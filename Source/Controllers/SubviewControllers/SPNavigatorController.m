@@ -102,7 +102,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 		ignoreUpdate        = NO;
 		isFiltered          = NO;
 		isFiltering         = NO;
-		[syncButton setState:NSOffState];
+		[syncButton setState:NSControlStateValueOff];
 		NSDictionaryClass   = [NSDictionary class];
 	}
 
@@ -132,7 +132,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 	[schemaStatusSplitView setMinSize:16.f ofSubviewAtIndex:1];
 
 	[self setWindowFrameAutosaveName:@"SPNavigator"];
-	[outlineSchema2 registerForDraggedTypes:@[SPNavigatorTableDataPasteboardDragType, SPNavigatorPasteboardDragType, NSStringPboardType]];
+	[outlineSchema2 registerForDraggedTypes:@[SPNavigatorTableDataPasteboardDragType, SPNavigatorPasteboardDragType, NSPasteboardTypeString]];
 	[outlineSchema2 setDraggingSourceOperationMask:NSDragOperationEvery forLocal:YES];
 	[outlineSchema2 setDraggingSourceOperationMask:NSDragOperationEvery forLocal:NO];
 
@@ -158,7 +158,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 - (BOOL)syncMode
 {
 	if([[self window] isVisible])
-		return ([syncButton state] == NSOffState || [outlineSchema2 numberOfSelectedRows] > 1) ? NO : YES;
+		return ([syncButton state] == NSControlStateValueOff || [outlineSchema2 numberOfSelectedRows] > 1) ? NO : YES;
 	return NO;
 }
 
@@ -328,7 +328,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 
 - (void)_setSyncButtonOn
 {
-	[syncButton setState:NSOnState];
+	[syncButton setState:NSControlStateValueOn];
 	[self syncButtonAction:self];
 }
 
@@ -371,12 +371,12 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 				// TODO: in sync mode switch it off while selecting the item in the doc and re-enable it after a delay of one 0.1sec
 				// to avoid gui rendering problems
 				NSInteger oldState = [syncButton state];
-				[syncButton setState:NSOffState];
+				[syncButton setState:NSControlStateValueOff];
 
 				// Select the database and table
 				[doc selectDatabase:[pathArray objectAtIndex:1] item:[pathArray safeObjectAtIndex:2]];
 
-				if(oldState == NSOnState)
+				if(oldState == NSControlStateValueOn)
 					[self performSelector:@selector(_setSyncButtonOn) withObject:nil afterDelay:0.1];
 
 			} else {
@@ -575,7 +575,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 	[outlineSchema2 reloadData];
 	selectedKey2 = @"";
 	selectionViewPort2 = NSZeroRect;
-	[syncButton setState:NSOffState];
+	[syncButton setState:NSControlStateValueOff];
 	isFiltered = NO;
 
 	if (![[doc getConnection] isConnected]) return;
@@ -625,7 +625,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 
 		isFiltered = YES;
 
-		[syncButton setState:NSOffState];
+		[syncButton setState:NSControlStateValueOff];
 
 		NSMutableDictionary *structure = [NSMutableDictionary dictionary];
 		[structure setObject:[NSMutableDictionary dictionary] forKey:connectionID];
@@ -703,7 +703,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 
 	if(!schemaData) return;
 
-	if([syncButton state] == NSOnState) {
+	if([syncButton state] == NSControlStateValueOn) {
 
 		if(isFiltered) {
 			isFiltered = NO;
@@ -1078,7 +1078,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 - (BOOL)outlineView:(NSOutlineView *)outlineView writeItems:(NSArray *)items toPasteboard:(NSPasteboard *)pboard
 {
 	// Provide data for our custom type, and simple NSStrings.
-	[pboard declareTypes:@[SPNavigatorTableDataPasteboardDragType, SPNavigatorPasteboardDragType, NSStringPboardType] owner:self];
+	[pboard declareTypes:@[SPNavigatorTableDataPasteboardDragType, SPNavigatorPasteboardDragType, NSPasteboardTypeString] owner:self];
 
 	// Collect the actual schema paths without leading connection ID
 	NSMutableArray *draggedItems = [NSMutableArray array];
@@ -1116,7 +1116,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 
 	if(![dragString length]) return NO;
 
-	[pboard setString:dragString forType:NSStringPboardType];
+	[pboard setString:dragString forType:NSPasteboardTypeString];
 	return YES;
 }
 

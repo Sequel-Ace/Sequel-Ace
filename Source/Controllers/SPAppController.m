@@ -1445,7 +1445,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
     NSArray *types = [pboard types];
 
-    if ((![types containsObject:NSStringPboardType]) || (!(pboardString = [pboard stringForType:NSStringPboardType]))) {
+    if ((![types containsObject:NSPasteboardTypeString]) || (!(pboardString = [pboard stringForType:NSPasteboardTypeString]))) {
         *error = @"Pasteboard couldn't give string.";
 
         return;

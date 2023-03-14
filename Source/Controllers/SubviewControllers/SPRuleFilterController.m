@@ -528,7 +528,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			[check setImagePosition:NSImageOnly];
 			[check sizeToFit];
 			[check setAllowsMixedState:[node allowsMixedState]];
-			[check setState:([node initialState] ? NSOnState : NSOffState)];
+			[check setState:([node initialState] ? NSControlStateValueOn : NSControlStateValueOff)];
 			[check setTarget:self];
 			[check setAction:@selector(_checkboxClicked:)];
 			return check;
@@ -655,7 +655,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		newState = [sender state];
 	}
 
-	if(row >= 0 && (newState == NSOnState || newState == NSOffState)) {
+	if(row >= 0 && (newState == NSControlStateValueOn || newState == NSControlStateValueOff)) {
 		// if we are a compound row, go downwards to update our children
 		if([filterRuleEditor rowTypeForRow:row] == NSRuleEditorRowTypeCompound) {
 			[self _updateCheckedStateDownwardsFromCompoundRow:row to:newState];
@@ -722,7 +722,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	// stop condition for recursion
 	if(row < 0) return;
 
-	__block NSCellStateValue newState = NSOnState;
+	__block NSCellStateValue newState = NSControlStateValueOn;
 	__block NSUInteger countOff = 0;
 	NSIndexSet *subrows = [filterRuleEditor subrowIndexesForRow:row];
 	[subrows enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
@@ -733,13 +733,13 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			*stop = YES;
 			return;
 		}
-		else if(subState == NSOffState) {
+		else if(subState == NSControlStateValueOff) {
 			countOff++;
 		}
 	}];
 	if(countOff) {
 		// off only happens if all children are off
-		newState = (countOff == [subrows count]) ? NSOffState : NSMixedState;
+		newState = (countOff == [subrows count]) ? NSControlStateValueOff : NSMixedState;
 	}
 
 	//update ourselves
@@ -759,15 +759,15 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
  * @return
  *   The resulting state for the given row according to all children (recursive).
  *   This will be:
- *   - `NSOnState` if the row either has no children or all children are also checked
+ *   - `NSControlStateValueOn` if the row either has no children or all children are also checked
  *   - `NSMixedState` if at least one child row is also in mixed state or some (but not all) of the child rows are unchecked
- *   - `NSOffState` if there are child rows and all of them are unchecked
+ *   - `NSControlStateValueOff` if there are child rows and all of them are unchecked
  */
 - (NSCellStateValue)_recalculateCheckboxStatesFromRow:(NSInteger)row
 {
 	NSIndexSet *subrows = [filterRuleEditor subrowIndexesForRow:row];
 
-	__block NSCellStateValue newState = NSOnState;
+	__block NSCellStateValue newState = NSControlStateValueOn;
 	__block NSUInteger countOff = 0;
 	[subrows enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
 		NSCellStateValue subState;
@@ -782,13 +782,13 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		if(subState == NSMixedState) {
 			newState = NSMixedState;
 		}
-		else if(subState == NSOffState) {
+		else if(subState == NSControlStateValueOff) {
 			countOff++;
 		}
 	}];
 	if(countOff) {
 		// off only happens if all children are off
-		newState = (countOff == [subrows count]) ? NSOffState : NSMixedState;
+		newState = (countOff == [subrows count]) ? NSControlStateValueOff : NSMixedState;
 	}
 
 	return newState;
@@ -804,7 +804,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
  *   The row index to return the checkbox state of (must be >= 0)
  * @return
  *   The checkbox state.
- *   Defaults to `NSOnState` if no checkbox is found in the row.
+ *   Defaults to `NSControlStateValueOn` if no checkbox is found in the row.
  */
 - (NSCellStateValue)_checkboxStateForRow:(NSInteger)row
 {
@@ -816,7 +816,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	}
 
 	SPLog(@"row=%ld: row does not have enable node as first child!? (type=%ld)", row, (NSInteger)[firstCriterion type]);
-	return NSOnState;
+	return NSControlStateValueOn;
 }
 
 - (IBAction)_textFieldAction:(id)sender
@@ -1385,7 +1385,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		if([criteria count] < 3 || [criteria count] != [displayValues count]) {
 			return nil;
 		}
-		BOOL isEnabled = ([(NSButton *)[displayValues objectAtIndex:0] state] == NSOnState);
+		BOOL isEnabled = ([(NSButton *)[displayValues objectAtIndex:0] state] == NSControlStateValueOn);
 		if(!isEnabled && !includeDisabled) {
 			return nil;
 		}

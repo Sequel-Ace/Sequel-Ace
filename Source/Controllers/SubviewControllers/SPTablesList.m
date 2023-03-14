@@ -590,7 +590,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	NSInteger alertReturnCode = [alert runModal];
 	if (alertReturnCode == NSAlertFirstButtonReturn) {
-		[self _removeTable:[[alert suppressionButton] state] == NSOnState];
+		[self _removeTable:[[alert suppressionButton] state] == NSControlStateValueOn];
 	}
 }
 
@@ -608,7 +608,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	NSInteger objectType = [[filteredTableTypes objectAtIndex:[tablesListView selectedRow]] integerValue];
 
-	[copyTableContentSwitch setState:NSOffState];
+	[copyTableContentSwitch setState:NSControlStateValueOff];
 	[copyTableContentSwitch setEnabled:objectType == SPTableTypeTable];
 
 	NSString *tableType = @"";
@@ -755,8 +755,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
         // Copy to the clipboard
         NSPasteboard *pb = [NSPasteboard generalPasteboard];
 
-        [pb declareTypes:@[NSStringPboardType] owner:self];
-        [pb setString:copiedSyntax forType:NSStringPboardType];
+        [pb declareTypes:@[NSPasteboardTypeString] owner:self];
+        [pb setString:copiedSyntax forType:NSPasteboardTypeString];
 
     }
 }
@@ -2588,7 +2588,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		return;
 	}
 
-	BOOL copyTableContent = ([copyTableContentSwitch state] == NSOnState);
+	BOOL copyTableContent = ([copyTableContentSwitch state] == NSControlStateValueOn);
 
 	NSString *targetDatabaseName = [chooseDatabaseButton titleOfSelectedItem];
 

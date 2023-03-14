@@ -190,10 +190,10 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 - (IBAction)updateKnownHostsConfig:(NSPopUpButton *)sender {
 
     for (NSMenuItem *item in [knownHostsChooser itemArray]) {
-        [item setState:NSOffState];
+        [item setState:NSControlStateValueOff];
     }
 
-    [sender setState:NSOnState];
+    [sender setState:NSControlStateValueOn];
     [knownHostsChooser setTitle:[sender title]];
 
     if ([[sender title] isEqualToString:@"Sequel Ace default"]) {
@@ -241,10 +241,10 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 - (IBAction)updateSSHConfig:(NSPopUpButton *)sender
 {
 	for (NSMenuItem *item in [sshConfigChooser itemArray]) {
-		[item setState:NSOffState];
+		[item setState:NSControlStateValueOff];
 	}
 	
-	[sender setState:NSOnState];
+	[sender setState:NSControlStateValueOn];
 	[sshConfigChooser setTitle:[sender title]];
 	
 	if ([[sender title] isEqualToString:@"Sequel Ace default"]) {

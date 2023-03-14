@@ -438,7 +438,7 @@ static BOOL StringQualifiesForWordSearch(NSString *s);
 - (BOOL)validateUserInterfaceItem:(id <NSValidatedUserInterfaceItem>)anItem
 {
 	if([anItem action] == @selector(toggleWordSearch:)) {
-		[(NSMenuItem *)anItem setState:([self qualifiesForWordSearch]? NSOnState : NSOffState)];
+		[(NSMenuItem *)anItem setState:([self qualifiesForWordSearch]? NSControlStateValueOn : NSControlStateValueOff)];
 	}
 	return YES;
 }

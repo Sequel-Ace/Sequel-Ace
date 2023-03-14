@@ -131,7 +131,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 - (NSString *)tableFilterString
 {
 	if([[[filterTableWhereClause textStorage] string] length]) {
-		if ([filterTableNegateCheckbox state] == NSOnState) {
+		if ([filterTableNegateCheckbox state] == NSControlStateValueOn) {
 			return [NSString stringWithFormat:@"NOT (%@)", [[filterTableWhereClause textStorage] string]];
 		}
 		else {
@@ -216,9 +216,9 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 	[filterTableSplitView setMinSize:135 ofSubviewAtIndex:1];
 
 	// Init Filter Table GUI
-	[filterTableDistinctCheckbox setState:(filterTableDistinct) ? NSOnState : NSOffState];
-	[filterTableNegateCheckbox setState:(filterTableNegate) ? NSOnState : NSOffState];
-	[filterTableLiveSearchCheckbox setState:NSOffState];
+	[filterTableDistinctCheckbox setState:(filterTableDistinct) ? NSControlStateValueOn : NSControlStateValueOff];
+	[filterTableNegateCheckbox setState:(filterTableNegate) ? NSControlStateValueOn : NSControlStateValueOff];
+	[filterTableLiveSearchCheckbox setState:NSControlStateValueOff];
 
 	filterTableDefaultOperator = [[self class] escapeFilterTableDefaultOperator:[prefs objectForKey:SPFilterTableDefaultOperator]];
 }
@@ -237,7 +237,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 	[self updateFilterTableClause:sender];
 
 	// If live search is set perform filtering
-	if ([filterTableLiveSearchCheckbox state] == NSOnState) {
+	if ([filterTableLiveSearchCheckbox state] == NSControlStateValueOn) {
 		[self filterTable:filterTableFilterButton];
 	}
 }
@@ -281,7 +281,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 	}
 
 	// If live search is set perform filtering
-	if ([filterTableLiveSearchCheckbox state] == NSOnState) {
+	if ([filterTableLiveSearchCheckbox state] == NSControlStateValueOn) {
 		[self filterTable:filterTableFilterButton];
 	}
 }
@@ -293,10 +293,10 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 {
 	filterTableDistinct = !filterTableDistinct;
 
-	[filterTableDistinctCheckbox setState:(filterTableDistinct) ? NSOnState : NSOffState];
+	[filterTableDistinctCheckbox setState:(filterTableDistinct) ? NSControlStateValueOn : NSControlStateValueOff];
 
 	// If live search is set perform filtering
-	if ([filterTableLiveSearchCheckbox state] == NSOnState) {
+	if ([filterTableLiveSearchCheckbox state] == NSControlStateValueOn) {
 		[self filterTable:filterTableFilterButton];
 	}
 }
@@ -429,7 +429,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 					[filterTableWhereClause scrollRangeToVisible:NSMakeRange(0, 0)];
 
 					// If live search is set perform filtering
-					if ([filterTableLiveSearchCheckbox state] == NSOnState) {
+					if ([filterTableLiveSearchCheckbox state] == NSControlStateValueOn) {
 						[self filterTable:filterTableFilterButton];
 					}
 				}
@@ -536,7 +536,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 	[filterTableWhereClause scrollRangeToVisible:NSMakeRange(0, 0)];
 
 	// If live search is set perform filtering
-	if ([filterTableLiveSearchCheckbox state] == NSOnState) {
+	if ([filterTableLiveSearchCheckbox state] == NSControlStateValueOn) {
 		[self filterTable:filterTableFilterButton];
 	}
 }

@@ -364,7 +364,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	// Empty and disable filter options
 	[toggleRuleFilterButton setEnabled:NO];
-	[toggleRuleFilterButton setState:NSOffState];
+	[toggleRuleFilterButton setState:NSControlStateValueOff];
 	[ruleFilterController setColumns:nil];
 
 	// Disable pagination
@@ -654,11 +654,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// hide/show the rule filter editor, based on its previous state (so that it stays visible when switching tables, if someone has enabled it and vice versa)
 	if (showFilterRuleEditor) {
 		[self setRuleEditorVisible:YES animate:YES];
-		[toggleRuleFilterButton setState:NSOnState];
+		[toggleRuleFilterButton setState:NSControlStateValueOn];
 	}
 	else {
 		[self setRuleEditorVisible:NO animate:NO];
-		[toggleRuleFilterButton setState:NSOffState];
+		[toggleRuleFilterButton setState:NSControlStateValueOff];
 	}
 	[ruleFilterController setEnabled:enableInteraction];
 	[toggleRuleFilterButton setEnabled:enableInteraction];
@@ -1475,7 +1475,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (IBAction) togglePagination:(NSButton *)sender
 {
-	[self setPaginationViewVisibility:([sender state] == NSOnState)];
+	[self setPaginationViewVisibility:([sender state] == NSControlStateValueOn)];
 }
 
 - (void)popoverDidClose:(NSNotification *)notification
@@ -1492,11 +1492,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	NSRect paginationViewFrame = [paginationView frame];
 	
 	if(makeVisible) {
-		[paginationButton setState:NSOnState];
+		[paginationButton setState:NSControlStateValueOn];
 		[paginationViewController makeInputFirstResponder];
 	}
 	else {
-		[paginationButton setState:NSOffState];
+		[paginationButton setState:NSControlStateValueOff];
 		// TODO This is only relevant in 10.6 legacy mode.
 		// When using a modern NSPopover, the view controller's parent window is an _NSPopoverWindow,
 		// not the SP window and we don't care what the first responder in the popover is.
@@ -1680,7 +1680,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	isEditingRow = YES;
 	isEditingNewRow = YES;
 	currentlyEditingRow = [tableContentView selectedRow];
-    if ( [multipleLineEditingButton state] == NSOffState ){
+    if ( [multipleLineEditingButton state] == NSControlStateValueOff ){
         NSInteger numRows = [tableContentView numberOfRows];
         if(numRows-1 != 0){
             [tableContentView editColumn:0 row:numRows-1 withEvent:nil select:YES];
@@ -1788,13 +1788,13 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[alert setAlertStyle:NSAlertStyleCritical];
 
 	[alert setShowsSuppressionButton:NO];
-	[[alert suppressionButton] setState:NSOffState];
+	[[alert suppressionButton] setState:NSControlStateValueOff];
 
 	if (allowDeletingAllRows) {
 		// If table has PRIMARY KEY ask for resetting the auto increment after deletion if given
 		if(![[tableDataInstance statusValueForKey:@"Auto_increment"] isNSNull]) {
 			[alert setShowsSuppressionButton:YES];
-			[[alert suppressionButton] setState:([prefs boolForKey:SPResetAutoIncrementAfterDeletionOfAllRows]) ? NSOnState : NSOffState];
+			[[alert suppressionButton] setState:([prefs boolForKey:SPResetAutoIncrementAfterDeletionOfAllRows]) ? NSControlStateValueOn : NSControlStateValueOff];
 			[[[alert suppressionButton] cell] setControlSize:NSControlSizeSmall];
 			[[[alert suppressionButton] cell] setFont:[NSFont systemFontOfSize:11]];
 			[[alert suppressionButton] setTitle:NSLocalizedString(@"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?", @"reset auto_increment after deletion of all rows message")];
@@ -1849,7 +1849,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
         [doubleCheckAlert setShowsSuppressionButton: YES];
 
         if ([doubleCheckAlert runModal] == NSAlertFirstButtonReturn) {
-            if ([[doubleCheckAlert suppressionButton] state] == NSOnState) {
+            if ([[doubleCheckAlert suppressionButton] state] == NSControlStateValueOn) {
                 [prefs setBool:NO forKey:SPShowWarningBeforeDeleteQuery];
             }
             SPLog(@"User clicked Yes, exec queries");
@@ -1882,7 +1882,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
             [self updateCountText];
 
             // Reset auto increment if suppression button was ticked
-            if ([[alert suppressionButton] state] == NSOnState) {
+            if ([[alert suppressionButton] state] == NSControlStateValueOn) {
                 [tableSourceInstance setAutoIncrementTo:@1];
                 [prefs setBool:YES forKey:SPResetAutoIncrementAfterDeletionOfAllRows];
             } else {
@@ -3939,7 +3939,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
     [prefs setBool:YES forKey:SPRuleFilterEditorLastVisibilityChoice];
 	
 	[self setRuleEditorVisible:YES animate:YES];
-	[toggleRuleFilterButton setState:NSOnState];
+	[toggleRuleFilterButton setState:NSControlStateValueOn];
 	[ruleFilterController focusFirstInputField];
 }
 
@@ -4251,10 +4251,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		if (tmp && [tmp length])
 		{
-			[pboard declareTypes:@[NSTabularTextPboardType, NSStringPboardType] owner:nil];
+			[pboard declareTypes:@[NSPasteboardTypeTabularText, NSPasteboardTypeString] owner:nil];
 
-			[pboard setString:tmp forType:NSStringPboardType];
-			[pboard setString:tmp forType:NSTabularTextPboardType];
+			[pboard setString:tmp forType:NSPasteboardTypeString];
+			[pboard setString:tmp forType:NSPasteboardTypeTabularText];
 
 			return YES;
 		}

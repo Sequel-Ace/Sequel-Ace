@@ -361,7 +361,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 {
 	// Close the advanced options view if it's open
 	[indexAdvancedOptionsView setHidden:YES];
-	[indexAdvancedOptionsViewButton setState:NSOffState];
+	[indexAdvancedOptionsViewButton setState:NSControlStateValueOff];
 	showAdvancedView = NO;
 
 	// Hide the size column

@@ -323,7 +323,7 @@
 			<string>Sequel Ace</string>
 			<key>NSSendTypes</key>
 			<array>
-				<string>NSStringPboardType</string>
+				<string>NSPasteboardTypeString</string>
 				<string>NSURLPboardType</string>
 			</array>
 		</dict>

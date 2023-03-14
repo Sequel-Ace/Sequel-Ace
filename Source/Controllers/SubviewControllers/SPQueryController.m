@@ -164,8 +164,8 @@ static SPQueryController *sharedQueryController = nil;
         NSPasteboard *pasteBoard = [NSPasteboard generalPasteboard];
 
         // Copy the string to the pasteboard
-        [pasteBoard declareTypes:@[NSStringPboardType] owner:self];
-        [pasteBoard setString:string forType:NSStringPboardType];
+        [pasteBoard declareTypes:@[NSPasteboardTypeString] owner:self];
+        [pasteBoard setString:string forType:NSPasteboardTypeString];
     }
 }
 
@@ -185,8 +185,8 @@ static SPQueryController *sharedQueryController = nil;
         NSPasteboard *pasteBoard = [NSPasteboard generalPasteboard];
 
         // Copy the string to the pasteboard
-        [pasteBoard declareTypes:@[NSStringPboardType] owner:self];
-        [pasteBoard setString:string forType:NSStringPboardType];
+        [pasteBoard declareTypes:@[NSPasteboardTypeString] owner:self];
+        [pasteBoard setString:string forType:NSPasteboardTypeString];
     }
 }
 
@@ -788,8 +788,8 @@ static SPQueryController *sharedQueryController = nil;
 
     NSString *string = [self infoStringForRowIndexes:rowIndexes includeTimestamps:includeTimestamps includeConnections:includeConnections includeDatabases:includeDatabases];
 	if([string length]) {
-		[pboard declareTypes:@[NSStringPboardType] owner:self];
-		return [pboard setString:string forType:NSStringPboardType];
+		[pboard declareTypes:@[NSPasteboardTypeString] owner:self];
+		return [pboard setString:string forType:NSPasteboardTypeString];
 	}
 
 	return NO;

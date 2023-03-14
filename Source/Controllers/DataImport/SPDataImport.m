@@ -179,12 +179,12 @@
 	[importFromClipboardTextView setVerticallyResizable:YES];
 	[importFromClipboardTextView setFont:[NSFont fontWithName:@"Monaco" size:11.0f]];
 	
-    if([[[NSPasteboard generalPasteboard] stringForType:NSStringPboardType] length] > 4000){
-        [importFromClipboardTextView setString:[[[[NSPasteboard generalPasteboard] stringForType:NSStringPboardType] substringToIndex:4000] stringByAppendingString:@"\n…"]];
+    if([[[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString] length] > 4000){
+        [importFromClipboardTextView setString:[[[[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString] substringToIndex:4000] stringByAppendingString:@"\n…"]];
     }
     else{
-        if([[NSPasteboard generalPasteboard] stringForType:NSStringPboardType] != nil){
-            [importFromClipboardTextView setString:[[NSPasteboard generalPasteboard] stringForType:NSStringPboardType]];
+        if([[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString] != nil){
+            [importFromClipboardTextView setString:[[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString]];
         }
     }
 
@@ -227,7 +227,7 @@
 			encoding = [self->mySQLConnection stringEncoding];
 		}
 
-		if (![[[NSPasteboard generalPasteboard] stringForType:NSStringPboardType] writeToFile:importFileName atomically:NO encoding:encoding error:nil]) {
+		if (![[[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString] writeToFile:importFileName atomically:NO encoding:encoding error:nil]) {
 			NSBeep();
 			NSLog(@"Couldn't write clipboard content to temporary file.");
 			return;
@@ -1003,7 +1003,7 @@
 				}
 
 				// Remove the header row from the data set if appropriate
-				if ([[importFieldNamesSwitch onMainThread] state] == NSOnState) {
+				if ([[importFieldNamesSwitch onMainThread] state] == NSControlStateValueOn) {
 					[parsedRows removeObjectAtIndex:0];
 					[parsePositions removeObjectAtIndex:0];
 				}
@@ -1619,7 +1619,7 @@
 	mySQLConnection = theConnection;
 	
 	// Set up the interface
-	[switchButton setButtonType:NSSwitchButton];
+	[switchButton setButtonType:NSButtonTypeSwitch];
 	[switchButton setControlSize:NSControlSizeSmall];
 
 	[errorsView setFont:[NSUserDefaults getFont]];

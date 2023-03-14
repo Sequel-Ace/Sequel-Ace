@@ -256,11 +256,11 @@ typedef enum {
 
 		// Check for NULL
 		if ([sheetEditData isEqualToString:[prefs objectForKey:SPNullValue]]) {
-			[bitSheetNULLButton setState:NSOnState];
+			[bitSheetNULLButton setState:NSControlStateValueOn];
 			[self setToNull:bitSheetNULLButton];
 		}
 		else {
-			[bitSheetNULLButton setState:NSOffState];
+			[bitSheetNULLButton setState:NSControlStateValueOff];
 		}
 
 		[bitSheetFieldName setStringValue:label];
@@ -269,11 +269,11 @@ typedef enum {
 		NSUInteger i = 0;
 		NSUInteger maxBit = (NSUInteger)((maxTextLength > 64) ? 64 : maxTextLength);
 
-		if ([bitSheetNULLButton state] == NSOffState && maxBit <= [(NSString*)sheetEditData length])
+		if ([bitSheetNULLButton state] == NSControlStateValueOff && maxBit <= [(NSString*)sheetEditData length])
 			for (i = 0; i < maxBit; i++)
 			{
 				[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%ld", (long)i]]
-				 setState:([(NSString*)sheetEditData characterAtIndex:(maxBit - i - 1)] == '1') ? NSOnState : NSOffState];
+				 setState:([(NSString*)sheetEditData characterAtIndex:(maxBit - i - 1)] == '1') ? NSControlStateValueOn : NSControlStateValueOff];
 			}
 
 		for (i = maxBit; i < 64; i++)
@@ -1086,7 +1086,7 @@ typedef enum {
 	NSUInteger i = 0;
 	NSUInteger maxBit = (NSUInteger)((maxTextLength > 64) ? 64 : maxTextLength);
 
-	if([bitSheetNULLButton state] == NSOnState) {
+	if([bitSheetNULLButton state] == NSControlStateValueOn) {
 		NSString *nullString = [prefs objectForKey:SPNullValue];
 		sheetEditData = [NSString stringWithString:nullString];
 		[bitSheetIntegerTextField setStringValue:nullString];
@@ -1104,7 +1104,7 @@ typedef enum {
 	NSUInteger bitValue = 0x1;
 
 	for(i=0; i<maxBit; i++) {
-		if([(NSButton*)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", (unsigned long)i]] state] == NSOnState) {
+		if([(NSButton*)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", (unsigned long)i]] state] == NSControlStateValueOn) {
 			intValue += bitValue;
 			[bitString replaceCharactersInRange:NSMakeRange((NSUInteger)maxTextLength-i-1, 1) withString:@"1"];
 		}
@@ -1131,11 +1131,11 @@ typedef enum {
 	switch([sender tag]) {
 		case 0: // all to 1
 		for(i=0; i<maxBit; i++)
-			[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:NSOnState];
+			[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:NSControlStateValueOn];
 		break;
 		case 1: // all to 0
 		for(i=0; i<maxBit; i++)
-			[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:NSOffState];
+			[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:NSControlStateValueOff];
 		break;
 		case 2: // negate
 		for(i=0; i<maxBit; i++)
@@ -1145,13 +1145,13 @@ typedef enum {
 		for(i=maxBit-1; i>0; i--) {
 			[(NSButton*)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:[(NSButton*)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i-1]] state]];
 		}
-		[(NSButton *)[self valueForKeyPath:@"bitSheetBitButton0"] setState:NSOffState];
+		[(NSButton *)[self valueForKeyPath:@"bitSheetBitButton0"] setState:NSControlStateValueOff];
 		break;
 		case 4: // shift right
 		for(i=0; i<maxBit-1; i++) {
 			[(NSButton*)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:[(NSButton*)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i+1]] state]];
 		}
-		[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", maxBit-1]] setState:NSOffState];
+		[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", maxBit-1]] setState:NSControlStateValueOff];
 		break;
 		case 5: // rotate left
 		aBit = [(NSButton*)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%ld", maxBit-1]] state];
@@ -1188,7 +1188,7 @@ typedef enum {
 	unsigned long i;
 	unsigned long maxBit = (unsigned long)((maxTextLength > 64) ? 64 : maxTextLength);
 
-	if([(NSButton*)sender state] == NSOnState) {
+	if([(NSButton*)sender state] == NSControlStateValueOn) {
 		for(i=0; i<maxBit; i++)
 			[[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setEnabled:NO];
 		[bitSheetHexTextField setEnabled:NO];
@@ -1231,7 +1231,7 @@ typedef enum {
 		NSUInteger intValue = (NSUInteger)strtoull([[bitSheetIntegerTextField stringValue] UTF8String], NULL, 0);
 
 		for(i=0; i<maxBit; i++)
-			[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:NSOffState];
+			[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:NSControlStateValueOff];
 
 		[bitSheetHexTextField setStringValue:[NSString stringWithFormat:@"%lX", (unsigned long)intValue]];
 		[bitSheetOctalTextField setStringValue:[NSString stringWithFormat:@"%llo", (long long)intValue]];
@@ -1239,7 +1239,7 @@ typedef enum {
 		i = 0;
 		while( intValue && i < maxBit )
 		{
-			[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:( (intValue & 0x1) == 0) ? NSOffState : NSOnState];
+			[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%lu", i]] setState:( (intValue & 0x1) == 0) ? NSControlStateValueOff : NSControlStateValueOn];
 			intValue >>= 1;
 			i++;
 		}
@@ -1255,7 +1255,7 @@ typedef enum {
 		[[NSScanner scannerWithString:[bitSheetHexTextField stringValue]] scanHexLongLong: &intValue];
 
 		for(i=0; i<maxBit; i++)
-			[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%ld", (long)i]] setState:NSOffState];
+			[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%ld", (long)i]] setState:NSControlStateValueOff];
 
 		[bitSheetHexTextField setStringValue:[NSString stringWithFormat:@"%qX", intValue]];
 		[bitSheetOctalTextField setStringValue:[NSString stringWithFormat:@"%llo", intValue]];
@@ -1263,7 +1263,7 @@ typedef enum {
 		i = 0;
 		while( intValue && i < maxBit )
 		{
-			[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%ld", (long)i]] setState:( (intValue & 0x1) == 0) ? NSOffState : NSOnState];
+			[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%ld", (long)i]] setState:( (intValue & 0x1) == 0) ? NSControlStateValueOff : NSControlStateValueOn];
 			intValue >>= 1;
 			i++;
 		}

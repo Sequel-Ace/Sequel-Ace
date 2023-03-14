@@ -316,7 +316,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 - (BOOL)importFieldNamesHeader
 {
 	if(importFieldNamesHeaderSwitch) {
-		return ([importFieldNamesHeaderSwitch state] == NSOnState);
+		return ([importFieldNamesHeaderSwitch state] == NSControlStateValueOn);
 	}
 	else {
 		//this is a provisional field for the initial value of the checkbox until the window is actually loaded
@@ -331,29 +331,29 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 - (BOOL)insertRemainingRowsAfterUpdate
 {
-	return ([addRemainingDataSwitch state] == NSOnState)?YES:NO;
+	return ([addRemainingDataSwitch state] == NSControlStateValueOn)?YES:NO;
 }
 
 - (NSString*)importHeaderString
 {
 	if([[importMethodPopup titleOfSelectedItem] isEqualToString:@"INSERT"]) {
 		return [NSString stringWithFormat:@"INSERT %@%@%@%@INTO ",
-			([lowPriorityCheckBox state] == NSOnState) ? @"LOW_PRIORITY " : @"",
-			([delayedCheckBox state] == NSOnState) ? @"DELAYED " : @"",
-			([highPriorityCheckBox state] == NSOnState) ? @"HIGH_PRIORITY " : @"",
-			([ignoreCheckBox state] == NSOnState) ? @"IGNORE " : @""
+			([lowPriorityCheckBox state] == NSControlStateValueOn) ? @"LOW_PRIORITY " : @"",
+			([delayedCheckBox state] == NSControlStateValueOn) ? @"DELAYED " : @"",
+			([highPriorityCheckBox state] == NSControlStateValueOn) ? @"HIGH_PRIORITY " : @"",
+			([ignoreCheckBox state] == NSControlStateValueOn) ? @"IGNORE " : @""
 			];
 	}
 	else if([[importMethodPopup titleOfSelectedItem] isEqualToString:@"REPLACE"]) {
 		return [NSString stringWithFormat:@"REPLACE %@%@INTO ",
-			([lowPriorityReplaceCheckBox state] == NSOnState) ? @"LOW_PRIORITY " : @"",
-			([delayedReplaceCheckBox state] == NSOnState) ? @"DELAYED " : @""
+			([lowPriorityReplaceCheckBox state] == NSControlStateValueOn) ? @"LOW_PRIORITY " : @"",
+			([delayedReplaceCheckBox state] == NSControlStateValueOn) ? @"DELAYED " : @""
 			];
 	}
 	else if([[importMethodPopup titleOfSelectedItem] isEqualToString:@"UPDATE"]) {
 		return [NSString stringWithFormat:@"UPDATE %@%@%@ SET ",
-			([lowPriorityUpdateCheckBox state] == NSOnState) ? @"LOW_PRIORITY " : @"",
-			([ignoreUpdateCheckBox state] == NSOnState) ? @"IGNORE " : @"",
+			([lowPriorityUpdateCheckBox state] == NSControlStateValueOn) ? @"LOW_PRIORITY " : @"",
+			([ignoreUpdateCheckBox state] == NSControlStateValueOn) ? @"IGNORE " : @"",
 			[[self selectedTableTarget] backtickQuotedString]
 			];
 	}
@@ -362,7 +362,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 - (NSString*)onupdateString
 {
-	if([onupdateCheckBox state] == NSOnState && [[onupdateTextView string] length])
+	if([onupdateCheckBox state] == NSControlStateValueOn && [[onupdateTextView string] length])
 		return [NSString stringWithFormat:@"ON DUPLICATE KEY UPDATE %@", [onupdateTextView string]];
 	else
 		return @"";
@@ -1126,7 +1126,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			[globalValuesSheet makeFirstResponder:globalValuesTableView];
 
 		// Replace the current map pair with the last selected global value
-		if([replaceAfterSavingCheckBox state] == NSOnState && [globalValuesTableView numberOfSelectedRows] == 1) {
+		if([replaceAfterSavingCheckBox state] == NSControlStateValueOn && [globalValuesTableView numberOfSelectedRows] == 1) {
 
 			[fieldMappingArray safeReplaceObjectAtIndex:[fieldMapperTableView selectedRow] withObject:[NSNumber numberWithInteger:[globalValuesTableView selectedRow]+numberOfImportColumns]];
 
@@ -1153,10 +1153,10 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 {
 	showAdvancedView = !showAdvancedView;
 	if(showAdvancedView) {
-		[advancedButton setState:NSOnState];
+		[advancedButton setState:NSControlStateValueOn];
 		[self changeImportMethod:nil];
 	} else {
-		[advancedButton setState:NSOffState];
+		[advancedButton setState:NSControlStateValueOff];
 		[advancedBox setHidden:YES];
 		[advancedReplaceView setHidden:YES];
 		[advancedUpdateView setHidden:YES];
@@ -1168,16 +1168,16 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 - (IBAction)advancedCheckboxValidation:(id)sender
 {
 
-	if(sender == lowPriorityReplaceCheckBox && [lowPriorityReplaceCheckBox state] == NSOnState) {
+	if(sender == lowPriorityReplaceCheckBox && [lowPriorityReplaceCheckBox state] == NSControlStateValueOn) {
 		[delayedReplaceCheckBox setState:NO];
 		return;
 	}
-	if(sender == delayedReplaceCheckBox && [delayedReplaceCheckBox state] == NSOnState) {
+	if(sender == delayedReplaceCheckBox && [delayedReplaceCheckBox state] == NSControlStateValueOn) {
 		[lowPriorityReplaceCheckBox setState:NO];
 		return;
 	}
 	if(sender == skipexistingRowsCheckBox) {
-		if([skipexistingRowsCheckBox state] == NSOnState) {
+		if([skipexistingRowsCheckBox state] == NSControlStateValueOn) {
 			[delayedCheckBox setState:NO];
 			[delayedCheckBox setEnabled:NO];
 			[onupdateCheckBox setState:YES];
@@ -1203,20 +1203,20 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		}
 	}
 
-	if(sender == lowPriorityCheckBox && [lowPriorityCheckBox state] == NSOnState) {
+	if(sender == lowPriorityCheckBox && [lowPriorityCheckBox state] == NSControlStateValueOn) {
 		[highPriorityCheckBox setState:NO];
 		[delayedCheckBox setState:NO];
-		if([skipexistingRowsCheckBox state] == NSOffState)
+		if([skipexistingRowsCheckBox state] == NSControlStateValueOff)
 			[onupdateCheckBox setEnabled:YES];
 	}
-	if(sender == highPriorityCheckBox && [highPriorityCheckBox state] == NSOnState) {
+	if(sender == highPriorityCheckBox && [highPriorityCheckBox state] == NSControlStateValueOn) {
 		[lowPriorityCheckBox setState:NO];
 		[delayedCheckBox setState:NO];
-		if([skipexistingRowsCheckBox state] == NSOffState)
+		if([skipexistingRowsCheckBox state] == NSControlStateValueOff)
 			[onupdateCheckBox setEnabled:YES];
 	}
 	if(sender == delayedCheckBox) {
-		if([delayedCheckBox state] == NSOnState) {
+		if([delayedCheckBox state] == NSControlStateValueOn) {
 			[lowPriorityCheckBox setState:NO];
 			[highPriorityCheckBox setState:NO];
 			[onupdateCheckBox setState:NO];
@@ -1226,12 +1226,12 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		}
 	}
 
-	if(sender == onupdateCheckBox && [onupdateCheckBox state] == NSOnState) {
+	if(sender == onupdateCheckBox && [onupdateCheckBox state] == NSControlStateValueOn) {
 		[onupdateTextView setBackgroundColor:[NSColor whiteColor]];
 		[onupdateTextView setEditable:YES];
 		[[self window] makeFirstResponder:onupdateTextView];
 	}
-	if([onupdateCheckBox state] == NSOffState && [skipexistingRowsCheckBox state] == NSOffState) {
+	if([onupdateCheckBox state] == NSControlStateValueOff && [skipexistingRowsCheckBox state] == NSControlStateValueOff) {
 		[onupdateTextView setBackgroundColor:[NSColor lightGrayColor]];
 		[onupdateTextView setEditable:NO];
 	}
@@ -1677,7 +1677,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 			if ([doNotImportKey isEqual:[fieldMappingOperatorArray objectAtIndex:rowIndex]]) return [NSString stringWithFormat:@"DEFAULT: %@", [fieldMappingTableDefaultValues objectAtIndex:rowIndex]];
 
-			if([importFieldNamesHeaderSwitch state] == NSOnState) {
+			if([importFieldNamesHeaderSwitch state] == NSControlStateValueOn) {
 				if([[fieldMappingArray safeObjectAtIndex:rowIndex] unsignedIntegerValue]>=[[fieldMappingImportArray firstObject] count])
 					return [NSString stringWithFormat:@"%@: %@", NSLocalizedString(@"User-defined value", @"user-defined value"), [fieldMappingGlobalValues safeObjectAtIndex:[[fieldMappingArray safeObjectAtIndex:rowIndex] integerValue]]];
 
@@ -1689,7 +1689,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 					return [[[fieldMappingImportArray firstObject] safeObjectAtIndex:[[fieldMappingArray safeObjectAtIndex:rowIndex] integerValue]] description];
 
 			}
-			else if([importFieldNamesHeaderSwitch state] == NSOffState) {
+			else if([importFieldNamesHeaderSwitch state] == NSControlStateValueOff) {
 				NSUInteger colIndex = [[fieldMappingArray safeObjectAtIndex:rowIndex] unsignedIntegerValue];
 				NSString *retval;
 				if(colIndex >= [[fieldMappingImportArray firstObject] count])

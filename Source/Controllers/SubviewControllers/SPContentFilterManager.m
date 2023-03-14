@@ -775,7 +775,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 			[c flushCachedRegexData];
 			[c replaceOccurrencesOfRegex:@"(?<!\\\\)\\$CURRENT_FIELD" withString:@"<field>"];
 			[c flushCachedRegexData];
-			[resultingClauseContentLabel setStringValue:[NSString stringWithFormat:@"%@%@", ([suppressLeadingFieldPlaceholderCheckbox state] == NSOnState) ? @"" : @"<field> ", c]];
+			[resultingClauseContentLabel setStringValue:[NSString stringWithFormat:@"%@%@", ([suppressLeadingFieldPlaceholderCheckbox state] == NSControlStateValueOn) ? @"" : @"<field> ", c]];
 		}
 
 	}

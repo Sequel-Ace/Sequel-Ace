@@ -79,13 +79,13 @@ static inline BOOL IS_TOKEN(id x);
 static inline BOOL IS_STRING(id x);
 
 /**
- * converts a ([obj state] == NSOnState) to @YES / @NO
- * (because doing @([obj state] == NSOnState) will result in an integer 0/1)
+ * converts a ([obj state] == NSControlStateValueOn) to @YES / @NO
+ * (because doing @([obj state] == NSControlStateValueOn) will result in an integer 0/1)
  */
 static inline NSNumber *IsOn(id obj);
 
 /**
- * Sets the state of obj to NSOnState or NSOffState based on the value of ref
+ * Sets the state of obj to NSControlStateValueOn or NSControlStateValueOff based on the value of ref
  */
 static inline void SetOnOff(NSNumber *ref,id obj);
 
@@ -446,12 +446,12 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 		
 		// Close the advanced options view if it's open
 		[exportAdvancedOptionsView setHidden:YES];
-		[exportAdvancedOptionsViewButton setState:NSOffState];
+		[exportAdvancedOptionsViewButton setState:NSControlStateValueOff];
 		showAdvancedView = NO;
 		
 		// Close the customize filename view if it's open
 		[exportCustomFilenameView setHidden:YES];
-		[exportCustomFilenameViewButton setState:NSOffState];
+		[exportCustomFilenameViewButton setState:NSControlStateValueOff];
 		showCustomFilenameView = NO;
 		
 		// If open close the advanced options view and custom filename view
@@ -878,7 +878,7 @@ set_input:
 {
 	if (![sender state])
 	{
-		[exportSQLIncludeDropSyntaxCheck setState:NSOffState];
+		[exportSQLIncludeDropSyntaxCheck setState:NSControlStateValueOff];
 	}
 	
 	[exportSQLIncludeDropSyntaxCheck setEnabled:[sender state]];
@@ -1066,7 +1066,7 @@ set_input:
 			serverLowerCaseTableNameValue = 0;
 		}
 		
-		[exportDotForceLowerTableNamesCheck setState:(serverLowerCaseTableNameValue == 0)?NSOffState:NSOnState];
+		[exportDotForceLowerTableNamesCheck setState:(serverLowerCaseTableNameValue == 0)?NSControlStateValueOff:NSControlStateValueOn];
 	}
 	
 	[self _displayExportTypeOptions:(isSQL || isCSV || isXML || isDot)];
@@ -1675,7 +1675,7 @@ set_input:
 		[exporter setServerSupport:[self serverSupport]];
 		[exporter setExportOutputEncoding:[connection stringEncoding]];
 		[exporter setExportMaxProgress:(NSInteger)[exportProgressIndicator bounds].size.width];
-		[exporter setExportUsingLowMemoryBlockingStreaming:([exportProcessLowMemoryButton state] == NSOnState)];
+		[exporter setExportUsingLowMemoryBlockingStreaming:([exportProcessLowMemoryButton state] == NSControlStateValueOn)];
 		[exporter setExportOutputCompressionFormat:(SPFileCompressionFormat)[exportOutputCompressionFormatPopupButton indexOfSelectedItem]];
 		[exporter setExportOutputCompressFile:([exportOutputCompressionFormatPopupButton indexOfSelectedItem] != SPNoCompression)];
 	}
@@ -3252,7 +3252,7 @@ set_input:
 		[exportTableList reloadData];
 	}
 
-	if((o = [dict safeObjectForKey:@"lowMemoryStreaming"])) [exportProcessLowMemoryButton setState:([o boolValue] ? NSOnState : NSOffState)];
+	if((o = [dict safeObjectForKey:@"lowMemoryStreaming"])) [exportProcessLowMemoryButton setState:([o boolValue] ? NSControlStateValueOn : NSControlStateValueOff)];
 
 	SPFileCompressionFormat cf;
 	if((o = [dict safeObjectForKey:@"compressionFormat"]) && [[self class] copyCompressionFormatForDescription:o to:&cf]) [exportOutputCompressionFormatPopupButton selectItemAtIndex:cf];
@@ -3375,7 +3375,7 @@ set_input:
 
 - (NSDictionary *)sqlSettings
 {
-	BOOL includeStructure = ([exportSQLIncludeStructureCheck state] == NSOnState);
+	BOOL includeStructure = ([exportSQLIncludeStructureCheck state] == NSControlStateValueOn);
 
 	NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithDictionary:@{
 																				@"SQLIncludeStructure": IsOn(exportSQLIncludeStructureCheck),
@@ -3420,7 +3420,7 @@ set_input:
 	if((o = [settings safeObjectForKey:@"SQLInsertNValue"]))     [exportSQLInsertNValueTextField setIntegerValue:[o integerValue]];
 	if((o = [settings safeObjectForKey:@"SQLInsertDivider"]) && [[self class] copySQLExportInsertDividerForDescription:o to:&div]) [exportSQLInsertDividerPopUpButton selectItemAtIndex:div];
 
-	if([exportSQLIncludeStructureCheck state] == NSOnState) {
+	if([exportSQLIncludeStructureCheck state] == NSControlStateValueOn) {
 		if((o = [settings safeObjectForKey:@"SQLIncludeAutoIncrementValue"]))  SetOnOff(o, exportSQLIncludeAutoIncrementValueButton);
 		if((o = [settings safeObjectForKey:@"SQLIncludeDropSyntax"]))  SetOnOff(o, exportSQLIncludeDropSyntaxCheck);
 	}
@@ -3537,9 +3537,9 @@ set_input:
 
 - (id)sqlSpecificSettingsForSchemaObject:(NSString *)name ofType:(SPTableType)type
 {
-	BOOL structure = ([exportSQLIncludeStructureCheck state] == NSOnState);
-	BOOL content   = ([exportSQLIncludeContentCheck state] == NSOnState);
-	BOOL drop      = ([exportSQLIncludeDropSyntaxCheck state] == NSOnState);
+	BOOL structure = ([exportSQLIncludeStructureCheck state] == NSControlStateValueOn);
+	BOOL content   = ([exportSQLIncludeContentCheck state] == NSControlStateValueOn);
+	BOOL drop      = ([exportSQLIncludeDropSyntaxCheck state] == NSControlStateValueOn);
 
 	// SQL allows per table setting of structure/content/drop table
 	if(type == SPTableTypeTable) {
@@ -3569,9 +3569,9 @@ set_input:
 
 - (void)applySqlSpecificSettings:(id)settings forSchemaObject:(NSString *)name ofType:(SPTableType)type
 {
-	BOOL structure = ([exportSQLIncludeStructureCheck state] == NSOnState);
-	BOOL content   = ([exportSQLIncludeContentCheck state] == NSOnState);
-	BOOL drop      = ([exportSQLIncludeDropSyntaxCheck state] == NSOnState);
+	BOOL structure = ([exportSQLIncludeStructureCheck state] == NSControlStateValueOn);
+	BOOL content   = ([exportSQLIncludeContentCheck state] == NSControlStateValueOn);
+	BOOL drop      = ([exportSQLIncludeDropSyntaxCheck state] == NSControlStateValueOn);
 
 	// SQL allows per table setting of structure/content/drop table
 	if(type == SPTableTypeTable) {
@@ -3919,10 +3919,10 @@ BOOL IS_STRING(id x)
 
 NSNumber *IsOn(NSButton *obj)
 {
-	return (([obj state] == NSOnState)? @YES : @NO);
+	return (([obj state] == NSControlStateValueOn)? @YES : @NO);
 }
 
 void SetOnOff(NSNumber *ref,NSButton *obj)
 {
-	[obj setState:([ref boolValue] ? NSOnState : NSOffState)];
+	[obj setState:([ref boolValue] ? NSControlStateValueOn : NSControlStateValueOff)];
 }

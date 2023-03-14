@@ -361,8 +361,8 @@
 		NSPasteboard *pasteBoard = [NSPasteboard generalPasteboard];
 		
 		// Copy the string to the pasteboard
-		[pasteBoard declareTypes:@[NSStringPboardType] owner:nil];
-		[pasteBoard setString:string forType:NSStringPboardType];
+		[pasteBoard declareTypes:@[NSPasteboardTypeString] owner:nil];
+		[pasteBoard setString:string forType:NSPasteboardTypeString];
 	}
 }
 

@@ -166,8 +166,8 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 		NSPasteboard *pasteBoard = [NSPasteboard generalPasteboard];
 		
 		// Copy the string to the pasteboard
-		[pasteBoard declareTypes:@[NSStringPboardType] owner:nil];
-		[pasteBoard setString:string forType:NSStringPboardType];
+		[pasteBoard declareTypes:@[NSPasteboardTypeString] owner:nil];
+		[pasteBoard setString:string forType:NSPasteboardTypeString];
 	}
 }
 
@@ -517,7 +517,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	// Uncheck all items
 	for (NSMenuItem *item in items)
 	{
-		[item setState:NSOffState];
+		[item setState:NSControlStateValueOff];
 	}
 	
 	// Check the selected item
@@ -525,13 +525,13 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	{ 		
 		if (interval == [item tag]) {
 			found = YES;
-			[item setState:NSOnState];
+			[item setState:NSControlStateValueOn];
 			break;
 		}
 	}
 	
 	// If a match wasn't found then a custom value is set
-	if (!found) [(NSMenuItem*)[items objectAtIndex:([items count] - 1)] setState:NSOnState];
+	if (!found) [(NSMenuItem*)[items objectAtIndex:([items count] - 1)] setState:NSControlStateValueOn];
 }
 
 /**

@@ -1548,7 +1548,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     NSInteger correctStateForMenuItem;
 
     for (NSMenuItem *aMenuItem in [selectEncodingMenu itemArray]) {
-        correctStateForMenuItem = ([aMenuItem tag] == itemToSelect) ? NSOnState : NSOffState;
+        correctStateForMenuItem = ([aMenuItem tag] == itemToSelect) ? NSControlStateValueOn : NSControlStateValueOff;
 
         if ([aMenuItem state] == correctStateForMenuItem) continue; // don't re-apply state incase it causes performance issues
 
@@ -1762,8 +1762,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // show syntax(es) in sheet
     if (sender == self) {
         NSPasteboard *pb = [NSPasteboard generalPasteboard];
-        [pb declareTypes:@[NSStringPboardType] owner:self];
-        [pb setString:createSyntax forType:NSStringPboardType];
+        [pb declareTypes:@[NSPasteboardTypeString] owner:self];
+        [pb setString:createSyntax forType:NSPasteboardTypeString];
 
         // Table syntax copied notification
         NSUserNotification *notification = [[NSUserNotification alloc] init];
@@ -2170,8 +2170,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         // Copy to the clipboard
         NSPasteboard *pb = [NSPasteboard generalPasteboard];
 
-        [pb declareTypes:@[NSStringPboardType] owner:self];
-        [pb setString:createSyntax forType:NSStringPboardType];
+        [pb declareTypes:@[NSPasteboardTypeString] owner:self];
+        [pb setString:createSyntax forType:NSPasteboardTypeString];
 
         // Table syntax copied notification
         NSUserNotification *notification = [[NSUserNotification alloc] init];
@@ -2756,14 +2756,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (IBAction)validateSaveConnectionAccessory:(id)sender
 {
-    // [saveConnectionAutoConnect setEnabled:([saveConnectionSavePassword state] == NSOnState)];
-    [self.saveConnectionSavePasswordAlert setHidden:([self.saveConnectionSavePassword state] == NSOffState)];
+    // [saveConnectionAutoConnect setEnabled:([saveConnectionSavePassword state] == NSControlStateValueOn)];
+    [self.saveConnectionSavePasswordAlert setHidden:([self.saveConnectionSavePassword state] == NSControlStateValueOff)];
 
     // If user checks the Encrypt check box set focus to password field
-    if (sender == self.saveConnectionEncrypt && [self.saveConnectionEncrypt state] == NSOnState) [self.saveConnectionEncryptString selectText:sender];
+    if (sender == self.saveConnectionEncrypt && [self.saveConnectionEncrypt state] == NSControlStateValueOn) [self.saveConnectionEncryptString selectText:sender];
 
     // Unfocus saveConnectionEncryptString
-    if (sender == self.saveConnectionEncrypt && [self.saveConnectionEncrypt state] == NSOffState) {
+    if (sender == self.saveConnectionEncrypt && [self.saveConnectionEncrypt state] == NSControlStateValueOff) {
         // [saveConnectionEncryptString setStringValue:[saveConnectionEncryptString stringValue]];
         // TODO how can one make it better ?
         [[self.saveConnectionEncryptString window] makeFirstResponder:[[self.saveConnectionEncryptString window] initialFirstResponder]];
@@ -2812,12 +2812,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         } else if ([contextInfo isEqualToString:@"saveSession"]) {
             NSDictionary *userInfo = @{
                 @"contextInfo": contextInfo,
-                @"encrypted": [NSNumber numberWithBool:[self.saveConnectionEncrypt state] == NSOnState],
+                @"encrypted": [NSNumber numberWithBool:[self.saveConnectionEncrypt state] == NSControlStateValueOn],
                 @"saveConnectionEncryptString": [self.saveConnectionEncryptString stringValue],
-                @"auto_connect": [NSNumber numberWithBool:[self.saveConnectionAutoConnect state] == NSOnState],
-                @"save_password": [NSNumber numberWithBool:[self.saveConnectionSavePassword state] == NSOnState],
-                @"include_session": [NSNumber numberWithBool:[self.saveConnectionIncludeData state] == NSOnState],
-                @"save_editor_content": [NSNumber numberWithBool:[self.saveConnectionIncludeQuery state] == NSOnState]
+                @"auto_connect": [NSNumber numberWithBool:[self.saveConnectionAutoConnect state] == NSControlStateValueOn],
+                @"save_password": [NSNumber numberWithBool:[self.saveConnectionSavePassword state] == NSControlStateValueOn],
+                @"include_session": [NSNumber numberWithBool:[self.saveConnectionIncludeData state] == NSControlStateValueOn],
+                @"save_editor_content": [NSNumber numberWithBool:[self.saveConnectionIncludeQuery state] == NSControlStateValueOn]
             };
             [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentSaveToSPFNotification object:fileName userInfo:userInfo];
         }
@@ -2835,16 +2835,16 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // Store save panel settings or take them from spfDocData
     if (!saveInBackground && contextInfo == nil) {
-        [spfDocData_temp setObject:[NSNumber numberWithBool:([self.saveConnectionEncrypt state]==NSOnState) ? YES : NO ] forKey:@"encrypted"];
+        [spfDocData_temp setObject:[NSNumber numberWithBool:([self.saveConnectionEncrypt state]==NSControlStateValueOn) ? YES : NO ] forKey:@"encrypted"];
         if([[spfDocData_temp objectForKey:@"encrypted"] boolValue]) {
             [spfDocData_temp setObject:[self.saveConnectionEncryptString stringValue] forKey:@"e_string"];
         }
-        [spfDocData_temp setObject:[NSNumber numberWithBool:([self.saveConnectionAutoConnect state]==NSOnState) ? YES : NO ] forKey:@"auto_connect"];
-        [spfDocData_temp setObject:[NSNumber numberWithBool:([self.saveConnectionSavePassword state]==NSOnState) ? YES : NO ] forKey:@"save_password"];
-        [spfDocData_temp setObject:[NSNumber numberWithBool:([self.saveConnectionIncludeData state]==NSOnState) ? YES : NO ] forKey:@"include_session"];
+        [spfDocData_temp setObject:[NSNumber numberWithBool:([self.saveConnectionAutoConnect state]==NSControlStateValueOn) ? YES : NO ] forKey:@"auto_connect"];
+        [spfDocData_temp setObject:[NSNumber numberWithBool:([self.saveConnectionSavePassword state]==NSControlStateValueOn) ? YES : NO ] forKey:@"save_password"];
+        [spfDocData_temp setObject:[NSNumber numberWithBool:([self.saveConnectionIncludeData state]==NSControlStateValueOn) ? YES : NO ] forKey:@"include_session"];
         [spfDocData_temp setObject:@NO forKey:@"save_editor_content"];
         if([[[[customQueryInstance valueForKeyPath:@"textView"] textStorage] string] length]) {
-            [spfDocData_temp setObject:[NSNumber numberWithBool:([self.saveConnectionIncludeQuery state] == NSOnState) ? YES : NO] forKey:@"save_editor_content"];
+            [spfDocData_temp setObject:[NSNumber numberWithBool:([self.saveConnectionIncludeQuery state] == NSControlStateValueOn) ? YES : NO] forKey:@"save_editor_content"];
         }
     }
     else {
@@ -3190,7 +3190,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     if (action == @selector(importFromClipboard:)){
-        return [self database] && [[NSPasteboard generalPasteboard] availableTypeFromArray:@[NSStringPboardType]];
+        return [self database] && [[NSPasteboard generalPasteboard] availableTypeFromArray:@[NSPasteboardTypeString]];
     }
 
     // Change "Save Query/Queries" menu item title dynamically
@@ -5117,10 +5117,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     {
         NSPasteboard *pb = [NSPasteboard generalPasteboard];
 
-        [pb declareTypes:@[NSTabularTextPboardType, NSStringPboardType] owner:nil];
+        [pb declareTypes:@[NSPasteboardTypeTabularText, NSPasteboardTypeString] owner:nil];
 
-        [pb setString:tmp forType:NSStringPboardType];
-        [pb setString:tmp forType:NSTabularTextPboardType];
+        [pb setString:tmp forType:NSPasteboardTypeString];
+        [pb setString:tmp forType:NSPasteboardTypeTabularText];
     }
 }
 
@@ -5149,7 +5149,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     NSDictionary *databaseDetails = @{
         SPNewDatabaseDetails : [self createDatabaseInfo],
         SPNewDatabaseName : newDatabaseName,
-        SPNewDatabaseCopyContent : @([copyDatabaseDataButton state] == NSOnState)
+        SPNewDatabaseCopyContent : @([copyDatabaseDataButton state] == NSControlStateValueOn)
     };
 
     [self startTaskWithDescription:[NSString stringWithFormat:NSLocalizedString(@"Copying database '%@'...", @"Copying database task description"), [self database]]];

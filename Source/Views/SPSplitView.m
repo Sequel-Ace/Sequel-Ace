@@ -97,7 +97,7 @@
 		[super awakeFromNib];
 	}
 
-	[collapseToggleButton setState:(collapsibleSubviewCollapsed?NSOnState:NSOffState)];
+	[collapseToggleButton setState:(collapsibleSubviewCollapsed?NSControlStateValueOn:NSControlStateValueOff)];
 }
 
 - (void)dealloc
@@ -141,7 +141,7 @@
 	}
 
 	collapsibleSubviewIndex = subviewIndex;
-	[collapseToggleButton setState:NSOffState];
+	[collapseToggleButton setState:NSControlStateValueOff];
 	collapsibleSubviewCollapsed = NO;
 }
 
@@ -153,7 +153,7 @@
 - (void)setToggleCollapseButton:(NSButton *)aButton
 {
 	collapseToggleButton = aButton;
-	[collapseToggleButton setState:(collapsibleSubviewCollapsed?NSOnState:NSOffState)];
+	[collapseToggleButton setState:(collapsibleSubviewCollapsed?NSControlStateValueOn:NSControlStateValueOff)];
 }
 
 /**
@@ -202,7 +202,7 @@
 	}
 
 	collapsibleSubviewCollapsed = shouldCollapse;
-	[collapseToggleButton setState:(shouldCollapse?NSOnState:NSOffState)];
+	[collapseToggleButton setState:(shouldCollapse?NSControlStateValueOn:NSControlStateValueOff)];
 
 	NSView *viewToAnimate = [[self subviews] objectAtIndex:collapsibleSubviewIndex];
 	animationStartSize = [self _lengthOfView:viewToAnimate];

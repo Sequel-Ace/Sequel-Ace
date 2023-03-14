@@ -50,7 +50,7 @@
     if(NSBundle.mainBundle.isMASVersion == YES){
         SPLog(@"isMASVersion == YES, set enabled = no, state = off");
         updateAvailableButton.enabled = NO;
-        updateAvailableButton.state = NSOffState;
+        updateAvailableButton.state = NSControlStateValueOff;
     }
     else {
         SPLog(@"isMASVersion == NO, set enabled = yes, state = on");

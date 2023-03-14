@@ -906,7 +906,7 @@ static unsigned short getRandomPort(void);
 		requestedPassphrase = [[NSString alloc] initWithString:thePassword];
 
 		// Add to keychain if appropriate
-		if (currentKeyName && [sshPasswordKeychainCheckbox state] == NSOnState) {
+		if (currentKeyName && [sshPasswordKeychainCheckbox state] == NSControlStateValueOn) {
 			SPKeychain *keychain = [[SPKeychain alloc] init];
 			[keychain addPassword:thePassword forName:@"SSH" account:currentKeyName withLabel:[NSString stringWithFormat:@"SSH: %@", currentKeyName]];
 			

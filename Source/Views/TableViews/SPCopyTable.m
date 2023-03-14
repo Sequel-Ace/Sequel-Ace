@@ -119,8 +119,8 @@ NSString *kHeader     = @"HEADER";
 		
 		if (tmp != nil){
 			NSPasteboard *pb = [NSPasteboard generalPasteboard];
-			[pb declareTypes:@[NSStringPboardType] owner:nil];
-			[pb setString:tmp forType:NSStringPboardType];
+			[pb declareTypes:@[NSPasteboardTypeString] owner:nil];
+			[pb setString:tmp forType:NSPasteboardTypeString];
 		}
 	}
 	else {
@@ -129,10 +129,10 @@ NSString *kHeader     = @"HEADER";
 		if (tmp != nil) {
 			NSPasteboard *pb = [NSPasteboard generalPasteboard];
 
-			[pb declareTypes:@[NSTabularTextPboardType, NSStringPboardType] owner:nil];
+			[pb declareTypes:@[NSPasteboardTypeTabularText, NSPasteboardTypeString] owner:nil];
 
-			[pb setString:tmp forType:NSStringPboardType];
-			[pb setString:tmp forType:NSTabularTextPboardType];
+			[pb setString:tmp forType:NSPasteboardTypeString];
+			[pb setString:tmp forType:NSPasteboardTypeTabularText];
 		}
 	}
 }

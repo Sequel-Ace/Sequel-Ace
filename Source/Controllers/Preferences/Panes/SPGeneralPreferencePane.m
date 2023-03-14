@@ -68,10 +68,10 @@ static NSString *SPDatabaseImage = @"database-small";
 {		
 	for (NSMenuItem *item in [defaultFavoritePopup itemArray])
 	{
-		[item setState:NSOffState];
+		[item setState:NSControlStateValueOff];
 	}
 	
-	[sender setState:NSOnState];
+	[sender setState:NSControlStateValueOn];
 	[defaultFavoritePopup setTitle:[sender title]];
 	
 	[prefs setBool:([defaultFavoritePopup indexOfSelectedItem] == 0) forKey:SPSelectLastFavoriteUsed];

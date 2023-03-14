@@ -183,7 +183,7 @@
 	// If the item is the Show/Hide Toolbar menu item, override the text to allow correct translation
 	if ([menuItem action] == @selector(toggleToolbarShown:)) {
 		BOOL theResponse = [super validateMenuItem:menuItem];
-		if ([[self toolbar] isVisible] || [menuItem state] == NSOnState) {
+		if ([[self toolbar] isVisible] || [menuItem state] == NSControlStateValueOn) {
 			[menuItem setTitle:NSLocalizedString(@"Hide Toolbar", @"Hide Toolbar menu item")];
 		} else {
 			[menuItem setTitle:NSLocalizedString(@"Show Toolbar", @"Show Toolbar menu item")];

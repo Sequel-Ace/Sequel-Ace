@@ -264,7 +264,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         }
         
         if ([tableDocumentInstance isUntitled]) {
-            [saveQueryFavoriteGlobal setState:NSOnState];
+            [saveQueryFavoriteGlobal setState:NSControlStateValueOn];
         }
         [[tableDocumentInstance parentWindowControllerWindow] beginSheet:queryFavoritesSheet completionHandler:^(NSModalResponse returnCode) {
             if (returnCode == NSModalResponseOK) {
@@ -283,14 +283,14 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                     queryToBeAddded = [self->textView string];
                 }
                 
-                if ([self->saveQueryFavoriteGlobal state] == NSOnState) {
+                if ([self->saveQueryFavoriteGlobal state] == NSControlStateValueOn) {
                     [favorites addObject:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], queryToBeAddded, nil] forKeys:@[@"name", @"query"]]];
                     
                     [self->prefs setObject:favorites forKey:SPQueryFavorites];
                 } else {
                     [[SPQueryController sharedQueryController] addFavorite:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], [queryToBeAddded mutableCopy], nil] forKeys:@[@"name", @"query"]] forFileURL:[self->tableDocumentInstance fileURL]];
                 }
-                [self->saveQueryFavoriteGlobal setState:NSOffState];
+                [self->saveQueryFavoriteGlobal setState:NSControlStateValueOff];
                 [self queryFavoritesHaveBeenUpdated:nil];
                 [self->queryFavoriteNameTextField setStringValue:@""];
             }
@@ -306,7 +306,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         }
         
         if ([tableDocumentInstance isUntitled]) {
-            [saveQueryFavoriteGlobal setState:NSOnState];
+            [saveQueryFavoriteGlobal setState:NSControlStateValueOn];
         }
         [[tableDocumentInstance parentWindowControllerWindow] beginSheet:queryFavoritesSheet completionHandler:^(NSModalResponse returnCode) {
             if (returnCode == NSModalResponseOK) {
@@ -318,14 +318,14 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 // What should be saved
                 NSString *queryToBeAddded = [self->textView string];
                 
-                if ([self->saveQueryFavoriteGlobal state] == NSOnState) {
+                if ([self->saveQueryFavoriteGlobal state] == NSControlStateValueOn) {
                     [favorites addObject:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], queryToBeAddded, nil] forKeys:@[@"name", @"query"]]];
                     
                     [self->prefs setObject:favorites forKey:SPQueryFavorites];
                 } else {
                     [[SPQueryController sharedQueryController] addFavorite:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], [queryToBeAddded mutableCopy], nil] forKeys:@[@"name", @"query"]] forFileURL:[self->tableDocumentInstance fileURL]];
                 }
-                [self->saveQueryFavoriteGlobal setState:NSOffState];
+                [self->saveQueryFavoriteGlobal setState:NSControlStateValueOff];
                 [self queryFavoritesHaveBeenUpdated:nil];
                 [self->queryFavoriteNameTextField setStringValue:@""];
             }
@@ -485,36 +485,36 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     // "Indent new lines" toggle
     if (sender == autoindentMenuItem) {
-        BOOL enableAutoindent = !([autoindentMenuItem state] == NSOffState);
+        BOOL enableAutoindent = !([autoindentMenuItem state] == NSControlStateValueOff);
         
         [prefs setBool:enableAutoindent forKey:SPCustomQueryAutoIndent];
-        [autoindentMenuItem setState:enableAutoindent?NSOnState:NSOffState];
+        [autoindentMenuItem setState:enableAutoindent?NSControlStateValueOn:NSControlStateValueOff];
         [textView setAutoindent:enableAutoindent];
     }
     
     // "Auto-pair characters" toggle
     if (sender == autopairMenuItem) {
-        BOOL enableAutopair = !([autopairMenuItem state] == NSOffState);
+        BOOL enableAutopair = !([autopairMenuItem state] == NSControlStateValueOff);
         
         [prefs setBool:enableAutopair forKey:SPCustomQueryAutoPairCharacters];
-        [autopairMenuItem setState:enableAutopair?NSOnState:NSOffState];
+        [autopairMenuItem setState:enableAutopair?NSControlStateValueOn:NSControlStateValueOff];
         [textView setAutopair:enableAutopair];
     }
     
     // "Auto-help" toggle
     if (sender == autohelpMenuItem) {
-        BOOL enableAutohelp = !([autohelpMenuItem state] == NSOffState);
+        BOOL enableAutohelp = !([autohelpMenuItem state] == NSControlStateValueOff);
         [prefs setBool:enableAutohelp forKey:SPCustomQueryUpdateAutoHelp];
-        [autohelpMenuItem setState:enableAutohelp?NSOnState:NSOffState];
+        [autohelpMenuItem setState:enableAutohelp?NSControlStateValueOn:NSControlStateValueOff];
         [textView setAutohelp:enableAutohelp];
     }
     
     // "Auto-uppercase keywords" toggle
     if (sender == autouppercaseKeywordsMenuItem) {
-        BOOL enableAutouppercaseKeywords = !([autouppercaseKeywordsMenuItem state] == NSOffState);
+        BOOL enableAutouppercaseKeywords = !([autouppercaseKeywordsMenuItem state] == NSControlStateValueOff);
         
         [prefs setBool:enableAutouppercaseKeywords forKey:SPCustomQueryAutoUppercaseKeywords];
-        [autouppercaseKeywordsMenuItem setState:enableAutouppercaseKeywords?NSOnState:NSOffState];
+        [autouppercaseKeywordsMenuItem setState:enableAutouppercaseKeywords?NSControlStateValueOn:NSControlStateValueOff];
         [textView setAutouppercaseKeywords:enableAutouppercaseKeywords];
     }
 }
@@ -555,8 +555,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 {
     NSPasteboard *pb = [NSPasteboard generalPasteboard];
     
-    [pb declareTypes:@[NSStringPboardType] owner:nil];
-    [pb setString:[self buildHistoryString] forType:NSStringPboardType];
+    [pb declareTypes:@[NSPasteboardTypeString] owner:nil];
+    [pb setString:[self buildHistoryString] forType:NSPasteboardTypeString];
     
 }
 
@@ -1734,10 +1734,10 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     // Set up the interface
     
     [customQueryView setVerticalMotionCanBeginDrag:NO];
-    [autoindentMenuItem setState:([prefs boolForKey:SPCustomQueryAutoIndent]?NSOnState:NSOffState)];
-    [autopairMenuItem setState:([prefs boolForKey:SPCustomQueryAutoPairCharacters]?NSOnState:NSOffState)];
-    [autohelpMenuItem setState:([prefs boolForKey:SPCustomQueryUpdateAutoHelp]?NSOnState:NSOffState)];
-    [autouppercaseKeywordsMenuItem setState:([prefs boolForKey:SPCustomQueryAutoUppercaseKeywords]?NSOnState:NSOffState)];
+    [autoindentMenuItem setState:([prefs boolForKey:SPCustomQueryAutoIndent]?NSControlStateValueOn:NSControlStateValueOff)];
+    [autopairMenuItem setState:([prefs boolForKey:SPCustomQueryAutoPairCharacters]?NSControlStateValueOn:NSControlStateValueOff)];
+    [autohelpMenuItem setState:([prefs boolForKey:SPCustomQueryUpdateAutoHelp]?NSControlStateValueOn:NSControlStateValueOff)];
+    [autouppercaseKeywordsMenuItem setState:([prefs boolForKey:SPCustomQueryAutoUppercaseKeywords]?NSControlStateValueOn:NSControlStateValueOff)];
     
     if ( [[SPQueryController sharedQueryController] historyForFileURL:[tableDocumentInstance fileURL]] )
         [self performSelectorOnMainThread:@selector(historyItemsHaveBeenUpdated:) withObject:nil waitUntilDone:YES];
@@ -2477,9 +2477,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         NSString *tmp = [customQueryView draggedRowsAsTabString];
         if ( nil != tmp )
         {
-            [pboard declareTypes:@[NSTabularTextPboardType, NSStringPboardType] owner:nil];
-            [pboard setString:tmp forType:NSStringPboardType];
-            [pboard setString:tmp forType:NSTabularTextPboardType];
+            [pboard declareTypes:@[NSPasteboardTypeTabularText, NSPasteboardTypeString] owner:nil];
+            [pboard setString:tmp forType:NSPasteboardTypeString];
+            [pboard setString:tmp forType:NSPasteboardTypeTabularText];
             return YES;
         }
         return NO;
@@ -3036,7 +3036,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     //TODO: this doesn't belong in the document context, since multiple open documents can become out of sync through this
     [prefs setBool:NO forKey:SPCustomQueryUpdateAutoHelp];
-    [autohelpMenuItem setState:NSOffState];
+    [autohelpMenuItem setState:NSControlStateValueOff];
     [textView setAutohelp:NO];
 }
 
