@@ -14,7 +14,7 @@
 "$(shell_command)" = "$(shell_command)";
 
 /* text showing how many rows are selected */
-"%@ %@ selected" = "%1$@ %2$@ selected";
+"%@ %@ selected" = "%1$@ %2$@ elektitaj";
 
 /* History item filtered by values label */
 "%@ (Filtered by %@)" = "%1$@ (Filtered by %2$@)";
@@ -24,7 +24,7 @@
 
 /* Content Filter Manager : Initial name of copied filter
  Initial favourite name after duplicating a previous favourite */
-"%@ Copy" = "%@ Copy";
+"%@ Copy" = "%@ - kopio";
 
 /* text showing a single row a partially loaded result */
 "%@ row in partial load" = "%@ row in partial load";
@@ -700,7 +700,7 @@
 "collation connection: %@" = "collation connection: %@";
 
 /* comment label */
-"Comment" = "Comment";
+"Comment" = "Komento";
 
 /* Title of action menu item to comment line */
 "Comment Line" = "Comment Line";
@@ -809,7 +809,7 @@
 "Could not parse file as CSV" = "Could not parse file as CSV";
 
 /* message when database selection failed */
-"Could not select database" = "Could not select database";
+"Could not select database" = "Ne eblis elekti datumbazon";
 
 /* Alter Database : Query Failed ($1 = mysql error message) */
 "Couldn't alter database.\nMySQL said: %@" = "Couldn't alter database.\nMySQL said: %@";
@@ -1483,7 +1483,7 @@
 "Help topics for %@" = "Help topics for %@";
 
 /* hide console */
-"Hide Console" = "Hide Console";
+"Hide Console" = "Kaŝi la konzolon";
 
 /* hide navigator */
 "Hide Navigator" = "Hide Navigator";
@@ -1492,7 +1492,7 @@
 "Hide Tab Bar" = "Hide Tab Bar";
 
 /* Hide Toolbar menu item */
-"Hide Toolbar" = "Hide Toolbar";
+"Hide Toolbar" = "Kaŝi la ilobreton";
 
 /* export filename host token
  export header host label */
@@ -1982,7 +1982,7 @@
 "Print Page…" = "Print Page…";
 
 /* privileges label (Navigator) */
-"Privileges" = "Privileges";
+"Privileges" = "Privilegioj";
 
 /* procedure */
 "procedure" = "proceduro";
@@ -2308,7 +2308,7 @@
 "Select Active Query" = "Select Active Query";
 
 /* toolbar item for selecting a db */
-"Select Database" = "Select Database";
+"Select Database" = "Elekti datumbazon";
 
 /* selected items */
 "selected items" = "elektitaj eroj";
@@ -2370,7 +2370,7 @@
 "Show as Text Tooltip" = "Show as Text Tooltip";
 
 /* show console */
-"Show Console" = "Show Console";
+"Show Console" = "Montri la konzolon";
 
 /* show create func syntax menu item */
 "Show Create Function Syntax..." = "Show Create Function Syntax...";
@@ -2403,7 +2403,7 @@
 "Show the console which shows all MySQL commands performed by Sequel Ace" = "Show the console which shows all MySQL commands performed by Sequel Ace";
 
 /* Show Toolbar menu item */
-"Show Toolbar" = "Show Toolbar";
+"Show Toolbar" = "Montri la ilobreton";
 
 /* filtered item count */
 "Showing %lu of %lu processes" = "Showing %1$lu of %2$lu processes";
@@ -2415,7 +2415,7 @@
 "Shutdown failed!" = "Shutdown failed!";
 
 /* range of integer types */
-"Signed: %@ to %@\nUnsigned: %@ to %@" = "Signed: %1$@ to %2$@\nUnsigned: %3$@ to %4$@";
+"Signed: %@ to %@\nUnsigned: %@ to %@" = "Signuma: %1$@ ĝis %2$@\nSensignuma: %3$@ ĝis %4$@";
 
 /* Table Info Section : table size on disk */
 "size: %@" = "grando: %@";
@@ -2497,7 +2497,7 @@
 "Status file for sequelace url scheme command couldn't be written!" = "Status file for sequelace url scheme command couldn't be written!";
 
 /* stop button */
-"Stop" = "Stop";
+"Stop" = "Ĉesigi";
 
 /* Stop queries string */
 "Stop queries" = "Stop queries";
@@ -2612,7 +2612,7 @@
 "Table Content (TSV)" = "Table Content (TSV)";
 
 /* toolbar item for navigation history */
-"Table History" = "Table History";
+"Table History" = "Tabela historio";
 
 /* toolbar item label for switching to the Table Info tab */
 "Table Info" = "Table Info";
@@ -2918,7 +2918,7 @@
 "Unable to add index" = "Ne eblis aldoni indekson";
 
 /* unable to analyze selected items message */
-"Unable to analyze selected items" = "Unable to analyze selected items";
+"Unable to analyze selected items" = "Ne eblis analizi la elektitajn erojn";
 
 /* unable to analyze table message */
 "Unable to analyze table" = "Ne eblis analizi la tabelon";
@@ -2948,10 +2948,10 @@
 "Unable to delete index" = "Ne eblis forigi la indekson";
 
 /* error deleting relation message */
-"Unable to delete relation" = "Unable to delete relation";
+"Unable to delete relation" = "Ne eblis forigi la rilaton";
 
 /* error deleting trigger message */
-"Unable to delete trigger" = "Unable to delete trigger";
+"Unable to delete trigger" = "Ne eblis forigi la ekagilon";
 
 /* unable to flush selected items message */
 "Unable to flush selected items" = "Unable to flush selected items";
@@ -2978,16 +2978,16 @@
 "Unable to perform the checksum" = "Unable to perform the checksum";
 
 /* error removing host message */
-"Unable to remove host" = "Unable to remove host";
+"Unable to remove host" = "Ne eblis forigi la gastiganton";
 
 /* unable to rename database message */
 "Unable to rename database" = "Unable to rename database";
 
 /* unable to repair selected items message */
-"Unable to repair selected items" = "Unable to repair selected items";
+"Unable to repair selected items" = "Ne eblis ripari la elektitajn erojn";
 
 /* unable to repair table message */
-"Unable to repair table" = "Unable to repair table";
+"Unable to repair table" = "Ne eblis ripari la tabelon";
 
 /* message of panel when connection to db failed after selecting from popupbutton */
 "Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists." = "Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists.";
@@ -3287,7 +3287,7 @@
 "Downloading Sequel Ace - %@" = "Downloading Sequel Ace - %@";
 
 /* downloading new version time remaining estimate text */
-"About %.1f seconds left" = "About %.1f seconds left";
+"About %.1f seconds left" = "Ĉirkaŭ %.1f sekundoj restas";
 
 /* downloading new version failure alert title */
 "Download Failed" = "Download Failed";
