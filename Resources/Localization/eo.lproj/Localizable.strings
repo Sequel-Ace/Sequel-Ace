@@ -239,7 +239,7 @@
 "Add Database..." = "Aldoni datumbazon...";
 
 /* Add Host */
-"Add Host" = "Add Host";
+"Add Host" = "Aldoni gastiganton";
 
 /* add global value or expression menu item */
 "Add Value or Expression…" = "Aldoni valoron aŭ esprimon…";
@@ -1496,7 +1496,7 @@
 
 /* export filename host token
  export header host label */
-"Host" = "Host";
+"Host" = "Gastiganto";
 
 /* description of double */
 "IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results.";
@@ -1651,10 +1651,10 @@
 "Keyword" = "Keyword";
 
 /* kill button */
-"Kill" = "Kill";
+"Kill" = "Ĉesigi";
 
 /* kill connection message */
-"Kill connection?" = "Kill connection?";
+"Kill connection?" = "Ĉu ĉesigi la konekton?";
 
 /* kill query message */
 "Kill query?" = "Kill query?";
@@ -2915,19 +2915,19 @@
 "Type Declaration:" = "Type Declaration:";
 
 /* add index error message */
-"Unable to add index" = "Unable to add index";
+"Unable to add index" = "Ne eblis aldoni indekson";
 
 /* unable to analyze selected items message */
 "Unable to analyze selected items" = "Unable to analyze selected items";
 
 /* unable to analyze table message */
-"Unable to analyze table" = "Unable to analyze table";
+"Unable to analyze table" = "Ne eblis analizi la tabelon";
 
 /* unable to check selected items message */
-"Unable to check selected items" = "Unable to check selected items";
+"Unable to check selected items" = "Ne eblis kontroli la elektitajn erojn";
 
 /* unable to check table message */
-"Unable to check table" = "Unable to check table";
+"Unable to check table" = "Ne eblis kontroli la tabelon";
 
 /* message of panel when connection to host failed due to access denied error */
 "Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "Unable to connect to host %1$@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %2$@";
@@ -2942,10 +2942,10 @@
 "Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@" = "Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@";
 
 /* unable to copy database message */
-"Unable to copy database" = "Unable to copy database";
+"Unable to copy database" = "Ne eblis kopii la datumbazon";
 
 /* error deleting index message */
-"Unable to delete index" = "Unable to delete index";
+"Unable to delete index" = "Ne eblis forigi la indekson";
 
 /* error deleting relation message */
 "Unable to delete relation" = "Unable to delete relation";
@@ -2963,7 +2963,7 @@
 "Unable to get list of users" = "Unable to get list of users";
 
 /* error killing connection message */
-"Unable to kill connection" = "Unable to kill connection";
+"Unable to kill connection" = "Ne eblis ĉesigi la konekton";
 
 /* error killing query message */
 "Unable to kill query" = "Unable to kill query";
