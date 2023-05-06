@@ -3359,7 +3359,7 @@
 "Copy Table Name" = "复制表名";
 
 /* sequelace URL scheme error: LaunchFavorite alert title (favorite name not found) */
-"LaunchFavorite URL Scheme Error" = "LaunchFavorite URL Scheme Error";
+"LaunchFavorite URL Scheme Error" = "启动收藏夹的 URL 链接出错了";
 
 /* sequelace URL scheme error: LaunchFavorite alert description (favorite name not found) */
-"The variable in the ?name= query parameter could not be matched with any of your favorites." = "The variable in the ?name= query parameter could not be matched with any of your favorites.";
+"The variable in the ?name= query parameter could not be matched with any of your favorites." = "?name= 查询参数中的变量无法在您的收藏夹中找到";
