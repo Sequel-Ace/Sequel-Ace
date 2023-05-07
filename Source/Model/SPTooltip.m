@@ -325,14 +325,15 @@ static CGFloat slow_in_out (CGFloat t)
 
 	//If first responder is a textview return the caret position
 	if(([fr isMemberOfClass:[NSTextView class]] && [fr alignment] == NSTextAlignmentLeft) || [[[fr class] description] isEqualToString:@"SPTextView"]) {
-		NSRange range = NSMakeRange([fr selectedRange].location,1);
-		NSRange glyphRange = [[fr layoutManager] glyphRangeForCharacterRange:range actualCharacterRange:NULL];
-		NSRect boundingRect = [[fr layoutManager] boundingRectForGlyphRange:glyphRange inTextContainer:[fr textContainer]];
-		boundingRect = [fr convertRect: boundingRect toView:NULL];
+		NSTextView *frTextView = (NSTextView *)fr;
+		NSRange range = NSMakeRange([frTextView selectedRange].location,1);
+		NSRange glyphRange = [[frTextView layoutManager] glyphRangeForCharacterRange:range actualCharacterRange:NULL];
+		NSRect boundingRect = [[frTextView layoutManager] boundingRectForGlyphRange:glyphRange inTextContainer:[frTextView textContainer]];
+		boundingRect = [frTextView convertRect: boundingRect toView:NULL];
 
 		NSPoint oppositeOrigin = NSMakePoint(NSMaxX(boundingRect), NSMaxY(boundingRect));
-        pos = [[fr window] convertPointToScreen:oppositeOrigin];
-		NSFont* font = [fr font];
+        pos = [[frTextView window] convertPointToScreen:oppositeOrigin];
+		NSFont* font = [frTextView font];
 		if(font) pos.y -= [font pointSize]*1.3f;
 		return pos;
 	// Otherwise return mouse location
