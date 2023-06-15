@@ -2895,10 +2895,10 @@ Befehle werden anwendungsweit ausgeführt";
 "Triggers for table: %@" = "Auslöser für Tabelle: % @";
 
 /* truncate button */
-"Truncate" = "Webformular-Eingabetabellen kürzen.";
+"Truncate" = "Leeren";
 
 /* truncate tables message */
-"Truncate selected tables?" = "Ausgewählte Tabellen abschneiden?";
+"Truncate selected tables?" = "Ausgewählte Tabellen leeren?";
 
 /* truncate table menu title */
 "Truncate Table..." = "Tabelle leeren...";
