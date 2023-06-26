@@ -3330,34 +3330,34 @@ Befehle werden anwendungsweit ausgeführt";
 "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.";
 
 /* Menu option to pin a view to the top of the list of tables */
-"Pin View" = "Pin View";
+"Pin View" = "Ansicht anpinnen";
 
 /* Menu option to pin a table to the top of the list of tables */
-"Pin Table" = "Pin Table";
+"Pin Table" = "Tabelle anpinnen";
 
 /* Menu option to pin a procedure to the top of the list of tables */
 "Pin Procedure" = "Pin Procedure";
 
 /* Menu option to pin a function to the top of the list of tables */
-"Pin Function" = "Pin Function";
+"Pin Function" = "Funktion anpinnen";
 
 /* Menu option to unpin a view which is currently pinned at the top of the list of tables */
-"Unpin View" = "Unpin View";
+"Unpin View" = "Ansicht loslösen";
 
 /* Menu option to unpin a table which is currently pinned at the top of the list of tables */
-"Unpin Table" = "Unpin Table";
+"Unpin Table" = "Tabelle loslösen";
 
 /* Menu option to unpin a procedure which is currently pinned at the top of the list of tables */
 "Unpin Procedure" = "Unpin Procedure";
 
 /* Menu option to unpin a function which is currently pinned at the top of the list of tables */
-"Unpin Function" = "Unpin Function";
+"Unpin Function" = "Funktion loslösen";
 
 /* header for pinned table list */
-"PINNED" = "PINNED";
+"PINNED" = "ANGEPINNT";
 
 /* Menu option to copy a table's name with database name in the list of tables */
-"Copy Table Name" = "Copy Table Name";
+"Copy Table Name" = "Tabellennamen kopieren";
 
 /* sequelace URL scheme error: LaunchFavorite alert title (favorite name not found) */
 "LaunchFavorite URL Scheme Error" = "LaunchFavorite URL Scheme Error";
