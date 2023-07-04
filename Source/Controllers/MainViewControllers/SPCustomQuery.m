@@ -1821,7 +1821,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         // Set field type for validations
         [[dataCell formatter] setFieldType:[columnDefinition objectForKey:@"type"]];
         [theCol setDataCell:dataCell];
-        [[theCol headerCell] setAttributedStringValue:[columnDefinition tableContentColumnHeaderAttributedString]];
+        if ([prefs boolForKey:SPDisplayTableViewColumnTypes]) {
+            [[theCol headerCell] setAttributedStringValue:[columnDefinition tableContentColumnHeaderAttributedString]];
+        } else {
+            [[theCol headerCell] setStringValue:[columnDefinition objectForKey:@"name"]];
+        }
         [theCol setHeaderToolTip:[NSString stringWithFormat:@"%@ – %@%@", [columnDefinition objectForKey:@"name"], [columnDefinition objectForKey:@"type"], ([columnDefinition objectForKey:@"char_length"]) ? [NSString stringWithFormat:@"(%@)", [columnDefinition objectForKey:@"char_length"]] : @""]];
         
         // Set the width of this column to saved value if exists and maps to a real column
@@ -3246,6 +3250,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         [customQueryView reloadData];
     } else if ([keyPath isEqualToString:SPCustomQueryEnableBracketHighlighting]) {
         self.bracketHighlighter.enabled = [[change valueForKey:NSKeyValueChangeNewKey] boolValue];
+    } else if ([keyPath isEqualToString:SPDisplayTableViewColumnTypes]) {
+        [self updateTableView];
     }
 }
 
@@ -3594,6 +3600,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     [prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:NULL];
     [prefs addObserver:self forKeyPath:SPCustomQueryEnableBracketHighlighting options:NSKeyValueObservingOptionNew context:NULL];
+    [prefs addObserver:self forKeyPath:SPDisplayTableViewColumnTypes options:NSKeyValueObservingOptionNew context:NULL];
     self.bracketHighlighter = [[SPBracketHighlighter alloc] initWithTextView:textView];
     self.bracketHighlighter.enabled = [prefs boolForKey:SPCustomQueryEnableBracketHighlighting];
 }
