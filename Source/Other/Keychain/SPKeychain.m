@@ -188,10 +188,14 @@
  * Delete a password from the user's Keychain for the supplied name and account.
  */
 - (void)deletePasswordForName:(NSString *)name account:(NSString *)account {
-    
+
     if (![self isValidName:name acount:account]) {
         return;
     }
+
+    // Set to empty string before deleting to regain keychain ownership
+    [self updateItemWithName:name account:account toPassword:@""];
+
 	OSStatus status;
 	SecKeychainItemRef itemRef = nil;
 
