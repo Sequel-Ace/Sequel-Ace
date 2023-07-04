@@ -14,7 +14,6 @@ extension SPDatabaseDocument {
             Swift.print("❌ SaveSPFAccessory accessory dialog could not be loaded.")
             return
         }
-        panel.allowedFileTypes = [SPBundleFileExtension]
 
         guard let appDelegate = NSApp.delegate as? SPAppController else {
             return
