@@ -194,7 +194,12 @@
     }
 
     // Set to empty string before deleting to regain keychain ownership
-    [self updateItemWithName:name account:account toPassword:@""];
+    @try  {
+        [self updateItemWithName:name account:account toPassword:@""];
+    } @catch (NSException *exception) {
+       NSLog(@"%@ ",exception.name);
+       NSLog(@"Reason: %@ ",exception.reason);
+    }
 
 	OSStatus status;
 	SecKeychainItemRef itemRef = nil;
