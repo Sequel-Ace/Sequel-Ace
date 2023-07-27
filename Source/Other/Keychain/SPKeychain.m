@@ -193,14 +193,6 @@
         return;
     }
 
-    // Set to empty string before deleting to regain keychain ownership
-    @try  {
-        [self updateItemWithName:name account:account toPassword:@""];
-    } @catch (NSException *exception) {
-       NSLog(@"%@ ",exception.name);
-       NSLog(@"Reason: %@ ",exception.reason);
-    }
-
 	OSStatus status;
 	SecKeychainItemRef itemRef = nil;
 
@@ -289,7 +281,14 @@
 											NULL, NULL,													// No password retrieval required
 											&itemRef);													// The item reference
 
-	if (status != noErr) {
+    if (status != noErr) {
+        // An error of 25300 indicates that the keychain item does not exist. Try a safe delete and then a fresh add.
+        if (abs((int)status) == 25300) {
+            [self deletePasswordForName:name account:account];
+
+            return [self addPassword:password forName:newName account:newAccount];
+        }
+
 		NSLog(@"Error (%i) while trying to find keychain item to edit for name: %@ account: %@", (int)status, name, account);
 
 		NSAlert *alert = [[NSAlert alloc] init];
@@ -316,9 +315,9 @@
 
 	if (status != noErr) {
 
-		// An error of -25299 indicates that the keychain item is a duplicate.  As connection names include a unique ID,
+		// An error of 25299 indicates that the keychain item is a duplicate.  As connection names include a unique ID,
 		// this indicates an issue when previously altering keychain items; delete the old item and try again.
-		if ((int)status == -25299) {
+		if (abs((int)status) == 25299) {
 			[self deletePasswordForName:newName account:newAccount];
 			
 			return [self updateItemWithName:name account:account toName:newName account:newAccount password:password];
