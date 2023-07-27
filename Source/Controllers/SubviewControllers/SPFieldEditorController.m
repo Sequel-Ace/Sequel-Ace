@@ -339,12 +339,6 @@ typedef enum {
 		[editTextView setHidden:YES];
 		[editTextScrollView setHidden:YES];
 
-		// Hide QuickLook button and text/image/hex control for text data
-		[editSheetQuickLookButton setHidden:((!_isBlob && !isBinary) || _isGeometry)];
-		[editSheetSegmentControl setHidden:(!_isBlob && !isBinary && !_isGeometry)];
-
-		[editSheetSegmentControl setEnabled:YES forSegment:ImageSegment];
-
 		// Set window's min size since no segment and quicklook buttons are hidden
 		if (_isBlob || isBinary || _isGeometry) {
 			[usedSheet setFrameAutosaveName:@"SPFieldEditorBlobSheet"];
@@ -373,6 +367,7 @@ typedef enum {
 		}];
 
 		[editSheetProgressBar startAnimation:self];
+        [editSheetSegmentControl setEnabled:NO forSegment:ImageSegment];
 
 		NSImage *image = nil;
 
@@ -439,6 +434,7 @@ typedef enum {
 		}
 
 		if (image) {
+            [editSheetSegmentControl setEnabled:YES forSegment:ImageSegment];
 			[editImage setImage:image];
 			[hexTextView setHidden:YES];
 			[hexTextScrollView setHidden:YES];
