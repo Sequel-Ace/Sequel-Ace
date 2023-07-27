@@ -2021,7 +2021,6 @@
 	if(!unsortedBundleName || ![unsortedBundleName length]) return scopeIndex;
 
 	NSUInteger returnIndex = 0;
-	NSUInteger k = 0;
 	for(id i in [[commandBundleTreeController arrangedObjects] childNodes]) {
 		for(id j in [i childNodes]) {
 			if([[[j representedObject] objectForKey:kBundleNameKey] isEqualToString:unsortedBundleName]) {
@@ -2053,7 +2052,6 @@
 					returnIndex++;
 				}
 			}
-			k++;
 		}
 		return 0;
 	}

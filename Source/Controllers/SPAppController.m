@@ -261,8 +261,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         }
     }
     executeOnBackgroundThread(^{
-        NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
-
         // fake the dbViewInfoPanelSplit being open
         NSMutableArray *dbViewInfoPanelSplit = [[NSMutableArray alloc] initWithCapacity:2];
         [dbViewInfoPanelSplit addObject:@"0.000000, 0.000000, 359.500000, 577.500000, NO, NO"];
@@ -275,7 +273,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     // Add menu item to check for updates
     [self addCheckForUpdatesMenuItem];
 
-    [[NSUserDefaults standardUserDefaults] addObserver:self forKeyPath:SPShowUpdateAvailable options:NSKeyValueObservingOptionNew context:NULL];
+    [prefs addObserver:self forKeyPath:SPShowUpdateAvailable options:NSKeyValueObservingOptionNew context:NULL];
 
     [[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(externalApplicationWantsToOpenADatabaseConnection:) name:@"ExternalApplicationWantsToOpenADatabaseConnection" object:nil];
 
@@ -297,7 +295,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         }
 
         // Set autoconnection if appropriate
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:SPAutoConnectToDefault] && secureBookmarkManager.staleBookmarks.count == 0) {
+        if ([prefs boolForKey:SPAutoConnectToDefault] && secureBookmarkManager.staleBookmarks.count == 0) {
             [newWindowController.databaseDocument connect];
         }
     }
@@ -381,7 +379,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
     NSString *fileName = [notification object];
     NSError *error = nil;
-    NSString *contextInfo = [[notification userInfo] objectForKey:@"contextInfo"];
+//    NSString *contextInfo = [[notification userInfo] objectForKey:@"contextInfo"];
     NSNumber *encrypted = [[notification userInfo] objectForKey:@"encrypted"];
     NSString *saveConnectionEncryptString = [[notification userInfo] objectForKey:@"saveConnectionEncryptString"];
     NSNumber *auto_connect = [[notification userInfo] objectForKey:@"auto_connect"];
