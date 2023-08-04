@@ -2418,10 +2418,21 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 	// Only display the connection error message if there is a window visible
 	if ([[dbDocument parentWindowControllerWindow] isVisible]) {
-        errorShowing = YES;
+		NSScrollView *scrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(0,0,800,300)];
+		NSTextView *errorMessageTextView = [[NSTextView alloc] initWithFrame:scrollView.bounds];
+
+		[errorMessageTextView insertText:errorMessage replacementRange:NSMakeRange(0, 0)];
+		[errorMessageTextView setEditable:NO];
+		[errorMessageTextView setDrawsBackground:NO];
+
+		[scrollView setDrawsBackground:NO];
+		[scrollView setHasVerticalScroller:YES];
+		[scrollView setDocumentView:errorMessageTextView];
+
+		errorShowing = YES;
 		NSAlert *alert = [[NSAlert alloc] init];
 		[alert setMessageText:theTitle];
-		[alert setInformativeText:errorMessage];
+		[alert setAccessoryView:scrollView];
 		[alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
 		if (isSSHTunnelBindError) {
 			[alert addButtonWithTitle:NSLocalizedString(@"Use Standard Connection", @"use standard connection button")];
