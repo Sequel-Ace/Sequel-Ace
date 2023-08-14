@@ -83,8 +83,6 @@
         SPDatabaseDocument *document = (SPDatabaseDocument *)[notification object];
         if (tableDocumentInstance == document) {
             [self setConnection:nil];
-
-            pthread_mutex_destroy(&dataProcessingLock);
         }
     }
 }
