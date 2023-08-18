@@ -431,7 +431,7 @@
 "An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@" = "Beim Zurücksetzen von AUTO_INCREMENT der Tabelle '%1$@' trat ein Fehler auf.\n\nMySQL Ergebnis: %2$@";
 
 /* error truncating table informative message */
-"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@" = "Beim Verkürzen der Tabelle '%1$@' trat ein Fehler auf.\n\nMySQL Ergebnis: %2$@";
+"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@" = "Beim Leeren der Tabelle '%1$@' trat ein Fehler auf.\n\nMySQL-Ergebnis: %2$@";
 
 /* mysql error occurred informative message */
 "An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "Bei der Ausführung trat ein Fehler auf.\n\nMySQL Ergebnis: %@";
@@ -1224,7 +1224,7 @@
 "Error retrieving trigger information" = "Fehler beim Abruf der Trigger-Information";
 
 /* error truncating table message */
-"Error truncating table" = "Fehler beim Einkürzen der Tabelle";
+"Error truncating table" = "Fehler beim Leeren der Tabelle";
 
 /* error updating keychain item message */
 "Error updating Keychain item" = "Fehler bei der Aktualisierung des Schlüsselbundes";
