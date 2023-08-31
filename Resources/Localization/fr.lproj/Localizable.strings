@@ -236,16 +236,16 @@
 "Add" = "Add";
 
 /* menu item to add db */
-"Add Database..." = "Add Database...";
+"Add Database..." = "Ajouter une base de données...";
 
 /* Add Host */
-"Add Host" = "Add Host";
+"Add Host" = "Ajouter un hôte";
 
 /* add global value or expression menu item */
-"Add Value or Expression…" = "Add Value or Expression…";
+"Add Value or Expression…" = "Ajouter une valeur ou une expression…";
 
 /* adding index task status message */
-"Adding index..." = "Adding index...";
+"Adding index..." = "Ajout de l'index...";
 
 /* Advanced options short title */
 "Advanced" = "Advanced";
@@ -257,7 +257,7 @@
 "Alerts & Logs Preferences" = "Alerts & Logs Preferences";
 
 /* All databases placeholder */
-"All Databases" = "All Databases";
+"All Databases" = "Toutes les bases de données";
 
 /* All databases (%) placeholder */
 "All Databases (%)" = "All Databases (%)";
@@ -335,10 +335,10 @@
 "An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.";
 
 /* mysql error occurred message */
-"An error occurred" = "An error occurred";
+"An error occurred" = "Une erreur s'est produite";
 
 /* MySQL table info retrieval error message */
-"An error occurred retrieving table information.  MySQL said: %@" = "An error occurred retrieving table information.  MySQL said: %@";
+"An error occurred retrieving table information.  MySQL said: %@" = "Une erreur s'est produite lors de la récupération des informations de la table. MySQL a dit: %@";
 
 /* SQL encoding read error */
 "An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed." = "An error occurred when reading the file, as it could not be read in the encoding you selected (%1$@).\n\nOnly %2$ld queries were executed.";
@@ -380,7 +380,7 @@
 "An error occurred while flushing the %@.\n\nMySQL said:%@" = "An error occurred while flushing the %1$@.\n\nMySQL said:%2$@";
 
 /* sql import error message */
-"An error occurred while importing SQL" = "An error occurred while importing SQL";
+"An error occurred while importing SQL" = "Une erreur s'est produite lors de l'import SQL";
 
 /* an error occurred while trying to optimze the %@.\n\nMySQL said:%@ */
 "An error occurred while optimzing the %@.\n\nMySQL said:%@" = "An error occurred while optimzing the %1$@.\n\nMySQL said:%2$@";
@@ -455,13 +455,13 @@
 "Analyze Selected Items" = "Analyze Selected Items";
 
 /* analyze table menu item */
-"Analyze Table" = "Analyze Table";
+"Analyze Table" = "Analyser la table";
 
 /* analyze table failed message */
-"Analyze table failed." = "Analyze table failed.";
+"Analyze table failed." = "L'analyse de la table a échoué.";
 
 /* change table type informative message */
-"Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone." = "Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone.";
+"Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone." = "Êtes-vous sûr de vouloir changer le type de cette table en %@?\n\nVeuillez noter que le changement de type d'une table peut entraîner la perte d'une partie ou de la totalité de ses données. Cette action ne peut être annulée.";
 
 /* clear global history list informative message */
 "Are you sure you want to clear the global history list? This action cannot be undone." = "Are you sure you want to clear the global history list? This action cannot be undone.";
@@ -586,16 +586,16 @@
  Open Files : Bundle : Already-Installed : Cancel button
  Preferences : Network : Custom SSH client : warning dialog : cancel button
  shutdown server : confirmation dialog : cancel button */
-"Cancel" = "Cancel";
+"Cancel" = "Annuler";
 
 /* sql import : charset error alert : cancel button */
-"Cancel Import" = "Cancel Import";
+"Cancel Import" = "Annuler l'import";
 
 /* cancelling task status message */
-"Cancelling..." = "Cancelling...";
+"Cancelling..." = "Annulation en cours...";
 
 /* empty query informative message */
-"Cannot save an empty query." = "Cannot save an empty query.";
+"Cannot save an empty query." = "Impossible d'enregistrer une requête vide.";
 
 /* caret label for color table (Prefs > Editor) */
 "Caret" = "Caret";
