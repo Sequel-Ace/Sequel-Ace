@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-See Readme for supported version
+See Compatibility section of Readme for supported versions information.
 
 ## Reporting a Vulnerability
 
