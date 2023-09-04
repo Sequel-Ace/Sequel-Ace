@@ -21,7 +21,7 @@
 		<string>MacOSX</string>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>20050</string>
+	<string>20051</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>
