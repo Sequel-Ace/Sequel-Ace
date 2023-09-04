@@ -1117,7 +1117,7 @@
 "Duplicate View..." = "複製檢視表…";
 
 /* partial copy database support informative message */
-"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "只支援部分複製資料庫「%@」，因為其中包含資料表之外的其他內容（檢視表、預存程式、函數等），將不會複製它們。\n\n確定要繼續嗎？";
+"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?";
 
 /* edit filter */
 "Edit Filters…" = "編輯篩選…";
