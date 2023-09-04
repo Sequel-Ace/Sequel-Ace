@@ -1117,7 +1117,7 @@
 "Duplicate View..." = "ビューを複製...";
 
 /* partial copy database support informative message */
-"Duplicating the database '%@' is only partially supported as it contains objects other tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "データベース '%@' を複製することは、他のテーブルが含まれているため部分的にのみサポートされています ビュー、プロシージャー、関数など)、コピーされません。format@@0\n\n続行しますか？";
+"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "データベース '%@' を複製することは、他のテーブルが含まれているため部分的にのみサポートされています ビュー、プロシージャー、関数など)、コピーされません。format@@0\n\n続行しますか？";
 
 /* edit filter */
 "Edit Filters…" = "フィルターを編集…";
