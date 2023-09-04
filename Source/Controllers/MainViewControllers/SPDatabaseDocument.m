@@ -859,7 +859,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([tablesListInstance hasNonTableObjects]) {
         NSAlert *alert = [[NSAlert alloc] init];
         [alert setMessageText:NSLocalizedString(@"Only Partially Supported", @"partial copy database support message")];
-        [alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Duplicating the database '%@' is only partially supported as it contains objects other tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?", @"partial copy database support informative message"), selectedDatabase]];
+        [alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?", @"partial copy database support informative message"), selectedDatabase]];
 
         // Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
         [alert addButtonWithTitle:NSLocalizedString(@"Continue", "continue button")];
