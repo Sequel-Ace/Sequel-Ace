@@ -1117,7 +1117,7 @@
 "Duplicate View..." = "Duplicar View...";
 
 /* partial copy database support informative message */
-"Duplicating the database '%@' is only partially supported as it contains objects other tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "A duplicação do banco de dados '%@' é apenas parcialmente suportada, já que contém objetos outras tabelas (ou seja, visualizações, procedimentos, funções, etc.), que não serão copiados.\n\nVocê gostaria de continuar?";
+"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?";
 
 /* edit filter */
 "Edit Filters…" = "Editar filtros…";
