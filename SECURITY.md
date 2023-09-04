@@ -1,0 +1,9 @@
+# Security Policy
+
+## Supported Versions
+
+See Readme for supported version
+
+## Reporting a Vulnerability
+
+Please report all vulnerabilities via GitHub's security advisory report tool - https://github.com/Sequel-Ace/Sequel-Ace/security/advisories/new
