@@ -11,6 +11,6 @@ jobs:
     runs-on: macos-latest
     steps:
     - name: Checkout the Git repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Build and run tests
       run: ./Scripts/build.sh tests
