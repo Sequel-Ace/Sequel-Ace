@@ -2214,11 +2214,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         }
 
         // Connection established
-        executeOnMainThreadAfterADelay(^{
-            SPMainLoopAsync(^{
-                [self mySQLConnectionEstablished];
-            });
-        }, 0.5);
+        [self performSelectorOnMainThread:@selector(mySQLConnectionEstablished) withObject:nil waitUntilDone:NO];
     }
 }
 
