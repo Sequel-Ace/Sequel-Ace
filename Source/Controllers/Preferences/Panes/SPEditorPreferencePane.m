@@ -110,6 +110,8 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
  */
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
+    
 	[NSColor setIgnoresAlpha:NO];
 	
     NSTableColumn *column = [[colorSettingTableView tableColumns] safeObjectAtIndex:1];

@@ -93,9 +93,7 @@
 
 - (void)awakeFromNib
 {
-	if ([NSSplitView instancesRespondToSelector:@selector(awakeFromNib)]) {
-		[super awakeFromNib];
-	}
+    [super awakeFromNib];
 
 	[collapseToggleButton setState:(collapsibleSubviewCollapsed?NSControlStateValueOn:NSControlStateValueOff)];
 }

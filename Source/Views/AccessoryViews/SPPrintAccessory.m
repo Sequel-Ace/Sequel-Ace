@@ -42,6 +42,8 @@
 
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
+    
 	[self setView:printAccessoryView];
 	
 	[defaultsController addObserver:self forKeyPath:@"values.PrintBackground" options:NSKeyValueObservingOptionNew context:@"PrinterSettingsChanged"];

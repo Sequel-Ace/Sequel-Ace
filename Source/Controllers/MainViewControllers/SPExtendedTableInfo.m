@@ -76,6 +76,8 @@ static NSString *SPMySQLCommentField          = @"Comment";
  */
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
+    
 	// Add observers for document task activity
 	[[NSNotificationCenter defaultCenter] addObserver:self
 											 selector:@selector(startDocumentTaskForTab:)

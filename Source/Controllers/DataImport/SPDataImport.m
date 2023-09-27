@@ -109,6 +109,7 @@
 - (void)awakeFromNib
 {
 	if (mainNibLoaded) return;
+    [super awakeFromNib];
 
 	mainNibLoaded = YES;
 	

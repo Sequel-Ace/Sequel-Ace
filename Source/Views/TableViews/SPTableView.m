@@ -68,11 +68,9 @@
 
 - (void) awakeFromNib
 {
+    [super awakeFromNib];
+
 	[super setDoubleAction:@selector(_doubleClickAction)];
-	
-	if ([NSTableView instancesRespondToSelector:@selector(awakeFromNib)]) {
-		[super awakeFromNib];
-	}
 }
 
 #pragma mark -

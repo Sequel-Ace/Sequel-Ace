@@ -125,6 +125,8 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
  */
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
+    
 	prefs = [NSUserDefaults standardUserDefaults];
 
 	// Set up the splitview

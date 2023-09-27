@@ -254,6 +254,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)awakeFromNib
 {
     if (_mainNibLoaded) return;
+    [super awakeFromNib];
 
     _mainNibLoaded = YES;
 
@@ -494,7 +495,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [tableDataInstance setConnection:mySQLConnection];
     [extendedTableInfoInstance setConnection:mySQLConnection];
 
-
     // Set the custom query editor's MySQL version
     [customQueryInstance setMySQLversion:mySQLVersion];
 
@@ -525,8 +525,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [self initQueryEditorWithString:[spfSession objectForKey:@"queries"]];
         }
     }
-
-    [[self->tablesListInstance onMainThread] makeTableListFilterHaveFocus];
 
     // Insert queryEditorInitString into the Query Editor if defined
     SPMainLoopAsync(^{

@@ -64,6 +64,8 @@
 
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
+    
 	// Set the process table view's vertical gridlines if required
 	[variablesTableView setGridStyleMask:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 

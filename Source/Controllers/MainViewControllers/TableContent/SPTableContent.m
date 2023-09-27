@@ -187,9 +187,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 - (void)awakeFromNib
 {
-    [super awakeFromNib];
-
 	if (_mainNibLoaded) return;
+    [super awakeFromNib];
 	_mainNibLoaded = YES;
 
     // initially hide the filter rule editor
@@ -233,8 +232,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
     [self->filterTableController setTarget:self];
     [self->filterTableController setAction:@selector(filterTable:)];
-    //TODO This is only needed for 10.6 compatibility
-    self->scrollViewHasRubberbandScrolling = [[[self->ruleFilterController view] enclosingScrollView] respondsToSelector:@selector(setVerticalScrollElasticity:)];
+
 
     // Add observers for document task activity
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -3440,9 +3438,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 - (void)updateFilterRuleEditorSize:(CGFloat)requestedHeight animate:(BOOL)animate
 {
+    if(self.selectedTable == nil) {
+        return;
+    }
 	NSRect contentAreaRect = [contentAreaContainer frame];
 	CGFloat availableHeight = contentAreaRect.size.height;
-
 	NSRect ruleEditorRect = [[[ruleFilterController view] enclosingScrollView] frame];
 
 	//adjust for the UI elements below the rule editor, but only if the view should not be hidden
@@ -3474,9 +3474,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		[NSAnimationContext endGrouping];
 	}
 	else {
-		[tableContentContainer setFrameSize:bottomContainerRect.size];
-		[filterRuleEditorContainer setFrame:topContainerRect];
-		[[[ruleFilterController view] enclosingScrollView] setFrame:ruleEditorRect];
+        [tableContentContainer setFrameSize:bottomContainerRect.size];
+        [filterRuleEditorContainer setFrame:topContainerRect];
+        [[[ruleFilterController view] enclosingScrollView] setFrame:ruleEditorRect];
 	}
 
 	//disable rubberband scrolling as long as there is nothing to scroll

@@ -55,6 +55,7 @@ static NSString *SPAboutPanelNibName = @"AboutPanel";
 
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
 
     NSBundle *mainBundle = [NSBundle mainBundle];
 

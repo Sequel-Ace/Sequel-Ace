@@ -115,6 +115,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
+    
 	// Configure the table information pane
 	[tableListSplitView setCollapsibleSubviewIndex:1];
 

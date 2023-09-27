@@ -630,6 +630,8 @@ static SPQueryController *sharedQueryController = nil;
  */
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
+    
 	prefs = [NSUserDefaults standardUserDefaults];
 
 	[self setWindowFrameAutosaveName:SPQueryConsoleWindowAutoSaveName];

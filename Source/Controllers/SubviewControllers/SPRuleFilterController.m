@@ -321,6 +321,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 }
 
 - (void)awakeFromNib {
+    [super awakeFromNib];
 
 	[self _doChangeToRuleEditorData:^{
 		[self->filterRuleEditor bind:@"rows" toObject:self->_modelContainer withKeyPath:@"model" options:nil];
