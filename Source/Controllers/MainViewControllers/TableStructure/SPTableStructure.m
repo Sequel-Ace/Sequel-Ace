@@ -157,6 +157,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
+    
 	NSComparisonResult (^numCompare)(NSString *, NSString *) = ^NSComparisonResult(NSString *lhs, NSString *rhs) {
 		return [@([lhs integerValue]) compare: @([rhs integerValue])];
 	};

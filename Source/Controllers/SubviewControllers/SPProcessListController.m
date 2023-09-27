@@ -127,6 +127,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 {
 	// Update the selected auto refresh interval
 	[self _updateSelectedAutoRefreshIntervalInterface];
+    [super windowDidLoad];
 }
 
 #pragma mark -

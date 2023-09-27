@@ -105,6 +105,7 @@ static BOOL StringQualifiesForWordSearch(NSString *s);
 	// Handle a double click in the DB list the same as if OK was clicked.
 	[databaseListView setTarget:self];
 	[databaseListView setDoubleAction:@selector(okClicked:)];
+    [super windowDidLoad];
 }
 
 #pragma mark -

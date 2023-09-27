@@ -2137,12 +2137,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
  */
 - (void) makeTableListFilterHaveFocus
 {
-	if([tables count] > 20) {
-		[[tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:listFilterField];
-	}
-	else {
-		[[tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:tablesListView];
-	}
+    SPMainLoopAsync(^{
+        [[self->tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:self->listFilterField];
+    });
 }
 
 /**

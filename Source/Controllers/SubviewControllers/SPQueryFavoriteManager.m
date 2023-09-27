@@ -81,6 +81,8 @@
  */
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
+    
 	[favorites addObject:@{
 			@"name"            : @"Global",
 			@"headerOfFileURL" : @"",

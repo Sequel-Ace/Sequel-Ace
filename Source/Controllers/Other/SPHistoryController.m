@@ -61,6 +61,7 @@
 
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
 	tableContentInstance = [theDocument tableContentInstance];
 	tablesListInstance = [theDocument tablesListInstance];
 

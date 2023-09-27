@@ -187,83 +187,69 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
+
 	if (_mainNibLoaded) return;
 	_mainNibLoaded = YES;
 
-	// initially hide the filter rule editor
-	[self updateFilterRuleEditorSize:0.0 animate:NO];
+    // initially hide the filter rule editor
+    [self updateFilterRuleEditorSize:0.0 animate:NO];
 
-	// Set the table content view's vertical gridlines if required
-	[tableContentView setGridStyleMask:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 
-	// Set the double-click action in blank areas of the table to create new rows
-	[tableContentView setEmptyDoubleClickAction:@selector(addRow:)];
+        // Set the table content view's vertical gridlines if required
+    [self->tableContentView setGridStyleMask:([self->prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 
-	[paginationViewController setTarget:self];
-	[paginationViewController setAction:@selector(navigatePaginationFromButton:)];
-	[paginationViewController view]; // make sure the nib is actually loaded
-	
-	//let's see if we can use the NSPopover (10.7+) or have to make do with our legacy clone.
-	//this is using reflection right now, as our SDK is 10.8 but our minimum supported version is 10.6
-	Class popOverClass = NSClassFromString(@"NSPopover");
-	if(popOverClass) {
-		paginationPopover = [[popOverClass alloc] init];
-		[paginationPopover setDelegate:(SPTableContent<NSPopoverDelegate> *)self];
-		[paginationPopover setContentViewController:paginationViewController];
-		[paginationPopover setBehavior:NSPopoverBehaviorTransient];
-	}
-	else {
-		[paginationBox setContentView:[paginationViewController view]];
-		
-		// Add the pagination view to the content area
-		NSRect paginationViewFrame = [paginationView frame];
-		NSRect paginationButtonFrame = [paginationButton frame];
-		paginationViewHeight = paginationViewFrame.size.height;
-		paginationViewFrame.origin.x = paginationButtonFrame.origin.x + paginationButtonFrame.size.width - paginationViewFrame.size.width;
-		paginationViewFrame.origin.y = paginationButtonFrame.origin.y + paginationButtonFrame.size.height - 2;
-		paginationViewFrame.size.height = 0;
-		[paginationView setFrame:paginationViewFrame];
-		[[paginationButton superview] addSubview:paginationView];
-	}
+    // Set the double-click action in blank areas of the table to create new rows
+    [self->tableContentView setEmptyDoubleClickAction:@selector(addRow:)];
 
-	[tableContentView setFieldEditorSelectedRange:NSMakeRange(0,0)];
+    [self->paginationViewController setTarget:self];
+    [self->paginationViewController setAction:@selector(navigatePaginationFromButton:)];
+    [self->paginationViewController view]; // make sure the nib is actually loaded
 
-	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
-	[prefs addObserver:self forKeyPath:SPDisplayTableViewColumnTypes options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
-	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
-	[prefs addObserver:self forKeyPath:SPDisplayBinaryDataAsHex options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
+    self->paginationPopover = [[NSPopover alloc] init];
+    [self->paginationPopover setDelegate:(SPTableContent<NSPopoverDelegate> *)self];
+    [self->paginationPopover setContentViewController:self->paginationViewController];
+    [self->paginationPopover setBehavior:NSPopoverBehaviorTransient];
 
-	// Add observer to change view sizes with filter rule editor
-	[[NSNotificationCenter defaultCenter] addObserver:self
-	                                         selector:@selector(filterRuleEditorPreferredSizeChanged:)
-	                                             name:SPRuleFilterHeightChangedNotification
-	                                           object:ruleFilterController];
-	[contentAreaContainer setPostsFrameChangedNotifications:YES];
-	[[NSNotificationCenter defaultCenter] addObserver:self
-	                                         selector:@selector(contentViewSizeChanged:)
-	                                             name:NSViewFrameDidChangeNotification
-	                                           object:contentAreaContainer];
-	[ruleFilterController setTarget:self];
-	[ruleFilterController setAction:@selector(filterTable:)];
-	
-	[filterTableController setTarget:self];
-	[filterTableController setAction:@selector(filterTable:)];
-	//TODO This is only needed for 10.6 compatibility
-	scrollViewHasRubberbandScrolling = [[[ruleFilterController view] enclosingScrollView] respondsToSelector:@selector(setVerticalScrollElasticity:)];
+    [self->tableContentView setFieldEditorSelectedRange:NSMakeRange(0,0)];
 
-	// Add observers for document task activity
-	[[NSNotificationCenter defaultCenter] addObserver:self
-	                                         selector:@selector(startDocumentTaskForTab:)
-	                                             name:SPDocumentTaskStartNotification
-	                                           object:tableDocumentInstance];
-	[[NSNotificationCenter defaultCenter] addObserver:self
-	                                         selector:@selector(endDocumentTaskForTab:)
-	                                             name:SPDocumentTaskEndNotification
-	                                           object:tableDocumentInstance];
-	[[NSNotificationCenter defaultCenter] addObserver:self
-	                                         selector:@selector(documentWillClose:)
-	                                             name:SPDocumentWillCloseNotification
-	                                           object:nil];
+    [self->prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
+    [self->prefs addObserver:self forKeyPath:SPDisplayTableViewColumnTypes options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
+    [self->prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
+    [self->prefs addObserver:self forKeyPath:SPDisplayBinaryDataAsHex options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
+
+    // Add observer to change view sizes with filter rule editor
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(filterRuleEditorPreferredSizeChanged:)
+                                                 name:SPRuleFilterHeightChangedNotification
+                                               object:self->ruleFilterController];
+    [self->contentAreaContainer setPostsFrameChangedNotifications:YES];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(contentViewSizeChanged:)
+                                                 name:NSViewFrameDidChangeNotification
+                                               object:self->contentAreaContainer];
+    [self->ruleFilterController setTarget:self];
+    [self->ruleFilterController setAction:@selector(filterTable:)];
+
+    [self->filterTableController setTarget:self];
+    [self->filterTableController setAction:@selector(filterTable:)];
+    //TODO This is only needed for 10.6 compatibility
+    self->scrollViewHasRubberbandScrolling = [[[self->ruleFilterController view] enclosingScrollView] respondsToSelector:@selector(setVerticalScrollElasticity:)];
+
+    // Add observers for document task activity
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(startDocumentTaskForTab:)
+                                                 name:SPDocumentTaskStartNotification
+                                               object:self->tableDocumentInstance];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(endDocumentTaskForTab:)
+                                                 name:SPDocumentTaskEndNotification
+                                               object:self->tableDocumentInstance];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(documentWillClose:)
+                                                 name:SPDocumentWillCloseNotification
+                                               object:nil];
+
 }
 
 #pragma mark -

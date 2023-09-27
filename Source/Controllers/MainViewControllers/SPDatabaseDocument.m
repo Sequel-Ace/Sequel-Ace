@@ -494,12 +494,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [tableDataInstance setConnection:mySQLConnection];
     [extendedTableInfoInstance setConnection:mySQLConnection];
 
+
     // Set the custom query editor's MySQL version
     [customQueryInstance setMySQLversion:mySQLVersion];
 
     [helpViewerClientInstance setConnection:mySQLConnection];
 
-    [self updateWindowTitle:self];
+    SPMainQSync(^{
+        [self updateWindowTitle:self];
+    });
 
     NSString *serverDisplayName = [[self.parentWindowController window] title];
     NSUserNotification *notification = [[NSUserNotification alloc] init];
@@ -523,55 +526,64 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
     }
 
+    [[self->tablesListInstance onMainThread] makeTableListFilterHaveFocus];
+
     // Insert queryEditorInitString into the Query Editor if defined
-    if (queryEditorInitString && [queryEditorInitString length]) {
-        [self viewQuery];
-        [customQueryInstance doPerformLoadQueryService:queryEditorInitString];
+    SPMainLoopAsync(^{
+        if (self->queryEditorInitString && [self->queryEditorInitString length]) {
+            [self viewQuery];
+            [self->customQueryInstance doPerformLoadQueryService:self->queryEditorInitString];
 
-    }
-
-    if (spfSession != nil) {
-
-        // Restore vertical split view divider for tables' list and right view (Structure, Content, etc.)
-        if([spfSession objectForKey:@"windowVerticalDividerPosition"]) [contentViewSplitter setPosition:[[spfSession objectForKey:@"windowVerticalDividerPosition"] floatValue] ofDividerAtIndex:0];
-
-        // Start a task to restore the session details
-        [self startTaskWithDescription:NSLocalizedString(@"Restoring session...", @"Restoring session task description")];
-
-        if ([NSThread isMainThread]) [NSThread detachNewThreadWithName:SPCtxt(@"SPDatabaseDocument session load task",self) target:self selector:@selector(restoreSession) object:nil];
-        else                         [self restoreSession];
-    }
-    else {
-        switch ([prefs integerForKey:SPDefaultViewMode] > 0 ? [prefs integerForKey:SPDefaultViewMode] : [prefs integerForKey:SPLastViewMode]) {
-            default:
-            case SPStructureViewMode:
-                [self viewStructure];
-                break;
-            case SPContentViewMode:
-                [self viewContent];
-                break;
-            case SPRelationsViewMode:
-                [self viewRelations];
-                break;
-            case SPTableInfoViewMode:
-                [self viewStatus];
-                break;
-            case SPQueryEditorViewMode:
-                [self viewQuery];
-                break;
-            case SPTriggersViewMode:
-                [self viewTriggers];
-                break;
         }
-    }
+    });
 
     if ([self database]) [self detectDatabaseEncoding];
 
-    // If not on the query view, alter initial focus - set focus to table list filter
-    // field if visible, otherwise set focus to Table List view
-    if (![[self selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarCustomQuery]) {
-        [[tablesListInstance onMainThread] makeTableListFilterHaveFocus];
-    }
+    executeOnMainThreadAfterADelay(^{
+        //FIXME HERE
+        if (self->spfSession != nil) {
+
+            // Restore vertical split view divider for tables' list and right view (Structure, Content, etc.)
+            if([self->spfSession objectForKey:@"windowVerticalDividerPosition"]) [self->contentViewSplitter setPosition:[[self->spfSession objectForKey:@"windowVerticalDividerPosition"] floatValue] ofDividerAtIndex:0];
+
+            // Start a task to restore the session details
+            [self startTaskWithDescription:NSLocalizedString(@"Restoring session...", @"Restoring session task description")];
+
+            if ([NSThread isMainThread]) [NSThread detachNewThreadWithName:SPCtxt(@"SPDatabaseDocument session load task",self) target:self selector:@selector(restoreSession) object:nil];
+            else                         [self restoreSession];
+        }
+        else {
+            switch ([self->prefs integerForKey:SPDefaultViewMode] > 0 ? [self->prefs integerForKey:SPDefaultViewMode] : [self->prefs integerForKey:SPLastViewMode]) {
+                default:
+                case SPStructureViewMode:
+                    [[self onMainThread] viewStructure];
+                    [[self->tablesListInstance onMainThread] makeTableListFilterHaveFocus];
+                    break;
+                case SPContentViewMode:
+                    [[self onMainThread] viewContent];
+                    [[self->tablesListInstance onMainThread] makeTableListFilterHaveFocus];
+                    break;
+                case SPRelationsViewMode:
+                    [[self onMainThread] viewRelations];
+                    [[self->tablesListInstance onMainThread] makeTableListFilterHaveFocus];
+                    break;
+                case SPTableInfoViewMode:
+                    [[self onMainThread] viewStatus];
+                    [[self->tablesListInstance onMainThread] makeTableListFilterHaveFocus];
+                    break;
+                case SPQueryEditorViewMode:
+                    [[self onMainThread] viewQuery];
+                    //Keep the query view focused
+//                    [[self->tablesListInstance onMainThread] makeTableListFilterHaveFocus];
+                    break;
+                case SPTriggersViewMode:
+                    [[self onMainThread] viewTriggers];
+                    [[self->tablesListInstance onMainThread] makeTableListFilterHaveFocus];
+                    break;
+            }
+        }
+
+    }, 0.5);
 
 }
 
@@ -2294,7 +2306,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  * Passes query to tablesListInstance
  */
 - (void)doPerformQueryService:(NSString *)query {
-    [[self.parentWindowController window] makeKeyAndOrderFront:self];
     [self viewQuery];
     [customQueryInstance doPerformQueryService:query];
 }
@@ -2381,6 +2392,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (BOOL)couldCommitCurrentViewActions
 {
+    if (![self table] || ([tablesListInstance tableType] != SPTableTypeTable && [tablesListInstance tableType] != SPTableTypeView)) {
+        return YES;
+    }
+
     [[self.parentWindowController window] endEditingFor:nil];
     switch ([self currentlySelectedView]) {
 
@@ -4287,6 +4302,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)restoreSession
 {
+
     @autoreleasepool {
         // Check and set the table
         NSArray *tables = [tablesListInstance tables];
@@ -5570,17 +5586,16 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 //WARNING: Might be called from code in background threads
 - (void)viewStructure {
-    
+
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
             [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
             return;
         }
-        
-        executeOnMainThreadAfterADelay(^{
-            [self->tableTabView selectTabViewItemAtIndex:0];
-        }, 0.5);
+
+
+        [self->tableTabView selectTabViewItemAtIndex:0];
         [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableStructure];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
@@ -5596,12 +5611,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
             return;
         }
-        
-        executeOnMainThreadAfterADelay(^{
-            [self->tableTabView selectTabViewItemAtIndex:1];
-        }, 0.5);
+
+        [self->tableTabView selectTabViewItemAtIndex:1];
         [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableContent];
         [self->spHistoryControllerInstance updateHistoryEntries];
+
         [self->prefs setInteger:SPContentViewMode forKey:SPLastViewMode];
     });
 }
@@ -5613,10 +5627,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
             return;
         }
-        
-        executeOnMainThreadAfterADelay(^{
-            [self->tableTabView selectTabViewItemAtIndex:2];
-        }, 0.5);
+
+        [self->tableTabView selectTabViewItemAtIndex:2];
         [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarCustomQuery];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
@@ -5635,10 +5647,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
             return;
         }
-        
-        executeOnMainThreadAfterADelay(^{
-            [self->tableTabView selectTabViewItemAtIndex:3];
-        }, 0.5);
+
+        [self->tableTabView selectTabViewItemAtIndex:3];
         [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableInfo];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
@@ -5660,10 +5670,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
             return;
         }
-        
-        executeOnMainThreadAfterADelay(^{
-            [self->tableTabView selectTabViewItemAtIndex:4];
-        }, 0.5);
+
+        [self->tableTabView selectTabViewItemAtIndex:4];
         [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableRelations];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
@@ -5679,10 +5687,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
             return;
         }
-        
-        executeOnMainThreadAfterADelay(^{
-            [self->tableTabView selectTabViewItemAtIndex:5];
-        }, 0.5);
+
+        [self->tableTabView selectTabViewItemAtIndex:5];
         [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableTriggers];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
@@ -5764,6 +5770,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)tabView:(NSTabView *)aTabView didSelectTabViewItem:(NSTabViewItem *)tabViewItem
 {
+    if (![self table] || ([tablesListInstance tableType] != SPTableTypeTable && [tablesListInstance tableType] != SPTableTypeView)) {
+        return;
+    }
+
+
     [self startTaskWithDescription:[NSString stringWithFormat:NSLocalizedString(@"Loading %@...", @"Loading table task string"), [self table]]];
 
     // We can't pass aTabView or tabViewItem UI objects to a bg thread, but since the change should already
@@ -5882,13 +5893,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         switch (selectedTabViewIndex) {
             case SPTableViewStructure:
                 if (!structureLoaded) {
-                    [tableSourceInstance loadTable:selectedTableName];
+                    [[tableSourceInstance onMainThread] loadTable:selectedTableName];
                     structureLoaded = YES;
                 }
                 break;
             case SPTableViewContent:
                 if (!contentLoaded) {
-                    [tableContentInstance loadTable:selectedTableName];
+                    [[tableContentInstance onMainThread] loadTable:selectedTableName];
                     contentLoaded = YES;
                 }
                 break;
@@ -5984,11 +5995,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
             switch (selectedTabViewIndex) {
                 case SPTableViewStructure:
-                    [tableSourceInstance loadTable:selectedTableName];
+                    [[tableSourceInstance onMainThread] loadTable:selectedTableName];
                     structureLoaded = YES;
                     break;
                 case SPTableViewContent:
-                    [tableContentInstance loadTable:selectedTableName];
+                    [[tableContentInstance onMainThread] loadTable:selectedTableName];
                     contentLoaded = YES;
                     break;
                 case SPTableViewStatus:
