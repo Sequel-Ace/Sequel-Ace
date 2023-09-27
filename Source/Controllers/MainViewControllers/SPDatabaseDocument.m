@@ -329,7 +329,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [taskProgressWindow setOpaque:NO];
     [taskProgressWindow setBackgroundColor:[NSColor clearColor]];
     [taskProgressWindow setAlphaValue:0.0f];
+    [taskProgressWindow setIsVisible:NO];
     [taskProgressWindow setContentView:taskProgressLayer];
+    [self.parentWindowControllerWindow addChildWindow:taskProgressWindow ordered:NSWindowAbove];
 
     alterDatabaseCharsetHelper = [[SPCharsetCollationHelper alloc] initWithCharsetButton:databaseAlterEncodingButton CollationButton:databaseAlterCollationButton];
     addDatabaseCharsetHelper   = [[SPCharsetCollationHelper alloc] initWithCharsetButton:databaseEncodingButton CollationButton:databaseCollationButton];
@@ -1239,7 +1241,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Keep the window hidden for the first ~0.5 secs
     if (timeSinceFadeInStart < 0.5) return;
 
-    [self.parentWindowControllerWindow addChildWindow:taskProgressWindow ordered:NSWindowAbove];
+    [taskProgressWindow setIsVisible:YES];
 
     CGFloat alphaValue = [taskProgressWindow alphaValue];
 
@@ -1382,7 +1384,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [taskProgressIndicator stopAnimation:self];
         }
         [taskProgressWindow setAlphaValue:0.0f];
-        [self.parentWindowControllerWindow removeChildWindow:taskProgressWindow];
+        [taskProgressWindow setIsVisible:NO];
         taskDisplayIsIndeterminate = YES;
         [taskProgressIndicator setIndeterminate:YES];
 
