@@ -917,7 +917,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
         for (NSURLQueryItem *queryItem in [components queryItems]) {
             if ([valid containsObject:queryItem.name]) {
-                NSString *decodedQueryItem = [[queryItem.value stringByRemovingPercentEncoding];
+                NSString *decodedQueryItem = [queryItem.value stringByRemovingPercentEncoding];
                 [details setObject:decodedQueryItem forKey:queryItem.name];
             }
             else {
