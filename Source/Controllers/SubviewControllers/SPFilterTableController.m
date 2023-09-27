@@ -221,6 +221,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 	[filterTableLiveSearchCheckbox setState:NSControlStateValueOff];
 
 	filterTableDefaultOperator = [[self class] escapeFilterTableDefaultOperator:[prefs objectForKey:SPFilterTableDefaultOperator]];
+    [super windowDidLoad];
 }
 
 - (IBAction)filterTable:(id)sender {

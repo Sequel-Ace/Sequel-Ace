@@ -171,6 +171,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
+    
     // Register url scheme handle
     [[NSAppleEventManager sharedAppleEventManager] setEventHandler:self
                                                        andSelector:@selector(handleEvent:withReplyEvent:)

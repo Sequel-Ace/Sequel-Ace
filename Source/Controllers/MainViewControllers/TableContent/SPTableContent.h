@@ -83,7 +83,6 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 	ContentPaginationViewController *paginationViewController;
 	NSPopover *paginationPopover;
 	IBOutlet NSView *paginationView;
-	IBOutlet NSBox *paginationBox;
 
 	IBOutlet SPRuleFilterController *ruleFilterController;
 	IBOutlet SPFilterTableController *filterTableController;

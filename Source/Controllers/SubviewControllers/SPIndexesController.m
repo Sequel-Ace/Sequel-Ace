@@ -109,6 +109,8 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 {
 	// As this controller also loads its own nib, it may call awakeFromNib multiple times; perform setup only once.
 	if (mainNibLoaded) return;
+    [super awakeFromNib];
+    
 	mainNibLoaded = YES;
 
 	// Set the index tables view's vertical gridlines if required

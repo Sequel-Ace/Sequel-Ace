@@ -52,6 +52,8 @@ static NSString *SPDatabaseImage = @"database-small";
 
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
+    
 	// Generic folder image for use in the outline view's groups
 	folderImage = [[NSWorkspace sharedWorkspace] iconForFileType:NSFileTypeForHFSTypeCode(kGenericFolderIcon)];
 	

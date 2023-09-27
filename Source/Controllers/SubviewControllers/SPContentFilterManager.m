@@ -78,6 +78,8 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
  */
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
+    
 	// Set up the split view
 	[contentFilterSplitView setMinSize:120.f ofSubviewAtIndex:0];
 	[contentFilterSplitView setMaxSize:245.f ofSubviewAtIndex:0];

@@ -115,6 +115,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
+    
 	// Configure the table information pane
 	[tableListSplitView setCollapsibleSubviewIndex:1];
 
@@ -2137,12 +2139,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
  */
 - (void) makeTableListFilterHaveFocus
 {
-	if([tables count] > 20) {
-		[[tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:listFilterField];
-	}
-	else {
-		[[tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:tablesListView];
-	}
+    SPMainLoopAsync(^{
+        [[self->tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:self->listFilterField];
+    });
 }
 
 /**

@@ -79,6 +79,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
  */
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
 	// Set the table relation view's vertical gridlines if required
 	[relationsTableView setGridStyleMask:([[NSUserDefaults standardUserDefaults] boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 	

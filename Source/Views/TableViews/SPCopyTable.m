@@ -1579,9 +1579,7 @@ NSString *kHeader     = @"HEADER";
 	columnDefinitions = nil;
 	prefs = [NSUserDefaults standardUserDefaults];
 
-	if ([NSTableView instancesRespondToSelector:@selector(awakeFromNib)]) {
-		[super awakeFromNib];
-	}
+    [super awakeFromNib];
 }
 
 @end

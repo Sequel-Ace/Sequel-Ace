@@ -3554,7 +3554,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 - (void)awakeFromNib
 {
-    
+    [super awakeFromNib];
+
     [customQueryView setFieldEditorSelectedRange:NSMakeRange(0,0)];
     [self updateQueryInteractionInterface];
     

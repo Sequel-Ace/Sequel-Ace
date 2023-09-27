@@ -239,7 +239,8 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 {
 	// As this controller also loads its own nib, it may call awakeFromNib multiple times; perform setup only once.
 	if (mainNibLoaded) return;
-	
+    [super awakeFromNib];
+
 	mainNibLoaded = YES;
 	
 	windowMinWidth = [[self window] minSize].width;

@@ -109,6 +109,7 @@
 - (void)awakeFromNib
 {
 	if (mainNibLoaded) return;
+    [super awakeFromNib];
 
 	mainNibLoaded = YES;
 	
@@ -1254,7 +1255,7 @@
 
 	//the field mapper is an UI object and must not be caught in the background thread's autoreleasepool
 	__block SPFieldMapperController *fieldMapperController = nil;
-	dispatch_async(dispatch_get_main_queue(), ^{
+    SPMainLoopAsync(^{
 		// Init the field mapper controller
 		fieldMapperController = [[SPFieldMapperController alloc] initWithDelegate:self];
 		[fieldMapperController setConnection:self->mySQLConnection];

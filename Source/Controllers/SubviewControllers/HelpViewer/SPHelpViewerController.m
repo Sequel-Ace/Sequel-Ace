@@ -103,6 +103,7 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 	if (@available(macOS 10.14, *)) {
 		[[self window] addObserver:self forKeyPath:@"effectiveAppearance" options:0 context:HelpViewerControllerKVOContext];
 	}
+    [super windowDidLoad];
 }
 
 - (void)observeValueForKeyPath:(nullable NSString *)keyPath ofObject:(nullable id)object change:(nullable NSDictionary<NSKeyValueChangeKey, id> *)change context:(nullable void *)context

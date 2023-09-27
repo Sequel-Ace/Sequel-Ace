@@ -95,7 +95,7 @@
 
 - (void)awakeFromNib
 {
-
+    [super awakeFromNib];
 	// Set the splitview up
 	[splitView setMinSize:122.f ofSubviewAtIndex:0];
 	[splitView setMinSize:588.f ofSubviewAtIndex:1];

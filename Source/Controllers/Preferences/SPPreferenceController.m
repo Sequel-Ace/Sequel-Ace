@@ -87,6 +87,7 @@
 					   networkPreferencePane,
 					   filePreferencePane,
 					   nil];
+    [super windowDidLoad];
 }
 
 #pragma mark -

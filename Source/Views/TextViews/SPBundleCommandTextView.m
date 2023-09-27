@@ -47,6 +47,7 @@
 
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
 
 	prefs = [NSUserDefaults standardUserDefaults];
 

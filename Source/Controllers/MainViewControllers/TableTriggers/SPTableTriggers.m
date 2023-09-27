@@ -96,6 +96,8 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
  */
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
+    
 	prefs = [NSUserDefaults standardUserDefaults];
 
 	// Set the table triggers view's vertical gridlines if required

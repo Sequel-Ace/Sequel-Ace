@@ -95,6 +95,8 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
+    
 	[self setClientView:[[self scrollView] documentView]];
 }
 

@@ -115,6 +115,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 - (void)awakeFromNib
 {
+    [super awakeFromNib];
 	// Set Context Menu
 	[[[fieldMapperTableView menu] itemAtIndex:0] setHidden:YES];
 	[[[fieldMapperTableView menu] itemAtIndex:1] setHidden:YES];
