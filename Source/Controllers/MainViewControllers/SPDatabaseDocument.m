@@ -5578,7 +5578,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             return;
         }
         
-        [self->tableTabView selectTabViewItemAtIndex:0];
+        executeOnMainThreadAfterADelay(^{
+            [self->tableTabView selectTabViewItemAtIndex:0];
+        }, 0.5);
         [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableStructure];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
@@ -5595,7 +5597,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             return;
         }
         
-        [self->tableTabView selectTabViewItemAtIndex:1];
+        executeOnMainThreadAfterADelay(^{
+            [self->tableTabView selectTabViewItemAtIndex:1];
+        }, 0.5);
         [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableContent];
         [self->spHistoryControllerInstance updateHistoryEntries];
         [self->prefs setInteger:SPContentViewMode forKey:SPLastViewMode];
@@ -5610,7 +5614,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             return;
         }
         
-        [self->tableTabView selectTabViewItemAtIndex:2];
+        executeOnMainThreadAfterADelay(^{
+            [self->tableTabView selectTabViewItemAtIndex:2];
+        }, 0.5);
         [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarCustomQuery];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
@@ -5630,7 +5636,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             return;
         }
         
-        [self->tableTabView selectTabViewItemAtIndex:3];
+        executeOnMainThreadAfterADelay(^{
+            [self->tableTabView selectTabViewItemAtIndex:3];
+        }, 0.5);
         [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableInfo];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
@@ -5653,7 +5661,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             return;
         }
         
-        [self->tableTabView selectTabViewItemAtIndex:4];
+        executeOnMainThreadAfterADelay(^{
+            [self->tableTabView selectTabViewItemAtIndex:4];
+        }, 0.5);
         [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableRelations];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
@@ -5670,7 +5680,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             return;
         }
         
-        [self->tableTabView selectTabViewItemAtIndex:5];
+        executeOnMainThreadAfterADelay(^{
+            [self->tableTabView selectTabViewItemAtIndex:5];
+        }, 0.5);
         [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableTriggers];
         [self->spHistoryControllerInstance updateHistoryEntries];
         
