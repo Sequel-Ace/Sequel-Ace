@@ -538,7 +538,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([self database]) [self detectDatabaseEncoding];
 
     executeOnMainThreadAfterADelay(^{
-        //FIXME HERE
         if (self->spfSession != nil) {
 
             // Restore vertical split view divider for tables' list and right view (Structure, Content, etc.)
