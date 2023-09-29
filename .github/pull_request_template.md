@@ -26,6 +26,7 @@ Please use one of these hashtags for your PR title:
   - [ ] 11.x (Big Sur)
   - [ ] 12.x (Monterey)
   - [ ] 13.x (Ventura)
+  - [ ] 14.x (Sonoma)
 - Localizations:
   - [ ] English
   - [ ] Spanish
