@@ -3,6 +3,7 @@
     <dependencies>
         <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22154"/>
+        <capability name="System colors introduced in macOS 10.14" minToolsVersion="10.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -1052,6 +1053,7 @@
                                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                             <font key="font" metaFont="message" size="11"/>
                                                                         </buttonCell>
+                                                                        <color key="bezelColor" name="controlAccentColor" catalog="System" colorSpace="catalog"/>
                                                                         <connections>
                                                                             <action selector="filterTable:" target="ki9-Po-bdr" id="MPN-pR-y4d"/>
                                                                         </connections>
