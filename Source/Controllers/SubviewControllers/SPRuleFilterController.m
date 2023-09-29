@@ -449,6 +449,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	if(rowType == NSRuleEditorRowTypeCompound) {
 		if(!criterion) {
 			EnableNode *node = [[EnableNode alloc] init];
+
 			[node setAllowsMixedState:YES];
 			return node;
 		}
@@ -664,6 +665,8 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		// then go upwards to update the checkbox state of our parent
 		[self _updateCheckedStateUpwardsFromCompoundRow:[filterRuleEditor parentRowForRow:row]];
 	}
+
+    [self _updateButtonStates];
 }
 
 /**
@@ -991,27 +994,13 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 
 - (void)_resize
 {
-	// The situation with the sizing is a bit f'ed up:
-	// - When -ruleEditorRowsDidChange: is invoked the NSRuleEditor has not yet updated its required frame size
-	// - We can't use KVO on -frame either, because SPTableContent will update the container size which
-	//   ultimately also updates the NSRuleEditor's frame, causing a loop
-	// - Calling -sizeToFit works, but only when the NSRuleEditor is growing. It won't shrink
-	//   after removing rows.
-	// - -intrinsicContentSize is what we want, but that method is 10.7+, so on 10.6 let's do the
-	//   easiest workaround (note that both -intrinsicContentSize and -sizeToFit internally use -[NSRuleEditor _minimumFrameHeight])
-	CGFloat wantsHeight;
-	if([filterRuleEditor respondsToSelector:@selector(intrinsicContentSize)]) {
-		NSSize sz = [filterRuleEditor intrinsicContentSize];
-		wantsHeight = sz.height;
-	}
-	else {
-		wantsHeight = [filterRuleEditor rowHeight] * [filterRuleEditor numberOfRows];
-	}
-	if(wantsHeight != preferredHeight) {
-		[self setPreferredHeight:wantsHeight];
-		[[NSNotificationCenter defaultCenter] postNotificationName:SPRuleFilterHeightChangedNotification object:self];
-	}
+    SPMainQSync(^{
+        CGFloat wantsHeight = [self->filterRuleEditor rowHeight] * MAX([self->filterRuleEditor numberOfRows], 1);
+        [self setPreferredHeight:wantsHeight];
+        [[NSNotificationCenter defaultCenter] postNotificationName:SPRuleFilterHeightChangedNotification object:self];
+    });
 }
+
 
 - (void)ruleEditorRowsDidChange:(NSNotification *)notification 
 {
@@ -1277,7 +1266,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 - (void)addFilterExpression
 {
 	// reject this if no table columns exist: would cause invalid state (empty filter rows)
-	if(![columns count]) return;
+    if(![columns count]) {
+        return;
+    }
 
 	[self _doChangeToRuleEditorData:^{
 		[self->filterRuleEditor insertRowAtIndex:0 withType:NSRuleEditorRowTypeSimple asSubrowOfRow:-1 animate:NO];

@@ -3,6 +3,7 @@
     <dependencies>
         <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22154"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -1003,19 +1004,81 @@
                                                         <rect key="frame" x="7" y="10" width="695" height="529"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         <subviews>
+                                                            <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="9oo-u0-ndW" userLabel="Filter Rule Editor Container">
+                                                                <rect key="frame" x="0.0" y="497" width="695" height="31"/>
+                                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
+                                                                <subviews>
+                                                                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xVl-jD-jgc">
+                                                                        <rect key="frame" x="586" y="6" width="99" height="19"/>
+                                                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
+                                                                        <buttonCell key="cell" type="roundRect" title="Add Filter" bezelStyle="roundedRect" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="MCE-yX-CGu">
+                                                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                                            <font key="font" metaFont="message" size="11"/>
+                                                                        </buttonCell>
+                                                                        <connections>
+                                                                            <action selector="addFilter:" target="ki9-Po-bdr" id="K6X-Ba-Xld"/>
+                                                                        </connections>
+                                                                    </button>
+                                                                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4676">
+                                                                        <rect key="frame" x="579" y="-1" width="113" height="32"/>
+                                                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
+                                                                        <buttonCell key="cell" type="push" title="Apply Filter(s)" bezelStyle="rounded" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="4677">
+                                                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                                            <font key="font" metaFont="message" size="11"/>
+                                                                        </buttonCell>
+                                                                        <color key="bezelColor" name="AccentColor"/>
+                                                                        <connections>
+                                                                            <action selector="filterTable:" target="ki9-Po-bdr" id="eAC-YD-du3"/>
+                                                                        </connections>
+                                                                    </button>
+                                                                    <scrollView fixedFrame="YES" borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="CIQ-tc-1Fn">
+                                                                        <rect key="frame" x="0.0" y="1" width="578" height="29"/>
+                                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                        <clipView key="contentView" copiesOnScroll="NO" id="kdv-Wp-s5h">
+                                                                            <rect key="frame" x="0.0" y="0.0" width="578" height="29"/>
+                                                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                            <subviews>
+                                                                                <ruleEditor nestingMode="compound" canRemoveAllRows="YES" rowHeight="29" id="FF9-z2-9od">
+                                                                                    <rect key="frame" x="0.0" y="0.0" width="578" height="29"/>
+                                                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" flexibleMaxY="YES"/>
+                                                                                    <connections>
+                                                                                        <action selector="_menuItemInRuleEditorClicked:" target="ki9-Po-bdr" id="mgx-03-h4w"/>
+                                                                                        <outlet property="delegate" destination="ki9-Po-bdr" id="rFd-07-AiC"/>
+                                                                                    </connections>
+                                                                                </ruleEditor>
+                                                                            </subviews>
+                                                                            <color key="backgroundColor" name="tertiaryLabelColor" catalog="System" colorSpace="catalog"/>
+                                                                        </clipView>
+                                                                        <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="dIO-Od-K6g">
+                                                                            <rect key="frame" x="-100" y="-100" width="223" height="15"/>
+                                                                            <autoresizingMask key="autoresizingMask"/>
+                                                                        </scroller>
+                                                                        <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="wlW-vM-FUZ">
+                                                                            <rect key="frame" x="561" y="1" width="16" height="27"/>
+                                                                            <autoresizingMask key="autoresizingMask"/>
+                                                                        </scroller>
+                                                                    </scrollView>
+                                                                </subviews>
+                                                                <userDefinedRuntimeAttributes>
+                                                                    <userDefinedRuntimeAttribute type="boolean" keyPath="wantsLayer" value="YES"/>
+                                                                    <userDefinedRuntimeAttribute type="color" keyPath="backgroundColor">
+                                                                        <color key="value" name="quinarySystemFillColor" catalog="System" colorSpace="catalog"/>
+                                                                    </userDefinedRuntimeAttribute>
+                                                                </userDefinedRuntimeAttributes>
+                                                            </customView>
                                                             <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="vcX-Xr-0cm" userLabel="Table Content Container">
-                                                                <rect key="frame" x="0.0" y="0.0" width="695" height="458"/>
+                                                                <rect key="frame" x="0.0" y="0.0" width="695" height="498"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <subviews>
                                                                     <scrollView focusRingType="none" fixedFrame="YES" autohidesScrollers="YES" horizontalLineScroll="18" horizontalPageScroll="10" verticalLineScroll="18" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="35">
-                                                                        <rect key="frame" x="0.0" y="25" width="695" height="433"/>
+                                                                        <rect key="frame" x="0.0" y="25" width="695" height="473"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <clipView key="contentView" id="lwO-LP-RWZ">
-                                                                            <rect key="frame" x="1" y="1" width="693" height="431"/>
+                                                                            <rect key="frame" x="1" y="1" width="693" height="471"/>
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
                                                                                 <tableView identifier="TableContentTableView" focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="none" alternatingRowBackgroundColors="YES" autosaveColumns="NO" rowHeight="16" headerView="3920" id="36" customClass="SPCopyTable">
-                                                                                    <rect key="frame" x="0.0" y="0.0" width="693" height="414"/>
+                                                                                    <rect key="frame" x="0.0" y="0.0" width="693" height="454"/>
                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                     <size key="intercellSpacing" width="3" height="2"/>
                                                                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -1187,60 +1250,6 @@
                                                                         <color key="contentTintColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                         <connections>
                                                                             <action selector="navigatePaginationFromButton:" target="67" id="6666"/>
-                                                                        </connections>
-                                                                    </button>
-                                                                </subviews>
-                                                            </customView>
-                                                            <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="9oo-u0-ndW" userLabel="Filter Rule Editor Container">
-                                                                <rect key="frame" x="0.0" y="458" width="695" height="71"/>
-                                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
-                                                                <subviews>
-                                                                    <scrollView fixedFrame="YES" borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="CIQ-tc-1Fn">
-                                                                        <rect key="frame" x="0.0" y="31" width="694" height="40"/>
-                                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                                                        <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="kdv-Wp-s5h">
-                                                                            <rect key="frame" x="0.0" y="0.0" width="694" height="40"/>
-                                                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                                                            <subviews>
-                                                                                <ruleEditor nestingMode="compound" canRemoveAllRows="YES" rowHeight="29" id="FF9-z2-9od">
-                                                                                    <rect key="frame" x="0.0" y="0.0" width="694" height="40"/>
-                                                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" flexibleMaxY="YES"/>
-                                                                                    <connections>
-                                                                                        <action selector="_menuItemInRuleEditorClicked:" target="ki9-Po-bdr" id="mgx-03-h4w"/>
-                                                                                        <outlet property="delegate" destination="ki9-Po-bdr" id="rFd-07-AiC"/>
-                                                                                    </connections>
-                                                                                </ruleEditor>
-                                                                            </subviews>
-                                                                        </clipView>
-                                                                        <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="dIO-Od-K6g">
-                                                                            <rect key="frame" x="-100" y="-100" width="223" height="15"/>
-                                                                            <autoresizingMask key="autoresizingMask"/>
-                                                                        </scroller>
-                                                                        <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="wlW-vM-FUZ">
-                                                                            <rect key="frame" x="-100" y="-100" width="15" height="133"/>
-                                                                            <autoresizingMask key="autoresizingMask"/>
-                                                                        </scroller>
-                                                                    </scrollView>
-                                                                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4676">
-                                                                        <rect key="frame" x="586" y="6" width="99" height="19"/>
-                                                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                                                                        <buttonCell key="cell" type="roundRect" title="Filter" bezelStyle="roundedRect" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="4677">
-                                                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                                                            <font key="font" metaFont="message" size="11"/>
-                                                                        </buttonCell>
-                                                                        <connections>
-                                                                            <action selector="filterTable:" target="ki9-Po-bdr" id="eAC-YD-du3"/>
-                                                                        </connections>
-                                                                    </button>
-                                                                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xVl-jD-jgc">
-                                                                        <rect key="frame" x="586" y="6" width="99" height="19"/>
-                                                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                                                                        <buttonCell key="cell" type="roundRect" title="Add Filter" bezelStyle="roundedRect" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="MCE-yX-CGu">
-                                                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                                                            <font key="font" metaFont="message" size="11"/>
-                                                                        </buttonCell>
-                                                                        <connections>
-                                                                            <action selector="addFilter:" target="ki9-Po-bdr" id="K6X-Ba-Xld"/>
                                                                         </connections>
                                                                     </button>
                                                                 </subviews>
@@ -4996,5 +5005,8 @@ Gw
         <image name="button_filterTemplate" width="11" height="10"/>
         <image name="button_filter_activeTemplate" width="11" height="10"/>
         <image name="grabber-horizontal" width="10" height="8"/>
+        <namedColor name="AccentColor">
+            <color red="0.0" green="0.46000000000000002" blue="0.89000000000000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
     </resources>
 </document>
