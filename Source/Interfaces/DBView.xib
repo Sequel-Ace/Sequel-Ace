@@ -3,7 +3,6 @@
     <dependencies>
         <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22154"/>
-        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -1046,16 +1045,15 @@
                                                                             <autoresizingMask key="autoresizingMask"/>
                                                                         </scroller>
                                                                     </scrollView>
-                                                                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4676">
+                                                                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3nZ-wq-bqx">
                                                                         <rect key="frame" x="579" y="-1" width="113" height="32"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                                                                        <buttonCell key="cell" type="push" title="Apply Filter(s)" bezelStyle="rounded" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="4677">
+                                                                        <buttonCell key="cell" type="push" title="Apply Filter(s)" bezelStyle="rounded" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="DbF-iD-5HL">
                                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                             <font key="font" metaFont="message" size="11"/>
                                                                         </buttonCell>
-                                                                        <color key="bezelColor" name="AccentColor"/>
                                                                         <connections>
-                                                                            <action selector="filterTable:" target="ki9-Po-bdr" id="eAC-YD-du3"/>
+                                                                            <action selector="filterTable:" target="ki9-Po-bdr" id="MPN-pR-y4d"/>
                                                                         </connections>
                                                                     </button>
                                                                 </subviews>
@@ -4393,7 +4391,7 @@ Gw
         <customObject id="ki9-Po-bdr" userLabel="SPRuleFilter" customClass="SPRuleFilterController">
             <connections>
                 <outlet property="addFilterButton" destination="xVl-jD-jgc" id="hoX-nP-wFM"/>
-                <outlet property="filterButton" destination="4676" id="9tZ-dW-BR3"/>
+                <outlet property="filterButton" destination="3nZ-wq-bqx" id="Dup-Nc-nEk"/>
                 <outlet property="filterRuleEditor" destination="FF9-z2-9od" id="RW4-XM-XQS"/>
                 <outlet property="tableContentViewBelow" destination="36" id="ZGh-dM-J6C"/>
                 <outlet property="tableDataInstance" destination="4702" id="e69-W6-UwN"/>
@@ -5005,8 +5003,5 @@ Gw
         <image name="button_filterTemplate" width="11" height="10"/>
         <image name="button_filter_activeTemplate" width="11" height="10"/>
         <image name="grabber-horizontal" width="10" height="8"/>
-        <namedColor name="AccentColor">
-            <color red="0.0" green="0.46000000000000002" blue="0.89000000000000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </namedColor>
     </resources>
 </document>
