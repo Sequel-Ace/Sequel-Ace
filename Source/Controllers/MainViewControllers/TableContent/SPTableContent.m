@@ -641,7 +641,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		[toggleRuleFilterButton setState:NSControlStateValueOn];
 	}
 	else {
-		[self setRuleEditorVisible:NO animate:NO];
+		[self setRuleEditorVisible:NO animate:YES];
 		[toggleRuleFilterButton setState:NSControlStateValueOff];
 	}
 	[ruleFilterController setEnabled:enableInteraction];
@@ -1333,12 +1333,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	if((showFilterRuleEditor = show)) {
 		[ruleFilterController setEnabled:YES];
 		// if it was the user who enabled the filter (indicated by the animation) add an empty row by default
-		if([ruleFilterController isEmpty] && animate) {
-			[ruleFilterController addFilterExpression];
+		if([ruleFilterController isEmpty]) {
+			[[ruleFilterController onMainThread] addFilterExpression];
 			// the sizing will be updated automatically by adding a row
 		}
 		else {
-			[self updateFilterRuleEditorSize:[ruleFilterController preferredHeight] animate:animate];
+			[self updateFilterRuleEditorSize:[[ruleFilterController onMainThread] preferredHeight] animate:animate];
 		}
 	}
 	else {
@@ -3438,29 +3438,26 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 - (void)updateFilterRuleEditorSize:(CGFloat)requestedHeight animate:(BOOL)animate
 {
-    if(self.selectedTable == nil) {
-        return;
-    }
 	NSRect contentAreaRect = [contentAreaContainer frame];
 	CGFloat availableHeight = contentAreaRect.size.height;
 	NSRect ruleEditorRect = [[[ruleFilterController view] enclosingScrollView] frame];
+    ruleEditorRect.origin.x = 1;
+    ruleEditorRect.origin.y = 1;
 
 	//adjust for the UI elements below the rule editor, but only if the view should not be hidden
-	CGFloat containerRequestedHeight = showFilterRuleEditor ? requestedHeight + ruleEditorRect.origin.y : 0;
+	CGFloat containerRequestedHeight = showFilterRuleEditor ? MAX(requestedHeight, 29) + ruleEditorRect.origin.y : 0;
 
 	//the rule editor can ask for about one-third of the available space before we have it use it's scrollbar
-	CGFloat topContainerGivenHeight = MIN(containerRequestedHeight,(availableHeight / 3));
+	CGFloat topContainerGivenHeight = MAX(MIN(containerRequestedHeight,(availableHeight / 3)), 1);
 
-	// abort if the size didn't really change
 	NSRect topContainerRect = [filterRuleEditorContainer frame];
-	if(topContainerGivenHeight == topContainerRect.size.height) return;
 
 	CGFloat newBottomContainerHeight = availableHeight - topContainerGivenHeight;
 
 	NSRect bottomContainerRect = [tableContentContainer frame];
 	bottomContainerRect.size.height = newBottomContainerHeight;
 
-	topContainerRect.origin.y = newBottomContainerHeight;
+	topContainerRect.origin.y = newBottomContainerHeight - 2;
 	topContainerRect.size.height = topContainerGivenHeight;
 
 	// this one should be inferable from the IB layout IMHO, but the OS gets it wrong
@@ -3474,33 +3471,31 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		[NSAnimationContext endGrouping];
 	}
 	else {
-        [tableContentContainer setFrameSize:bottomContainerRect.size];
+        [tableContentContainer setFrame:bottomContainerRect];
         [filterRuleEditorContainer setFrame:topContainerRect];
         [[[ruleFilterController view] enclosingScrollView] setFrame:ruleEditorRect];
 	}
 
 	//disable rubberband scrolling as long as there is nothing to scroll
-	if(scrollViewHasRubberbandScrolling) {
-		NSScrollView *filterControllerScroller = [[ruleFilterController view] enclosingScrollView];
-		if (ruleEditorRect.size.height >= requestedHeight) {
-			[filterControllerScroller setVerticalScrollElasticity:NSScrollElasticityNone];
-		} else {
-			[filterControllerScroller setVerticalScrollElasticity:NSScrollElasticityAutomatic];
-		}
-	}
+    NSScrollView *filterControllerScroller = [[ruleFilterController view] enclosingScrollView];
+    if (ruleEditorRect.size.height >= MAX(requestedHeight, 29)) {
+        [filterControllerScroller setVerticalScrollElasticity:NSScrollElasticityNone];
+    } else {
+        [filterControllerScroller setVerticalScrollElasticity:NSScrollElasticityAutomatic];
+    }
 }
 
 - (void)filterRuleEditorPreferredSizeChanged:(NSNotification *)notification
 {
 	if(showFilterRuleEditor) {
-		[self updateFilterRuleEditorSize:[ruleFilterController preferredHeight] animate:YES];
+		[self updateFilterRuleEditorSize:[[ruleFilterController onMainThread] preferredHeight] animate:YES];
 	}
 }
 
 - (void)contentViewSizeChanged:(NSNotification *)notification
 {
 	if(showFilterRuleEditor) {
-		[self updateFilterRuleEditorSize:[ruleFilterController preferredHeight] animate:NO];
+		[self updateFilterRuleEditorSize:[[ruleFilterController onMainThread] preferredHeight] animate:NO];
 	}
 }
 
