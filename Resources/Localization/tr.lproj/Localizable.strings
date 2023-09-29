@@ -1395,6 +1395,9 @@
 /* filter label */
 "Filter" = "Filtre";
 
+/* apply filter label */
+"Apply Filter(s)" = "Apply Filter(s)";
+
 /* filter tables menu item */
 "Filter Tables" = "Filter Tables";
 

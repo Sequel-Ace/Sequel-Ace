@@ -1395,6 +1395,9 @@
 /* filter label */
 "Filter" = "篩選";
 
+/* apply filter label */
+"Apply Filter(s)" = "Apply Filter(s)";
+
 /* filter tables menu item */
 "Filter Tables" = "篩選資料表";
 
