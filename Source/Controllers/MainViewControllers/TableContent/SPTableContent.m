@@ -3477,14 +3477,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 
 	//disable rubberband scrolling as long as there is nothing to scroll
-	if(scrollViewHasRubberbandScrolling) {
-		NSScrollView *filterControllerScroller = [[ruleFilterController view] enclosingScrollView];
-		if (ruleEditorRect.size.height >= requestedHeight) {
-			[filterControllerScroller setVerticalScrollElasticity:NSScrollElasticityNone];
-		} else {
-			[filterControllerScroller setVerticalScrollElasticity:NSScrollElasticityAutomatic];
-		}
-	}
+    NSScrollView *filterControllerScroller = [[ruleFilterController view] enclosingScrollView];
+    if (ruleEditorRect.size.height >= MAX(requestedHeight, 29)) {
+        [filterControllerScroller setVerticalScrollElasticity:NSScrollElasticityNone];
+    } else {
+        [filterControllerScroller setVerticalScrollElasticity:NSScrollElasticityAutomatic];
+    }
 }
 
 - (void)filterRuleEditorPreferredSizeChanged:(NSNotification *)notification
