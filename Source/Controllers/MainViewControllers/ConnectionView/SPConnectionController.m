@@ -2318,9 +2318,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [favoritesOutlineView display];
 
     // Pass the connection to the document and clean up the interface
-    SPMainLoopAsync(^{
-        [self addConnectionToDocument];
-    });
+    [self addConnectionToDocument];
 }
 
 /**
@@ -2366,11 +2364,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 - (void)addConnectionToDocument
 {
     // Hide the connection view and restore the main view
-    SPMainLoopAsync(^{
-        [self->databaseConnectionView setHidden:NO];
-        [self->connectionView setHidden:YES];
-        [self->connectionView removeFromSuperviewWithoutNeedingDisplay];
-    });
+    [connectionView removeFromSuperviewWithoutNeedingDisplay];
+    [databaseConnectionView setHidden:NO];
 
     // Restore the toolbar icons
     NSArray *toolbarItems = [[[dbDocument parentWindowControllerWindow] toolbar] items];
@@ -2379,9 +2374,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     // Pass the connection to the table document, allowing it to set
     // up the other classes and the rest of the interface.
-    SPMainLoopAsync(^{
-        [self->dbDocument setConnection:self->mySQLConnection];
-    });
+    [dbDocument setConnection:mySQLConnection];
 }
 
 /**
@@ -3693,4 +3686,3 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 }
 
 @end
-
