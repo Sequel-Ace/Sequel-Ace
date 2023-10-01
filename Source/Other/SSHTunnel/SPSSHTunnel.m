@@ -314,7 +314,6 @@ static unsigned short getRandomPort(void);
 		}
 
 		NSInteger connectionTimeout = [[[NSUserDefaults standardUserDefaults] objectForKey:SPConnectionTimeoutValue] integerValue];
-		if (!connectionTimeout) connectionTimeout = 10;
 		BOOL useKeepAlive = [[[NSUserDefaults standardUserDefaults] objectForKey:SPUseKeepAlive] doubleValue];
 		double keepAliveInterval = [[[NSUserDefaults standardUserDefaults] objectForKey:SPKeepAliveInterval] doubleValue];
 		if (!keepAliveInterval) keepAliveInterval = 0;
@@ -393,7 +392,9 @@ static unsigned short getRandomPort(void);
 		TA(@"-o",@"ExitOnForwardFailure=yes");
 
 		// Specify a connection timeout based on the preferences value
-		TA(@"-o",([NSString stringWithFormat:@"ConnectTimeout=%ld", (long)connectionTimeout]));
+        if(connectionTimeout > 0) {
+            TA(@"-o",([NSString stringWithFormat:@"ConnectTimeout=%ld", (long)connectionTimeout]));
+        }
 
 		// Allow three password prompts
 		TA(@"-o",@"NumberOfPasswordPrompts=3");
