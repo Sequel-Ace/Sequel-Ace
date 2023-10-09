@@ -78,28 +78,28 @@
 "%lu groups" = "%lu groupes";
 
 /* Table Content : Remove Row : Result : Too Many : Part 1 : n+y (y!=1) rows instead of n selected were deleted. */
-"%ld additional rows were removed!" = "%ld additional rows were removed!";
+"%ld additional rows were removed!" = "%ld lignes supplémentaires ont été supprimées !";
 
 /* Label showing the index of the selected CSV row */
-"%ld of %lu record(s)" = "%1$ld of %2$lu record(s)";
+"%ld of %lu record(s)" = "%1$ld de %2$lu enregistrement(s)";
 
 /* Label showing the index of the selected CSV row (csv partially loaded) */
-"%ld of first %lu record(s)" = "%1$ld of first %2$lu record(s)";
+"%ld of first %lu record(s)" = "%1$ld de(s) premier(s) %2$lu enregistrement(s)";
 
 /* Table Content : Remove Row : Result : Too Few : Part 1 : n-x (x!=1) of n selected rows were deleted. */
-"%ld rows were not removed." = "%ld rows were not removed.";
+"%ld rows were not removed." = "%ld lignes n'ont pas été supprimées.";
 
 /* Export file already exists message */
-"%lu files already exist. Do you want to replace them?" = "%lu files already exist. Do you want to replace them?";
+"%lu files already exist. Do you want to replace them?" = "%lu fichiers existent déjà. Voulez-vous les remplacer ?";
 
 /* Export files creation error title */
-"%lu files could not be created" = "%lu files could not be created";
+"%lu files could not be created" = "%lu fichiers n'ont pas pu être créés";
 
 /* Some export files already exist explanatory text */
-"%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents.";
+"%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "%lu fichiers portant le même nom existent déjà dans le dossier cible. Les remplacer écrasera leur contenu actuel.";
 
 /* filtered item count */
-"%lu of %lu" = "%1$lu of %2$lu";
+"%lu of %lu" = "%1$lu de %2$lu";
 
 /* Export folder not writable for some files explanatory text */
 "%lu of the export files could not be created because their target export folder is not writable; please select a new export location and try again." = "%lu of the export files could not be created because their target export folder is not writable; please select a new export location and try again.";
