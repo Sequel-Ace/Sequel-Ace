@@ -938,6 +938,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
             BOOL defaultValueIsString = NO;
             if ([defaultValue length]) {
                 NSString *trimmedWhiteSpace = [defaultValue stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+                // if trimmed string is empty, revert to original to avoid crash
+                if ([trimmedWhiteSpace isEqualToString: @""]) {
+                  trimmedWhiteSpace = defaultValue;
+                }
                 unichar firstChar = [trimmedWhiteSpace characterAtIndex:0];
                 unichar lastChar = [trimmedWhiteSpace characterAtIndex:[trimmedWhiteSpace length] - 1];
                 // Check if defaultValue is an expression
