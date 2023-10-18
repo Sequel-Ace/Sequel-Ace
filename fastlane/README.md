@@ -29,7 +29,7 @@ Creates new branch prepare_release, updates strings, increments build version, g
 [bundle exec] fastlane mac prepare_release_bump_patch_version
 ```
 
-Creates new branch prepare_release, updates strings, increments app patch version, increments build version, generates changelog, creates a PR.
+Creates new branch prepare_release, increments app patch version, updates strings, increments build version, generates changelog, creates a PR.
 
 ### mac prepare_beta_release_bump_version
 
