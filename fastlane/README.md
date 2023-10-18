@@ -23,6 +23,14 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 Creates new branch prepare_release, updates strings, increments build version, generates changelog, creates a PR.
 
+### mac prepare_release_bump_patch_version
+
+```sh
+[bundle exec] fastlane mac prepare_release_bump_patch_version
+```
+
+Creates new branch prepare_release, updates strings, increments app patch version, increments build version, generates changelog, creates a PR.
+
 ### mac prepare_beta_release_bump_version
 
 ```sh

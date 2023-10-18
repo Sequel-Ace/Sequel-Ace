@@ -53,6 +53,35 @@ platform :mac do
       )
    end
 
+   desc "Creates new branch prepare_release, increments app patch version, updates strings, increments build version, generates changelog, creates a PR."
+   lane :prepare_release_bump_patch_version do |options|
+   
+      # Checkout to prepare release branch
+      sh "git checkout -b prepare_release"
+      ensure_git_branch(
+         branch: 'prepare_release'
+      )
+      sh "git push -u origin prepare_release"
+      
+      increment_app_patch_version
+      increment_build_version
+      
+      changelog = generate_changelog_locally
+
+      # Commit and push changelog changes
+      sh "git commit -am 'Changelog updates'"
+      sh "git push -u origin prepare_release"
+
+      # Create Pull request to master
+      create_pull_request(
+         api_token: ENV['GITHUB_TOKEN'],
+         repo: GITHUB_REPO,
+         base: "main",
+         title: "Prepare release",
+         body: changelog
+      )
+   end
+
    desc "Creates new branch prepare_release, updates strings, increments app version, increments build version, generates changelog, creates a PR."
    lane :prepare_beta_release_bump_version do |options|
 
