@@ -221,10 +221,10 @@
 "Access denied!" = "¡Acceso denegado!";
 
 /* range of double */
-"Accurate to approx. 15 decimal places" = "Accurate to approx. 15 decimal places";
+"Accurate to approx. 15 decimal places" = "Precisión de aproximadamente 15 decimales";
 
 /* range of float */
-"Accurate to approx. 7 decimal places" = "Accurate to approx. 7 decimal places";
+"Accurate to approx. 7 decimal places" = "Precisión de aproximadamente 7 decimales";
 
 /* active connection window is busy. please wait and try again. tooltip */
 "Active connection window is busy. Please wait and try again." = "La conexión activa está ocupada. Por favor, espere y vuelva a intentarlo.";
@@ -1377,14 +1377,14 @@
 "Field is not editable. Field has no or multiple table or database origin(s)." = "Campo no editable. El campo no tiene o tiene múltiples orígenes de tablas o bases de datos.";
 
 /* Custom Query result editing error - could not identify original row */
-"Field is not editable. No matching record found.\nReload data, check encoding, or try to add\na primary key field or more fields\nin your SELECT statement for table '%@'\nto identify field origin unambiguously." = "Field is not editable. No matching record found.\nReload data, check encoding, or try to add\na primary key field or more fields\nin your SELECT statement for table '%@'\nto identify field origin unambiguously.";
+"Field is not editable. No matching record found.\nReload data, check encoding, or try to add\na primary key field or more fields\nin your SELECT statement for table '%@'\nto identify field origin unambiguously." = "El campo no es editable. No se ha encontrado ningún registro coincidente.\nRecarga la tabla, comprueba la codificación, o intenta añadir\nun campo clave primaria o más campos\nen la declaración de vista de '%@' para identificar de forma única el origen del campo\n.";
 
 /* Table Content result editing error - could not identify original row */
-"Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously." = "Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously.";
+"Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously." = "El campo no es editable. No se ha encontrado ningún registro coincidente.\nRecarga la tabla, comprueba la codificación, o intenta añadir\nun campo clave primaria o más campos\nen la declaración de vista de '%@' para identificar de forma única el origen del campo\n.";
 
 /* error while reading data file */
 "File couldn't be read." = "El archivo no se ha podido leer.";
-"File couldn't be read: %@\n\nIt will be deleted." = "File couldn't be read: %@\n\nIt will be deleted.";
+"File couldn't be read: %@\n\nIt will be deleted." = "No se pudo leer el archivo: %@\n\nSe eliminará.";
 
 /* File read error title (Import Dialog) */
 "File read error" = "Error al leer el archivo";
@@ -1396,7 +1396,7 @@
 "Filter" = "Filtro";
 
 /* apply filter label */
-"Apply Filter(s)" = "Apply Filter(s)";
+"Apply Filter(s)" = "Aplicar filtro(s)";
 
 /* filter tables menu item */
 "Filter Tables" = "Filtrar tablas";
@@ -1716,10 +1716,10 @@
 "M: 1 (default) to 64" = "M: 1 (por defecto) a 64";
 
 /* connection view : ssl : key file picker : wrong format error description */
-"Make sure the file contains a RSA private key and is using PEM encoding." = "Make sure the file contains a RSA private key and is using PEM encoding.";
+"Make sure the file contains a RSA private key and is using PEM encoding." = "Asegúrese de que el archivo contiene una clave privada RSA y está usando la codificación PEM.";
 
 /* connection view : ssl : client cert picker : wrong format error description */
-"Make sure the file contains a X.509 client certificate and is using PEM encoding." = "Make sure the file contains a X.509 client certificate and is using PEM encoding.";
+"Make sure the file contains a X.509 client certificate and is using PEM encoding." = "Asegúrese de que el archivo contiene un certificado de cliente X.509 y utiliza la codificación PEM.";
 
 /* match field menu item */
 "Match Field" = "Incluir Campo";
