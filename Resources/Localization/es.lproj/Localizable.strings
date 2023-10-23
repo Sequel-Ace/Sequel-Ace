@@ -2043,7 +2043,7 @@
 "Quote" = "Comillas";
 
 /* databsse rename unsupported informative message */
-"Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database." = "Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database.";
+"Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database." = "Renombrar la base de datos '%@' no es posible porque contiene objetos distintos a tablas (p.ej. vistas, procedimientos, funciones, etc.).\n\nSi deseas renombrar una base de datos, utilice 'Duplicar base de datos', mueva manualmente cualquier objeto que no sea una tabla y luego suelte la base de datos antigua.";
 
 /* range for serial type */
 "Range: %@ to %@" = "Rango: %1$@ a %2$@";
@@ -3056,13 +3056,13 @@
 "Updating field data..." = "Actualizando datos de campo...";
 
 /* URL scheme command couldn't authenticated */
-"URL scheme command couldn't authenticated" = "URL scheme command couldn't authenticated";
+"URL scheme command couldn't authenticated" = "El comando de esquema de URL no pudo autenticarse";
 
 /* URL scheme command was terminated by user */
 "URL scheme command was terminated by user" = "El comando de esquema URL fue finalizado por el usuario";
 
 /* URL scheme command %@ unsupported */
-"URL scheme command %@ unsupported" = "URL scheme command %@ unsupported";
+"URL scheme command %@ unsupported" = "Comando de esquema URL “%@” no soportado";
 
 /* Use 127.0.0.1 button */
 "Use 127.0.0.1" = "Usar 127.0.0.1";
@@ -3080,7 +3080,7 @@
 "Users" = "Usuarios";
 
 /* CSV Field Mapping : Table View : Tooltip for fields with NULL value */
-"Value will be imported as MySQL NULL" = "Value will be imported as MySQL NULL";
+"Value will be imported as MySQL NULL" = "El valor se importará como MySQL NULL";
 
 /* variable label for color table (Prefs > Editor) */
 "Variable" = "Variable";
@@ -3164,13 +3164,13 @@
 "You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted." = "Ha solicitado que la conexión debe establecerse usando SSL, pero MySQL realiza la conexión sin SSL.\n\nEsto puede deberse a que el servidor no admite conexiones SSL, o SSL está deshabilitado; o fueron proporcionado detalles insuficientes para establecer una conexión SSL.\n\nEsta conexión no está cifrada.";
 
 /* Query Favorites : List : Section Heading : current connection document : tooltip (arg is the name of the spf file) */
-"‘%@’ based favorites" = "‘%@’ based favorites";
+"‘%@’ based favorites" = "favoritos basados en ‘%@";
 
 /* table column header. Read: 'Showing all content filters for fields of type %@' (ContentFilterManager) */
 "‘%@’ Fields Content Filters" = "‘%@’ Filtros de contenido de campos";
 
 /* Export file already exists message */
-"%@ already exists. Do you want to replace it?" = "%@ already exists. Do you want to replace it?";
+"%@ already exists. Do you want to replace it?" = "%@” ya existe. ¿Desea reemplazarlo?";
 
 /* Bundle Editor : Outline View : Bundle item : tooltip */
 "%@ Bundle" = "Paquete de %@";
@@ -3182,16 +3182,16 @@
 "%@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item." = "%@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item.";
 
 /* connection view : ssl : client cert file picker : wrong format error title */
-"%@ is not a valid client certificate file." = "%@ is not a valid client certificate file.";
+"%@ is not a valid client certificate file." = "%@ no es un archivo de certificado de cliente válido.";
 
 /* connection view : ssl : key file picker : wrong format error title */
-"%@ is not a valid private key file." = "%@ is not a valid private key file.";
+"%@ is not a valid private key file." = "%@ no es un archivo válido de clave privada.";
 
 /* text shown when there are App Sandbox Issues */
 "App Sandbox Issue" = "App Sandbox Issue";
 
 /* Stale Bookmarks error title */
-"Stale Bookmarks" = "Stale Bookmarks";
+"Stale Bookmarks" = "Marcadores obsoletos";
 
 /* App Sandbox info link text */
 "App Sandbox Info" = "App Sandbox Info";
@@ -3236,7 +3236,7 @@
 "Export Error" = "Error al exportar";
 
 /* Message for Export Error alert */
-"Error while writing to the export file. Could not open file: %@" = "Error while writing to the export file. Could not open file: %@";
+"Error while writing to the export file. Could not open file: %@" = "Error al escribir el archivo de exportación. No se pudo abrir el archivo: %@";
 
 /* Message for User window error */
 "Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column." = "Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column.";
@@ -3326,7 +3326,7 @@
 "Never show this again" = "Nunca volver a mostrar esto";
 
 /* Info alert when editing a generated column */
-"The current field \"%@\" is a generated column and therefore cannot be edited." = "The current field \"%@\" is a generated column and therefore cannot be edited.";
+"The current field \"%@\" is a generated column and therefore cannot be edited." = "El campo actual \"%@\" es una columna generada y por lo tanto no puede ser editada.";
 
 /* Release note / info modal about change in latest release about column behavior */
 "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.";
