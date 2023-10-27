@@ -671,7 +671,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if (_isWorkingLevel) databaseListIsSelectable = NO;
 
     // Select the database
-    [self selectDatabase:[chooseDatabaseButton titleOfSelectedItem] item:[self table]];
+    [self selectDatabase:[chooseDatabaseButton titleOfSelectedItem] item: nil];
 }
 
 /**
@@ -3261,12 +3261,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // Backward in history menu item
     if ((action == @selector(backForwardInHistory:)) && ([menuItem tag] == 0)) {
-        return (([[spHistoryControllerInstance history] count]) && ([spHistoryControllerInstance historyPosition] > 0));
+        return ([spHistoryControllerInstance countPrevious]);
     }
 
     // Forward in history menu item
     if ((action == @selector(backForwardInHistory:)) && ([menuItem tag] == 1)) {
-        return (([[spHistoryControllerInstance history] count]) && (([spHistoryControllerInstance historyPosition] + 1) < [[spHistoryControllerInstance history] count]));
+        return [spHistoryControllerInstance countForward];
     }
 
     // Show/hide console
@@ -5378,6 +5378,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [[chooseDatabaseButton onMainThread] selectItemWithTitle:targetDatabaseName];
 
             selectedDatabase = [[NSString alloc] initWithString:targetDatabaseName];
+            selectedTableName = targetItemName ? [[NSString alloc] initWithString:targetItemName] : nil;
 
             [databaseDataInstance resetAllData];
 
