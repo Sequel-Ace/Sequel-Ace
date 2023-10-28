@@ -1117,7 +1117,7 @@
 "Duplicate View..." = "复制视图...";
 
 /* partial copy database support informative message */
-"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?";
+"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "复制数据库“%@”仅支持表，其它对象(例如：视图、过程、函数等)将不会被复制。\n\n是否继续？";
 
 /* edit filter */
 "Edit Filters…" = "编辑过滤器…";
@@ -1396,7 +1396,7 @@
 "Filter" = "过滤器";
 
 /* apply filter label */
-"Apply Filter(s)" = "Apply Filter(s)";
+"Apply Filter(s)" = "过滤(s)";
 
 /* filter tables menu item */
 "Filter Tables" = "过滤表";
@@ -3362,7 +3362,7 @@
 "Copy Table Name" = "复制表名";
 
 /* sequelace URL scheme error: LaunchFavorite alert title (favorite name not found) */
-"LaunchFavorite URL Scheme Error" = "启动收藏夹的 URL 链接出错了";
+"LaunchFavorite URL Scheme Error" = "打开收藏夹的 URL 格式错误";
 
 /* sequelace URL scheme error: LaunchFavorite alert description (favorite name not found) */
-"The variable in the ?name= query parameter could not be matched with any of your favorites." = "?name= 查询参数中的变量无法在您的收藏夹中找到";
+"The variable in the ?name= query parameter could not be matched with any of your favorites." = "收藏夹中未匹配到 ?name= 查询参数中的变量";
