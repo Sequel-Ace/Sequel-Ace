@@ -1117,7 +1117,7 @@
 "Duplicate View..." = "Ansicht duplizieren";
 
 /* partial copy database support informative message */
-"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?";
+"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "Das Duplizieren der Datenbank '%@' wird nur teilweise unterstützt, da sie andere Objekte als Tabellen enthält (z.B. Ansichten, Prozeduren, Funktionen, usw.), die nicht kopiert werden.\n\nMöchten Sie fortfahren?";
 
 /* edit filter */
 "Edit Filters…" = "Filter bearbeiten…";
@@ -1396,7 +1396,7 @@
 "Filter" = "Filtern";
 
 /* apply filter label */
-"Apply Filter(s)" = "Apply Filter(s)";
+"Apply Filter(s)" = "Filter anwenden";
 
 /* filter tables menu item */
 "Filter Tables" = "Tabellen filtern";
@@ -3366,4 +3366,4 @@ Befehle werden anwendungsweit ausgeführt";
 "LaunchFavorite URL Scheme Error" = "LaunchFavorite URL Scheme Error";
 
 /* sequelace URL scheme error: LaunchFavorite alert description (favorite name not found) */
-"The variable in the ?name= query parameter could not be matched with any of your favorites." = "The variable in the ?name= query parameter could not be matched with any of your favorites.";
+"The variable in the ?name= query parameter could not be matched with any of your favorites." = "Die Variable im Parameter ?name= stimmt mit keinem Ihrer Favoriten überein.";
