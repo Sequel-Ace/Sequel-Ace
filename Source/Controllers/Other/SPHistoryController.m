@@ -420,7 +420,6 @@ static BOOL canCurrentReplaceEntry(SPTableHistoryEntry *curr, SPTableHistoryEntr
 	}
 	// views are the same, but the filter settings have changed, also store the position details on the *previous* history item
 	else if (viewIsTheSame || (!curr.filter && new.filter) || ![curr.filter isEqualToDictionary: new.filter]) {
-		// TODO: Investigate further, don't fully understand why we add a new item to history but also modify the current entry.
 		curr.viewPort = new.viewPort;
 		if (new.selectedRows) {
 			curr.selectedRows = new.selectedRows;
@@ -485,7 +484,6 @@ static NSString* menuItemDescriptionFor(SPTableHistoryEntry *entry) {
 
 	[name appendFormat: @"/%@", entry.table];
 
-	// TODO: Enhance this, non nil doesn't mean items are actually filtered.
 	if (entry.filter) {
 		name = [NSMutableString stringWithFormat: NSLocalizedString(@"%@ (Filtered)", @"History item filtered by values label"), name];
 	}
