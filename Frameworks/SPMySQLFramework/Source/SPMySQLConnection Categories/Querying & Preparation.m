@@ -63,8 +63,18 @@
  */
 - (NSString *)escapeString:(NSString *)theString includingQuotes:(BOOL)includeQuotes
 {
+    NSString *logString;
+    if (includeQuotes) {
+        [delegate willQueryString:@"start escaping string" connection:self];
+    } else {
+        [delegate willQueryString:@"start escaping and quoting string" connection:self];
+    }
+
 	// Return nil strings untouched
 	if (!theString) return theString;
+
+    logString = [NSString stringWithFormat:@"escaping string with lengths %lu %lu %lu %lu and encoding %lu: '%@'", theString.length, theString.cStringLength, [theString lengthOfBytesUsingEncoding:NSUTF8StringEncoding], [theString lengthOfBytesUsingEncoding:stringEncoding], stringEncoding, theString];
+    [delegate willQueryString:logString connection:self];
 
 	// To correctly escape the string, an active connection is required, so verify.
 	if (state == SPMySQLDisconnected || state == SPMySQLConnecting) {
@@ -84,15 +94,24 @@
 	NSData *cData = [theString dataUsingEncoding:stringEncoding allowLossyConversion:YES];
 	NSUInteger cDataLength = [cData length];
 
+    [delegate willQueryString:[NSString stringWithFormat:@"data length: %lu", cDataLength] connection:self];
+    const unsigned char* cDataBytes = [cData bytes];
+    [delegate willQueryString:[NSString stringWithFormat:@"first cData char: %hhu", cDataBytes[0]] connection:self];
+
 	// Create a buffer for mysql_real_escape_string to place the converted string into;
 	// the max length is 2*length (if every character was quoted) + 2 (quotes/terminator).
 	// Adding quotes in this way makes the logic below *slightly* harder to follow but
 	// makes the addition of the quotes almost free, which is much nicer when building
 	// lots of strings.
-	char *escBuffer = (char *)malloc((cDataLength * 2) + 2);
+    NSUInteger mallocSize = (cDataLength * 2) + 2;
+	char *escBuffer = (char *)malloc(mallocSize);
+
+    [delegate willQueryString:[NSString stringWithFormat:@"malloc result for size %lu: %lu", mallocSize, escBuffer] connection:self];
 
 	// Use mysql_real_escape_string to perform the escape, starting one character in
 	NSUInteger escapedLength = mysql_real_escape_string(mySQLConnection, escBuffer+1, [cData bytes], cDataLength);
+
+    [delegate willQueryString:[NSString stringWithFormat:@"escapedLength: %lu", escapedLength] connection:self];
 
 	// Set up an NSData object to allow conversion back to NSString while preserving
 	// any nul characters contained in the string.
@@ -104,13 +123,20 @@
 		escBuffer[0] = '\'';
 		escBuffer[escapedLength+1] = '\'';
 
+        [delegate willQueryString:[NSString stringWithFormat:@"second escBuffer char: %hhd", escBuffer[1]] connection:self];
+
 		escapedData = [NSData dataWithBytesNoCopy:escBuffer length:escapedLength+2 freeWhenDone:NO];
 	} else {
 		escapedData = [NSData dataWithBytesNoCopy:escBuffer+1 length:escapedLength freeWhenDone:NO];
 	}
 
+    const unsigned char* escapedDataBytes = [escapedData bytes];
+    [delegate willQueryString:[NSString stringWithFormat:@"second escapedData char: %hhd", escapedDataBytes[1]] connection:self];
+
 	// Convert to the string to return
 	NSString *escapedString = [[NSString alloc] initWithData:escapedData encoding:stringEncoding];
+    logString = [NSString stringWithFormat:@"final escapedString with lengths %lu %lu %lu %lu: '%@'", escapedString.length, escapedString.cStringLength, [escapedString lengthOfBytesUsingEncoding:NSUTF8StringEncoding], [escapedString lengthOfBytesUsingEncoding:stringEncoding], escapedString];
+    [delegate willQueryString:logString connection:self];
 
 	// Free up any memory and return
 	free(escBuffer);
@@ -420,6 +446,11 @@
 	[theResult _setQueryExecutionTime:queryExecutionTime];
 
 	return theResult;
+}
+
+- (void)log:(NSString *)message
+{
+    [delegate willQueryString:message connection:self];
 }
 
 #pragma mark -

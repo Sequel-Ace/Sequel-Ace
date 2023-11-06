@@ -2563,14 +2563,18 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			} else {
 				NSString *desc = [rowObject description];
 				if ([desc isMatchedByRegex:SPCurrentTimestampPattern]) {
+                    [[SPQueryController sharedQueryController] showMessageInConsole:@"regex!?!" connection:@"debug" database:@"debug"];
 					fieldValue = desc;
 				} else if ([fieldTypeGroup isEqualToString:@"bit"]) {
+                    [[SPQueryController sharedQueryController] showMessageInConsole:@"bit!?!" connection:@"debug" database:@"debug"];
 					fieldValue = [NSString stringWithFormat:@"b'%@'", ((![desc length] || [desc isEqualToString:@"0"]) ? @"0" : desc)];
 				} else if ([fieldTypeGroup isEqualToString:@"date"] && [desc isEqualToString:@"NOW()"]) {
 					fieldValue = @"NOW()";
 				} else if ([fieldTypeGroup isEqualToString:@"string"] && [[rowObject description] isEqualToString:@"UUID()"]) {
 					fieldValue = @"UUID()";
 				} else {
+                    NSString *logString = [NSString stringWithFormat:@"before escaping string with lengths %lu %lu %lu: '%@'", desc.length, desc.cStringLength, [desc lengthOfBytesUsingEncoding:NSUTF8StringEncoding], desc];
+                    [[SPQueryController sharedQueryController] showMessageInConsole:logString connection:@"debug" database:@"debug"];
 					fieldValue = [mySQLConnection escapeAndQuoteString:desc];
 				}
 			}
