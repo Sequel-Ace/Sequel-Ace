@@ -27,7 +27,7 @@
 "%@ Copy" = "%@ Copier";
 
 /* text showing a single row a partially loaded result */
-"%@ row in partial load" = "%@ row in partial load";
+"%@ row in partial load" = "%@ ligne partiellement chargée";
 
 /* text showing a single row in the result */
 "%@ row in table" = "%@ ligne dans la table";
@@ -36,7 +36,7 @@
 "%@ row of %@%@ matches filter" = "%1$@ ligne sur %2$@%3$@ correspondant au filtre";
 
 /* text showing how many rows are in a partially loaded result */
-"%@ rows in partial load" = "%@ rows in partial load";
+"%@ rows in partial load" = "%@ lignes partiellement chargées";
 
 /* text showing how many rows are in the result */
 "%@ rows in table" = "%@ lignes dans la table";
@@ -54,52 +54,52 @@
 "%@; 1 row affected" = "%@; 1 ligne affectée";
 
 /* text showing one row has been affected by multiple queries */
-"%@; 1 row affected in total, by %ld queries taking %@" = "%1$@; 1 row affected in total, by %2$ld queries taking %3$@";
+"%@; 1 row affected in total, by %ld queries taking %@" = "%1$@; 1 ligne modifiée au total, par %2$ld requêtes prenant %3$@";
 
 /* text showing a query was cancelled */
-"%@; Cancelled after %@" = "%1$@; Cancelled after %2$@";
+"%@; Cancelled after %@" = "%1$@; Annulé après %2$@";
 
 /* text showing multiple queries were cancelled */
-"%@; Cancelled in query %ld, after %@" = "%1$@; Cancelled in query %2$ld, after %3$@";
+"%@; Cancelled in query %ld, after %@" = "%1$@; Annulé dans la requête %2$ld, après %3$@";
 
 /* Error display text, showing original MySQL error */
-"%@\n\nMySQL said: %@" = "%1$@\n\nMySQL said: %2$@";
+"%@\n\nMySQL said: %@" = "%1$@\n\nnMySQL dit : %2$@";
 
 /* favorite singular label (%d == 1) */
-"%lu favorite" = "%lu favorite";
+"%lu favorite" = "%lu favori";
 
 /* favorites plural label (%d != 1) */
-"%lu favorites" = "%lu favorites";
+"%lu favorites" = "%lu favoris";
 
 /* favorite group singular label (%d == 1) */
-"%lu group" = "%lu group";
+"%lu group" = "%lu groupe";
 
 /* favorite groups plural label (%d != 1) */
-"%lu groups" = "%lu groups";
+"%lu groups" = "%lu groupes";
 
 /* Table Content : Remove Row : Result : Too Many : Part 1 : n+y (y!=1) rows instead of n selected were deleted. */
-"%ld additional rows were removed!" = "%ld additional rows were removed!";
+"%ld additional rows were removed!" = "%ld lignes supplémentaires ont été supprimées !";
 
 /* Label showing the index of the selected CSV row */
-"%ld of %lu record(s)" = "%1$ld of %2$lu record(s)";
+"%ld of %lu record(s)" = "%1$ld de %2$lu enregistrement(s)";
 
 /* Label showing the index of the selected CSV row (csv partially loaded) */
-"%ld of first %lu record(s)" = "%1$ld of first %2$lu record(s)";
+"%ld of first %lu record(s)" = "%1$ld de(s) premier(s) %2$lu enregistrement(s)";
 
 /* Table Content : Remove Row : Result : Too Few : Part 1 : n-x (x!=1) of n selected rows were deleted. */
-"%ld rows were not removed." = "%ld rows were not removed.";
+"%ld rows were not removed." = "%ld lignes n'ont pas été supprimées.";
 
 /* Export file already exists message */
-"%lu files already exist. Do you want to replace them?" = "%lu files already exist. Do you want to replace them?";
+"%lu files already exist. Do you want to replace them?" = "%lu fichiers existent déjà. Voulez-vous les remplacer ?";
 
 /* Export files creation error title */
-"%lu files could not be created" = "%lu files could not be created";
+"%lu files could not be created" = "%lu fichiers n'ont pas pu être créés";
 
 /* Some export files already exist explanatory text */
-"%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents.";
+"%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "%lu fichiers portant le même nom existent déjà dans le dossier cible. Les remplacer écrasera leur contenu actuel.";
 
 /* filtered item count */
-"%lu of %lu" = "%1$lu of %2$lu";
+"%lu of %lu" = "%1$lu de %2$lu";
 
 /* Export folder not writable for some files explanatory text */
 "%lu of the export files could not be created because their target export folder is not writable; please select a new export location and try again." = "%lu of the export files could not be created because their target export folder is not writable; please select a new export location and try again.";
@@ -108,37 +108,37 @@
 "%lu of the export files could not be created because their target export folder no longer exists; please select a new export location and try again." = "%lu of the export files could not be created because their target export folder no longer exists; please select a new export location and try again.";
 
 /* History item title with nothing selected */
-"(no selection)" = "(no selection)";
+"(no selection)" = "(aucune sélection)";
 
 /* value shown for hidden blob and text fields */
-"(not loaded)" = "(not loaded)";
+"(not loaded)" = "(non chargé)";
 
 /* Explanation for MySQL server has gone away error */
-"(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)" = "(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)";
+"(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)" = "(Cela indique généralement que la connexion a été fermée par le serveur après une inactivité, mais cela peut également se produire en raison d'autres conditions. La connexion a été restaurée ; veuillez réessayer si la requête peut être réexécutée en toute sécurité.)";
 
 /* Custom Query : text appended to the “x row(s) affected” messages. $1 is a time interval */
-", first row available after %1$@" = ", first row available after %1$@";
+", first row available after %1$@" = ", première ligne disponible après %1$@";
 
 /* Custom Query : text appended to the “x row(s) affected” messages (for update/delete queries). $1 is a time interval */
-", taking %1$@" = ", taking %1$@";
+", taking %1$@" = ", prend %1$@";
 
 /* warning shown in the console when no rows have been affected after writing to the db */
-"/* WARNING: No rows have been affected */\n" = "/* WARNING: No rows have been affected */\n";
+"/* WARNING: No rows have been affected */\n" = "/* ATTENTION : aucune ligne n'a été affectée */\n";
 
 /* error text when multiple custom query failed */
-"[ERROR in query %ld] %@\n" = "[ERROR in query %1$ld] %2$@\n";
+"[ERROR in query %ld] %@\n" = "[EURREUR dans la requête %1$ld] %2$@\n";
 
 /* error text when reading of csv file gave errors */
-"[ERROR in row %ld] %@\n" = "[ERROR in row %1$ld] %2$@\n";
+"[ERROR in row %ld] %@\n" = "[ERREUR sur la ligne %1$ld] %2$@\n";
 
 /* [multiple selection] */
-"[multiple selection]" = "[multiple selection]";
+"[multiple selection]" = "[sélection multiple]";
 
 /* displayed when new content filter has empty Name field (ContentFilterManager) */
-"[name required]" = "[name required]";
+"[name required]" = "[Nom obligatoire]";
 
 /* [no selection] */
-"[no selection]" = "[no selection]";
+"[no selection]" = "[aucune sélection]";
 
 /* Additional export file errors */
 "\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)" = "\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)";
@@ -191,16 +191,16 @@
 
 /* table structure : indexes : delete index : error 1553 : title
  table structure : indexes : delete index : error 1553, no FK found : title */
-"A foreign key needs this index" = "A foreign key needs this index";
+"A foreign key needs this index" = "Une clé étrangère a besoin de cet index";
 
 /* description of set */
 "A SET can define up to 64 members (as strings) of which a field can use one or more using a comma-separated list. Upon insertion the order of members is automatically normalized and duplicate members will be eliminated. Assignment of numbers is supported using the same semantics as for BIT types." = "A SET can define up to 64 members (as strings) of which a field can use one or more using a comma-separated list. Upon insertion the order of members is automatically normalized and duplicate members will be eliminated. Assignment of numbers is supported using the same semantics as for BIT types.";
 
 /* SSH key not found message */
-"A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again." = "A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again.";
+"A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again." = "Un emplacement de clé SSH a été spécifié, mais aucun fichier n'a été trouvé dans l'emplacement spécifié. Veuillez re-sélectionner la clé et réessayer.";
 
 /* SSL CA certificate file not found message */
-"A SSL Certificate Authority certificate location was specified, but no file was found in the specified location.  Please re-select the Certificate Authority certificate and try again." = "A SSL Certificate Authority certificate location was specified, but no file was found in the specified location.  Please re-select the Certificate Authority certificate and try again.";
+"A SSL Certificate Authority certificate location was specified, but no file was found in the specified location.  Please re-select the Certificate Authority certificate and try again." = "Un certificat d'autorité de certification SSL a été spécifié, mais aucun fichier n'a été trouvé à l'emplacement spécifié. Veuillez sélectionner à nouveau le certificat de l'autorité de certification et réessayer.";
 
 /* SSL certificate file not found message */
 "A SSL certificate location was specified, but no file was found in the specified location.  Please re-select the certificate and try again." = "A SSL certificate location was specified, but no file was found in the specified location.  Please re-select the certificate and try again.";
@@ -209,16 +209,16 @@
 "A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again." = "A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again.";
 
 /* duplicate host informative message */
-"A user with the host '%@' already exists" = "A user with the host '%@' already exists";
+"A user with the host '%@' already exists" = "Un utilisateur avec l'hôte '%@' existe déjà";
 
 /* duplicate user informative message */
-"A user with the name '%@' already exists" = "A user with the name '%@' already exists";
+"A user with the name '%@' already exists" = "Un utilisateur avec le nom '%@' existe déjà";
 
 /* table content : editing : error message description when parsing as hex string failed */
 "A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too." = "A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too.";
 
 /* connection failed due to access denied title */
-"Access denied!" = "Access denied!";
+"Access denied!" = "Accès refusé !";
 
 /* range of double */
 "Accurate to approx. 15 decimal places" = "Accurate to approx. 15 decimal places";
@@ -230,10 +230,10 @@
 "Active connection window is busy. Please wait and try again." = "Active connection window is busy. Please wait and try again.";
 
 /* header for activities pane */
-"ACTIVITIES" = "ACTIVITIES";
+"ACTIVITIES" = "ACTIVITÉS";
 
 /* Add trigger button label */
-"Add" = "Add";
+"Add" = "Ajouter";
 
 /* menu item to add db */
 "Add Database..." = "Ajouter une base de données...";
@@ -248,19 +248,19 @@
 "Adding index..." = "Ajout de l'index...";
 
 /* Advanced options short title */
-"Advanced" = "Advanced";
+"Advanced" = "Avancé";
 
 /* notifications preference pane name */
-"Alerts & Logs" = "Alerts & Logs";
+"Alerts & Logs" = "Alertes et Logs";
 
 /* notifications preference pane tooltip */
-"Alerts & Logs Preferences" = "Alerts & Logs Preferences";
+"Alerts & Logs Preferences" = "Préférences alertes et logs";
 
 /* All databases placeholder */
 "All Databases" = "Toutes les bases de données";
 
 /* All databases (%) placeholder */
-"All Databases (%)" = "All Databases (%)";
+"All Databases (%)" = "Toutes les bases de données (%)";
 
 /* All export files already exist message */
 "All the export files already exist. Do you want to replace them?" = "All the export files already exist. Do you want to replace them?";

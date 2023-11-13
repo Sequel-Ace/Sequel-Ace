@@ -31,6 +31,7 @@
 @class SPDatabaseDocument;
 @class SPTableContent;
 @class SPTablesList;
+@class SPTableHistoryManager, SPTableHistoryEntry;
 
 @interface SPHistoryController : NSObject 
 {
@@ -39,41 +40,28 @@
 
 	SPTableContent *tableContentInstance;
 	SPTablesList *tablesListInstance;
-	NSMutableArray *history;
 	NSMutableDictionary *tableContentStates;
-	NSUInteger historyPosition;
+	SPTableHistoryManager *historyManager;
 	BOOL modifyingState;
 	BOOL navigatingFK;
 	BOOL toolbarItemVisible;
 }
 
-@property (readonly) NSUInteger historyPosition;
-@property (readonly) NSMutableArray *history;
 @property (readwrite, assign) BOOL modifyingState;
 @property (readwrite, assign) BOOL navigatingFK;
 
 // Interface interaction
-- (void) updateToolbarItem;
+- (NSUInteger)countPrevious;
+- (NSUInteger)countForward;
 - (void)goBackInHistory;
 - (void)goForwardInHistory;
-- (IBAction) historyControlClicked:(NSSegmentedControl *)theControl;
-- (void) setupInterface;
-- (void) startDocumentTask:(NSNotification *)aNotification;
-- (void) endDocumentTask:(NSNotification *)aNotification;
+- (IBAction)historyControlClicked:(NSSegmentedControl *)theControl;
+- (void)setupInterface;
 
 // Adding or updating history entries
-- (void) updateHistoryEntries;
-
-// Loading history entries
-- (void) loadEntryAtPosition:(NSUInteger)position;
-- (void) loadEntryTaskWithPosition:(NSNumber *)positionNumber;
-- (void) loadEntryFromMenuItem:(id)theMenuItem;
+- (void)updateHistoryEntries;
 
 // Restoring view states
-- (void) restoreViewStates;
-
-// History entry details and description
-- (NSMenuItem *) menuEntryForHistoryEntryAtIndex:(NSInteger)theIndex;
-- (NSString *) nameForHistoryEntryDetails:(NSDictionary *)theEntry;
+- (void)restoreViewStates;
 
 @end

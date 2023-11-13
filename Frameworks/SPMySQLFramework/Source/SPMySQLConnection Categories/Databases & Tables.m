@@ -208,6 +208,7 @@
 	// Perform the query and record state
 	SPMySQLResult *tableResult = [self queryString:tableQuery];
 	[tableResult setDefaultRowReturnType:SPMySQLResultRowAsArray];
+    [tableResult setReturnDataAsStrings:YES];
 
 	// Retrieve the result into an array if the query was successful
 	if (![self queryErrored]) {

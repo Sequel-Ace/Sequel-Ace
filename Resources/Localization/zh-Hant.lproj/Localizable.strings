@@ -150,7 +150,7 @@
 "A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit." = "位元欄位類型，其中 M 指定位元數。如果輸入值位元數小於 M，則對齊到最後一位元。若要單獨命名每一位元組請參考 SET。";
 
 /* Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog message */
-"A Bundle ‘%@’ is already installed. Do you want to update it?" = "已安裝包「%@」。是否更新？";
+"A Bundle ‘%@’ is already installed. Do you want to update it?" = "已安裝擴充包「%@」。是否更新？";
 
 /* description of binary */
 "A byte array with fixed length. Shorter values will always be padded to the right with 0x00 until they fit M." = "固定長度的位元組陣列，位數不足的值將會向右填充 0x00 直到長度達到 M。";
@@ -209,7 +209,7 @@
 "A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again." = "指定的 SSL 金鑰位置找不到金鑰檔案，請重新選擇。";
 
 /* duplicate host informative message */
-"A user with the host '%@' already exists" = "已存在主機為'%@'的用戶";
+"A user with the host '%@' already exists" = "已存在主機為「%@」的使用者";
 
 /* duplicate user informative message */
 "A user with the name '%@' already exists" = "使用者「%@」已存在";
@@ -1117,7 +1117,7 @@
 "Duplicate View..." = "複製檢視表…";
 
 /* partial copy database support informative message */
-"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?";
+"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "只支援複製資料庫「%@」的一部分，因為其中包含了資料表以外的其他內容（例如檢視表、預存程式、函數等），這些內容將不會被複製。\n\n 確定要繼續嗎？";
 
 /* edit filter */
 "Edit Filters…" = "編輯篩選…";
@@ -1396,7 +1396,7 @@
 "Filter" = "篩選";
 
 /* apply filter label */
-"Apply Filter(s)" = "Apply Filter(s)";
+"Apply Filter(s)" = "套用篩選";
 
 /* filter tables menu item */
 "Filter Tables" = "篩選資料表";
@@ -1976,7 +1976,7 @@
 "Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "請輸入 SSH Tunnel 的域名或關閉 SSH Tunnel。";
 
 /* Please enter the password */
-"Please enter the password for ‘%@’:" = "請輸入‘%@’的密碼：";
+"Please enter the password for ‘%@’:" = "請輸入「%@」的密碼：";
 
 /* print button */
 "Print" = "列印";

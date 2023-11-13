@@ -84,21 +84,38 @@
 	NSData *cData = [theString dataUsingEncoding:stringEncoding allowLossyConversion:YES];
 	NSUInteger cDataLength = [cData length];
 
-	// Create a buffer for mysql_real_escape_string to place the converted string into;
-	// the max length is 2*length (if every character was quoted) + 2 (quotes/terminator).
+	// Create a buffer for mysql_real_escape_string to place the converted string into.
+	// MySQL requires 2*length (if every character was quoted) + 1 (null terminator) bytes.
+	// We add one more byte for the leading quote we're adding, and replace the null
+	// terminator with the trailing quote.
 	// Adding quotes in this way makes the logic below *slightly* harder to follow but
 	// makes the addition of the quotes almost free, which is much nicer when building
 	// lots of strings.
-	char *escBuffer = (char *)malloc((cDataLength * 2) + 2);
+	NSUInteger mallocSize = (cDataLength * 2) + 2;
+	char *escBuffer = (char *)malloc(mallocSize);
 
 	// Use mysql_real_escape_string to perform the escape, starting one character in
 	NSUInteger escapedLength = mysql_real_escape_string(mySQLConnection, escBuffer+1, [cData bytes], cDataLength);
+
+	// Deal with mysql_real_escape_string errors, such as NO_BACKSLASH_ESCAPES SQL mode being enabled
+	// https://dev.mysql.com/doc/c-api/8.0/en/mysql-real-escape-string.html
+	if (escapedLength == (unsigned long)-1) {
+		NSUInteger theErrorID = mysql_errno(mySQLConnection);
+		if (theErrorID == CR_INSECURE_API_ERR) {
+			escapedLength = mysql_real_escape_string_quote(mySQLConnection, escBuffer+1, [cData bytes], cDataLength, '\'');
+		} else {
+			NSString *theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
+			SPLog(@"[escapeString:includingQuotes]: Unhandled error code %lu returned by mysql_real_escape_string: %@", theErrorID, theErrorMessage);
+			NSAssert(0 != 0, @"Unhandled error code returned by mysql_real_escape_string");
+			free(escBuffer);
+			return nil;
+		}
+	}
 
 	// Set up an NSData object to allow conversion back to NSString while preserving
 	// any nul characters contained in the string.
 	NSData *escapedData;
 	if (includeQuotes) {
-
 #warning This code assumes that the encoding cData is in is still ASCII-compatible which may not be the case (e.g. for UTF16, EBCDIC)
 		// Add quotes if requested
 		escBuffer[0] = '\'';
