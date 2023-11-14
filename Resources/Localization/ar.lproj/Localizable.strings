@@ -1,57 +1,57 @@
 /* Table Content : Remove Row : Result : Too Few : Part 3 : Row not deleted when using primary key for DELETE statement. */
-" Check the Console for possible errors inside the primary key(s) of this table!" = " Check the Console for possible errors inside the primary key(s) of this table!";
+" Check the Console for possible errors inside the primary key(s) of this table!" = " تحقق من وحدة التحكم لاحتمال حدوث أخطاء داخل المفتاح الأساسي لهذا الجدول!";
 
 /* Table Content : Remove Row : Result : Too Many : Part 2 : Generic text */
-" Please check the Console and inform the Sequel Ace team!" = " Please check the Console and inform the Sequel Ace team!";
+" Please check the Console and inform the Sequel Ace team!" = " الرجاء التحقق من وحدة التحكم وإبلاغ فريق Ace team!";
 
 /* Table Content : Remove Row : Result : Too Few : Part 2 : Generic help message */
-" Reload the table to be sure that the contents have not changed in the meantime." = " Reload the table to be sure that the contents have not changed in the meantime.";
+" Reload the table to be sure that the contents have not changed in the meantime." = " قم بإعادة تحميل الجدول للتأكد من أن المحتويات لم تتغير.";
 
 /* Table Content : Remove Row : Result : Too Few : Part 3 : no primary key in table generic message */
-" You should also add a primary key to this table!" = " You should also add a primary key to this table!";
+" You should also add a primary key to this table!" = " يجب عليك أيضًا إضافة مفتاح أساسي إلى هذا الجدول!";
 
 /* Query snippet shell command syntax and placeholder */
 "$(shell_command)" = "$(shell_command)";
 
 /* text showing how many rows are selected */
-"%@ %@ selected" = "%1$@ %2$@ selected";
+"%@ %@ selected" = "تم تحديد %1$@ %2$@";
 
 /* History item filtered by values label */
-"%@ (Filtered by %@)" = "%1$@ (Filtered by %2$@)";
+"%@ (Filtered by %@)" = "%1$@ (تصفية بواسطة %2$@)";
 
 /* History item with page number label */
-"%@ (Page %lu)" = "%1$@ (Page %2$lu)";
+"%@ (Page %lu)" = "%1$@ (الصفحة %2$lu)";
 
 /* Content Filter Manager : Initial name of copied filter
  Initial favourite name after duplicating a previous favourite */
-"%@ Copy" = "%@ Copy";
+"%@ Copy" = "نسخ %@";
 
 /* text showing a single row a partially loaded result */
-"%@ row in partial load" = "%@ row in partial load";
+"%@ row in partial load" = "%@ سطر في تحميل جزئي";
 
 /* text showing a single row in the result */
-"%@ row in table" = "%@ row in table";
+"%@ row in table" = "%@ سطر في الجدول";
 
 /* text showing how a single rows matched filter */
-"%@ row of %@%@ matches filter" = "%1$@ row of %2$@%3$@ matches filter";
+"%@ row of %@%@ matches filter" = "%1$@ سطر من %2$@%3$@ تطابق عامل التصفية";
 
 /* text showing how many rows are in a partially loaded result */
-"%@ rows in partial load" = "%@ rows in partial load";
+"%@ rows in partial load" = "%@ سطر في تحميل جزئي";
 
 /* text showing how many rows are in the result */
-"%@ rows in table" = "%@ rows in table";
+"%@ rows in table" = "%@ سطر في الجدول";
 
 /* text showing how many rows matched filter */
-"%@ rows of %@%@ match filter" = "%1$@ rows of %2$@%3$@ match filter";
+"%@ rows of %@%@ match filter" = "%1$@ سطر من %2$@%3$@ تطابق عامل التصفية";
 
 /* text showing how many rows have been affected by a single query */
-"%@; %ld rows affected" = "%1$@; %2$ld rows affected";
+"%@; %ld rows affected" = "%1$@; %2$ld سطر تأثر";
 
 /* text showing how many rows have been affected by multiple queries */
-"%@; %ld rows affected in total, by %ld queries taking %@" = "%1$@; %2$ld rows affected in total, by %3$ld queries taking %4$@";
+"%@; %ld rows affected in total, by %ld queries taking %@" = "%1$@; %2$ld سطر متأثر إجمالاً، بواسطة %3$ld تم التنفيذ خلال %4$@";
 
 /* text showing one row has been affected by a single query */
-"%@; 1 row affected" = "%@; 1 row affected";
+"%@; 1 row affected" = "%@; سطر تأثر";
 
 /* text showing one row has been affected by multiple queries */
 "%@; 1 row affected in total, by %ld queries taking %@" = "%1$@; 1 row affected in total, by %2$ld queries taking %3$@";
