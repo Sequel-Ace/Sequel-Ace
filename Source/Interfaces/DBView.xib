@@ -1523,7 +1523,7 @@ Gw
                                                                                                             <menuItem title="Save Query to Favorites" tag="100000" toolTip="Save current query, selection, or - if no selection or current query could be found - the entire content to Favorite." id="7265">
                                                                                                                 <modifierMask key="keyEquivalentModifierMask" option="YES"/>
                                                                                                             </menuItem>
-                                                                                                            <menuItem title="Save All to Favorites" tag="100001" alternate="YES" toolTip="Save editor content to Favorite. Press ⌥ to restrict for current query or selection." id="7269">
+                                                                                                            <menuItem title="Save All to Favorites" tag="100001" toolTip="Save editor content to Favorite. Press ⌥ to restrict for current query or selection." id="7269">
                                                                                                                 <modifierMask key="keyEquivalentModifierMask"/>
                                                                                                             </menuItem>
                                                                                                             <menuItem title="Edit Favorites..." id="7266"/>
