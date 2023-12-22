@@ -242,7 +242,7 @@
 "Add Host" = "Host Ekle";
 
 /* add global value or expression menu item */
-"Add Value or Expression…" = "Add Value or Expression…";
+"Add Value or Expression…" = "Global Değer veya İfade Ekle…";
 
 /* adding index task status message */
 "Adding index..." = "Index ekleniyor...";
@@ -263,7 +263,7 @@
 "All Databases (%)" = "Tüm Veritabanları (%)";
 
 /* All export files already exist message */
-"All the export files already exist. Do you want to replace them?" = "All the export files already exist. Do you want to replace them?";
+"All the export files already exist. Do you want to replace them?" = "Tüm dosyalar zaten mevcut. Onları değiştirmek ister misin?";
 
 /* An error for sequelace URL scheme command occurred. Probably no corresponding connection window found. */
 "An error for sequelace URL scheme command occurred. Probably no corresponding connection window found." = "An error for sequelace URL scheme command occurred. Probably no corresponding connection window found.";
@@ -1749,70 +1749,70 @@
 "Month" = "Month";
 
 /* multiple selection */
-"multiple selection" = "multiple selection";
+"multiple selection" = "çoklu seçim";
 
 /* MySQL connecting very short status message */
-"MySQL connecting..." = "MySQL connecting...";
+"MySQL connecting..." = "MySQL bağlanıyor...";
 
 /* mysql error message */
-"MySQL Error" = "MySQL Error";
+"MySQL Error" = "MySQL Hatası";
 
 /* mysql help */
-"MySQL Help" = "MySQL Help";
+"MySQL Help" = "MySQL Yardım";
 
 /* MySQL Help for Selection */
-"MySQL Help for Selection" = "MySQL Help for Selection";
+"MySQL Help for Selection" = "Seçim için MySQL Yardımı";
 
 /* MySQL Help for Word */
-"MySQL Help for Word" = "MySQL Help for Word";
+"MySQL Help for Word" = "Kelime için MySQL Yardımı";
 
 /* mysql help categories */
-"MySQL Help – Categories" = "MySQL Help – Categories";
+"MySQL Help – Categories" = "MySQL Yardımı – Kategoriler";
 
 /* mysql said message */
-"MySQL said:" = "MySQL said:";
+"MySQL said:" = "MySQL şöyle dedi:";
 
 /* shutdown server : error dialog : message */
-"MySQL said:\n%@" = "MySQL said:\n%@";
+"MySQL said:\n%@" = "MySQL şöyle dedi:\n%@";
 
 /* message of panel when error while adding row to db */
-"MySQL said:\n\n%@" = "MySQL said:\n\n%@";
+"MySQL said:\n\n%@" = "MySQL şöyle dedi:\n\n%@";
 
 /* Preferences : Themes : Initial filename for 'Export' */
-"MyTheme" = "MyTheme";
+"MyTheme" = "Tema";
 
 /* network preference pane name */
-"Network" = "Network";
+"Network" = "Ağ";
 
 /* network preference pane tooltip */
-"Network Preferences" = "Network Preferences";
+"Network Preferences" = "Ağ Tercihleri";
 
 /* file preference pane name */
-"Files" = "Files";
+"Files" = "Dosya";
 
 /* file preference pane tooltip */
-"File Preferences" = "File Preferences";
+"File Preferences" = "Dosya Tercihleri";
 
 /* Bundle Editor : Default name for new bundle in the list on the left */
-"New Bundle" = "New Bundle";
+"New Bundle" = "Yeni Paket";
 
 /* new column name placeholder string */
-"New Column Name" = "New Column Name";
+"New Column Name" = "Yeni kolon adı";
 
 /* new favorite name */
-"New Favorite" = "New Favorite";
+"New Favorite" = "Yeni Favori";
 
 /* Content Filter Manager : Initial name for new filter */
-"New Filter" = "New Filter";
+"New Filter" = "Yeni Filtre";
 
 /* new folder placeholder name */
-"New Folder" = "New Folder";
+"New Folder" = "Yeni Klasör";
 
 /* Bundle Editor : Default name for a new bundle in the menu */
-"New Name" = "New Name";
+"New Name" = "Yeni İsim";
 
 /* new table menu item */
-"New Table" = "New Table";
+"New Table" = "Yeni Tablo";
 
 /* error that no color theme found */
 "No color theme data found." = "No color theme data found.";
