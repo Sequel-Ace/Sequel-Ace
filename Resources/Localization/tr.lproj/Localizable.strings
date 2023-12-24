@@ -39,7 +39,7 @@
 "%@ rows in partial load" = "Kısmi yüklenen %@ sıra";
 
 /* text showing how many rows are in the result */
-"%@ rows in table" = "Tabloda %@ sıra var";
+"%@ rows in table" = "Tabloda %@ satır var";
 
 /* text showing how many rows matched filter */
 "%@ rows of %@%@ match filter" = "%2$@%3$@ sıradan %1$@ sıra filtreye uyuyor";
