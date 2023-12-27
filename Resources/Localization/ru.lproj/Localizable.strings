@@ -1396,7 +1396,7 @@
 "Filter" = "Отфильтровать";
 
 /* apply filter label */
-"Apply Filter(s)" = "Apply Filter(s)";
+"Apply Filter(s)" = "Применить фильтр(ы)";
 
 /* filter tables menu item */
 "Filter Tables" = "Фильтр таблиц";
