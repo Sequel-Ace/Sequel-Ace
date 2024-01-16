@@ -1117,7 +1117,7 @@
 "Duplicate View..." = "ビューを複製...";
 
 /* partial copy database support informative message */
-"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?";
+"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "データベース '%@' を複製することは、テーブル以外のオブジェクトが含まれているため、部分的にのみサポートされています ビュー、プロシージャー、関数など)、コピーされません。Aformat@@0\n\n続行しますか？";
 
 /* edit filter */
 "Edit Filters…" = "フィルターを編集…";
@@ -1397,7 +1397,7 @@
 "Filter" = "フィルタ";
 
 /* apply filter label */
-"Apply Filter(s)" = "Apply Filter(s)";
+"Apply Filter(s)" = "フィルターを適用";
 
 /* filter tables menu item */
 "Filter Tables" = "テーブルのフィルタリング";
@@ -3366,4 +3366,4 @@
 "LaunchFavorite URL Scheme Error" = "LaunchFavorite URL Scheme Error";
 
 /* sequelace URL scheme error: LaunchFavorite alert description (favorite name not found) */
-"The variable in the ?name= query parameter could not be matched with any of your favorites." = "The variable in the ?name= query parameter could not be matched with any of your favorites.";
+"The variable in the ?name= query parameter could not be matched with any of your favorites." = "?name= クエリパラメータの変数は、お気に入りのどれとも一致しませんでした。";
