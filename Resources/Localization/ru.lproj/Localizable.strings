@@ -171,14 +171,14 @@
 "A character string that can store up to M bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding and the values of other fields in the row." = "Символьная строка, которая может хранить до M байт, но занимает меньше места для более коротких значений. Фактическое количество символов также ограничено используемой кодировкой и значениями других полей в строке таблицы.";
 
 /* description of text */
-"A character string that can store up to M bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "A character string that can store up to M bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length.";
+"A character string that can store up to M bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "Символьная строка, которая может хранить до M байт, но требует меньше места для более коротких значений. Фактическое количество символов ограничено используемой кодировкой. В отличие от VARCHAR этот тип не засчитывается в максимальную длину строки.";
 
 /* description of char */
-"A character string that will require M×w bytes per row, independent of the actual content length. w is the maximum number of bytes a single character can occupy in the given encoding." = "A character string that will require M×w bytes per row, independent of the actual content length. w is the maximum number of bytes a single character can occupy in the given encoding.";
+"A character string that will require M×w bytes per row, independent of the actual content length. w is the maximum number of bytes a single character can occupy in the given encoding." = "Символьная строка, которая потребует M×w байт в одной строке, независимо от фактической длины содержимого. w - максимальное количество байт, которое может занять один символ в данной кодировке.";
 
 /* description of longtext
  description of mediumtext */
-"A character string with variable length. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "A character string with variable length. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length.";
+"A character string with variable length. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "Символьная строка с длиной переменной. Фактическое количество символов дополнительно ограничено используемой кодировкой. В отличие от VARCHAR этот тип не засчитывается в максимальную длину строки.";
 
 /* description of json */
 "A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8." = "Тип данных, который проверяет JSON данные при INSERT-е и хранит их в двоичном формате, что одновременно компактнее и способно обеспечить более быстрый доступ по сравнению с текстовым JSON-ном.\nДоступно в MySQL 5.7.8.";
@@ -187,7 +187,7 @@
 "A file with the same name already exists in the target folder. Replacing it will overwrite its current contents." = "Файл с таким именем уже существует в целевой папке. Замена файла перезапишет его содержимое.";
 
 /* description of decimal */
-"A fixed-point, exact decimal value. M is the maxium number of digits, of which D may be after the decimal point. When rounding, 0-4 is always rounded down, 5-9 up (“round towards nearest”)." = "A fixed-point, exact decimal value. M is the maxium number of digits, of which D may be after the decimal point. When rounding, 0-4 is always rounded down, 5-9 up (“round towards nearest”).";
+"A fixed-point, exact decimal value. M is the maxium number of digits, of which D may be after the decimal point. When rounding, 0-4 is always rounded down, 5-9 up (“round towards nearest”)." = "Фиксированная точка, точное десятичное значение. M - это максимальное количество цифр, из которых D может быть после десятичной точки. При округлении 0-4 всегда округляется вниз, 5-9 вверх («круглый в сторону ближайшего»).";
 
 /* table structure : indexes : delete index : error 1553 : title
  table structure : indexes : delete index : error 1553, no FK found : title */
@@ -266,7 +266,7 @@
 "All the export files already exist. Do you want to replace them?" = "Все экспортируемые файлы уже существуют. Вы хотите заменить их?";
 
 /* An error for sequelace URL scheme command occurred. Probably no corresponding connection window found. */
-"An error for sequelace URL scheme command occurred. Probably no corresponding connection window found." = "An error for sequelace URL scheme command occurred. Probably no corresponding connection window found.";
+"An error for sequelace URL scheme command occurred. Probably no corresponding connection window found." = "Произошла ошибка для команды URL схемы, возможно не найдено соответствующего окна соединения.";
 
 /* no connection available informatie message */
 "An error has occurred and there doesn't seem to be a connection available." = "Произошла ошибка и похоже, что соединение недоступно.";
@@ -341,13 +341,13 @@
 "An error occurred retrieving table information.  MySQL said: %@" = "При получении информации о таблице произошла ошибка. MySQL сообщил: %@";
 
 /* SQL encoding read error */
-"An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed." = "An error occurred when reading the file, as it could not be read in the encoding you selected (%1$@).\n\nOnly %2$ld queries were executed.";
+"An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed." = "Произошла ошибка при чтении файла, так как он не может быть прочитан в выбранной кодировке (%1$@).\n\nВыполнены только запросы %2$ld.";
 
 /* CSV encoding read error */
-"An error occurred when reading the file, as it could not be read using the encoding you selected (%@).\n\nOnly %ld rows were imported." = "An error occurred when reading the file, as it could not be read using the encoding you selected (%1$@).\n\nOnly %2$ld rows were imported.";
+"An error occurred when reading the file, as it could not be read using the encoding you selected (%@).\n\nOnly %ld rows were imported." = "Произошла ошибка при чтении файла, так как его невозможно прочитать с помощью выбранной кодировки (%1$@).\n\nТолько %2$ld строки были импортированы.";
 
 /* SQL read error, including detail from system */
-"An error occurred when reading the file.\n\nOnly %ld queries were executed.\n\n(%@)" = "An error occurred when reading the file.\n\nOnly %1$ld queries were executed.\n\n(%2$@)";
+"An error occurred when reading the file.\n\nOnly %ld queries were executed.\n\n(%@)" = "Произошла ошибка при чтении файла.\n\nвыполнены только %1$ld запросов.\n\n(%2$@)";
 
 /* CSV read error, including detail string from system */
 "An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)" = "Произошла ошибка при чтении файла.\n\nБыло импортировано строк: %1$ld.\n\n(%2$@)";
@@ -404,7 +404,7 @@
 "An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@" = "При попытке добавить новый столбец '%1$@' произошла ошибка.\n\n%2$@.\n\nMySQL сообщил: %3$@";
 
 /* error adding new table informative message */
-"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@" = "An error occurred while trying to add the new table '%1$@' by\n\n%2$@.\n\nMySQL said: %3$@";
+"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@" = "Произошла ошибка при попытке добавить новую таблицу '%1$@' от\n\n%2$@.\n\nMySQL сказал: %3$@";
 
 /* error adding new table informative message */
 "An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@" = "Произошла ошибка при попытке добавить новую таблицу '%1$@'.\n\nMySQL сообщил: %2$@";
@@ -440,13 +440,13 @@
 "Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Ограничения ресурсов не поддерживаются для вашей версии MySQL. Любые ограничения ресурсов, которые вы указали, были отклонены и не сохранились. MySQL сообщил: %@";
 
 /* Export files creation error explanatory text */
-"An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again.";
+"An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "Произошла необработанная ошибка при попытке создать %lu экспортируемых файлов. Проверьте детали и повторите попытку.";
 
 /* All export files creation error explanatory text */
-"An unhandled error occurred when attempting to create each of the export files.  Please check the details and try again." = "An unhandled error occurred when attempting to create each of the export files.  Please check the details and try again.";
+"An unhandled error occurred when attempting to create each of the export files.  Please check the details and try again." = "Произошла необработанная ошибка при попытке создать каждый из экспортируемых файлов. Проверьте детали и повторите попытку.";
 
 /* Export file creation error explanatory text */
-"An unhandled error occurred when attempting to create the export file.  Please check the details and try again." = "An unhandled error occurred when attempting to create the export file.  Please check the details and try again.";
+"An unhandled error occurred when attempting to create the export file.  Please check the details and try again." = "Произошла необработанная ошибка при попытке создать файл экспорта. Пожалуйста, проверьте детали и повторите попытку.";
 
 /* ANALYZE one or more tables - result title */
 "Analyze %@" = "Анализ %@";
@@ -461,7 +461,7 @@
 "Analyze table failed." = "Не получилось проанализировать таблицу.";
 
 /* change table type informative message */
-"Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone." = "Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone.";
+"Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone." = "Вы уверены, что хотите изменить тип этой таблицы на %@?\n\nИмейте в виду, что изменение типа таблицы может вызвать потерю некоторых или всех ее данных. Это действие нельзя отменить.";
 
 /* clear global history list informative message */
 "Are you sure you want to clear the global history list? This action cannot be undone." = "Вы уверены, что хотите очистить всю историю запросов? Это действие необратимо.";
@@ -521,16 +521,16 @@
 "Are you sure you want to move the selected Bundle to the Trash and remove them respectively?" = "Вы уверены, что хотите удалить выбранный пакет, переместив его в корзину?";
 
 /* continue to print informative message */
-"Are you sure you want to print the current content view of the table '%@'?\n\nIt currently contains %@ rows, which may take a significant amount of time to print." = "Are you sure you want to print the current content view of the table '%1$@'?\n\nIt currently contains %2$@ rows, which may take a significant amount of time to print.";
+"Are you sure you want to print the current content view of the table '%@'?\n\nIt currently contains %@ rows, which may take a significant amount of time to print." = "Вы уверены, что хотите распечатать текущее содержимое таблицы '%1$@'?\n\nНа данный момент содержит строки %2$@ , что может занять значительное время для печати.";
 
 /* remove all query favorites informative message */
 "Are you sure you want to remove all of your saved query favorites? This action cannot be undone." = "Вы уверены, что хотите удалить все ваши избранные запросы? Это действие необратимо.";
 
 /* remove all selected content filters informative message */
-"Are you sure you want to remove all selected content filters? This action cannot be undone." = "Are you sure you want to remove all selected content filters? This action cannot be undone.";
+"Are you sure you want to remove all selected content filters? This action cannot be undone." = "Вы уверены, что хотите удалить все выбранные фильтры контента? Это действие нельзя отменить.";
 
 /* remove all selected query favorites informative message */
-"Are you sure you want to remove all selected query favorites? This action cannot be undone." = "Are you sure you want to remove all selected query favorites? This action cannot be undone.";
+"Are you sure you want to remove all selected query favorites? This action cannot be undone." = "Вы уверены, что хотите удалить все избранные запросы? Это действие нельзя отменить.";
 
 /* Table Info Section : current value of auto_increment */
 "auto_increment: %@" = "auto_increment: %@";
@@ -578,7 +578,7 @@
 "bzip2 compression" = "bzip2 сжатие";
 
 /* description of geometry */
-"Can store a single spatial value of types POINT, LINESTRING or POLYGON. Spatial support in MySQL is based on the OpenGIS Geometry Model." = "Can store a single spatial value of types POINT, LINESTRING or POLYGON. Spatial support in MySQL is based on the OpenGIS Geometry Model.";
+"Can store a single spatial value of types POINT, LINESTRING or POLYGON. Spatial support in MySQL is based on the OpenGIS Geometry Model." = "Может хранить одноместное значение типов POINT, LINESTRING или POLYGON. Поддержка пространств в MySQL основана на OpenGIS Geometry Model.";
 
 /* Bundle Editor : Remove-Bundle: cancel button
  cancel
@@ -610,7 +610,7 @@
 "Change table type" = "Изменить тип таблицы";
 
 /* unsaved changes informative message */
-"Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue";
+"Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "Были внесены изменения, которые будут потеряны при закрытии этого окна. Вы уверены, что хотите продолжить";
 
 /* character set client: %@ */
 "character set client: %@" = "кодировка: %@";
@@ -854,7 +854,7 @@
 "Couldn't get create syntax.\nMySQL said: %@" = "Не удалось получить запрос создания.\nMySQL сообщил: %@";
 
 /* Custom Query result editing error - could not identify a corresponding column */
-"Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table." = "Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table.";
+"Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table." = "Не удалось однозначно определить источник полей. Столбец '%@' содержит данные из более чем одной таблицы.";
 
 /* message of panel when loading of row failed */
 "Couldn't load the row. Reload the table to be sure that the row exists and use a primary key for your table." = "Не удалось загрузить строку. Перезагрузите таблицу, чтобы убедиться, что она существует и используйте первичный ключ в вашей таблицы.";
@@ -888,7 +888,7 @@
 "created: %@" = "создана: %@";
 
 /* description of polygon */
-"Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\"." = "Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\".";
+"Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\"." = "Создает поверхность, объединив одно кольцо (т.е. Линейная строка, которая закрыта и простая) как внешняя граница, при которой \"дыры\" или \"нулевые или более внутренние рейсы\" действуют как \"дыры\".";
 
 /* Creating table task string */
 "Creating %@..." = "Создание %@...";
@@ -973,7 +973,7 @@
 "definer: %@" = "создатель: %@";
 
 /* description of enum */
-"Defines a list of members, of which every field can use at most one. Values are sorted by their index number (starting at 0 for the first member)." = "Defines a list of members, of which every field can use at most one. Values are sorted by their index number (starting at 0 for the first member).";
+"Defines a list of members, of which every field can use at most one. Values are sorted by their index number (starting at 0 for the first member)." = "Определяет список участников, из которых каждое поле может использовать не более одного. Значения сортируются по их индексу (начиная с 0 для первого пользователя).";
 
 /* delete button */
 "Delete" = "Удалить";
@@ -1153,7 +1153,7 @@
 "engine: %@" = "движок: %@";
 
 /* enter connection details label */
-"Enter connection details below, or choose a favorite" = "Enter connection details below, or choose a favorite";
+"Enter connection details below, or choose a favorite" = "Введите данные о подключении ниже, или выберите избранное";
 
 /* SSH key password prompt */
 "Enter your password for the SSH key\n\"%@\"" = "Введите ваш пароль для SSH ключа\n'%@";
@@ -1477,7 +1477,7 @@
 "Globally stored favorites" = "Общие избранные";
 
 /* Preferences : Notifications : status text : notification setup */
-"Notifications are delivered via the Notification Center." = "Notifications are delivered via the Notification Center.";
+"Notifications are delivered via the Notification Center." = "Уведомления доставляются через центр уведомлений.";
 
 /* Gzip compression export summary - within a sentence */
 "Gzip compression" = "Gzip сжатие";
@@ -1502,10 +1502,10 @@
 "Host" = "Хост";
 
 /* description of double */
-"IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results.";
+"IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "IEEE 754 двойная точность с плавающей точкой. M - это максимальное количество цифр, из которых D может быть после десятичной точки. Примечание: Многие десятичные числа могут быть приблизительны только значениями с плавающей точкой. Смотрите DECIMAL, если требуется точный результат.";
 
 /* description of float */
-"IEEE 754 single-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "IEEE 754 single-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results.";
+"IEEE 754 single-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "IEEE 754 одноточное значение с плавающей точкой. M - это максимальное количество цифр, из которых D может быть после десятичной точки. Примечание: Многие десятичные числа могут быть приблизительны только значениями с плавающей точкой. Смотрите DECIMAL, если требуется точный результат.";
 
 /* ignore button */
 "Ignore" = "Пропустить";
@@ -1585,7 +1585,7 @@
 "Input Field" = "Поле ввода";
 
 /* input field  doesn't support insertion of snippets. */
-"Input Field doesn't support insertion of snippets." = "Input Field doesn't support insertion of snippets.";
+"Input Field doesn't support insertion of snippets." = "Входное поле не поддерживает вставку сниппетов.";
 
 /* input field is not editable. */
 "Input Field is not editable." = "Поле ввода не редактируемо.";
@@ -1609,13 +1609,13 @@
 "Insufficient connection details" = "Недостаточно данных для подключения";
 
 /* insufficient details informative message */
-"Insufficient details provided to establish a connection. Please enter at least the hostname." = "Insufficient details provided to establish a connection. Please enter at least the hostname.";
+"Insufficient details provided to establish a connection. Please enter at least the hostname." = "Недостаточно данных для установки соединения. Пожалуйста, введите по крайней мере имя хоста.";
 
 /* insufficient SSH tunnel details informative message */
-"Insufficient details provided to establish a connection. Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "Insufficient details provided to establish a connection. Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel.";
+"Insufficient details provided to establish a connection. Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "Недостаточно данных для установки соединения. Пожалуйста, введите имя хоста для туннеля SSH или отключите туннель SSH.";
 
 /* insufficient details informative message */
-"Insufficient details provided to establish a connection. Please provide at least a host." = "Insufficient details provided to establish a connection. Please provide at least a host.";
+"Insufficient details provided to establish a connection. Please provide at least a host." = "Недостаточно подробных данных для установки соединения. Пожалуйста, предоставьте хост.";
 
 /* Interpret data as: */
 "Interpret data as:" = "Данные интерпретированы как:";
@@ -1716,13 +1716,13 @@
 "M: 1 (default) to 64" = "М: от 1 (по умолчанию) до 64";
 
 /* connection view : ssl : key file picker : wrong format error description */
-"Make sure the file contains a RSA private key and is using PEM encoding." = "Make sure the file contains a RSA private key and is using PEM encoding.";
+"Make sure the file contains a RSA private key and is using PEM encoding." = "Убедитесь, что файл содержит закрытый ключ RSA и использует кодировку PEM.";
 
 /* connection view : ssl : client cert picker : wrong format error description */
 "Make sure the file contains a X.509 client certificate and is using PEM encoding." = "Убедитесь, что файл содержит сертификат клиента X.509 и использует PEM кодировку.";
 
 /* match field menu item */
-"Match Field" = "Match Field";
+"Match Field" = "Поле матча";
 
 /* Shown when user inserts too many arguments (ContentFilterManager) */
 "Maximum number of arguments is 2!" = "Максимальное количество аргументов: 2!";
@@ -1964,7 +1964,7 @@
 "optional" = "необязательно";
 
 /* Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed. */
-"Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed." = "Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed.";
+"Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed." = "Не удается интерпретировать данный параметр. Разрешена только строка или массив (с двумя элементами).";
 
 /* Permission Denied */
 "Permission Denied" = "Доступ запрещён";
@@ -2012,7 +2012,7 @@
 "Query cancelled." = "Запрос отменён.";
 
 /* Query cancel by resetting connection error */
-"Query cancelled.  Please note that to cancel the query the connection had to be reset; transactions and connection variables were reset." = "Query cancelled.  Please note that to cancel the query the connection had to be reset; transactions and connection variables were reset.";
+"Query cancelled.  Please note that to cancel the query the connection had to be reset; transactions and connection variables were reset." = "Запрос отменен. Пожалуйста, обратите внимание, что для отмены запроса соединение должно быть сброшено; переменные подключения были сброшены.";
 
 /* query editor preference pane name */
 "Query Editor" = "Редактор запросов";
@@ -2155,40 +2155,40 @@
 "Replace Selection" = "Заменить выделенное";
 
 /* description of year */
-"Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5." = "Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5.";
+"Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5." = "Представляет собой 4-значное значение года, хранимое как 1 байт. Неверные значения конвертируются в 0000 и две цифры от 0 до 69 будут конвертированы в 2069. значения от 70 до 99 до лет 1970 до 1999 г.\nТип YEAR(2) был удален в MySQL 5.7.5.";
 
 /* description of multilinestring */
 "Represents a collection of LineStrings." = "Представляет собой коллекцию LineStrings.";
 
 /* description of geometrycollection */
-"Represents a collection of objects of any other single- or multi-valued spatial type. The only restriction being, that all objects must share a common coordinate system." = "Represents a collection of objects of any other single- or multi-valued spatial type. The only restriction being, that all objects must share a common coordinate system.";
+"Represents a collection of objects of any other single- or multi-valued spatial type. The only restriction being, that all objects must share a common coordinate system." = "Представляет собой коллекцию объектов любого другого однозначного или многозначного пространственного типа. Единственное ограничение заключается в том, что все объекты должны иметь общую систему координат.";
 
 /* description of multipolygon */
-"Represents a collection of Polygons. The Polygons making up the MultiPolygon must not intersect." = "Represents a collection of Polygons. The Polygons making up the MultiPolygon must not intersect.";
+"Represents a collection of Polygons. The Polygons making up the MultiPolygon must not intersect." = "Представляет собой коллекцию полигонов. Полигоны, составляющие многополигон, не должны пересекаться.";
 
 /* description of multipoint */
-"Represents a set of Points without specifying any kind of relation and/or order between them." = "Represents a set of Points without specifying any kind of relation and/or order between them.";
+"Represents a set of Points without specifying any kind of relation and/or order between them." = "Представляет собой набор точек без указания каких-либо отношений и/или порядка между ними.";
 
 /* description of point */
-"Represents a single location in coordinate space using X and Y coordinates. The point is zero-dimensional." = "Represents a single location in coordinate space using X and Y coordinates. The point is zero-dimensional.";
+"Represents a single location in coordinate space using X and Y coordinates. The point is zero-dimensional." = "Представляет собой одно местоположение в координатном пространстве с использованием координат X и Y. Точка равна нулевому измерению.";
 
 /* description of linestring */
-"Represents an ordered set of coordinates where each consecutive pair of two points is connected by a straight line." = "Represents an ordered set of coordinates where each consecutive pair of two points is connected by a straight line.";
+"Represents an ordered set of coordinates where each consecutive pair of two points is connected by a straight line." = "Представляет собой упорядоченный набор координат, где каждая последовательная пара двух точек соединяется прямой линией.";
 
 /* required placeholder string */
 "required" = "требуется";
 
 /* description of smallint */
-"Requires 2 bytes storage space. M is the optional display width and does not affect the possible value range." = "Requires 2 bytes storage space. M is the optional display width and does not affect the possible value range.";
+"Requires 2 bytes storage space. M is the optional display width and does not affect the possible value range." = "Требует 2 байта памяти места. M является необязательной шириной дисплея и не влияет на диапазон возможных значений.";
 
 /* description of mediumint */
-"Requires 3 bytes storage space. M is the optional display width and does not affect the possible value range." = "Requires 3 bytes storage space. M is the optional display width and does not affect the possible value range.";
+"Requires 3 bytes storage space. M is the optional display width and does not affect the possible value range." = "Требует 3 байт памяти места. M является дополнительной шириной дисплея и не влияет на диапазон возможных значений.";
 
 /* description of int */
-"Requires 4 bytes storage space. M is the optional display width and does not affect the possible value range. INTEGER is an alias to this type." = "Requires 4 bytes storage space. M is the optional display width and does not affect the possible value range. INTEGER is an alias to this type.";
+"Requires 4 bytes storage space. M is the optional display width and does not affect the possible value range. INTEGER is an alias to this type." = "Требуется 4 байта пространства памяти. M является дополнительной шириной дисплея и не влияет на диапазон возможных значений. INTEGER является псевдонимом для данного типа.";
 
 /* description of bigint */
-"Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers." = "Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers.";
+"Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers." = "Требует 8 байт памяти места. M является дополнительной шириной дисплея и не влияет на диапазон возможных значений. Примечание: Арифметические операции могут быть не выполнены для больших чисел.";
 
 /* reset auto_increment after deletion of all rows message */
 "Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "Сбросить AUTO_INCREMENT после удаления\n(только при условии удаления всех строк из таблицы)?";
@@ -2332,10 +2332,10 @@
 "Selection" = "Выделенное";
 
 /* table structure : indexes : delete index : no columns error : description */
-"Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?";
+"Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Последовательный Туз не мог найти колонки, относящиеся к этому индексу. Может быть, он уже был удален?";
 
 /* Preferences : Network : Custom SSH client : warning dialog message */
-"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations.";
+"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Последовательный Ace поддерживает и тестируется с версиями клиента OpenSSH по умолчанию, включенными в macOS. Использование различных клиентов может вызвать проблемы связи, риски безопасности или вообще не работать.\n\nПожалуйста, имейте в виду, что мы не можем оказывать поддержку таким конфигурациям.";
 
 /* sequelace URL scheme command not supported. */
 "sequelace URL scheme command not supported." = "Команда Sequel Ace URL схемы не поддерживается.";
@@ -2403,7 +2403,7 @@
 "Show Tab Bar" = "Показывать панель вкладок";
 
 /* tooltip for toolbar item for show console */
-"Show the console which shows all MySQL commands performed by Sequel Ace" = "Show the console which shows all MySQL commands performed by Sequel Ace";
+"Show the console which shows all MySQL commands performed by Sequel Ace" = "Показать консоль, которая показывает все команды MySQL, выполненные Sequel Ace";
 
 /* Show Toolbar menu item */
 "Show Toolbar" = "Показать панель инструментов";
@@ -2451,7 +2451,7 @@
 "SPATIAL" = "SPATIAL";
 
 /* sql data access label (Navigator) */
-"SQL Data Access" = "SQL Data Access";
+"SQL Data Access" = "Доступ к данным SQL";
 
 
 /* Connection Secured via SSL information text */
@@ -2497,7 +2497,7 @@
 "started" = "запущено";
 
 /* status file for sequelace url scheme command couldn't be written error message */
-"Status file for sequelace url scheme command couldn't be written!" = "Status file for sequelace url scheme command couldn't be written!";
+"Status file for sequelace url scheme command couldn't be written!" = "Файл состояния для команды url sequelace не может быть записан!";
 
 /* stop button */
 "Stop" = "Стоп";
@@ -2515,7 +2515,7 @@
 "Stores a date and time of day. The representation is YYYY-MM-DD HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Хранит дату и время. Представление ГГГГ-ММ-ДД ЧЧ:ММ:СС[.|*], может содержать дроби секунды. Это значение не зависит от настройки часового пояса. Неверные значения преобразовываются в 0000-0000:00:00.0. В MySQL 5.6.4 были добавлены дробные секунды с точностью до микросекунд (6).";
 
 /* description of date */
-"Stores a date without time information. The representation is YYYY-MM-DD. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00." = "Stores a date without time information. The representation is YYYY-MM-DD. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00.";
+"Stores a date without time information. The representation is YYYY-MM-DD. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00." = "Хранит дату без информации о времени. Представление ГГГ-ММ-ДД. На значение не влияет ни один часовой пояс. Неправильные значения преобразуются в 0000-00.";
 
 /* description of time */
 "Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Хранит время, продолжительность или интервал времени. Представление ЧЧ:ММ:СС[.|*] может содержать дроби секунды. Это значение не зависит от настройки часового пояса. Неверные значения преобразовываются в 00:00:00. В MySQL 5.6.4 были добавлены дробные секунды с точностью до микросекунд (6).";
@@ -2587,7 +2587,7 @@
 "Table %lu of %lu (%@): Fetching data..." = "Таблица %1$lu из %2$lu (%3$@): Получение данных...";
 
 /* export label showing app is fetching relations data for a specific table */
-"Table %lu of %lu (%@): Fetching relations data..." = "Table %1$lu of %2$lu (%3$@): Fetching relations data...";
+"Table %lu of %lu (%@): Fetching relations data..." = "Таблица %1$lu из %2$lu (%3$@): Получение данных о связях...";
 
 /* export label showing app if writing data for a specific table */
 "Table %lu of %lu (%@): Writing data..." = "Таблица %1$lu из %2$lu (%3$@): Запись данных...";
@@ -2697,10 +2697,10 @@
 "The connection is busy. Please wait and try again." = "Соединение занято. Пожалуйста, подождите и повторите попытку.";
 
 /* the connection of the active connection window is not identical tooltip */
-"The connection of the active connection window is not identical." = "The connection of the active connection window is not identical.";
+"The connection of the active connection window is not identical." = "Подключение окна активного соединения не идентично.";
 
 /* Connection lost during import error message */
-"The connection to the server was lost during the import.  The import is only partially complete." = "The connection to the server was lost during the import.  The import is only partially complete.";
+"The connection to the server was lost during the import.  The import is only partially complete." = "Соединение с сервером было потеряно во время импорта. Импорт завершен лишь частично.";
 
 /* Create syntax permission denied detail */
 "The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator." = "The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator.";
@@ -2715,7 +2715,7 @@
 "The current color theme is unsaved. Do you want to proceed without saving it?" = "Текущая цветовая схема не сохранена. Продолжить без сохранения?";
 
 /* Short important release note for swap of custom query buttons */
-"The Custom Query \"Run\" and \"Run All\" button positions and their shortcuts have been swapped." = "The Custom Query Run and Run All button positions and their shortcuts have been swapped.";
+"The Custom Query \"Run\" and \"Run All\" button positions and their shortcuts have been swapped." = "Пользовательский запрос Запуск и Запуск Кнопки Все и их ярлыки переключены.";
 
 /* the following default bundles were updated:\n%@\nyour modifications were stored as “(user)”. */
 "The following default Bundles were updated:\n%@\nYour modifications were stored as “(user)”." = "Следующие базовые наборы обновились:\n%@\nВаши изменения были сохранены как “(user)”.";
@@ -2727,7 +2727,7 @@
 "The following error occurred during the import process:\n\n%@" = "При импорте произошла ошибка:\n\n%@";
 
 /* table structure : indexes : delete index : error 1553 : description */
-"The foreign key relationship '%@' has a dependency on index '%@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone." = "The foreign key relationship '%1$@' has a dependency on index '%2$@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone.";
+"The foreign key relationship '%@' has a dependency on index '%@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone." = "Связи с внешним ключом '%1$@' имеют зависимость от индекса '%2$@'. Перед удалением индекса эти отношения должны быть удалены.\n\nВы уверены, что хотите продолжить удаление отношений и индекса? Это действие нельзя отменить.";
 
 /* table list change alert message */
 "The list of tables has changed" = "Список таблиц изменился";
@@ -2736,19 +2736,19 @@
 "The name '%@' is already used." = "Имя '%@' уже используется.";
 
 /* table list change alert informative message */
-"The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?" = "The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?";
+"The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?" = "Количество таблиц в этой базе данных изменилось с момента открытия экспортного диалога. Сейчас существует %lu дополнительных таблиц. Скорее всего, добавлено внешним приложением.\n\nКак бы вы хотели продолжить?";
 
 /* message of panel when no rows have been affected after writing to the db */
 "The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)" = "Строка не была записана в базу данных MySQL. Возможно, вы ничего не изменили.\nПерезагрузите таблицу, чтобы убедиться, что она существует и используйте первичный ключ в вашей таблицы.\n(Эту ошибку можно отключить в настройках)";
 
 /* export : import settings : file version error description ($1 = is version, $2 = list of supported versions); note: the u00A0 is a non-breaking space, do not add more whitespace. */
-"The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace.";
+"The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "Выбранные параметры экспорта были сохранены в версии%1$ld, но могут быть импортированы только настройки со следующими версиями: %2$@.\n\nСохраните настройки обратно совместимым способом или обновите вашу версию Sequel Ace.";
 
 /* export : import settings : spf content type error description */
-"The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file." = "The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file.";
+"The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file." = "Выбранный файл содержит данные типа “%1$@”, но необходим тип “%2$@”. Пожалуйста, выберите другой файл.";
 
 /* export : import settings : file error description */
-"The selected file is either not a valid SPF file or severely corrupted." = "The selected file is either not a valid SPF file or severely corrupted.";
+"The selected file is either not a valid SPF file or severely corrupted." = "Выбранный файл не является допустимым SPF файлом или сильно поврежден.";
 
 /* error deleting relation informative message */
 "The selected relation couldn't be deleted.\n\nMySQL said: %@" = "Выбранная связь не может быть удалена.\n\nMySQL сообщил: %@";
@@ -2757,10 +2757,10 @@
 "The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "Выбранный триггер не может быть удалён.\n\nMySQL сообщил: %@";
 
 /* description of tinyint */
-"The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range.";
+"The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "Наименьший целочисленный тип, требует 1 байт пространства памяти. M является необязательной шириной дисплея и не влияет на возможный диапазон значений.";
 
 /* message of panel when connection to socket failed because optional socket could not be found */
-"The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@" = "The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@";
+"The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@" = "Файл сокета не найден в общем месте. Пожалуйста, укажите правильное расположение сокета.\n\nMySQL сказал: %@";
 
 /* error creating relation informative message */
 "The specified relation could not be created.\n\nMySQL said: %@" = "Не получается установить связь.\n\nMySQL сообщил: %@";
@@ -2781,22 +2781,22 @@
 "The SSH password could not be loaded; please enter the SSH password for %@:" = "SSH пароль не может быть загружен из Связки ключей; пожалуйста, введите SSH пароль для %@:";
 
 /* SSH tunnel authentication failed message */
-"The SSH Tunnel could not authenticate with the remote host. Please check your password and ensure you still have access." = "The SSH Tunnel could not authenticate with the remote host. Please check your password and ensure you still have access.";
+"The SSH Tunnel could not authenticate with the remote host. Please check your password and ensure you still have access." = "SSH туннель не может аутентифицироваться с удаленным хостом. Пожалуйста, проверьте пароль и убедитесь, что у вас все еще есть доступ.";
 
 /* SSH tunnel unexpectedly closed */
 "The SSH Tunnel has unexpectedly closed." = "SSH туннель неожиданно закрылся.";
 
 /* SSH tunnel was closed by remote host message */
-"The SSH Tunnel was closed 'by the remote host'. This may indicate a networking issue or a network timeout." = "The SSH Tunnel was closed 'by the remote host'. This may indicate a networking issue or a network timeout.";
+"The SSH Tunnel was closed 'by the remote host'. This may indicate a networking issue or a network timeout." = "Туннель SSH был закрыт «удаленным хостом». Это может указывать на проблему сетевого взаимодействия или время ожидания сети.";
 
 /* SSH tunnel forwarding port connection refused message */
-"The SSH Tunnel was established successfully, but could not forward data to the remote port as the remote port refused the connection." = "The SSH Tunnel was established successfully, but could not forward data to the remote port as the remote port refused the connection.";
+"The SSH Tunnel was established successfully, but could not forward data to the remote port as the remote port refused the connection." = "Туннель SSH был успешно создан, но не смог перенаправить данные на удаленный порт, так как удаленный порт отказал соединению.";
 
 /* SSH tunnel unable to bind to local port message */
 "The SSH Tunnel was unable to bind to the local port. This error may occur if you already have an SSH connection to the same server and are using a 'LocalForward' setting in your SSH configuration.\n\nWould you like to fall back to a standard connection to localhost in order to use the existing tunnel?" = "Не удалось пробросить туннель SSH через локальный порт. Эта ошибка может произойти, если у вас уже есть SSH соединение с тем же сервером и вы используете параметр 'LocalForward' в вашей конфигурации SSH.\n\nВы хотите вернуться к стандартному соединению с локальным хостом, чтобы использовать существующий туннель?";
 
 /* SSH tunnel failed or timed out message */
-"The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds)." = "The SSH Tunnel was unable to connect to host %1$@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %2$ld seconds).";
+"The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds)." = "SSH туннель не смог подключиться к хосту %1$@или истек срок ожидания запроса.\n\nУбедитесь, что адрес правильный и что у вас есть необходимые привилегии, или попробуйте увеличить тайм-аут соединения (сейчас %2$ld секунд).";
 
 /* message of panel when loading of table failed and presumably due to used filter argument */
 "The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@" = "Не получается загрузить данные таблицы предположительно из-за настроек фильтра.\n\nMySQL сообщил: %@";
@@ -2805,7 +2805,7 @@
 "The table data couldn't be loaded.\n\nMySQL said: %@" = "Не получается загрузить данные таблицы.\n\nMySQL сообщил: %@";
 
 /* Export folder not writable explanatory text */
-"The target export folder is not writable.  Please select a new export location and try again." = "The target export folder is not writable.  Please select a new export location and try again.";
+"The target export folder is not writable.  Please select a new export location and try again." = "Папка для экспорта недоступна для записи. Пожалуйста, выберите новое место для экспорта и повторите попытку.";
 
 /* Export folder not chosen by user explanatory text */
 "No directory selected.  Please select a new export location and try again." = "Каталог не выбран. Пожалуйста, выберите новое место для экспорта и повторите попытку.";
@@ -2813,7 +2813,7 @@
 "Please select a new export location and try again." = "Пожалуйста, выберите новое место для экспорта и повторите попытку.";
 
 /* Export folder missing explanatory text */
-"The target export folder no longer exists.  Please select a new export location and try again." = "The target export folder no longer exists.  Please select a new export location and try again.";
+"The target export folder no longer exists.  Please select a new export location and try again." = "Целевая папка экспорта больше не существует. Пожалуйста, выберите новое место для экспорта и повторите попытку.";
 
 /* theme name label */
 "Theme Name:" = "Название темы:";
@@ -2831,7 +2831,7 @@
 "There were no errors." = "Без ошибок.";
 
 /* delete field and foreign key informative message */
-"This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone." = "This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone.";
+"This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone." = "Это поле является частью внешних ключевых связей с таблицей '%@'. Эта связь должна быть удалена перед удалением поля.\n\nВы уверены, что хотите продолжить удаление отношений и поля? Это действие не может быть отменено.";
 
 /* table structure : indexes : delete index : error 1553, no FK found : description */
 "This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@" = "Этот индекс не может быть удалён, так как он используется существующей связью внешнего ключа.\n\nПожалуйста, удалите эту связь прежде чем пытаться удалить этот индекс.\n\nMySQL сообщил: %@";
@@ -2879,13 +2879,13 @@
 "This table currently does not support relations. Only tables that use the InnoDB storage engine support them." = "В настоящее время эта таблица не поддерживает связи. Их поддерживают только таблицы, использующие движок хранилища InnoDB.";
 
 /* user has no hosts informative message */
-"This user doesn't have any hosts associated with it. It will be deleted unless one is added" = "This user doesn't have any hosts associated with it. It will be deleted unless one is added";
+"This user doesn't have any hosts associated with it. It will be deleted unless one is added" = "У этого пользователя нет связанных с ним хостов. Он будет удален, если не будет добавлен";
 
 /* error removing host informative message */
-"This user doesn't seem to have any associated hosts and will be removed unless a host is added." = "This user doesn't seem to have any associated hosts and will be removed unless a host is added.";
+"This user doesn't seem to have any associated hosts and will be removed unless a host is added." = "Похоже, у этого пользователя нет связанных узлов и он будет удален, если не будет добавлен хост.";
 
 /* shutdown server : confirmation dialog : message */
-"This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!" = "This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!";
+"This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!" = "Ожидается завершение открытых транзакций и выход из mysql демона. После этого ни вы, ни кто-либо другой не можете подключиться к этой базе данных!\n\nДля перезапуска MySQL необходим полный доступ к операционной системе сервера!";
 
 /* export filename time token */
 "Time" = "Время";
@@ -3032,7 +3032,7 @@
 "Up to %@ characters (16 MiB)" = "До %@ символов (16 МиБ)";
 
 /* range for enum type */
-"Up to %@ distinct members (<%@ in practice)\n1-2 bytes storage" = "Up to %1$@ distinct members (<%2$@ in practice)\n1-2 bytes storage";
+"Up to %@ distinct members (<%@ in practice)\n1-2 bytes storage" = "До %1$@ отдельных членов (<%2$@ на практике)\n1-2 байт хранения";
 
 /* range for tinyblob type */
 "Up to 255 bytes" = "До 255 байт";
@@ -3047,19 +3047,19 @@
 "updated: %@" = "обновлено: %@";
 
 /* message of panel when error while updating field to db after enabling it */
-"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field of table `%2$@` was changed." = "Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field of table `%2$@` was changed.";
+"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field of table `%2$@` was changed." = "Не удалось обновить содержимое поля. Не удалось однозначно определить источник полей (%1$ld совпадения). Очень вероятно, что при редактировании этого поля таблицы `%2$@была изменена.";
 
 /* message of panel when error while updating field to db after enabling it */
-"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user." = "Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user.";
+"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user." = "Не удалось обновить содержимое поля. Не удалось однозначно определить источник полей (%1$ld совпадения). Очень вероятно, что при редактировании этого поля таблица `%2$@была изменена другим пользователем.";
 
 /* updating field task description */
 "Updating field data..." = "Обновление данных поля...";
 
 /* URL scheme command couldn't authenticated */
-"URL scheme command couldn't authenticated" = "URL scheme command couldn't authenticated";
+"URL scheme command couldn't authenticated" = "Ошибка аутентификации команды URL схемы";
 
 /* URL scheme command was terminated by user */
-"URL scheme command was terminated by user" = "URL scheme command was terminated by user";
+"URL scheme command was terminated by user" = "Команда URL схемы была прервана пользователем";
 
 /* URL scheme command %@ unsupported */
 "URL scheme command %@ unsupported" = "Команда URL схемы %@ не поддерживается";
@@ -3113,7 +3113,7 @@
 "Warning" = "Предупреждение";
 
 /* Short important release note for why password prompts may occur */
-"We've changed Sequel Ace's digital signature for GateKeeper compatibility; you'll have to allow access to your passwords again." = "We've changed Sequel Ace's digital signature for GateKeeper compatibility; you'll have to allow access to your passwords again.";
+"We've changed Sequel Ace's digital signature for GateKeeper compatibility; you'll have to allow access to your passwords again." = "Мы изменили цифровую подпись Sequel Ace для совместимости GateKeeper; вам необходимо разрешить доступ к вашим паролям.";
 
 /* Important release notes informational text, single change */
 "We've made a few changes but we thought you should know about one particularly important one:" = "Мы внеси некоторые изменения и думаем, что вы должны узнать о наиболее важном:";
@@ -3164,10 +3164,10 @@
 "You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted." = "Вы инициализировали установку соединения с помощью SSL, но MySQL подключился без SSL.\n\nЭто может быть потому, что сервер не поддерживает SSL-соединения, или на нём SSL отключено, или задано недостаточно параметров для установки SSL-соединения.\n\nЭто соединение не зашифровано.";
 
 /* Query Favorites : List : Section Heading : current connection document : tooltip (arg is the name of the spf file) */
-"‘%@’ based favorites" = "‘%@’ based favorites";
+"‘%@’ based favorites" = "‘%@' избранное";
 
 /* table column header. Read: 'Showing all content filters for fields of type %@' (ContentFilterManager) */
-"‘%@’ Fields Content Filters" = "‘%@’ Fields Content Filters";
+"‘%@’ Fields Content Filters" = "‘%@' Поля Контентные Фильтры";
 
 /* Export file already exists message */
 "%@ already exists. Do you want to replace it?" = "%@ уже существует. Вы хотите заменить его?";
@@ -3179,7 +3179,7 @@
 "%@ could not be created" = "%@ не может быть создан";
 
 /* %@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item. */
-"%@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item." = "%@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item.";
+"%@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item." = "%@ не может быть обработан. Вы можете изменить настройки столбца, но столбец не будет отображаться в виде содержимого; пожалуйста, сообщите об этом команде Sequel Ace с помощью пункта меню справки.";
 
 /* connection view : ssl : client cert file picker : wrong format error title */
 "%@ is not a valid client certificate file." = "%@ не является допустимым файлом сертификата клиента.";
@@ -3203,13 +3203,13 @@
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "Выбранный файл не является допустимым.\n\nПожалуйста, попробуйте ещё раз.\n\nКласс: %@";
 
 /* known hosts not writable error message */
-"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "Выбранный файл hosts-файлов не доступен для записи.\n\n%@\n\nПожалуйста выберите файл в настройках Sequel Ace и повторите попытку.";
 
 /* known hosts is invalid message */
 "The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
 
 /* known hosts contains quote message */
-"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote.";
+"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "Выбранный файл hosts содержит кавычки (\") в пути файла, который не поддерживается.\n\n%@\n\nПожалуйста, выберите другой файл в Настройках Последователя или переименуйте путь к файлу, чтобы удалить кавычку.";
 
 /* SSH Tunnel Debugging menu and window title */
 "SSH Tunnel Debugging Info" = "Отладочная информация SSH туннеля";
@@ -3239,13 +3239,13 @@
 "Error while writing to the export file. Could not open file: %@" = "Ошибка записи в файл экспорта. Не удалось открыть файл: %@";
 
 /* Message for User window error */
-"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column." = "Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column.";
+"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column." = "Результат от mysql.user не содержит ни 'Пароль', ни 'authentication_string'.";
 
 /* Title for User window error */
 "User Data Error" = "Ошибка данных пользователя";
 
 /* Title for Stale Bookmark file selection dialog */
-"Please re-select the file '%@' in order to restore Sequel Ace's access." = "Please re-select the file '%@' in order to restore Sequel Ace's access.";
+"Please re-select the file '%@' in order to restore Sequel Ace's access." = "Пожалуйста, перевыберите файл '%@' для восстановления доступа к Sequel Ace.";
 
 /* Title for File Preference file selection dialog */
 "Please choose a file or folder to grant Sequel Ace access to." = "Пожалуйста, выберите файл или папку для предоставления доступа Sequel Ace.";
@@ -3269,7 +3269,7 @@
 "New Connection Error" = "Ошибка нового соединения";
 
 /* New Connection Error informative message */
-"Failed to create new database connection window. Please restart Sequel Ace and try again." = "Failed to create new database connection window. Please restart Sequel Ace and try again.";
+"Failed to create new database connection window. Please restart Sequel Ace and try again." = "Не удалось создать новое окно подключения к базе данных. Перезапустите Sequel Ace и повторите попытку.";
 
 /* new version is available alert title */
 "A new version is available" = "Доступна новая версия";
@@ -3311,7 +3311,7 @@
 "Check for Updates..." = "Проверить наличие обновлений...";
 
 /* Warning message during connection in case the variable skip-show-database is set to ON */
-"The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges.";
+"The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "Переменная skip-show-database сервера базы данных установлена в ВКЛЮЧЕНИЕ. Таким образом, вы не сможете список баз данных, если не имеете привилегии SHOW DATABASES.\n\nОднако, базы данных по-прежнему доступны непосредственно через SQL-запросы в зависимости от ваших привилегий.";
 
 /* Error alert title when the request to GitHub fails */
 "GitHub Request Failed" = "Ошибка запроса к GitHub";
@@ -3365,4 +3365,4 @@
 "LaunchFavorite URL Scheme Error" = "Ошибка запуска Избранной URL схемы";
 
 /* sequelace URL scheme error: LaunchFavorite alert description (favorite name not found) */
-"The variable in the ?name= query parameter could not be matched with any of your favorites." = "The variable in the ?name= query parameter could not be matched with any of your favorites.";
+"The variable in the ?name= query parameter could not be matched with any of your favorites." = "Переменная в параметре ?name= запроса не соответствует ни одному из ваших избранных.";
