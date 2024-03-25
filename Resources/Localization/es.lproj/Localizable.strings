@@ -181,7 +181,7 @@
 "A character string with variable length. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "Una cadena de caracteres con longitud variable. El número real de caracteres está aún más limitado por la codificación utilizada. A diferencia de VARCHAR este tipo no cuenta para la longitud máxima de fila.";
 
 /* description of json */
-"A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8." = "A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8.";
+"A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8." = "Un tipo de dato que valida datos JSON en INSERT y los almacena internamente en un formato binario que es ambos, más compacto y rápido de acceder que el JSON en formato texto.\nDisponible desde MySQL 5.7.8.";
 
 /* Export file already exists explanatory text */
 "A file with the same name already exists in the target folder. Replacing it will overwrite its current contents." = "Un archivo con el mismo nombre ya existe en la carpeta de destino. Reemplazándolos sobreescribirá el contenido actual.";
@@ -2742,7 +2742,7 @@
 "The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)" = "La fila no fue escrita en la base de datos MySQL. Usted probablemente no ha modificado nada.\nVuelva a cargar la tabla para asegurarse que la fila existe y use la clave primaria de su tabla.\n(Este error se puede deshabilitar en las preferencias.)";
 
 /* export : import settings : file version error description ($1 = is version, $2 = list of supported versions); note: the u00A0 is a non-breaking space, do not add more whitespace. */
-"The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace.";
+"The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "Las opciones de configuración seleccionadas para exportación fueron almacenadas con la versión %1$ld, pero solo las opciones con las siguientes versiones pueden ser importadas: %2$@\n\nGrabe las opciones de configuración con una versión compatible hacia atrás o actualice su versión de Sequel Ace.";
 
 /* export : import settings : spf content type error description */
 "The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file." = "El archivo seleccionado contiene datos de tipo “%1$@”, pero se necesita el tipo “%2$@. Por favor, elija un archivo diferente.";
