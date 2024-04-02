@@ -1,12 +1,13 @@
 {
+  "originHash" : "93029d78cc5d36faf93146fb5a5dbbb6b0403df2ddb5d256e2556d3c6863306c",
   "pins" : [
     {
       "identity" : "alamofire",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Alamofire/Alamofire.git",
       "state" : {
-        "revision" : "b2fa556e4e48cbf06cf8c63def138c98f4b811fa",
-        "version" : "5.8.0"
+        "revision" : "f455c2975872ccd2d9c81594c658af65716e9b9a",
+        "version" : "5.9.1"
       }
     },
     {
@@ -23,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ccgus/fmdb",
       "state" : {
-        "revision" : "61e51fde7f7aab6554f30ab061cc588b28a97d04",
-        "version" : "2.7.7"
+        "revision" : "ccad1c3c57ae597dbcfdf1e2737f733356d37d66",
+        "version" : "2.7.10"
       }
     },
     {
@@ -33,7 +34,7 @@
       "location" : "https://github.com/erikdoe/ocmock",
       "state" : {
         "branch" : "master",
-        "revision" : "05cbc9d934e84ad32530fa53fd7d29c7966d5828"
+        "revision" : "4e8ba1624acf99378b163542d97abf299141c4bb"
       }
     },
     {
@@ -50,10 +51,10 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SnapKit/SnapKit",
       "state" : {
-        "revision" : "f222cbdf325885926566172f6f5f06af95473158",
-        "version" : "5.6.0"
+        "revision" : "2842e6e84e82eb9a8dac0100ca90d9444b0307f4",
+        "version" : "5.7.1"
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }
