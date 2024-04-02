@@ -141,6 +141,7 @@ private extension TabManager {
         guard let newManagement = addManagedWindow(windowController: newWindowController) else { preconditionFailure() }
         let newWindow = newManagement.window
 
+        // In case user hits "+" in the UI in tab bar - system automatically creates a tab for us and adds it to the tabGroup - there is no way to avoid it and no way to work around it. In case user hits CMD+T or "New tab" in Menu, it's upon us to do so, so we add tabbed window manually
         if managedWindows.first(where: { $0.window.isMainWindow }) != nil {
             window.addTabbedWindow(newWindow, ordered: orderingMode)
         }
@@ -173,8 +174,7 @@ private extension TabManager {
             }
             self.removeManagedWindow(forWindow: window)
         }
-        let management = ManagedWindow(windowController: windowController, window: window, closingSubscription: subscription)
-        return management
+        return ManagedWindow(windowController: windowController, window: window, closingSubscription: subscription)
     }
 
     func removeManagedWindow(forWindow window: NSWindow) {
