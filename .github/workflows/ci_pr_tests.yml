@@ -14,3 +14,5 @@ jobs:
       uses: actions/checkout@v4
     - name: Build and run tests
       run: ./Scripts/build.sh tests
+         env:
+         DEVELOPER_DIR: '/Applications/Xcode_15.3.app/Contents/Developer'
