@@ -1,5 +1,5 @@
 {
-  "originHash" : "93029d78cc5d36faf93146fb5a5dbbb6b0403df2ddb5d256e2556d3c6863306c",
+  "originHash" : "3dfaab527835dc6945cdeef749ea2b317b7e11fee656495d0945addc3d9903da",
   "pins" : [
     {
       "identity" : "alamofire",
@@ -31,10 +31,10 @@
     {
       "identity" : "ocmock",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/erikdoe/ocmock",
+      "location" : "https://github.com/paulb777/ocmock",
       "state" : {
-        "branch" : "master",
-        "revision" : "4e8ba1624acf99378b163542d97abf299141c4bb"
+        "branch" : "patch-2",
+        "revision" : "173955e93e6ee6999a10729ab67e4b4efdd1db6d"
       }
     },
     {
