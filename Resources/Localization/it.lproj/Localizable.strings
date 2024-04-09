@@ -2,7 +2,7 @@
 " Check the Console for possible errors inside the primary key(s) of this table!" = " Controlla la Console per possibili errori relativi alla o alle chiavi primarie di questa tabella!";
 
 /* Table Content : Remove Row : Result : Too Many : Part 2 : Generic text */
-" Please check the Console and inform the Sequel Ace team!" = " Per favore controllare la Console e informare it team di Sequel Ace!";
+" Please check the Console and inform the Sequel Ace team!" = " Per favore controlla la Console e informa it team di Sequel Ace!";
 
 /* Table Content : Remove Row : Result : Too Few : Part 2 : Generic help message */
 " Reload the table to be sure that the contents have not changed in the meantime." = " Ricarica la tabella per essere sicuri che i contenuti non siano cambiati nel frattempo.";
@@ -42,13 +42,13 @@
 "%@ rows in table" = "%@ righe nella tabella";
 
 /* text showing how many rows matched filter */
-"%@ rows of %@%@ match filter" = "%1$@ righe di %2$@%3$@ filtro corrispondenza";
+"%@ rows of %@%@ match filter" = "%1$@ righe di %2$@%3$@ corrispondono al filtro";
 
 /* text showing how many rows have been affected by a single query */
 "%@; %ld rows affected" = "%1$@; %2$ld righe interessate";
 
 /* text showing how many rows have been affected by multiple queries */
-"%@; %ld rows affected in total, by %ld queries taking %@" = "%1$@; %2$ld righe colpite in totale, da %3$ld query che interessano %4$@";
+"%@; %ld rows affected in total, by %ld queries taking %@" = "%1$@; %2$ld righe interessate in totale, da %3$ld query che interessano %4$@";
 
 /* text showing one row has been affected by a single query */
 "%@; 1 row affected" = "%@; righe interessate";
@@ -542,7 +542,7 @@
 "Background" = "Sfondo";
 
 /* backtick quote label for color table (Prefs > Editor) */
-"Backtick Quote" = "Preventivo Backtick";
+"Backtick Quote" = "Quote Backtick";
 
 /* bash error */
 "BASH Error" = "Errore BASH";
@@ -613,7 +613,7 @@
 "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "Sono state apportate modifiche, che andranno perse se questa finestra è chiusa. Sei sicuro di voler continuare";
 
 /* character set client: %@ */
-"character set client: %@" = "client set caratteri: %@";
+"character set client: %@" = "set caratteri client: %@";
 
 /* CHECK one or more tables - result title */
 "Check %@" = "Controlla %@";
@@ -625,16 +625,16 @@
 "check option: %@" = "opzione di controllo: %@";
 
 /* check selected items menu item */
-"Check Selected Items" = "Controlla Gli Elementi Selezionati";
+"Check Selected Items" = "Controlla Elementi Selezionati";
 
 /* check table menu item */
-"Check Table" = "Tabella Di Controllo";
+"Check Table" = "Controllo Tabella";
 
 /* check table failed message */
-"Check table failed." = "Tabella di controllo fallita.";
+"Check table failed." = "Controllo tabella fallito.";
 
 /* check table successfully passed message */
-"Check table successfully passed." = "Tabella di controllo passata con successo.";
+"Check table successfully passed." = "Tabella controllata con esito positivo.";
 
 /* check view menu item */
 "Check View" = "Controlla Vista";
@@ -2140,7 +2140,7 @@
 "Repair Selected Items" = "Ripara Oggetti Selezionati";
 
 /* repair table menu item */
-"Repair Table" = "Ripara Tavolo";
+"Repair Table" = "Ripara Tabella";
 
 /* repair table failed message */
 "Repair table failed." = "Riparazione tabella fallita.";
@@ -2200,7 +2200,7 @@
 "Delete Selected Rows" = "Elimina Righe Selezionate";
 
 /* delete all rows in table button */
-"Delete ALL ROWS IN TABLE" = "Eliminare TUTTI I ROWS NELLA TAVOLA";
+"Delete ALL ROWS IN TABLE" = "Elimina TUTTE LE RIGHE DELLA TABELLA";
 
 /* Restoring session task description */
 "Restoring session..." = "Ripristino sessione...";
@@ -2524,31 +2524,31 @@
 "Structure" = "Struttura";
 
 /* successfully analyzed all selected items message */
-"Successfully analyzed all selected items." = "Analizzato con successo tutti gli elementi selezionati.";
+"Successfully analyzed all selected items." = "Tutti gli elementi selezionati sono stati analizzati.";
 
 /* analyze table successfully passed message */
-"Successfully analyzed table." = "Tabella analizzata con successo.";
+"Successfully analyzed table." = "Tabella analizzata.";
 
 /* successfully flushed all selected items message */
-"Successfully flushed all selected items." = "Tutti gli elementi selezionati sono stati scaricati con successo.";
+"Successfully flushed all selected items." = "Flush eseguito su tutti gli elementi selezionati.";
 
 /* message of panel when successfully flushed privs */
-"Successfully flushed privileges." = "Privilegi risciacquati con successo.";
+"Successfully flushed privileges." = "Flush eseguito sui privilegi.";
 
 /* flush table successfully passed message */
-"Successfully flushed table." = "Tavolo lavato con successo.";
+"Successfully flushed table." = "Flush eseguito sulla tabella.";
 
 /* successfully optimized all selected items message */
-"Successfully optimized all selected items." = "Ottimizzato con successo tutti gli elementi selezionati.";
+"Successfully optimized all selected items." = "Tutti gli elementi selezionati sono stati ottimizzati.";
 
 /* optimize table successfully passed message */
-"Successfully optimized table." = "Tavolo ottimizzato con successo.";
+"Successfully optimized table." = "Tabella ottimizzata.";
 
 /* successfully repaired all selected items message */
 "Successfully repaired all selected items." = "Hai riparato con successo tutti gli elementi selezionati.";
 
 /* repair table successfully passed message */
-"Successfully repaired table." = "Tabella riparata con successo.";
+"Successfully repaired table." = "Tabella riparata.";
 
 /* tooltip for toolbar item for switching to the Run Query tab */
 "Switch to the Run Query tab" = "Passa alla scheda Esegui query";
@@ -2957,10 +2957,10 @@
 "Unable to delete trigger" = "Impossibile eliminare il trigger";
 
 /* unable to flush selected items message */
-"Unable to flush selected items" = "Impossibile risciacquare gli elementi selezionati";
+"Unable to flush selected items" = "Impossibile eseguire il flush sugli elementi selezionati";
 
 /* unable to flush table message */
-"Unable to flush table" = "Impossibile lavare la tabella";
+"Unable to flush table" = "Impossibile eseguire il flush sulla tabella";
 
 /* unable to get list of users message */
 "Unable to get list of users" = "Impossibile ottenere l'elenco degli utenti";
