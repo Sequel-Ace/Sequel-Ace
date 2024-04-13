@@ -87,7 +87,7 @@
 "%ld of first %lu record(s)" = "%1$ld dei primi record di %2$lu";
 
 /* Table Content : Remove Row : Result : Too Few : Part 1 : n-x (x!=1) of n selected rows were deleted. */
-"%ld rows were not removed." = "%ld rows were not removed.";
+"%ld rows were not removed." = "%ld righe non sono state eliminate.";
 
 /* Export file already exists message */
 "%lu files already exist. Do you want to replace them?" = "I file %lu esistono già. Vuoi sostituirli?";
@@ -96,7 +96,7 @@
 "%lu files could not be created" = "Impossibile creare i file %lu";
 
 /* Some export files already exist explanatory text */
-"%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents.";
+"%lu files with the same names already exist in the target folder. Replacing them will overwrite their current contents." = "%lu file con lo stesso nome esistono già nella cartella di destinazione. Sostituendoli, sovrascriverai il loro attuale contenuto.";
 
 /* filtered item count */
 "%lu of %lu" = "%1$lu di %2$lu";
@@ -126,7 +126,7 @@
 "/* WARNING: No rows have been affected */\n" = "/* ATTENZIONE: Nessuna riga è stata colpita */\n";
 
 /* error text when multiple custom query failed */
-"[ERROR in query %ld] %@\n" = "[ERROR nella query %1$ld] %2$@\n";
+"[ERROR in query %ld] %@\n" = "[ERRORE nella query %1$ld] %2$@\n";
 
 /* error text when reading of csv file gave errors */
 "[ERROR in row %ld] %@\n" = "[ERRORE alla riga %1$ld] %2$@\n";
@@ -407,16 +407,16 @@
 "An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@" = "Si è verificato un errore durante il tentativo di aggiungere la nuova tabella '%1$@' di\n\n%2$@.\n\nMySQL ha detto: %3$@";
 
 /* error adding new table informative message */
-"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@" = "An error occurred while trying to add the new table '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@" = "Si è verificato un errore durante il tentativo di aggiunta della nuova tabella '%1$@'.\n\nMySQL ha detto: %2$@";
 
 /* error while trying to alter table message */
-"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@" = "An error occurred while trying to alter table '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@" = "Si è verificato un errore durante il tentativo di modifica della struttura della tabella '%1$@'.\n\nMySQL ha detto: %2$@";
 
 /* an error occurred while trying to check the %@.\n\nMySQL said:%@ */
 "An error occurred while trying to check the %@.\n\nMySQL said:%@" = "Si è verificato un errore durante il tentativo di controllare %1$@.\n\nMySQL ha detto:%2$@";
 
 /* error deleting relation informative message */
-"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@" = "An error occurred while trying to delete the relation '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@" = "Si è verificato un errore durante il tentativo di eliminazione della relazione '%1$@'.\n\nMySQL ha detto: %2$@";
 
 /* unable to get list of users informative message */
 "An error occurred while trying to get the list of users. Please make sure you have the necessary privileges to perform user management, including access to the mysql.user table." = "Si è verificato un errore durante il tentativo di ottenere l'elenco degli utenti. Assicurati di avere i privilegi necessari per eseguire la gestione dell'utente, incluso l'accesso alla tabella mysql.utente.";
