@@ -29,7 +29,6 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-#import "SPKeychain.h"
 #import "SPAppController.h"
 #import "SPDatabaseDocument.h"
 #import "SPPreferenceController.h"

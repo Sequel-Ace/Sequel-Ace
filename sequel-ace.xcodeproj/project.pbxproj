@@ -218,6 +218,7 @@
 		5132930D25F586A900D803AD /* TabManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132930A25F586A900D803AD /* TabManager.swift */; };
 		513515D2259354BB001E4533 /* NSImageExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 513515D1259354BB001E4533 /* NSImageExtensions.swift */; };
 		51384AC22903461000FEC501 /* NSDictionaryExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51384AC12903461000FEC501 /* NSDictionaryExtension.swift */; };
+		513C8CE12BBC4132001CCE3A /* OCMock in Frameworks */ = {isa = PBXBuildFile; productRef = 513C8CE02BBC4132001CCE3A /* OCMock */; };
 		514DD98925FACF1500EA3B3B /* SPDatabaseDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 514DD98825FACF1500EA3B3B /* SPDatabaseDocument.swift */; };
 		515D303F25BD7DE60021CF1E /* AppCenterCrashes in Frameworks */ = {isa = PBXBuildFile; productRef = 515D303E25BD7DE60021CF1E /* AppCenterCrashes */; };
 		515D304125BD7DE60021CF1E /* AppCenterAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 515D304025BD7DE60021CF1E /* AppCenterAnalytics */; };
@@ -226,7 +227,6 @@
 		517E4512257A954000ED333B /* ContentFilters.plist in Resources */ = {isa = PBXBuildFile; fileRef = 517E4511257A954000ED333B /* ContentFilters.plist */; };
 		5193502F2567D2FB001272B5 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193502E2567D2FB001272B5 /* CollectionExtension.swift */; };
 		519350302567D2FB001272B5 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193502E2567D2FB001272B5 /* CollectionExtension.swift */; };
-		51A2D3B6292FEF000018CFB8 /* OCMock in Frameworks */ = {isa = PBXBuildFile; productRef = 51A2D3B5292FEF000018CFB8 /* OCMock */; };
 		51A709392565B99F001F1D2F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 51A709382565B99F001F1D2F /* Images.xcassets */; };
 		51BB391C25F82B060048CA69 /* SPAppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BB391B25F82B060048CA69 /* SPAppController.swift */; };
 		51BC14F825BE135500F1CDC9 /* SPWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC14F725BE135500F1CDC9 /* SPWindowController.swift */; };
@@ -1171,7 +1171,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				51A2D3B6292FEF000018CFB8 /* OCMock in Frameworks */,
+				513C8CE12BBC4132001CCE3A /* OCMock in Frameworks */,
 				51DCBEF0257134190098E303 /* libz.tbd in Frameworks */,
 				502D22151BA62FA5000D4CE7 /* Security.framework in Frameworks */,
 				1717FA43155831600065C036 /* libicucore.dylib in Frameworks */,
@@ -2439,7 +2439,7 @@
 			);
 			name = "Unit Tests";
 			packageProductDependencies = (
-				51A2D3B5292FEF000018CFB8 /* OCMock */,
+				513C8CE02BBC4132001CCE3A /* OCMock */,
 			);
 			productName = "Unit Tests";
 			productReference = 380F4ED90FC0B50500B0BFD7 /* Unit Tests.xctest */;
@@ -2553,7 +2553,7 @@
 				515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */,
 				51BC14FF25BE138700F1CDC9 /* XCRemoteSwiftPackageReference "SnapKit" */,
 				1A89556D25D6C8880060CE72 /* XCRemoteSwiftPackageReference "Alamofire" */,
-				51A2D3B4292FEF000018CFB8 /* XCRemoteSwiftPackageReference "ocmock" */,
+				513C8CDF2BBC4132001CCE3A /* XCRemoteSwiftPackageReference "ocmock" */,
 			);
 			productRefGroup = 19C28FB0FE9D524F11CA2CBB /* Products */;
 			projectDirPath = "";
@@ -4100,20 +4100,20 @@
 				minimumVersion = 5.8.0;
 			};
 		};
+		513C8CDF2BBC4132001CCE3A /* XCRemoteSwiftPackageReference "ocmock" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/paulb777/ocmock";
+			requirement = {
+				branch = "patch-2";
+				kind = branch;
+			};
+		};
 		515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/microsoft/appcenter-sdk-apple";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 5.0.0;
-			};
-		};
-		51A2D3B4292FEF000018CFB8 /* XCRemoteSwiftPackageReference "ocmock" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/erikdoe/ocmock";
-			requirement = {
-				branch = master;
-				kind = branch;
 			};
 		};
 		51BC14FF25BE138700F1CDC9 /* XCRemoteSwiftPackageReference "SnapKit" */ = {
@@ -4140,6 +4140,11 @@
 			package = 1A89556D25D6C8880060CE72 /* XCRemoteSwiftPackageReference "Alamofire" */;
 			productName = Alamofire;
 		};
+		513C8CE02BBC4132001CCE3A /* OCMock */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 513C8CDF2BBC4132001CCE3A /* XCRemoteSwiftPackageReference "ocmock" */;
+			productName = OCMock;
+		};
 		515D303E25BD7DE60021CF1E /* AppCenterCrashes */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */;
@@ -4149,11 +4154,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */;
 			productName = AppCenterAnalytics;
-		};
-		51A2D3B5292FEF000018CFB8 /* OCMock */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 51A2D3B4292FEF000018CFB8 /* XCRemoteSwiftPackageReference "ocmock" */;
-			productName = OCMock;
 		};
 		51BC150025BE138700F1CDC9 /* SnapKit */ = {
 			isa = XCSwiftPackageProductDependency;
