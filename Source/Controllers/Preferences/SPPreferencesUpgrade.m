@@ -29,7 +29,6 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPPreferencesUpgrade.h"
-#import "SPKeychain.h"
 #import "SPFavoritesController.h"
 #import "SPTreeNode.h"
 #import "SPFavoriteNode.h"
