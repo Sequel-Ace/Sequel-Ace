@@ -4117,7 +4117,7 @@
 			repositoryURL = "https://github.com/Alamofire/Alamofire.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 5.8.0;
+				minimumVersion = 5.9.0;
 			};
 		};
 		513C8CDF2BBC4132001CCE3A /* XCRemoteSwiftPackageReference "ocmock" */ = {
@@ -4133,7 +4133,7 @@
 			repositoryURL = "https://github.com/microsoft/appcenter-sdk-apple";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 5.0.0;
+				minimumVersion = 5.0.4;
 			};
 		};
 		51BC14FF25BE138700F1CDC9 /* XCRemoteSwiftPackageReference "SnapKit" */ = {
@@ -4148,8 +4148,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/ccgus/fmdb";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.7.7;
+				kind = exactVersion;
+				version = 2.7.9;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
