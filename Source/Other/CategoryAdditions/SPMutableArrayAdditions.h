@@ -47,3 +47,13 @@
 - (void)safeSetArray:(NSArray* _Nonnull)arr;
 
 @end
+
+@interface NSMutableOrderedSet (SPMutableArrayAdditions)
+
+- (nullable id)safeObjectAtIndex:(NSUInteger)idx;
+- (void)safeAddObject:(nullable id)obj;
+- (void)safeReplaceObjectAtIndex:(NSUInteger)index withObject:(nullable id)anObject;
+- (void)safeRemoveObjectAtIndex:(NSUInteger)index;
+- (void)addObjectIfNotContains:(id _Nonnull)obj;
+
+@end

@@ -1316,6 +1316,14 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 }
 
 /**
+ * Database tables accessor
+ */
+- (NSArray *)pinnedTables
+{
+    return pinnedTables;
+}
+
+/**
  * Database tables accessors for a given table type.
  */
 - (NSArray *)allTableAndViewNames
