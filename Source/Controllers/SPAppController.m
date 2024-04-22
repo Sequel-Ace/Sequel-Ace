@@ -1531,6 +1531,13 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
 {
+    if ([sender keyWindow] != nil) {
+        BOOL answer = [self dialogOKCancelWithQuestion:NSLocalizedString(@"Close the app?", @"quitting app informal alert title") text:NSLocalizedString(@"Are you sure you want to quit the app?", @"quitting app informal alert body")];
+        if (answer == NO) {
+            return NSTerminateCancel;
+        }
+    }
+
     BOOL shouldSaveFavorites = NO;
 
     // removing vacuum here. See: https://www.sqlite.org/lang_vacuum.html
@@ -1581,7 +1588,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         [[SPFavoritesController sharedFavoritesController] saveFavoritesSynchronously];
     }
 
-    return YES;
+    return NSTerminateNow;
 }
 
 #pragma mark -
