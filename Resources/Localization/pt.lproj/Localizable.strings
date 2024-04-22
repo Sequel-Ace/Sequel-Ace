@@ -612,6 +612,12 @@
 /* unsaved changes informative message */
 "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "Alterações foram feitas, que serão perdidas se esta janela for fechada. Tem certeza que deseja continuar";
 
+/* quitting app informal alert title */
+"Close the app?" = "Close the app?";
+
+/* quitting app informal alert body */
+"Are you sure you want to quit the app?" = "Are you sure you want to quit the app?";
+
 /* character set client: %@ */
 "character set client: %@" = "definir o conjunto de caracteres cliente: %@";
 
