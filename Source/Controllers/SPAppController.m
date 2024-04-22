@@ -302,6 +302,10 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     }
 }
 
+- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {
+    return YES;
+}
+
 - (void)addCheckForUpdatesMenuItem {
     if (NSBundle.mainBundle.isMASVersion == NO && [[NSUserDefaults standardUserDefaults] boolForKey:SPShowUpdateAvailable] == YES) {
         SPLog(@"Adding menu item to check for updates");
