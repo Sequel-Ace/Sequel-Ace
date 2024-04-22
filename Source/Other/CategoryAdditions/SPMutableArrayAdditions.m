@@ -89,3 +89,36 @@
 }
 
 @end
+
+@implementation NSMutableOrderedSet (SPMutableArrayAdditions)
+
+- (id)safeObjectAtIndex:(NSUInteger)idx{
+    return idx < self.count ? [self objectAtIndex:idx] : nil;
+}
+
+- (void)safeAddObject:(id)obj{
+    if (obj != nil) {
+        [self addObject:obj];
+    }
+}
+
+- (void)addObjectIfNotContains:(id)obj{
+    if (obj != nil && [self containsObject:obj] == NO) {
+        [self addObject:obj];
+    }
+}
+
+- (void)safeReplaceObjectAtIndex:(NSUInteger)index withObject:(nullable id)anObject{
+    if (anObject != nil && index < self.count) {
+        [self replaceObjectAtIndex:index withObject:anObject];
+    }
+}
+
+- (void)safeRemoveObjectAtIndex:(NSUInteger)index{
+    id object = [self safeObjectAtIndex:index];
+    if (object != nil && object != [NSNull null]) {
+        [self removeObjectAtIndex:index];
+    }
+}
+
+@end
