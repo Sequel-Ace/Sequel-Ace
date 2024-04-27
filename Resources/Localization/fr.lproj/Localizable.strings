@@ -982,7 +982,7 @@
 "Defines a list of members, of which every field can use at most one. Values are sorted by their index number (starting at 0 for the first member)." = "Définit une liste de membres, dont chaque champ peut être utilisé au plus un. Les valeurs sont triées par leur numéro d'index (à partir de 0 pour le premier membre).";
 
 /* delete button */
-"Delete" = "Supprimez";
+"Delete" = "Supprimer";
 
 /* delete table/view message */
 "Delete %@ '%@'?" = "Supprimer %1$@ '%2$@ ' ?";
