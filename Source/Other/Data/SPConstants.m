@@ -114,6 +114,7 @@ NSString *SPAutoConnectToDefault                 = @"AutoConnectToDefault";
 NSString *SPDefaultViewMode                      = @"DefaultViewMode";
 NSString *SPLastViewMode                         = @"LastViewMode";
 NSString *SPDefaultEncoding                      = @"DefaultEncodingTag";
+NSString *SPApplicationPromptOnQuit              = @"ApplicationPromptOnQuit";
 NSString *SPDisplayTableViewVerticalGridlines    = @"DisplayTableViewVerticalGridlines";
 NSString *SPDisplayTableViewColumnTypes          = @"DisplayTableViewColumnTypes";
 NSString *SPDisplayCommentsInTablesList          = @"DisplayCommentsInTablesList";
