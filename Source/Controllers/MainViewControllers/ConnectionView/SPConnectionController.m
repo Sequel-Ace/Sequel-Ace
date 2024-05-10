@@ -2419,14 +2419,19 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     // Only display the connection error message if there is a window visible
     if ([[dbDocument parentWindowControllerWindow] isVisible]) {
         NSScrollView *scrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(0,0,488,140)];
-        NSText *errorMessageTextView = [[NSText alloc] initWithFrame:scrollView.bounds];
+        [scrollView setDrawsBackground:NO];
+        [scrollView setHasVerticalScroller:YES];
+        
+        NSScroller *verticalScroller = [scrollView verticalScroller];
+        CGFloat scrollbarWidth = NSWidth([verticalScroller frame]);
+        NSRect textViewFrame = scrollView.bounds;
+        textViewFrame.size.width = scrollView.frame.size.width - scrollbarWidth;
 
+        NSText *errorMessageTextView = [[NSText alloc] initWithFrame:textViewFrame];
         [errorMessageTextView setString:errorMessage];
         [errorMessageTextView setEditable:NO];
         [errorMessageTextView setDrawsBackground:NO];
 
-        [scrollView setDrawsBackground:NO];
-        [scrollView setHasVerticalScroller:YES];
         [scrollView setDocumentView:errorMessageTextView];
 
         errorShowing = YES;
