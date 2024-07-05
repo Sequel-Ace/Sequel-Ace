@@ -303,7 +303,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {
-    return YES;
+    return NO;
 }
 
 - (void)addCheckForUpdatesMenuItem {
