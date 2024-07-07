@@ -2283,10 +2283,14 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 			}
 		}
 
-		// Check for TAB as indention for current line, i.e. left of the caret there are only white spaces
+		// Check for TAB/SHIFT+TAB as indention (or undention) for current line, i.e. left of the caret there are only white spaces
 		// but only if Soft Indent is set
 		if([prefs boolForKey:SPCustomQuerySoftIndent] && [self isCaretAtIndentPositionIgnoreLineStart:YES]) {
-			if([self shiftSelectionRight]) return;
+            if ([theEvent modifierFlags] & NSEventModifierFlagShift) {
+                if([self shiftSelectionLeft]) return;
+            } else {
+                if([self shiftSelectionRight]) return;
+            }
 		}
 	}
 
