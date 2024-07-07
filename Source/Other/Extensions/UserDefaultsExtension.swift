@@ -28,6 +28,10 @@ extension UserDefaults {
 		}
 		return savedFont
 	}
+  
+  @objc static func getSystemFont() -> NSFont {
+    return NSFont.systemFont(ofSize: NSFont.systemFontSize)
+  }
 
     // needs to be objc for KVO
     @objc var SPSecureBookmarks: [Dictionary<String, Data>] {

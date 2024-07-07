@@ -289,6 +289,12 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	[[NSFontPanel sharedFontPanel] makeKeyAndOrderFront:self];
 }
 
+- (IBAction)resetSystemFont:(id)sender
+{
+  [prefs setObject:[NSArchiver archivedDataWithRootObject:[NSUserDefaults getSystemFont]] forKey:SPCustomQueryEditorFont];
+  [self updateDisplayedEditorFontName];
+}
+
 /**
  * Sets the syntax colours back to there defaults.
  */
@@ -347,11 +353,9 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
  */
 - (void)updateDisplayedEditorFontName
 {
-	NSFont *font = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]];
-	
-	[editorFontName setFont:font];
-	
-	[colorSettingTableView reloadData];
+  NSFont *font = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]];
+  [editorFontName setFont:font];
+  [colorSettingTableView reloadData];
 }
 
 - (IBAction)delayStepperChanged:(id)sender {
