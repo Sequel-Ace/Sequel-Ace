@@ -45,17 +45,19 @@
 		return;
 	}
 	
-	[super setFont:theFont];
+  NSFont *displayFont = [NSFont fontWithName:[theFont fontName] size:13.0f];
+	[super setFont:displayFont];
 
 	// Set up a paragraph style for display, setting bounds and display settings
 	NSMutableParagraphStyle *paragraphStyle = [NSMutableParagraphStyle new];
 	
 	[paragraphStyle setAlignment:NSTextAlignmentNatural];
 	[paragraphStyle setLineBreakMode:NSLineBreakByTruncatingMiddle];
-	[paragraphStyle setMaximumLineHeight:NSHeight([self bounds]) + [theFont descender]];
+	[paragraphStyle setMaximumLineHeight:NSHeight([self bounds]) + [displayFont descender]];
 
 	// Set up the text to display - the font display name and the point size.
-	NSMutableAttributedString *displayString = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"%@, %.1f pt", [theFont displayName], [theFont pointSize]]];
+  NSString *displayName = [NSString stringWithFormat:@"%@, %.1f pt", [theFont displayName], [theFont pointSize]];
+	NSMutableAttributedString *displayString = [[NSMutableAttributedString alloc] initWithString:displayName];
 
 	// Apply the paragraph style
 	[displayString addAttribute:NSParagraphStyleAttributeName value:paragraphStyle range:NSMakeRange(0, [displayString length])];
