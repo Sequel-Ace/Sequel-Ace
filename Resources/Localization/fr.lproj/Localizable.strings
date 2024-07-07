@@ -147,7 +147,7 @@
 "\n\nPress ⇧ for binary search (case-sensitive)." = "\n\nAppuyez sur <unk> pour une recherche binaire (sensible à la casse).";
 
 /* description of bit */
-"A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit." = "Un type de champ bits. M spécifie le nombre de bits. Si des valeurs plus courtes sont insérées, elles seront alignées sur le bit le moins significatif. Voir le type SET si vous voulez explicitement nommer chaque bits.";
+"A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit." = "Un type de champ bits. M spécifie le nombre de bits. Si des valeurs plus courtes sont insérées, elles seront alignées sur le bit le moins significatif. Voir le type SET si vous voulez explicitement nommer chaque bit.";
 
 /* Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog message */
 "A Bundle ‘%@’ is already installed. Do you want to update it?" = "Un pack ‘%@’ est déjà installé. Voulez-vous le mettre à jour ?";
@@ -181,7 +181,7 @@
 "A character string with variable length. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "Une chaîne de caractères avec une longueur variable. Le nombre réel de caractères est encore limité par l'encodage utilisé. Contrairement à VARCHAR, ce type ne compte pas pour la longueur maximale de la ligne.";
 
 /* description of json */
-"A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8." = "A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8.";
+"A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8." = "Un type de données qui valide les données JSON lors de l'INSERT et les stocke en interne dans un format binaire qui est à la fois plus compact et plus rapide d'accès que le JSON textuel\n. Disponible à partir de MySQL 5.7.8.";
 
 /* Export file already exists explanatory text */
 "A file with the same name already exists in the target folder. Replacing it will overwrite its current contents." = "Un fichier avec le même nom existe déjà dans le dossier cible. Remplacer le fichier remplacera son contenu actuel.";
@@ -612,6 +612,12 @@
 /* unsaved changes informative message */
 "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "Des modifications ont été faites, qui seront perdues si cette fenêtre est fermée. Êtes-vous sûr de vouloir continuer";
 
+/* quitting app informal alert title */
+"Close the app?" = "Close the app?";
+
+/* quitting app informal alert body */
+"Are you sure you want to quit the app?" = "Are you sure you want to quit the app?";
+
 /* character set client: %@ */
 "character set client: %@" = "jeu de caractères client: %@";
 
@@ -976,7 +982,7 @@
 "Defines a list of members, of which every field can use at most one. Values are sorted by their index number (starting at 0 for the first member)." = "Définit une liste de membres, dont chaque champ peut être utilisé au plus un. Les valeurs sont triées par leur numéro d'index (à partir de 0 pour le premier membre).";
 
 /* delete button */
-"Delete" = "Supprimez";
+"Delete" = "Supprimer";
 
 /* delete table/view message */
 "Delete %@ '%@'?" = "Supprimer %1$@ '%2$@ ' ?";
@@ -3029,7 +3035,7 @@
 "Up to %@ bytes (4 GiB)" = "Up to %@ bytes (4 GiB)";
 
 /* range for mediumtext type */
-"Up to %@ characters (16 MiB)" = "Up to %@ characters (16 MiB)";
+"Up to %@ characters (16 MiB)" = "Jusqu\"à %@ caractères (16 Mo)";
 
 /* range for enum type */
 "Up to %@ distinct members (<%@ in practice)\n1-2 bytes storage" = "Up to %1$@ distinct members (<%2$@ in practice)\n1-2 bytes storage";

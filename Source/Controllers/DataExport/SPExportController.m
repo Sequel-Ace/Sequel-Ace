@@ -708,7 +708,7 @@ set_input:
 	
 	// For all modes, retrieve table and view names
 	{
-		NSArray *tablesAndViews = [tablesListInstance allTableAndViewNames];
+        NSOrderedSet *tablesAndViews = [[NSOrderedSet alloc] initWithArray:[[tablesListInstance allTableAndViewNames] sortedArrayUsingSelector:@selector(compare:)]];
 
 		for (id itemName in tablesAndViews) {
 			[tables safeAddObject:[NSMutableArray arrayWithObjects:

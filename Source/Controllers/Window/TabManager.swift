@@ -138,17 +138,26 @@ private extension TabManager {
 
     func createTab(newWindowController: SPWindowController, inWindow window: NSWindow, ordered orderingMode: NSWindow.OrderingMode) {
 
-        guard let newWindow = addManagedWindow(windowController: newWindowController)?.window else { preconditionFailure() }
+        guard let newManagement = addManagedWindow(windowController: newWindowController) else { preconditionFailure() }
+        let newWindow = newManagement.window
 
-        window.addTabbedWindow(newWindow, ordered: orderingMode)
+        // In case user hits "+" in the UI in tab bar - system automatically creates a tab for us and adds it to the tabGroup - there is no way to avoid it and no way to work around it. In case user hits CMD+T or "New tab" in Menu, it's upon us to do so, so we add tabbed window manually
+        if managedWindows.first(where: { $0.window.isMainWindow }) != nil {
+            window.addTabbedWindow(newWindow, ordered: orderingMode)
+        }
+        let index = window.tabGroup?.windows.firstIndex(of: newWindow) ?? 0
+        managedWindows.insert(newManagement, at: index)
         newWindow.makeKeyAndOrderFront(nil)
     }
 
     func createWindow(newWindowController: SPWindowController, inWindow window: NSWindow, ordered orderingMode: NSWindow.OrderingMode) {
 
-        guard let newWindow = addManagedWindow(windowController: newWindowController)?.window else { preconditionFailure() }
+        guard let newManagement = addManagedWindow(windowController: newWindowController) else { preconditionFailure() }
+        let newWindow = newManagement.window
 
         window.addChildWindow(newWindow, ordered: orderingMode)
+        let index = window.tabGroup?.windows.firstIndex(of: newWindow) ?? 0
+        managedWindows.insert(newManagement, at: index)
         newWindow.collectionBehavior = [newWindow.collectionBehavior, .participatesInCycle]
         newWindow.makeKeyAndOrderFront(nil)
     }
@@ -165,10 +174,7 @@ private extension TabManager {
             }
             self.removeManagedWindow(forWindow: window)
         }
-        let management = ManagedWindow(windowController: windowController, window: window, closingSubscription: subscription)
-        let currentIndex = managedWindows.firstIndex(where: { $0.window.isMainWindow }) ?? -1
-        managedWindows.insert(management, at: currentIndex + 1)
-        return management
+        return ManagedWindow(windowController: windowController, window: window, closingSubscription: subscription)
     }
 
     func removeManagedWindow(forWindow window: NSWindow) {

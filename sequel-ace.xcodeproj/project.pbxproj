@@ -218,6 +218,7 @@
 		5132930D25F586A900D803AD /* TabManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132930A25F586A900D803AD /* TabManager.swift */; };
 		513515D2259354BB001E4533 /* NSImageExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 513515D1259354BB001E4533 /* NSImageExtensions.swift */; };
 		51384AC22903461000FEC501 /* NSDictionaryExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51384AC12903461000FEC501 /* NSDictionaryExtension.swift */; };
+		513C8CE12BBC4132001CCE3A /* OCMock in Frameworks */ = {isa = PBXBuildFile; productRef = 513C8CE02BBC4132001CCE3A /* OCMock */; };
 		514DD98925FACF1500EA3B3B /* SPDatabaseDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 514DD98825FACF1500EA3B3B /* SPDatabaseDocument.swift */; };
 		515D303F25BD7DE60021CF1E /* AppCenterCrashes in Frameworks */ = {isa = PBXBuildFile; productRef = 515D303E25BD7DE60021CF1E /* AppCenterCrashes */; };
 		515D304125BD7DE60021CF1E /* AppCenterAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 515D304025BD7DE60021CF1E /* AppCenterAnalytics */; };
@@ -226,7 +227,6 @@
 		517E4512257A954000ED333B /* ContentFilters.plist in Resources */ = {isa = PBXBuildFile; fileRef = 517E4511257A954000ED333B /* ContentFilters.plist */; };
 		5193502F2567D2FB001272B5 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193502E2567D2FB001272B5 /* CollectionExtension.swift */; };
 		519350302567D2FB001272B5 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193502E2567D2FB001272B5 /* CollectionExtension.swift */; };
-		51A2D3B6292FEF000018CFB8 /* OCMock in Frameworks */ = {isa = PBXBuildFile; productRef = 51A2D3B5292FEF000018CFB8 /* OCMock */; };
 		51A709392565B99F001F1D2F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 51A709382565B99F001F1D2F /* Images.xcassets */; };
 		51BB391C25F82B060048CA69 /* SPAppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BB391B25F82B060048CA69 /* SPAppController.swift */; };
 		51BC14F825BE135500F1CDC9 /* SPWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC14F725BE135500F1CDC9 /* SPWindowController.swift */; };
@@ -1171,7 +1171,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				51A2D3B6292FEF000018CFB8 /* OCMock in Frameworks */,
+				513C8CE12BBC4132001CCE3A /* OCMock in Frameworks */,
 				51DCBEF0257134190098E303 /* libz.tbd in Frameworks */,
 				502D22151BA62FA5000D4CE7 /* Security.framework in Frameworks */,
 				1717FA43155831600065C036 /* libicucore.dylib in Frameworks */,
@@ -2439,7 +2439,7 @@
 			);
 			name = "Unit Tests";
 			packageProductDependencies = (
-				51A2D3B5292FEF000018CFB8 /* OCMock */,
+				513C8CE02BBC4132001CCE3A /* OCMock */,
 			);
 			productName = "Unit Tests";
 			productReference = 380F4ED90FC0B50500B0BFD7 /* Unit Tests.xctest */;
@@ -2553,7 +2553,7 @@
 				515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */,
 				51BC14FF25BE138700F1CDC9 /* XCRemoteSwiftPackageReference "SnapKit" */,
 				1A89556D25D6C8880060CE72 /* XCRemoteSwiftPackageReference "Alamofire" */,
-				51A2D3B4292FEF000018CFB8 /* XCRemoteSwiftPackageReference "ocmock" */,
+				513C8CDF2BBC4132001CCE3A /* XCRemoteSwiftPackageReference "ocmock" */,
 			);
 			productRefGroup = 19C28FB0FE9D524F11CA2CBB /* Products */;
 			projectDirPath = "";
@@ -3154,6 +3154,7 @@
 				INFOPLIST_FILE = "Resources/Plists/Unit Tests-Info.plist";
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
 				LD_RUNPATH_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_LDFLAGS = (
 					"-framework",
@@ -3189,6 +3190,7 @@
 				INFOPLIST_FILE = "Resources/Plists/Unit Tests-Info.plist";
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
 				LD_RUNPATH_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_LDFLAGS = (
 					"-framework",
@@ -3224,6 +3226,7 @@
 				INFOPLIST_FILE = "Resources/Plists/Unit Tests-Info.plist";
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
 				LD_RUNPATH_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_LDFLAGS = (
 					"-framework",
@@ -3265,7 +3268,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 20062;
+				CURRENT_PROJECT_VERSION = 20067;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -3316,6 +3319,7 @@
 			buildSettings = {
 				APPLY_RULES_IN_COPY_HEADERS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOL_FRAMEWORKS = "UIKit AppKit";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "Entitlements/Sequel Ace.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -3347,6 +3351,7 @@
 					"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib",
 					"$(inherited)",
 				);
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
@@ -3377,6 +3382,7 @@
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INSTALL_PATH = /usr/local/bin;
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_LDFLAGS = (
 					"-framework",
@@ -3404,6 +3410,7 @@
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INSTALL_PATH = /usr/local/bin;
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_LDFLAGS = (
 					"-framework",
@@ -3431,6 +3438,7 @@
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INSTALL_PATH = /usr/local/bin;
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_LDFLAGS = (
 					"-framework",
@@ -3464,6 +3472,7 @@
 				GENERATE_PKGINFO_FILE = YES;
 				INFOPLIST_FILE = "Resources/Plists/TunnelAssistant-Info.plist";
 				INSTALL_PATH = "/Applications/Sequel Ace.app/Contents/MacOS";
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_LDFLAGS = (
 					"-framework",
@@ -3499,6 +3508,7 @@
 				GENERATE_PKGINFO_FILE = YES;
 				INFOPLIST_FILE = "Resources/Plists/TunnelAssistant-Info.plist";
 				INSTALL_PATH = "/Applications/Sequel Ace.app/Contents/MacOS";
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_LDFLAGS = (
 					"-framework",
@@ -3534,6 +3544,7 @@
 				GENERATE_PKGINFO_FILE = YES;
 				INFOPLIST_FILE = "Resources/Plists/TunnelAssistant-Info.plist";
 				INSTALL_PATH = "/Applications/Sequel Ace.app/Contents/MacOS";
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_LDFLAGS = (
 					"-framework",
@@ -3577,7 +3588,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20062;
+				CURRENT_PROJECT_VERSION = 20067;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -3630,6 +3641,7 @@
 			buildSettings = {
 				APPLY_RULES_IN_COPY_HEADERS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOL_FRAMEWORKS = "UIKit AppKit";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "Entitlements/Sequel Ace.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -3661,6 +3673,7 @@
 					"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib",
 					"$(inherited)",
 				);
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace-beta";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
@@ -3697,6 +3710,7 @@
 				INFOPLIST_FILE = "Resources/Plists/Unit Tests-Info.plist";
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
 				LD_RUNPATH_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_LDFLAGS = (
 					"-framework",
@@ -3729,6 +3743,7 @@
 				GENERATE_PKGINFO_FILE = YES;
 				INFOPLIST_FILE = "Resources/Plists/TunnelAssistant-Info.plist";
 				INSTALL_PATH = "/Applications/Sequel Ace.app/Contents/MacOS";
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_LDFLAGS = (
 					"-framework",
@@ -3758,6 +3773,7 @@
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INSTALL_PATH = /usr/local/bin;
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_LDFLAGS = (
 					"-framework",
@@ -3775,6 +3791,7 @@
 			buildSettings = {
 				APPLY_RULES_IN_COPY_HEADERS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOL_FRAMEWORKS = "UIKit AppKit";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "Entitlements/Sequel Ace.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -3807,6 +3824,7 @@
 					"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib",
 					"$(inherited)",
 				);
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
@@ -3827,6 +3845,7 @@
 			buildSettings = {
 				APPLY_RULES_IN_COPY_HEADERS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOL_FRAMEWORKS = "UIKit AppKit";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "Entitlements/Sequel Ace.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -3858,6 +3877,7 @@
 					"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib",
 					"$(inherited)",
 				);
+				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
@@ -3901,7 +3921,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20062;
+				CURRENT_PROJECT_VERSION = 20067;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -3984,7 +4004,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 20062;
+				CURRENT_PROJECT_VERSION = 20067;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -4097,7 +4117,15 @@
 			repositoryURL = "https://github.com/Alamofire/Alamofire.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 5.8.0;
+				minimumVersion = 5.9.0;
+			};
+		};
+		513C8CDF2BBC4132001CCE3A /* XCRemoteSwiftPackageReference "ocmock" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/paulb777/ocmock";
+			requirement = {
+				branch = "patch-2";
+				kind = branch;
 			};
 		};
 		515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */ = {
@@ -4105,15 +4133,7 @@
 			repositoryURL = "https://github.com/microsoft/appcenter-sdk-apple";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 5.0.0;
-			};
-		};
-		51A2D3B4292FEF000018CFB8 /* XCRemoteSwiftPackageReference "ocmock" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/erikdoe/ocmock";
-			requirement = {
-				branch = master;
-				kind = branch;
+				minimumVersion = 5.0.4;
 			};
 		};
 		51BC14FF25BE138700F1CDC9 /* XCRemoteSwiftPackageReference "SnapKit" */ = {
@@ -4128,8 +4148,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/ccgus/fmdb";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.7.7;
+				kind = exactVersion;
+				version = 2.7.9;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -4140,6 +4160,11 @@
 			package = 1A89556D25D6C8880060CE72 /* XCRemoteSwiftPackageReference "Alamofire" */;
 			productName = Alamofire;
 		};
+		513C8CE02BBC4132001CCE3A /* OCMock */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 513C8CDF2BBC4132001CCE3A /* XCRemoteSwiftPackageReference "ocmock" */;
+			productName = OCMock;
+		};
 		515D303E25BD7DE60021CF1E /* AppCenterCrashes */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */;
@@ -4149,11 +4174,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 515D303D25BD7DE60021CF1E /* XCRemoteSwiftPackageReference "appcenter-sdk-apple" */;
 			productName = AppCenterAnalytics;
-		};
-		51A2D3B5292FEF000018CFB8 /* OCMock */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 51A2D3B4292FEF000018CFB8 /* XCRemoteSwiftPackageReference "ocmock" */;
-			productName = OCMock;
 		};
 		51BC150025BE138700F1CDC9 /* SnapKit */ = {
 			isa = XCSwiftPackageProductDependency;

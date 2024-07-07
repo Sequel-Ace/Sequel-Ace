@@ -121,6 +121,8 @@
 	<integer>0</integer>
 	<key>deletedDefaultBundles</key>
 	<array/>
+	<key>ApplicationPromptOnQuit</key>
+	<true/>
 	<key>DisplayServerVersionInWindowTitle</key>
 	<true/>
 	<key>DisplayTableViewVerticalGridlines</key>

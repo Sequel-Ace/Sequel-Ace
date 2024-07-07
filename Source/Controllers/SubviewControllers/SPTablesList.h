@@ -162,6 +162,7 @@
 - (nullable NSString *)tableName;
 - (SPTableType)tableType;
 - (nonnull NSArray *)tables;
+- (nonnull NSArray *)pinnedTables;
 - (nonnull NSArray *)tableTypes;
 - (nonnull NSArray *)allTableAndViewNames;
 - (nonnull NSArray *)allTableNames;

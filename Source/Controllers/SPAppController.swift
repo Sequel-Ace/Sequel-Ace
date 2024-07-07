@@ -207,3 +207,15 @@ extension SPAppController {
         tabManager.activeWindowController?.databaseDocument.showMySQLHelp()
     }
 }
+
+extension SPAppController {
+    @objc func dialogOKCancel(question: String, text: String) -> Bool {
+        let alert = NSAlert()
+        alert.messageText = question
+        alert.informativeText = text
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+}

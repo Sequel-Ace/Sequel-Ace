@@ -612,6 +612,12 @@
 /* unsaved changes informative message */
 "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "Alterações foram feitas, que serão perdidas se esta janela for fechada. Tem certeza que deseja continuar";
 
+/* quitting app informal alert title */
+"Close the app?" = "Close the app?";
+
+/* quitting app informal alert body */
+"Are you sure you want to quit the app?" = "Are you sure you want to quit the app?";
+
 /* character set client: %@ */
 "character set client: %@" = "definir o conjunto de caracteres cliente: %@";
 
@@ -1117,7 +1123,7 @@
 "Duplicate View..." = "Duplicar View...";
 
 /* partial copy database support informative message */
-"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "Duplicar a base de dados '%@' é apenas parcialmente suportado, pois contém elementos para além das tabelas (funções, procedimentos, etc.) e que não serão copiados.\n\nPretende ainda assim continuar?";
+"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "A duplicação da base de dados '%@' é apenas parcialmente suportada, pois esta contém outros objectos para além das tabelas (funções, procedimentos, etc.) que não serão copiados.\n\nPretende ainda assim continuar?";
 
 /* edit filter */
 "Edit Filters…" = "Editar filtros…";
