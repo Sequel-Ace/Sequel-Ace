@@ -27,4 +27,3 @@ fastlane/.env
 prebuild.log
 /docs/_site
 vendor
-Package.resolved
