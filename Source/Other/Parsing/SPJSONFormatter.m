@@ -34,114 +34,134 @@ static char GetNextANSIChar(SPJSONTokenizerState *stateInfo);
 
 @implementation SPJSONFormatter
 
++ (NSString *)stringByFormattingString:(NSString *)input useSoftIndent:(BOOL)useSoftIndent indentWidth:(NSInteger)indentWidth
+{
+  SPJSONTokenizerState stateInfo;
+  if(SPJSONTokenizerInit(input,&stateInfo) == -1) return nil;
+  
+  NSUInteger idLevel = 0;
+  
+  NSCharacterSet *wsNlCharset = [NSCharacterSet whitespaceAndNewlineCharacterSet];
+  NSMutableString *formatted = [[NSMutableString alloc] init];
+  
+  SPJSONToken prevTokenType = JSON_TOK_EOF;
+  SPJSONTokenInfo curToken;
+  if(SPJSONTokenizerGetNextToken(&stateInfo,&curToken) == -1) {
+    return nil;
+  }
+  
+  BOOL needIndent = NO;
+  SPJSONTokenInfo nextToken;
+  do {
+    //we need to know the next token to do meaningful formatting
+    if(SPJSONTokenizerGetNextToken(&stateInfo,&nextToken) == -1) {
+      return nil;
+    }
+    
+    if(idLevel > 0 && (curToken.tok == JSON_TOK_SQUARE_BRACE_CLOSE || curToken.tok == JSON_TOK_CURLY_BRACE_CLOSE))
+      idLevel--;
+    
+    //if this token is a "]" or "}" and there was no ",", "[" or "{" directly before it, add a linebreak before
+    if(prevTokenType != JSON_TOK_CURLY_BRACE_OPEN && prevTokenType != JSON_TOK_SQUARE_BRACE_OPEN && prevTokenType != JSON_TOK_COMMA && (curToken.tok == JSON_TOK_SQUARE_BRACE_CLOSE || curToken.tok == JSON_TOK_CURLY_BRACE_CLOSE)) {
+      [formatted appendString:@"\n"];
+      needIndent = YES;
+    }
+    
+    //if this token is on a new line indent it
+    if(needIndent && idLevel > 0) {
+      NSMutableString *indentString = [NSMutableString string];
+      SPLog(@"SPJSONFormatter:indentWidth is %d", indentWidth);
+      if (indentWidth < 1) indentWidth = 1;
+      if (indentWidth > 32) indentWidth = 32;
+
+      if (useSoftIndent == YES) {
+        for(NSUInteger i = 0; i < indentWidth; i++)
+          [indentString appendString:@" "];
+      } else {
+        [indentString appendString:@"\t"];
+      }
+      
+      //32 tabs pool (with fallback for even deeper nesting)
+      NSMutableString *tabs = [NSMutableString string];
+      for (NSUInteger i = 0; i < 32; i++)
+        [tabs appendString:indentString];
+      
+      NSInteger myIdLevel = idLevel;
+      while(myIdLevel > [tabs length]) {
+        [formatted appendString:tabs];
+        myIdLevel -= [tabs length];
+      }
+      [formatted appendString:[tabs substringWithRange:NSMakeRange(0, myIdLevel*indentWidth)]];
+      needIndent = NO;
+    }
+    
+    //save ourselves the overhead of creating an NSString if we already know what it will contain
+    NSString *curTokenString;
+    switch (curToken.tok) {
+      case JSON_TOK_CURLY_BRACE_OPEN:
+        curTokenString = @"{";
+        break;
+        
+      case JSON_TOK_CURLY_BRACE_CLOSE:
+        curTokenString = @"}";
+        break;
+        
+      case JSON_TOK_SQUARE_BRACE_OPEN:
+        curTokenString = @"[";
+        break;
+        
+      case JSON_TOK_SQUARE_BRACE_CLOSE:
+        curTokenString = @"]";
+        break;
+        
+      case JSON_TOK_DOUBLE_QUOTE:
+        curTokenString = @"\"";
+        break;
+        
+      case JSON_TOK_COLON:
+        curTokenString = @": "; //add a space after ":" for readability
+        break;
+        
+      case JSON_TOK_COMMA:
+        curTokenString = @",";
+        break;
+        
+        //JSON_TOK_OTHER
+        //JSON_TOK_STRINGDATA
+      default:
+        curTokenString = [[NSString alloc] initWithBytesNoCopy:(void *)(&stateInfo.str[curToken.pos]) length:curToken.len encoding:NSUTF8StringEncoding freeWhenDone:NO];
+        //for everything except strings get rid of surrounding whitespace
+        if(curToken.tok != JSON_TOK_STRINGDATA) {
+          NSString *newTokenString = [curTokenString stringByTrimmingCharactersInSet:wsNlCharset];
+          curTokenString = newTokenString;
+        }
+    }
+    
+    [formatted appendString:curTokenString];
+    
+    //if the current token is a "[", "{" or "," and the next token is not a "]" or "}" add a line break afterwards
+    if(
+       curToken.tok == JSON_TOK_COMMA ||
+       (curToken.tok == JSON_TOK_CURLY_BRACE_OPEN && nextToken.tok != JSON_TOK_CURLY_BRACE_CLOSE) ||
+       (curToken.tok == JSON_TOK_SQUARE_BRACE_OPEN && nextToken.tok != JSON_TOK_SQUARE_BRACE_CLOSE)
+       ) {
+         [formatted appendString:@"\n"];
+         needIndent = YES;
+       }
+    
+    if(curToken.tok == JSON_TOK_CURLY_BRACE_OPEN || curToken.tok == JSON_TOK_SQUARE_BRACE_OPEN)
+      idLevel++;
+    
+    prevTokenType = curToken.tok;
+    curToken = nextToken;
+  } while(curToken.tok != JSON_TOK_EOF); //SPJSONTokenizerGetNextToken() will always return JSON_TOK_EOF once it has reached that state
+  
+  return formatted;
+}
+
 + (NSString *)stringByFormattingString:(NSString *)input
 {
-	SPJSONTokenizerState stateInfo;
-	if(SPJSONTokenizerInit(input,&stateInfo) == -1) return nil;
-	
-	NSUInteger idLevel = 0;
-	
-	NSCharacterSet *wsNlCharset = [NSCharacterSet whitespaceAndNewlineCharacterSet];
-	NSMutableString *formatted = [[NSMutableString alloc] init];
-	
-	SPJSONToken prevTokenType = JSON_TOK_EOF;
-	SPJSONTokenInfo curToken;
-	if(SPJSONTokenizerGetNextToken(&stateInfo,&curToken) == -1) {
-		return nil;
-	}
-	
-	BOOL needIndent = NO;
-	SPJSONTokenInfo nextToken;
-	do {
-		//we need to know the next token to do meaningful formatting
-		if(SPJSONTokenizerGetNextToken(&stateInfo,&nextToken) == -1) {
-			return nil;
-		}
-		
-		if(idLevel > 0 && (curToken.tok == JSON_TOK_SQUARE_BRACE_CLOSE || curToken.tok == JSON_TOK_CURLY_BRACE_CLOSE))
-			idLevel--;
-		
-		//if this token is a "]" or "}" and there was no ",", "[" or "{" directly before it, add a linebreak before
-		if(prevTokenType != JSON_TOK_CURLY_BRACE_OPEN && prevTokenType != JSON_TOK_SQUARE_BRACE_OPEN && prevTokenType != JSON_TOK_COMMA && (curToken.tok == JSON_TOK_SQUARE_BRACE_CLOSE || curToken.tok == JSON_TOK_CURLY_BRACE_CLOSE)) {
-			[formatted appendString:@"\n"];
-			needIndent = YES;
-		}
-		
-		//if this token is on a new line indent it
-		if(needIndent && idLevel > 0) {
-			//32 tabs pool (with fallback for even deeper nesting)
-			static NSString *tabs = @"\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t";
-			NSUInteger myIdLevel = idLevel;
-			while(myIdLevel > [tabs length]) {
-				[formatted appendString:tabs];
-				myIdLevel -= [tabs length];
-			}
-			[formatted appendString:[tabs substringWithRange:NSMakeRange(0, myIdLevel)]];
-			needIndent = NO;
-		}
-		
-		//save ourselves the overhead of creating an NSString if we already know what it will contain
-		NSString *curTokenString;
-		switch (curToken.tok) {
-			case JSON_TOK_CURLY_BRACE_OPEN:
-				curTokenString = @"{";
-				break;
-				
-			case JSON_TOK_CURLY_BRACE_CLOSE:
-				curTokenString = @"}";
-				break;
-				
-			case JSON_TOK_SQUARE_BRACE_OPEN:
-				curTokenString = @"[";
-				break;
-				
-			case JSON_TOK_SQUARE_BRACE_CLOSE:
-				curTokenString = @"]";
-				break;
-				
-			case JSON_TOK_DOUBLE_QUOTE:
-				curTokenString = @"\"";
-				break;
-				
-			case JSON_TOK_COLON:
-				curTokenString = @": "; //add a space after ":" for readability
-				break;
-				
-			case JSON_TOK_COMMA:
-				curTokenString = @",";
-				break;
-				
-			//JSON_TOK_OTHER
-			//JSON_TOK_STRINGDATA
-			default:
-				curTokenString = [[NSString alloc] initWithBytesNoCopy:(void *)(&stateInfo.str[curToken.pos]) length:curToken.len encoding:NSUTF8StringEncoding freeWhenDone:NO];
-				//for everything except strings get rid of surrounding whitespace
-				if(curToken.tok != JSON_TOK_STRINGDATA) {
-					NSString *newTokenString = [curTokenString stringByTrimmingCharactersInSet:wsNlCharset];
-					curTokenString = newTokenString;
-				}
-		}
-		
-		[formatted appendString:curTokenString];
-
-		//if the current token is a "[", "{" or "," and the next token is not a "]" or "}" add a line break afterwards
-		if(
-		   curToken.tok == JSON_TOK_COMMA ||
-		   (curToken.tok == JSON_TOK_CURLY_BRACE_OPEN && nextToken.tok != JSON_TOK_CURLY_BRACE_CLOSE) ||
-		   (curToken.tok == JSON_TOK_SQUARE_BRACE_OPEN && nextToken.tok != JSON_TOK_SQUARE_BRACE_CLOSE)
-		) {
-			[formatted appendString:@"\n"];
-			needIndent = YES;
-		}
-		
-		if(curToken.tok == JSON_TOK_CURLY_BRACE_OPEN || curToken.tok == JSON_TOK_SQUARE_BRACE_OPEN)
-			idLevel++;
-		
-		prevTokenType = curToken.tok;
-		curToken = nextToken;
-	} while(curToken.tok != JSON_TOK_EOF); //SPJSONTokenizerGetNextToken() will always return JSON_TOK_EOF once it has reached that state
-	
-	return formatted;
+    return [self stringByFormattingString:input useSoftIndent:false indentWidth:1];
 }
 
 + (NSString *)stringByUnformattingString:(NSString *)input

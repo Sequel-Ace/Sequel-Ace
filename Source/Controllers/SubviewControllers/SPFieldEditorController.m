@@ -412,9 +412,12 @@ typedef enum {
 		else {
 			// If the input is a JSON type column we can format it.
 			// Since MySQL internally stores JSON in binary, it does not retain any formatting
+      BOOL useSoftIndent = [prefs boolForKey:SPCustomQuerySoftIndent];
+      NSInteger indentWidth = [prefs integerForKey:SPCustomQuerySoftIndentWidth];
+
 			do {
 				if(_isJSON) {
-					NSString *formatted = [SPJSONFormatter stringByFormattingString:sheetEditData];
+          NSString *formatted = [SPJSONFormatter stringByFormattingString:sheetEditData useSoftIndent:useSoftIndent indentWidth:indentWidth];
 					if(formatted) {
 						stringValue = formatted;
 						break;
@@ -552,7 +555,9 @@ typedef enum {
                         else{
                           // Re-format by custom formatter instead of using NSJSONSerialization
                           // to avoid the data conversion issue of NSJSONSerialization (e.g: float number issue)
-                          NSString *prettyPrintedJson = [SPJSONFormatter stringByFormattingString:sheetEditData];
+                          BOOL useSoftIndent = [prefs boolForKey:SPCustomQuerySoftIndent];
+                          NSInteger indentWidth = [prefs integerForKey:SPCustomQuerySoftIndentWidth];
+                          NSString *prettyPrintedJson = [SPJSONFormatter stringByFormattingString:sheetEditData useSoftIndent:useSoftIndent indentWidth:indentWidth];
                           if(prettyPrintedJson != nil){
                             SPLog(@"prettyPrintedJson : %@", prettyPrintedJson);
                             [jsonTextView setString:prettyPrintedJson];
