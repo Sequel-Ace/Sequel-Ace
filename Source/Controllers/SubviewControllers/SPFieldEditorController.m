@@ -541,6 +541,8 @@ typedef enum {
                     if ([sheetEditData respondsToSelector:@selector(dataUsingEncoding:)]) {
                         NSError *error = nil;
                         NSData *jsonData = [sheetEditData dataUsingEncoding:NSUTF8StringEncoding];
+                        
+                        // Validate by NSJSONSerialization
                         id jsonObject = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingMutableContainers error:&error];
 
                         if(error != nil){
@@ -548,34 +550,17 @@ typedef enum {
                             [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
                         }
                         else{
-                            if([NSJSONSerialization isValidJSONObject:jsonObject]){
-                                SPLog(@"isValidJSONObject : %@", jsonObject);
-                                NSData *prettyJsonData = [NSJSONSerialization dataWithJSONObject:jsonObject options:NSJSONWritingPrettyPrinted error:&error];
-
-                                if(error != nil){
-                                    SPLog(@"dataWithJSONObject error : %@", error.localizedDescription);
-                                    [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
-                                }
-                                else{
-                                    NSString *prettyPrintedJson = [[NSString alloc] initWithData:prettyJsonData encoding:NSUTF8StringEncoding];
-                                    if(prettyPrintedJson != nil){
-                                        SPLog(@"prettyPrintedJson : %@", prettyPrintedJson);
-                                        [jsonTextView setString:prettyPrintedJson];
-                                    }
-                                    else{
-                                        SPLog(@"prettyPrintedJson is nil");
-                                        [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
-                                    }
-                                }
-                            }
-                            else{
-                                if(sheetEditData != nil){
-                                    [jsonTextView setString:sheetEditData];
-                                }
-                                else{
-                                    [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
-                                }
-                            }
+                          // Re-format by custom formatter instead of using NSJSONSerialization
+                          // to avoid the data conversion issue of NSJSONSerialization (e.g: float number issue)
+                          NSString *prettyPrintedJson = [SPJSONFormatter stringByFormattingString:sheetEditData];
+                          if(prettyPrintedJson != nil){
+                            SPLog(@"prettyPrintedJson : %@", prettyPrintedJson);
+                            [jsonTextView setString:prettyPrintedJson];
+                          }
+                          else{
+                            SPLog(@"prettyPrintedJson is nil");
+                            [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
+                          }
                         }
                     }
                     else{
