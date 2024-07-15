@@ -109,6 +109,8 @@ int SPJSONTokenizerGetNextToken(SPJSONTokenizerState *stateInfo, SPJSONTokenInfo
  *
  * @return The formatted string or nil if formatting failed.
  */
++ (NSString *)stringByFormattingString:(NSString *)input useSoftIndent:(BOOL)useSoftIndent indentWidth:(NSInteger)indentWidth;
+
 + (NSString *)stringByFormattingString:(NSString *)input;
 
 /**
