@@ -4692,7 +4692,7 @@ static NSMenu* defaultColumnHeaderMenu(SPTableContent *tc) {
     item.target = tc;
     item.action = @selector(toggleDisplayOverrideFormatter:);
     item.enabled = YES;
-    item.representedObject = [FormatterWithReference newWithFormatter: [SAUUIDormatter new]];
+    item.representedObject = [FormatterWithReference newWithFormatter: [SAUuidFormatter new]];
     [menu addItem: item];
 
     return menu;
@@ -4718,7 +4718,7 @@ static NSDictionary* currentFormatters(SPTableContent *tc) {
 
 static NSDictionary* knownColumnFormatters(SPTableContent *tc) {
     return @{ 
-        @"UUID": [SAUUIDormatter new],
+        @"UUID": [SAUuidFormatter new],
         // In theory, we could extract hex handling to it's own formatter
         // @"HEX": [SAHexormatter new]
     };

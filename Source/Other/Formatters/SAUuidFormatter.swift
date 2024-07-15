@@ -6,7 +6,8 @@
 import Foundation
 
 
-@objc final class SAUUIDormatter: SABaseFormatter {
+
+@objc final class SAUuidFormatter: SABaseFormatter {
     static let REGEX_PAIRS = try! NSRegularExpression(pattern: "[0-9a-f]{1,2}", options: .caseInsensitive)
     static let REGEX_VALID_CHARS = try! NSRegularExpression(pattern: "[^0-9a-f\\-]", options: .caseInsensitive)
     static var nullStr: String? { UserDefaults.standard.string(forKey: SPNullValue) }
