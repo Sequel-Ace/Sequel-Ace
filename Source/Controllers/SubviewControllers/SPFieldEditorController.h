@@ -30,6 +30,8 @@
 
 #import <Quartz/Quartz.h> // QuickLookUI
 
+@class SABaseFormatter;
+
 //This is an informal protocol
 @protocol _QLPreviewPanelController
 
@@ -206,6 +208,11 @@
  * The field encoding of the underlying table field for displaying it to the user.
  */
 @property(nonatomic, copy) NSString *fieldEncoding;
+
+/**
+ * The field encoding of the underlying table field for displaying it to the user.
+ */
+@property(nonatomic, copy) SABaseFormatter *displayFormatter;
 
 /**
  * Whether underlying table field allows NULL for several validations.

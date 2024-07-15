@@ -4190,7 +4190,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 				cellValue = [NSString stringWithString:[prefs objectForKey:SPNullValue]];
 			}
 
-			if ([self cellValueIsDisplayedAsHexForColumn:[[tableColumn identifier] integerValue]]) {
+			NSInteger idx = [[tableColumn identifier] integerValue];
+			if ([[tableColumn.dataCell formatter] isKindOfClass:[SABaseFormatter class]]) {
+				[fieldEditor setDisplayFormatter:[tableColumn.dataCell formatter]];
+			}
+			else if ([self cellValueIsDisplayedAsHexForColumn:idx]) {
 				[fieldEditor setTextMaxLength:[[self tableView:tableContentView objectValueForTableColumn:tableColumn row:rowIndex] length]];
 				isFieldEditable = NO;
 			}
