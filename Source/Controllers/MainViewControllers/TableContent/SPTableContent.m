@@ -2856,7 +2856,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			NSString *escVal;
 			NSString *fmt = @"%@";
 			// If the field is of type BIT then it needs a binary prefix
-			if ([[[tableDataInstance columnWithName:[keys safeObjectAtIndex:i]] objectForKey:@"type"] isEqualToString:@"BIT"]) {
+      NSDictionary *field = [tableDataInstance columnWithName:[keys safeObjectAtIndex:i]];
+      NSString *fieldType = [field objectForKey:@"type"];
+      NSString *fieldTypeGroup = [field objectForKey:@"typegrouping"];
+      
+			if ([fieldType isEqualToString:@"BIT"]) {
 				escVal = [mySQLConnection escapeString:tempValue includingQuotes:NO];
 				fmt = @"b'%@'";
 			}
@@ -2865,7 +2869,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			}
 			// BLOB/TEXT data
 			else if ([tempValue isKindOfClass:[NSData class]]) {
-				escVal = [mySQLConnection escapeAndQuoteData:tempValue];
+        if ([fieldType isEqualToString:@"UUID"] && [fieldTypeGroup isEqualToString:@"blobdata"]) {
+          NSString *uuidVal = [[NSString alloc] initWithData:tempValue encoding:NSUTF8StringEncoding];
+          escVal = [mySQLConnection escapeAndQuoteString:uuidVal];
+        } else {
+          escVal = [mySQLConnection escapeAndQuoteData:tempValue];
+        }
 			}
 			else {
 				escVal = [mySQLConnection escapeAndQuoteString:tempValue];
