@@ -69,6 +69,8 @@ static const NSInteger kBlobAsImageFile = 4;
 NSString *kColType    = @"TYPE";
 NSString *kColMapping = @"MAPPING";
 NSString *kHeader     = @"HEADER";
+NSString *kFieldType = @"FIELD_TYPE";
+NSString *kFieldTypeGroup = @"FIELDGROUP";
 
 @implementation SPCopyTable
 
@@ -450,7 +452,9 @@ NSString *kHeader     = @"HEADER";
 	{
         data = nil;
         columnMapping = (NSUInteger)[[[columns safeObjectAtIndex:c] identifier] integerValue];
-		NSString *t = [[columnDefinitions safeObjectAtIndex:columnMapping] objectForKey:@"typegrouping"];
+        NSDictionary *field = [columnDefinitions safeObjectAtIndex:columnMapping];
+        NSString *t = [field objectForKey:@"type"];
+        NSString *tGroup = [field objectForKey:@"typegrouping"];
 
         // Search for generated column and skip=YES
         generatedColumnAndSkip = (skipGeneratedColumn == YES && [[columnDefinitions safeObjectAtIndex:columnMapping] objectForKey:@"generatedalways"]);
@@ -505,6 +509,8 @@ NSString *kHeader     = @"HEADER";
             data[kColMapping] = @(columnMapping);
             data[kColType]    = @(1);                 // By default, set to String
             data[kHeader]     = [[[[columns safeObjectAtIndex:c] headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0];
+            data[kFieldType]  = t;
+            data[kFieldTypeGroup] = tGroup;
             // Numeric data
             if ([t isEqualToString:@"bit"] || [t isEqualToString:@"integer"] || [t isEqualToString:@"float"])
                 data[kColType] = @(0);
@@ -552,6 +558,8 @@ NSString *kHeader     = @"HEADER";
             if (![data isKindOfClass:[NSNull class]]) {
                 NSUInteger colType    = [[data objectForKey:kColType] unsignedIntValue];
                 NSUInteger colMapping = [[data objectForKey:kColMapping] unsignedIntValue];
+                NSString *fieldType = [data objectForKey:kFieldType];
+                NSString *fieldTypeGroup = [data objectForKey:kFieldTypeGroup];
                 cellData = SPDataStorageObjectAtRowAndColumn(tableStorage, rowIndex, colMapping);
                 // If the data is not loaded, attempt to fetch the value
                 if ([cellData isSPNotLoaded] && [[self delegate] isKindOfClass:spTableContentClass]) {
@@ -588,6 +596,10 @@ NSString *kHeader     = @"HEADER";
                         // Quote string, text and blob types appropriately
                         case 1:
                         case 2:
+                            if ([fieldType isEqualToString:@"UUID"] && [fieldTypeGroup isEqualToString:@"blobdata"]) {
+                              cellData = [[NSString alloc] initWithData:cellData encoding:NSUTF8StringEncoding];
+                            }
+                        
                             if ([cellData isKindOfClass:nsDataClass]) {
                                 [rowValues safeAddObject:[mySQLConnection escapeAndQuoteData:cellData]];
                             } else {
