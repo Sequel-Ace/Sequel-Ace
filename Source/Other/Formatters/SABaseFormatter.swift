@@ -6,7 +6,7 @@
 import Foundation
 
 
-@objc open class SABaseFormatter: Formatter {
+@objc class SABaseFormatter: Formatter {
 
     /// Max length to use for Field Editor
     @objc var maxLengthOverride: UInt { 0 }

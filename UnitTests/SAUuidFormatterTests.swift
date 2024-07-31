@@ -7,7 +7,7 @@ import AppKit
 import XCTest
 
 
-class SAUuidFormatterTests: XCTestCase {
+final class SAUuidFormatterTests: XCTestCase {
   let formatter = SAUuidFormatter()
 
   func testFormatterMaxLengthOverride() {

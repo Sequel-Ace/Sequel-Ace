@@ -3835,7 +3835,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		}
 
     if ([[tableColumn.dataCell formatter] isKindOfClass: [SABaseFormatter class]]) {
-      // if we have a base formatter, return the raw data so it can handel the formatting
+      // if we have a base formatter, return the raw data so it can handle the formatting
       return value;
     }
 
