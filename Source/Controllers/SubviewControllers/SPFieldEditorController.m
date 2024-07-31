@@ -614,7 +614,7 @@ typedef enum {
 
 		if (self.displayFormatter) {
 			NSString *_Nullable err = nil;
-			BOOL isValid = [self.displayFormatter getObjectValue:nil forString:[editTextView string] errorDescription:&err];
+			BOOL isValid = [self.displayFormatter getObjectValue:nil forString:sheetEditData errorDescription:&err];
 			if (!isValid) {
 				NSBeep();
 				if (err != nil) {
@@ -654,6 +654,11 @@ typedef enum {
 			NSString *unformatted = [SPJSONFormatter stringByUnformattingString:returnData];
 			if(unformatted) returnData = unformatted;
 		}
+    else if (self.displayFormatter) {
+      id convertedDate;
+      [self.displayFormatter getObjectValue:&convertedDate forString:sheetEditData errorDescription:nil];
+      returnData = convertedDate;
+    }
 
 		if([callerInstance respondsToSelector:@selector(processFieldEditorResult:contextInfo:)]) {
 			[(id <SPFieldEditorControllerDelegate>)callerInstance processFieldEditorResult:returnData contextInfo:contextInfo];
