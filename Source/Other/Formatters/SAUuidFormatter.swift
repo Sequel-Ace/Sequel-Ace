@@ -6,18 +6,34 @@
 import Foundation
 
 
-
 @objc final class SAUuidFormatter: SABaseFormatter {
     static let REGEX_PAIRS = try! NSRegularExpression(pattern: "[0-9a-f]{1,2}", options: .caseInsensitive)
     static let REGEX_VALID_CHARS = try! NSRegularExpression(pattern: "[^0-9a-f\\-]", options: .caseInsensitive)
-    static var nullStr: String? { UserDefaults.standard.string(forKey: SPNullValue) }
 
     static func invalidCharactersInUuid(in str: String) -> NSString {
         return String(format: NSLocalizedString("Invalid UUID Character in: %@", comment: "Invalid UUID Character"), str) as NSString
     }
-
     static func invalidUuid(_ str: String) -> NSString {
         return String(format: NSLocalizedString("Invalid UUID: %@", comment: "Invalid UUID"), str) as NSString
+    }
+
+    var nullStr: String? { self.userDefaults.string(forKey: "NullValue") }
+    let userDefaults: UserDefaults
+
+    @objc override init() {
+        self.userDefaults = UserDefaults.standard
+        super.init()
+    }
+
+    required init?(coder: NSCoder) {
+        self.userDefaults = UserDefaults.standard
+        super.init(coder: coder)
+    }
+
+    /// For Unit Testing Only -- See UT `SAUuidFormatterTests` for how UserDefaults are mocked.
+    init(userDefaults: UserDefaults) {
+        self.userDefaults = userDefaults
+        super.init()
     }
 
     // MARK: - SABaseFormatter Overrides
@@ -96,7 +112,7 @@ import Foundation
     // MARK: - Helper Methods
 
     func isPartialMatchForNullValue(_ s: String) -> Bool {
-        if let nul = Self.nullStr, nul.contains(s) {
+        if let nul = self.nullStr, nul.contains(s) {
             // not valid characters but user could be trying null the value out.
             return true
         }
@@ -104,7 +120,7 @@ import Foundation
     }
 
     func isNullValue(_ s: String) -> Bool {
-        if let NUL = Self.nullStr, NUL == s {
+        if let NUL = self.nullStr, NUL == s {
             // not valid characters but user could be trying null the value out.
             return true
         }
