@@ -4747,8 +4747,7 @@ static NSDictionary* knownColumnFormatters(SPTableContent *tc) {
     }
 
     // currently only support: BINARY(16) => UUID
-    if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"binary"]
-        && [[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"binary"]) {
+    if ([columnDefinition[@"typegrouping"] isEqualToString:@"binary"] && [columnDefinition[@"length"] integerValue] == 16) {
         return menu;
     }
 
