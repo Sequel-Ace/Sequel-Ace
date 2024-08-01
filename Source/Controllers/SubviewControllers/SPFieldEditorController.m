@@ -1297,15 +1297,17 @@ typedef enum {
 
 		adjTextMaxTextLength = originalMaxTextLength;
 
-		NSString *err = nil;
-		NSString *newStr = nil;
-		BOOL isValid = [self.displayFormatter isPartialStringValid:replacementString newEditingString:&newStr errorDescription:&err];
-		if (!isValid) {
-			NSBeep();
-			if (err != nil) {
-				[SPTooltip showWithObject: err];
+		if (self.displayFormatter) {
+			NSString *err = nil;
+			NSString *newStr = nil;
+			BOOL isValid = [self.displayFormatter isPartialStringValid:replacementString newEditingString:&newStr errorDescription:&err];
+			if (!isValid) {
+				NSBeep();
+				if (err != nil) {
+					[SPTooltip showWithObject: err];
+				}
+				return NO;
 			}
-			return NO;
 		}
 
 		// Otherwise, allow it
