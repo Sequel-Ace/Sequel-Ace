@@ -196,6 +196,11 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 					[result appendFormat:@"%@\t", nullString];
 				else if ([cellData isSPNotLoaded])
 					[result appendFormat:@"%@\t", NSLocalizedString(@"(not loaded)", @"value shown for hidden blob and text fields")];
+        else if ([[[columns[c] dataCell] formatter] isKindOfClass:[SABaseFormatter class]]) {
+          SABaseFormatter *formatter = (SABaseFormatter *)[[columns[c] dataCell] formatter];
+          NSString *displayString = [formatter stringForObjectValue:cellData];
+          [result appendFormat:@"%@\t", displayString];
+        }
 				else if ([cellData isKindOfClass:[NSData class]]) {
 					if(withBlobHandling == kBlobInclude) {
 						NSString *displayString;
@@ -329,6 +334,11 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 					[result appendFormat:@"\"%@\",", nullString];
 				else if ([cellData isSPNotLoaded])
 					[result appendFormat:@"\"%@\",", NSLocalizedString(@"(not loaded)", @"value shown for hidden blob and text fields")];
+        else if ([[[columns[c] dataCell] formatter] isKindOfClass:[SABaseFormatter class]]) {
+          SABaseFormatter *formatter = (SABaseFormatter *)[[columns[c] dataCell] formatter];
+          NSString *displayString = [formatter stringForObjectValue:cellData];
+          [result appendFormat:@"\"%@\",", displayString];
+        }
 				else if ([cellData isKindOfClass:[NSData class]]) {
 					if(withBlobHandling == kBlobInclude) {
 						NSString *displayString;

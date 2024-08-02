@@ -101,7 +101,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 @end
 
-@interface SPTableContent ()
+@interface SPTableContent () <SATableHeaderViewDelegate>
 
 - (BOOL)cancelRowEditing;
 - (void)documentWillClose:(NSNotification *)notification;
@@ -175,7 +175,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		textForegroundColor  = [NSColor controlTextColor];
 		nullHighlightColor   = [NSColor systemGrayColor];
-		binhexHighlightColor = [NSColor systemBlueColor];
+		displayOverrideHighlightColor = [NSColor systemBlueColor];
 
 		kCellEditorErrorNoMatch = NSLocalizedString(@"Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously.", @"Table Content result editing error - could not identify original row");
 		kCellEditorErrorNoMultiTabDb = NSLocalizedString(@"Field is not editable. Field has no or multiple table or database origin(s).",@"field is not editable due to no table/database");
@@ -378,18 +378,14 @@ static void *TableContentKVOContext = &TableContentKVOContext;
     SPLog(@"tableDetails: %@", tableDetails);
 
 	NSString *newTableName;
-	NSInteger sortColumnNumberToRestore = NSNotFound;
-	NSNumber *colWidth;
 	NSArray *columnNames;
 	NSMutableDictionary *preservedColumnWidths = nil;
-	NSTableColumn *theCol;
 
 	BOOL enableInteraction =
 	 ![[tableDocumentInstance selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarTableContent] || 
 	 ![tableDocumentInstance isWorking];
 
 	if (!tableDetails) {
-		
 		// If no table is currently selected, no action required - return.
 		if (!selectedTable) return;
 
@@ -504,123 +500,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		}
 	}
 
-	NSString *nullValue = [prefs objectForKey:SPNullValue];
 	NSFont *tableFont = [NSUserDefaults getFont];
 	[tableContentView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	// Add the new columns to the table
-	for (NSDictionary *columnDefinition in dataColumns ) {
-
-		// Set up the column
-		theCol = [[NSTableColumn alloc] initWithIdentifier:[columnDefinition objectForKey:@"datacolumnindex"]];
-
-        if ([prefs boolForKey:SPDisplayTableViewColumnTypes]) {
-            [[theCol headerCell] setAttributedStringValue:[columnDefinition tableContentColumnHeaderAttributedString]];
-        } else {
-            [[theCol headerCell] setStringValue:[columnDefinition objectForKey:@"name"]];
-        }
-
-		[theCol setHeaderToolTip:[NSString stringWithFormat:@"%@ – %@%@%@%@", 
-			[columnDefinition objectForKey:@"name"], 
-			[columnDefinition objectForKey:@"type"], 
-			([columnDefinition objectForKey:@"length"]) ? [NSString stringWithFormat:@"(%@)", [columnDefinition objectForKey:@"length"]] : @"", 
-			([columnDefinition objectForKey:@"values"]) ? [NSString stringWithFormat:@"(\n- %@\n)", [[columnDefinition objectForKey:@"values"] componentsJoinedByString:@"\n- "]] : @"", 
-			([columnDefinition objectForKey:@"comment"] && [(NSString *)[columnDefinition objectForKey:@"comment"] length]) ? [NSString stringWithFormat:@"\n%@", [[columnDefinition objectForKey:@"comment"] stringByReplacingOccurrencesOfString:@"\\n" withString:@"\n"]] : @""
-			]];
-		
-		// Copy in the width if present in a reloaded table
-		if ([preservedColumnWidths objectForKey:[columnDefinition objectForKey:@"name"]]) {
-			[theCol setWidth:[[preservedColumnWidths objectForKey:[columnDefinition objectForKey:@"name"]] floatValue]];
-		}
-		
-		[theCol setEditable:YES];
-
-		// Set up the data cell depending on the column type
-		id dataCell;
-		if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"enum"]) {
-			dataCell = [[SPComboBoxCell alloc] initTextCell:@""];
-			[dataCell setButtonBordered:NO];
-			[dataCell setBezeled:NO];
-			[dataCell setDrawsBackground:NO];
-			[dataCell setCompletes:YES];
-			[dataCell setControlSize:NSControlSizeSmall];
-            [dataCell setUsesSingleLineMode:YES];
-			// add prefs NULL value representation if NULL value is allowed for that field
-			if([[columnDefinition objectForKey:@"null"] boolValue])
-				[dataCell addItemWithObjectValue:nullValue];
-			[dataCell addItemsWithObjectValues:[columnDefinition objectForKey:@"values"]];
-
-		// Add a foreign key arrow if applicable
-		} else if ([columnDefinition objectForKey:@"foreignkeyreference"]) {
-			dataCell = [[SPTextAndLinkCell alloc] initTextCell:@""];
-			[dataCell setTarget:self action:@selector(clickLinkArrow:)];
-
-		// Otherwise instantiate a text-only cell
-		} else {
-			dataCell = [[SPTextAndLinkCell alloc] initTextCell:@""];
-		}
-
-		// Set the column to right-aligned for numeric data types
-		if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"integer"]
-			|| [[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"float"])
-		{
-			[dataCell setAlignment:NSTextAlignmentRight];
-		}
-
-		[dataCell setEditable:YES];
-
-		// Set the line break mode and an NSFormatter subclass which displays line breaks nicely
-		[dataCell setLineBreakMode:NSLineBreakByTruncatingTail];
-		[dataCell setFormatter:[SPDataCellFormatter new]];
-
-		// Set field length limit if field is a varchar to match varchar length
-		if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"string"]
-			|| [[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"bit"]) {
-			[[dataCell formatter] setTextLimit:[[columnDefinition objectForKey:@"length"] integerValue]];
-		}
-
-		// Set field type for validations
-		[[dataCell formatter] setFieldType:[columnDefinition objectForKey:@"type"]];
-
-		// Set the data cell font according to the preferences
-		[dataCell setFont:tableFont];
-
-		// Assign the data cell
-		[theCol setDataCell:dataCell];
-
-		// Set the width of this column to saved value if exists
-		colWidth = [[[[prefs objectForKey:SPTableColumnWidths] objectForKey:[NSString stringWithFormat:@"%@@%@", [tableDocumentInstance database], [tableDocumentInstance host]]] objectForKey:[tablesListInstance tableName]] objectForKey:[columnDefinition objectForKey:@"name"]];
-		if ( colWidth ) {
-			[theCol setWidth:[colWidth floatValue]];
-		}
-
-		// Set the column to be reselected for sorting if appropriate
-		if (sortColumnToRestore && [sortColumnToRestore isEqualToString:[columnDefinition objectForKey:@"name"]])
-			sortColumnNumberToRestore = [[columnDefinition objectForKey:@"datacolumnindex"] integerValue];
-
-		// Add the column to the table
-		[tableContentView addTableColumn:theCol];
-	}
-
-	// If the table has been reloaded and the previously selected sort column is still present, reselect it.
-	if (sortColumnNumberToRestore != NSNotFound) {
-		theCol = [tableContentView tableColumnWithIdentifier:[NSString stringWithFormat:@"%lld", (long long)sortColumnNumberToRestore]];
-		sortCol = [[NSNumber alloc] initWithInteger:sortColumnNumberToRestore];
-		[tableContentView setHighlightedTableColumn:theCol];
-		isDesc = !sortColumnToRestoreIsAsc;
-		if ( isDesc ) {
-			[tableContentView setIndicatorImage:[NSImage imageNamed:@"NSDescendingSortIndicator"] inTableColumn:theCol];
-		} else {
-			[tableContentView setIndicatorImage:[NSImage imageNamed:@"NSAscendingSortIndicator"] inTableColumn:theCol];
-		}
-
-	// Otherwise, clear sorting
-	} else {
-		if (sortCol) {
-			sortCol = nil;
-		}
-		isDesc = NO;
-	}
+	[self _buildTableColumns:preservedColumnWidths withFont:tableFont];
 
 	// Store the current first responder so filter field doesn't steal focus
 	id currentFirstResponder = [[tableDocumentInstance parentWindowControllerWindow] firstResponder];
@@ -665,6 +549,154 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	if (!previousTableRowsCount) {
 		[self clearTableValues];
 	}
+}
+
+- (void)_buildTableColumns:(NSMutableDictionary *)savedColumnWidths withFont:(NSFont *)font {
+    NSString *nullValue = [prefs objectForKey:SPNullValue];
+    BOOL displayColumnTypes = [prefs boolForKey:SPDisplayTableViewColumnTypes];
+    NSInteger sortColumnNumberToRestore = NSNotFound;
+    NSDictionary *formatOverrides = currentFormatters(self);
+
+    for (NSDictionary *columnDefinition in dataColumns) {
+        id name = columnDefinition[@"name"];
+        id columnIndex = columnDefinition[@"datacolumnindex"];
+
+        // Set up the column
+        NSTableColumn *column  = [[NSTableColumn alloc] initWithIdentifier:columnIndex];
+
+        if (displayColumnTypes) {
+            [[column headerCell] setAttributedStringValue:[columnDefinition tableContentColumnHeaderAttributedString]];
+        } else {
+            [[column headerCell] setStringValue:name];
+        }
+        [column setHeaderToolTip:buildTooltip(columnDefinition)];
+        [column setEditable:YES];
+
+        NSString *nameKey = column.headerCell.stringValue;
+        // Set up the data cell depending on the column type
+        [column setDataCell:configureDataCell(self, columnDefinition, nullValue, font, formatOverrides, nameKey)];
+
+        // Copy in the width if present in a reloaded table
+        if (savedColumnWidths[nameKey]) {
+            [column setWidth:[savedColumnWidths[nameKey] floatValue]];
+        }
+        else { // try to reload from sqlite
+            NSNumber *colWidth = savedWidthForColumn(self, nameKey);
+            if (colWidth) {
+                [column setWidth:[colWidth floatValue]];
+            }
+        }
+
+        // Set the column to be reselected for sorting if appropriate
+        if (sortColumnToRestore && [sortColumnToRestore isEqualToString:name]) {
+            sortColumnNumberToRestore = [columnIndex integerValue];
+        }
+
+        // Add the column to the table
+        [tableContentView addTableColumn:column];
+    }
+
+    if (sortColumnNumberToRestore != NSNotFound) {
+        // If the table has been reloaded and the previously selected sort column is still present, reselect it.
+        NSTableColumn *theCol = [tableContentView tableColumnWithIdentifier:[NSString stringWithFormat:@"%lld", (long long)sortColumnNumberToRestore]];
+        sortCol = [[NSNumber alloc] initWithInteger:sortColumnNumberToRestore];
+        [tableContentView setHighlightedTableColumn:theCol];
+        isDesc = !sortColumnToRestoreIsAsc;
+        if ( isDesc ) {
+            [tableContentView setIndicatorImage:[NSImage imageNamed:@"NSDescendingSortIndicator"] inTableColumn:theCol];
+        } else {
+            [tableContentView setIndicatorImage:[NSImage imageNamed:@"NSAscendingSortIndicator"] inTableColumn:theCol];
+        }
+    }
+    else {
+        // Otherwise, clear sorting
+        if (sortCol) {
+            sortCol = nil;
+        }
+        isDesc = NO;
+    }
+}
+
+static NSString* buildTooltip(NSDictionary *columnDefinition) {
+    id name = columnDefinition[@"name"];
+    id type = columnDefinition[@"type"];
+
+    id len  = columnDefinition [@"length"];
+    id lenStr = len ? [NSString stringWithFormat:@"(%@)", len] : @"";
+
+    id vals = columnDefinition[@"values"];
+    id valStr = vals ? [NSString stringWithFormat:@"(\n- %@\n)", [vals componentsJoinedByString:@"\n- "]] : @"";
+
+    id comm = columnDefinition[@"comment"];
+    id commentStr = (comm && [(NSString *)comm length])
+        ? [NSString stringWithFormat:@"\n%@", [comm stringByReplacingOccurrencesOfString:@"\\n" withString:@"\n"]]
+        : @"";
+
+    NSString *tooltip = [NSString stringWithFormat:@"%@ – %@%@%@%@", name, type, lenStr, valStr, commentStr ];
+    return tooltip;
+}
+
+static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString *nullValue, NSFont *tableFont, NSDictionary* formats, NSString *nameKey) {
+    id typegroup = colDefs[@"typegrouping"];
+    id cell;
+
+    if ([typegroup isEqualToString:@"enum"]) {
+        cell = [[SPComboBoxCell alloc] initTextCell:@""];
+        [cell setButtonBordered:NO];
+        [cell setBezeled:NO];
+        [cell setDrawsBackground:NO];
+        [cell setCompletes:YES];
+        [cell setControlSize:NSControlSizeSmall];
+        [cell setUsesSingleLineMode:YES];
+        // add prefs NULL value representation if NULL value is allowed for that field
+        if([colDefs[@"null"] boolValue])
+            [cell addItemWithObjectValue:nullValue];
+        [cell addItemsWithObjectValues:colDefs[@"values"]];
+    }
+    else if (colDefs[@"foreignkeyreference"]) {
+        // Add a foreign key arrow if applicable
+        cell = [[SPTextAndLinkCell alloc] initTextCell:@""];
+        [cell setTarget:tc action:@selector(clickLinkArrow:)];
+    }
+    else {
+        // Otherwise instantiate a text-only cell
+        cell = [[SPTextAndLinkCell alloc] initTextCell:@""];
+    }
+    [cell setEditable:YES];
+
+    // Set the column to right-aligned for numeric data types
+    if ([typegroup isEqualToString:@"integer"] || [typegroup isEqualToString:@"float"]) {
+        [cell setAlignment:NSTextAlignmentRight];
+    }
+
+    // Set field length limit if field is a varchar to match varchar length
+    if ([typegroup isEqualToString:@"string"] || [typegroup isEqualToString:@"bit"]) {
+        [[cell formatter] setTextLimit:[colDefs[@"length"] integerValue]];
+    }
+
+    // Set the line break mode and an NSFormatter subclass which displays line breaks nicely
+    [cell setLineBreakMode:NSLineBreakByTruncatingTail];
+    [cell setFont:tableFont];
+
+    if (formats[nameKey]) {
+        [cell setFormatter:formats[nameKey]];
+    }
+    else {
+        // default formatter
+        [cell setFormatter:[SPDataCellFormatter new]];
+        [[cell formatter] setFieldType:colDefs[@"type"]];
+    }
+
+    if ([typegroup isEqualToString:@"binary"]) {
+        // since UUID is the only one supported for now, only add menu if we encounter a valid type
+        // but we would relax this in the future if more formatters are added.
+        // NOTE: this is one menu for the whole table since the menu is configured on the headerView
+        if (tc->tableContentView.headerView.menu == nil) {
+            tc->tableContentView.headerView.menu = defaultColumnHeaderMenu(tc);
+        }
+    }
+
+    return cell;
 }
 
 - (NSString *)selectedTable
@@ -2260,6 +2292,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 					if (hide) {
 						str = @"&lt;BLOB&gt;";
 					}
+					else if ([[aTableColumn.dataCell formatter] isKindOfClass: [SABaseFormatter class]]) {
+						str = [(SABaseFormatter *)[aTableColumn.dataCell formatter] stringForObjectValue: o];
+					}
 					else if ([self cellValueIsDisplayedAsHexForColumn:columnIndex]) {
 						str = [NSString stringWithFormat:@"0x%@", [o dataToHexString]];
 					}
@@ -3589,12 +3624,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	if (isWorking) pthread_mutex_unlock(&tableValuesLock);
 	[tableContentView setDelegate:nil];
 	for (NSDictionary *columnDefinition in dataColumns) {
+		NSTableColumn *aTableColumn = [tableContentView tableColumnWithIdentifier:[columnDefinition objectForKey:@"datacolumnindex"]];
 
 		// Skip columns with saved widths
-		if ([[[[prefs objectForKey:SPTableColumnWidths] objectForKey:[NSString stringWithFormat:@"%@@%@", [tableDocumentInstance database], [tableDocumentInstance host]]] objectForKey:[tablesListInstance tableName]] objectForKey:[columnDefinition objectForKey:@"name"]]) continue;
+		if (savedWidthForColumn(self, aTableColumn.headerCell.stringValue)) continue;
 
 		// Otherwise set the column width
-		NSTableColumn *aTableColumn = [tableContentView tableColumnWithIdentifier:[columnDefinition objectForKey:@"datacolumnindex"]];
 		NSInteger targetWidth = [[columnWidths objectForKey:[columnDefinition objectForKey:@"datacolumnindex"]] integerValue];
 		[aTableColumn setWidth:targetWidth];
 	}
@@ -3799,8 +3834,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 			return [prefs objectForKey:SPNullValue];
 		}
 
-		if ([value isKindOfClass:[NSData class]]) {
+    if ([[tableColumn.dataCell formatter] isKindOfClass: [SABaseFormatter class]]) {
+      // if we have a base formatter, return the raw data so it can handle the formatting
+      return value;
+    }
 
+		if ([value isKindOfClass:[NSData class]]) {
 			if ([self cellValueIsDisplayedAsHexForColumn:columnIndex]) {
 				if ([(NSData *)value length] > 255) {
 					return [NSString stringWithFormat:@"0x%@…", [[(NSData *)value subdataWithRange:NSMakeRange(0, 255)] dataToHexString]];
@@ -3859,23 +3898,27 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 		if (object) {
 			// Restore NULLs if necessary
-			if ([object isEqualToString:[prefs objectForKey:SPNullValue]] && [[column objectForKey:@"null"] boolValue]) {
-				object = [NSNull null];
-			}
-			else if ([self cellValueIsDisplayedAsHexForColumn:columnIndex]) {
-				// This is a binary object being edited as a hex string.
-				// Convert the string back to binary.
-				// Error checking is done in -control:textShouldEndEditing:
-				NSData *data = [NSData dataWithHexString:object];
-				if (!data) {
-					NSBeep();
-					return;
-				}
-				object = data;
-			}
+            if ([[tableColumn.dataCell formatter] isKindOfClass: [SABaseFormatter class]]) {
+                // noop -- object should already be in correct format based on Formatter handling.
+            }
+            // legacy handling:
+            else if ([object isEqualToString:[prefs objectForKey:SPNullValue]] && [[column objectForKey:@"null"] boolValue]) {
+                object = [NSNull null];
+            }
+            else if ([self cellValueIsDisplayedAsHexForColumn:columnIndex]) {
+                // This is a binary object being edited as a hex string.
+                // Convert the string back to binary.
+                // Error checking is done in -control:textShouldEndEditing:
+                NSData *data = [NSData dataWithHexString:object];
+                if (!data) {
+                    NSBeep();
+                    return;
+                }
+                object = data;
+            }
 
-			[tableValues replaceObjectInRow:rowIndex column:columnIndex withObject:object];
-		}
+            [tableValues replaceObjectInRow:rowIndex column:columnIndex withObject:object];
+        }
 		else {
 			[tableValues replaceObjectInRow:rowIndex column:columnIndex withObject:@""];
 		}
@@ -4050,44 +4093,30 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Sometimes the column has no identifier. I can't figure out what is causing it, so we just skip over this item
 	if (![[[notification userInfo] objectForKey:@"NSTableColumn"] identifier]) return;
 
-	NSMutableDictionary *tableColumnWidths;
-	NSString *database = [NSString stringWithFormat:@"%@@%@", [tableDocumentInstance database], [tableDocumentInstance host]];
+	NSString *database = dbHostPrefKey(self);
 	NSString *table = [tablesListInstance tableName];
 
-
-    if (database == nil || table == nil){
-        SPLog(@"database or table is nil");
-    }
+	if (database == nil || table == nil){
+		SPLog(@"database or table is nil");
+	}
 
 	// Get tableColumnWidths object
-	if ([prefs objectForKey:SPTableColumnWidths] != nil ) {
-		tableColumnWidths = [NSMutableDictionary dictionaryWithDictionary:[prefs objectForKey:SPTableColumnWidths]];
-	}
-	else {
-		tableColumnWidths = [NSMutableDictionary dictionary];
-	}
+	NSMutableDictionary *savedWidths = [NSMutableDictionary dictionaryWithDictionary:[prefs objectForKey:SPTableColumnWidths]];
 
 	// Get the database object
-	if  ([tableColumnWidths safeObjectForKey:database] == nil) {
-		[tableColumnWidths safeSetObject:[NSMutableDictionary dictionary] forKey:database];
-	}
-	else {
-		[tableColumnWidths safeSetObject:[NSMutableDictionary dictionaryWithDictionary:[tableColumnWidths safeObjectForKey:database]] forKey:database];
-	}
+	NSMutableDictionary *dbWidths = [NSMutableDictionary dictionaryWithDictionary:[savedWidths safeObjectForKey:database]];
+	[savedWidths safeSetObject:dbWidths forKey:database];
 
 	// Get the table object
-	if  ([[tableColumnWidths safeObjectForKey:database] safeObjectForKey:table] == nil) {
-		[[tableColumnWidths safeObjectForKey:database] safeSetObject:[NSMutableDictionary dictionary] forKey:table];
-	}
-	else {
-		[[tableColumnWidths safeObjectForKey:database] safeSetObject:[NSMutableDictionary dictionaryWithDictionary:[[tableColumnWidths safeObjectForKey:database] safeObjectForKey:table]] forKey:table];
-	}
+	NSMutableDictionary *tableWidths = [NSMutableDictionary dictionaryWithDictionary:[dbWidths safeObjectForKey:table]];
+	[dbWidths safeSetObject:tableWidths forKey:table];
 
 	// Save column size
-	[[[tableColumnWidths safeObjectForKey:database] safeObjectForKey:table]
-     safeSetObject:[NSNumber numberWithDouble:[(NSTableColumn *)[[notification userInfo] safeObjectForKey:@"NSTableColumn"] width]]
-	 forKey:[[[[notification userInfo] safeObjectForKey:@"NSTableColumn"] headerCell] stringValue]];
-	[prefs setObject:tableColumnWidths forKey:SPTableColumnWidths];
+	NSTableColumn *column = (NSTableColumn *)[[notification userInfo] safeObjectForKey:@"NSTableColumn"];
+	[tableWidths safeSetObject:[NSNumber numberWithDouble:column.width] forKey:column.headerCell.stringValue];
+	
+	// save back to user defaults
+	[prefs setObject:savedWidths forKey:SPTableColumnWidths];
 }
 
 /**
@@ -4190,7 +4219,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 				cellValue = [NSString stringWithString:[prefs objectForKey:SPNullValue]];
 			}
 
-			if ([self cellValueIsDisplayedAsHexForColumn:[[tableColumn identifier] integerValue]]) {
+			NSInteger idx = [[tableColumn identifier] integerValue];
+			if ([[tableColumn.dataCell formatter] isKindOfClass:[SABaseFormatter class]]) {
+				[fieldEditor setDisplayFormatter:[tableColumn.dataCell formatter]];
+			}
+			else if ([self cellValueIsDisplayedAsHexForColumn:idx]) {
 				[fieldEditor setTextMaxLength:[[self tableView:tableContentView objectValueForTableColumn:tableColumn row:rowIndex] length]];
 				isFieldEditable = NO;
 			}
@@ -4275,7 +4308,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	NSUInteger targetWidth = [tableContentView autodetectWidthForColumnDefinition:columnDefinition maxRows:500];
 
 	// Clear any saved widths for the column
-	NSString *dbKey = [NSString stringWithFormat:@"%@@%@", [tableDocumentInstance database], [tableDocumentInstance host]];
+	NSString *dbKey = dbHostPrefKey(self);
 	NSString *tableKey = [tablesListInstance tableName];
 	NSMutableDictionary *savedWidths = [NSMutableDictionary dictionaryWithDictionary:[prefs objectForKey:SPTableColumnWidths]];
 	NSMutableDictionary *dbDict = [NSMutableDictionary dictionaryWithDictionary:[savedWidths objectForKey:dbKey]];
@@ -4353,12 +4386,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		}
 		else {
 			[cell setTextColor:textForegroundColor];
-
-			if (
-				[self cellValueIsDisplayedAsHexForColumn:[[tableColumn identifier] integerValue]] &&
-				rowIndex != [tableContentView selectedRow]
-			) {
-				[cell setTextColor:binhexHighlightColor];
+			BOOL hasDisplayOverride = [self cellValueIsDisplayedAsHexForColumn:[[tableColumn identifier] integerValue]] ||
+				[[cell formatter] isKindOfClass:[SABaseFormatter class]];
+			if (hasDisplayOverride && rowIndex != [tableContentView selectedRow]) {
+				[cell setTextColor:displayOverrideHighlightColor];
 			}
 		}
 
@@ -4467,21 +4498,30 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Validate hex input
 	// We do this here because the textfield will still be selected with the pending changes if we bail out here
 	if(control == tableContentView) {
-		NSInteger columnIndex = [tableContentView editedColumn];
-		if ([self cellValueIsDisplayedAsHexForColumn:columnIndex]) {
-			// special case: the "NULL" string
-			NSDictionary *column = [dataColumns safeObjectAtIndex:columnIndex];
-			if ([[editor string] isEqualToString:[prefs objectForKey:SPNullValue]] && [[column objectForKey:@"null"] boolValue]) {
-				return YES;
-			}
-			// This is a binary object being edited as a hex string.
-			// Convert the string back to binary, checking for errors.
-			NSData *data = [NSData dataWithHexString:[editor string]];
-			if (!data) {
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Invalid hexadecimal value", @"table content : editing : error message title when parsing as hex string failed") message:NSLocalizedString(@"A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too.", @"table content : editing : error message description when parsing as hex string failed") callback:nil];
-				return NO;
-			}
-		}
+      NSInteger columnIndex = [tableContentView editedColumn];
+      NSTableColumn *col = tableContentView.tableColumns[columnIndex];
+
+      if ([[col.dataCell formatter] isKindOfClass:[SABaseFormatter class]]) {
+          return [[col.dataCell formatter] getObjectValue:nil forString:editor.string errorDescription:nil];
+      }
+      else if ([self cellValueIsDisplayedAsHexForColumn:columnIndex]) {
+          // special case: the "NULL" string
+          NSDictionary *column = [dataColumns safeObjectAtIndex:columnIndex];
+          if ([editor.string isEqualToString:[prefs objectForKey:SPNullValue]] && [[column objectForKey:@"null"] boolValue]) {
+              return YES;
+          }
+          // This is a binary object being edited as a hex string.
+          // Convert the string back to binary, checking for errors.
+          if (![NSData dataWithHexString: editor.string]) {
+              NSString *title = NSLocalizedString(@"Invalid hexadecimal value", @"table content : editing : error message title when parsing as hex string failed");
+              NSString *msg  = NSLocalizedString(
+                  @"A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too.",
+                  @"table content : editing : error message description when parsing as hex string failed"
+              );
+              [NSAlert createWarningAlertWithTitle:title message:msg callback:nil];
+              return NO;
+          }
+      }
 	}
 	return YES;
 }
@@ -4603,6 +4643,128 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (NSArray *)dataColumnDefinitions
 {
 	return dataColumns;
+}
+
+#pragma mark -
+#pragma mark Methods for Column Display Format
+
+- (void)toggleDisplayOverrideFormatter:(NSMenuItem *)item {
+    FormatterWithReference *ref = (FormatterWithReference *)item.representedObject;
+    NSTableColumn *col = (NSTableColumn *) ref.reference;
+    if (ref == nil || col == nil) { return; }
+
+    NSString *format = @""; // defaults to no override
+    if (item.state == NSControlStateValueOff) {
+        // turn on UUID format
+        item.state = NSControlStateValueOn;
+        format = item.title;
+        [col.dataCell setFormatter: ref.formatter];
+    }
+    else {
+        // turn off UUID format
+        item.state = NSControlStateValueOff;
+        [col.dataCell setFormatter: [SPDataCellFormatter new]]; // default formatter
+    }
+
+    [SQLiteDisplayFormatManager.sharedInstance replaceOverrideForHostName:tableDocumentInstance.host
+                                                             databaseName:tableDocumentInstance.database
+                                                                tableName:tableDocumentInstance.table
+                                                                  colName:col.headerCell.stringValue
+                                                                   format:format];
+    [tableContentView reloadData];
+}
+
+// Builds Menu with all display formats
+static NSMenu* defaultColumnHeaderMenu(SPTableContent *tc) {
+    NSMenu *menu = [[NSMenu alloc] init];
+
+    // section title required macOS 14+ so here we build a fake with disabled item + separator
+    NSMenuItem *item = [[NSMenuItem alloc] init];
+    item.title = NSLocalizedString(@"Display Format Override", "Title for menu when ctrl-clicking on content column header.");
+    item.enabled = false;
+    item.state = NSControlStateValueOff;
+    [menu addItem: item];
+    [menu addItem: [NSMenuItem separatorItem]];
+
+    item = [NSMenuItem new];
+    item.title = @"UUID";
+    item.state = NSControlStateValueOff;
+    item.target = tc;
+    item.action = @selector(toggleDisplayOverrideFormatter:);
+    item.enabled = YES;
+    item.representedObject = [FormatterWithReference newWithFormatter: [SAUuidFormatter new]];
+    [menu addItem: item];
+
+    return menu;
+}
+
+// Builds dictionary of String -> SABaseFormatter for columns with previously selected display overrides
+static NSDictionary* currentFormatters(SPTableContent *tc) {
+    NSDictionary *format = [SQLiteDisplayFormatManager.sharedInstance allDisplayOverridesForHostName:tc->tableDocumentInstance.host
+                                                                                        databaseName:tc->tableDocumentInstance.database
+                                                                                           tableName:tc->tableDocumentInstance.table];
+    if (![format count]) {
+        return @{};
+    }
+
+    NSDictionary *known = knownColumnFormatters(tc);
+    NSMutableDictionary *res = [[NSMutableDictionary alloc] init];
+    for (NSString *key in format) {
+        res[key] = known[format[key]];
+    }
+
+    return res;
+}
+
+static NSDictionary* knownColumnFormatters(SPTableContent *tc) {
+    return @{ 
+        @"UUID": [SAUuidFormatter new],
+        // In theory, we could extract hex handling to it's own formatter
+        // @"HEX": [SAHexormatter new]
+    };
+}
+
+#pragma mark -
+#pragma mark SPTableHeaderViewDelegate Methods
+
+- (NSMenu *)validateWithMenu:(NSMenu *)menu forTableColumn:(NSTableColumn *)col {
+    NSDictionary *columnDefinition = dataColumns[col.identifier.integerValue];
+    if (!columnDefinition) {
+        return nil;
+    }
+
+    NSString *format = [SQLiteDisplayFormatManager.sharedInstance displayOverrideForHostName:tableDocumentInstance.host
+                                                                                databaseName:tableDocumentInstance.database
+                                                                                   tableName:tableDocumentInstance.table
+                                                                                  columnName:col.headerCell.stringValue];
+    for (NSMenuItem *item in menu.itemArray) {
+        FormatterWithReference *ref = (FormatterWithReference *)item.representedObject;
+        if (ref == nil) { continue; }
+
+        item.state = ([item.title isEqualToString: format]) ? NSControlStateValueOn : NSControlStateValueOff;
+        // keep reference to column so we which to target when item is selected
+        ref.reference = col;
+    }
+
+    // currently only support: BINARY(16) => UUID
+    if ([columnDefinition[@"typegrouping"] isEqualToString:@"binary"] && [columnDefinition[@"length"] integerValue] == 16) {
+        return menu;
+    }
+
+    return nil;
+}
+
+#pragma mark -
+#pragma mark UserDefault Helper Functions
+
+static NSNumber* savedWidthForColumn(SPTableContent* tc, NSString *colKey) {
+    NSDictionary *savedWidths = [tc->prefs objectForKey:SPTableColumnWidths];
+    NSDictionary *dbHostPrefs = savedWidths[dbHostPrefKey(tc)];
+    return dbHostPrefs[tc->tablesListInstance.tableName][colKey];
+}
+
+static NSString* dbHostPrefKey(SPTableContent* tc) {
+    return [NSString stringWithFormat:@"%@@%@", tc->tableDocumentInstance.database, tc->tableDocumentInstance.host];
 }
 
 #pragma mark -

@@ -437,7 +437,14 @@
 		C9F92712162D39E60051CB2E /* toolbar-switch-to-browse.png in Resources */ = {isa = PBXBuildFile; fileRef = C9F92711162D39E60051CB2E /* toolbar-switch-to-browse.png */; };
 		C9F92714162D39FE0051CB2E /* toolbar-switch-to-browse@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = C9F92713162D39FE0051CB2E /* toolbar-switch-to-browse@2x.png */; };
 		D35577F52728C6CF002B3989 /* SPWindowTabAccessory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35577F42728C6CF002B3989 /* SPWindowTabAccessory.swift */; };
+		FD0E72EA2C38DEA1007EF348 /* SATableHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0E72E92C38DC0E007EF348 /* SATableHeaderView.swift */; };
+		FD0E72EC2C391F44007EF348 /* SQLiteDisplayFormatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0E72EB2C391F44007EF348 /* SQLiteDisplayFormatManager.swift */; };
+		FD18C8992C3C9B2F002A5D57 /* SAUuidFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD18C8982C3C9B2F002A5D57 /* SAUuidFormatter.swift */; };
+		FD2056052C3A7E90008DD271 /* SABaseFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2056042C3A7E90008DD271 /* SABaseFormatter.swift */; };
 		FD6DFF872ADB40630057B713 /* SPTableHistoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD6DFF862ADB40630057B713 /* SPTableHistoryManager.swift */; };
+		FD8099A72C59DCFA0084646F /* SAUuidFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */; };
+		FD8099A82C59DDF70084646F /* SAUuidFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD18C8982C3C9B2F002A5D57 /* SAUuidFormatter.swift */; };
+		FD8099A92C59DE1D0084646F /* SABaseFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2056042C3A7E90008DD271 /* SABaseFormatter.swift */; };
 		FDCF55E52788278500D30655 /* TableSortHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */; };
 /* End PBXBuildFile section */
 
@@ -1163,7 +1170,12 @@
 		C9F92711162D39E60051CB2E /* toolbar-switch-to-browse.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "toolbar-switch-to-browse.png"; sourceTree = "<group>"; };
 		C9F92713162D39FE0051CB2E /* toolbar-switch-to-browse@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "toolbar-switch-to-browse@2x.png"; sourceTree = "<group>"; };
 		D35577F42728C6CF002B3989 /* SPWindowTabAccessory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPWindowTabAccessory.swift; sourceTree = "<group>"; };
+		FD0E72E92C38DC0E007EF348 /* SATableHeaderView.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SATableHeaderView.swift; sourceTree = "<group>"; };
+		FD0E72EB2C391F44007EF348 /* SQLiteDisplayFormatManager.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SQLiteDisplayFormatManager.swift; sourceTree = "<group>"; };
+		FD18C8982C3C9B2F002A5D57 /* SAUuidFormatter.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SAUuidFormatter.swift; sourceTree = "<group>"; };
+		FD2056042C3A7E90008DD271 /* SABaseFormatter.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SABaseFormatter.swift; sourceTree = "<group>"; };
 		FD6DFF862ADB40630057B713 /* SPTableHistoryManager.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SPTableHistoryManager.swift; sourceTree = "<group>"; tabWidth = 4; usesTabs = 1; };
+		FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAUuidFormatterTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1506,6 +1518,7 @@
 				1A6D28FD25DD8018007509F1 /* ProgressWindowController.storyboard */,
 				1A4DC22C25DECEA000DA4FE1 /* ProgressWindowController.swift */,
 				44011DFD0DC2836DB08A0619 /* SQLitePinnedTableManager.swift */,
+				FD0E72EB2C391F44007EF348 /* SQLiteDisplayFormatManager.swift */,
 			);
 			path = Other;
 			sourceTree = "<group>";
@@ -1700,6 +1713,7 @@
 				BC398A2B121D526200BE3EF4 /* SPCopyTable.h */,
 				BC398A2C121D526200BE3EF4 /* SPCopyTable.m */,
 				171C398D16BD634600209EC6 /* SPDatabaseContentViewDelegate.h */,
+				FD0E72E92C38DC0E007EF348 /* SATableHeaderView.swift */,
 			);
 			name = "Table Views";
 			path = TableViews;
@@ -1874,6 +1888,7 @@
 		17E6416E0EF01F3B001BC333 /* Other */ = {
 			isa = PBXGroup;
 			children = (
+				FD2056032C3A7E64008DD271 /* Formatters */,
 				51F4AFB924B26646006144D5 /* Extensions */,
 				507FF10E1BBCC4A900104523 /* Utility */,
 				1198F5B01174EDA700670590 /* Database Actions */,
@@ -2240,6 +2255,7 @@
 				1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */,
 				1AE6C1CC25B07E9500880D73 /* SPFunctionsTests.m */,
 				8AEACADD4B36D9819ADC93DD /* TableSortHelperTests.swift */,
+				FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -2418,6 +2434,15 @@
 			);
 			name = "Category Additions";
 			path = CategoryAdditions;
+			sourceTree = "<group>";
+		};
+		FD2056032C3A7E64008DD271 /* Formatters */ = {
+			isa = PBXGroup;
+			children = (
+				FD2056042C3A7E90008DD271 /* SABaseFormatter.swift */,
+				FD18C8982C3C9B2F002A5D57 /* SAUuidFormatter.swift */,
+			);
+			path = Formatters;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -2803,6 +2828,7 @@
 				1ADEA5A424BF1FFB00D2140B /* SPDateAdditions.m in Sources */,
 				50837F771E50E007004FAE8A /* SPJSONFormatter.m in Sources */,
 				505F568F1BCEE485007467DD /* SPFunctions.m in Sources */,
+				FD8099A82C59DDF70084646F /* SAUuidFormatter.swift in Sources */,
 				502D21F81BA50966000D4CE7 /* SPDataAdditions.m in Sources */,
 				1A9498DE2551776D000BC793 /* DateFormatterExtension.swift in Sources */,
 				51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */,
@@ -2829,6 +2855,7 @@
 				50837F741E50DCD4004FAE8A /* SPJSONFormatterTests.m in Sources */,
 				1AB925922551550200063446 /* NumberFormatterExtension.swift in Sources */,
 				50EA926A1AB246B8008D3C4F /* SPDatabaseActionTest.m in Sources */,
+				FD8099A92C59DE1D0084646F /* SABaseFormatter.swift in Sources */,
 				50EA92651AB23EC8008D3C4F /* SPDatabaseAction.m in Sources */,
 				1A94997A25518549000BC793 /* DateComponentsFormatterExtension.swift in Sources */,
 				50EA92641AB23EAD008D3C4F /* SPDatabaseCopy.m in Sources */,
@@ -2838,6 +2865,7 @@
 				1A2DD55A25939BEE00616E7E /* SPTestingUtils.m in Sources */,
 				1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */,
 				1798F1C4155018E2004B0AB8 /* SPMutableArrayAdditionsTests.m in Sources */,
+				FD8099A72C59DCFA0084646F /* SAUuidFormatterTests.swift in Sources */,
 				1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */,
 				1AEA768425EF05D500AC4DA6 /* ByteCountFormatterExtension.swift in Sources */,
 				17DB5F441555CA300046834B /* SPMutableArrayAdditions.m in Sources */,
@@ -2902,6 +2930,7 @@
 				1A2711CF2539D9B10066ED58 /* SPReachability.m in Sources */,
 				172A65110F7BED7A001E861A /* SPConsoleMessage.m in Sources */,
 				6F0EA8ED272F33B700514FF1 /* SPBundleManagerAdditions.swift in Sources */,
+				FD0E72EA2C38DEA1007EF348 /* SATableHeaderView.swift in Sources */,
 				1A24B627258A2E9A00541E88 /* SecureBookmarkData.swift in Sources */,
 				179F15060F7C433C00579954 /* SPEditorTokens.l in Sources */,
 				B5E92F1C0F75B2E800012500 /* SPExportController.m in Sources */,
@@ -2945,6 +2974,7 @@
 				503B02CA1AE82C5E0060CAB1 /* SPTableFilterParser.m in Sources */,
 				1A9F343F257B0DBE0062EC87 /* SPBundleManager.m in Sources */,
 				4D90B79A101E0CDF00D116A1 /* SPUserManager.m in Sources */,
+				FD18C8992C3C9B2F002A5D57 /* SAUuidFormatter.swift in Sources */,
 				4D90B79E101E0CF200D116A1 /* SPUserManager.xcdatamodel in Sources */,
 				4D90B79F101E0CF200D116A1 /* SPUserMO.m in Sources */,
 				584192A1101E57BB0089807F /* NSMutableArray-MultipleSort.m in Sources */,
@@ -2985,6 +3015,7 @@
 				BC2777A011514B940034DF6A /* SPNavigatorController.m in Sources */,
 				589582151154F8F400EDCC28 /* SPMainThreadTrampoline.m in Sources */,
 				BC4DF1981158FB280059FABD /* SPNavigatorOutlineView.m in Sources */,
+				FD2056052C3A7E90008DD271 /* SABaseFormatter.swift in Sources */,
 				5885CF4A116A63B200A85ACB /* SPFileHandle.m in Sources */,
 				1198F5B31174EDD500670590 /* SPDatabaseCopy.m in Sources */,
 				1141A389117BBFF200126A28 /* SPTableCopy.m in Sources */,
@@ -3030,6 +3061,7 @@
 				17D3C6D3128B1C900047709F /* SPFavoritesOutlineView.m in Sources */,
 				50D3C3521A77135F00B5429C /* SPParserUtils.c in Sources */,
 				1A8B53572584520800526DED /* SPURLAdditions.m in Sources */,
+				FD0E72EC2C391F44007EF348 /* SQLiteDisplayFormatManager.swift in Sources */,
 				513515D2259354BB001E4533 /* NSImageExtensions.swift in Sources */,
 				BC68BFC7128D4EAE004907D9 /* SPBundleEditorController.m in Sources */,
 				BC1944D01297291800A236CD /* SPBundleCommandTextView.m in Sources */,
