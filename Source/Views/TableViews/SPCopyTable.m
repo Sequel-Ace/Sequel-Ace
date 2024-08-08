@@ -606,7 +606,12 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
                         // Quote string, text and blob types appropriately
                         case 1:
                         case 2:
-                            if ([fieldType isEqualToString:@"UUID"] && [fieldTypeGroup isEqualToString:@"blobdata"]) {
+                            if (
+                              [cellData isKindOfClass:[NSData class]] 
+                                && ([fieldType isEqualToString:@"UUID"]
+                                || [fieldTypeGroup isEqualToString:@"textdata"]
+                                || [fieldTypeGroup isEqualToString:@"string"]
+                            )) {
                               cellData = [[NSString alloc] initWithData:cellData encoding:NSUTF8StringEncoding];
                             }
                         
