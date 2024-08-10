@@ -2570,6 +2570,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		// Prepare to derive the value to save
 		NSString *fieldValue;
 		NSString *fieldTypeGroup = [fieldDefinition objectForKey:@"typegrouping"];
+    NSString *defaultFieldValue = [fieldDefinition objectForKey:@"default"];
 
 		// Use NULL when the user has entered the nullValue string defined in the preferences,
 		// or when a numeric  or date field is empty.
@@ -2594,10 +2595,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			// Convert data to its hex representation
 			} else if ([rowObject isKindOfClass:[NSData class]]) {
 				fieldValue = [mySQLConnection escapeAndQuoteData:rowObject];
-
 			} else {
 				NSString *desc = [rowObject description];
-				if ([desc isMatchedByRegex:SPCurrentTimestampPattern]) {
+				if (desc == defaultFieldValue || [desc isMatchedByRegex:SPCurrentTimestampPattern]) {
 					fieldValue = desc;
 				} else if ([fieldTypeGroup isEqualToString:@"bit"]) {
 					fieldValue = [NSString stringWithFormat:@"b'%@'", ((![desc length] || [desc isEqualToString:@"0"]) ? @"0" : desc)];
@@ -2610,16 +2610,16 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 				}
 			}
 		}
-        
-        if (fieldValue == nil || [fieldValue isNSNull]){
-            SPLog(@"fieldValue is nil: %@", fieldValue);
-        }
+    
+    if (fieldValue == nil || [fieldValue isNSNull]){
+      SPLog(@"fieldValue is nil: %@", fieldValue);
+    }
 
-		// Store the key and value in the ordered arrays for saving (Except for generated columns).
-        if (![fieldDefinition objectForKey:@"generatedalways"]) {
-            [rowFieldsToSave safeAddObject:[fieldDefinition safeObjectForKey:@"name"]];
-            [rowValuesToSave safeAddObject:fieldValue];
-        }
+    // Store the key and value in the ordered arrays for saving (Except for generated columns).
+    if (![fieldDefinition objectForKey:@"generatedalways"]) {
+      [rowFieldsToSave safeAddObject:[fieldDefinition safeObjectForKey:@"name"]];
+      [rowValuesToSave safeAddObject:fieldValue];
+    }
 	}
 
 	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryWillBePerformed" object:tableDocumentInstance];
