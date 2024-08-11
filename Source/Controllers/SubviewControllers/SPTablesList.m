@@ -1678,28 +1678,50 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		// Table has invalid name, and since we trimmed whitespace and checked for empty string, this means there is already a table with that name
 		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat: NSLocalizedString(@"The name '%@' is already used.", @"message when trying to rename a table/view/proc/etc to an already used name"), newTableName] callback:nil];
 		return;
-	}
+  }
+  
+  __block BOOL isRenamed = NO;
+  if ([prefs boolForKey:SPQueryWarningEnabled]) {
+    [NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Rename table", @"Rename table")
+                                 message:[NSString stringWithFormat:NSLocalizedString(@"Do you want to rename '%@' table to '%@'?", @"rename table description"), 
+                                          selectedTableName,
+                                          newTableName]
+                      primaryButtonTitle:NSLocalizedString(@"Confirm", @"table structure : indexes : delete index : error 1553 : delete index and FK button")
+                    primaryButtonHandler:^{
+      [self renameTableOfType:self->selectedTableType from:self->selectedTableName to:newTableName];
+      isRenamed = YES;
+    }
+                     cancelButtonHandler:nil];
+  } else {
+    [self renameTableOfType:selectedTableType from:selectedTableName to:newTableName];
+    isRenamed = YES;
+  }
+  
+  if (!isRenamed) {
+    return;
+  }
 
-	@try {
-		// first: update the database
-		[self _renameTableOfType:selectedTableType from:selectedTableName to:newTableName];
-        
-        // second : unpin selectedTableName and pin newTableName
-        [self handlePinnedTableRenameFrom:selectedTableName To:newTableName];
+  // Set window title to reflect the new table name
+  [tableDocumentInstance updateWindowTitle:self];
+  
+  // Query the structure of all databases in the background (mainly for completion)
+  [[tableDocumentInstance databaseStructureRetrieval] queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES}];
+}
 
-		// third: do full refresh
-        [self updateTables:self];
-        
-	}
-	@catch (NSException * myException) {
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[myException reason] callback:nil];
-	}
-
-	// Set window title to reflect the new table name
-	[tableDocumentInstance updateWindowTitle:self];
-
-	// Query the structure of all databases in the background (mainly for completion)
-	[[tableDocumentInstance databaseStructureRetrieval] queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES}];
+- (void) renameTableOfType:(SPTableType)tableType from:(NSString *)fromTableName to:(NSString *)toTableName {
+  @try {
+    // first: update the database
+    [self _renameTableOfType:tableType from:fromTableName to:toTableName];
+    
+    // second : unpin fromTableName and pin toTableName
+    [self handlePinnedTableRenameFrom:fromTableName To:toTableName];
+    
+    // third: do full refresh
+    [self updateTables:self];
+  }
+  @catch (NSException * myException) {
+    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[myException reason] callback:nil];
+  }
 }
 
 #pragma mark -
