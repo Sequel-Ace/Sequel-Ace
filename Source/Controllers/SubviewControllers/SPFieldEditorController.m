@@ -628,12 +628,11 @@ typedef enum {
 
 		if (self.displayFormatter) {
 			NSString *_Nullable err = nil;
-			BOOL isValid = [self.displayFormatter getObjectValue:nil forString:sheetEditData errorDescription:&err];
+			BOOL isValid = [self.displayFormatter getObjectValue:nil forString:[editTextView string] errorDescription:&err];
 			if (!isValid) {
 				NSBeep();
 				if (err != nil) {
 					[SPTooltip showWithObject: err];
-
 				}
 				return;
 			}
@@ -670,7 +669,7 @@ typedef enum {
 		}
     else if (self.displayFormatter) {
       id convertedDate;
-      [self.displayFormatter getObjectValue:&convertedDate forString:sheetEditData errorDescription:nil];
+      [self.displayFormatter getObjectValue:&convertedDate forString:[editTextView string] errorDescription:nil];
       returnData = convertedDate;
     }
 
