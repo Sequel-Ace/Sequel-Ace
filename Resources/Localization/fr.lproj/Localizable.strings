@@ -365,7 +365,7 @@
 "An error occurred when trying to change the table encoding to '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant de changer l'encodage de la table en '%1$@'.\n\nMySQL a dit: %2$@";
 
 /* error changing table type informative message */
-"An error occurred when trying to change the table type to '%@'.\n\nMySQL said: %@" = "An error occurred when trying to change the table type to '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred when trying to change the table type to '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite lors de la tentative de modification du type de table en '%1$@'.\n\nMySQL a dit : %2$@";
 
 /* error changing table comment informative message */
 "An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant de modifier le commentaire de la table à '%1$@'.\n\nMySQL a dit: %2$@";
@@ -407,10 +407,10 @@
 "An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant d'ajouter la nouvelle table '%1$@' par\n\n%2$@.\n\nMySQL a dit: %3$@";
 
 /* error adding new table informative message */
-"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@" = "An error occurred while trying to add the new table '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite lors de la tentative d'ajout de la nouvelle table '%1$@'.\n\nMySQL a dit : %2$@";
 
 /* error while trying to alter table message */
-"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@" = "An error occurred while trying to alter table '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite lors de la tentative de modification de la table '%1$@'.\n\nMySQL a dit : %2$@";
 
 /* an error occurred while trying to check the %@.\n\nMySQL said:%@ */
 "An error occurred while trying to check the %@.\n\nMySQL said:%@" = "Une erreur est survenue lors de la vérification de l' %1$@.\n\nMySQL a dit:%2$@";
@@ -613,10 +613,10 @@
 "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "Des modifications ont été faites, qui seront perdues si cette fenêtre est fermée. Êtes-vous sûr de vouloir continuer";
 
 /* quitting app informal alert title */
-"Close the app?" = "Close the app?";
+"Close the app?" = "Fermer l'application ?";
 
 /* quitting app informal alert body */
-"Are you sure you want to quit the app?" = "Are you sure you want to quit the app?";
+"Are you sure you want to quit the app?" = "Êtes-vous certain de vouloir fermer l'application ?";
 
 /* character set client: %@ */
 "character set client: %@" = "jeu de caractères client: %@";
@@ -1126,7 +1126,7 @@
 "Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "La duplication de la base de données '%@' n'est que partiellement supportée car elle contient des objets autres que les tables (i.e. vues, procédures, fonctions, etc.), qui ne seront pas copiées.\n\nVoulez-vous continuer ?";
 
 /* edit filter */
-"Edit Filters…" = "Edit Filters…";
+"Edit Filters…" = "Modifier les filtres…";
 
 /* Edit row button */
 "Edit row" = "Editer la ligne";
@@ -1138,7 +1138,7 @@
 "Edit Theme List…" = "Modifier la liste des thèmes…";
 
 /* edit user-defined filter */
-"Edit user-defined Filters…" = "Edit user-defined Filters…";
+"Edit user-defined Filters…" = "Editer les filtres prédéfinis…";
 
 /* empty query message */
 "Empty query" = "Requête vide";
@@ -1377,7 +1377,7 @@
 "Field" = "Champ";
 
 /* Query result editing error - could not match row being edited uniquely */
-"Field is not editable. Couldn't identify field origin unambiguously (%ld matches)." = "Field is not editable. Couldn't identify field origin unambiguously (%ld matches).";
+"Field is not editable. Couldn't identify field origin unambiguously (%ld matches)." = "Le champ n'est pas éditable. Impossible d'identifier l'origine du champ sans ambiguïté (%ld correspondances).";
 
 /* field is not editable due to no table/database */
 "Field is not editable. Field has no or multiple table or database origin(s)." = "Le champ n'est pas modifiable. Le champ n'a pas de table ou origine de base de données multiple.";
@@ -1420,7 +1420,7 @@
 "Finished exporting to %@" = "Exportation vers %@ terminée";
 
 /* description for finished importing notification */
-"Finished importing %@" = "Finished importing %@";
+"Finished importing %@" = "Import terminé %@";
 
 /* FLUSH one or more tables - result title */
 "Flush %@" = "Vider %@";
@@ -2415,7 +2415,7 @@
 "Show Toolbar" = "Afficher la barre d'outils";
 
 /* filtered item count */
-"Showing %lu of %lu processes" = "Showing %1$lu of %2$lu processes";
+"Showing %lu of %lu processes" = "Montrer %1$lu processus sur %2$lu";
 
 /* shutdown server : confirmation dialog : shutdown button */
 "Shutdown" = "Arrêt";
@@ -2470,7 +2470,7 @@
 "SSH connecting..." = "Connexion SSH...";
 
 /* SSH connecting titlebar marker */
-"SSH Connecting…" = "SSH Connecting…";
+"SSH Connecting…" = "Connexion SSH en cours…";
 
 /* SSH connection failed title */
 "SSH connection failed!" = "Échec de la connexion SSH!";
@@ -2742,7 +2742,7 @@
 "The name '%@' is already used." = "Le nom '%@' est déjà utilisé.";
 
 /* table list change alert informative message */
-"The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?" = "The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?";
+"The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?" = "Le nombre de tables dans cette base de données a changé depuis l'ouverture de la boîte de dialogue d'exportation. Il y a maintenant %lu table(s) supplémentaire(s), probablement ajoutée(s) par une application externe.\n\nComment souhaitez-vous procéder ?";
 
 /* message of panel when no rows have been affected after writing to the db */
 "The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)" = "La ligne n'a pas été écrite dans la base de données MySQL. Vous n'avez probablement rien changé.\nRecharger la table pour être sûr que la ligne existe et utiliser une clé primaire pour votre table.\n(Cette erreur peut être désactivée dans les préférences.)";
@@ -3032,13 +3032,13 @@
 "Up to %@ bytes (16 MiB)" = "Jusqu'à %@ octets (16 MiB)";
 
 /* range for longblob type */
-"Up to %@ bytes (4 GiB)" = "Up to %@ bytes (4 GiB)";
+"Up to %@ bytes (4 GiB)" = "Jusqu'à %@ bytes (4 GiB)";
 
 /* range for mediumtext type */
 "Up to %@ characters (16 MiB)" = "Jusqu\"à %@ caractères (16 Mo)";
 
 /* range for enum type */
-"Up to %@ distinct members (<%@ in practice)\n1-2 bytes storage" = "Up to %1$@ distinct members (<%2$@ in practice)\n1-2 bytes storage";
+"Up to %@ distinct members (<%@ in practice)\n1-2 bytes storage" = "Jusqu'à %1$@ membres distincts (<%2$@ en pratique)\n1-2 octets de stockage";
 
 /* range for tinyblob type */
 "Up to 255 bytes" = "Jusqu'à 255 octets";
@@ -3053,10 +3053,10 @@
 "updated: %@" = "mis à jour : %@";
 
 /* message of panel when error while updating field to db after enabling it */
-"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field of table `%2$@` was changed." = "Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field of table `%2$@` was changed.";
+"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field of table `%2$@` was changed." = "La mise à jour du contenu du champ a échoué. Impossible d'identifier l'origine du champ sans ambiguïté (%1$ld correspondances). Il est très probable que lors de la modification de ce champ de la table `%2$@`, celui-ci ait été modifié.";
 
 /* message of panel when error while updating field to db after enabling it */
-"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user." = "Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user.";
+"Updating field content failed. Couldn't identify field origin unambiguously (%1$ld matches). It's very likely that while editing this field the table `%2$@` was changed by an other user." = "La mise à jour du contenu du champ a échoué. Impossible d'identifier l'origine du champ sans ambiguïté (%1$ld correspondances). Il est très probable que lors de la modification de ce champ, la table `%2$@` ait été modifiée par un autre utilisateur.";
 
 /* updating field task description */
 "Updating field data..." = "Mise à jour des données du champ...";
@@ -3176,7 +3176,7 @@
 "‘%@’ Fields Content Filters" = "Filtres de contenu des champs ‘%@’";
 
 /* Export file already exists message */
-"%@ already exists. Do you want to replace it?" = "%@ already exists. Do you want to replace it?";
+"%@ already exists. Do you want to replace it?" = "%@ existent déjà. Voulez-vous les remplacer ?";
 
 /* Bundle Editor : Outline View : Bundle item : tooltip */
 "%@ Bundle" = "Lot %@";
@@ -3296,7 +3296,7 @@
 "Downloading Sequel Ace - %@" = "Téléchargement de Sequel Ace - %@";
 
 /* downloading new version time remaining estimate text */
-"About %.1f seconds left" = "About %.1f seconds left";
+"About %.1f seconds left" = "Il reste environ %.1f secondes";
 
 /* downloading new version failure alert title */
 "Download Failed" = "Échec du téléchargement";
