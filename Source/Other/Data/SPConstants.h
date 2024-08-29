@@ -673,6 +673,7 @@ extern NSString *SPSnapshotBuildIndicator;
 extern const long SPBundleCurrentVersion;
 
 extern NSString *SPCurrentTimestampPattern;
+extern NSString *SPFunctionNamePattern;
 
 typedef NS_ENUM(NSInteger, SPBundleRedirectAction) {
 	SPBundleRedirectActionNone                 = 200,
