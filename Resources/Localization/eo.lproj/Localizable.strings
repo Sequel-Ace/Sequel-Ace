@@ -985,19 +985,19 @@
 "Delete" = "Forigi";
 
 /* delete table/view message */
-"Delete %@ '%@'?" = "Delete %1$@ '%2$@'?";
+"Delete %@ '%@'?" = "Ĉu forigi %1$@ '%2$@'?";
 
 /* table structure : indexes : delete index : error 1553 : delete index and FK button */
 "Delete Both" = "Forigi ambaŭ";
 
 /* delete database message */
-"Delete database '%@'?" = "Delete database '%@'?";
+"Delete database '%@'?" = "Ĉu forigi la datumbazon '%@'?";
 
 /* delete database message */
 "Delete favorite '%@'?" = "Delete favorite '%@'?";
 
 /* delete field message */
-"Delete field '%@'?" = "Delete field '%@'?";
+"Delete field '%@'?" = "Ĉu forigi la kampon '%@'?";
 
 /* delete func menu title */
 "Delete Function" = "Forigi la funkcion";
