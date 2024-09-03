@@ -151,15 +151,16 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 			if (i < [processesFiltered count]) {
 				NSDictionary *process = [processesFiltered safeObjectAtIndex:i];
 				
-				NSString *stringTmp = [NSString stringWithFormat:@"%@ %@ %@ %@ %@ %@ %@ %@",
-									   [process objectForKey:@"Id"],
-									   [process objectForKey:@"User"],
-									   [process objectForKey:@"Host"],
-									   [process objectForKey:@"db"],
-									   [process objectForKey:@"Command"],
-									   [process objectForKey:@"Time"],
-									   [process objectForKey:@"State"],
-									   [process objectForKey:@"Info"]];
+				NSString *stringTmp = [NSString stringWithFormat:@"%@ %@ %@ %@ %@ %@ %@ %@ %@",
+                               [process objectForKey:@"Id"],
+                               [process objectForKey:@"User"],
+                               [process objectForKey:@"Host"],
+                               [process objectForKey:@"db"],
+                               [process objectForKey:@"Command"],
+                               [process objectForKey:@"Time"],
+                               [process objectForKey:@"State"],
+                               [process objectForKey:@"Info"],
+                               [process objectForKey:@"Progress"]];
 				
 				[string appendString:stringTmp];
 				[string appendString:@"\n"];
@@ -244,7 +245,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
                 
                 for (NSDictionary *process in self->processesFiltered)
                 {
-                    NSString *stringTmp = [NSString stringWithFormat:@"%@ %@ %@ %@ %@ %@ %@ %@",
+                    NSString *stringTmp = [NSString stringWithFormat:@"%@ %@ %@ %@ %@ %@ %@ %@ %@",
                                            [process objectForKey:@"Id"],
                                            [process objectForKey:@"User"],
                                            [process objectForKey:@"Host"],
@@ -252,7 +253,8 @@ static NSString * const SPKillIdKey   = @"SPKillId";
                                            [process objectForKey:@"Command"],
                                            [process objectForKey:@"Time"],
                                            [process objectForKey:@"State"],
-                                           [process objectForKey:@"Info"]];
+                                           [process objectForKey:@"Info"],
+                                           [process objectForKey:@"Progress"]];
                     
                     [processesString appendString:stringTmp];
                     [processesString appendString:@"\n"];
@@ -686,7 +688,8 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 			([[process objectForKey:@"Command"] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound) ||
 			((![[process objectForKey:@"Time"] isNSNull]) && ([[[process objectForKey:@"Time"] stringValue] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound)) ||
 			((![[process objectForKey:@"State"] isNSNull]) && ([[process objectForKey:@"State"] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound)) ||
-			((![[process objectForKey:@"Info"] isNSNull]) && ([[process objectForKey:@"Info"] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound)))
+			((![[process objectForKey:@"Info"] isNSNull]) && ([[process objectForKey:@"Info"] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound)) ||
+      ((![[process objectForKey:@"Progress"] isNSNull]) && ([[process objectForKey:@"Progress"] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound)))
 		{
 			[processesFiltered addObject:process];
 		}
