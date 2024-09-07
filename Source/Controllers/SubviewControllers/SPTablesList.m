@@ -1686,7 +1686,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
                                  message:[NSString stringWithFormat:NSLocalizedString(@"Do you want to rename '%@' table to '%@'?", @"rename table description"), 
                                           selectedTableName,
                                           newTableName]
-                      primaryButtonTitle:NSLocalizedString(@"Confirm", @"table structure : indexes : delete index : error 1553 : delete index and FK button")
+                      primaryButtonTitle:NSLocalizedString(@"Confirm", @"Confirmation for renaming table")
                     primaryButtonHandler:^{
       [self renameTableOfType:self->selectedTableType from:self->selectedTableName to:newTableName];
       isRenamed = YES;
