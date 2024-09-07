@@ -1450,12 +1450,14 @@
       [fieldDetails setValue:@NO forKey:@"isfunction"];
       if([[detailParser unquotedString] isEqualToString:@"NULL"]) {
         [fieldDetails setObject:[NSNull null] forKey:@"default"];
-      }else {
-        // Example values: function_name(), 'function_name()', 'invalid_function_name()', etc.
+      } else {
+        // Before unquoting, try to detect if the default value is a function
+        // this help providing more details of default values to logics after having definition
         if ([detailParser isMatchedByRegex:SPFunctionNamePattern]) {
           [fieldDetails setValue:@YES forKey:@"isfunction"];
         }
         
+        // Unquote if string is quoted, otherwise do nothing
         [fieldDetails setValue:[detailParser unquotedString] forKey:@"default"];
       }
 			definitionPartsIndex++;
