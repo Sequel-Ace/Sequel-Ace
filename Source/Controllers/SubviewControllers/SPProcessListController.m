@@ -42,6 +42,7 @@
 static NSString *SPKillProcessQueryMode        = @"SPKillProcessQueryMode";
 static NSString *SPKillProcessConnectionMode   = @"SPKillProcessConnectionMode";
 static NSString *SPTableViewIDColumnIdentifier = @"Id";
+static NSString *SPTableViewProgressColumnIdentifier = @"Progress";
 
 static NSString * const SPKillModeKey = @"SPKillMode";
 static NSString * const SPKillIdKey   = @"SPKillId";
@@ -99,6 +100,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	
 	// Show/hide table columns
 	[[processListTableView tableColumnWithIdentifier:SPTableViewIDColumnIdentifier] setHidden:![prefs boolForKey:SPProcessListShowProcessID]];
+  [[processListTableView tableColumnWithIdentifier:SPTableViewProgressColumnIdentifier] setHidden:![connection isMariaDB]];
 	
 	// Set the process table view's vertical gridlines if required
 	[processListTableView setGridStyleMask:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];

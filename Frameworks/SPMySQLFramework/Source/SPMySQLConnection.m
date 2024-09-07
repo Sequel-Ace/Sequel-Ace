@@ -452,6 +452,18 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
     return true;
 }
 
+- (BOOL) isMariaDB
+{
+  serverVariableVersion = [[NSString alloc] initWithCString:mysql_get_server_info(mySQLConnection) encoding:NSISOLatin1StringEncoding];
+  // See more: https://regex101.com/r/0QRlsG/1
+  NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", @"(^.*)-[mariadb].*"];
+  if ([predicate evaluateWithObject: [serverVariableVersion lowercaseString]]){
+    return true;
+  }
+  
+  return false;
+}
+
 #pragma mark -
 #pragma mark General connection utilities
 
