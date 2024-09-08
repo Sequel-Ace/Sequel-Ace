@@ -290,7 +290,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 									[tableDataInstance getConstraints], @"constraints",
 									nil];
 
-    SPLog(@"calling setTableDetails:%@", tableDetails);
+  SPLog(@"calling setTableDetails:%@", tableDetails);
 	[[self onMainThread] setTableDetails:tableDetails];
 
 	// Init copyTable with necessary information for copying selected rows as SQL INSERT
@@ -2597,7 +2597,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 				fieldValue = [mySQLConnection escapeAndQuoteData:rowObject];
 			} else {
 				NSString *desc = [rowObject description];
-				if (desc == defaultFieldValue || [desc isMatchedByRegex:SPCurrentTimestampPattern]) {
+				if ([[fieldDefinition objectForKey:@"isfunction"] boolValue]) {
 					fieldValue = desc;
 				} else if ([fieldTypeGroup isEqualToString:@"bit"]) {
 					fieldValue = [NSString stringWithFormat:@"b'%@'", ((![desc length] || [desc isEqualToString:@"0"]) ? @"0" : desc)];
