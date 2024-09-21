@@ -1453,7 +1453,7 @@
       } else {
         // Before unquoting, try to detect if the default value is a function
         // this help providing more details of default values to logics after having definition
-        if ([detailParser isMatchedByRegex:SPFunctionNamePattern]) {
+        if ([detailParser isMatchedByRegex:SPFunctionNamePattern] || [detailParser isMatchedByRegex:SPCurrentTimestampPattern]) {
           [fieldDetails setValue:@YES forKey:@"isfunction"];
         }
         

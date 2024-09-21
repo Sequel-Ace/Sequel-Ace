@@ -500,7 +500,7 @@ NSString *SPBundleShellVariableAppCallbackURL               = @"SP_APP_CALLBACK_
 //                                                    CURRENT_TIMESTAMP    [            (           [n]          )    ]
 NSString *SPCurrentTimestampPattern = (@"(?i)^" OWS @"CURRENT_TIMESTAMP" @"(?:" OWS @"\\(" OWS @"(\\d*)" OWS @"\\)" @")?" OWS @"$");
 
-// Check it tests: https://regex101.com/r/RvAJfc/1
+// Function regex tests: https://regex101.com/r/IHJW5A/1
 NSString *SPFunctionNamePattern = (@"(?i)^" OWS @"\\w+" OWS @"\\(" OWS @"(\\d*|\\w+|" OWS @".*" OWS @")" OWS @"\\)" OWS @"$");
 #undef OWS
 
