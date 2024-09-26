@@ -2597,7 +2597,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 				fieldValue = [mySQLConnection escapeAndQuoteData:rowObject];
 			} else {
 				NSString *desc = [rowObject description];
-				if ([[fieldDefinition objectForKey:@"isfunction"] boolValue]) {
+				if ([[fieldDefinition objectForKey:@"isfunction"] boolValue] && desc == defaultFieldValue) {
 					fieldValue = desc;
 				} else if ([fieldTypeGroup isEqualToString:@"bit"]) {
 					fieldValue = [NSString stringWithFormat:@"b'%@'", ((![desc length] || [desc isEqualToString:@"0"]) ? @"0" : desc)];
