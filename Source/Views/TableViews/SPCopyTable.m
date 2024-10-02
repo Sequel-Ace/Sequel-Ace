@@ -539,9 +539,13 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 	} // end of column loop
 
     if(errorDict.count > 0){
-        SPLog(@"autoIncrement error");        
-        if ([prefs boolForKey:SPSaveApplicationUsageAnalytics]) {
-            [MSACAnalytics trackEvent:@"error" withProperties:errorDict];
+        SPLog(@"autoIncrement error");
+        @try {
+            if ([prefs boolForKey:SPSaveApplicationUsageAnalytics]) {
+                [MSACAnalytics trackEvent:@"error" withProperties:errorDict];
+            }
+        } @catch (NSException * e) {
+            SPLog(@"MSACAppCenter Exception on trackEvent Report: %@", e);
         }
     }
 

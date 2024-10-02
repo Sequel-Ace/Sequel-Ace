@@ -192,10 +192,18 @@ static CGFloat slow_in_out (CGFloat t)
         
         if(errorDict.count > 0){
             NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
-            if ([prefs boolForKey:SPSaveApplicationUsageAnalytics]) {
-                executeOnBackgroundThread(^{
-                    [MSACAnalytics trackEvent:@"error" withProperties:errorDict];
-                });
+            @try {
+                if ([prefs boolForKey:SPSaveApplicationUsageAnalytics]) {
+                    executeOnBackgroundThread(^{
+                        @try {
+                            [MSACAnalytics trackEvent:@"error" withProperties:errorDict];
+                        } @catch (NSException * e) {
+                            SPLog(@"MSACAppCenter Exception on trackEvent Report callback: %@", e);
+                        }
+                    });
+                }
+            } @catch (NSException * e) {
+                SPLog(@"MSACAppCenter Exception on trackEvent Report: %@", e);
             }
         }
 
