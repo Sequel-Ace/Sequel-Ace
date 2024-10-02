@@ -32,9 +32,14 @@
 
     // forward exception to MSACCrashes
     NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
-    if ([prefs boolForKey:SPSaveApplicationUsageAnalytics]) {
-        [MSACCrashes applicationDidReportException:exception];
+    @try {
+        if ([prefs boolForKey:SPSaveApplicationUsageAnalytics]) {
+            [MSACCrashes applicationDidReportException:exception];
+        }
+    } @catch (NSException * e) {
+        SPLog(@"MSACAppCenter Exception on Crash Report: %@", e);
     }
+
     [super reportException:exception];
 }
 
