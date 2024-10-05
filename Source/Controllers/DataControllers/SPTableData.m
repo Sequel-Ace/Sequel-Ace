@@ -1445,18 +1445,14 @@
 		// Field defaults
 		} else if ([detailString isEqualToString:@"DEFAULT"] && (definitionPartsIndex + 1 < partsArrayLength)) {
 			detailParser = [[SPSQLParser alloc] initWithString:[definitionParts safeObjectAtIndex:definitionPartsIndex+1]];
-
-      // To know if default value is a function
-      [fieldDetails setValue:@NO forKey:@"isfunction"];
+      
+      // If field default is not a quoted string, then it's a function/expression
+      Boolean isQuotedString = [detailParser isQuotedString];
+      [fieldDetails setValue:@(!isQuotedString) forKey:@"isfunction"];
+      
       if([[detailParser unquotedString] isEqualToString:@"NULL"]) {
         [fieldDetails setObject:[NSNull null] forKey:@"default"];
       } else {
-        // Before unquoting, try to detect if the default value is a function
-        // this help providing more details of default values to logics after having definition
-        if ([detailParser isMatchedByRegex:SPFunctionNamePattern] || [detailParser isMatchedByRegex:SPCurrentTimestampPattern]) {
-          [fieldDetails setValue:@YES forKey:@"isfunction"];
-        }
-        
         // Unquote if string is quoted, otherwise do nothing
         [fieldDetails setValue:[detailParser unquotedString] forKey:@"default"];
       }
