@@ -204,6 +204,7 @@
 - (double)timeConnected;
 - (BOOL)userTriggeredDisconnect;
 - (BOOL)isNotMariadb103;
+- (BOOL)isMariaDB;
 
 #pragma mark -
 #pragma mark Connection utility
