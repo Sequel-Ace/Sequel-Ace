@@ -117,6 +117,11 @@ typedef enum {
 - (void) deleteComments;
 
 /**
+ * To check if start/end characters are similar quote characters
+ */
+- (BOOL) isQuotedString;
+
+/**
  * Removes quotes surrounding the string if present, and un-escapes internal occurrences of the quote character,
  * before returning the resulting string.
  * If no quotes surround the current string, return the entire string; if the current string contains several
