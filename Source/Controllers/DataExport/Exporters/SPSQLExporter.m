@@ -517,6 +517,7 @@
                         for (NSUInteger t = 0; t < colCountRetained; t++)
                         {
                             id object = [row safeObjectAtIndex:t];
+                          	NSDictionary *fieldDetails = [[tableDetails safeObjectForKey:@"columns"] safeObjectAtIndex:t];
 
                             // Add NULL values directly to the output row; use a pointer comparison to the singleton
                             // instance for speed.
@@ -530,7 +531,7 @@
                             }
 
                             // If the field is of type BIT, the values need a binary prefix of b'x'.
-                            else if ([[[[tableDetails safeObjectForKey:@"columns"] safeObjectAtIndex:t] safeObjectForKey:@"type"] isEqualToString:@"BIT"]) {
+                            else if ([[fieldDetails safeObjectForKey:@"type"] isEqualToString:@"BIT"]) {
                                 [sqlString appendFormat:@"b'%@'", [object description]];
                             }
 
@@ -559,11 +560,17 @@
                                     NSString *data = [[NSString alloc] initWithData:object encoding:[self exportOutputEncoding]];
 
                                     if (data == nil) {
-#warning This can corrupt data! Check if this case ever happens and if so, export as hex-string
-                                        data = [[NSString alloc] initWithData:object encoding:NSASCIIStringEncoding];
+                                    // warning This can corrupt data! Check if this case ever happens and if so, export as hex-string
+                                      data = [[NSString alloc] initWithData:object encoding:NSASCIIStringEncoding];
                                     }
-
-                                    [sqlString appendFormat:@"'%@'", data];
+                                  
+                                    NSString *fieldTypeGroup = [fieldDetails objectForKey:@"typegrouping"];
+                                  	if ([fieldTypeGroup isEqualToString:@"textdata"] || [fieldTypeGroup isEqualToString:@"string"]) {
+                                      [sqlString appendStringOrNil:[connection escapeAndQuoteString:data]];
+                                    } else {
+                                      // it's possible that the fieldType could eq to blob
+                                      [sqlString appendFormat:@"'%@'", data];
+                                    }
                                 }
                             }
 
