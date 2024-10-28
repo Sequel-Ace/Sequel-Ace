@@ -616,7 +616,7 @@
 "Close the app?" = "Close the app?";
 
 /* quitting app informal alert body */
-"Are you sure you want to quit the app?" = "Are you sure you want to quit the app?";
+"Are you sure you want to quit the app?" = "アプリを終了してもよろしいですか？";
 
 /* character set client: %@ */
 "character set client: %@" = "文字セットクライアント: %@";
