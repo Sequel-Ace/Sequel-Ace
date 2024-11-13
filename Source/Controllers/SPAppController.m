@@ -308,7 +308,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {
-    return YES;
+   return [[NSUserDefaults standardUserDefaults] boolForKey:SPApplicationQuitOnLastWindowClosed];
 }
 
 - (void)addCheckForUpdatesMenuItem {

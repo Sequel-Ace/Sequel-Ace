@@ -300,6 +300,7 @@ extern NSString *SPTableContentFilterKey;
 
 // General Prefpane
 extern NSString *SPApplicationPromptOnQuit;
+extern NSString *SPApplicationQuitOnLastWindowClosed;
 extern NSString *SPDefaultFavorite;
 extern NSString *SPSelectLastFavoriteUsed;
 extern NSString *SPLastFavoriteID;
