@@ -2119,11 +2119,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         [mySQLConnection setKeepAliveInterval:[[prefs objectForKey:SPKeepAliveInterval] floatValue]];
 
         // Connect
+        SPLog(@"Establish connection");
         [mySQLConnection connect];
-
         if (![mySQLConnection isConnected]) {
             if (sshTunnel && !cancellingConnection) {
-
                 // This is a race condition we cannot fix "properly":
                 // For meaningful error handling we need to also consider the debug output from the SSH connection.
                 // The SSH debug output might be sligthly delayed though (flush, delegates, ...) or
@@ -2214,6 +2213,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         }
 
         // Connection established
+        SPLog(@"Establisted connection");
         [self performSelectorOnMainThread:@selector(mySQLConnectionEstablished) withObject:nil waitUntilDone:NO];
     }
 }
@@ -2278,6 +2278,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)mySQLConnectionEstablished
 {
+    SPLog(@"mySQLConnectionEstablished");
     isConnecting = NO;
 
     // If the user is only testing the connection, kill the connection
@@ -2363,6 +2364,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)addConnectionToDocument
 {
+    SPLog(@"addConnectionToDocument");
     // Hide the connection view and restore the main view
     [connectionView removeFromSuperviewWithoutNeedingDisplay];
     [databaseConnectionView setHidden:NO];
