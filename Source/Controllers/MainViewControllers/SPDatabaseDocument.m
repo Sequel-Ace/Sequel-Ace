@@ -484,6 +484,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     // For each of the main controllers, assign the current connection
+    SPLog(@"setConnection for each of main controllers");
     [tableSourceInstance setConnection:mySQLConnection];
     [tableContentInstance setConnection:mySQLConnection];
     [tableRelationsInstance setConnection:mySQLConnection];
@@ -2339,7 +2340,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)closeConnection {
     SPLog(@"closeConnection");
     [mySQLConnection setDelegate:nil];
+
+    SPLog(@"Closing mySQLConnection");
     [mySQLConnection disconnect];
+  
+    SPLog(@"Closing databaseStructureRetrieval");
+    [[databaseStructureRetrieval connection] disconnect];
+
     _isConnected = NO;
 
     // Disconnected notification

@@ -107,6 +107,7 @@
  */
 - (void)setConnectionToClone:(SPMySQLConnection *)aConnection
 {
+  SPLog(@"setConnectionToClone");
 	// Perform the task in a background thread to avoid blocking the UI
 	[NSThread detachNewThreadWithName:SPCtxt(@"SPDatabaseStructure clone connection task",self.delegate)
 							   target:self 
@@ -578,6 +579,7 @@
  */
 - (BOOL)_ensureConnectionUnsafe
 {
+  SPLog(@"_ensureConnectionUnsafe");
 	if (!mySQLConnection || !self.delegate) return NO;
 
 	// Check the connection state
