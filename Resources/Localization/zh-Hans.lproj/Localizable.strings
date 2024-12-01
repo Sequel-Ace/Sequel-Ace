@@ -613,10 +613,10 @@
 "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "该窗口中的修改将会在窗口关闭后丢失，您确定要继续吗";
 
 /* quitting app informal alert title */
-"Close the app?" = "关闭应用";
+"Close the app?" = "关闭应用？";
 
 /* quitting app informal alert body */
-"Are you sure you want to quit the app?" = "您确定要退出该应用吗？";
+"Are you sure you want to quit the app?" = "确定要退出应用吗？";
 
 /* character set client: %@ */
 "character set client: %@" = "客户端字符集：%@";

@@ -1445,10 +1445,17 @@
 		// Field defaults
 		} else if ([detailString isEqualToString:@"DEFAULT"] && (definitionPartsIndex + 1 < partsArrayLength)) {
 			detailParser = [[SPSQLParser alloc] initWithString:[definitionParts safeObjectAtIndex:definitionPartsIndex+1]];
-			if([[detailParser unquotedString] isEqualToString:@"NULL"])
-				[fieldDetails setObject:[NSNull null] forKey:@"default"];
-			else
-				[fieldDetails setValue:[detailParser unquotedString] forKey:@"default"];
+      
+      // If field default is not a quoted string, then it's a function/expression
+      Boolean isQuotedString = [detailParser isQuotedString];
+      [fieldDetails setValue:@(!isQuotedString) forKey:@"isfunction"];
+      
+      if([[detailParser unquotedString] isEqualToString:@"NULL"]) {
+        [fieldDetails setObject:[NSNull null] forKey:@"default"];
+      } else {
+        // Unquote if string is quoted, otherwise do nothing
+        [fieldDetails setValue:[detailParser unquotedString] forKey:@"default"];
+      }
 			definitionPartsIndex++;
 
 		// Special timestamp/datetime case - Whether fields are set to update the current timestamp

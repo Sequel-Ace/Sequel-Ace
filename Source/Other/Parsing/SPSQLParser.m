@@ -170,6 +170,23 @@
 	}
 }
 
+- (BOOL) isQuotedString
+{
+  // If the first character is not a quote character, return the entire string.
+  unichar quoteCharacter = CFStringGetCharacterAtIndex((CFStringRef)string, 0);
+  if (quoteCharacter != CHAR_BTICK && quoteCharacter != CHAR_DQUOTE && quoteCharacter != CHAR_SQUOTE) {
+    return FALSE;
+  }
+  
+  // Get the end of the string
+  NSUInteger stringEndIndex = [self endIndexOfStringQuotedByCharacter:quoteCharacter startingAtIndex:1];
+  if (stringEndIndex == NSNotFound) {
+    return FALSE;
+  }
+  
+  return TRUE;
+}
+
 /**
  * Removes quotes surrounding the string if present, and un-escapes internal occurrences of the quote character before returning.
  */

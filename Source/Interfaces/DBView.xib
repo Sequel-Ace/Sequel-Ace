@@ -1107,9 +1107,12 @@
                                                                             <rect key="frame" x="680" y="17" width="15" height="450"/>
                                                                             <autoresizingMask key="autoresizingMask"/>
                                                                         </scroller>
-                                                                        <tableHeaderView key="headerView" wantsLayer="YES" id="3920">
+                                                                        <tableHeaderView key="headerView" wantsLayer="YES" id="3920" customClass="SATableHeaderView" customModule="Sequel_Ace" customModuleProvider="target">
                                                                             <rect key="frame" x="0.0" y="0.0" width="693" height="17"/>
                                                                             <autoresizingMask key="autoresizingMask"/>
+                                                                            <connections>
+                                                                                <outlet property="delegate" destination="67" id="QYB-GC-Os2"/>
+                                                                            </connections>
                                                                         </tableHeaderView>
                                                                     </scrollView>
                                                                     <button toolTip="Add row (⌥⌘A)" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5175">

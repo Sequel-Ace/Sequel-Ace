@@ -499,7 +499,6 @@ NSString *SPBundleShellVariableAppCallbackURL               = @"SP_APP_CALLBACK_
 #define OWS @"\\s*" /* optional whitespace */
 //                                                    CURRENT_TIMESTAMP    [            (           [n]          )    ]
 NSString *SPCurrentTimestampPattern = (@"(?i)^" OWS @"CURRENT_TIMESTAMP" @"(?:" OWS @"\\(" OWS @"(\\d*)" OWS @"\\)" @")?" OWS @"$");
-#undef OWS
 
 // URL scheme
 NSString *SPURLSchemeQueryInputPathHeader          = @"~/tmp/SP_QUERY_";

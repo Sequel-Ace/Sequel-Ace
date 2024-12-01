@@ -56,6 +56,7 @@ typedef enum {
 @synthesize textMaxLength = maxTextLength;
 @synthesize fieldType;
 @synthesize fieldEncoding;
+@synthesize displayFormatter;
 @synthesize allowNULL = _allowNULL;
 
 /**
@@ -197,6 +198,10 @@ typedef enum {
 
 #pragma mark -
 
+- (unsigned long long)maxLengthDateWithOverride {
+	return self.displayFormatter.maxLengthOverride != 0 ? self.displayFormatter.maxLengthOverride : maxTextLength;
+}
+
 /**
  * Main method for editing data. It will validate several settings and display a modal sheet for theWindow whioch waits until the user closes the sheet.
  *
@@ -218,41 +223,20 @@ typedef enum {
 				sender:(id)sender
 		   contextInfo:(NSDictionary *)theContextInfo
 {
-	usedSheet = nil;
-
-	_isEditable = isEditable;
-	contextInfo = theContextInfo;
-	callerInstance = sender;
-
-	_isGeometry = ([[fieldType uppercaseString] isEqualToString:@"GEOMETRY"]) ? YES : NO;
-	_isJSON     = ([[fieldType uppercaseString] isEqualToString:SPMySQLJsonType]);
-
-	// Set field label
-	NSMutableString *label = [NSMutableString string];
-
-	[label appendFormat:@"“%@”", fieldName];
-
-	if ([fieldType length] || maxTextLength > 0 || [fieldEncoding length] || !_allowNULL)
-		[label appendString:@" – "];
-
-	if ([fieldType length])
-		[label appendString:fieldType];
-
-	//skip length for JSON type since it's a constant and MySQL doesn't display it either
-	if (maxTextLength > 0 && !_isJSON)
-		[label appendFormat:@"(%lld) ", maxTextLength];
-
-	if (!_allowNULL)
-		[label appendString:@"NOT NULL "];
-
-	if ([fieldEncoding length])
-		[label appendString:fieldEncoding];
+	usedSheet       = nil;
+	_isEditable     = isEditable;
+	contextInfo     = theContextInfo;
+	callerInstance  = sender;
+	_isGeometry     = ([[fieldType uppercaseString] isEqualToString:@"GEOMETRY"]) ? YES : NO;
+	_isJSON         = ([[fieldType uppercaseString] isEqualToString:SPMySQLJsonType]);
+	NSString *label = [self buildLabelForField:fieldName];
 
 	if ([fieldType length] && [[fieldType uppercaseString] isEqualToString:@"BIT"]) {
-
+		usedSheet     = bitSheet;
 		sheetEditData = (NSString*)data;
 
 		[bitSheetNULLButton setEnabled:_allowNULL];
+		[bitSheetFieldName setStringValue:label];
 
 		// Check for NULL
 		if ([sheetEditData isEqualToString:[prefs objectForKey:SPNullValue]]) {
@@ -263,56 +247,40 @@ typedef enum {
 			[bitSheetNULLButton setState:NSControlStateValueOff];
 		}
 
-		[bitSheetFieldName setStringValue:label];
-
 		// Init according bit check boxes
 		NSUInteger i = 0;
 		NSUInteger maxBit = (NSUInteger)((maxTextLength > 64) ? 64 : maxTextLength);
 
-		if ([bitSheetNULLButton state] == NSControlStateValueOff && maxBit <= [(NSString*)sheetEditData length])
-			for (i = 0; i < maxBit; i++)
-			{
+		if ([bitSheetNULLButton state] == NSControlStateValueOff && maxBit <= [(NSString*)sheetEditData length]) {
+			for (i = 0; i < maxBit; i++) {
 				[(NSButton *)[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%ld", (long)i]]
 				 setState:([(NSString*)sheetEditData characterAtIndex:(maxBit - i - 1)] == '1') ? NSControlStateValueOn : NSControlStateValueOff];
 			}
+		}
 
-		for (i = maxBit; i < 64; i++)
-		{
+		for (i = maxBit; i < 64; i++) {
 			[[self valueForKeyPath:[NSString stringWithFormat:@"bitSheetBitButton%ld", (long)i]] setEnabled:NO];
 		}
 
 		[self updateBitSheet];
 
-		usedSheet = bitSheet;
 		[theWindow beginSheet:usedSheet completionHandler:^(NSModalResponse returnCode) {
 			// Remember spell cheecker status
 			[self->prefs setBool:[self->editTextView isContinuousSpellCheckingEnabled] forKey:SPBlobTextEditorSpellCheckingEnabled];
 		}];
-	} 
+	}
 	else {
-		usedSheet = editSheet;
+		usedSheet                  = editSheet;
+		sheetEditData              = data;
+		editSheetWillBeInitialized = YES;
+		encoding                   = anEncoding;
+		_isBlob                    = (!_isJSON && isFieldBlob); // we don't want the hex/image controls for JSON
+		BOOL isBinary              = ([[fieldType uppercaseString] isEqualToString:@"BINARY"] || [[fieldType uppercaseString] isEqualToString:@"VARBINARY"]);
 
-		NSFont *textEditorFont = [NSFont systemFontOfSize:[NSFont systemFontSize]];
-		// Based on user preferences, either use:
-		// 1. The font specifically chosen for the editor sheet textView (FieldEditorSheetFont, right-click in the textView, and choose "Font > Show Fonts" to do that);
-		// 2. The font used for the table view (SPGlobalFontSettings, per the "MySQL Content Font" preference option);
-		if ([prefs objectForKey:SPFieldEditorSheetFont]) {
-			textEditorFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPFieldEditorSheetFont]];
-		} else if ([prefs objectForKey:SPGlobalFontSettings]) {
-			textEditorFont = [NSUserDefaults getFont];
-		}
-		[editTextView setFont:textEditorFont];
-
+		[editTextView setFont:[self selectFont]];
 		[editTextView setContinuousSpellCheckingEnabled:[prefs boolForKey:SPBlobTextEditorSpellCheckingEnabled]];
-
+		[editTextView setEditable:_isEditable];
 		[editSheetFieldName setStringValue:[NSString stringWithFormat:@"%@: %@", NSLocalizedString(@"Field", @"Field"), label]];
-
-		// Hide all views in editSheet
-		[hexTextView setHidden:YES];
-		[hexTextScrollView setHidden:YES];
-		[editImage setHidden:YES];
-		[editTextView setHidden:YES];
-		[editTextScrollView setHidden:YES];
 
 		if (!_isEditable) {
 			[editSheetOkButton setHidden:YES];
@@ -321,40 +289,26 @@ typedef enum {
 			[editSheetOpenButton setEnabled:NO];
 		}
 
-		editSheetWillBeInitialized = YES;
-
-		encoding = anEncoding;
-
-		// we don't want the hex/image controls for JSON
-		_isBlob = (!_isJSON && isFieldBlob);
-		
-		BOOL isBinary = ([[fieldType uppercaseString] isEqualToString:@"BINARY"] || [[fieldType uppercaseString] isEqualToString:@"VARBINARY"]);
-
-		sheetEditData = data;
-
 		// Hide all views in editSheet
-		[hexTextView setHidden:YES];
-		[hexTextScrollView setHidden:YES];
-		[editImage setHidden:YES];
-		[editTextView setHidden:YES];
-		[editTextScrollView setHidden:YES];
+		[self showEditText:NO];
+		[self showHexText:NO];
+		[self showJsonText:NO];
+		[self showImage:NO];
+		[editImage setEditable:_isEditable];
 
 		// Set window's min size since no segment and quicklook buttons are hidden
 		if (_isBlob || isBinary || _isGeometry) {
 			[usedSheet setFrameAutosaveName:@"SPFieldEditorBlobSheet"];
 			[usedSheet setMinSize:NSMakeSize(650, 200)];
-		} 
+		}
 		else {
 			[usedSheet setFrameAutosaveName:@"SPFieldEditorTextSheet"];
 			[usedSheet setMinSize:NSMakeSize(390, 150)];
 		}
 
-		[editTextView setEditable:_isEditable];
-		[editImage setEditable:_isEditable];
-
 		NSSize screen = [[NSScreen mainScreen] visibleFrame].size;
 		NSRect sheet = [usedSheet frame];
-		
+
 		[usedSheet setFrame:
 		 NSMakeRect(sheet.origin.x, sheet.origin.y, 
 					(sheet.size.width > screen.width) ? screen.width : sheet.size.width, 
@@ -367,16 +321,18 @@ typedef enum {
 		}];
 
 		[editSheetProgressBar startAnimation:self];
-        [editSheetSegmentControl setEnabled:NO forSegment:ImageSegment];
+		[editSheetSegmentControl setEnabled:NO forSegment:ImageSegment];
+		[hexTextView setString:@""]; // Set hex view to "" - load on demand only
 
 		NSImage *image = nil;
-
-		if ([sheetEditData isKindOfClass:[NSData class]]) {
-			image = [[NSImage alloc] initWithData:sheetEditData];
-
-			// Set hex view to "" - load on demand only
-			[hexTextView setString:@""];
-
+		if (self.displayFormatter) {
+			// data comes with it's own display formatter so let's use that.
+			stringValue = [self.displayFormatter stringForObjectValue: sheetEditData];
+			[self showEditText:YES];
+			[editSheetSegmentControl setSelectedSegment:TextSegment];
+		}
+		else if ([sheetEditData isKindOfClass:[NSData class]]) {
+			image       = [[NSImage alloc] initWithData:sheetEditData];
 			stringValue = [[NSString alloc] initWithData:sheetEditData encoding:encoding];
 
 			if (stringValue == nil) {
@@ -387,35 +343,28 @@ typedef enum {
 				stringValue	= [[NSString alloc] initWithFormat:@"0x%@", [sheetEditData dataToHexString]];
 			}
 
-			[hexTextView setHidden:NO];
-			[hexTextScrollView setHidden:NO];
-			[editImage setHidden:YES];
-			[editTextView setHidden:YES];
-			[editTextScrollView setHidden:YES];
 			[editSheetSegmentControl setSelectedSegment:HexSegment];
+			[self showHexText:YES];
 		}
 		else if ([sheetEditData isKindOfClass:[SPMySQLGeometryData class]]) {
 			SPGeometryDataView *v = [[SPGeometryDataView alloc] initWithCoordinates:[sheetEditData coordinates] targetDimension:2000.0f];
-
 			image = [v thumbnailImage];
-
 			stringValue = [sheetEditData wktString];
 
-			[hexTextView setString:@""];
-			[hexTextView setHidden:YES];
-			[hexTextScrollView setHidden:YES];
 			[editSheetSegmentControl setEnabled:NO forSegment:HexSegment];
 			[editSheetSegmentControl setSelectedSegment:TextSegment];
-			[editTextView setHidden:NO];
-			[editTextScrollView setHidden:NO];
+			[self showEditText:YES];
 		}
 		else {
 			// If the input is a JSON type column we can format it.
 			// Since MySQL internally stores JSON in binary, it does not retain any formatting
+      BOOL useSoftIndent = [prefs boolForKey:SPCustomQuerySoftIndent];
+      NSInteger indentWidth = [prefs integerForKey:SPCustomQuerySoftIndentWidth];
+
 			do {
-				if(_isJSON) {
-					NSString *formatted = [SPJSONFormatter stringByFormattingString:sheetEditData];
-					if(formatted) {
+				if (_isJSON) {
+          NSString *formatted = [SPJSONFormatter stringByFormattingString:sheetEditData useSoftIndent:useSoftIndent indentWidth:indentWidth];
+					if (formatted) {
 						stringValue = formatted;
 						break;
 					}
@@ -425,28 +374,17 @@ typedef enum {
 
 			[hexTextView setString:@""];
 
-			[hexTextView setHidden:YES];
-			[hexTextScrollView setHidden:YES];
-			[editImage setHidden:YES];
-			[editTextView setHidden:NO];
-			[editTextScrollView setHidden:NO];
+			[self showEditText:YES];
 			[editSheetSegmentControl setSelectedSegment:TextSegment];
 		}
 
+		[editImage setImage:image];
 		if (image) {
-            [editSheetSegmentControl setEnabled:YES forSegment:ImageSegment];
-			[editImage setImage:image];
-			[hexTextView setHidden:YES];
-			[hexTextScrollView setHidden:YES];
-			[editImage setHidden:NO];
+			[editSheetSegmentControl setEnabled:YES forSegment:ImageSegment];
 			if(!_isGeometry) {
-				[editTextView setHidden:YES];
-				[editTextScrollView setHidden:YES];
+				[self showImage:YES];
 				[editSheetSegmentControl setSelectedSegment:ImageSegment];
 			}
-		}
-		else {
-			[editImage setImage:nil];
 		}
 
 		if (stringValue) {
@@ -454,16 +392,13 @@ typedef enum {
 
 			if (image == nil) {
 				if (!isBinary) {
-					[hexTextView setHidden:YES];
-					[hexTextScrollView setHidden:YES];
+					[self showHexText:NO];
 				}
 				else {
 					[editSheetSegmentControl setEnabled:NO forSegment:ImageSegment];
 				}
 
-				[editImage setHidden:YES];
-				[editTextView setHidden:NO];
-				[editTextScrollView setHidden:NO];
+				[self showEditText:YES];
 				[editSheetSegmentControl setSelectedSegment:TextSegment];
 			}
 
@@ -484,9 +419,49 @@ typedef enum {
 		}
 
 		editSheetWillBeInitialized = NO;
-
 		[editSheetProgressBar stopAnimation:self];
 	}
+}
+
+- (NSString *)buildLabelForField:(NSString *)fieldName {
+	// Set field label
+	NSMutableString *label = [NSMutableString string];
+
+	[label appendFormat:@"“%@”", fieldName];
+
+	if ([fieldType length] || maxTextLength > 0 || [fieldEncoding length] || !_allowNULL)
+		[label appendString:@" – "];
+
+	if ([fieldType length])
+		[label appendString:fieldType];
+
+	//skip length for JSON type since it's a constant and MySQL doesn't display it either
+	if (maxTextLength > 0 && !_isJSON)
+		[label appendFormat:@"(%lld) ", maxTextLength];
+
+	if (self.displayFormatter)
+		[label appendFormat:@"– %@ ", self.displayFormatter.label];
+
+	if (!_allowNULL)
+		[label appendString:@"NOT NULL "];
+
+	if ([fieldEncoding length])
+		[label appendString:fieldEncoding];
+
+	return label;
+}
+
+- (NSFont *)selectFont {
+	NSFont *textEditorFont = [NSFont systemFontOfSize:[NSFont systemFontSize]];
+	// Based on user preferences, either use:
+	// 1. The font specifically chosen for the editor sheet textView (FieldEditorSheetFont, right-click in the textView, and choose "Font > Show Fonts" to do that);
+	// 2. The font used for the table view (SPGlobalFontSettings, per the "MySQL Content Font" preference option);
+	if ([prefs objectForKey:SPFieldEditorSheetFont]) {
+		textEditorFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPFieldEditorSheetFont]];
+	} else if ([prefs objectForKey:SPGlobalFontSettings]) {
+		textEditorFont = [NSUserDefaults getFont];
+	}
+	return textEditorFont;
 }
 
 /**
@@ -496,23 +471,11 @@ typedef enum {
 {
 	switch((FieldEditorSegment)[sender selectedSegment]){
 		case TextSegment:
-			[editTextView setHidden:NO];
-			[editTextScrollView setHidden:NO];
-			[editImage setHidden:YES];
-			[hexTextView setHidden:YES];
-			[hexTextScrollView setHidden:YES];
-			[jsonTextView setHidden:YES];
-			[jsonTextScrollView setHidden:YES];
+			[self showEditText:YES];
 			[usedSheet makeFirstResponder:editTextView];
 			break;
 		case ImageSegment:
-			[editTextView setHidden:YES];
-			[editTextScrollView setHidden:YES];
-			[editImage setHidden:NO];
-			[hexTextView setHidden:YES];
-			[hexTextScrollView setHidden:YES];
-			[jsonTextView setHidden:YES];
-			[jsonTextScrollView setHidden:YES];
+			[self showImage:YES];
 			[usedSheet makeFirstResponder:editImage];
 			break;
 		case HexSegment:
@@ -526,79 +489,68 @@ typedef enum {
 				}
 				[editSheetProgressBar stopAnimation:self];
 			}
-			[editTextView setHidden:YES];
-			[editTextScrollView setHidden:YES];
-			[editImage setHidden:YES];
-			[hexTextView setHidden:NO];
-			[hexTextScrollView setHidden:NO];
-			[jsonTextView setHidden:YES];
-			[jsonTextScrollView setHidden:YES];
+			[self showHexText:YES];
 			break;
 		case JsonSegment:
 			[usedSheet makeFirstResponder:jsonTextView];
+      
 			if([[jsonTextView string] isEqualToString:@""]) {
-                if([sheetEditData isKindOfClass:[NSData class]] || [sheetEditData isKindOfClass:[NSString class]]) {
-                    if ([sheetEditData respondsToSelector:@selector(dataUsingEncoding:)]) {
-                        NSError *error = nil;
-                        NSData *jsonData = [sheetEditData dataUsingEncoding:NSUTF8StringEncoding];
-                        id jsonObject = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingMutableContainers error:&error];
-
-                        if(error != nil){
-                            SPLog(@"JSONObjectWithData error : %@", error.localizedDescription);
-                            [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
-                        }
-                        else{
-                            if([NSJSONSerialization isValidJSONObject:jsonObject]){
-                                SPLog(@"isValidJSONObject : %@", jsonObject);
-                                NSData *prettyJsonData = [NSJSONSerialization dataWithJSONObject:jsonObject options:NSJSONWritingPrettyPrinted error:&error];
-
-                                if(error != nil){
-                                    SPLog(@"dataWithJSONObject error : %@", error.localizedDescription);
-                                    [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
-                                }
-                                else{
-                                    NSString *prettyPrintedJson = [[NSString alloc] initWithData:prettyJsonData encoding:NSUTF8StringEncoding];
-                                    if(prettyPrintedJson != nil){
-                                        SPLog(@"prettyPrintedJson : %@", prettyPrintedJson);
-                                        [jsonTextView setString:prettyPrintedJson];
-                                    }
-                                    else{
-                                        SPLog(@"prettyPrintedJson is nil");
-                                        [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
-                                    }
-                                }
-                            }
-                            else{
-                                if(sheetEditData != nil){
-                                    [jsonTextView setString:sheetEditData];
-                                }
-                                else{
-                                    [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
-                                }
-                            }
-                        }
-                    }
-                    else{
-                        SPLog(@"sheetEditData does not respond to dataUsingEncoding: %@", [sheetEditData class]);
+        // 0. If sheet data is not NSData or NSString, then stop to process as potential JSON
+        if(![sheetEditData isKindOfClass:[NSData class]] && ![sheetEditData isKindOfClass:[NSString class]]) {
+          SPLog(@"sheetEditData not of NSData or NSString class: %@", [sheetEditData class]);
+          [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
+          break;
+        }
+        
+        // 1. Validate if JSON is valid
+        NSData *jsonData = nil;
+        if ([sheetEditData respondsToSelector:@selector(dataUsingEncoding:)]) {
+          jsonData = [sheetEditData dataUsingEncoding:NSUTF8StringEncoding];
+        } else if ([sheetEditData isKindOfClass:[NSData class]]) {
+          jsonData = sheetEditData;
+        } else{
+          SPLog(@"sheetEditData does not respond to dataUsingEncoding: %@", [sheetEditData class]);
+          [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
 #ifdef DEBUG
-                        NSArray *arr = DumpObjCMethods(sheetEditData);
-                        SPLog(@"sheetEditData class methods = %@", arr);
+          NSArray *arr = DumpObjCMethods(sheetEditData);
+          SPLog(@"sheetEditData class methods = %@", arr);
 #endif
-                    }
-                }
-                else{
-                    SPLog(@"sheetEditData not of NSData or NSString class: %@", [sheetEditData class]);
-                }
+          break;
+        }
+        
+        NSError *error = nil;
+        id jsonObject = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingMutableContainers error:&error];
+        if(error != nil){
+          SPLog(@"JSONObjectWithData error : %@", error.localizedDescription);
+          [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
+          break;
+        }
+        
+        
+        // 2. Convert data to raw string then beautify it as JSON
+        NSString *rawJson = nil;
+        if ([sheetEditData isKindOfClass:[NSData class]]) {
+          rawJson = [[NSString alloc] initWithData:sheetEditData encoding:NSUTF8StringEncoding];
+        } else{
+          rawJson = sheetEditData;
+        }
+        
+        BOOL useSoftIndent = [prefs boolForKey:SPCustomQuerySoftIndent];
+        NSInteger indentWidth = [prefs integerForKey:SPCustomQuerySoftIndentWidth];
 
-
+        // Re-format by custom formatter instead of using NSJSONSerialization
+        // to avoid the data conversion issues of NSJSONSerialization (e.g: float number convertion, keys ordering)
+        NSString *prettyPrintedJson = [SPJSONFormatter stringByFormattingString:rawJson useSoftIndent:useSoftIndent indentWidth:indentWidth];
+        if(prettyPrintedJson != nil){
+          SPLog(@"prettyPrintedJson : %@", prettyPrintedJson);
+          [jsonTextView setString:prettyPrintedJson];
+        }
+        else{
+          SPLog(@"prettyPrintedJson is nil");
+          [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
+        }
 			}
-			[editTextView setHidden:YES];
-			[editTextScrollView setHidden:YES];
-			[editImage setHidden:YES];
-			[hexTextView setHidden:YES];
-			[hexTextScrollView setHidden:YES];
-			[jsonTextView setHidden:NO];
-			[jsonTextScrollView setHidden:NO];
+			[self showJsonText:YES];
 			break;
 	}
 }
@@ -653,9 +605,9 @@ typedef enum {
 	// - for max text length (except for NULL value string) select the part which won't be saved
 	//   and suppress closing the sheet
 	if (sender == editSheetOkButton) {
-		
-		unsigned long long maxLength = maxTextLength;
-		
+
+		unsigned long long maxLength = self.maxLengthDateWithOverride;
+
 		// For FLOAT fields ignore the decimal point in the text when comparing lengths
 		if ([[fieldType uppercaseString] isEqualToString:@"FLOAT"] && ([[[editTextView textStorage] string] rangeOfString:@"."].location != NSNotFound)) {
 			maxLength++;
@@ -665,13 +617,25 @@ typedef enum {
         NSString *nullValue = [[NSUserDefaults standardUserDefaults] objectForKey:SPNullValue];
         NSTextStorage *editTVtextStorage = [editTextView textStorage];
         NSString *editTVString = [editTVtextStorage string];
-        
+
 		if (maxLength > 0 && [editTVString characterCount] > (NSInteger)maxLength && ![editTVString isEqualToString:nullValue] && [nullValue contains:editTVString] == NO) {
 			[editTextView setSelectedRange:NSMakeRange((NSUInteger)maxLength, [editTVString characterCount] - (NSUInteger)maxLength)];
 			[editTextView scrollRangeToVisible:NSMakeRange([editTextView selectedRange].location,0)];
-			[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Text is too long. Maximum text length is set to %llu.", @"Text is too long. Maximum text length is set to %llu."), maxTextLength]];
-			
+			[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Text is too long. Maximum text length is set to %llu.", @"Text is too long. Maximum text length is set to %llu."), maxLength]];
+
 			return;
+		}
+
+		if (self.displayFormatter) {
+			NSString *_Nullable err = nil;
+			BOOL isValid = [self.displayFormatter getObjectValue:nil forString:[editTextView string] errorDescription:&err];
+			if (!isValid) {
+				NSBeep();
+				if (err != nil) {
+					[SPTooltip showWithObject: err];
+				}
+				return;
+			}
 		}
 
 		editSheetReturnCode = 1;
@@ -697,12 +661,17 @@ typedef enum {
 
 	if(callerInstance) {
 		id returnData = ( editSheetReturnCode && _isEditable ) ? (_isGeometry) ? [editTextView string] : sheetEditData : nil;
-		
+
 		//for MySQLs JSON type remove the formatting again, since it won't be stored anyway
 		if(_isJSON) {
 			NSString *unformatted = [SPJSONFormatter stringByUnformattingString:returnData];
 			if(unformatted) returnData = unformatted;
 		}
+    else if (self.displayFormatter) {
+      id convertedData;
+      [self.displayFormatter getObjectValue:&convertedData forString:[editTextView string] errorDescription:nil];
+      returnData = convertedData;
+    }
 
 		if([callerInstance respondsToSelector:@selector(processFieldEditorResult:contextInfo:)]) {
 			[(id <SPFieldEditorControllerDelegate>)callerInstance processFieldEditorResult:returnData contextInfo:contextInfo];
@@ -717,21 +686,14 @@ typedef enum {
 {
 	if (returnCode == NSModalResponseOK) {
 		NSString *contents = nil;
-
 		editSheetWillBeInitialized = YES;
-
 		[editSheetProgressBar startAnimation:self];
-
-		// load new data/images
-		sheetEditData = [[NSData alloc] initWithContentsOfURL:[panel URL]];
+		sheetEditData = [[NSData alloc] initWithContentsOfURL:[panel URL]]; // load new data/images
 
 		NSImage *image = [[NSImage alloc] initWithData:sheetEditData];
 		contents = [[NSString alloc] initWithData:sheetEditData encoding:encoding];
 		if (contents == nil)
 			contents = [[NSString alloc] initWithData:sheetEditData encoding:NSASCIIStringEncoding];
-
-		// set the image preview, string contents and hex representation
-		[editImage setImage:image];
 
 		if(contents)
 			[editTextView setString:contents];
@@ -742,23 +704,15 @@ typedef enum {
 		if(![[hexTextView string] isEqualToString:@""])
 			[hexTextView setString:[sheetEditData dataToFormattedHexString]];
 
-		// If the image cell now contains a valid image, select the image view
-		if (image) {
+		// set the image preview, string contents and hex representation
+		[editImage setImage:image];
+		if (image) { // If the image cell now contains a valid image, select the image view
 			[editSheetSegmentControl setSelectedSegment:ImageSegment];
-			[hexTextView setHidden:YES];
-			[hexTextScrollView setHidden:YES];
-			[editImage setHidden:NO];
-			[editTextView setHidden:YES];
-			[editTextScrollView setHidden:YES];
-
-			// Otherwise deselect the image view
-		} else {
+			[self showImage:YES];
+		}
+		else { // Otherwise deselect the image view
 			[editSheetSegmentControl setSelectedSegment:TextSegment];
-			[hexTextView setHidden:YES];
-			[hexTextScrollView setHidden:YES];
-			[editImage setHidden:YES];
-			[editTextView setHidden:NO];
-			[editTextScrollView setHidden:NO];
+			[self showEditText:YES];
 		}
 		if(contents)
 		[editSheetProgressBar stopAnimation:self];
@@ -1011,19 +965,13 @@ typedef enum {
  */
 -(void)processPasteImageData
 {
-
 	editSheetWillBeInitialized = YES;
-
-	NSImage *image = nil;
-
-	image = [[NSImage alloc] initWithPasteboard:[NSPasteboard generalPasteboard]];
+	NSImage *image = [[NSImage alloc] initWithPasteboard:[NSPasteboard generalPasteboard]];
 	if (image) {
-
 		[editImage setImage:image];
-
 		sheetEditData = [[NSData alloc] initWithData:[image TIFFRepresentationUsingCompression:NSTIFFCompressionLZW factor:1]];
-
 		NSString *contents = [[NSString alloc] initWithData:sheetEditData encoding:encoding];
+		
 		if (contents == nil)
 			contents = [[NSString alloc] initWithData:sheetEditData encoding:NSASCIIStringEncoding];
 
@@ -1032,7 +980,6 @@ typedef enum {
 			[editTextView setString:contents];
 		if(![[hexTextView string] isEqualToString:@""])
 			[hexTextView setString:[sheetEditData dataToFormattedHexString]];
-
 	}
 
 	editSheetWillBeInitialized = NO;
@@ -1045,7 +992,6 @@ typedef enum {
  */
 - (void)processUpdatedImageData:(NSData *)data
 {
-
 	editSheetWillBeInitialized = YES;
 
 	// If the image was not processed, set a blank string as the contents of the edit and hex views.
@@ -1263,7 +1209,7 @@ typedef enum {
 			intValue >>= 1;
 			i++;
 		}
-		
+
 		[self updateBitSheet];
 	}
 }
@@ -1273,14 +1219,15 @@ typedef enum {
  */
 - (BOOL)textView:(NSTextView *)textView shouldChangeTextInRange:(NSRange)r replacementString:(NSString *)replacementString
 {
-    if (replacementString == nil || [replacementString characterCount] == 0) {
-        editTextViewWasChanged = YES; // Backspace
-        return YES;
-    }
-    
-	if (textView == editTextView && 
-		(maxTextLength > 0) && 
-		![[[[editTextView textStorage] string] stringByAppendingString:replacementString] isEqualToString:[prefs objectForKey:SPNullValue]])
+	if (replacementString == nil || [replacementString characterCount] == 0) {
+		editTextViewWasChanged = YES; // Backspace
+		return YES;
+	}
+
+	unsigned long long adjTextMaxTextLength = self.maxLengthDateWithOverride;
+
+	if (textView == editTextView && (adjTextMaxTextLength > 0) &&
+			![[[[editTextView textStorage] string] stringByAppendingString:replacementString] isEqualToString:[prefs objectForKey:SPNullValue]])
 	{
 		NSInteger newLength;
 
@@ -1297,13 +1244,13 @@ typedef enum {
 		if (r.location == NSNotFound) return NO;
 
 		// Length checking while using the Input Manager (eg for Japanese)
-		if ([textView hasMarkedText] && (maxTextLength > 0) && (r.location < maxTextLength)) {
+		if ([textView hasMarkedText] && (adjTextMaxTextLength > 0) && (r.location < adjTextMaxTextLength)) {
 
 			// User tries to insert a new char but max text length was already reached - return NO
-			if (!r.length && ([[[textView textStorage] string] characterCount] >= (NSInteger)maxTextLength)) {
-				[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %llu.", @"Maximum text length is set to %llu."), maxTextLength]];
+			if (!r.length && ([[[textView textStorage] string] characterCount] >= (NSInteger)adjTextMaxTextLength)) {
+				[SPTooltip showWithObject:[NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %llu.", @"Maximum text length is set to %llu."), adjTextMaxTextLength]];
 				[textView unmarkText];
-				
+
 				return NO;
 			}
 			// Otherwise allow it if insertion point is valid for eg
@@ -1312,7 +1259,7 @@ typedef enum {
 			// 4 which is larger than max length.
 			// TODO this doesn't solve the problem of inserting more than one char. For now
 			// that part which won't be saved will be hilited if user pressed the OK button.
-			else if (r.location < maxTextLength) {
+			else if (r.location < adjTextMaxTextLength) {
 				return YES;
 			}
 		}
@@ -1321,52 +1268,65 @@ typedef enum {
 		newLength = [[[textView textStorage] string] characterCount] + [replacementString characterCount] - r.length;
 
 		NSUInteger textLength = [[[textView textStorage] string] characterCount];
-		
-		unsigned long long originalMaxTextLength = maxTextLength;
-		
+
+		unsigned long long originalMaxTextLength = adjTextMaxTextLength;
+
 		// For FLOAT fields ignore the decimal point in the text when comparing lengths
-		if ([[fieldType uppercaseString] isEqualToString:@"FLOAT"] && 
-			([[[textView textStorage] string] rangeOfString:@"."].location != NSNotFound)) {
-			
-			if ((NSUInteger)newLength == (maxTextLength + 1)) {
-				maxTextLength++;
+		if ([[fieldType uppercaseString] isEqualToString:@"FLOAT"] &&
+				([[[textView textStorage] string] rangeOfString:@"."].location != NSNotFound)) {
+
+			if ((NSUInteger)newLength == (adjTextMaxTextLength + 1)) {
+				adjTextMaxTextLength++;
 				textLength--;
 			}
-			else if ((NSUInteger)newLength > maxTextLength) {
+			else if ((NSUInteger)newLength > adjTextMaxTextLength) {
 				textLength--;
 			}
 		}
 
 		// If it's too long, disallow the change but try
 		// to insert a text chunk partially to maxTextLength.
-		if ((NSUInteger)newLength > maxTextLength) {
-			if ((maxTextLength - textLength + [textView selectedRange].length) <= [replacementString characterCount]) {
-			
+		if ((NSUInteger)newLength > adjTextMaxTextLength) {
+			if ((adjTextMaxTextLength - textLength + [textView selectedRange].length) <= [replacementString characterCount]) {
+
 				NSString *tooltip = nil;
-				
-				if (maxTextLength - textLength + [textView selectedRange].length) {
-					tooltip = [NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %llu. Inserted text was truncated.", @"Maximum text length is set to %llu. Inserted text was truncated."), maxTextLength];
+
+				if (adjTextMaxTextLength - textLength + [textView selectedRange].length) {
+					tooltip = [NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %llu. Inserted text was truncated.", @"Maximum text length is set to %llu. Inserted text was truncated."), adjTextMaxTextLength];
 				}
 				else {
-					tooltip = [NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %llu.", @"Maximum text length is set to %llu."), maxTextLength];
+					tooltip = [NSString stringWithFormat:NSLocalizedString(@"Maximum text length is set to %llu.", @"Maximum text length is set to %llu."), adjTextMaxTextLength];
 				}
-				
+
 				[SPTooltip showWithObject:tooltip];
 
-				[textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[replacementString substringToIndex:(NSUInteger)maxTextLength - textLength +[textView selectedRange].length]]];
+				[textView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[replacementString substringToIndex:(NSUInteger)adjTextMaxTextLength - textLength +[textView selectedRange].length]]];
 			}
-			
-			maxTextLength = originalMaxTextLength;
-			
+
+			adjTextMaxTextLength = originalMaxTextLength;
+
 			return NO;
 		}
 
-		maxTextLength = originalMaxTextLength;
+		adjTextMaxTextLength = originalMaxTextLength;
+
+		if (self.displayFormatter) {
+			NSString *err = nil;
+			NSString *newStr = nil;
+			BOOL isValid = [self.displayFormatter isPartialStringValid:replacementString newEditingString:&newStr errorDescription:&err];
+			if (!isValid) {
+				NSBeep();
+				if (err != nil) {
+					[SPTooltip showWithObject: err];
+				}
+				return NO;
+			}
+		}
 
 		// Otherwise, allow it
 		return YES;
 	}
-	
+
 	return YES;
 }
 
@@ -1388,7 +1348,7 @@ typedef enum {
 		// clear the image and hex (since i doubt someone can "type" a gif)
 		[editImage setImage:nil];
 		[hexTextView setString:@""];
-		
+
 		// set edit data to text
 		sheetEditData = [NSString stringWithString:[editTextView string]];
 	}
@@ -1481,6 +1441,52 @@ typedef enum {
 - (void)setDoGroupDueToChars
 {
 	doGroupDueToChars = YES;
+}
+
+#pragma mark -
+#pragma mark UI Helper Methods
+
+- (void)showHexText:(BOOL)show {
+	BOOL hidden = !show;
+	[hexTextView setHidden:hidden];
+	[hexTextScrollView setHidden:hidden];
+	if (show) { // hide others
+		[self showEditText:hidden];
+		[self showJsonText:hidden];
+		[self showImage:hidden];
+	}
+}
+
+- (void)showEditText:(BOOL)show {
+	BOOL hidden = !show;
+	[editTextView setHidden:hidden];
+	[editTextScrollView setHidden:hidden];
+	if (show) { // hide others
+		[self showHexText:hidden];
+		[self showJsonText:hidden];
+		[self showImage:hidden];
+	}
+}
+
+- (void)showJsonText:(BOOL)show {
+	BOOL hidden = !show;
+	[jsonTextView setHidden:hidden];
+	[jsonTextScrollView setHidden:hidden];
+	if (show) { // hide others
+		[self showHexText:hidden];
+		[self showEditText:hidden];
+		[self showImage:hidden];
+	}
+}
+
+- (void)showImage:(BOOL)show {
+	BOOL hidden = !show;
+	[editImage setHidden:hidden];
+	if (show) { // hide others
+		[self showHexText:hidden];
+		[self showEditText:hidden];
+		[self showJsonText:hidden];
+	}
 }
 
 @end

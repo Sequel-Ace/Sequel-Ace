@@ -1120,7 +1120,9 @@ Gw
                     </tableHeaderView>
                 </scrollView>
             </subviews>
-            <point key="canvasLocation" x="-369" y="-444"/>
+            <constraints>
+                <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="411" id="1uC-QN-wbV"/>
+            </constraints>
         </customView>
         <userDefaultsController representsSharedInstance="YES" id="1385"/>
     </objects>

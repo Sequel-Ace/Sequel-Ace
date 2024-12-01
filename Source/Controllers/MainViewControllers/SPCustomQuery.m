@@ -357,7 +357,15 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             if ([[textView.textStorage string] length] > 0) {
                 [selectedFaveQueryStr insertString:@"\n" atIndex:0];
             }
-            [textView insertAsSnippet:selectedFaveQueryStr atRange:[textView selectedRange]];
+          
+            NSRange selectedRange = [textView selectedRange];
+            // If no selected range, then make a new range then use it for appending query
+            if (!selectedRange.length) {
+              selectedRange = NSMakeRange(textView.textStorage.length, 0);
+              NSUInteger caretPosition = selectedRange.location;
+            }
+          
+            [textView insertAsSnippet:selectedFaveQueryStr atRange:selectedRange];
         }
     }
 }
@@ -389,7 +397,15 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             if ([[textView.textStorage string] length] > 0) {
                 [selectedHistoryQueryStr insertString:@"\n" atIndex:0];
             }
-            [textView insertAsSnippet:selectedHistoryQueryStr atRange:[textView selectedRange]];
+          
+            NSRange selectedRange = [textView selectedRange];
+            // If no selected range, then make a new range then use it for appending query
+            if (!selectedRange.length) {
+              selectedRange = NSMakeRange(textView.textStorage.length, 0);
+              NSUInteger caretPosition = selectedRange.location;
+            }
+          
+            [textView insertAsSnippet:selectedHistoryQueryStr atRange:selectedRange];
         }
 
     }

@@ -144,7 +144,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 
 	NSColor *textForegroundColor;
 	NSColor *nullHighlightColor;
-	NSColor *binhexHighlightColor;
+	NSColor *displayOverrideHighlightColor;
 
 	SPFieldEditorController *fieldEditor;
 
