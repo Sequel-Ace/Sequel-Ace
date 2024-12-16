@@ -13,7 +13,7 @@
 	<key>contact</key>
 	<string>tvg@udk.qr</string>
 	<key>description</key>
-	<string>Copy Selected Result rows as Markdown Table. Uses extra time and memory to padd rows to maximum width. Blobs excluded.
+	<string>Copy selected result rows without BLOB fields as Markdown table.
 
 Version 1.0</string>
 	<key>input</key>
@@ -21,11 +21,11 @@ Version 1.0</string>
 	<key>keyEquivalent</key>
 	<string></string>
 	<key>name</key>
-	<string>Copy as Markdown (Padded)</string>
+	<string>Copy as Markdown</string>
 	<key>scope</key>
 	<string>datatable</string>
 	<key>tooltip</key>
-	<string>Copy Select as pretty Markdown Table </string>
+	<string>Copy selection as Markdown table</string>
 	<key>trigger</key>
 	<string>none</string>
 	<key>uuid</key>
