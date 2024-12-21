@@ -102,7 +102,7 @@
 	<key>EditInSheetForMultiLineText</key>
 	<true/>
 	<key>SaveApplicationUsageAnalytics</key>
-	<true/>
+	<false/>
 	<key>EditInSheetForLongText</key>
 	<true/>
 	<key>EditInSheetForLongTextLengthThreshold</key>
