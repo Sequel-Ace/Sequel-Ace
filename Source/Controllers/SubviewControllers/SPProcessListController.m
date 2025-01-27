@@ -683,6 +683,8 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	// Perform filtering
 	for (NSDictionary *process in processes) 
 	{
+    BOOL isProcessColumnHidden = [processListTableView tableColumnWithIdentifier:SPTableViewProgressColumnIdentifier].isHidden;
+    
 		if (([[[process objectForKey:@"Id"] stringValue] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound) ||
 			([[process objectForKey:@"User"] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound) ||
 			([[process objectForKey:@"Host"] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound) ||
@@ -691,7 +693,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 			((![[process objectForKey:@"Time"] isNSNull]) && ([[[process objectForKey:@"Time"] stringValue] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound)) ||
 			((![[process objectForKey:@"State"] isNSNull]) && ([[process objectForKey:@"State"] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound)) ||
 			((![[process objectForKey:@"Info"] isNSNull]) && ([[process objectForKey:@"Info"] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound)) ||
-      ((![[process objectForKey:@"Progress"] isNSNull]) && ([[process objectForKey:@"Progress"] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound)))
+      (!isProcessColumnHidden && (![[process objectForKey:@"Progress"] isNSNull]) && ([[process objectForKey:@"Progress"] rangeOfString:filterString options:NSCaseInsensitiveSearch].location != NSNotFound)))
 		{
 			[processesFiltered addObject:process];
 		}
