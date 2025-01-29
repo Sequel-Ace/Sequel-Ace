@@ -613,10 +613,10 @@
 "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "Были внесены изменения, которые будут потеряны при закрытии этого окна. Вы уверены, что хотите продолжить";
 
 /* quitting app informal alert title */
-"Close the app?" = "Close the app?";
+"Close the app?" = "Закрыть приложение?";
 
 /* quitting app informal alert body */
-"Are you sure you want to quit the app?" = "Are you sure you want to quit the app?";
+"Are you sure you want to quit the app?" = "Вы уверены, что хотите закрыть приложение?";
 
 /* character set client: %@ */
 "character set client: %@" = "кодировка: %@";
@@ -1123,7 +1123,7 @@
 "Duplicate View..." = "Дублировать представление...";
 
 /* partial copy database support informative message */
-"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?";
+"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "Создание дубликата базы данных '%@' имеет частичную поддержку ввиду того, что она содержит отличные от таблиц объекты (такие как: представления, процедуры, функции и т.п.), которые не будут скопированы.\n\nВы хотите продолжить?";
 
 /* edit filter */
 "Edit Filters…" = "Редактировать фильтры…";
@@ -2709,7 +2709,7 @@
 "The connection to the server was lost during the import.  The import is only partially complete." = "Соединение с сервером было потеряно во время импорта. Импорт завершен лишь частично.";
 
 /* Create syntax permission denied detail */
-"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator." = "The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator.";
+"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator." = "Невозможно получить синтаксис создания из-за ошибки прав доступа.\n\nПожалуйста, уточните наличие необходимых полномочий у администратора.";
 
 /* CSV file open error */
 "The CSV file you selected could not be found or read." = "Не удалось найти или прочитать выбранный CSV файл.";
@@ -3212,7 +3212,7 @@
 "The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "Выбранный файл hosts-файлов не доступен для записи.\n\n%@\n\nПожалуйста выберите файл в настройках Sequel Ace и повторите попытку.";
 
 /* known hosts is invalid message */
-"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "Выбранный файл с известными хостами повреждён.\n\nПожалуйста, выберите файл заново в Настройках Sequel Ace и затем повторите попытку.";
 
 /* known hosts contains quote message */
 "The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "Выбранный файл hosts содержит кавычки (\") в пути файла, который не поддерживается.\n\n%@\n\nПожалуйста, выберите другой файл в Настройках Последователя или переименуйте путь к файлу, чтобы удалить кавычку.";
