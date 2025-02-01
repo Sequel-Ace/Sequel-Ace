@@ -1,16 +1,17 @@
 #ifndef MYSQL_PLUGIN_AUTH_COMMON_INCLUDED
-/* Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2010, 2024, Oracle and/or its affiliates.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
    as published by the Free Software Foundation.
 
-   This program is also distributed with certain software (including
+   This program is designed to work with certain software (including
    but not limited to OpenSSL) that is licensed under separate terms,
    as designated in a particular file or component or in included license
    documentation.  The authors of MySQL hereby grant you an additional
    permission to link the program and your derivative works with the
-   separately licensed software that they have included with MySQL.
+   separately licensed software that they have either included with
+   the program or referenced in the documentation.
 
    Without limiting anything contained in the foregoing, this file,
    which is part of C Driver for MySQL (Connector/C), is also subject to the
@@ -94,7 +95,12 @@
   or not.
 */
 #define CR_OK_HANDSHAKE_COMPLETE -2
-
+/**
+  Authentication was successful with limited operations.
+  It means that the both client and server side plugins decided to allow
+  authentication with very limited operations ALTER USER to do registration.
+*/
+#define CR_OK_AUTH_IN_SANDBOX_MODE -3
 /**
 Flag to be passed back to server from authentication plugins via
 authenticated_as when proxy mapping should be done by the server.
@@ -105,7 +111,7 @@ authenticated_as when proxy mapping should be done by the server.
   We need HANDLE definition if on Windows. Define WIN32_LEAN_AND_MEAN (if
   not already done) to minimize amount of imported declarations.
 */
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(MYSQL_ABI_CHECK)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
@@ -121,7 +127,8 @@ struct MYSQL_PLUGIN_VIO_INFO {
     MYSQL_VIO_MEMORY
   } protocol;
   int socket; /**< it's set, if the protocol is SOCKET or TCP */
-#ifdef _WIN32
+  bool is_tls_established;
+#if defined(_WIN32) && !defined(MYSQL_ABI_CHECK)
   HANDLE handle; /**< it's set, if the protocol is PIPE or MEMORY */
 #endif
 };
@@ -171,7 +178,7 @@ typedef struct MYSQL_PLUGIN_VIO {
                                                    int *result);
   /**
     Non blocking version of write_packet. Sends data available in pkt of length
-    pkt_len to server in asynchrnous way.
+    pkt_len to server in asynchronous way.
   */
   enum net_async_status (*write_packet_nonblocking)(
       struct MYSQL_PLUGIN_VIO *vio, const unsigned char *pkt, int pkt_len,

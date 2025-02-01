@@ -1,15 +1,16 @@
-/* Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2000, 2024, Oracle and/or its affiliates.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
    as published by the Free Software Foundation.
 
-   This program is also distributed with certain software (including
+   This program is designed to work with certain software (including
    but not limited to OpenSSL) that is licensed under separate terms,
    as designated in a particular file or component or in included license
    documentation.  The authors of MySQL hereby grant you an additional
    permission to link the program and your derivative works with the
-   separately licensed software that they have included with MySQL.
+   separately licensed software that they have either included with
+   the program or referenced in the documentation.
 
    Without limiting anything contained in the foregoing, this file,
    which is part of C Driver for MySQL (Connector/C), is also subject to the
@@ -54,7 +55,7 @@ typedef uint64_t my_ulonglong;
 
 #ifndef my_socket_defined
 #define my_socket_defined
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(MYSQL_ABI_CHECK)
 #include <windows.h>
 #ifdef WIN32_LEAN_AND_MEAN
 #include <winsock2.h>
@@ -62,13 +63,13 @@ typedef uint64_t my_ulonglong;
 #define my_socket SOCKET
 #else
 typedef int my_socket;
-#endif /* _WIN32 */
+#endif /* _WIN32 && ! MYSQL_ABI_CHECK */
 #endif /* my_socket_defined */
 
 // Small extra definition to avoid pulling in my_compiler.h in client code.
 // IWYU pragma: no_include "my_compiler.h"
 #ifndef MY_COMPILER_INCLUDED
-#if !defined(_WIN32)
+#if !defined(_WIN32) || defined(MYSQL_ABI_CHECK)
 #define STDCALL
 #else
 #define STDCALL __stdcall
@@ -210,7 +211,10 @@ enum mysql_option {
   MYSQL_OPT_TLS_CIPHERSUITES,
   MYSQL_OPT_COMPRESSION_ALGORITHMS,
   MYSQL_OPT_ZSTD_COMPRESSION_LEVEL,
-  MYSQL_OPT_LOAD_DATA_LOCAL_DIR
+  MYSQL_OPT_LOAD_DATA_LOCAL_DIR,
+  MYSQL_OPT_USER_PASSWORD,
+  MYSQL_OPT_SSL_SESSION_DATA,
+  MYSQL_OPT_TLS_SNI_SERVERNAME
 };
 
 /**
@@ -282,8 +286,8 @@ enum mysql_ssl_fips_mode {
 typedef struct character_set {
   unsigned int number;   /* character set number              */
   unsigned int state;    /* character set state               */
-  const char *csname;    /* collation name                    */
-  const char *name;      /* character set name                */
+  const char *csname;    /* character set name                */
+  const char *name;      /* collation name                    */
   const char *comment;   /* comment                           */
   const char *dir;       /* character set directory           */
   unsigned int mbminlen; /* min. length for multibyte strings */
@@ -363,6 +367,22 @@ typedef struct MYSQL_RES {
 #define MYSQL_RPL_SKIP_HEARTBEAT (1 << 17)
 
 /**
+ Flag to indicate that the heartbeat_event being generated
+ is using the class Heartbeat_event_v2
+*/
+#define USE_HEARTBEAT_EVENT_V2 (1 << 1)
+
+/**
+ Flag to indicate that tagged GTIDS will be skipped in COM_BINLOG_DUMP_GTIDS
+*/
+#define MYSQL_RPL_SKIP_TAGGED_GTIDS (1 << 2)
+
+/**
+ Tagged GTIDS are supported starting from below version of MySQL
+*/
+#define MYSQL_TAGGED_GTIDS_VERSION_SUPPORT 80300
+
+/**
   Struct for information about a replication stream.
 
   @sa mysql_binlog_open()
@@ -403,7 +423,7 @@ void STDCALL mysql_server_end(void);
 /*
   mysql_server_init/end need to be called when using libmysqld or
   libmysqlclient (exactly, mysql_server_init() is called by mysql_init() so
-  you don't need to call it explicitely; but you need to call
+  you don't need to call it explicitly; but you need to call
   mysql_server_end() to free memory). The names are a bit misleading
   (mysql_SERVER* to be used when using libmysqlCLIENT). So we add more general
   names which suit well whether you're using libmysqld or libmysqlclient. We
@@ -453,6 +473,10 @@ bool STDCALL mysql_ssl_set(MYSQL *mysql, const char *key, const char *cert,
                            const char *ca, const char *capath,
                            const char *cipher);
 const char *STDCALL mysql_get_ssl_cipher(MYSQL *mysql);
+bool STDCALL mysql_get_ssl_session_reused(MYSQL *mysql);
+void *STDCALL mysql_get_ssl_session_data(MYSQL *mysql, unsigned int n_ticket,
+                                         unsigned int *out_len);
+bool STDCALL mysql_free_ssl_session_data(MYSQL *mysql, void *data);
 bool STDCALL mysql_change_user(MYSQL *mysql, const char *user,
                                const char *passwd, const char *db);
 MYSQL *STDCALL mysql_real_connect(MYSQL *mysql, const char *host,
@@ -556,6 +580,7 @@ void STDCALL myodbc_remove_escape(MYSQL *mysql, char *name);
 unsigned int STDCALL mysql_thread_safe(void);
 bool STDCALL mysql_read_query_result(MYSQL *mysql);
 int STDCALL mysql_reset_connection(MYSQL *mysql);
+enum net_async_status STDCALL mysql_reset_connection_nonblocking(MYSQL *mysql);
 
 int STDCALL mysql_binlog_open(MYSQL *mysql, MYSQL_RPL *rpl);
 int STDCALL mysql_binlog_fetch(MYSQL *mysql, MYSQL_RPL *rpl);
@@ -603,7 +628,7 @@ enum enum_mysql_stmt_state {
 
   length         - On input: in case when lengths of input values
                    are different for each execute, you can set this to
-                   point at a variable containining value length. This
+                   point at a variable containing value length. This
                    way the value length can be different in each execute.
                    If length is not NULL, buffer_length is not used.
                    Note, length can even point at buffer_length if
@@ -730,6 +755,9 @@ enum enum_stmt_attr_type {
   STMT_ATTR_PREFETCH_ROWS
 };
 
+bool STDCALL mysql_bind_param(MYSQL *mysql, unsigned n_params,
+                              MYSQL_BIND *binds, const char **names);
+
 MYSQL_STMT *STDCALL mysql_stmt_init(MYSQL *mysql);
 int STDCALL mysql_stmt_prepare(MYSQL_STMT *stmt, const char *query,
                                unsigned long length);
@@ -746,6 +774,8 @@ bool STDCALL mysql_stmt_attr_get(MYSQL_STMT *stmt,
                                  enum enum_stmt_attr_type attr_type,
                                  void *attr);
 bool STDCALL mysql_stmt_bind_param(MYSQL_STMT *stmt, MYSQL_BIND *bnd);
+bool STDCALL mysql_stmt_bind_named_param(MYSQL_STMT *stmt, MYSQL_BIND *binds,
+                                         unsigned n_params, const char **names);
 bool STDCALL mysql_stmt_bind_result(MYSQL_STMT *stmt, MYSQL_BIND *bnd);
 bool STDCALL mysql_stmt_close(MYSQL_STMT *stmt);
 bool STDCALL mysql_stmt_reset(MYSQL_STMT *stmt);
@@ -791,6 +821,8 @@ MYSQL *STDCALL mysql_real_connect_dns_srv(MYSQL *mysql,
                                           const char *user, const char *passwd,
                                           const char *db,
                                           unsigned long client_flag);
+
+enum connect_stage STDCALL mysql_get_connect_nonblocking_stage(MYSQL *mysql);
 
 #ifdef __cplusplus
 }

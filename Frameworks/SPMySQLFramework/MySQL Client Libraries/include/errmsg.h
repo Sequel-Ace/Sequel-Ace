@@ -1,18 +1,19 @@
 #ifndef ERRMSG_INCLUDED
 #define ERRMSG_INCLUDED
 
-/* Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2000, 2024, Oracle and/or its affiliates.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
    as published by the Free Software Foundation.
 
-   This program is also distributed with certain software (including
+   This program is designed to work with certain software (including
    but not limited to OpenSSL) that is licensed under separate terms,
    as designated in a particular file or component or in included license
    documentation.  The authors of MySQL hereby grant you an additional
    permission to link the program and your derivative works with the
-   separately licensed software that they have included with MySQL.
+   separately licensed software that they have either included with
+   the program or referenced in the documentation.
 
    Without limiting anything contained in the foregoing, this file,
    which is part of C Driver for MySQL (Connector/C), is also subject to the
@@ -77,10 +78,10 @@ extern const char *client_errors[]; /* Error messages */
 #define CR_CANT_READ_CHARSET 2019
 #define CR_NET_PACKET_TOO_LARGE 2020
 #define CR_EMBEDDED_CONNECTION 2021
-#define CR_PROBE_SLAVE_STATUS 2022
-#define CR_PROBE_SLAVE_HOSTS 2023
-#define CR_PROBE_SLAVE_CONNECT 2024
-#define CR_PROBE_MASTER_CONNECT 2025
+#define CR_PROBE_REPLICA_STATUS 2022
+#define CR_PROBE_REPLICA_HOSTS 2023
+#define CR_PROBE_REPLICA_CONNECT 2024
+#define CR_PROBE_SOURCE_CONNECT 2025
 #define CR_SSL_CONNECTION_ERROR 2026
 #define CR_MALFORMED_PACKET 2027
 #define CR_WRONG_LICENSE 2028
@@ -123,17 +124,25 @@ extern const char *client_errors[]; /* Error messages */
 #define CR_INSECURE_API_ERR 2062
 #define CR_FILE_NAME_TOO_LONG 2063
 #define CR_SSL_FIPS_MODE_ERR 2064
-#define CR_COMPRESSION_NOT_SUPPORTED 2065
+#define CR_DEPRECATED_COMPRESSION_NOT_SUPPORTED 2065
 #define CR_COMPRESSION_WRONGLY_CONFIGURED 2066
 #define CR_KERBEROS_USER_NOT_FOUND 2067
-#define CR_ERROR_LAST /*Copy last error nr:*/ 2067
+#define CR_LOAD_DATA_LOCAL_INFILE_REJECTED 2068
+#define CR_LOAD_DATA_LOCAL_INFILE_REALPATH_FAIL 2069
+#define CR_DNS_SRV_LOOKUP_FAILED 2070
+#define CR_MANDATORY_TRACKER_NOT_FOUND 2071
+#define CR_INVALID_FACTOR_NO 2072
+#define CR_CANT_GET_SESSION_DATA 2073
+#define CR_INVALID_CLIENT_CHARSET 2074
+#define CR_TLS_SERVER_NOT_FOUND 2075
+#define CR_ERROR_LAST /*Copy last error nr:*/ 2075
 /* Add error numbers before CR_ERROR_LAST and change it accordingly. */
 
 /* Visual Studio requires '__inline' for C code */
 static inline const char *ER_CLIENT(int client_errno) {
   if (client_errno >= CR_ERROR_FIRST && client_errno <= CR_ERROR_LAST)
     return client_errors[client_errno - CR_ERROR_FIRST];
-  return client_errors[CR_UNKNOWN_ERROR];
+  return client_errors[CR_UNKNOWN_ERROR - CR_ERROR_FIRST];
 }
 
 #endif /* ERRMSG_INCLUDED */

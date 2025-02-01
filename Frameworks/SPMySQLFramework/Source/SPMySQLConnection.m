@@ -644,6 +644,8 @@ asm(".desc ___crashreporter_info__, 0x10");
 - (MYSQL *)_makeRawMySQLConnectionWithEncoding:(NSString *)encodingName isMasterConnection:(BOOL)isMaster
 {
 	if ([[NSThread currentThread] isCancelled]) return NULL;
+    NSString *pluginPath = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"mysqlplugins/arm64"];
+    setenv("MYSQL_PLUGIN_DIR", [pluginPath UTF8String], 1);
 
 	// Set up the MySQL connection object
 	MYSQL *theConnection = mysql_init(NULL);
