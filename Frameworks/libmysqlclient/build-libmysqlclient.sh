@@ -83,9 +83,8 @@ export OPENSSL_INCLUDE_DIR=$(/opt/homebrew/bin/brew --prefix openssl@3)"/include
     -DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl@3 \
     -DOPENSSL_LIBRARIES=/opt/homebrew/opt/openssl@3/lib \
     -DOPENSSL_INCLUDE_DIR=/opt/homebrew/opt/openssl@3/include \
-    -DPLUGIN_DIR="@rpath/mysqlplugins/arm64" \
-    -DINSTALL_PLUGINDIR=lib/plugin \
-    -DWITH_DYNAMIC_PLUGINS=ON \
+    -DDOWNLOAD_BOOST=1 -DWITH_BOOST=boost_directory -DBUILD_CONFIG=mysql_release -DENABLED_LOCAL_INFILE=1  -DWITH_MYSQLD_LDFLAGS="-all-static --disable-shared" -DWITHOUT_SERVER=1 -DWITH_ZLIB=system -DWITH_UNIT_TESTS=0 \
+    -DDISABLE_SHARED=1 \
     -DWITH_AUTHENTICATION_CLIENT_PLUGINS=yes \
     -DWITH_AUTHENTICATION_PLUGIN=ALL \
     -DWITH_INSECURE_AUTH=ON \
@@ -136,9 +135,8 @@ arch -x86_64 /usr/local/bin/cmake -S . -B $BUILD_DIR/x86_64 \
     -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl@3 \
     -DOPENSSL_LIBRARIES=/usr/local/opt/openssl@3/lib \
     -DOPENSSL_INCLUDE_DIR=/usr/local/opt/openssl@3/include \
-    -DPLUGIN_DIR="@rpath/mysqlplugins/x86_64" \
-    -DINSTALL_PLUGINDIR=lib/plugin \
-    -DWITH_DYNAMIC_PLUGINS=ON \
+    -DDOWNLOAD_BOOST=1 -DWITH_BOOST=boost_directory -DBUILD_CONFIG=mysql_release -DENABLED_LOCAL_INFILE=1  -DWITH_MYSQLD_LDFLAGS="-all-static --disable-shared" -DWITHOUT_SERVER=1 -DWITH_ZLIB=system -DWITH_UNIT_TESTS=0 \
+    -DDISABLE_SHARED=1 \
     -DWITH_AUTHENTICATION_CLIENT_PLUGINS=yes \
     -DWITH_AUTHENTICATION_PLUGIN=ALL \
     -DWITH_INSECURE_AUTH=ON \
@@ -192,12 +190,6 @@ lipo -create -output $TARGET_BUILD_DIR/libssl.3.dylib \
 # lipo -create -output $TARGET_BUILD_DIR/libfido2.1.15.0.dylib \
 #     $BUILD_DIR/x86_64/install/lib/libfido2.1.15.0.dylib \
 #     $BUILD_DIR/arm64/install/lib/libfido2.1.15.0.dylib
-
-echo "***** Fixing Plugin Paths *****"
-cd "$TARGET_BUILD_DIR"
-install_name_tool -add_rpath "@loader_path/../mysqlplugins/arm64" libmysqlclient.24.dylib
-install_name_tool -add_rpath "@loader_path/../mysqlplugins/x86_64" libmysqlclient.24.dylib
-
 
 echo "***** Fixing DYLIB Paths *****"
 cd "$TARGET_BUILD_DIR"
