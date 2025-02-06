@@ -8,11 +8,11 @@ permissions:
 jobs:
   tests:
     name: Run Tests
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
     - name: Checkout the Git repository
       uses: actions/checkout@v4
     - name: Build and run tests
       run: ./Scripts/build.sh tests
       env:
-        DEVELOPER_DIR: '/Applications/Xcode_15.3.app/Contents/Developer'
+        DEVELOPER_DIR: '/Applications/Xcode_16.2.app/Contents/Developer'
