@@ -1,15 +1,16 @@
-/* Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2015, 2024, Oracle and/or its affiliates.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License, version 2.0,
 as published by the Free Software Foundation.
 
-This program is also distributed with certain software (including
+This program is designed to work with certain software (including
 but not limited to OpenSSL) that is licensed under separate terms,
 as designated in a particular file or component or in included license
 documentation.  The authors of MySQL hereby grant you an additional
 permission to link the program and your derivative works with the
-separately licensed software that they have included with MySQL.
+separately licensed software that they have either included with
+the program or referenced in the documentation.
 
 Without limiting anything contained in the foregoing, this file,
 which is part of C Driver for MySQL (Connector/C), is also subject to the
@@ -56,15 +57,15 @@ enum enum_server_command {
   COM_FIELD_LIST, /**< Deprecated. See @ref page_protocol_com_field_list */
   COM_CREATE_DB, /**< Currently refused by the server. See ::dispatch_command */
   COM_DROP_DB,   /**< Currently refused by the server. See ::dispatch_command */
-  COM_REFRESH,   /**< Deprecated. See @ref page_protocol_com_refresh */
-  COM_DEPRECATED_1, /**< Deprecated, used to be COM_SHUTDOWN */
-  COM_STATISTICS,   /**< See @ref page_protocol_com_statistics */
-  COM_PROCESS_INFO, /**< Deprecated. See @ref page_protocol_com_process_info */
-  COM_CONNECT,      /**< Currently refused by the server. */
-  COM_PROCESS_KILL, /**< Deprecated. See @ref page_protocol_com_process_kill */
-  COM_DEBUG,        /**< See @ref page_protocol_com_debug */
-  COM_PING,         /**< See @ref page_protocol_com_ping */
-  COM_TIME,         /**< Currently refused by the server. */
+  COM_UNUSED_2,  /**< Removed, used to be COM_REFRESH. */
+  COM_UNUSED_1,  /**< Removed, used to be COM_SHUTDOWN */
+  COM_STATISTICS,     /**< See @ref page_protocol_com_statistics */
+  COM_UNUSED_4,       /**< Removed, used to be COM_PROCESS_INFO */
+  COM_CONNECT,        /**< Currently refused by the server. */
+  COM_UNUSED_5,       /**< Removed, used to be COM_PROCESS_KILL */
+  COM_DEBUG,          /**< See @ref page_protocol_com_debug */
+  COM_PING,           /**< See @ref page_protocol_com_ping */
+  COM_TIME,           /**< Currently refused by the server. */
   COM_DELAYED_INSERT, /**< Functionality removed. */
   COM_CHANGE_USER,    /**< See @ref page_protocol_com_change_user */
   COM_BINLOG_DUMP,    /**< See @ref page_protocol_com_binlog_dump */
@@ -93,7 +94,9 @@ enum enum_server_command {
   COM_BINLOG_DUMP_GTID,
   COM_RESET_CONNECTION, /**< See @ref page_protocol_com_reset_connection */
   COM_CLONE,
-  /* don't forget to update const char *command_name[] in sql_parse.cc */
+  COM_SUBSCRIBE_GROUP_REPLICATION_STREAM,
+  /* don't forget to update std::string Command_names::m_names[] in sql_parse.cc
+   */
 
   /* Must be last */
   COM_END /**< Not a real command. Refused. */

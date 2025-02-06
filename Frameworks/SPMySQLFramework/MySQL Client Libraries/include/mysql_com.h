@@ -1,15 +1,16 @@
-/* Copyright (c) 2000, 2020, Oracle and/or its affiliates.
+/* Copyright (c) 2000, 2024, Oracle and/or its affiliates.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
    as published by the Free Software Foundation.
 
-   This program is also distributed with certain software (including
+   This program is designed to work with certain software (including
    but not limited to OpenSSL) that is licensed under separate terms,
    as designated in a particular file or component or in included license
    documentation.  The authors of MySQL hereby grant you an additional
    permission to link the program and your derivative works with the
-   separately licensed software that they have included with MySQL.
+   separately licensed software that they have either included with
+   the program or referenced in the documentation.
 
    Without limiting anything contained in the foregoing, this file,
    which is part of C Driver for MySQL (Connector/C), is also subject to the
@@ -47,7 +48,7 @@
 */
 #ifndef my_socket_defined
 #include "my_io.h"
-#include "mysql/components/services/my_io_bits.h"
+#include "mysql/components/services/bits/my_io_bits.h"
 #endif
 
 #ifndef MYSQL_ABI_CHECK
@@ -73,6 +74,17 @@
 #define SERVER_VERSION_LENGTH 60
 #define SQLSTATE_LENGTH 5
 
+/*
+  In FIDO terminology, relying party is the server where required services are
+  running. Relying party ID is unique name given to server.
+*/
+#define RELYING_PARTY_ID_LENGTH 255
+
+/* Length of random salt sent during fido registration */
+#define CHALLENGE_LENGTH 32
+
+/* Maximum authentication factors server supports */
+#define MAX_AUTH_FACTORS 3
 /**
   Maximum length of comments
 
@@ -115,7 +127,7 @@
 */
 #define SCRAMBLE_LENGTH 20
 #define AUTH_PLUGIN_DATA_PART_1_LENGTH 8
-/** length of password stored in the db: new passwords are preceeded with '*'*/
+/** length of password stored in the db: new passwords are preceded with '*'*/
 #define SCRAMBLED_PASSWORD_CHAR_LENGTH (SCRAMBLE_LENGTH * 2 + 1)
 
 /**
@@ -178,12 +190,12 @@
 #define EXPLICIT_NULL_FLAG                        \
   (1 << 27) /**< Field is explicitly specified as \
                NULL by the user */
-#define FIELD_IS_MARKED                   \
-  (1 << 28) /**< Intern: field is marked, \
-                 general purpose */
+/* 1 << 28 is unused. */
 
 /** Field will not be loaded in secondary engine. */
 #define NOT_SECONDARY_FLAG (1 << 29)
+/** Field is explicitly marked as invisible by the user. */
+#define FIELD_IS_INVISIBLE (1 << 30)
 
 /** @}*/
 
@@ -203,24 +215,25 @@
   @{
 */
 
-#define REFRESH_GRANT 1    /**< Refresh grant tables, FLUSH PRIVILEGES */
-#define REFRESH_LOG 2      /**< Start on new log file, FLUSH LOGS */
-#define REFRESH_TABLES 4   /**< close all tables, FLUSH TABLES */
-#define REFRESH_HOSTS 8    /**< Flush host cache, FLUSH HOSTS */
-#define REFRESH_STATUS 16  /**< Flush status variables, FLUSH STATUS */
-#define REFRESH_THREADS 32 /**< Flush thread cache */
+#define REFRESH_GRANT 1  /**< Refresh grant tables, FLUSH PRIVILEGES */
+#define REFRESH_LOG 2    /**< Start on new log file, FLUSH LOGS */
+#define REFRESH_TABLES 4 /**< close all tables, FLUSH TABLES */
+#define UNUSED_8                                                           \
+  8 /**< Previously REFRESH_HOSTS but not used anymore. Use TRUNCATE TABLE \
+       performance_schema.host_cache instead */
+#define REFRESH_STATUS 16 /**< Flush status variables, FLUSH STATUS */
+#define UNUSED_32 32      /**< Removed. Used to be flush thread cache */
 #define REFRESH_REPLICA                         \
-  64 /**< Reset master info and restart replica \
+  64 /**< Reset source info and restart replica \
         thread, RESET REPLICA */
-#define REFRESH_SLAVE                                        \
-  REFRESH_REPLICA /**< Reset master info and restart replica \
-        thread, RESET REPLICA. This is deprecated,           \
-        use REFRESH_REPLICA instead. */
 
-#define REFRESH_MASTER                                                 \
-  128                            /**< Remove all bin logs in the index \
-                                    and truncate the index, RESET MASTER */
-#define REFRESH_ERROR_LOG 256    /**< Rotate only the erorr log */
+#define REFRESH_SOURCE                       \
+  128 /**< Remove all bin logs in the index  \
+         and truncate the index. Also resets \
+         GTID information. Command:          \
+         RESET BINARY LOGS AND GTIDS */
+
+#define REFRESH_ERROR_LOG 256    /**< Rotate only the error log */
 #define REFRESH_ENGINE_LOG 512   /**< Flush all storage engine logs */
 #define REFRESH_BINARY_LOG 1024  /**< Flush the binary log */
 #define REFRESH_RELAY_LOG 2048   /**< Flush the relay log */
@@ -233,7 +246,9 @@
   @sa REFRESH_READ_LOCK, handle_reload_request, close_cached_tables
 */
 #define REFRESH_FAST 32768
-#define REFRESH_USER_RESOURCES 0x80000L   /** FLISH RESOUCES. @sa ::reset_mqh */
+#define REFRESH_USER_RESOURCES                                                 \
+  0x80000L                                /** FLUSH RESOURCES. @sa ::reset_mqh \
+                                           */
 #define REFRESH_FOR_EXPORT 0x100000L      /** FLUSH TABLES ... FOR EXPORT */
 #define REFRESH_OPTIMIZER_COSTS 0x200000L /** FLUSH OPTIMIZER_COSTS */
 #define REFRESH_PERSIST 0x400000L         /** RESET PERSIST */
@@ -311,7 +326,8 @@
   @sa send_client_reply_packet()
 */
 #define CLIENT_CONNECT_WITH_DB 8
-#define CLIENT_NO_SCHEMA 16 /**< Don't allow database.table.column */
+#define CLIENT_NO_SCHEMA \
+  16 /**< DEPRECATED: Don't allow database.table.column */
 /**
   Compression protocol supported.
 
@@ -676,15 +692,6 @@
 #define CLIENT_DEPRECATE_EOF (1UL << 24)
 
 /**
-  Verify server certificate.
-
-  Client only flag.
-
-  @deprecated in favor of --ssl-mode.
-*/
-#define CLIENT_SSL_VERIFY_SERVER_CERT (1UL << 30)
-
-/**
   The client can handle optional metadata information in the resultset.
 */
 #define CLIENT_OPTIONAL_RESULTSET_METADATA (1UL << 25)
@@ -709,10 +716,53 @@
 #define CLIENT_ZSTD_COMPRESSION_ALGORITHM (1UL << 26)
 
 /**
+  Support optional extension for query parameters into the @ref
+  page_protocol_com_query and @ref page_protocol_com_stmt_execute packets.
+
+  Server
+  ------
+
+  Expects an optional part containing the query parameter set(s). Executes the
+  query for each set of parameters or returns an error if more than 1 set of
+  parameters is sent and the server can't execute it.
+
+  Client
+  ------
+
+  Can send the optional part containing the query parameter set(s).
+*/
+#define CLIENT_QUERY_ATTRIBUTES (1UL << 27)
+
+/**
+  Support Multi factor authentication.
+
+  Server
+  ------
+  Server sends AuthNextFactor packet after every nth factor authentication
+  method succeeds, except the last factor authentication.
+
+  Client
+  ------
+  Client reads AuthNextFactor packet sent by server and initiates next factor
+  authentication method.
+*/
+#define MULTI_FACTOR_AUTHENTICATION (1UL << 28)
+
+/**
   This flag will be reserved to extend the 32bit capabilities structure to
   64bits.
 */
 #define CLIENT_CAPABILITY_EXTENSION (1UL << 29)
+
+/**
+  Verify server certificate.
+
+  Client only flag.
+
+  @deprecated in favor of --ssl-mode.
+*/
+#define CLIENT_SSL_VERIFY_SERVER_CERT (1UL << 30)
+
 /**
   Don't reset the options after an unsuccessful connect
 
@@ -728,7 +778,7 @@
 /** a compatibility alias for CLIENT_COMPRESS */
 #define CAN_CLIENT_COMPRESS CLIENT_COMPRESS
 
-/** Gather all possible capabilites (flags) supported by the server */
+/** Gather all possible capabilities (flags) supported by the server */
 #define CLIENT_ALL_FLAGS                                                       \
   (CLIENT_LONG_PASSWORD | CLIENT_FOUND_ROWS | CLIENT_LONG_FLAG |               \
    CLIENT_CONNECT_WITH_DB | CLIENT_NO_SCHEMA | CLIENT_COMPRESS | CLIENT_ODBC | \
@@ -741,7 +791,8 @@
    CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA |                                     \
    CLIENT_CAN_HANDLE_EXPIRED_PASSWORDS | CLIENT_SESSION_TRACK |                \
    CLIENT_DEPRECATE_EOF | CLIENT_OPTIONAL_RESULTSET_METADATA |                 \
-   CLIENT_ZSTD_COMPRESSION_ALGORITHM)
+   CLIENT_ZSTD_COMPRESSION_ALGORITHM | CLIENT_QUERY_ATTRIBUTES |               \
+   MULTI_FACTOR_AUTHENTICATION)
 
 /**
   Switch off from ::CLIENT_ALL_FLAGS the flags that are optional and
@@ -854,6 +905,12 @@ struct Vio;
 #define MAX_CHAR_WIDTH 255
 /// Default width for blob in bytes @todo - align this with sizes from field.h
 #define MAX_BLOB_WIDTH 16777216
+
+#define NET_ERROR_UNSET 0               /**< No error has occurred yet */
+#define NET_ERROR_SOCKET_RECOVERABLE 1  /**< Socket still usable */
+#define NET_ERROR_SOCKET_UNUSABLE 2     /**< Do not use the socket */
+#define NET_ERROR_SOCKET_NOT_READABLE 3 /**< Try write and close socket */
+#define NET_ERROR_SOCKET_NOT_WRITABLE 4 /**< Try read and close socket */
 
 typedef struct NET {
   MYSQL_VIO vio;
@@ -972,11 +1029,29 @@ enum enum_resultset_metadata {
   RESULTSET_METADATA_FULL = 1
 };
 
+#if defined(__clang__)
+// disable -Wdocumentation to workaround
+// https://bugs.llvm.org/show_bug.cgi?id=38905
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdocumentation"
+#endif
+/**
+  The flags used in COM_STMT_EXECUTE.
+  @sa @ref Protocol_classic::parse_packet, @ref mysql_int_serialize_param_data
+*/
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 enum enum_cursor_type {
   CURSOR_TYPE_NO_CURSOR = 0,
   CURSOR_TYPE_READ_ONLY = 1,
   CURSOR_TYPE_FOR_UPDATE = 2,
-  CURSOR_TYPE_SCROLLABLE = 4
+  CURSOR_TYPE_SCROLLABLE = 4,
+  /**
+    On when the client will send the parameter count
+    even for 0 parameters.
+  */
+  PARAMETER_COUNT_AVAILABLE = 8
 };
 
 /** options for ::mysql_options() */
@@ -1051,31 +1126,7 @@ struct rand_struct {
 
 /* Prototypes to password functions */
 
-/*
-  These functions are used for authentication by client and server and
-  implemented in sql/password.c
-*/
-
-void randominit(struct rand_struct *, unsigned long seed1, unsigned long seed2);
-double my_rnd(struct rand_struct *);
-void create_random_string(char *to, unsigned int length,
-                          struct rand_struct *rand_st);
-
-void hash_password(unsigned long *to, const char *password,
-                   unsigned int password_len);
-void make_scrambled_password_323(char *to, const char *password);
-void scramble_323(char *to, const char *message, const char *password);
-bool check_scramble_323(const unsigned char *reply, const char *message,
-                        unsigned long *salt);
-void get_salt_from_password_323(unsigned long *res, const char *password);
-void make_password_from_salt_323(char *to, const unsigned long *salt);
-
-void make_scrambled_password(char *to, const char *password);
-void scramble(char *to, const char *message, const char *password);
-bool check_scramble(const unsigned char *reply, const char *message,
-                    const unsigned char *hash_stage2);
-void get_salt_from_password(unsigned char *res, const char *password);
-void make_password_from_salt(char *to, const unsigned char *hash_stage2);
+/* used in both client and server */
 char *octet2hex(char *to, const char *str, unsigned int len);
 
 /* end of password.c */
@@ -1097,15 +1148,8 @@ const char *mysql_errno_to_sqlstate(unsigned int mysql_errno);
 
 /* Some other useful functions */
 
-// Need to be extern "C" for the time being, due to memcached.
-#ifdef __cplusplus
-extern "C" {
-#endif
 bool my_thread_init(void);
 void my_thread_end(void);
-#ifdef __cplusplus
-}
-#endif
 
 #ifdef STDCALL
 unsigned long STDCALL net_field_length(unsigned char **packet);
@@ -1116,8 +1160,146 @@ uint64_t net_field_length_ll(unsigned char **packet);
 unsigned char *net_store_length(unsigned char *pkg, unsigned long long length);
 unsigned int net_length_size(unsigned long long num);
 unsigned int net_field_length_size(const unsigned char *pos);
+uint64_t net_length_size_including_self(uint64_t length_without_self);
 
 #define NULL_LENGTH ((unsigned long)~0) /**< For ::net_store_length() */
 #define MYSQL_STMT_HEADER 4
 #define MYSQL_LONG_DATA_HEADER 6
+
+/* clang-format off */
+/**
+  Describes the current state of Asynchronous connection phase state machine
+
+  @startuml
+  [*] --> CONNECT_STAGE_INVALID
+  [*] --> CONNECT_STAGE_NOT_STARTED
+
+  CONNECT_STAGE_NOT_STARTED --> CONNECT_STAGE_NET_BEGIN_CONNECT
+  CONNECT_STAGE_NOT_STARTED --> CONNECT_STAGE_COMPLETE
+
+  CONNECT_STAGE_NET_BEGIN_CONNECT --> CONNECT_STAGE_NET_WAIT_CONNECT
+  CONNECT_STAGE_NET_BEGIN_CONNECT --> CONNECT_STAGE_NET_COMPLETE_CONNECT
+  CONNECT_STAGE_NET_BEGIN_CONNECT --> STATE_MACHINE_FAILED
+
+  CONNECT_STAGE_NET_WAIT_CONNECT --> CONNECT_STAGE_NET_COMPLETE_CONNECT
+  CONNECT_STAGE_NET_WAIT_CONNECT --> STATE_MACHINE_FAILED
+
+  CONNECT_STAGE_NET_COMPLETE_CONNECT --> STATE_MACHINE_FAILED
+  CONNECT_STAGE_NET_COMPLETE_CONNECT --> CONNECT_STAGE_READ_GREETING
+
+  CONNECT_STAGE_READ_GREETING --> STATE_MACHINE_FAILED
+  CONNECT_STAGE_READ_GREETING --> CONNECT_STAGE_PARSE_HANDSHAKE
+
+  CONNECT_STAGE_PARSE_HANDSHAKE --> STATE_MACHINE_FAILED
+  CONNECT_STAGE_PARSE_HANDSHAKE --> CONNECT_STAGE_ESTABLISH_SSL
+
+  CONNECT_STAGE_ESTABLISH_SSL --> STATE_MACHINE_FAILED
+  CONNECT_STAGE_ESTABLISH_SSL --> CONNECT_STAGE_AUTHENTICATE
+
+  CONNECT_STAGE_AUTHENTICATE --> STATE_MACHINE_FAILED
+  CONNECT_STAGE_AUTHENTICATE --> CONNECT_STAGE_AUTH_BEGIN
+
+  CONNECT_STAGE_AUTH_BEGIN --> STATE_MACHINE_FAILED
+  CONNECT_STAGE_AUTH_BEGIN --> CONNECT_STAGE_AUTH_RUN_FIRST_AUTHENTICATE_USER
+
+  CONNECT_STAGE_AUTH_RUN_FIRST_AUTHENTICATE_USER --> CONNECT_STAGE_AUTH_HANDLE_FIRST_AUTHENTICATE_USER
+
+  CONNECT_STAGE_AUTH_HANDLE_FIRST_AUTHENTICATE_USER --> STATE_MACHINE_FAILED
+  CONNECT_STAGE_AUTH_HANDLE_FIRST_AUTHENTICATE_USER --> CONNECT_STAGE_AUTH_READ_CHANGE_USER_RESULT
+
+  CONNECT_STAGE_AUTH_READ_CHANGE_USER_RESULT --> CONNECT_STAGE_AUTH_HANDLE_CHANGE_USER_REQUEST
+
+  CONNECT_STAGE_AUTH_HANDLE_CHANGE_USER_REQUEST --> STATE_MACHINE_FAILED
+  CONNECT_STAGE_AUTH_HANDLE_CHANGE_USER_REQUEST --> CONNECT_STAGE_AUTH_RUN_SECOND_AUTHENTICATE_USER
+  CONNECT_STAGE_AUTH_HANDLE_CHANGE_USER_REQUEST --> CONNECT_STAGE_AUTH_INIT_MULTI_AUTH
+  CONNECT_STAGE_AUTH_HANDLE_CHANGE_USER_REQUEST --> CONNECT_STAGE_AUTH_FINISH_AUTH
+
+  CONNECT_STAGE_AUTH_RUN_SECOND_AUTHENTICATE_USER --> STATE_MACHINE_FAILED
+  CONNECT_STAGE_AUTH_RUN_SECOND_AUTHENTICATE_USER --> CONNECT_STAGE_AUTH_HANDLE_SECOND_AUTHENTICATE_USER
+
+  CONNECT_STAGE_AUTH_HANDLE_SECOND_AUTHENTICATE_USER --> STATE_MACHINE_FAILED
+  CONNECT_STAGE_AUTH_HANDLE_SECOND_AUTHENTICATE_USER --> CONNECT_STAGE_AUTH_INIT_MULTI_AUTH
+  CONNECT_STAGE_AUTH_HANDLE_SECOND_AUTHENTICATE_USER --> CONNECT_STAGE_AUTH_FINISH_AUTH
+
+  CONNECT_STAGE_AUTH_INIT_MULTI_AUTH --> STATE_MACHINE_FAILED
+  CONNECT_STAGE_AUTH_INIT_MULTI_AUTH --> CONNECT_STAGE_AUTH_DO_MULTI_PLUGIN_AUTH
+
+  CONNECT_STAGE_AUTH_DO_MULTI_PLUGIN_AUTH --> STATE_MACHINE_FAILED
+  CONNECT_STAGE_AUTH_DO_MULTI_PLUGIN_AUTH --> CONNECT_STAGE_AUTH_HANDLE_MULTI_AUTH_RESPONSE
+
+  CONNECT_STAGE_AUTH_HANDLE_MULTI_AUTH_RESPONSE --> STATE_MACHINE_FAILED
+  CONNECT_STAGE_AUTH_HANDLE_MULTI_AUTH_RESPONSE --> CONNECT_STAGE_AUTH_INIT_MULTI_AUTH
+  CONNECT_STAGE_AUTH_HANDLE_MULTI_AUTH_RESPONSE --> CONNECT_STAGE_AUTH_FINISH_AUTH
+
+  CONNECT_STAGE_AUTH_FINISH_AUTH --> STATE_MACHINE_FAILED
+  CONNECT_STAGE_AUTH_FINISH_AUTH --> CONNECT_STAGE_PREP_SELECT_DATABASE
+
+  CONNECT_STAGE_PREP_SELECT_DATABASE --> CONNECT_STAGE_COMPLETE
+  CONNECT_STAGE_PREP_SELECT_DATABASE --> CONNECT_STAGE_PREP_INIT_COMMANDS
+
+  CONNECT_STAGE_PREP_INIT_COMMANDS --> CONNECT_STAGE_COMPLETE
+  CONNECT_STAGE_PREP_INIT_COMMANDS --> CONNECT_STAGE_SEND_ONE_INIT_COMMAND
+
+  CONNECT_STAGE_SEND_ONE_INIT_COMMAND --> CONNECT_STAGE_SEND_ONE_INIT_COMMAND
+  CONNECT_STAGE_SEND_ONE_INIT_COMMAND --> STATE_MACHINE_FAILED
+  CONNECT_STAGE_SEND_ONE_INIT_COMMAND --> CONNECT_STAGE_COMPLETE
+
+  STATE_MACHINE_FAILED --> [*]
+  CONNECT_STAGE_COMPLETE --> [*]
+  CONNECT_STAGE_INVALID --> [*]
+  @enduml
+*/
+/* clang-format on */
+enum connect_stage {
+  /** MYSQL not valid or an unknown state */
+  CONNECT_STAGE_INVALID = 0,
+  /** not connected */
+  CONNECT_STAGE_NOT_STARTED,
+  /** begin connection to the server */
+  CONNECT_STAGE_NET_BEGIN_CONNECT,
+  /** wait for connection to be established */
+  CONNECT_STAGE_NET_WAIT_CONNECT,
+  /** init the local data structures post connect */
+  CONNECT_STAGE_NET_COMPLETE_CONNECT,
+  /** read the first packet */
+  CONNECT_STAGE_READ_GREETING,
+  /** parse the first packet */
+  CONNECT_STAGE_PARSE_HANDSHAKE,
+  /** tls establishment */
+  CONNECT_STAGE_ESTABLISH_SSL,
+  /** authentication phase */
+  CONNECT_STAGE_AUTHENTICATE,
+  /** determine the plugin to use */
+  CONNECT_STAGE_AUTH_BEGIN,
+  /** run first auth plugin */
+  CONNECT_STAGE_AUTH_RUN_FIRST_AUTHENTICATE_USER,
+  /** handle the result of the first auth plugin run */
+  CONNECT_STAGE_AUTH_HANDLE_FIRST_AUTHENTICATE_USER,
+  /** read the implied changed user auth, if any */
+  CONNECT_STAGE_AUTH_READ_CHANGE_USER_RESULT,
+  /** Check if server asked to use a different authentication plugin */
+  CONNECT_STAGE_AUTH_HANDLE_CHANGE_USER_REQUEST,
+  /** Start the authentication process again with the plugin which
+  server asked for */
+  CONNECT_STAGE_AUTH_RUN_SECOND_AUTHENTICATE_USER,
+  /** Start multi factor authentication */
+  CONNECT_STAGE_AUTH_INIT_MULTI_AUTH,
+  /** Final cleanup */
+  CONNECT_STAGE_AUTH_FINISH_AUTH,
+  /** Now read the results of the second plugin run */
+  CONNECT_STAGE_AUTH_HANDLE_SECOND_AUTHENTICATE_USER,
+  /** Invoke client plugins multi-auth authentication method */
+  CONNECT_STAGE_AUTH_DO_MULTI_PLUGIN_AUTH,
+  /** Handle response from client plugins authentication method */
+  CONNECT_STAGE_AUTH_HANDLE_MULTI_AUTH_RESPONSE,
+  /** Authenticated, set initial database if specified */
+  CONNECT_STAGE_PREP_SELECT_DATABASE,
+  /** Prepare to send a sequence of init commands. */
+  CONNECT_STAGE_PREP_INIT_COMMANDS,
+  /** Send an init command.  This is called once per init command until
+  they've all been run (or a failure occurs) */
+  CONNECT_STAGE_SEND_ONE_INIT_COMMAND,
+  /** Connected or no async connect in progress */
+  CONNECT_STAGE_COMPLETE
+};
 #endif
