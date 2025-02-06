@@ -1,3 +1,20 @@
+## [4.2.0]
+
+### Added
+
+
+### Fixed
+
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
 ## [4.1.7]
 
 ### Added
