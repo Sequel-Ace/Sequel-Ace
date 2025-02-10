@@ -62,7 +62,7 @@ static NSString *SPAboutPanelNibName = @"AboutPanel";
 	BOOL isSnapshotBuild = mainBundle.isSnapshotBuild;
 	
 	// Set the application name, but only include the major version if this is not a nightly build.
-	[appNameVersionTextField setStringValue:[NSString stringWithFormat:@"Sequel Ace%@", (isSnapshotBuild ? @" Beta" : @"")]];
+	[appNameVersionTextField setStringValue:[NSString stringWithFormat:@"Harv-u-in-DB%@", (isSnapshotBuild ? @" Beta" : @"")]];
 
 	[self _setVersionLabel:isSnapshotBuild];
 	

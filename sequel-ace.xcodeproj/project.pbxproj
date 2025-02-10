@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		04BC8C002D5A827E00056E26 /* SPMegasearchController.m in Sources */ = {isa = PBXBuildFile; fileRef = 04BC8BFF2D5A827E00056E26 /* SPMegasearchController.m */; };
+		04BC8C022D5A85B100056E26 /* MegasearchWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 04BC8C012D5A85B100056E26 /* MegasearchWindow.xib */; };
 		1141A389117BBFF200126A28 /* SPTableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1141A388117BBFF200126A28 /* SPTableCopy.m */; };
 		1198F5B31174EDD500670590 /* SPDatabaseCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1198F5B21174EDD500670590 /* SPDatabaseCopy.m */; };
 		11B55BFE1189E3B2009EF465 /* SPDatabaseAction.m in Sources */ = {isa = PBXBuildFile; fileRef = 11B55BFD1189E3B2009EF465 /* SPDatabaseAction.m */; };
@@ -571,6 +573,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		04BC8BFE2D5A826900056E26 /* SPMegasearchController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPMegasearchController.h; sourceTree = "<group>"; };
+		04BC8BFF2D5A827E00056E26 /* SPMegasearchController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPMegasearchController.m; sourceTree = "<group>"; };
+		04BC8C012D5A85B100056E26 /* MegasearchWindow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = MegasearchWindow.xib; sourceTree = "<group>"; };
 		1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		112730551180788A000737FD /* SPTableCopyTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTableCopyTest.m; sourceTree = "<group>"; };
 		1141A387117BBFF200126A28 /* SPTableCopy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTableCopy.h; sourceTree = "<group>"; };
@@ -1466,7 +1471,9 @@
 				17A7773211C52D8E001E27B4 /* SPIndexesController.h */,
 				17A7773311C52D8E001E27B4 /* SPIndexesController.m */,
 				50A9F8AF19EAD4B90053E571 /* SPGotoDatabaseController.h */,
+				04BC8BFE2D5A826900056E26 /* SPMegasearchController.h */,
 				50A9F8B019EAD4B90053E571 /* SPGotoDatabaseController.m */,
+				04BC8BFF2D5A827E00056E26 /* SPMegasearchController.m */,
 				506CE92F1A311C6C0039F736 /* SPRuleFilterController.h */,
 				506CE9301A311C6C0039F736 /* SPRuleFilterController.m */,
 				9BE76A3D5C9830E2F7738770 /* SPFilterTableController.m */,
@@ -2045,6 +2052,7 @@
 				51CD0BC2258D06D7009E2484 /* FieldEditorSheet.xib */,
 				51CD0BC1258D06D7009E2484 /* FilterTableWindow.xib */,
 				51CD0BC3258D06D7009E2484 /* GotoDatabaseDialog.xib */,
+				04BC8C012D5A85B100056E26 /* MegasearchWindow.xib */,
 				51CD0BC6258D06D7009E2484 /* HelpViewer.xib */,
 				51CD0BC9258D06D8009E2484 /* ImportAccessory.xib */,
 				51CD0BC4258D06D7009E2484 /* IndexesView.xib */,
@@ -2727,6 +2735,7 @@
 				8831EFAC2240131500D10172 /* button_editTemplate.pdf in Resources */,
 				BC09D7DF12A786FB0030DB64 /* cancel-clicked.png in Resources */,
 				BC09D7E012A786FB0030DB64 /* cancel-highlighted.png in Resources */,
+				04BC8C022D5A85B100056E26 /* MegasearchWindow.xib in Resources */,
 				BC09D7E112A786FB0030DB64 /* cancel-hovered-highlighted.png in Resources */,
 				BC09D7E212A786FB0030DB64 /* cancel-hovered.png in Resources */,
 				BC09D7E312A786FB0030DB64 /* cancel.png in Resources */,
@@ -2933,6 +2942,7 @@
 				1A4CB03425923C4B00EDF804 /* StringRegexExtension.swift in Sources */,
 				58FEF57E0F3B4E9700518E8E /* SPTableData.m in Sources */,
 				58C56EF50F438E120035701E /* SPDataCellFormatter.m in Sources */,
+				04BC8C002D5A827E00056E26 /* SPMegasearchController.m in Sources */,
 				1A2711CF2539D9B10066ED58 /* SPReachability.m in Sources */,
 				172A65110F7BED7A001E861A /* SPConsoleMessage.m in Sources */,
 				6F0EA8ED272F33B700514FF1 /* SPBundleManagerAdditions.swift in Sources */,
@@ -3365,7 +3375,7 @@
 				COMPRESS_PNG_FILES = YES;
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
+				DEVELOPMENT_TEAM = JKBY4JPZGM;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -3391,7 +3401,7 @@
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.harv-u-in-db";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
 				PRODUCT_NAME = "Sequel Ace";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -3500,7 +3510,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
+				DEVELOPMENT_TEAM = JKBY4JPZGM;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -3518,7 +3528,7 @@
 					"-framework",
 					AppKit,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace.SequelAceTunnelAssistant";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.harv-u-in-db.SequelAceTunnelAssistant";
 				PRODUCT_NAME = SequelAceTunnelAssistant;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -3537,7 +3547,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
+				DEVELOPMENT_TEAM = JKBY4JPZGM;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
 				GCC_MODEL_TUNING = G5;
@@ -3554,7 +3564,7 @@
 					"-framework",
 					AppKit,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace.SequelAceTunnelAssistant";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.harv-u-in-db.SequelAceTunnelAssistant";
 				PRODUCT_NAME = SequelAceTunnelAssistant;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -3573,7 +3583,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
+				DEVELOPMENT_TEAM = JKBY4JPZGM;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
 				GCC_MODEL_TUNING = G5;
@@ -3590,7 +3600,7 @@
 					"-framework",
 					AppKit,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace.SequelAceTunnelAssistant";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.harv-u-in-db.SequelAceTunnelAssistant";
 				PRODUCT_NAME = SequelAceTunnelAssistant;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -3687,7 +3697,7 @@
 				COMPRESS_PNG_FILES = YES;
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
+				DEVELOPMENT_TEAM = JKBY4JPZGM;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -3713,7 +3723,7 @@
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace-beta";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.harv-u-in-db-beta";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
 				PRODUCT_NAME = "Sequel Ace Beta";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -3772,7 +3782,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
+				DEVELOPMENT_TEAM = JKBY4JPZGM;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
 				GCC_MODEL_TUNING = G5;
@@ -3789,7 +3799,7 @@
 					"-framework",
 					AppKit,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace.SequelAceTunnelAssistant";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.harv-u-in-db.SequelAceTunnelAssistant";
 				PRODUCT_NAME = SequelAceTunnelAssistant;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -3837,7 +3847,7 @@
 				COMPRESS_PNG_FILES = YES;
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
+				DEVELOPMENT_TEAM = JKBY4JPZGM;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -3864,7 +3874,7 @@
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.harv-u-in-db";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
 				PRODUCT_NAME = "Sequel Ace";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -3891,7 +3901,7 @@
 				COMPRESS_PNG_FILES = YES;
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
+				DEVELOPMENT_TEAM = JKBY4JPZGM;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -3917,7 +3927,7 @@
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.harv-u-in-db";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
 				PRODUCT_NAME = "Sequel Ace";
 				PROVISIONING_PROFILE_SPECIFIER = "";

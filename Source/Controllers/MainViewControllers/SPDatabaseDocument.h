@@ -46,6 +46,7 @@
 @class SPMySQLConnection;
 @class SPCharsetCollationHelper;
 @class SPGotoDatabaseController;
+@class SPMegasearchController;
 @class SPCreateDatabaseInfo;
 @class SPExtendedTableInfo;
 @class SPTableTriggers;
@@ -233,6 +234,7 @@
 	BOOL windowTitleStatusViewIsVisible;
 	SPDatabaseStructure *databaseStructureRetrieval;
 	SPGotoDatabaseController *gotoDatabaseController;
+    SPMegasearchController *megasearchController;
 	
 	int64_t instanceId;
 }
@@ -450,6 +452,7 @@
 #pragma mark Database menu
 
 - (void)showGotoDatabase;
+- (void)showMegasearch;
 - (void)addDatabase:(id)sender;
 - (void)removeDatabase:(id)sender;
 - (void)copyDatabase;

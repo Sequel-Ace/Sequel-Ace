@@ -68,6 +68,7 @@
 #import "SPFavoriteColorSupport.h"
 #import "SPCharsetCollationHelper.h"
 #import "SPGotoDatabaseController.h"
+#import "SPMegasearchController.h"
 #import "SPFunctions.h"
 #import "SPCreateDatabaseInfo.h"
 #import "SPAppController.h"
@@ -205,6 +206,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         allDatabases = nil;
         allSystemDatabases = nil;
         gotoDatabaseController = nil;
+        megasearchController = nil;
 
         isProcessing = NO;
 
@@ -1066,6 +1068,21 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if ([gotoDatabaseController runModal]) {
         [self selectDatabase:[gotoDatabaseController selectedDatabase] item:nil];
+    }
+}
+
+- (void)showMegasearch {
+    if(!megasearchController) {
+        megasearchController = [[SPMegasearchController alloc] init];
+    }
+
+    NSMutableArray *dbList = [[NSMutableArray alloc] init];
+//    [dbList addObjectsFromArray:[self allSystemDatabaseNames]];
+    [dbList addObjectsFromArray:[self allTableNames]];
+    [megasearchController setDatabaseList:dbList];
+
+    if ([megasearchController runModal]) {
+        [self selectDatabase:[megasearchController selectedDatabase] item:nil];
     }
 }
 

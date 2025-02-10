@@ -98,6 +98,10 @@ extension SPAppController {
     @IBAction func showGotoDatabase(_ sender: Any) {
         tabManager.activeWindowController?.databaseDocument.showGotoDatabase()
     }
+    
+    @IBAction func showMegasearch(_ sender: Any) {
+        tabManager.activeWindowController?.databaseDocument.showMegasearch()
+    }
 
     @IBAction func addDatabase(_ sender: Any) {
         tabManager.activeWindowController?.databaseDocument.addDatabase(sender)
