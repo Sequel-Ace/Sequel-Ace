@@ -168,10 +168,10 @@
 "A character string that can store up to 255 bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "Una stringa di caratteri che può memorizzare fino a 255 byte, ma richiede meno spazio per valori più brevi. Il numero effettivo di caratteri è ulteriormente limitato dalla codifica usata. A differenza di VARCHAR questo tipo non conta verso la lunghezza massima della riga.";
 
 /* description of varchar */
-"A character string that can store up to M bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding and the values of other fields in the row." = "Una stringa di caratteri che può memorizzare fino a byte M, ma richiede meno spazio per valori più brevi. Il numero effettivo di caratteri è ulteriormente limitato dalla codifica utilizzata e dai valori di altri campi nella riga.";
+"A character string that can store up to M bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding and the values of other fields in the row." = "Una stringa di caratteri che può memorizzare fino a M byte, ma richiede meno spazio per valori più brevi. Il numero effettivo di caratteri è ulteriormente limitato dalla codifica utilizzata e dai valori di altri campi nella riga.";
 
 /* description of text */
-"A character string that can store up to M bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "Una stringa di caratteri che può memorizzare fino a byte M, ma richiede meno spazio per valori più brevi. Il numero effettivo di caratteri è ulteriormente limitato dalla codifica usata. A differenza di VARCHAR questo tipo non conta verso la lunghezza massima della riga.";
+"A character string that can store up to M bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "Una stringa di caratteri che può memorizzare fino a M byte, ma richiede meno spazio per valori più brevi. Il numero effettivo di caratteri è ulteriormente limitato dalla codifica usata. A differenza di VARCHAR questo tipo non conta verso la lunghezza massima della riga.";
 
 /* description of char */
 "A character string that will require M×w bytes per row, independent of the actual content length. w is the maximum number of bytes a single character can occupy in the given encoding." = "Una stringa di caratteri che richiederà byte M×w per riga, indipendentemente dalla lunghezza effettiva del contenuto. w è il numero massimo di byte che un singolo carattere può occupare nella codifica data.";
@@ -191,19 +191,20 @@
 
 /* table structure : indexes : delete index : error 1553 : title
  table structure : indexes : delete index : error 1553, no FK found : title */
-"A foreign key needs this index" = "Una chiave estera ha bisogno di questo indice";
+"A foreign key needs this index" = "Una chiave esterna ha bisogno di questo indice";
 
 /* description of set */
 "A SET can define up to 64 members (as strings) of which a field can use one or more using a comma-separated list. Upon insertion the order of members is automatically normalized and duplicate members will be eliminated. Assignment of numbers is supported using the same semantics as for BIT types." = "Un SET può definire fino a 64 membri (come stringhe) di cui un campo può usare uno o più utilizzando una lista separata da virgole. Al momento dell'inserimento l'ordine dei membri viene automaticamente normalizzato e i membri duplicati verranno eliminati. L'assegnazione di numeri è supportata utilizzando la stessa semantica dei tipi BIT.";
 
 /* SSH key not found message */
-"A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again." = "È stata specificata una posizione della chiave SSH, ma non è stato trovato alcun file nella posizione specificata. Si prega di ri-selezionare la chiave e riprovare.";
+"A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again." = "È stata specificata una posizione della chiave SSH, ma non è stato trovato alcun file nella posizione specificata. Si prega di riselezionare la chiave e riprovare.";
 
 /* SSL CA certificate file not found message */
 "A SSL Certificate Authority certificate location was specified, but no file was found in the specified location.  Please re-select the Certificate Authority certificate and try again." = "È stata specificata una posizione del certificato dell'autorità di certificazione SSL, ma non è stato trovato alcun file nella posizione specificata. Selezionare nuovamente il certificato dell'autorità di certificazione e riprovare.";
 
 /* SSL certificate file not found message */
-"A SSL certificate location was specified, but no file was found in the specified location.  Please re-select the certificate and try again." = "È stata specificata una posizione del certificato SSL, ma non è stato trovato alcun file nella posizione specificata. Si prega di ri-selezionare il certificato e riprovare.";
+"A SSL certificate location was specified, but no file was found in the specified location.  Please re-select the certificate and try again." = "È stata specificata una posizione del certificato SSL, ma non è stato trovato alcun file nella posizione specificata. Si prega di ri
+selezionare il certificato e riprovare.";
 
 /* SSL key file not found message */
 "A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again." = "È stata specificata una posizione del file chiave SSL, ma non è stato trovato alcun file nella posizione specificata. Si prega di ri-selezionare il file chiave e riprovare.";
@@ -251,10 +252,10 @@
 "Advanced" = "Avanzate";
 
 /* notifications preference pane name */
-"Alerts & Logs" = "Avvisi E Registri";
+"Alerts & Logs" = "Avvisi e Registri";
 
 /* notifications preference pane tooltip */
-"Alerts & Logs Preferences" = "Preferenze Di Avvisi E Log";
+"Alerts & Logs Preferences" = "Preferenze di Avvisi e Registri";
 
 /* All databases placeholder */
 "All Databases" = "Tutti I Database";
@@ -598,7 +599,7 @@
 "Cannot save an empty query." = "Impossibile salvare una query vuota.";
 
 /* caret label for color table (Prefs > Editor) */
-"Caret" = "Cursivo";
+"Caret" = "Corsivo";
 
 /* change button */
 "Change" = "Cambia";
@@ -613,10 +614,10 @@
 "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "Sono state apportate modifiche, che andranno perse se questa finestra è chiusa. Sei sicuro di voler continuare";
 
 /* quitting app informal alert title */
-"Close the app?" = "Close the app?";
+"Close the app?" = "Chiudi l'app?";
 
 /* quitting app informal alert body */
-"Are you sure you want to quit the app?" = "Are you sure you want to quit the app?";
+"Are you sure you want to quit the app?" = "Sei sicuro di voler chiudere l'app?";
 
 /* character set client: %@ */
 "character set client: %@" = "client set caratteri: %@";
@@ -634,19 +635,19 @@
 "Check Selected Items" = "Controlla Gli Elementi Selezionati";
 
 /* check table menu item */
-"Check Table" = "Tabella Di Controllo";
+"Check Table" = "Controlla la Tabella";
 
 /* check table failed message */
-"Check table failed." = "Tabella di controllo fallita.";
+"Check table failed." = "Controllo della Tabella fallito.";
 
 /* check table successfully passed message */
-"Check table successfully passed." = "Tabella di controllo passata con successo.";
+"Check table successfully passed." = "Controllo della Tabella effettuato con successo.";
 
 /* check view menu item */
-"Check View" = "Controlla Vista";
+"Check View" = "Controllo della Vista";
 
 /* checking field data for editing task description */
-"Checking field data for editing..." = "Controllo dei dati di campo per la modifica...";
+"Checking field data for editing..." = "Controllo dei campi dei dati per la modifica...";
 
 /* checksum %@ message */
 "Checksum %@" = "Checksum %@";
@@ -709,7 +710,7 @@
 "Comment" = "Commento";
 
 /* Title of action menu item to comment line */
-"Comment Line" = "Linea Di Commento";
+"Comment Line" = "Linea di Commento";
 
 /* Title of action menu item to comment selection */
 "Comment Selection" = "Selezione Commento";
