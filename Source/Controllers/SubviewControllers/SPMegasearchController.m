@@ -203,7 +203,8 @@ static BOOL StringQualifiesForWordSearch(NSString *s);
 	else {
 		attrValue = [unfilteredList safeObjectAtIndex:row];
 	}
-
+    NSLog(@"in the selected database atrribute here", attrValue);
+    
 	return attrValue;
 }
 

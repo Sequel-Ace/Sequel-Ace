@@ -1082,7 +1082,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [megasearchController setDatabaseList:dbList];
 
     if ([megasearchController runModal]) {
-        [self selectDatabase:[megasearchController selectedDatabase] item:nil];
+        [self selectDatabase:selectedDatabase item:[megasearchController selectedDatabase]];
+        [self viewContent];
+        NSLog(@"selected database here");
+        NSLog(selectedDatabase);
+        NSLog([megasearchController selectedDatabase]);
     }
 }
 

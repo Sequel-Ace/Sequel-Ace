@@ -555,11 +555,6 @@
                                     <action selector="toggleConsole:" target="-1" id="832"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Clear Console" keyEquivalent="k" id="790">
-                                <connections>
-                                    <action selector="clearConsole:" target="-1" id="793"/>
-                                </connections>
-                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="1194"/>
                             <menuItem title="Show Navigator" keyEquivalent="n" id="1050">
                                 <modifierMask key="keyEquivalentModifierMask" control="YES" option="YES" command="YES"/>
