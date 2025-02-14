@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -77,6 +77,26 @@
 		9615D15E2D4C26DD0095F55A /* libssl.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 9615D15C2D4C26DD0095F55A /* libssl.3.dylib */; };
 		9615D15F2D4C26F80095F55A /* libcrypto.3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9615D15B2D4C26DD0095F55A /* libcrypto.3.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		9615D3922D4D7DA00095F55A /* libssl.3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9615D15C2D4C26DD0095F55A /* libssl.3.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		9615D84D2D5EDF530095F55A /* psi_base.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8362D5EDF530095F55A /* psi_base.h */; };
+		9615D84E2D5EDF530095F55A /* psi_memory.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8372D5EDF530095F55A /* psi_memory.h */; };
+		9615D84F2D5EDF530095F55A /* client_plugin.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8392D5EDF530095F55A /* client_plugin.h */; };
+		9615D8502D5EDF530095F55A /* plugin_auth_common.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D83A2D5EDF530095F55A /* plugin_auth_common.h */; };
+		9615D8512D5EDF530095F55A /* udf_registration_types.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D83B2D5EDF530095F55A /* udf_registration_types.h */; };
+		9615D8522D5EDF530095F55A /* errmsg.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D83D2D5EDF530095F55A /* errmsg.h */; };
+		9615D8532D5EDF530095F55A /* field_types.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D83E2D5EDF530095F55A /* field_types.h */; };
+		9615D8542D5EDF530095F55A /* my_alloc.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D83F2D5EDF530095F55A /* my_alloc.h */; };
+		9615D8552D5EDF530095F55A /* my_command.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8402D5EDF530095F55A /* my_command.h */; };
+		9615D8562D5EDF530095F55A /* my_compress.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8412D5EDF530095F55A /* my_compress.h */; };
+		9615D8572D5EDF530095F55A /* my_list.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8422D5EDF530095F55A /* my_list.h */; };
+		9615D8582D5EDF530095F55A /* mysql.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8432D5EDF530095F55A /* mysql.h */; };
+		9615D8592D5EDF530095F55A /* mysql_com.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8442D5EDF530095F55A /* mysql_com.h */; };
+		9615D85A2D5EDF530095F55A /* mysql_time.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8452D5EDF530095F55A /* mysql_time.h */; };
+		9615D85B2D5EDF530095F55A /* mysql_version.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8462D5EDF530095F55A /* mysql_version.h */; };
+		9615D85C2D5EDF530095F55A /* mysqld_error.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8472D5EDF530095F55A /* mysqld_error.h */; };
+		9615D85D2D5EDF530095F55A /* mysqlx_ername.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8482D5EDF530095F55A /* mysqlx_ername.h */; };
+		9615D85E2D5EDF530095F55A /* mysqlx_error.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8492D5EDF530095F55A /* mysqlx_error.h */; };
+		9615D85F2D5EDF530095F55A /* mysqlx_version.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D84A2D5EDF530095F55A /* mysqlx_version.h */; };
+		9615D8602D5EDF530095F55A /* typelib.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D84B2D5EDF530095F55A /* typelib.h */; };
 		FD4211952918779400941BFE /* SPMySQLGeometryDataTests.m in Sources */ = {isa = PBXBuildFile; fileRef = FD4211942918779400941BFE /* SPMySQLGeometryDataTests.m */; };
 /* End PBXBuildFile section */
 
@@ -181,13 +201,29 @@
 		9615D1582D4C18CB0095F55A /* libmysqlclient.24.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libmysqlclient.24.dylib; sourceTree = "<group>"; };
 		9615D15B2D4C26DD0095F55A /* libcrypto.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libcrypto.3.dylib; sourceTree = "<group>"; };
 		9615D15C2D4C26DD0095F55A /* libssl.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libssl.3.dylib; sourceTree = "<group>"; };
+		9615D8362D5EDF530095F55A /* psi_base.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = psi_base.h; sourceTree = "<group>"; };
+		9615D8372D5EDF530095F55A /* psi_memory.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = psi_memory.h; sourceTree = "<group>"; };
+		9615D8392D5EDF530095F55A /* client_plugin.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = client_plugin.h; sourceTree = "<group>"; };
+		9615D83A2D5EDF530095F55A /* plugin_auth_common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = plugin_auth_common.h; sourceTree = "<group>"; };
+		9615D83B2D5EDF530095F55A /* udf_registration_types.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = udf_registration_types.h; sourceTree = "<group>"; };
+		9615D83D2D5EDF530095F55A /* errmsg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = errmsg.h; sourceTree = "<group>"; };
+		9615D83E2D5EDF530095F55A /* field_types.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = field_types.h; sourceTree = "<group>"; };
+		9615D83F2D5EDF530095F55A /* my_alloc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = my_alloc.h; sourceTree = "<group>"; };
+		9615D8402D5EDF530095F55A /* my_command.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = my_command.h; sourceTree = "<group>"; };
+		9615D8412D5EDF530095F55A /* my_compress.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = my_compress.h; sourceTree = "<group>"; };
+		9615D8422D5EDF530095F55A /* my_list.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = my_list.h; sourceTree = "<group>"; };
+		9615D8432D5EDF530095F55A /* mysql.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysql.h; sourceTree = "<group>"; };
+		9615D8442D5EDF530095F55A /* mysql_com.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysql_com.h; sourceTree = "<group>"; };
+		9615D8452D5EDF530095F55A /* mysql_time.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysql_time.h; sourceTree = "<group>"; };
+		9615D8462D5EDF530095F55A /* mysql_version.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysql_version.h; sourceTree = "<group>"; };
+		9615D8472D5EDF530095F55A /* mysqld_error.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysqld_error.h; sourceTree = "<group>"; };
+		9615D8482D5EDF530095F55A /* mysqlx_ername.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysqlx_ername.h; sourceTree = "<group>"; };
+		9615D8492D5EDF530095F55A /* mysqlx_error.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysqlx_error.h; sourceTree = "<group>"; };
+		9615D84A2D5EDF530095F55A /* mysqlx_version.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysqlx_version.h; sourceTree = "<group>"; };
+		9615D84B2D5EDF530095F55A /* typelib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = typelib.h; sourceTree = "<group>"; };
 		D2F7E79907B2D74100F64583 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
 		FD4211942918779400941BFE /* SPMySQLGeometryDataTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPMySQLGeometryDataTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		9615D3AC2D4DA55F0095F55A /* include */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = include; sourceTree = "<group>"; };
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		507FF1D21BC0D7D300104523 /* Frameworks */ = {
@@ -334,7 +370,7 @@
 			isa = PBXGroup;
 			children = (
 				5842929C14C34B36000F8438 /* lib */,
-				9615D3AC2D4DA55F0095F55A /* include */,
+				9615D84C2D5EDF530095F55A /* include */,
 			);
 			path = "MySQL Client Libraries";
 			sourceTree = "<group>";
@@ -420,6 +456,49 @@
 			name = "Result Categories";
 			sourceTree = "<group>";
 		};
+		9615D8382D5EDF530095F55A /* psi */ = {
+			isa = PBXGroup;
+			children = (
+				9615D8362D5EDF530095F55A /* psi_base.h */,
+				9615D8372D5EDF530095F55A /* psi_memory.h */,
+			);
+			path = psi;
+			sourceTree = "<group>";
+		};
+		9615D83C2D5EDF530095F55A /* mysql */ = {
+			isa = PBXGroup;
+			children = (
+				9615D8382D5EDF530095F55A /* psi */,
+				9615D8392D5EDF530095F55A /* client_plugin.h */,
+				9615D83A2D5EDF530095F55A /* plugin_auth_common.h */,
+				9615D83B2D5EDF530095F55A /* udf_registration_types.h */,
+			);
+			path = mysql;
+			sourceTree = "<group>";
+		};
+		9615D84C2D5EDF530095F55A /* include */ = {
+			isa = PBXGroup;
+			children = (
+				9615D83C2D5EDF530095F55A /* mysql */,
+				9615D83D2D5EDF530095F55A /* errmsg.h */,
+				9615D83E2D5EDF530095F55A /* field_types.h */,
+				9615D83F2D5EDF530095F55A /* my_alloc.h */,
+				9615D8402D5EDF530095F55A /* my_command.h */,
+				9615D8412D5EDF530095F55A /* my_compress.h */,
+				9615D8422D5EDF530095F55A /* my_list.h */,
+				9615D8432D5EDF530095F55A /* mysql.h */,
+				9615D8442D5EDF530095F55A /* mysql_com.h */,
+				9615D8452D5EDF530095F55A /* mysql_time.h */,
+				9615D8462D5EDF530095F55A /* mysql_version.h */,
+				9615D8472D5EDF530095F55A /* mysqld_error.h */,
+				9615D8482D5EDF530095F55A /* mysqlx_ername.h */,
+				9615D8492D5EDF530095F55A /* mysqlx_error.h */,
+				9615D84A2D5EDF530095F55A /* mysqlx_version.h */,
+				9615D84B2D5EDF530095F55A /* typelib.h */,
+			);
+			path = include;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -431,6 +510,26 @@
 				584294E414CB8002000F8438 /* SPMySQLConstants.h in Headers */,
 				1A96314625B9CE6600BF2E91 /* SPMySQLArrayAdditions.h in Headers */,
 				584294F614CB8002000F8438 /* Querying & Preparation.h in Headers */,
+				9615D84D2D5EDF530095F55A /* psi_base.h in Headers */,
+				9615D84E2D5EDF530095F55A /* psi_memory.h in Headers */,
+				9615D84F2D5EDF530095F55A /* client_plugin.h in Headers */,
+				9615D8502D5EDF530095F55A /* plugin_auth_common.h in Headers */,
+				9615D8512D5EDF530095F55A /* udf_registration_types.h in Headers */,
+				9615D8522D5EDF530095F55A /* errmsg.h in Headers */,
+				9615D8532D5EDF530095F55A /* field_types.h in Headers */,
+				9615D8542D5EDF530095F55A /* my_alloc.h in Headers */,
+				9615D8552D5EDF530095F55A /* my_command.h in Headers */,
+				9615D8562D5EDF530095F55A /* my_compress.h in Headers */,
+				9615D8572D5EDF530095F55A /* my_list.h in Headers */,
+				9615D8582D5EDF530095F55A /* mysql.h in Headers */,
+				9615D8592D5EDF530095F55A /* mysql_com.h in Headers */,
+				9615D85A2D5EDF530095F55A /* mysql_time.h in Headers */,
+				9615D85B2D5EDF530095F55A /* mysql_version.h in Headers */,
+				9615D85C2D5EDF530095F55A /* mysqld_error.h in Headers */,
+				9615D85D2D5EDF530095F55A /* mysqlx_ername.h in Headers */,
+				9615D85E2D5EDF530095F55A /* mysqlx_error.h in Headers */,
+				9615D85F2D5EDF530095F55A /* mysqlx_version.h in Headers */,
+				9615D8602D5EDF530095F55A /* typelib.h in Headers */,
 				584294F014CB8002000F8438 /* Ping & KeepAlive.h in Headers */,
 				584294FA14CB8002000F8438 /* Encoding.h in Headers */,
 				58C7C1E414DB6E4C00436315 /* SPMySQLFastStreamingResult.h in Headers */,
@@ -498,9 +597,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				9615D3AC2D4DA55F0095F55A /* include */,
 			);
 			name = SPMySQL.framework;
 			productInstallPath = "$(HOME)/Library/Frameworks";
@@ -666,7 +762,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 20084;
+				DYLIB_CURRENT_VERSION = 20085;
 				FRAMEWORK_VERSION = A;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -702,7 +798,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 20084;
+				DYLIB_CURRENT_VERSION = 20085;
 				FRAMEWORK_VERSION = A;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -749,7 +845,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CURRENT_PROJECT_VERSION = 20084;
+				CURRENT_PROJECT_VERSION = 20085;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				ENABLE_TESTABILITY = YES;
@@ -803,7 +899,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CURRENT_PROJECT_VERSION = 20084;
+				CURRENT_PROJECT_VERSION = 20085;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -952,7 +1048,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CURRENT_PROJECT_VERSION = 20084;
+				CURRENT_PROJECT_VERSION = 20085;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -993,7 +1089,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 20084;
+				DYLIB_CURRENT_VERSION = 20085;
 				FRAMEWORK_VERSION = A;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -1078,7 +1174,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CURRENT_PROJECT_VERSION = 20084;
+				CURRENT_PROJECT_VERSION = 20085;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -1116,7 +1212,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 20084;
+				DYLIB_CURRENT_VERSION = 20085;
 				FRAMEWORK_VERSION = A;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -1162,7 +1258,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CURRENT_PROJECT_VERSION = 20084;
+				CURRENT_PROJECT_VERSION = 20085;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -1200,7 +1296,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 20084;
+				DYLIB_CURRENT_VERSION = 20085;
 				FRAMEWORK_VERSION = A;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
