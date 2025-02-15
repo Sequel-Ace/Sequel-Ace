@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "8D15AC270486D014006FF6A4"
-               BuildableName = "Sequel Ace.app"
-               BlueprintName = "Sequel Ace"
+               BuildableName = "Harv-U-in-db.app"
+               BlueprintName = "harv-U-in-db"
                ReferencedContainer = "container:sequel-ace.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -31,8 +31,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "8D15AC270486D014006FF6A4"
-            BuildableName = "Sequel Ace.app"
-            BlueprintName = "Sequel Ace"
+            BuildableName = "Harv-U-in-db.app"
+            BlueprintName = "harv-U-in-db"
             ReferencedContainer = "container:sequel-ace.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -54,8 +54,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "8D15AC270486D014006FF6A4"
-            BuildableName = "Sequel Ace.app"
-            BlueprintName = "Sequel Ace"
+            BuildableName = "Harv-U-in-db.app"
+            BlueprintName = "harv-U-in-db"
             ReferencedContainer = "container:sequel-ace.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -70,8 +70,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "8D15AC270486D014006FF6A4"
-            BuildableName = "Sequel Ace.app"
-            BlueprintName = "Sequel Ace"
+            BuildableName = "Harv-U-in-db.app"
+            BlueprintName = "harv-U-in-db"
             ReferencedContainer = "container:sequel-ace.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
