@@ -9,10 +9,12 @@ If you would like to sponsor Sequel Ace, please check out our [Open Collective](
 
 ## Compatibility
 
-- **macOS:** >= 10.13 \*
+- **macOS:** >= 12.0 \*
 - **Processor:** Intel & Apple Silicon
 - **MySQL:** >= 5.7
 - **MariaDB:** >= 10.0
+
+_Note: An [older version of Sequel Ace (version 4.1.7)](https://github.com/Sequel-Ace/Sequel-Ace/releases/tag/production%2F4.1.7-20080) is available to download for macOS versions 10.13, 10.14, 10.15, and 11.
 
 _Note: An [older version of Sequel Ace (version 3.5.2)](https://github.com/Sequel-Ace/Sequel-Ace/releases/tag/production%2F3.5.2-20033) is available to download for macOS versions 10.12 or for MySQL 5.6 support._
 

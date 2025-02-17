@@ -44,10 +44,7 @@ fi
 
 export CC=/usr/bin/clang
 export CXX=/usr/bin/clang++
-
 cd $MYSQL_SRC
-
-mkdir -p $BUILD_DIR/x86_64 $BUILD_DIR/arm64 $BUILD_DIR/universal
 
 
 # Check that we have HomeBrew installed
@@ -65,17 +62,19 @@ fi
 
 rm -rf $BUILD_DIR/arm64
 mkdir -p $BUILD_DIR/arm64
-/opt/homebrew/bin/brew install icu4c googletest bison cmake lz4 zlib llvm openssl@3
-export MACOSX_DEPLOYMENT_TARGET=11.0
+/opt/homebrew/bin/brew install icu4c googletest bison flex ninja cmake lz4 zlib llvm openssl@3
+export MACOSX_DEPLOYMENT_TARGET=12.0
 export OPENSSL_ROOT_DIR=$(/opt/homebrew/bin/brew --prefix openssl@3)
 export OPENSSL_LIB_DIR=$(/opt/homebrew/bin/brew --prefix openssl@3)"/lib"
 export OPENSSL_INCLUDE_DIR=$(/opt/homebrew/bin/brew --prefix openssl@3)"/include"
 
 /opt/homebrew/bin/cmake -S . -B $BUILD_DIR/arm64 \
     -DCMAKE_OSX_ARCHITECTURES=arm64 \
+    -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
+    -DCMAKE_CXX_STANDARD=20 \
     -DCMAKE_SYSTEM_PROCESSOR=arm64 \
     -DCMAKE_OSX_SYSROOT=$(xcrun --sdk macosx --show-sdk-path) \
-    -DCMAKE_CXX_FLAGS="-stdlib=libc++ -nostdinc++ -I/opt/homebrew/opt/llvm/include/c++/v1 -mmacosx-version-min=11.0" \
+    -DCMAKE_CXX_FLAGS="-stdlib=libc++ -nostdinc++ -I/opt/homebrew/opt/llvm/include/c++/v1 -mmacosx-version-min=12.0" \
     -DCMAKE_INSTALL_PREFIX=$BUILD_DIR/arm64/install \
     -DCMAKE_PREFIX_PATH="/opt/homebrew/opt/gtest;/opt/homebrew/opt/icu4c;/opt/homebrew/opt/openssl" \
     -DBISON_EXECUTABLE=/opt/homebrew/opt/bison/bin/bison \
@@ -116,18 +115,20 @@ fi
 
 rm -rf $BUILD_DIR/x86_64
 mkdir -p $BUILD_DIR/x86_64
-arch -x86_64 /usr/local/bin/brew install icu4c googletest bison cmake lz4 zlib llvm openssl@3
+arch -x86_64 /usr/local/bin/brew install icu4c googletest bison flex ninja cmake lz4 zlib llvm openssl@3
 mkdir -p /usr/local/mysql/lib/private
-export MACOSX_DEPLOYMENT_TARGET=10.13
+export MACOSX_DEPLOYMENT_TARGET=12.0
 export OPENSSL_ROOT_DIR=$(/usr/local/bin/brew --prefix openssl@3)
 export OPENSSL_LIB_DIR=$(/usr/local/bin/brew --prefix openssl@3)"/lib"
 export OPENSSL_INCLUDE_DIR=$(/usr/local/bin/brew --prefix openssl@3)"/include"
 
 arch -x86_64 /usr/local/bin/cmake -S . -B $BUILD_DIR/x86_64 \
     -DCMAKE_OSX_ARCHITECTURES=x86_64 \
+    -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
+    -DCMAKE_CXX_STANDARD=20 \
     -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
     -DCMAKE_OSX_SYSROOT=$(xcrun --sdk macosx --show-sdk-path) \
-    -DCMAKE_CXX_FLAGS="-stdlib=libc++ -nostdinc++ -I/usr/local/opt/llvm/include/c++/v1 -mmacosx-version-min=10.13" \
+    -DCMAKE_CXX_FLAGS="-stdlib=libc++ -nostdinc++ -I/usr/local/opt/llvm/include/c++/v1 -mmacosx-version-min=12.0" \
     -DCMAKE_INSTALL_PREFIX=$BUILD_DIR/x86_64/install \
     -DCMAKE_PREFIX_PATH="/usr/local/gtest_x86_64;/usr/local/icu_x86_64" \
     -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison \
@@ -252,5 +253,5 @@ rm -rf "$SRCROOT/../SPMySQLFramework/MySQL Client Libraries/lib/mysqlplugins/x86
 rm -rf "$SRCROOT/../SPMySQLFramework/MySQL Client Libraries/include/*" || exit 1;
 cp "$TARGET_BUILD_DIR/"*.dylib "$SRCROOT/../SPMySQLFramework/MySQL Client Libraries/lib" || exit 1;
 rsync -Hav "$BUILD_DIR/arm64/install/include/" "$SRCROOT/../SPMySQLFramework/MySQL Client Libraries/include" || exit 1;
-cp "$TARGET_BUILD_DIR/../arm64/install/lib/plugin/"*.so "$SRCROOT/../SPMySQLFramework/MySQL Client Libraries/lib/mysqlplugins/arm64" || exit 1;
-cp "$TARGET_BUILD_DIR/../x86_64/install/lib/plugin/"*.so "$SRCROOT/../SPMySQLFramework/MySQL Client Libraries/lib/mysqlplugins/x86_64" || exit 1;
+cp "$BUILD_DIR/arm64/install/lib/plugin/"*.so "$SRCROOT/../SPMySQLFramework/MySQL Client Libraries/lib/mysqlplugins/arm64" || exit 1;
+cp "$BUILD_DIR/x86_64/install/lib/plugin/"*.so "$SRCROOT/../SPMySQLFramework/MySQL Client Libraries/lib/mysqlplugins/x86_64" || exit 1;
