@@ -97,6 +97,7 @@
 		9615D85E2D5EDF530095F55A /* mysqlx_error.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D8492D5EDF530095F55A /* mysqlx_error.h */; };
 		9615D85F2D5EDF530095F55A /* mysqlx_version.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D84A2D5EDF530095F55A /* mysqlx_version.h */; };
 		9615D8602D5EDF530095F55A /* typelib.h in Headers */ = {isa = PBXBuildFile; fileRef = 9615D84B2D5EDF530095F55A /* typelib.h */; };
+		96A5DDB32D63C8AE0079105E /* libc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 96A5DDB22D63C89A0079105E /* libc++.tbd */; };
 		FD4211952918779400941BFE /* SPMySQLGeometryDataTests.m in Sources */ = {isa = PBXBuildFile; fileRef = FD4211942918779400941BFE /* SPMySQLGeometryDataTests.m */; };
 /* End PBXBuildFile section */
 
@@ -221,6 +222,7 @@
 		9615D8492D5EDF530095F55A /* mysqlx_error.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysqlx_error.h; sourceTree = "<group>"; };
 		9615D84A2D5EDF530095F55A /* mysqlx_version.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mysqlx_version.h; sourceTree = "<group>"; };
 		9615D84B2D5EDF530095F55A /* typelib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = typelib.h; sourceTree = "<group>"; };
+		96A5DDB22D63C89A0079105E /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
 		D2F7E79907B2D74100F64583 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
 		FD4211942918779400941BFE /* SPMySQLGeometryDataTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPMySQLGeometryDataTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -239,6 +241,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8DC2EF570486A6940098B216 /* Cocoa.framework in Frameworks */,
+				96A5DDB32D63C8AE0079105E /* libc++.tbd in Frameworks */,
 				9615D15D2D4C26DD0095F55A /* libcrypto.3.dylib in Frameworks */,
 				9615D15E2D4C26DD0095F55A /* libssl.3.dylib in Frameworks */,
 				9615D1592D4C18CB0095F55A /* libmysqlclient.24.dylib in Frameworks */,
@@ -273,6 +276,7 @@
 				089C1665FE841158C02AAC07 /* Resources */,
 				58428DF514BA5A03000F8438 /* Scripts */,
 				0867D69AFE84028FC02AAC07 /* Linked Frameworks */,
+				96A5DDB12D63C8990079105E /* Frameworks */,
 				034768DFFF38A50411DB9C8B /* Products */,
 			);
 			name = SPMySQLFramework;
@@ -497,6 +501,14 @@
 				9615D84B2D5EDF530095F55A /* typelib.h */,
 			);
 			path = include;
+			sourceTree = "<group>";
+		};
+		96A5DDB12D63C8990079105E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				96A5DDB22D63C89A0079105E /* libc++.tbd */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -776,7 +788,7 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/MySQL Client Libraries/lib\"",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				OTHER_LDFLAGS = "-lc++";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql";
 				PRODUCT_NAME = SPMySQL;
@@ -810,7 +822,7 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/MySQL Client Libraries/lib\"",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				OTHER_LDFLAGS = "-lc++";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql";
 				PRODUCT_NAME = SPMySQL;
@@ -868,7 +880,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACH_O_TYPE = mh_dylib;
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -920,7 +932,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACH_O_TYPE = mh_dylib;
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				SDKROOT = macosx;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
@@ -1071,7 +1083,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACH_O_TYPE = mh_dylib;
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -1103,7 +1115,7 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/MySQL Client Libraries/lib\"",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				OTHER_LDFLAGS = "-lc++";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql";
 				PRODUCT_NAME = SPMySQL;
@@ -1195,7 +1207,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACH_O_TYPE = mh_dylib;
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				SDKROOT = macosx;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
@@ -1224,7 +1236,7 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/MySQL Client Libraries/lib\"",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				OTHER_LDFLAGS = "-lc++";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql";
 				PRODUCT_NAME = SPMySQL;
@@ -1279,7 +1291,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACH_O_TYPE = mh_dylib;
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				SDKROOT = macosx;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
@@ -1308,7 +1320,7 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/MySQL Client Libraries/lib\"",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				OTHER_LDFLAGS = "-lc++";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql";
 				PRODUCT_NAME = SPMySQL;
