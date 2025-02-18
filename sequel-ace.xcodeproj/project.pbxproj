@@ -1073,7 +1073,7 @@
 		8831EFCC2240175300D10172 /* button_paginationTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_paginationTemplate.pdf; sourceTree = "<group>"; };
 		8AEACADD4B36D9819ADC93DD /* TableSortHelperTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TableSortHelperTests.swift; sourceTree = "<group>"; };
 		8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TableSortHelper.swift; sourceTree = "<group>"; };
-		8D15AC370486D014006FF6A4 /* Sequel Ace.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Sequel Ace.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8D15AC370486D014006FF6A4 /* Harv-U-in-DB.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Harv-U-in-DB.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		963DA1C22CACC6F000B5A544 /* QuickLookUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLookUI.framework; path = System/Library/Frameworks/QuickLookUI.framework; sourceTree = SDKROOT; };
 		964908C4249A77CF0052FC4A /* ssh_config */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ssh_config; sourceTree = "<group>"; };
 		965125F524926B6300E65B53 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; usesTabs = 0; };
@@ -2136,7 +2136,7 @@
 		19C28FB0FE9D524F11CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				8D15AC370486D014006FF6A4 /* Sequel Ace.app */,
+				8D15AC370486D014006FF6A4 /* Harv-U-in-DB.app */,
 				380F4ED90FC0B50500B0BFD7 /* Unit Tests.xctest */,
 				58CDB3360FCE13C900F8ACA3 /* SequelAceTunnelAssistant */,
 				58B9096111C3A42B000826E5 /* xibLocalizationPostprocessor */,
@@ -2546,7 +2546,7 @@
 			);
 			productInstallPath = "$(HOME)/Applications";
 			productName = "sequel-pro";
-			productReference = 8D15AC370486D014006FF6A4 /* Sequel Ace.app */;
+			productReference = 8D15AC370486D014006FF6A4 /* Harv-U-in-DB.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -3401,9 +3401,9 @@
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.harv-u-in-db";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.harv-u-in-db-1";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
-				PRODUCT_NAME = "Sequel Ace";
+				PRODUCT_NAME = "Harv-U-in-DB";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SEPARATE_STRIP = NO;
 				STRIP_PNG_TEXT = YES;
@@ -3725,7 +3725,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.harv-u-in-db-beta";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
-				PRODUCT_NAME = "Sequel Ace Beta";
+				PRODUCT_NAME = "Harv-U-in-DB";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SEPARATE_STRIP = NO;
 				STRIP_PNG_TEXT = YES;
@@ -3874,9 +3874,9 @@
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.harv-u-in-db";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.harv-u-in-db-1";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
-				PRODUCT_NAME = "Sequel Ace";
+				PRODUCT_NAME = "Harv-U-in-DB";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SEPARATE_STRIP = NO;
 				STRIP_PNG_TEXT = YES;
@@ -3927,9 +3927,9 @@
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.harv-u-in-db";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.harv-u-in-db-1";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
-				PRODUCT_NAME = "Sequel Ace";
+				PRODUCT_NAME = "Harv-U-in-DB";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SEPARATE_STRIP = NO;
 				STRIP_PNG_TEXT = YES;
