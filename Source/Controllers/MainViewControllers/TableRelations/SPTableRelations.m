@@ -89,7 +89,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:nil];
 
 	NSFont *tableFont = [NSUserDefaults getFont];
-	[relationsTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+	[relationsTableView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	for (NSTableColumn *column in [relationsTableView tableColumns])
 	{
@@ -466,7 +466,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
 		NSFont *tableFont = [NSUserDefaults getFont];
 
-		[relationsTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[relationsTableView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 		[relationsTableView setFont:tableFont];
 		[relationsTableView reloadData];
 	}

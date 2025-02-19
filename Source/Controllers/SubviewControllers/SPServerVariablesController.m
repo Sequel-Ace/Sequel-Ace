@@ -70,7 +70,7 @@
 	[variablesTableView setGridStyleMask:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 
 	NSFont *tableFont = [NSUserDefaults getFont];
-	[variablesTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+	[variablesTableView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	for (NSTableColumn *column in [variablesTableView tableColumns])
 	{
@@ -218,7 +218,7 @@
 	else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
 		NSFont *tableFont = [NSUserDefaults getFont];
 
-		[variablesTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[variablesTableView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 		[variablesTableView setFont:tableFont];
 		[variablesTableView reloadData];
 	}

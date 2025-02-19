@@ -106,7 +106,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	[processListTableView setGridStyleMask:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
 
 	NSFont *tableFont = [NSUserDefaults getFont];
-	[processListTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+	[processListTableView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	for (NSTableColumn *column in [processListTableView tableColumns])
 	{
@@ -408,7 +408,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 	else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
 		NSFont *tableFont = [NSUserDefaults getFont];
 
-		[processListTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[processListTableView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 		[processListTableView setFont:tableFont];
 		[processListTableView reloadData];
 	}
