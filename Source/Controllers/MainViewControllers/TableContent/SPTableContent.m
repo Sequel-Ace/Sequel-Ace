@@ -501,7 +501,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 
 	NSFont *tableFont = [NSUserDefaults getFont];
-	[tableContentView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+	[tableContentView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	// Add the new columns to the table
 	[self _buildTableColumns:preservedColumnWidths withFont:tableFont];
@@ -3720,7 +3720,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
 			NSFont *tableFont = [NSUserDefaults getFont];
 
-			[tableContentView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+			[tableContentView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 			[tableContentView setFont:tableFont];
 			[tableContentView reloadData];
 		}

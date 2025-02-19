@@ -1804,7 +1804,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     // Update font size on the table
     NSFont *tableFont = [NSUserDefaults getFont];
-    [customQueryView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+    [customQueryView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
     
     // If there are no table columns to add, return
     if (!cqColumnDefinition || ![cqColumnDefinition count]) return;
@@ -3261,7 +3261,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     // Result Table Font preference changed
     else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
         NSFont *tableFont = [NSUserDefaults getFont];
-        [customQueryView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+        [customQueryView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
         [customQueryView setFont:tableFont];
         [customQueryView reloadData];
     } else if ([keyPath isEqualToString:SPCustomQueryEnableBracketHighlighting]) {

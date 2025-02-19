@@ -372,7 +372,7 @@ static SPQueryController *sharedQueryController = nil;
 	else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
 		NSFont *tableFont = [NSUserDefaults getFont];
 
-		[consoleTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[consoleTableView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 		[consoleTableView setFont:tableFont];
 		[consoleTableView reloadData];
 	}
@@ -658,7 +658,7 @@ static SPQueryController *sharedQueryController = nil;
 
 	// Set the strutcture and index view's font
 	NSFont *tableFont = [NSUserDefaults getFont];
-	[consoleTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+	[consoleTableView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	for (NSTableColumn *column in [consoleTableView tableColumns])
 	{

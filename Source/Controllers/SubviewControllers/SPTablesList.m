@@ -154,7 +154,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	addTableCharsetHelper = [[SPCharsetCollationHelper alloc] initWithCharsetButton:tableEncodingButton CollationButton:tableCollationButton];
 
 	NSFont *tableFont = [NSUserDefaults getFont];
-	[tablesListView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+	[tablesListView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	for (NSTableColumn *column in [tablesListView tableColumns]) {
 		[[column dataCell] setFont:tableFont];
@@ -172,7 +172,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	// Table font preference changed
 	if ([keyPath isEqualToString:SPGlobalFontSettings]) {
 		NSFont *tableFont = [NSUserDefaults getFont];
-		[tablesListView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[tablesListView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 		[tablesListView setFont:tableFont];
 		[tablesListView reloadData];
 	}
