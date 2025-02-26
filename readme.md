@@ -14,4 +14,4 @@ Harv-u-in-DB (Sequel Ace) <img alt="Logo" src="https://sequel-ace.com/images/app
 
 
 
-![License](https://img.shields.io/badge/WTFPL-lightgrey?style=for-the-badge)
+[![License](https://img.shields.io/badge/WTFPL-lightgrey?style=for-the-badge)](https://github.com/sirkris/WTFPL/blob/master/WTFPL.md)
