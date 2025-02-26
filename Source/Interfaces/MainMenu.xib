@@ -531,7 +531,7 @@
                                     <action selector="viewStatus:" target="-1" id="506"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Custom Query" keyEquivalent="6" id="500">
+                            <menuItem title="Custom Query" keyEquivalent="i" id="500">
                                 <connections>
                                     <action selector="viewQuery:" target="-1" id="503"/>
                                 </connections>
@@ -1026,7 +1026,7 @@
                         <font key="font" metaFont="system"/>
                     </buttonCell>
                 </button>
-                <textField focusRingType="none" verticalHuggingPriority="750" fixedFrame="YES" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Bea-mS-nZN" customClass="HyperlinkTextField" customModule="Sequel_Ace" customModuleProvider="target">
+                <textField verticalHuggingPriority="750" fixedFrame="YES" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Bea-mS-nZN" customClass="HyperlinkTextField" customModule="Sequel_Ace" customModuleProvider="target">
                     <rect key="frame" x="23" y="0.0" width="137" height="21"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" allowsUndo="NO" sendsActionOnEndEditing="YES" borderStyle="bezel" alignment="left" title="Stale Bookmark Help" id="jQo-Yb-Hvj">
