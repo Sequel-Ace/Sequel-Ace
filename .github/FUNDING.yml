@@ -1,8 +1,4 @@
-# These are supported funding model platforms
-
-open_collective: sequel-ace
-github: [Jason-Morcos, Kaspik]
-
+open_collective: harv-u-in-db
 github: [harveylewis, euanwilliams]
 patreon: harvuin
 custom: ["https://rnli.org"]
