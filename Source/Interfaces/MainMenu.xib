@@ -511,7 +511,7 @@
                                     <action selector="viewStructure:" target="-1" id="501"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Table Content" keyEquivalent="2" id="499">
+                            <menuItem title="Table Content" keyEquivalent="C" id="499">
                                 <connections>
                                     <action selector="viewContent:" target="-1" id="502"/>
                                 </connections>
