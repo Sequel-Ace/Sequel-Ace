@@ -1953,7 +1953,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		return 25;
 	} else {
 		NSFont *tableFont = [NSUserDefaults getFont];
-		return 2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height;
+		return 4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height;
 	}
 }
 

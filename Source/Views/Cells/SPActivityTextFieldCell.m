@@ -71,7 +71,7 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 		drawState = SPLinkDrawStateNormal;
 
 		cancelButton = [[NSButtonCell alloc] init];
-		[cancelButton setButtonType:NSMomentaryChangeButton];
+		[cancelButton setButtonType:NSButtonTypeMomentaryChange];
 		[cancelButton setImagePosition:NSImageRight];
 		[cancelButton setTitle:@""];
 		[cancelButton setBordered:NO];
@@ -118,7 +118,7 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 
 	[cancelButton setEnabled:(contextInfo != nil)];
 
-	(([self isHighlighted]) && (![[self highlightColorWithFrame:cellFrame inView:controlView] isEqualTo:[NSColor secondarySelectedControlColor]])) ? [self invertFontColors] : [self restoreFontColors];
+    (([self isHighlighted]) && (![[self highlightColorWithFrame:cellFrame inView:controlView] isEqualTo:[NSColor unemphasizedSelectedContentBackgroundColor]])) ? [self invertFontColors] : [self restoreFontColors];
 	
 	// Construct and get the sub text attributed string
 	NSAttributedString *mainString = [self attributedStringForFavoriteName];
