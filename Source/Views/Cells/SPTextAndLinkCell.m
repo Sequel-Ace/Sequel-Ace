@@ -100,7 +100,7 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 		hasLink = YES;
 
 		linkButton = [[NSButtonCell alloc] init];
-		[linkButton setButtonType:NSMomentaryChangeButton];
+        [linkButton setButtonType:NSButtonTypeMomentaryChange];
 		[linkButton setImagePosition:NSImageRight];
 		[linkButton setTitle:@""];
 		[linkButton setBordered:NO];
