@@ -108,7 +108,8 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 			@"repl_slave_priv":          @"replication_slave_priv",
 			@"repl_client_priv":         @"replication_client_priv",
 			@"truncate_versioning_priv": @"delete_versioning_rows_priv", // MariaDB only, 10.3.4 only
-			@"delete_history_priv":      @"delete_versioning_rows_priv", // MariaDB only, since 10.3.5
+			@"delete_history_priv":      @"delete_versioning_rows_priv", // MariaDB only, since 10.3.5,
+			@"show_create_routine_priv": @"show_create_routine_priv", // MariaDB only, since 11.3.1, see more: https://jira.mariadb.org/browse/MDEV-29167
 		};
 	
         schemas = [[NSMutableArray alloc] init];
