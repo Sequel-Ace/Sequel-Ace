@@ -284,9 +284,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			}
 		}
 
-		// Reorder the tables in alphabetical order
-		[tables sortArrayUsingSelector:@selector(localizedCompare:) withPairedMutableArrays:tableTypes, nil];
-
 		/* Grab the procedures and functions
 		 *
 		 * Using information_schema gives us more info (for information window perhaps?) but breaks
