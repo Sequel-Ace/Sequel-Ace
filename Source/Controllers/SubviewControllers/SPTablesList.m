@@ -726,22 +726,39 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 }
 
 - (IBAction)togglePinTable:(nullable id)sender {
-	if (!selectedTableName) {
+  NSIndexSet *indexes = [tablesListView selectedRowIndexes];
+  SPLog(@"togglePinTable");
+  
+  if (!selectedTableName && !indexes) {
+    SPLog(@"no table selected");
 		return;
 	}
-
-    NSString *databaseName = [mySQLConnection database];
-    NSString *hostName = [mySQLConnection host];
-
-	if ([pinnedTables containsObject:selectedTableName]) { // unpin selection
-        [_SQLitePinnedTableManager unpinTableWithHostName:hostName databaseName:databaseName tableToUnpin:selectedTableName];
-	}
-	else { // pin selection
-        [_SQLitePinnedTableManager pinTableWithHostName:hostName databaseName:databaseName tableToPin:selectedTableName];
-	}
-    
-    [[NSNotificationCenter defaultCenter] postNotificationName:pinnedTableNotificationName object:nil];
-    // actual pin toggle will happen when notification is received and processed
+  
+  NSString *databaseName = [mySQLConnection database];
+  NSString *hostName = [mySQLConnection host];
+  
+  NSMutableArray *selectedTables = [NSMutableArray array];
+  BOOL isPinned = NO;
+  
+  if (selectedTableName) {
+    [selectedTables addObject:selectedTableName];
+    isPinned = [pinnedTables containsObject:selectedTableName];
+  } else {
+    selectedTables = [NSMutableArray arrayWithArray:[filteredTables objectsAtIndexes:indexes]];
+    isPinned = [[sender title] isEqualToString:@"Unpin Tables"];
+  }
+  
+  for (NSString *tableName in selectedTables) {
+    if (isPinned) { // unpin selection
+      [_SQLitePinnedTableManager unpinTableWithHostName:hostName databaseName:databaseName tableToUnpin:tableName];
+    } else { // pin selection
+      [_SQLitePinnedTableManager pinTableWithHostName:hostName databaseName:databaseName tableToPin:tableName];
+    }
+  }
+  
+  [tablesListView deselectAll:self];
+  [[NSNotificationCenter defaultCenter] postNotificationName:pinnedTableNotificationName object:nil];
+  // actual pin toggle will happen when notification is received and processed
 }
 
 
@@ -877,6 +894,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		// Update the selected table name and type
 		
 		if (selectedTableName) selectedTableName = nil;
+
+    [pinTableContextMenuItem setHidden:YES];
+    [pinTableMenuItem setHidden:YES];
 		
 		// Set gear menu items Remove/Duplicate table/view according to the table types
 		// if at least one item is selected
@@ -885,6 +905,18 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			NSUInteger currentIndex = [indexes lastIndex];
 			BOOL areTableTypeEqual = YES;
 			NSInteger lastType = [[filteredTableTypes objectAtIndex:currentIndex] integerValue];
+      
+      
+      // If every selected table is pinned, show the "Unpin Tables" menu item
+      // If at least one selected table is not pinned, show the "Pin Tables" menu item
+      BOOL isGroupPinned = YES;
+      for (NSUInteger index = [indexes firstIndex]; index != NSNotFound; index = [indexes indexGreaterThanIndex:index]) {
+        if (![pinnedTables containsObject:[filteredTables objectAtIndex:index]]) {
+          SPLog(@"Found table %@ isn't pinned", [filteredTables objectAtIndex:index]);
+          isGroupPinned = NO;
+          break;
+        }
+      }
 
 			while (currentIndex != NSNotFound)
 			{
@@ -904,6 +936,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 						[truncateTableButton setTitle:NSLocalizedString(@"Truncate Tables", @"truncate tables menu item")];
 						[removeTableContextMenuItem setTitle:NSLocalizedString(@"Delete Tables", @"delete tables menu title")];
 						[truncateTableContextMenuItem setTitle:NSLocalizedString(@"Truncate Tables", @"truncate tables menu item")];
+            [pinTableMenuItem setTitle:NSLocalizedString(!isGroupPinned ? @"Pin Tables" : @"Unpin Tables", @"pin tables menu title")];
+            [pinTableContextMenuItem setTitle:NSLocalizedString(!isGroupPinned ? @"Pin Tables" : @"Unpin Tables", @"pin tables menu title")];
+            [pinTableMenuItem setHidden:NO];
+            [pinTableContextMenuItem setHidden:NO];
 						[truncateTableButton setHidden:NO];
 						[truncateTableContextMenuItem setHidden:NO];
 						break;
@@ -940,8 +976,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[renameTableContextMenuItem setHidden:YES];
 		[openTableInNewTabContextMenuItem setHidden:YES];
 		[openTableInNewWindowContextMenuItem setHidden:YES];
-		[pinTableContextMenuItem setHidden:YES];
-        [copyTableNameContextMenuItem setHidden:YES];
+    [copyTableNameContextMenuItem setHidden:YES];
 		[separatorTableContextMenuItem3 setHidden:NO];
 		[duplicateTableContextMenuItem setHidden:YES];
 		[separatorTableContextMenuItem setHidden:YES];
@@ -955,7 +990,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[renameTableMenuItem setHidden:YES];
 		[openTableInNewTabMenuItem setHidden:YES];
 		[openTableInNewWindowMenuItem setHidden:YES];
-		[pinTableMenuItem setHidden:YES];
 		[separatorTableMenuItem3 setHidden:NO];
 		[duplicateTableMenuItem setHidden:YES];
 		[separatorTableMenuItem setHidden:YES];
