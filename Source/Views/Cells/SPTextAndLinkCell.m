@@ -122,7 +122,7 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 
 	// Fast case for no arrow
 	if (!hasLink || !linkActive) {
-        NSRect textRect = NSMakeRect(aRect.origin.x, aRect.origin.y + 2.0f, aRect.size.width, aRect.size.height);
+		NSRect textRect = NSMakeRect(aRect.origin.x, aRect.origin.y + 2.0f, aRect.size.width, aRect.size.height - 2.0f);
 		[super drawInteriorWithFrame:textRect inView:controlView];
 		return;
 	}
