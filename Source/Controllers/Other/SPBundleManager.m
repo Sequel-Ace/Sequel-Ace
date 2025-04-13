@@ -201,10 +201,19 @@ static SPBundleManager *sharedManager = nil;
             SPLog(@"obj2 = %@",bundle);
 
             NSString *legacyPath = path.stringByDeletingLastPathComponent;
-            NSString *legacyBundleName = [legacyPath lastPathComponent];
+
+            NSMutableString *migratedPath = [[NSMutableString alloc] initWithCapacity:path.stringByDeletingLastPathComponent.length];
+            [migratedPath setString:[path.stringByDeletingLastPathComponent dropSuffixWithSuffix:SPUserBundleFileExtension]];
+            [migratedPath appendString:SPUserBundleFileExtensionV2];
+            NSString *bundlePath = migratedPath.lastPathComponent;
+
+            SPLog(@"migratedPath %@", migratedPath);
+            SPLog(@"legacyPath %@", legacyPath);
+            SPLog(@"bundlePath %@", bundlePath);
+
+            NSError *error = nil;
 
             // Check if a migrated version already exists
-            NSString *migratedPath = [legacyPath stringByAppendingString:@"_"];
             if ([fileManager fileExistsAtPath:migratedPath isDirectory:nil]) {
                 SPLog(@"Migrated version already exists at path: %@", migratedPath);
                 // Remove the old legacy bundle since we already have a migrated version
@@ -218,13 +227,12 @@ static SPBundleManager *sharedManager = nil;
             
             SPLog(@"Migrating bundle from %@ to %@", legacyPath, migratedPath);
 
-            NSError *error = nil;
             if (![fileManager moveItemAtPath:legacyPath toPath:migratedPath error:&error]) {
-                SPLog(@"Could not move %@ to %@. Error: %@", legacyPath, migratedPath, error.localizedDescription);
+                SPLog(@"Could not move “%@” to %@. Error: %@", legacyPath, migratedPath, error.localizedDescription);
                 [self doOrDoNotBeep:legacyPath];
                 return;
             }
-            SPLog(@"Bundle migrated successfully to %@", migratedPath);
+            SPLog(@"Bundle migrated successfully to “%@”", migratedPath);
             
             [migratedLegacyBundles safeAddObject:migratedPath];
 
