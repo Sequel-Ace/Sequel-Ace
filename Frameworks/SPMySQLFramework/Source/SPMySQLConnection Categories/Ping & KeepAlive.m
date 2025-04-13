@@ -68,6 +68,12 @@ typedef struct {
 		return;
 	}
 
+	// If we've had too many ping failures, don't keep trying
+	if (keepAlivePingFailures >= 3) {
+		state = SPMySQLConnectionLostInBackground;
+		return;
+	}
+
 	// Attempt to lock the connection. If the connection is currently busy,
     // we don't need a ping.
 	if (![self _tryLockConnection]) return;
