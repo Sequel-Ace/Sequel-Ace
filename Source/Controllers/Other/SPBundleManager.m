@@ -534,7 +534,7 @@ static SPBundleManager *sharedManager = nil;
 									BOOL isDir;
 									NSString *newInfoPath = [NSString stringWithFormat:@"%@/%@/%@", [bundlePaths objectAtIndex:0], bundle, SPBundleFileName];
 									NSString *orgPath = [NSString stringWithFormat:@"%@/%@", [bundlePaths objectAtIndex:1], bundle];
-									NSString *newPath = [NSString stringWithFormat:@"%@/%@", [bundlePaths objectForKey:0], bundle];
+									NSString *newPath = [NSString stringWithFormat:@"%@/%@", [bundlePaths objectAtIndex:0], bundle];
 									if([fileManager fileExistsAtPath:newPath isDirectory:&isDir] && isDir)
 										newPath = [NSString stringWithFormat:@"%@_%ld", newPath, (long)(random() % 35000)];
 									error = nil;
