@@ -2905,8 +2905,20 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			// BLOB/TEXT data
 			else if ([tempValue isKindOfClass:[NSData class]]) {
         if ([fieldType isEqualToString:@"UUID"] && [fieldTypeGroup isEqualToString:@"blobdata"]) {
-          NSString *uuidVal = [[NSString alloc] initWithData:tempValue encoding:NSUTF8StringEncoding];
-          escVal = [mySQLConnection escapeAndQuoteString:uuidVal];
+          // Convert UUID binary data to a proper MySQL UUID string format
+          NSMutableString *uuidString = [NSMutableString string];
+          const unsigned char *bytes = [tempValue bytes];
+          NSUInteger length = [tempValue length];
+          
+          // Format UUID as a string in the format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+          for (NSUInteger i = 0; i < length; i++) {
+            if (i == 4 || i == 6 || i == 8 || i == 10) {
+              [uuidString appendString:@"-"];
+            }
+            [uuidString appendFormat:@"%02x", bytes[i]];
+          }
+          
+          escVal = [mySQLConnection escapeAndQuoteString:uuidString];
         } else {
           escVal = [mySQLConnection escapeAndQuoteData:tempValue];
         }
