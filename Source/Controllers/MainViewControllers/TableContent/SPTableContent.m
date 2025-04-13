@@ -2006,17 +2006,29 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
             // if table has only one PRIMARY KEY
             // delete the fast way by using the PRIMARY KEY in an IN clause
             NSMutableString *deleteQuery = [NSMutableString string];
-
             [deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [selectedTable backtickQuotedString], [[primaryKeyFieldNames firstObject] backtickQuotedString]]];
 
             while (anIndex != NSNotFound) {
+                NSDictionary *field = [tableDataInstance columnWithName:[primaryKeyFieldNames firstObject]];
+                NSString *dataColumnIndex = [field objectForKey:@"datacolumnindex"];
+                NSString *fieldType = [field objectForKey:@"type"];
+                NSString *fieldTypeGroup = [field objectForKey:@"typegrouping"];
+              
+                id keyValue = [tableValues cellDataAtRow:anIndex column:[dataColumnIndex integerValue]];
 
-                id keyValue = [tableValues cellDataAtRow:anIndex column:[[[tableDataInstance columnWithName:[primaryKeyFieldNames firstObject]] objectForKey:@"datacolumnindex"] integerValue]];
-
-                if([keyValue isKindOfClass:[NSData class]])
-                    [deleteQuery appendStringOrNil:[mySQLConnection escapeAndQuoteData:keyValue]];
-                else
-                    [deleteQuery appendStringOrNil:[mySQLConnection escapeAndQuoteString:[keyValue description]]];
+                NSString *escVal;
+                if([keyValue isKindOfClass:[NSData class]]) {
+                  if ([fieldType isEqualToString:@"UUID"] && [fieldTypeGroup isEqualToString:@"blobdata"]) {
+                    NSString *uuidVal = [[NSString alloc] initWithData:keyValue encoding:NSUTF8StringEncoding];
+                    escVal = [mySQLConnection escapeAndQuoteString:uuidVal];
+                  } else {
+                    escVal = [mySQLConnection escapeAndQuoteData:keyValue];
+                  }
+                } else {
+                  escVal = [mySQLConnection escapeAndQuoteString:[keyValue description]];
+                }
+              
+              	[deleteQuery appendStringOrNil:escVal];
 
                 // Split deletion query into 256k chunks
                 if([deleteQuery length] > 256000) {
