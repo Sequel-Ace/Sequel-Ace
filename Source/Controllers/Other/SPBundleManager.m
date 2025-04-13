@@ -184,7 +184,6 @@ static SPBundleManager *sharedManager = nil;
 
 #pragma mark - legacy bundle rename
 - (void)renameLegacyBundles{
-
 	SPLog(@"renameLegacyBundles");
 
 	// if we find any legacy bundles we'll need to change the dict, so take a copy
@@ -192,7 +191,6 @@ static SPBundleManager *sharedManager = nil;
 
 	[bundleItemsCopy enumerateKeysAndObjectsUsingBlock:^(NSString *scope, NSArray *bundles, BOOL *stop1) {
 		[bundles enumerateObjectsUsingBlock:^(id bundle, NSUInteger idx, BOOL *stop){
-
 			NSString *path = bundle[SPBundleInternPathToFileKey];
             if (![path containsString:SPUserBundleFileExtension]) {
                 // Already migrated
@@ -203,45 +201,42 @@ static SPBundleManager *sharedManager = nil;
             SPLog(@"obj2 = %@",bundle);
 
             NSString *legacyPath = path.stringByDeletingLastPathComponent;
+            NSString *legacyBundleName = [legacyPath lastPathComponent];
 
-            NSMutableString *migratedPath = [[NSMutableString alloc] initWithCapacity:path.stringByDeletingLastPathComponent.length];
-            [migratedPath setString:[path.stringByDeletingLastPathComponent dropSuffixWithSuffix:SPUserBundleFileExtension]];
-            [migratedPath appendString:SPUserBundleFileExtensionV2];
-            NSString *bundlePath = migratedPath.lastPathComponent;
-
-            SPLog(@"migratedPath %@", migratedPath);
-            SPLog(@"legacyPath %@", legacyPath);
-            SPLog(@"bundlePath %@", bundlePath);
-
-            NSError *error = nil;
-
+            // Check if a migrated version already exists
+            NSString *migratedPath = [legacyPath stringByAppendingString:@"_"];
             if ([fileManager fileExistsAtPath:migratedPath isDirectory:nil]) {
-                SPLog(@"File exists at path: %@", migratedPath);
+                SPLog(@"Migrated version already exists at path: %@", migratedPath);
+                // Remove the old legacy bundle since we already have a migrated version
+                NSError *removeError = nil;
+                if (![fileManager removeItemAtPath:legacyPath error:&removeError]) {
+                    SPLog(@"Could not remove legacy bundle at %@. Error: %@", legacyPath, removeError.localizedDescription);
+                    [self doOrDoNotBeep:legacyPath];
+                }
                 return;
             }
             
-            SPLog(@"File DOES NOT YET exist at “%@”", migratedPath);
+            SPLog(@"Migrating bundle from %@ to %@", legacyPath, migratedPath);
 
+            NSError *error = nil;
             if (![fileManager moveItemAtPath:legacyPath toPath:migratedPath error:&error]) {
-                SPLog(@"Could not move “%@” to %@. Error: %@", legacyPath, migratedPath, error.localizedDescription);
+                SPLog(@"Could not move %@ to %@. Error: %@", legacyPath, migratedPath, error.localizedDescription);
                 [self doOrDoNotBeep:legacyPath];
                 return;
             }
-            SPLog(@"File renamed successfully “%@”", migratedPath);
+            SPLog(@"Bundle migrated successfully to %@", migratedPath);
             
             [migratedLegacyBundles safeAddObject:migratedPath];
 
-            // we need to add the new bundle version
+            // Verify the migrated bundle
             NSString *infoPath = [NSString stringWithFormat:@"%@/%@", migratedPath, SPBundleFileName];
             NSError *readError = nil;
-            SPLog(@"infoPath %@", infoPath);
             NSDictionary *cmdData = [SPBundleManager.shared loadBundleAt:infoPath error:&readError];
             
             if(!cmdData || readError) {
-                SPLog(@"“%@” file couldn't be read. (error=%@)", infoPath, readError.localizedDescription);
+                SPLog(@"Migrated bundle %@ is invalid. Error: %@", infoPath, readError.localizedDescription);
                 [self doOrDoNotBeep:infoPath];
-
-                // remove the dodgy bundle
+                // Clean up the invalid migrated bundle
                 [self removeBundle:migratedPath.lastPathComponent];
                 return;
             }
@@ -539,7 +534,7 @@ static SPBundleManager *sharedManager = nil;
 									BOOL isDir;
 									NSString *newInfoPath = [NSString stringWithFormat:@"%@/%@/%@", [bundlePaths objectAtIndex:0], bundle, SPBundleFileName];
 									NSString *orgPath = [NSString stringWithFormat:@"%@/%@", [bundlePaths objectAtIndex:1], bundle];
-									NSString *newPath = [NSString stringWithFormat:@"%@/%@", [bundlePaths objectAtIndex:0], bundle];
+									NSString *newPath = [NSString stringWithFormat:@"%@/%@", [bundlePaths objectForKey:0], bundle];
 									if([fileManager fileExistsAtPath:newPath isDirectory:&isDir] && isDir)
 										newPath = [NSString stringWithFormat:@"%@_%ld", newPath, (long)(random() % 35000)];
 									error = nil;
