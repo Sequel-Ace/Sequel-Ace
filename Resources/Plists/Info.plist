@@ -190,7 +190,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>5.0.4</string>
+	<string>5.0.5</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -213,7 +213,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>20090</string>
+	<string>20091</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSApplicationCategoryType</key>
