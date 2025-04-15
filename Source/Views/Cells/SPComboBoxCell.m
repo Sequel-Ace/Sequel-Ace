@@ -136,23 +136,9 @@ static NSString *_CellWillDismissNotification = @"NSComboBoxCellWillDismissNotif
  */
 - (void)drawInteriorWithFrame:(NSRect)cellFrame inView:(NSView *)controlView
 {
-    // Calculate the vertical center offset based on the cell height and font metrics
-    CGFloat cellHeight = cellFrame.size.height;
-    CGFloat fontHeight = [self.font boundingRectForFont].size.height;
-    
-    // For ENUM cells, we need to account for the popup button width
-    CGFloat buttonWidth = 0;
-    if ([self isKindOfClass:[SPComboBoxCell class]]) {
-        buttonWidth = 16.0; // Standard width for the popup button
-    }
-    
-    // Create a new frame that centers the content vertically and accounts for the button
-    NSRect contentFrame = NSMakeRect(cellFrame.origin.x, 
-                                    cellFrame.origin.y + (cellHeight - fontHeight) / 2.0,
-                                    cellFrame.size.width - buttonWidth, 
-                                    fontHeight);
-    
-    [super drawInteriorWithFrame:contentFrame inView:controlView];
+	// Center the content vertically in the cell
+	CGFloat verticalOffset = (cellFrame.size.height - [self.font boundingRectForFont].size.height) / 2.0;
+	[super drawInteriorWithFrame:NSMakeRect(cellFrame.origin.x, cellFrame.origin.y + verticalOffset, cellFrame.size.width, cellFrame.size.height) inView:controlView];
 }
 
 @end
