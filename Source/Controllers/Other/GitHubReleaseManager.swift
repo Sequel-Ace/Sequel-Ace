@@ -209,7 +209,7 @@ import OSLog
             alert.showsSuppressionButton = true
         }
         alert.alertStyle = .informational
-        alert.addButton(withTitle: "View").tag = GitHubReleaseManager.NSModalResponseView.rawValue
+        alert.addButton(withTitle: NSLocalizedString("View", comment: "View button")).tag = GitHubReleaseManager.NSModalResponseView.rawValue
 
         if asset != nil {
             alert.addButton(withTitle: NSLocalizedString("Download", comment: "Download new version")).tag = GitHubReleaseManager.NSModalResponseDownload.rawValue
@@ -536,7 +536,8 @@ import OSLog
                     // only show alert if the user did not explicitly cancel the download
                     if error.isExplicitlyCancelledError == false {
                         Log.error("Error: \(error.localizedDescription)")
-                        NSAlert.createWarningAlert(title: NSLocalizedString("Download Failed", comment: "Download Failed"), message: error.localizedDescription)
+                        NSAlert.createWarningAlert(title: NSLocalizedString("Download Failed", comment: "Download Failed"), 
+                                                 message: error.localizedDescription)
                         if (manager?.isReachable == false) {
                             Log.error("manager?.isReachable == false")
                         }
