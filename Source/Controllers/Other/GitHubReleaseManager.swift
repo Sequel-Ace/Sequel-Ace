@@ -399,8 +399,6 @@ import OSLog
                                                     userInfo: [NSLocalizedDescriptionKey: "Zip file not found at path: \(filePath)"])
                                     }
                                     
-                                    Log.debug("Starting unzip process")
-                                    
                                     // Create and configure the unzip process
                                     let task = Process()
                                     task.launchPath = "/usr/bin/unzip"
@@ -421,9 +419,6 @@ import OSLog
                                     var outputData = Data()
                                     while let data = try? fileHandle.read(upToCount: 1024), !data.isEmpty {
                                         outputData.append(data)
-                                        if let output = String(data: data, encoding: .utf8) {
-                                            Log.debug("Unzip output: \(output)")
-                                        }
                                     }
                                     
                                     // Close the file handle
@@ -432,15 +427,11 @@ import OSLog
                                     // Now wait for the process to exit
                                     task.waitUntilExit()
                                     
-                                    Log.debug("Unzip process completed with status: \(task.terminationStatus)")
-                                    
                                     // Verify the contents were extracted
                                     let contents = try fileManager.contentsOfDirectory(at: tempDir, includingPropertiesForKeys: nil)
-                                    Log.debug("Contents of temp directory after unzip: \(contents.map { $0.lastPathComponent }.joined(separator: ", "))")
                                     
                                     // Handle the result on the main thread
                                     DispatchQueue.main.async { [self] in
-                                        Log.debug("Processing unzip result on main thread")
                                         // Stop the progress indicator
                                         self.progressViewController?.progressIndicator.stopAnimation(nil)
                                         self.progressWindowController?.close()
@@ -451,13 +442,9 @@ import OSLog
                                                 let appFile = contents.first { $0.pathExtension == "app" }
                                                 
                                                 if let appFile = appFile {
-                                                    Log.debug("Found app file at: \(appFile.path)")
-                                                    
                                                     // Get the Downloads directory URL
                                                     let downloadsURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
                                                     let destinationURL = downloadsURL.appendingPathComponent(appFile.lastPathComponent)
-                                                    
-                                                    Log.debug("Moving app to Downloads: \(destinationURL.path)")
                                                     
                                                     // Remove existing file in Downloads if it exists
                                                     if FileManager.default.fileExists(atPath: destinationURL.path) {
@@ -489,24 +476,18 @@ import OSLog
                                                     alert.addButton(withTitle: NSLocalizedString("Quit Now", comment: "Quit Now"))
                                                     alert.addButton(withTitle: NSLocalizedString("Later", comment: "Later"))
                                                     
-                                                    Log.debug("Showing installation alert")
                                                     if alert.runModal() == .alertFirstButtonReturn {
-                                                        Log.debug("User chose to quit now")
                                                         NSApp.terminate(nil)
                                                     }
                                                 } else {
-                                                    Log.error("No .app file found in the extracted contents")
                                                     NSAlert.createWarningAlert(title: NSLocalizedString("Update Failed", comment: "Update Failed"), 
                                                                              message: NSLocalizedString("Could not find the application in the downloaded update. Please try downloading it manually.", comment: "No app found"))
                                                 }
                                             } catch {
-                                                Log.error("Error finding app file: \(error.localizedDescription)")
                                                 NSAlert.createWarningAlert(title: NSLocalizedString("Update Failed", comment: "Update Failed"), 
                                                                          message: error.localizedDescription)
                                             }
                                         } else {
-                                            let output = String(data: outputData, encoding: .utf8)
-                                            Log.error("Failed to unzip update with status: \(task.terminationStatus), output: \(output ?? "none")")
                                             NSAlert.createWarningAlert(title: NSLocalizedString("Update Failed", comment: "Update Failed"), 
                                                                      message: NSLocalizedString("Failed to unpack the update. Please try downloading it manually.", comment: "Unpack failed"))
                                         }
@@ -516,8 +497,7 @@ import OSLog
                                         try? fileManager.removeItem(at: URL(fileURLWithPath: downloadDir))
                                     }
                                 } catch {
-                                    DispatchQueue.main.async {
-                                        Log.error("Error during unzip: \(error.localizedDescription)")
+                                    DispatchQueue.main.async { [self] in
                                         NSAlert.createWarningAlert(title: NSLocalizedString("Update Failed", comment: "Update Failed"), 
                                                                  message: error.localizedDescription)
                                         self.progressViewController?.progressIndicator.stopAnimation(nil)
