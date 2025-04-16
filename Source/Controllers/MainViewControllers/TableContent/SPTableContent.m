@@ -4346,10 +4346,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		[prefs setObject:[NSDictionary dictionaryWithDictionary:savedWidths] forKey:SPTableColumnWidths];
 	}
 
-	// Return the width, while the delegate is empty to prevent column resize notifications
-	[tableContentView setDelegate:nil];
-	[tableContentView performSelector:@selector(setDelegate:) withObject:self afterDelay:0.1];
-
+	// Instead of removing the delegate, we'll just return the width
+	// This preserves the text coloring state during column resizing
 	return targetWidth;
 }
 
