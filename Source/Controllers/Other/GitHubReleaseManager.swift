@@ -391,7 +391,7 @@ import OSLog
                             }
                             
                             // Run unzip on background queue
-                            DispatchQueue.global(qos: .userInitiated).async {
+                            DispatchQueue.global(qos: .userInitiated).async { [self] in
                                 do {
                                     // Verify zip file exists
                                     guard fileManager.fileExists(atPath: filePath) else {
@@ -439,7 +439,7 @@ import OSLog
                                     Log.debug("Contents of temp directory after unzip: \(contents.map { $0.lastPathComponent }.joined(separator: ", "))")
                                     
                                     // Handle the result on the main thread
-                                    DispatchQueue.main.async {
+                                    DispatchQueue.main.async { [self] in
                                         Log.debug("Processing unzip result on main thread")
                                         // Stop the progress indicator
                                         self.progressViewController?.progressIndicator.stopAnimation(nil)
