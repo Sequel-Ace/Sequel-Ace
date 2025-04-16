@@ -1562,6 +1562,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             sortKey = SPFavoriteColorIndexKey;
             break;
         case SPFavoritesSortUnsorted:
+            // When unsorted, just save the current order without sorting
+            [favoritesController saveFavorites];
+            [self _reloadFavoritesViewData];
             return;
     }
 
@@ -2755,8 +2758,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     // Cache the selected nodes for selection restoration afterwards
     NSArray *preDragSelection = [self selectedFavoriteNodes];
 
-    // Disable all automatic sorting
-    currentSortItem = -1;
+    // When manually reordering, set to unsorted to preserve the order
+    currentSortItem = SPFavoritesSortUnsorted;
     reverseFavoritesSort = NO;
 
     [prefs setInteger:currentSortItem forKey:SPFavoritesSortedBy];
@@ -2795,7 +2798,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         NSInteger newIndex = childIndex;
 
         if (oldIndex != NSNotFound) {
-
             [childNodeArray removeObjectAtIndex:oldIndex];
 
             if (childIndex > oldIndex) {
@@ -2807,31 +2809,25 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         }
 
         [childNodeArray insertObject:treeNode atIndex:newIndex];
-
         newIndex++;
     }
 
+    // Save the new order
     [favoritesController saveFavorites];
-
     [self _reloadFavoritesViewData];
 
     [[NSNotificationCenter defaultCenter] postNotificationName:SPConnectionFavoritesChangedNotification object:self];
 
     [[[SPAppDelegate preferenceController] generalPreferencePane] updateDefaultFavoritePopup];
 
-    // Update the selection to account for rearranged faourites
+    // Update the selection to account for rearranged favourites
     NSMutableIndexSet *restoredSelection = [NSMutableIndexSet indexSet];
-
-    for (SPTreeNode *eachNode in preDragSelection)
-    {
+    for (SPTreeNode *eachNode in preDragSelection) {
         [restoredSelection addIndex:[favoritesOutlineView rowForItem:eachNode]];
     }
-
     [favoritesOutlineView selectRowIndexes:restoredSelection byExtendingSelection:NO];
 
-    acceptedDrop = YES;
-
-    return acceptedDrop;
+    return YES;
 }
 
 #pragma mark -
