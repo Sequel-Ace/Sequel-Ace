@@ -1,3 +1,20 @@
+## [5.0.6]
+
+### Added
+
+
+### Fixed
+
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
 ## [5.0.5]
 
 ### Added
