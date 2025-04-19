@@ -175,6 +175,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[tablesListView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 		[tablesListView setFont:tableFont];
 		[tablesListView reloadData];
+		// Force a visual refresh of the table list
+		[tablesListView setNeedsDisplay:YES];
+		[tablesListView displayIfNeeded];
 	}
 	else {
 		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
@@ -217,6 +220,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[self->tables removeAllObjects];
 		[self->tableTypes removeAllObjects];
 		[self->tablesListView reloadData];
+		// Force a visual refresh of the table list
+		[self->tablesListView setNeedsDisplay:YES];
+		[self->tablesListView displayIfNeeded];
 	});
 
 	if ([tableDocumentInstance database]) {
@@ -630,7 +636,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	}
 
     // from docs:
-    // A window that uses NSWindowStyleMaskBorderless can’t become key or main
+    // A window that uses NSWindowStyleMaskBorderless can't become key or main
     // meaning it can't take input, so switch the style here.
     // It doesn't change how the popup looks.
     copyTableSheet.styleMask = NSWindowStyleMaskTitled;

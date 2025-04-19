@@ -3734,6 +3734,16 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 			[tableContentView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 			[tableContentView setFont:tableFont];
+			
+			// Update header cells
+			for (NSTableColumn *column in [tableContentView tableColumns]) {
+				if ([prefs boolForKey:SPDisplayTableViewColumnTypes]) {
+					[[column headerCell] setAttributedStringValue:[[dataColumns objectAtIndex:[[column identifier] integerValue]] tableContentColumnHeaderAttributedString]];
+				} else {
+					[[column headerCell] setFont:tableFont];
+				}
+			}
+			
 			[tableContentView reloadData];
 		}
 		// Display binary data as Hex
