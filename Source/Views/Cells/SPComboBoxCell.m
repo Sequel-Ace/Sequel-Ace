@@ -136,9 +136,9 @@ static NSString *_CellWillDismissNotification = @"NSComboBoxCellWillDismissNotif
  */
 - (void)drawInteriorWithFrame:(NSRect)cellFrame inView:(NSView *)controlView
 {
-	// Center the content vertically in the cell
-	CGFloat verticalOffset = (cellFrame.size.height - [self.font boundingRectForFont].size.height) / 2.0;
-	[super drawInteriorWithFrame:NSMakeRect(cellFrame.origin.x, cellFrame.origin.y + verticalOffset, cellFrame.size.width, cellFrame.size.height) inView:controlView];
+    //Weird offset hack to fix enums and structure view ComboBoxCell labels from floating up or down randomly
+    [super drawInteriorWithFrame:NSMakeRect(cellFrame.origin.x, cellFrame.origin.y + (self.font.pointSize-13.0) / 2.0, cellFrame.size.width, cellFrame.size.height) inView:controlView];
+
 }
 
 @end
