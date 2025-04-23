@@ -556,7 +556,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
     BOOL displayColumnTypes = [prefs boolForKey:SPDisplayTableViewColumnTypes];
     NSInteger sortColumnNumberToRestore = NSNotFound;
     NSDictionary *formatOverrides = currentFormatters(self);
-    NSFont *headerFont = [NSFont fontWithDescriptor:font.fontDescriptor size:MAX(font.pointSize * 0.75, 11.0)];
+    NSFont *headerFont = [[NSFontManager sharedFontManager] convertFont:font toSize:MAX(font.pointSize * 0.75, 11.0)];
 
     for (NSDictionary *columnDefinition in dataColumns) {
         id name = columnDefinition[@"name"];
@@ -3741,7 +3741,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		// Table font preference changed
 		else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
 			NSFont *tableFont = [NSUserDefaults getFont];
-            NSFont *headerFont = [NSFont fontWithDescriptor:tableFont.fontDescriptor size:MAX(tableFont.pointSize * 0.75, 11.0)];
+            NSFont *headerFont = [[NSFontManager sharedFontManager] convertFont:tableFont toSize:MAX(tableFont.pointSize * 0.75, 11.0)];
 
 			[tableContentView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 			[tableContentView setFont:tableFont];
@@ -3751,13 +3751,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 				if ([prefs boolForKey:SPDisplayTableViewColumnTypes]) {
                     NSAttributedString *attrString = [[dataColumns safeObjectAtIndex:[[column identifier] integerValue]] tableContentColumnHeaderAttributedString];
                     
-                    // Need to create a mutable copy to modify the font
-                    NSMutableAttributedString *newAttrString = [[NSMutableAttributedString alloc] initWithAttributedString:attrString];
-                    
-                    // Apply font to the entire string
-                    [newAttrString addAttribute:NSFontAttributeName value:headerFont range:NSMakeRange(0, [newAttrString length])];
-
-                    [[column headerCell] setAttributedStringValue:newAttrString];
+                    [[column headerCell] setAttributedStringValue:attrString];
 				} else {
 					[[column headerCell] setFont:headerFont];
 				}

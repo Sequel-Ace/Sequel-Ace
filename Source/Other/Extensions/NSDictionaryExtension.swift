@@ -14,8 +14,8 @@ import Foundation
             return NSAttributedString(string: "")
         }
         let tableFont = UserDefaults.getFont()
-        let headerFont = NSFont(descriptor: tableFont.fontDescriptor, size: Swift.max(tableFont.pointSize * 0.75, 11.0)) ?? tableFont
-        
+        let headerFont = NSFontManager.shared.convert(tableFont, toSize: Swift.max(tableFont.pointSize * 0.75, 11.0))
+
         let attributedString = NSMutableAttributedString(string: columnName, attributes: [.font: headerFont])
         
         if let columnType: String = value(forKey: "type") as? String {
