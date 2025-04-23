@@ -2589,7 +2589,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 - (CGFloat)outlineView:(NSOutlineView *)outlineView heightOfRowByItem:(id)item
 {
-    return 24.f;
+    NSFont *tableFont = [NSUserDefaults getFont];
+    CGFloat textHeight = NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height;
+    return MAX(24.0f, textHeight + 8.0f); // Ensure minimum height of 24 with padding for larger fonts
 }
 
 - (NSString *)outlineView:(NSOutlineView *)outlineView toolTipForCell:(NSCell *)cell rect:(NSRectPointer)rect tableColumn:(NSTableColumn *)tableColumn item:(id)item mouseLocation:(NSPoint)mouseLocation
@@ -3483,6 +3485,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     for (NSTableColumn *col in [favoritesOutlineView tableColumns]) {
         [[col dataCell] setFont:tableFont];
     }
+    
+    // Register for font change notifications
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(fontChanged:)
+                                                 name:@"SPFontChangedNotification"
+                                               object:nil];
 }
 
 /**
@@ -3676,7 +3684,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 
     [self setConnectionKeychainID:nil];
-
+    
+    // Remove font change observer
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"SPFontChangedNotification" object:nil];
 }
 
 /**
@@ -3686,6 +3696,23 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     if (error) {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Favorites export error", @"favorites export error message") message:[NSString stringWithFormat:NSLocalizedString(@"The following error occurred during the export process:\n\n%@", @"favorites export error informative message"), [error localizedDescription]] callback:nil];
     }
+}
+
+// Add this method to handle font change notifications
+- (void)fontChanged:(NSNotification *)notification
+{
+    // Update font in favorites outline view
+    NSFont *tableFont = [NSUserDefaults getFont];
+    [favoritesOutlineView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+    [favoritesOutlineView setFont:tableFont];
+    
+    for (NSTableColumn *col in [favoritesOutlineView tableColumns]) {
+        [[col dataCell] setFont:tableFont];
+    }
+    
+    // Force reload to update the display
+    [favoritesOutlineView reloadData];
+    [favoritesOutlineView setNeedsDisplay:YES];
 }
 
 @end

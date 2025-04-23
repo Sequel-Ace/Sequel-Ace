@@ -1804,6 +1804,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     // Update font size on the table
     NSFont *tableFont = [NSUserDefaults getFont];
+    NSFont *headerFont = [[NSFontManager sharedFontManager] convertFont:tableFont toSize:MAX(tableFont.pointSize * 0.75, 11.0)];
     [customQueryView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
     
     // If there are no table columns to add, return
@@ -1833,7 +1834,10 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         {
             [dataCell setAlignment:NSTextAlignmentRight];
         }
-        
+
+        // Set the header font to match table font
+        [[theCol headerCell] setFont:headerFont];
+
         // Set field type for validations
         [[dataCell formatter] setFieldType:[columnDefinition objectForKey:@"type"]];
         [theCol setDataCell:dataCell];
@@ -3261,8 +3265,24 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     // Result Table Font preference changed
     else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
         NSFont *tableFont = [NSUserDefaults getFont];
+        NSFont *headerFont = [[NSFontManager sharedFontManager] convertFont:tableFont toSize:MAX(tableFont.pointSize * 0.75, 11.0)];
         [customQueryView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
         [customQueryView setFont:tableFont];
+
+        // Update header cells
+        for (NSTableColumn *column in [customQueryView tableColumns]) {
+            if ([prefs boolForKey:SPDisplayTableViewColumnTypes]) {
+                NSAttributedString *attrString = [[cqColumnDefinition safeObjectAtIndex:[[column identifier] integerValue]] tableContentColumnHeaderAttributedString];
+
+                [[column headerCell] setAttributedStringValue:attrString];
+            } else {
+                [[column headerCell] setFont:headerFont];
+            }
+        }
+
+        // Force header view to redraw
+        [customQueryView.headerView setNeedsDisplay:YES];
+
         [customQueryView reloadData];
     } else if ([keyPath isEqualToString:SPCustomQueryEnableBracketHighlighting]) {
         self.bracketHighlighter.enabled = [[change valueForKey:NSKeyValueChangeNewKey] boolValue];

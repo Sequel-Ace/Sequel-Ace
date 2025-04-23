@@ -139,6 +139,9 @@
 			font = [[NSFontPanel sharedFontPanel] panelConvertFont:[NSUserDefaults getFont]];
 			[NSUserDefaults saveFont:font];
             [generalPreferencePane updateDisplayedFontName];
+            
+            // Post notification to ensure all views update
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"SPFontChangedNotification" object:self];
 			break;
 		case SPPrefFontChangeTargetEditor:
 			font = [[NSFontPanel sharedFontPanel] panelConvertFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]]];

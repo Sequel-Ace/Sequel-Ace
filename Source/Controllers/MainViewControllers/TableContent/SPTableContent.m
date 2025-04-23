@@ -556,6 +556,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
     BOOL displayColumnTypes = [prefs boolForKey:SPDisplayTableViewColumnTypes];
     NSInteger sortColumnNumberToRestore = NSNotFound;
     NSDictionary *formatOverrides = currentFormatters(self);
+    NSFont *headerFont = [[NSFontManager sharedFontManager] convertFont:font toSize:MAX(font.pointSize * 0.75, 11.0)];
 
     for (NSDictionary *columnDefinition in dataColumns) {
         id name = columnDefinition[@"name"];
@@ -563,6 +564,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
         // Set up the column
         NSTableColumn *column  = [[NSTableColumn alloc] initWithIdentifier:columnIndex];
+
+        // Set the header font to match table font
+        [[column headerCell] setFont:headerFont];
 
         if (displayColumnTypes) {
             [[column headerCell] setAttributedStringValue:[columnDefinition tableContentColumnHeaderAttributedString]];
@@ -2876,6 +2880,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		}
 	}
 
+	// Check again to make sure keys array is not empty before proceeding
+	if (![keys count]) {
+		SPLog(@"Keys array is empty in argumentForRow:excludingLimits:, aborting to prevent crash");
+		return @"";
+	}
+
 	NSMutableString *argument = [NSMutableString string];
 	// Walk through the keys list constructing the argument list
 	for (NSUInteger i = 0 ; i < [keys count]; i++ ) {
@@ -2885,11 +2895,11 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		id tempValue;
 		// Use the selected row if appropriate
 		if ( row >= 0 ) {
-			tempValue = [tableValues cellDataAtRow:row column:[[[tableDataInstance columnWithName:[keys safeObjectAtIndex:i]] objectForKey:@"datacolumnindex"] integerValue]];
+			tempValue = [tableValues cellDataAtRow:row column:[[[tableDataInstance columnWithName:[keys safeObjectAtIndex:i]] safeObjectForKey:@"datacolumnindex"] integerValue]];
 		}
 		// Otherwise use the oldRow
 		else {
-			tempValue = [oldRow objectAtIndex:[[[tableDataInstance columnWithName:[keys safeObjectAtIndex:i]] objectForKey:@"datacolumnindex"] integerValue]];
+			tempValue = [oldRow safeObjectAtIndex:[[[tableDataInstance columnWithName:[keys safeObjectAtIndex:i]] safeObjectForKey:@"datacolumnindex"] integerValue]];
 		}
 
 		if ([tempValue isNSNull]) {
@@ -2904,9 +2914,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			NSString *fmt = @"%@";
 			// If the field is of type BIT then it needs a binary prefix
       NSDictionary *field = [tableDataInstance columnWithName:[keys safeObjectAtIndex:i]];
-      NSString *fieldType = [field objectForKey:@"type"];
-      NSString *fieldTypeGroup = [field objectForKey:@"typegrouping"];
-      
+      NSString *fieldType = [field safeObjectForKey:@"type"];
+      NSString *fieldTypeGroup = [field safeObjectForKey:@"typegrouping"];
+
 			if ([fieldType isEqualToString:@"BIT"]) {
 				escVal = [mySQLConnection escapeString:tempValue includingQuotes:NO];
 				fmt = @"b'%@'";
@@ -3731,6 +3741,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		// Table font preference changed
 		else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
 			NSFont *tableFont = [NSUserDefaults getFont];
+            NSFont *headerFont = [[NSFontManager sharedFontManager] convertFont:tableFont toSize:MAX(tableFont.pointSize * 0.75, 11.0)];
 
 			[tableContentView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 			[tableContentView setFont:tableFont];
@@ -3738,11 +3749,16 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			// Update header cells
 			for (NSTableColumn *column in [tableContentView tableColumns]) {
 				if ([prefs boolForKey:SPDisplayTableViewColumnTypes]) {
-					[[column headerCell] setAttributedStringValue:[[dataColumns objectAtIndex:[[column identifier] integerValue]] tableContentColumnHeaderAttributedString]];
+                    NSAttributedString *attrString = [[dataColumns safeObjectAtIndex:[[column identifier] integerValue]] tableContentColumnHeaderAttributedString];
+                    
+                    [[column headerCell] setAttributedStringValue:attrString];
 				} else {
-					[[column headerCell] setFont:tableFont];
+					[[column headerCell] setFont:headerFont];
 				}
 			}
+
+            // Force header view to redraw
+            [tableContentView.headerView setNeedsDisplay:YES];
 			
 			[tableContentView reloadData];
 		}
@@ -3953,7 +3969,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		return NO;
 	}
 
-	NSDictionary *columnDefinition = [[(id <SPDatabaseContentViewDelegate>)[tableContentView delegate] dataColumnDefinitions] objectAtIndex:columnIndex];
+	NSDictionary *columnDefinition = [[(id <SPDatabaseContentViewDelegate>)[tableContentView delegate] dataColumnDefinitions] safeObjectAtIndex:columnIndex];
 	NSString *typeGrouping = columnDefinition[@"typegrouping"];
 
 	if ([typeGrouping isEqual:@"binary"]) {
