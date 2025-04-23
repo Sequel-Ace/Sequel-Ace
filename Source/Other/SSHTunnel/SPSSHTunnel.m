@@ -298,8 +298,15 @@ static unsigned short getRandomPort(void);
                     return;
                 }
                 
-                // Wait before continuing with reconnection
-                [NSThread sleepForTimeInterval:backoffDelay];
+                // Use asynchronous delay instead of blocking sleep
+                SPLog(@"Scheduling delayed connection attempt in %.1f seconds", backoffDelay);
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(backoffDelay * NSEC_PER_SEC)), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                    // Re-check if we're still in idle state before proceeding
+                    if (self->connectionState == SPMySQLProxyIdle) {
+                        [self _initiateConnection];
+                    }
+                });
+                return;
             }
         } else {
             // Reset counter if last attempt was a while ago
@@ -308,16 +315,21 @@ static unsigned short getRandomPort(void);
     }
     
     lastReconnectionTime = currentTime;
+    [self _initiateConnection];
+}
 
-	[debugMessagesLock lock];
-	[debugMessages removeAllObjects];
-	[debugMessagesLock unlock];
-	taskExitedUnexpectedly = NO;
+// Helper method to actually start the connection
+- (void)_initiateConnection 
+{
+    [debugMessagesLock lock];
+    [debugMessages removeAllObjects];
+    [debugMessagesLock unlock];
+    taskExitedUnexpectedly = NO;
 
-	[NSThread detachNewThreadWithName:@"SPSSHTunnel SSH binary communication task"
-	                           target:self
-	                         selector:@selector(launchTask:)
-	                           object:nil];
+    [NSThread detachNewThreadWithName:@"SPSSHTunnel SSH binary communication task"
+                           target:self
+                         selector:@selector(launchTask:)
+                           object:nil];
 }
 
 /*
@@ -680,15 +692,10 @@ static unsigned short getRandomPort(void);
         return;
     }
 
-	// If there's a delegate set, clear it to prevent unexpected state change messaging
-//	if (delegate) {
-//		delegate = nil;
-//		stateChangeSelector = NULL;
-//	}
-
-    // Reset reconnection tracking
+    // Reset reconnection tracking on explicit user-initiated disconnects
     reconnectionAttempts = 0;
     lastReconnectionTime = nil;
+    SPLog(@"Reset reconnection counters on explicit disconnect");
 
 	// Before terminating the tunnel, check that it's actually running. This is to accommodate tunnels which
 	// suddenly disappear as a result of network disconnections. 
@@ -720,35 +727,49 @@ static unsigned short getRandomPort(void);
 {
     SPLog(@"Aborting task");
     if (task){
-        // Reset reconnection attempts when explicitly aborting
-        reconnectionAttempts = 0;
-        lastReconnectionTime = nil;
+        // Note: We intentionally don't reset reconnection counters here
+        // to allow the backoff mechanism to work properly for network issues
         
         if ([task isRunning]){
             SPLog(@"Task is running - calling terminate");
             @try {
+                // Capture the process ID before terminating the task
+                pid_t pidToKill = task.processIdentifier;
                 [task SPterminate];
                 
                 // Wait a small amount of time to ensure task is terminated
                 dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                    // Ensure the NSTask is released properly
-                    @autoreleasepool {
-                        if (self->task) {
-                            @try {
-                                if ([self->task isRunning]) {
-                                    SPLog(@"Task is still running after terminate, forcing kill");
-                                    // Force a kill if it's still running
-                                    NSTask *forceKillTask = [[NSTask alloc] init];
-                                    [forceKillTask setLaunchPath:@"/bin/sh"];
-                                    [forceKillTask setArguments:@[@"-c", [NSString stringWithFormat:@"pkill -KILL -P %d", self->task.processIdentifier]]];
-                                    [forceKillTask launch];
-                                    [forceKillTask waitUntilExit];
-                                }
-                            } @catch (NSException *e) {
-                                SPLog(@"Exception when checking if task is still running: %@", e);
+                    // Check if process still exists and force kill if needed
+                    NSTask *checkTask = [[NSTask alloc] init];
+                    [checkTask setLaunchPath:@"/bin/sh"];
+                    [checkTask setArguments:@[@"-c", [NSString stringWithFormat:@"ps -p %d >/dev/null 2>&1 && echo \"exists\" || echo \"not exists\"", pidToKill]]];
+                    
+                    NSPipe *pipe = [NSPipe pipe];
+                    [checkTask setStandardOutput:pipe];
+                    
+                    // Execute on background queue to avoid blocking UI
+                    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                        @try {
+                            [checkTask launch];
+                            [checkTask waitUntilExit];
+                            
+                            NSData *data = [[pipe fileHandleForReading] readDataToEndOfFile];
+                            NSString *output = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+                            output = [output stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+                            
+                            if ([output isEqualToString:@"exists"]) {
+                                SPLog(@"Task is still running after terminate, forcing kill");
+                                // Force a kill if it's still running
+                                NSTask *forceKillTask = [[NSTask alloc] init];
+                                [forceKillTask setLaunchPath:@"/bin/sh"];
+                                [forceKillTask setArguments:@[@"-c", [NSString stringWithFormat:@"pkill -KILL -P %d", pidToKill]]];
+                                [forceKillTask launch];
+                                [forceKillTask waitUntilExit];
                             }
+                        } @catch (NSException *e) {
+                            SPLog(@"Exception when checking if task is still running: %@", e);
                         }
-                    }
+                    });
                 });
             } @catch (NSException *e) {
                 SPLog(@"Exception when terminating SSH task: %@", e);
