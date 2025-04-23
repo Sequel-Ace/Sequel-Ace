@@ -13,11 +13,16 @@ import Foundation
         guard let columnName: String = value(forKey: "name") as? String else {
             return NSAttributedString(string: "")
         }
-        let font = UserDefaults.getFont()
-        let attributedString = NSMutableAttributedString(string: columnName, attributes: [.font: NSFontManager.shared.convert(font, toSize: 11)])
+        let tableFont = UserDefaults.getFont()
+        let headerFont = NSFont(descriptor: tableFont.fontDescriptor, size: Swift.max(tableFont.pointSize * 0.75, 11.0)) ?? tableFont
+        
+        let attributedString = NSMutableAttributedString(string: columnName, attributes: [.font: headerFont])
+        
         if let columnType: String = value(forKey: "type") as? String {
             attributedString.append(NSAttributedString(string: NSString.columnHeaderSplittingSpace as String))
-            attributedString.append(NSAttributedString(string: columnType, attributes: [.font: NSFontManager.shared.convert(font, toSize: 8), .foregroundColor: NSColor.gray]))
+            
+            let smallerHeaderFont = NSFontManager.shared.convert(headerFont, toSize: headerFont.pointSize * 0.75)
+            attributedString.append(NSAttributedString(string: columnType, attributes: [.font: smallerHeaderFont, .foregroundColor: NSColor.gray]))
         }
         return attributedString
     }

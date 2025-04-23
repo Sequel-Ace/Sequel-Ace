@@ -159,6 +159,12 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	for (NSTableColumn *column in [tablesListView tableColumns]) {
 		[[column dataCell] setFont:tableFont];
 	}
+	
+	// Add observer for custom font change notification
+	[[NSNotificationCenter defaultCenter] addObserver:self 
+	                                         selector:@selector(fontChanged:) 
+	                                             name:@"SPFontChangedNotification" 
+	                                           object:nil];
 }
 
 #pragma mark -
@@ -3008,8 +3014,22 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
-
+	[[NSNotificationCenter defaultCenter] removeObserver:self name:@"SPFontChangedNotification" object:nil];
+	
     NSLog(@"Dealloc called %s", __FILE_NAME__);
+}
+
+// Add method to handle direct font change notification
+- (void)fontChanged:(NSNotification *)notification
+{
+    // Update font in tables list view
+    NSFont *tableFont = [NSUserDefaults getFont];
+    [tablesListView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+    [tablesListView setFont:tableFont];
+    [tablesListView reloadData];
+    // Force a visual refresh of the table list
+    [tablesListView setNeedsDisplay:YES];
+    [tablesListView displayIfNeeded];
 }
 
 @end
