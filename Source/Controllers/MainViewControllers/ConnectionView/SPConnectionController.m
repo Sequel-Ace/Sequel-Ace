@@ -36,6 +36,7 @@
 #import "RegexKitLite.h"
 #import "SPKeychain.h"
 #import "SPSSHTunnel.h"
+#import "SPFileHandle.h"
 #import "SPTableTextFieldCell.h"
 #import "SPFavoritesController.h"
 #import "SPFavoriteNode.h"
@@ -2242,6 +2243,49 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     // Trim whitespace and newlines from the SSH host field before attempting to connect
     [self setSshHost:[[self sshHost] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
+
+    // Confirm that the SSH config file is accessible
+    NSString *sshConfigFile = [[NSUserDefaults standardUserDefaults] stringForKey:SPSSHConfigFile];
+    if (sshConfigFile == nil) {
+        sshConfigFile = [[NSBundle mainBundle] pathForResource:SPSSHConfigFile ofType:@""];
+    }
+
+    if (![SPFileHandle fileHandleForReadingAtPath:sshConfigFile]) {
+        SPLog(@"Cannot read sshConfigFile: %@", sshConfigFile);
+
+        NSAlert *alert = [[NSAlert alloc] init];
+        [alert addButtonWithTitle:NSLocalizedString(@"Go to Network Settings", @"SSH config file error alert - Go to network settings button")];
+        [alert addButtonWithTitle:NSLocalizedString(@"Reset to Default & Continue", @"SSH config file error alert - Reset to default button")];
+        [alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"SSH config file error alert - Cancel button")];
+        [alert setMessageText:NSLocalizedString(@"Cannot Access SSH Config File", @"SSH config file error alert title")];
+        [alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Sequel Ace does not have permission to read the configured SSH config file at '%@'.\n\nThis might be due to Sandbox restrictions. You can configure a different SSH Config File in the Network tab of Preferences or correct access to the exiting file in the Files tab of Preferences, or you can reset the path to the Sequel Ace default.", @"SSH config file error alert message"), sshConfigFile]];
+        [alert setAlertStyle:NSAlertStyleWarning];
+
+        NSInteger response = [alert runModal];
+
+        if (response == NSAlertFirstButtonReturn) { // Go to Settings
+            SPPreferenceController *prefCon = [((SPAppController *)[NSApp delegate]) preferenceController];
+            [prefCon showWindow:nil];
+
+            id filePaneItem = prefCon->networkItem;
+            [prefCon displayPreferencePane:filePaneItem];
+
+            // After showing settings, restore UI and stop connection attempt
+            [self _restoreConnectionInterface];
+            return;
+
+        } else if (response == NSAlertSecondButtonReturn) { // Reset to Default
+            NSString *defaultSSHConfigPath = [[NSBundle mainBundle] pathForResource:SPSSHConfigFile ofType:@""];
+            [[NSUserDefaults standardUserDefaults] setObject:defaultSSHConfigPath forKey:SPSSHConfigFile];
+            [[NSUserDefaults standardUserDefaults] synchronize];
+
+            //Continue with connection attempt - it will now use the new config
+        } else { // Cancel or closed alert
+            // Restore UI and stop connection attempt
+            [self _restoreConnectionInterface];
+            return;
+        }
+    }
 
     // Set up the tunnel details
     sshTunnel = [[SPSSHTunnel alloc] initToHost:[self sshHost] port:[[self sshPort] integerValue] login:[self sshUser] tunnellingToPort:([[self port] length]?[[self port] integerValue]:3306) onHost:[self host]];
