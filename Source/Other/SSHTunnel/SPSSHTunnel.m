@@ -54,11 +54,7 @@ static unsigned short getRandomPort(void);
 
 @end
 
-@implementation SPSSHTunnel {
-    // Add a property to track reconnection attempts
-    NSInteger reconnectionAttempts;
-    NSDate *lastReconnectionTime;
-}
+@implementation SPSSHTunnel
 
 @synthesize passwordPromptCancelled;
 @synthesize taskExitedUnexpectedly;
@@ -89,10 +85,6 @@ static unsigned short getRandomPort(void);
 		debugMessages = [[NSMutableArray alloc] init];
 		debugMessagesLock = [[NSLock alloc] init];
 		answerAvailableLock = [[NSLock alloc] init];
-        
-        // Initialize reconnection tracking
-        reconnectionAttempts = 0;
-        lastReconnectionTime = nil;
 
 		// Enable connection muxing on 10.7+, but only if a preference is enabled; this is because
 		// muxing causes connection instability for a large number of users (see Issue #1457)
@@ -260,10 +252,10 @@ static unsigned short getRandomPort(void);
 	return debugMessagesString;
 }
 
-/**
- * Initiate a connection to the remote server.
+/*
+ * Initiate the SSH tunnel connection, launching the task in a background thread.
  */
-- (void)connect 
+- (void)connect
 {
     SPLog(@"connect in ssh tunnel connection state = %i", connectionState);
 
@@ -273,63 +265,16 @@ static unsigned short getRandomPort(void);
         SPLog(@"connect ssh connection state != SPMySQLProxyIdle, returning");
         return;
     }
-    
-    // Implement a maximum reconnection attempt limit and exponential backoff
-    // to prevent CPU spikes during network issues
-    NSDate *currentTime = [NSDate date];
-    if (lastReconnectionTime != nil) {
-        // If we've reconnected in the last 2 seconds, increment the counter
-        if ([currentTime timeIntervalSinceDate:lastReconnectionTime] < 2.0) {
-            reconnectionAttempts++;
-            
-            // If we're reconnecting too frequently, add a delay that increases with attempts
-            if (reconnectionAttempts > 3) {
-                NSTimeInterval backoffDelay = MIN(30.0, pow(2.0, reconnectionAttempts - 3)); // Exponential backoff up to 30 seconds
-                SPLog(@"Too many reconnection attempts (%ld) - backing off for %.1f seconds", (long)reconnectionAttempts, backoffDelay);
-                
-                // If we've tried too many times, stop trying to prevent CPU spikes
-                if (reconnectionAttempts > 8) {
-                    // Force a proper disconnect and reset
-                    SPLog(@"Maximum reconnection attempts reached, forcing reset");
-                    connectionState = SPMySQLProxyIdle;
-                    [self abortTask];
-                    [self setLastError:NSLocalizedString(@"Maximum reconnection attempts reached. Please try reconnecting manually.", @"SSH tunnel reached maximum reconnection attempts")];
-                    if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
-                    return;
-                }
-                
-                // Use asynchronous delay instead of blocking sleep
-                SPLog(@"Scheduling delayed connection attempt in %.1f seconds", backoffDelay);
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(backoffDelay * NSEC_PER_SEC)), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-                    // Re-check if we're still in idle state before proceeding
-                    if (self->connectionState == SPMySQLProxyIdle) {
-                        [self _initiateConnection];
-                    }
-                });
-                return;
-            }
-        } else {
-            // Reset counter if last attempt was a while ago
-            reconnectionAttempts = 0;
-        }
-    }
-    
-    lastReconnectionTime = currentTime;
-    [self _initiateConnection];
-}
 
-// Helper method to actually start the connection
-- (void)_initiateConnection 
-{
-    [debugMessagesLock lock];
-    [debugMessages removeAllObjects];
-    [debugMessagesLock unlock];
-    taskExitedUnexpectedly = NO;
+	[debugMessagesLock lock];
+	[debugMessages removeAllObjects];
+	[debugMessagesLock unlock];
+	taskExitedUnexpectedly = NO;
 
-    [NSThread detachNewThreadWithName:@"SPSSHTunnel SSH binary communication task"
-                           target:self
-                         selector:@selector(launchTask:)
-                           object:nil];
+	[NSThread detachNewThreadWithName:@"SPSSHTunnel SSH binary communication task"
+	                           target:self
+	                         selector:@selector(launchTask:)
+	                           object:nil];
 }
 
 /*
@@ -692,31 +637,17 @@ static unsigned short getRandomPort(void);
         return;
     }
 
-    // Reset reconnection tracking on explicit user-initiated disconnects
-    reconnectionAttempts = 0;
-    lastReconnectionTime = nil;
-    SPLog(@"Reset reconnection counters on explicit disconnect");
+	// If there's a delegate set, clear it to prevent unexpected state change messaging
+//	if (delegate) {
+//		delegate = nil;
+//		stateChangeSelector = NULL;
+//	}
 
 	// Before terminating the tunnel, check that it's actually running. This is to accommodate tunnels which
 	// suddenly disappear as a result of network disconnections. 
     if (task) {
         SPLog(@"disconnect found task, aborting");
         [self abortTask];
-    } else {
-        // Even if we don't have a task, make sure we reset the connection state
-        connectionState = SPMySQLProxyIdle;
-    }
-    
-    // Clean up any file handles that might be leaking
-    if (standardError) {
-        @try {
-            [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                        name:NSFileHandleDataAvailableNotification
-                                                      object:[standardError fileHandleForReading]];
-        }
-        @catch (NSException *exception) {
-            SPLog(@"Exception when cleaning up SSH standard error handle: %@", exception);
-        }
     }
 }
 
@@ -727,61 +658,12 @@ static unsigned short getRandomPort(void);
 {
     SPLog(@"Aborting task");
     if (task){
-        // Note: We intentionally don't reset reconnection counters here
-        // to allow the backoff mechanism to work properly for network issues
-        
         if ([task isRunning]){
             SPLog(@"Task is running - calling terminate");
-            @try {
-                // Capture the process ID before terminating the task
-                pid_t pidToKill = task.processIdentifier;
-                [task SPterminate];
-                
-                // Wait a small amount of time to ensure task is terminated
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                    // Check if process still exists and force kill if needed
-                    NSTask *checkTask = [[NSTask alloc] init];
-                    [checkTask setLaunchPath:@"/bin/sh"];
-                    [checkTask setArguments:@[@"-c", [NSString stringWithFormat:@"ps -p %d >/dev/null 2>&1 && echo \"exists\" || echo \"not exists\"", pidToKill]]];
-                    
-                    NSPipe *pipe = [NSPipe pipe];
-                    [checkTask setStandardOutput:pipe];
-                    
-                    // Execute on background queue to avoid blocking UI
-                    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-                        @try {
-                            [checkTask launch];
-                            [checkTask waitUntilExit];
-                            
-                            NSData *data = [[pipe fileHandleForReading] readDataToEndOfFile];
-                            NSString *output = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-                            output = [output stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-                            
-                            if ([output isEqualToString:@"exists"]) {
-                                SPLog(@"Task is still running after terminate, forcing kill");
-                                // Force a kill if it's still running
-                                NSTask *forceKillTask = [[NSTask alloc] init];
-                                [forceKillTask setLaunchPath:@"/bin/sh"];
-                                [forceKillTask setArguments:@[@"-c", [NSString stringWithFormat:@"pkill -KILL -P %d", pidToKill]]];
-                                [forceKillTask launch];
-                                [forceKillTask waitUntilExit];
-                            }
-                        } @catch (NSException *e) {
-                            SPLog(@"Exception when checking if task is still running: %@", e);
-                        }
-                    });
-                });
-            } @catch (NSException *e) {
-                SPLog(@"Exception when terminating SSH task: %@", e);
-            }
+            [task SPterminate];
         }
         SPLog(@"Nilling out task");
         task = nil;
-    }
-    
-    // Ensure proper state is set to prevent reconnection loops
-    if (connectionState != SPMySQLProxyIdle) {
-        connectionState = SPMySQLProxyIdle;
     }
 }
 
@@ -812,9 +694,6 @@ static unsigned short getRandomPort(void);
 				|| [message rangeOfString:@"mux_client_request_session: master session id: "].location != NSNotFound))
 			{
 				connectionState = SPMySQLProxyConnected;
-                // Reset reconnection counters on successful connection
-                reconnectionAttempts = 0;
-                lastReconnectionTime = nil;
 				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
 
@@ -846,25 +725,12 @@ static unsigned short getRandomPort(void);
 				connectionState = SPMySQLProxyForwardingFailed;
 				[self setLastError:NSLocalizedString(@"The SSH Tunnel was established successfully, but could not forward data to the remote port as the remote port refused the connection.", @"SSH tunnel forwarding port connection refused message")];
 			}
-			if ([message rangeOfString:@"Operation timed out" ].location != NSNotFound ||
-               [message rangeOfString:@"Connection timed out" ].location != NSNotFound ||
-               [message rangeOfString:@"Network is unreachable" ].location != NSNotFound ||
-               [message rangeOfString:@"No route to host" ].location != NSNotFound) {
+			if ([message rangeOfString:@"Operation timed out" ].location != NSNotFound) {
 				connectionState = SPMySQLProxyIdle;
-                // Increment reconnection attempts counter for network issues
-                reconnectionAttempts++;
                 [self abortTask];
-				[self setLastError:[NSString stringWithFormat:NSLocalizedString(@"The SSH Tunnel was unable to connect to host %@ or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).", @"SSH tunnel failed or timed out message"), sshHost, (long)[[[NSUserDefaults standardUserDefaults] objectForKey:SPConnectionTimeoutValue] integerValue]]];
+				[self setLastError:[NSString stringWithFormat:NSLocalizedString(@"The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).", @"SSH tunnel failed or timed out message"), sshHost, (long)[[[NSUserDefaults standardUserDefaults] objectForKey:SPConnectionTimeoutValue] integerValue]]];
 				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
-            // Additional check for broken pipes and other connection issues
-            if ([message rangeOfString:@"broken pipe" options:NSCaseInsensitiveSearch].location != NSNotFound ||
-                [message rangeOfString:@"Connection reset by peer" options:NSCaseInsensitiveSearch].location != NSNotFound) {
-                connectionState = SPMySQLProxyIdle;
-                [self abortTask];
-                [self setLastError:NSLocalizedString(@"The SSH Tunnel connection was reset. This may indicate network instability or firewall issues.", @"SSH tunnel connection reset message")];
-                if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
-            }
 		}
 	}
 
