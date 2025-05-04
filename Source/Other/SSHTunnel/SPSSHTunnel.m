@@ -776,7 +776,7 @@ static unsigned short getRandomPort(void);
             }
         }
         SPLog(@"Nilling out task");
-        task = nil;
+//        task = nil;
     }
     
     // Ensure proper state is set to prevent reconnection loops
