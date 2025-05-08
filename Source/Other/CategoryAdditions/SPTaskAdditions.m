@@ -27,37 +27,16 @@
     int processID = self.processIdentifier;
 
     [self terminate];
-    
-    // Create tasks on a background queue to avoid blocking the UI
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        // First check if the process exists before trying to kill it
-        NSTask *checkTask = [[NSTask alloc] init];
-        [checkTask setLaunchPath:@"/bin/sh"];
-        [checkTask setArguments:@[@"-c", [NSString stringWithFormat:@"ps -p %i >/dev/null 2>&1 && echo \"exists\" || echo \"not exists\"", processID]]];
-        
-        NSPipe *pipe = [NSPipe pipe];
-        [checkTask setStandardOutput:pipe];
-        [checkTask launch];
-        [checkTask waitUntilExit];
-        
-        NSData *data = [[pipe fileHandleForReading] readDataToEndOfFile];
-        NSString *output = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-        output = [output stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-        
-        // Only attempt to kill if the process actually exists (exact match)
-        if ([output isEqualToString:@"exists"]) {
-            NSTask *killTask = [[NSTask alloc] init];
-            [killTask setLaunchPath:@"/bin/sh"];
-            [killTask setArguments:@[@"-c",[NSString stringWithFormat:@"kill -9 %i", processID]]];
-            [killTask launch];
-            [killTask waitUntilExit];
-        }
-        
-        // Only update the shared array on the main thread
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [SPAppDelegate.sshProcessIDs removeObject:@(processID)];
-            SPLog(@"sshProcessIDs count: %lu", (unsigned long)SPAppDelegate.sshProcessIDs.count);
-        });
+
+    NSTask *killTask = [[NSTask alloc] init];
+    [killTask setLaunchPath:@"/bin/sh"];
+    SPMainQSync(^{
+        [killTask setArguments:@[@"-c",[NSString stringWithFormat:@"kill -9 %@", [NSString stringWithFormat:@"%i", processID]]]];
+        [killTask launch];
+        [killTask waitUntilExit];
+
+        [SPAppDelegate.sshProcessIDs removeObject:@(processID)];
+        SPLog(@"sshProcessIDs count: %lu", (unsigned long)SPAppDelegate.sshProcessIDs.count);
     });
 }
 
