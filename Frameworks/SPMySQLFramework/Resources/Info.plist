@@ -13,7 +13,7 @@
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string>5.0.7</string>
+	<string>5.0.8</string>
 	<key>CFBundleSignature</key>
 	<string>SPDT</string>
 	<key>CFBundleSupportedPlatforms</key>
@@ -21,7 +21,7 @@
 		<string>MacOSX</string>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>20093</string>
+	<string>20094</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>
