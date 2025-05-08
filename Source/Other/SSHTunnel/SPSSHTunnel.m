@@ -663,7 +663,7 @@ static unsigned short getRandomPort(void);
             [task SPterminate];
         }
         SPLog(@"Nilling out task");
-        task = nil;
+//        task = nil;
     }
 }
 
