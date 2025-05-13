@@ -698,7 +698,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     // Start a task
-    [self startTaskWithDescription:[NSString stringWithFormat:NSLocalizedString(@"Loading database '%@'...", @"Loading database task string"), [[chooseDatabaseButton onMainThread] titleOfSelectedItem]]];
+    [self startTaskWithDescription:[NSString stringWithFormat:NSLocalizedString(@"Loading database '%@'...", @"Loading database task string"), database]];
 
     NSDictionary *selectionDetails = [NSDictionary dictionaryWithObjectsAndKeys:database, @"database", item, @"item", nil];
 
