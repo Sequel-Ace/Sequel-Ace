@@ -5391,7 +5391,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [[chooseDatabaseButton onMainThread] selectItemWithTitle:targetDatabaseName];
 
             selectedDatabase = [[NSString alloc] initWithString:targetDatabaseName];
-            selectedTableName = targetItemName ? [[NSString alloc] initWithString:targetItemName] : nil;
+            selectedTableName = nil;
 
             [databaseDataInstance resetAllData];
 
