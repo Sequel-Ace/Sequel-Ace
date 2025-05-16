@@ -987,10 +987,15 @@ asm(".desc ___crashreporter_info__, 0x10");
 			reconnectSucceeded = YES;
 			if (databaseToRestore) {
 				[self selectDatabase:databaseToRestore];
+				// When the connection is restored successfully, reset the relevant variables to prepare for the next time
+				databaseToRestore = nil;
 			}
 			if (encodingToRestore) {
 				[self setEncoding:encodingToRestore];
 				[self setEncodingUsesLatin1Transport:encodingUsesLatin1TransportToRestore];
+				// When the connection is restored successfully, reset the relevant variables to prepare for the next time
+				encodingToRestore = nil;
+				encodingUsesLatin1TransportToRestore = NO;
 			}
 		}
 			// If the connection failed and the connection is permitted to retry,
