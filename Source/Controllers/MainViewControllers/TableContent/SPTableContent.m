@@ -2386,6 +2386,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			//when navigating binary relations (eg. raw UUID) do so via a hex-encoded value for charset safety
 			BOOL navigateAsHex = ([targetFilterValue isKindOfClass:[NSData class]] && [[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"binary"]);
 			if(navigateAsHex) targetFilterValue = [self->mySQLConnection escapeData:(NSData *)targetFilterValue includingQuotes:NO];
+            else if ([targetFilterValue isKindOfClass:[NSData class]] && [[columnDefinition objectForKey:@"collation"] hasSuffix:@"_bin"]) {
+                targetFilterValue = [(NSData *)targetFilterValue stringRepresentationUsingEncoding:[self->mySQLConnection stringEncoding]];
+            }
 
 			NSString *filterComparison = @"=";
 			if([targetFilterValue isNSNull]) filterComparison = @"IS NULL";
