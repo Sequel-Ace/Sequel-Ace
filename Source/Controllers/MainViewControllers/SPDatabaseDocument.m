@@ -698,7 +698,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     // Start a task
-    [self startTaskWithDescription:[NSString stringWithFormat:NSLocalizedString(@"Loading database '%@'...", @"Loading database task string"), [[chooseDatabaseButton onMainThread] titleOfSelectedItem]]];
+    [self startTaskWithDescription:[NSString stringWithFormat:NSLocalizedString(@"Loading database '%@'...", @"Loading database task string"), database]];
 
     NSDictionary *selectionDetails = [NSDictionary dictionaryWithObjectsAndKeys:database, @"database", item, @"item", nil];
 
@@ -1065,7 +1065,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [gotoDatabaseController setDatabaseList:dbList];
 
     if ([gotoDatabaseController runModal]) {
-        [self selectDatabase:[gotoDatabaseController selectedDatabase] item:nil];
+        NSString *database =[gotoDatabaseController selectedDatabase];
+        if ([database rangeOfString:@"."].location != NSNotFound){
+            NSArray *components = [database componentsSeparatedByString:@"."];
+            [self selectDatabase:[components firstObject] item:[components lastObject]];
+        }else{
+            [self selectDatabase:database item:nil];
+        }
     }
 }
 
@@ -5385,7 +5391,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [[chooseDatabaseButton onMainThread] selectItemWithTitle:targetDatabaseName];
 
             selectedDatabase = [[NSString alloc] initWithString:targetDatabaseName];
-            selectedTableName = targetItemName ? [[NSString alloc] initWithString:targetItemName] : nil;
+            selectedTableName = nil;
 
             [databaseDataInstance resetAllData];
 
