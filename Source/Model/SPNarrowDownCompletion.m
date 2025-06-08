@@ -1037,7 +1037,21 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 	}
 	else {
 		if(backtickMode == 100) {
-			NSString *replaceString = [[theView string] substringWithRange:theCharRange];
+      NSString *replaceString = [[theView string] substringWithRange:theCharRange];
+      
+      // replace next characters if theCharRange is not at the end of the string
+      for (NSUInteger i = theCharRange.location+theCharRange.length; i < [[theView string] length]; i++) {
+        // append next character to replaceString
+        replaceString = [replaceString stringByAppendingFormat:@"%C", [[theView string] characterAtIndex:i]];
+        
+        // break if we find a space or backtick
+        if ([[theView string] characterAtIndex:i] == '`' || [[theView string] characterAtIndex:i] == ' ') {
+          break;
+        }
+      }
+
+      theCharRange = NSMakeRange(theCharRange.location, [replaceString length]);
+      
 			BOOL nextCharIsBacktick = ([replaceString hasSuffix:@"`"]);
 			if(theCharRange.length == 1) nextCharIsBacktick = NO;
 			if(!nextCharIsBacktick) {
