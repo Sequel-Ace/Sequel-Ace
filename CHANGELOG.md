@@ -1,3 +1,24 @@
+## [5.0.9]
+
+### Added
+- 08085999c,  support goto database.table with the "Go to Database" (#2244)
+
+### Fixed
+- 5d43e5702,  #1746 clicking foreign key arrows on _bin column filters correctly (#2248)
+- 2340e0ca2,  Reset the relevant variables to prepare for the next time (#2243)
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+- 0c81e48ec, This file has extension "xcodeproj" not "xcworkspace"  (#2261)
+
+### Unfinished
+
+
 ## [5.0.8]
 
 ### Added
