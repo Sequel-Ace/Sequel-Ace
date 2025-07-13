@@ -873,13 +873,9 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 			else if([textualInputCharacters characterIsMember:key]) {
 				if (autocompletePlaceholderWasInserted) [self removeAutocompletionPlaceholderUsingFastMethod:YES];
 
-				if (autoCompletionMode) {
-					[theView setCompletionIsOpen:NO];
-					[self close];
-					[NSApp sendEvent:event];
-					return;
-				}
-
+				// Related to the fix of issue #625 (https://github.com/sequelpro/sequelpro/issues/625), 
+				// it has introduced a side effect where the auto-completion popup closes prematurely, 
+				// even when the user is still typing and the current input matches items in the list.
 				[NSApp sendEvent:event];
 
 				if(commaInsertionMode) break;
