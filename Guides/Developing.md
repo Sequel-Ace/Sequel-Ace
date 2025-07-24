@@ -4,7 +4,7 @@
 
 To run Sequel Ace locally from XCode, please:
 - download `.zip` archive of this repo/clone locally
-- open `sequel-ace.xcworkspace` 
+- open `sequel-ace.xcodeproj` 
 - for the `sequel-ace` and `SPMySQLFramework`  (located in `Source/Frameworks/SPMySQLFramework`) projects, under `Signing & Capibilities`
     - change the Bundle Identifier to be unique to you (e.g. add `.YOUR_USER_NAME`)
     - select a Team that you can create signing certificates for

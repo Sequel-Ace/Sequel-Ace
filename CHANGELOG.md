@@ -1,3 +1,197 @@
+## [5.0.9]
+
+### Added
+- 08085999c,  support goto database.table with the "Go to Database" (#2244)
+
+### Fixed
+- 5d43e5702,  #1746 clicking foreign key arrows on _bin column filters correctly (#2248)
+- 2340e0ca2,  Reset the relevant variables to prepare for the next time (#2243)
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+- 0c81e48ec, This file has extension "xcodeproj" not "xcworkspace"  (#2261)
+
+### Unfinished
+
+
+## [5.0.8]
+
+### Added
+
+
+### Fixed
+
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
+### Unfinished
+
+
+## [5.0.7]
+
+### Added
+
+
+### Fixed
+
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
+## [5.0.6]
+
+### Added
+
+
+### Fixed
+
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
+## [5.0.5]
+
+### Added
+
+
+### Fixed
+
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
+## [5.0.4]
+
+### Added
+
+
+### Fixed
+
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
+## [5.0.3]
+
+### Added
+
+
+### Fixed
+
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
+## [5.0.2]
+
+### Added
+
+
+### Fixed
+
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
+## [5.0.1]
+
+### Added
+
+
+### Fixed
+
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
+## [5.0.0]
+
+### Added
+
+
+### Fixed
+
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
+## [4.2.1]
+
+### Added
+
+
+### Fixed
+
+
+### Changed
+
+
+### Removed
+
+
+### Infra
+
+
 ## [4.2.0]
 
 ### Added

@@ -63,12 +63,12 @@
 	NSToolbarItem *generalItem;
 	NSToolbarItem *notificationsItem;
 	NSToolbarItem *tablesItem;
-	NSToolbarItem *networkItem;
 	NSToolbarItem *editorItem;
 	NSToolbarItem *shortcutItem;
     SPPreferenceFontChangeTarget fontChangeTarget;
 
     @package
+    NSToolbarItem *networkItem;
 	NSToolbarItem *fileItem;
 	
 }

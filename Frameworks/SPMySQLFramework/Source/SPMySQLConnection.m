@@ -987,10 +987,15 @@ asm(".desc ___crashreporter_info__, 0x10");
 			reconnectSucceeded = YES;
 			if (databaseToRestore) {
 				[self selectDatabase:databaseToRestore];
+				// When the connection is restored successfully, reset the relevant variables to prepare for the next time
+				databaseToRestore = nil;
 			}
 			if (encodingToRestore) {
 				[self setEncoding:encodingToRestore];
 				[self setEncodingUsesLatin1Transport:encodingUsesLatin1TransportToRestore];
+				// When the connection is restored successfully, reset the relevant variables to prepare for the next time
+				encodingToRestore = nil;
+				encodingUsesLatin1TransportToRestore = NO;
 			}
 		}
 			// If the connection failed and the connection is permitted to retry,
@@ -1052,7 +1057,6 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (BOOL)_waitForNetworkConnectionWithTimeout:(double)timeoutSeconds
 {
-
     SPLog(@"_waitForNetworkConnectionWithTimeout: %f", timeoutSeconds);
 	// Set up the reachability target - the host is not important, and is not connected to.
     SCNetworkReachabilityRef reachabilityTarget = SCNetworkReachabilityCreateWithName(NULL, "google.com"); 
@@ -1078,10 +1082,13 @@ asm(".desc ___crashreporter_info__, 0x10");
 		if (hostReachable) break;
 
 		// If the timeout has been exceeded, break out of the loop
-		if (_timeIntervalSinceMonotonicTime(loopStart_t) >= timeoutSeconds) break;
+		if (_timeIntervalSinceMonotonicTime(loopStart_t) >= timeoutSeconds) {
+            SPLog(@"Network connection timeout exceeded");
+            break;
+        }
 
-		// Sleep before the next loop iteration
-		usleep(250000);
+		// Sleep before the next loop iteration - increase sleep time to reduce CPU usage
+		usleep(500000); // Sleep for 0.5 seconds instead of 0.25
 	}
 
 	CFRelease(reachabilityTarget);

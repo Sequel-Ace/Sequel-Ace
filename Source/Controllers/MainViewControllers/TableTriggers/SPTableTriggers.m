@@ -107,7 +107,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 	[triggersTableView setEmptyDoubleClickAction:@selector(addTrigger:)];
 
 	NSFont *tableFont = [NSUserDefaults getFont];
-	[triggersTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+	[triggersTableView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	[addTriggerPanel setInitialFirstResponder:triggerNameTextField];
 	
@@ -407,7 +407,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 	// Table font preference changed
 	else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
 		NSFont *tableFont = [NSUserDefaults getFont];
-		[triggersTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[triggersTableView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 		[triggersTableView setFont:tableFont];
 		[triggersTableView reloadData];
 	}

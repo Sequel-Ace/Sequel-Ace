@@ -190,8 +190,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:nil];
 
 	NSFont *tableFont = [NSUserDefaults getFont];
-	[tableSourceView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
-	[indexesTableView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+	[tableSourceView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+	[indexesTableView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	extraFieldSuggestions = @[
 			@"None",
@@ -945,8 +945,23 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
                 unichar firstChar = [trimmedWhiteSpace characterAtIndex:0];
                 unichar lastChar = [trimmedWhiteSpace characterAtIndex:[trimmedWhiteSpace length] - 1];
                 // Check if defaultValue is an expression
-                if ((firstChar == '(') && (lastChar = ')')) {
+                if (lastChar == ')') {
+                    // To check if brackets appear in pairs, then we assume the string is possibly an expression
+                    // if it's expression by this check so query will be executed and an error will be shown
+                    // TODO: Best possible solution would be checking the input value against the list of known functions/keywords
+                    NSUInteger checkBracketPairs = 0;
+                    for (NSUInteger i = 0; i < [trimmedWhiteSpace length]; i++) {
+                        if ([trimmedWhiteSpace characterAtIndex:i] == '(') {
+                          checkBracketPairs++;
+                        } else if ([trimmedWhiteSpace characterAtIndex:i] == ')') {
+                          checkBracketPairs--;
+                        }
+                    }
+                  
+                  // it means brackets are in pairs
+                  if (checkBracketPairs == 0) {
                     defaultValueIsExpression = YES;
+                  }
                 }
                 // Check if defaultValue is a string in quotes (single or double)
                 else if ( ((firstChar == '"') && (lastChar = '"')) || ((firstChar == '\'') && (lastChar = '\'')) ) {
@@ -982,8 +997,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			else if ([theRowType isEqualToString:@"BIT"]) {
 				[queryString appendFormat:@"\n DEFAULT %@", defaultValue];
 			}
-            // *CHAR, *TEXT and *ENUM must be wrapped with single or double quotes for empty string and other default value. Expression are provided as is. TIMESTAMP and DATETIME must always be wrapped in quotes.
-            else if ([theRowType hasSuffix:@"CHAR"] || [theRowType hasSuffix:@"TEXT"] || [theRowType hasSuffix:@"ENUM"] || [theRowType isInArray:@[@"TIMESTAMP",@"DATETIME"]]) {
+            // *CHAR, *TEXT and *ENUM must be wrapped with single or double quotes for empty string and other default value. Expression are provided as is. TIMESTAMP, DATETIME and DATE must always be wrapped in quotes.
+            else if ([theRowType hasSuffix:@"CHAR"] || [theRowType hasSuffix:@"TEXT"] || [theRowType hasSuffix:@"ENUM"] || [theRowType isInArray:@[@"TIMESTAMP",@"DATETIME",@"DATE"]]) {
                 // If default value is not an expresion or a string, add quotes.
                 if (!defaultValueIsExpression && !defaultValueIsString)
                     [queryString appendFormat:@"\n DEFAULT %@", [mySQLConnection escapeAndQuoteString:defaultValue]];
@@ -1107,8 +1122,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Table font preference changed
 	else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
 		NSFont *tableFont = [NSUserDefaults getFont];
-		[tableSourceView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
-		[indexesTableView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[tableSourceView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+		[indexesTableView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 		[tableSourceView setFont:tableFont];
 		[indexesTableView setFont:tableFont];
 		[tableSourceView reloadData];

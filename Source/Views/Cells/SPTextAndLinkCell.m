@@ -100,7 +100,7 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 		hasLink = YES;
 
 		linkButton = [[NSButtonCell alloc] init];
-		[linkButton setButtonType:NSMomentaryChangeButton];
+        [linkButton setButtonType:NSButtonTypeMomentaryChange];
 		[linkButton setImagePosition:NSImageRight];
 		[linkButton setTitle:@""];
 		[linkButton setBordered:NO];
@@ -122,7 +122,8 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 
 	// Fast case for no arrow
 	if (!hasLink || !linkActive) {
-		[super drawInteriorWithFrame:aRect inView:controlView];
+		NSRect textRect = NSMakeRect(aRect.origin.x, aRect.origin.y + 2.0f, aRect.size.width, aRect.size.height - 2.0f);
+		[super drawInteriorWithFrame:textRect inView:controlView];
 		return;
 	}
 	

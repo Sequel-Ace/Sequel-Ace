@@ -62,7 +62,7 @@
 	if ((self = [super init])) {
 		emptyDoubleClickAction = NULL;
 	}
-	
+    self.style = NSTableViewStylePlain; // App targeting macOS 11 or later have automatic, apps targeting pre macOS 11 have plain. We just dropped 10.15 and 11, so we should manually set Plain for now.
 	return self;
 }
 

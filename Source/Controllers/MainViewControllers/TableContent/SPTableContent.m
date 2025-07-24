@@ -501,7 +501,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	}
 
 	NSFont *tableFont = [NSUserDefaults getFont];
-	[tableContentView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+	[tableContentView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
 	// Add the new columns to the table
 	[self _buildTableColumns:preservedColumnWidths withFont:tableFont];
@@ -556,6 +556,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
     BOOL displayColumnTypes = [prefs boolForKey:SPDisplayTableViewColumnTypes];
     NSInteger sortColumnNumberToRestore = NSNotFound;
     NSDictionary *formatOverrides = currentFormatters(self);
+    NSFont *headerFont = [[NSFontManager sharedFontManager] convertFont:font toSize:MAX(font.pointSize * 0.75, 11.0)];
 
     for (NSDictionary *columnDefinition in dataColumns) {
         id name = columnDefinition[@"name"];
@@ -563,6 +564,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
         // Set up the column
         NSTableColumn *column  = [[NSTableColumn alloc] initWithIdentifier:columnIndex];
+
+        // Set the header font to match table font
+        [[column headerCell] setFont:headerFont];
 
         if (displayColumnTypes) {
             [[column headerCell] setAttributedStringValue:[columnDefinition tableContentColumnHeaderAttributedString]];
@@ -2006,17 +2010,29 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
             // if table has only one PRIMARY KEY
             // delete the fast way by using the PRIMARY KEY in an IN clause
             NSMutableString *deleteQuery = [NSMutableString string];
-
             [deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [selectedTable backtickQuotedString], [[primaryKeyFieldNames firstObject] backtickQuotedString]]];
 
             while (anIndex != NSNotFound) {
+                NSDictionary *field = [tableDataInstance columnWithName:[primaryKeyFieldNames firstObject]];
+                NSString *dataColumnIndex = [field objectForKey:@"datacolumnindex"];
+                NSString *fieldType = [field objectForKey:@"type"];
+                NSString *fieldTypeGroup = [field objectForKey:@"typegrouping"];
+              
+                id keyValue = [tableValues cellDataAtRow:anIndex column:[dataColumnIndex integerValue]];
 
-                id keyValue = [tableValues cellDataAtRow:anIndex column:[[[tableDataInstance columnWithName:[primaryKeyFieldNames firstObject]] objectForKey:@"datacolumnindex"] integerValue]];
-
-                if([keyValue isKindOfClass:[NSData class]])
-                    [deleteQuery appendStringOrNil:[mySQLConnection escapeAndQuoteData:keyValue]];
-                else
-                    [deleteQuery appendStringOrNil:[mySQLConnection escapeAndQuoteString:[keyValue description]]];
+                NSString *escVal;
+                if([keyValue isKindOfClass:[NSData class]]) {
+                  if ([fieldType isEqualToString:@"UUID"] && [fieldTypeGroup isEqualToString:@"blobdata"]) {
+                    NSString *uuidVal = [[NSString alloc] initWithData:keyValue encoding:NSUTF8StringEncoding];
+                    escVal = [mySQLConnection escapeAndQuoteString:uuidVal];
+                  } else {
+                    escVal = [mySQLConnection escapeAndQuoteData:keyValue];
+                  }
+                } else {
+                  escVal = [mySQLConnection escapeAndQuoteString:[keyValue description]];
+                }
+              
+              	[deleteQuery appendStringOrNil:escVal];
 
                 // Split deletion query into 256k chunks
                 if([deleteQuery length] > 256000) {
@@ -2370,6 +2386,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			//when navigating binary relations (eg. raw UUID) do so via a hex-encoded value for charset safety
 			BOOL navigateAsHex = ([targetFilterValue isKindOfClass:[NSData class]] && [[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"binary"]);
 			if(navigateAsHex) targetFilterValue = [self->mySQLConnection escapeData:(NSData *)targetFilterValue includingQuotes:NO];
+            else if ([targetFilterValue isKindOfClass:[NSData class]] && [[columnDefinition objectForKey:@"collation"] hasSuffix:@"_bin"]) {
+                targetFilterValue = [(NSData *)targetFilterValue stringRepresentationUsingEncoding:[self->mySQLConnection stringEncoding]];
+            }
 
 			NSString *filterComparison = @"=";
 			if([targetFilterValue isNSNull]) filterComparison = @"IS NULL";
@@ -2864,6 +2883,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		}
 	}
 
+	// Check again to make sure keys array is not empty before proceeding
+	if (![keys count]) {
+		SPLog(@"Keys array is empty in argumentForRow:excludingLimits:, aborting to prevent crash");
+		return @"";
+	}
+
 	NSMutableString *argument = [NSMutableString string];
 	// Walk through the keys list constructing the argument list
 	for (NSUInteger i = 0 ; i < [keys count]; i++ ) {
@@ -2873,11 +2898,11 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		id tempValue;
 		// Use the selected row if appropriate
 		if ( row >= 0 ) {
-			tempValue = [tableValues cellDataAtRow:row column:[[[tableDataInstance columnWithName:[keys safeObjectAtIndex:i]] objectForKey:@"datacolumnindex"] integerValue]];
+			tempValue = [tableValues cellDataAtRow:row column:[[[tableDataInstance columnWithName:[keys safeObjectAtIndex:i]] safeObjectForKey:@"datacolumnindex"] integerValue]];
 		}
 		// Otherwise use the oldRow
 		else {
-			tempValue = [oldRow objectAtIndex:[[[tableDataInstance columnWithName:[keys safeObjectAtIndex:i]] objectForKey:@"datacolumnindex"] integerValue]];
+			tempValue = [oldRow safeObjectAtIndex:[[[tableDataInstance columnWithName:[keys safeObjectAtIndex:i]] safeObjectForKey:@"datacolumnindex"] integerValue]];
 		}
 
 		if ([tempValue isNSNull]) {
@@ -2892,9 +2917,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			NSString *fmt = @"%@";
 			// If the field is of type BIT then it needs a binary prefix
       NSDictionary *field = [tableDataInstance columnWithName:[keys safeObjectAtIndex:i]];
-      NSString *fieldType = [field objectForKey:@"type"];
-      NSString *fieldTypeGroup = [field objectForKey:@"typegrouping"];
-      
+      NSString *fieldType = [field safeObjectForKey:@"type"];
+      NSString *fieldTypeGroup = [field safeObjectForKey:@"typegrouping"];
+
 			if ([fieldType isEqualToString:@"BIT"]) {
 				escVal = [mySQLConnection escapeString:tempValue includingQuotes:NO];
 				fmt = @"b'%@'";
@@ -3719,9 +3744,25 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		// Table font preference changed
 		else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
 			NSFont *tableFont = [NSUserDefaults getFont];
+            NSFont *headerFont = [[NSFontManager sharedFontManager] convertFont:tableFont toSize:MAX(tableFont.pointSize * 0.75, 11.0)];
 
-			[tableContentView setRowHeight:2.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+			[tableContentView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 			[tableContentView setFont:tableFont];
+			
+			// Update header cells
+			for (NSTableColumn *column in [tableContentView tableColumns]) {
+				if ([prefs boolForKey:SPDisplayTableViewColumnTypes]) {
+                    NSAttributedString *attrString = [[dataColumns safeObjectAtIndex:[[column identifier] integerValue]] tableContentColumnHeaderAttributedString];
+                    
+                    [[column headerCell] setAttributedStringValue:attrString];
+				} else {
+					[[column headerCell] setFont:headerFont];
+				}
+			}
+
+            // Force header view to redraw
+            [tableContentView.headerView setNeedsDisplay:YES];
+			
 			[tableContentView reloadData];
 		}
 		// Display binary data as Hex
@@ -3931,7 +3972,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		return NO;
 	}
 
-	NSDictionary *columnDefinition = [[(id <SPDatabaseContentViewDelegate>)[tableContentView delegate] dataColumnDefinitions] objectAtIndex:columnIndex];
+	NSDictionary *columnDefinition = [[(id <SPDatabaseContentViewDelegate>)[tableContentView delegate] dataColumnDefinitions] safeObjectAtIndex:columnIndex];
 	NSString *typeGrouping = columnDefinition[@"typegrouping"];
 
 	if ([typeGrouping isEqual:@"binary"]) {
@@ -4334,10 +4375,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		[prefs setObject:[NSDictionary dictionaryWithDictionary:savedWidths] forKey:SPTableColumnWidths];
 	}
 
-	// Return the width, while the delegate is empty to prevent column resize notifications
-	[tableContentView setDelegate:nil];
-	[tableContentView performSelector:@selector(setDelegate:) withObject:self afterDelay:0.1];
-
+	// Instead of removing the delegate, we'll just return the width
+	// This preserves the text coloring state during column resizing
 	return targetWidth;
 }
 

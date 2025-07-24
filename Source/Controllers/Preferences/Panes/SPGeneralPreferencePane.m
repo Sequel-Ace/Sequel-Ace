@@ -88,12 +88,34 @@ static NSString *SPDatabaseImage = @"database-small";
 
 	NSFontPanel *panel = [[NSFontManager sharedFontManager] fontPanel:YES];
 	[panel setPanelFont:[NSUserDefaults getFont] isMultiple:NO];
+	
+	// Create an accessory view with a system font button
+	NSView *accessoryView = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 200, 30)];
+	NSButton *systemFontButton = [[NSButton alloc] initWithFrame:NSMakeRect(10, 5, 180, 20)];
+	[systemFontButton setTitle:NSLocalizedString(@"Use System Font", @"System Font button in font panel")];
+	[systemFontButton setBezelStyle:NSBezelStyleRounded];
+	[systemFontButton setTarget:self];
+	[systemFontButton setAction:@selector(changeDefaultFont:)];
+	[systemFontButton setTag:1001];
+	[accessoryView addSubview:systemFontButton];
+	
+	[panel setAccessoryView:accessoryView];
 	[panel makeKeyAndOrderFront:self];
 }
 
 - (void)changeDefaultFont:(id)sender {
-	[(SPPreferenceController *)[[[self view] window] delegate] changeDefaultFont:nil];
-	[self updateDisplayedFontName];
+	if ([sender isKindOfClass:[NSControl class]] && [sender tag] == 1001) {
+		NSFont *systemFont = [NSUserDefaults getSystemFont];
+		[NSUserDefaults saveFont:systemFont];
+		
+		// Update the font panel to show the system font
+		NSFontPanel *panel = [[NSFontManager sharedFontManager] fontPanel:NO];
+		if (panel) {
+			[panel setPanelFont:systemFont isMultiple:NO];
+		}
+	}
+
+    [(SPPreferenceController *)[[[self view] window] delegate] changeDefaultFont:nil];
 }
 
 #pragma mark -

@@ -476,9 +476,10 @@ static unsigned short getRandomPort(void);
 
 		// If keepalive is set in the preferences, use the same value for the SSH tunnel
 		if (useKeepAlive && keepAliveInterval) {
-			TA(@"-o", @"TCPKeepAlive=no");
+			TA(@"-o", @"TCPKeepAlive=yes");  // Enable TCP keepalive
 			TA(@"-o", ([NSString stringWithFormat:@"ServerAliveInterval=%ld", (long)ceil(keepAliveInterval)]));
-			TA(@"-o", @"ServerAliveCountMax=1");
+			TA(@"-o", @"ServerAliveCountMax=3");  // Increase max retries before disconnecting
+			TA(@"-o", @"ConnectTimeout=10");  // Add a shorter connect timeout
 		}
 
 		// Specify the port, host, and authentication details
@@ -662,7 +663,7 @@ static unsigned short getRandomPort(void);
             [task SPterminate];
         }
         SPLog(@"Nilling out task");
-        task = nil;
+//        task = nil;
     }
 }
 

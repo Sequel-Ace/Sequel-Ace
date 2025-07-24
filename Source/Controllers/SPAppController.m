@@ -166,6 +166,16 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 }
 
 /**
+ * Close any open font panels to avoid them reopening on next launch
+ */
+- (void)closeFontPanelIfOpen {
+    NSFontPanel *fontPanel = [[NSFontManager sharedFontManager] fontPanel:NO];
+    if (fontPanel && [fontPanel isVisible]) {
+        [fontPanel close];
+    }
+}
+
+/**
  * Initialisation stuff upon nib awakening
  */
 - (void)awakeFromNib
@@ -1592,6 +1602,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     if (shouldSaveFavorites) {
         [[SPFavoritesController sharedFavoritesController] saveFavoritesSynchronously];
     }
+
+    // Close any open font panels to prevent them reopening on next launch
+    [self closeFontPanelIfOpen];
 
     return NSTerminateNow;
 }

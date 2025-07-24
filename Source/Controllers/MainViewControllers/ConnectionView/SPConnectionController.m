@@ -36,6 +36,7 @@
 #import "RegexKitLite.h"
 #import "SPKeychain.h"
 #import "SPSSHTunnel.h"
+#import "SPFileHandle.h"
 #import "SPTableTextFieldCell.h"
 #import "SPFavoritesController.h"
 #import "SPFavoriteNode.h"
@@ -1562,6 +1563,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             sortKey = SPFavoriteColorIndexKey;
             break;
         case SPFavoritesSortUnsorted:
+            // When unsorted, just save the current order without sorting
+            [favoritesController saveFavorites];
+            [self _reloadFavoritesViewData];
             return;
     }
 
@@ -2240,6 +2244,49 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     // Trim whitespace and newlines from the SSH host field before attempting to connect
     [self setSshHost:[[self sshHost] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
 
+    // Confirm that the SSH config file is accessible
+    NSString *sshConfigFile = [[NSUserDefaults standardUserDefaults] stringForKey:SPSSHConfigFile];
+    if (sshConfigFile == nil) {
+        sshConfigFile = [[NSBundle mainBundle] pathForResource:SPSSHConfigFile ofType:@""];
+    }
+
+    if (![SPFileHandle fileHandleForReadingAtPath:sshConfigFile]) {
+        SPLog(@"Cannot read sshConfigFile: %@", sshConfigFile);
+
+        NSAlert *alert = [[NSAlert alloc] init];
+        [alert addButtonWithTitle:NSLocalizedString(@"Go to Network Settings", @"SSH config file error alert - Go to network settings button")];
+        [alert addButtonWithTitle:NSLocalizedString(@"Reset to Default & Continue", @"SSH config file error alert - Reset to default button")];
+        [alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"SSH config file error alert - Cancel button")];
+        [alert setMessageText:NSLocalizedString(@"Cannot Access SSH Config File", @"SSH config file error alert title")];
+        [alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Sequel Ace does not have permission to read the configured SSH config file at '%@'.\n\nThis might be due to Sandbox restrictions. You can configure a different SSH Config File in the Network tab of Preferences or correct access to the exiting file in the Files tab of Preferences, or you can reset the path to the Sequel Ace default.", @"SSH config file error alert message"), sshConfigFile]];
+        [alert setAlertStyle:NSAlertStyleWarning];
+
+        NSInteger response = [alert runModal];
+
+        if (response == NSAlertFirstButtonReturn) { // Go to Settings
+            SPPreferenceController *prefCon = [((SPAppController *)[NSApp delegate]) preferenceController];
+            [prefCon showWindow:nil];
+
+            id filePaneItem = prefCon->networkItem;
+            [prefCon displayPreferencePane:filePaneItem];
+
+            // After showing settings, restore UI and stop connection attempt
+            [self _restoreConnectionInterface];
+            return;
+
+        } else if (response == NSAlertSecondButtonReturn) { // Reset to Default
+            NSString *defaultSSHConfigPath = [[NSBundle mainBundle] pathForResource:SPSSHConfigFile ofType:@""];
+            [[NSUserDefaults standardUserDefaults] setObject:defaultSSHConfigPath forKey:SPSSHConfigFile];
+            [[NSUserDefaults standardUserDefaults] synchronize];
+
+            //Continue with connection attempt - it will now use the new config
+        } else { // Cancel or closed alert
+            // Restore UI and stop connection attempt
+            [self _restoreConnectionInterface];
+            return;
+        }
+    }
+
     // Set up the tunnel details
     sshTunnel = [[SPSSHTunnel alloc] initToHost:[self sshHost] port:[[self sshPort] integerValue] login:[self sshUser] tunnellingToPort:([[self port] length]?[[self port] integerValue]:3306) onHost:[self host]];
 
@@ -2586,7 +2633,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 - (CGFloat)outlineView:(NSOutlineView *)outlineView heightOfRowByItem:(id)item
 {
-    return 24.f;
+    NSFont *tableFont = [NSUserDefaults getFont];
+    CGFloat textHeight = NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height;
+    return MAX(24.0f, textHeight + 8.0f); // Ensure minimum height of 24 with padding for larger fonts
 }
 
 - (NSString *)outlineView:(NSOutlineView *)outlineView toolTipForCell:(NSCell *)cell rect:(NSRectPointer)rect tableColumn:(NSTableColumn *)tableColumn item:(id)item mouseLocation:(NSPoint)mouseLocation
@@ -2755,8 +2804,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     // Cache the selected nodes for selection restoration afterwards
     NSArray *preDragSelection = [self selectedFavoriteNodes];
 
-    // Disable all automatic sorting
-    currentSortItem = -1;
+    // When manually reordering, set to unsorted to preserve the order
+    currentSortItem = SPFavoritesSortUnsorted;
     reverseFavoritesSort = NO;
 
     [prefs setInteger:currentSortItem forKey:SPFavoritesSortedBy];
@@ -2795,7 +2844,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         NSInteger newIndex = childIndex;
 
         if (oldIndex != NSNotFound) {
-
             [childNodeArray removeObjectAtIndex:oldIndex];
 
             if (childIndex > oldIndex) {
@@ -2807,31 +2855,25 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         }
 
         [childNodeArray insertObject:treeNode atIndex:newIndex];
-
         newIndex++;
     }
 
+    // Save the new order
     [favoritesController saveFavorites];
-
     [self _reloadFavoritesViewData];
 
     [[NSNotificationCenter defaultCenter] postNotificationName:SPConnectionFavoritesChangedNotification object:self];
 
     [[[SPAppDelegate preferenceController] generalPreferencePane] updateDefaultFavoritePopup];
 
-    // Update the selection to account for rearranged faourites
+    // Update the selection to account for rearranged favourites
     NSMutableIndexSet *restoredSelection = [NSMutableIndexSet indexSet];
-
-    for (SPTreeNode *eachNode in preDragSelection)
-    {
+    for (SPTreeNode *eachNode in preDragSelection) {
         [restoredSelection addIndex:[favoritesOutlineView rowForItem:eachNode]];
     }
-
     [favoritesOutlineView selectRowIndexes:restoredSelection byExtendingSelection:NO];
 
-    acceptedDrop = YES;
-
-    return acceptedDrop;
+    return YES;
 }
 
 #pragma mark -
@@ -3481,12 +3523,18 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [favoritesOutlineView setDraggingSourceOperationMask:NSDragOperationMove forLocal:YES];
 
     NSFont *tableFont = [NSUserDefaults getFont];
-    [favoritesOutlineView setRowHeight:2.0f+NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+    [favoritesOutlineView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
 
     [favoritesOutlineView setFont:tableFont];
     for (NSTableColumn *col in [favoritesOutlineView tableColumns]) {
         [[col dataCell] setFont:tableFont];
     }
+    
+    // Register for font change notifications
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(fontChanged:)
+                                                 name:@"SPFontChangedNotification"
+                                               object:nil];
 }
 
 /**
@@ -3680,7 +3728,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 
     [self setConnectionKeychainID:nil];
-
+    
+    // Remove font change observer
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"SPFontChangedNotification" object:nil];
 }
 
 /**
@@ -3690,6 +3740,23 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     if (error) {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Favorites export error", @"favorites export error message") message:[NSString stringWithFormat:NSLocalizedString(@"The following error occurred during the export process:\n\n%@", @"favorites export error informative message"), [error localizedDescription]] callback:nil];
     }
+}
+
+// Add this method to handle font change notifications
+- (void)fontChanged:(NSNotification *)notification
+{
+    // Update font in favorites outline view
+    NSFont *tableFont = [NSUserDefaults getFont];
+    [favoritesOutlineView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
+    [favoritesOutlineView setFont:tableFont];
+    
+    for (NSTableColumn *col in [favoritesOutlineView tableColumns]) {
+        [[col dataCell] setFont:tableFont];
+    }
+    
+    // Force reload to update the display
+    [favoritesOutlineView reloadData];
+    [favoritesOutlineView setNeedsDisplay:YES];
 }
 
 @end

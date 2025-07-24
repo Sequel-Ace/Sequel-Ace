@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/coderabbit-overrides.v2.json
+ language: "en" # English
+ early_access: false
+ reviews:
+   high_level_summary: true
+   poem: false # Disable the poem feature because it adds noise and doesn't improve the review process.
+   review_status: false
+   collapse_walkthrough: true
+   path_filters: []
+   path_instructions: []
+   auto_review:
+     enabled: true
+     drafts: false
+     base_branches: []
+ chat:
+   auto_reply: false

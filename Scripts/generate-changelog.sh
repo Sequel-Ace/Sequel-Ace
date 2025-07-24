@@ -12,19 +12,22 @@ echo "## [$CURRENT_VERSION]" > $TEMP_FILE
 changelog_changes=""
 
 changelog_changes+="\n### Added\n"
-changelog_changes+="$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'- %h, %b' | grep '#added' | sed 's/#added//g')\n"
+changelog_changes+="$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'- %h, %s' | grep '#added' | sed 's/#added//g')\n"
 
 changelog_changes+="\n### Fixed\n"
-changelog_changes+="$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'- %h, %b' | grep '#fixed' | sed 's/#fixed//g')\n"
+changelog_changes+="$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'- %h, %s' | grep '#fixed' | sed 's/#fixed//g')\n"
 
 changelog_changes+="\n### Changed\n"
-changelog_changes+="$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'- %h, %b' | grep '#changed' | sed 's/#changed//g')\n"
+changelog_changes+="$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'- %h, %s' | grep '#changed' | sed 's/#changed//g')\n"
 
 changelog_changes+="\n### Removed\n"
-changelog_changes+="$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'- %h, %b' | grep '#removed' | sed 's/#removed//g')\n"
+changelog_changes+="$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'- %h, %s' | grep '#removed' | sed 's/#removed//g')\n"
 
 changelog_changes+="\n### Infra\n"
-changelog_changes+="$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'- %h, %b' | grep '#infra' | sed 's/#infra//g')\n"
+changelog_changes+="$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'- %h, %s' | grep '#infra' | sed 's/#infra//g')\n"
+
+changelog_changes+="\n### Unfinished\n"
+changelog_changes+="$(git log --merges $LAST_MAJOR_VERSION..HEAD --pretty=format:'- %h, %s' | grep '#unfinished' | sed 's/#unfinished//g')\n"
 
 changelog_changes+="\n"
 
