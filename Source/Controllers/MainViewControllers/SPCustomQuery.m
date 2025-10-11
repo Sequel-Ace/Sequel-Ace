@@ -1395,18 +1395,23 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
   NSMutableArray<NSString *> *modifiedLines = [NSMutableArray arrayWithCapacity:lines.count];
   
   NSString *commentMarker = @"-- ";
-  NSString *trimmedFirstLine = nil;
+  BOOL allLinesAreCommented = YES;
+  BOOL hasContent = NO;
   
-  // Determine if we should be commenting or uncommenting by checking the first non-empty line.
+  // Determine if we should comment or uncomment.
+  // If all non-empty lines are commented, we uncomment. Otherwise, we comment.
   for (NSString *line in lines) {
     NSString *trimmedLine = [line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
     if (trimmedLine.length > 0) {
-      trimmedFirstLine = trimmedLine;
-      break;
+      hasContent = YES;
+      if (![trimmedLine hasPrefix:commentMarker]) {
+        allLinesAreCommented = NO;
+        break;
+      }
     }
   }
   
-  BOOL shouldUncomment = (trimmedFirstLine && [trimmedFirstLine hasPrefix:commentMarker]);
+  BOOL shouldUncomment = (hasContent && allLinesAreCommented);
   
   // Process each line
   for (NSString *line in lines) {
