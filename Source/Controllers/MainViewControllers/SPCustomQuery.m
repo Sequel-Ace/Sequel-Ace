@@ -1374,6 +1374,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     [textView setSelectedRange:NSMakeRange(workingRange.location, n.length)];
 }
 
+
+static NSString * const SPDashStyleCommentMarker = @"-- ";
+
 /**
  * Toggles SQL line comments ('-- ') for each line in the current query or selection.
  */
@@ -1394,41 +1397,42 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
   NSArray<NSString *> *lines = [selectedText componentsSeparatedByString:@"\n"];
   NSMutableArray<NSString *> *modifiedLines = [NSMutableArray arrayWithCapacity:lines.count];
   
-  NSString *commentMarker = @"-- ";
-  BOOL allLinesAreCommented = YES;
-  BOOL hasContent = NO;
+  NSString *commentMarker = SPDashStyleCommentMarker;
+  BOOL shouldUncomment = NO;
   
-  // Determine if we should comment or uncomment.
-  // If all non-empty lines are commented, we uncomment. Otherwise, we comment.
+  // Determine if we should comment or uncomment based on the first non-empty line.
   for (NSString *line in lines) {
-    NSString *trimmedLine = [line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-    if (trimmedLine.length > 0) {
-      hasContent = YES;
-      if (![trimmedLine hasPrefix:commentMarker]) {
-        allLinesAreCommented = NO;
-        break;
+    NSRange firstCharRange = [line rangeOfCharacterFromSet:[[NSCharacterSet whitespaceCharacterSet] invertedSet]];
+    if (firstCharRange.location != NSNotFound) {
+      NSString *codePart = [line substringFromIndex:firstCharRange.location];
+      if ([codePart hasPrefix:commentMarker]) {
+        shouldUncomment = YES;
       }
+      break; // Decision made, stop checking lines.
     }
   }
   
-  BOOL shouldUncomment = (hasContent && allLinesAreCommented);
-  
   // Process each line
   for (NSString *line in lines) {
+    NSRange firstCharRange = [line rangeOfCharacterFromSet:[[NSCharacterSet whitespaceCharacterSet] invertedSet]];
+    
     if (shouldUncomment) {
-      NSRange markerRange = [line rangeOfString:commentMarker];
-      if (markerRange.location != NSNotFound) {
-        [modifiedLines addObject:[line stringByReplacingCharactersInRange:markerRange withString:@""]];
+      // Uncomment: Remove one instance of the marker from the start of the code.
+      if (firstCharRange.location != NSNotFound && [line length] >= firstCharRange.location + [commentMarker length]) {
+        NSRange potentialMarkerRange = NSMakeRange(firstCharRange.location, commentMarker.length);
+        if ([[line substringWithRange:potentialMarkerRange] isEqualToString:commentMarker]) {
+          [modifiedLines addObject:[line stringByReplacingCharactersInRange:potentialMarkerRange withString:@""]];
+        } else {
+          [modifiedLines addObject:line];
+        }
       } else {
         [modifiedLines addObject:line];
       }
     } else {
-      // Add comment marker to non-empty lines that are not already commented.
-      NSString *trimmedLine = [line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-      if (trimmedLine.length > 0 && ![trimmedLine hasPrefix:commentMarker]) {
-        [modifiedLines addObject:[NSString stringWithFormat:@"%@%@", commentMarker, line]];
+      // Comment: Add the marker to every non-empty line, preserving indentation.
+      if (firstCharRange.location != NSNotFound) {
+        [modifiedLines addObject:[line stringByReplacingCharactersInRange:NSMakeRange(firstCharRange.location, 0) withString:commentMarker]];
       } else {
-        // Add the line as-is if it's empty or already commented.
         [modifiedLines addObject:line];
       }
     }
