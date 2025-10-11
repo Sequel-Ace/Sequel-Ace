@@ -480,7 +480,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     // "Comment Current Query" menu item - Add or remove "-- " for each line
     // in the current query
     if (sender == commentCurrentQueryMenuItem) {
+      if ([self->prefs boolForKey:UseDashStyleForBlockComment]) {
+        [self commentOutCurrentQueryTakingSelectionWithDashes:NO];
+      } else {
         [self commentOutCurrentQueryTakingSelection:NO];
+      }
     }
     
     // "Completion List" menu item - used to autocomplete.  Uses a different shortcut to avoid the menu button flickering
@@ -1371,6 +1375,71 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 }
 
 /**
+ * Toggles SQL line comments ('-- ') for each line in the current query or selection.
+ */
+- (void)commentOutCurrentQueryTakingSelectionWithDashes:(BOOL)takeSelection {
+  NSRange originalRange = [textView selectedRange];
+  NSRange workingRange = takeSelection ? originalRange : currentQueryRange;
+  
+  // If there's no text selected, there's nothing to do.
+  if (workingRange.length == 0) {
+    return;
+  }
+  
+  // Expand the working range to encompass the full lines of the selection.
+  NSString *fullText = [textView string];
+  NSRange lineAdjustedRange = [fullText lineRangeForRange:workingRange];
+  
+  NSString *selectedText = [fullText substringWithRange:lineAdjustedRange];
+  NSArray<NSString *> *lines = [selectedText componentsSeparatedByString:@"\n"];
+  NSMutableArray<NSString *> *modifiedLines = [NSMutableArray arrayWithCapacity:lines.count];
+  
+  NSString *commentMarker = @"-- ";
+  NSString *trimmedFirstLine = nil;
+  
+  // Determine if we should be commenting or uncommenting by checking the first non-empty line.
+  for (NSString *line in lines) {
+    NSString *trimmedLine = [line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+    if (trimmedLine.length > 0) {
+      trimmedFirstLine = trimmedLine;
+      break;
+    }
+  }
+  
+  BOOL shouldUncomment = (trimmedFirstLine && [trimmedFirstLine hasPrefix:commentMarker]);
+  
+  // Process each line
+  for (NSString *line in lines) {
+    if (shouldUncomment) {
+      NSRange markerRange = [line rangeOfString:commentMarker];
+      if (markerRange.location != NSNotFound) {
+        [modifiedLines addObject:[line stringByReplacingCharactersInRange:markerRange withString:@""]];
+      } else {
+        [modifiedLines addObject:line];
+      }
+    } else {
+      // Add comment marker to non-empty lines that are not already commented.
+      NSString *trimmedLine = [line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+      if (trimmedLine.length > 0 && ![trimmedLine hasPrefix:commentMarker]) {
+        [modifiedLines addObject:[NSString stringWithFormat:@"%@%@", commentMarker, line]];
+      } else {
+        // Add the line as-is if it's empty or already commented.
+        [modifiedLines addObject:line];
+      }
+    }
+  }
+  
+  NSString *replacementString = [modifiedLines componentsJoinedByString:@"\n"];
+  
+  // Perform the text replacement and update the selection
+  if ([textView shouldChangeTextInRange:lineAdjustedRange replacementString:replacementString]) {
+    [textView replaceCharactersInRange:lineAdjustedRange withString:replacementString];
+    [textView didChangeText];
+    [textView setSelectedRange:NSMakeRange(lineAdjustedRange.location, replacementString.length)];
+  }
+}
+
+/**
  * Add or remove "-- " for each line in the current query or selection,
  * if the selection is in-line wrap selection into ⁄* block comments and
  * place the caret after ⁄* to allow to enter !xxxxxx e.g.
@@ -1381,7 +1450,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     NSRange oldRange = [textView selectedRange];
     
     if(oldRange.length) { // (un)comment selection
+      if ([self->prefs boolForKey:UseDashStyleForBlockComment]) {
+        [self commentOutCurrentQueryTakingSelectionWithDashes:YES];
+      } else {
         [self commentOutCurrentQueryTakingSelection:YES];
+      }
     } else { // single line
         
         // get the current line range

@@ -115,6 +115,8 @@
 	<integer>2</integer>
 	<key>CustomQueryUpdateAutoHelp</key>
 	<false/>
+	<key>UseDashStyleForBlockComment</key>
+	<false/>
 	<key>DefaultEncodingTag</key>
 	<real>0</real>
 	<key>DefaultViewMode</key>
