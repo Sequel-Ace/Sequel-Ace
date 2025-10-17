@@ -239,6 +239,7 @@
 - (void)selectCurrentQuery;
 - (void)commentOut;
 - (void)commentOutCurrentQueryTakingSelection:(BOOL)takeSelection;
+- (void)commentOutCurrentQueryTakingSelectionWithDashes:(BOOL)takeSelection;
 - (NSString *)usedQuery;
 - (NSString *)argumentForRow:(NSUInteger)rowIndex ofTable:(NSString *)tableForColumn andDatabase:(NSString *)database includeBlobs:(BOOL)includeBlobs;
 - (void)saveCellValue:(id)anObject forTableColumn:(NSTableColumn *)aTableColumn row:(NSUInteger)rowIndex;
