@@ -522,13 +522,13 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
             data[kFieldType]  = t;
             data[kFieldTypeGroup] = tGroup;
             // Numeric data
-            if ([t isEqualToString:@"bit"] || [t isEqualToString:@"integer"] || [t isEqualToString:@"float"])
+            if ([tGroup isEqualToString:@"bit"] || [tGroup isEqualToString:@"integer"] || [tGroup isEqualToString:@"float"])
                 data[kColType] = @(0);
             // Blob data or long text data
-            else if ([t isEqualToString:@"blobdata"] || [t isEqualToString:@"textdata"])
+            else if ([tGroup isEqualToString:@"blobdata"] || [tGroup isEqualToString:@"textdata"])
                 data[kColType] = @(2);
             // GEOMETRY data
-            else if ([t isEqualToString:@"geometry"])
+            else if ([tGroup isEqualToString:@"geometry"])
                 data[kColType] = @(3);
         }
         if (data)
