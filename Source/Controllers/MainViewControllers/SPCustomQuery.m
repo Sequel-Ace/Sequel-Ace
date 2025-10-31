@@ -838,11 +838,15 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 // If more than one table name is found set resultTableName to nil.
                 // resultTableName will be set to the original table name (not defined via AS) provided by mysql return
                 // and the resultTableName can differ due to case-sensitive/insensitive settings!.
-                NSString *resultTableName = [[cqColumnDefinition objectAtIndex:0] objectForKey:@"org_table"];
-                for(id field in cqColumnDefinition) {
-                    if(![[field objectForKey:@"org_table"] isEqualToString:resultTableName]) {
-                        resultTableName = nil;
-                        break;
+                // Note: DDL statements (CREATE, ALTER, DROP, etc.) return empty result sets with no columns
+                NSString *resultTableName = nil;
+                if ([cqColumnDefinition count] > 0) {
+                    resultTableName = [[cqColumnDefinition objectAtIndex:0] objectForKey:@"org_table"];
+                    for(id field in cqColumnDefinition) {
+                        if(![[field objectForKey:@"org_table"] isEqualToString:resultTableName]) {
+                            resultTableName = nil;
+                            break;
+                        }
                     }
                 }
                 

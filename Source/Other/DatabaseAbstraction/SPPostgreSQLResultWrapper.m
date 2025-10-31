@@ -248,15 +248,48 @@
             sp_postgresql_free_string(nameCStr);
         }
         
-        // Create a field definition dictionary
-        // In a full implementation, we'd get more info from PostgreSQL
-        NSDictionary *definition = @{
-            @"name": name,
-            @"type": @"text", // Simplified - would need actual type info
-            @"length": @0
-        };
+        // Create a field definition dictionary compatible with MySQL format
+        // This ensures compatibility with SPCopyTable and other components that expect MySQL-style metadata
+        NSMutableDictionary *definition = [NSMutableDictionary dictionary];
         
-        [definitions addObject:definition];
+        // REQUIRED: Record the original column position within the result set (must never be nil)
+        [definition setObject:[NSString stringWithFormat:@"%lu", (unsigned long)i] forKey:@"datacolumnindex"];
+        
+        // REQUIRED: Record the column name (must never be nil, but can be empty string)
+        [definition setObject:name forKey:@"name"];
+        
+        // Type information - simplified for PostgreSQL
+        [definition setObject:@"text" forKey:@"type"];
+        [definition setObject:@"string" forKey:@"typegrouping"];
+        
+        // Length information
+        [definition setObject:@(0) forKey:@"byte_length"];
+        [definition setObject:@(0) forKey:@"char_length"];
+        [definition setObject:@(0) forKey:@"max_byte_length"];
+        [definition setObject:@(0) forKey:@"decimals"];
+        
+        // Charset information - PostgreSQL uses UTF8
+        [definition setObject:@(0) forKey:@"charsetnr"];
+        [definition setObject:@"UTF8" forKey:@"charset_name"];
+        [definition setObject:@"UTF8" forKey:@"charset_collation"];
+        
+        // Flag information - default to permissive values
+        [definition setObject:@(0) forKey:@"flags"];
+        [definition setObject:@(NO) forKey:@"null"];
+        [definition setObject:@(NO) forKey:@"PRI_KEY_FLAG"];
+        [definition setObject:@(NO) forKey:@"UNIQUE_KEY_FLAG"];
+        [definition setObject:@(NO) forKey:@"MULTIPLE_KEY_FLAG"];
+        [definition setObject:@(NO) forKey:@"BLOB_FLAG"];
+        [definition setObject:@(NO) forKey:@"UNSIGNED_FLAG"];
+        [definition setObject:@(NO) forKey:@"ZEROFILL_FLAG"];
+        [definition setObject:@(NO) forKey:@"BINARY_FLAG"];
+        [definition setObject:@(NO) forKey:@"ENUM_FLAG"];
+        [definition setObject:@(NO) forKey:@"AUTO_INCREMENT_FLAG"];
+        [definition setObject:@(NO) forKey:@"SET_FLAG"];
+        [definition setObject:@(NO) forKey:@"NUM_FLAG"];
+        [definition setObject:@(NO) forKey:@"PART_KEY_FLAG"];
+        
+        [definitions addObject:[definition copy]];
     }
     
     _fieldDefinitions = [definitions copy];
