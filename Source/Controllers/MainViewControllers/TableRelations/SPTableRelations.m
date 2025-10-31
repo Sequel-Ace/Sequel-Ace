@@ -35,6 +35,8 @@
 #import "SPTableView.h"
 #import "RegexKitLite.h"
 #import "SPServerSupport.h"
+#import "SPDatabaseConnection.h"
+#import "SPDatabaseResult.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -267,8 +269,8 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
 	// Use UTF8 for identifier-based queries
 	if (changeEncoding) {
-		[connection storeEncodingForRestoration];
-		[connection setEncoding:@"utf8mb4"];
+		[(id<SPDatabaseConnection>)connection storeEncodingForRestoration];
+		[(id<SPDatabaseConnection>)connection setEncoding:[(id<SPDatabaseConnection>)connection preferredUTF8Encoding]];
 	}
 
     // Set all databases exxcept system database
@@ -602,8 +604,8 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
     // Get all InnoDB tables in the current database
     [refTablePopUpButton removeAllItems];
     if (database != nil && database.length != 0) {
-        SPMySQLResult *result = [connection queryString:[NSString stringWithFormat:@"SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND engine = 'InnoDB' AND table_schema = %@ ORDER BY table_name ASC", [database tickQuotedString]]];
-        [result setDefaultRowReturnType:SPMySQLResultRowAsArray];
+        id<SPDatabaseResult>result = [connection queryString:[NSString stringWithFormat:@"SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND engine = 'InnoDB' AND table_schema = %@ ORDER BY table_name ASC", [database tickQuotedString]]];
+        [result setDefaultRowReturnType:SPDatabaseResultRowAsArray];
         [result setReturnDataAsStrings:YES]; // TODO: Workaround for #2699/#2700
         for (NSArray *eachRow in result) {
             [refTablePopUpButton safeAddItemWithTitle:[eachRow firstObject]];

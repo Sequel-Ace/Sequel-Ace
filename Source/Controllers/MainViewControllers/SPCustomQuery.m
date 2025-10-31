@@ -60,6 +60,8 @@
 #import <pthread.h>
 #import <SPMySQL/SPMySQL.h>
 #import "SPBracketHighlighter.h"
+#import "SPDatabaseConnection.h"
+#import "SPDatabaseResult.h"
 
 #include <libkern/OSAtomic.h>
 #import "sequel-ace-Swift.h"
@@ -752,7 +754,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 {
     @autoreleasepool {
         NSArray                     *queries        = [taskArguments objectForKey:@"queries"];
-        SPMySQLStreamingResultStore *resultStore    = nil;
+        id<SPDatabaseResult>         resultStore    = nil;
         NSMutableString             *errors         = [NSMutableString string];
         SEL                          callbackMethod = NULL;
         NSString                    *taskButtonString;
@@ -840,11 +842,15 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 // If more than one table name is found set resultTableName to nil.
                 // resultTableName will be set to the original table name (not defined via AS) provided by mysql return
                 // and the resultTableName can differ due to case-sensitive/insensitive settings!.
-                NSString *resultTableName = [[cqColumnDefinition objectAtIndex:0] objectForKey:@"org_table"];
-                for(id field in cqColumnDefinition) {
-                    if(![[field objectForKey:@"org_table"] isEqualToString:resultTableName]) {
-                        resultTableName = nil;
-                        break;
+                // Note: DDL statements (CREATE, ALTER, DROP, etc.) return empty result sets with no columns
+                NSString *resultTableName = nil;
+                if ([cqColumnDefinition count] > 0) {
+                    resultTableName = [[cqColumnDefinition objectAtIndex:0] objectForKey:@"org_table"];
+                    for(id field in cqColumnDefinition) {
+                        if(![[field objectForKey:@"org_table"] isEqualToString:resultTableName]) {
+                            resultTableName = nil;
+                            break;
+                        }
                     }
                 }
                 
@@ -1122,7 +1128,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  * Processes a supplied streaming result store, monitoring the load and updating
  * the data displayed during download.
  */
-- (void)updateResultStore:(SPMySQLStreamingResultStore *)theResultStore
+- (void)updateResultStore:(id)theResultStore
 {
     pthread_mutex_lock(&resultDataLock);
     // Remove all items from the table
@@ -1824,9 +1830,9 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 /**
  * Sets the connection (received from SPDatabaseDocument) and makes things that have to be done only once
  */
-- (void)setConnection:(SPMySQLConnection *)theConnection
+- (void)setConnection:(id<SPDatabaseConnection>)theConnection
 {
-    mySQLConnection = theConnection;
+	mySQLConnection = theConnection;
     currentQueryRanges = nil;
     
     // Set up the interface
@@ -2055,7 +2061,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     [tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Checking field data for editing...", @"checking field data for editing task description")];
     
     // Actual check whether field can be identified bijectively
-    SPMySQLResult *tempResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
+    id<SPDatabaseResult> tempResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
                                                               [[columnDefinition objectForKey:@"db"] backtickQuotedString],
                                                               [tableForColumn backtickQuotedString],
                                                               fieldIDQueryStr]];
@@ -2122,7 +2128,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     dataRow = [resultData rowContentsAtIndex:rowIndex];
     
     // Get the primary key if there is one, using any columns present within it
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@.%@",
+    id<SPDatabaseResult> theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@.%@",
                                                              [database backtickQuotedString], [tableForColumn backtickQuotedString]]];
     [theResult setReturnDataAsStrings:YES];
     NSMutableArray *primaryColumnsInSpecifiedTable = [NSMutableArray array];

@@ -37,6 +37,7 @@
 #import "RegexKitLite.h"
 #import "SPExportController.h"
 #import "SPFunctions.h"
+#import "SPDatabaseConnection.h"
 
 #import <SPMySQL/SPMySQL.h>
 #include <stdlib.h>
@@ -153,8 +154,8 @@
         [metaString appendString:@"\xef\xbb\xbf"];
     }
 
-    // we require utf8mb4
-    [connection setEncoding:@"utf8mb4"];
+    // we require UTF8
+    [(id<SPDatabaseConnection>)connection setEncoding:[(id<SPDatabaseConnection>)connection preferredUTF8Encoding]];
 
     // Add the dump header to the dump file
     [metaString appendString:@"# ************************************************************\n"];

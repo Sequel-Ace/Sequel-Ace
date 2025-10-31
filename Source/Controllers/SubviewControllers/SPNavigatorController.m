@@ -34,6 +34,7 @@
 #import "SPNavigatorOutlineView.h"
 #import "ImageAndTextCell.h"
 #import "SPDatabaseDocument.h"
+#import "SPDatabaseConnection.h"
 #import "SPTablesList.h"
 #import "SPLogger.h"
 #import "SPTooltip.h"
@@ -415,7 +416,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 
 	if (doc) {
 
-		SPMySQLConnection *theConnection = [doc getConnection];
+		id<SPDatabaseConnection> theConnection = [doc getConnection];
 		if(!theConnection || ![theConnection isConnected]) return;
 
 		NSString *connectionID = [doc connectionID];

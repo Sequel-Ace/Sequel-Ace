@@ -36,10 +36,10 @@
 @class SPTablesList;
 @class SPIndexesController;
 @class SPTableView;
-@class SPMySQLConnection;
-@class SPMySQLResult;
 @class SPExtendedTableInfo;
 @class SPTableInfo;
+@protocol SPDatabaseConnection;
+@protocol SPDatabaseResult;
 
 @interface SPFieldTypeHelp : NSObject
 {
@@ -92,7 +92,7 @@
 	IBOutlet id viewColumnsMenu;
 	IBOutlet NSPopUpButtonCell *encodingPopupCell;
 
-	SPMySQLConnection *mySQLConnection;
+	id<SPDatabaseConnection> connection;
 	
 	SPTableFieldValidation *fieldValidation;
 
@@ -127,8 +127,8 @@
 - (IBAction)closeSheet:(id)sender;
 
 // Additional methods
-- (void)setConnection:(SPMySQLConnection *)theConnection;
-- (NSArray *)convertIndexResultToArray:(SPMySQLResult *)theResult;
+- (void)setConnection:(id<SPDatabaseConnection>)theConnection;
+- (NSArray *)convertIndexResultToArray:(id<SPDatabaseResult>)theResult;
 - (BOOL)saveRowOnDeselect;
 - (BOOL)addRowToDB;
 - (void)setAutoIncrementTo:(NSNumber *)value;

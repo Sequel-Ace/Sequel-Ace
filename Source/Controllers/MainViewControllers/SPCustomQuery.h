@@ -43,11 +43,10 @@
 @class SPDataStorage;
 @class SPSplitView;
 @class SPFieldEditorController;
-@class SPMySQLConnection;
-@class SPMySQLStreamingResultStore;
 @class SPTextView;
 @class SPDatabaseDocument;
 @class SPTablesList;
+@protocol SPDatabaseConnection;
 
 @class SPBracketHighlighter;
 
@@ -118,7 +117,7 @@
 	SPQueryFavoriteManager *favoritesManager;
 
 	NSUserDefaults *prefs;
-	SPMySQLConnection *mySQLConnection;
+	id<SPDatabaseConnection> mySQLConnection;
 
 	NSString *usedQuery;
 	NSRange currentQueryRange;
@@ -208,7 +207,7 @@
 - (NSArray *)currentResult;
 - (NSArray *)currentDataResultWithNULLs:(BOOL)includeNULLs truncateDataFields:(BOOL)truncate;
 - (NSUInteger)currentResultRowCount;
-- (void)updateResultStore:(SPMySQLStreamingResultStore *)theResultStore;
+- (void)updateResultStore:(id)theResultStore;
 
 // Retrieving and setting table state
 - (void)updateTableView;
@@ -233,7 +232,7 @@
 - (void)tableSortCallback;
 
 // Other
-- (void)setConnection:(SPMySQLConnection *)theConnection;
+- (void)setConnection:(id<SPDatabaseConnection>)theConnection;
 - (void)doPerformQueryService:(NSString *)query;
 - (void)doPerformLoadQueryService:(NSString *)query;
 - (void)selectCurrentQuery;
