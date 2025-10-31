@@ -7,6 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0B0DFF822EA66FE800AF0021 /* SPPostgreSQLConnectionWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BAF9D6B2EA1389D00C663C3 /* SPPostgreSQLConnectionWrapper.m */; };
+		0B0DFF832EA66FE800AF0021 /* SPPostgreSQLResultWrapper.h in Sources */ = {isa = PBXBuildFile; fileRef = 0BAF9D6C2EA1389D00C663C3 /* SPPostgreSQLResultWrapper.h */; };
+		0BAF9D682EA1091900C663C3 /* SPMySQLConnectionWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BAF9D642EA1091900C663C3 /* SPMySQLConnectionWrapper.m */; };
+		0BAF9D692EA1091900C663C3 /* SPMySQLResultWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BAF9D662EA1091900C663C3 /* SPMySQLResultWrapper.m */; };
+		0BAF9D6E2EA1389D00C663C3 /* SPPostgreSQLResultWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BAF9D6D2EA1389D00C663C3 /* SPPostgreSQLResultWrapper.m */; };
+		0BAF9D6F2EA1389D00C663C3 /* SPPostgreSQLConnectionWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BAF9D6B2EA1389D00C663C3 /* SPPostgreSQLConnectionWrapper.m */; };
+		0BAF9D712EA1404600C663C3 /* libsppostgresql.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0BAF9D702EA13AD000C663C3 /* libsppostgresql.a */; };
+		0BAFPGTEST02 /* SPPostgreSQLIntegrationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BAFPGTEST01 /* SPPostgreSQLIntegrationTests.m */; };
+		0BAFPGTEST03 /* SPPostgreSQLConnectionWrapper.h in Sources */ = {isa = PBXBuildFile; fileRef = 0BAF9D6A2EA1389D00C663C3 /* SPPostgreSQLConnectionWrapper.h */; };
+		0BAFPGTEST04 /* SPPostgreSQLResultWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BAF9D6D2EA1389D00C663C3 /* SPPostgreSQLResultWrapper.m */; };
+		0BAFPGTEST05 /* SPMySQLConnectionWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BAF9D642EA1091900C663C3 /* SPMySQLConnectionWrapper.m */; };
+		0BAFPGTEST06 /* SPMySQLResultWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BAF9D662EA1091900C663C3 /* SPMySQLResultWrapper.m */; };
+		0BAFPGTEST07 /* (null) in Sources */ = {isa = PBXBuildFile; };
 		1141A389117BBFF200126A28 /* SPTableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1141A388117BBFF200126A28 /* SPTableCopy.m */; };
 		1198F5B31174EDD500670590 /* SPDatabaseCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1198F5B21174EDD500670590 /* SPDatabaseCopy.m */; };
 		11B55BFE1189E3B2009EF465 /* SPDatabaseAction.m in Sources */ = {isa = PBXBuildFile; fileRef = 11B55BFD1189E3B2009EF465 /* SPDatabaseAction.m */; };
@@ -572,6 +585,19 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0BAF9D602EA1091900C663C3 /* SPDatabaseConnection.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPDatabaseConnection.h; sourceTree = "<group>"; };
+		0BAF9D612EA1091900C663C3 /* SPDatabaseConnectionProxy.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPDatabaseConnectionProxy.h; sourceTree = "<group>"; };
+		0BAF9D622EA1091900C663C3 /* SPDatabaseResult.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPDatabaseResult.h; sourceTree = "<group>"; };
+		0BAF9D632EA1091900C663C3 /* SPMySQLConnectionWrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPMySQLConnectionWrapper.h; sourceTree = "<group>"; };
+		0BAF9D642EA1091900C663C3 /* SPMySQLConnectionWrapper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPMySQLConnectionWrapper.m; sourceTree = "<group>"; };
+		0BAF9D652EA1091900C663C3 /* SPMySQLResultWrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPMySQLResultWrapper.h; sourceTree = "<group>"; };
+		0BAF9D662EA1091900C663C3 /* SPMySQLResultWrapper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPMySQLResultWrapper.m; sourceTree = "<group>"; };
+		0BAF9D6A2EA1389D00C663C3 /* SPPostgreSQLConnectionWrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPPostgreSQLConnectionWrapper.h; sourceTree = "<group>"; };
+		0BAF9D6B2EA1389D00C663C3 /* SPPostgreSQLConnectionWrapper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPPostgreSQLConnectionWrapper.m; sourceTree = "<group>"; };
+		0BAF9D6C2EA1389D00C663C3 /* SPPostgreSQLResultWrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPPostgreSQLResultWrapper.h; sourceTree = "<group>"; };
+		0BAF9D6D2EA1389D00C663C3 /* SPPostgreSQLResultWrapper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPPostgreSQLResultWrapper.m; sourceTree = "<group>"; };
+		0BAF9D702EA13AD000C663C3 /* libsppostgresql.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libsppostgresql.a; path = Frameworks/SPPostgreSQLFramework/libsppostgresql.a; sourceTree = "<group>"; };
+		0BAFPGTEST01 /* SPPostgreSQLIntegrationTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPPostgreSQLIntegrationTests.m; sourceTree = "<group>"; };
 		1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		112730551180788A000737FD /* SPTableCopyTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTableCopyTest.m; sourceTree = "<group>"; };
 		1141A387117BBFF200126A28 /* SPTableCopy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTableCopy.h; sourceTree = "<group>"; };
@@ -1210,6 +1236,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0BAF9D712EA1404600C663C3 /* libsppostgresql.a in Frameworks */,
 				96A5DDB82D63C8E70079105E /* libc++.tbd in Frameworks */,
 				963DA1C72CACC71000B5A544 /* QuickLookUI.framework in Frameworks */,
 				1A89556F25D6C8880060CE72 /* Alamofire in Frameworks */,
@@ -1240,6 +1267,24 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0BAF9D672EA1091900C663C3 /* DatabaseAbstraction */ = {
+			isa = PBXGroup;
+			children = (
+				0BAF9D6A2EA1389D00C663C3 /* SPPostgreSQLConnectionWrapper.h */,
+				0BAF9D6B2EA1389D00C663C3 /* SPPostgreSQLConnectionWrapper.m */,
+				0BAF9D6C2EA1389D00C663C3 /* SPPostgreSQLResultWrapper.h */,
+				0BAF9D6D2EA1389D00C663C3 /* SPPostgreSQLResultWrapper.m */,
+				0BAF9D602EA1091900C663C3 /* SPDatabaseConnection.h */,
+				0BAF9D612EA1091900C663C3 /* SPDatabaseConnectionProxy.h */,
+				0BAF9D622EA1091900C663C3 /* SPDatabaseResult.h */,
+				0BAF9D632EA1091900C663C3 /* SPMySQLConnectionWrapper.h */,
+				0BAF9D642EA1091900C663C3 /* SPMySQLConnectionWrapper.m */,
+				0BAF9D652EA1091900C663C3 /* SPMySQLResultWrapper.h */,
+				0BAF9D662EA1091900C663C3 /* SPMySQLResultWrapper.m */,
+			);
+			path = DatabaseAbstraction;
+			sourceTree = "<group>";
+		};
 		1058C7A6FEA54F5311CA2CBB /* Linked Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -1896,6 +1941,7 @@
 		17E6416E0EF01F3B001BC333 /* Other */ = {
 			isa = PBXGroup;
 			children = (
+				0BAF9D672EA1091900C663C3 /* DatabaseAbstraction */,
 				FD2056032C3A7E64008DD271 /* Formatters */,
 				51F4AFB924B26646006144D5 /* Extensions */,
 				507FF10E1BBCC4A900104523 /* Utility */,
@@ -2215,6 +2261,7 @@
 		2A37F4C3FDCFA73011CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				0BAF9D702EA13AD000C663C3 /* libsppostgresql.a */,
 				96A5DDB42D63C8E70079105E /* libc++.tbd */,
 				963DA1C22CACC6F000B5A544 /* QuickLookUI.framework */,
 				38C613721C8977E600B3B6EF /* libz.tbd */,
@@ -2264,6 +2311,7 @@
 				1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */,
 				1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */,
 				1AE6C1CC25B07E9500880D73 /* SPFunctionsTests.m */,
+				0BAFPGTEST01 /* SPPostgreSQLIntegrationTests.m */,
 				8AEACADD4B36D9819ADC93DD /* TableSortHelperTests.swift */,
 				FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */,
 			);
@@ -2517,6 +2565,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = C05733C708A9546B00998B17 /* Build configuration list for PBXNativeTarget "Sequel Ace" */;
 			buildPhases = (
+				0BAF9D722EA1408E00C663C3 /* Build RUST PostgreSQL library */,
 				8D15AC300486D014006FF6A4 /* Sources */,
 				8D15AC330486D014006FF6A4 /* Frameworks */,
 				8D15AC2B0486D014006FF6A4 /* Resources */,
@@ -2809,6 +2858,25 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		0BAF9D722EA1408E00C663C3 /* Build RUST PostgreSQL library */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build RUST PostgreSQL library";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "\"$PROJECT_DIR/Frameworks/SPPostgreSQLFramework/xcode_build_rust.sh\"\n";
+		};
 		1A62C63425BE08F400DF903B /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -2834,6 +2902,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0B0DFF822EA66FE800AF0021 /* SPPostgreSQLConnectionWrapper.m in Sources */,
+				0B0DFF832EA66FE800AF0021 /* SPPostgreSQLResultWrapper.h in Sources */,
 				1A9498C125517191000BC793 /* DateExtension.swift in Sources */,
 				1ADEA5A424BF1FFB00D2140B /* SPDateAdditions.m in Sources */,
 				50837F771E50E007004FAE8A /* SPJSONFormatter.m in Sources */,
@@ -2882,6 +2952,12 @@
 				1717FA401558313A0065C036 /* RegexKitLite.m in Sources */,
 				50D3C35C1A771C4C00B5429C /* SPParserUtilsTest.m in Sources */,
 				1AE6C1CD25B07E9500880D73 /* SPFunctionsTests.m in Sources */,
+				0BAFPGTEST02 /* SPPostgreSQLIntegrationTests.m in Sources */,
+				0BAFPGTEST03 /* SPPostgreSQLConnectionWrapper.h in Sources */,
+				0BAFPGTEST04 /* SPPostgreSQLResultWrapper.m in Sources */,
+				0BAFPGTEST05 /* SPMySQLConnectionWrapper.m in Sources */,
+				0BAFPGTEST06 /* SPMySQLResultWrapper.m in Sources */,
+				0BAFPGTEST07 /* (null) in Sources */,
 				1A9A40D525875EC9009F0E71 /* NSMutableArray-MultipleSort.m in Sources */,
 				8AEACED018AABDD8CBB42877 /* TableSortHelperTests.swift in Sources */,
 			);
@@ -3012,6 +3088,8 @@
 				582A01E9107C0C170027D42B /* SPNotLoaded.m in Sources */,
 				173284EA1088FEDE0062E892 /* SPConstants.m in Sources */,
 				171312CE109D23C700FB465F /* SPTableTextFieldCell.m in Sources */,
+				0BAF9D682EA1091900C663C3 /* SPMySQLConnectionWrapper.m in Sources */,
+				0BAF9D692EA1091900C663C3 /* SPMySQLResultWrapper.m in Sources */,
 				174CE14210AB9281008F892B /* SPProcessListController.m in Sources */,
 				517412302573E10C00EB6935 /* SPPrintUtility.m in Sources */,
 				1792C13710AD75C800ABE758 /* SPServerVariablesController.m in Sources */,
@@ -3068,6 +3146,8 @@
 				506CE9311A311C6C0039F736 /* SPRuleFilterController.m in Sources */,
 				17D3C66E128AD4710047709F /* SPFavoritesController.m in Sources */,
 				17D3C671128AD8160047709F /* SPSingleton.m in Sources */,
+				0BAF9D6E2EA1389D00C663C3 /* SPPostgreSQLResultWrapper.m in Sources */,
+				0BAF9D6F2EA1389D00C663C3 /* SPPostgreSQLConnectionWrapper.m in Sources */,
 				17D3C6D3128B1C900047709F /* SPFavoritesOutlineView.m in Sources */,
 				50D3C3521A77135F00B5429C /* SPParserUtils.c in Sources */,
 				1A8B53572584520800526DED /* SPURLAdditions.m in Sources */,
@@ -3192,15 +3272,23 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				HEADER_SEARCH_PATHS = "$CONFIGURATION_TEMP_DIR/sequel-ace.build/DerivedSources";
+				HEADER_SEARCH_PATHS = (
+					"$CONFIGURATION_TEMP_DIR/sequel-ace.build/DerivedSources",
+					"$(PROJECT_DIR)/Frameworks/SPPostgreSQLFramework/Headers/",
+				);
 				INFOPLIST_FILE = "Resources/Plists/Unit Tests-Info.plist";
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
 				LD_RUNPATH_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Frameworks/SPPostgreSQLFramework",
+				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					Cocoa,
+					"$(PROJECT_DIR)/Frameworks/SPPostgreSQLFramework/libsppostgresql.a",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace.tests";
 				PRODUCT_NAME = "Unit Tests";
@@ -3228,15 +3316,23 @@
 				);
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				HEADER_SEARCH_PATHS = "$CONFIGURATION_TEMP_DIR/sequel-ace.build/DerivedSources";
+				HEADER_SEARCH_PATHS = (
+					"$CONFIGURATION_TEMP_DIR/sequel-ace.build/DerivedSources",
+					"$(PROJECT_DIR)/Frameworks/SPPostgreSQLFramework/Headers/",
+				);
 				INFOPLIST_FILE = "Resources/Plists/Unit Tests-Info.plist";
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
 				LD_RUNPATH_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Frameworks/SPPostgreSQLFramework",
+				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					Cocoa,
+					"$(PROJECT_DIR)/Frameworks/SPPostgreSQLFramework/libsppostgresql.a",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace.tests";
 				PRODUCT_NAME = "Unit Tests";
@@ -3369,7 +3465,7 @@
 				COMPRESS_PNG_FILES = YES;
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
+				DEVELOPMENT_TEAM = 26P4KFB7Z3;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -3382,6 +3478,7 @@
 				GCC_NO_COMMON_BLOCKS = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/Frameworks/SPPostgreSQLFramework/Headers/";
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INSTALL_PATH = /Applications;
@@ -3390,12 +3487,13 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib",
+					"\"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\\\ Client\\\\ Libraries/lib\"",
 					"$(inherited)",
+					"$(PROJECT_DIR)/Frameworks/SPPostgreSQLFramework",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ggsoft.sequel-ace2";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
 				PRODUCT_NAME = "Sequel Ace";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -3500,11 +3598,12 @@
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_ENTITLEMENTS = Entitlements/SequelAceTunnelAssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
+				DEVELOPMENT_TEAM = 26P4KFB7Z3;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -3537,11 +3636,12 @@
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_ENTITLEMENTS = Entitlements/SequelAceTunnelAssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
+				DEVELOPMENT_TEAM = 26P4KFB7Z3;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
 				GCC_MODEL_TUNING = G5;
@@ -3574,10 +3674,11 @@
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_ENTITLEMENTS = Entitlements/SequelAceTunnelAssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
+				DEVELOPMENT_TEAM = 26P4KFB7Z3;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
 				GCC_MODEL_TUNING = G5;
@@ -3691,7 +3792,7 @@
 				COMPRESS_PNG_FILES = YES;
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
+				DEVELOPMENT_TEAM = 26P4KFB7Z3;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -3704,6 +3805,7 @@
 				GCC_NO_COMMON_BLOCKS = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/Frameworks/SPPostgreSQLFramework/Headers/";
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INSTALL_PATH = /Applications;
@@ -3712,12 +3814,13 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib",
+					"\"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\\\ Client\\\\ Libraries/lib\"",
 					"$(inherited)",
+					"$(PROJECT_DIR)/Frameworks/SPPostgreSQLFramework",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace-beta";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ggsoft.sequel-ace-beta2";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
 				PRODUCT_NAME = "Sequel Ace Beta";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -3773,10 +3876,11 @@
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_ENTITLEMENTS = Entitlements/SequelAceTunnelAssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
+				DEVELOPMENT_TEAM = 26P4KFB7Z3;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
 				GCC_MODEL_TUNING = G5;
@@ -3841,7 +3945,7 @@
 				COMPRESS_PNG_FILES = YES;
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
+				DEVELOPMENT_TEAM = 26P4KFB7Z3;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -3855,6 +3959,7 @@
 				GCC_NO_COMMON_BLOCKS = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/Frameworks/SPPostgreSQLFramework/Headers/";
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INSTALL_PATH = /Applications;
@@ -3863,12 +3968,13 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib",
+					"\"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\\\ Client\\\\ Libraries/lib\"",
 					"$(inherited)",
+					"$(PROJECT_DIR)/Frameworks/SPPostgreSQLFramework",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ggsoft.sequel-ace2";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
 				PRODUCT_NAME = "Sequel Ace";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -3895,7 +4001,7 @@
 				COMPRESS_PNG_FILES = YES;
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = NKQ4HJ66PX;
+				DEVELOPMENT_TEAM = 26P4KFB7Z3;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -3908,6 +4014,7 @@
 				GCC_NO_COMMON_BLOCKS = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/Frameworks/SPPostgreSQLFramework/Headers/";
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INSTALL_PATH = /Applications;
@@ -3916,12 +4023,13 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib",
+					"\"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\\\ Client\\\\ Libraries/lib\"",
 					"$(inherited)",
+					"$(PROJECT_DIR)/Frameworks/SPPostgreSQLFramework",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ggsoft.sequel-ace2";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
 				PRODUCT_NAME = "Sequel Ace";
 				PROVISIONING_PROFILE_SPECIFIER = "";

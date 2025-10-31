@@ -60,6 +60,12 @@ typedef NS_ENUM(NSUInteger, SPConnectionType) {
 	SPSSHTunnelConnection = 2
 };
 
+// Database types
+typedef NS_ENUM(NSUInteger, SPDatabaseType) {
+	SPDatabaseTypeMySQL      = 0,
+	SPDatabaseTypePostgreSQL = 1
+};
+
 // Export type constants
 typedef NS_ENUM(NSUInteger, SPExportType) {
 	SPSQLExport   = 0,
@@ -528,6 +534,7 @@ extern NSString *SPFavoriteColorIndexKey;
 extern NSString *SPFavoriteTimeZoneModeKey;
 extern NSString *SPFavoriteTimeZoneIdentifierKey;
 extern NSString *SPFavoriteTypeKey;
+extern NSString *SPFavoriteDatabaseTypeKey;
 extern NSString *SPFavoriteSocketKey;
 extern NSString *SPFavoriteSSHHostKey;
 extern NSString *SPFavoriteSSHPortKey;

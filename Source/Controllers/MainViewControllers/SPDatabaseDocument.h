@@ -48,6 +48,8 @@
 @class SPGotoDatabaseController;
 @class SPCreateDatabaseInfo;
 @class SPExtendedTableInfo;
+
+@protocol SPDatabaseConnection;
 @class SPTableTriggers;
 @class SPTableRelations;
 @class SPHelpViewerClient;
@@ -154,7 +156,7 @@
 	NSInteger passwordSheetReturnCode;
 
 	// Master connection
-	SPMySQLConnection *mySQLConnection;
+	id<SPDatabaseConnection> databaseConnection;
 
 	// Controllers
 	SPConnectionController *connectionController;
@@ -274,8 +276,8 @@
 - (void)initQueryEditorWithString:(NSString *)query;
 
 // Connection callback and methods
-- (void)setConnection:(SPMySQLConnection *)theConnection;
-- (SPMySQLConnection *)getConnection;
+- (void)setConnection:(id<SPDatabaseConnection>)theConnection;
+- (id<SPDatabaseConnection>)getConnection;
 
 // Database methods
 - (IBAction)chooseDatabase:(id)sender;

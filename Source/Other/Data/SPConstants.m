@@ -347,6 +347,7 @@ NSString *SPFavoriteColorIndexKey                        = @"colorIndex";
 NSString *SPFavoriteTimeZoneModeKey                      = @"timeZoneMode";
 NSString *SPFavoriteTimeZoneIdentifierKey                = @"timeZone";
 NSString *SPFavoriteTypeKey                              = @"type";
+NSString *SPFavoriteDatabaseTypeKey                      = @"databaseType";
 NSString *SPFavoriteSocketKey                            = @"socket";
 NSString *SPFavoriteSSHHostKey                           = @"sshHost";
 NSString *SPFavoriteSSHPortKey                           = @"sshPort";

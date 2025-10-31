@@ -31,6 +31,8 @@
 
 #import "SPDatabaseDocument.h"
 #import "SPConnectionController.h"
+#import "SPDatabaseConnection.h"
+#import "SPDatabaseResult.h"
 #import "SPTablesList.h"
 #import "SPDatabaseStructure.h"
 #import "SPFileHandle.h"
@@ -130,8 +132,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (void) closeAndDisconnect;
 
-- (NSString *)keychainPasswordForConnection:(SPMySQLConnection *)connection;
-- (NSString *)keychainPasswordForSSHConnection:(SPMySQLConnection *)connection;
+- (NSString *)keychainPasswordForConnection:(id<SPDatabaseConnection>)connection;
+- (NSString *)keychainPasswordForSSHConnection:(id<SPDatabaseConnection>)connection;
 
 @end
 
@@ -200,7 +202,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         selectedDatabase = nil;
         selectedDatabaseEncoding = @"latin1";
-        mySQLConnection = nil;
+        databaseConnection = nil;
         mySQLVersion = nil;
         allDatabases = nil;
         allSystemDatabases = nil;
@@ -401,20 +403,20 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  *
  * This method *MUST* be called from the UI thread!
  */
-- (void)setConnection:(SPMySQLConnection *)theConnection
+- (void)setConnection:(id<SPDatabaseConnection>)theConnection
 {
     if ([theConnection userTriggeredDisconnect]) {
         return;
     }
 
     _isConnected = YES;
-    mySQLConnection = theConnection;
+    databaseConnection = theConnection;
 
     // Now that we have a connection, determine what functionality the database supports.
     // Note that this must be done before anything else as it's used by nearly all of the main controllers.
-    serverSupport = [[SPServerSupport alloc] initWithMajorVersion:[mySQLConnection serverMajorVersion]
-                                                            minor:[mySQLConnection serverMinorVersion]
-                                                          release:[mySQLConnection serverReleaseVersion]];
+    serverSupport = [[SPServerSupport alloc] initWithMajorVersion:[databaseConnection serverMajorVersion]
+                                                            minor:[databaseConnection serverMinorVersion]
+                                                          release:[databaseConnection serverReleaseVersion]];
 
     // Set the fileURL and init the preferences (query favs, filters, and history) if available for that URL
     NSURL *newURL = [[SPQueryController sharedQueryController] registerDocumentWithFileURL:[self fileURL] andContextInfo:spfPreferences];
@@ -426,7 +428,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     // Get the mysql version
-    mySQLVersion = [mySQLConnection serverVersionString] ;
+    mySQLVersion = [databaseConnection serverVersionString] ;
 
     NSString *tmpDb = [connectionController database];
 
@@ -437,13 +439,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     // Ensure the connection encoding is set to utf8 for database/table name retrieval
-    [mySQLConnection setEncoding:@"utf8mb4"];
+    [databaseConnection setEncoding:[databaseConnection preferredUTF8Encoding]];
 
     // Check if skip-show-database is set to ON
     if ( [prefs boolForKey:SPShowWarningSkipShowDatabase] ) {
-        SPMySQLResult *result = [mySQLConnection queryString:@"SHOW VARIABLES LIKE 'skip_show_database'"];
+        id<SPDatabaseResult>result = [databaseConnection queryString:@"SHOW VARIABLES LIKE 'skip_show_database'"];
         [result setReturnDataAsStrings:YES];
-        if(![mySQLConnection queryErrored] && [result numberOfRows] == 1) {
+        if(![databaseConnection queryErrored] && [result numberOfRows] == 1) {
             NSString *skip_show_database = [[result getRowAsDictionary] objectForKey:@"Value"];
             if ([skip_show_database.lowercaseString isEqualToString:@"on"]) {
                 [NSAlert createAlertWithTitle:NSLocalizedString(@"Warning",@"warning")
@@ -463,16 +465,16 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [chooseDatabaseButton setEnabled:!_isWorkingLevel];
 
     // Set the connection on the database structure builder
-    [databaseStructureRetrieval setConnectionToClone:mySQLConnection];
+    [databaseStructureRetrieval setConnectionToClone:databaseConnection];
 
-    [databaseDataInstance setConnection:mySQLConnection];
+    [databaseDataInstance setConnection:databaseConnection];
 
     // Pass the support class to the data instance
     [databaseDataInstance setServerSupport:serverSupport];
 
     // Set the connection on the tables list instance - this updates the table list while the connection
     // is still UTF8
-    [tablesListInstance setConnection:mySQLConnection];
+    [tablesListInstance setConnection:databaseConnection];
 
     // Set the connection encoding if necessary
     NSNumber *encodingType = [prefs objectForKey:SPDefaultEncoding];
@@ -480,26 +482,26 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([encodingType intValue] != SPEncodingAutodetect) {
         [self setConnectionEncoding:[self mysqlEncodingFromEncodingTag:encodingType] reloadingViews:NO];
     } else {
-        [[self onMainThread] updateEncodingMenuWithSelectedEncoding:[self encodingTagFromMySQLEncoding:[mySQLConnection encoding]]];
+        [[self onMainThread] updateEncodingMenuWithSelectedEncoding:[self encodingTagFromMySQLEncoding:[databaseConnection encoding]]];
     }
 
     // For each of the main controllers, assign the current connection
     SPLog(@"setConnection for each of main controllers");
-    [tableSourceInstance setConnection:mySQLConnection];
-    [tableContentInstance setConnection:mySQLConnection];
-    [tableRelationsInstance setConnection:mySQLConnection];
-    [tableTriggersInstance setConnection:mySQLConnection];
-    [customQueryInstance setConnection:mySQLConnection];
-    [tableDumpInstance setConnection:mySQLConnection];
-    [exportControllerInstance setConnection:mySQLConnection];
+    [tableSourceInstance setConnection:databaseConnection];
+    [tableContentInstance setConnection:databaseConnection];
+    [tableRelationsInstance setConnection:databaseConnection];
+    [tableTriggersInstance setConnection:databaseConnection];
+    [customQueryInstance setConnection:databaseConnection];
+    [tableDumpInstance setConnection:databaseConnection];
+    [exportControllerInstance setConnection:databaseConnection];
     [exportControllerInstance setServerSupport:serverSupport];
-    [tableDataInstance setConnection:mySQLConnection];
-    [extendedTableInfoInstance setConnection:mySQLConnection];
+    [tableDataInstance setConnection:databaseConnection];
+    [extendedTableInfoInstance setConnection:databaseConnection];
 
     // Set the custom query editor's MySQL version
     [customQueryInstance setMySQLversion:mySQLVersion];
 
-    [helpViewerClientInstance setConnection:mySQLConnection];
+    [helpViewerClientInstance setConnection:databaseConnection];
 
     [self updateWindowTitle:self];
 
@@ -582,9 +584,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  *
  * @return The document's connection
  */
-- (SPMySQLConnection *)getConnection
+- (id<SPDatabaseConnection>)getConnection
 {
-    return mySQLConnection;
+    return databaseConnection;
 }
 
 #pragma mark -
@@ -609,7 +611,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [[chooseDatabaseButton menu] addItem:[NSMenuItem separatorItem]];
 
 
-    NSArray *theDatabaseList = [mySQLConnection databases];
+    NSArray *theDatabaseList = [databaseConnection databases];
 
     allDatabases = [[NSMutableArray alloc] initWithCapacity:[theDatabaseList count]];
     allSystemDatabases = [[NSMutableArray alloc] initWithCapacity:2];
@@ -804,7 +806,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
      */
     NSLog(@"=================");
 
-    SPMySQLResult *showTablesQuery = [mySQLConnection queryString:@"show tables"];
+    id<SPDatabaseResult>showTablesQuery = [databaseConnection queryString:@"show tables"];
 
     NSArray *tableRow;
     while ((tableRow = [showTablesQuery getRowAsArray]) != nil) {
@@ -815,13 +817,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             NSLog(@"Scanning %@", table);
 
 
-            NSDictionary *tableStatus = [[mySQLConnection queryString:[NSString stringWithFormat:@"SHOW TABLE STATUS LIKE %@", [table tickQuotedString]]] getRowAsDictionary];
+            NSDictionary *tableStatus = [[databaseConnection queryString:[NSString stringWithFormat:@"SHOW TABLE STATUS LIKE %@", [table tickQuotedString]]] getRowAsDictionary];
             NSInteger rowCountEstimate = [tableStatus[@"Rows"] integerValue];
             NSLog(@"Estimated row count: %li", rowCountEstimate);
 
 
 
-            SPMySQLResult *tableContentsQuery = [mySQLConnection streamingQueryString:[NSString stringWithFormat:@"select * from %@", [table backtickQuotedString]] useLowMemoryBlockingStreaming:NO];
+            id<SPDatabaseResult>tableContentsQuery = [databaseConnection streamingQueryString:[NSString stringWithFormat:@"select * from %@", [table backtickQuotedString]] useLowMemoryBlockingStreaming:NO];
             //NSDate *lastProgressUpdate = [NSDate date];
             time_t lastProgressUpdate = time(NULL);
             NSInteger rowCount = 0;
@@ -941,7 +943,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if (!serverVariablesController) {
         serverVariablesController = [[SPServerVariablesController alloc] init];
 
-        [serverVariablesController setConnection:mySQLConnection];
+        [serverVariablesController setConnection:databaseConnection];
     }
 
     [serverVariablesController displayServerVariablesSheetAttachedToWindow:[self.parentWindowController window]];
@@ -954,7 +956,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if (!processListController) {
         processListController = [[SPProcessListController alloc] init];
 
-        [processListController setConnection:mySQLConnection];
+        [processListController setConnection:databaseConnection];
     }
 
     [processListController displayProcessListWindow];
@@ -962,9 +964,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (void)shutdownServer {
     [NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Do you really want to shutdown the server?", @"shutdown server : confirmation dialog : title") message:NSLocalizedString(@"This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!", @"shutdown server : confirmation dialog : message") primaryButtonTitle:NSLocalizedString(@"Shutdown", @"shutdown server : confirmation dialog : shutdown button") primaryButtonHandler:^{
-        if (![self->mySQLConnection serverShutdown]) {
-            if ([self->mySQLConnection isConnected]) {
-                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Shutdown failed!", @"shutdown server : error dialog : title") message:[NSString stringWithFormat:NSLocalizedString(@"MySQL said:\n%@", @"shutdown server : error dialog : message"),[self->mySQLConnection lastErrorMessage]] callback:nil];
+        if (![self->databaseConnection serverShutdown]) {
+            if ([self->databaseConnection isConnected]) {
+                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Shutdown failed!", @"shutdown server : error dialog : title") message:[NSString stringWithFormat:NSLocalizedString(@"MySQL said:\n%@", @"shutdown server : error dialog : message"),[self->databaseConnection lastErrorMessage]] callback:nil];
             }
         }
     } cancelButtonHandler:nil];
@@ -1007,9 +1009,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Notify listeners that a query has started
     [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryWillBePerformed" object:self];
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:@"SELECT DATABASE()"];
-    [theResult setDefaultRowReturnType:SPMySQLResultRowAsArray];
-    if (![mySQLConnection queryErrored]) {
+    id<SPDatabaseResult>theResult = [databaseConnection queryString:@"SELECT DATABASE()"];
+    [theResult setDefaultRowReturnType:SPDatabaseResultRowAsArray];
+    if (![databaseConnection queryErrored]) {
 
         for (NSArray *eachRow in theResult)
         {
@@ -1450,10 +1452,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // See whether there is an active database structure task and whether it can be used
     // to cancel the query, for speed (no connection overhead!)
     if (databaseStructureRetrieval && [databaseStructureRetrieval connection]) {
-        [mySQLConnection setLastQueryWasCancelled:YES];
-        [[databaseStructureRetrieval connection] killQueryOnThreadID:[mySQLConnection mysqlConnectionThreadId]];
+        [databaseConnection setLastQueryWasCancelled:YES];
+        [[databaseStructureRetrieval connection] killQueryOnThreadID:[databaseConnection mysqlConnectionThreadId]];
     } else {
-        [mySQLConnection cancelCurrentQuery];
+        [databaseConnection cancelCurrentQuery];
     }
 
     if (taskCancellationCallbackObject && taskCancellationCallbackSelector) {
@@ -1519,15 +1521,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Special-case UTF-8 over latin 1 to allow viewing/editing of mangled data.
     if ([mysqlEncoding isEqualToString:@"utf8-"]) {
         useLatin1Transport = YES;
-        mysqlEncoding = @"utf8mb4";
+        mysqlEncoding = [databaseConnection preferredUTF8Encoding];
     }
 
     // Set the connection encoding
-    if (![mySQLConnection setEncoding:mysqlEncoding]) {
+    if (![databaseConnection setEncoding:mysqlEncoding]) {
         NSLog(@"Error: could not set encoding to %@ nor fall back to database encoding on MySQL %@", mysqlEncoding, [self mySQLVersion]);
         return;
     }
-    [mySQLConnection setEncodingUsesLatin1Transport:useLatin1Transport];
+    [databaseConnection setEncodingUsesLatin1Transport:useLatin1Transport];
 
     // Update the selected menu item
     if (useLatin1Transport) {
@@ -1537,7 +1539,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     // Update the stored connection encoding to prevent switches
-    [mySQLConnection storeEncodingForRestoration];
+    [databaseConnection storeEncodingForRestoration];
 
     // Reload views as appropriate
     if (reloadViews) {
@@ -1628,7 +1630,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                                     nil];
     NSString *mysqlEncoding = [translationMap valueForKey:[NSString stringWithFormat:@"%i", [encodingTag intValue]]];
 
-    if (!mysqlEncoding) return @"utf8mb4";
+    if (!mysqlEncoding) return [databaseConnection preferredUTF8Encoding];
 
     return mysqlEncoding;
 }
@@ -1734,13 +1736,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             return;
         }
 
-        SPMySQLResult *theResult = [mySQLConnection queryString:query];
+        id<SPDatabaseResult>theResult = [databaseConnection queryString:query];
         [theResult setReturnDataAsStrings:YES];
 
         // Check for errors, only displaying if the connection hasn't been terminated
-        if ([mySQLConnection queryErrored]) {
-            if ([mySQLConnection isConnected]) {
-                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error message title") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while creating table syntax.\n\n: %@", @"Error shown when unable to show create table syntax"), [mySQLConnection lastErrorMessage]] callback:nil];
+        if ([databaseConnection queryErrored]) {
+            if ([databaseConnection isConnected]) {
+                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error message title") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while creating table syntax.\n\n: %@", @"Error shown when unable to show create table syntax"), [databaseConnection lastErrorMessage]] callback:nil];
             }
 
             return;
@@ -1818,16 +1820,16 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"CHECK TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    id<SPDatabaseResult>theResult = [databaseConnection queryString:[NSString stringWithFormat:@"CHECK TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
     [theResult setReturnDataAsStrings:YES];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
 
     // Check for errors, only displaying if the connection hasn't been terminated
-    if ([mySQLConnection queryErrored]) {
+    if ([databaseConnection queryErrored]) {
         NSString *mText = ([selectedItems count]>1) ? NSLocalizedString(@"Unable to check selected items", @"unable to check selected items message") : NSLocalizedString(@"Unable to check table", @"unable to check table message");
-        if ([mySQLConnection isConnected]) {
-            [NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to check the %@.\n\nMySQL said:%@",@"an error occurred while trying to check the %@.\n\nMySQL said:%@"), what, [mySQLConnection lastErrorMessage]] callback:nil];
+        if ([databaseConnection isConnected]) {
+            [NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to check the %@.\n\nMySQL said:%@",@"an error occurred while trying to check the %@.\n\nMySQL said:%@"), what, [databaseConnection lastErrorMessage]] callback:nil];
         }
 
         return;
@@ -1876,16 +1878,16 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"ANALYZE TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    id<SPDatabaseResult>theResult = [databaseConnection queryString:[NSString stringWithFormat:@"ANALYZE TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
     [theResult setReturnDataAsStrings:YES];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
 
     // Check for errors, only displaying if the connection hasn't been terminated
-    if ([mySQLConnection queryErrored]) {
+    if ([databaseConnection queryErrored]) {
         NSString *mText = ([selectedItems count]>1) ? NSLocalizedString(@"Unable to analyze selected items", @"unable to analyze selected items message") : NSLocalizedString(@"Unable to analyze table", @"unable to analyze table message");
-        if ([mySQLConnection isConnected]) {
-            [NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while analyzing the %@.\n\nMySQL said:%@",@"an error occurred while analyzing the %@.\n\nMySQL said:%@"), what, [mySQLConnection lastErrorMessage]] callback:nil];
+        if ([databaseConnection isConnected]) {
+            [NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while analyzing the %@.\n\nMySQL said:%@",@"an error occurred while analyzing the %@.\n\nMySQL said:%@"), what, [databaseConnection lastErrorMessage]] callback:nil];
         }
 
         return;
@@ -1935,16 +1937,16 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"OPTIMIZE TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    id<SPDatabaseResult>theResult = [databaseConnection queryString:[NSString stringWithFormat:@"OPTIMIZE TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
     [theResult setReturnDataAsStrings:YES];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
 
     // Check for errors, only displaying if the connection hasn't been terminated
-    if ([mySQLConnection queryErrored]) {
+    if ([databaseConnection queryErrored]) {
         NSString *mText = ([selectedItems count]>1) ? NSLocalizedString(@"Unable to optimze selected items", @"unable to optimze selected items message") : NSLocalizedString(@"Unable to optimze table", @"unable to optimze table message");
-        if ([mySQLConnection isConnected]) {
-            [NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while optimzing the %@.\n\nMySQL said:%@",@"an error occurred while trying to optimze the %@.\n\nMySQL said:%@"), what, [mySQLConnection lastErrorMessage]] callback:nil];
+        if ([databaseConnection isConnected]) {
+            [NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while optimzing the %@.\n\nMySQL said:%@",@"an error occurred while trying to optimze the %@.\n\nMySQL said:%@"), what, [databaseConnection lastErrorMessage]] callback:nil];
         }
         return;
     }
@@ -1993,16 +1995,16 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"REPAIR TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    id<SPDatabaseResult>theResult = [databaseConnection queryString:[NSString stringWithFormat:@"REPAIR TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
     [theResult setReturnDataAsStrings:YES];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
 
     // Check for errors, only displaying if the connection hasn't been terminated
-    if ([mySQLConnection queryErrored]) {
+    if ([databaseConnection queryErrored]) {
         NSString *mText = ([selectedItems count]>1) ? NSLocalizedString(@"Unable to repair selected items", @"unable to repair selected items message") : NSLocalizedString(@"Unable to repair table", @"unable to repair table message");
-        if ([mySQLConnection isConnected]) {
-            [NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while repairing the %@.\n\nMySQL said:%@",@"an error occurred while trying to repair the %@.\n\nMySQL said:%@"), what, [mySQLConnection lastErrorMessage]] callback:nil];
+        if ([databaseConnection isConnected]) {
+            [NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while repairing the %@.\n\nMySQL said:%@",@"an error occurred while trying to repair the %@.\n\nMySQL said:%@"), what, [databaseConnection lastErrorMessage]] callback:nil];
         }
         return;
     }
@@ -2051,16 +2053,16 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"FLUSH TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    id<SPDatabaseResult>theResult = [databaseConnection queryString:[NSString stringWithFormat:@"FLUSH TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
     [theResult setReturnDataAsStrings:YES];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
 
     // Check for errors, only displaying if the connection hasn't been terminated
-    if ([mySQLConnection queryErrored]) {
+    if ([databaseConnection queryErrored]) {
         NSString *mText = ([selectedItems count]>1) ? NSLocalizedString(@"Unable to flush selected items", @"unable to flush selected items message") : NSLocalizedString(@"Unable to flush table", @"unable to flush table message");
-        if ([mySQLConnection isConnected]) {
-            [NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while flushing the %@.\n\nMySQL said:%@",@"an error occurred while trying to flush the %@.\n\nMySQL said:%@"), what, [mySQLConnection lastErrorMessage]] callback:nil];
+        if ([databaseConnection isConnected]) {
+            [NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while flushing the %@.\n\nMySQL said:%@",@"an error occurred while trying to flush the %@.\n\nMySQL said:%@"), what, [databaseConnection lastErrorMessage]] callback:nil];
         }
 
         return;
@@ -2110,14 +2112,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"CHECKSUM TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    id<SPDatabaseResult>theResult = [databaseConnection queryString:[NSString stringWithFormat:@"CHECKSUM TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
 
     // Check for errors, only displaying if the connection hasn't been terminated
-    if ([mySQLConnection queryErrored]) {
-        if ([mySQLConnection isConnected]) {
-            NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while performing the checksum on %@.\n\nMySQL said:%@",@"an error occurred while performing the checksum on the %@.\n\nMySQL said:%@"), what, [mySQLConnection lastErrorMessage]];
+    if ([databaseConnection queryErrored]) {
+        if ([databaseConnection isConnected]) {
+            NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while performing the checksum on %@.\n\nMySQL said:%@",@"an error occurred while performing the checksum on the %@.\n\nMySQL said:%@"), what, [databaseConnection lastErrorMessage]];
             [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to perform the checksum", @"unable to perform the checksum") message:alertMessage callback:nil];
         }
 
@@ -2281,14 +2283,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         userManagerInstance = [[SPUserManager alloc] init];
 
         [userManagerInstance setDatabaseDocument:self];
-        [userManagerInstance setConnection:mySQLConnection];
+        [userManagerInstance setConnection:databaseConnection];
         [userManagerInstance setServerSupport:serverSupport];
     }
 
     // Before displaying the user manager make sure the current user has access to the mysql.user table.
-    SPMySQLResult *result = [mySQLConnection queryString:@"SELECT user FROM mysql.user LIMIT 1"];
+    id<SPDatabaseResult>result = [databaseConnection queryString:@"SELECT user FROM mysql.user LIMIT 1"];
 
-    if ([mySQLConnection queryErrored] && ([result numberOfRows] == 0)) {
+    if ([databaseConnection queryErrored] && ([result numberOfRows] == 0)) {
 
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to get list of users", @"unable to get list of users message") message:NSLocalizedString(@"An error occurred while trying to get the list of users. Please make sure you have the necessary privileges to perform user management, including access to the mysql.user table.", @"unable to get list of users informative message") callback:nil];
         return;
@@ -2320,14 +2322,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  * Flushes the mysql privileges
  */
 - (void)flushPrivileges {
-    [mySQLConnection queryString:@"FLUSH PRIVILEGES"];
+    [databaseConnection queryString:@"FLUSH PRIVILEGES"];
 
-    if (![mySQLConnection queryErrored]) {
+    if (![databaseConnection queryErrored]) {
         //flushed privileges without errors
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Flushed Privileges", @"title of panel when successfully flushed privs") message:NSLocalizedString(@"Successfully flushed privileges.", @"message of panel when successfully flushed privs") callback:nil];
     } else {
         //error while flushing privileges
-        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't flush privileges.\nMySQL said: %@", @"message of panel when flushing privs failed"), [mySQLConnection lastErrorMessage]] callback:nil];
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't flush privileges.\nMySQL said: %@", @"message of panel when flushing privs failed"), [databaseConnection lastErrorMessage]] callback:nil];
     }
 }
 
@@ -2345,10 +2347,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (void)closeConnection {
     SPLog(@"closeConnection");
-    [mySQLConnection setDelegate:nil];
+    [databaseConnection setDelegate:nil];
 
-    SPLog(@"Closing mySQLConnection");
-    [mySQLConnection disconnect];
+    SPLog(@"Closing databaseConnection");
+    [databaseConnection disconnect];
   
     SPLog(@"Closing databaseStructureRetrieval");
     [[databaseStructureRetrieval connection] disconnect];
@@ -2369,7 +2371,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
     if ([keyPath isEqualToString:SPConsoleEnableLogging]) {
-        [mySQLConnection setDelegateQueryLogging:[[change objectForKey:NSKeyValueChangeNewKey] boolValue]];
+        [databaseConnection setDelegateQueryLogging:[[change objectForKey:NSKeyValueChangeNewKey] boolValue]];
     }
     else if ([keyPath isEqualToString:SPEditInSheetEnabled]) {
         multipleLineEditingButton.state = [[change objectForKey:NSKeyValueChangeNewKey] boolValue];
@@ -2499,8 +2501,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     tabTitle = [NSMutableString string];
 
-    // Add the MySQL version to the window title if enabled in prefs
-    if ([prefs boolForKey:SPDisplayServerVersionInWindowTitle]) [tabTitle appendFormat:@"(MySQL %@)\n", [self mySQLVersion]];
+    // Add the database version to the window title if enabled in prefs
+    if ([prefs boolForKey:SPDisplayServerVersionInWindowTitle]) {
+        NSString *dbName = [databaseConnection databaseDisplayName];
+        NSString *version = [databaseConnection shortServerVersionString];
+        [tabTitle appendFormat:@"(%@ %@)\n", dbName, version];
+    }
 
     [tabTitle appendString:[self name]];
     if ([self database]) {
@@ -3382,9 +3388,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         // Add the path to the window title
         [windowTitle appendString:pathName];
 
-        // Add the MySQL version to the window title if enabled in prefs
+        // Add the database version to the window title if enabled in prefs
         if ([prefs boolForKey:SPDisplayServerVersionInWindowTitle]) {
-            [windowTitle appendFormat:@"(MySQL %@) ", mySQLVersion];
+            NSString *dbName = [databaseConnection databaseDisplayName];
+            NSString *version = [databaseConnection shortServerVersionString];
+            [windowTitle appendFormat:@"(%@ %@) ", dbName, version];
         }
 
         NSMutableString *tabTitle = [NSMutableString string];
@@ -3951,7 +3959,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
         [sessionState setObject:currentlySelectedViewName forKey:@"view"];
 
-        [sessionState setObject:[mySQLConnection encoding] forKey:@"connectionEncoding"];
+        [sessionState setObject:[databaseConnection encoding] forKey:@"connectionEncoding"];
 
         [sessionState setObject:[NSNumber numberWithBool:[[[self.parentWindowController window] toolbar] isVisible]] forKey:@"isToolbarVisible"];
         [sessionState setObject:[NSNumber numberWithFloat:[tableContentInstance tablesListWidth]] forKey:@"windowVerticalDividerPosition"];
@@ -4002,7 +4010,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     SPKeychain *keychain = nil;
 
     // If this document already has a connection, don't proceed.
-    if (mySQLConnection) return NO;
+    if (databaseConnection) return NO;
 
     // Load the connection data from the state dictionary
     connection = [NSDictionary dictionaryWithDictionary:[stateDetails objectForKey:@"connection"]];
@@ -4314,7 +4322,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
 
         // Reset database view encoding if differs from default
-        if ([spfSession objectForKey:@"connectionEncoding"] && ![[mySQLConnection encoding] isEqualToString:[spfSession objectForKey:@"connectionEncoding"]]) {
+        if ([spfSession objectForKey:@"connectionEncoding"] && ![[databaseConnection encoding] isEqualToString:[spfSession objectForKey:@"connectionEncoding"]]) {
             [self setConnectionEncoding:[spfSession objectForKey:@"connectionEncoding"] reloadingViews:YES];
         }
 
@@ -4606,7 +4614,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
             if(doSyntaxHighlighting && [params count] < 3) return;
 
-            BOOL changeEncoding = ![[mySQLConnection encoding] hasPrefix:@"utf8"];
+            BOOL changeEncoding = ![[databaseConnection encoding] hasPrefix:@"utf8"];
 
 
             NSArray *items = [params subarrayWithRange:NSMakeRange(1, [params count]-( (doSyntaxHighlighting) ? 2 : 1) )];
@@ -4663,21 +4671,21 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
                 // Ensure that queries are made in UTF8
                 if (changeEncoding) {
-                    [mySQLConnection storeEncodingForRestoration];
-                    [mySQLConnection setEncoding:@"utf8mb4"];
+                    [databaseConnection storeEncodingForRestoration];
+                    [databaseConnection setEncoding:[databaseConnection preferredUTF8Encoding]];
                 }
 
                 // Get create syntax
-                SPMySQLResult *queryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW CREATE %@ %@",
+                id<SPDatabaseResult>queryResult = [databaseConnection queryString:[NSString stringWithFormat:@"SHOW CREATE %@ %@",
                                                                            itemTypeStr,
                                                                            [item backtickQuotedString]]];
                 [queryResult setReturnDataAsStrings:YES];
 
-                if (changeEncoding) [mySQLConnection restoreStoredEncoding];
+                if (changeEncoding) [databaseConnection restoreStoredEncoding];
 
                 if ( ![queryResult numberOfRows] ) {
                     //error while getting table structure
-                    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't get create syntax.\nMySQL said: %@", @"message of panel when table information cannot be retrieved"), [mySQLConnection lastErrorMessage]] callback:nil];
+                    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't get create syntax.\nMySQL said: %@", @"message of panel when table information cannot be retrieved"), [databaseConnection lastErrorMessage]] callback:nil];
                     status = @"1";
                 } else {
                     NSString *syntaxString = [[queryResult getRowAsArray] objectAtIndex:queryCol];
@@ -4750,10 +4758,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                     SPLog(@"Couldn't create file handle to %@", resultFileName);
                 }
 
-                SPMySQLResult *theResult = [mySQLConnection streamingQueryString:query];
+                id<SPDatabaseResult>theResult = [databaseConnection streamingQueryString:query];
                 [theResult setReturnDataAsStrings:YES];
-                if ([mySQLConnection queryErrored]) {
-                    [fh writeData:[[NSString stringWithFormat:@"MySQL said: %@", [mySQLConnection lastErrorMessage]] dataUsingEncoding:NSUTF8StringEncoding]];
+                if ([databaseConnection queryErrored]) {
+                    [fh writeData:[[NSString stringWithFormat:@"MySQL said: %@", [databaseConnection lastErrorMessage]] dataUsingEncoding:NSUTF8StringEncoding]];
                     status = @"1";
                 } else {
 
@@ -4814,7 +4822,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                                 else if([cell isKindOfClass:[SPMySQLGeometryData class]])
                                     [result appendFormat:@"\"%@\"", [cell wktString]];
                                 else if([cell isKindOfClass:[NSData class]]) {
-                                    NSString *displayString = [[NSString alloc] initWithData:cell encoding:[mySQLConnection stringEncoding]];
+                                    NSString *displayString = [[NSString alloc] initWithData:cell encoding:[databaseConnection stringEncoding]];
                                     if (!displayString) displayString = [[NSString alloc] initWithData:cell encoding:NSASCIIStringEncoding];
                                     if (displayString) {
                                         [result appendFormat:@"\"%@\"", [displayString stringByReplacingOccurrencesOfString:@"\"" withString:@"\"\""]];
@@ -4852,7 +4860,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                                 else if([cell isKindOfClass:[SPMySQLGeometryData class]])
                                     [result appendFormat:@"%@", [cell wktString]];
                                 else if([cell isKindOfClass:[NSData class]]) {
-                                    NSString *displayString = [[NSString alloc] initWithData:cell encoding:[mySQLConnection stringEncoding]];
+                                    NSString *displayString = [[NSString alloc] initWithData:cell encoding:[databaseConnection stringEncoding]];
                                     if (!displayString) displayString = [[NSString alloc] initWithData:cell encoding:NSASCIIStringEncoding];
                                     if (displayString) {
                                         [result appendFormat:@"%@", [[displayString stringByReplacingOccurrencesOfString:@"\n" withString:@"↵"] stringByReplacingOccurrencesOfString:@"\t" withString:@"⇥"]];
@@ -5257,19 +5265,19 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     // As we're amending identifiers, ensure UTF8
-    if (![[mySQLConnection encoding] hasPrefix:@"utf8"]) {
-        [mySQLConnection setEncoding:@"utf8mb4"];
+    if (![[databaseConnection encoding] hasPrefix:@"utf8"]) {
+        [databaseConnection setEncoding:[databaseConnection preferredUTF8Encoding]];
     }
 
     SPDatabaseAction *dbAction = [[SPDatabaseAction alloc] init];
-    [dbAction setConnection:mySQLConnection];
+    [dbAction setConnection:databaseConnection];
     BOOL res = [dbAction createDatabase:[databaseNameField stringValue]
                            withEncoding:[addDatabaseCharsetHelper selectedCharset]
                               collation:[addDatabaseCharsetHelper selectedCollation]];
 
     if (!res) {
         // An error occurred
-        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't create database.\nMySQL said: %@", @"message of panel when creation of db failed"), [mySQLConnection lastErrorMessage]] callback:nil];
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't create database.\nMySQL said: %@", @"message of panel when creation of db failed"), [databaseConnection lastErrorMessage]] callback:nil];
         return;
     }
 
@@ -5301,11 +5309,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     //run alter
-    [mySQLConnection queryString:alterStatement];
+    [databaseConnection queryString:alterStatement];
 
-    if ([mySQLConnection queryErrored]) {
+    if ([databaseConnection queryErrored]) {
         // An error occurred
-        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't alter database.\nMySQL said: %@", @"Alter Database : Query Failed ($1 = mysql error message)"), [mySQLConnection lastErrorMessage]] callback:nil];
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't alter database.\nMySQL said: %@", @"Alter Database : Query Failed ($1 = mysql error message)"), [databaseConnection lastErrorMessage]] callback:nil];
         return;
     }
 
@@ -5321,13 +5329,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)_removeDatabase
 {
     // Drop the database from the server
-    [mySQLConnection queryString:[NSString stringWithFormat:@"DROP DATABASE %@", [[self database] backtickQuotedString]]];
+    [databaseConnection queryString:[NSString stringWithFormat:@"DROP DATABASE %@", [[self database] backtickQuotedString]]];
 
-    if ([mySQLConnection queryErrored]) {
+    if ([databaseConnection queryErrored]) {
         // An error occurred
         [self performSelector:@selector(showErrorSheetWith:)
                    withObject:[NSArray arrayWithObjects:NSLocalizedString(@"Error", @"error"),
-                               [NSString stringWithFormat:NSLocalizedString(@"Couldn't delete the database.\nMySQL said: %@", @"message of panel when deleting db failed"), [mySQLConnection lastErrorMessage]],
+                               [NSString stringWithFormat:NSLocalizedString(@"Couldn't delete the database.\nMySQL said: %@", @"message of panel when deleting db failed"), [databaseConnection lastErrorMessage]],
                                nil]
                    afterDelay:0.3];
 
@@ -5345,7 +5353,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     [self setDatabases];
 
-    [tablesListInstance setConnection:mySQLConnection];
+    [tablesListInstance setConnection:databaseConnection];
 
     // inform observers that a database was dropped
     [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
@@ -5372,12 +5380,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         if (![targetDatabaseName isEqualToString:selectedDatabase]) {
             // Attempt to select the specified database, and abort on failure
-            if ([[chooseDatabaseButton onMainThread] indexOfItemWithTitle:targetDatabaseName] == NSNotFound || ![mySQLConnection selectDatabase:targetDatabaseName])
+            if ([[chooseDatabaseButton onMainThread] indexOfItemWithTitle:targetDatabaseName] == NSNotFound || ![databaseConnection selectDatabase:targetDatabaseName])
             {
                 // End the task first to ensure the database dropdown can be reselected
                 [self endTask];
 
-                if ([mySQLConnection isConnected]) {
+                if ([databaseConnection isConnected]) {
 
                     // Update the database list
                     [[self onMainThread] setDatabases];
@@ -5400,7 +5408,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [self detectDatabaseEncoding];
 
             // Set the connection of SPTablesList to reload tables in db
-            [tablesListInstance setConnection:mySQLConnection];
+            [tablesListInstance setConnection:databaseConnection];
 
             // Update the window title
             [self updateWindowTitle:self];
@@ -5798,8 +5806,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)loadTable:(NSString *)aTable ofType:(SPTableType)aTableType
 {
     // Ensure a connection is still present
-    if (![mySQLConnection isConnected]){
-        SPLog(@"![mySQLConnection isConnected], returning");
+    if (![databaseConnection isConnected]){
+        SPLog(@"![databaseConnection isConnected], returning");
         return;
     }
 
@@ -5944,12 +5952,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         relationsLoaded = NO;
 
         // Ensure status and details are fetched using UTF8
-        NSString *previousEncoding = [mySQLConnection encoding];
+        NSString *previousEncoding = [databaseConnection encoding];
         BOOL changeEncoding = ![previousEncoding hasPrefix:@"utf8"];
 
         if (changeEncoding) {
-            [mySQLConnection storeEncodingForRestoration];
-            [mySQLConnection setEncoding:@"utf8mb4"];
+            [databaseConnection storeEncodingForRestoration];
+            [databaseConnection setEncoding:[databaseConnection preferredUTF8Encoding]];
         }
 
         // Cache status information on the working thread
@@ -5966,14 +5974,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             // If encoding is set to Autodetect, update the connection character set encoding to utf8mb4
             // This allows us to receive data encoded in various charsets as UTF-8 characters.
             if ([[prefs objectForKey:SPDefaultEncoding] intValue] == SPEncodingAutodetect) {
-                if (![@"utf8mb4" isEqualToString:previousEncoding]) {
-                    [self setConnectionEncoding:@"utf8mb4" reloadingViews:NO];
+                if (![[databaseConnection preferredUTF8Encoding] isEqualToString:previousEncoding]) {
+                    [self setConnectionEncoding:[databaseConnection preferredUTF8Encoding] reloadingViews:NO];
                     changeEncoding = NO;
                 }
             }
         }
 
-        if (changeEncoding) [mySQLConnection restoreStoredEncoding];
+        if (changeEncoding) [databaseConnection restoreStoredEncoding];
 
         // Notify listeners of the table change now that the state is fully set up.
         [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPTableChangedNotification object:self];
@@ -6085,7 +6093,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 }
 
-#pragma mark - SPMySQLConnection delegate methods
+#pragma mark - SPDatabaseConnection delegate methods
 
 /**
  * Invoked when the framework is about to perform a query.
@@ -6115,17 +6123,17 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Invoked when the current connection needs a password from the Keychain.
  */
-- (NSString *)keychainPasswordForConnection:(SPMySQLConnection *)connection
+- (NSString *)keychainPasswordForConnection:(id<SPDatabaseConnection>)connection
 {
     return [connectionController keychainPassword];
 }
 
 /**
  * Invoked when the current connection needs a ssh password from the Keychain.
- * This isn't actually part of the SPMySQLConnection delegate protocol, but is here
+ * This isn't actually part of the SPDatabaseConnection delegate protocol, but is here
  * due to its similarity to the previous method.
  */
-- (NSString *)keychainPasswordForSSHConnection:(SPMySQLConnection *)connection
+- (NSString *)keychainPasswordForSSHConnection:(id<SPDatabaseConnection>)connection
 {
     // If no keychain item is available, return an empty password
     NSString *password = [connectionController keychainPasswordForSSH];
@@ -6146,12 +6154,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Invoked when the connection fails and the framework needs to know how to proceed.
  */
-- (SPMySQLConnectionLostDecision)connectionLost:(id)connection
+- (SPDatabaseConnectionLostDecision)connectionLost:(id)connection
 {
 
     SPLog(@"connectionLost");
 
-    SPMySQLConnectionLostDecision connectionErrorCode = SPMySQLConnectionLostDisconnect;
+    SPDatabaseConnectionLostDecision connectionErrorCode = SPDatabaseConnectionLostDisconnect;
 
     // Only display the reconnect dialog if the window is visible
     // and we are not terminating
@@ -6166,7 +6174,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         // Display the connection error dialog and wait for the return code
         [[self.parentWindowController window] beginSheet:connectionErrorDialog completionHandler:nil];
-        connectionErrorCode = (SPMySQLConnectionLostDecision)[NSApp runModalForWindow:connectionErrorDialog];
+        connectionErrorCode = (SPDatabaseConnectionLostDecision)[NSApp runModalForWindow:connectionErrorDialog];
 
         [NSApp endSheet:connectionErrorDialog];
         [connectionErrorDialog orderOut:nil];
@@ -6174,7 +6182,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         queryStartDate = [[NSDate alloc] init];
 
         // If 'disconnect' was selected, trigger a window close.
-        if (connectionErrorCode == SPMySQLConnectionLostDisconnect) {
+        if (connectionErrorCode == SPDatabaseConnectionLostDisconnect) {
             [self performSelectorOnMainThread:@selector(closeAndDisconnect) withObject:nil waitUntilDone:YES];
         }
     }

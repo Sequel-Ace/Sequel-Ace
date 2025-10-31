@@ -30,6 +30,7 @@
 
 #import "SPDatabaseStructure.h"
 #import "SPDatabaseDocument.h"
+#import "SPDatabaseConnection.h"
 #import "SPTablesList.h"
 #import "RegexKitLite.h"
 #import "SPThreadAdditions.h"
@@ -598,8 +599,8 @@
 	// Attempt a connection
 	if (![mySQLConnection connect]) return NO;
 
-	// Ensure the encoding is set to UTF8mb4
-	[mySQLConnection setEncoding:@"utf8mb4"];
+	// Ensure the encoding is set to UTF8
+	[(id<SPDatabaseConnection>)mySQLConnection setEncoding:[(id<SPDatabaseConnection>)mySQLConnection preferredUTF8Encoding]];
 
 	// Return success
 	return YES;

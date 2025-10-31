@@ -31,8 +31,8 @@
 
 @class SPHistoryController;
 @class SPTableView;
-@class SPMySQLConnection;
-@class SPDatabaseDocument; 
+@class SPDatabaseDocument;
+@protocol SPDatabaseConnection; 
 @class SPDatabaseData;
 @class SPTableStructure;
 @class SPTableContent;
@@ -97,7 +97,7 @@
 	IBOutlet NSMenuItem *separatorTableMenuItem2;
 	IBOutlet NSMenuItem *separatorTableMenuItem3;
 	
-	SPMySQLConnection *mySQLConnection;
+	id<SPDatabaseConnection> connection;
 
 	// Table list context menu items
 	IBOutlet NSMenuItem *removeTableContextMenuItem;
@@ -148,7 +148,7 @@
 - (IBAction)updateFilter:(nullable id)sender;
 
 // Additional methods
-- (void)setConnection:(nonnull SPMySQLConnection *)theConnection;
+- (void)setConnection:(nonnull id<SPDatabaseConnection>)theConnection;
 - (void)setSelectionState:(nullable NSDictionary *)selectionDetails;
 - (void)selectTableAtIndex:(nullable NSNumber *)row;
 - (void)makeTableListFilterHaveFocus;
