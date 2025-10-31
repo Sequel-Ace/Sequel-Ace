@@ -947,10 +947,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		if(activeFilter == SPTableContentFilterSourceRuleFilter || activeFilter == SPTableContentFilterSourceNone) {
 			NSString *errorDetail;
 			if([filterString length]){
-				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@", @"message of panel when loading of table failed and presumably due to used filter argument"), [connection lastErrorMessage]];
+				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded presumably due to used filter clause. \n\nDatabase said: %@", @"message of panel when loading of table failed and presumably due to used filter argument"), [connection lastErrorMessage]];
 			}
 			else{
-				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded.\n\nMySQL said: %@", @"message of panel when loading of table failed"), [connection lastErrorMessage]];
+				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded.\n\nDatabase said: %@", @"message of panel when loading of table failed"), [connection lastErrorMessage]];
 				SPMainQSync(^{
 					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:errorDetail callback:nil];
 				});

@@ -40,6 +40,8 @@
 #import "SPSQLParser.h"
 #import "SPIndexesController.h"
 #import "RegexKitLite.h"
+#import "SPDatabaseConnection.h"
+#import "SPDatabaseResult.h"
 #import "SPTableFieldValidation.h"
 #import "SPThreadAdditions.h"
 #import "SPServerSupport.h"
@@ -328,16 +330,16 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
  */
 - (IBAction)showOptimizedFieldType:(id)sender
 {
-	SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT %@ FROM %@ PROCEDURE ANALYSE(0,8192)", 
+	id<SPDatabaseResult> theResult = [connection queryString:[NSString stringWithFormat:@"SELECT %@ FROM %@ PROCEDURE ANALYSE(0,8192)", 
 		[[[[self activeFieldsSource] objectAtIndex:[tableSourceView selectedRow]] objectForKey:@"name"] backtickQuotedString],
 		[selectedTable backtickQuotedString]]];
 
 	// Check for errors
-	if ([mySQLConnection queryErrored]) {
+	if ([connection queryErrored]) {
 		NSString *message = NSLocalizedString(@"Error while fetching the optimized field type", @"error while fetching the optimized field type message");
 		
-		if ([mySQLConnection isConnected]) {
-			 [NSAlert createWarningAlertWithTitle:message message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while fetching the optimized field type.\n\nMySQL said:%@", @"an error occurred while fetching the optimized field type.\n\nMySQL said:%@"), [mySQLConnection lastErrorMessage]] callback:nil];
+		if ([connection isConnected]) {
+			 [NSAlert createWarningAlertWithTitle:message message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while fetching the optimized field type.\n\nMySQL said:%@", @"an error occurred while fetching the optimized field type.\n\nMySQL said:%@"), [connection lastErrorMessage]] callback:nil];
 		}
 		return;
 	}
@@ -601,10 +603,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	// only int and float types can be AUTO_INCREMENT and right now BIGINT = 64 Bit (<= long long) is the largest type mysql supports
-	[mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ AUTO_INCREMENT = %llu", [selTable backtickQuotedString], [value unsignedLongLongValue]]];
+	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ AUTO_INCREMENT = %llu", [selTable backtickQuotedString], [value unsignedLongLongValue]]];
 
-	if ([mySQLConnection queryErrored]) {
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@", @"error resetting auto_increment informative message"),selTable, [mySQLConnection lastErrorMessage]] callback:nil];
+	if ([connection queryErrored]) {
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@", @"error resetting auto_increment informative message"),selTable, [connection lastErrorMessage]] callback:nil];
 	}
 
 	// reload data
@@ -620,7 +622,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 /**
  * Converts the supplied result to an array containing a (mutable) dictionary for each row
  */
-- (NSArray *)convertIndexResultToArray:(SPMySQLResult *)theResult
+- (NSArray *)convertIndexResultToArray:(id<SPDatabaseResult>)theResult
 {
 	NSUInteger numOfRows = (NSUInteger)[theResult numberOfRows];
 	NSMutableArray *tempResult = [NSMutableArray arrayWithCapacity:numOfRows];
@@ -754,9 +756,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	autoIncrementIndex = nil;
 
 	// Execute query
-	[mySQLConnection queryString:queryString];
+	[connection queryString:queryString];
 
-	if (![mySQLConnection queryErrored]) {
+	if (![connection queryErrored]) {
 		isEditingRow = NO;
 		isEditingNewRow = NO;
 		currentlyEditingRow = -1;
@@ -774,8 +776,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		return YES;
 	}
 	else {
-		if ([mySQLConnection lastErrorID] == 1146) { // If the current table doesn't exist anymore
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@", @"error while trying to alter table message"),selectedTable, [mySQLConnection lastErrorMessage]] callback:nil];
+		if ([connection lastErrorID] == 1146) { // If the current table doesn't exist anymore
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@", @"error while trying to alter table message"),selectedTable, [connection lastErrorMessage]] callback:nil];
 
 			isEditingRow = NO;
 			isEditingNewRow = NO;
@@ -795,7 +797,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 
 		if (isEditingNewRow) {
-			NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@", @"error adding field informative message"), [theRow objectForKey:@"name"], queryString, [mySQLConnection lastErrorMessage]];
+			NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@", @"error adding field informative message"), [theRow objectForKey:@"name"], queryString, [connection lastErrorMessage]];
 			[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Error adding field", @"error adding field message") message:alertMessage primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") primaryButtonHandler:^{
 				[self addRowSheetPrimaryAction];
 			} cancelButtonHandler:^{
@@ -804,7 +806,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			}];
 
 		} else {
-			NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@", @"error changing field informative message"), [theRow objectForKey:@"name"], queryString, [mySQLConnection lastErrorMessage]];
+			NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@", @"error changing field informative message"), [theRow objectForKey:@"name"], queryString, [connection lastErrorMessage]];
 			[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Error changing field", @"error changing field message") message:alertMessage primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") primaryButtonHandler:^{
 				[self addRowSheetPrimaryAction];
 			} cancelButtonHandler:^{
@@ -873,7 +875,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 		// Otherwise, use the provided default
 		else {
-			[queryString appendFormat:@"\n DEFAULT %@ ", [mySQLConnection escapeAndQuoteString:[theRow objectForKey:@"default"]]];
+			[queryString appendFormat:@"\n DEFAULT %@ ", [connection escapeAndQuoteString:[theRow objectForKey:@"default"]]];
 		}
 	}
 
@@ -1001,7 +1003,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
             else if ([theRowType hasSuffix:@"CHAR"] || [theRowType hasSuffix:@"TEXT"] || [theRowType hasSuffix:@"ENUM"] || [theRowType isInArray:@[@"TIMESTAMP",@"DATETIME",@"DATE"]]) {
                 // If default value is not an expresion or a string, add quotes.
                 if (!defaultValueIsExpression && !defaultValueIsString)
-                    [queryString appendFormat:@"\n DEFAULT %@", [mySQLConnection escapeAndQuoteString:defaultValue]];
+                    [queryString appendFormat:@"\n DEFAULT %@", [connection escapeAndQuoteString:defaultValue]];
                 else
                     [queryString appendFormat:@"\n DEFAULT %@", defaultValue];
             }
@@ -1012,7 +1014,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
             // Otherwise, use the provided default (Can be an expression, int value....)
             else  {
                 [queryString appendFormat:@"\n DEFAULT %@", defaultValue];
-//                [queryString appendFormat:@"\n DEFAULT %@", [mySQLConnection escapeAndQuoteString:defaultValue]];
+//                [queryString appendFormat:@"\n DEFAULT %@", [connection escapeAndQuoteString:defaultValue]];
             }
 		}
 
@@ -1041,7 +1043,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
     // Any column comments
     if ([(NSString *)[theRow objectForKey:@"comment"] length]) {
-        [queryString appendFormat:@"\n COMMENT %@", [mySQLConnection escapeAndQuoteString:[theRow objectForKey:@"comment"]]];
+        [queryString appendFormat:@"\n COMMENT %@", [connection escapeAndQuoteString:[theRow objectForKey:@"comment"]]];
     }
 
 	return queryString;
@@ -1140,12 +1142,12 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 /**
  * Sets the connection (received from SPDatabaseDocument) and makes things that have to be done only once
  */
-- (void)setConnection:(SPMySQLConnection *)theConnection
+- (void)setConnection:(id<SPDatabaseConnection>)theConnection
 {
-	mySQLConnection = theConnection;
+	connection = theConnection;
 	
 	// Set the indexes controller connection
-	[indexesController setConnection:mySQLConnection];
+	[indexesController setConnection:connection];
 	
 	// Set up tableView
 	[tableSourceView registerForDraggedTypes:@[SPDefaultPasteboardDragType]];
@@ -1211,8 +1213,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	NSString *nullValue = [prefs stringForKey:SPNullValue];
 	CFStringRef escapedNullValue = CFXMLCreateStringByEscapingEntities(NULL, ((CFStringRef)nullValue), NULL);
 
-	SPMySQLResult *structureQueryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [selectedTable backtickQuotedString]]];
-	SPMySQLResult *indexesQueryResult   = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEXES FROM %@", [selectedTable backtickQuotedString]]];
+	id<SPDatabaseResult> structureQueryResult = [connection getColumnsForTable:selectedTable];
+	id<SPDatabaseResult> indexesQueryResult   = [connection getIndexesForTable:selectedTable];
 
 	[structureQueryResult setReturnDataAsStrings:YES];
 	[indexesQueryResult setReturnDataAsStrings:YES];
@@ -1346,28 +1348,28 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 					}
 				}
 
-				[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [self->selectedTable backtickQuotedString], [relationName backtickQuotedString]]];
+				[self->connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [self->selectedTable backtickQuotedString], [relationName backtickQuotedString]]];
 
 				// Check for errors, but only if the query wasn't cancelled
-				if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
+				if ([self->connection queryErrored] && ![self->connection lastQueryWasCancelled]) {
 					NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
 					[errorDictionary setObject:NSLocalizedString(@"Unable to delete relation", @"error deleting relation message") forKey:@"title"];
-					[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@", @"error deleting relation informative message"), relationName, [self->mySQLConnection lastErrorMessage]] forKey:@"message"];
+					[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@", @"error deleting relation informative message"), relationName, [self->connection lastErrorMessage]] forKey:@"message"];
 					[[self onMainThread] showErrorSheetWith:errorDictionary];
 				}
 			}
 
 			// Remove field
-			[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP %@",
+			[self->connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP %@",
 																	[self->selectedTable backtickQuotedString], [[[[self activeFieldsSource] safeObjectAtIndex:[self->tableSourceView selectedRow]] safeObjectForKey:@"name"] backtickQuotedString]]];
 
 			// Check for errors, but only if the query wasn't cancelled
-			if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
+			if ([self->connection queryErrored] && ![self->connection lastQueryWasCancelled]) {
 				NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
 				[errorDictionary setObject:NSLocalizedString(@"Error", @"error") forKey:@"title"];
 				[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"Couldn't delete field %@.\nMySQL said: %@", @"message of panel when field cannot be deleted"),
 																	  [[[self activeFieldsSource] objectAtIndex:[self->tableSourceView selectedRow]] objectForKey:@"name"],
-																	  [self->mySQLConnection lastErrorMessage]] forKey:@"message"];
+																	  [self->connection lastErrorMessage]] forKey:@"message"];
 
 				[[self onMainThread] showErrorSheetWith:errorDictionary];
 			}
@@ -1418,15 +1420,15 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	// Retrieve the indexes for the table
-	SPMySQLResult *indexResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEX FROM %@", [aTable backtickQuotedString]]];
+	id<SPDatabaseResult> indexResult = [connection getIndexesForTable:aTable];
 
 	// If an error occurred, reset the interface and abort
-	if ([mySQLConnection queryErrored]) {
+	if ([connection queryErrored]) {
 		[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 		[[self onMainThread] setTableDetails:nil];
 
-		if ([mySQLConnection isConnected]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nMySQL said: %@", @"message of panel when retrieving information failed"), [mySQLConnection lastErrorMessage]] callback:nil];
+		if ([connection isConnected]) {
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nDatabase said: %@", @"message of panel when retrieving information failed"), [connection lastErrorMessage]] callback:nil];
 		}
 
 		return;
@@ -1585,7 +1587,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			[theField setObject:[prefs stringForKey:SPNullValue] forKey:@"default"];
 		}
         else if ([type hasSuffix:@"CHAR"] || [type hasSuffix:@"TEXT"] || [type hasSuffix:@"ENUM"]) {
-            [theField setObject:[mySQLConnection escapeAndQuoteString:[theField objectForKey:@"default"]] forKey:@"default"];
+            [theField setObject:[connection escapeAndQuoteString:[theField objectForKey:@"default"]] forKey:@"default"];
         }
 
 		// Init Extra field
@@ -2047,10 +2049,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	// Run the query; report any errors, or reload the table on success
-	[mySQLConnection queryString:queryString];
+	[connection queryString:queryString];
 
-	if ([mySQLConnection queryErrored]) {
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error moving field", @"error moving field message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to move the field.\n\nMySQL said: %@", @"error moving field informative message"), [mySQLConnection lastErrorMessage]] callback:nil];
+	if ([connection queryErrored]) {
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error moving field", @"error moving field message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to move the field.\n\nMySQL said: %@", @"error moving field informative message"), [connection lastErrorMessage]] callback:nil];
 	}
 	else {
 		[tableDataInstance resetAllData];

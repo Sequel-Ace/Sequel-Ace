@@ -232,21 +232,18 @@ copy_return:
 
 /**
  * Returns all of the database's available storage engines.
+ * Delegates to the database connection wrapper for database-specific implementation.
  *
  * This method is NOT thread-safe!
  */
 - (NSArray *)getDatabaseStorageEngines
 {	
 	if ([storageEngines count] == 0) {
-        // Check the information_schema.engines table is accessible
-        id<SPDatabaseResult> result = [connection queryString:@"SHOW TABLES IN information_schema LIKE 'ENGINES'"];
-        
-        if ([result numberOfRows] == 1) {
-            
-            // Table is accessible so get available storage engines
-            // Note, that the case of the column names specified in this query are important.
-            [storageEngines addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT Engine, Support FROM `information_schema`.`engines` WHERE SUPPORT IN ('DEFAULT', 'YES') AND Engine != 'PERFORMANCE_SCHEMA'"]];
-        }
+		// Use the database-agnostic method from the connection
+		NSArray *engines = [connection getDatabaseStorageEngines];
+		if ([engines count] > 0) {
+			[storageEngines addObjectsFromArray:engines];
+		}
 	}
 	
 	return [storageEngines sortedArrayUsingFunction:_sortStorageEngineEntry context:nil];

@@ -525,6 +525,32 @@
     return [collations copy];
 }
 
+- (NSArray *)getDatabaseStorageEngines {
+    // MySQL: Check if information_schema.engines table is accessible
+    SPMySQLResult *checkResult = [_mysqlConnection queryString:@"SHOW TABLES IN information_schema LIKE 'ENGINES'"];
+    
+    if (!checkResult || [checkResult numberOfRows] != 1) {
+        return @[];
+    }
+    
+    // Table is accessible, get available storage engines
+    // Note: The case of the column names specified in this query are important
+    SPMySQLResult *result = [_mysqlConnection queryString:@"SELECT Engine, Support FROM `information_schema`.`engines` WHERE SUPPORT IN ('DEFAULT', 'YES') AND Engine != 'PERFORMANCE_SCHEMA'"];
+    
+    if (!result || [_mysqlConnection queryErrored]) {
+        return @[];
+    }
+    
+    NSMutableArray *engines = [NSMutableArray array];
+    [result setReturnDataAsStrings:YES];
+    
+    for (NSDictionary *row in result) {
+        [engines addObject:row];
+    }
+    
+    return [engines copy];
+}
+
 - (void)storeEncodingForRestoration {
     [_mysqlConnection storeEncodingForRestoration];
 }
@@ -694,6 +720,15 @@
 - (id<SPDatabaseResult>)getTriggersForTable:(NSString *)tableName {
     NSString *query = [NSString stringWithFormat:@"/*!50003 SHOW TRIGGERS WHERE `Table` = %@ */",
                       [tableName tickQuotedString]];
+    SPMySQLResult *result = [_mysqlConnection queryString:query];
+    if (result) {
+        return [[SPMySQLResultWrapper alloc] initWithMySQLResult:result];
+    }
+    return nil;
+}
+
+- (id<SPDatabaseResult>)getIndexesForTable:(NSString *)tableName {
+    NSString *query = [NSString stringWithFormat:@"SHOW INDEX FROM %@", [tableName backtickQuotedString]];
     SPMySQLResult *result = [_mysqlConnection queryString:query];
     if (result) {
         return [[SPMySQLResultWrapper alloc] initWithMySQLResult:result];

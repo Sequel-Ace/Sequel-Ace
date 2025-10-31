@@ -319,6 +319,13 @@ typedef NS_ENUM(NSUInteger, SPDatabaseConnectionLostDecision) {
  */
 - (id<SPDatabaseResult>)getTriggersForTable:(NSString *)tableName;
 
+/**
+ * Get indexes for a table
+ * @param tableName The name of the table
+ * @return Result set with index information or nil on error
+ */
+- (id<SPDatabaseResult>)getIndexesForTable:(NSString *)tableName;
+
 #pragma mark - Server Information
 
 /**
@@ -397,6 +404,13 @@ typedef NS_ENUM(NSUInteger, SPDatabaseConnectionLostDecision) {
  * @return Array of dictionaries with collation information, or empty array if not supported
  */
 - (NSArray *)getCollationsForEncoding:(NSString *)encoding;
+
+/**
+ * Get available storage engines for this database
+ * @return Array of dictionaries with storage engine information (MySQL: Engine, Support, etc.), 
+ *         or empty array for databases that don't support storage engines (e.g., PostgreSQL)
+ */
+- (NSArray *)getDatabaseStorageEngines;
 
 /**
  * Store current encoding for later restoration

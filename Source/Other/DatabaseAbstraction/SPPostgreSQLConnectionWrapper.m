@@ -23,6 +23,7 @@
     NSUInteger _timeout;
     BOOL _useSSL;
     BOOL _connected;
+    BOOL _hasDisconnected; // Flag to prevent double-disconnect
     NSString *_lastErrorMessage;
     NSUInteger _lastErrorID;
 }
@@ -47,6 +48,7 @@
         _timeout = 10;
         _useSSL = NO;
         _connected = NO;
+        _hasDisconnected = NO;
         _lastErrorMessage = nil;
         _lastErrorID = 0;
     }
@@ -54,11 +56,8 @@
 }
 
 - (void)dealloc {
-    if (_pgConnection != NULL) {
-        sp_postgresql_connection_disconnect(_pgConnection);
-        sp_postgresql_connection_destroy(_pgConnection);
-        _pgConnection = NULL;
-    }
+    // Ensure connection is properly cleaned up on dealloc
+    [self disconnect];
 }
 
 #pragma mark - Database Type
@@ -288,6 +287,7 @@
     }
     
     _connected = YES;
+    _hasDisconnected = NO; // Reset disconnect flag on successful connection
     _lastErrorMessage = nil;
     _lastErrorID = 0;
     NSLog(@"🟢 PostgreSQL connection successful!");
@@ -295,12 +295,23 @@
 }
 
 - (void)disconnect {
+    // Prevent double-disconnect by checking flag first
+    if (_hasDisconnected) {
+        return;
+    }
+    
+    // Mark as disconnected first to prevent race conditions
+    _connected = NO;
+    _hasDisconnected = YES;
+    
     if (_pgConnection != NULL) {
+        // Call disconnect on the Rust side
         sp_postgresql_connection_disconnect(_pgConnection);
+        
+        // Destroy the connection object to free memory
         sp_postgresql_connection_destroy(_pgConnection);
         _pgConnection = NULL;
     }
-    _connected = NO;
 }
 
 - (BOOL)isConnected {
@@ -359,7 +370,7 @@
     }
     
     // PostgreSQL version format: "PostgreSQL 15.4 on aarch64-unknown-linux-musl, compiled by gcc..."
-    // Extract just "PostgreSQL 15.4"
+    // Extract just "15.4"
     NSRange postgresqlRange = [versionString rangeOfString:@"PostgreSQL" options:NSCaseInsensitiveSearch];
     if (postgresqlRange.location == NSNotFound) {
         return versionString;
@@ -387,6 +398,10 @@
 #pragma mark - Query Execution
 
 - (id<SPDatabaseResult>)queryString:(NSString *)query {
+    // Clear error state at the start of each query
+    _lastErrorMessage = nil;
+    _lastErrorID = 0;
+    
     if (![self isConnected]) {
         _lastErrorMessage = @"Not connected to database";
         _lastErrorID = 100;
@@ -404,8 +419,6 @@
         return nil;
     }
     
-    _lastErrorMessage = nil;
-    _lastErrorID = 0;
     return [[SPPostgreSQLResultWrapper alloc] initWithPGResult:pgResult connection:self];
 }
 
@@ -731,6 +744,12 @@
         @"IS_COMPILED": @"YES",
         @"SORTLEN": @"1"
     }];
+}
+
+- (NSArray *)getDatabaseStorageEngines {
+    // PostgreSQL doesn't have storage engines like MySQL (InnoDB, MyISAM, etc.)
+    // Return empty array
+    return @[];
 }
 
 - (void)storeEncodingForRestoration {
@@ -1183,6 +1202,59 @@
         @"  created AS \"Created\" "
         @"FROM information_schema.triggers "
         @"WHERE LOWER(event_object_schema) = LOWER('%@') AND LOWER(event_object_table) = LOWER('%@')",
+        [schemaName stringByReplacingOccurrencesOfString:@"'" withString:@"''"],
+        [tableName stringByReplacingOccurrencesOfString:@"'" withString:@"''"]];
+    
+    if (_pgConnection == NULL || !_connected) {
+        return nil;
+    }
+    
+    SPPostgreSQLResult *rawResult = sp_postgresql_connection_execute_query(_pgConnection, [query UTF8String]);
+    if (rawResult == NULL) {
+        _lastErrorMessage = [self lastErrorMessage];
+        return nil;
+    }
+    
+    return [[SPPostgreSQLResultWrapper alloc] initWithPGResult:rawResult connection:self];
+}
+
+- (id<SPDatabaseResult>)getIndexesForTable:(NSString *)tableName {
+    // PostgreSQL equivalent of SHOW INDEX
+    
+    // Get current schema
+    NSString *schemaName = @"public";
+    id<SPDatabaseResult> schemaResult = [self queryString:@"SELECT current_schema()"];
+    if (schemaResult && [schemaResult numberOfRows] > 0) {
+        NSArray *row = [schemaResult getRowAsArray];
+        if (row && [row count] > 0 && ![row[0] isKindOfClass:[NSNull class]]) {
+            schemaName = row[0];
+        }
+    }
+    
+    // Query to get index information in a MySQL-compatible format
+    NSString *query = [NSString stringWithFormat:
+        @"SELECT "
+        @"  t.relname AS \"Table\", "
+        @"  CASE WHEN ix.indisunique THEN 0 ELSE 1 END AS \"Non_unique\", "
+        @"  i.relname AS \"Key_name\", "
+        @"  a.attnum AS \"Seq_in_index\", "
+        @"  a.attname AS \"Column_name\", "
+        @"  NULL AS \"Collation\", "
+        @"  NULL AS \"Cardinality\", "
+        @"  NULL AS \"Sub_part\", "
+        @"  NULL AS \"Packed\", "
+        @"  CASE WHEN a.attnotnull THEN '' ELSE 'YES' END AS \"Null\", "
+        @"  am.amname AS \"Index_type\", "
+        @"  '' AS \"Comment\", "
+        @"  '' AS \"Index_comment\" "
+        @"FROM pg_class t "
+        @"JOIN pg_index ix ON t.oid = ix.indrelid "
+        @"JOIN pg_class i ON i.oid = ix.indexrelid "
+        @"JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey) "
+        @"JOIN pg_am am ON i.relam = am.oid "
+        @"JOIN pg_namespace n ON t.relnamespace = n.oid "
+        @"WHERE LOWER(n.nspname) = LOWER('%@') AND LOWER(t.relname) = LOWER('%@') "
+        @"ORDER BY i.relname, a.attnum",
         [schemaName stringByReplacingOccurrencesOfString:@"'" withString:@"''"],
         [tableName stringByReplacingOccurrencesOfString:@"'" withString:@"''"]];
     
