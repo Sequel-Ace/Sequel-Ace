@@ -7,6 +7,7 @@
 
 #import "SPPostgreSQLConnectionWrapper.h"
 #import "SPPostgreSQLResultWrapper.h"
+#import "SPPostgreSQLStreamingResultWrapper.h"
 #import "SPConstants.h"
 
 // Import the Rust FFI C header
@@ -423,21 +424,35 @@
 }
 
 - (id<SPDatabaseResult>)streamingQueryString:(NSString *)query {
-    // PostgreSQL doesn't have the same streaming concept as MySQL
-    // For now, use regular query execution
-    return [self queryString:query];
+    // Use streaming query with default batch size
+    return [self streamingQueryString:query useLowMemoryBlockingStreaming:NO];
 }
 
 - (id<SPDatabaseResult>)streamingQueryString:(NSString *)query useLowMemoryBlockingStreaming:(BOOL)fullStream {
-    // PostgreSQL doesn't have the same streaming concept as MySQL
-    // For now, use regular query execution
-    return [self queryString:query];
+    // Clear error state at the start of each query
+    _lastErrorMessage = nil;
+    _lastErrorID = 0;
+    
+    if (![self isConnected]) {
+        _lastErrorMessage = @"Not connected to database";
+        _lastErrorID = 100;
+        return nil;
+    }
+    
+    // Choose batch size based on streaming mode
+    // fullStream = YES means low memory mode, use smaller batches
+    NSUInteger batchSize = fullStream ? 500 : 1000;
+    
+    // Create streaming wrapper that will execute the query asynchronously when startDownload is called
+    return [[SPPostgreSQLStreamingResultWrapper alloc] initWithQuery:query 
+                                                          connection:self
+                                                           batchSize:batchSize];
 }
 
 - (id)resultStoreFromQueryString:(NSString *)query {
-    // PostgreSQL doesn't have a separate result store concept
-    // Return regular query result
-    return [self queryString:query];
+    // Use streaming query to match MySQL behavior
+    // This allows async loading, cancellation, and progress updates
+    return [self streamingQueryString:query useLowMemoryBlockingStreaming:NO];
 }
 
 - (NSArray *)getAllRowsFromQuery:(NSString *)query {

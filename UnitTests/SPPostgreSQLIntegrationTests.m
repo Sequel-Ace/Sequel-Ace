@@ -15,6 +15,7 @@
 //
 
 #import <XCTest/XCTest.h>
+#import <objc/runtime.h>
 #import "SPPostgreSQLConnectionWrapper.h"
 #import "SPPostgreSQLResultWrapper.h"
 #import "SPDatabaseConnection.h"
@@ -880,6 +881,489 @@
     
     NSLog(@"✅ TLS vs Non-TLS comparison test PASSED");
     NSLog(@"    Both connection modes work correctly.");
+}
+
+#pragma mark - Test 20: Streaming Query Basic Test
+
+- (void)test_20_StreamingQuery {
+    NSLog(@"\n🧪 Test 20: Streaming Query Basic Test");
+    
+    SPPostgreSQLConnectionWrapper *connection = [[SPPostgreSQLConnectionWrapper alloc] init];
+    [connection setHost:self.testHost];
+    [connection setUsername:self.testUser];
+    [connection setPassword:self.testPassword];
+    [connection setDatabase:self.testDatabase];
+    [connection setPort:self.testPort];
+    [connection setUseSSL:NO];
+    
+    BOOL connected = [connection connect];
+    XCTAssertTrue(connected, @"Should connect successfully");
+    XCTAssertTrue([connection isConnected], @"Should report as connected");
+    
+    if (!connected) {
+        NSLog(@"❌ Connection failed, skipping streaming test");
+        return;
+    }
+    
+    // Create a small test table with known data
+    NSString *createTableQuery = @"CREATE TABLE IF NOT EXISTS test_streaming ("
+                                 @"id SERIAL PRIMARY KEY, "
+                                 @"name TEXT NOT NULL, "
+                                 @"value INTEGER NOT NULL)";
+    id<SPDatabaseResult> createResult = [connection queryString:createTableQuery];
+    XCTAssertNotNil(createResult, @"Create table should succeed");
+    
+    // Insert test data
+    [connection queryString:@"DELETE FROM test_streaming"];  // Clean slate
+    for (int i = 1; i <= 50; i++) {
+        NSString *insertQuery = [NSString stringWithFormat:@"INSERT INTO test_streaming (name, value) VALUES ('Row%d', %d)", i, i * 10];
+        [connection queryString:insertQuery];
+    }
+    NSLog(@"✓ Inserted 50 test rows");
+    
+    // Execute streaming query
+    id<SPDatabaseResult> streamingResult = [connection streamingQueryString:@"SELECT * FROM test_streaming ORDER BY id"];
+    XCTAssertNotNil(streamingResult, @"Streaming query should return result");
+    
+    if (streamingResult) {
+        // Start the async download
+        NSLog(@"🚀 Starting data download...");
+        [streamingResult startDownload];
+        
+        // Wait for download to complete (with timeout)
+        NSDate *startTime = [NSDate date];
+        NSTimeInterval timeout = 10.0;
+        
+        while (![streamingResult dataDownloaded] && [[NSDate date] timeIntervalSinceDate:startTime] < timeout) {
+            [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+        }
+        
+        XCTAssertTrue([streamingResult dataDownloaded], @"Data should have downloaded within timeout");
+        NSLog(@"✓ Data downloaded in %.3f seconds", [[NSDate date] timeIntervalSinceDate:startTime]);
+        
+        // Check metadata
+        NSUInteger totalRows = [streamingResult numberOfRows];
+        NSUInteger numFields = [streamingResult numberOfFields];
+        
+        NSLog(@"✓ Streaming result metadata:");
+        NSLog(@"  Total rows: %lu", (unsigned long)totalRows);
+        NSLog(@"  Fields: %lu", (unsigned long)numFields);
+        
+        XCTAssertEqual(totalRows, 50, @"Should have 50 rows");
+        XCTAssertEqual(numFields, 3, @"Should have 3 fields (id, name, value)");
+        
+        // Check field names
+        NSArray<NSString *> *fieldNames = [streamingResult fieldNames];
+        XCTAssertTrue([fieldNames containsObject:@"id"], @"Should have 'id' field");
+        XCTAssertTrue([fieldNames containsObject:@"name"], @"Should have 'name' field");
+        XCTAssertTrue([fieldNames containsObject:@"value"], @"Should have 'value' field");
+        NSLog(@"✓ Field names: %@", fieldNames);
+        
+        // Verify dataDownloaded property
+        BOOL dataDownloaded = [streamingResult dataDownloaded];
+        NSLog(@"✓ dataDownloaded: %@", dataDownloaded ? @"YES" : @"NO");
+        
+        // Iterate through results (tests the enumeration)
+        NSUInteger rowCount = 0;
+        for (NSArray *row in streamingResult) {
+            rowCount++;
+            if (rowCount == 1) {
+                // Verify first row
+                NSLog(@"✓ First row: %@", row);
+            }
+        }
+        
+        NSLog(@"✓ Enumerated %lu rows", (unsigned long)rowCount);
+        XCTAssertEqual(rowCount, totalRows, @"Enumeration should return all rows");
+        
+        // Test seekToRow and getRowAsArray
+        [streamingResult seekToRow:0];
+        NSArray *firstRow = [streamingResult getRowAsArray];
+        XCTAssertNotNil(firstRow, @"Should get first row");
+        NSLog(@"✓ First row via getRowAsArray: %@", firstRow);
+        
+        // Test getRowAsDictionary
+        [streamingResult seekToRow:0];
+        NSDictionary *firstRowDict = [streamingResult getRowAsDictionary];
+        XCTAssertNotNil(firstRowDict, @"Should get first row as dictionary");
+        NSLog(@"✓ First row as dictionary: %@", firstRowDict);
+        
+        // Verify dictionary contents
+        XCTAssertNotNil(firstRowDict[@"id"], @"Dictionary should have 'id'");
+        XCTAssertNotNil(firstRowDict[@"name"], @"Dictionary should have 'name'");
+        XCTAssertNotNil(firstRowDict[@"value"], @"Dictionary should have 'value'");
+    }
+    
+    // Clean up
+    [connection queryString:@"DROP TABLE test_streaming"];
+    [connection disconnect];
+    
+    NSLog(@"✅ Test 20 Passed: Streaming Query Basic Test");
+}
+
+#pragma mark - Test 21: Streaming Query Large Dataset
+
+- (void)test_21_StreamingQueryLargeDataset {
+    NSLog(@"\n🧪 Test 21: Streaming Query Large Dataset");
+    
+    SPPostgreSQLConnectionWrapper *connection = [[SPPostgreSQLConnectionWrapper alloc] init];
+    [connection setHost:self.testHost];
+    [connection setUsername:self.testUser];
+    [connection setPassword:self.testPassword];
+    [connection setDatabase:self.testDatabase];
+    [connection setPort:self.testPort];
+    [connection setUseSSL:NO];
+    
+    BOOL connected = [connection connect];
+    XCTAssertTrue(connected, @"Should connect successfully");
+    
+    if (!connected) {
+        NSLog(@"❌ Connection failed, skipping large dataset test");
+        return;
+    }
+    
+    // Check if football_match_event table exists
+    id<SPDatabaseResult> checkTableResult = [connection queryString:
+        @"SELECT COUNT(*) as cnt FROM information_schema.tables "
+        @"WHERE table_schema = 'public' AND table_name = 'football_match_event'"];
+    
+    if (!checkTableResult || [checkTableResult numberOfRows] == 0) {
+        NSLog(@"⚠️  football_match_event table does not exist, skipping large dataset test");
+        [connection disconnect];
+        return;
+    }
+    
+    [checkTableResult seekToRow:0];
+    NSArray *row = [checkTableResult getRowAsArray];
+    if (!row || [row count] == 0 || [row[0] isEqual:[NSNull null]]) {
+        NSLog(@"⚠️  Could not verify football_match_event table, skipping test");
+        [connection disconnect];
+        return;
+    }
+    
+    // Get row count from the table
+    id<SPDatabaseResult> countResult = [connection queryString:@"SELECT COUNT(*) as total FROM football_match_event"];
+    XCTAssertNotNil(countResult, @"Count query should succeed");
+    
+    [countResult seekToRow:0];
+    NSArray *countRow = [countResult getRowAsArray];
+    NSString *totalRowsStr = countRow[0];
+    NSUInteger totalRows = [totalRowsStr integerValue];
+    
+    NSLog(@"✓ football_match_event table has %lu rows", (unsigned long)totalRows);
+    
+    if (totalRows == 0) {
+        NSLog(@"⚠️  football_match_event table is empty, skipping large dataset test");
+        [connection disconnect];
+        return;
+    }
+    
+    // Test regular streaming query (default batch size)
+    NSLog(@"\n📊 Testing regular streaming query...");
+    NSDate *startTime = [NSDate date];
+    
+    id<SPDatabaseResult> streamingResult = [connection streamingQueryString:@"SELECT * FROM football_match_event LIMIT 5000"];
+    XCTAssertNotNil(streamingResult, @"Streaming query should return result");
+    
+    if (streamingResult) {
+        // Start async download and wait for completion
+        [streamingResult startDownload];
+        while (![streamingResult dataDownloaded] && [[NSDate date] timeIntervalSinceDate:startTime] < 10.0) {
+            [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+        }
+        XCTAssertTrue([streamingResult dataDownloaded], @"Data should have downloaded");
+        
+        NSTimeInterval queryTime = -[startTime timeIntervalSinceNow];
+        NSLog(@"✓ Query execution time: %.3f seconds", queryTime);
+        
+        NSUInteger resultRows = [streamingResult numberOfRows];
+        NSUInteger resultFields = [streamingResult numberOfFields];
+        NSLog(@"✓ Result: %lu rows, %lu fields", (unsigned long)resultRows, (unsigned long)resultFields);
+        
+        XCTAssertTrue(resultRows <= 5000, @"Should respect LIMIT");
+        XCTAssertTrue(resultFields > 0, @"Should have fields");
+        
+        // Check field names
+        NSArray<NSString *> *fieldNames = [streamingResult fieldNames];
+        NSLog(@"✓ Field names: %@", fieldNames);
+        XCTAssertTrue([fieldNames count] > 0, @"Should have field names");
+        
+        // Sample first few rows
+        NSUInteger sampleSize = MIN(5, resultRows);
+        NSLog(@"\n📝 Sampling first %lu rows:", (unsigned long)sampleSize);
+        
+        [streamingResult seekToRow:0];
+        for (NSUInteger i = 0; i < sampleSize; i++) {
+            NSDictionary *rowDict = [streamingResult getRowAsDictionary];
+            if (rowDict) {
+                NSLog(@"  Row %lu: %@", (unsigned long)(i + 1), rowDict);
+            }
+        }
+    }
+    
+    // Test low-memory streaming query (smaller batch size)
+    NSLog(@"\n💾 Testing low-memory streaming query...");
+    startTime = [NSDate date];
+    
+    id<SPDatabaseResult> lowMemResult = [connection streamingQueryString:@"SELECT * FROM football_match_event LIMIT 3000" 
+                                                 useLowMemoryBlockingStreaming:YES];
+    XCTAssertNotNil(lowMemResult, @"Low-memory streaming query should return result");
+    
+    if (lowMemResult) {
+        // Start async download and wait for completion
+        [lowMemResult startDownload];
+        while (![lowMemResult dataDownloaded] && [[NSDate date] timeIntervalSinceDate:startTime] < 10.0) {
+            [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+        }
+        XCTAssertTrue([lowMemResult dataDownloaded], @"Data should have downloaded");
+        
+        NSTimeInterval queryTime = -[startTime timeIntervalSinceNow];
+        NSLog(@"✓ Query execution time: %.3f seconds", queryTime);
+        
+        NSUInteger resultRows = [lowMemResult numberOfRows];
+        NSLog(@"✓ Low-memory result: %lu rows", (unsigned long)resultRows);
+        
+        XCTAssertTrue(resultRows <= 3000, @"Should respect LIMIT");
+        
+        // Verify enumeration works
+        NSUInteger enumeratedCount = 0;
+        for (NSArray *row in lowMemResult) {
+            enumeratedCount++;
+            if (enumeratedCount >= 10) break;  // Just sample first 10
+        }
+        NSLog(@"✓ Enumerated %lu rows (sample)", (unsigned long)enumeratedCount);
+        XCTAssertTrue(enumeratedCount > 0, @"Should enumerate rows");
+    }
+    
+    // Test resultStoreFromQueryString (should use streaming internally)
+    NSLog(@"\n🗄️  Testing resultStoreFromQueryString...");
+    startTime = [NSDate date];
+    
+    id resultStore = [connection resultStoreFromQueryString:@"SELECT * FROM football_match_event LIMIT 2000"];
+    XCTAssertNotNil(resultStore, @"Result store query should return result");
+    
+    if (resultStore && [resultStore conformsToProtocol:@protocol(SPDatabaseResult)]) {
+        // Start async download and wait for completion
+        if ([resultStore respondsToSelector:@selector(startDownload)]) {
+            [resultStore startDownload];
+            while (![resultStore dataDownloaded] && [[NSDate date] timeIntervalSinceDate:startTime] < 10.0) {
+                [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+            }
+            XCTAssertTrue([resultStore dataDownloaded], @"Data should have downloaded");
+        }
+        
+        NSTimeInterval queryTime = -[startTime timeIntervalSinceNow];
+        NSLog(@"✓ Query execution time: %.3f seconds", queryTime);
+        
+        id<SPDatabaseResult> storeResult = (id<SPDatabaseResult>)resultStore;
+        NSUInteger resultRows = [storeResult numberOfRows];
+        NSLog(@"✓ Result store: %lu rows", (unsigned long)resultRows);
+        
+        XCTAssertTrue(resultRows <= 2000, @"Should respect LIMIT");
+    }
+    
+    [connection disconnect];
+    NSLog(@"✅ Test 21 Passed: Streaming Query Large Dataset");
+}
+
+#pragma mark - Test 22: Async Streaming Result Store
+
+- (void)test_22_AsyncStreamingResultStore {
+    NSLog(@"\n🧪 Test 22: Async Streaming Result Store");
+    
+    SPPostgreSQLConnectionWrapper *connection = [[SPPostgreSQLConnectionWrapper alloc] init];
+    [connection setHost:self.testHost];
+    [connection setUsername:self.testUser];
+    [connection setPassword:self.testPassword];
+    [connection setDatabase:self.testDatabase];
+    [connection setPort:self.testPort];
+    [connection setUseSSL:NO];
+    
+    BOOL connected = [connection connect];
+    XCTAssertTrue(connected, @"Should connect successfully");
+    
+    if (!connected) {
+        NSLog(@"❌ Connection failed, skipping async streaming test");
+        return;
+    }
+    
+    // Create a small test table
+    NSString *createTableQuery = @"CREATE TABLE IF NOT EXISTS test_async_streaming ("
+                                 @"id SERIAL PRIMARY KEY, "
+                                 @"name TEXT NOT NULL, "
+                                 @"value INTEGER NOT NULL)";
+    id<SPDatabaseResult> createResult = [connection queryString:createTableQuery];
+    XCTAssertNotNil(createResult, @"Create table should succeed");
+    
+    // Insert test data
+    [connection queryString:@"DELETE FROM test_async_streaming"];
+    for (int i = 1; i <= 3; i++) {
+        NSString *insertQuery = [NSString stringWithFormat:@"INSERT INTO test_async_streaming (name, value) VALUES ('Row%d', %d)", i, i * 10];
+        [connection queryString:insertQuery];
+    }
+    NSLog(@"✓ Inserted 3 test rows");
+    
+    // Test async result store (mimics what table loading does)
+    NSLog(@"\n📊 Testing resultStoreFromQueryString (async streaming)...");
+    
+    id<SPDatabaseResult> resultStore = [connection resultStoreFromQueryString:@"SELECT * FROM test_async_streaming ORDER BY id"];
+    XCTAssertNotNil(resultStore, @"Result store should be created");
+    
+    NSLog(@"✓ Result store created: %@", [resultStore class]);
+    NSLog(@"  Initial dataDownloaded: %@", [resultStore dataDownloaded] ? @"YES" : @"NO");
+    NSLog(@"  Initial numberOfRows: %lu", (unsigned long)[resultStore numberOfRows]);
+    NSLog(@"  Initial numberOfFields: %lu", (unsigned long)[resultStore numberOfFields]);
+    
+    // Set up a delegate to track completion
+    __block BOOL delegateWasCalled = NO;
+    __block NSDate *startTime = [NSDate date];
+    
+    id mockDelegate = [NSObject new];
+    
+    // Use method swizzling to add the delegate method
+    Class delegateClass = [mockDelegate class];
+    IMP implementation = imp_implementationWithBlock(^(id self, id resultStore) {
+        NSLog(@"✓ Delegate callback received!");
+        NSLog(@"  Time elapsed: %.3f seconds", -[startTime timeIntervalSinceNow]);
+        delegateWasCalled = YES;
+    });
+    
+    class_addMethod(delegateClass, @selector(resultStoreDidFinishLoadingData:), implementation, "v@:@");
+    
+    [resultStore setDelegate:mockDelegate];
+    NSLog(@"✓ Delegate set");
+    
+    // Start the download
+    NSLog(@"\n🚀 Calling startDownload...");
+    [resultStore startDownload];
+    NSLog(@"✓ startDownload returned (should be non-blocking)");
+    
+    // Wait for completion with timeout
+    NSLog(@"\n⏳ Waiting for data to download...");
+    int timeout = 10; // 10 seconds
+    int elapsed = 0;
+    
+    while (![resultStore dataDownloaded] && elapsed < timeout) {
+        [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+        usleep(100000); // 100ms
+        elapsed++;
+        
+        if (elapsed % 10 == 0) {
+            NSLog(@"  Still waiting... %d seconds elapsed", elapsed / 10);
+            NSLog(@"    dataDownloaded: %@", [resultStore dataDownloaded] ? @"YES" : @"NO");
+            NSLog(@"    numberOfRows: %lu", (unsigned long)[resultStore numberOfRows]);
+        }
+    }
+    
+    if (elapsed >= timeout) {
+        NSLog(@"❌ TIMEOUT: Data did not finish downloading in %d seconds", timeout);
+        NSLog(@"  Final dataDownloaded: %@", [resultStore dataDownloaded] ? @"YES" : @"NO");
+        NSLog(@"  Final numberOfRows: %lu", (unsigned long)[resultStore numberOfRows]);
+        
+        // Try to cancel
+        [resultStore cancelResultLoad];
+        
+        XCTFail(@"Download timed out after %d seconds", timeout);
+        
+        [connection queryString:@"DROP TABLE test_async_streaming"];
+        [connection disconnect];
+        return;
+    }
+    
+    NSLog(@"✓ Data download completed in %.3f seconds", -[startTime timeIntervalSinceNow]);
+    NSLog(@"  dataDownloaded: %@", [resultStore dataDownloaded] ? @"YES" : @"NO");
+    NSLog(@"  numberOfRows: %lu", (unsigned long)[resultStore numberOfRows]);
+    NSLog(@"  numberOfFields: %lu", (unsigned long)[resultStore numberOfFields]);
+    NSLog(@"  Delegate was called: %@", delegateWasCalled ? @"YES" : @"NO");
+    
+    // Verify the results
+    XCTAssertTrue([resultStore dataDownloaded], @"Data should be downloaded");
+    XCTAssertEqual([resultStore numberOfRows], 3, @"Should have 3 rows");
+    XCTAssertEqual([resultStore numberOfFields], 3, @"Should have 3 fields");
+    XCTAssertTrue(delegateWasCalled, @"Delegate should have been called");
+    
+    // Verify field names
+    NSArray<NSString *> *fieldNames = [resultStore fieldNames];
+    NSLog(@"✓ Field names: %@", fieldNames);
+    XCTAssertTrue([fieldNames containsObject:@"id"], @"Should have 'id' field");
+    XCTAssertTrue([fieldNames containsObject:@"name"], @"Should have 'name' field");
+    XCTAssertTrue([fieldNames containsObject:@"value"], @"Should have 'value' field");
+    
+    // Verify row data
+    [resultStore seekToRow:0];
+    NSArray *firstRow = [resultStore getRowAsArray];
+    NSLog(@"✓ First row: %@", firstRow);
+    XCTAssertNotNil(firstRow, @"Should get first row");
+    XCTAssertEqual([firstRow count], 3, @"Row should have 3 columns");
+    
+    // Clean up
+    [connection queryString:@"DROP TABLE test_async_streaming"];
+    [connection disconnect];
+    
+    NSLog(@"✅ Test 22 Passed: Async Streaming Result Store");
+}
+
+#pragma mark - Test 23: Async Streaming Cancellation
+
+- (void)test_23_AsyncStreamingCancellation {
+    NSLog(@"\n🧪 Test 23: Async Streaming Cancellation");
+    
+    SPPostgreSQLConnectionWrapper *connection = [[SPPostgreSQLConnectionWrapper alloc] init];
+    [connection setHost:self.testHost];
+    [connection setUsername:self.testUser];
+    [connection setPassword:self.testPassword];
+    [connection setDatabase:self.testDatabase];
+    [connection setPort:self.testPort];
+    [connection setUseSSL:NO];
+    
+    BOOL connected = [connection connect];
+    XCTAssertTrue(connected, @"Should connect successfully");
+    
+    if (!connected) {
+        NSLog(@"❌ Connection failed, skipping cancellation test");
+        return;
+    }
+    
+    // Create result store but don't start download yet
+    NSLog(@"📊 Creating result store without starting download...");
+    id<SPDatabaseResult> resultStore = [connection resultStoreFromQueryString:@"SELECT * FROM pg_class LIMIT 100"];
+    XCTAssertNotNil(resultStore, @"Result store should be created");
+    
+    NSLog(@"✓ Result store created: %@", [resultStore class]);
+    NSLog(@"  Initial dataDownloaded: %@", [resultStore dataDownloaded] ? @"YES" : @"NO");
+    
+    // Cancel before starting (should start and immediately cancel)
+    NSLog(@"\n🛑 Calling cancelResultLoad (before startDownload)...");
+    NSDate *startTime = [NSDate date];
+    [resultStore cancelResultLoad];
+    NSTimeInterval cancelTime = -[startTime timeIntervalSinceNow];
+    NSLog(@"✓ Cancel completed in %.3f seconds", cancelTime);
+    
+    XCTAssertTrue([resultStore dataDownloaded], @"Should be marked as downloaded after cancel");
+    XCTAssertLessThan(cancelTime, 5.0, @"Cancel should complete within 5 seconds");
+    
+    // Test 2: Start download, then cancel
+    NSLog(@"\n📊 Creating second result store...");
+    id<SPDatabaseResult> resultStore2 = [connection resultStoreFromQueryString:@"SELECT * FROM pg_class LIMIT 100"];
+    
+    NSLog(@"🚀 Starting download...");
+    [resultStore2 startDownload];
+    
+    // Wait a moment for download to start
+    usleep(50000); // 50ms
+    
+    NSLog(@"🛑 Canceling download...");
+    startTime = [NSDate date];
+    [resultStore2 cancelResultLoad];
+    cancelTime = -[startTime timeIntervalSinceNow];
+    NSLog(@"✓ Cancel completed in %.3f seconds", cancelTime);
+    
+    XCTAssertTrue([resultStore2 dataDownloaded], @"Should be marked as downloaded after cancel");
+    XCTAssertLessThan(cancelTime, 5.0, @"Cancel should complete within 5 seconds");
+    
+    [connection disconnect];
+    
+    NSLog(@"✅ Test 23 Passed: Async Streaming Cancellation");
 }
 
 @end

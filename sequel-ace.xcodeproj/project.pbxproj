@@ -20,6 +20,8 @@
 		0BAFPGTEST05 /* SPMySQLConnectionWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BAF9D642EA1091900C663C3 /* SPMySQLConnectionWrapper.m */; };
 		0BAFPGTEST06 /* SPMySQLResultWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BAF9D662EA1091900C663C3 /* SPMySQLResultWrapper.m */; };
 		0BAFPGTEST07 /* (null) in Sources */ = {isa = PBXBuildFile; };
+		0BBBFD632EB8FD7200E8B078 /* SPPostgreSQLStreamingResultWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BBBFD622EB8FD7200E8B078 /* SPPostgreSQLStreamingResultWrapper.m */; };
+		0BBBFD642EB8FD7200E8B078 /* SPPostgreSQLStreamingResultWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BBBFD622EB8FD7200E8B078 /* SPPostgreSQLStreamingResultWrapper.m */; };
 		1141A389117BBFF200126A28 /* SPTableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1141A388117BBFF200126A28 /* SPTableCopy.m */; };
 		1198F5B31174EDD500670590 /* SPDatabaseCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1198F5B21174EDD500670590 /* SPDatabaseCopy.m */; };
 		11B55BFE1189E3B2009EF465 /* SPDatabaseAction.m in Sources */ = {isa = PBXBuildFile; fileRef = 11B55BFD1189E3B2009EF465 /* SPDatabaseAction.m */; };
@@ -598,6 +600,8 @@
 		0BAF9D6D2EA1389D00C663C3 /* SPPostgreSQLResultWrapper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPPostgreSQLResultWrapper.m; sourceTree = "<group>"; };
 		0BAF9D702EA13AD000C663C3 /* libsppostgresql.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libsppostgresql.a; path = Frameworks/SPPostgreSQLFramework/libsppostgresql.a; sourceTree = "<group>"; };
 		0BAFPGTEST01 /* SPPostgreSQLIntegrationTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPPostgreSQLIntegrationTests.m; sourceTree = "<group>"; };
+		0BBBFD612EB8FD7200E8B078 /* SPPostgreSQLStreamingResultWrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPPostgreSQLStreamingResultWrapper.h; sourceTree = "<group>"; };
+		0BBBFD622EB8FD7200E8B078 /* SPPostgreSQLStreamingResultWrapper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPPostgreSQLStreamingResultWrapper.m; sourceTree = "<group>"; };
 		1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		112730551180788A000737FD /* SPTableCopyTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTableCopyTest.m; sourceTree = "<group>"; };
 		1141A387117BBFF200126A28 /* SPTableCopy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTableCopy.h; sourceTree = "<group>"; };
@@ -1270,6 +1274,8 @@
 		0BAF9D672EA1091900C663C3 /* DatabaseAbstraction */ = {
 			isa = PBXGroup;
 			children = (
+				0BBBFD612EB8FD7200E8B078 /* SPPostgreSQLStreamingResultWrapper.h */,
+				0BBBFD622EB8FD7200E8B078 /* SPPostgreSQLStreamingResultWrapper.m */,
 				0BAF9D6A2EA1389D00C663C3 /* SPPostgreSQLConnectionWrapper.h */,
 				0BAF9D6B2EA1389D00C663C3 /* SPPostgreSQLConnectionWrapper.m */,
 				0BAF9D6C2EA1389D00C663C3 /* SPPostgreSQLResultWrapper.h */,
@@ -2943,6 +2949,7 @@
 				50D3C35D1A77217800B5429C /* SPParserUtils.c in Sources */,
 				380F4EF50FC0B68F00B0BFD7 /* SPStringAdditionsTests.m in Sources */,
 				1A2DD55A25939BEE00616E7E /* SPTestingUtils.m in Sources */,
+				0BBBFD632EB8FD7200E8B078 /* SPPostgreSQLStreamingResultWrapper.m in Sources */,
 				1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */,
 				1798F1C4155018E2004B0AB8 /* SPMutableArrayAdditionsTests.m in Sources */,
 				FD8099A72C59DCFA0084646F /* SAUuidFormatterTests.swift in Sources */,
@@ -3179,6 +3186,7 @@
 				1798F19B1550185B004B0AB8 /* SPTreeNode.m in Sources */,
 				17D5B49E1553059F00EF3BB3 /* SPViewCopy.m in Sources */,
 				176E14D115570FE300FAF326 /* SPBundleCommandRunner.m in Sources */,
+				0BBBFD642EB8FD7200E8B078 /* SPPostgreSQLStreamingResultWrapper.m in Sources */,
 				58DF9F3315AB26C2003B4330 /* SPDateAdditions.m in Sources */,
 				58DF9F7315AB8509003B4330 /* SPSplitView.m in Sources */,
 				5843E247162B555B00EAA6D1 /* SPThreadAdditions.m in Sources */,

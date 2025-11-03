@@ -13,9 +13,11 @@ use std::ptr;
 mod connection;
 mod result;
 mod errors;
+mod streaming_result;
 
 use connection::PostgreSQLConnection;
 use result::PostgreSQLResult;
+use streaming_result::PostgreSQLStreamingResult as RustStreamingResult;
 
 // Opaque types for C API
 pub struct SPPostgreSQLConnection {
@@ -24,6 +26,10 @@ pub struct SPPostgreSQLConnection {
 
 pub struct SPPostgreSQLResult {
     inner: PostgreSQLResult,
+}
+
+pub struct SPPostgreSQLStreamingResult {
+    inner: RustStreamingResult,
 }
 
 // Connection Management
@@ -171,6 +177,35 @@ pub extern "C" fn sp_postgresql_connection_execute_query(
     }
 }
 
+// Streaming Query Execution
+
+#[no_mangle]
+pub extern "C" fn sp_postgresql_connection_execute_streaming_query(
+    conn: *mut SPPostgreSQLConnection,
+    query: *const c_char,
+    batch_size: c_int,
+) -> *mut SPPostgreSQLStreamingResult {
+    if conn.is_null() || query.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let conn_ref = &mut (*conn).inner;
+        let query_str = CStr::from_ptr(query).to_string_lossy().into_owned();
+        let batch_size_usize = if batch_size > 0 { batch_size as usize } else { 1000 };
+        
+        match conn_ref.execute_streaming_query(&query_str, batch_size_usize) {
+            Ok(result) => {
+                let result_box = Box::new(SPPostgreSQLStreamingResult {
+                    inner: result,
+                });
+                Box::into_raw(result_box)
+            },
+            Err(_) => ptr::null_mut(),
+        }
+    }
+}
+
 // Result Management
 
 #[no_mangle]
@@ -179,6 +214,104 @@ pub extern "C" fn sp_postgresql_result_destroy(result: *mut SPPostgreSQLResult) 
         unsafe {
             let _ = Box::from_raw(result);
         }
+    }
+}
+
+// Streaming Result Management
+
+#[no_mangle]
+pub extern "C" fn sp_postgresql_streaming_result_destroy(result: *mut SPPostgreSQLStreamingResult) {
+    if !result.is_null() {
+        unsafe {
+            let _ = Box::from_raw(result);
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn sp_postgresql_streaming_result_total_rows(result: *const SPPostgreSQLStreamingResult) -> c_int {
+    if result.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        let result_ref = &(*result).inner;
+        result_ref.total_rows() as c_int
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn sp_postgresql_streaming_result_num_fields(result: *const SPPostgreSQLStreamingResult) -> c_int {
+    if result.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        let result_ref = &(*result).inner;
+        result_ref.num_columns() as c_int
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn sp_postgresql_streaming_result_field_name(
+    result: *const SPPostgreSQLStreamingResult,
+    field_index: c_int,
+) -> *mut c_char {
+    if result.is_null() || field_index < 0 {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let result_ref = &(*result).inner;
+        let columns = result_ref.column_names();
+        
+        if field_index as usize >= columns.len() {
+            return ptr::null_mut();
+        }
+        
+        let name = &columns[field_index as usize];
+        match CString::new(name.as_str()) {
+            Ok(c_str) => c_str.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn sp_postgresql_streaming_result_has_more(result: *const SPPostgreSQLStreamingResult) -> c_int {
+    if result.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        let result_ref = &(*result).inner;
+        if result_ref.has_more() { 1 } else { 0 }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn sp_postgresql_streaming_result_next_batch(
+    result: *mut SPPostgreSQLStreamingResult,
+    _row_callback: extern "C" fn(*const c_char, c_int, *mut c_char, *mut *mut c_char),
+    _user_data: *mut std::os::raw::c_void,
+) -> c_int {
+    if result.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        let result_ref = &mut (*result).inner;
+        
+        // Get the batch
+        let batch = result_ref.next_batch();
+        
+        if batch.is_empty() {
+            return 0;
+        }
+        
+        // Just return the batch size for now
+        // The actual row extraction will be done via separate FFI calls
+        batch.len() as c_int
     }
 }
 

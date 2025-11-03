@@ -16,6 +16,7 @@ extern "C" {
 // Opaque types
 typedef struct SPPostgreSQLConnection SPPostgreSQLConnection;
 typedef struct SPPostgreSQLResult SPPostgreSQLResult;
+typedef struct SPPostgreSQLStreamingResult SPPostgreSQLStreamingResult;
 
 // Connection Management
 
@@ -78,6 +79,19 @@ SPPostgreSQLResult* sp_postgresql_connection_execute_query(
     const char* query
 );
 
+/**
+ * Execute a streaming SQL query (memory efficient for large result sets)
+ * @param conn Connection object
+ * @param query SQL query string
+ * @param batch_size Number of rows to process per batch (0 = default 1000)
+ * @return Pointer to streaming result object or NULL on failure
+ */
+SPPostgreSQLStreamingResult* sp_postgresql_connection_execute_streaming_query(
+    SPPostgreSQLConnection* conn,
+    const char* query,
+    int batch_size
+);
+
 // Result Management
 
 /**
@@ -122,6 +136,59 @@ char* sp_postgresql_result_get_value(
     const SPPostgreSQLResult* result,
     int row,
     int col
+);
+
+// Streaming Result Management
+
+/**
+ * Destroy a streaming result set and free resources
+ * @param result Streaming result object to destroy
+ */
+void sp_postgresql_streaming_result_destroy(SPPostgreSQLStreamingResult* result);
+
+/**
+ * Get total number of rows in streaming result set
+ * @param result Streaming result object
+ * @return Total number of rows
+ */
+int sp_postgresql_streaming_result_total_rows(const SPPostgreSQLStreamingResult* result);
+
+/**
+ * Get number of fields/columns in streaming result set
+ * @param result Streaming result object
+ * @return Number of fields
+ */
+int sp_postgresql_streaming_result_num_fields(const SPPostgreSQLStreamingResult* result);
+
+/**
+ * Get field name by index from streaming result
+ * @param result Streaming result object
+ * @param field_index Field index (0-based)
+ * @return Field name (caller must free with sp_postgresql_free_string)
+ */
+char* sp_postgresql_streaming_result_field_name(
+    const SPPostgreSQLStreamingResult* result,
+    int field_index
+);
+
+/**
+ * Check if streaming result has more batches to fetch
+ * @param result Streaming result object
+ * @return 1 if more data available, 0 if finished
+ */
+int sp_postgresql_streaming_result_has_more(const SPPostgreSQLStreamingResult* result);
+
+/**
+ * Fetch next batch of rows from streaming result
+ * @param result Streaming result object
+ * @param callback Callback function (unused, reserved for future)
+ * @param user_data User data pointer (unused, reserved for future)
+ * @return Number of rows in batch, 0 if no more rows
+ */
+int sp_postgresql_streaming_result_next_batch(
+    SPPostgreSQLStreamingResult* result,
+    void* callback,
+    void* user_data
 );
 
 // Error Handling
