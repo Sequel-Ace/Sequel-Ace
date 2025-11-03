@@ -842,10 +842,10 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 NSString *resultTableName = nil;
                 if ([cqColumnDefinition count] > 0) {
                     resultTableName = [[cqColumnDefinition objectAtIndex:0] objectForKey:@"org_table"];
-                    for(id field in cqColumnDefinition) {
-                        if(![[field objectForKey:@"org_table"] isEqualToString:resultTableName]) {
-                            resultTableName = nil;
-                            break;
+                for(id field in cqColumnDefinition) {
+                    if(![[field objectForKey:@"org_table"] isEqualToString:resultTableName]) {
+                        resultTableName = nil;
+                        break;
                         }
                     }
                 }
@@ -1750,7 +1750,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 - (void)setConnection:(id<SPDatabaseConnection>)theConnection
 {
-	mySQLConnection = theConnection;
+    mySQLConnection = theConnection;
     currentQueryRanges = nil;
     
     // Set up the interface

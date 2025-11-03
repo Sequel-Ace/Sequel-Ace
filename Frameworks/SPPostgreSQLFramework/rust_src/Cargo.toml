@@ -9,6 +9,8 @@ crate-type = ["staticlib", "cdylib"]
 
 [dependencies]
 postgres = { version = "0.19", features = ["with-chrono-0_4", "with-serde_json-1", "with-uuid-1"] }
+postgres-native-tls = "0.5"
+native-tls = "0.2"
 chrono = "0.4"
 uuid = "1.0"
 serde_json = "1.0"

@@ -12,6 +12,14 @@
                 <outlet property="connectionDetailsScrollView" destination="5588" id="5592"/>
                 <outlet property="connectionInstructionsTextField" destination="5154" id="5800"/>
                 <outlet property="connectionResizeContainer" destination="4888" id="5164"/>
+                <outlet property="databaseTypeSelector" destination="9999" id="9996"/>
+                <outlet property="connectionTypeTabView" destination="4980" id="9995"/>
+                <outlet property="standardAllowDataLocalInfileButton" destination="oIH-sM-vBJ" id="9994"/>
+                <outlet property="standardEnableClearTextPluginButton" destination="2k2-ul-dtp" id="9993"/>
+                <outlet property="socketAllowDataLocalInfileButton" destination="UTU-OQ-h6m" id="9992"/>
+                <outlet property="socketEnableClearTextPluginButton" destination="f6I-gs-bxP" id="9991"/>
+                <outlet property="sshAllowDataLocalInfileButton" destination="5DJ-XN-oYd" id="9990"/>
+                <outlet property="sshEnableClearTextPluginButton" destination="9zy-Sk-eFd" id="9989"/>
                 <outlet property="connectionSplitView" destination="5741" id="5745"/>
                 <outlet property="connectionView" destination="5739" id="5740"/>
                 <outlet property="editButtonsView" destination="5862" id="5882"/>
@@ -302,8 +310,22 @@ DQ
                                                                     <action selector="initiateConnection:" target="-2" id="5439"/>
                                                                 </connections>
                                                             </button>
+                                                            <segmentedControl verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="9999">
+                                                                <rect key="frame" x="123" y="570" width="200" height="28"/>
+                                                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                <segmentedCell key="cell" borderStyle="border" alignment="left" style="rounded" trackingMode="selectOne" id="9998">
+                                                                    <font key="font" metaFont="system"/>
+                                                                    <segments>
+                                                                        <segment label="MySQL" width="100" selected="YES" tag="0"/>
+                                                                        <segment label="PostgreSQL" width="100" tag="1"/>
+                                                                    </segments>
+                                                                </segmentedCell>
+                                                                <connections>
+                                                                    <action selector="databaseTypeChanged:" target="-2" id="9997"/>
+                                                                </connections>
+                                                            </segmentedControl>
                                                             <tabView fixedFrame="YES" initialItem="4981" translatesAutoresizingMaskIntoConstraints="NO" id="4980">
-                                                                <rect key="frame" x="3" y="60" width="440" height="540"/>
+                                                                <rect key="frame" x="3" y="60" width="440" height="505"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <font key="font" metaFont="system"/>
                                                                 <tabViewItems>
@@ -505,8 +527,27 @@ DQ
                                                                                                 <action selector="didChangeSelectedTimeZone:" target="-2" id="jDI-am-jCC"/>
                                                                                             </connections>
                                                                                         </popUpButton>
-                                                                                        <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="oIH-sM-vBJ">
+                                                                                        <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5593">
                                                                                             <rect key="frame" x="108" y="64" width="251" height="18"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <buttonCell key="cell" type="check" title="Require SSL" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="5594">
+                                                                                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                            </buttonCell>
+                                                                                            <connections>
+                                                                                                <action selector="updateSSLInterface:" target="-2" id="5651"/>
+                                                                                                <binding destination="-2" name="value" keyPath="useSSL" id="5627">
+                                                                                                    <dictionary key="options">
+                                                                                                        <integer key="NSMultipleValuesPlaceholder" value="0"/>
+                                                                                                        <integer key="NSNoSelectionPlaceholder" value="0"/>
+                                                                                                        <integer key="NSNotApplicablePlaceholder" value="0"/>
+                                                                                                        <integer key="NSNullPlaceholder" value="0"/>
+                                                                                                    </dictionary>
+                                                                                                </binding>
+                                                                                            </connections>
+                                                                                        </button>
+                                                                                        <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="oIH-sM-vBJ">
+                                                                                            <rect key="frame" x="108" y="37" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="check" title="Allow LOCAL_DATA_INFILE (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="Ot7-jd-TIL">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -525,7 +566,7 @@ DQ
                                                                                             </connections>
                                                                                         </button>
                                                                                         <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2k2-ul-dtp">
-                                                                                            <rect key="frame" x="108" y="37" width="251" height="18"/>
+                                                                                            <rect key="frame" x="108" y="9" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="check" title="Enable Cleartext plugin (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="mSn-DP-BWp">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -534,25 +575,6 @@ DQ
                                                                                             <connections>
                                                                                                 <action selector="updateClearTextPlugin:" target="-2" id="f3x-0d-TpI"/>
                                                                                                 <binding destination="-2" name="value" keyPath="enableClearTextPlugin" id="TSv-Nq-ohb">
-                                                                                                    <dictionary key="options">
-                                                                                                        <integer key="NSMultipleValuesPlaceholder" value="0"/>
-                                                                                                        <integer key="NSNoSelectionPlaceholder" value="0"/>
-                                                                                                        <integer key="NSNotApplicablePlaceholder" value="0"/>
-                                                                                                        <integer key="NSNullPlaceholder" value="0"/>
-                                                                                                    </dictionary>
-                                                                                                </binding>
-                                                                                            </connections>
-                                                                                        </button>
-                                                                                        <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5593">
-                                                                                            <rect key="frame" x="108" y="9" width="251" height="18"/>
-                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                                                            <buttonCell key="cell" type="check" title="Require SSL" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="5594">
-                                                                                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                                                                                                <font key="font" metaFont="system"/>
-                                                                                            </buttonCell>
-                                                                                            <connections>
-                                                                                                <action selector="updateSSLInterface:" target="-2" id="5651"/>
-                                                                                                <binding destination="-2" name="value" keyPath="useSSL" id="5627">
                                                                                                     <dictionary key="options">
                                                                                                         <integer key="NSMultipleValuesPlaceholder" value="0"/>
                                                                                                         <integer key="NSNoSelectionPlaceholder" value="0"/>

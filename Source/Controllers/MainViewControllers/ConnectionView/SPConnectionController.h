@@ -139,6 +139,17 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	IBOutlet NSView *sslCertificateLocationHelp;
 	IBOutlet NSView *sslCACertLocationHelp;
 
+	IBOutlet NSSegmentedControl *databaseTypeSelector;
+	IBOutlet NSTabView *connectionTypeTabView;
+	
+	// MySQL-specific controls (to hide for PostgreSQL)
+	IBOutlet NSButton *standardAllowDataLocalInfileButton;
+	IBOutlet NSButton *standardEnableClearTextPluginButton;
+	IBOutlet NSButton *socketAllowDataLocalInfileButton;
+	IBOutlet NSButton *socketEnableClearTextPluginButton;
+	IBOutlet NSButton *sshAllowDataLocalInfileButton;
+	IBOutlet NSButton *sshEnableClearTextPluginButton;
+	
 	IBOutlet NSTextField *standardNameField;
 	IBOutlet NSTextField *sshNameField;
 	IBOutlet NSTextField *socketNameField;
@@ -256,6 +267,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 - (IBAction)showHelp:(id)sender;
 - (IBAction)updateSSLInterface:(id)sender;
 - (IBAction)updateKeyLocationFileVisibility:(id)sender;
+- (IBAction)databaseTypeChanged:(id)sender;
 
 - (void)resizeTabViewToConnectionType:(NSUInteger)theType animating:(BOOL)animate;
 

@@ -7,7 +7,8 @@
 //
 
 use postgres::{Client, NoTls, Config};
-use postgres::tls::MakeTlsConnect;
+use postgres_native_tls::MakeTlsConnector;
+use native_tls::TlsConnector;
 use std::error::Error;
 use crate::result::PostgreSQLResult;
 use crate::errors::PostgreSQLError;
@@ -43,9 +44,22 @@ impl PostgreSQLConnection {
         self.config.password(password);
         self.config.dbname(database);
         
-        // For now, we'll use NoTls. In a full implementation, we'd use native-tls or rustls
-        // when use_ssl is true
-        match self.config.connect(NoTls) {
+        // Connect with or without TLS based on use_ssl flag
+        let result = if use_ssl {
+            // Create a TLS connector that accepts invalid certificates
+            // This is useful for development and self-signed certificates
+            let connector = TlsConnector::builder()
+                .danger_accept_invalid_certs(true)
+                .danger_accept_invalid_hostnames(true)
+                .build()?;
+            
+            let tls = MakeTlsConnector::new(connector);
+            self.config.connect(tls)
+        } else {
+            self.config.connect(NoTls)
+        };
+        
+        match result {
             Ok(client) => {
                 self.client = Some(client);
                 self.last_error = None;

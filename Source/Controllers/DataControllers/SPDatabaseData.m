@@ -157,21 +157,21 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 			[characterSetCollations addObjectsFromArray:collations];
 		} else {
 			// Fallback: Try the old MySQL-specific query for backward compatibility
-			[characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", characterSetEncoding]]];
+            [characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", characterSetEncoding]]];
 
-			//Special handling to try utf8 if the encoding is utf8mb3 https://github.com/Sequel-Ace/Sequel-Ace/issues/1064
-			if (![characterSetCollations count] && [characterSetEncoding isEqualToString:@"utf8mb3"]) {
-				[characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", @"utf8"]]];
-			} else if (![characterSetCollations count] && [characterSetEncoding isEqualToString:@"utf8"]) {
-				[characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", @"utf8mb3"]]];
+            //Special handling to try utf8 if the encoding is utf8mb3 https://github.com/Sequel-Ace/Sequel-Ace/issues/1064
+            if (![characterSetCollations count] && [characterSetEncoding isEqualToString:@"utf8mb3"]) {
+                [characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", @"utf8"]]];
+            } else if (![characterSetCollations count] && [characterSetEncoding isEqualToString:@"utf8"]) {
+                [characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", @"utf8mb3"]]];
 			}
-		}
+            }
 
 		// If that still failed, just log a warning (don't show popup)
-		if (![characterSetCollations count]) {
+			if (![characterSetCollations count]) {
 			NSLog(@"Warning: Unable to get database collations for encoding %@", characterSetEncoding);
 			// Don't show popup - just log the warning
-		}
+			}
 
 			if ([characterSetCollations count]) {
 				[cachedCollationsByEncoding setObject:[NSArray arrayWithArray:characterSetCollations] forKey:characterSetEncoding];
@@ -243,7 +243,7 @@ copy_return:
 		NSArray *engines = [connection getDatabaseStorageEngines];
 		if ([engines count] > 0) {
 			[storageEngines addObjectsFromArray:engines];
-		}
+        }
 	}
 	
 	return [storageEngines sortedArrayUsingFunction:_sortStorageEngineEntry context:nil];
@@ -271,11 +271,11 @@ copy_return:
 				[characterSetEncodings addObjectsFromArray:encodings];
 			} else {
 				// Fallback: Try the old MySQL-specific query for backward compatibility
-				[characterSetEncodings addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`character_sets` ORDER BY `character_set_name` ASC"]];
+            [characterSetEncodings addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`character_sets` ORDER BY `character_set_name` ASC"]];
 			}
 
 			// If that still failed, show warning (but don't fail - just use current encoding)
-			if (![characterSetEncodings count]) {
+			if (![characterSetEncodings count]) {			
 				NSLog(@"Warning: Unable to get database character set encodings, using current connection encoding");
 				// Don't show popup - just log the warning
 			}

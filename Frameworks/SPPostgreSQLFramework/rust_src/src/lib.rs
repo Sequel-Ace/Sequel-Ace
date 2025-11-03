@@ -9,7 +9,6 @@
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
 use std::ptr;
-use std::error::Error;
 
 mod connection;
 mod result;
@@ -17,7 +16,6 @@ mod errors;
 
 use connection::PostgreSQLConnection;
 use result::PostgreSQLResult;
-use errors::PostgreSQLError;
 
 // Opaque types for C API
 pub struct SPPostgreSQLConnection {
