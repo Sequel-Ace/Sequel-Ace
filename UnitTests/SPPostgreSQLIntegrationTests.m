@@ -1366,5 +1366,94 @@
     NSLog(@"✅ Test 23 Passed: Async Streaming Cancellation");
 }
 
+#pragma mark - Test 24: Table Status and Auto Increment
+
+- (void)test_24_TableStatusAndAutoIncrement {
+    NSLog(@"\n🧪 Test 24: Table Status Query and Auto Increment Detection");
+    
+    id<SPDatabaseConnection> connection = [self createAndConnectConnection];
+    if (!connection) {
+        XCTFail(@"Failed to create connection");
+        return;
+    }
+    
+    // First, create a test table WITH a sequence
+    NSLog(@"📝 Creating test table WITH sequence...");
+    [connection queryString:@"DROP TABLE IF EXISTS test_with_sequence CASCADE"];
+    [connection queryString:@"CREATE TABLE test_with_sequence (id SERIAL PRIMARY KEY, name VARCHAR(100))"];
+    [connection queryString:@"INSERT INTO test_with_sequence (name) VALUES ('test1'), ('test2'), ('test3')"];
+    
+    // Create a test table WITHOUT a sequence
+    NSLog(@"📝 Creating test table WITHOUT sequence...");
+    [connection queryString:@"DROP TABLE IF EXISTS test_without_sequence CASCADE"];
+    [connection queryString:@"CREATE TABLE test_without_sequence (id INTEGER PRIMARY KEY, name VARCHAR(100))"];
+    [connection queryString:@"INSERT INTO test_without_sequence (id, name) VALUES (1, 'test1'), (2, 'test2')"];
+    
+    // Test 1: Table WITH sequence
+    NSLog(@"🔍 Testing table WITH sequence...");
+    id<SPDatabaseResult> statusWithSeq = [connection getTableStatus:@"test_with_sequence"];
+    XCTAssertNotNil(statusWithSeq, @"Should get status for table with sequence");
+    
+    if (statusWithSeq && [statusWithSeq numberOfRows] > 0) {
+        NSDictionary *statusDict = [statusWithSeq getRowAsDictionary];
+        NSLog(@"📊 Table WITH sequence status: %@", statusDict);
+        
+        id autoIncrementValue = [statusDict objectForKey:@"Auto_increment"];
+        NSLog(@"   Auto_increment value: %@ (class: %@)", autoIncrementValue, [autoIncrementValue class]);
+        
+        XCTAssertNotNil(autoIncrementValue, @"Auto_increment should not be nil for table with sequence");
+        XCTAssertFalse([autoIncrementValue isKindOfClass:[NSNull class]], @"Auto_increment should not be NSNull for table with sequence");
+        
+        if (autoIncrementValue && ![autoIncrementValue isKindOfClass:[NSNull class]]) {
+            long long nextValue = [autoIncrementValue longLongValue];
+            NSLog(@"   ✓ Next sequence value: %lld", nextValue);
+            XCTAssertEqual(nextValue, 4, @"Next sequence value should be 4 (after inserting 3 rows)");
+        }
+    }
+    
+    // Test 2: Table WITHOUT sequence
+    NSLog(@"🔍 Testing table WITHOUT sequence...");
+    id<SPDatabaseResult> statusWithoutSeq = [connection getTableStatus:@"test_without_sequence"];
+    XCTAssertNotNil(statusWithoutSeq, @"Should get status for table without sequence");
+    
+    if (statusWithoutSeq && [statusWithoutSeq numberOfRows] > 0) {
+        NSDictionary *statusDict = [statusWithoutSeq getRowAsDictionary];
+        NSLog(@"📊 Table WITHOUT sequence status: %@", statusDict);
+        
+        id autoIncrementValue = [statusDict objectForKey:@"Auto_increment"];
+        NSLog(@"   Auto_increment value: %@ (class: %@)", autoIncrementValue, [autoIncrementValue class]);
+        
+        BOOL isNull = (autoIncrementValue == nil || [autoIncrementValue isKindOfClass:[NSNull class]]);
+        NSLog(@"   Is NULL: %@", isNull ? @"YES" : @"NO");
+        
+        XCTAssertTrue(isNull, @"Auto_increment should be NULL for table without sequence");
+    }
+    
+    // Test 3: Check actual tables from the database (league_team, league)
+    NSLog(@"🔍 Testing real tables from database...");
+    
+    // Check if league_team exists
+    id<SPDatabaseResult> checkLeagueTeam = [connection queryString:@"SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'league_team'"];
+    if (checkLeagueTeam && [checkLeagueTeam numberOfRows] > 0) {
+        NSLog(@"📊 Testing league_team table...");
+        id<SPDatabaseResult> leagueTeamStatus = [connection getTableStatus:@"league_team"];
+        if (leagueTeamStatus && [leagueTeamStatus numberOfRows] > 0) {
+            NSDictionary *statusDict = [leagueTeamStatus getRowAsDictionary];
+            NSLog(@"   league_team status: %@", statusDict);
+            id autoInc = [statusDict objectForKey:@"Auto_increment"];
+            NSLog(@"   league_team Auto_increment: %@ (class: %@)", autoInc, [autoInc class]);
+        }
+    }
+    
+    // Cleanup
+    NSLog(@"🧹 Cleaning up test tables...");
+    [connection queryString:@"DROP TABLE IF EXISTS test_with_sequence CASCADE"];
+    [connection queryString:@"DROP TABLE IF EXISTS test_without_sequence CASCADE"];
+    
+    [connection disconnect];
+    
+    NSLog(@"✅ Test 24 Passed: Table Status and Auto Increment Detection");
+}
+
 @end
 

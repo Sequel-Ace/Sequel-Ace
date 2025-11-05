@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0B0DFF822EA66FE800AF0021 /* SPPostgreSQLConnectionWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BAF9D6B2EA1389D00C663C3 /* SPPostgreSQLConnectionWrapper.m */; };
 		0B0DFF832EA66FE800AF0021 /* SPPostgreSQLResultWrapper.h in Sources */ = {isa = PBXBuildFile; fileRef = 0BAF9D6C2EA1389D00C663C3 /* SPPostgreSQLResultWrapper.h */; };
+		0B0F77FF2EBBAEDF00CD18B6 /* SPPostgreSQLTypeMapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BPGTYPE022EA1389D00C663C3 /* SPPostgreSQLTypeMapper.m */; };
 		0BAF9D682EA1091900C663C3 /* SPMySQLConnectionWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BAF9D642EA1091900C663C3 /* SPMySQLConnectionWrapper.m */; };
 		0BAF9D692EA1091900C663C3 /* SPMySQLResultWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BAF9D662EA1091900C663C3 /* SPMySQLResultWrapper.m */; };
 		0BAF9D6E2EA1389D00C663C3 /* SPPostgreSQLResultWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BAF9D6D2EA1389D00C663C3 /* SPPostgreSQLResultWrapper.m */; };
@@ -22,6 +23,7 @@
 		0BAFPGTEST07 /* (null) in Sources */ = {isa = PBXBuildFile; };
 		0BBBFD632EB8FD7200E8B078 /* SPPostgreSQLStreamingResultWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BBBFD622EB8FD7200E8B078 /* SPPostgreSQLStreamingResultWrapper.m */; };
 		0BBBFD642EB8FD7200E8B078 /* SPPostgreSQLStreamingResultWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BBBFD622EB8FD7200E8B078 /* SPPostgreSQLStreamingResultWrapper.m */; };
+		0BPGTYPE032EA1389D00C663C3 /* SPPostgreSQLTypeMapper.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BPGTYPE022EA1389D00C663C3 /* SPPostgreSQLTypeMapper.m */; };
 		1141A389117BBFF200126A28 /* SPTableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1141A388117BBFF200126A28 /* SPTableCopy.m */; };
 		1198F5B31174EDD500670590 /* SPDatabaseCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1198F5B21174EDD500670590 /* SPDatabaseCopy.m */; };
 		11B55BFE1189E3B2009EF465 /* SPDatabaseAction.m in Sources */ = {isa = PBXBuildFile; fileRef = 11B55BFD1189E3B2009EF465 /* SPDatabaseAction.m */; };
@@ -602,6 +604,8 @@
 		0BAFPGTEST01 /* SPPostgreSQLIntegrationTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPPostgreSQLIntegrationTests.m; sourceTree = "<group>"; };
 		0BBBFD612EB8FD7200E8B078 /* SPPostgreSQLStreamingResultWrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPPostgreSQLStreamingResultWrapper.h; sourceTree = "<group>"; };
 		0BBBFD622EB8FD7200E8B078 /* SPPostgreSQLStreamingResultWrapper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPPostgreSQLStreamingResultWrapper.m; sourceTree = "<group>"; };
+		0BPGTYPE012EA1389D00C663C3 /* SPPostgreSQLTypeMapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPPostgreSQLTypeMapper.h; sourceTree = "<group>"; };
+		0BPGTYPE022EA1389D00C663C3 /* SPPostgreSQLTypeMapper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPPostgreSQLTypeMapper.m; sourceTree = "<group>"; };
 		1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		112730551180788A000737FD /* SPTableCopyTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTableCopyTest.m; sourceTree = "<group>"; };
 		1141A387117BBFF200126A28 /* SPTableCopy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTableCopy.h; sourceTree = "<group>"; };
@@ -1280,6 +1284,8 @@
 				0BAF9D6B2EA1389D00C663C3 /* SPPostgreSQLConnectionWrapper.m */,
 				0BAF9D6C2EA1389D00C663C3 /* SPPostgreSQLResultWrapper.h */,
 				0BAF9D6D2EA1389D00C663C3 /* SPPostgreSQLResultWrapper.m */,
+				0BPGTYPE012EA1389D00C663C3 /* SPPostgreSQLTypeMapper.h */,
+				0BPGTYPE022EA1389D00C663C3 /* SPPostgreSQLTypeMapper.m */,
 				0BAF9D602EA1091900C663C3 /* SPDatabaseConnection.h */,
 				0BAF9D612EA1091900C663C3 /* SPDatabaseConnectionProxy.h */,
 				0BAF9D622EA1091900C663C3 /* SPDatabaseResult.h */,
@@ -2913,6 +2919,7 @@
 				1A9498C125517191000BC793 /* DateExtension.swift in Sources */,
 				1ADEA5A424BF1FFB00D2140B /* SPDateAdditions.m in Sources */,
 				50837F771E50E007004FAE8A /* SPJSONFormatter.m in Sources */,
+				0B0F77FF2EBBAEDF00CD18B6 /* SPPostgreSQLTypeMapper.m in Sources */,
 				505F568F1BCEE485007467DD /* SPFunctions.m in Sources */,
 				FD8099A82C59DDF70084646F /* SAUuidFormatter.swift in Sources */,
 				502D21F81BA50966000D4CE7 /* SPDataAdditions.m in Sources */,
@@ -3155,6 +3162,7 @@
 				17D3C671128AD8160047709F /* SPSingleton.m in Sources */,
 				0BAF9D6E2EA1389D00C663C3 /* SPPostgreSQLResultWrapper.m in Sources */,
 				0BAF9D6F2EA1389D00C663C3 /* SPPostgreSQLConnectionWrapper.m in Sources */,
+				0BPGTYPE032EA1389D00C663C3 /* SPPostgreSQLTypeMapper.m in Sources */,
 				17D3C6D3128B1C900047709F /* SPFavoritesOutlineView.m in Sources */,
 				50D3C3521A77135F00B5429C /* SPParserUtils.c in Sources */,
 				1A8B53572584520800526DED /* SPURLAdditions.m in Sources */,

@@ -36,6 +36,7 @@
 #import "SPActivityTextFieldCell.h"
 #import "SPTableTextFieldCell.h"
 #import "SPAppController.h"
+#import "SPDatabaseConnection.h"
 #import "sequel-ace-Swift.h"
 
 @interface SPTableInfo ()
@@ -183,10 +184,19 @@
 				[info safeAddObject:[NSString stringWithFormat:NSLocalizedString(@"updated: %@", @"updated: %@"), [self _getUserDefinedDateStringFromMySQLDate:[tableStatus objectForKey:@"Update_time"]]]];
 			}
 			
-			// Check for 'Engine' == NULL - should not happen (at least not with MySQL)
-			if (![[tableStatus objectForKey:@"Engine"] isNSNull]) {
-				[info safeAddObject:[NSString stringWithFormat:NSLocalizedString(@"engine: %@", @"Table Info Section : Table Engine"), [tableStatus objectForKey:@"Engine"]]];
+		// Check for 'Engine' == NULL - should not happen (at least not with MySQL)
+		// Only show engine if there are multiple storage engines available (i.e., it's a configurable option)
+		// This hides the engine for databases like PostgreSQL that don't have multiple storage engines
+		if (![[tableStatus objectForKey:@"Engine"] isNSNull]) {
+			NSString *engine = [tableStatus objectForKey:@"Engine"];
+			id<SPDatabaseConnection> connection = [tableDocumentInstance getConnection];
+			NSArray *availableEngines = [connection getDatabaseStorageEngines];
+			
+			// Only show engine if there are 2+ storage engines available (meaning it's a user choice)
+			if ([availableEngines count] > 1) {
+				[info safeAddObject:[NSString stringWithFormat:NSLocalizedString(@"engine: %@", @"Table Info Section : Table Engine"), engine]];
 			}
+		}
 
 			// Check for 'Rows' == NULL - information_schema database doesn't report row count for it's tables
 			if (![[tableStatus objectForKey:@"Rows"] isNSNull]) {

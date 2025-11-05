@@ -1144,22 +1144,94 @@
     NSString *escapedTableName = [tableName stringByReplacingOccurrencesOfString:@"'" withString:@"''"];
     NSString *escapedSchemaName = [schemaName stringByReplacingOccurrencesOfString:@"'" withString:@"''"];
     
-    NSString *query = [NSString stringWithFormat:
-        @"SELECT "
-        @"  t.tablename AS \"Name\", "
-        @"  'BASE TABLE' AS \"Engine\", "
-        @"  pg_total_relation_size(quote_ident(t.schemaname)||'.'||quote_ident(t.tablename)) AS \"Data_length\", "
-        @"  (SELECT COUNT(*) FROM \"%@\".\"%@\") AS \"Rows\", "
-        @"  pg_size_pretty(pg_total_relation_size(quote_ident(t.schemaname)||'.'||quote_ident(t.tablename))) AS \"Size\", "
-        @"  obj_description((quote_ident(t.schemaname)||'.'||quote_ident(t.tablename))::regclass) AS \"Comment\", "
-        @"  CURRENT_TIMESTAMP AS \"Create_time\", "
-        @"  CURRENT_TIMESTAMP AS \"Update_time\" "
-        @"FROM pg_tables t "
-        @"WHERE LOWER(t.schemaname) = LOWER('%@') AND LOWER(t.tablename) = LOWER('%@')",
-        schemaName,
-        tableName,
-        escapedSchemaName,
-        escapedTableName];
+    // Step 1: Find the primary key column
+    NSString *pkQuery = [NSString stringWithFormat:
+        @"SELECT a.attname "
+        @"FROM pg_index i "
+        @"JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey) "
+        @"WHERE i.indrelid = (quote_ident('%@') || '.' || quote_ident('%@'))::regclass "
+        @"  AND i.indisprimary "
+        @"LIMIT 1",
+        escapedSchemaName, escapedTableName];
+    
+    id<SPDatabaseResult> pkResult = [self queryString:pkQuery];
+    NSString *pkColumn = nil;
+    if (pkResult && [pkResult numberOfRows] > 0) {
+        NSArray *pkRow = [pkResult getRowAsArray];
+        if (pkRow && [pkRow count] > 0 && ![pkRow[0] isKindOfClass:[NSNull class]]) {
+            pkColumn = pkRow[0];
+        }
+    }
+    
+    // Step 2: Get the sequence name if there's a PK column
+    NSString *sequenceName = nil;
+    if (pkColumn) {
+        NSString *seqQuery = [NSString stringWithFormat:
+            @"SELECT pg_get_serial_sequence(quote_ident('%@') || '.' || quote_ident('%@'), '%@')",
+            escapedSchemaName, escapedTableName, [pkColumn stringByReplacingOccurrencesOfString:@"'" withString:@"''"]];
+        
+        id<SPDatabaseResult> seqResult = [self queryString:seqQuery];
+        if (seqResult && [seqResult numberOfRows] > 0) {
+            NSArray *seqRow = [seqResult getRowAsArray];
+            if (seqRow && [seqRow count] > 0 && ![seqRow[0] isKindOfClass:[NSNull class]]) {
+                sequenceName = seqRow[0];
+            }
+        }
+    }
+    
+    // Step 3: Get the next sequence value if we have a sequence
+    NSNumber *autoIncrementValue = nil;
+    if (sequenceName && [sequenceName length] > 0) {
+        NSString *nextValQuery = [NSString stringWithFormat:
+            @"SELECT CASE WHEN is_called THEN last_value + 1 ELSE last_value END AS next_value "
+            @"FROM %@",
+            sequenceName];
+        
+        id<SPDatabaseResult> nextValResult = [self queryString:nextValQuery];
+        if (nextValResult && [nextValResult numberOfRows] > 0) {
+            NSArray *nextValRow = [nextValResult getRowAsArray];
+            if (nextValRow && [nextValRow count] > 0 && ![nextValRow[0] isKindOfClass:[NSNull class]]) {
+                autoIncrementValue = @([nextValRow[0] longLongValue]);
+            }
+        }
+    }
+    
+    // Step 4: Build the final query with the auto_increment value
+    NSString *query;
+    if (autoIncrementValue) {
+        query = [NSString stringWithFormat:
+            @"SELECT "
+            @"  t.tablename AS \"Name\", "
+            @"  'BASE TABLE' AS \"Engine\", "
+            @"  pg_total_relation_size(quote_ident(t.schemaname)||'.'||quote_ident(t.tablename)) AS \"Data_length\", "
+            @"  (SELECT COUNT(*) FROM \"%@\".\"%@\") AS \"Rows\", "
+            @"  pg_size_pretty(pg_total_relation_size(quote_ident(t.schemaname)||'.'||quote_ident(t.tablename))) AS \"Size\", "
+            @"  obj_description((quote_ident(t.schemaname)||'.'||quote_ident(t.tablename))::regclass) AS \"Comment\", "
+            @"  NULL AS \"Create_time\", "
+            @"  NULL AS \"Update_time\", "
+            @"  %lld AS \"Auto_increment\" "
+            @"FROM pg_tables t "
+            @"WHERE LOWER(t.schemaname) = LOWER('%@') AND LOWER(t.tablename) = LOWER('%@')",
+            schemaName, tableName,
+            [autoIncrementValue longLongValue],
+            escapedSchemaName, escapedTableName];
+    } else {
+        query = [NSString stringWithFormat:
+            @"SELECT "
+            @"  t.tablename AS \"Name\", "
+            @"  'BASE TABLE' AS \"Engine\", "
+            @"  pg_total_relation_size(quote_ident(t.schemaname)||'.'||quote_ident(t.tablename)) AS \"Data_length\", "
+            @"  (SELECT COUNT(*) FROM \"%@\".\"%@\") AS \"Rows\", "
+            @"  pg_size_pretty(pg_total_relation_size(quote_ident(t.schemaname)||'.'||quote_ident(t.tablename))) AS \"Size\", "
+            @"  obj_description((quote_ident(t.schemaname)||'.'||quote_ident(t.tablename))::regclass) AS \"Comment\", "
+            @"  NULL AS \"Create_time\", "
+            @"  NULL AS \"Update_time\", "
+            @"  NULL AS \"Auto_increment\" "
+            @"FROM pg_tables t "
+            @"WHERE LOWER(t.schemaname) = LOWER('%@') AND LOWER(t.tablename) = LOWER('%@')",
+            schemaName, tableName,
+            escapedSchemaName, escapedTableName];
+    }
     
     if (_pgConnection == NULL || !_connected) {
         return nil;

@@ -278,6 +278,21 @@ pub extern "C" fn sp_postgresql_streaming_result_field_name(
 }
 
 #[no_mangle]
+pub extern "C" fn sp_postgresql_streaming_result_field_type_oid(
+    result: *const SPPostgreSQLStreamingResult,
+    field_index: c_int,
+) -> u32 {
+    if result.is_null() || field_index < 0 {
+        return 0;
+    }
+    
+    unsafe {
+        let result_ref = &(*result).inner;
+        result_ref.type_oid(field_index as usize).unwrap_or(0)
+    }
+}
+
+#[no_mangle]
 pub extern "C" fn sp_postgresql_streaming_result_has_more(result: *const SPPostgreSQLStreamingResult) -> c_int {
     if result.is_null() {
         return 0;
@@ -359,6 +374,21 @@ pub extern "C" fn sp_postgresql_result_field_name(
             },
             None => ptr::null_mut(),
         }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn sp_postgresql_result_field_type_oid(
+    result: *const SPPostgreSQLResult,
+    field_index: c_int,
+) -> u32 {
+    if result.is_null() || field_index < 0 {
+        return 0;
+    }
+    
+    unsafe {
+        let result_ref = &(*result).inner;
+        result_ref.field_type_oid(field_index as usize).unwrap_or(0)
     }
 }
 

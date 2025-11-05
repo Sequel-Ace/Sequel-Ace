@@ -7,6 +7,7 @@
 
 #import "SPPostgreSQLResultWrapper.h"
 #import "SPPostgreSQLConnectionWrapper.h"
+#import "SPPostgreSQLTypeMapper.h"
 #import "sppostgresql_ffi.h"
 
 @interface SPPostgreSQLResultWrapper ()
@@ -267,9 +268,13 @@
         // REQUIRED: Record the column name (must never be nil, but can be empty string)
         [definition setObject:name forKey:@"name"];
         
-        // Type information - simplified for PostgreSQL
-        [definition setObject:@"text" forKey:@"type"];
-        [definition setObject:@"string" forKey:@"typegrouping"];
+        // Get actual PostgreSQL type information using OID
+        uint32_t typeOID = sp_postgresql_result_field_type_oid(_pgResult, (int)i);
+        NSString *typeName = [SPPostgreSQLTypeMapper typeNameForOID:typeOID];
+        NSString *typeGrouping = [SPPostgreSQLTypeMapper typeGroupingForOID:typeOID];
+        
+        [definition setObject:typeName forKey:@"type"];
+        [definition setObject:typeGrouping forKey:@"typegrouping"];
         
         // Length information
         [definition setObject:@(0) forKey:@"byte_length"];

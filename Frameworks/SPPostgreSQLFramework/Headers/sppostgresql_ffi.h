@@ -126,6 +126,17 @@ char* sp_postgresql_result_field_name(
 );
 
 /**
+ * Get field type OID by index
+ * @param result Result object
+ * @param field_index Field index (0-based)
+ * @return PostgreSQL type OID (0 if invalid index)
+ */
+unsigned int sp_postgresql_result_field_type_oid(
+    const SPPostgreSQLResult* result,
+    int field_index
+);
+
+/**
  * Get value at specific row and column
  * @param result Result object
  * @param row Row index (0-based)
@@ -167,6 +178,17 @@ int sp_postgresql_streaming_result_num_fields(const SPPostgreSQLStreamingResult*
  * @return Field name (caller must free with sp_postgresql_free_string)
  */
 char* sp_postgresql_streaming_result_field_name(
+    const SPPostgreSQLStreamingResult* result,
+    int field_index
+);
+
+/**
+ * Get field type OID by index from streaming result
+ * @param result Streaming result object
+ * @param field_index Field index (0-based)
+ * @return PostgreSQL type OID (0 if invalid index)
+ */
+unsigned int sp_postgresql_streaming_result_field_type_oid(
     const SPPostgreSQLStreamingResult* result,
     int field_index
 );

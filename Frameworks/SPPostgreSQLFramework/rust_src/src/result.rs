@@ -83,23 +83,33 @@ pub fn get_value(row: &Row, col_idx: usize, _column: &Column) -> Option<String> 
 pub struct PostgreSQLResult {
     rows: Vec<Row>,
     field_names: Vec<String>,
+    field_type_oids: Vec<u32>,  // Store PostgreSQL type OIDs
 }
 
 impl PostgreSQLResult {
     pub fn from_rows(rows: Vec<Row>) -> Self {
-        let field_names = if let Some(first_row) = rows.first() {
-            first_row
+        let (field_names, field_type_oids) = if let Some(first_row) = rows.first() {
+            let names: Vec<String> = first_row
                 .columns()
                 .iter()
                 .map(|col| col.name().to_string())
-                .collect()
+                .collect();
+            
+            let oids: Vec<u32> = first_row
+                .columns()
+                .iter()
+                .map(|col| col.type_().oid())
+                .collect();
+            
+            (names, oids)
         } else {
-            Vec::new()
+            (Vec::new(), Vec::new())
         };
         
         PostgreSQLResult {
             rows,
             field_names,
+            field_type_oids,
         }
     }
     
@@ -109,9 +119,15 @@ impl PostgreSQLResult {
             .map(|col| col.name().to_string())
             .collect();
         
+        let field_type_oids = columns
+            .iter()
+            .map(|col| col.type_().oid())
+            .collect();
+        
         PostgreSQLResult {
             rows,
             field_names,
+            field_type_oids,
         }
     }
     
@@ -125,6 +141,10 @@ impl PostgreSQLResult {
     
     pub fn field_name(&self, index: usize) -> Option<String> {
         self.field_names.get(index).cloned()
+    }
+    
+    pub fn field_type_oid(&self, index: usize) -> Option<u32> {
+        self.field_type_oids.get(index).copied()
     }
     
     pub fn get_value(&self, row: usize, col: usize) -> Option<String> {
