@@ -16,6 +16,7 @@
     NSUInteger _currentRow;
     BOOL _returnDataAsStrings;
     NSArray *_fieldDefinitions;
+    NSArray *_cachedFieldNames; // Cache for field names
     NSArray *_cachedRows; // Cache for enumeration
     BOOL _returnRowsAsDictionaries; // Whether to return rows as dictionaries or arrays
 }
@@ -138,7 +139,7 @@
     }
     
     _currentRow++;
-    return [row copy];
+    return row;
 }
 
 - (NSDictionary *)getRowAsDictionary {
@@ -170,7 +171,8 @@
         return @[];
     }
     
-    NSMutableArray *allRows = [NSMutableArray array];
+    NSUInteger totalRows = [self numberOfRows];
+    NSMutableArray *allRows = [NSMutableArray arrayWithCapacity:totalRows];
     NSUInteger savedRow = _currentRow;
     
     _currentRow = 0;
@@ -190,7 +192,8 @@
         return @[];
     }
     
-    NSMutableArray *allRows = [NSMutableArray array];
+    NSUInteger totalRows = [self numberOfRows];
+    NSMutableArray *allRows = [NSMutableArray arrayWithCapacity:totalRows];
     NSUInteger savedRow = _currentRow;
     
     _currentRow = 0;
@@ -208,6 +211,11 @@
 #pragma mark - Field Information
 
 - (NSArray *)fieldNames {
+    // Cache field names since they don't change
+    if (_cachedFieldNames) {
+        return _cachedFieldNames;
+    }
+    
     if (_pgResult == NULL) {
         return @[];
     }
@@ -225,7 +233,8 @@
         }
     }
     
-    return [names copy];
+    _cachedFieldNames = [names copy];
+    return _cachedFieldNames;
 }
 
 - (NSArray *)fieldDefinitions {
@@ -360,12 +369,20 @@
 }
 
 - (id)cellDataAtRow:(NSUInteger)rowIndex column:(NSUInteger)columnIndex {
-    NSArray *row = [self rowContentsAtIndex:rowIndex];
-    if (row && columnIndex < [row count]) {
-        id cellData = row[columnIndex];
-        return cellData ?: [NSNull null];
+    if (_pgResult == NULL || rowIndex >= [self numberOfRows] || columnIndex >= [self numberOfFields]) {
+        return [NSNull null];
     }
-    return [NSNull null];
+    
+    char *valueCStr = sp_postgresql_result_get_value(_pgResult, (int)rowIndex, (int)columnIndex);
+    
+    if (valueCStr == NULL) {
+        return [NSNull null];
+    }
+    
+    NSString *value = [NSString stringWithUTF8String:valueCStr];
+    sp_postgresql_free_string(valueCStr);
+    
+    return value;
 }
 
 - (id)cellPreviewAtRow:(NSUInteger)rowIndex column:(NSUInteger)columnIndex previewLength:(NSUInteger)previewLength {
@@ -412,4 +429,3 @@
 }
 
 @end
-

@@ -233,17 +233,8 @@
 
 - (BOOL)connect {
     if (_connected) {
-        NSLog(@"🔵 PostgreSQL already connected");
         return YES;
     }
-    
-    NSLog(@"🔵 PostgreSQL connect attempt:");
-    NSLog(@"   host: %@", _host);
-    NSLog(@"   port: %lu", (unsigned long)_port);
-    NSLog(@"   username: %@", _username);
-    NSLog(@"   password: %@", _password);
-    NSLog(@"   database: %@", _database);
-    NSLog(@"   useSSL: %d", _useSSL);
     
     const char *hostCStr = [_host UTF8String];
     const char *userCStr = [_username UTF8String];
@@ -254,7 +245,6 @@
         _lastErrorMessage = @"Missing required connection parameters (host, user, password, or database)";
         _lastErrorID = 1;
         _connected = NO;
-        NSLog(@"🔴 PostgreSQL connection failed: missing parameters");
         return NO;
     }
     
@@ -264,23 +254,17 @@
         _lastErrorMessage = @"Failed to create PostgreSQL connection object";
         _lastErrorID = 1;
         _connected = NO;
-        NSLog(@"🔴 PostgreSQL connection failed: sp_postgresql_connection_create returned NULL");
         return NO;
     }
     
-    NSLog(@"🔵 Calling sp_postgresql_connection_connect...");
-    
     // Attempt to connect
     int result = sp_postgresql_connection_connect(_pgConnection, hostCStr, (int)_port, userCStr, passCStr, dbCStr, _useSSL ? 1 : 0);
-    
-    NSLog(@"🔵 sp_postgresql_connection_connect returned: %d", result);
     
     if (result == 0) {
         char *errorCStr = sp_postgresql_connection_last_error(_pgConnection);
         _lastErrorMessage = errorCStr ? [NSString stringWithUTF8String:errorCStr] : @"Unknown connection error";
         if (errorCStr) sp_postgresql_free_string(errorCStr);
         _lastErrorID = 2;
-        NSLog(@"🔴 PostgreSQL connection failed: %@", _lastErrorMessage);
         sp_postgresql_connection_destroy(_pgConnection);
         _pgConnection = NULL;
         _connected = NO;
@@ -291,7 +275,6 @@
     _hasDisconnected = NO; // Reset disconnect flag on successful connection
     _lastErrorMessage = nil;
     _lastErrorID = 0;
-    NSLog(@"🟢 PostgreSQL connection successful!");
     return YES;
 }
 
@@ -549,8 +532,9 @@
         return @[];
     }
     
-    NSMutableArray *databases = [NSMutableArray array];
-    for (NSUInteger i = 0; i < [result numberOfRows]; i++) {
+    NSUInteger rowCount = [result numberOfRows];
+    NSMutableArray *databases = [NSMutableArray arrayWithCapacity:rowCount];
+    for (NSUInteger i = 0; i < rowCount; i++) {
         [result seekToRow:i];
         NSArray *row = [result getRowAsArray];
         if (row && [row count] > 0 && row[0] != [NSNull null]) {
@@ -572,8 +556,9 @@
         return @[];
     }
     
-    NSMutableArray *tables = [NSMutableArray array];
-    for (NSUInteger i = 0; i < [result numberOfRows]; i++) {
+    NSUInteger rowCount = [result numberOfRows];
+    NSMutableArray *tables = [NSMutableArray arrayWithCapacity:rowCount];
+    for (NSUInteger i = 0; i < rowCount; i++) {
         [result seekToRow:i];
         NSArray *row = [result getRowAsArray];
         if (row && [row count] > 0 && row[0] != [NSNull null]) {
@@ -598,8 +583,9 @@
         return @[];
     }
     
-    NSMutableArray *tables = [NSMutableArray array];
-    for (NSUInteger i = 0; i < [result numberOfRows]; i++) {
+    NSUInteger rowCount = [result numberOfRows];
+    NSMutableArray *tables = [NSMutableArray arrayWithCapacity:rowCount];
+    for (NSUInteger i = 0; i < rowCount; i++) {
         [result seekToRow:i];
         NSArray *row = [result getRowAsArray];
         if (row && [row count] > 0 && row[0] != [NSNull null]) {
@@ -1007,8 +993,6 @@
         schemaName = @"public";
     }
     
-    NSLog(@"getCreateTableStatement: tableName=%@, schemaName=%@ (database parameter ignored: %@)", tableName, schemaName, database);
-    
     // First, get column information
     // PostgreSQL converts unquoted identifiers to lowercase, so we need to search case-insensitively
     NSString *columnsQuery = [NSString stringWithFormat:
@@ -1027,8 +1011,6 @@
         [schemaName stringByReplacingOccurrencesOfString:@"'" withString:@"''"],
         [tableName stringByReplacingOccurrencesOfString:@"'" withString:@"''"]];
     
-    NSLog(@"Column query: %@", columnsQuery);
-    
     if (_pgConnection == NULL || !_connected) {
         return nil;
     }
@@ -1046,8 +1028,6 @@
     // Wrap the result
     SPPostgreSQLResultWrapper *columnsWrapper = [[SPPostgreSQLResultWrapper alloc] initWithPGResult:columnsResult connection:self];
     [columnsWrapper setReturnDataAsStrings:YES];
-    
-    NSLog(@"Number of columns: %lu", (unsigned long)[columnsWrapper numberOfRows]);
     
     BOOL firstColumn = YES;
     NSDictionary *row;
