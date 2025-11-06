@@ -7,7 +7,7 @@
 //
 
 use std::ffi::{CStr, CString};
-use std::os::raw::{c_char, c_int};
+use std::os::raw::{c_char, c_int, c_ulonglong};
 use std::ptr;
 
 mod connection;
@@ -339,6 +339,18 @@ pub extern "C" fn sp_postgresql_result_num_rows(result: *const SPPostgreSQLResul
     unsafe {
         let result_ref = &(*result).inner;
         result_ref.num_rows() as c_int
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn sp_postgresql_result_affected_rows(result: *const SPPostgreSQLResult) -> c_ulonglong {
+    if result.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        let result_ref = &(*result).inner;
+        result_ref.affected_rows()
     }
 }
 

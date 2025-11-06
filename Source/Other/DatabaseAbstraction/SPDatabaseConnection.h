@@ -225,12 +225,6 @@ typedef NS_ENUM(NSUInteger, SPDatabaseConnectionLostDecision) {
 - (NSString *)lastSqlstate;
 
 /**
- * Get number of rows affected by last query
- * @return Row count
- */
-- (unsigned long long)rowsAffectedByLastQuery;
-
-/**
  * Get last insert ID
  * @return Insert ID
  */

@@ -44,6 +44,7 @@ pub fn get_value(row: &Row, col_idx: usize, _column: &Column) -> Option<String> 
         return val.map(|v| v.format("%H:%M:%S%.f").to_string());
     }
     
+    
     // Try integer types
     if let Ok(val) = row.try_get::<_, Option<i16>>(col_idx) {
         return val.map(|v| v.to_string());
@@ -84,6 +85,7 @@ pub struct PostgreSQLResult {
     rows: Vec<Row>,
     field_names: Vec<String>,
     field_type_oids: Vec<u32>,  // Store PostgreSQL type OIDs
+    affected_rows: u64,  // Number of rows affected by UPDATE/DELETE/INSERT
 }
 
 impl PostgreSQLResult {
@@ -106,10 +108,23 @@ impl PostgreSQLResult {
             (Vec::new(), Vec::new())
         };
         
+        let row_count = rows.len() as u64;
+        
         PostgreSQLResult {
             rows,
             field_names,
             field_type_oids,
+            affected_rows: row_count,
+        }
+    }
+    
+    pub fn from_command(affected_rows: u64) -> Self {
+        // For UPDATE/DELETE/INSERT commands that don't return rows
+        PostgreSQLResult {
+            rows: Vec::new(),
+            field_names: Vec::new(),
+            field_type_oids: Vec::new(),
+            affected_rows,
         }
     }
     
@@ -124,11 +139,18 @@ impl PostgreSQLResult {
             .map(|col| col.type_().oid())
             .collect();
         
+        let row_count = rows.len() as u64;
+        
         PostgreSQLResult {
             rows,
             field_names,
             field_type_oids,
+            affected_rows: row_count,
         }
+    }
+    
+    pub fn affected_rows(&self) -> u64 {
+        self.affected_rows
     }
     
     pub fn num_rows(&self) -> usize {
@@ -180,6 +202,7 @@ impl PostgreSQLResult {
             if let Ok(val) = row_data.try_get::<_, Option<NaiveTime>>(col) {
                 return val.map(|v| v.format("%H:%M:%S%.f").to_string());
             }
+            
             
             // Try integer types
             if let Ok(val) = row_data.try_get::<_, Option<i16>>(col) {

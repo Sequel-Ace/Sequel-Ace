@@ -85,24 +85,44 @@ impl PostgreSQLConnection {
     pub fn execute_query(&mut self, query: &str) -> Result<PostgreSQLResult, Box<dyn Error>> {
         match &mut self.client {
             Some(client) => {
-                // Use prepared statement to preserve column metadata even for empty results
-                match client.prepare(query) {
-                    Ok(statement) => {
-                        match client.query(&statement, &[]) {
-                            Ok(rows) => {
-                                self.last_error = None;
-                                // Pass column information from the statement
-                                Ok(PostgreSQLResult::from_rows_with_columns(rows, statement.columns()))
-                            },
-                            Err(e) => {
-                                self.last_error = Some(e.to_string());
-                                Err(Box::new(e))
-                            }
+                // Determine if this is a command (UPDATE/DELETE/INSERT) or a query (SELECT)
+                let trimmed = query.trim_start().to_uppercase();
+                let is_command = trimmed.starts_with("UPDATE") || 
+                                 trimmed.starts_with("DELETE") || 
+                                 trimmed.starts_with("INSERT");
+                
+                if is_command {
+                    // For commands, use execute() to get affected rows
+                    match client.execute(query, &[]) {
+                        Ok(affected_rows) => {
+                            self.last_error = None;
+                            Ok(PostgreSQLResult::from_command(affected_rows))
+                        },
+                        Err(e) => {
+                            self.last_error = Some(e.to_string());
+                            Err(Box::new(e))
                         }
-                    },
-                    Err(e) => {
-                        self.last_error = Some(e.to_string());
-                        Err(Box::new(e))
+                    }
+                } else {
+                    // For queries, use prepared statement to preserve column metadata even for empty results
+                    match client.prepare(query) {
+                        Ok(statement) => {
+                            match client.query(&statement, &[]) {
+                                Ok(rows) => {
+                                    self.last_error = None;
+                                    // Pass column information from the statement
+                                    Ok(PostgreSQLResult::from_rows_with_columns(rows, statement.columns()))
+                                },
+                                Err(e) => {
+                                    self.last_error = Some(e.to_string());
+                                    Err(Box::new(e))
+                                }
+                            }
+                        },
+                        Err(e) => {
+                            self.last_error = Some(e.to_string());
+                            Err(Box::new(e))
+                        }
                     }
                 }
             },

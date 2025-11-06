@@ -31,9 +31,6 @@
 
 @class SPPostgreSQLConnectionWrapper;
 
-// Forward declaration of Rust FFI type
-typedef struct SPPostgreSQLStreamingResult SPPostgreSQLStreamingResult;
-
 /**
  * SPPostgreSQLStreamingResultWrapper
  * 

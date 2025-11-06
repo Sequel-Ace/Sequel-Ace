@@ -149,6 +149,13 @@ char* sp_postgresql_result_get_value(
     int col
 );
 
+/**
+ * Get number of rows affected by UPDATE/DELETE/INSERT command
+ * @param result Result object
+ * @return Number of affected rows (0 for SELECT queries)
+ */
+unsigned long long sp_postgresql_result_affected_rows(const SPPostgreSQLResult* result);
+
 // Streaming Result Management
 
 /**

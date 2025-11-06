@@ -690,7 +690,7 @@
 
 - (id<SPDatabaseResult>)getColumnsForTable:(NSString *)tableName {
     NSString *query = [NSString stringWithFormat:@"SHOW COLUMNS FROM %@", 
-                      [tableName backtickQuotedString]];
+                      [self quoteIdentifier:tableName]];
     SPMySQLResult *result = [_mysqlConnection queryString:query];
     if (result) {
         return [[SPMySQLResultWrapper alloc] initWithMySQLResult:result];

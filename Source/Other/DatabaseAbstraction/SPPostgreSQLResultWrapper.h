@@ -25,5 +25,10 @@ typedef struct SPPostgreSQLResult SPPostgreSQLResult;
  */
 @property (nonatomic, readonly) SPPostgreSQLResult *pgResult;
 
+/**
+ * Get number of rows affected by command (UPDATE/DELETE/INSERT)
+ */
+- (unsigned long long)affectedRows;
+
 @end
 

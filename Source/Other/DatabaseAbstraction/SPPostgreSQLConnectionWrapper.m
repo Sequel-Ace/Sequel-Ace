@@ -27,6 +27,7 @@
     BOOL _hasDisconnected; // Flag to prevent double-disconnect
     NSString *_lastErrorMessage;
     NSUInteger _lastErrorID;
+    id<SPDatabaseResult> _lastResult; // Track last result for affected rows
 }
 @end
 
@@ -52,6 +53,7 @@
         _hasDisconnected = NO;
         _lastErrorMessage = nil;
         _lastErrorID = 0;
+        _lastResult = nil;
     }
     return self;
 }
@@ -385,6 +387,7 @@
     // Clear error state at the start of each query
     _lastErrorMessage = nil;
     _lastErrorID = 0;
+    _lastResult = nil;
     
     if (![self isConnected]) {
         _lastErrorMessage = @"Not connected to database";
@@ -403,7 +406,10 @@
         return nil;
     }
     
-    return [[SPPostgreSQLResultWrapper alloc] initWithPGResult:pgResult connection:self];
+    SPPostgreSQLResultWrapper *resultWrapper = [[SPPostgreSQLResultWrapper alloc] initWithPGResult:pgResult connection:self];
+    _lastResult = resultWrapper;
+    
+    return resultWrapper;
 }
 
 - (id<SPDatabaseResult>)streamingQueryString:(NSString *)query {
@@ -433,8 +439,8 @@
 }
 
 - (id)resultStoreFromQueryString:(NSString *)query {
-    // Use streaming query to match MySQL behavior
-    // This allows async loading, cancellation, and progress updates
+    // Create streaming wrapper that will execute query asynchronously when startDownload is called
+    // This matches MySQL's behavior where the query starts but data download is deferred
     return [self streamingQueryString:query useLowMemoryBlockingStreaming:NO];
 }
 
@@ -461,9 +467,10 @@
 }
 
 - (unsigned long long)rowsAffectedByLastQuery {
-    // This is tracked differently in PostgreSQL
-    // For now, return the value from affectedRows
-    return [self affectedRows];
+    if (_lastResult && [_lastResult respondsToSelector:@selector(affectedRows)]) {
+        return [(SPPostgreSQLResultWrapper *)_lastResult affectedRows];
+    }
+    return 0;
 }
 
 - (BOOL)queryErrored {
@@ -599,9 +606,7 @@
 #pragma mark - Query Information
 
 - (unsigned long long)affectedRows {
-    // This would need to be tracked per query
-    // For now, return 0
-    return 0;
+    return [self rowsAffectedByLastQuery];
 }
 
 - (unsigned long long)lastInsertID {
@@ -1100,16 +1105,36 @@
         }
     }
     
+    // Query to get column information including primary key status
+    // This matches MySQL's SHOW COLUMNS FROM output format
     NSString *query = [NSString stringWithFormat:
         @"SELECT "
-        @"  column_name AS \"Field\", "
-        @"  data_type AS \"Type\", "
-        @"  is_nullable AS \"Null\", "
-        @"  column_default AS \"Default\", "
+        @"  c.column_name AS \"Field\", "
+        @"  c.data_type AS \"Type\", "
+        @"  c.is_nullable AS \"Null\", "
+        @"  CASE "
+        @"    WHEN pk.column_name IS NOT NULL THEN 'PRI' "
+        @"    ELSE '' "
+        @"  END AS \"Key\", "
+        @"  c.column_default AS \"Default\", "
         @"  '' AS \"Extra\" "
-        @"FROM information_schema.columns "
-        @"WHERE LOWER(table_schema) = LOWER('%@') AND LOWER(table_name) = LOWER('%@') "
-        @"ORDER BY ordinal_position",
+        @"FROM information_schema.columns c "
+        @"LEFT JOIN ( "
+        @"  SELECT ku.column_name "
+        @"  FROM information_schema.table_constraints tc "
+        @"  JOIN information_schema.key_column_usage ku "
+        @"    ON tc.constraint_type = 'PRIMARY KEY' "
+        @"    AND tc.constraint_name = ku.constraint_name "
+        @"    AND tc.table_schema = ku.table_schema "
+        @"    AND tc.table_name = ku.table_name "
+        @"  WHERE LOWER(tc.table_schema) = LOWER('%@') "
+        @"    AND LOWER(tc.table_name) = LOWER('%@') "
+        @") pk ON c.column_name = pk.column_name "
+        @"WHERE LOWER(c.table_schema) = LOWER('%@') "
+        @"  AND LOWER(c.table_name) = LOWER('%@') "
+        @"ORDER BY c.ordinal_position",
+        [schemaName stringByReplacingOccurrencesOfString:@"'" withString:@"''"],
+        [tableName stringByReplacingOccurrencesOfString:@"'" withString:@"''"],
         [schemaName stringByReplacingOccurrencesOfString:@"'" withString:@"''"],
         [tableName stringByReplacingOccurrencesOfString:@"'" withString:@"''"]];
     

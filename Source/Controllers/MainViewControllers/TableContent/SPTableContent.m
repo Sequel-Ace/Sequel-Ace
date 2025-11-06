@@ -1606,11 +1606,13 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	dataRow = [tableValues rowContentsAtIndex:rowIndex];
 
 	// Get the primary key if there is one, using any columns present within it
-	id<SPDatabaseResult>theResult = [connection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@.%@",
-		[database backtickQuotedString], [tableForColumn backtickQuotedString]]];
+	// Note: For cross-database queries, we need to select the database first or use getColumnsForTable
+	// This assumes we're already connected to the correct database
+	id<SPDatabaseResult>theResult = [connection getColumnsForTable:tableForColumn];
 	[theResult setReturnDataAsStrings:YES];
 	NSMutableArray *primaryColumnsInSpecifiedTable = [NSMutableArray array];
-	for (NSDictionary *eachRow in theResult) {
+	NSDictionary *eachRow;
+	while ((eachRow = [theResult getRowAsDictionary])) {
 		if ( [[eachRow objectForKey:@"Key"] isEqualToString:@"PRI"] ) {
 			for (field in columnsInSpecifiedTable) {
 				if([[field objectForKey:@"org_name"] isEqualToString:[eachRow objectForKey:@"Field"]]) {
@@ -1627,7 +1629,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	for (field in columnsToQuery) {
 		id aValue = [dataRow objectAtIndex:[[field objectForKey:@"datacolumnindex"] integerValue]];
 		if ([aValue isNSNull]) {
-			[argumentParts addObject:[NSString stringWithFormat:@"%@ IS NULL", [[field objectForKey:@"org_name"] backtickQuotedString]]];
+			[argumentParts addObject:[NSString stringWithFormat:@"%@ IS NULL", [connection quoteIdentifier:[field objectForKey:@"org_name"]]]];
 		} else {
 			NSString *fieldTypeGrouping = [field objectForKey:@"typegrouping"];
 
@@ -1643,17 +1645,17 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 			// If the field is of type BIT then it needs a binary prefix
 			if ([fieldTypeGrouping isEqualToString:@"bit"]) {
-				[argumentParts addObject:[NSString stringWithFormat:@"%@=b'%@'", [[field objectForKey:@"org_name"] backtickQuotedString], [aValue description]]];
+				[argumentParts addObject:[NSString stringWithFormat:@"%@=b'%@'", [connection quoteIdentifier:[field objectForKey:@"org_name"]], [aValue description]]];
 			}
 			else if ([fieldTypeGrouping isEqualToString:@"geometry"]) {
-				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [connection escapeAndQuoteData:[aValue data]]]];
+				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [connection quoteIdentifier:[field objectForKey:@"org_name"]], [connection escapeAndQuoteData:[aValue data]]]];
 			}
 			// BLOB/TEXT data
 			else if ([aValue isKindOfClass:[NSData class]]) {
-				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [connection escapeAndQuoteData:aValue]]];
+				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [connection quoteIdentifier:[field objectForKey:@"org_name"]], [connection escapeAndQuoteData:aValue]]];
 			}
 			else {
-				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [connection escapeAndQuoteString:aValue]]];
+				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [connection quoteIdentifier:[field objectForKey:@"org_name"]], [connection escapeAndQuoteString:aValue]]];
 			}
 		}
 	}
@@ -1745,12 +1747,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		}
 		
 		// If we have indexes, use argumentForRow
-		queryResult = [connection queryString:[NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@", [selectedTable backtickQuotedString], whereArgument]];
+		queryResult = [connection queryString:[NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@", [connection quoteIdentifier:selectedTable], whereArgument]];
 		dbDataRow = [queryResult getRowAsArray];
 	}
 
 	// Set autoincrement fields to NULL
-	queryResult = [connection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [selectedTable backtickQuotedString]]];
+	queryResult = [connection getColumnsForTable:selectedTable];
 	
 	[queryResult setReturnDataAsStrings:YES];
 	
@@ -1897,7 +1899,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         // consistent state if deletion fails.
         if (isEditingRow) [self cancelRowEditing];
 
-        [connection queryString:[NSString stringWithFormat:@"DELETE FROM %@", [selectedTable backtickQuotedString]]];
+        [connection queryString:[NSString stringWithFormat:@"DELETE FROM %@", [connection quoteIdentifier:selectedTable]]];
         if ( ![connection queryErrored] ) {
             maxNumRows = 0;
             tableRowsCount = 0;
@@ -1967,14 +1969,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
             NSInteger numberOfRows = 0;
 
             // Get the number of rows in the table
-            NSString *returnedCount = [connection getFirstFieldFromQuery:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [selectedTable backtickQuotedString]]];
+            NSString *returnedCount = [connection getFirstFieldFromQuery:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [connection quoteIdentifier:selectedTable]]];
             if (returnedCount) {
                 numberOfRows = [returnedCount integerValue];
             }
 
             // Check for uniqueness via LIMIT numberOfRows-1,numberOfRows for speed
             if(numberOfRows > 0) {
-                [connection queryString:[NSString stringWithFormat:@"SELECT * FROM %@ GROUP BY %@ LIMIT %ld,%ld", [selectedTable backtickQuotedString], [primaryKeyFieldNames componentsJoinedAndBacktickQuoted], (long)(numberOfRows-1), (long)numberOfRows]];
+                [connection queryString:[NSString stringWithFormat:@"SELECT * FROM %@ GROUP BY %@ LIMIT %ld,%ld", [connection quoteIdentifier:selectedTable], [primaryKeyFieldNames componentsJoinedAndQuotedForConnection:connection], (long)(numberOfRows-1), (long)numberOfRows]];
                 if ([connection rowsAffectedByLastQuery] == 0)
                     primaryKeyFieldNames = nil;
             } else {
@@ -1990,7 +1992,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
                 //argumentForRow might return empty query, in which case we shouldn't execute the partial query
                 if([wherePart length]) {
-                    [connection queryString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@", [selectedTable backtickQuotedString], wherePart]];
+                    [connection queryString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@", [connection quoteIdentifier:selectedTable], wherePart]];
 
                     // Check for errors
                     if ( ![connection rowsAffectedByLastQuery] || [connection queryErrored]) {
@@ -2013,7 +2015,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
             // if table has only one PRIMARY KEY
             // delete the fast way by using the PRIMARY KEY in an IN clause
             NSMutableString *deleteQuery = [NSMutableString string];
-            [deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [selectedTable backtickQuotedString], [[primaryKeyFieldNames firstObject] backtickQuotedString]]];
+            [deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [connection quoteIdentifier:selectedTable], [connection quoteIdentifier:[primaryKeyFieldNames firstObject]]]];
 
             while (anIndex != NSNotFound) {
                 NSDictionary *field = [tableDataInstance columnWithName:[primaryKeyFieldNames firstObject]];
@@ -2046,7 +2048,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
                     affectedRows += (NSInteger)[connection rowsAffectedByLastQuery];
 
                     // Reinit a new deletion query
-                    [deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [selectedTable backtickQuotedString], [[primaryKeyFieldNames firstObject] backtickQuotedString]]];
+                    [deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [connection quoteIdentifier:selectedTable], [connection quoteIdentifier:[primaryKeyFieldNames firstObject]]]];
                 } else {
                     [deleteQuery appendString:@","];
                 }
@@ -2072,7 +2074,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
             // delete the row by using all PRIMARY KEYs in an OR clause
             NSMutableString *deleteQuery = [NSMutableString string];
 
-            [deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE ", [selectedTable backtickQuotedString]]];
+            [deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE ", [connection quoteIdentifier:selectedTable]]];
 
             while (anIndex != NSNotFound) {
 
@@ -2094,7 +2096,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
                     affectedRows += (NSInteger)[connection rowsAffectedByLastQuery];
 
                     // Reinit a new deletion query
-                    [deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE ", [selectedTable backtickQuotedString]]];
+                    [deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE ", [connection quoteIdentifier:selectedTable]]];
                 } else {
                     [deleteQuery appendString:@" OR "];
                 }
@@ -2651,7 +2653,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// Use INSERT syntax when creating new rows
 	if (isEditingNewRow) {
 		queryString = [NSMutableString stringWithFormat:@"INSERT INTO %@ (%@) VALUES (%@)",
-					   [selectedTable backtickQuotedString], [rowFieldsToSave componentsJoinedAndBacktickQuoted], [rowValuesToSave componentsJoinedByString:@", "]];
+					   [connection quoteIdentifier:selectedTable], [rowFieldsToSave componentsJoinedAndQuotedForConnection:connection], [rowValuesToSave componentsJoinedByString:@", "]];
 
 	// Otherwise use an UPDATE syntax to save only the changed cells - if this point is reached,
 	// the equality test has failed and so there is always at least one changed cell (Except in the case where the cell is of the "generated column" type, the number of cell changed can be 0)
@@ -2659,11 +2661,11 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         if ([rowFieldsToSave count] == 0) {
             return [[NSMutableString alloc] initWithString:@""];
         }
-        queryString = [NSMutableString stringWithFormat:@"UPDATE %@ SET ", [selectedTable backtickQuotedString]];
+        queryString = [NSMutableString stringWithFormat:@"UPDATE %@ SET ", [connection quoteIdentifier:selectedTable]];
         for (i = 0; i < [rowFieldsToSave count]; i++) {
             if (i) [queryString appendString:@", "];
             [queryString appendFormat:@"%@ = %@",
-                                       [[rowFieldsToSave safeObjectAtIndex:i] backtickQuotedString], [rowValuesToSave safeObjectAtIndex:i]];
+                                       [connection quoteIdentifier:[rowFieldsToSave safeObjectAtIndex:i]], [rowValuesToSave safeObjectAtIndex:i]];
         }
         NSString *whereArg = [self argumentForRow:-2];
         if(![whereArg length]) {
@@ -2858,13 +2860,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	if ( !keys ) {
 		setLimit = NO;
 		keys = [[NSMutableArray alloc] init];
-		id<SPDatabaseResult>theResult = [connection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [selectedTable backtickQuotedString]]];
+		id<SPDatabaseResult>theResult = [connection getColumnsForTable:selectedTable];
 		if(!theResult) {
-			SPLog(@"no result from SHOW COLUMNS mysql query! Abort.");
+			SPLog(@"no result from getColumnsForTable! Abort.");
 			return @"";
 		}
 		[theResult setReturnDataAsStrings:YES];
-		for (NSDictionary *eachRow in theResult) {
+		NSDictionary *eachRow;
+		while ((eachRow = [theResult getRowAsDictionary])) {
 			if ( [[eachRow objectForKey:@"Key"] isEqualToString:@"PRI"] ) {
 				[keys addObject:[eachRow objectForKey:@"Field"]];
 			}
@@ -2909,7 +2912,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		}
 
 		if ([tempValue isNSNull]) {
-			[argument appendFormat:@"%@ IS NULL", [[keys safeObjectAtIndex:i] backtickQuotedString]];
+			[argument appendFormat:@"%@ IS NULL", [connection quoteIdentifier:[keys safeObjectAtIndex:i]]];
 		}
 		else if ([tempValue isSPNotLoaded]) {
 			SPLog(@"Exceptional case: SPNotLoaded object found! Abort.");
@@ -2948,7 +2951,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 				return @"";
 			}
 			
-			[argument appendFormat:@"%@ = %@", [[keys safeObjectAtIndex:i] backtickQuotedString], [NSString stringWithFormat:fmt,escVal]];
+			[argument appendFormat:@"%@ = %@", [connection quoteIdentifier:[keys safeObjectAtIndex:i]], [NSString stringWithFormat:fmt,escVal]];
 		}
 	}
 
@@ -3039,8 +3042,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 	// Actual check whether field can be identified bijectively
 	id<SPDatabaseResult>tempResult = [connection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
-		[[columnDefinition objectForKey:@"db"] backtickQuotedString],
-		[tableForColumn backtickQuotedString],
+		[connection quoteIdentifier:[columnDefinition objectForKey:@"db"]],
+		[connection quoteIdentifier:tableForColumn],
 		fieldIDQueryStr]];
 
 	if ([connection queryErrored]) {
@@ -3059,8 +3062,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		}
 
 		tempResult = [connection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
-			[[columnDefinition objectForKey:@"db"] backtickQuotedString],
-			[tableForColumn backtickQuotedString],
+			[connection quoteIdentifier:[columnDefinition objectForKey:@"db"]],
+			[connection quoteIdentifier:tableForColumn],
 			fieldIDQueryStr]];
 
 		if ([connection queryErrored]) {
@@ -3204,9 +3207,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		}
 
 		[connection queryString:
-			[NSString stringWithFormat:@"UPDATE %@.%@ SET %@.%@.%@ = %@ %@",
-				[[columnDefinition objectForKey:@"db"] backtickQuotedString], [tableForColumn backtickQuotedString],
-				[[columnDefinition objectForKey:@"db"] backtickQuotedString], [tableForColumn backtickQuotedString], [columnName backtickQuotedString], newObject, fieldIDQueryStr]];
+			[NSString stringWithFormat:@"UPDATE %@.%@ SET %@ = %@ %@",
+				[connection quoteIdentifier:[columnDefinition objectForKey:@"db"]], [connection quoteIdentifier:tableForColumn],
+				[connection quoteIdentifier:columnName], newObject, fieldIDQueryStr]];
 
 		// Check for errors while UPDATE
 		if ([connection queryErrored]) {
@@ -4188,7 +4191,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		if ([[tableValues cellDataAtRow:rowIndex column:[[tableColumn identifier] integerValue]] isSPNotLoaded]) {
 
 			// Only get the data for the selected column, not all of them
-			NSString *query = [NSString stringWithFormat:@"SELECT %@ FROM %@ WHERE %@", [[[[tableColumn headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0] backtickQuotedString], [selectedTable backtickQuotedString], wherePart];
+			NSString *query = [NSString stringWithFormat:@"SELECT %@ FROM %@ WHERE %@", [connection quoteIdentifier:[[[tableColumn headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0]], [connection quoteIdentifier:selectedTable], wherePart];
 
 			id<SPDatabaseResult>tempResult = [connection queryString:query];
 

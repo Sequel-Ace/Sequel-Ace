@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPArrayAdditions.h"
+#import "SPDatabaseConnection.h"
 
 @implementation NSArray (SPArrayAdditions)
 
@@ -124,6 +125,25 @@
 		if ([result length])
 			[result appendString: @","];
 		[result appendFormat:@"\"%@\"", [[component description] stringByReplacingOccurrencesOfString:@"\"" withString:@"\"\""]];
+	}
+	return result;
+}
+
+/*
+ * Joins array elements with database-appropriate identifier quoting
+ * Uses the connection's quoteIdentifier method for proper quoting (backticks for MySQL, double quotes for PostgreSQL)
+ */
+- (NSString *)componentsJoinedAndQuotedForConnection:(id<SPDatabaseConnection>)connection
+{
+	NSMutableString *result = [NSMutableString string];
+	[result setString:@""];
+	
+	for (NSString *component in self)
+	{
+		if ([result length])
+			[result appendString: @", "];
+
+		[result appendString:[connection quoteIdentifier:component]];
 	}
 	return result;
 }

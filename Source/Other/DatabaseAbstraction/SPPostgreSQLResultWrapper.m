@@ -433,4 +433,11 @@
     NSLog(@"Warning: removeAllRows not implemented for PostgreSQL results");
 }
 
+- (unsigned long long)affectedRows {
+    if (_pgResult == NULL) {
+        return 0;
+    }
+    return sp_postgresql_result_affected_rows(_pgResult);
+}
+
 @end
