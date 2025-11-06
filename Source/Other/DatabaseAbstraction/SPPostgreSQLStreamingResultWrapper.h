@@ -31,25 +31,31 @@
 
 @class SPPostgreSQLConnectionWrapper;
 
+// Forward declaration of Rust FFI type (typedef in sppostgresql_ffi.h)
+typedef struct SPPostgreSQLResult SPPostgreSQLResult;
+
 /**
  * SPPostgreSQLStreamingResultWrapper
  * 
  * Wrapper class that implements SPDatabaseResult protocol for streaming results.
  * Provides memory-efficient iteration over large PostgreSQL result sets by
  * processing data in batches instead of loading everything into memory at once.
+ * 
+ * Matches MySQL's pattern: receives a pre-executed result handle with metadata
+ * available immediately, data fetching is deferred until startDownload is called.
  */
 @interface SPPostgreSQLStreamingResultWrapper : NSObject <SPDatabaseResult>
 
 /**
- * Initialize with a query to execute asynchronously
- * @param query The SQL query to execute
- * @param connection The connection wrapper to execute the query on
+ * Initialize with a pre-executed PostgreSQL result handle (matches MySQL pattern)
+ * @param pgResult Pre-executed result handle from sp_postgresql_connection_execute_query
+ * @param connection The connection wrapper
  * @param batchSize The batch size for fetching (for compatibility, currently unused)
  * @return Wrapper instance
  */
-- (instancetype)initWithQuery:(NSString *)query
-                   connection:(SPPostgreSQLConnectionWrapper *)connection
-                    batchSize:(NSUInteger)batchSize;
+- (instancetype)initWithPGResult:(SPPostgreSQLResult *)pgResult
+                      connection:(SPPostgreSQLConnectionWrapper *)connection
+                       batchSize:(NSUInteger)batchSize;
 
 /**
  * Indicates whether all data has been downloaded/loaded

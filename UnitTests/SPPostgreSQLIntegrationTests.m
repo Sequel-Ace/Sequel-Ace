@@ -1324,9 +1324,20 @@
         return;
     }
     
+    // Create a test table
+    NSString *createTableQuery = @"CREATE TABLE IF NOT EXISTS test_cancel ("
+                                 @"id SERIAL PRIMARY KEY, "
+                                 @"name TEXT NOT NULL)";
+    [connection queryString:createTableQuery];
+    [connection queryString:@"DELETE FROM test_cancel"];
+    for (int i = 1; i <= 10; i++) {
+        [connection queryString:[NSString stringWithFormat:@"INSERT INTO test_cancel (name) VALUES ('Row%d')", i]];
+    }
+    NSLog(@"✓ Created test table with 10 rows");
+    
     // Create result store but don't start download yet
-    NSLog(@"📊 Creating result store without starting download...");
-    id<SPDatabaseResult> resultStore = [connection resultStoreFromQueryString:@"SELECT * FROM pg_class LIMIT 100"];
+    NSLog(@"\n📊 Creating result store without starting download...");
+    id<SPDatabaseResult> resultStore = [connection resultStoreFromQueryString:@"SELECT * FROM test_cancel"];
     XCTAssertNotNil(resultStore, @"Result store should be created");
     
     NSLog(@"✓ Result store created: %@", [resultStore class]);
@@ -1344,7 +1355,7 @@
     
     // Test 2: Start download, then cancel
     NSLog(@"\n📊 Creating second result store...");
-    id<SPDatabaseResult> resultStore2 = [connection resultStoreFromQueryString:@"SELECT * FROM pg_class LIMIT 100"];
+    id<SPDatabaseResult> resultStore2 = [connection resultStoreFromQueryString:@"SELECT * FROM test_cancel"];
     
     NSLog(@"🚀 Starting download...");
     [resultStore2 startDownload];
@@ -1361,6 +1372,8 @@
     XCTAssertTrue([resultStore2 dataDownloaded], @"Should be marked as downloaded after cancel");
     XCTAssertLessThan(cancelTime, 5.0, @"Cancel should complete within 5 seconds");
     
+    // Cleanup
+    [connection queryString:@"DROP TABLE test_cancel"];
     [connection disconnect];
     
     NSLog(@"✅ Test 23 Passed: Async Streaming Cancellation");
@@ -1757,8 +1770,8 @@
     NSLog(@"✅ Test 33 Passed: Combined INSERT, UPDATE, DELETE operations");
 }
 
-- (void)DISABLED_test_34_UpdateThenStreamingSelect {
-    NSLog(@"\n🧪 Test 34: UPDATE followed by streaming SELECT (DISABLED - flaky, needs investigation)");
+- (void)test_34_UpdateThenStreamingSelect {
+    NSLog(@"\n🧪 Test 34: UPDATE followed by streaming SELECT (reproducing hang)");
     
     id<SPDatabaseConnection> connection = [self createAndConnectConnection];
     XCTAssertNotNil(connection, @"Connection should be established");

@@ -43,18 +43,18 @@
     return downloaded;
 }
 
-- (instancetype)initWithQuery:(NSString *)query
-                   connection:(SPPostgreSQLConnectionWrapper *)connection
-                    batchSize:(NSUInteger)batchSize {
+- (instancetype)initWithPGResult:(SPPostgreSQLResult *)pgResult
+                      connection:(SPPostgreSQLConnectionWrapper *)connection
+                       batchSize:(NSUInteger)batchSize {
     if ((self = [super init])) {
-        _query = [query copy];
         _connection = connection;
         _batchSize = batchSize;
         _currentRow = 0;
         _dataDownloaded = NO;
         _loadStarted = NO;
         _loadCancelled = NO;
-        _pgResult = NULL;
+        _pgResult = pgResult;  // Store the pre-executed result handle
+        _query = nil;  // No query string needed (already executed)
         
         // Initialize mutex
         pthread_mutex_init(&_dataLock, NULL);
@@ -62,53 +62,28 @@
         // Initialize row storage
         _cachedRows = [NSMutableArray array];
         
-        // Execute query with LIMIT 0 to get table structure/metadata synchronously
-        // This is fast (returns no data) and needed for UI to know column info immediately
-        SPPostgreSQLConnection *pgConnection = [connection pgConnection];
-        if (pgConnection) {
-            // Wrap the query in a subquery with LIMIT 0 to get just metadata (fast, no data)
-            NSString *metadataQuery = [NSString stringWithFormat:@"SELECT * FROM (%@) AS metadata_query LIMIT 0", query];
-            SPPostgreSQLResult *metadataResult = sp_postgresql_connection_execute_query(pgConnection, [metadataQuery UTF8String]);
-            
-            if (metadataResult) {
-                // Extract field metadata
-                _numFields = sp_postgresql_result_num_fields(metadataResult);
-                
-                NSMutableArray<NSString *> *names = [NSMutableArray arrayWithCapacity:_numFields];
-                NSMutableArray<NSNumber *> *typeOIDs = [NSMutableArray arrayWithCapacity:_numFields];
-                for (NSUInteger i = 0; i < _numFields; i++) {
-                    char *nameCStr = sp_postgresql_result_field_name(metadataResult, (int)i);
-                    if (nameCStr) {
-                        NSString *name = [NSString stringWithUTF8String:nameCStr];
-                        [names addObject:name];
-                        sp_postgresql_free_string(nameCStr);
-                    } else {
-                        [names addObject:[NSString stringWithFormat:@"column_%lu", (unsigned long)i]];
-                    }
-                    
-                    uint32_t typeOID = sp_postgresql_result_field_type_oid(metadataResult, (int)i);
-                    [typeOIDs addObject:@(typeOID)];
-                }
-                _cachedFieldNames = [names copy];
-                _cachedFieldTypeOIDs = [typeOIDs copy];
-                
-                // Clean up metadata result
-                sp_postgresql_result_destroy(metadataResult);
-            } else {
-                // Metadata query failed
-                _numFields = 0;
-                _cachedFieldNames = @[];
-                _cachedFieldTypeOIDs = @[];
-            }
-        } else {
-            // No connection
-            _numFields = 0;
-            _cachedFieldNames = @[];
-            _cachedFieldTypeOIDs = @[];
-        }
+        // Extract metadata from result handle (FAST - no query execution!)
+        // Matches MySQL pattern: metadata is immediately available from result handle
+        _totalRows = sp_postgresql_result_num_rows(_pgResult);
+        _numFields = sp_postgresql_result_num_fields(_pgResult);
         
-        // Total rows will be set when actual query executes in _downloadAllData
-        _totalRows = 0;
+        NSMutableArray<NSString *> *names = [NSMutableArray arrayWithCapacity:_numFields];
+        NSMutableArray<NSNumber *> *typeOIDs = [NSMutableArray arrayWithCapacity:_numFields];
+        for (NSUInteger i = 0; i < _numFields; i++) {
+            char *nameCStr = sp_postgresql_result_field_name(_pgResult, (int)i);
+            if (nameCStr) {
+                NSString *name = [NSString stringWithUTF8String:nameCStr];
+                [names addObject:name];
+                sp_postgresql_free_string(nameCStr);
+            } else {
+                [names addObject:[NSString stringWithFormat:@"column_%lu", (unsigned long)i]];
+            }
+            
+            uint32_t typeOID = sp_postgresql_result_field_type_oid(_pgResult, (int)i);
+            [typeOIDs addObject:@(typeOID)];
+        }
+        _cachedFieldNames = [names copy];
+        _cachedFieldTypeOIDs = [typeOIDs copy];
     }
     return self;
 }
@@ -336,51 +311,21 @@
         [[NSThread currentThread] setName:@"SPPostgreSQLStreamingResultStore data download thread"];
         
         @try {
-            // Execute the query on the background thread
-            SPPostgreSQLConnection *pgConnection = [_connection pgConnection];
-            if (!pgConnection) {
-                NSLog(@"[PG Streaming] No connection available");
-                return;  // @finally will still run
-            }
-            
-            _pgResult = sp_postgresql_connection_execute_query(pgConnection, [_query UTF8String]);
-            
+            // Use the pre-executed result handle (NO query execution!)
+            // Matches MySQL pattern: result was already executed in connection wrapper
             if (!_pgResult) {
-                NSLog(@"[PG Streaming] Query execution failed");
+                NSLog(@"[PG Streaming] No result handle available");
                 return;  // @finally will still run
             }
             
-            // Get total rows and number of fields
-            NSUInteger totalRows = sp_postgresql_result_num_rows(_pgResult);
-            NSUInteger numFields = sp_postgresql_result_num_fields(_pgResult);
-            
-            // Extract field metadata
-            NSMutableArray<NSString *> *fieldNames = [NSMutableArray arrayWithCapacity:numFields];
-            NSMutableArray<NSNumber *> *fieldTypeOIDs = [NSMutableArray arrayWithCapacity:numFields];
-            for (NSUInteger i = 0; i < numFields; i++) {
-                char *nameCStr = sp_postgresql_result_field_name(_pgResult, (int)i);
-                if (nameCStr) {
-                    NSString *name = [NSString stringWithUTF8String:nameCStr];
-                    [fieldNames addObject:name];
-                    sp_postgresql_free_string(nameCStr);
-                } else {
-                    [fieldNames addObject:[NSString stringWithFormat:@"column_%lu", (unsigned long)i]];
-                }
-                
-                uint32_t typeOID = sp_postgresql_result_field_type_oid(_pgResult, (int)i);
-                [fieldTypeOIDs addObject:@(typeOID)];
-            }
-            
-            // Update metadata atomically
+            // Get total rows and fields from our already-extracted metadata
             pthread_mutex_lock(&_dataLock);
-            _totalRows = totalRows;
-            _numFields = numFields;
-            _cachedFieldNames = [fieldNames copy];
-            _cachedFieldTypeOIDs = [fieldTypeOIDs copy];
+            NSUInteger totalRows = _totalRows;
+            NSUInteger numFields = _numFields;
             [_cachedRows removeAllObjects];
             pthread_mutex_unlock(&_dataLock);
             
-            // Fetch all rows
+            // Fetch all rows from the result handle (matches MySQL's mysql_fetch_row pattern)
             for (NSUInteger rowIndex = 0; rowIndex < totalRows; rowIndex++) {
                 // Check if cancelled
                 if (_loadCancelled) {
@@ -406,7 +351,7 @@
                 pthread_mutex_unlock(&_dataLock);
             }
             
-            // Clean up result
+            // Clean up result handle after fetching all data
             if (_pgResult) {
                 sp_postgresql_result_destroy(_pgResult);
                 _pgResult = NULL;
