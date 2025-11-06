@@ -22,13 +22,13 @@
 @property (nonatomic, weak) SPPostgreSQLConnectionWrapper *connection;
 @property (nonatomic, strong) NSArray<NSString *> *cachedFieldNames;
 @property (nonatomic, strong) NSArray<NSNumber *> *cachedFieldTypeOIDs;
-@property (nonatomic, assign) NSUInteger totalRows;
+@property (nonatomic, assign) long long totalRows;  // May be -1 if unknown (cursor-based streaming)
 @property (nonatomic, assign) NSUInteger numFields;
 @property (nonatomic, assign) NSUInteger currentRow;
 @property (nonatomic, assign) BOOL dataDownloaded;
 @property (nonatomic, strong) NSMutableArray<NSMutableArray *> *cachedRows;
 @property (nonatomic, assign) NSUInteger batchSize;
-@property (nonatomic, assign) SPPostgreSQLResult *pgResult; // Store result handle for async data loading
+@property (nonatomic, assign) SPPostgreSQLStreamingResult *pgStreamingResult; // Store streaming result handle (TRUE cursor-based streaming)
 
 @end
 
@@ -43,9 +43,9 @@
     return downloaded;
 }
 
-- (instancetype)initWithPGResult:(SPPostgreSQLResult *)pgResult
-                      connection:(SPPostgreSQLConnectionWrapper *)connection
-                       batchSize:(NSUInteger)batchSize {
+- (instancetype)initWithStreamingResult:(SPPostgreSQLStreamingResult *)pgStreamingResult
+                             connection:(SPPostgreSQLConnectionWrapper *)connection
+                              batchSize:(NSUInteger)batchSize {
     if ((self = [super init])) {
         _connection = connection;
         _batchSize = batchSize;
@@ -53,7 +53,7 @@
         _dataDownloaded = NO;
         _loadStarted = NO;
         _loadCancelled = NO;
-        _pgResult = pgResult;  // Store the pre-executed result handle
+        _pgStreamingResult = pgStreamingResult;  // Store the pre-executed streaming result handle (TRUE cursor-based)
         _query = nil;  // No query string needed (already executed)
         
         // Initialize mutex
@@ -62,15 +62,15 @@
         // Initialize row storage
         _cachedRows = [NSMutableArray array];
         
-        // Extract metadata from result handle (FAST - no query execution!)
+        // Extract metadata from streaming result handle (FAST - no query execution!)
         // Matches MySQL pattern: metadata is immediately available from result handle
-        _totalRows = sp_postgresql_result_num_rows(_pgResult);
-        _numFields = sp_postgresql_result_num_fields(_pgResult);
+        _totalRows = sp_postgresql_streaming_result_total_rows(_pgStreamingResult);  // May be -1 if unknown
+        _numFields = sp_postgresql_streaming_result_num_fields(_pgStreamingResult);
         
         NSMutableArray<NSString *> *names = [NSMutableArray arrayWithCapacity:_numFields];
         NSMutableArray<NSNumber *> *typeOIDs = [NSMutableArray arrayWithCapacity:_numFields];
         for (NSUInteger i = 0; i < _numFields; i++) {
-            char *nameCStr = sp_postgresql_result_field_name(_pgResult, (int)i);
+            char *nameCStr = sp_postgresql_streaming_result_field_name(_pgStreamingResult, (int)i);
             if (nameCStr) {
                 NSString *name = [NSString stringWithUTF8String:nameCStr];
                 [names addObject:name];
@@ -79,7 +79,7 @@
                 [names addObject:[NSString stringWithFormat:@"column_%lu", (unsigned long)i]];
             }
             
-            uint32_t typeOID = sp_postgresql_result_field_type_oid(_pgResult, (int)i);
+            uint32_t typeOID = sp_postgresql_streaming_result_field_type_oid(_pgStreamingResult, (int)i);
             [typeOIDs addObject:@(typeOID)];
         }
         _cachedFieldNames = [names copy];
@@ -92,10 +92,10 @@
     // Ensure download is cancelled
     [self cancelResultLoad];
     
-    // Clean up result if it wasn't already
-    if (_pgResult) {
-        sp_postgresql_result_destroy(_pgResult);
-        _pgResult = NULL;
+    // Clean up streaming result (TRUE cursor-based streaming)
+    if (_pgStreamingResult) {
+        sp_postgresql_streaming_result_destroy(_pgStreamingResult);
+        _pgStreamingResult = NULL;
     }
     
     // Destroy mutex
@@ -119,8 +119,25 @@
 #pragma mark - Result Metadata
 
 - (NSUInteger)numberOfRows {
-    // Return total rows - known immediately after init
-    return _totalRows;
+    // Matches MySQL streaming behavior:
+    // - While downloading: returns current number of rows fetched so far
+    // - After download complete: returns final total
+    pthread_mutex_lock(&_dataLock);
+    BOOL downloaded = _dataDownloaded;
+    NSUInteger cachedCount = [_cachedRows count];
+    long long totalRows = _totalRows;
+    pthread_mutex_unlock(&_dataLock);
+    
+    if (!downloaded) {
+        // Still downloading - return current count (like MySQL's rowDownloadIterator)
+        return cachedCount;
+    }
+    
+    // Download complete - return final total
+    if (totalRows >= 0) {
+        return (NSUInteger)totalRows;
+    }
+    return cachedCount;
 }
 
 - (NSUInteger)numberOfFields {
@@ -311,50 +328,75 @@
         [[NSThread currentThread] setName:@"SPPostgreSQLStreamingResultStore data download thread"];
         
         @try {
-            // Use the pre-executed result handle (NO query execution!)
-            // Matches MySQL pattern: result was already executed in connection wrapper
-            if (!_pgResult) {
-                NSLog(@"[PG Streaming] No result handle available");
+            // TRUE cursor-based streaming: fetches batches on-demand from PostgreSQL server
+            if (!_pgStreamingResult) {
+                NSLog(@"[PG Streaming] No streaming result handle available");
                 return;  // @finally will still run
             }
             
-            // Get total rows and fields from our already-extracted metadata
+            // Get metadata
             pthread_mutex_lock(&_dataLock);
-            NSUInteger totalRows = _totalRows;
             NSUInteger numFields = _numFields;
             [_cachedRows removeAllObjects];
             pthread_mutex_unlock(&_dataLock);
             
-            // Fetch all rows from the result handle (matches MySQL's mysql_fetch_row pattern)
-            for (NSUInteger rowIndex = 0; rowIndex < totalRows; rowIndex++) {
-                // Check if cancelled
+            NSUInteger totalFetchedRows = 0;
+            
+            // Fetch batches from cursor until no more data
+            while (sp_postgresql_streaming_result_has_more(_pgStreamingResult)) {
+                // Check if cancelled before fetching next batch
                 if (_loadCancelled) {
-                    NSLog(@"[PG Streaming] Load cancelled at row %lu", (unsigned long)rowIndex);
+                    NSLog(@"[PG Streaming] Load cancelled at row %lu", (unsigned long)totalFetchedRows);
                     break;
                 }
                 
-                NSMutableArray *row = [NSMutableArray arrayWithCapacity:numFields];
-                
-                for (NSUInteger colIndex = 0; colIndex < numFields; colIndex++) {
-                    char *valueCStr = sp_postgresql_result_get_value(_pgResult, (int)rowIndex, (int)colIndex);
-                    if (valueCStr) {
-                        NSString *value = [NSString stringWithUTF8String:valueCStr];
-                        [row addObject:value];
-                        sp_postgresql_free_string(valueCStr);
-                    } else {
-                        [row addObject:[NSNull null]];
-                    }
+                // Fetch next batch from cursor (only this batch is in memory!)
+                int batchSize = sp_postgresql_streaming_result_next_batch(_pgStreamingResult, NULL, NULL);
+                if (batchSize < 0) {
+                    NSLog(@"[PG Streaming] Error fetching batch");
+                    break;
+                }
+                if (batchSize == 0) {
+                    break;  // No more rows
                 }
                 
+                // Process current batch using batch-relative indices
+                for (int batchRow = 0; batchRow < batchSize; batchRow++) {
+                    NSMutableArray *row = [NSMutableArray arrayWithCapacity:numFields];
+                    
+                    for (NSUInteger colIndex = 0; colIndex < numFields; colIndex++) {
+                        // Use batch-relative index to get value from current batch
+                        char *valueCStr = sp_postgresql_streaming_result_get_batch_value(_pgStreamingResult, batchRow, (int)colIndex);
+                        if (valueCStr) {
+                            NSString *value = [NSString stringWithUTF8String:valueCStr];
+                            [row addObject:value];
+                            sp_postgresql_free_string(valueCStr);
+                        } else {
+                            [row addObject:[NSNull null]];
+                        }
+                    }
+                    
+                    pthread_mutex_lock(&_dataLock);
+                    [_cachedRows addObject:row];
+                    pthread_mutex_unlock(&_dataLock);
+                    
+                    totalFetchedRows++;
+                }
+                
+                // Previous batch is now released from memory, only current batch remains
+            }
+            
+            // Update total rows if it was unknown
+            if (_totalRows < 0) {
                 pthread_mutex_lock(&_dataLock);
-                [_cachedRows addObject:row];
+                _totalRows = (long long)totalFetchedRows;
                 pthread_mutex_unlock(&_dataLock);
             }
             
-            // Clean up result handle after fetching all data
-            if (_pgResult) {
-                sp_postgresql_result_destroy(_pgResult);
-                _pgResult = NULL;
+            // Clean up streaming result
+            if (_pgStreamingResult) {
+                sp_postgresql_streaming_result_destroy(_pgStreamingResult);
+                _pgStreamingResult = NULL;
             }
             
         } @catch (NSException *exception) {

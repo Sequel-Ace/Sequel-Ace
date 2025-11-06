@@ -134,34 +134,24 @@ impl PostgreSQLConnection {
         }
     }
     
-    /// Execute a streaming query that loads data in batches
-    /// This is more memory efficient for large result sets
-    /// batch_size: number of rows to process at a time (default: 1000)
+    /// Execute a TRUE streaming query using PostgreSQL cursors
+    /// Only fetches data in batches as needed - memory efficient for large result sets
+    /// batch_size: number of rows to fetch per batch (default: 1000)
     pub fn execute_streaming_query(&mut self, query: &str, batch_size: usize) 
         -> Result<PostgreSQLStreamingResult, Box<dyn Error>> {
         
         match &mut self.client {
             Some(client) => {
-                // Use prepared statement to preserve column metadata
-                match client.prepare(query) {
-                    Ok(statement) => {
-                        let columns = statement.columns();
-                        
-                        match client.query(&statement, &[]) {
-                            Ok(rows) => {
-                                self.last_error = None;
-                                // Return streaming result for efficient processing
-                                Ok(PostgreSQLStreamingResult::new(rows, columns, batch_size))
-                            },
-                            Err(e) => {
-                                self.last_error = Some(e.to_string());
-                                Err(Box::new(e))
-                            }
-                        }
+                // Create cursor-based streaming result
+                // This declares a server-side cursor and fetches batches on demand
+                match PostgreSQLStreamingResult::new(client, query, batch_size) {
+                    Ok(result) => {
+                        self.last_error = None;
+                        Ok(result)
                     },
                     Err(e) => {
                         self.last_error = Some(e.to_string());
-                        Err(Box::new(e))
+                        Err(e)
                     }
                 }
             },

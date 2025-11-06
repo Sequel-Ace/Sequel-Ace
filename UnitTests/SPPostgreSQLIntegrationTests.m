@@ -1778,6 +1778,11 @@
     
     NSString *testTableName = @"test_update_streaming";
     
+    // Drop table if it exists from previous test run
+    [connection queryString:[NSString stringWithFormat:
+        @"DROP TABLE IF EXISTS %@",
+        [connection quoteIdentifier:testTableName]]];
+    
     // Create table with multiple rows
     // Note: Using INTEGER instead of NUMERIC for simpler type handling
     [connection queryString:[NSString stringWithFormat:
@@ -1903,6 +1908,179 @@
     [connection queryString:[NSString stringWithFormat:@"DROP TABLE %@", [connection quoteIdentifier:testTableName]]];
     [connection disconnect];
     NSLog(@"✅ Test 34 Passed: UPDATE followed by streaming SELECT works correctly without hanging");
+}
+
+#pragma mark - Test 35: Large Streaming Query with Batching
+
+- (void)test_35_LargeStreamingQueryWithBatching {
+    NSLog(@"\n🧪 Test 35: Large Streaming Query with 100K records (500-row batches)");
+    
+    id<SPDatabaseConnection> connection = [self createAndConnectConnection];
+    XCTAssertNotNil(connection, @"Connection should be established");
+    
+    NSString *testTableName = @"test_large_streaming";
+    
+    // Drop table if it exists from previous test run
+    [connection queryString:[NSString stringWithFormat:
+        @"DROP TABLE IF EXISTS %@",
+        [connection quoteIdentifier:testTableName]]];
+    
+    // Create table
+    NSLog(@"   Creating table...");
+    NSString *createQuery = [NSString stringWithFormat:
+        @"CREATE TABLE %@ (id INTEGER PRIMARY KEY, name TEXT NOT NULL)",
+        [connection quoteIdentifier:testTableName]];
+    [connection queryString:createQuery];
+    
+    // Insert 100K records in batches (for speed)
+    NSLog(@"   Inserting 100,000 records...");
+    NSDate *insertStart = [NSDate date];
+    
+    const int totalRecords = 100000;
+    const int insertBatchSize = 1000;
+    
+    for (int batchStart = 1; batchStart <= totalRecords; batchStart += insertBatchSize) {
+        int batchEnd = MIN(batchStart + insertBatchSize - 1, totalRecords);
+        
+        NSMutableString *batchInsert = [NSMutableString stringWithFormat:
+            @"INSERT INTO %@ (id, name) VALUES ", [connection quoteIdentifier:testTableName]];
+        
+        for (int i = batchStart; i <= batchEnd; i++) {
+            if (i > batchStart) [batchInsert appendString:@", "];
+            [batchInsert appendFormat:@"(%d, '%d')", i, i];
+        }
+        
+        [connection queryString:batchInsert];
+        
+        if (batchStart % 10000 == 1) {
+            NSLog(@"      Inserted %d records...", batchStart - 1);
+        }
+    }
+    
+    NSLog(@"   ✓ Inserted 100K records in %.2f seconds", -[insertStart timeIntervalSinceNow]);
+    
+    // Execute streaming query using connection wrapper (which should use streaming API)
+    NSLog(@"\n   Executing streaming query with 500-row batches...");
+    NSDate *queryStart = [NSDate date];
+    
+    id<SPDatabaseResult> result = [connection streamingQueryString:
+        [NSString stringWithFormat:@"SELECT * FROM %@ ORDER BY id", [connection quoteIdentifier:testTableName]]
+        useLowMemoryBlockingStreaming:YES];  // Use 500-row batch size
+    
+    NSLog(@"   ✓ Query executed in %.3f seconds", -[queryStart timeIntervalSinceNow]);
+    XCTAssertNotNil(result, @"Streaming result should not be nil");
+    
+    // Check metadata is available IMMEDIATELY (before calling startDownload)
+    NSLog(@"\n   Verifying metadata available immediately:");
+    NSUInteger numFields = [result numberOfFields];
+    NSLog(@"      Number of fields: %lu", (unsigned long)numFields);
+    
+    XCTAssertEqual(numFields, (NSUInteger)2, @"Should have 2 fields");
+    
+    // Check field names
+    NSArray *fieldNames = [result fieldNames];
+    XCTAssertEqualObjects(fieldNames[0], @"id", @"First field should be 'id'");
+    XCTAssertEqualObjects(fieldNames[1], @"name", @"Second field should be 'name'");
+    NSLog(@"      Field names: %@", fieldNames);
+    
+    // Note: numberOfRows will be 0 before download (like MySQL's mysql_use_result)
+    // It will be accurate after download completes
+    
+    // Start the download
+    NSLog(@"\n   Starting batched download...");
+    [result startDownload];
+    
+    // Wait for download to complete
+    NSDate *downloadStart = [NSDate date];
+    int timeout = 60; // 60 seconds for 100K records
+    int elapsed = 0;
+    
+    while (![result dataDownloaded] && elapsed < timeout) {
+        [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+        usleep(100000); // 100ms
+        elapsed++;
+        
+        if (elapsed % 50 == 0) {  // Every 5 seconds
+            NSLog(@"      Still downloading... %d seconds elapsed", elapsed / 10);
+        }
+    }
+    
+    if (elapsed >= timeout) {
+        [result cancelResultLoad];
+        XCTFail(@"Download timed out after %d seconds", timeout);
+        [connection queryString:[NSString stringWithFormat:@"DROP TABLE %@", [connection quoteIdentifier:testTableName]]];
+        [connection disconnect];
+        return;
+    }
+    
+    NSLog(@"   ✓ Downloaded all data in %.2f seconds", -[downloadStart timeIntervalSinceNow]);
+    
+    // Now that download is complete, numberOfRows should reflect the total
+    NSUInteger totalRows = [result numberOfRows];
+    NSLog(@"   ✓ Total rows after download: %lu", (unsigned long)totalRows);
+    XCTAssertEqual(totalRows, (NSUInteger)totalRecords, @"Should have 100K rows after download");
+    
+    // Verify data correctness by sampling
+    NSLog(@"\n   Verifying data correctness:");
+    [result seekToRow:0];
+    
+    // Check first 10 rows
+    NSLog(@"      Checking first 10 rows...");
+    for (int i = 1; i <= 10; i++) {
+        NSArray *row = [result getRowAsArray];
+        XCTAssertNotNil(row, @"Row %d should not be nil", i);
+        XCTAssertEqual([row count], (NSUInteger)2, @"Row should have 2 columns");
+        
+        NSString *idStr = [row[0] description];
+        NSString *nameStr = [row[1] description];
+        NSString *expectedStr = [NSString stringWithFormat:@"%d", i];
+        
+        XCTAssertEqualObjects(idStr, expectedStr, @"Row %d: id should be %d", i, i);
+        XCTAssertEqualObjects(nameStr, expectedStr, @"Row %d: name should be '%d'", i, i);
+    }
+    
+    // Check some middle rows
+    NSLog(@"      Checking rows 50000-50010...");
+    [result seekToRow:50000 - 1]; // -1 because  seekToRow is 0-based
+    for (int i = 50000; i <= 50010; i++) {
+        NSArray *row = [result getRowAsArray];
+        NSString *idStr = [row[0] description];
+        NSString *nameStr = [row[1] description];
+        NSString *expectedStr = [NSString stringWithFormat:@"%d", i];
+        
+        XCTAssertEqualObjects(idStr, expectedStr, @"Row %d: id should be %d", i, i);
+        XCTAssertEqualObjects(nameStr, expectedStr, @"Row %d: name should be '%d'", i, i);
+    }
+    
+    // Check last 10 rows
+    NSLog(@"      Checking last 10 rows...");
+    [result seekToRow:totalRecords - 10];
+    for (int i = totalRecords - 9; i <= totalRecords; i++) {
+        NSArray *row = [result getRowAsArray];
+        NSString *idStr = [row[0] description];
+        NSString *nameStr = [row[1] description];
+        NSString *expectedStr = [NSString stringWithFormat:@"%d", i];
+        
+        XCTAssertEqualObjects(idStr, expectedStr, @"Row %d: id should be %d", i, i);
+        XCTAssertEqualObjects(nameStr, expectedStr, @"Row %d: name should be '%d'", i, i);
+    }
+    
+    // Count all rows to verify completeness
+    NSLog(@"\n   Counting all rows...");
+    [result seekToRow:0];
+    NSUInteger rowCount = 0;
+    while ([result getRowAsArray]) {
+        rowCount++;
+    }
+    XCTAssertEqual(rowCount, (NSUInteger)totalRecords, @"Should have fetched all 100K rows");
+    NSLog(@"   ✓ Verified all %lu rows present", (unsigned long)rowCount);
+    
+    // Cleanup
+    [connection queryString:[NSString stringWithFormat:@"DROP TABLE %@", [connection quoteIdentifier:testTableName]]];
+    [connection disconnect];
+    
+    NSLog(@"✅ Test 35 Passed: Large streaming query with batching works correctly");
+    NSLog(@"   Total time: %.2f seconds", -[queryStart timeIntervalSinceNow]);
 }
 
 @end

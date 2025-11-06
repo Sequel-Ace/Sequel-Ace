@@ -428,28 +428,32 @@
         return nil;
     }
     
-    // Execute the query to get result handle (matches MySQL's mysql_use_result pattern)
-    // This executes the query but doesn't fetch data yet - metadata is available immediately
-    const char *queryCStr = [query UTF8String];
-    SPPostgreSQLResult *pgResult = sp_postgresql_connection_execute_query(_pgConnection, queryCStr);
+    // Choose batch size based on streaming mode
+    // fullStream = YES means low memory mode, use smaller batches
+    NSUInteger batchSize = fullStream ? 500 : 1000;
     
-    if (pgResult == NULL) {
+    // Execute streaming query using dedicated API (matches MySQL's mysql_use_result pattern)
+    // This executes the query but data is fetched in batches, metadata is available immediately
+    const char *queryCStr = [query UTF8String];
+    SPPostgreSQLStreamingResult *pgStreamingResult = sp_postgresql_connection_execute_streaming_query(
+        _pgConnection, 
+        queryCStr, 
+        (int)batchSize
+    );
+    
+    if (pgStreamingResult == NULL) {
         char *errorCStr = sp_postgresql_connection_last_error(_pgConnection);
-        _lastErrorMessage = errorCStr ? [NSString stringWithUTF8String:errorCStr] : @"Query execution failed";
+        _lastErrorMessage = errorCStr ? [NSString stringWithUTF8String:errorCStr] : @"Streaming query execution failed";
         if (errorCStr) sp_postgresql_free_string(errorCStr);
         _lastErrorID = 101;
         return nil;
     }
     
-    // Choose batch size based on streaming mode
-    // fullStream = YES means low memory mode, use smaller batches
-    NSUInteger batchSize = fullStream ? 500 : 1000;
-    
-    // Create streaming wrapper with pre-executed result handle (matches MySQL pattern)
-    // The result has metadata available, but data fetching is deferred until startDownload
-    return [[SPPostgreSQLStreamingResultWrapper alloc] initWithPGResult:pgResult 
-                                                          connection:self
-                                                           batchSize:batchSize];
+    // Create streaming wrapper with pre-executed streaming result (matches MySQL pattern)
+    // The result has metadata available, data fetching is batched
+    return [[SPPostgreSQLStreamingResultWrapper alloc] initWithStreamingResult:pgStreamingResult 
+                                                                     connection:self
+                                                                      batchSize:batchSize];
 }
 
 - (id)resultStoreFromQueryString:(NSString *)query {

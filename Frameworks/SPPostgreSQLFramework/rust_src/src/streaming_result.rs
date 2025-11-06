@@ -1,64 +1,141 @@
 //
 //  streaming_result.rs
-//  SPPostgreSQLFramework - PostgreSQL Streaming Result Implementation
+//  SPPostgreSQLFramework - PostgreSQL TRUE Streaming Result Implementation
 //
 //  Created by Sequel Ace on 2024.
 //  Copyright (c) 2024 Sequel Ace. All rights reserved.
 //
+//  Implements cursor-based streaming for memory-efficient processing of large result sets
+//
 
-use postgres::{Client, Row, Column};
+use postgres::{Client, Row};
 use std::error::Error;
 
-/// Streaming result that fetches data in batches using PostgreSQL portals
-/// This allows processing large result sets without loading everything into memory
+/// TRUE streaming result using PostgreSQL cursors
+/// Only keeps current batch in memory, fetches on-demand from server
 pub struct PostgreSQLStreamingResult {
-    rows: Vec<Row>,
-    columns: Vec<String>,  // Store column names instead of Column objects
-    type_oids: Vec<u32>,   // Store PostgreSQL type OIDs
-    current_index: usize,
+    client: *mut Client,  // Raw pointer to client (managed by connection)
+    cursor_name: String,
+    columns: Vec<String>,
+    type_oids: Vec<u32>,
+    total_rows: i64,  // -1 if unknown, otherwise actual count
+    current_batch: Vec<Row>,
+    current_batch_start_index: usize,
     batch_size: usize,
+    finished: bool,
+    owns_transaction: bool,  // Track if WE started the transaction
 }
 
+// SAFETY: We ensure Client is only accessed through controlled FFI
+unsafe impl Send for PostgreSQLStreamingResult {}
+
 impl PostgreSQLStreamingResult {
-    /// Create a new streaming result from rows and columns
-    pub fn new(rows: Vec<Row>, columns: &[Column], batch_size: usize) -> Self {
-        // Store column names
-        let column_names: Vec<String> = columns
-            .iter()
-            .map(|col| col.name().to_string())
-            .collect();
+    /// Create a new cursor-based streaming result
+    /// This executes DECLARE CURSOR and prepares for batch fetching
+    pub fn new(
+        client: &mut Client,
+        query: &str,
+        batch_size: usize,
+    ) -> Result<Self, Box<dyn Error>> {
+        // Generate unique cursor name with timestamp for uniqueness across multiple cursors
+        use std::time::{SystemTime, UNIX_EPOCH};
+        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros();
+        let cursor_name = format!("sequel_ace_cursor_{}_{}", std::process::id(), timestamp);
         
-        // Store type OIDs
-        let type_oids: Vec<u32> = columns
-            .iter()
-            .map(|col| col.type_().oid())
-            .collect();
+        // Try to start a transaction (required for cursors)
+        // Track if WE started it so we know whether to commit/rollback later
+        let owns_transaction = match client.execute("BEGIN", &[]) {
+            Ok(_) => true,   // We started the transaction
+            Err(_) => false, // Already in transaction
+        };
         
-        PostgreSQLStreamingResult {
-            rows,
-            columns: column_names,
+        // Declare cursor with the query
+        let declare_sql = format!("DECLARE {} SCROLL CURSOR FOR {}", cursor_name, query);
+        client.execute(&declare_sql, &[])?;
+        
+        // Fetch first row to get column metadata (without moving cursor forward significantly)
+        let fetch_meta_sql = format!("FETCH FORWARD 1 FROM {}", cursor_name);
+        let rows = client.query(&fetch_meta_sql, &[])?;
+        
+        // Extract column metadata
+        let (columns, type_oids) = if let Some(first_row) = rows.first() {
+            let cols: Vec<String> = first_row
+                .columns()
+                .iter()
+                .map(|col| col.name().to_string())
+                .collect();
+            
+            let oids: Vec<u32> = first_row
+                .columns()
+                .iter()
+                .map(|col| col.type_().oid())
+                .collect();
+            
+            // Move cursor back to start since we fetched one row for metadata
+            client.execute(&format!("MOVE BACKWARD 1 FROM {}", cursor_name), &[])?;
+            
+            (cols, oids)
+        } else {
+            // Empty result set
+            (Vec::new(), Vec::new())
+        };
+        
+        // Total rows are unknown for cursor-based streaming
+        // They will be determined after all batches are fetched (like MySQL's mysql_use_result)
+        let total_rows = -1;
+        
+        Ok(PostgreSQLStreamingResult {
+            client: client as *mut Client,
+            cursor_name,
+            columns,
             type_oids,
-            current_index: 0,
+            total_rows,
+            current_batch: Vec::new(),
+            current_batch_start_index: 0,
             batch_size,
-        }
+            finished: false,
+            owns_transaction,
+        })
     }
     
-    /// Get the next batch of rows
-    pub fn next_batch(&mut self) -> &[Row] {
-        let start = self.current_index;
-        let end = std::cmp::min(start + self.batch_size, self.rows.len());
-        self.current_index = end;
-        &self.rows[start..end]
+    /// Get the next batch of rows from the cursor
+    pub fn next_batch(&mut self) -> Result<&[Row], Box<dyn Error>> {
+        if self.finished {
+            return Ok(&[]);
+        }
+        
+        // SAFETY: Client pointer is valid as long as connection is alive
+        unsafe {
+            let client = &mut *self.client;
+            
+            // Fetch next batch from cursor
+            let fetch_sql = format!("FETCH FORWARD {} FROM {}", self.batch_size, self.cursor_name);
+            let rows = client.query(&fetch_sql, &[])?;
+            
+            if rows.is_empty() {
+                self.finished = true;
+                self.current_batch.clear();
+                return Ok(&[]);
+            }
+            
+            // Update batch start index
+            self.current_batch_start_index += self.current_batch.len();
+            
+            // Replace current batch (frees old batch from memory!)
+            self.current_batch = rows;
+            
+            Ok(&self.current_batch)
+        }
     }
     
     /// Check if there are more rows to fetch
     pub fn has_more(&self) -> bool {
-        self.current_index < self.rows.len()
+        !self.finished
     }
     
-    /// Get the total number of rows
-    pub fn total_rows(&self) -> usize {
-        self.rows.len()
+    /// Get the total number of rows (may be -1 if unknown)
+    pub fn total_rows(&self) -> i64 {
+        self.total_rows
     }
     
     /// Get column names
@@ -76,72 +153,106 @@ impl PostgreSQLStreamingResult {
         self.type_oids.get(index).copied()
     }
     
-    /// Reset to the beginning
-    pub fn reset(&mut self) {
-        self.current_index = 0;
-    }
-    
-    /// Get all rows (reference)
-    pub fn all_rows(&self) -> &[Row] {
-        &self.rows
-    }
-}
-
-/// Simpler batched result - loads all data but provides it in batches
-/// This is more memory efficient than loading and converting everything at once
-pub struct PostgreSQLBatchedResult {
-    rows: Vec<Row>,
-    columns: Vec<Column>,
-    current_index: usize,
-    batch_size: usize,
-}
-
-impl PostgreSQLBatchedResult {
-    pub fn new(rows: Vec<Row>, columns: Vec<Column>, batch_size: usize) -> Self {
-        PostgreSQLBatchedResult {
-            rows,
-            columns,
-            current_index: 0,
-            batch_size,
-        }
-    }
-    
-    pub fn next_batch(&mut self) -> &[Row] {
-        let start = self.current_index;
-        let end = std::cmp::min(start + self.batch_size, self.rows.len());
-        self.current_index = end;
-        &self.rows[start..end]
-    }
-    
-    pub fn has_more(&self) -> bool {
-        self.current_index < self.rows.len()
-    }
-    
-    pub fn total_rows(&self) -> usize {
-        self.rows.len()
-    }
-    
-    pub fn columns(&self) -> &[Column] {
-        &self.columns
-    }
-    
-    pub fn reset(&mut self) {
-        self.current_index = 0;
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_batched_result_creation() {
-        let rows = Vec::new();
-        let columns = Vec::new();
-        let result = PostgreSQLBatchedResult::new(rows, columns, 100);
+    /// Get value from current batch at relative index
+    /// Returns None if index is out of range for current batch
+    pub fn get_batch_value(&self, batch_relative_row: usize, col: usize) -> Option<String> {
+        use chrono::{DateTime, Utc, NaiveDateTime, NaiveDate, NaiveTime};
+        use uuid::Uuid;
         
-        assert_eq!(result.total_rows(), 0);
-        assert!(!result.has_more());
+        if let Some(row_data) = self.current_batch.get(batch_relative_row) {
+            // Try string first (TEXT, VARCHAR, etc.)
+            if let Ok(val) = row_data.try_get::<_, Option<String>>(col) {
+                return val;
+            }
+            
+            // Try UUID
+            if let Ok(val) = row_data.try_get::<_, Option<Uuid>>(col) {
+                return val.map(|v| v.to_string());
+            }
+            
+            // Try timestamp with timezone (TIMESTAMPTZ)
+            if let Ok(val) = row_data.try_get::<_, Option<DateTime<Utc>>>(col) {
+                return val.map(|v| v.to_rfc3339());
+            }
+            
+            // Try timestamp without timezone (TIMESTAMP)
+            if let Ok(val) = row_data.try_get::<_, Option<NaiveDateTime>>(col) {
+                return val.map(|v| v.to_string());
+            }
+            
+            // Try date (DATE)
+            if let Ok(val) = row_data.try_get::<_, Option<NaiveDate>>(col) {
+                return val.map(|v| v.to_string());
+            }
+            
+            // Try time (TIME)
+            if let Ok(val) = row_data.try_get::<_, Option<NaiveTime>>(col) {
+                return val.map(|v| v.to_string());
+            }
+            
+            // Try numeric types
+            if let Ok(val) = row_data.try_get::<_, Option<i16>>(col) {
+                return val.map(|v| v.to_string());
+            }
+            
+            if let Ok(val) = row_data.try_get::<_, Option<i32>>(col) {
+                return val.map(|v| v.to_string());
+            }
+            
+            if let Ok(val) = row_data.try_get::<_, Option<i64>>(col) {
+                return val.map(|v| v.to_string());
+            }
+            
+            if let Ok(val) = row_data.try_get::<_, Option<f32>>(col) {
+                return val.map(|v| v.to_string());
+            }
+            
+            if let Ok(val) = row_data.try_get::<_, Option<f64>>(col) {
+                return val.map(|v| v.to_string());
+            }
+            
+            // Try boolean
+            if let Ok(val) = row_data.try_get::<_, Option<bool>>(col) {
+                return val.map(|v| if v { "true".to_string() } else { "false".to_string() });
+            }
+            
+            // Try JSON/JSONB
+            if let Ok(val) = row_data.try_get::<_, Option<serde_json::Value>>(col) {
+                return val.map(|v| v.to_string());
+            }
+        }
+        
+        None
+    }
+    
+    /// Get current batch size
+    pub fn current_batch_size(&self) -> usize {
+        self.current_batch.len()
+    }
+    
+    /// Close the cursor and clean up
+    pub fn close(&mut self) -> Result<(), Box<dyn Error>> {
+        if !self.finished {
+            unsafe {
+                let client = &mut *self.client;
+                
+                // Close cursor
+                let close_sql = format!("CLOSE {}", self.cursor_name);
+                let _ = client.execute(&close_sql, &[]);
+                
+                // Only commit if WE started the transaction
+                if self.owns_transaction {
+                    let _ = client.execute("COMMIT", &[]);
+                }
+            }
+            self.finished = true;
+        }
+        Ok(())
     }
 }
 
+impl Drop for PostgreSQLStreamingResult {
+    fn drop(&mut self) {
+        let _ = self.close();
+    }
+}

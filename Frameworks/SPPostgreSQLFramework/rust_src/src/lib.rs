@@ -7,7 +7,7 @@
 //
 
 use std::ffi::{CStr, CString};
-use std::os::raw::{c_char, c_int, c_ulonglong};
+use std::os::raw::{c_char, c_int, c_ulonglong, c_longlong};
 use std::ptr;
 
 mod connection;
@@ -229,14 +229,14 @@ pub extern "C" fn sp_postgresql_streaming_result_destroy(result: *mut SPPostgreS
 }
 
 #[no_mangle]
-pub extern "C" fn sp_postgresql_streaming_result_total_rows(result: *const SPPostgreSQLStreamingResult) -> c_int {
+pub extern "C" fn sp_postgresql_streaming_result_total_rows(result: *const SPPostgreSQLStreamingResult) -> c_longlong {
     if result.is_null() {
-        return 0;
+        return -1;
     }
     
     unsafe {
         let result_ref = &(*result).inner;
-        result_ref.total_rows() as c_int
+        result_ref.total_rows()
     }
 }
 
@@ -317,16 +317,63 @@ pub extern "C" fn sp_postgresql_streaming_result_next_batch(
     unsafe {
         let result_ref = &mut (*result).inner;
         
-        // Get the batch
-        let batch = result_ref.next_batch();
-        
-        if batch.is_empty() {
-            return 0;
+        // Fetch next batch from cursor (returns Result)
+        match result_ref.next_batch() {
+            Ok(batch) => {
+                if batch.is_empty() {
+                    return 0;
+                }
+                // Return the batch size
+                batch.len() as c_int
+            },
+            Err(_) => {
+                // Error fetching batch
+                return -1;
+            }
         }
-        
-        // Just return the batch size for now
-        // The actual row extraction will be done via separate FFI calls
-        batch.len() as c_int
+    }
+}
+
+/// Get value from current batch in streaming result
+/// Uses TRUE cursor-based streaming - only current batch is in memory
+/// @param row: Batch-relative row index (0 to batch_size-1)
+/// @param col: Column index
+#[no_mangle]
+pub extern "C" fn sp_postgresql_streaming_result_get_batch_value(
+    result: *const SPPostgreSQLStreamingResult,
+    batch_relative_row: c_int,
+    col: c_int,
+) -> *mut c_char {
+    if result.is_null() || batch_relative_row < 0 || col < 0 {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let result_ref = &(*result).inner;
+        match result_ref.get_batch_value(batch_relative_row as usize, col as usize) {
+            Some(value) => {
+                match CString::new(value) {
+                    Ok(c_str) => c_str.into_raw(),
+                    Err(_) => ptr::null_mut(),
+                }
+            },
+            None => ptr::null_mut(),
+        }
+    }
+}
+
+/// Get current batch size
+#[no_mangle]
+pub extern "C" fn sp_postgresql_streaming_result_current_batch_size(
+    result: *const SPPostgreSQLStreamingResult,
+) -> c_int {
+    if result.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        let result_ref = &(*result).inner;
+        result_ref.current_batch_size() as c_int
     }
 }
 

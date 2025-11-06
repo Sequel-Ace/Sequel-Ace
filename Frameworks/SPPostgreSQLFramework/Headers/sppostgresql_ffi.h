@@ -166,10 +166,11 @@ void sp_postgresql_streaming_result_destroy(SPPostgreSQLStreamingResult* result)
 
 /**
  * Get total number of rows in streaming result set
+ * NOTE: May return -1 if total count is unknown (cursor-based streaming)
  * @param result Streaming result object
- * @return Total number of rows
+ * @return Total number of rows, or -1 if unknown
  */
-int sp_postgresql_streaming_result_total_rows(const SPPostgreSQLStreamingResult* result);
+long long sp_postgresql_streaming_result_total_rows(const SPPostgreSQLStreamingResult* result);
 
 /**
  * Get number of fields/columns in streaming result set
@@ -219,6 +220,26 @@ int sp_postgresql_streaming_result_next_batch(
     void* callback,
     void* user_data
 );
+
+/**
+ * Get value from current batch in streaming result (TRUE cursor-based streaming)
+ * @param result Streaming result object
+ * @param batch_relative_row Row index within current batch (0 to current_batch_size-1)
+ * @param col Column index (0-based)
+ * @return Value as string (caller must free with sp_postgresql_free_string), NULL if invalid index
+ */
+char* sp_postgresql_streaming_result_get_batch_value(
+    const SPPostgreSQLStreamingResult* result,
+    int batch_relative_row,
+    int col
+);
+
+/**
+ * Get the size of the current batch
+ * @param result Streaming result object
+ * @return Number of rows in current batch
+ */
+int sp_postgresql_streaming_result_current_batch_size(const SPPostgreSQLStreamingResult* result);
 
 // Error Handling
 
