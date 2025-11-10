@@ -2161,5 +2161,338 @@
     NSLog(@"   Total time: %.3f seconds", -[queryStart timeIntervalSinceNow]);
 }
 
+#pragma mark - Test 37: Get CREATE TABLE Statement
+
+- (void)test_37_GetCreateTableStatement {
+    NSLog(@"\n🧪 Test 37: Get CREATE TABLE Statement");
+    
+    id<SPDatabaseConnection> connection = [self createAndConnectConnection];
+    XCTAssertNotNil(connection, @"Should connect to database");
+    
+    // Create a test table with various column types
+    NSString *testTableName = [NSString stringWithFormat:@"test_create_table_%d", arc4random_uniform(100000)];
+    NSLog(@"   Creating test table: %@", testTableName);
+    
+    NSString *createSQL = [NSString stringWithFormat:
+        @"CREATE TABLE %@ ("
+        @"  id SERIAL PRIMARY KEY, "
+        @"  name VARCHAR(100) NOT NULL, "
+        @"  age INTEGER, "
+        @"  email TEXT, "
+        @"  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+        @")",
+        [connection quoteIdentifier:testTableName]];
+    
+    [connection queryString:createSQL];
+    XCTAssertFalse([connection queryErrored], @"Table creation should succeed");
+    
+    // Get the CREATE statement
+    NSLog(@"   Getting CREATE TABLE statement...");
+    NSString *createStatement = [connection getCreateStatementForTable:testTableName];
+    
+    XCTAssertNotNil(createStatement, @"Should return CREATE TABLE statement");
+    XCTAssertTrue([createStatement containsString:@"CREATE TABLE"], @"Should contain CREATE TABLE");
+    XCTAssertTrue([createStatement containsString:@"id"], @"Should contain id column");
+    XCTAssertTrue([createStatement containsString:@"name"], @"Should contain name column");
+    
+    NSLog(@"   ✓ CREATE TABLE statement retrieved:");
+    NSLog(@"     %@", createStatement);
+    
+    // Cleanup
+    [connection queryString:[NSString stringWithFormat:@"DROP TABLE %@", [connection quoteIdentifier:testTableName]]];
+    [connection disconnect];
+    
+    NSLog(@"✅ Test 37 Passed: Get CREATE TABLE Statement");
+}
+
+#pragma mark - Test 38: Get CREATE VIEW Statement
+
+- (void)test_38_GetCreateViewStatement {
+    NSLog(@"\n🧪 Test 38: Get CREATE VIEW Statement");
+    
+    id<SPDatabaseConnection> connection = [self createAndConnectConnection];
+    XCTAssertNotNil(connection, @"Should connect to database");
+    
+    // Create a test table
+    NSString *testTableName = [NSString stringWithFormat:@"test_view_table_%d", arc4random_uniform(100000)];
+    NSString *testViewName = [NSString stringWithFormat:@"test_view_%d", arc4random_uniform(100000)];
+    
+    NSLog(@"   Creating test table: %@", testTableName);
+    [connection queryString:[NSString stringWithFormat:
+        @"CREATE TABLE %@ (id SERIAL PRIMARY KEY, name TEXT, value INTEGER)",
+        [connection quoteIdentifier:testTableName]]];
+    
+    // Insert some test data
+    [connection queryString:[NSString stringWithFormat:
+        @"INSERT INTO %@ (name, value) VALUES ('test1', 100), ('test2', 200)",
+        [connection quoteIdentifier:testTableName]]];
+    
+    // Create a test view
+    NSLog(@"   Creating test view: %@", testViewName);
+    NSString *createViewSQL = [NSString stringWithFormat:
+        @"CREATE VIEW %@ AS SELECT id, name, value * 2 AS double_value FROM %@ WHERE value > 50",
+        [connection quoteIdentifier:testViewName],
+        [connection quoteIdentifier:testTableName]];
+    
+    [connection queryString:createViewSQL];
+    XCTAssertFalse([connection queryErrored], @"View creation should succeed");
+    
+    // Get the CREATE VIEW statement
+    NSLog(@"   Getting CREATE VIEW statement...");
+    NSString *createStatement = [connection getCreateStatementForView:testViewName];
+    
+    XCTAssertNotNil(createStatement, @"Should return CREATE VIEW statement");
+    XCTAssertTrue([createStatement containsString:@"CREATE VIEW"], @"Should contain CREATE VIEW");
+    XCTAssertTrue([createStatement containsString:@"SELECT"], @"Should contain SELECT");
+    XCTAssertTrue([createStatement containsString:testTableName], @"Should reference source table");
+    
+    NSLog(@"   ✓ CREATE VIEW statement retrieved:");
+    NSLog(@"     %@", createStatement);
+    
+    // Cleanup
+    [connection queryString:[NSString stringWithFormat:@"DROP VIEW %@", [connection quoteIdentifier:testViewName]]];
+    [connection queryString:[NSString stringWithFormat:@"DROP TABLE %@", [connection quoteIdentifier:testTableName]]];
+    [connection disconnect];
+    
+    NSLog(@"✅ Test 38 Passed: Get CREATE VIEW Statement");
+}
+
+#pragma mark - Test 39: Get CREATE FUNCTION Statement
+
+- (void)test_39_GetCreateFunctionStatement {
+    NSLog(@"\n🧪 Test 39: Get CREATE FUNCTION Statement");
+    
+    id<SPDatabaseConnection> connection = [self createAndConnectConnection];
+    XCTAssertNotNil(connection, @"Should connect to database");
+    
+    // Create a test function
+    NSString *testFunctionName = [NSString stringWithFormat:@"test_function_%d", arc4random_uniform(100000)];
+    NSLog(@"   Creating test function: %@", testFunctionName);
+    
+    NSString *createFunctionSQL = [NSString stringWithFormat:
+        @"CREATE OR REPLACE FUNCTION %@(x INTEGER, y INTEGER) "
+        @"RETURNS INTEGER AS $$ "
+        @"BEGIN "
+        @"  RETURN x + y; "
+        @"END; "
+        @"$$ LANGUAGE plpgsql",
+        [connection quoteIdentifier:testFunctionName]];
+    
+    [connection queryString:createFunctionSQL];
+    XCTAssertFalse([connection queryErrored], @"Function creation should succeed: %@", [connection lastErrorMessage]);
+    
+    // Get the CREATE FUNCTION statement
+    NSLog(@"   Getting CREATE FUNCTION statement...");
+    NSString *createStatement = [connection getCreateStatementForFunction:testFunctionName];
+    
+    XCTAssertNotNil(createStatement, @"Should return CREATE FUNCTION statement");
+    XCTAssertTrue([createStatement containsString:@"FUNCTION"] || [createStatement containsString:@"function"], 
+                  @"Should contain FUNCTION keyword");
+    XCTAssertTrue([createStatement containsString:testFunctionName], @"Should contain function name");
+    
+    NSLog(@"   ✓ CREATE FUNCTION statement retrieved:");
+    NSLog(@"     %@", createStatement);
+    
+    // Test the function works
+    id<SPDatabaseResult> result = [connection queryString:[NSString stringWithFormat:
+        @"SELECT %@(5, 3) AS result", [connection quoteIdentifier:testFunctionName]]];
+    [result setReturnDataAsStrings:YES];
+    NSArray *row = [result getRowAsArray];
+    XCTAssertEqualObjects(row[0], @"8", @"Function should return 5+3=8");
+    NSLog(@"   ✓ Function works correctly: 5 + 3 = %@", row[0]);
+    
+    // Cleanup
+    [connection queryString:[NSString stringWithFormat:
+        @"DROP FUNCTION %@(INTEGER, INTEGER)", [connection quoteIdentifier:testFunctionName]]];
+    [connection disconnect];
+    
+    NSLog(@"✅ Test 39 Passed: Get CREATE FUNCTION Statement");
+}
+
+#pragma mark - Test 40: Get CREATE PROCEDURE Statement
+
+- (void)test_40_GetCreateProcedureStatement {
+    NSLog(@"\n🧪 Test 40: Get CREATE PROCEDURE Statement");
+    
+    id<SPDatabaseConnection> connection = [self createAndConnectConnection];
+    XCTAssertNotNil(connection, @"Should connect to database");
+    
+    // Check PostgreSQL version (procedures require 11+)
+    id<SPDatabaseResult> versionResult = [connection queryString:@"SHOW server_version"];
+    [versionResult setReturnDataAsStrings:YES];
+    NSArray *versionRow = [versionResult getRowAsArray];
+    NSString *versionString = versionRow[0];
+    NSInteger majorVersion = [[versionString componentsSeparatedByString:@"."][0] integerValue];
+    
+    if (majorVersion < 11) {
+        NSLog(@"   ⚠️ PostgreSQL %ld doesn't support procedures (requires 11+), skipping test", (long)majorVersion);
+        [connection disconnect];
+        return;
+    }
+    
+    // Create a test table for the procedure to use
+    NSString *testTableName = [NSString stringWithFormat:@"test_proc_table_%d", arc4random_uniform(100000)];
+    NSString *testProcedureName = [NSString stringWithFormat:@"test_procedure_%d", arc4random_uniform(100000)];
+    
+    NSLog(@"   Creating test table: %@", testTableName);
+    [connection queryString:[NSString stringWithFormat:
+        @"CREATE TABLE %@ (id SERIAL PRIMARY KEY, counter INTEGER DEFAULT 0)",
+        [connection quoteIdentifier:testTableName]]];
+    
+    // Create a test procedure
+    NSLog(@"   Creating test procedure: %@", testProcedureName);
+    NSString *createProcedureSQL = [NSString stringWithFormat:
+        @"CREATE OR REPLACE PROCEDURE %@(increment_by INTEGER) "
+        @"LANGUAGE plpgsql AS $$ "
+        @"BEGIN "
+        @"  INSERT INTO %@ (counter) VALUES (increment_by); "
+        @"END; "
+        @"$$",
+        [connection quoteIdentifier:testProcedureName],
+        [connection quoteIdentifier:testTableName]];
+    
+    [connection queryString:createProcedureSQL];
+    XCTAssertFalse([connection queryErrored], @"Procedure creation should succeed: %@", [connection lastErrorMessage]);
+    
+    // Get the CREATE PROCEDURE statement
+    NSLog(@"   Getting CREATE PROCEDURE statement...");
+    NSString *createStatement = [connection getCreateStatementForProcedure:testProcedureName];
+    
+    XCTAssertNotNil(createStatement, @"Should return CREATE PROCEDURE statement");
+    XCTAssertTrue([createStatement containsString:@"PROCEDURE"] || [createStatement containsString:@"procedure"], 
+                  @"Should contain PROCEDURE keyword");
+    XCTAssertTrue([createStatement containsString:testProcedureName], @"Should contain procedure name");
+    
+    NSLog(@"   ✓ CREATE PROCEDURE statement retrieved:");
+    NSLog(@"     %@", createStatement);
+    
+    // Test the procedure works
+    [connection queryString:[NSString stringWithFormat:
+        @"CALL %@(42)", [connection quoteIdentifier:testProcedureName]]];
+    XCTAssertFalse([connection queryErrored], @"Calling procedure should succeed");
+    
+    id<SPDatabaseResult> verifyResult = [connection queryString:[NSString stringWithFormat:
+        @"SELECT counter FROM %@", [connection quoteIdentifier:testTableName]]];
+    [verifyResult setReturnDataAsStrings:YES];
+    NSArray *verifyRow = [verifyResult getRowAsArray];
+    XCTAssertEqualObjects(verifyRow[0], @"42", @"Procedure should have inserted 42");
+    NSLog(@"   ✓ Procedure works correctly: inserted value = %@", verifyRow[0]);
+    
+    // Cleanup
+    [connection queryString:[NSString stringWithFormat:
+        @"DROP PROCEDURE %@(INTEGER)", [connection quoteIdentifier:testProcedureName]]];
+    [connection queryString:[NSString stringWithFormat:@"DROP TABLE %@", [connection quoteIdentifier:testTableName]]];
+    [connection disconnect];
+    
+    NSLog(@"✅ Test 40 Passed: Get CREATE PROCEDURE Statement");
+}
+
+#pragma mark - Test 41: Build CREATE TABLE Statement
+
+- (void)test_41_BuildCreateTableStatement {
+    NSLog(@"\n🧪 Test 41: Build CREATE TABLE Statement");
+    
+    id<SPDatabaseConnection> connection = [self createAndConnectConnection];
+    XCTAssertNotNil(connection, @"Should connect to database");
+    
+    // Test building CREATE TABLE statement
+    NSString *testTableName = [NSString stringWithFormat:@"test_build_table_%d", arc4random_uniform(100000)];
+    NSLog(@"   Building CREATE TABLE statement for: %@", testTableName);
+    
+    NSString *createStatement = [connection buildCreateTableStatementForTable:testTableName
+                                                                    tableType:nil
+                                                                 encodingName:nil
+                                                                collationName:nil];
+    
+    XCTAssertNotNil(createStatement, @"Should return CREATE TABLE statement");
+    XCTAssertTrue([createStatement containsString:@"CREATE TABLE"], @"Should contain CREATE TABLE");
+    XCTAssertTrue([createStatement containsString:testTableName] || 
+                  [createStatement containsString:[connection quoteIdentifier:testTableName]], 
+                  @"Should contain table name");
+    XCTAssertTrue([createStatement containsString:@"SERIAL"], @"Should use SERIAL for auto-increment");
+    XCTAssertTrue([createStatement containsString:@"PRIMARY KEY"], @"Should have PRIMARY KEY");
+    
+    NSLog(@"   ✓ Built CREATE TABLE statement:");
+    NSLog(@"     %@", createStatement);
+    
+    // Actually create the table using the generated statement
+    NSLog(@"   Creating table using generated statement...");
+    [connection queryString:createStatement];
+    XCTAssertFalse([connection queryErrored], @"Table creation should succeed: %@", [connection lastErrorMessage]);
+    
+    // Verify table was created
+    id<SPDatabaseResult> result = [connection queryString:[NSString stringWithFormat:
+        @"SELECT column_name, data_type FROM information_schema.columns "
+        @"WHERE table_name = '%@' ORDER BY ordinal_position",
+        testTableName]];
+    
+    XCTAssertTrue([result numberOfRows] > 0, @"Table should have columns");
+    [result setReturnDataAsStrings:YES];
+    
+    NSLog(@"   ✓ Table created with columns:");
+    while (true) {
+        NSArray *row = [result getRowAsArray];
+        if (!row) break;
+        NSLog(@"     - %@ (%@)", row[0], row[1]);
+    }
+    
+    // Test inserting data (SERIAL should auto-increment)
+    [connection queryString:[NSString stringWithFormat:
+        @"INSERT INTO %@ DEFAULT VALUES", [connection quoteIdentifier:testTableName]]];
+    XCTAssertFalse([connection queryErrored], @"Insert should succeed");
+    
+    id<SPDatabaseResult> selectResult = [connection queryString:[NSString stringWithFormat:
+        @"SELECT * FROM %@", [connection quoteIdentifier:testTableName]]];
+    XCTAssertEqual([selectResult numberOfRows], (NSUInteger)1, @"Should have 1 row");
+    NSLog(@"   ✓ SERIAL auto-increment works");
+    
+    // Cleanup
+    [connection queryString:[NSString stringWithFormat:@"DROP TABLE %@", [connection quoteIdentifier:testTableName]]];
+    [connection disconnect];
+    
+    NSLog(@"✅ Test 41 Passed: Build CREATE TABLE Statement");
+}
+
+#pragma mark - Test 42: CREATE Statement Error Handling
+
+- (void)test_42_CreateStatementErrorHandling {
+    NSLog(@"\n🧪 Test 42: CREATE Statement Error Handling");
+    
+    id<SPDatabaseConnection> connection = [self createAndConnectConnection];
+    XCTAssertNotNil(connection, @"Should connect to database");
+    
+    // Test getting CREATE statement for non-existent table
+    NSLog(@"   Testing non-existent table...");
+    NSString *nonExistentTable = @"this_table_does_not_exist_12345";
+    NSString *createStatement = [connection getCreateStatementForTable:nonExistentTable];
+    XCTAssertNil(createStatement, @"Should return nil for non-existent table");
+    NSLog(@"   ✓ Returns nil for non-existent table");
+    
+    // Test getting CREATE statement for non-existent view
+    NSLog(@"   Testing non-existent view...");
+    NSString *nonExistentView = @"this_view_does_not_exist_12345";
+    createStatement = [connection getCreateStatementForView:nonExistentView];
+    XCTAssertNil(createStatement, @"Should return nil for non-existent view");
+    NSLog(@"   ✓ Returns nil for non-existent view");
+    
+    // Test getting CREATE statement for non-existent function
+    NSLog(@"   Testing non-existent function...");
+    NSString *nonExistentFunction = @"this_function_does_not_exist_12345";
+    createStatement = [connection getCreateStatementForFunction:nonExistentFunction];
+    XCTAssertNil(createStatement, @"Should return nil for non-existent function");
+    NSLog(@"   ✓ Returns nil for non-existent function");
+    
+    // Test getting CREATE statement for non-existent procedure
+    NSLog(@"   Testing non-existent procedure...");
+    NSString *nonExistentProcedure = @"this_procedure_does_not_exist_12345";
+    createStatement = [connection getCreateStatementForProcedure:nonExistentProcedure];
+    XCTAssertNil(createStatement, @"Should return nil for non-existent procedure");
+    NSLog(@"   ✓ Returns nil for non-existent procedure");
+    
+    [connection disconnect];
+    
+    NSLog(@"✅ Test 42 Passed: CREATE Statement Error Handling");
+}
+
 @end
 

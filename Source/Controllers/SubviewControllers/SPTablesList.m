@@ -283,7 +283,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		 * Using information_schema gives us more info (for information window perhaps?) but breaks
 		 * backward compatibility with pre 4 I believe. I left the other methods below, in case.
 		 */
-        NSString *pQuery = [NSString stringWithFormat:@"SELECT * FROM information_schema.routines WHERE routine_schema = %@ ORDER BY routine_name", [[tableDocumentInstance database] tickQuotedString]];
+		// Use database-agnostic quoting and proper SQL escaping
+		NSString *escapedDatabase = [[tableDocumentInstance database] stringByReplacingOccurrencesOfString:@"'" withString:@"''"];
+        NSString *pQuery = [NSString stringWithFormat:@"SELECT * FROM information_schema.routines WHERE routine_schema = '%@' ORDER BY routine_name", escapedDatabase];
         theResult = [connection queryString:pQuery];
         [theResult setDefaultRowReturnType:SPDatabaseResultRowAsArray];
         [theResult setReturnDataAsStrings:YES]; //see tables above
@@ -2693,17 +2695,23 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			break;
 	}
 
-	// Get table/view structure
-	id<SPDatabaseResult>queryResult = [connection queryString:[NSString stringWithFormat:@"SHOW CREATE %@ %@",
-												[tableType uppercaseString],
-												[connection quoteIdentifier:[filteredTables objectAtIndex:[tablesListView selectedRow]]]
-												]];
-	[queryResult setReturnDataAsStrings:YES];
-
-	if ( ![queryResult numberOfRows] ) {
-
+	// Get table/view structure using database-agnostic method
+	NSString *createStatement = nil;
+	NSString *objectName = [filteredTables objectAtIndex:[tablesListView selectedRow]];
+	
+	if (tblType == SPTableTypeView) {
+		createStatement = [connection getCreateStatementForView:objectName];
+	} else if (tblType == SPTableTypeTable) {
+		createStatement = [connection getCreateStatementForTable:objectName];
+	} else if (tblType == SPTableTypeProc) {
+		createStatement = [connection getCreateStatementForProcedure:objectName];
+	} else if (tblType == SPTableTypeFunc) {
+		createStatement = [connection getCreateStatementForFunction:objectName];
+	}
+	
+	if (!createStatement) {
 		//error while getting table structure
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't get create syntax.\nMySQL said: %@", @"message of panel when table information cannot be retrieved"), [connection lastErrorMessage]] callback:nil];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't get create syntax.\nDatabase said: %@", @"message of panel when table information cannot be retrieved"), [connection lastErrorMessage]] callback:nil];
 		return;
     }
 
@@ -2712,7 +2720,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	NSString *scanString;
 
 	if(tblType == SPTableTypeView){
-		scanner = [[NSScanner alloc] initWithString:[[queryResult getRowAsDictionary] objectForKey:@"Create View"]];
+		scanner = [[NSScanner alloc] initWithString:createStatement];
 		[scanner scanUpToString:@"AS" intoString:nil];
 		[scanner scanUpToString:@"" intoString:&scanString];
 		[connection queryString:[NSString stringWithFormat:@"CREATE VIEW %@ %@", [connection quoteIdentifier:tableName], scanString]];
@@ -2727,13 +2735,16 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			return;
 		}
 
-		scanner = [[NSScanner alloc] initWithString:[[queryResult getRowAsDictionary] objectForKey:@"Create Table"]];
+		scanner = [[NSScanner alloc] initWithString:createStatement];
 		[scanner scanUpToString:@"(" intoString:nil];
 		[scanner scanUpToString:@"" intoString:&scanString];
 
 		// If there are any InnoDB referencial constraints we need to strip out the names as they must be unique.
 		// MySQL will generate the new names based on the new table name.
-		scanString = [scanString stringByReplacingOccurrencesOfRegex:[NSString stringWithFormat:@"CONSTRAINT `[^`]+` "] withString:@""];
+		// Use database-agnostic identifier quoting
+		NSString *quoteChar = [connection identifierQuoteCharacter];
+		NSString *constraintPattern = [NSString stringWithFormat:@"CONSTRAINT %@[^%@]+%@ ", quoteChar, quoteChar, quoteChar];
+		scanString = [scanString stringByReplacingOccurrencesOfRegex:constraintPattern withString:@""];
 
 		// If we're not copying the tables content as well then we need to strip out any AUTO_INCREMENT presets.
 		if (!copyTableContent) {
@@ -2748,26 +2759,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	}
 	else if(tblType == SPTableTypeFunc || tblType == SPTableTypeProc)
 	{
-		// get the create syntax
-		id<SPDatabaseResult>theResult;
-
-		if(selectedTableType == SPTableTypeProc)
-			theResult = [connection queryString:[NSString stringWithFormat:@"SHOW CREATE PROCEDURE %@", [connection quoteIdentifier:selectedTableName]]];
-		else if([self tableType] == SPTableTypeFunc)
-			theResult = [connection queryString:[NSString stringWithFormat:@"SHOW CREATE FUNCTION %@", [connection quoteIdentifier:selectedTableName]]];
-		else
-			return;
-
-		// Check for errors, only displaying if the connection hasn't been terminated
-		if ([connection queryErrored]) {
-			if ([connection isConnected]) {
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the create syntax for '%@'.\nMySQL said: %@", @"message of panel when create syntax cannot be retrieved"), selectedTableName, [connection lastErrorMessage]] callback:nil];
-			}
-			return;
-		}
-
-		[theResult setReturnDataAsStrings:YES];
-		NSString *tableSyntax = [[theResult getRowAsArray] objectAtIndex:2];
+		// CREATE statement was already retrieved above
+		NSString *tableSyntax = createStatement;
 
 		// replace the old name by the new one and drop the old one
 		// Use the appropriate identifier pattern based on database quote character
@@ -2946,12 +2939,16 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			default: break;
 		}
 
-		id<SPDatabaseResult>theResult  = [connection queryString:[NSString stringWithFormat:@"SHOW CREATE %@ %@", stringTableType, [connection quoteIdentifier:oldTableName] ] ];
-		if ([connection queryErrored]) {
-			[NSException raise:@"MySQL Error" format:NSLocalizedString(@"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\nMySQL said: %@", @"rename precedure/function error - can't retrieve syntax"), oldTableName, [connection lastErrorMessage]];
+		NSString *oldCreateSyntax = nil;
+		if (tableType == SPTableTypeProc) {
+			oldCreateSyntax = [connection getCreateStatementForProcedure:oldTableName];
+		} else if (tableType == SPTableTypeFunc) {
+			oldCreateSyntax = [connection getCreateStatementForFunction:oldTableName];
 		}
-		[theResult setReturnDataAsStrings:YES];
-		NSString *oldCreateSyntax = [[theResult getRowAsArray] objectAtIndex:2];
+		
+		if (!oldCreateSyntax) {
+			[NSException raise:@"Database Error" format:NSLocalizedString(@"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\nDatabase said: %@", @"rename procedure/function error - can't retrieve syntax"), oldTableName, [connection lastErrorMessage]];
+		}
 
 		// replace the old name with the new name
 		NSRange rangeOfProcedureName = [oldCreateSyntax rangeOfString: [NSString stringWithFormat:@"%@ %@", stringTableType, [connection quoteIdentifier:oldTableName] ] ];

@@ -713,6 +713,62 @@
     return [createStatement copy];
 }
 
+- (NSString *)getCreateStatementForTable:(NSString *)tableName {
+    // MySQL: Use SHOW CREATE TABLE
+    id<SPDatabaseResult> result = [self queryString:[NSString stringWithFormat:@"SHOW CREATE TABLE %@", [self quoteIdentifier:tableName]]];
+    if (!result || [result numberOfRows] == 0) {
+        return nil;
+    }
+    [result setReturnDataAsStrings:YES];
+    NSArray *row = [result getRowAsArray];
+    if (row && [row count] >= 2) {
+        return row[1]; // Second column contains CREATE TABLE statement
+    }
+    return nil;
+}
+
+- (NSString *)getCreateStatementForView:(NSString *)viewName {
+    // MySQL: Use SHOW CREATE VIEW
+    id<SPDatabaseResult> result = [self queryString:[NSString stringWithFormat:@"SHOW CREATE VIEW %@", [self quoteIdentifier:viewName]]];
+    if (!result || [result numberOfRows] == 0) {
+        return nil;
+    }
+    [result setReturnDataAsStrings:YES];
+    NSArray *row = [result getRowAsArray];
+    if (row && [row count] >= 2) {
+        return row[1]; // Second column contains CREATE VIEW statement
+    }
+    return nil;
+}
+
+- (NSString *)getCreateStatementForProcedure:(NSString *)procedureName {
+    // MySQL: Use SHOW CREATE PROCEDURE
+    id<SPDatabaseResult> result = [self queryString:[NSString stringWithFormat:@"SHOW CREATE PROCEDURE %@", [self quoteIdentifier:procedureName]]];
+    if (!result || [result numberOfRows] == 0) {
+        return nil;
+    }
+    [result setReturnDataAsStrings:YES];
+    NSArray *row = [result getRowAsArray];
+    if (row && [row count] >= 3) {
+        return row[2]; // Third column contains CREATE PROCEDURE statement
+    }
+    return nil;
+}
+
+- (NSString *)getCreateStatementForFunction:(NSString *)functionName {
+    // MySQL: Use SHOW CREATE FUNCTION
+    id<SPDatabaseResult> result = [self queryString:[NSString stringWithFormat:@"SHOW CREATE FUNCTION %@", [self quoteIdentifier:functionName]]];
+    if (!result || [result numberOfRows] == 0) {
+        return nil;
+    }
+    [result setReturnDataAsStrings:YES];
+    NSArray *row = [result getRowAsArray];
+    if (row && [row count] >= 3) {
+        return row[2]; // Third column contains CREATE FUNCTION statement
+    }
+    return nil;
+}
+
 #pragma mark - Table Structure and Metadata
 
 - (id<SPDatabaseResult>)getCreateTableStatement:(NSString *)tableName fromDatabase:(NSString *)database {

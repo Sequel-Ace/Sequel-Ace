@@ -580,6 +580,34 @@ typedef NS_ENUM(NSUInteger, SPDatabaseConnectionLostDecision) {
                                    encodingName:(NSString *)encodingName
                                   collationName:(NSString *)collationName;
 
+/**
+ * Get the CREATE statement for an existing table
+ * @param tableName The name of the table
+ * @return The CREATE TABLE statement, or nil if not found/error
+ */
+- (NSString *)getCreateStatementForTable:(NSString *)tableName;
+
+/**
+ * Get the CREATE statement for an existing view
+ * @param viewName The name of the view
+ * @return The CREATE VIEW statement, or nil if not found/error
+ */
+- (NSString *)getCreateStatementForView:(NSString *)viewName;
+
+/**
+ * Get the CREATE statement for an existing procedure
+ * @param procedureName The name of the procedure
+ * @return The CREATE PROCEDURE statement, or nil if not found/error
+ */
+- (NSString *)getCreateStatementForProcedure:(NSString *)procedureName;
+
+/**
+ * Get the CREATE statement for an existing function
+ * @param functionName The name of the function
+ * @return The CREATE FUNCTION statement, or nil if not found/error
+ */
+- (NSString *)getCreateStatementForFunction:(NSString *)functionName;
+
 #pragma mark - Utility
 
 /**

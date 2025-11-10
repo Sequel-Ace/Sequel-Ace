@@ -1031,6 +1031,76 @@
     return [NSString stringWithFormat:@"CREATE TABLE %@ (id SERIAL PRIMARY KEY)", quotedTableName];
 }
 
+- (NSString *)getCreateStatementForTable:(NSString *)tableName {
+    // PostgreSQL: Use existing getCreateTableStatement method which builds it from information_schema
+    id<SPDatabaseResult> result = [self getCreateTableStatement:tableName fromDatabase:nil];
+    if (!result || [result numberOfRows] == 0) {
+        return nil;
+    }
+    [result setReturnDataAsStrings:YES];
+    NSArray *row = [result getRowAsArray];
+    if (row && [row count] >= 2) {
+        return row[1]; // Second column contains CREATE TABLE statement
+    }
+    return nil;
+}
+
+- (NSString *)getCreateStatementForView:(NSString *)viewName {
+    // PostgreSQL: Use pg_get_viewdef to get the view definition
+    // Properly escape the view name for use in SQL string literal
+    NSString *escapedViewName = [viewName stringByReplacingOccurrencesOfString:@"'" withString:@"''"];
+    NSString *query = [NSString stringWithFormat:@"SELECT pg_get_viewdef('%@'::regclass, true)", escapedViewName];
+    
+    id<SPDatabaseResult> result = [self queryString:query];
+    if (!result || [result numberOfRows] == 0) {
+        return nil;
+    }
+    [result setReturnDataAsStrings:YES];
+    NSArray *row = [result getRowAsArray];
+    if (row && [row count] >= 1 && ![row[0] isKindOfClass:[NSNull class]]) {
+        // Wrap in CREATE VIEW statement
+        NSString *viewDef = row[0];
+        return [NSString stringWithFormat:@"CREATE VIEW %@ AS\n%@", [self quoteIdentifier:viewName], viewDef];
+    }
+    return nil;
+}
+
+- (NSString *)getCreateStatementForProcedure:(NSString *)procedureName {
+    // PostgreSQL: Use pg_get_functiondef (procedures are functions in PostgreSQL)
+    // Properly escape the procedure name for use in SQL string literal
+    NSString *escapedProcedureName = [procedureName stringByReplacingOccurrencesOfString:@"'" withString:@"''"];
+    NSString *query = [NSString stringWithFormat:@"SELECT pg_get_functiondef(oid) FROM pg_proc WHERE proname = '%@' AND prokind = 'p'", escapedProcedureName];
+    
+    id<SPDatabaseResult> result = [self queryString:query];
+    if (!result || [result numberOfRows] == 0) {
+        return nil;
+    }
+    [result setReturnDataAsStrings:YES];
+    NSArray *row = [result getRowAsArray];
+    if (row && [row count] >= 1 && ![row[0] isKindOfClass:[NSNull class]]) {
+        return row[0]; // pg_get_functiondef returns the complete CREATE statement
+    }
+    return nil;
+}
+
+- (NSString *)getCreateStatementForFunction:(NSString *)functionName {
+    // PostgreSQL: Use pg_get_functiondef
+    // Properly escape the function name for use in SQL string literal
+    NSString *escapedFunctionName = [functionName stringByReplacingOccurrencesOfString:@"'" withString:@"''"];
+    NSString *query = [NSString stringWithFormat:@"SELECT pg_get_functiondef(oid) FROM pg_proc WHERE proname = '%@' AND prokind = 'f'", escapedFunctionName];
+    
+    id<SPDatabaseResult> result = [self queryString:query];
+    if (!result || [result numberOfRows] == 0) {
+        return nil;
+    }
+    [result setReturnDataAsStrings:YES];
+    NSArray *row = [result getRowAsArray];
+    if (row && [row count] >= 1 && ![row[0] isKindOfClass:[NSNull class]]) {
+        return row[0]; // pg_get_functiondef returns the complete CREATE statement
+    }
+    return nil;
+}
+
 - (void)lock {
     // PostgreSQL connection locking not implemented
     // Would use mutexes if needed
@@ -1176,6 +1246,12 @@
         if (columnDefault && ![columnDefault isEqualToString:@""]) {
             [createTableSQL appendFormat:@" DEFAULT %@", columnDefault];
         }
+    }
+    
+    // If no columns were found, the table doesn't exist
+    if (firstColumn) {
+        // No columns found - table doesn't exist
+        return nil;
     }
     
     [createTableSQL appendString:@"\n)"];
