@@ -678,6 +678,11 @@
     return YES;
 }
 
+- (BOOL)supportsLimitInUpdateDelete {
+    // MySQL supports LIMIT in UPDATE and DELETE statements
+    return YES;
+}
+
 - (NSString *)buildCreateTableStatementForTable:(NSString *)tableName
                                       tableType:(NSString *)tableType
                                    encodingName:(NSString *)encodingName

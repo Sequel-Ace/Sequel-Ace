@@ -568,6 +568,12 @@ typedef NS_ENUM(NSUInteger, SPDatabaseConnectionLostDecision) {
 - (BOOL)supportsTableLevelCharacterSets;
 
 /**
+ * Check if database supports LIMIT clause in UPDATE and DELETE statements
+ * @return YES if supported (MySQL), NO otherwise (PostgreSQL)
+ */
+- (BOOL)supportsLimitInUpdateDelete;
+
+/**
  * Build a CREATE TABLE statement for a new table with database-specific syntax
  * @param tableName The name of the table to create
  * @param tableType Optional table type/engine (e.g., "InnoDB", "MyISAM" for MySQL; ignored for PostgreSQL)

@@ -2955,7 +2955,11 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		}
 	}
 
-	if (setLimit && !excludeLimits) [argument appendString:@" LIMIT 1"];
+	// Only append LIMIT 1 if the database supports it in UPDATE/DELETE statements
+	// MySQL supports it, but PostgreSQL does not
+	if (setLimit && !excludeLimits && [connection supportsLimitInUpdateDelete]) {
+		[argument appendString:@" LIMIT 1"];
+	}
 
 	return argument;
 }

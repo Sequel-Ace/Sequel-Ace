@@ -1015,6 +1015,12 @@
     return NO;
 }
 
+- (BOOL)supportsLimitInUpdateDelete {
+    // PostgreSQL does NOT support LIMIT in UPDATE or DELETE statements
+    // Use CTEs or subqueries if limit is needed
+    return NO;
+}
+
 - (NSString *)buildCreateTableStatementForTable:(NSString *)tableName
                                       tableType:(NSString *)tableType
                                    encodingName:(NSString *)encodingName
