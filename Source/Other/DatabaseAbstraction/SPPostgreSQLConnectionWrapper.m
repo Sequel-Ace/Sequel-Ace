@@ -73,6 +73,10 @@
     return (NSUInteger)SPDatabaseTypePostgreSQL;
 }
 
++ (NSUInteger)defaultPort {
+    return 5432;
+}
+
 #pragma mark - Connection Properties
 
 - (NSString *)host {
@@ -1018,6 +1022,45 @@
 - (BOOL)supportsLimitInUpdateDelete {
     // PostgreSQL does NOT support LIMIT in UPDATE or DELETE statements
     // Use CTEs or subqueries if limit is needed
+    return NO;
+}
+
+- (BOOL)isDefaultValueServerExpression:(NSString *)defaultValue {
+    if (!defaultValue || [defaultValue length] == 0) {
+        return NO;
+    }
+    
+    // PostgreSQL: Detect server-side expressions that should be computed by the database
+    // 
+    // Strategy: Be conservative - only flag definite server expressions (functions, keywords)
+    // Let simple literals (including those with :: casts) pass through to the UI
+    
+    // 1. Function calls - these are always server expressions
+    // Examples: nextval(), now(), uuid_generate_v4(), random(), upper()
+    if ([defaultValue containsString:@"("]) {
+        return YES;  // Any function call is a server expression
+    }
+    
+    // 2. PostgreSQL timestamp/date keywords (no parentheses)
+    // Examples: CURRENT_TIMESTAMP, CURRENT_DATE, LOCALTIMESTAMP
+    NSString *uppercaseDefault = [defaultValue uppercaseString];
+    if ([uppercaseDefault isEqualToString:@"CURRENT_TIMESTAMP"] ||
+        [uppercaseDefault isEqualToString:@"CURRENT_DATE"] ||
+        [uppercaseDefault isEqualToString:@"CURRENT_TIME"] ||
+        [uppercaseDefault isEqualToString:@"LOCALTIMESTAMP"] ||
+        [uppercaseDefault isEqualToString:@"LOCALTIME"]) {
+        return YES;
+    }
+    
+    // 3. Everything else is treated as a literal value
+    // This includes:
+    // - Simple numbers: 42, 3.14
+    // - Quoted strings: 'active', 'default'
+    // - Casts of literals: 'active'::text, '2024-01-01'::date, 42::integer
+    // 
+    // Note: PostgreSQL uses :: for ALL casts, so we can't use it as a discriminator.
+    // Casted literals like '2024-01-01'::date will show in the UI, but that's acceptable
+    // because they're still literal values (not computed). The user can see and edit them.
     return NO;
 }
 

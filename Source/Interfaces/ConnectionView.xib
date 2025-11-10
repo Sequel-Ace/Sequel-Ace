@@ -64,6 +64,7 @@
                 <outlet property="standardConnectionSSLDetailsContainer" destination="5595" id="5620"/>
                 <outlet property="standardNameField" destination="5376" id="5810"/>
                 <outlet property="standardPasswordField" destination="5179" id="5427"/>
+                <outlet property="standardPortField" destination="5187" id="5187-outlet"/>
                 <outlet property="standardSQLHostField" destination="5171" id="5446"/>
                 <outlet property="standardSSLCACertButton" destination="5612" id="5667"/>
                 <outlet property="standardSSLCertificateButton" destination="5604" id="5666"/>
@@ -350,7 +351,7 @@ DQ
                                                                                         <textField toolTip="Enter the port to use when connecting to the MySQL server.  The default MySQL port is 3306" focusRingType="none" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5187">
                                                                                             <rect key="frame" x="110" y="129" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="3306" drawsBackground="YES" usesSingleLineMode="YES" id="5190">
+                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="5190">
                                                                                                 <font key="font" metaFont="system"/>
                                                                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                                                 <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -359,7 +360,6 @@ DQ
                                                                                                 <binding destination="-2" name="value" keyPath="port" id="5418">
                                                                                                     <dictionary key="options">
                                                                                                         <bool key="NSContinuouslyUpdatesValue" value="YES"/>
-                                                                                                        <string key="NSNullPlaceholder">3306</string>
                                                                                                     </dictionary>
                                                                                                 </binding>
                                                                                                 <outlet property="delegate" destination="-2" id="5362"/>
@@ -1336,7 +1336,7 @@ DQ
                                                                                         <textField toolTip="Enter the port to use when connecting to the MySQL server.  The default MySQL port is 3306" focusRingType="none" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5272">
                                                                                             <rect key="frame" x="110" y="280" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="3306" drawsBackground="YES" usesSingleLineMode="YES" id="5275">
+                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="5275">
                                                                                                 <font key="font" metaFont="system"/>
                                                                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                                                 <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -1345,7 +1345,6 @@ DQ
                                                                                                 <binding destination="-2" name="value" keyPath="port" id="5419">
                                                                                                     <dictionary key="options">
                                                                                                         <bool key="NSContinuouslyUpdatesValue" value="YES"/>
-                                                                                                        <string key="NSNullPlaceholder">3306</string>
                                                                                                     </dictionary>
                                                                                                 </binding>
                                                                                                 <outlet property="delegate" destination="-2" id="5371"/>

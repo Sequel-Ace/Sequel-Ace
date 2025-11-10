@@ -158,6 +158,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	IBOutlet NSTextField *standardUserField;
 	IBOutlet NSTextField *socketUserField;
 	IBOutlet NSTextField *sshUserField;
+	IBOutlet NSTextField *standardPortField;
 	IBOutlet SPColorSelectorView *standardColorField;
 	IBOutlet SPColorSelectorView *sshColorField;
 	IBOutlet SPColorSelectorView *socketColorField;

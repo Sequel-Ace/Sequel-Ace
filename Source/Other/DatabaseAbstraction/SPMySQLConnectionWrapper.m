@@ -58,6 +58,10 @@
     return (NSUInteger)SPDatabaseTypeMySQL;
 }
 
++ (NSUInteger)defaultPort {
+    return 3306;
+}
+
 #pragma mark - Connection Properties
 
 - (NSString *)host {
@@ -681,6 +685,30 @@
 - (BOOL)supportsLimitInUpdateDelete {
     // MySQL supports LIMIT in UPDATE and DELETE statements
     return YES;
+}
+
+- (BOOL)isDefaultValueServerExpression:(NSString *)defaultValue {
+    if (!defaultValue || [defaultValue length] == 0) {
+        return NO;
+    }
+    
+    // MySQL: Check for common server-side expressions
+    // CURRENT_TIMESTAMP and variations are computed server-side
+    NSString *uppercaseDefault = [defaultValue uppercaseString];
+    
+    if ([uppercaseDefault isEqualToString:@"CURRENT_TIMESTAMP"] ||
+        [uppercaseDefault isEqualToString:@"CURRENT_DATE"] ||
+        [uppercaseDefault isEqualToString:@"CURRENT_TIME"] ||
+        [uppercaseDefault hasPrefix:@"CURRENT_TIMESTAMP("] ||
+        [uppercaseDefault isEqualToString:@"NOW()"] ||
+        [uppercaseDefault hasPrefix:@"NOW("] ||
+        [uppercaseDefault isEqualToString:@"CURDATE()"] ||
+        [uppercaseDefault isEqualToString:@"CURTIME()"]) {
+        return YES;
+    }
+    
+    // Most other MySQL defaults are literal values
+    return NO;
 }
 
 - (NSString *)buildCreateTableStatementForTable:(NSString *)tableName

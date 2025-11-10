@@ -1680,20 +1680,26 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	if ( ![self saveRowOnDeselect] ) return;
 
 	for (NSDictionary *column in dataColumns) {
-		if ([column objectForKey:@"default"] == nil || [[column objectForKey:@"default"] isNSNull]) {
+		id defaultValue = [column objectForKey:@"default"];
+		
+		if (defaultValue == nil || [defaultValue isNSNull]) {
 			[newRow addObject:[NSNull null]];
-		} else if ([[column objectForKey:@"default"] isEqualToString:@""]
+		} else if ([defaultValue isEqualToString:@""]
 					&& ![[column objectForKey:@"null"] boolValue]
 					&& ([[column objectForKey:@"typegrouping"] isEqualToString:@"float"]
 						|| [[column objectForKey:@"typegrouping"] isEqualToString:@"integer"]
 						|| [[column objectForKey:@"typegrouping"] isEqualToString:@"bit"]))
 		{
 			[newRow addObject:@"0"];
-		} else if ([[column objectForKey:@"typegrouping"] isEqualToString:@"bit"] && [[column objectForKey:@"default"] hasPrefix:@"b'"] && [(NSString*)[column objectForKey:@"default"] length] > 3) {
+		} else if ([[column objectForKey:@"typegrouping"] isEqualToString:@"bit"] && [defaultValue hasPrefix:@"b'"] && [(NSString*)defaultValue length] > 3) {
 			// remove leading b' and final '
-			[newRow addObject:[[[column objectForKey:@"default"] substringFromIndex:2] substringToIndex:[(NSString*)[column objectForKey:@"default"] length]-3]];
+			[newRow addObject:[[defaultValue substringFromIndex:2] substringToIndex:[(NSString*)defaultValue length]-3]];
+		} else if ([connection isDefaultValueServerExpression:defaultValue]) {
+			// Server-side expression (like nextval(), CURRENT_TIMESTAMP, now(), etc.)
+			// Don't show the expression in the UI - let the database compute it on INSERT
+			[newRow addObject:[NSNull null]];
 		} else {
-			[newRow addObject:[column objectForKey:@"default"]];
+			[newRow addObject:defaultValue];
 		}
 	}
 	[tableValues addRowWithContents:newRow];
@@ -2641,8 +2647,16 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
     // Store the key and value in the ordered arrays for saving (Except for generated columns).
     if (![fieldDefinition objectForKey:@"generatedalways"]) {
-      [rowFieldsToSave safeAddObject:[fieldDefinition safeObjectForKey:@"name"]];
-      [rowValuesToSave safeAddObject:fieldValue];
+      // For new rows: omit columns with server default expressions if the value is NULL
+      // This allows the database to use its DEFAULT value instead of inserting NULL
+      BOOL shouldOmitForDefault = isEditingNewRow && 
+                                   [fieldValue isEqualToString:@"NULL"] &&
+                                   [connection isDefaultValueServerExpression:[fieldDefinition objectForKey:@"default"]];
+      
+      if (!shouldOmitForDefault) {
+        [rowFieldsToSave safeAddObject:[fieldDefinition safeObjectForKey:@"name"]];
+        [rowValuesToSave safeAddObject:fieldValue];
+      }
     }
 	}
 

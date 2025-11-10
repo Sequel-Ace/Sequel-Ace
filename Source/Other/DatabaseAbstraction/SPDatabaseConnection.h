@@ -58,6 +58,12 @@ typedef NS_ENUM(NSUInteger, SPDatabaseConnectionLostDecision) {
  */
 - (NSUInteger)databaseType;
 
+/**
+ * Returns the default port for this database type
+ * @return Default port number (3306 for MySQL, 5432 for PostgreSQL, etc.)
+ */
++ (NSUInteger)defaultPort;
+
 #pragma mark - Connection Properties
 
 @property (readwrite, copy) NSString *host;
@@ -572,6 +578,13 @@ typedef NS_ENUM(NSUInteger, SPDatabaseConnectionLostDecision) {
  * @return YES if supported (MySQL), NO otherwise (PostgreSQL)
  */
 - (BOOL)supportsLimitInUpdateDelete;
+
+/**
+ * Check if a default value is a server-side expression that should be computed by the database
+ * @param defaultValue The default value string from column metadata
+ * @return YES if it's an expression (like nextval, CURRENT_TIMESTAMP), NO if it's a literal value
+ */
+- (BOOL)isDefaultValueServerExpression:(NSString *)defaultValue;
 
 /**
  * Build a CREATE TABLE statement for a new table with database-specific syntax

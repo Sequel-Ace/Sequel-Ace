@@ -2494,5 +2494,278 @@
     NSLog(@"✅ Test 42 Passed: CREATE Statement Error Handling");
 }
 
+#pragma mark - Test 43: Default Value Server Expression Detection
+
+- (void)test_43_DefaultValueServerExpressionDetection {
+    NSLog(@"\n🧪 Test 43: Default Value Server Expression Detection");
+    
+    id<SPDatabaseConnection> connection = [self createAndConnectConnection];
+    XCTAssertNotNil(connection, @"Should connect to database");
+    
+    // Test PostgreSQL sequence expressions
+    NSLog(@"   Testing sequence expressions...");
+    XCTAssertTrue([connection isDefaultValueServerExpression:@"nextval('video_id_seq'::regclass)"], 
+                  @"Should detect nextval as server expression");
+    XCTAssertTrue([connection isDefaultValueServerExpression:@"nextval('test_table_id_seq'::regclass)"], 
+                  @"Should detect nextval with different table name");
+    NSLog(@"   ✓ Sequence expressions detected");
+    
+    // Test timestamp functions
+    NSLog(@"   Testing timestamp functions...");
+    XCTAssertTrue([connection isDefaultValueServerExpression:@"CURRENT_TIMESTAMP"], 
+                  @"Should detect CURRENT_TIMESTAMP");
+    XCTAssertTrue([connection isDefaultValueServerExpression:@"current_timestamp"], 
+                  @"Should detect lowercase current_timestamp");
+    XCTAssertTrue([connection isDefaultValueServerExpression:@"now()"], 
+                  @"Should detect now()");
+    XCTAssertTrue([connection isDefaultValueServerExpression:@"NOW()"], 
+                  @"Should detect NOW()");
+    XCTAssertTrue([connection isDefaultValueServerExpression:@"CURRENT_DATE"], 
+                  @"Should detect CURRENT_DATE");
+    XCTAssertTrue([connection isDefaultValueServerExpression:@"CURRENT_TIME"], 
+                  @"Should detect CURRENT_TIME");
+    XCTAssertTrue([connection isDefaultValueServerExpression:@"LOCALTIMESTAMP"], 
+                  @"Should detect LOCALTIMESTAMP");
+    XCTAssertTrue([connection isDefaultValueServerExpression:@"LOCALTIME"], 
+                  @"Should detect LOCALTIME");
+    NSLog(@"   ✓ Timestamp functions detected");
+    
+    // Test UUID functions
+    NSLog(@"   Testing UUID functions...");
+    XCTAssertTrue([connection isDefaultValueServerExpression:@"uuid_generate_v4()"], 
+                  @"Should detect uuid_generate_v4()");
+    XCTAssertTrue([connection isDefaultValueServerExpression:@"gen_random_uuid()"], 
+                  @"Should detect gen_random_uuid()");
+    NSLog(@"   ✓ UUID functions detected");
+    
+    // Test cast expressions
+    NSLog(@"   Testing cast expressions (all treated as literals)...");
+    XCTAssertFalse([connection isDefaultValueServerExpression:@"'test'::text"], 
+                   @"Quoted string with ::text cast is a literal value");
+    XCTAssertFalse([connection isDefaultValueServerExpression:@"0::integer"], 
+                   @"Numeric cast is a literal value");
+    XCTAssertFalse([connection isDefaultValueServerExpression:@"'2024-01-01'::date"], 
+                   @"String with date cast is a literal value (will display with cast)");
+    NSLog(@"   ✓ Cast expressions correctly treated as literals");
+    
+    // Test literal values (should NOT be detected as server expressions)
+    NSLog(@"   Testing literal values (should NOT be server expressions)...");
+    XCTAssertFalse([connection isDefaultValueServerExpression:@"42"], 
+                   @"Numeric literal should not be server expression");
+    XCTAssertFalse([connection isDefaultValueServerExpression:@"'default string'"], 
+                   @"String literal should not be server expression");
+    XCTAssertFalse([connection isDefaultValueServerExpression:@"0"], 
+                   @"Zero should not be server expression");
+    XCTAssertFalse([connection isDefaultValueServerExpression:@"true"], 
+                   @"Boolean should not be server expression");
+    XCTAssertFalse([connection isDefaultValueServerExpression:@"false"], 
+                   @"Boolean should not be server expression");
+    XCTAssertFalse([connection isDefaultValueServerExpression:@""], 
+                   @"Empty string should not be server expression");
+    XCTAssertFalse([connection isDefaultValueServerExpression:nil], 
+                   @"nil should not be server expression");
+    NSLog(@"   ✓ Literal values correctly NOT detected as server expressions");
+    
+    [connection disconnect];
+    
+    NSLog(@"✅ Test 43 Passed: Default Value Server Expression Detection");
+}
+
+#pragma mark - Test 44: Add Row with SERIAL and Timestamp Defaults
+
+- (void)test_44_AddRowWithSerialAndTimestampDefaults {
+    NSLog(@"\n🧪 Test 44: Add Row with SERIAL and Timestamp Defaults");
+    
+    id<SPDatabaseConnection> connection = [self createAndConnectConnection];
+    XCTAssertNotNil(connection, @"Should connect to database");
+    
+    // Create a test table with SERIAL and TIMESTAMP defaults
+    NSString *testTableName = [NSString stringWithFormat:@"test_defaults_%d", arc4random_uniform(100000)];
+    NSLog(@"   Creating test table: %@", testTableName);
+    
+    NSString *createSQL = [NSString stringWithFormat:
+        @"CREATE TABLE %@ ("
+        @"  id SERIAL PRIMARY KEY, "
+        @"  name TEXT NOT NULL, "
+        @"  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+        @"  updated_at TIMESTAMP DEFAULT now(), "
+        @"  status TEXT DEFAULT 'active'"
+        @")",
+        [connection quoteIdentifier:testTableName]];
+    
+    [connection queryString:createSQL];
+    XCTAssertFalse([connection queryErrored], @"Table creation should succeed: %@", [connection lastErrorMessage]);
+    
+    // Query column defaults
+    NSLog(@"   Querying column defaults...");
+    NSString *defaultsQuery = [NSString stringWithFormat:
+        @"SELECT column_name, column_default "
+        @"FROM information_schema.columns "
+        @"WHERE table_name = '%@' "
+        @"ORDER BY ordinal_position",
+        testTableName];
+    
+    id<SPDatabaseResult> result = [connection queryString:defaultsQuery];
+    [result setReturnDataAsStrings:YES];
+    
+    NSMutableDictionary *columnDefaults = [NSMutableDictionary dictionary];
+    while (true) {
+        NSArray *row = [result getRowAsArray];
+        if (!row) break;
+        
+        NSString *columnName = row[0];
+        id defaultValue = row[1];
+        
+        if (![defaultValue isKindOfClass:[NSNull class]]) {
+            columnDefaults[columnName] = defaultValue;
+            NSLog(@"     %@: %@", columnName, defaultValue);
+        }
+    }
+    
+    // Verify server expressions are detected
+    NSLog(@"   Verifying server expression detection...");
+    
+    NSString *idDefault = columnDefaults[@"id"];
+    if (idDefault) {
+        XCTAssertTrue([connection isDefaultValueServerExpression:idDefault],
+                      @"SERIAL default should be detected as server expression: %@", idDefault);
+        XCTAssertTrue([idDefault containsString:@"nextval"],
+                      @"SERIAL default should contain nextval: %@", idDefault);
+        NSLog(@"     ✓ SERIAL default detected correctly");
+    }
+    
+    NSString *createdAtDefault = columnDefaults[@"created_at"];
+    if (createdAtDefault) {
+        XCTAssertTrue([connection isDefaultValueServerExpression:createdAtDefault],
+                      @"CURRENT_TIMESTAMP should be detected as server expression: %@", createdAtDefault);
+        NSLog(@"     ✓ CURRENT_TIMESTAMP default detected correctly");
+    }
+    
+    NSString *updatedAtDefault = columnDefaults[@"updated_at"];
+    if (updatedAtDefault) {
+        XCTAssertTrue([connection isDefaultValueServerExpression:updatedAtDefault],
+                      @"now() should be detected as server expression: %@", updatedAtDefault);
+        NSLog(@"     ✓ now() default detected correctly");
+    }
+    
+    NSString *statusDefault = columnDefaults[@"status"];
+    if (statusDefault) {
+        XCTAssertFalse([connection isDefaultValueServerExpression:statusDefault],
+                       @"Literal string default should NOT be server expression: %@", statusDefault);
+        NSLog(@"     ✓ Literal default NOT detected as server expression");
+    }
+    
+    // Insert a row with only the required field
+    NSLog(@"   Inserting row with only required field...");
+    [connection queryString:[NSString stringWithFormat:
+        @"INSERT INTO %@ (name) VALUES ('test')",
+        [connection quoteIdentifier:testTableName]]];
+    XCTAssertFalse([connection queryErrored], @"Insert should succeed");
+    
+    // Verify the database computed the default values
+    NSLog(@"   Verifying database computed default values...");
+    id<SPDatabaseResult> selectResult = [connection queryString:[NSString stringWithFormat:
+        @"SELECT id, name, created_at, updated_at, status FROM %@",
+        [connection quoteIdentifier:testTableName]]];
+    [selectResult setReturnDataAsStrings:YES];
+    
+    NSArray *insertedRow = [selectResult getRowAsArray];
+    XCTAssertNotNil(insertedRow, @"Should get inserted row");
+    XCTAssertEqual([insertedRow count], (NSUInteger)5, @"Should have 5 columns");
+    
+    // Verify id was auto-generated (SERIAL)
+    NSString *generatedId = insertedRow[0];
+    XCTAssertNotNil(generatedId, @"id should be generated");
+    XCTAssertTrue([generatedId integerValue] > 0, @"Generated id should be positive: %@", generatedId);
+    NSLog(@"     ✓ SERIAL generated id: %@", generatedId);
+    
+    // Verify name was inserted
+    NSString *insertedName = insertedRow[1];
+    XCTAssertEqualObjects(insertedName, @"test", @"Name should match");
+    NSLog(@"     ✓ Name inserted correctly: %@", insertedName);
+    
+    // Verify created_at was auto-generated
+    NSString *createdAt = insertedRow[2];
+    XCTAssertNotNil(createdAt, @"created_at should be generated");
+    XCTAssertTrue([createdAt length] > 0, @"created_at should not be empty");
+    NSLog(@"     ✓ CURRENT_TIMESTAMP generated created_at: %@", createdAt);
+    
+    // Verify updated_at was auto-generated
+    NSString *updatedAt = insertedRow[3];
+    XCTAssertNotNil(updatedAt, @"updated_at should be generated");
+    XCTAssertTrue([updatedAt length] > 0, @"updated_at should not be empty");
+    NSLog(@"     ✓ now() generated updated_at: %@", updatedAt);
+    
+    // Verify status has literal default
+    NSString *status = insertedRow[4];
+    XCTAssertEqualObjects(status, @"active", @"status should have literal default");
+    NSLog(@"     ✓ Literal default applied: %@", status);
+    
+    // Cleanup
+    [connection queryString:[NSString stringWithFormat:@"DROP TABLE %@", [connection quoteIdentifier:testTableName]]];
+    [connection disconnect];
+    
+    NSLog(@"✅ Test 44 Passed: Add Row with SERIAL and Timestamp Defaults");
+}
+
+#pragma mark - Test 45: Complex Default Expressions
+
+- (void)test_45_ComplexDefaultExpressions {
+    NSLog(@"\n🧪 Test 45: Complex Default Expressions");
+    
+    id<SPDatabaseConnection> connection = [self createAndConnectConnection];
+    XCTAssertNotNil(connection, @"Should connect to database");
+    
+    // Test various complex expressions
+    NSLog(@"   Testing complex function expressions...");
+    
+    // Math functions
+    XCTAssertTrue([connection isDefaultValueServerExpression:@"random()"],
+                  @"random() should be server expression");
+    XCTAssertTrue([connection isDefaultValueServerExpression:@"floor(random() * 100)"],
+                  @"Math expression should be server expression");
+    
+    // String functions
+    XCTAssertTrue([connection isDefaultValueServerExpression:@"upper('test')"],
+                  @"String function should be server expression");
+    XCTAssertTrue([connection isDefaultValueServerExpression:@"concat('prefix_', now())"],
+                  @"concat function should be server expression");
+    
+    // Array and JSON defaults - these use [] or {}, not (), so treated as literals
+    XCTAssertFalse([connection isDefaultValueServerExpression:@"ARRAY[]::integer[]"],
+                   @"ARRAY[] uses square brackets, treated as literal");
+    XCTAssertFalse([connection isDefaultValueServerExpression:@"{}::jsonb"],
+                   @"JSON object cast is treated as literal (shows in UI with cast)");
+    
+    // But expressions with parentheses are server expressions
+    XCTAssertTrue([connection isDefaultValueServerExpression:@"(true)::boolean"],
+                  @"Expression with parentheses is treated as server expression");
+    
+    NSLog(@"   ✓ Complex expressions detected correctly");
+    
+    // Test edge cases
+    NSLog(@"   Testing edge cases...");
+    
+    // Quoted strings without casts should NOT be server expressions
+    XCTAssertFalse([connection isDefaultValueServerExpression:@"'simple string'"],
+                   @"Simple quoted string should not be server expression");
+    
+    // Numbers without casts
+    XCTAssertFalse([connection isDefaultValueServerExpression:@"123"],
+                   @"Plain number should not be server expression");
+    XCTAssertFalse([connection isDefaultValueServerExpression:@"123.456"],
+                   @"Decimal number should not be server expression");
+    
+    // But numbers WITH operations should be (has parentheses)
+    XCTAssertTrue([connection isDefaultValueServerExpression:@"(5 + 3)"],
+                  @"Math operation with parentheses is server expression");
+    
+    NSLog(@"   ✓ Edge cases handled correctly");
+    
+    [connection disconnect];
+    
+    NSLog(@"✅ Test 45 Passed: Complex Default Expressions");
+}
+
 @end
 
