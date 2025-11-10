@@ -220,6 +220,16 @@ pub extern "C" fn sp_postgresql_result_destroy(result: *mut SPPostgreSQLResult) 
 // Streaming Result Management
 
 #[no_mangle]
+pub extern "C" fn sp_postgresql_streaming_result_mark_disconnected(result: *mut SPPostgreSQLStreamingResult) {
+    if !result.is_null() {
+        unsafe {
+            let result_ref = &mut (*result).inner;
+            result_ref.mark_client_disconnected();
+        }
+    }
+}
+
+#[no_mangle]
 pub extern "C" fn sp_postgresql_streaming_result_destroy(result: *mut SPPostgreSQLStreamingResult) {
     if !result.is_null() {
         unsafe {

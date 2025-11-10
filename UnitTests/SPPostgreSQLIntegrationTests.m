@@ -2083,5 +2083,83 @@
     NSLog(@"   Total time: %.2f seconds", -[queryStart timeIntervalSinceNow]);
 }
 
+#pragma mark - Test 36: Empty Table Query (No Infinite Loop)
+
+- (void)test_36_EmptyTableQuery {
+    NSLog(@"\n🧪 Test 36: Empty Table Query (should not infinite loop)");
+    
+    id<SPDatabaseConnection> connection = [self createAndConnectConnection];
+    XCTAssertNotNil(connection, @"Connection should be established");
+    
+    NSString *testTableName = @"test_empty_table";
+    
+    // Drop table if it exists from previous test run
+    [connection queryString:[NSString stringWithFormat:
+        @"DROP TABLE IF EXISTS %@",
+        [connection quoteIdentifier:testTableName]]];
+    
+    // Create empty table
+    NSLog(@"   Creating empty table...");
+    [connection queryString:[NSString stringWithFormat:
+        @"CREATE TABLE %@ (id SERIAL PRIMARY KEY, name TEXT, value INTEGER)",
+        [connection quoteIdentifier:testTableName]]];
+    
+    // Query empty table with streaming
+    NSLog(@"   Querying empty table with streaming...");
+    NSDate *queryStart = [NSDate date];
+    id<SPDatabaseResult> result = [connection streamingQueryString:
+        [NSString stringWithFormat:@"SELECT * FROM %@", [connection quoteIdentifier:testTableName]]
+        useLowMemoryBlockingStreaming:YES];
+    
+    XCTAssertNotNil(result, @"Streaming result should not be nil");
+    
+    // Check metadata is available (this was the infinite loop trigger)
+    NSUInteger numFields = [result numberOfFields];
+    NSLog(@"      Number of fields: %lu", (unsigned long)numFields);
+    XCTAssertEqual(numFields, (NSUInteger)3, @"Should have 3 fields even for empty table");
+    
+    // Check field names
+    NSArray *fieldNames = [result fieldNames];
+    XCTAssertEqual([fieldNames count], (NSUInteger)3, @"Should have 3 field names");
+    NSLog(@"      Field names: %@", fieldNames);
+    
+    // Start download
+    [result startDownload];
+    
+    // Wait for download to complete (should be instant for empty table)
+    NSDate *downloadStart = [NSDate date];
+    int timeout = 5; // 5 seconds should be more than enough for empty table
+    int elapsed = 0;
+    
+    while (![result dataDownloaded] && elapsed < timeout) {
+        [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+        usleep(100000); // 100ms
+        elapsed++;
+    }
+    
+    XCTAssertTrue([result dataDownloaded], @"Empty table download should complete quickly");
+    NSLog(@"   ✓ Downloaded in %.3f seconds", -[downloadStart timeIntervalSinceNow]);
+    
+    // Verify numberOfRows is 0
+    NSUInteger totalRows = [result numberOfRows];
+    XCTAssertEqual(totalRows, (NSUInteger)0, @"Empty table should have 0 rows");
+    NSLog(@"   ✓ Total rows: %lu", (unsigned long)totalRows);
+    
+    // Try to iterate (should not hang)
+    [result seekToRow:0];
+    NSUInteger rowCount = 0;
+    while ([result getRowAsArray]) {
+        rowCount++;
+    }
+    XCTAssertEqual(rowCount, (NSUInteger)0, @"Should iterate 0 rows");
+    
+    // Cleanup
+    [connection queryString:[NSString stringWithFormat:@"DROP TABLE %@", [connection quoteIdentifier:testTableName]]];
+    [connection disconnect];
+    
+    NSLog(@"✅ Test 36 Passed: Empty table query works without infinite loop");
+    NSLog(@"   Total time: %.3f seconds", -[queryStart timeIntervalSinceNow]);
+}
+
 @end
 

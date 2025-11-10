@@ -24,6 +24,8 @@ pub struct PostgreSQLStreamingResult {
     batch_size: usize,
     finished: bool,
     owns_transaction: bool,  // Track if WE started the transaction
+    client_disconnected: bool,  // Track if client was disconnected (for safe cleanup)
+    cursor_closed: bool,  // Track if cursor has been closed (to avoid double-close)
 }
 
 // SAFETY: We ensure Client is only accessed through controlled FFI
@@ -57,7 +59,8 @@ impl PostgreSQLStreamingResult {
         let fetch_meta_sql = format!("FETCH FORWARD 1 FROM {}", cursor_name);
         let rows = client.query(&fetch_meta_sql, &[])?;
         
-        // Extract column metadata
+        // Extract column metadata from the statement, not the rows
+        // This works even for empty result sets!
         let (columns, type_oids) = if let Some(first_row) = rows.first() {
             let cols: Vec<String> = first_row
                 .columns()
@@ -76,8 +79,22 @@ impl PostgreSQLStreamingResult {
             
             (cols, oids)
         } else {
-            // Empty result set
-            (Vec::new(), Vec::new())
+            // Empty result set - we still need column metadata!
+            // Use a prepared statement to get column info without fetching rows
+            let stmt = client.prepare(&format!("SELECT * FROM ({}) AS meta_query LIMIT 0", query))?;
+            let cols: Vec<String> = stmt
+                .columns()
+                .iter()
+                .map(|col| col.name().to_string())
+                .collect();
+            
+            let oids: Vec<u32> = stmt
+                .columns()
+                .iter()
+                .map(|col| col.type_().oid())
+                .collect();
+            
+            (cols, oids)
         };
         
         // Total rows are unknown for cursor-based streaming
@@ -95,12 +112,14 @@ impl PostgreSQLStreamingResult {
             batch_size,
             finished: false,
             owns_transaction,
+            client_disconnected: false,
+            cursor_closed: false,
         })
     }
     
     /// Get the next batch of rows from the cursor
     pub fn next_batch(&mut self) -> Result<&[Row], Box<dyn Error>> {
-        if self.finished {
+        if self.finished || self.client_disconnected {
             return Ok(&[]);
         }
         
@@ -230,23 +249,37 @@ impl PostgreSQLStreamingResult {
         self.current_batch.len()
     }
     
+    /// Mark the client as disconnected (called when connection is closed)
+    /// This prevents trying to close cursor on an invalid client
+    pub fn mark_client_disconnected(&mut self) {
+        self.client_disconnected = true;
+        self.finished = true;
+    }
+    
     /// Close the cursor and clean up
     pub fn close(&mut self) -> Result<(), Box<dyn Error>> {
-        if !self.finished {
-            unsafe {
-                let client = &mut *self.client;
-                
-                // Close cursor
-                let close_sql = format!("CLOSE {}", self.cursor_name);
-                let _ = client.execute(&close_sql, &[]);
-                
-                // Only commit if WE started the transaction
-                if self.owns_transaction {
-                    let _ = client.execute("COMMIT", &[]);
-                }
-            }
-            self.finished = true;
+        // Skip if already closed, client disconnected, or client null
+        if self.cursor_closed || self.client_disconnected || self.client.is_null() {
+            return Ok(());
         }
+        
+        // Close cursor and commit transaction even if finished=true
+        // (finished just means we fetched all rows, we still need to clean up!)
+        unsafe {
+            let client = &mut *self.client;
+            
+            // Close cursor
+            let close_sql = format!("CLOSE {}", self.cursor_name);
+            let _ = client.execute(&close_sql, &[]);
+            
+            // Only commit if WE started the transaction
+            if self.owns_transaction {
+                let _ = client.execute("COMMIT", &[]);
+            }
+        }
+        
+        self.cursor_closed = true;
+        self.finished = true;
         Ok(())
     }
 }

@@ -64,5 +64,17 @@ typedef struct SPPostgreSQLStreamingResult SPPostgreSQLStreamingResult;
  */
 @property (nonatomic, readonly) BOOL dataDownloaded;
 
+/**
+ * Mark the underlying client as disconnected (prevents cursor cleanup on invalid client)
+ * Called by connection wrapper before disconnecting
+ */
+- (void)markClientDisconnected;
+
+/**
+ * Replace existing result store data (for smoother table reloads)
+ * Called by SPDataStorage when reloading table data
+ */
+- (void)replaceExistingResultStore:(id)previousResultStore;
+
 @end
 

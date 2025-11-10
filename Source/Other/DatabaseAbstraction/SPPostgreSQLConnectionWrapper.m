@@ -28,7 +28,9 @@
     NSString *_lastErrorMessage;
     NSUInteger _lastErrorID;
     id<SPDatabaseResult> _lastResult; // Track last result for affected rows
+    NSHashTable *_activeStreamingResults; // Track active streaming results for cleanup (weak references)
 }
+
 @end
 
 @implementation SPPostgreSQLConnectionWrapper
@@ -54,6 +56,8 @@
         _lastErrorMessage = nil;
         _lastErrorID = 0;
         _lastResult = nil;
+        // Use weak references so we don't interfere with normal memory management
+        _activeStreamingResults = [NSHashTable weakObjectsHashTable];
     }
     return self;
 }
@@ -290,6 +294,16 @@
     _connected = NO;
     _hasDisconnected = YES;
     
+    // Mark all active streaming results as disconnected before destroying connection
+    // This prevents them from trying to close cursors on an invalid client
+    // Use allObjects to get a snapshot since we're using weak references
+    for (id result in [_activeStreamingResults allObjects]) {
+        if ([result respondsToSelector:@selector(markClientDisconnected)]) {
+            [result markClientDisconnected];
+        }
+    }
+    [_activeStreamingResults removeAllObjects];
+    
     if (_pgConnection != NULL) {
         // Call disconnect on the Rust side
         sp_postgresql_connection_disconnect(_pgConnection);
@@ -400,9 +414,14 @@
     
     if (pgResult == NULL) {
         char *errorCStr = sp_postgresql_connection_last_error(_pgConnection);
-        _lastErrorMessage = errorCStr ? [NSString stringWithUTF8String:errorCStr] : @"Query execution failed";
+        NSString *errorMsg = errorCStr ? [NSString stringWithUTF8String:errorCStr] : @"Query execution failed";
+        _lastErrorMessage = errorMsg;
         if (errorCStr) sp_postgresql_free_string(errorCStr);
         _lastErrorID = 101;
+        
+        // Log the error for debugging
+        NSLog(@"PostgreSQL query failed: %@ (Query: %@)", errorMsg, query);
+        
         return nil;
     }
     
@@ -428,6 +447,22 @@
         return nil;
     }
     
+    // CRITICAL: Clean up any existing streaming results BEFORE creating a new one
+    // PostgreSQL only allows one cursor/transaction at a time on a connection
+    NSArray *existingResults = [_activeStreamingResults allObjects];
+    if ([existingResults count] > 0) {
+        for (id result in existingResults) {
+            if ([result respondsToSelector:@selector(markClientDisconnected)]) {
+                [result markClientDisconnected];
+            }
+            if ([result respondsToSelector:@selector(cancelResultLoad)]) {
+                [result cancelResultLoad];
+            }
+        }
+        // Wait a moment for cleanup to complete
+        usleep(10000); // 10ms
+    }
+    
     // Choose batch size based on streaming mode
     // fullStream = YES means low memory mode, use smaller batches
     NSUInteger batchSize = fullStream ? 500 : 1000;
@@ -451,15 +486,33 @@
     
     // Create streaming wrapper with pre-executed streaming result (matches MySQL pattern)
     // The result has metadata available, data fetching is batched
-    return [[SPPostgreSQLStreamingResultWrapper alloc] initWithStreamingResult:pgStreamingResult 
-                                                                     connection:self
-                                                                      batchSize:batchSize];
+    SPPostgreSQLStreamingResultWrapper *wrapper = [[SPPostgreSQLStreamingResultWrapper alloc] initWithStreamingResult:pgStreamingResult 
+                                                                                                            connection:self
+                                                                                                             batchSize:batchSize];
+    
+    // Track this streaming result for cleanup on disconnect (weak reference)
+    // The hash table will automatically remove it when deallocated
+    if (wrapper) {
+        [_activeStreamingResults addObject:wrapper];
+    }
+    
+    return wrapper;
 }
 
 - (id)resultStoreFromQueryString:(NSString *)query {
-    // Create streaming wrapper that will execute query asynchronously when startDownload is called
-    // This matches MySQL's behavior where the query starts but data download is deferred
-    return [self streamingQueryString:query useLowMemoryBlockingStreaming:NO];
+    // PostgreSQL cursors only work with SELECT queries
+    // For DDL (CREATE, DROP, ALTER) and DML (INSERT, UPDATE, DELETE), use regular queryString
+    NSString *trimmedQuery = [query stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    NSString *upperQuery = [trimmedQuery uppercaseString];
+    
+    // Check if this is a SELECT query (cursors only work with SELECT)
+    if ([upperQuery hasPrefix:@"SELECT"] || [upperQuery hasPrefix:@"WITH"]) {
+        // Use streaming for SELECT queries
+        return [self streamingQueryString:query useLowMemoryBlockingStreaming:NO];
+    } else {
+        // Use regular query for DDL/DML commands
+        return [self queryString:query];
+    }
 }
 
 - (NSArray *)getAllRowsFromQuery:(NSString *)query {

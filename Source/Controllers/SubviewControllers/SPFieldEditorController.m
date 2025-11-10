@@ -1223,6 +1223,13 @@ typedef enum {
 		editTextViewWasChanged = YES; // Backspace
 		return YES;
 	}
+	
+	// Mark that text was changed for any non-empty replacement
+	// This fixes the issue where selecting all text and typing a replacement
+	// would not be detected as a change (since replacementString.length > 1)
+	if ([replacementString length] > 0) {
+		editTextViewWasChanged = YES;
+	}
 
 	unsigned long long adjTextMaxTextLength = self.maxLengthDateWithOverride;
 
@@ -1235,6 +1242,8 @@ typedef enum {
 		// saves a non-space char + base char if that combination
 		// occurs at the end of a sequence of typing before saving
 		// (OK button).
+		// NOTE: This is now redundant since we set editTextViewWasChanged above,
+		// but keeping it for backwards compatibility
 		editTextViewWasChanged = ([replacementString length] == 1) || wasCutPaste;
 
 		// Pure attribute changes are ok

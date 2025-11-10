@@ -159,6 +159,13 @@ unsigned long long sp_postgresql_result_affected_rows(const SPPostgreSQLResult* 
 // Streaming Result Management
 
 /**
+ * Mark streaming result as disconnected (prevents cursor cleanup on invalid client)
+ * Call this before destroying connection if streaming results may still exist
+ * @param result Streaming result object
+ */
+void sp_postgresql_streaming_result_mark_disconnected(SPPostgreSQLStreamingResult* result);
+
+/**
  * Destroy a streaming result set and free resources
  * @param result Streaming result object to destroy
  */

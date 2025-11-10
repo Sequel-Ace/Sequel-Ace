@@ -92,6 +92,9 @@
     // Ensure download is cancelled
     [self cancelResultLoad];
     
+    // No need to remove from connection's tracking array - it uses weak references
+    // and will automatically remove this object when deallocated
+    
     // Clean up streaming result (TRUE cursor-based streaming)
     if (_pgStreamingResult) {
         sp_postgresql_streaming_result_destroy(_pgStreamingResult);
@@ -402,30 +405,22 @@
         } @catch (NSException *exception) {
             NSLog(@"PostgreSQL streaming exception: %@", exception);
         } @finally {
-            // ALWAYS mark as complete, even if there was an error
+            // CRITICAL: Mark as complete FIRST, before calling delegate
+            // This allows awaitDataDownloaded to return immediately
             pthread_mutex_lock(&_dataLock);
             _dataDownloaded = YES;
             pthread_mutex_unlock(&_dataLock);
             
-            // Capture weak reference to avoid retain cycle and crashes
-            __weak SPPostgreSQLStreamingResultWrapper *weakSelf = self;
-            
-            // Notify delegate on main thread
-            dispatch_async(dispatch_get_main_queue(), ^{
-                __strong SPPostgreSQLStreamingResultWrapper *strongSelf = weakSelf;
-                
-                if (!strongSelf) {
-                    return;
-                }
-                
-                id delegate = strongSelf->_delegate;
-                if (delegate && [delegate respondsToSelector:@selector(resultStoreDidFinishLoadingData:)]) {
+            // Call delegate directly on background thread (like MySQL does)
+            // Do NOT dispatch to main thread - that causes deadlock when main thread
+            // is blocked in awaitDataDownloaded waiting for _dataDownloaded to become YES
+            id delegate = _delegate;
+            if (delegate && [delegate respondsToSelector:@selector(resultStoreDidFinishLoadingData:)]) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-                    [delegate performSelector:@selector(resultStoreDidFinishLoadingData:) withObject:strongSelf];
+                [delegate performSelector:@selector(resultStoreDidFinishLoadingData:) withObject:self];
 #pragma clang diagnostic pop
-                }
-            });
+            }
         }
     }
 }
@@ -546,6 +541,39 @@
     pthread_mutex_unlock(&_dataLock);
     
     return count;
+}
+
+#pragma mark - Connection Lifecycle
+
+- (void)markClientDisconnected {
+    // Mark the streaming result as disconnected to prevent cursor cleanup on invalid client
+    if (_pgStreamingResult) {
+        sp_postgresql_streaming_result_mark_disconnected(_pgStreamingResult);
+    }
+    
+    // Cancel any ongoing download
+    [self cancelResultLoad];
+}
+
+#pragma mark - Data Replacement
+
+- (void)replaceExistingResultStore:(id)previousResultStore {
+    // For PostgreSQL, we need to ensure the old cursor is closed before the new one starts fetching
+    // The old result will clean up its own transaction when deallocated
+    
+    if ([previousResultStore isKindOfClass:[SPPostgreSQLStreamingResultWrapper class]]) {
+        SPPostgreSQLStreamingResultWrapper *prevWrapper = (SPPostgreSQLStreamingResultWrapper *)previousResultStore;
+        
+        // Mark as disconnected to stop any ongoing fetch operations
+        // This will cause next_batch to return empty immediately
+        [prevWrapper markClientDisconnected];
+        
+        // Cancel the load (this will return quickly since we marked as disconnected)
+        [prevWrapper cancelResultLoad];
+    }
+    
+    // We could transfer data from the previous result store for smoother reloads
+    // (like MySQL does), but for now we'll just fetch fresh data
 }
 
 @end

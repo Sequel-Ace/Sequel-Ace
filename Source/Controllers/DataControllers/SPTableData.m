@@ -1118,7 +1118,7 @@
 		// [status objectForKey:@"Rows"] is NULL then try to get the number of rows via SELECT COUNT(1) FROM `foo`
 		// this happens e.g. for db "information_schema"
 		if([[status objectForKey:@"Rows"] isNSNull]) {
-			tableStatusResult = [self.connection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [escapedTableName backtickQuotedString] ]];
+			tableStatusResult = [self.connection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [self.connection quoteIdentifier:escapedTableName] ]];
 			// this query can fail e.g. if a table is damaged
 			if (tableStatusResult && ![self.connection queryErrored]) {
 				[status safeSetObject:[[tableStatusResult getRowAsArray] firstObject] forKey:@"Rows"];
@@ -1240,7 +1240,7 @@
 	}
 
 	// Fetch the number of rows
-	id<SPDatabaseResult> rowResult = [self.connection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [[tableListInstance tableName] backtickQuotedString]]];
+	id<SPDatabaseResult> rowResult = [self.connection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [self.connection quoteIdentifier:[tableListInstance tableName]]]];
 	if ([self.connection queryErrored] || !rowResult) {
 		return NO;
 	}
