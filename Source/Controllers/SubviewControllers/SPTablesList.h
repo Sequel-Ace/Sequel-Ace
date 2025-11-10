@@ -70,6 +70,9 @@
 	IBOutlet NSPopUpButton *tableEncodingButton;
 	IBOutlet NSPopUpButton *tableCollationButton;
 	IBOutlet NSPopUpButton *tableTypeButton;
+	IBOutlet NSTextField *tableEncodingLabel;
+	IBOutlet NSTextField *tableCollationLabel;
+	IBOutlet NSTextField *tableTypeLabel;
 	IBOutlet NSButton *toolbarAddButton;
 
 	__weak IBOutlet NSPopUpButton *chooseDatabaseButton;

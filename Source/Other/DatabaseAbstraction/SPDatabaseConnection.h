@@ -555,6 +555,31 @@ typedef NS_ENUM(NSUInteger, SPDatabaseConnectionLostDecision) {
  */
 - (BOOL)supportsFeature:(NSString *)feature;
 
+/**
+ * Check if database supports table-level storage engines (e.g., InnoDB, MyISAM in MySQL)
+ * @return YES if supported (MySQL), NO otherwise (PostgreSQL)
+ */
+- (BOOL)supportsTableEngines;
+
+/**
+ * Check if database supports table-level character set encoding
+ * @return YES if supported (MySQL), NO otherwise (PostgreSQL uses database-level encoding)
+ */
+- (BOOL)supportsTableLevelCharacterSets;
+
+/**
+ * Build a CREATE TABLE statement for a new table with database-specific syntax
+ * @param tableName The name of the table to create
+ * @param tableType Optional table type/engine (e.g., "InnoDB", "MyISAM" for MySQL; ignored for PostgreSQL)
+ * @param encodingName Optional character set encoding (e.g., "utf8mb4" for MySQL; ignored for PostgreSQL)
+ * @param collationName Optional collation (e.g., "utf8mb4_general_ci" for MySQL; ignored for PostgreSQL)
+ * @return CREATE TABLE statement with database-specific syntax
+ */
+- (NSString *)buildCreateTableStatementForTable:(NSString *)tableName
+                                      tableType:(NSString *)tableType
+                                   encodingName:(NSString *)encodingName
+                                  collationName:(NSString *)collationName;
+
 #pragma mark - Utility
 
 /**

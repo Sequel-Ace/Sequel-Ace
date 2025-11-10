@@ -668,6 +668,51 @@
     return NO;
 }
 
+- (BOOL)supportsTableEngines {
+    // MySQL supports storage engines (InnoDB, MyISAM, etc.)
+    return YES;
+}
+
+- (BOOL)supportsTableLevelCharacterSets {
+    // MySQL supports table-level character sets and collations
+    return YES;
+}
+
+- (NSString *)buildCreateTableStatementForTable:(NSString *)tableName
+                                      tableType:(NSString *)tableType
+                                   encodingName:(NSString *)encodingName
+                                  collationName:(NSString *)collationName {
+    // MySQL: Create table with AUTO_INCREMENT
+    NSMutableString *createStatement = [NSMutableString string];
+    
+    NSString *quotedTableName = [self quoteIdentifier:tableName];
+    
+    // Build column definition
+    // For CSV tables, don't add PRIMARY KEY AUTO_INCREMENT
+    if ([tableType isEqualToString:@"CSV"]) {
+        [createStatement appendFormat:@"CREATE TABLE %@ (id INT(11) UNSIGNED NOT NULL)", quotedTableName];
+    } else {
+        [createStatement appendFormat:@"CREATE TABLE %@ (id INT(11) UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT)", quotedTableName];
+    }
+    
+    // Add character set if specified
+    if (encodingName && [encodingName length] > 0) {
+        [createStatement appendFormat:@" DEFAULT CHARACTER SET %@", [self quoteIdentifier:encodingName]];
+    }
+    
+    // Add collation if specified
+    if (collationName && [collationName length] > 0) {
+        [createStatement appendFormat:@" DEFAULT COLLATE %@", [self quoteIdentifier:collationName]];
+    }
+    
+    // Add engine/storage type if specified
+    if (tableType && [tableType length] > 0 && ![tableType isEqualToString:@"CSV"]) {
+        [createStatement appendFormat:@" ENGINE = %@", [self quoteIdentifier:tableType]];
+    }
+    
+    return [createStatement copy];
+}
+
 #pragma mark - Table Structure and Metadata
 
 - (id<SPDatabaseResult>)getCreateTableStatement:(NSString *)tableName fromDatabase:(NSString *)database {

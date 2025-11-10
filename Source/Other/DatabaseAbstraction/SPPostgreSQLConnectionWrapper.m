@@ -1004,6 +1004,33 @@
     return NO;
 }
 
+- (BOOL)supportsTableEngines {
+    // PostgreSQL doesn't have storage engines like MySQL (InnoDB, MyISAM, etc.)
+    return NO;
+}
+
+- (BOOL)supportsTableLevelCharacterSets {
+    // PostgreSQL uses database-level encoding, not table-level
+    // Character encoding is set when creating the database
+    return NO;
+}
+
+- (NSString *)buildCreateTableStatementForTable:(NSString *)tableName
+                                      tableType:(NSString *)tableType
+                                   encodingName:(NSString *)encodingName
+                                  collationName:(NSString *)collationName {
+    // PostgreSQL: Create table with SERIAL for auto-increment
+    // Note: tableType, encodingName, and collationName are ignored for PostgreSQL
+    // PostgreSQL doesn't have storage engines (tableType)
+    // PostgreSQL encoding is set at database level, not table level
+    
+    NSString *quotedTableName = [self quoteIdentifier:tableName];
+    
+    // Use SERIAL for auto-incrementing primary key (equivalent to MySQL's AUTO_INCREMENT)
+    // SERIAL is a shorthand for INTEGER with a sequence
+    return [NSString stringWithFormat:@"CREATE TABLE %@ (id SERIAL PRIMARY KEY)", quotedTableName];
+}
+
 - (void)lock {
     // PostgreSQL connection locking not implemented
     // Would use mutexes if needed
@@ -1047,6 +1074,23 @@
 
 #pragma mark - Table Structure and Metadata
 
+#pragma mark - Private Helper Methods
+
+/**
+ * Get the current PostgreSQL schema name
+ * @return The current schema name, or "public" as fallback
+ */
+- (NSString *)_getCurrentSchemaName {
+    id<SPDatabaseResult> schemaResult = [self queryString:@"SELECT current_schema()"];
+    if (schemaResult && [schemaResult numberOfRows] > 0) {
+        NSArray *row = [schemaResult getRowAsArray];
+        if (row && [row count] > 0 && ![row[0] isKindOfClass:[NSNull class]]) {
+            return row[0];
+        }
+    }
+    return @"public";
+}
+
 - (id<SPDatabaseResult>)getCreateTableStatement:(NSString *)tableName fromDatabase:(NSString *)database {
     // PostgreSQL doesn't have SHOW CREATE TABLE
     // We need to build a CREATE TABLE statement from information_schema
@@ -1055,19 +1099,7 @@
     // NOT the schema. We need to query for the current schema from search_path.
     // The database parameter is ignored for PostgreSQL (unlike MySQL where database == schema)
     
-    NSString *schemaName = nil;
-    
-    // Get current schema from search_path
-    id<SPDatabaseResult> schemaResult = [self queryString:@"SELECT current_schema()"];
-    if (schemaResult && [schemaResult numberOfRows] > 0) {
-        NSArray *row = [schemaResult getRowAsArray];
-        if (row && [row count] > 0) {
-            schemaName = row[0];
-        }
-    }
-    if (!schemaName || [schemaName isKindOfClass:[NSNull class]]) {
-        schemaName = @"public";
-    }
+    NSString *schemaName = [self _getCurrentSchemaName];
     
     // First, get column information
     // PostgreSQL converts unquoted identifiers to lowercase, so we need to search case-insensitively
@@ -1167,14 +1199,7 @@
 - (id<SPDatabaseResult>)getColumnsForTable:(NSString *)tableName {
     // PostgreSQL equivalent of SHOW COLUMNS FROM
     // Get current schema
-    NSString *schemaName = @"public";
-    id<SPDatabaseResult> schemaResult = [self queryString:@"SELECT current_schema()"];
-    if (schemaResult && [schemaResult numberOfRows] > 0) {
-        NSArray *row = [schemaResult getRowAsArray];
-        if (row && [row count] > 0 && ![row[0] isKindOfClass:[NSNull class]]) {
-            schemaName = row[0];
-        }
-    }
+    NSString *schemaName = [self _getCurrentSchemaName];
     
     // Query to get column information including primary key status
     // This matches MySQL's SHOW COLUMNS FROM output format
@@ -1227,14 +1252,7 @@
     // Query pg_catalog for table metadata
     
     // Get current schema
-    NSString *schemaName = @"public";
-    id<SPDatabaseResult> schemaResult = [self queryString:@"SELECT current_schema()"];
-    if (schemaResult && [schemaResult numberOfRows] > 0) {
-        NSArray *row = [schemaResult getRowAsArray];
-        if (row && [row count] > 0 && ![row[0] isKindOfClass:[NSNull class]]) {
-            schemaName = row[0];
-        }
-    }
+    NSString *schemaName = [self _getCurrentSchemaName];
     
     // Escape single quotes for SQL string literals
     NSString *escapedTableName = [tableName stringByReplacingOccurrencesOfString:@"'" withString:@"''"];
@@ -1346,14 +1364,7 @@
     // PostgreSQL equivalent of SHOW TRIGGERS
     
     // Get current schema
-    NSString *schemaName = @"public";
-    id<SPDatabaseResult> schemaResult = [self queryString:@"SELECT current_schema()"];
-    if (schemaResult && [schemaResult numberOfRows] > 0) {
-        NSArray *row = [schemaResult getRowAsArray];
-        if (row && [row count] > 0 && ![row[0] isKindOfClass:[NSNull class]]) {
-            schemaName = row[0];
-        }
-    }
+    NSString *schemaName = [self _getCurrentSchemaName];
     
     NSString *query = [NSString stringWithFormat:
         @"SELECT "
@@ -1385,14 +1396,7 @@
     // PostgreSQL equivalent of SHOW INDEX
     
     // Get current schema
-    NSString *schemaName = @"public";
-    id<SPDatabaseResult> schemaResult = [self queryString:@"SELECT current_schema()"];
-    if (schemaResult && [schemaResult numberOfRows] > 0) {
-        NSArray *row = [schemaResult getRowAsArray];
-        if (row && [row count] > 0 && ![row[0] isKindOfClass:[NSNull class]]) {
-            schemaName = row[0];
-        }
-    }
+    NSString *schemaName = [self _getCurrentSchemaName];
     
     // Query to get index information in a MySQL-compatible format
     NSString *query = [NSString stringWithFormat:
