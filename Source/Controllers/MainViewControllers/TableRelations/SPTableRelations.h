@@ -30,6 +30,7 @@
 
 @class SPTableView;
 @class SPMySQLConnection;
+@protocol SPDatabaseConnection;
 @class SPDatabaseDocument;
 @class SPTablesList;
 @class SPTableData;
@@ -63,7 +64,7 @@
 	IBOutlet NSView     *detailErrorView;
 	IBOutlet NSTextView *detailErrorText;
 	
-	SPMySQLConnection *connection;
+	id<SPDatabaseConnection> connection;
 
 	NSUserDefaults *prefs;
 	NSMutableArray *relationData;
@@ -71,7 +72,7 @@
 }
 
 @property (readonly) NSMutableArray *relationData;
-@property (readwrite, strong) SPMySQLConnection *connection;
+@property (readwrite, strong) id<SPDatabaseConnection> connection;
 
 // IB action methods
 - (IBAction)addRelation:(id)sender;

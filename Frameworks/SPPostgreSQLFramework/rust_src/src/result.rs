@@ -7,9 +7,36 @@
 //
 
 use postgres::{Row, Column};
+use postgres::types::{FromSql, Type};
 use chrono::{NaiveDateTime, NaiveDate, NaiveTime, DateTime, Utc};
 use uuid::Uuid;
 use serde_json;
+use std::error::Error;
+
+/// A wrapper type that accepts ANY PostgreSQL type and converts it to a String.
+/// This is used for custom types like ENUMs that don't have built-in Rust type mappings.
+#[derive(Debug)]
+pub struct AnyValue(pub String);
+
+impl<'a> FromSql<'a> for AnyValue {
+    fn from_sql(_ty: &Type, raw: &'a [u8]) -> Result<Self, Box<dyn Error + Sync + Send>> {
+        // PostgreSQL sends most values as UTF-8 text in binary protocol
+        // ENUMs in particular are sent as their text representation
+        match std::str::from_utf8(raw) {
+            Ok(s) => Ok(AnyValue(s.to_string())),
+            Err(_) => {
+                // If not valid UTF-8, represent raw bytes in a readable format
+                let hex_str: String = raw.iter().map(|b| format!("{:02x}", b)).collect();
+                Ok(AnyValue(format!("\\x{}", hex_str)))
+            }
+        }
+    }
+    
+    // Accept ANY type - this is the key to handling ENUMs and other custom types
+    fn accepts(_ty: &Type) -> bool {
+        true
+    }
+}
 
 /// Standalone function to extract a value from a Row
 /// Used by both regular and streaming results
@@ -75,6 +102,12 @@ pub fn get_value(row: &Row, col_idx: usize, _column: &Column) -> Option<String> 
     // Try JSON/JSONB
     if let Ok(val) = row.try_get::<_, Option<serde_json::Value>>(col_idx) {
         return val.map(|v| v.to_string());
+    }
+    
+    // For any unknown types (like ENUMs), use AnyValue which accepts ANY PostgreSQL type
+    // This is the fallback for custom types that don't have built-in Rust mappings
+    if let Ok(val) = row.try_get::<_, Option<AnyValue>>(col_idx) {
+        return val.map(|v| v.0);
     }
     
     // If all else fails, return None (NULL value)
@@ -234,6 +267,11 @@ impl PostgreSQLResult {
             // Try JSON/JSONB (as serde_json::Value)
             if let Ok(val) = row_data.try_get::<_, Option<serde_json::Value>>(col) {
                 return val.map(|v| v.to_string());
+            }
+            
+            // For any unknown types (like ENUMs), use AnyValue which accepts ANY PostgreSQL type
+            if let Ok(val) = row_data.try_get::<_, Option<AnyValue>>(col) {
+                return val.map(|v| v.0);
             }
             
             // If we can't get the value, return None (NULL)

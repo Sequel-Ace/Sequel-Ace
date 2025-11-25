@@ -10,6 +10,7 @@
 
 use postgres::{Client, Row};
 use std::error::Error;
+use crate::result::AnyValue;
 
 /// TRUE streaming result using PostgreSQL cursors
 /// Only keeps current batch in memory, fetches on-demand from server
@@ -52,12 +53,38 @@ impl PostgreSQLStreamingResult {
         };
         
         // Declare cursor with the query
+        // IMPORTANT: If this fails, we MUST rollback the transaction to avoid leaving
+        // PostgreSQL in an ABORTED state where all subsequent commands fail
         let declare_sql = format!("DECLARE {} SCROLL CURSOR FOR {}", cursor_name, query);
-        client.execute(&declare_sql, &[])?;
+        if let Err(e) = client.execute(&declare_sql, &[]) {
+            // Rollback the transaction if we started it
+            if owns_transaction {
+                let _ = client.execute("ROLLBACK", &[]);
+            }
+            return Err(e.into());
+        }
         
         // Fetch first row to get column metadata (without moving cursor forward significantly)
         let fetch_meta_sql = format!("FETCH FORWARD 1 FROM {}", cursor_name);
-        let rows = client.query(&fetch_meta_sql, &[])?;
+        let rows = match client.query(&fetch_meta_sql, &[]) {
+            Ok(rows) => rows,
+            Err(e) => {
+                // Clean up cursor and transaction on error
+                let _ = client.execute(&format!("CLOSE {}", cursor_name), &[]);
+                if owns_transaction {
+                    let _ = client.execute("ROLLBACK", &[]);
+                }
+                return Err(e.into());
+            }
+        };
+        
+        // Helper closure to clean up cursor and transaction on error
+        let cleanup = |client: &mut Client, cursor: &str, owns_txn: bool| {
+            let _ = client.execute(&format!("CLOSE {}", cursor), &[]);
+            if owns_txn {
+                let _ = client.execute("ROLLBACK", &[]);
+            }
+        };
         
         // Extract column metadata from the statement, not the rows
         // This works even for empty result sets!
@@ -75,13 +102,22 @@ impl PostgreSQLStreamingResult {
                 .collect();
             
             // Move cursor back to start since we fetched one row for metadata
-            client.execute(&format!("MOVE BACKWARD 1 FROM {}", cursor_name), &[])?;
+            if let Err(e) = client.execute(&format!("MOVE BACKWARD 1 FROM {}", cursor_name), &[]) {
+                cleanup(client, &cursor_name, owns_transaction);
+                return Err(e.into());
+            }
             
             (cols, oids)
         } else {
             // Empty result set - we still need column metadata!
             // Use a prepared statement to get column info without fetching rows
-            let stmt = client.prepare(&format!("SELECT * FROM ({}) AS meta_query LIMIT 0", query))?;
+            let stmt = match client.prepare(&format!("SELECT * FROM ({}) AS meta_query LIMIT 0", query)) {
+                Ok(stmt) => stmt,
+                Err(e) => {
+                    cleanup(client, &cursor_name, owns_transaction);
+                    return Err(e.into());
+                }
+            };
             let cols: Vec<String> = stmt
                 .columns()
                 .iter()
@@ -238,6 +274,11 @@ impl PostgreSQLStreamingResult {
             // Try JSON/JSONB
             if let Ok(val) = row_data.try_get::<_, Option<serde_json::Value>>(col) {
                 return val.map(|v| v.to_string());
+            }
+            
+            // For any unknown types (like ENUMs), use AnyValue which accepts ANY PostgreSQL type
+            if let Ok(val) = row_data.try_get::<_, Option<AnyValue>>(col) {
+                return val.map(|v| v.0);
             }
         }
         

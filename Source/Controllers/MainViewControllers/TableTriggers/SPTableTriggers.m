@@ -34,6 +34,7 @@
 #import "SPTableData.h"
 #import "SPTableView.h"
 #import "SPServerSupport.h"
+#import "SPDatabaseConnection.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -201,8 +202,8 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 	if (isEdit && [(NSString *)[editedTrigger objectForKey:SPTriggerName] length] > 0)
 	{
 		NSString *queryDelete = [NSString stringWithFormat:@"DROP TRIGGER %@.%@",
-								 [[tableDocumentInstance database] backtickQuotedString],
-								 [[editedTrigger objectForKey:SPTriggerName] backtickQuotedString]];
+								 [connection quoteIdentifier:[tableDocumentInstance database]],
+								 [connection quoteIdentifier:[editedTrigger objectForKey:SPTriggerName]]];
 		
 		[connection queryString:queryDelete];
 		
@@ -246,10 +247,10 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 	NSString *triggerStatement  = [triggerStatementTextView string];
 
 	NSString *query = [NSString stringWithFormat:createTriggerStatementTemplate,
-					   [triggerName backtickQuotedString],
+					   [connection quoteIdentifier:triggerName],
 					   triggerActionTime,
 					   triggerEvent,
-					   [[tablesListInstance tableName] backtickQuotedString],
+					   [connection quoteIdentifier:[tablesListInstance tableName]],
 					   triggerStatement];
 
 	// Execute query
@@ -261,10 +262,10 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 		// In case of error, re-create the original trigger statement
 		if (isEdit) {
 			query = [NSString stringWithFormat:createTriggerStatementTemplate,
-					 [[editedTrigger objectForKey:SPTriggerName] backtickQuotedString],
+					 [connection quoteIdentifier:[editedTrigger objectForKey:SPTriggerName]],
 					 [editedTrigger objectForKey:SPTriggerActionTime],
 					 [editedTrigger objectForKey:SPTriggerEvent],
-					 [[tablesListInstance tableName] backtickQuotedString],
+					 [connection quoteIdentifier:[tablesListInstance tableName]],
 					 [editedTrigger objectForKey:SPTriggerStatement]];
 		
 			// If this attempt to re-create the trigger failed, then we're screwed as we've just lost the user's 
@@ -309,7 +310,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 
 			[selectedSet enumerateIndexesWithOptions:NSEnumerationReverse usingBlock:^(NSUInteger row, BOOL * _Nonnull stop) {
 				NSString *triggerName = [[self->triggerData objectAtIndex:row] objectForKey:SPTriggerName];
-				NSString *query = [NSString stringWithFormat:@"DROP TRIGGER %@.%@", [database backtickQuotedString], [triggerName backtickQuotedString]];
+				NSString *query = [NSString stringWithFormat:@"DROP TRIGGER %@.%@", [self->connection quoteIdentifier:database], [self->connection quoteIdentifier:triggerName]];
 
 				[self->connection queryString:query];
 

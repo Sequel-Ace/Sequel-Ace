@@ -33,6 +33,7 @@
 #import "SPViewCopy.h"
 #import "SPTablesList.h"
 #import "SPCreateDatabaseInfo.h"
+#import "SPDatabaseConnection.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -116,7 +117,7 @@
 {
     SPLog(@"_dropDatabase: %@", database);
 
-	[connection queryString:[NSString stringWithFormat:@"DROP DATABASE %@", [database backtickQuotedString]]];	
+	[connection queryString:[NSString stringWithFormat:@"DROP DATABASE %@", [connection quoteIdentifier:database]]];	
 	
 	return ![connection queryErrored];
 }

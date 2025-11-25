@@ -60,6 +60,12 @@
 	return self;
 }
 
+// Convenience initializer for tests (uses backtickQuotedString fallback when connection is nil)
+- (instancetype)initWithFilterClause:(NSString *)filter numberOfArguments:(NSUInteger)numArgs
+{
+	return [self initWithFilterClause:filter numberOfArguments:numArgs connection:nil];
+}
+
 - (void)dealloc
 {
 	[self setCurrentField:nil];
@@ -86,7 +92,12 @@
 
 	[clause replaceOccurrencesOfRegex:@"(?<!\\\\)\\$BINARY " withString:(caseSensitive) ? @"BINARY " : @""];
 	[clause flushCachedRegexData];
-	[clause replaceOccurrencesOfRegex:@"(?<!\\\\)\\$CURRENT_FIELD" withString:(_currentField) ? [_connection quoteIdentifier:_currentField] : @""];
+	// Quote the current field - use connection if available, otherwise fall back to backtickQuotedString for tests
+	NSString *quotedField = @"";
+	if (_currentField) {
+		quotedField = _connection ? [_connection quoteIdentifier:_currentField] : [_currentField backtickQuotedString];
+	}
+	[clause replaceOccurrencesOfRegex:@"(?<!\\\\)\\$CURRENT_FIELD" withString:quotedField];
 	[clause flushCachedRegexData];
 	
 	// Escape % sign for format insertion ie if number of arguments is greater than 0
@@ -115,7 +126,8 @@
 	NSMutableString *filterString = [NSMutableString string];
 
 	if(!suppressLeadingTablePlaceholder) {
-		[filterString appendFormat:@"%@ ",[_connection quoteIdentifier:_currentField]];
+		NSString *quotedFieldForPrefix = _connection ? [_connection quoteIdentifier:_currentField] : [_currentField backtickQuotedString];
+		[filterString appendFormat:@"%@ ", quotedFieldForPrefix];
 	}
 
 	NSUInteger numArgs = numberOfArguments;

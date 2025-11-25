@@ -150,18 +150,18 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
     NSString *thatTable  = [refTablePopUpButton titleOfSelectedItem];
     NSString *thatColumn = [refColumnPopUpButton titleOfSelectedItem];
 
-	NSString *query = [NSString stringWithFormat:@"ALTER TABLE %@ ADD ",[thisTable backtickQuotedString]];
+	NSString *query = [NSString stringWithFormat:@"ALTER TABLE %@ ADD ",[connection quoteIdentifier:thisTable]];
 	
 	// Set constraint name?
 	if ([[constraintName stringValue] length] > 0) {
-		query = [query stringByAppendingString:[NSString stringWithFormat:@"CONSTRAINT %@ ", [[constraintName stringValue] backtickQuotedString]]];
+		query = [query stringByAppendingString:[NSString stringWithFormat:@"CONSTRAINT %@ ", [connection quoteIdentifier:[constraintName stringValue]]]];
 	}
 	
 	query = [query stringByAppendingString:[NSString stringWithFormat:@"FOREIGN KEY (%@) REFERENCES %@.%@ (%@)",
-                                            [thisColumn backtickQuotedString],
-                                            [thatDatabase backtickQuotedString],
-                                            [thatTable backtickQuotedString],
-                                            [thatColumn backtickQuotedString]]];
+                                            [connection quoteIdentifier:thisColumn],
+                                            [connection quoteIdentifier:thatDatabase],
+                                            [connection quoteIdentifier:thatTable],
+                                            [connection quoteIdentifier:thatColumn]]];
 
 	NSArray *onActions = @[@"RESTRICT", @"CASCADE", @"SET NULL", @"NO ACTION"];
 	
@@ -305,7 +305,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
 			[selectedSet enumerateIndexesWithOptions:NSEnumerationReverse usingBlock:^(NSUInteger row, BOOL * _Nonnull stop) {
 				NSString *relationName = [[self->relationData objectAtIndex:row] objectForKey:SPRelationNameKey];
-				NSString *query = [NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [thisTable backtickQuotedString], [relationName backtickQuotedString]];
+				NSString *query = [NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [self->connection quoteIdentifier:thisTable], [self->connection quoteIdentifier:relationName]];
 
 				[self->connection queryString:query];
 

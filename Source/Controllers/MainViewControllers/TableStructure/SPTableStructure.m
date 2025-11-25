@@ -331,8 +331,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 - (IBAction)showOptimizedFieldType:(id)sender
 {
 	id<SPDatabaseResult> theResult = [connection queryString:[NSString stringWithFormat:@"SELECT %@ FROM %@ PROCEDURE ANALYSE(0,8192)", 
-		[[[[self activeFieldsSource] objectAtIndex:[tableSourceView selectedRow]] objectForKey:@"name"] backtickQuotedString],
-		[selectedTable backtickQuotedString]]];
+		[connection quoteIdentifier:[[[self activeFieldsSource] objectAtIndex:[tableSourceView selectedRow]] objectForKey:@"name"]],
+		[connection quoteIdentifier:selectedTable]]];
 
 	// Check for errors
 	if ([connection queryErrored]) {
@@ -603,7 +603,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	// only int and float types can be AUTO_INCREMENT and right now BIGINT = 64 Bit (<= long long) is the largest type mysql supports
-	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ AUTO_INCREMENT = %llu", [selTable backtickQuotedString], [value unsignedLongLongValue]]];
+	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ AUTO_INCREMENT = %llu", [connection quoteIdentifier:selTable], [value unsignedLongLongValue]]];
 
 	if ([connection queryErrored]) {
 		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\ndatabase said: %@", @"error resetting auto_increment informative message"),selTable, [connection lastErrorMessage]] callback:nil];
@@ -716,13 +716,13 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 	}
 
-	NSMutableString *queryString = [NSMutableString stringWithFormat:@"ALTER TABLE %@",[selectedTable backtickQuotedString]];
+	NSMutableString *queryString = [NSMutableString stringWithFormat:@"ALTER TABLE %@",[connection quoteIdentifier:selectedTable]];
 	[queryString appendString:@" "];
 	if (isEditingNewRow) {
 		[queryString appendString:@"ADD"];
 	}
 	else {
-		[queryString appendFormat:@"CHANGE %@",[[oldRow objectForKey:@"name"] backtickQuotedString]];
+		[queryString appendFormat:@"CHANGE %@",[connection quoteIdentifier:[oldRow objectForKey:@"name"]]];
 	}
 	[queryString appendString:@" "];
 	[queryString appendString:[self _buildPartialColumnDefinitionString:theRow]];
@@ -735,21 +735,21 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 			// Add AFTER ... only if the user added a new field
 			if (isEditingNewRow) {
-				[queryString appendFormat:@"\n AFTER %@", [[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
+				[queryString appendFormat:@"\n AFTER %@", [connection quoteIdentifier:[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"]]];
 			}
 		}
 		else {
 			// Add AFTER ... only if the user added a new field
 			if (isEditingNewRow) {
-				[queryString appendFormat:@"\n AFTER %@", [[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
+				[queryString appendFormat:@"\n AFTER %@", [connection quoteIdentifier:[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"]]];
 			}
 
-			[queryString appendFormat:@"\n, ADD %@ (%@)", autoIncrementIndex, [[theRow objectForKey:@"name"] backtickQuotedString]];
+			[queryString appendFormat:@"\n, ADD %@ (%@)", autoIncrementIndex, [connection quoteIdentifier:[theRow objectForKey:@"name"]]];
 		}
 	}
 	// Add AFTER ... only if the user added a new field
 	else if (isEditingNewRow) {
-		[queryString appendFormat:@"\n AFTER %@", [[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
+		[queryString appendFormat:@"\n AFTER %@", [connection quoteIdentifier:[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"]]];
 	}
 
 	isCurrentExtraAutoIncrement = NO;
@@ -844,7 +844,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
     if ([theRow objectForKey:@"generatedalways"])
         theRowGeneratedAlways = [[[theRow objectForKey:@"generatedalways"] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] uppercaseString];
 
-	queryString = [NSMutableString stringWithString:[[theRow objectForKey:@"name"] backtickQuotedString]];
+	queryString = [NSMutableString stringWithString:[connection quoteIdentifier:[theRow objectForKey:@"name"]]];
 
 	[queryString appendString:@" "];
 	[queryString appendString:theRowType];
@@ -1348,7 +1348,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 					}
 				}
 
-				[self->connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [self->selectedTable backtickQuotedString], [relationName backtickQuotedString]]];
+				[self->connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [self->connection quoteIdentifier:self->selectedTable], [self->connection quoteIdentifier:relationName]]];
 
 				// Check for errors, but only if the query wasn't cancelled
 				if ([self->connection queryErrored] && ![self->connection lastQueryWasCancelled]) {
@@ -1361,7 +1361,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 			// Remove field
 			[self->connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP %@",
-																	[self->selectedTable backtickQuotedString], [[[[self activeFieldsSource] safeObjectAtIndex:[self->tableSourceView selectedRow]] safeObjectForKey:@"name"] backtickQuotedString]]];
+																	[self->connection quoteIdentifier:self->selectedTable], [self->connection quoteIdentifier:[[[self activeFieldsSource] safeObjectAtIndex:[self->tableSourceView selectedRow]] safeObjectForKey:@"name"]]]];
 
 			// Check for errors, but only if the query wasn't cancelled
 			if ([self->connection queryErrored] && ![self->connection lastQueryWasCancelled]) {
@@ -2036,7 +2036,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	// Begin construction of the reordering query
 	NSMutableString *queryString = [NSMutableString stringWithFormat:@"ALTER TABLE %@ MODIFY COLUMN %@",
-									[selectedTable backtickQuotedString],
+									[connection quoteIdentifier:selectedTable],
 									[self _buildPartialColumnDefinitionString:originalRow]];
 
 	[queryString appendString:@" "];
@@ -2045,7 +2045,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		[queryString appendString:@"FIRST"];
 	}
 	else {
-		[queryString appendFormat:@"AFTER %@", [[[[self activeFieldsSource] objectAtIndex:destinationRowIndex - 1] objectForKey:@"name"] backtickQuotedString]];
+		[queryString appendFormat:@"AFTER %@", [connection quoteIdentifier:[[[self activeFieldsSource] objectAtIndex:destinationRowIndex - 1] objectForKey:@"name"]]];
 	}
 
 	// Run the query; report any errors, or reload the table on success

@@ -50,6 +50,9 @@
 
 - (instancetype)initWithFilterClause:(NSString *)filter numberOfArguments:(NSUInteger)numArgs connection:(id<SPDatabaseConnection>)connection;
 
+// Convenience initializer for tests (uses backtickQuotedString fallback)
+- (instancetype)initWithFilterClause:(NSString *)filter numberOfArguments:(NSUInteger)numArgs;
+
 @property(readonly) NSString *clause;
 @property(readonly) NSUInteger numberOfArguments;
 

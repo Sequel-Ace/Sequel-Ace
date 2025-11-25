@@ -35,6 +35,7 @@
 #import "SPDatabaseData.h"
 #import "SPDatabaseDocument.h"
 #import "SPTablesList.h"
+#import "SPDatabaseConnection.h"
 #import "SPTableStructure.h"
 #import "SPServerSupport.h"
 #import "sequel-ace-Swift.h"
@@ -149,7 +150,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	if ([currentEncoding isEqualToString:newEncoding]) return;
 
 	// Alter table's character set encoding
-	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ CHARACTER SET = %@", [selectedTable backtickQuotedString], newEncoding]];
+	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ CHARACTER SET = %@", [connection quoteIdentifier:selectedTable], newEncoding]];
 
 	if (![connection queryErrored]) {
 		// Reload the table's data
@@ -174,7 +175,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	if ([currentCollation isEqualToString:newCollation]) return;
 
 	// Alter table's character set collation
-	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ COLLATE = %@", [selectedTable backtickQuotedString], newCollation]];
+	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ COLLATE = %@", [connection quoteIdentifier:selectedTable], newCollation]];
 
 	if (![connection queryErrored]) {
 		// Reload the table's data
@@ -557,7 +558,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		if (([currentComment isEqualToString:newComment] == NO && newComment.length > 0) ||(newComment.length == 0 && currentComment.length > 0) ) {
 																							
 			// Alter table's comment
-			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ COMMENT = %@", [selectedTable backtickQuotedString], [connection escapeAndQuoteString:newComment]]];
+			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ COMMENT = %@", [connection quoteIdentifier:selectedTable], [connection escapeAndQuoteString:newComment]]];
 
 			if (![connection queryErrored]) {
 				// Reload the table's data
@@ -641,7 +642,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 - (void)_changeCurrentTableTypeFrom:(NSString *)currentType to:(NSString *)newType
 {
 	// Alter table's storage type
-	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ ENGINE = %@", [selectedTable backtickQuotedString], newType]];
+	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ ENGINE = %@", [connection quoteIdentifier:selectedTable], newType]];
 	
 	if ([connection queryErrored]) {
 

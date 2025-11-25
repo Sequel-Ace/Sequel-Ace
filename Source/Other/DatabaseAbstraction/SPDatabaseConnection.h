@@ -282,6 +282,13 @@ typedef NS_ENUM(NSUInteger, SPDatabaseConnectionLostDecision) {
 - (NSArray<NSString *> *)tablesOfType:(NSString *)tableType;
 
 /**
+ * List all tables from a specific database
+ * @param database The database name
+ * @return Array of table names
+ */
+- (NSArray<NSString *> *)tablesFromDatabase:(NSString *)database;
+
+/**
  * Get detailed table information (names, types, and optionally comments)
  * @param includeComments YES to include table comments, NO otherwise
  * @return Array of dictionaries with keys: "Name", "Table_type", "Comment" (if includeComments is YES)

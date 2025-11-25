@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPViewCopy.h"
+#import "SPDatabaseConnection.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -44,13 +45,13 @@
 {
 	NSMutableString *createStatement = [[NSMutableString alloc] initWithString:[self _createViewStatementFor:view inDatabase:sourceDatabase]];
 	
-	NSString *search = [NSString stringWithFormat:@"VIEW %@", [view backtickQuotedString]];
+	NSString *search = [NSString stringWithFormat:@"VIEW %@", [connection quoteIdentifier:view]];
 
 	NSRange range = [createStatement rangeOfString:search];
 	
 	if (range.location != NSNotFound) {
 		
-		NSUInteger replaced = [createStatement replaceOccurrencesOfString:search withString:[NSString stringWithFormat:@"VIEW %@.%@", [targetDatabase backtickQuotedString], [view backtickQuotedString]] options:0 range:range];
+		NSUInteger replaced = [createStatement replaceOccurrencesOfString:search withString:[NSString stringWithFormat:@"VIEW %@.%@", [connection quoteIdentifier:targetDatabase], [connection quoteIdentifier:view]] options:0 range:range];
 		
 		if (replaced != 1) {
 
@@ -58,8 +59,8 @@
 		}
 	
 		// Replace all occurrences of the old database name
-		[createStatement replaceOccurrencesOfString:[sourceDatabase backtickQuotedString]
-										 withString:[targetDatabase backtickQuotedString]
+		[createStatement replaceOccurrencesOfString:[connection quoteIdentifier:sourceDatabase]
+										 withString:[connection quoteIdentifier:targetDatabase]
 											options:0
 											  range:NSMakeRange(0, [createStatement length])];
 		
@@ -76,11 +77,22 @@
 
 - (NSString *)_createViewStatementFor:(NSString *)view inDatabase:(NSString *)sourceDatabase 
 {
-	NSString *createStatement = [NSString stringWithFormat:@"SHOW CREATE VIEW %@.%@", [sourceDatabase backtickQuotedString], [view backtickQuotedString]];
-	
-	SPMySQLResult *theResult = [connection queryString:createStatement];
-	
-	return [theResult numberOfRows] > 0 ? [[theResult getRowAsArray] objectAtIndex:1] : @"";
+    // Use database-agnostic method to get CREATE VIEW statement
+    // Note: This requires switching to the source database first
+    NSString *currentDatabase = [connection database];
+    
+    // Switch to source database
+    [connection selectDatabase:sourceDatabase];
+    
+    // Get the CREATE VIEW statement using database-agnostic method
+    NSString *result = [connection getCreateStatementForView:view];
+    
+    // Switch back to original database
+    if (currentDatabase) {
+        [connection selectDatabase:currentDatabase];
+    }
+    
+    return result ? result : @"";
 }
 
 @end

@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPTableCopy.h"
+#import "SPDatabaseConnection.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -49,7 +50,7 @@
 		
 		// Add the target DB name and the separator dot after "CREATE TABLE ".
 		[createTableStatement insertString:@"." atIndex:13];
-		[createTableStatement insertString:[targetDatabase backtickQuotedString] atIndex:13];
+		[createTableStatement insertString:[connection quoteIdentifier:targetDatabase] atIndex:13];
 
 		[connection queryString:createTableStatement];		
 		
@@ -68,10 +69,10 @@
 	if (structureCopySuccess && copyWithContent) {
 		
 		NSString *copyDataStatement = [NSString stringWithFormat:@"INSERT INTO %@.%@ SELECT * FROM %@.%@", 
-									   [targetDatabase backtickQuotedString],
-									   [tableName backtickQuotedString],
-									   [sourceDatabase backtickQuotedString],
-									   [tableName backtickQuotedString]
+									   [connection quoteIdentifier:targetDatabase],
+									   [connection quoteIdentifier:tableName],
+									   [connection quoteIdentifier:sourceDatabase],
+									   [connection quoteIdentifier:tableName]
 									   ];
 		
 		[connection queryString:copyDataStatement];		
@@ -127,10 +128,10 @@
 - (BOOL)moveTable:(NSString *)tableName from:(NSString *)sourceDatabase to:(NSString *)targetDatabase
 {	
 	NSString *moveStatement = [NSString stringWithFormat:@"RENAME TABLE %@.%@ TO %@.%@", 
-							   [sourceDatabase backtickQuotedString],
-							   [tableName backtickQuotedString],
-							   [targetDatabase backtickQuotedString],
-							   [tableName backtickQuotedString]];
+							   [connection quoteIdentifier:sourceDatabase],
+							   [connection quoteIdentifier:tableName],
+							   [connection quoteIdentifier:targetDatabase],
+							   [connection quoteIdentifier:tableName]];
 
     SPLog(@"moveTable from : %@, to: %@", sourceDatabase, targetDatabase);
     SPLog(@"moveTable moveStatement: %@", moveStatement);
@@ -145,21 +146,32 @@
 
 - (NSString *)_createTableStatementFor:(NSString *)tableName inDatabase:(NSString *)sourceDatabase
 {
-
-    if([tableName respondsToSelector:@selector(backtickQuotedString)] == NO || [sourceDatabase respondsToSelector:@selector(backtickQuotedString)] == NO){
-        SPLog(@"_createTableStatementFor: tableName or sourceDatabase does not respond to selector: backtickQuotedString");
-        return  nil;
+    if (!tableName || !sourceDatabase) {
+        SPLog(@"_createTableStatementFor: tableName or sourceDatabase is nil");
+        return nil;
     }
 
-	NSString *showCreateTableStatment = [NSString stringWithFormat:@"SHOW CREATE TABLE %@.%@", [sourceDatabase backtickQuotedString], [tableName backtickQuotedString]];
-	
-	SPMySQLResult *result = [connection queryString:showCreateTableStatment];
-	
-	if ([result numberOfRows] > 0) return [[result getRowAsArray] objectAtIndex:1];
-	
-	SPLog(@"query <%@> failed to return the expected result.\n  Error state: %@ (%lu)", showCreateTableStatment, [connection lastErrorMessage], [connection lastErrorID]);
-
-	return nil;
+    // Use database-agnostic method to get CREATE TABLE statement
+    // Note: This requires switching to the source database first
+    NSString *currentDatabase = [connection database];
+    
+    // Switch to source database
+    [connection selectDatabase:sourceDatabase];
+    
+    // Get the CREATE TABLE statement using database-agnostic method
+    NSString *createStatement = [connection getCreateStatementForTable:tableName];
+    
+    // Switch back to original database
+    if (currentDatabase) {
+        [connection selectDatabase:currentDatabase];
+    }
+    
+    if (!createStatement) {
+        SPLog(@"Failed to get CREATE TABLE statement for %@.%@.\n  Error state: %@ (%lu)", 
+              sourceDatabase, tableName, [connection lastErrorMessage], [connection lastErrorID]);
+    }
+    
+    return createStatement;
 }
 
 @end

@@ -5,7 +5,7 @@ edition = "2021"
 
 [lib]
 name = "sppostgresql"
-crate-type = ["staticlib", "cdylib"]
+crate-type = ["staticlib"]
 
 [dependencies]
 postgres = { version = "0.19", features = ["with-chrono-0_4", "with-serde_json-1", "with-uuid-1"] }

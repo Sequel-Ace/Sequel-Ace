@@ -2767,5 +2767,279 @@
     NSLog(@"✅ Test 45 Passed: Complex Default Expressions");
 }
 
+#pragma mark - Test 46: ENUM Type Support
+
+- (void)test_46_EnumTypeSupport {
+    NSLog(@"\n🧪 Test 46: ENUM Type Support");
+    
+    id<SPDatabaseConnection> connection = [self createAndConnectConnection];
+    XCTAssertNotNil(connection, @"Should connect to database");
+    
+    NSString *enumTypeName = [NSString stringWithFormat:@"test_status_enum_%u", arc4random()];
+    NSString *testTableName = [NSString stringWithFormat:@"test_enum_table_%u", arc4random()];
+    
+    // Create an ENUM type
+    NSLog(@"   Creating ENUM type: %@", enumTypeName);
+    NSString *createEnumSQL = [NSString stringWithFormat:
+        @"CREATE TYPE %@ AS ENUM ('pending', 'active', 'completed', 'cancelled')",
+        [connection quoteIdentifier:enumTypeName]];
+    [connection queryString:createEnumSQL];
+    XCTAssertFalse([connection queryErrored], @"Should create ENUM type without error: %@", [connection lastErrorMessage]);
+    NSLog(@"   ✓ ENUM type created");
+    
+    // Create a table using the ENUM type
+    NSLog(@"   Creating table with ENUM column...");
+    NSString *createTableSQL = [NSString stringWithFormat:
+        @"CREATE TABLE %@ ("
+        @"  id SERIAL PRIMARY KEY,"
+        @"  name VARCHAR(100) NOT NULL,"
+        @"  status %@ NOT NULL DEFAULT 'pending',"
+        @"  priority %@ DEFAULT 'active'"
+        @")",
+        [connection quoteIdentifier:testTableName],
+        [connection quoteIdentifier:enumTypeName],
+        [connection quoteIdentifier:enumTypeName]];
+    [connection queryString:createTableSQL];
+    XCTAssertFalse([connection queryErrored], @"Should create table with ENUM columns: %@", [connection lastErrorMessage]);
+    NSLog(@"   ✓ Table with ENUM columns created");
+    
+    // Insert rows with different ENUM values
+    NSLog(@"   Inserting rows with ENUM values...");
+    
+    NSString *insert1 = [NSString stringWithFormat:
+        @"INSERT INTO %@ (name, status, priority) VALUES ('Task 1', 'pending', 'active')",
+        [connection quoteIdentifier:testTableName]];
+    [connection queryString:insert1];
+    XCTAssertFalse([connection queryErrored], @"Should insert row 1: %@", [connection lastErrorMessage]);
+    
+    NSString *insert2 = [NSString stringWithFormat:
+        @"INSERT INTO %@ (name, status, priority) VALUES ('Task 2', 'active', 'completed')",
+        [connection quoteIdentifier:testTableName]];
+    [connection queryString:insert2];
+    XCTAssertFalse([connection queryErrored], @"Should insert row 2: %@", [connection lastErrorMessage]);
+    
+    NSString *insert3 = [NSString stringWithFormat:
+        @"INSERT INTO %@ (name, status, priority) VALUES ('Task 3', 'completed', 'cancelled')",
+        [connection quoteIdentifier:testTableName]];
+    [connection queryString:insert3];
+    XCTAssertFalse([connection queryErrored], @"Should insert row 3: %@", [connection lastErrorMessage]);
+    
+    // Insert with default ENUM value
+    NSString *insert4 = [NSString stringWithFormat:
+        @"INSERT INTO %@ (name) VALUES ('Task 4')",
+        [connection quoteIdentifier:testTableName]];
+    [connection queryString:insert4];
+    XCTAssertFalse([connection queryErrored], @"Should insert row 4 with defaults: %@", [connection lastErrorMessage]);
+    
+    NSLog(@"   ✓ Rows with ENUM values inserted");
+    
+    // Query and verify ENUM values are retrieved correctly
+    NSLog(@"   Querying ENUM values...");
+    NSString *selectSQL = [NSString stringWithFormat:
+        @"SELECT name, status, priority FROM %@ ORDER BY id",
+        [connection quoteIdentifier:testTableName]];
+    id<SPDatabaseResult> result = [connection queryString:selectSQL];
+    XCTAssertNotNil(result, @"Should get result");
+    XCTAssertFalse([connection queryErrored], @"Should query without error: %@", [connection lastErrorMessage]);
+    
+    NSUInteger rowCount = [result numberOfRows];
+    XCTAssertEqual(rowCount, 4UL, @"Should have 4 rows");
+    
+    [result setReturnDataAsStrings:YES];
+    
+    // Verify row 1
+    [result seekToRow:0];
+    NSArray *row1 = [result getRowAsArray];
+    XCTAssertNotNil(row1, @"Row 1 should exist");
+    XCTAssertEqualObjects(row1[0], @"Task 1", @"name should be 'Task 1'");
+    XCTAssertEqualObjects(row1[1], @"pending", @"status ENUM should be 'pending', got: %@", row1[1]);
+    XCTAssertEqualObjects(row1[2], @"active", @"priority ENUM should be 'active', got: %@", row1[2]);
+    NSLog(@"   ✓ Row 1 ENUM values correct: status=%@, priority=%@", row1[1], row1[2]);
+    
+    // Verify row 2
+    [result seekToRow:1];
+    NSArray *row2 = [result getRowAsArray];
+    XCTAssertNotNil(row2, @"Row 2 should exist");
+    XCTAssertEqualObjects(row2[1], @"active", @"status ENUM should be 'active', got: %@", row2[1]);
+    XCTAssertEqualObjects(row2[2], @"completed", @"priority ENUM should be 'completed', got: %@", row2[2]);
+    NSLog(@"   ✓ Row 2 ENUM values correct: status=%@, priority=%@", row2[1], row2[2]);
+    
+    // Verify row 3
+    [result seekToRow:2];
+    NSArray *row3 = [result getRowAsArray];
+    XCTAssertNotNil(row3, @"Row 3 should exist");
+    XCTAssertEqualObjects(row3[1], @"completed", @"status ENUM should be 'completed', got: %@", row3[1]);
+    XCTAssertEqualObjects(row3[2], @"cancelled", @"priority ENUM should be 'cancelled', got: %@", row3[2]);
+    NSLog(@"   ✓ Row 3 ENUM values correct: status=%@, priority=%@", row3[1], row3[2]);
+    
+    // Verify row 4 (with defaults)
+    [result seekToRow:3];
+    NSArray *row4 = [result getRowAsArray];
+    XCTAssertNotNil(row4, @"Row 4 should exist");
+    XCTAssertEqualObjects(row4[1], @"pending", @"status ENUM default should be 'pending', got: %@", row4[1]);
+    // priority has no default, so it should be NULL
+    NSLog(@"   ✓ Row 4 ENUM values correct: status=%@ (default), priority=%@", row4[1], row4[2]);
+    
+    // Test UPDATE with ENUM values
+    NSLog(@"   Testing UPDATE with ENUM values...");
+    NSString *updateSQL = [NSString stringWithFormat:
+        @"UPDATE %@ SET status = 'cancelled' WHERE name = 'Task 1'",
+        [connection quoteIdentifier:testTableName]];
+    [connection queryString:updateSQL];
+    XCTAssertFalse([connection queryErrored], @"Should update ENUM value: %@", [connection lastErrorMessage]);
+    
+    // Verify the update
+    NSString *verifySQL = [NSString stringWithFormat:
+        @"SELECT status FROM %@ WHERE name = 'Task 1'",
+        [connection quoteIdentifier:testTableName]];
+    result = [connection queryString:verifySQL];
+    XCTAssertNotNil(result, @"Should get result");
+    [result setReturnDataAsStrings:YES];
+    [result seekToRow:0];
+    NSArray *updatedRow = [result getRowAsArray];
+    XCTAssertEqualObjects(updatedRow[0], @"cancelled", @"Updated status should be 'cancelled', got: %@", updatedRow[0]);
+    NSLog(@"   ✓ UPDATE with ENUM value works correctly");
+    
+    // Test filtering by ENUM value
+    NSLog(@"   Testing WHERE clause with ENUM values...");
+    NSString *filterSQL = [NSString stringWithFormat:
+        @"SELECT name FROM %@ WHERE status = 'active' ORDER BY name",
+        [connection quoteIdentifier:testTableName]];
+    result = [connection queryString:filterSQL];
+    XCTAssertNotNil(result, @"Should get result");
+    XCTAssertFalse([connection queryErrored], @"Should filter by ENUM: %@", [connection lastErrorMessage]);
+    XCTAssertEqual([result numberOfRows], 1UL, @"Should find 1 row with status='active'");
+    NSLog(@"   ✓ WHERE clause with ENUM value works correctly");
+    
+    // Cleanup
+    NSLog(@"   Cleaning up...");
+    [connection queryString:[NSString stringWithFormat:@"DROP TABLE %@", [connection quoteIdentifier:testTableName]]];
+    [connection queryString:[NSString stringWithFormat:@"DROP TYPE %@", [connection quoteIdentifier:enumTypeName]]];
+    [connection disconnect];
+    
+    NSLog(@"✅ Test 46 Passed: ENUM Type Support");
+}
+
+#pragma mark - Test 47: ENUM Type with Multiple Values and Queries
+
+- (void)test_47_EnumTypeMultipleValuesAndQueries {
+    NSLog(@"\n🧪 Test 47: ENUM Type with Multiple Values and Queries");
+    
+    id<SPDatabaseConnection> connection = [self createAndConnectConnection];
+    XCTAssertNotNil(connection, @"Should connect to database");
+    
+    NSString *enumTypeName = [NSString stringWithFormat:@"test_priority_enum_%u", arc4random()];
+    NSString *testTableName = [NSString stringWithFormat:@"test_enum_multi_%u", arc4random()];
+    
+    // Create an ENUM type
+    NSLog(@"   Creating ENUM type...");
+    NSString *createEnumSQL = [NSString stringWithFormat:
+        @"CREATE TYPE %@ AS ENUM ('low', 'medium', 'high', 'critical')",
+        [connection quoteIdentifier:enumTypeName]];
+    [connection queryString:createEnumSQL];
+    XCTAssertFalse([connection queryErrored], @"Should create ENUM type: %@", [connection lastErrorMessage]);
+    
+    // Create a table with ENUM
+    NSString *createTableSQL = [NSString stringWithFormat:
+        @"CREATE TABLE %@ ("
+        @"  id SERIAL PRIMARY KEY,"
+        @"  task_name VARCHAR(100),"
+        @"  priority %@"
+        @")",
+        [connection quoteIdentifier:testTableName],
+        [connection quoteIdentifier:enumTypeName]];
+    [connection queryString:createTableSQL];
+    XCTAssertFalse([connection queryErrored], @"Should create table: %@", [connection lastErrorMessage]);
+    
+    // Insert multiple rows
+    NSLog(@"   Inserting test data...");
+    NSArray *priorities = @[@"low", @"medium", @"high", @"critical"];
+    for (int i = 0; i < 20; i++) {
+        NSString *priority = priorities[i % 4];
+        NSString *insertSQL = [NSString stringWithFormat:
+            @"INSERT INTO %@ (task_name, priority) VALUES ('Task %d', '%@')",
+            [connection quoteIdentifier:testTableName], i, priority];
+        [connection queryString:insertSQL];
+        XCTAssertFalse([connection queryErrored], @"Should insert row %d: %@", i, [connection lastErrorMessage]);
+    }
+    NSLog(@"   ✓ Inserted 20 rows");
+    
+    // Query all rows and verify ENUM values
+    NSLog(@"   Testing query with ENUM values...");
+    NSString *selectSQL = [NSString stringWithFormat:
+        @"SELECT task_name, priority FROM %@ ORDER BY id",
+        [connection quoteIdentifier:testTableName]];
+    id<SPDatabaseResult> result = [connection queryString:selectSQL];
+    XCTAssertNotNil(result, @"Should get result");
+    XCTAssertFalse([connection queryErrored], @"Should query without error: %@", [connection lastErrorMessage]);
+    
+    [result setReturnDataAsStrings:YES];
+    NSUInteger rowCount = [result numberOfRows];
+    XCTAssertEqual(rowCount, 20UL, @"Should have 20 rows");
+    NSLog(@"   ✓ Query returned %lu rows", (unsigned long)rowCount);
+    
+    // Verify all ENUM values
+    for (NSUInteger rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+        [result seekToRow:rowIndex];
+        NSArray *row = [result getRowAsArray];
+        NSString *taskName = row[0];
+        NSString *priority = row[1];
+        
+        XCTAssertNotNil(taskName, @"task_name should not be nil for row %lu", (unsigned long)rowIndex);
+        XCTAssertNotNil(priority, @"priority ENUM should not be nil for row %lu, got: %@", (unsigned long)rowIndex, priority);
+        
+        NSString *expectedPriority = priorities[rowIndex % 4];
+        XCTAssertEqualObjects(priority, expectedPriority, 
+            @"Row %lu: priority should be '%@', got '%@'", (unsigned long)rowIndex, expectedPriority, priority);
+    }
+    NSLog(@"   ✓ All 20 rows have correct ENUM values");
+    
+    // Test COUNT aggregation with ENUM filter
+    NSLog(@"   Testing COUNT with ENUM filter...");
+    NSString *countSQL = [NSString stringWithFormat:
+        @"SELECT COUNT(*) FROM %@ WHERE priority = 'high'",
+        [connection quoteIdentifier:testTableName]];
+    result = [connection queryString:countSQL];
+    [result setReturnDataAsStrings:YES];
+    [result seekToRow:0];
+    NSArray *countRow = [result getRowAsArray];
+    XCTAssertEqualObjects(countRow[0], @"5", @"Should have 5 'high' priority rows");
+    NSLog(@"   ✓ COUNT with ENUM filter works correctly");
+    
+    // Test GROUP BY with ENUM
+    NSLog(@"   Testing GROUP BY with ENUM...");
+    NSString *groupSQL = [NSString stringWithFormat:
+        @"SELECT priority, COUNT(*) as cnt FROM %@ GROUP BY priority ORDER BY priority",
+        [connection quoteIdentifier:testTableName]];
+    result = [connection queryString:groupSQL];
+    XCTAssertFalse([connection queryErrored], @"Should execute GROUP BY: %@", [connection lastErrorMessage]);
+    [result setReturnDataAsStrings:YES];
+    XCTAssertEqual([result numberOfRows], 4UL, @"Should have 4 groups");
+    
+    // Verify each group (ENUMs are sorted by their definition order, not alphabetically)
+    // The enum was defined as: 'low', 'medium', 'high', 'critical'
+    NSArray *expectedGroups = @[
+        @[@"low", @"5"],
+        @[@"medium", @"5"],
+        @[@"high", @"5"],
+        @[@"critical", @"5"]
+    ];
+    for (NSUInteger i = 0; i < 4; i++) {
+        [result seekToRow:i];
+        NSArray *row = [result getRowAsArray];
+        NSArray *expected = expectedGroups[i];
+        XCTAssertEqualObjects(row[0], expected[0], @"Group %lu: priority should be '%@', got '%@'", (unsigned long)i, expected[0], row[0]);
+        XCTAssertEqualObjects(row[1], expected[1], @"Group %lu: count should be '%@', got '%@'", (unsigned long)i, expected[1], row[1]);
+    }
+    NSLog(@"   ✓ GROUP BY with ENUM works correctly");
+    
+    // Cleanup
+    [connection queryString:[NSString stringWithFormat:@"DROP TABLE %@", [connection quoteIdentifier:testTableName]]];
+    [connection queryString:[NSString stringWithFormat:@"DROP TYPE %@", [connection quoteIdentifier:enumTypeName]]];
+    [connection disconnect];
+    
+    NSLog(@"✅ Test 47 Passed: ENUM Type with Multiple Values and Queries");
+}
+
 @end
 

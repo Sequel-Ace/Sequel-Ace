@@ -30,6 +30,7 @@
 
 #import "SPDatabaseAction.h"
 #import "SPCreateDatabaseInfo.h"
+#import "SPDatabaseConnection.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -56,14 +57,14 @@
 		return NO;
 	}
 	
-	NSMutableString *query = [NSMutableString stringWithFormat:@"CREATE DATABASE %@", [database backtickQuotedString]];
+	NSMutableString *query = [NSMutableString stringWithFormat:@"CREATE DATABASE %@", [connection quoteIdentifier:database]];
 	
 	if ([encoding length]) { // [nil length] == 0
-		[query appendFormat:@" DEFAULT CHARACTER SET = %@",[encoding backtickQuotedString]];
+		[query appendFormat:@" DEFAULT CHARACTER SET = %@",[connection quoteIdentifier:encoding]];
 	}
 
 	if ([collation length]) {
-		[query appendFormat:@" DEFAULT COLLATE = %@",[collation backtickQuotedString]];
+		[query appendFormat:@" DEFAULT COLLATE = %@",[connection quoteIdentifier:collation]];
 	}
 	
 	[connection queryString:query];

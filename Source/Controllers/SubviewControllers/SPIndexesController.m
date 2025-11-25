@@ -37,6 +37,7 @@
 #import "SPTableStructure.h"
 #import "SPThreadAdditions.h"
 #import "SPFunctions.h"
+#import "SPDatabaseConnection.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -750,7 +751,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 				indexName = @"";
 			}
 			else {
-				indexName = ([indexName isEqualToString:@""]) ? @"" : [indexName backtickQuotedString];
+				indexName = ([indexName isEqualToString:@""]) ? @"" : [connection quoteIdentifier:indexName];
 			}
 
 			// For each column add it to the temp array and check if size is required
@@ -768,10 +769,10 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 				if ([requiresLength containsObject:[columnType uppercaseString]] && (![(NSString *)[column objectForKey:@"Size"] length]) && !isFullTextType) continue;
 
 				if ([column objectForKey:@"Size"] && [supportsLength containsObject:columnType] && !isFullTextType) {
-					[tempIndexedColumns addObject:[NSString stringWithFormat:@"%@ (%@)", [columnName backtickQuotedString], [column objectForKey:@"Size"]]];
+					[tempIndexedColumns addObject:[NSString stringWithFormat:@"%@ (%@)", [connection quoteIdentifier:columnName], [column objectForKey:@"Size"]]];
 				}
 				else {
-					[tempIndexedColumns addObject:[columnName backtickQuotedString]];
+					[tempIndexedColumns addObject:[connection quoteIdentifier:columnName]];
 				}
 			}
 
@@ -780,7 +781,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 				if ((![indexType isEqualToString:@"INDEX"]) && (![indexType isEqualToString:@"PRIMARY KEY"])) indexType = [indexType stringByAppendingFormat:@" INDEX"];
 
 				// Build the query
-				NSMutableString *query = [NSMutableString stringWithFormat:@"ALTER TABLE %@ ADD %@", [table backtickQuotedString], indexType];
+				NSMutableString *query = [NSMutableString stringWithFormat:@"ALTER TABLE %@ ADD %@", [connection quoteIdentifier:table], indexType];
 
 				// If supplied specify the index's name
 				if ([indexName length]) {
@@ -843,7 +844,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 		// Remove the foreign key dependency before the index if required
 		if ([fkName length]) {
 
-			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [table backtickQuotedString], [fkName backtickQuotedString]]];
+			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [connection quoteIdentifier:table], [connection quoteIdentifier:fkName]]];
 
 			// Check for errors, but only if the query wasn't cancelled
 			if ([connection queryErrored] && ![connection lastQueryWasCancelled]) {
@@ -857,11 +858,11 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 		}
 
 		if ([index isEqualToString:@"PRIMARY"]) {
-			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP PRIMARY KEY", [table backtickQuotedString]]];
+			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP PRIMARY KEY", [connection quoteIdentifier:table]]];
 		}
 		else {
 			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP INDEX %@",
-			                                                   [table backtickQuotedString], [index backtickQuotedString]]];
+			                                                   [connection quoteIdentifier:table], [connection quoteIdentifier:index]]];
 		}
 
 		// Check for errors, but only if the query wasn't cancelled

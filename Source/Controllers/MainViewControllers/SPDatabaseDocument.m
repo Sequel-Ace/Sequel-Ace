@@ -823,7 +823,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 
 
-            id<SPDatabaseResult>tableContentsQuery = [databaseConnection streamingQueryString:[NSString stringWithFormat:@"select * from %@", [table backtickQuotedString]] useLowMemoryBlockingStreaming:NO];
+            id<SPDatabaseResult>tableContentsQuery = [databaseConnection streamingQueryString:[NSString stringWithFormat:@"select * from %@", [databaseConnection quoteIdentifier:table]] useLowMemoryBlockingStreaming:NO];
             //NSDate *lastProgressUpdate = [NSDate date];
             time_t lastProgressUpdate = time(NULL);
             NSInteger rowCount = 0;
@@ -1711,36 +1711,36 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         type = [[types objectAtIndex:counter] intValue];
         query = nil;
 
+        NSString *createStatement = nil;
+        NSString *itemName = [items objectAtIndex:counter];
+        
         if( type == SPTableTypeTable ) {
-            query = [NSString stringWithFormat:@"SHOW CREATE TABLE %@", [[items objectAtIndex:counter] backtickQuotedString]];
+            createStatement = [databaseConnection getCreateStatementForTable:itemName];
             typeString = @"TABLE";
         }
         else if( type == SPTableTypeView ) {
-            query = [NSString stringWithFormat:@"SHOW CREATE VIEW %@", [[items objectAtIndex:counter] backtickQuotedString]];
+            createStatement = [databaseConnection getCreateStatementForView:itemName];
             typeString = @"VIEW";
         }
         else if( type == SPTableTypeProc ) {
-            query = [NSString stringWithFormat:@"SHOW CREATE PROCEDURE %@", [[items objectAtIndex:counter] backtickQuotedString]];
+            createStatement = [databaseConnection getCreateStatementForProcedure:itemName];
             typeString = @"PROCEDURE";
             colOffs = 2;
         }
         else if( type == SPTableTypeFunc ) {
-            query = [NSString stringWithFormat:@"SHOW CREATE FUNCTION %@", [[items objectAtIndex:counter] backtickQuotedString]];
+            createStatement = [databaseConnection getCreateStatementForFunction:itemName];
             typeString = @"FUNCTION";
             colOffs = 2;
         }
 
-        if (query == nil) {
-            NSLog(@"Unknown type for selected item while getting the create syntax for '%@'", [items objectAtIndex:counter]);
+        if (typeString == nil) {
+            NSLog(@"Unknown type for selected item while getting the create syntax for '%@'", itemName);
             NSBeep();
             return;
         }
 
-        id<SPDatabaseResult>theResult = [databaseConnection queryString:query];
-        [theResult setReturnDataAsStrings:YES];
-
-        // Check for errors, only displaying if the connection hasn't been terminated
-        if ([databaseConnection queryErrored]) {
+        // Check for errors
+        if (!createStatement || [databaseConnection queryErrored]) {
             if ([databaseConnection isConnected]) {
                 [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error message title") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while creating table syntax.\n\n: %@", @"Error shown when unable to show create table syntax"), [databaseConnection lastErrorMessage]] callback:nil];
             }
@@ -1749,8 +1749,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
 
         NSString *tableSyntax;
-        if (type == SPTableTypeProc) tableSyntax = [NSString stringWithFormat:@"DELIMITER ;;\n%@;;\nDELIMITER ", [[theResult getRowAsArray] objectAtIndex:colOffs]];
-        else                         tableSyntax = [[theResult getRowAsArray] objectAtIndex:colOffs];
+        if (type == SPTableTypeProc) tableSyntax = [NSString stringWithFormat:@"DELIMITER ;;\n%@;;\nDELIMITER ", createStatement];
+        else                         tableSyntax = createStatement;
 
         // A NULL value indicates that the user does not have permission to view the syntax
         if ([tableSyntax isNSNull]) {
@@ -4675,20 +4675,25 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                     [databaseConnection setEncoding:[databaseConnection preferredUTF8Encoding]];
                 }
 
-                // Get create syntax
-                id<SPDatabaseResult>queryResult = [databaseConnection queryString:[NSString stringWithFormat:@"SHOW CREATE %@ %@",
-                                                                           itemTypeStr,
-                                                                           [item backtickQuotedString]]];
-                [queryResult setReturnDataAsStrings:YES];
+                // Get create syntax using database-agnostic method
+                NSString *syntaxString = nil;
+                if ([itemTypeStr isEqualToString:@"TABLE"]) {
+                    syntaxString = [databaseConnection getCreateStatementForTable:item];
+                } else if ([itemTypeStr isEqualToString:@"VIEW"]) {
+                    syntaxString = [databaseConnection getCreateStatementForView:item];
+                } else if ([itemTypeStr isEqualToString:@"PROCEDURE"]) {
+                    syntaxString = [databaseConnection getCreateStatementForProcedure:item];
+                } else if ([itemTypeStr isEqualToString:@"FUNCTION"]) {
+                    syntaxString = [databaseConnection getCreateStatementForFunction:item];
+                }
 
                 if (changeEncoding) [databaseConnection restoreStoredEncoding];
 
-                if ( ![queryResult numberOfRows] ) {
+                if (!syntaxString) {
                     //error while getting table structure
                     [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't get create syntax.\ndatabase said: %@", @"message of panel when table information cannot be retrieved"), [databaseConnection lastErrorMessage]] callback:nil];
                     status = @"1";
                 } else {
-                    NSString *syntaxString = [[queryResult getRowAsArray] objectAtIndex:queryCol];
 
                     // A NULL value indicates that the user does not have permission to view the syntax
                     if ([syntaxString isNSNull]) {
@@ -5300,12 +5305,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     NSString *newCharset   = [alterDatabaseCharsetHelper selectedCharset];
     NSString *newCollation = [alterDatabaseCharsetHelper selectedCollation];
 
-    NSString *alterStatement = [NSString stringWithFormat:@"ALTER DATABASE %@ DEFAULT CHARACTER SET %@", [[self database] backtickQuotedString],[newCharset backtickQuotedString]];
+    NSString *alterStatement = [NSString stringWithFormat:@"ALTER DATABASE %@ DEFAULT CHARACTER SET %@", [databaseConnection quoteIdentifier:[self database]],[databaseConnection quoteIdentifier:newCharset]];
 
     //technically there is an issue here: If a user had a non-default collation and now wants to switch to the default collation this cannot be specidifed (default == nil).
     //However if you just do an ALTER with CHARACTER SET == oldCharset MySQL will still reset the collation therefore doing exactly what we want.
     if(newCollation) {
-        alterStatement = [NSString stringWithFormat:@"%@ DEFAULT COLLATE %@",alterStatement,[newCollation backtickQuotedString]];
+        alterStatement = [NSString stringWithFormat:@"%@ DEFAULT COLLATE %@",alterStatement,[databaseConnection quoteIdentifier:newCollation]];
     }
 
     //run alter
@@ -5329,7 +5334,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (void)_removeDatabase
 {
     // Drop the database from the server
-    [databaseConnection queryString:[NSString stringWithFormat:@"DROP DATABASE %@", [[self database] backtickQuotedString]]];
+    [databaseConnection queryString:[NSString stringWithFormat:@"DROP DATABASE %@", [databaseConnection quoteIdentifier:[self database]]]];
 
     if ([databaseConnection queryErrored]) {
         // An error occurred

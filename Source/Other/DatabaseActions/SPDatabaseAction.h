@@ -32,17 +32,19 @@
 @class SPMySQLConnection;
 @class SPCreateDatabaseInfo;
 
+@protocol SPDatabaseConnection;
+
 @interface SPDatabaseAction : NSObject 
 {
 	NSWindow *messageWindow;
 	SPTablesList *tablesList;
-	SPMySQLConnection *connection;
+	id<SPDatabaseConnection> connection;
 }
 
 /**
- * @property connection References the SPMySQL.framework MySQL connection; it has to be set.
+ * @property connection References the database connection (MySQL or PostgreSQL); it has to be set.
  */
-@property (nonnull, readwrite, strong) SPMySQLConnection *connection;
+@property (nonnull, readwrite, strong) id<SPDatabaseConnection> connection;
 
 /**
  * @property tablesList
