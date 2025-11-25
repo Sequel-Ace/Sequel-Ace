@@ -33,6 +33,7 @@
 @class SPTableData;
 @class SPTableStructure;
 @class SPMySQLConnection;
+@protocol SPDatabaseConnection;
 @class SPTableView;
 
 @interface SPIndexesController : NSWindowController <NSTableViewDelegate, NSTableViewDataSource, NSComboBoxCellDataSource>
@@ -78,7 +79,7 @@
 	
 	NSUserDefaults *prefs;
 	
-	SPMySQLConnection *connection;
+	id<SPDatabaseConnection> connection;
 
 	BOOL showAdvancedView;
 	
@@ -95,7 +96,7 @@
 /**
  * @property connection The MySQL connection to use
  */
-@property (readwrite, strong) SPMySQLConnection *connection;
+@property (readwrite, strong) id<SPDatabaseConnection> connection;
 
 - (IBAction)addIndex:(id)sender;
 - (IBAction)removeIndex:(id)sender;

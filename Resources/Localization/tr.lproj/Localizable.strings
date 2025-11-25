@@ -62,8 +62,8 @@
 /* text showing multiple queries were cancelled */
 "%@; Cancelled in query %ld, after %@" = "%1$@; Cancelled in query %2$ld, after %3$@";
 
-/* Error display text, showing original MySQL error */
-"%@\n\nMySQL said: %@" = "%1$@\n\nMySQL: %2$@";
+/* Error display text, showing original database error */
+"%@\n\ndatabase said: %@" = "%1$@\n\nveritabanı: %2$@";
 
 /* favorite singular label (%d == 1) */
 "%lu favorite" = "%lu favori";
@@ -275,10 +275,10 @@
 "An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane." = "An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane.";
 
 /* error killing query informative message */
-"An error occurred while attempting to kill connection %lld.\n\nMySQL said: %@" = "An error occurred while attempting to kill connection %1$lld.\n\nMySQL said: %2$@";
+"An error occurred while attempting to kill connection %lld.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* error killing query informative message */
-"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@" = "An error occurred while attempting to kill the query associated with connection %1$lld.\n\nMySQL said: %2$@";
+"An error occurred while attempting to kill the query associated with connection %lld.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* Error shown when unable to show create table syntax */
 "An error occurred while creating table syntax.\n\n: %@" = "An error occurred while creating table syntax.\n\n: %@";
@@ -287,31 +287,31 @@
 "An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first." = "An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first.";
 
 /* rename table error informative message */
-"An error occurred while renaming '%@'.\n\nMySQL said: %@" = "An error occurred while renaming '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while renaming '%@'.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* rename error - don't know what type the renamed thing is */
 "An error occurred while renaming. '%@' is of an unknown type." = "An error occurred while renaming. '%@' is of an unknown type.";
 
 /* rename precedure/function error - can't delete old procedure */
-"An error occurred while renaming. I couldn't delete '%@'.\n\nMySQL said: %@" = "An error occurred while renaming. I couldn't delete '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while renaming. I couldn't delete '%@'.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* rename precedure/function error - can't recreate procedure */
-"An error occurred while renaming. I couldn't recreate '%@'.\n\nMySQL said: %@" = "An error occurred while renaming. I couldn't recreate '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while renaming. I couldn't recreate '%@'.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* rename precedure/function error - can't retrieve syntax */
-"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\nMySQL said: %@" = "An error occurred while renaming. I couldn't retrieve the syntax for '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* rename error - invalid create syntax */
 "An error occurred while renaming. The CREATE syntax of '%@' could not be parsed." = "An error occurred while renaming. The CREATE syntax of '%@' could not be parsed.";
 
 /* message of panel when retrieving view information failed */
-"An error occurred while retrieving status data.\n\nMySQL said: %@" = "An error occurred while retrieving status data.\n\nMySQL said: %@";
+"An error occurred while retrieving status data.\n\ndatabase said: %@" = "An error occurred while retrieving status data.\n\ndatabase said: %@";
 
 /* message of panel when create syntax cannot be retrieved */
-"An error occurred while retrieving the create syntax for '%@'.\nMySQL said: %@" = "An error occurred while retrieving the create syntax for '%1$@'.\nMySQL said: %2$@";
+"An error occurred while retrieving the create syntax for '%@'.\ndatabase said: %@" = "0database said: %2$@";
 
 /* add index error informative message */
-"An error occurred while trying to add the index.\n\nMySQL said: %@" = "An error occurred while trying to add the index.\n\nMySQL said: %@";
+"An error occurred while trying to add the index.\n\ndatabase said: %@" = "An error occurred while trying to add the index.\n\ndatabase said: %@";
 
 /* error adding password to keychain informative message */
 "An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.";
@@ -320,10 +320,10 @@
 "An error occurred while trying to copy the database '%@' to '%@'." = "An error occurred while trying to copy the database '%1$@' to '%2$@'.";
 
 /* error deleting index informative message */
-"An error occurred while trying to delete the index.\n\nMySQL said: %@" = "An error occurred while trying to delete the index.\n\nMySQL said: %@";
+"An error occurred while trying to delete the index.\n\ndatabase said: %@" = "An error occurred while trying to delete the index.\n\ndatabase said: %@";
 
 /* table status : row count query failed : error message */
-"An error occurred while trying to determine the number of rows for %@.\nMySQL said: %@ (%lu)" = "An error occurred while trying to determine the number of rows for “%1$@”.\nMySQL said: %2$@ (%3$lu)";
+"An error occurred while trying to determine the number of rows for %@.\ndatabase said: %@ (%lu)" = "0database said: %2$@ (%3$lu)";
 
 /* unable to rename database message informative message */
 "An error occurred while trying to rename the database '%@' to '%@'." = "An error occurred while trying to rename the database '%1$@' to '%2$@'.";
@@ -338,7 +338,7 @@
 "An error occurred" = "Bir hata oluştu";
 
 /* MySQL table info retrieval error message */
-"An error occurred retrieving table information.  MySQL said: %@" = "An error occurred retrieving table information.  MySQL said: %@";
+"An error occurred retrieving table information.  database said: %@" = "An error occurred retrieving table information.  database said: %@";
 
 /* SQL encoding read error */
 "An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed." = "An error occurred when reading the file, as it could not be read in the encoding you selected (%1$@).\n\nOnly %2$ld queries were executed.";
@@ -353,91 +353,91 @@
 "An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)" = "An error occurred when reading the file.\n\nOnly %1$ld rows were imported.\n\n(%2$@)";
 
 /* error adding field informative message */
-"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@" = "An error occurred when trying to add the field '%1$@' via\n\n%2$@\n\nMySQL said: %3$@";
+"An error occurred when trying to add the field '%@' via\n\n%@\n\ndatabase said: %@" = "0database said: %3$@";
 
 /* error changing field informative message */
-"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@" = "An error occurred when trying to change the field '%1$@' via\n\n%2$@\n\nMySQL said: %3$@";
+"An error occurred when trying to change the field '%@' via\n\n%@\n\ndatabase said: %@" = "0database said: %3$@";
 
 /* error changing table collation informative message */
-"An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@" = "An error occurred when trying to change the table collation to '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred when trying to change the table collation to '%@'.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* error changing table encoding informative message */
-"An error occurred when trying to change the table encoding to '%@'.\n\nMySQL said: %@" = "An error occurred when trying to change the table encoding to '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred when trying to change the table encoding to '%@'.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* error changing table type informative message */
-"An error occurred when trying to change the table type to '%@'.\n\nMySQL said: %@" = "An error occurred when trying to change the table type to '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred when trying to change the table type to '%@'.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* error changing table comment informative message */
-"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@" = "An error occurred when trying to change the table's comment to '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred when trying to change the table's comment to '%@'.\n\ndatabase said: %@" = "0database said: %2$@";
 
-/* an error occurred while analyzing the %@.\n\nMySQL said:%@ */
-"An error occurred while analyzing the %@.\n\nMySQL said:%@" = "An error occurred while analyzing the %1$@.\n\nMySQL said:%2$@";
+/* an error occurred while analyzing the %@.\n\ndatabase said:%@ */
+"An error occurred while analyzing the %@.\n\ndatabase said:%@" = "An error occurred while analyzing the %1$@.\n\ndatabase said:%2$@";
 
-/* an error occurred while fetching the optimized field type.\n\nMySQL said:%@ */
-"An error occurred while fetching the optimized field type.\n\nMySQL said:%@" = "An error occurred while fetching the optimized field type.\n\nMySQL said:%@";
+/* an error occurred while fetching the optimized field type.\n\ndatabase said:%@ */
+"An error occurred while fetching the optimized field type.\n\ndatabase said:%@" = "An error occurred while fetching the optimized field type.\n\ndatabase said:%@";
 
-/* an error occurred while trying to flush the %@.\n\nMySQL said:%@ */
-"An error occurred while flushing the %@.\n\nMySQL said:%@" = "An error occurred while flushing the %1$@.\n\nMySQL said:%2$@";
+/* an error occurred while trying to flush the %@.\n\ndatabase said:%@ */
+"An error occurred while flushing the %@.\n\ndatabase said:%@" = "An error occurred while flushing the %1$@.\n\ndatabase said:%2$@";
 
 /* sql import error message */
 "An error occurred while importing SQL" = "An error occurred while importing SQL";
 
-/* an error occurred while trying to optimze the %@.\n\nMySQL said:%@ */
-"An error occurred while optimzing the %@.\n\nMySQL said:%@" = "An error occurred while optimzing the %1$@.\n\nMySQL said:%2$@";
+/* an error occurred while trying to optimze the %@.\n\ndatabase said:%@ */
+"An error occurred while optimzing the %@.\n\ndatabase said:%@" = "An error occurred while optimzing the %1$@.\n\ndatabase said:%2$@";
 
-/* an error occurred while performing the checksum on the %@.\n\nMySQL said:%@ */
-"An error occurred while performing the checksum on %@.\n\nMySQL said:%@" = "An error occurred while performing the checksum on %1$@.\n\nMySQL said:%2$@";
+/* an error occurred while performing the checksum on the %@.\n\ndatabase said:%@ */
+"An error occurred while performing the checksum on %@.\n\ndatabase said:%@" = "An error occurred while performing the checksum on %1$@.\n\ndatabase said:%2$@";
 
-/* an error occurred while trying to repair the %@.\n\nMySQL said:%@ */
-"An error occurred while repairing the %@.\n\nMySQL said:%@" = "An error occurred while repairing the %1$@.\n\nMySQL said:%2$@";
+/* an error occurred while trying to repair the %@.\n\ndatabase said:%@ */
+"An error occurred while repairing the %@.\n\ndatabase said:%@" = "An error occurred while repairing the %1$@.\n\ndatabase said:%2$@";
 
 /* message of panel when retrieving information failed */
-"An error occurred while retrieving information.\nMySQL said: %@" = "An error occurred while retrieving information.\nMySQL said: %@";
+"An error occurred while retrieving information.\ndatabase said: %@" = "An error occurred while retrieving information.\ndatabase said: %@";
 
 /* error retrieving table information informative message */
-"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@" = "An error occurred while retrieving the information for table '%1$@'. Please try again.\n\nMySQL said: %2$@";
+"An error occurred while retrieving the information for table '%@'. Please try again.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* error retrieving table information informative message */
-"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nMySQL said: %@" = "An error occurred while retrieving the trigger information for table '%1$@'. Please try again.\n\nMySQL said: %2$@";
+"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* error adding new column informative message */
-"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@" = "An error occurred while trying to add the new column '%1$@' by\n\n%2$@.\n\nMySQL said: %3$@";
+"An error occurred while trying to add the new column '%@' by\n\n%@.\n\ndatabase said: %@" = "0database said: %3$@";
 
 /* error adding new table informative message */
-"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@" = "An error occurred while trying to add the new table '%1$@' by\n\n%2$@.\n\nMySQL said: %3$@";
+"An error occurred while trying to add the new table '%@' by\n\n%@.\n\ndatabase said: %@" = "0database said: %3$@";
 
 /* error adding new table informative message */
-"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@" = "An error occurred while trying to add the new table '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while trying to add the new table '%@'.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* error while trying to alter table message */
-"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@" = "An error occurred while trying to alter table '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while trying to alter table '%@'.\n\ndatabase said: %@" = "0database said: %2$@";
 
-/* an error occurred while trying to check the %@.\n\nMySQL said:%@ */
-"An error occurred while trying to check the %@.\n\nMySQL said:%@" = "An error occurred while trying to check the %1$@.\n\nMySQL said:%2$@";
+/* an error occurred while trying to check the %@.\n\ndatabase said:%@ */
+"An error occurred while trying to check the %@.\n\ndatabase said:%@" = "An error occurred while trying to check the %1$@.\n\ndatabase said:%2$@";
 
 /* error deleting relation informative message */
-"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@" = "An error occurred while trying to delete the relation '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while trying to delete the relation '%@'.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* unable to get list of users informative message */
 "An error occurred while trying to get the list of users. Please make sure you have the necessary privileges to perform user management, including access to the mysql.user table." = "An error occurred while trying to get the list of users. Please make sure you have the necessary privileges to perform user management, including access to the mysql.user table.";
 
 /* error importing table informative message */
-"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@" = "An error occurred while trying to import a table via: \n%1$@\n\n\nMySQL said: %2$@";
+"An error occurred while trying to import a table via: \n%@\n\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* error moving field informative message */
-"An error occurred while trying to move the field.\n\nMySQL said: %@" = "An error occurred while trying to move the field.\n\nMySQL said: %@";
+"An error occurred while trying to move the field.\n\ndatabase said: %@" = "An error occurred while trying to move the field.\n\ndatabase said: %@";
 
 /* error resetting auto_increment informative message */
-"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@" = "An error occurred while trying to reset AUTO_INCREMENT of table '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* error truncating table informative message */
-"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@" = "An error occurred while trying to truncate the table '%1$@'.\n\nMySQL said: %2$@";
+"An error occurred while trying to truncate the table '%@'.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* mysql error occurred informative message */
-"An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "An error occurred whilst trying to perform the operation.\n\nMySQL said: %@";
+"An error occurred whilst trying to perform the operation.\n\ndatabase said: %@" = "An error occurred whilst trying to perform the operation.\n\ndatabase said: %@";
 
 /* mysql resource limits unsupported message */
-"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@";
+"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. database said: %@" = "Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. database said: %@";
 
 /* Export files creation error explanatory text */
 "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again.";
@@ -727,7 +727,7 @@
 "Connected to %@" = "Connected to %@";
 
 /* message of panel when connection to db failed */
-"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %@" = "Connected to host, but unable to connect to database %1$@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %2$@";
+"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* Generic connecting very short status message */
 "Connecting..." = "Bağlanıyor...";
@@ -818,13 +818,13 @@
 "Could not select database" = "Could not select database";
 
 /* Alter Database : Query Failed ($1 = mysql error message) */
-"Couldn't alter database.\nMySQL said: %@" = "Couldn't alter database.\nMySQL said: %@";
+"Couldn't alter database.\ndatabase said: %@" = "Couldn't alter database.\ndatabase said: %@";
 
 /* Couldn't copy default themes to Application Support Theme folder!\nError: %@ */
 "Couldn't copy default themes to Application Support Theme folder!\nError: %@" = "Couldn't copy default themes to Application Support Theme folder!\nError: %@";
 
 /* message of panel when table cannot be created */
-"Couldn't create '%@'.\nMySQL said: %@" = "Couldn't create '%1$@'.\nMySQL said: %2$@";
+"Couldn't create '%@'.\ndatabase said: %@" = "0database said: %2$@";
 
 /* Couldn't create Application Support Bundle folder!\nError: %@ */
 "Couldn't create Application Support Bundle folder!\nError: %@" = "Couldn't create Application Support Bundle folder!\nError: %@";
@@ -833,31 +833,31 @@
 "Couldn't create Application Support Theme folder!\nError: %@" = "Couldn't create Application Support Theme folder!\nError: %@";
 
 /* message of panel when creation of db failed */
-"Couldn't create database.\nMySQL said: %@" = "Couldn't create database.\nMySQL said: %@";
+"Couldn't create database.\ndatabase said: %@" = "Couldn't create database.\ndatabase said: %@";
 
 /* message of panel when an item cannot be deleted */
-"Couldn't delete '%@'.\n\nMySQL said: %@" = "Couldn't delete '%1$@'.\n\nMySQL said: %2$@";
+"Couldn't delete '%@'.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* message of panel when an item cannot be deleted including informative message about using force deletion */
-"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@" = "Couldn't delete '%1$@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %2$@";
+"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* message of panel when field cannot be deleted */
-"Couldn't delete field %@.\nMySQL said: %@" = "Couldn't delete field %1$@.\nMySQL said: %2$@";
+"Couldn't delete field %@.\ndatabase said: %@" = "0database said: %2$@";
 
 /* message when deleteing all rows failed */
-"Couldn't delete rows.\n\nMySQL said: %@" = "Couldn't delete rows.\n\nMySQL said: %@";
+"Couldn't delete rows.\n\ndatabase said: %@" = "Couldn't delete rows.\n\ndatabase said: %@";
 
 /* message of panel when deleting db failed */
-"Couldn't delete the database.\nMySQL said: %@" = "Couldn't delete the database.\nMySQL said: %@";
+"Couldn't delete the database.\ndatabase said: %@" = "Couldn't delete the database.\ndatabase said: %@";
 
 /* message of panel when an item cannot be renamed */
-"Couldn't duplicate '%@'.\nMySQL said: %@" = "Couldn't duplicate '%1$@'.\nMySQL said: %2$@";
+"Couldn't duplicate '%@'.\ndatabase said: %@" = "0database said: %2$@";
 
 /* message of panel when flushing privs failed */
-"Couldn't flush privileges.\nMySQL said: %@" = "Couldn't flush privileges.\nMySQL said: %@";
+"Couldn't flush privileges.\ndatabase said: %@" = "Couldn't flush privileges.\ndatabase said: %@";
 
 /* message of panel when table information cannot be retrieved */
-"Couldn't get create syntax.\nMySQL said: %@" = "Couldn't get create syntax.\nMySQL said: %@";
+"Couldn't get create syntax.\ndatabase said: %@" = "Couldn't get create syntax.\ndatabase said: %@";
 
 /* Custom Query result editing error - could not identify a corresponding column */
 "Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table." = "Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table.";
@@ -872,10 +872,10 @@
 "Couldn't sort column." = "Couldn't sort column.";
 
 /* message of panel when sorting of table failed */
-"Couldn't sort table. MySQL said: %@" = "Couldn't sort table. MySQL said: %@";
+"Couldn't sort table. database said: %@" = "Couldn't sort table. database said: %@";
 
 /* message of panel when error while updating field to db */
-"Couldn't write field.\nMySQL said: %@" = "Couldn't write field.\nMySQL said: %@";
+"Couldn't write field.\ndatabase said: %@" = "Couldn't write field.\ndatabase said: %@";
 
 /* create syntax for table comment */
 "Create syntax for" = "Create syntax for";
@@ -1760,8 +1760,8 @@
 /* MySQL connecting very short status message */
 "MySQL connecting..." = "MySQL bağlanıyor...";
 
-/* mysql error message */
-"MySQL Error" = "MySQL Hatası";
+/* database error message */
+"Database Error" = "Veritabanı Hatası";
 
 /* mysql help */
 "MySQL Help" = "MySQL Yardım";
@@ -1776,13 +1776,13 @@
 "MySQL Help – Categories" = "MySQL Yardımı – Kategoriler";
 
 /* mysql said message */
-"MySQL said:" = "MySQL şöyle dedi:";
+"database said:" = "MySQL şöyle dedi:";
 
 /* shutdown server : error dialog : message */
-"MySQL said:\n%@" = "MySQL şöyle dedi:\n%@";
+"database said:\n%@" = "MySQL şöyle dedi:\n%@";
 
 /* message of panel when error while adding row to db */
-"MySQL said:\n\n%@" = "MySQL şöyle dedi:\n\n%@";
+"database said:\n\n%@" = "MySQL şöyle dedi:\n\n%@";
 
 /* Preferences : Themes : Initial filename for 'Export' */
 "MyTheme" = "Tema";
@@ -2757,22 +2757,22 @@
 "The selected file is either not a valid SPF file or severely corrupted." = "The selected file is either not a valid SPF file or severely corrupted.";
 
 /* error deleting relation informative message */
-"The selected relation couldn't be deleted.\n\nMySQL said: %@" = "The selected relation couldn't be deleted.\n\nMySQL said: %@";
+"The selected relation couldn't be deleted.\n\ndatabase said: %@" = "The selected relation couldn't be deleted.\n\ndatabase said: %@";
 
 /* error deleting trigger informative message */
-"The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "The selected trigger couldn't be deleted.\n\nMySQL said: %@";
+"The selected trigger couldn't be deleted.\n\ndatabase said: %@" = "The selected trigger couldn't be deleted.\n\ndatabase said: %@";
 
 /* description of tinyint */
 "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range.";
 
 /* message of panel when connection to socket failed because optional socket could not be found */
-"The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@" = "The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@";
+"The socket file could not be found in any common location. Please supply the correct socket location.\n\ndatabase said: %@" = "The socket file could not be found in any common location. Please supply the correct socket location.\n\ndatabase said: %@";
 
 /* error creating relation informative message */
-"The specified relation could not be created.\n\nMySQL said: %@" = "The specified relation could not be created.\n\nMySQL said: %@";
+"The specified relation could not be created.\n\ndatabase said: %@" = "The specified relation could not be created.\n\ndatabase said: %@";
 
 /* error creating trigger informative message */
-"The specified trigger was unable to be created.\n\nMySQL said: %@" = "The specified trigger was unable to be created.\n\nMySQL said: %@";
+"The specified trigger was unable to be created.\n\ndatabase said: %@" = "The specified trigger was unable to be created.\n\ndatabase said: %@";
 
 /* sql import : charset error alert : detail message */
 "The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!" = "The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!";
@@ -2805,10 +2805,10 @@
 "The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds)." = "The SSH Tunnel was unable to connect to host %1$@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %2$ld seconds).";
 
 /* message of panel when loading of table failed and presumably due to used filter argument */
-"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@" = "The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@";
+"The table data couldn't be loaded presumably due to used filter clause. \n\ndatabase said: %@" = "The table data couldn't be loaded presumably due to used filter clause. \n\ndatabase said: %@";
 
 /* message of panel when loading of table failed */
-"The table data couldn't be loaded.\n\nMySQL said: %@" = "The table data couldn't be loaded.\n\nMySQL said: %@";
+"The table data couldn't be loaded.\n\ndatabase said: %@" = "The table data couldn't be loaded.\n\ndatabase said: %@";
 
 /* Export folder not writable explanatory text */
 "The target export folder is not writable.  Please select a new export location and try again." = "The target export folder is not writable.  Please select a new export location and try again.";
@@ -2840,7 +2840,7 @@
 "This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone." = "This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone.";
 
 /* table structure : indexes : delete index : error 1553, no FK found : description */
-"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@" = "This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@";
+"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\ndatabase said: %@" = "This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\ndatabase said: %@";
 
 /* description of serial */
 "This is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE." = "This is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE.";
@@ -2939,16 +2939,16 @@
 "Unable to check table" = "Unable to check table";
 
 /* message of panel when connection to host failed due to access denied error */
-"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "Unable to connect to host %1$@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %2$@";
+"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* message of panel when SSH port forwarding failed */
-"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@" = "Unable to connect to host %1$@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %2$@";
+"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* message of panel when connection to host failed */
-"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\nMySQL said: %@" = "Unable to connect to host %1$@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %2$ld seconds).\n\nMySQL said: %3$@";
+"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\ndatabase said: %@" = "0database said: %3$@";
 
 /* message of panel when connection to host failed */
-"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@" = "Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@";
+"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\ndatabase said: %@" = "Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\ndatabase said: %@";
 
 /* unable to copy database message */
 "Unable to copy database" = "Unable to copy database";

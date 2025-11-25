@@ -4453,11 +4453,13 @@ Gw
                 <outlet property="showCreateSyntaxMenuItem" destination="7927" id="7949"/>
                 <outlet property="spHistoryControllerInstance" destination="6297" id="6302"/>
                 <outlet property="tableCollationButton" destination="8310" id="8314"/>
+                <outlet property="tableCollationLabel" destination="8309" id="9001"/>
                 <outlet property="tableContentInstance" destination="67" id="143"/>
                 <outlet property="tableDataInstance" destination="4702" id="4707"/>
                 <outlet property="tableDocumentInstance" destination="-2" id="587"/>
                 <outlet property="tableDumpInstance" destination="362" id="619"/>
                 <outlet property="tableEncodingButton" destination="5325" id="5366"/>
+                <outlet property="tableEncodingLabel" destination="5326" id="9002"/>
                 <outlet property="tableInfoInstance" destination="4488" id="6883"/>
                 <outlet property="tableListSplitView" destination="6032" id="6257"/>
                 <outlet property="tableNameField" destination="5324" id="5698"/>
@@ -4465,6 +4467,7 @@ Gw
                 <outlet property="tableSourceInstance" destination="69" id="137"/>
                 <outlet property="tableTriggersInstance" destination="6691" id="7042"/>
                 <outlet property="tableTypeButton" destination="5714" id="5743"/>
+                <outlet property="tableTypeLabel" destination="5713" id="9003"/>
                 <outlet property="tablesListView" destination="22" id="138"/>
                 <outlet property="toolbarActionsButton" destination="7859" id="7943"/>
                 <outlet property="toolbarAddButton" destination="7850" id="7853"/>
@@ -4872,7 +4875,7 @@ Gw
             </items>
             <point key="canvasLocation" x="-240" y="524"/>
         </menu>
-        <customView id="VCn-3k-MdI" userLabel="MySQL Error Accessory View">
+        <customView id="VCn-3k-MdI" userLabel="Database Error Accessory View">
             <rect key="frame" x="0.0" y="0.0" width="395" height="135"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>

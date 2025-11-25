@@ -60,6 +60,8 @@
 #import <pthread.h>
 #import <SPMySQL/SPMySQL.h>
 #import "SPBracketHighlighter.h"
+#import "SPDatabaseConnection.h"
+#import "SPDatabaseResult.h"
 
 #include <libkern/OSAtomic.h>
 #import "sequel-ace-Swift.h"
@@ -752,7 +754,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 {
     @autoreleasepool {
         NSArray                     *queries        = [taskArguments objectForKey:@"queries"];
-        SPMySQLStreamingResultStore *resultStore    = nil;
+        id<SPDatabaseResult>         resultStore    = nil;
         NSMutableString             *errors         = [NSMutableString string];
         SEL                          callbackMethod = NULL;
         NSString                    *taskButtonString;
@@ -840,11 +842,15 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 // If more than one table name is found set resultTableName to nil.
                 // resultTableName will be set to the original table name (not defined via AS) provided by mysql return
                 // and the resultTableName can differ due to case-sensitive/insensitive settings!.
-                NSString *resultTableName = [[cqColumnDefinition objectAtIndex:0] objectForKey:@"org_table"];
+                // Note: DDL statements (CREATE, ALTER, DROP, etc.) return empty result sets with no columns
+                NSString *resultTableName = nil;
+                if ([cqColumnDefinition count] > 0) {
+                    resultTableName = [[cqColumnDefinition objectAtIndex:0] objectForKey:@"org_table"];
                 for(id field in cqColumnDefinition) {
                     if(![[field objectForKey:@"org_table"] isEqualToString:resultTableName]) {
                         resultTableName = nil;
                         break;
+                        }
                     }
                 }
                 
@@ -907,7 +913,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                                 [self->tableDocumentInstance setTaskIndicatorShouldAnimate:NO];
                                 
                                 NSAlert *alert = [[NSAlert alloc] init];
-                                [alert setMessageText:NSLocalizedString(@"MySQL Error", @"mysql error message")];
+                                [alert setMessageText:NSLocalizedString(@"Database Error", @"database error message")];
                                 [alert setInformativeText:[self->mySQLConnection lastErrorMessage]];
                                 
                                 // Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
@@ -1122,7 +1128,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  * Processes a supplied streaming result store, monitoring the load and updating
  * the data displayed during download.
  */
-- (void)updateResultStore:(SPMySQLStreamingResultStore *)theResultStore
+- (void)updateResultStore:(id)theResultStore
 {
     pthread_mutex_lock(&resultDataLock);
     // Remove all items from the table
@@ -1824,7 +1830,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 /**
  * Sets the connection (received from SPDatabaseDocument) and makes things that have to be done only once
  */
-- (void)setConnection:(SPMySQLConnection *)theConnection
+- (void)setConnection:(id<SPDatabaseConnection>)theConnection
 {
     mySQLConnection = theConnection;
     currentQueryRanges = nil;
@@ -2054,11 +2060,11 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     
     [tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Checking field data for editing...", @"checking field data for editing task description")];
     
-    // Actual check whether field can be identified bijectively
-    SPMySQLResult *tempResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
-                                                              [[columnDefinition objectForKey:@"db"] backtickQuotedString],
-                                                              [tableForColumn backtickQuotedString],
-                                                              fieldIDQueryStr]];
+	// Actual check whether field can be identified bijectively
+	id<SPDatabaseResult> tempResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
+	                                                          [mySQLConnection quoteIdentifier:[columnDefinition objectForKey:@"db"]],
+	                                                          [mySQLConnection quoteIdentifier:tableForColumn],
+	                                                          fieldIDQueryStr]];
     
     if ([mySQLConnection queryErrored]) {
         [tableDocumentInstance endTask];
@@ -2075,10 +2081,10 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             return @[@(-1), @""];
         }
         
-        tempResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
-                                                   [[columnDefinition objectForKey:@"db"] backtickQuotedString],
-                                                   [tableForColumn backtickQuotedString],
-                                                   fieldIDQueryStr]];
+		tempResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
+		                                                   [mySQLConnection quoteIdentifier:[columnDefinition objectForKey:@"db"]],
+		                                                   [mySQLConnection quoteIdentifier:tableForColumn],
+		                                                   fieldIDQueryStr]];
         
         if ([mySQLConnection queryErrored]) {
             [tableDocumentInstance endTask];
@@ -2121,63 +2127,65 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     // --- Build WHERE clause ---
     dataRow = [resultData rowContentsAtIndex:rowIndex];
     
-    // Get the primary key if there is one, using any columns present within it
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@.%@",
-                                                             [database backtickQuotedString], [tableForColumn backtickQuotedString]]];
-    [theResult setReturnDataAsStrings:YES];
-    NSMutableArray *primaryColumnsInSpecifiedTable = [NSMutableArray array];
-    for (NSDictionary *eachRow in theResult) {
-        if ( [[eachRow objectForKey:@"Key"] isEqualToString:@"PRI"] ) {
-            for (field in columnsInSpecifiedTable) {
-                if([[field objectForKey:@"org_name"] isEqualToString:[eachRow objectForKey:@"Field"]]) {
-                    [primaryColumnsInSpecifiedTable addObject:field];
-                }
-            }
-        }
-    }
+	// Get the primary key if there is one, using any columns present within it
+	// Note: For cross-database queries, we need to select the database first or use getColumnsForTable
+	// This assumes we're already connected to the correct database
+	id<SPDatabaseResult> theResult = [mySQLConnection getColumnsForTable:tableForColumn];
+	[theResult setReturnDataAsStrings:YES];
+	NSMutableArray *primaryColumnsInSpecifiedTable = [NSMutableArray array];
+	NSDictionary *eachRow;
+	while ((eachRow = [theResult getRowAsDictionary])) {
+		if ( [[eachRow objectForKey:@"Key"] isEqualToString:@"PRI"] ) {
+			for (field in columnsInSpecifiedTable) {
+				if([[field objectForKey:@"org_name"] isEqualToString:[eachRow objectForKey:@"Field"]]) {
+					[primaryColumnsInSpecifiedTable addObject:field];
+				}
+			}
+		}
+	}
     
     // Determine whether to use the primary keys list or fall back to all fields when building the query string
     NSMutableArray *columnsToQuery = [primaryColumnsInSpecifiedTable count] ? primaryColumnsInSpecifiedTable : columnsInSpecifiedTable;
     
-    // Build up the argument
-    for (field in columnsToQuery) {
-        id aValue = [dataRow objectAtIndex:[[field objectForKey:@"datacolumnindex"] integerValue]];
-        if ([aValue isNSNull]) {
-            [argumentParts addObject:[NSString stringWithFormat:@"%@ IS NULL", [[field objectForKey:@"org_name"] backtickQuotedString]]];
-        } else {
-            NSString *fieldTypeGrouping = [field objectForKey:@"typegrouping"];
-            
-            // Skip blob-type fields if requested
-            if (!includeBlobs
-                && ([fieldTypeGrouping isEqualToString:@"textdata"]
-                    ||  [fieldTypeGrouping isEqualToString:@"blobdata"]
-                    || [[field objectForKey:@"type"] isEqualToString:@"BINARY"]
-                    || [[field objectForKey:@"type"] isEqualToString:@"VARBINARY"]))
-            {
-                continue;
-            }
-            
-            // If the field is of type BIT then it needs a binary prefix
-            if ([fieldTypeGrouping isEqualToString:@"bit"]) {
-                [argumentParts addObject:[NSString stringWithFormat:@"%@=b'%@'", [[field objectForKey:@"org_name"] backtickQuotedString], [aValue description]]];
-            }
-            else if ([fieldTypeGrouping isEqualToString:@"geometry"]) {
-                [argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteData:[aValue data]]]];
-            }
-            // BLOB/TEXT data
-            else if ([aValue isKindOfClass:[NSData class]]) {
-                [argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteData:aValue]]];
-            }
-            else {
-                [argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteString:aValue]]];
-            }
-        }
-    }
-    
-    // Check for empty strings
-    if (![argumentParts count]) return nil;
-    
-    return [NSString stringWithFormat:@"WHERE (%@)", [argumentParts componentsJoinedByString:@" AND "]];
+	// Build up the argument
+	for (field in columnsToQuery) {
+		id aValue = [dataRow objectAtIndex:[[field objectForKey:@"datacolumnindex"] integerValue]];
+		if ([aValue isNSNull]) {
+			[argumentParts addObject:[NSString stringWithFormat:@"%@ IS NULL", [mySQLConnection quoteIdentifier:[field objectForKey:@"org_name"]]]];
+		} else {
+			NSString *fieldTypeGrouping = [field objectForKey:@"typegrouping"];
+			
+			// Skip blob-type fields if requested
+			if (!includeBlobs
+				&& ([fieldTypeGrouping isEqualToString:@"textdata"]
+					||  [fieldTypeGrouping isEqualToString:@"blobdata"]
+					|| [[field objectForKey:@"type"] isEqualToString:@"BINARY"]
+					|| [[field objectForKey:@"type"] isEqualToString:@"VARBINARY"]))
+			{
+				continue;
+			}
+			
+			// If the field is of type BIT then it needs a binary prefix
+			if ([fieldTypeGrouping isEqualToString:@"bit"]) {
+				[argumentParts addObject:[NSString stringWithFormat:@"%@=b'%@'", [mySQLConnection quoteIdentifier:[field objectForKey:@"org_name"]], [aValue description]]];
+			}
+			else if ([fieldTypeGrouping isEqualToString:@"geometry"]) {
+				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [mySQLConnection quoteIdentifier:[field objectForKey:@"org_name"]], [mySQLConnection escapeAndQuoteData:[aValue data]]]];
+			}
+			// BLOB/TEXT data
+			else if ([aValue isKindOfClass:[NSData class]]) {
+				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [mySQLConnection quoteIdentifier:[field objectForKey:@"org_name"]], [mySQLConnection escapeAndQuoteData:aValue]]];
+			}
+			else {
+				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [mySQLConnection quoteIdentifier:[field objectForKey:@"org_name"]], [mySQLConnection escapeAndQuoteString:aValue]]];
+			}
+		}
+	}
+	
+	// Check for empty strings
+	if (![argumentParts count]) return nil;
+	
+	return [NSString stringWithFormat:@"WHERE (%@)", [argumentParts componentsJoinedByString:@" AND "]];
 }
 
 - (void)saveCellValue:(id)anObject forTableColumn:(NSTableColumn *)aTableColumn row:(NSUInteger)rowIndex
@@ -2233,9 +2241,9 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             }
         }
 
-        NSString *queryStr = [NSString stringWithFormat:@"UPDATE %@.%@ SET %@.%@.%@ = %@ %@",
-                              [[columnDefinition objectForKey:@"db"] backtickQuotedString], [[columnDefinition objectForKey:@"org_table"] backtickQuotedString],
-                              [[columnDefinition objectForKey:@"db"] backtickQuotedString], [[columnDefinition objectForKey:@"org_table"] backtickQuotedString], [columnName backtickQuotedString], newObject, fieldIDQueryString];
+		NSString *queryStr = [NSString stringWithFormat:@"UPDATE %@.%@ SET %@.%@.%@ = %@ %@",
+		                              [mySQLConnection quoteIdentifier:[columnDefinition objectForKey:@"db"]], [mySQLConnection quoteIdentifier:[columnDefinition objectForKey:@"org_table"]],
+		                              [mySQLConnection quoteIdentifier:[columnDefinition objectForKey:@"db"]], [mySQLConnection quoteIdentifier:[columnDefinition objectForKey:@"org_table"]], [mySQLConnection quoteIdentifier:columnName], newObject, fieldIDQueryString];
 
 
         SPLog(@"queryStr: %@", queryStr);
@@ -2245,7 +2253,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 
             // Check for errors while UPDATE
             if ([mySQLConnection queryErrored]) {
-                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nMySQL said: %@", @"message of panel when error while updating field to db"), [mySQLConnection lastErrorMessage]] callback:nil];
+                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\ndatabase said: %@", @"message of panel when error while updating field to db"), [mySQLConnection lastErrorMessage]] callback:nil];
                 return;
             }
 
@@ -2296,7 +2304,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 
                     // Check for errors while UPDATE
                     if ([self->mySQLConnection queryErrored]) {
-                        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nMySQL said: %@", @"message of panel when error while updating field to db"), [self->mySQLConnection lastErrorMessage]] callback:nil];
+                        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\ndatabase said: %@", @"message of panel when error while updating field to db"), [self->mySQLConnection lastErrorMessage]] callback:nil];
                         return;
                     }
 

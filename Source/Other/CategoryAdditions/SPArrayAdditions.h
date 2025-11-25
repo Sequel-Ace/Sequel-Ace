@@ -70,6 +70,8 @@ static inline void NSMutableArrayReplaceObject(NSArray *self, CFIndex idx, id an
 	CFArraySetValueAtIndex((CFMutableArrayRef)self, idx, (__bridge const void *)(anObject));
 }
 
+@protocol SPDatabaseConnection;
+
 @interface NSArray (SPArrayAdditions)
 
 - (NSString *)componentsJoinedAndBacktickQuoted;
@@ -78,6 +80,14 @@ static inline void NSMutableArrayReplaceObject(NSArray *self, CFIndex idx, id an
 - (NSString *)componentsJoinedByPeriodAndBacktickQuoted;
 - (NSString *)componentsJoinedByPeriodAndBacktickQuotedAndIgnoreFirst;
 - (NSString *)componentsJoinedAsCSV;
+
+/**
+ * Joins array elements with database-appropriate identifier quoting
+ * Uses the connection's quoteIdentifier method for proper quoting (backticks for MySQL, double quotes for PostgreSQL)
+ * @param connection The database connection to use for identifier quoting
+ * @return Comma-separated string of quoted identifiers
+ */
+- (NSString *)componentsJoinedAndQuotedForConnection:(id<SPDatabaseConnection>)connection;
 
 - (NSArray *)subarrayWithIndexes:(NSIndexSet *)indexes;
 

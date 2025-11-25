@@ -240,7 +240,7 @@ const NSString * const SerFilterExprEnabled = @"enabled";
 + (NSDictionary *)_flattenSerializedFilter:(NSDictionary *)in;
 static BOOL SerIsGroup(NSDictionary *dict);
 - (NSDictionary *)_serializedFilterIncludingFilterDefinition:(BOOL)includeDefinition withDisabled:(BOOL)includeDisabled;
-+ (void)_writeFilterTree:(NSDictionary *)in toString:(NSMutableString *)out wrapInParenthesis:(BOOL)wrap binary:(BOOL)isBINARY error:(NSError **)err;
++ (void)_writeFilterTree:(NSDictionary *)in toString:(NSMutableString *)out wrapInParenthesis:(BOOL)wrap binary:(BOOL)isBINARY connection:(id<SPDatabaseConnection>)connection error:(NSError **)err;
 - (NSMutableDictionary *)_restoreSerializedFilter:(NSDictionary *)serialized;
 static void _addIfNotNil(NSMutableArray *array, id toAdd);
 - (ColumnNode *)_columnForName:(NSString *)name;
@@ -1303,7 +1303,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		NSDictionary *filterTree = [[self class] _flattenSerializedFilter:[self _serializedFilterIncludingFilterDefinition:YES withDisabled:NO]];
 
 		// build it recursively
-		[[self class] _writeFilterTree:filterTree toString:filterString wrapInParenthesis:NO binary:isBINARY error:&innerError];
+		[[self class] _writeFilterTree:filterTree toString:filterString wrapInParenthesis:NO binary:isBINARY connection:[tableDocumentInstance getConnection] error:&innerError];
 
 		 // carry the error (if any) outside of the scope of the autoreleasepool
 	}
@@ -1647,7 +1647,7 @@ BOOL SerIsGroup(NSDictionary *dict)
 	};
 }
 
-+ (void)_writeFilterTree:(NSDictionary *)in toString:(NSMutableString *)out wrapInParenthesis:(BOOL)wrap binary:(BOOL)isBINARY error:(NSError **)err
++ (void)_writeFilterTree:(NSDictionary *)in toString:(NSMutableString *)out wrapInParenthesis:(BOOL)wrap binary:(BOOL)isBINARY connection:(id<SPDatabaseConnection>)connection error:(NSError **)err
 {
 	NSError *myErr = nil;
 	
@@ -1671,7 +1671,7 @@ BOOL SerIsGroup(NSDictionary *dict)
 			else {
 				if(wrap && [children count] == 1) wrapChild = NO;
 			}
-			[self _writeFilterTree:child toString:out wrapInParenthesis:wrapChild binary:isBINARY error:&myErr];
+			[self _writeFilterTree:child toString:out wrapInParenthesis:wrapChild binary:isBINARY connection:connection error:&myErr];
 			if(myErr) {
 				if(err) *err = myErr;
 				return;
@@ -1705,7 +1705,8 @@ BOOL SerIsGroup(NSDictionary *dict)
 		NSArray *values = [in objectForKey:SerFilterExprValues];
 
 		SPTableFilterParser *parser = [[SPTableFilterParser alloc] initWithFilterClause:[filter objectForKey:@"Clause"]
-		                                                              numberOfArguments:[[filter objectForKey:@"NumberOfArguments"] integerValue]];
+		                                                              numberOfArguments:[[filter objectForKey:@"NumberOfArguments"] integerValue]
+		                                                                     connection:connection];
 		[parser setArgument:[values firstObject]];
 		[parser setFirstBetweenArgument:[values firstObject]];
 		[parser setSecondBetweenArgument:[values safeObjectAtIndex:1]];

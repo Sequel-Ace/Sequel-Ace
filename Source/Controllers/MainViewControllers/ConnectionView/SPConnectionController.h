@@ -34,19 +34,22 @@
 #import "SPReachability.h"
 
 #import <SPMySQL/SPMySQL.h>
+#import "SPDatabaseConnection.h"
 
 @class SPDatabaseDocument, 
 	   SPFavoritesController, 
 	   SPSSHTunnel,
 	   SPTreeNode,
 	   SPFavoritesOutlineView,
-       SPMySQLConnection,
 	   SPSplitView,
 	   SPKeychain,
 	   SPFavoriteNode,
 	   SPFavoriteTextFieldCell,
        SPColorSelectorView
 ;
+
+// Forward declarations for concrete connection types
+@class SPMySQLConnection;
 
 typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
     SPConnectionTimeZoneModeUseServerTZ,
@@ -57,7 +60,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 @interface SPConnectionController : NSViewController <SPMySQLConnectionDelegate, NSOpenSavePanelDelegate, SPFavoritesImportProtocol, SPFavoritesExportProtocol, NSSplitViewDelegate>
 {	
 	__weak SPDatabaseDocument *dbDocument;
-	SPMySQLConnection *mySQLConnection;
+	id<SPDatabaseConnection> databaseConnection;
 
 	SPKeychain *keychain;
 	NSSplitView *databaseConnectionView;
@@ -73,6 +76,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	// Standard details
 	NSInteger previousType;
 	NSInteger type;
+	NSInteger databaseType;  // MySQL or PostgreSQL
 	NSString *name;
 	NSString *host;
 	NSString *user;
@@ -135,6 +139,17 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	IBOutlet NSView *sslCertificateLocationHelp;
 	IBOutlet NSView *sslCACertLocationHelp;
 
+	IBOutlet NSSegmentedControl *databaseTypeSelector;
+	IBOutlet NSTabView *connectionTypeTabView;
+	
+	// MySQL-specific controls (to hide for PostgreSQL)
+	IBOutlet NSButton *standardAllowDataLocalInfileButton;
+	IBOutlet NSButton *standardEnableClearTextPluginButton;
+	IBOutlet NSButton *socketAllowDataLocalInfileButton;
+	IBOutlet NSButton *socketEnableClearTextPluginButton;
+	IBOutlet NSButton *sshAllowDataLocalInfileButton;
+	IBOutlet NSButton *sshEnableClearTextPluginButton;
+	
 	IBOutlet NSTextField *standardNameField;
 	IBOutlet NSTextField *sshNameField;
 	IBOutlet NSTextField *socketNameField;
@@ -143,6 +158,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	IBOutlet NSTextField *standardUserField;
 	IBOutlet NSTextField *socketUserField;
 	IBOutlet NSTextField *sshUserField;
+	IBOutlet NSTextField *standardPortField;
 	IBOutlet SPColorSelectorView *standardColorField;
 	IBOutlet SPColorSelectorView *sshColorField;
 	IBOutlet SPColorSelectorView *socketColorField;
@@ -201,6 +217,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 
 @property (readwrite, weak) id <SPConnectionControllerDelegateProtocol> delegate;
 @property (readwrite) NSInteger type;
+@property (readwrite) NSInteger databaseType;
 @property (readwrite, copy) NSString *name;
 @property (readwrite, copy) NSString *host;
 @property (readwrite, copy) NSString *user;
@@ -251,6 +268,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 - (IBAction)showHelp:(id)sender;
 - (IBAction)updateSSLInterface:(id)sender;
 - (IBAction)updateKeyLocationFileVisibility:(id)sender;
+- (IBAction)databaseTypeChanged:(id)sender;
 
 - (void)resizeTabViewToConnectionType:(NSUInteger)theType animating:(BOOL)animate;
 

@@ -33,7 +33,9 @@
 #import "sequel-ace-Swift.h"
 
 #import "SPFunctions.h"
-#import <SPMySQL/SPMySQL.h>
+#import "SPConstants.h"
+#import "SPDatabaseConnection.h"
+#import "SPDatabaseResult.h"
 
 @interface SPDatabaseData ()
 
@@ -149,7 +151,12 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 				goto copy_return;
 			}
 
-			// Try to retrieve the available collations for the supplied encoding from the database
+		// Try to retrieve the available collations using the database-agnostic method
+		NSArray *collations = [connection getCollationsForEncoding:characterSetEncoding];
+		if ([collations count] > 0) {
+			[characterSetCollations addObjectsFromArray:collations];
+		} else {
+			// Fallback: Try the old MySQL-specific query for backward compatibility
             [characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", characterSetEncoding]]];
 
             //Special handling to try utf8 if the encoding is utf8mb3 https://github.com/Sequel-Ace/Sequel-Ace/issues/1064
@@ -157,13 +164,13 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
                 [characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", @"utf8"]]];
             } else if (![characterSetCollations count] && [characterSetEncoding isEqualToString:@"utf8"]) {
                 [characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", @"utf8mb3"]]];
+			}
             }
 
-			// If that failed, get the list of collations matching the supplied encoding from the hard-coded list
+		// If that still failed, just log a warning (don't show popup)
 			if (![characterSetCollations count]) {
-                SPMainQSync(^{
-                    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Unable to get database collations for given encoding", @"Unable to get database collations for given encoding") callback:nil];
-                });
+			NSLog(@"Warning: Unable to get database collations for encoding %@", characterSetEncoding);
+			// Don't show popup - just log the warning
 			}
 
 			if ([characterSetCollations count]) {
@@ -225,20 +232,17 @@ copy_return:
 
 /**
  * Returns all of the database's available storage engines.
+ * Delegates to the database connection wrapper for database-specific implementation.
  *
  * This method is NOT thread-safe!
  */
 - (NSArray *)getDatabaseStorageEngines
 {	
 	if ([storageEngines count] == 0) {
-        // Check the information_schema.engines table is accessible
-        SPMySQLResult *result = [connection queryString:@"SHOW TABLES IN information_schema LIKE 'ENGINES'"];
-        
-        if ([result numberOfRows] == 1) {
-            
-            // Table is accessible so get available storage engines
-            // Note, that the case of the column names specified in this query are important.
-            [storageEngines addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT Engine, Support FROM `information_schema`.`engines` WHERE SUPPORT IN ('DEFAULT', 'YES') AND Engine != 'PERFORMANCE_SCHEMA'"]];
+		// Use the database-agnostic method from the connection
+		NSArray *engines = [connection getDatabaseStorageEngines];
+		if ([engines count] > 0) {
+			[storageEngines addObjectsFromArray:engines];
         }
 	}
 	
@@ -261,13 +265,19 @@ copy_return:
 	@synchronized(charsetCollationLock) {
 		if ([characterSetEncodings count] == 0) {
 			
-			// Try to retrieve the available character set encodings from the database
-			// Check the information_schema.character_sets table is accessible
+			// Try to retrieve the available character set encodings using the database-agnostic method
+			NSArray *encodings = [connection getAvailableEncodings];
+			if ([encodings count] > 0) {
+				[characterSetEncodings addObjectsFromArray:encodings];
+			} else {
+				// Fallback: Try the old MySQL-specific query for backward compatibility
             [characterSetEncodings addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`character_sets` ORDER BY `character_set_name` ASC"]];
+			}
 
-			// If that failed, get the list of character set encodings from the hard-coded list
+			// If that still failed, show warning (but don't fail - just use current encoding)
 			if (![characterSetEncodings count]) {			
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Unable to get database character set encodings", @"Unable to get database character set encodings") callback:nil];
+				NSLog(@"Warning: Unable to get database character set encodings, using current connection encoding");
+				// Don't show popup - just log the warning
 			}
 		}
 			
@@ -387,7 +397,18 @@ copy_return:
  */
 - (NSString *)_getSingleVariableValue:(NSString *)variable
 {
-	SPMySQLResult *result = [connection queryString:[NSString stringWithFormat:@"SHOW VARIABLES LIKE %@", [variable tickQuotedString]]];;
+	// Use the protocol method to get server variable value
+	// This abstracts the difference between MySQL and PostgreSQL
+	if ([connection respondsToSelector:@selector(getServerVariableValue:)]) {
+		NSString *value = [(id<SPDatabaseConnection>)connection getServerVariableValue:variable];
+		if (!value && [connection queryErrored]) {
+			SPLog(@"server variable lookup failed for '%@': %@ (%lu)",variable,[connection lastErrorMessage],[connection lastErrorID]);
+		}
+		return value;
+	}
+	
+	// Fallback for connections that don't support the protocol method
+	id<SPDatabaseResult> result = [connection queryString:[NSString stringWithFormat:@"SHOW VARIABLES LIKE %@", [variable tickQuotedString]]];
 	
 	[result setReturnDataAsStrings:YES];
 	
@@ -406,7 +427,7 @@ copy_return:
  */
 - (NSArray *)_getDatabaseDataForQuery:(NSString *)query
 {
-	SPMySQLResult *result = [connection queryString:query];
+	id<SPDatabaseResult> result = [connection queryString:query];
 	
 	if ([connection queryErrored]) return @[];
 	

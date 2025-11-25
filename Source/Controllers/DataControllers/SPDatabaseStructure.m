@@ -30,6 +30,7 @@
 
 #import "SPDatabaseStructure.h"
 #import "SPDatabaseDocument.h"
+#import "SPDatabaseConnection.h"
 #import "SPTablesList.h"
 #import "RegexKitLite.h"
 #import "SPThreadAdditions.h"
@@ -391,7 +392,14 @@
 			}
 
 			// Retrieve the column details (only those we need so we don't fetch the whole function body which might be huge)
-			theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT SPECIFIC_NAME, ROUTINE_TYPE, DTD_IDENTIFIER, IS_DETERMINISTIC, SQL_DATA_ACCESS, SECURITY_TYPE, DEFINER FROM `information_schema`.`ROUTINES` WHERE `ROUTINE_SCHEMA` = %@", [currentDatabase tickQuotedString]]];
+			// Use database-agnostic quoting for identifiers
+			id<SPDatabaseConnection> dbConnection = (id<SPDatabaseConnection>)mySQLConnection;
+			NSString *quotedDB = [dbConnection quoteIdentifier:@"information_schema"];
+			NSString *quotedRoutines = [dbConnection quoteIdentifier:@"ROUTINES"];
+			NSString *quotedRoutineSchema = [dbConnection quoteIdentifier:@"ROUTINE_SCHEMA"];
+			NSString *escapedCurrentDB = [currentDatabase stringByReplacingOccurrencesOfString:@"'" withString:@"''"];
+			
+			theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT SPECIFIC_NAME, ROUTINE_TYPE, DTD_IDENTIFIER, IS_DETERMINISTIC, SQL_DATA_ACCESS, SECURITY_TYPE, DEFINER FROM %@.%@ WHERE %@ = '%@'", quotedDB, quotedRoutines, quotedRoutineSchema, escapedCurrentDB]];
 			[theResult setReturnDataAsStrings:YES]; //TODO workaround for #2700 with mysql 8.0 (see #2699)
 			[theResult setDefaultRowReturnType:SPMySQLResultRowAsArray];
 
@@ -598,8 +606,8 @@
 	// Attempt a connection
 	if (![mySQLConnection connect]) return NO;
 
-	// Ensure the encoding is set to UTF8mb4
-	[mySQLConnection setEncoding:@"utf8mb4"];
+	// Ensure the encoding is set to UTF8
+	[(id<SPDatabaseConnection>)mySQLConnection setEncoding:[(id<SPDatabaseConnection>)mySQLConnection preferredUTF8Encoding]];
 
 	// Return success
 	return YES;

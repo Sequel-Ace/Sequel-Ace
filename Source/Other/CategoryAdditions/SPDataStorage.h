@@ -29,19 +29,20 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import <SPMySQL/SPMySQLStreamingResultStoreDelegate.h>
+#import "SPDatabaseResult.h"
 
 @class SPMySQLStreamingResultStore;
 
 /**
- * This class wraps a SPMySQLStreamingResultStore, providing an editable
+ * This class wraps a database result (SPDatabaseResult protocol), providing an editable
  * data store; on a fresh load all data will be proxied from the underlying
- * result store, but if cells or rows are edited, mutable rows are stored
+ * result, but if cells or rows are edited, mutable rows are stored
  * directly.
  */
 
 @interface SPDataStorage : NSObject <SPMySQLStreamingResultStoreDelegate>
 {
-	SPMySQLStreamingResultStore *dataStorage;
+	id<SPDatabaseResult> dataStorage;
 	NSPointerArray *editedRows;
 	BOOL *unloadedColumns;
 	NSCondition *dataDownloadedLock;
@@ -51,7 +52,7 @@
 }
 
 /* Setting result store */
-- (void) setDataStorage:(SPMySQLStreamingResultStore *) newDataStorage updatingExisting:(BOOL)updateExistingStore;
+- (void) setDataStorage:(id<SPDatabaseResult>) newDataStorage updatingExisting:(BOOL)updateExistingStore;
 
 /* Retrieving rows and cells */
 - (NSMutableArray *) rowContentsAtIndex:(NSUInteger)anIndex;

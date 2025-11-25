@@ -29,6 +29,9 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
+#import "SPDatabaseResult.h"
+#import "SPDatabaseConnection.h"
+
 @class SPDatabaseDocument;
 @class SPCopyTable;
 @class SPTextAndLinkCell;
@@ -37,7 +40,7 @@
 @class SPDataStorage;
 @class SPTextView;
 @class SPFieldEditorController;
-@class SPMySQLConnection;
+@protocol SPDatabaseConnection;
 @class SPMySQLStreamingResultStore;
 @class SPTableData;
 @class SPDatabaseDocument;
@@ -86,7 +89,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 
 	IBOutlet SPRuleFilterController *ruleFilterController;
 	IBOutlet SPFilterTableController *filterTableController;
-	SPMySQLConnection *mySQLConnection;
+	id<SPDatabaseConnection> connection;
 
 	BOOL _mainNibLoaded;
 	BOOL isWorking;
@@ -209,10 +212,10 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 - (void)endDocumentTaskForTab:(NSNotification *)aNotification;
 
 // Additional methods
-- (void)setConnection:(SPMySQLConnection *)theConnection;
+- (void)setConnection:(id<SPDatabaseConnection>)theConnection;
 - (void)clickLinkArrow:(SPTextAndLinkCell *)theArrowCell;
 - (void)clickLinkArrowTask:(SPTextAndLinkCell *)theArrowCell;
-- (void)updateResultStore:(SPMySQLStreamingResultStore *)theResultStore approximateRowCount:(NSUInteger)targetRowCount;
+- (void)updateResultStore:(id<SPDatabaseResult>)theResultStore approximateRowCount:(NSUInteger)targetRowCount;
 - (BOOL)saveRowToTable;
 - (NSMutableString *)deriveQueryString;
 - (NSString *)argumentForRow:(NSInteger)row;

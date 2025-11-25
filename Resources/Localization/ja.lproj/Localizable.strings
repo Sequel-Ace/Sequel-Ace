@@ -62,8 +62,8 @@
 /* text showing multiple queries were cancelled */
 "%@; Cancelled in query %ld, after %@" = "%1$@; クエリ %2$ldの後に %3$@ をキャンセルしました";
 
-/* Error display text, showing original MySQL error */
-"%@\n\nMySQL said: %@" = "%1$@\n\nMySQLの応答: %2$@";
+/* Error display text, showing original database error */
+"%@\n\ndatabase said: %@" = "%1$@\n\nデータベースの応答: %2$@";
 
 /* favorite singular label (%d == 1) */
 "%lu favorite" = "%lu お気に入り";
@@ -275,10 +275,10 @@
 "An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane." = "schemeコマンドの実行中にエラーが発生します。 schemeコマンドがBundleコマンドによって呼び出された場合、そのコマンドがまだ実行される可能性があります。 ⌘+キーを押し、またはアクティビティペインを介して終了しようとすることができます。";
 
 /* error killing query informative message */
-"An error occurred while attempting to kill connection %lld.\n\nMySQL said: %@" = "接続 %1$lldのキル中にエラーが発生しました。\n\nMySQL は次のとおりです: %2$@";
+"An error occurred while attempting to kill connection %lld.\n\ndatabase said: %@" = "接続 %1$lldのキル中にエラーが発生しました。\n\nMySQL は次のとおりです: %2$@";
 
 /* error killing query informative message */
-"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@" = "接続 %1$lldに関連付けられたクエリのキル中にエラーが発生しました。\n\nMySQL は次のとおりです: %2$@";
+"An error occurred while attempting to kill the query associated with connection %lld.\n\ndatabase said: %@" = "接続 %1$lldに関連付けられたクエリのキル中にエラーが発生しました。\n\nMySQL は次のとおりです: %2$@";
 
 /* Error shown when unable to show create table syntax */
 "An error occurred while creating table syntax.\n\n: %@" = "テーブル構文の作成中にエラーが発生しました。\n\n: %@";
@@ -287,31 +287,31 @@
 "An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first." = "'%@'の名前を変更中にエラーが発生しました。一時的な名前が見つかりませんでした。最初に別の名前に変更してみてください。";
 
 /* rename table error informative message */
-"An error occurred while renaming '%@'.\n\nMySQL said: %@" = "'%1$@'の名前を変更中にエラーが発生しました。\n\nMySQLは次のとおりです: %2$@";
+"An error occurred while renaming '%@'.\n\ndatabase said: %@" = "'%1$@'の名前を変更中にエラーが発生しました。\n\nMySQLは次のとおりです: %2$@";
 
 /* rename error - don't know what type the renamed thing is */
 "An error occurred while renaming. '%@' is of an unknown type." = "名前の変更中にエラーが発生しました。'%@' は不明なタイプです。";
 
 /* rename precedure/function error - can't delete old procedure */
-"An error occurred while renaming. I couldn't delete '%@'.\n\nMySQL said: %@" = "名前の変更中にエラーが発生しました。'%1$@'を削除できませんでした。\n\nMySQLは次のとおりです: %2$@";
+"An error occurred while renaming. I couldn't delete '%@'.\n\ndatabase said: %@" = "名前の変更中にエラーが発生しました。'%1$@'を削除できませんでした。\n\nMySQLは次のとおりです: %2$@";
 
 /* rename precedure/function error - can't recreate procedure */
-"An error occurred while renaming. I couldn't recreate '%@'.\n\nMySQL said: %@" = "名前の変更中にエラーが発生しました。'%1$@'を再作成できませんでした。\n\nMySQLは次のとおりです: %2$@";
+"An error occurred while renaming. I couldn't recreate '%@'.\n\ndatabase said: %@" = "名前の変更中にエラーが発生しました。'%1$@'を再作成できませんでした。\n\nMySQLは次のとおりです: %2$@";
 
 /* rename precedure/function error - can't retrieve syntax */
-"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\nMySQL said: %@" = "名前の変更中にエラーが発生しました。'%1$@'の構文を取得できませんでした。\n\nMySQLは次のとおりです: %2$@";
+"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\ndatabase said: %@" = "名前の変更中にエラーが発生しました。'%1$@'の構文を取得できませんでした。\n\nMySQLは次のとおりです: %2$@";
 
 /* rename error - invalid create syntax */
 "An error occurred while renaming. The CREATE syntax of '%@' could not be parsed." = "名前の変更中にエラーが発生しました。'%@' の作成構文を解析できませんでした。";
 
 /* message of panel when retrieving view information failed */
-"An error occurred while retrieving status data.\n\nMySQL said: %@" = "ステータスデータの取得中にエラーが発生しました。\n\nMySQL は %@";
+"An error occurred while retrieving status data.\n\ndatabase said: %@" = "ステータスデータの取得中にエラーが発生しました。\n\nMySQL は %@";
 
 /* message of panel when create syntax cannot be retrieved */
-"An error occurred while retrieving the create syntax for '%@'.\nMySQL said: %@" = "'%1$@'の構文の取得中にエラーが発生しました。\nMySQLは次のとおりです: %2$@";
+"An error occurred while retrieving the create syntax for '%@'.\ndatabase said: %@" = "'%1$@'の構文の取得中にエラーが発生しました。\nMySQLは次のとおりです: %2$@";
 
 /* add index error informative message */
-"An error occurred while trying to add the index.\n\nMySQL said: %@" = "インデックスの追加中にエラーが発生しました。\n\nMySQL は %@ です。";
+"An error occurred while trying to add the index.\n\ndatabase said: %@" = "インデックスの追加中にエラーが発生しました。\n\nMySQL は %@ です。";
 
 /* error adding password to keychain informative message */
 "An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "キーチェーンにパスワードを追加中にエラーが発生しました。 キーチェーンを修復すると問題が解決するかもしれませんが、それが解決しない場合は、エラーコード %iを提供して、シーケンスエースチームに報告してください。";
@@ -320,10 +320,10 @@
 "An error occurred while trying to copy the database '%@' to '%@'." = "データベース '%1$@' を '%2$@ ' にコピー中にエラーが発生しました。";
 
 /* error deleting index informative message */
-"An error occurred while trying to delete the index.\n\nMySQL said: %@" = "インデックスの削除中にエラーが発生しました。\n\nMySQL は %@ です。";
+"An error occurred while trying to delete the index.\n\ndatabase said: %@" = "インデックスの削除中にエラーが発生しました。\n\nMySQL は %@ です。";
 
 /* table status : row count query failed : error message */
-"An error occurred while trying to determine the number of rows for %@.\nMySQL said: %@ (%lu)" = "\"%1$@\" の行数を決定しようとしてエラーが発生しました。\nMySQL は %2$@ (%3$lu)";
+"An error occurred while trying to determine the number of rows for %@.\ndatabase said: %@ (%lu)" = "\"%1$@\" の行数を決定しようとしてエラーが発生しました。\nMySQL は %2$@ (%3$lu)";
 
 /* unable to rename database message informative message */
 "An error occurred while trying to rename the database '%@' to '%@'." = "データベース '%1$@' を '%2$@ ' にリネーム中にエラーが発生しました。";
@@ -338,7 +338,7 @@
 "An error occurred" = "エラーが発生しました";
 
 /* MySQL table info retrieval error message */
-"An error occurred retrieving table information.  MySQL said: %@" = "テーブル情報の取得中にエラーが発生しました。MySQLは次のとおりです: %@";
+"An error occurred retrieving table information.  database said: %@" = "テーブル情報の取得中にエラーが発生しました。MySQLは次のとおりです: %@";
 
 /* SQL encoding read error */
 "An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed." = "選択したエンコーディング（%1$@）でファイルを読み取ることができなかったため、ファイルの読み取り中にエラーが発生しました。\n\n%2$ldクエリのみが実行されました。";
@@ -353,91 +353,91 @@
 "An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)" = "ファイルの読み込み中にエラーが発生しました。\n\n %1$ld 行のみインポートされました。\n\n(%2$@)";
 
 /* error adding field informative message */
-"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@" = "フィールド '%1$@'を\n\n%2$@ \n\nMySQL経由で追加しようとしたときにエラーが発生しました：%3$@";
+"An error occurred when trying to add the field '%@' via\n\n%@\n\ndatabase said: %@" = "フィールド '%1$@'を\n\n%2$@ \n\nMySQL経由で追加しようとしたときにエラーが発生しました：%3$@";
 
 /* error changing field informative message */
-"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@" = "フィールド '%1$@'を\n\n%2$@ \n\nMySQL経由で変更しようとしたときにエラーが発生しました：%3$@";
+"An error occurred when trying to change the field '%@' via\n\n%@\n\ndatabase said: %@" = "フィールド '%1$@'を\n\n%2$@ \n\nMySQL経由で変更しようとしたときにエラーが発生しました：%3$@";
 
 /* error changing table collation informative message */
-"An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@" = "テーブルの照合順序を '%1$@' に変更しようとしたときにエラーが発生しました。\n\nMySQL は次のとおりです: %2$@";
+"An error occurred when trying to change the table collation to '%@'.\n\ndatabase said: %@" = "テーブルの照合順序を '%1$@' に変更しようとしたときにエラーが発生しました。\n\nMySQL は次のとおりです: %2$@";
 
 /* error changing table encoding informative message */
-"An error occurred when trying to change the table encoding to '%@'.\n\nMySQL said: %@" = "テーブルエンコーディングを '%1$@' に変更しようとしたときにエラーが発生しました。\n\nMySQLは次のとおりです: %2$@";
+"An error occurred when trying to change the table encoding to '%@'.\n\ndatabase said: %@" = "テーブルエンコーディングを '%1$@' に変更しようとしたときにエラーが発生しました。\n\nMySQLは次のとおりです: %2$@";
 
 /* error changing table type informative message */
-"An error occurred when trying to change the table type to '%@'.\n\nMySQL said: %@" = "テーブル型を '%1$@' に変更しようとしたときにエラーが発生しました。\n\nMySQL は次のとおりです: %2$@";
+"An error occurred when trying to change the table type to '%@'.\n\ndatabase said: %@" = "テーブル型を '%1$@' に変更しようとしたときにエラーが発生しました。\n\nMySQL は次のとおりです: %2$@";
 
 /* error changing table comment informative message */
-"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@" = "テーブルのコメントを '%1$@' に変更しようとしたときにエラーが発生しました。\n\nMySQL は次のとおりです: %2$@";
+"An error occurred when trying to change the table's comment to '%@'.\n\ndatabase said: %@" = "テーブルのコメントを '%1$@' に変更しようとしたときにエラーが発生しました。\n\nMySQL は次のとおりです: %2$@";
 
-/* an error occurred while analyzing the %@.\n\nMySQL said:%@ */
-"An error occurred while analyzing the %@.\n\nMySQL said:%@" = "%1$@の解析中にエラーが発生しました。\n\nMySQLは次のとおりです:%2$@";
+/* an error occurred while analyzing the %@.\n\ndatabase said:%@ */
+"An error occurred while analyzing the %@.\n\ndatabase said:%@" = "%1$@の解析中にエラーが発生しました。\n\nMySQLは次のとおりです:%2$@";
 
-/* an error occurred while fetching the optimized field type.\n\nMySQL said:%@ */
-"An error occurred while fetching the optimized field type.\n\nMySQL said:%@" = "最適化されたフィールドタイプの取得中にエラーが発生しました。\n\nMySQL は%@ です。";
+/* an error occurred while fetching the optimized field type.\n\ndatabase said:%@ */
+"An error occurred while fetching the optimized field type.\n\ndatabase said:%@" = "最適化されたフィールドタイプの取得中にエラーが発生しました。\n\nMySQL は%@ です。";
 
-/* an error occurred while trying to flush the %@.\n\nMySQL said:%@ */
-"An error occurred while flushing the %@.\n\nMySQL said:%@" = "%1$@のフラッシュ中にエラーが発生しました。\n\nMySQL は%2$@";
+/* an error occurred while trying to flush the %@.\n\ndatabase said:%@ */
+"An error occurred while flushing the %@.\n\ndatabase said:%@" = "%1$@のフラッシュ中にエラーが発生しました。\n\nMySQL は%2$@";
 
 /* sql import error message */
 "An error occurred while importing SQL" = "SQLのインポート中にエラーが発生しました";
 
-/* an error occurred while trying to optimze the %@.\n\nMySQL said:%@ */
-"An error occurred while optimzing the %@.\n\nMySQL said:%@" = "%1$@の最適化中にエラーが発生しました。\n\nMySQL は次のとおりです:%2$@";
+/* an error occurred while trying to optimze the %@.\n\ndatabase said:%@ */
+"An error occurred while optimzing the %@.\n\ndatabase said:%@" = "%1$@の最適化中にエラーが発生しました。\n\nMySQL は次のとおりです:%2$@";
 
-/* an error occurred while performing the checksum on the %@.\n\nMySQL said:%@ */
-"An error occurred while performing the checksum on %@.\n\nMySQL said:%@" = "%1$@のチェックサム中にエラーが発生しました。\n\nMySQL は次のとおりです:%2$@";
+/* an error occurred while performing the checksum on the %@.\n\ndatabase said:%@ */
+"An error occurred while performing the checksum on %@.\n\ndatabase said:%@" = "%1$@のチェックサム中にエラーが発生しました。\n\nMySQL は次のとおりです:%2$@";
 
-/* an error occurred while trying to repair the %@.\n\nMySQL said:%@ */
-"An error occurred while repairing the %@.\n\nMySQL said:%@" = "%1$@の修復中にエラーが発生しました。\n\nMySQL は%2$@";
+/* an error occurred while trying to repair the %@.\n\ndatabase said:%@ */
+"An error occurred while repairing the %@.\n\ndatabase said:%@" = "%1$@の修復中にエラーが発生しました。\n\nMySQL は%2$@";
 
 /* message of panel when retrieving information failed */
-"An error occurred while retrieving information.\nMySQL said: %@" = "情報の取得中にエラーが発生しました。\nMySQLは次のとおりです: %@";
+"An error occurred while retrieving information.\ndatabase said: %@" = "情報の取得中にエラーが発生しました。\nMySQLは次のとおりです: %@";
 
 /* error retrieving table information informative message */
-"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@" = "テーブル '%1$@' のトリガー情報を取得中にエラーが発生しました。もう一度やり直してください。\n\nMySQL: %2$@";
+"An error occurred while retrieving the information for table '%@'. Please try again.\n\ndatabase said: %@" = "テーブル '%1$@' のトリガー情報を取得中にエラーが発生しました。もう一度やり直してください。\n\nMySQL: %2$@";
 
 /* error retrieving table information informative message */
-"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nMySQL said: %@" = "テーブル '%1$@' のトリガー情報を取得中にエラーが発生しました。もう一度やり直してください。\n\nMySQL: %2$@";
+"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\ndatabase said: %@" = "テーブル '%1$@' のトリガー情報を取得中にエラーが発生しました。もう一度やり直してください。\n\nMySQL: %2$@";
 
 /* error adding new column informative message */
-"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@" = "新しい列「%1$@' 」を\n\n%2$@に追加しようとしてエラーが発生しました。\n\nMySQL: %3$@";
+"An error occurred while trying to add the new column '%@' by\n\n%@.\n\ndatabase said: %@" = "新しい列「%1$@' 」を\n\n%2$@に追加しようとしてエラーが発生しました。\n\nMySQL: %3$@";
 
 /* error adding new table informative message */
-"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@" = "新しいテーブル '%1$@' を\n\n%2$@によって追加しようとしてエラーが発生しました。\n\nMySQL: %3$@";
+"An error occurred while trying to add the new table '%@' by\n\n%@.\n\ndatabase said: %@" = "新しいテーブル '%1$@' を\n\n%2$@によって追加しようとしてエラーが発生しました。\n\nMySQL: %3$@";
 
 /* error adding new table informative message */
-"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@" = "新しいテーブル「%1$@'」の追加中にエラーが発生しました。\n\nMySQL: %2$@";
+"An error occurred while trying to add the new table '%@'.\n\ndatabase said: %@" = "新しいテーブル「%1$@'」の追加中にエラーが発生しました。\n\nMySQL: %2$@";
 
 /* error while trying to alter table message */
-"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@" = "テーブル「%1$@」の変更中にエラーが発生しました。\n\nMySQL: %2$@";
+"An error occurred while trying to alter table '%@'.\n\ndatabase said: %@" = "テーブル「%1$@」の変更中にエラーが発生しました。\n\nMySQL: %2$@";
 
-/* an error occurred while trying to check the %@.\n\nMySQL said:%@ */
-"An error occurred while trying to check the %@.\n\nMySQL said:%@" = "%1$@の確認中にエラーが発生しました。\n\nMySQL は%2$@";
+/* an error occurred while trying to check the %@.\n\ndatabase said:%@ */
+"An error occurred while trying to check the %@.\n\ndatabase said:%@" = "%1$@の確認中にエラーが発生しました。\n\nMySQL は%2$@";
 
 /* error deleting relation informative message */
-"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@" = "リレーション「%1$@'」の削除中にエラーが発生しました。\n\nMySQL: %2$@";
+"An error occurred while trying to delete the relation '%@'.\n\ndatabase said: %@" = "リレーション「%1$@'」の削除中にエラーが発生しました。\n\nMySQL: %2$@";
 
 /* unable to get list of users informative message */
 "An error occurred while trying to get the list of users. Please make sure you have the necessary privileges to perform user management, including access to the mysql.user table." = "ユーザーのリストの取得中にエラーが発生しました。 mysql.userテーブルへのアクセスを含め、ユーザー管理を実行するために必要な権限があることを確認してください。";
 
 /* error importing table informative message */
-"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@" = "テーブルのインポート中にエラーが発生しました: \n%1$@\n\n\nMySQL: %2$@";
+"An error occurred while trying to import a table via: \n%@\n\n\ndatabase said: %@" = "テーブルのインポート中にエラーが発生しました: \n%1$@\n\n\nMySQL: %2$@";
 
 /* error moving field informative message */
-"An error occurred while trying to move the field.\n\nMySQL said: %@" = "フィールドの移動中にエラーが発生しました。\n\nMySQL: %@";
+"An error occurred while trying to move the field.\n\ndatabase said: %@" = "フィールドの移動中にエラーが発生しました。\n\nMySQL: %@";
 
 /* error resetting auto_increment informative message */
-"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@" = "テーブル'%1$@'のAUTO_INCREMENTをリセット中にエラーが発生しました。\n\nMySQL: %2$@";
+"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\ndatabase said: %@" = "テーブル'%1$@'のAUTO_INCREMENTをリセット中にエラーが発生しました。\n\nMySQL: %2$@";
 
 /* error truncating table informative message */
-"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@" = "テーブル「%1$@'」を切り捨てようとしてエラーが発生しました。\n\nMySQL: %2$@";
+"An error occurred while trying to truncate the table '%@'.\n\ndatabase said: %@" = "テーブル「%1$@'」を切り捨てようとしてエラーが発生しました。\n\nMySQL: %2$@";
 
 /* mysql error occurred informative message */
-"An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "操作の実行中にエラーが発生しました。\n\nMySQL : %@ ";
+"An error occurred whilst trying to perform the operation.\n\ndatabase said: %@" = "操作の実行中にエラーが発生しました。\n\nMySQL : %@ ";
 
 /* mysql resource limits unsupported message */
-"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "お使いのバージョンのMySQLではリソース制限はサポートされていません。指定したリソース制限は破棄され保存されていません。MySQLは次のとおりです: %@";
+"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. database said: %@" = "お使いのバージョンのMySQLではリソース制限はサポートされていません。指定したリソース制限は破棄され保存されていません。MySQLは次のとおりです: %@";
 
 /* Export files creation error explanatory text */
 "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "エクスポートファイルの %lu を作成しようとしたときに処理されないエラーが発生しました。詳細を確認して、もう一度やり直してください。";
@@ -727,7 +727,7 @@
 "Connected to %@" = "%@ に接続しました";
 
 /* message of panel when connection to db failed */
-"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %@" = "ホストに接続しましたが、データベース %1$@に接続できません。 format@@0\n\nデータベースが存在し、必要な権限があることを確認してください。\n\nMySQL は %2$@";
+"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\ndatabase said: %@" = "ホストに接続しましたが、データベース %1$@に接続できません。 format@@0\n\nデータベースが存在し、必要な権限があることを確認してください。\n\nMySQL は %2$@";
 
 /* Generic connecting very short status message */
 "Connecting..." = "接続中...";
@@ -818,13 +818,13 @@
 "Could not select database" = "データベースを選択できませんでした";
 
 /* Alter Database : Query Failed ($1 = mysql error message) */
-"Couldn't alter database.\nMySQL said: %@" = "データベースを変更できませんでした。\nMySQL: %@";
+"Couldn't alter database.\ndatabase said: %@" = "データベースを変更できませんでした。\nMySQL: %@";
 
 /* Couldn't copy default themes to Application Support Theme folder!\nError: %@ */
 "Couldn't copy default themes to Application Support Theme folder!\nError: %@" = "Application Support Theme フォルダにデフォルトのテーマをコピーできませんでした!\nエラー: %@";
 
 /* message of panel when table cannot be created */
-"Couldn't create '%@'.\nMySQL said: %@" = "'%1$@' を作成できませんでした。\nMySQL は %2$@";
+"Couldn't create '%@'.\ndatabase said: %@" = "'%1$@' を作成できませんでした。\nMySQL は %2$@";
 
 /* Couldn't create Application Support Bundle folder!\nError: %@ */
 "Couldn't create Application Support Bundle folder!\nError: %@" = "Application Support Bundle フォルダを作成できませんでした!\nエラー: %@";
@@ -833,31 +833,31 @@
 "Couldn't create Application Support Theme folder!\nError: %@" = "アプリケーションのサポートテーマフォルダを作成できませんでした!\nエラー: %@";
 
 /* message of panel when creation of db failed */
-"Couldn't create database.\nMySQL said: %@" = "データベースを作成できませんでした。\nMySQL は: %@";
+"Couldn't create database.\ndatabase said: %@" = "データベースを作成できませんでした。\nMySQL は: %@";
 
 /* message of panel when an item cannot be deleted */
-"Couldn't delete '%@'.\n\nMySQL said: %@" = "'%1$@'を削除できませんでした。\n\nMySQL: %2$@";
+"Couldn't delete '%@'.\n\ndatabase said: %@" = "'%1$@'を削除できませんでした。\n\nMySQL: %2$@";
 
 /* message of panel when an item cannot be deleted including informative message about using force deletion */
-"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@" = "'%1$@'を削除できませんでした。\n\n '強制削除'オプションを選択すると、この問題を防ぐことができますが、データベースに一貫性のない状態が残る可能性があります。\n\nMySQLによると：%2$@";
+"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\ndatabase said: %@" = "'%1$@'を削除できませんでした。\n\n '強制削除'オプションを選択すると、この問題を防ぐことができますが、データベースに一貫性のない状態が残る可能性があります。\n\nMySQLによると：%2$@";
 
 /* message of panel when field cannot be deleted */
-"Couldn't delete field %@.\nMySQL said: %@" = "'%1$@'を削除できませんでした。\nMySQL: %2$@";
+"Couldn't delete field %@.\ndatabase said: %@" = "'%1$@'を削除できませんでした。\nMySQL: %2$@";
 
 /* message when deleteing all rows failed */
-"Couldn't delete rows.\n\nMySQL said: %@" = "行を削除できませんでした。\n\nMySQL は %@";
+"Couldn't delete rows.\n\ndatabase said: %@" = "行を削除できませんでした。\n\nMySQL は %@";
 
 /* message of panel when deleting db failed */
-"Couldn't delete the database.\nMySQL said: %@" = "データベースを削除できませんでした。\nMySQL は: %@";
+"Couldn't delete the database.\ndatabase said: %@" = "データベースを削除できませんでした。\nMySQL は: %@";
 
 /* message of panel when an item cannot be renamed */
-"Couldn't duplicate '%@'.\nMySQL said: %@" = "'%1$@'を複製できませんでした。\nMySQLは次のとおりです: %2$@";
+"Couldn't duplicate '%@'.\ndatabase said: %@" = "'%1$@'を複製できませんでした。\nMySQLは次のとおりです: %2$@";
 
 /* message of panel when flushing privs failed */
-"Couldn't flush privileges.\nMySQL said: %@" = "権限をフラッシュできませんでした。\nMySQL は %@";
+"Couldn't flush privileges.\ndatabase said: %@" = "権限をフラッシュできませんでした。\nMySQL は %@";
 
 /* message of panel when table information cannot be retrieved */
-"Couldn't get create syntax.\nMySQL said: %@" = "構文を取得できませんでした。\nMySQL: %@";
+"Couldn't get create syntax.\ndatabase said: %@" = "構文を取得できませんでした。\nMySQL: %@";
 
 /* Custom Query result editing error - could not identify a corresponding column */
 "Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table." = "フィールドの原点を明確に識別できませんでした。列 '%@' には複数のテーブルのデータが含まれています。";
@@ -872,10 +872,10 @@
 "Couldn't sort column." = "列をソートできませんでした。";
 
 /* message of panel when sorting of table failed */
-"Couldn't sort table. MySQL said: %@" = "テーブルをソートできませんでした。MySQL: %@";
+"Couldn't sort table. database said: %@" = "テーブルをソートできませんでした。MySQL: %@";
 
 /* message of panel when error while updating field to db */
-"Couldn't write field.\nMySQL said: %@" = "フィールドを書き込めませんでした。\nMySQL: %@";
+"Couldn't write field.\ndatabase said: %@" = "フィールドを書き込めませんでした。\nMySQL: %@";
 
 /* create syntax for table comment */
 "Create syntax for" = "構文";
@@ -1761,8 +1761,8 @@
 /* MySQL connecting very short status message */
 "MySQL connecting..." = "MySQL 接続中...";
 
-/* mysql error message */
-"MySQL Error" = "MySQL Error";
+/* database error message */
+"Database Error" = "データベースエラー";
 
 /* mysql help */
 "MySQL Help" = "MySQLヘルプ";
@@ -1777,13 +1777,13 @@
 "MySQL Help – Categories" = "MySQL ヘルプ – カテゴリ";
 
 /* mysql said message */
-"MySQL said:" = "MySQL :";
+"database said:" = "MySQL :";
 
 /* shutdown server : error dialog : message */
-"MySQL said:\n%@" = "MySQL :\n%@";
+"database said:\n%@" = "MySQL :\n%@";
 
 /* message of panel when error while adding row to db */
-"MySQL said:\n\n%@" = "MySQL :\n\n%@";
+"database said:\n\n%@" = "MySQL :\n\n%@";
 
 /* Preferences : Themes : Initial filename for 'Export' */
 "MyTheme" = "MyTheme";
@@ -2758,22 +2758,22 @@
 "The selected file is either not a valid SPF file or severely corrupted." = "選択したファイルは有効なSPFファイルではないか、ひどく破損しています。";
 
 /* error deleting relation informative message */
-"The selected relation couldn't be deleted.\n\nMySQL said: %@" = "選択したリレーションを削除できませんでした。\n\nMySQL: %@";
+"The selected relation couldn't be deleted.\n\ndatabase said: %@" = "選択したリレーションを削除できませんでした。\n\nMySQL: %@";
 
 /* error deleting trigger informative message */
-"The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "選択したトリガーを削除できませんでした。\n\nMySQL は %@ です。";
+"The selected trigger couldn't be deleted.\n\ndatabase said: %@" = "選択したトリガーを削除できませんでした。\n\nMySQL は %@ です。";
 
 /* description of tinyint */
 "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "最小の整数型、1バイトのストレージスペースが必要です。Mはオプションの表示幅であり、可能な値の範囲には影響しません。";
 
 /* message of panel when connection to socket failed because optional socket could not be found */
-"The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@" = "ソケットファイルが見つかりませんでした。正しいソケットの場所を指定してください。\n\nMySQL は %@ です。";
+"The socket file could not be found in any common location. Please supply the correct socket location.\n\ndatabase said: %@" = "ソケットファイルが見つかりませんでした。正しいソケットの場所を指定してください。\n\nMySQL は %@ です。";
 
 /* error creating relation informative message */
-"The specified relation could not be created.\n\nMySQL said: %@" = "指定されたリレーションを作成できませんでした。\n\nMySQL は %@";
+"The specified relation could not be created.\n\ndatabase said: %@" = "指定されたリレーションを作成できませんでした。\n\nMySQL は %@";
 
 /* error creating trigger informative message */
-"The specified trigger was unable to be created.\n\nMySQL said: %@" = "指定されたトリガーは作成できませんでした。\n\nMySQL は %@ です。";
+"The specified trigger was unable to be created.\n\ndatabase said: %@" = "指定されたトリガーは作成できませんでした。\n\nMySQL は %@ です。";
 
 /* sql import : charset error alert : detail message */
 "The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!" = "SQLファイルはutf8mb4エンコーディングを使用しますが、MySQLバージョンは制限付きのutf8サブセットのみをサポートしています。\n\nインポートは続けることができますが、SQL ファイル内の任意の BMP 以外の文字(例えば。 いくつかのタイポグラフィと科学的な特殊文字は、古風なCJKロゴグラム、絵文字が回復不能に失われます!";
@@ -2806,10 +2806,10 @@
 "The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds)." = "SSHトンネルがホスト%1$@に接続できなかったか、リクエストがタイムアウトしました。\n\nアドレスが正しく、必要な権限があることを確認するか、接続タイムアウト（現在は%2$ld）を増やしてみてください秒）。";
 
 /* message of panel when loading of table failed and presumably due to used filter argument */
-"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@" = "おそらく使用されたフィルタ句のためテーブルデータを読み込むことができませんでした。 \n\nMySQL は %@ と言いました。";
+"The table data couldn't be loaded presumably due to used filter clause. \n\ndatabase said: %@" = "おそらく使用されたフィルタ句のためテーブルデータを読み込むことができませんでした。 \n\nMySQL は %@ と言いました。";
 
 /* message of panel when loading of table failed */
-"The table data couldn't be loaded.\n\nMySQL said: %@" = "テーブルデータを読み込めませんでした。\n\nMySQL は %@ です。";
+"The table data couldn't be loaded.\n\ndatabase said: %@" = "テーブルデータを読み込めませんでした。\n\nMySQL は %@ です。";
 
 /* Export folder not writable explanatory text */
 "The target export folder is not writable.  Please select a new export location and try again." = "ターゲットのエクスポートフォルダは書き込み可能ではありません。新しいエクスポート場所を選択して、もう一度お試しください。";
@@ -2841,7 +2841,7 @@
 "This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone." = "このフィールドはテーブル'%@'との外部キー関係の一部です。 フィールドを削除する前に、このリレーションシップを削除する必要があります。 format@@0\n\nリレーションシップとフィールドを削除してもよろしいですか？この操作は元に戻せません。";
 
 /* table structure : indexes : delete index : error 1553, no FK found : description */
-"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@" = "既存の外部鍵関係で使用されているため、このインデックスは削除できません。\n\nこのインデックスを削除しようとする前に、リレーションシップを削除してください。\n\nMySQL は %@";
+"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\ndatabase said: %@" = "既存の外部鍵関係で使用されているため、このインデックスは削除できません。\n\nこのインデックスを削除しようとする前に、リレーションシップを削除してください。\n\nMySQL は %@";
 
 /* description of serial */
 "This is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE." = "これはBIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUEのエイリアスです。";
@@ -2940,16 +2940,16 @@
 "Unable to check table" = "テーブルを確認できません";
 
 /* message of panel when connection to host failed due to access denied error */
-"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "アクセスが拒否されたため、ホスト%1$@に接続できません。\n\nユーザー名とパスワードを再確認し、現在の場所からのアクセスが許可されていることを確認してください。\n\nMySQLによると：%2$@";
+"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\ndatabase said: %@" = "アクセスが拒否されたため、ホスト%1$@に接続できません。\n\nユーザー名とパスワードを再確認し、現在の場所からのアクセスが許可されていることを確認してください。\n\nMySQLによると：%2$@";
 
 /* message of panel when SSH port forwarding failed */
-"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@" = "SSH経由のポート接続が拒否されたため、ホスト%1$@に接続できません。\n\nMySQLホストがTCP / IP接続を許可するように設定され（no --skip-networking）、トンネリングを介してトンネリングしているホストからの接続を許可するように構成されていることを確認してください。\n\nポートが正しいことと、必要な権限があることを確認することもできます。\n\nエラーの詳細を確認すると、SSHデバッグログが表示され、詳細が提供される場合があります。\n\nMySQL said: %2$@";
+"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\ndatabase said: %@" = "0database said: %2$@";
 
 /* message of panel when connection to host failed */
-"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\nMySQL said: %@" = "ホスト%1$@に接続できないか、リクエストがタイムアウトしました。\n\nアドレスが正しく、必要な権限があることを確認するか、接続タイムアウト（現在は%2$ld秒）を増やしてみてください。\n\nMySQLによると：%3$@";
+"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\ndatabase said: %@" = "ホスト%1$@に接続できないか、リクエストがタイムアウトしました。\n\nアドレスが正しく、必要な権限があることを確認するか、接続タイムアウト（現在は%2$ld秒）を増やしてみてください。\n\nMySQLによると：%3$@";
 
 /* message of panel when connection to host failed */
-"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@" = "ソケット経由で接続できないか、リクエストがタイムアウトしました。\n\nソケットパスが正しいこと、必要な権限があること、サーバーが実行されていることを再確認してください。\n\nMySQLによると：%@";
+"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\ndatabase said: %@" = "ソケット経由で接続できないか、リクエストがタイムアウトしました。\n\nソケットパスが正しいこと、必要な権限があること、サーバーが実行されていることを再確認してください。\n\nMySQLによると：%@";
 
 /* unable to copy database message */
 "Unable to copy database" = "データベースをコピーできません";

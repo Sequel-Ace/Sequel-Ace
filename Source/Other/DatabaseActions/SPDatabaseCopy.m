@@ -31,6 +31,7 @@
 #import "SPDatabaseCopy.h"
 #import "SPTableCopy.h"
 #import "SPCreateDatabaseInfo.h"
+#import "SPDatabaseConnection.h"
 
 #import <SPMySQL/SPMySQL.h>
 

@@ -37,6 +37,7 @@
 #import "SPTableStructure.h"
 #import "SPThreadAdditions.h"
 #import "SPFunctions.h"
+#import "SPDatabaseConnection.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -750,7 +751,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 				indexName = @"";
 			}
 			else {
-				indexName = ([indexName isEqualToString:@""]) ? @"" : [indexName backtickQuotedString];
+				indexName = ([indexName isEqualToString:@""]) ? @"" : [connection quoteIdentifier:indexName];
 			}
 
 			// For each column add it to the temp array and check if size is required
@@ -768,10 +769,10 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 				if ([requiresLength containsObject:[columnType uppercaseString]] && (![(NSString *)[column objectForKey:@"Size"] length]) && !isFullTextType) continue;
 
 				if ([column objectForKey:@"Size"] && [supportsLength containsObject:columnType] && !isFullTextType) {
-					[tempIndexedColumns addObject:[NSString stringWithFormat:@"%@ (%@)", [columnName backtickQuotedString], [column objectForKey:@"Size"]]];
+					[tempIndexedColumns addObject:[NSString stringWithFormat:@"%@ (%@)", [connection quoteIdentifier:columnName], [column objectForKey:@"Size"]]];
 				}
 				else {
-					[tempIndexedColumns addObject:[columnName backtickQuotedString]];
+					[tempIndexedColumns addObject:[connection quoteIdentifier:columnName]];
 				}
 			}
 
@@ -780,7 +781,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 				if ((![indexType isEqualToString:@"INDEX"]) && (![indexType isEqualToString:@"PRIMARY KEY"])) indexType = [indexType stringByAppendingFormat:@" INDEX"];
 
 				// Build the query
-				NSMutableString *query = [NSMutableString stringWithFormat:@"ALTER TABLE %@ ADD %@", [table backtickQuotedString], indexType];
+				NSMutableString *query = [NSMutableString stringWithFormat:@"ALTER TABLE %@ ADD %@", [connection quoteIdentifier:table], indexType];
 
 				// If supplied specify the index's name
 				if ([indexName length]) {
@@ -807,7 +808,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 
 				// Check for errors, but only if the query wasn't cancelled
 				if ([connection queryErrored] && ![connection lastQueryWasCancelled]) {
-					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to add index", @"add index error message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the index.\n\nMySQL said: %@", @"add index error informative message"), [connection lastErrorMessage]] callback:nil];
+					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to add index", @"add index error message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the index.\n\ndatabase said: %@", @"add index error informative message"), [connection lastErrorMessage]] callback:nil];
 				}
 				else {
 					[tableData resetAllData];
@@ -843,25 +844,25 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 		// Remove the foreign key dependency before the index if required
 		if ([fkName length]) {
 
-			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [table backtickQuotedString], [fkName backtickQuotedString]]];
+			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [connection quoteIdentifier:table], [connection quoteIdentifier:fkName]]];
 
 			// Check for errors, but only if the query wasn't cancelled
 			if ([connection queryErrored] && ![connection lastQueryWasCancelled]) {
 				NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
 
 				[errorDictionary setObject:NSLocalizedString(@"Unable to delete relation", @"error deleting relation message") forKey:@"title"];
-				[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@", @"error deleting relation informative message"), fkName, [connection lastErrorMessage]] forKey:@"message"];
+				[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to delete the relation '%@'.\n\ndatabase said: %@", @"error deleting relation informative message"), fkName, [connection lastErrorMessage]] forKey:@"message"];
 
 				[[tableStructure onMainThread] showErrorSheetWith:errorDictionary];
 			}
 		}
 
 		if ([index isEqualToString:@"PRIMARY"]) {
-			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP PRIMARY KEY", [table backtickQuotedString]]];
+			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP PRIMARY KEY", [connection quoteIdentifier:table]]];
 		}
 		else {
 			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP INDEX %@",
-			                                                   [table backtickQuotedString], [index backtickQuotedString]]];
+			                                                   [connection quoteIdentifier:table], [connection quoteIdentifier:index]]];
 		}
 
 		// Check for errors, but only if the query wasn't cancelled
@@ -878,7 +879,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 				NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
 
 				[errorDictionary setObject:NSLocalizedString(@"Unable to delete index", @"error deleting index message") forKey:@"title"];
-				[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to delete the index.\n\nMySQL said: %@", @"error deleting index informative message"), [connection lastErrorMessage]] forKey:@"message"];
+				[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to delete the index.\n\ndatabase said: %@", @"error deleting index informative message"), [connection lastErrorMessage]] forKey:@"message"];
 
 				[[tableStructure onMainThread] showErrorSheetWith:errorDictionary];
 			}
@@ -928,14 +929,14 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 		NSArray *fkColumns = [[fkInfo objectForKey:@"columns"] sortedArrayUsingSelector:@selector(compare:)];
 		if(![myColumns isEqualToArray:fkColumns]) continue;
 		if(constraintName != nil) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"A foreign key needs this index", @"table structure : indexes : delete index : error 1553, no FK found : title") message:[NSString stringWithFormat:NSLocalizedString(@"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@", @"table structure : indexes : delete index : error 1553, no FK found : description"), [info objectForKey:@"error"]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"A foreign key needs this index", @"table structure : indexes : delete index : error 1553, no FK found : title") message:[NSString stringWithFormat:NSLocalizedString(@"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\ndatabase said: %@", @"table structure : indexes : delete index : error 1553, no FK found : description"), [info objectForKey:@"error"]] callback:nil];
 			return;
 		}
 		constraintName = [fkInfo objectForKey:@"name"];
 	}
 	
 	if (!constraintName) {
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"A foreign key needs this index", @"table structure : indexes : delete index : error 1553, no FK found : title") message:[NSString stringWithFormat:NSLocalizedString(@"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@", @"table structure : indexes : delete index : error 1553, no FK found : description"), [info objectForKey:@"error"]] callback:nil];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"A foreign key needs this index", @"table structure : indexes : delete index : error 1553, no FK found : title") message:[NSString stringWithFormat:NSLocalizedString(@"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\ndatabase said: %@", @"table structure : indexes : delete index : error 1553, no FK found : description"), [info objectForKey:@"error"]] callback:nil];
 		return;
 	}
 

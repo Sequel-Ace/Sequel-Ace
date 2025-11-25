@@ -33,6 +33,7 @@
 @class SPDatabaseData;
 @class SPTablesList;
 @class SPMySQLConnection;
+@protocol SPDatabaseConnection;
 @class SPDatabaseDocument;
 
 @interface SPExtendedTableInfo : NSObject
@@ -65,10 +66,10 @@
 	
 	NSString *selectedTable;
 	
-	SPMySQLConnection *connection;
+	id<SPDatabaseConnection> connection;
 }
 
-@property (readwrite, strong) SPMySQLConnection *connection;
+@property (readwrite, strong) id<SPDatabaseConnection> connection;
 
 // IBAction methods
 - (IBAction)reloadTable:(id)sender;

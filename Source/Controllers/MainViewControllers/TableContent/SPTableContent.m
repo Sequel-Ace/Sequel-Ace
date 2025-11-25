@@ -294,7 +294,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[[self onMainThread] setTableDetails:tableDetails];
 
 	// Init copyTable with necessary information for copying selected rows as SQL INSERT
-	[tableContentView setTableInstance:self withTableData:tableValues withColumns:dataColumns withTableName:selectedTable withConnection:mySQLConnection];
+	[tableContentView setTableInstance:self withTableData:tableValues withColumns:dataColumns withTableName:selectedTable withConnection:connection];
 
 	// Trigger a data refresh
 	[self loadTableValues];
@@ -736,7 +736,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	NSMutableString *queryString;
 	NSString *queryStringBeforeLimit = nil;
 	NSString *filterString;
-	SPMySQLStreamingResultStore *resultStore;
+	id<SPDatabaseResult> resultStore = nil;
 	NSInteger rowsToLoad = [[tableDataInstance statusValueForKey:@"Rows"] integerValue];
 
 	[[countText onMainThread] setStringValue:NSLocalizedString(@"Loading table data...", @"Loading table data string")];
@@ -751,7 +751,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	queryString = [NSMutableString stringWithFormat:@"SELECT %@%@ FROM %@", 
 			(activeFilter == SPTableContentFilterSourceTableFilter && filterString && [filterTableController isDistinct]) ? @"DISTINCT " :
 			@"",
-			[self fieldListForQuery], [selectedTable backtickQuotedString]];
+			[self fieldListForQuery], [connection quoteIdentifier:selectedTable]];
 
 	if ([filterString length]) {
 		[queryString appendFormat:@" WHERE %@", filterString];
@@ -762,7 +762,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 	// Add sorting details if appropriate
 	if (sortCol && [sortCol integerValue] < (NSInteger)dataColumns.count) {
-		[queryString appendFormat:@" ORDER BY %@", [[[dataColumns safeObjectAtIndex:[sortCol integerValue]] safeObjectForKey:@"name"] backtickQuotedString]];
+		NSString *sortColumnName = [[dataColumns safeObjectAtIndex:[sortCol integerValue]] safeObjectForKey:@"name"];
+		[queryString appendFormat:@" ORDER BY %@", [connection quoteIdentifier:sortColumnName]];
 		if (isDesc) [queryString appendString:@" DESC"];
 	}
 
@@ -781,8 +782,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			queryStringBeforeLimit = [NSString stringWithString:queryString];
 		}
 
-		// Append the limit settings
-		[queryString appendFormat:@" LIMIT %ld,%ld", (long)((contentPage-1)*[prefs integerForKey:SPLimitResultsValue]), (long)[prefs integerForKey:SPLimitResultsValue]];
+		// Append the limit settings using database-specific syntax
+		NSUInteger limitOffset = (contentPage-1)*[prefs integerForKey:SPLimitResultsValue];
+		NSUInteger limitCount = [prefs integerForKey:SPLimitResultsValue];
+		[queryString appendFormat:@" %@", [connection buildLimitClause:limitCount offset:limitOffset]];
 
 		// Update the approximate count of the rows to load
 		rowsToLoad = rowsToLoad - (contentPage-1)*[prefs integerForKey:SPLimitResultsValue];
@@ -795,7 +798,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// Perform and process the query
 	[tableContentView performSelectorOnMainThread:@selector(noteNumberOfRowsChanged) withObject:nil waitUntilDone:YES];
 	[self setUsedQuery:queryString];
-	resultStore = [mySQLConnection resultStoreFromQueryString:queryString];
+	resultStore = [connection resultStoreFromQueryString:queryString];
 
 	// Ensure the number of columns are unchanged; if the column count has changed, abort the load
 	// and queue a full table reload.
@@ -813,11 +816,11 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
     // otherwise, when selecting two (or more) tables to export, the code falls into this block when it shouldn't
     // and cancels the current query, which always seems to fail, which then triggers the diabolical reconnect code
 	if (selectedItems.count == 1 && resultStore && ([dataColumns count] != [resultStore numberOfFields])) {\
-        SPLog(@"mySQLConnection cancelCurrentQuery");
+        SPLog(@"connection cancelCurrentQuery");
         SPLog(@"[dataColumns count] = %lu", (unsigned long)[dataColumns count]);
         SPLog(@"[resultStore numberOfFields] = %lu", (unsigned long)[resultStore numberOfFields]);
 		[tableDocumentInstance disableTaskCancellation];
-		[mySQLConnection cancelCurrentQuery];
+		[connection cancelCurrentQuery];
 		[resultStore cancelResultLoad];
 		fullTableReloadRequired = YES;
 	}
@@ -828,18 +831,18 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 
 	// If the result is empty, and a late page is selected, reset the page
-	if (!fullTableReloadRequired && [prefs boolForKey:SPLimitResults] && queryStringBeforeLimit && !tableRowsCount && ![mySQLConnection lastQueryWasCancelled]) {
+	if (!fullTableReloadRequired && [prefs boolForKey:SPLimitResults] && queryStringBeforeLimit && !tableRowsCount && ![connection lastQueryWasCancelled]) {
 		contentPage = 1;
 		previousTableRowsCount = tableRowsCount;
-		queryString = [NSMutableString stringWithFormat:@"%@ LIMIT 0,%ld", queryStringBeforeLimit, (long)[prefs integerForKey:SPLimitResultsValue]];
+		queryString = [NSMutableString stringWithFormat:@"%@ %@", queryStringBeforeLimit, [connection buildLimitClause:[prefs integerForKey:SPLimitResultsValue] offset:0]];
 		[self setUsedQuery:queryString];
-		resultStore = [mySQLConnection resultStoreFromQueryString:queryString];
+		resultStore = [connection resultStoreFromQueryString:queryString];
 		if (resultStore) {
 			[self updateResultStore:resultStore approximateRowCount:[prefs integerForKey:SPLimitResultsValue]];
 		}
 	}
 
-	if ([mySQLConnection lastQueryWasCancelled] || [mySQLConnection queryErrored])
+	if ([connection lastQueryWasCancelled] || [connection queryErrored])
 		isInterruptedLoad = YES;
 	else
 		isInterruptedLoad = NO;
@@ -940,14 +943,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// Notify listenters that the query has finished
 	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 
-	if ([mySQLConnection queryErrored] && ![mySQLConnection lastQueryWasCancelled]) {
+	if ([connection queryErrored] && ![connection lastQueryWasCancelled]) {
 		if(activeFilter == SPTableContentFilterSourceRuleFilter || activeFilter == SPTableContentFilterSourceNone) {
 			NSString *errorDetail;
 			if([filterString length]){
-				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@", @"message of panel when loading of table failed and presumably due to used filter argument"), [mySQLConnection lastErrorMessage]];
+				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded presumably due to used filter clause. \n\nDatabase said: %@", @"message of panel when loading of table failed and presumably due to used filter argument"), [connection lastErrorMessage]];
 			}
 			else{
-				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded.\n\nMySQL said: %@", @"message of panel when loading of table failed"), [mySQLConnection lastErrorMessage]];
+				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded.\n\nDatabase said: %@", @"message of panel when loading of table failed"), [connection lastErrorMessage]];
 				SPMainQSync(^{
 					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:errorDetail callback:nil];
 				});
@@ -955,9 +958,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		}
 		// Filter task came from filter table
 		else if(activeFilter == SPTableContentFilterSourceTableFilter) {
-			[[filterTableController onMainThread] setFilterError:[mySQLConnection lastErrorID]
-			                                             message:[mySQLConnection lastErrorMessage]
-			                                            sqlstate:[mySQLConnection lastSqlstate]];
+			[[filterTableController onMainThread] setFilterError:[connection lastErrorID]
+			                                             message:[connection lastErrorMessage]
+			                                            sqlstate:[connection lastSqlstate]];
 		}
 	} 
 	else
@@ -976,7 +979,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
  * Processes a supplied streaming result store, monitoring the load and updating the data
  * displayed during download.
  */
-- (void)updateResultStore:(SPMySQLStreamingResultStore *)theResultStore approximateRowCount:(NSUInteger)targetRowCount;
+- (void)updateResultStore:(id<SPDatabaseResult>)theResultStore approximateRowCount:(NSUInteger)targetRowCount;
 {
 	NSUInteger i;
 	NSUInteger dataColumnsCount = [dataColumns count];
@@ -1456,8 +1459,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		[[tableContentView onMainThread] selectRowIndexes:[NSIndexSet indexSet] byExtendingSelection:NO];
 		[self loadTableValues];
 
-		if ([mySQLConnection queryErrored] && ![mySQLConnection lastQueryWasCancelled]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't sort table. MySQL said: %@", @"message of panel when sorting of table failed"), [mySQLConnection lastErrorMessage]] callback:nil];
+		if ([connection queryErrored] && ![connection lastQueryWasCancelled]) {
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't sort table. database said: %@", @"message of panel when sorting of table failed"), [connection lastErrorMessage]] callback:nil];
 
 			[tableDocumentInstance endTask];
 			return;
@@ -1603,11 +1606,13 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	dataRow = [tableValues rowContentsAtIndex:rowIndex];
 
 	// Get the primary key if there is one, using any columns present within it
-	SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@.%@",
-		[database backtickQuotedString], [tableForColumn backtickQuotedString]]];
+	// Note: For cross-database queries, we need to select the database first or use getColumnsForTable
+	// This assumes we're already connected to the correct database
+	id<SPDatabaseResult>theResult = [connection getColumnsForTable:tableForColumn];
 	[theResult setReturnDataAsStrings:YES];
 	NSMutableArray *primaryColumnsInSpecifiedTable = [NSMutableArray array];
-	for (NSDictionary *eachRow in theResult) {
+	NSDictionary *eachRow;
+	while ((eachRow = [theResult getRowAsDictionary])) {
 		if ( [[eachRow objectForKey:@"Key"] isEqualToString:@"PRI"] ) {
 			for (field in columnsInSpecifiedTable) {
 				if([[field objectForKey:@"org_name"] isEqualToString:[eachRow objectForKey:@"Field"]]) {
@@ -1624,7 +1629,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	for (field in columnsToQuery) {
 		id aValue = [dataRow objectAtIndex:[[field objectForKey:@"datacolumnindex"] integerValue]];
 		if ([aValue isNSNull]) {
-			[argumentParts addObject:[NSString stringWithFormat:@"%@ IS NULL", [[field objectForKey:@"org_name"] backtickQuotedString]]];
+			[argumentParts addObject:[NSString stringWithFormat:@"%@ IS NULL", [connection quoteIdentifier:[field objectForKey:@"org_name"]]]];
 		} else {
 			NSString *fieldTypeGrouping = [field objectForKey:@"typegrouping"];
 
@@ -1640,17 +1645,17 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 			// If the field is of type BIT then it needs a binary prefix
 			if ([fieldTypeGrouping isEqualToString:@"bit"]) {
-				[argumentParts addObject:[NSString stringWithFormat:@"%@=b'%@'", [[field objectForKey:@"org_name"] backtickQuotedString], [aValue description]]];
+				[argumentParts addObject:[NSString stringWithFormat:@"%@=b'%@'", [connection quoteIdentifier:[field objectForKey:@"org_name"]], [aValue description]]];
 			}
 			else if ([fieldTypeGrouping isEqualToString:@"geometry"]) {
-				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteData:[aValue data]]]];
+				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [connection quoteIdentifier:[field objectForKey:@"org_name"]], [connection escapeAndQuoteData:[aValue data]]]];
 			}
 			// BLOB/TEXT data
 			else if ([aValue isKindOfClass:[NSData class]]) {
-				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteData:aValue]]];
+				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [connection quoteIdentifier:[field objectForKey:@"org_name"]], [connection escapeAndQuoteData:aValue]]];
 			}
 			else {
-				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteString:aValue]]];
+				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [connection quoteIdentifier:[field objectForKey:@"org_name"]], [connection escapeAndQuoteString:aValue]]];
 			}
 		}
 	}
@@ -1675,20 +1680,26 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	if ( ![self saveRowOnDeselect] ) return;
 
 	for (NSDictionary *column in dataColumns) {
-		if ([column objectForKey:@"default"] == nil || [[column objectForKey:@"default"] isNSNull]) {
+		id defaultValue = [column objectForKey:@"default"];
+		
+		if (defaultValue == nil || [defaultValue isNSNull]) {
 			[newRow addObject:[NSNull null]];
-		} else if ([[column objectForKey:@"default"] isEqualToString:@""]
+		} else if ([defaultValue isEqualToString:@""]
 					&& ![[column objectForKey:@"null"] boolValue]
 					&& ([[column objectForKey:@"typegrouping"] isEqualToString:@"float"]
 						|| [[column objectForKey:@"typegrouping"] isEqualToString:@"integer"]
 						|| [[column objectForKey:@"typegrouping"] isEqualToString:@"bit"]))
 		{
 			[newRow addObject:@"0"];
-		} else if ([[column objectForKey:@"typegrouping"] isEqualToString:@"bit"] && [[column objectForKey:@"default"] hasPrefix:@"b'"] && [(NSString*)[column objectForKey:@"default"] length] > 3) {
+		} else if ([[column objectForKey:@"typegrouping"] isEqualToString:@"bit"] && [defaultValue hasPrefix:@"b'"] && [(NSString*)defaultValue length] > 3) {
 			// remove leading b' and final '
-			[newRow addObject:[[[column objectForKey:@"default"] substringFromIndex:2] substringToIndex:[(NSString*)[column objectForKey:@"default"] length]-3]];
+			[newRow addObject:[[defaultValue substringFromIndex:2] substringToIndex:[(NSString*)defaultValue length]-3]];
+		} else if ([connection isDefaultValueServerExpression:defaultValue]) {
+			// Server-side expression (like nextval(), CURRENT_TIMESTAMP, now(), etc.)
+			// Don't show the expression in the UI - let the database compute it on INSERT
+			[newRow addObject:[NSNull null]];
 		} else {
-			[newRow addObject:[column objectForKey:@"default"]];
+			[newRow addObject:defaultValue];
 		}
 	}
 	[tableValues addRowWithContents:newRow];
@@ -1714,7 +1725,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 - (IBAction)duplicateRow:(id)sender
 {
 	NSMutableArray *tempRow;
-	SPMySQLResult *queryResult;
+	id<SPDatabaseResult>queryResult;
 	NSDictionary *row;
 	NSArray *dbDataRow = nil;
 	NSUInteger i;
@@ -1742,12 +1753,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		}
 		
 		// If we have indexes, use argumentForRow
-		queryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@", [selectedTable backtickQuotedString], whereArgument]];
+		queryResult = [connection queryString:[NSString stringWithFormat:@"SELECT * FROM %@ WHERE %@", [connection quoteIdentifier:selectedTable], whereArgument]];
 		dbDataRow = [queryResult getRowAsArray];
 	}
 
 	// Set autoincrement fields to NULL
-	queryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [selectedTable backtickQuotedString]]];
+	queryResult = [connection getColumnsForTable:selectedTable];
 	
 	[queryResult setReturnDataAsStrings:YES];
 	
@@ -1894,8 +1905,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         // consistent state if deletion fails.
         if (isEditingRow) [self cancelRowEditing];
 
-        [mySQLConnection queryString:[NSString stringWithFormat:@"DELETE FROM %@", [selectedTable backtickQuotedString]]];
-        if ( ![mySQLConnection queryErrored] ) {
+        [connection queryString:[NSString stringWithFormat:@"DELETE FROM %@", [connection quoteIdentifier:selectedTable]]];
+        if ( ![connection queryErrored] ) {
             maxNumRows = 0;
             tableRowsCount = 0;
             maxNumRowsIsEstimate = NO;
@@ -1914,8 +1925,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         } else {
             [self performSelector:@selector(showErrorSheetWith:)
                 withObject:[NSArray arrayWithObjects:NSLocalizedString(@"Error", @"error"),
-                    [NSString stringWithFormat:NSLocalizedString(@"Couldn't delete rows.\n\nMySQL said: %@", @"message when deleteing all rows failed"),
-                       [mySQLConnection lastErrorMessage]],
+                    [NSString stringWithFormat:NSLocalizedString(@"Couldn't delete rows.\n\ndatabase said: %@", @"message when deleteing all rows failed"),
+                       [connection lastErrorMessage]],
                     nil]
                 afterDelay:0.3];
         }
@@ -1964,15 +1975,15 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
             NSInteger numberOfRows = 0;
 
             // Get the number of rows in the table
-            NSString *returnedCount = [mySQLConnection getFirstFieldFromQuery:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [selectedTable backtickQuotedString]]];
+            NSString *returnedCount = [connection getFirstFieldFromQuery:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [connection quoteIdentifier:selectedTable]]];
             if (returnedCount) {
                 numberOfRows = [returnedCount integerValue];
             }
 
             // Check for uniqueness via LIMIT numberOfRows-1,numberOfRows for speed
             if(numberOfRows > 0) {
-                [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT * FROM %@ GROUP BY %@ LIMIT %ld,%ld", [selectedTable backtickQuotedString], [primaryKeyFieldNames componentsJoinedAndBacktickQuoted], (long)(numberOfRows-1), (long)numberOfRows]];
-                if ([mySQLConnection rowsAffectedByLastQuery] == 0)
+                [connection queryString:[NSString stringWithFormat:@"SELECT * FROM %@ GROUP BY %@ LIMIT %ld,%ld", [connection quoteIdentifier:selectedTable], [primaryKeyFieldNames componentsJoinedAndQuotedForConnection:connection], (long)(numberOfRows-1), (long)numberOfRows]];
+                if ([connection rowsAffectedByLastQuery] == 0)
                     primaryKeyFieldNames = nil;
             } else {
                 primaryKeyFieldNames = nil;
@@ -1987,10 +1998,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
                 //argumentForRow might return empty query, in which case we shouldn't execute the partial query
                 if([wherePart length]) {
-                    [mySQLConnection queryString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@", [selectedTable backtickQuotedString], wherePart]];
+                    [connection queryString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@", [connection quoteIdentifier:selectedTable], wherePart]];
 
                     // Check for errors
-                    if ( ![mySQLConnection rowsAffectedByLastQuery] || [mySQLConnection queryErrored]) {
+                    if ( ![connection rowsAffectedByLastQuery] || [connection queryErrored]) {
                         // If error delete that index from selectedRows for reloading table if
                         // "ReloadAfterRemovingRow" is disbaled
                         if(!reloadAfterRemovingRow)
@@ -2010,7 +2021,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
             // if table has only one PRIMARY KEY
             // delete the fast way by using the PRIMARY KEY in an IN clause
             NSMutableString *deleteQuery = [NSMutableString string];
-            [deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [selectedTable backtickQuotedString], [[primaryKeyFieldNames firstObject] backtickQuotedString]]];
+            [deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [connection quoteIdentifier:selectedTable], [connection quoteIdentifier:[primaryKeyFieldNames firstObject]]]];
 
             while (anIndex != NSNotFound) {
                 NSDictionary *field = [tableDataInstance columnWithName:[primaryKeyFieldNames firstObject]];
@@ -2024,12 +2035,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
                 if([keyValue isKindOfClass:[NSData class]]) {
                   if ([fieldType isEqualToString:@"UUID"] && [fieldTypeGroup isEqualToString:@"blobdata"]) {
                     NSString *uuidVal = [[NSString alloc] initWithData:keyValue encoding:NSUTF8StringEncoding];
-                    escVal = [mySQLConnection escapeAndQuoteString:uuidVal];
+                    escVal = [connection escapeAndQuoteString:uuidVal];
                   } else {
-                    escVal = [mySQLConnection escapeAndQuoteData:keyValue];
+                    escVal = [connection escapeAndQuoteData:keyValue];
                   }
                 } else {
-                  escVal = [mySQLConnection escapeAndQuoteString:[keyValue description]];
+                  escVal = [connection escapeAndQuoteString:[keyValue description]];
                 }
               
               	[deleteQuery appendStringOrNil:escVal];
@@ -2037,13 +2048,13 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
                 // Split deletion query into 256k chunks
                 if([deleteQuery length] > 256000) {
                     [deleteQuery appendString:@")"];
-                    [mySQLConnection queryString:deleteQuery];
+                    [connection queryString:deleteQuery];
 
                     // Remember affected rows for error checking
-                    affectedRows += (NSInteger)[mySQLConnection rowsAffectedByLastQuery];
+                    affectedRows += (NSInteger)[connection rowsAffectedByLastQuery];
 
                     // Reinit a new deletion query
-                    [deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [selectedTable backtickQuotedString], [[primaryKeyFieldNames firstObject] backtickQuotedString]]];
+                    [deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE %@ IN (", [connection quoteIdentifier:selectedTable], [connection quoteIdentifier:[primaryKeyFieldNames firstObject]]]];
                 } else {
                     [deleteQuery appendString:@","];
                 }
@@ -2056,10 +2067,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
             if(![deleteQuery hasSuffix:@"("]) {
                 // Replace final , by ) and delete the remaining rows
                 [deleteQuery setString:[NSString stringWithFormat:@"%@)", [deleteQuery substringToIndex:([deleteQuery length]-1)]]];
-                [mySQLConnection queryString:deleteQuery];
+                [connection queryString:deleteQuery];
 
                 // Remember affected rows for error checking
-                affectedRows += (NSInteger)[mySQLConnection rowsAffectedByLastQuery];
+                affectedRows += (NSInteger)[connection rowsAffectedByLastQuery];
             }
 
             errors = (affectedRows > 0) ? [selectedRows count] - affectedRows : [selectedRows count];
@@ -2069,7 +2080,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
             // delete the row by using all PRIMARY KEYs in an OR clause
             NSMutableString *deleteQuery = [NSMutableString string];
 
-            [deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE ", [selectedTable backtickQuotedString]]];
+            [deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE ", [connection quoteIdentifier:selectedTable]]];
 
             while (anIndex != NSNotFound) {
 
@@ -2085,13 +2096,13 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
                 // Split deletion query into 64k chunks
                 if([deleteQuery length] > 64000) {
-                    [mySQLConnection queryString:deleteQuery];
+                    [connection queryString:deleteQuery];
 
                     // Remember affected rows for error checking
-                    affectedRows += (NSInteger)[mySQLConnection rowsAffectedByLastQuery];
+                    affectedRows += (NSInteger)[connection rowsAffectedByLastQuery];
 
                     // Reinit a new deletion query
-                    [deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE ", [selectedTable backtickQuotedString]]];
+                    [deleteQuery setString:[NSString stringWithFormat:@"DELETE FROM %@ WHERE ", [connection quoteIdentifier:selectedTable]]];
                 } else {
                     [deleteQuery appendString:@" OR "];
                 }
@@ -2105,10 +2116,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
                 // Remove final ' OR ' and delete the remaining rows
                 [deleteQuery setString:[deleteQuery substringToIndex:([deleteQuery length]-4)]];
-                [mySQLConnection queryString:deleteQuery];
+                [connection queryString:deleteQuery];
 
                 // Remember affected rows for error checking
-                affectedRows += (NSInteger)[mySQLConnection rowsAffectedByLastQuery];
+                affectedRows += (NSInteger)[connection rowsAffectedByLastQuery];
             }
 
             errors = (affectedRows > 0) ? [selectedRows count] - affectedRows : [selectedRows count];
@@ -2315,7 +2326,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 						str = [NSString stringWithFormat:@"0x%@", [o dataToHexString]];
 					}
 					else {
-						str = [o stringRepresentationUsingEncoding:[mySQLConnection stringEncoding]];
+						str = [o stringRepresentationUsingEncoding:[connection stringEncoding]];
 					}
 					[tempRow addObject:str];
 				}
@@ -2333,9 +2344,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 /**
  * Sets the connection (received from SPDatabaseDocument) and makes things that have to be done only once
  */
-- (void)setConnection:(SPMySQLConnection *)theConnection
+- (void)setConnection:(id<SPDatabaseConnection>)theConnection
 {
-	mySQLConnection = theConnection;
+	connection = theConnection;
 
 	[tableContentView setVerticalMotionCanBeginDrag:NO];
 }
@@ -2385,9 +2396,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 			//when navigating binary relations (eg. raw UUID) do so via a hex-encoded value for charset safety
 			BOOL navigateAsHex = ([targetFilterValue isKindOfClass:[NSData class]] && [[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"binary"]);
-			if(navigateAsHex) targetFilterValue = [self->mySQLConnection escapeData:(NSData *)targetFilterValue includingQuotes:NO];
+			if(navigateAsHex) targetFilterValue = [self->connection escapeData:(NSData *)targetFilterValue includingQuotes:NO];
             else if ([targetFilterValue isKindOfClass:[NSData class]] && [[columnDefinition objectForKey:@"collation"] hasSuffix:@"_bin"]) {
-                targetFilterValue = [(NSData *)targetFilterValue stringRepresentationUsingEncoding:[self->mySQLConnection stringEncoding]];
+                targetFilterValue = [(NSData *)targetFilterValue stringRepresentationUsingEncoding:[self->connection stringEncoding]];
             }
 
 			NSString *filterComparison = @"=";
@@ -2464,12 +2475,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	NSUInteger i;
 	
 	// Run the query
-	[mySQLConnection queryString:queryString];
+	[connection queryString:queryString];
 
 	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 
 	// If no rows have been changed, show error if appropriate.
-	if ( ![mySQLConnection rowsAffectedByLastQuery] && ![mySQLConnection queryErrored] ) {
+	if ( ![connection rowsAffectedByLastQuery] && ![connection queryErrored] ) {
 		if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
 			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
 		} else {
@@ -2497,7 +2508,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		return YES;
 
 	// On success...
-	} else if ( ![mySQLConnection queryErrored] ) {
+	} else if ( ![connection queryErrored] ) {
 		isEditingRow = NO;
 
 		// New row created successfully
@@ -2517,7 +2528,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 				// Set the insertId for fields with auto_increment
 				for ( i = 0; i < [dataColumns count]; i++ ) {
 					if ([[[dataColumns safeObjectAtIndex:i] objectForKey:@"autoincrement"] integerValue]) {
-						[tableValues replaceObjectInRow:currentlyEditingRow column:i withObject:[[NSNumber numberWithUnsignedLongLong:[mySQLConnection lastInsertID]] description]];
+						[tableValues replaceObjectInRow:currentlyEditingRow column:i withObject:[[NSNumber numberWithUnsignedLongLong:[connection lastInsertID]] description]];
 					}
 				}
 			}
@@ -2544,7 +2555,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         isSavingRow = NO;
 		return YES;
 	} else { // Report errors which have occurred
-		[NSAlert createAlertWithTitle:NSLocalizedString(@"Unable to write row", @"Unable to write row error") message:[NSString stringWithFormat:NSLocalizedString(@"MySQL said:\n\n%@", @"message of panel when error while adding row to db"), [mySQLConnection lastErrorMessage]] primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") secondaryButtonTitle:NSLocalizedString(@"Discard changes", @"discard changes button") primaryButtonHandler:^{
+		[NSAlert createAlertWithTitle:NSLocalizedString(@"Unable to write row", @"Unable to write row error") message:[NSString stringWithFormat:NSLocalizedString(@"database said:\n\n%@", @"message of panel when error while adding row to db"), [connection lastErrorMessage]] primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") secondaryButtonTitle:NSLocalizedString(@"Discard changes", @"discard changes button") primaryButtonHandler:^{
 			[self->tableContentView selectRowIndexes:[NSIndexSet indexSetWithIndex:self->currentlyEditingRow] byExtendingSelection:NO];
 			[self->tableContentView performSelector:@selector(keyDown:) withObject:[NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[self->tableContentView window] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x24] afterDelay:0.0];
 			[self->tableContentView reloadData];
@@ -2613,7 +2624,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 			// Convert data to its hex representation
 			} else if ([rowObject isKindOfClass:[NSData class]]) {
-				fieldValue = [mySQLConnection escapeAndQuoteData:rowObject];
+				fieldValue = [connection escapeAndQuoteData:rowObject];
 			} else {
 				NSString *desc = [rowObject description];
 				if ([[fieldDefinition objectForKey:@"isfunction"] boolValue] && desc == defaultFieldValue) {
@@ -2625,7 +2636,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 				} else if ([fieldTypeGroup isEqualToString:@"string"] && [[rowObject description] isEqualToString:@"UUID()"]) {
 					fieldValue = @"UUID()";
 				} else {
-					fieldValue = [mySQLConnection escapeAndQuoteString:desc];
+					fieldValue = [connection escapeAndQuoteString:desc];
 				}
 			}
 		}
@@ -2636,8 +2647,16 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
     // Store the key and value in the ordered arrays for saving (Except for generated columns).
     if (![fieldDefinition objectForKey:@"generatedalways"]) {
-      [rowFieldsToSave safeAddObject:[fieldDefinition safeObjectForKey:@"name"]];
-      [rowValuesToSave safeAddObject:fieldValue];
+      // For new rows: omit columns with server default expressions if the value is NULL
+      // This allows the database to use its DEFAULT value instead of inserting NULL
+      BOOL shouldOmitForDefault = isEditingNewRow && 
+                                   [fieldValue isEqualToString:@"NULL"] &&
+                                   [connection isDefaultValueServerExpression:[fieldDefinition objectForKey:@"default"]];
+      
+      if (!shouldOmitForDefault) {
+        [rowFieldsToSave safeAddObject:[fieldDefinition safeObjectForKey:@"name"]];
+        [rowValuesToSave safeAddObject:fieldValue];
+      }
     }
 	}
 
@@ -2648,7 +2667,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// Use INSERT syntax when creating new rows
 	if (isEditingNewRow) {
 		queryString = [NSMutableString stringWithFormat:@"INSERT INTO %@ (%@) VALUES (%@)",
-					   [selectedTable backtickQuotedString], [rowFieldsToSave componentsJoinedAndBacktickQuoted], [rowValuesToSave componentsJoinedByString:@", "]];
+					   [connection quoteIdentifier:selectedTable], [rowFieldsToSave componentsJoinedAndQuotedForConnection:connection], [rowValuesToSave componentsJoinedByString:@", "]];
 
 	// Otherwise use an UPDATE syntax to save only the changed cells - if this point is reached,
 	// the equality test has failed and so there is always at least one changed cell (Except in the case where the cell is of the "generated column" type, the number of cell changed can be 0)
@@ -2656,11 +2675,11 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         if ([rowFieldsToSave count] == 0) {
             return [[NSMutableString alloc] initWithString:@""];
         }
-        queryString = [NSMutableString stringWithFormat:@"UPDATE %@ SET ", [selectedTable backtickQuotedString]];
+        queryString = [NSMutableString stringWithFormat:@"UPDATE %@ SET ", [connection quoteIdentifier:selectedTable]];
         for (i = 0; i < [rowFieldsToSave count]; i++) {
             if (i) [queryString appendString:@", "];
             [queryString appendFormat:@"%@ = %@",
-                                       [[rowFieldsToSave safeObjectAtIndex:i] backtickQuotedString], [rowValuesToSave safeObjectAtIndex:i]];
+                                       [connection quoteIdentifier:[rowFieldsToSave safeObjectAtIndex:i]], [rowValuesToSave safeObjectAtIndex:i]];
         }
         NSString *whereArg = [self argumentForRow:-2];
         if(![whereArg length]) {
@@ -2855,13 +2874,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	if ( !keys ) {
 		setLimit = NO;
 		keys = [[NSMutableArray alloc] init];
-		SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [selectedTable backtickQuotedString]]];
+		id<SPDatabaseResult>theResult = [connection getColumnsForTable:selectedTable];
 		if(!theResult) {
-			SPLog(@"no result from SHOW COLUMNS mysql query! Abort.");
+			SPLog(@"no result from getColumnsForTable! Abort.");
 			return @"";
 		}
 		[theResult setReturnDataAsStrings:YES];
-		for (NSDictionary *eachRow in theResult) {
+		NSDictionary *eachRow;
+		while ((eachRow = [theResult getRowAsDictionary])) {
 			if ( [[eachRow objectForKey:@"Key"] isEqualToString:@"PRI"] ) {
 				[keys addObject:[eachRow objectForKey:@"Field"]];
 			}
@@ -2906,7 +2926,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		}
 
 		if ([tempValue isNSNull]) {
-			[argument appendFormat:@"%@ IS NULL", [[keys safeObjectAtIndex:i] backtickQuotedString]];
+			[argument appendFormat:@"%@ IS NULL", [connection quoteIdentifier:[keys safeObjectAtIndex:i]]];
 		}
 		else if ([tempValue isSPNotLoaded]) {
 			SPLog(@"Exceptional case: SPNotLoaded object found! Abort.");
@@ -2921,23 +2941,23 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
       NSString *fieldTypeGroup = [field safeObjectForKey:@"typegrouping"];
 
 			if ([fieldType isEqualToString:@"BIT"]) {
-				escVal = [mySQLConnection escapeString:tempValue includingQuotes:NO];
+				escVal = [connection escapeString:tempValue includingQuotes:NO];
 				fmt = @"b'%@'";
 			}
 			else if ([tempValue isKindOfClass:[SPMySQLGeometryData class]]) {
-				escVal = [mySQLConnection escapeAndQuoteData:[tempValue data]];
+				escVal = [connection escapeAndQuoteData:[tempValue data]];
 			}
 			// BLOB/TEXT data
 			else if ([tempValue isKindOfClass:[NSData class]]) {
         if ([fieldType isEqualToString:@"UUID"] && [fieldTypeGroup isEqualToString:@"blobdata"]) {
           NSString *uuidVal = [[NSString alloc] initWithData:tempValue encoding:NSUTF8StringEncoding];
-          escVal = [mySQLConnection escapeAndQuoteString:uuidVal];
+          escVal = [connection escapeAndQuoteString:uuidVal];
         } else {
-          escVal = [mySQLConnection escapeAndQuoteData:tempValue];
+          escVal = [connection escapeAndQuoteData:tempValue];
         }
 			}
 			else {
-				escVal = [mySQLConnection escapeAndQuoteString:tempValue];
+				escVal = [connection escapeAndQuoteString:tempValue];
 			}
 			
 			if(!escVal) {
@@ -2945,11 +2965,15 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 				return @"";
 			}
 			
-			[argument appendFormat:@"%@ = %@", [[keys safeObjectAtIndex:i] backtickQuotedString], [NSString stringWithFormat:fmt,escVal]];
+			[argument appendFormat:@"%@ = %@", [connection quoteIdentifier:[keys safeObjectAtIndex:i]], [NSString stringWithFormat:fmt,escVal]];
 		}
 	}
 
-	if (setLimit && !excludeLimits) [argument appendString:@" LIMIT 1"];
+	// Only append LIMIT 1 if the database supports it in UPDATE/DELETE statements
+	// MySQL supports it, but PostgreSQL does not
+	if (setLimit && !excludeLimits && [connection supportsLimitInUpdateDelete]) {
+		[argument appendString:@" LIMIT 1"];
+	}
 
 	return argument;
 }
@@ -2992,7 +3016,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
             continue;
         }
 
-        [fields addObject:[fieldName backtickQuotedString]];
+        [fields addObject:[connection quoteIdentifier:fieldName]];
     }
 
     return [fields componentsJoinedByString:@", "];
@@ -3035,12 +3059,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	[tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Checking field data for editing...", @"checking field data for editing task description")];
 
 	// Actual check whether field can be identified bijectively
-	SPMySQLResult *tempResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
-		[[columnDefinition objectForKey:@"db"] backtickQuotedString],
-		[tableForColumn backtickQuotedString],
+	id<SPDatabaseResult>tempResult = [connection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
+		[connection quoteIdentifier:[columnDefinition objectForKey:@"db"]],
+		[connection quoteIdentifier:tableForColumn],
 		fieldIDQueryStr]];
 
-	if ([mySQLConnection queryErrored]) {
+	if ([connection queryErrored]) {
 		[tableDocumentInstance endTask];
 		return @[@(-1), @""];
 	}
@@ -3055,12 +3079,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			return @[@(-1), @""];
 		}
 
-		tempResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
-			[[columnDefinition objectForKey:@"db"] backtickQuotedString],
-			[tableForColumn backtickQuotedString],
+		tempResult = [connection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
+			[connection quoteIdentifier:[columnDefinition objectForKey:@"db"]],
+			[connection quoteIdentifier:tableForColumn],
 			fieldIDQueryStr]];
 
-		if ([mySQLConnection queryErrored]) {
+		if ([connection queryErrored]) {
 			[tableDocumentInstance endTask];
 			return @[@(-1), @""];
 		}
@@ -3182,7 +3206,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		if ( [anObject isKindOfClass:[NSNumber class]] ) {
 			newObject = [anObject stringValue];
 		} else if ( [anObject isKindOfClass:[NSData class]] ) {
-			newObject = [mySQLConnection escapeAndQuoteData:anObject];
+			newObject = [connection escapeAndQuoteData:anObject];
 		} else {
 			NSString *desc = [anObject description];
 			if ( [desc isMatchedByRegex:SPCurrentTimestampPattern] ) {
@@ -3196,18 +3220,18 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			} else if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"date"] && [desc isEqualToString:@"NOW()"]) {
 				newObject = @"NOW()";
 			} else {
-				newObject = [mySQLConnection escapeAndQuoteString:desc];
+				newObject = [connection escapeAndQuoteString:desc];
 			}
 		}
 
-		[mySQLConnection queryString:
-			[NSString stringWithFormat:@"UPDATE %@.%@ SET %@.%@.%@ = %@ %@",
-				[[columnDefinition objectForKey:@"db"] backtickQuotedString], [tableForColumn backtickQuotedString],
-				[[columnDefinition objectForKey:@"db"] backtickQuotedString], [tableForColumn backtickQuotedString], [columnName backtickQuotedString], newObject, fieldIDQueryStr]];
+		[connection queryString:
+			[NSString stringWithFormat:@"UPDATE %@.%@ SET %@ = %@ %@",
+				[connection quoteIdentifier:[columnDefinition objectForKey:@"db"]], [connection quoteIdentifier:tableForColumn],
+				[connection quoteIdentifier:columnName], newObject, fieldIDQueryStr]];
 
 		// Check for errors while UPDATE
-		if ([mySQLConnection queryErrored]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nMySQL said: %@", @"message of panel when error while updating field to db"), [mySQLConnection lastErrorMessage]] callback:nil];
+		if ([connection queryErrored]) {
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\ndatabase said: %@", @"message of panel when error while updating field to db"), [connection lastErrorMessage]] callback:nil];
 
 			[tableDocumentInstance endTask];
 			[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
@@ -3215,7 +3239,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		}
 
 		// This shouldn't happen – for safety reasons
-		if ( ![mySQLConnection rowsAffectedByLastQuery] ) {
+		if ( ![connection rowsAffectedByLastQuery] ) {
 			if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
 				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
 			} else {
@@ -3890,9 +3914,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 			// Unless we're editing, always retrieve the short string representation, truncating the value where necessary
 			if ([tableView editedColumn] == (NSInteger)columnIndex || [tableView editedRow] == rowIndex) {
-				return [value stringRepresentationUsingEncoding:[mySQLConnection stringEncoding]];
+				return [value stringRepresentationUsingEncoding:[connection stringEncoding]];
 			} else {
-				return [value shortStringRepresentationUsingEncoding:[mySQLConnection stringEncoding]];
+				return [value shortStringRepresentationUsingEncoding:[connection stringEncoding]];
 			}
 		}
 
@@ -4185,9 +4209,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		if ([[tableValues cellDataAtRow:rowIndex column:[[tableColumn identifier] integerValue]] isSPNotLoaded]) {
 
 			// Only get the data for the selected column, not all of them
-			NSString *query = [NSString stringWithFormat:@"SELECT %@ FROM %@ WHERE %@", [[[[tableColumn headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0] backtickQuotedString], [selectedTable backtickQuotedString], wherePart];
+			NSString *query = [NSString stringWithFormat:@"SELECT %@ FROM %@ WHERE %@", [connection quoteIdentifier:[[[tableColumn headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0]], [connection quoteIdentifier:selectedTable], wherePart];
 
-			SPMySQLResult *tempResult = [mySQLConnection queryString:query];
+			id<SPDatabaseResult>tempResult = [connection queryString:query];
 
 			if (![tempResult numberOfRows]) {
 				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Couldn't load the row. Reload the table to be sure that the row exists and use a primary key for your table.", @"message of panel when loading of row failed") callback:nil];
@@ -4280,7 +4304,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 			[fieldEditor editWithObject:cellValue
 			                  fieldName:[[tableColumn headerCell] stringValue]
-			              usingEncoding:[mySQLConnection stringEncoding]
+			              usingEncoding:[connection stringEncoding]
 			               isObjectBlob:isBlob
 			                 isEditable:isFieldEditable
 			                 withWindow:[tableDocumentInstance parentWindowControllerWindow]

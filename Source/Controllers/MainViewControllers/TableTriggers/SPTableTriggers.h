@@ -30,6 +30,7 @@
 
 @class SPTableView;
 @class SPMySQLConnection;
+@protocol SPDatabaseConnection;
 @class SPDatabaseDocument;
 
 @interface SPTableTriggers : NSObject 
@@ -55,7 +56,7 @@
 	IBOutlet NSBox         *addTriggerTableBox;
 	IBOutlet NSButton      *confirmAddTriggerButton;
 	
-	SPMySQLConnection *connection;
+	id<SPDatabaseConnection> connection;
 	
 	NSMutableArray *triggerData;
 	NSUserDefaults *prefs;
@@ -66,7 +67,7 @@
 	NSDictionary *editedTrigger;
 }
 
-@property (readwrite, strong) SPMySQLConnection *connection;
+@property (readwrite, strong) id<SPDatabaseConnection> connection;
 
 - (void)loadTriggers;
 - (void)resetInterface;

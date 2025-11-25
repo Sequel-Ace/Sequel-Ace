@@ -68,7 +68,7 @@ done
 
 See [Connecting to MAMP or XAMPP](mamp-xampp.html "Connecting to MAMP or XAMPP").
 
-**My SSH connection gives the error: SSH port forwarding failed and MySQL said: Lost connection to MySQL server at 'reading initial communication packet', system error: 0**
+**My SSH connection gives the error: SSH port forwarding failed and database said: Lost connection to MySQL server at 'reading initial communication packet', system error: 0**
 
 On the server, configure MySQL by editing /etc/my.cnf and comment or remove `skip-networking` from the `[mysqld]` section. Then, restart MySQL Server.
 

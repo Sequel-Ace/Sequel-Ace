@@ -36,6 +36,7 @@
 #import "SPTableRelations.h"
 #import "SPCustomQuery.h"
 #import "SPDataStorage.h"
+#import "SPDatabaseConnection.h"
 #import "SPTextAndLinkCell.h"
 #import "SPTooltip.h"
 #import "SPBundleHTMLOutputController.h"
@@ -552,8 +553,8 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
     // --- SECOND PART --- Build the SQL with the previous selected columns
 
 	// Begin the SQL string
-	[result appendFormat:@"INSERT INTO %@ (%@)\nVALUES\n",
-     [(selectedTable == nil) ? @"<table>" : selectedTable backtickQuotedString], [self componentsJoinedAndBacktickQuoted:tbColumns]];
+	NSString *quotedTable = (selectedTable == nil) ? @"<table>" : (mySQLConnection ? [mySQLConnection quoteIdentifier:selectedTable] : [selectedTable backtickQuotedString]);
+	[result appendFormat:@"INSERT INTO %@ (%@)\nVALUES\n", quotedTable, [self componentsJoinedAndQuotedForConnection:tbColumns]];
 
 	NSUInteger rowIndex = [selectedRows firstIndex];
 	Class spTableContentClass = [SPTableContent class];
@@ -587,8 +588,8 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
                     // TODO - this could be preloaded for all selected rows rather than cell-by-cell
                     cellData = [mySQLConnection getFirstFieldFromQuery:
                                 [NSString stringWithFormat:@"SELECT %@ FROM %@ WHERE %@",
-                                    [[data safeObjectForKey:kHeader] backtickQuotedString],
-                                    [selectedTable backtickQuotedString],
+                                    [mySQLConnection quoteIdentifier:[data safeObjectForKey:kHeader]],
+                                    [mySQLConnection quoteIdentifier:selectedTable],
                                     whereArgument]];
                 }
 
@@ -651,10 +652,11 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 		if (rowCounter != penultimateRowIndex) {
 			// Add a new INSERT starter command every ~250k of data.
 			if ([value length] > 250000) {
+				NSString *quotedTableNew = (selectedTable == nil) ? @"<table>" : (mySQLConnection ? [mySQLConnection quoteIdentifier:selectedTable] : [selectedTable backtickQuotedString]);
 				[result appendFormat:@"%@);\n\nINSERT INTO %@ (%@)\nVALUES\n",
 						value,
-						[(selectedTable == nil) ? @"<table>" : selectedTable backtickQuotedString],
-                        [self componentsJoinedAndBacktickQuoted:tbColumns]];
+						quotedTableNew,
+                        [self componentsJoinedAndQuotedForConnection:tbColumns]];
 				[value setString:@""];
 			} 
 			else {
@@ -682,6 +684,12 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 
 - (NSString *)componentsJoinedAndBacktickQuoted:(NSArray *)array
 {
+    // Use database-agnostic quoting via connection
+    return [self componentsJoinedAndQuotedForConnection:array];
+}
+
+- (NSString *)componentsJoinedAndQuotedForConnection:(NSArray *)array
+{
     NSMutableString *result = [NSMutableString string];
     [result setString:@""];
 
@@ -691,7 +699,11 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
             if ([result length]) {
                 [result appendString: @", "];
             }
-            [result appendString:[header backtickQuotedString]];
+            if (mySQLConnection) {
+                [result appendString:[mySQLConnection quoteIdentifier:header]];
+            } else {
+                [result appendString:[header backtickQuotedString]];
+            }
         }
     }
     return result;

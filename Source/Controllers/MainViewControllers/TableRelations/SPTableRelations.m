@@ -35,6 +35,8 @@
 #import "SPTableView.h"
 #import "RegexKitLite.h"
 #import "SPServerSupport.h"
+#import "SPDatabaseConnection.h"
+#import "SPDatabaseResult.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -148,18 +150,18 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
     NSString *thatTable  = [refTablePopUpButton titleOfSelectedItem];
     NSString *thatColumn = [refColumnPopUpButton titleOfSelectedItem];
 
-	NSString *query = [NSString stringWithFormat:@"ALTER TABLE %@ ADD ",[thisTable backtickQuotedString]];
+	NSString *query = [NSString stringWithFormat:@"ALTER TABLE %@ ADD ",[connection quoteIdentifier:thisTable]];
 	
 	// Set constraint name?
 	if ([[constraintName stringValue] length] > 0) {
-		query = [query stringByAppendingString:[NSString stringWithFormat:@"CONSTRAINT %@ ", [[constraintName stringValue] backtickQuotedString]]];
+		query = [query stringByAppendingString:[NSString stringWithFormat:@"CONSTRAINT %@ ", [connection quoteIdentifier:[constraintName stringValue]]]];
 	}
 	
 	query = [query stringByAppendingString:[NSString stringWithFormat:@"FOREIGN KEY (%@) REFERENCES %@.%@ (%@)",
-                                            [thisColumn backtickQuotedString],
-                                            [thatDatabase backtickQuotedString],
-                                            [thatTable backtickQuotedString],
-                                            [thatColumn backtickQuotedString]]];
+                                            [connection quoteIdentifier:thisColumn],
+                                            [connection quoteIdentifier:thatDatabase],
+                                            [connection quoteIdentifier:thatTable],
+                                            [connection quoteIdentifier:thatColumn]]];
 
 	NSArray *onActions = @[@"RESTRICT", @"CASCADE", @"SET NULL", @"NO ACTION"];
 	
@@ -206,11 +208,11 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		}
 
 		if (accessoryView) {
-			[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error creating relation", @"error creating relation message") message:[NSString stringWithFormat:NSLocalizedString(@"The specified relation could not be created.\n\nMySQL said: %@", @"error creating relation informative message"), errorText] accessoryView:accessoryView callback:^{
+			[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error creating relation", @"error creating relation message") message:[NSString stringWithFormat:NSLocalizedString(@"The specified relation could not be created.\n\ndatabase said: %@", @"error creating relation informative message"), errorText] accessoryView:accessoryView callback:^{
 						 [self performSelector:@selector(openRelationSheet:) withObject:self afterDelay:0.0];
 			}];
 		} else {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error creating relation", @"error creating relation message") message:[NSString stringWithFormat:NSLocalizedString(@"The specified relation could not be created.\n\nMySQL said: %@", @"error creating relation informative message"), errorText] callback:^{
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error creating relation", @"error creating relation message") message:[NSString stringWithFormat:NSLocalizedString(@"The specified relation could not be created.\n\ndatabase said: %@", @"error creating relation informative message"), errorText] callback:^{
 				[self performSelector:@selector(openRelationSheet:) withObject:self afterDelay:0.0];
 			}];
 		}
@@ -267,8 +269,8 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
 	// Use UTF8 for identifier-based queries
 	if (changeEncoding) {
-		[connection storeEncodingForRestoration];
-		[connection setEncoding:@"utf8mb4"];
+		[(id<SPDatabaseConnection>)connection storeEncodingForRestoration];
+		[(id<SPDatabaseConnection>)connection setEncoding:[(id<SPDatabaseConnection>)connection preferredUTF8Encoding]];
 	}
 
     // Set all databases exxcept system database
@@ -303,13 +305,13 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
 			[selectedSet enumerateIndexesWithOptions:NSEnumerationReverse usingBlock:^(NSUInteger row, BOOL * _Nonnull stop) {
 				NSString *relationName = [[self->relationData objectAtIndex:row] objectForKey:SPRelationNameKey];
-				NSString *query = [NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [thisTable backtickQuotedString], [relationName backtickQuotedString]];
+				NSString *query = [NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [self->connection quoteIdentifier:thisTable], [self->connection quoteIdentifier:relationName]];
 
 				[self->connection queryString:query];
 
 				if ([self->connection queryErrored]) {
 
-					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete relation", @"error deleting relation message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected relation couldn't be deleted.\n\nMySQL said: %@", @"error deleting relation informative message"), [self->connection lastErrorMessage]] callback:nil];
+					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete relation", @"error deleting relation message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected relation couldn't be deleted.\n\ndatabase said: %@", @"error deleting relation informative message"), [self->connection lastErrorMessage]] callback:nil];
 					// Abort loop
 					*stop = YES;
 				}
@@ -602,8 +604,8 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
     // Get all InnoDB tables in the current database
     [refTablePopUpButton removeAllItems];
     if (database != nil && database.length != 0) {
-        SPMySQLResult *result = [connection queryString:[NSString stringWithFormat:@"SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND engine = 'InnoDB' AND table_schema = %@ ORDER BY table_name ASC", [database tickQuotedString]]];
-        [result setDefaultRowReturnType:SPMySQLResultRowAsArray];
+        id<SPDatabaseResult>result = [connection queryString:[NSString stringWithFormat:@"SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND engine = 'InnoDB' AND table_schema = %@ ORDER BY table_name ASC", [database tickQuotedString]]];
+        [result setDefaultRowReturnType:SPDatabaseResultRowAsArray];
         [result setReturnDataAsStrings:YES]; // TODO: Workaround for #2699/#2700
         for (NSArray *eachRow in result) {
             [refTablePopUpButton safeAddItemWithTitle:[eachRow firstObject]];
