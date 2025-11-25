@@ -2018,7 +2018,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		[connection queryString:query];
 		if ([connection queryErrored]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while importing table", @"error while importing table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@", @"error importing table informative message"), query, [connection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while importing table", @"error while importing table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to import a table via: \n%@\n\n\ndatabase said: %@", @"error importing table informative message"), query, [connection lastErrorMessage]] callback:nil];
 			return NO;
 		}
 		[self updateTables:nil];
@@ -2448,11 +2448,11 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			}
 			
 			NSString *databaseError = [connection lastErrorMessage];
-			NSString *userMessage = NSLocalizedString(@"Couldn't delete '%@'.\n\nMySQL said: %@", @"message of panel when an item cannot be deleted");
+			NSString *userMessage = NSLocalizedString(@"Couldn't delete '%@'.\n\ndatabase said: %@", @"message of panel when an item cannot be deleted");
 			
 			// Try to provide a more helpful message
 			if ([databaseError rangeOfString:@"a foreign key constraint fails" options:NSCaseInsensitiveSearch].location != NSNotFound) {
-				userMessage = NSLocalizedString(@"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@", @"message of panel when an item cannot be deleted including informative message about using force deletion");
+				userMessage = NSLocalizedString(@"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\ndatabase said: %@", @"message of panel when an item cannot be deleted including informative message about using force deletion");
 			}
 			
 			[alert setMessageText:NSLocalizedString(@"Error", @"error")];
@@ -2496,7 +2496,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		// Couldn't truncate table
 		if ([connection queryErrored]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error truncating table", @"error truncating table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@", @"error truncating table informative message"), [filteredTables objectAtIndex:currentIndex], [connection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error truncating table", @"error truncating table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to truncate the table '%@'.\n\ndatabase said: %@", @"error truncating table informative message"), [filteredTables objectAtIndex:currentIndex], [connection lastErrorMessage]] callback:nil];
 			*stop = YES;
 		}
 
@@ -2635,7 +2635,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			// Error while creating new table
 
 			SPMainQSync(^{
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@", @"error adding new table informative message"), tableName, [self->connection lastErrorMessage]] callback:nil];
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@'.\n\ndatabase said: %@", @"error adding new table informative message"), tableName, [self->connection lastErrorMessage]] callback:nil];
 			});
 
 			if (changeEncoding) [connection restoreStoredEncoding];
@@ -2769,14 +2769,14 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[connection queryString:[[tableSyntax unboxNull] stringByReplacingOccurrencesOfRegex:[NSString stringWithFormat:@"(?<=%@ )(%@)", [tableType uppercaseString], identifierPattern] withString:[connection quoteIdentifier:tableName]]];
 
 		if ([connection queryErrored]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't duplicate '%@'.\nMySQL said: %@", @"message of panel when an item cannot be renamed"), tableName, [connection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't duplicate '%@'.\ndatabase said: %@", @"message of panel when an item cannot be renamed"), tableName, [connection lastErrorMessage]] callback:nil];
 		}
 
 	}
 
 	if ([connection queryErrored]) {
 		//error while creating new table
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't create '%@'.\nMySQL said: %@", @"message of panel when table cannot be created"), tableName, [connection lastErrorMessage]] callback:nil];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't create '%@'.\ndatabase said: %@", @"message of panel when table cannot be created"), tableName, [connection lastErrorMessage]] callback:nil];
 		return;
 	}
 
@@ -2912,14 +2912,14 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		if ([connection queryErrored]) {
 
 			if(connection.lastErrorID == 1050 && tableType == SPTableTypeTableNewDB){
-				NSString *message = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while renaming '%@'.\n\nMySQL said: %@", @"rename table error informative message"), oldTableName, [connection lastErrorMessage]];
+				NSString *message = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while renaming '%@'.\n\ndatabase said: %@", @"rename table error informative message"), oldTableName, [connection lastErrorMessage]];
 
 				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:message callback:nil];
 
 				return;
 			}
 			else{
-				[NSException raise:@"MySQL Error" format:NSLocalizedString(@"An error occurred while renaming '%@'.\n\nMySQL said: %@", @"rename table error informative message"), oldTableName, [connection lastErrorMessage]];
+				[NSException raise:@"Database Error" format:NSLocalizedString(@"An error occurred while renaming '%@'.\n\ndatabase said: %@", @"rename table error informative message"), oldTableName, [connection lastErrorMessage]];
 			}
 		}
 
@@ -2959,12 +2959,12 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			withString: [NSString stringWithFormat:@"%@ %@", stringTableType, [connection quoteIdentifier:newTableName] ] ];
 		[connection queryString: newCreateSyntax];
 		if ([connection queryErrored]) {
-			[NSException raise:@"MySQL Error" format:NSLocalizedString(@"An error occurred while renaming. I couldn't recreate '%@'.\n\nMySQL said: %@", @"rename precedure/function error - can't recreate procedure"), oldTableName, [connection lastErrorMessage]];
+			[NSException raise:@"Database Error" format:NSLocalizedString(@"An error occurred while renaming. I couldn't recreate '%@'.\n\ndatabase said: %@", @"rename precedure/function error - can't recreate procedure"), oldTableName, [connection lastErrorMessage]];
 		}
 
 		[connection queryString: [NSString stringWithFormat: @"DROP %@ %@", stringTableType, [connection quoteIdentifier:oldTableName]]];
 		if ([connection queryErrored]) {
-			[NSException raise:@"MySQL Error" format:NSLocalizedString(@"An error occurred while renaming. I couldn't delete '%@'.\n\nMySQL said: %@", @"rename precedure/function error - can't delete old procedure"), oldTableName, [connection lastErrorMessage]];
+			[NSException raise:@"Database Error" format:NSLocalizedString(@"An error occurred while renaming. I couldn't delete '%@'.\n\ndatabase said: %@", @"rename precedure/function error - can't delete old procedure"), oldTableName, [connection lastErrorMessage]];
 		}
 		return;
 	}

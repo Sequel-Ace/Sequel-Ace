@@ -339,7 +339,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		NSString *message = NSLocalizedString(@"Error while fetching the optimized field type", @"error while fetching the optimized field type message");
 		
 		if ([connection isConnected]) {
-			 [NSAlert createWarningAlertWithTitle:message message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while fetching the optimized field type.\n\nMySQL said:%@", @"an error occurred while fetching the optimized field type.\n\nMySQL said:%@"), [connection lastErrorMessage]] callback:nil];
+			 [NSAlert createWarningAlertWithTitle:message message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while fetching the optimized field type.\n\ndatabase said:%@", @"an error occurred while fetching the optimized field type.\n\ndatabase said:%@"), [connection lastErrorMessage]] callback:nil];
 		}
 		return;
 	}
@@ -606,7 +606,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ AUTO_INCREMENT = %llu", [selTable backtickQuotedString], [value unsignedLongLongValue]]];
 
 	if ([connection queryErrored]) {
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@", @"error resetting auto_increment informative message"),selTable, [connection lastErrorMessage]] callback:nil];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\ndatabase said: %@", @"error resetting auto_increment informative message"),selTable, [connection lastErrorMessage]] callback:nil];
 	}
 
 	// reload data
@@ -777,7 +777,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 	else {
 		if ([connection lastErrorID] == 1146) { // If the current table doesn't exist anymore
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@", @"error while trying to alter table message"),selectedTable, [connection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to alter table '%@'.\n\ndatabase said: %@", @"error while trying to alter table message"),selectedTable, [connection lastErrorMessage]] callback:nil];
 
 			isEditingRow = NO;
 			isEditingNewRow = NO;
@@ -797,7 +797,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 
 		if (isEditingNewRow) {
-			NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@", @"error adding field informative message"), [theRow objectForKey:@"name"], queryString, [connection lastErrorMessage]];
+			NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to add the field '%@' via\n\n%@\n\ndatabase said: %@", @"error adding field informative message"), [theRow objectForKey:@"name"], queryString, [connection lastErrorMessage]];
 			[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Error adding field", @"error adding field message") message:alertMessage primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") primaryButtonHandler:^{
 				[self addRowSheetPrimaryAction];
 			} cancelButtonHandler:^{
@@ -806,7 +806,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			}];
 
 		} else {
-			NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@", @"error changing field informative message"), [theRow objectForKey:@"name"], queryString, [connection lastErrorMessage]];
+			NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the field '%@' via\n\n%@\n\ndatabase said: %@", @"error changing field informative message"), [theRow objectForKey:@"name"], queryString, [connection lastErrorMessage]];
 			[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Error changing field", @"error changing field message") message:alertMessage primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") primaryButtonHandler:^{
 				[self addRowSheetPrimaryAction];
 			} cancelButtonHandler:^{
@@ -1354,7 +1354,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				if ([self->connection queryErrored] && ![self->connection lastQueryWasCancelled]) {
 					NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
 					[errorDictionary setObject:NSLocalizedString(@"Unable to delete relation", @"error deleting relation message") forKey:@"title"];
-					[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@", @"error deleting relation informative message"), relationName, [self->connection lastErrorMessage]] forKey:@"message"];
+					[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to delete the relation '%@'.\n\ndatabase said: %@", @"error deleting relation informative message"), relationName, [self->connection lastErrorMessage]] forKey:@"message"];
 					[[self onMainThread] showErrorSheetWith:errorDictionary];
 				}
 			}
@@ -1367,7 +1367,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			if ([self->connection queryErrored] && ![self->connection lastQueryWasCancelled]) {
 				NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
 				[errorDictionary setObject:NSLocalizedString(@"Error", @"error") forKey:@"title"];
-				[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"Couldn't delete field %@.\nMySQL said: %@", @"message of panel when field cannot be deleted"),
+				[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"Couldn't delete field %@.\ndatabase said: %@", @"message of panel when field cannot be deleted"),
 																	  [[[self activeFieldsSource] objectAtIndex:[self->tableSourceView selectedRow]] objectForKey:@"name"],
 																	  [self->connection lastErrorMessage]] forKey:@"message"];
 
@@ -2052,7 +2052,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[connection queryString:queryString];
 
 	if ([connection queryErrored]) {
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error moving field", @"error moving field message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to move the field.\n\nMySQL said: %@", @"error moving field informative message"), [connection lastErrorMessage]] callback:nil];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error moving field", @"error moving field message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to move the field.\n\ndatabase said: %@", @"error moving field informative message"), [connection lastErrorMessage]] callback:nil];
 	}
 	else {
 		[tableDataInstance resetAllData];

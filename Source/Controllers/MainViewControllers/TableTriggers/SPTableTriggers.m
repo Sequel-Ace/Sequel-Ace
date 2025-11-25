@@ -207,7 +207,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 		[connection queryString:queryDelete];
 		
 		if ([connection queryErrored]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete trigger", @"error deleting trigger message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected trigger couldn't be deleted.\n\nMySQL said: %@", @"error deleting trigger informative message"), [connection lastErrorMessage]] callback:^{
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete trigger", @"error deleting trigger message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected trigger couldn't be deleted.\n\ndatabase said: %@", @"error deleting trigger informative message"), [connection lastErrorMessage]] callback:^{
 
 				[self performSelector:@selector(_openTriggerSheet) withObject:nil afterDelay:0.0];
 			}];
@@ -272,7 +272,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 			// or will it interfere with the one above?
 			[connection queryString:query];
 		}
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error creating trigger", @"error creating trigger message") message:[NSString stringWithFormat:NSLocalizedString(@"The specified trigger was unable to be created.\n\nMySQL said: %@", @"error creating trigger informative message"), createTriggerError] callback:^{
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error creating trigger", @"error creating trigger message") message:[NSString stringWithFormat:NSLocalizedString(@"The specified trigger was unable to be created.\n\ndatabase said: %@", @"error creating trigger informative message"), createTriggerError] callback:^{
 			[self performSelector:@selector(_openTriggerSheet) withObject:nil afterDelay:0.0];
 		}];
 	}
@@ -314,7 +314,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 				[self->connection queryString:query];
 
 				if ([self->connection queryErrored]) {
-					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete trigger", @"error deleting trigger message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected trigger couldn't be deleted.\n\nMySQL said: %@", @"error deleting trigger informative message"), [self->connection lastErrorMessage]] callback:nil];
+					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete trigger", @"error deleting trigger message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected trigger couldn't be deleted.\n\ndatabase said: %@", @"error deleting trigger informative message"), [self->connection lastErrorMessage]] callback:nil];
 					// Abort loop
 					*stop = YES;
 				}

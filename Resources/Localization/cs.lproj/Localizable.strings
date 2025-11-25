@@ -62,8 +62,8 @@
 /* text showing multiple queries were cancelled */
 "%@; Cancelled in query %ld, after %@" = "%1$@; Zrušeno v dotazu %2$ld, po %3$@";
 
-/* Error display text, showing original MySQL error */
-"%@\n\nMySQL said: %@" = "%1$@\n\nMySQL řekl: %2$@";
+/* Error display text, showing original database error */
+"%@\n\ndatabase said: %@" = "%1$@\n\ndatabáze řekla: %2$@";
 
 /* favorite singular label (%d == 1) */
 "%lu favorite" = "%lu oblíbené";
@@ -275,10 +275,10 @@
 "An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane." = "Při provádění příkazu schématu došlo k chybě. Pokud byl příkaz Bundle vyvolán příkazem Bundle, mohl by to být tak, že příkaz stále běží. Můžete se ho pokusit ukončit stisknutím klávesy <unk> +. nebo v panelu Aktivity.";
 
 /* error killing query informative message */
-"An error occurred while attempting to kill connection %lld.\n\nMySQL said: %@" = "Došlo k chybě při pokusu o ukončení spojení %1$lld.\n\nMySQL řekl: %2$@";
+"An error occurred while attempting to kill connection %lld.\n\ndatabase said: %@" = "Došlo k chybě při pokusu o ukončení spojení %1$lld.\n\nMySQL řekl: %2$@";
 
 /* error killing query informative message */
-"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@" = "Došlo k chybě při pokusu o ukončení dotazu spojeného s připojením %1$lld.\n\nMySQL řekl: %2$@";
+"An error occurred while attempting to kill the query associated with connection %lld.\n\ndatabase said: %@" = "Došlo k chybě při pokusu o ukončení dotazu spojeného s připojením %1$lld.\n\nMySQL řekl: %2$@";
 
 /* Error shown when unable to show create table syntax */
 "An error occurred while creating table syntax.\n\n: %@" = "Došlo k chybě při vytváření syntaxe tabulky.\n\n: %@";
@@ -287,31 +287,31 @@
 "An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first." = "Došlo k chybě při přejmenování '%@'. Nebylo nalezeno žádné dočasné jméno. Prosím, zkuste nejdříve přejmenovat na něco jiného.";
 
 /* rename table error informative message */
-"An error occurred while renaming '%@'.\n\nMySQL said: %@" = "Došlo k chybě při přejmenování '%1$@'.\n\nMySQL řekl: %2$@";
+"An error occurred while renaming '%@'.\n\ndatabase said: %@" = "Došlo k chybě při přejmenování '%1$@'.\n\nMySQL řekl: %2$@";
 
 /* rename error - don't know what type the renamed thing is */
 "An error occurred while renaming. '%@' is of an unknown type." = "Došlo k chybě při přejmenování. '%@' je neznámý typ.";
 
 /* rename precedure/function error - can't delete old procedure */
-"An error occurred while renaming. I couldn't delete '%@'.\n\nMySQL said: %@" = "Došlo k chybě při přejmenování. Nemohu smazat '%1$@'.\n\nMySQL řekl: %2$@";
+"An error occurred while renaming. I couldn't delete '%@'.\n\ndatabase said: %@" = "Došlo k chybě při přejmenování. Nemohu smazat '%1$@'.\n\nMySQL řekl: %2$@";
 
 /* rename precedure/function error - can't recreate procedure */
-"An error occurred while renaming. I couldn't recreate '%@'.\n\nMySQL said: %@" = "Došlo k chybě při přejmenování. Nemohu znovu vytvořit '%1$@'.\n\nMySQL řekl: %2$@";
+"An error occurred while renaming. I couldn't recreate '%@'.\n\ndatabase said: %@" = "Došlo k chybě při přejmenování. Nemohu znovu vytvořit '%1$@'.\n\nMySQL řekl: %2$@";
 
 /* rename precedure/function error - can't retrieve syntax */
-"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\nMySQL said: %@" = "Při přejmenování došlo k chybě. Nemohu načíst syntaxi pro '%1$@'.\n\nMySQL řekl: %2$@";
+"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\ndatabase said: %@" = "Při přejmenování došlo k chybě. Nemohu načíst syntaxi pro '%1$@'.\n\nMySQL řekl: %2$@";
 
 /* rename error - invalid create syntax */
 "An error occurred while renaming. The CREATE syntax of '%@' could not be parsed." = "Došlo k chybě při přejmenování. CREATE syntaxe '%@' nelze analyzovat.";
 
 /* message of panel when retrieving view information failed */
-"An error occurred while retrieving status data.\n\nMySQL said: %@" = "An error occurred while retrieving status data.\n\nMySQL said: %@";
+"An error occurred while retrieving status data.\n\ndatabase said: %@" = "An error occurred while retrieving status data.\n\ndatabase said: %@";
 
 /* message of panel when create syntax cannot be retrieved */
-"An error occurred while retrieving the create syntax for '%@'.\nMySQL said: %@" = "Nastala chyba při získávání syntaxe pro '%1$@'.\nMySQL řekl: %2$@";
+"An error occurred while retrieving the create syntax for '%@'.\ndatabase said: %@" = "Nastala chyba při získávání syntaxe pro '%1$@'.\nMySQL řekl: %2$@";
 
 /* add index error informative message */
-"An error occurred while trying to add the index.\n\nMySQL said: %@" = "Nastala chyba při přidávání indexu.\n\nMySQL řekl: %@";
+"An error occurred while trying to add the index.\n\ndatabase said: %@" = "Nastala chyba při přidávání indexu.\n\nMySQL řekl: %@";
 
 /* error adding password to keychain informative message */
 "An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "Nastala chyba při přidávání hesla do klíče. Opravením klíče by se to mohlo vyřešit, ale pokud se to nepodaří, nahlaste to týmu Sequel Ace, který dodá chybový kód %i.";
@@ -320,10 +320,10 @@
 "An error occurred while trying to copy the database '%@' to '%@'." = "Nastala chyba při kopírování databáze '%1$@' do '%2$@'.";
 
 /* error deleting index informative message */
-"An error occurred while trying to delete the index.\n\nMySQL said: %@" = "Nastala chyba při odstraňování indexu.\n\nMySQL řekl: %@";
+"An error occurred while trying to delete the index.\n\ndatabase said: %@" = "Nastala chyba při odstraňování indexu.\n\nMySQL řekl: %@";
 
 /* table status : row count query failed : error message */
-"An error occurred while trying to determine the number of rows for %@.\nMySQL said: %@ (%lu)" = "Nastala chyba při zjišťování počtu řádků pro „%1$@”.\nMySQL řekl: %2$@ (%3$lu)";
+"An error occurred while trying to determine the number of rows for %@.\ndatabase said: %@ (%lu)" = "Nastala chyba při zjišťování počtu řádků pro „%1$@”.\nMySQL řekl: %2$@ (%3$lu)";
 
 /* unable to rename database message informative message */
 "An error occurred while trying to rename the database '%@' to '%@'." = "Nastala chyba při přejmenování databáze '%1$@' na '%2$@'.";
@@ -338,7 +338,7 @@
 "An error occurred" = "Došlo k chybě";
 
 /* MySQL table info retrieval error message */
-"An error occurred retrieving table information.  MySQL said: %@" = "Došlo k chybě při načítání informací o tabulce. MySQL řekl: %@";
+"An error occurred retrieving table information.  database said: %@" = "Došlo k chybě při načítání informací o tabulce. MySQL řekl: %@";
 
 /* SQL encoding read error */
 "An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed." = "Při čtení souboru došlo k chybě, protože jej nelze přečíst ve vybraném kódování (%1$@).\n\nPouze %2$ld dotazy byly provedeny.";
@@ -353,91 +353,91 @@
 "An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)" = "Při čtení souboru došlo k chybě.\n\nByly importovány pouze řádky %1$ld .\n\n(%2$@)";
 
 /* error adding field informative message */
-"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@" = "Nastala chyba při přidávání pole '%1$@' přes\n\n%2$@\n\nMySQL řekl: %3$@";
+"An error occurred when trying to add the field '%@' via\n\n%@\n\ndatabase said: %@" = "Nastala chyba při přidávání pole '%1$@' přes\n\n%2$@\n\nMySQL řekl: %3$@";
 
 /* error changing field informative message */
-"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@" = "Nastala chyba při pokusu změnit pole '%1$@' přes\n\n%2$@\n\nMySQL řekl: %3$@";
+"An error occurred when trying to change the field '%@' via\n\n%@\n\ndatabase said: %@" = "Nastala chyba při pokusu změnit pole '%1$@' přes\n\n%2$@\n\nMySQL řekl: %3$@";
 
 /* error changing table collation informative message */
-"An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@" = "Nastala chyba při pokusu změnit kollaci tabulky na '%1$@'.\n\nMySQL řekl: %2$@";
+"An error occurred when trying to change the table collation to '%@'.\n\ndatabase said: %@" = "Nastala chyba při pokusu změnit kollaci tabulky na '%1$@'.\n\nMySQL řekl: %2$@";
 
 /* error changing table encoding informative message */
-"An error occurred when trying to change the table encoding to '%@'.\n\nMySQL said: %@" = "Nastala chyba při pokusu změnit tabulkové kódování na '%1$@'.\n\nMySQL řekl: %2$@";
+"An error occurred when trying to change the table encoding to '%@'.\n\ndatabase said: %@" = "Nastala chyba při pokusu změnit tabulkové kódování na '%1$@'.\n\nMySQL řekl: %2$@";
 
 /* error changing table type informative message */
-"An error occurred when trying to change the table type to '%@'.\n\nMySQL said: %@" = "Nastala chyba při pokusu o změnu typu tabulky na '%1$@'.\n\nMySQL řekl: %2$@";
+"An error occurred when trying to change the table type to '%@'.\n\ndatabase said: %@" = "Nastala chyba při pokusu o změnu typu tabulky na '%1$@'.\n\nMySQL řekl: %2$@";
 
 /* error changing table comment informative message */
-"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@" = "Nastala chyba při pokusu změnit komentář tabulky na '%1$@'.\n\nMySQL řekl: %2$@";
+"An error occurred when trying to change the table's comment to '%@'.\n\ndatabase said: %@" = "Nastala chyba při pokusu změnit komentář tabulky na '%1$@'.\n\nMySQL řekl: %2$@";
 
-/* an error occurred while analyzing the %@.\n\nMySQL said:%@ */
-"An error occurred while analyzing the %@.\n\nMySQL said:%@" = "Došlo k chybě při analýze %1$@.\n\nMySQL řekl:%2$@";
+/* an error occurred while analyzing the %@.\n\ndatabase said:%@ */
+"An error occurred while analyzing the %@.\n\ndatabase said:%@" = "Došlo k chybě při analýze %1$@.\n\nMySQL řekl:%2$@";
 
-/* an error occurred while fetching the optimized field type.\n\nMySQL said:%@ */
-"An error occurred while fetching the optimized field type.\n\nMySQL said:%@" = "Při načítání optimalizovaného typu pole došlo k chybě.\n\nMySQL řekl:%@";
+/* an error occurred while fetching the optimized field type.\n\ndatabase said:%@ */
+"An error occurred while fetching the optimized field type.\n\ndatabase said:%@" = "Při načítání optimalizovaného typu pole došlo k chybě.\n\nMySQL řekl:%@";
 
-/* an error occurred while trying to flush the %@.\n\nMySQL said:%@ */
-"An error occurred while flushing the %@.\n\nMySQL said:%@" = "Došlo k chybě při splachování %1$@.\n\nMySQL řekl:%2$@";
+/* an error occurred while trying to flush the %@.\n\ndatabase said:%@ */
+"An error occurred while flushing the %@.\n\ndatabase said:%@" = "Došlo k chybě při splachování %1$@.\n\nMySQL řekl:%2$@";
 
 /* sql import error message */
 "An error occurred while importing SQL" = "Při importu SQL došlo k chybě";
 
-/* an error occurred while trying to optimze the %@.\n\nMySQL said:%@ */
-"An error occurred while optimzing the %@.\n\nMySQL said:%@" = "Došlo k chybě při optimalizaci %1$@.\n\nMySQL řekl:%2$@";
+/* an error occurred while trying to optimze the %@.\n\ndatabase said:%@ */
+"An error occurred while optimzing the %@.\n\ndatabase said:%@" = "Došlo k chybě při optimalizaci %1$@.\n\nMySQL řekl:%2$@";
 
-/* an error occurred while performing the checksum on the %@.\n\nMySQL said:%@ */
-"An error occurred while performing the checksum on %@.\n\nMySQL said:%@" = "Došlo k chybě při provádění kontrolního součtu na %1$@.\n\nMySQL řekl:%2$@";
+/* an error occurred while performing the checksum on the %@.\n\ndatabase said:%@ */
+"An error occurred while performing the checksum on %@.\n\ndatabase said:%@" = "Došlo k chybě při provádění kontrolního součtu na %1$@.\n\nMySQL řekl:%2$@";
 
-/* an error occurred while trying to repair the %@.\n\nMySQL said:%@ */
-"An error occurred while repairing the %@.\n\nMySQL said:%@" = "Došlo k chybě při opravě %1$@.\n\nMySQL řekl:%2$@";
+/* an error occurred while trying to repair the %@.\n\ndatabase said:%@ */
+"An error occurred while repairing the %@.\n\ndatabase said:%@" = "Došlo k chybě při opravě %1$@.\n\nMySQL řekl:%2$@";
 
 /* message of panel when retrieving information failed */
-"An error occurred while retrieving information.\nMySQL said: %@" = "Při načítání informací došlo k chybě.\nMySQL řekl: %@";
+"An error occurred while retrieving information.\ndatabase said: %@" = "Při načítání informací došlo k chybě.\nMySQL řekl: %@";
 
 /* error retrieving table information informative message */
-"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@" = "Při načítání informací pro tabulku '%1$@' došlo k chybě. Opakujte akci.\n\nMySQL řekl: %2$@";
+"An error occurred while retrieving the information for table '%@'. Please try again.\n\ndatabase said: %@" = "Při načítání informací pro tabulku '%1$@' došlo k chybě. Opakujte akci.\n\nMySQL řekl: %2$@";
 
 /* error retrieving table information informative message */
-"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nMySQL said: %@" = "Došlo k chybě při načítání spouštěčích informací pro tabulku '%1$@'. Opakujte akci.\n\nMySQL řekl: %2$@";
+"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\ndatabase said: %@" = "Došlo k chybě při načítání spouštěčích informací pro tabulku '%1$@'. Opakujte akci.\n\nMySQL řekl: %2$@";
 
 /* error adding new column informative message */
-"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@" = "Nastala chyba při přidávání nového sloupce '%1$@' od\n\n%2$@.\n\nMySQL řekl: %3$@";
+"An error occurred while trying to add the new column '%@' by\n\n%@.\n\ndatabase said: %@" = "Nastala chyba při přidávání nového sloupce '%1$@' od\n\n%2$@.\n\nMySQL řekl: %3$@";
 
 /* error adding new table informative message */
-"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@" = "Nastala chyba při přidávání nové tabulky '%1$@' od\n\n%2$@.\n\nMySQL řekl: %3$@";
+"An error occurred while trying to add the new table '%@' by\n\n%@.\n\ndatabase said: %@" = "Nastala chyba při přidávání nové tabulky '%1$@' od\n\n%2$@.\n\nMySQL řekl: %3$@";
 
 /* error adding new table informative message */
-"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@" = "Nastala chyba při přidávání nové tabulky '%1$@'.\n\nMySQL řekl: %2$@";
+"An error occurred while trying to add the new table '%@'.\n\ndatabase said: %@" = "Nastala chyba při přidávání nové tabulky '%1$@'.\n\nMySQL řekl: %2$@";
 
 /* error while trying to alter table message */
-"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@" = "Nastala chyba při pokusu změnit tabulku '%1$@'.\n\nMySQL řekl: %2$@";
+"An error occurred while trying to alter table '%@'.\n\ndatabase said: %@" = "Nastala chyba při pokusu změnit tabulku '%1$@'.\n\nMySQL řekl: %2$@";
 
-/* an error occurred while trying to check the %@.\n\nMySQL said:%@ */
-"An error occurred while trying to check the %@.\n\nMySQL said:%@" = "Nastala chyba při pokusu o kontrolu %1$@.\n\nMySQL řekl:%2$@";
+/* an error occurred while trying to check the %@.\n\ndatabase said:%@ */
+"An error occurred while trying to check the %@.\n\ndatabase said:%@" = "Nastala chyba při pokusu o kontrolu %1$@.\n\nMySQL řekl:%2$@";
 
 /* error deleting relation informative message */
-"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@" = "Nastala chyba při odstraňování relace '%1$@'.\n\nMySQL řekl: %2$@";
+"An error occurred while trying to delete the relation '%@'.\n\ndatabase said: %@" = "Nastala chyba při odstraňování relace '%1$@'.\n\nMySQL řekl: %2$@";
 
 /* unable to get list of users informative message */
 "An error occurred while trying to get the list of users. Please make sure you have the necessary privileges to perform user management, including access to the mysql.user table." = "Nastala chyba při pokusu získat seznam uživatelů. Ujistěte se, že máte potřebná oprávnění k provádění uživatelského řízení, včetně přístupu k mysql.user tabulce.";
 
 /* error importing table informative message */
-"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@" = "Nastala chyba při importu tabulky via: \n%1$@\n\n\nMySQL řekl: %2$@";
+"An error occurred while trying to import a table via: \n%@\n\n\ndatabase said: %@" = "Nastala chyba při importu tabulky via: \n%1$@\n\n\nMySQL řekl: %2$@";
 
 /* error moving field informative message */
-"An error occurred while trying to move the field.\n\nMySQL said: %@" = "Nastala chyba při pokusu přesunout pole.\n\nMySQL řekl: %@";
+"An error occurred while trying to move the field.\n\ndatabase said: %@" = "Nastala chyba při pokusu přesunout pole.\n\nMySQL řekl: %@";
 
 /* error resetting auto_increment informative message */
-"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@" = "Nastala chyba při obnovování AUTO_INCREMENT tabulky '%1$@'.\n\nMySQL řekl: %2$@";
+"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\ndatabase said: %@" = "Nastala chyba při obnovování AUTO_INCREMENT tabulky '%1$@'.\n\nMySQL řekl: %2$@";
 
 /* error truncating table informative message */
-"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@" = "Nastala chyba při pokusu o zkrácení tabulky '%1$@'.\n\nMySQL řekl: %2$@";
+"An error occurred while trying to truncate the table '%@'.\n\ndatabase said: %@" = "Nastala chyba při pokusu o zkrácení tabulky '%1$@'.\n\nMySQL řekl: %2$@";
 
 /* mysql error occurred informative message */
-"An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "Při pokusu o provedení operace došlo k chybě.\n\nMySQL řekl: %@";
+"An error occurred whilst trying to perform the operation.\n\ndatabase said: %@" = "Při pokusu o provedení operace došlo k chybě.\n\nMySQL řekl: %@";
 
 /* mysql resource limits unsupported message */
-"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Limity zdrojů nejsou pro vaši verzi MySQL podporovány. Jakékoliv limity Resouce limit, které jste zadali, byly zahozeny a neuloženy. MySQL řekl: %@";
+"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. database said: %@" = "Limity zdrojů nejsou pro vaši verzi MySQL podporovány. Jakékoliv limity Resouce limit, které jste zadali, byly zahozeny a neuloženy. MySQL řekl: %@";
 
 /* Export files creation error explanatory text */
 "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "Při pokusu o vytvoření %lu exportovaných souborů došlo k neošetřené chybě. Zkontrolujte podrobnosti a zkuste to znovu.";
@@ -727,7 +727,7 @@
 "Connected to %@" = "Připojeno k %@";
 
 /* message of panel when connection to db failed */
-"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %@" = "Připojeno k serveru, ale nelze se připojit k databázi %1$@.\n\nUjistěte se, že databáze existuje a že máte potřebná oprávnění.\n\nMySQL řekl: %2$@";
+"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\ndatabase said: %@" = "Připojeno k serveru, ale nelze se připojit k databázi %1$@.\n\nUjistěte se, že databáze existuje a že máte potřebná oprávnění.\n\nMySQL řekl: %2$@";
 
 /* Generic connecting very short status message */
 "Connecting..." = "Připojování...";
@@ -818,13 +818,13 @@
 "Could not select database" = "Nelze vybrat databázi";
 
 /* Alter Database : Query Failed ($1 = mysql error message) */
-"Couldn't alter database.\nMySQL said: %@" = "Nelze změnit databázi.\nMySQL řekl: %@";
+"Couldn't alter database.\ndatabase said: %@" = "Nelze změnit databázi.\nMySQL řekl: %@";
 
 /* Couldn't copy default themes to Application Support Theme folder!\nError: %@ */
 "Couldn't copy default themes to Application Support Theme folder!\nError: %@" = "Nelze zkopírovat výchozí motivy do složky podpory aplikace!\nChyba: %@";
 
 /* message of panel when table cannot be created */
-"Couldn't create '%@'.\nMySQL said: %@" = "Nelze vytvořit '%1$@'.\nMySQL řekl: %2$@";
+"Couldn't create '%@'.\ndatabase said: %@" = "Nelze vytvořit '%1$@'.\nMySQL řekl: %2$@";
 
 /* Couldn't create Application Support Bundle folder!\nError: %@ */
 "Couldn't create Application Support Bundle folder!\nError: %@" = "Složka Balíček aplikací se nepodařilo vytvořit!\nChyba: %@";
@@ -833,31 +833,31 @@
 "Couldn't create Application Support Theme folder!\nError: %@" = "Složka podpory aplikací se nepodařilo vytvořit!\nChyba: %@";
 
 /* message of panel when creation of db failed */
-"Couldn't create database.\nMySQL said: %@" = "Nelze vytvořit databázi.\nMySQL řekl: %@";
+"Couldn't create database.\ndatabase said: %@" = "Nelze vytvořit databázi.\nMySQL řekl: %@";
 
 /* message of panel when an item cannot be deleted */
-"Couldn't delete '%@'.\n\nMySQL said: %@" = "Nelze odstranit '%1$@'.\n\nMySQL řekl: %2$@";
+"Couldn't delete '%@'.\n\ndatabase said: %@" = "Nelze odstranit '%1$@'.\n\nMySQL řekl: %2$@";
 
 /* message of panel when an item cannot be deleted including informative message about using force deletion */
-"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@" = "Nelze odstranit '%1$@'.\n\nVýběr možnosti 'Vynutit odstranění' může tomuto problému zabránit, ale může ponechat databázi v nekonzistentním stavu.\n\nMySQL řekl: %2$@";
+"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\ndatabase said: %@" = "Nelze odstranit '%1$@'.\n\nVýběr možnosti 'Vynutit odstranění' může tomuto problému zabránit, ale může ponechat databázi v nekonzistentním stavu.\n\nMySQL řekl: %2$@";
 
 /* message of panel when field cannot be deleted */
-"Couldn't delete field %@.\nMySQL said: %@" = "Nelze odstranit pole %1$@.\nMySQL řekl: %2$@";
+"Couldn't delete field %@.\ndatabase said: %@" = "Nelze odstranit pole %1$@.\nMySQL řekl: %2$@";
 
 /* message when deleteing all rows failed */
-"Couldn't delete rows.\n\nMySQL said: %@" = "Nelze odstranit řádky.\n\nMySQL řekl: %@";
+"Couldn't delete rows.\n\ndatabase said: %@" = "Nelze odstranit řádky.\n\nMySQL řekl: %@";
 
 /* message of panel when deleting db failed */
-"Couldn't delete the database.\nMySQL said: %@" = "Nelze odstranit databázi.\nMySQL řekl: %@";
+"Couldn't delete the database.\ndatabase said: %@" = "Nelze odstranit databázi.\nMySQL řekl: %@";
 
 /* message of panel when an item cannot be renamed */
-"Couldn't duplicate '%@'.\nMySQL said: %@" = "Nelze duplikovat '%1$@'.\nMySQL řekl: %2$@";
+"Couldn't duplicate '%@'.\ndatabase said: %@" = "Nelze duplikovat '%1$@'.\nMySQL řekl: %2$@";
 
 /* message of panel when flushing privs failed */
-"Couldn't flush privileges.\nMySQL said: %@" = "Nelze vymazat oprávnění.\nMySQL řekl: %@";
+"Couldn't flush privileges.\ndatabase said: %@" = "Nelze vymazat oprávnění.\nMySQL řekl: %@";
 
 /* message of panel when table information cannot be retrieved */
-"Couldn't get create syntax.\nMySQL said: %@" = "Nelze vytvořit syntaxi.\nMySQL řekl: %@";
+"Couldn't get create syntax.\ndatabase said: %@" = "Nelze vytvořit syntaxi.\nMySQL řekl: %@";
 
 /* Custom Query result editing error - could not identify a corresponding column */
 "Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table." = "Nelze jednoznačně identifikovat počátek pole. Sloupec '%@' obsahuje data z více než jedné tabulky.";
@@ -872,10 +872,10 @@
 "Couldn't sort column." = "Řazení sloupce se nezdařilo.";
 
 /* message of panel when sorting of table failed */
-"Couldn't sort table. MySQL said: %@" = "Nelze seřadit tabulku. MySQL řekl: %@";
+"Couldn't sort table. database said: %@" = "Nelze seřadit tabulku. MySQL řekl: %@";
 
 /* message of panel when error while updating field to db */
-"Couldn't write field.\nMySQL said: %@" = "Couldn't write field.\nMySQL said: %@";
+"Couldn't write field.\ndatabase said: %@" = "Couldn't write field.\ndatabase said: %@";
 
 /* create syntax for table comment */
 "Create syntax for" = "Vytvořit syntaxi pro";
@@ -1760,8 +1760,8 @@
 /* MySQL connecting very short status message */
 "MySQL connecting..." = "Připojování k MySQL...";
 
-/* mysql error message */
-"MySQL Error" = "MySQL Error";
+/* database error message */
+"Database Error" = "Chyba databáze";
 
 /* mysql help */
 "MySQL Help" = "MySQL Help";
@@ -1776,13 +1776,13 @@
 "MySQL Help – Categories" = "MySQL Nápověda - Kategorie";
 
 /* mysql said message */
-"MySQL said:" = "MySQL řekl:";
+"database said:" = "MySQL řekl:";
 
 /* shutdown server : error dialog : message */
-"MySQL said:\n%@" = "MySQL řekl:\n%@";
+"database said:\n%@" = "MySQL řekl:\n%@";
 
 /* message of panel when error while adding row to db */
-"MySQL said:\n\n%@" = "MySQL řekl:\n\n%@";
+"database said:\n\n%@" = "MySQL řekl:\n\n%@";
 
 /* Preferences : Themes : Initial filename for 'Export' */
 "MyTheme" = "Mymotiv";
@@ -2757,22 +2757,22 @@
 "The selected file is either not a valid SPF file or severely corrupted." = "Vybraný soubor buď není platný SPF soubor nebo je vážně poškozen.";
 
 /* error deleting relation informative message */
-"The selected relation couldn't be deleted.\n\nMySQL said: %@" = "Vybrané relace nelze odstranit.\n\nMySQL řekl: %@";
+"The selected relation couldn't be deleted.\n\ndatabase said: %@" = "Vybrané relace nelze odstranit.\n\nMySQL řekl: %@";
 
 /* error deleting trigger informative message */
-"The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "The selected trigger couldn't be deleted.\n\nMySQL said: %@";
+"The selected trigger couldn't be deleted.\n\ndatabase said: %@" = "The selected trigger couldn't be deleted.\n\ndatabase said: %@";
 
 /* description of tinyint */
 "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "Nejmenší celočíselný typ vyžaduje 1 bajtový úložný prostor. M je volitelná šířka displeje a nemá vliv na rozsah možných hodnot.";
 
 /* message of panel when connection to socket failed because optional socket could not be found */
-"The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@" = "Soubor se soketem nebyl nalezen v žádném společném umístění. Zadejte prosím správné umístění socketu.\n\nMySQL řekl: %@";
+"The socket file could not be found in any common location. Please supply the correct socket location.\n\ndatabase said: %@" = "Soubor se soketem nebyl nalezen v žádném společném umístění. Zadejte prosím správné umístění socketu.\n\nMySQL řekl: %@";
 
 /* error creating relation informative message */
-"The specified relation could not be created.\n\nMySQL said: %@" = "Zadaná relace nemohla být vytvořena.\n\nMySQL řekl: %@";
+"The specified relation could not be created.\n\ndatabase said: %@" = "Zadaná relace nemohla být vytvořena.\n\nMySQL řekl: %@";
 
 /* error creating trigger informative message */
-"The specified trigger was unable to be created.\n\nMySQL said: %@" = "Zadaný spouštěč nemohl být vytvořen.\n\nMySQL řekl: %@";
+"The specified trigger was unable to be created.\n\ndatabase said: %@" = "Zadaný spouštěč nemohl být vytvořen.\n\nMySQL řekl: %@";
 
 /* sql import : charset error alert : detail message */
 "The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!" = "SQL soubor používá kódování utf8mb4, ale vaše verze MySQL podporuje pouze omezenou podsadu utf8.\n\nMůžete pokračovat v importu, ale jakékoli jiné než BMP znaky v SQL souboru (např. některé typografické a vědecké speciální znaky, archaické CJK logy, emojis) budou nenávratně ztraceny!";
@@ -2805,10 +2805,10 @@
 "The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds)." = "SSH tunel se nepodařilo připojit k hostiteli %1$@nebo vypršel časový limit požadavku.\n\nUjistěte se, že adresa je správná a že máte potřebná oprávnění, nebo zkuste zvýšit časový limit připojení (v současné době %2$ld sekund).";
 
 /* message of panel when loading of table failed and presumably due to used filter argument */
-"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@" = "Data tabulky nemohla být načtena pravděpodobně z důvodu použité doložky filtru. \n\nMySQL řekl: %@";
+"The table data couldn't be loaded presumably due to used filter clause. \n\ndatabase said: %@" = "Data tabulky nemohla být načtena pravděpodobně z důvodu použité doložky filtru. \n\nMySQL řekl: %@";
 
 /* message of panel when loading of table failed */
-"The table data couldn't be loaded.\n\nMySQL said: %@" = "Data tabulky se nepodařilo načíst.\n\nMySQL řekl: %@";
+"The table data couldn't be loaded.\n\ndatabase said: %@" = "Data tabulky se nepodařilo načíst.\n\nMySQL řekl: %@";
 
 /* Export folder not writable explanatory text */
 "The target export folder is not writable.  Please select a new export location and try again." = "Do cílové složky pro export nelze zapisovat. Zvolte prosím nové umístění pro export a zkuste to znovu.";
@@ -2840,7 +2840,7 @@
 "This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone." = "Toto pole je součástí zahraničního klíče vztahu s tabulkou '%@'. Tento vztah musí být odstraněn, než může být pole odstraněno.\n\nJste si jisti, že chcete pokračovat v odstraňování vztahu a pole? Tuto akci nelze vrátit zpět.";
 
 /* table structure : indexes : delete index : error 1553, no FK found : description */
-"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@" = "Tento index nelze odstranit, protože je používán ve vztahu existujícím zahraničním klíčem.\n\nPřed odstraněním tohoto indexu odstraňte vztah.\n\nMySQL řekl: %@";
+"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\ndatabase said: %@" = "Tento index nelze odstranit, protože je používán ve vztahu existujícím zahraničním klíčem.\n\nPřed odstraněním tohoto indexu odstraňte vztah.\n\nMySQL řekl: %@";
 
 /* description of serial */
 "This is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE." = "Toto je alias pro BIGINT UNSIGNED NULL AUTO_INCREMENT UNIQUE.";
@@ -2939,16 +2939,16 @@
 "Unable to check table" = "Nelze zkontrolovat tabulku";
 
 /* message of panel when connection to host failed due to access denied error */
-"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "Nelze se připojit k hostiteli %1$@ , protože přístup byl odepřen.\n\nZkontrolujte své uživatelské jméno a heslo a ujistěte se, že je povolen přístup z vaší aktuální polohy.\n\nMySQL řekl: %2$@";
+"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\ndatabase said: %@" = "Nelze se připojit k hostiteli %1$@ , protože přístup byl odepřen.\n\nZkontrolujte své uživatelské jméno a heslo a ujistěte se, že je povolen přístup z vaší aktuální polohy.\n\nMySQL řekl: %2$@";
 
 /* message of panel when SSH port forwarding failed */
-"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@" = "Nelze se připojit k hostování %1$@ , protože připojení k portu přes SSH bylo odmítnuto.\n\nUjistěte se, že Váš MySQL host je nastaven pro povolení TCP/IP připojení (ne --skip-networking) a je nastaven tak, aby bylo možné povolit připojení z hostitele, který tunelling via.\n\nMůžete také zkontrolovat, že port je správný a že máte potřebná oprávnění.\n\nKontrola detailu chyb zobrazí protokol SSH ladění, který může poskytnout více podrobností.\n\nMySQL řekl: %2$@";
+"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\ndatabase said: %@" = "Nelze se připojit k hostování %1$@ , protože připojení k portu přes SSH bylo odmítnuto.\n\nUjistěte se, že Váš MySQL host je nastaven pro povolení TCP/IP připojení (ne --skip-networking) a je nastaven tak, aby bylo možné povolit připojení z hostitele, který tunelling via.\n\nMůžete také zkontrolovat, že port je správný a že máte potřebná oprávnění.\n\nKontrola detailu chyb zobrazí protokol SSH ladění, který může poskytnout více podrobností.\n\nMySQL řekl: %2$@";
 
 /* message of panel when connection to host failed */
-"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\nMySQL said: %@" = "Nelze se připojit k hostiteli %1$@nebo vypršel časový limit požadavku.\n\nUjistěte se, že adresa je správná a že máte potřebná oprávnění, nebo zkuste zvýšit časový limit připojení (v současné době %2$ld sekund).\n\nMySQL řekl: %3$@";
+"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\ndatabase said: %@" = "Nelze se připojit k hostiteli %1$@nebo vypršel časový limit požadavku.\n\nUjistěte se, že adresa je správná a že máte potřebná oprávnění, nebo zkuste zvýšit časový limit připojení (v současné době %2$ld sekund).\n\nMySQL řekl: %3$@";
 
 /* message of panel when connection to host failed */
-"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@" = "Nelze se připojit pomocí socketu, nebo vypršel časový limit požadavku.\n\nZkontrolujte, zda je cesta k soketu správná a zda máte potřebná oprávnění a že server běží.\n\nMySQL řekl: %@";
+"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\ndatabase said: %@" = "Nelze se připojit pomocí socketu, nebo vypršel časový limit požadavku.\n\nZkontrolujte, zda je cesta k soketu správná a zda máte potřebná oprávnění a že server běží.\n\nMySQL řekl: %@";
 
 /* unable to copy database message */
 "Unable to copy database" = "Nelze zkopírovat databázi";

@@ -208,11 +208,11 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		}
 
 		if (accessoryView) {
-			[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error creating relation", @"error creating relation message") message:[NSString stringWithFormat:NSLocalizedString(@"The specified relation could not be created.\n\nMySQL said: %@", @"error creating relation informative message"), errorText] accessoryView:accessoryView callback:^{
+			[NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error creating relation", @"error creating relation message") message:[NSString stringWithFormat:NSLocalizedString(@"The specified relation could not be created.\n\ndatabase said: %@", @"error creating relation informative message"), errorText] accessoryView:accessoryView callback:^{
 						 [self performSelector:@selector(openRelationSheet:) withObject:self afterDelay:0.0];
 			}];
 		} else {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error creating relation", @"error creating relation message") message:[NSString stringWithFormat:NSLocalizedString(@"The specified relation could not be created.\n\nMySQL said: %@", @"error creating relation informative message"), errorText] callback:^{
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error creating relation", @"error creating relation message") message:[NSString stringWithFormat:NSLocalizedString(@"The specified relation could not be created.\n\ndatabase said: %@", @"error creating relation informative message"), errorText] callback:^{
 				[self performSelector:@selector(openRelationSheet:) withObject:self afterDelay:0.0];
 			}];
 		}
@@ -311,7 +311,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
 				if ([self->connection queryErrored]) {
 
-					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete relation", @"error deleting relation message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected relation couldn't be deleted.\n\nMySQL said: %@", @"error deleting relation informative message"), [self->connection lastErrorMessage]] callback:nil];
+					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete relation", @"error deleting relation message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected relation couldn't be deleted.\n\ndatabase said: %@", @"error deleting relation informative message"), [self->connection lastErrorMessage]] callback:nil];
 					// Abort loop
 					*stop = YES;
 				}

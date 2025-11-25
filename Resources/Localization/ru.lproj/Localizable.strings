@@ -62,8 +62,8 @@
 /* text showing multiple queries were cancelled */
 "%@; Cancelled in query %ld, after %@" = "%1$@; Отменено на запросе %2$ld, после %3$@";
 
-/* Error display text, showing original MySQL error */
-"%@\n\nMySQL said: %@" = "%1$@\n\nMySQL сообщил: %2$@";
+/* Error display text, showing original database error */
+"%@\n\ndatabase said: %@" = "%1$@\n\nбаза данных сообщила: %2$@";
 
 /* favorite singular label (%d == 1) */
 "%lu favorite" = "%lu избранное";
@@ -275,10 +275,10 @@
 "An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane." = "При выполнении команды к БД произошла ошибка. Если команда к БД была вызвана командой пакета, то возможно она всё ещё выполняется. Вы можете попробовать её прервать, нажав ⌘+. или сделать это через панель Действий.";
 
 /* error killing query informative message */
-"An error occurred while attempting to kill connection %lld.\n\nMySQL said: %@" = "При попытке принудительного разрыва соединения %1$lld произошла ошибка.\n\nMySQL сообщил: %2$@";
+"An error occurred while attempting to kill connection %lld.\n\ndatabase said: %@" = "При попытке принудительного разрыва соединения %1$lld произошла ошибка.\n\nMySQL сообщил: %2$@";
 
 /* error killing query informative message */
-"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@" = "При попытке принудительно завершить запрос, связанный с соединением %1$lld произошла ошибка.\n\nMySQL сообщил: %2$@";
+"An error occurred while attempting to kill the query associated with connection %lld.\n\ndatabase said: %@" = "При попытке принудительно завершить запрос, связанный с соединением %1$lld произошла ошибка.\n\nMySQL сообщил: %2$@";
 
 /* Error shown when unable to show create table syntax */
 "An error occurred while creating table syntax.\n\n: %@" = "Произошла ошибка при формировании запроса создания таблицы.\n\n: %@";
@@ -287,31 +287,31 @@
 "An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first." = "Произошла ошибка при переименовании '%@'. Временное название не найдено. Пожалуйста, попробуйте сперва использовать другое название.";
 
 /* rename table error informative message */
-"An error occurred while renaming '%@'.\n\nMySQL said: %@" = "При переименовании '%1$@' произошла ошибка.\n\nMySQL сообщил: %2$@";
+"An error occurred while renaming '%@'.\n\ndatabase said: %@" = "При переименовании '%1$@' произошла ошибка.\n\nMySQL сообщил: %2$@";
 
 /* rename error - don't know what type the renamed thing is */
 "An error occurred while renaming. '%@' is of an unknown type." = "Произошла ошибка при переименовании: '%@' имеет неизвестный тип.";
 
 /* rename precedure/function error - can't delete old procedure */
-"An error occurred while renaming. I couldn't delete '%@'.\n\nMySQL said: %@" = "При переименовании произошла ошибка: не получается удалить '%1$@'.\n\nMySQL сообщил: %2$@";
+"An error occurred while renaming. I couldn't delete '%@'.\n\ndatabase said: %@" = "При переименовании произошла ошибка: не получается удалить '%1$@'.\n\nMySQL сообщил: %2$@";
 
 /* rename precedure/function error - can't recreate procedure */
-"An error occurred while renaming. I couldn't recreate '%@'.\n\nMySQL said: %@" = "При переименовании произошла ошибка: не получается пересоздать '%1$@'.\n\nMySQL сообщил: %2$@";
+"An error occurred while renaming. I couldn't recreate '%@'.\n\ndatabase said: %@" = "При переименовании произошла ошибка: не получается пересоздать '%1$@'.\n\nMySQL сообщил: %2$@";
 
 /* rename precedure/function error - can't retrieve syntax */
-"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\nMySQL said: %@" = "При переименовании произошла ошибка: не получается получить запрос создания '%1$@'.\n\nMySQL сообщил: %2$@";
+"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\ndatabase said: %@" = "При переименовании произошла ошибка: не получается получить запрос создания '%1$@'.\n\nMySQL сообщил: %2$@";
 
 /* rename error - invalid create syntax */
 "An error occurred while renaming. The CREATE syntax of '%@' could not be parsed." = "При переименовании произошла ошибка: не удалось разобрать CREATE запрос для '%@'.";
 
 /* message of panel when retrieving view information failed */
-"An error occurred while retrieving status data.\n\nMySQL said: %@" = "При получении данных о состоянии произошла ошибка.\n\nMySQL сообщил: %@";
+"An error occurred while retrieving status data.\n\ndatabase said: %@" = "При получении данных о состоянии произошла ошибка.\n\nMySQL сообщил: %@";
 
 /* message of panel when create syntax cannot be retrieved */
-"An error occurred while retrieving the create syntax for '%@'.\nMySQL said: %@" = "При получении запроса создания '%1$@' произошла ошибка.\nMySQL сообщил: %2$@";
+"An error occurred while retrieving the create syntax for '%@'.\ndatabase said: %@" = "При получении запроса создания '%1$@' произошла ошибка.\nMySQL сообщил: %2$@";
 
 /* add index error informative message */
-"An error occurred while trying to add the index.\n\nMySQL said: %@" = "При попытке добавить индекс произошла ошибка.\n\nMySQL сообщил: %@";
+"An error occurred while trying to add the index.\n\ndatabase said: %@" = "При попытке добавить индекс произошла ошибка.\n\nMySQL сообщил: %@";
 
 /* error adding password to keychain informative message */
 "An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "Произошла ошибка при попытке добавить пароль в Связку ключей. Попробуйте восстановить Связку ключей, а если это не поможет, то сообщите команде Sequel Ace код ошибки %i.";
@@ -320,10 +320,10 @@
 "An error occurred while trying to copy the database '%@' to '%@'." = "Произошла ошибка при попытке скопировать базу данных '%1$@' в '%2$@'.";
 
 /* error deleting index informative message */
-"An error occurred while trying to delete the index.\n\nMySQL said: %@" = "При попытке удалить индекс произошла ошибка.\n\nMySQL сообщил: %@";
+"An error occurred while trying to delete the index.\n\ndatabase said: %@" = "При попытке удалить индекс произошла ошибка.\n\nMySQL сообщил: %@";
 
 /* table status : row count query failed : error message */
-"An error occurred while trying to determine the number of rows for %@.\nMySQL said: %@ (%lu)" = "При попытке определить количество строк для “%1$@” произошла ошибка.\nMySQL сообщил: %2$@ (%3$lu)";
+"An error occurred while trying to determine the number of rows for %@.\ndatabase said: %@ (%lu)" = "При попытке определить количество строк для “%1$@” произошла ошибка.\nMySQL сообщил: %2$@ (%3$lu)";
 
 /* unable to rename database message informative message */
 "An error occurred while trying to rename the database '%@' to '%@'." = "Произошла ошибка при попытке переименовать базу данных '%1$@' в '%2$@'.";
@@ -338,7 +338,7 @@
 "An error occurred" = "Произошла ошибка";
 
 /* MySQL table info retrieval error message */
-"An error occurred retrieving table information.  MySQL said: %@" = "При получении информации о таблице произошла ошибка. MySQL сообщил: %@";
+"An error occurred retrieving table information.  database said: %@" = "При получении информации о таблице произошла ошибка. MySQL сообщил: %@";
 
 /* SQL encoding read error */
 "An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed." = "Произошла ошибка при чтении файла, так как он не может быть прочитан в выбранной кодировке (%1$@).\n\nВыполнены только запросы %2$ld.";
@@ -353,91 +353,91 @@
 "An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)" = "Произошла ошибка при чтении файла.\n\nБыло импортировано строк: %1$ld.\n\n(%2$@)";
 
 /* error adding field informative message */
-"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@" = "При попытке добавить поле '%1$@' через\n\n%2$@ произошла ошибка.\n\nMySQL сообщил: %3$@";
+"An error occurred when trying to add the field '%@' via\n\n%@\n\ndatabase said: %@" = "При попытке добавить поле '%1$@' через\n\n%2$@ произошла ошибка.\n\nMySQL сообщил: %3$@";
 
 /* error changing field informative message */
-"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@" = "При попытке изменить поле '%1$@' через\n\n%2$@ произошла ошибка.\n\nMySQL сообщил: %3$@";
+"An error occurred when trying to change the field '%@' via\n\n%@\n\ndatabase said: %@" = "При попытке изменить поле '%1$@' через\n\n%2$@ произошла ошибка.\n\nMySQL сообщил: %3$@";
 
 /* error changing table collation informative message */
-"An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@" = "При попытке изменить сортировку таблицы на '%1$@' произошла ошибка.\n\nMySQL сообщил: %2$@";
+"An error occurred when trying to change the table collation to '%@'.\n\ndatabase said: %@" = "При попытке изменить сортировку таблицы на '%1$@' произошла ошибка.\n\nMySQL сообщил: %2$@";
 
 /* error changing table encoding informative message */
-"An error occurred when trying to change the table encoding to '%@'.\n\nMySQL said: %@" = "При попытке изменить кодировку таблицы на '%1$@' произошла ошибка.\n\nMySQL сообщил: %2$@";
+"An error occurred when trying to change the table encoding to '%@'.\n\ndatabase said: %@" = "При попытке изменить кодировку таблицы на '%1$@' произошла ошибка.\n\nMySQL сообщил: %2$@";
 
 /* error changing table type informative message */
-"An error occurred when trying to change the table type to '%@'.\n\nMySQL said: %@" = "При попытке изменить тип таблицы на '%1$@' произошла ошибка.\n\nMySQL сообщил: %2$@";
+"An error occurred when trying to change the table type to '%@'.\n\ndatabase said: %@" = "При попытке изменить тип таблицы на '%1$@' произошла ошибка.\n\nMySQL сообщил: %2$@";
 
 /* error changing table comment informative message */
-"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@" = "При попытке изменить комментарий таблицы на '%1$@' произошла ошибка.\n\nMySQL сообщил: %2$@";
+"An error occurred when trying to change the table's comment to '%@'.\n\ndatabase said: %@" = "При попытке изменить комментарий таблицы на '%1$@' произошла ошибка.\n\nMySQL сообщил: %2$@";
 
-/* an error occurred while analyzing the %@.\n\nMySQL said:%@ */
-"An error occurred while analyzing the %@.\n\nMySQL said:%@" = "При анализе %1$@ произошла ошибка.\n\nMySQL сообщил:%2$@";
+/* an error occurred while analyzing the %@.\n\ndatabase said:%@ */
+"An error occurred while analyzing the %@.\n\ndatabase said:%@" = "При анализе %1$@ произошла ошибка.\n\nMySQL сообщил:%2$@";
 
-/* an error occurred while fetching the optimized field type.\n\nMySQL said:%@ */
-"An error occurred while fetching the optimized field type.\n\nMySQL said:%@" = "При получении оптимизированного типа поля произошла ошибка.\n\nMySQL сообщил:%@";
+/* an error occurred while fetching the optimized field type.\n\ndatabase said:%@ */
+"An error occurred while fetching the optimized field type.\n\ndatabase said:%@" = "При получении оптимизированного типа поля произошла ошибка.\n\nMySQL сообщил:%@";
 
-/* an error occurred while trying to flush the %@.\n\nMySQL said:%@ */
-"An error occurred while flushing the %@.\n\nMySQL said:%@" = "При очистке %1$@ произошла ошибка.\n\nMySQL сообщил:%2$@";
+/* an error occurred while trying to flush the %@.\n\ndatabase said:%@ */
+"An error occurred while flushing the %@.\n\ndatabase said:%@" = "При очистке %1$@ произошла ошибка.\n\nMySQL сообщил:%2$@";
 
 /* sql import error message */
 "An error occurred while importing SQL" = "При импорте SQL произошла ошибка";
 
-/* an error occurred while trying to optimze the %@.\n\nMySQL said:%@ */
-"An error occurred while optimzing the %@.\n\nMySQL said:%@" = "При оптимизации %1$@ произошла ошибка.\n\nMySQL сообщил:%2$@";
+/* an error occurred while trying to optimze the %@.\n\ndatabase said:%@ */
+"An error occurred while optimzing the %@.\n\ndatabase said:%@" = "При оптимизации %1$@ произошла ошибка.\n\nMySQL сообщил:%2$@";
 
-/* an error occurred while performing the checksum on the %@.\n\nMySQL said:%@ */
-"An error occurred while performing the checksum on %@.\n\nMySQL said:%@" = "При вычислении контрольной суммы %1$@ произошла ошибка.\n\nMySQL сообщил:%2$@";
+/* an error occurred while performing the checksum on the %@.\n\ndatabase said:%@ */
+"An error occurred while performing the checksum on %@.\n\ndatabase said:%@" = "При вычислении контрольной суммы %1$@ произошла ошибка.\n\nMySQL сообщил:%2$@";
 
-/* an error occurred while trying to repair the %@.\n\nMySQL said:%@ */
-"An error occurred while repairing the %@.\n\nMySQL said:%@" = "Произошла ошибка при исправлении %1$@.\n\nMySQL сообщил:%2$@";
+/* an error occurred while trying to repair the %@.\n\ndatabase said:%@ */
+"An error occurred while repairing the %@.\n\ndatabase said:%@" = "Произошла ошибка при исправлении %1$@.\n\nMySQL сообщил:%2$@";
 
 /* message of panel when retrieving information failed */
-"An error occurred while retrieving information.\nMySQL said: %@" = "При получении информации произошла ошибка.\nMySQL сообщил: %@";
+"An error occurred while retrieving information.\ndatabase said: %@" = "При получении информации произошла ошибка.\nMySQL сообщил: %@";
 
 /* error retrieving table information informative message */
-"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@" = "При получении информации по таблице '%1$@' произошла ошибка. Пожалуйста, попробуйте ещё раз.\n\nMySQL сообщил: %2$@";
+"An error occurred while retrieving the information for table '%@'. Please try again.\n\ndatabase said: %@" = "При получении информации по таблице '%1$@' произошла ошибка. Пожалуйста, попробуйте ещё раз.\n\nMySQL сообщил: %2$@";
 
 /* error retrieving table information informative message */
-"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nMySQL said: %@" = "При получении информации триггера для таблицы '%1$@' произошла ошибка. Пожалуйста, попробуйте ещё раз.\n\nMySQL сообщил: %2$@";
+"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\ndatabase said: %@" = "При получении информации триггера для таблицы '%1$@' произошла ошибка. Пожалуйста, попробуйте ещё раз.\n\nMySQL сообщил: %2$@";
 
 /* error adding new column informative message */
-"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@" = "При попытке добавить новый столбец '%1$@' произошла ошибка.\n\n%2$@.\n\nMySQL сообщил: %3$@";
+"An error occurred while trying to add the new column '%@' by\n\n%@.\n\ndatabase said: %@" = "При попытке добавить новый столбец '%1$@' произошла ошибка.\n\n%2$@.\n\nMySQL сообщил: %3$@";
 
 /* error adding new table informative message */
-"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@" = "Произошла ошибка при попытке добавить новую таблицу '%1$@' от\n\n%2$@.\n\nMySQL сказал: %3$@";
+"An error occurred while trying to add the new table '%@' by\n\n%@.\n\ndatabase said: %@" = "Произошла ошибка при попытке добавить новую таблицу '%1$@' от\n\n%2$@.\n\nMySQL сказал: %3$@";
 
 /* error adding new table informative message */
-"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@" = "Произошла ошибка при попытке добавить новую таблицу '%1$@'.\n\nMySQL сообщил: %2$@";
+"An error occurred while trying to add the new table '%@'.\n\ndatabase said: %@" = "Произошла ошибка при попытке добавить новую таблицу '%1$@'.\n\nMySQL сообщил: %2$@";
 
 /* error while trying to alter table message */
-"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@" = "Произошла ошибка при попытке изменить таблицу '%1$@'.\n\nMySQL сообщил: %2$@";
+"An error occurred while trying to alter table '%@'.\n\ndatabase said: %@" = "Произошла ошибка при попытке изменить таблицу '%1$@'.\n\nMySQL сообщил: %2$@";
 
-/* an error occurred while trying to check the %@.\n\nMySQL said:%@ */
-"An error occurred while trying to check the %@.\n\nMySQL said:%@" = "Произошла ошибка при попытке проверить %1$@.\n\nMySQL сообщил:%2$@";
+/* an error occurred while trying to check the %@.\n\ndatabase said:%@ */
+"An error occurred while trying to check the %@.\n\ndatabase said:%@" = "Произошла ошибка при попытке проверить %1$@.\n\nMySQL сообщил:%2$@";
 
 /* error deleting relation informative message */
-"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@" = "Произошла ошибка при попытке удалить связь '%1$@'.\n\nMySQL сообщил: %2$@";
+"An error occurred while trying to delete the relation '%@'.\n\ndatabase said: %@" = "Произошла ошибка при попытке удалить связь '%1$@'.\n\nMySQL сообщил: %2$@";
 
 /* unable to get list of users informative message */
 "An error occurred while trying to get the list of users. Please make sure you have the necessary privileges to perform user management, including access to the mysql.user table." = "Произошла ошибка при попытке получить список пользователей. Пожалуйста, убедитесь, что у вас есть необходимые права управления пользователями, включая доступ к таблице mysql.user.";
 
 /* error importing table informative message */
-"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@" = "При импорте таблицы произошла ошибка: \n%1$@\n\n\nMySQL сообщил: %2$@";
+"An error occurred while trying to import a table via: \n%@\n\n\ndatabase said: %@" = "При импорте таблицы произошла ошибка: \n%1$@\n\n\nMySQL сообщил: %2$@";
 
 /* error moving field informative message */
-"An error occurred while trying to move the field.\n\nMySQL said: %@" = "При попытке передвинуть поле произошла ошибка.\n\nMySQL сообщил: %@";
+"An error occurred while trying to move the field.\n\ndatabase said: %@" = "При попытке передвинуть поле произошла ошибка.\n\nMySQL сообщил: %@";
 
 /* error resetting auto_increment informative message */
-"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@" = "Произошла ошибка при попытке сбросить AUTO_INCREMENT таблицы '%1$@'.\n\nMySQL сообщил: %2$@";
+"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\ndatabase said: %@" = "Произошла ошибка при попытке сбросить AUTO_INCREMENT таблицы '%1$@'.\n\nMySQL сообщил: %2$@";
 
 /* error truncating table informative message */
-"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@" = "При попытке очистить таблицу '%1$@' произошла ошибка.\n\nMySQL сообщил: %2$@";
+"An error occurred while trying to truncate the table '%@'.\n\ndatabase said: %@" = "При попытке очистить таблицу '%1$@' произошла ошибка.\n\nMySQL сообщил: %2$@";
 
 /* mysql error occurred informative message */
-"An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "При попытке выполнить операцию произошла ошибка.\n\nMySQL сообщил: %@";
+"An error occurred whilst trying to perform the operation.\n\ndatabase said: %@" = "При попытке выполнить операцию произошла ошибка.\n\nMySQL сообщил: %@";
 
 /* mysql resource limits unsupported message */
-"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Ограничения ресурсов не поддерживаются для вашей версии MySQL. Любые ограничения ресурсов, которые вы указали, были отклонены и не сохранились. MySQL сообщил: %@";
+"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. database said: %@" = "Ограничения ресурсов не поддерживаются для вашей версии MySQL. Любые ограничения ресурсов, которые вы указали, были отклонены и не сохранились. MySQL сообщил: %@";
 
 /* Export files creation error explanatory text */
 "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "Произошла необработанная ошибка при попытке создать %lu экспортируемых файлов. Проверьте детали и повторите попытку.";
@@ -727,7 +727,7 @@
 "Connected to %@" = "Подключено к %@";
 
 /* message of panel when connection to db failed */
-"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %@" = "После соединения с узлом не удалось подключиться к базе данных %1$@.\n\nУбедитесь, что база данных существует и что у вас есть необходимые права.\n\nMySQL сообщил: %2$@";
+"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\ndatabase said: %@" = "После соединения с узлом не удалось подключиться к базе данных %1$@.\n\nУбедитесь, что база данных существует и что у вас есть необходимые права.\n\nMySQL сообщил: %2$@";
 
 /* Generic connecting very short status message */
 "Connecting..." = "Подключение...";
@@ -818,13 +818,13 @@
 "Could not select database" = "Не удалось выбрать базу данных";
 
 /* Alter Database : Query Failed ($1 = mysql error message) */
-"Couldn't alter database.\nMySQL said: %@" = "Не удалось изменить базу данных.\nMySQL сообщил: %@";
+"Couldn't alter database.\ndatabase said: %@" = "Не удалось изменить базу данных.\nMySQL сообщил: %@";
 
 /* Couldn't copy default themes to Application Support Theme folder!\nError: %@ */
 "Couldn't copy default themes to Application Support Theme folder!\nError: %@" = "Не удалось скопировать базовые темы в папку тем программы!\nОшибка: %@";
 
 /* message of panel when table cannot be created */
-"Couldn't create '%@'.\nMySQL said: %@" = "Не удалось создать '%1$@'.\nMySQL сообщил: %2$@";
+"Couldn't create '%@'.\ndatabase said: %@" = "Не удалось создать '%1$@'.\nMySQL сообщил: %2$@";
 
 /* Couldn't create Application Support Bundle folder!\nError: %@ */
 "Couldn't create Application Support Bundle folder!\nError: %@" = "Не удалось создать папку для хранения пакетов!\nОшибка: %@";
@@ -833,31 +833,31 @@
 "Couldn't create Application Support Theme folder!\nError: %@" = "Не удалось создать папку для хранения тем!\nОшибка: %@";
 
 /* message of panel when creation of db failed */
-"Couldn't create database.\nMySQL said: %@" = "Не удалось создать базу данных.\nMySQL сообщил: %@";
+"Couldn't create database.\ndatabase said: %@" = "Не удалось создать базу данных.\nMySQL сообщил: %@";
 
 /* message of panel when an item cannot be deleted */
-"Couldn't delete '%@'.\n\nMySQL said: %@" = "Не удалось удалить '%1$@'.\n\nMySQL сообщил: %2$@";
+"Couldn't delete '%@'.\n\ndatabase said: %@" = "Не удалось удалить '%1$@'.\n\nMySQL сообщил: %2$@";
 
 /* message of panel when an item cannot be deleted including informative message about using force deletion */
-"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@" = "Не удалось удалить '%1$@'.\n\nВыбор параметра «Принудительное удаление» может решить эту проблему, но при этом привести базу данных в рассогласованное состояние.\n\nMySQL сообщил: %2$@";
+"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\ndatabase said: %@" = "Не удалось удалить '%1$@'.\n\nВыбор параметра «Принудительное удаление» может решить эту проблему, но при этом привести базу данных в рассогласованное состояние.\n\nMySQL сообщил: %2$@";
 
 /* message of panel when field cannot be deleted */
-"Couldn't delete field %@.\nMySQL said: %@" = "Не удалось удалить поле %1$@.\nMySQL сообщил: %2$@";
+"Couldn't delete field %@.\ndatabase said: %@" = "Не удалось удалить поле %1$@.\nMySQL сообщил: %2$@";
 
 /* message when deleteing all rows failed */
-"Couldn't delete rows.\n\nMySQL said: %@" = "Не удалось удалить строки.\n\nMySQL сообщил: %@";
+"Couldn't delete rows.\n\ndatabase said: %@" = "Не удалось удалить строки.\n\nMySQL сообщил: %@";
 
 /* message of panel when deleting db failed */
-"Couldn't delete the database.\nMySQL said: %@" = "Не удалось удалить базу данных.\nMySQL сообщил: %@";
+"Couldn't delete the database.\ndatabase said: %@" = "Не удалось удалить базу данных.\nMySQL сообщил: %@";
 
 /* message of panel when an item cannot be renamed */
-"Couldn't duplicate '%@'.\nMySQL said: %@" = "Не удалось дублировать '%1$@'.\nMySQL сообщил: %2$@";
+"Couldn't duplicate '%@'.\ndatabase said: %@" = "Не удалось дублировать '%1$@'.\nMySQL сообщил: %2$@";
 
 /* message of panel when flushing privs failed */
-"Couldn't flush privileges.\nMySQL said: %@" = "Не удалось перезагрузить привилегии.\nMySQL сообщил: %@";
+"Couldn't flush privileges.\ndatabase said: %@" = "Не удалось перезагрузить привилегии.\nMySQL сообщил: %@";
 
 /* message of panel when table information cannot be retrieved */
-"Couldn't get create syntax.\nMySQL said: %@" = "Не удалось получить запрос создания.\nMySQL сообщил: %@";
+"Couldn't get create syntax.\ndatabase said: %@" = "Не удалось получить запрос создания.\nMySQL сообщил: %@";
 
 /* Custom Query result editing error - could not identify a corresponding column */
 "Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table." = "Не удалось однозначно определить источник полей. Столбец '%@' содержит данные из более чем одной таблицы.";
@@ -872,10 +872,10 @@
 "Couldn't sort column." = "Не удалось отсортировать столбец.";
 
 /* message of panel when sorting of table failed */
-"Couldn't sort table. MySQL said: %@" = "Не удалось отсортировать таблицу. MySQL сообщил: %@";
+"Couldn't sort table. database said: %@" = "Не удалось отсортировать таблицу. MySQL сообщил: %@";
 
 /* message of panel when error while updating field to db */
-"Couldn't write field.\nMySQL said: %@" = "Не удалось записать поле.\nMySQL сообщил: %@";
+"Couldn't write field.\ndatabase said: %@" = "Не удалось записать поле.\nMySQL сообщил: %@";
 
 /* create syntax for table comment */
 "Create syntax for" = "Запрос создания для";
@@ -1760,8 +1760,8 @@
 /* MySQL connecting very short status message */
 "MySQL connecting..." = "Подключение к MySQL...";
 
-/* mysql error message */
-"MySQL Error" = "Ошибка MySQL";
+/* database error message */
+"Database Error" = "Ошибка базы данных";
 
 /* mysql help */
 "MySQL Help" = "Справка по MySQL";
@@ -1776,13 +1776,13 @@
 "MySQL Help – Categories" = "MySQL справка – Категории";
 
 /* mysql said message */
-"MySQL said:" = "MySQL сообщил:";
+"database said:" = "MySQL сообщил:";
 
 /* shutdown server : error dialog : message */
-"MySQL said:\n%@" = "MySQL сообщил:\n%@";
+"database said:\n%@" = "MySQL сообщил:\n%@";
 
 /* message of panel when error while adding row to db */
-"MySQL said:\n\n%@" = "MySQL сообщил:\n\n%@";
+"database said:\n\n%@" = "MySQL сообщил:\n\n%@";
 
 /* Preferences : Themes : Initial filename for 'Export' */
 "MyTheme" = "МояTема";
@@ -2757,22 +2757,22 @@
 "The selected file is either not a valid SPF file or severely corrupted." = "Выбранный файл не является допустимым SPF файлом или сильно поврежден.";
 
 /* error deleting relation informative message */
-"The selected relation couldn't be deleted.\n\nMySQL said: %@" = "Выбранная связь не может быть удалена.\n\nMySQL сообщил: %@";
+"The selected relation couldn't be deleted.\n\ndatabase said: %@" = "Выбранная связь не может быть удалена.\n\nMySQL сообщил: %@";
 
 /* error deleting trigger informative message */
-"The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "Выбранный триггер не может быть удалён.\n\nMySQL сообщил: %@";
+"The selected trigger couldn't be deleted.\n\ndatabase said: %@" = "Выбранный триггер не может быть удалён.\n\nMySQL сообщил: %@";
 
 /* description of tinyint */
 "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "Наименьший целочисленный тип, требует 1 байт пространства памяти. M является необязательной шириной дисплея и не влияет на возможный диапазон значений.";
 
 /* message of panel when connection to socket failed because optional socket could not be found */
-"The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@" = "Файл сокета не найден в общем месте. Пожалуйста, укажите правильное расположение сокета.\n\nMySQL сказал: %@";
+"The socket file could not be found in any common location. Please supply the correct socket location.\n\ndatabase said: %@" = "Файл сокета не найден в общем месте. Пожалуйста, укажите правильное расположение сокета.\n\nMySQL сказал: %@";
 
 /* error creating relation informative message */
-"The specified relation could not be created.\n\nMySQL said: %@" = "Не получается установить связь.\n\nMySQL сообщил: %@";
+"The specified relation could not be created.\n\ndatabase said: %@" = "Не получается установить связь.\n\nMySQL сообщил: %@";
 
 /* error creating trigger informative message */
-"The specified trigger was unable to be created.\n\nMySQL said: %@" = "Не получается создать указанный триггер.\n\nMySQL сообщил: %@";
+"The specified trigger was unable to be created.\n\ndatabase said: %@" = "Не получается создать указанный триггер.\n\nMySQL сообщил: %@";
 
 /* sql import : charset error alert : detail message */
 "The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!" = "SQL-файл использует кодировку utf8mb4, но ваша версия MySQL поддерживает только ограниченный набор подмножеств utf8.\n\nВы можете продолжить импорт, но любые не-BMP символы в SQL файле (например, некоторые типографические и научные специальные символы, древние логотипы CJK, смайлики) будут безвозвратно потеряны!";
@@ -2805,10 +2805,10 @@
 "The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds)." = "SSH туннель не смог подключиться к хосту %1$@или истек срок ожидания запроса.\n\nУбедитесь, что адрес правильный и что у вас есть необходимые привилегии, или попробуйте увеличить тайм-аут соединения (сейчас %2$ld секунд).";
 
 /* message of panel when loading of table failed and presumably due to used filter argument */
-"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@" = "Не получается загрузить данные таблицы предположительно из-за настроек фильтра.\n\nMySQL сообщил: %@";
+"The table data couldn't be loaded presumably due to used filter clause. \n\ndatabase said: %@" = "Не получается загрузить данные таблицы предположительно из-за настроек фильтра.\n\nMySQL сообщил: %@";
 
 /* message of panel when loading of table failed */
-"The table data couldn't be loaded.\n\nMySQL said: %@" = "Не получается загрузить данные таблицы.\n\nMySQL сообщил: %@";
+"The table data couldn't be loaded.\n\ndatabase said: %@" = "Не получается загрузить данные таблицы.\n\nMySQL сообщил: %@";
 
 /* Export folder not writable explanatory text */
 "The target export folder is not writable.  Please select a new export location and try again." = "Папка для экспорта недоступна для записи. Пожалуйста, выберите новое место для экспорта и повторите попытку.";
@@ -2840,7 +2840,7 @@
 "This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone." = "Это поле является частью внешних ключевых связей с таблицей '%@'. Эта связь должна быть удалена перед удалением поля.\n\nВы уверены, что хотите продолжить удаление отношений и поля? Это действие не может быть отменено.";
 
 /* table structure : indexes : delete index : error 1553, no FK found : description */
-"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@" = "Этот индекс не может быть удалён, так как он используется существующей связью внешнего ключа.\n\nПожалуйста, удалите эту связь прежде чем пытаться удалить этот индекс.\n\nMySQL сообщил: %@";
+"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\ndatabase said: %@" = "Этот индекс не может быть удалён, так как он используется существующей связью внешнего ключа.\n\nПожалуйста, удалите эту связь прежде чем пытаться удалить этот индекс.\n\nMySQL сообщил: %@";
 
 /* description of serial */
 "This is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE." = "Это псевдоним для BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE.";
@@ -2939,16 +2939,16 @@
 "Unable to check table" = "Не удается проверить таблицу";
 
 /* message of panel when connection to host failed due to access denied error */
-"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "Не удаётся подключиться к узлу %1$@ из-за запрета доступа.\n\nПерепроверьте имя пользователя и пароль и убедитесь, что доступ к текущему ресурсу разрешён.\n\nMySQL сообщил: %2$@";
+"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\ndatabase said: %@" = "Не удаётся подключиться к узлу %1$@ из-за запрета доступа.\n\nПерепроверьте имя пользователя и пароль и убедитесь, что доступ к текущему ресурсу разрешён.\n\nMySQL сообщил: %2$@";
 
 /* message of panel when SSH port forwarding failed */
-"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@" = "Не удаётся соединиться с узлом %1$@ из-за отказа в подключении к порту через SSH.\n\nПожалуйста, убедитесь, что у вашего MySQL включено TCP/IP соединение (нет ключа --skip-networking при запуске) и настроено разрешение соединений с того хоста, пропущенного через туннель.\n\nВы также можете проверить правильность порта и наличие необходимых привилегий.\n\nОшибка добавлена в отладочный SSH журнал, где вы можете найти более детальную информацию для анализа.\n\nMySQL сообщил: %2$@";
+"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\ndatabase said: %@" = "Не удаётся соединиться с узлом %1$@ из-за отказа в подключении к порту через SSH.\n\nПожалуйста, убедитесь, что у вашего MySQL включено TCP/IP соединение (нет ключа --skip-networking при запуске) и настроено разрешение соединений с того хоста, пропущенного через туннель.\n\nВы также можете проверить правильность порта и наличие необходимых привилегий.\n\nОшибка добавлена в отладочный SSH журнал, где вы можете найти более детальную информацию для анализа.\n\nMySQL сообщил: %2$@";
 
 /* message of panel when connection to host failed */
-"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\nMySQL said: %@" = "Не удалось подключиться к узлу %1$@ или время ожидания истекло.\n\nУбедитесь в правильности адреса и наличии необходимых привилегий или попробуйте увеличить время ожидания соединения (сейчас %2$ld сек.).\n\nMySQL сообщил: %3$@";
+"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\ndatabase said: %@" = "Не удалось подключиться к узлу %1$@ или время ожидания истекло.\n\nУбедитесь в правильности адреса и наличии необходимых привилегий или попробуйте увеличить время ожидания соединения (сейчас %2$ld сек.).\n\nMySQL сообщил: %3$@";
 
 /* message of panel when connection to host failed */
-"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@" = "Не удается подключиться через сокет или время ожидания запроса истекло.\n\nПерепроверьте путь к сокету и наличии необходимых прав, а также запущен ли сервер.\n\nMySQL сообщил: %@";
+"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\ndatabase said: %@" = "Не удается подключиться через сокет или время ожидания запроса истекло.\n\nПерепроверьте путь к сокету и наличии необходимых прав, а также запущен ли сервер.\n\nMySQL сообщил: %@";
 
 /* unable to copy database message */
 "Unable to copy database" = "Не удаётся переименовать базу данных";

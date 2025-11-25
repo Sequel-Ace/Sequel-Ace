@@ -4875,7 +4875,7 @@ Gw
             </items>
             <point key="canvasLocation" x="-240" y="524"/>
         </menu>
-        <customView id="VCn-3k-MdI" userLabel="MySQL Error Accessory View">
+        <customView id="VCn-3k-MdI" userLabel="Database Error Accessory View">
             <rect key="frame" x="0.0" y="0.0" width="395" height="135"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>

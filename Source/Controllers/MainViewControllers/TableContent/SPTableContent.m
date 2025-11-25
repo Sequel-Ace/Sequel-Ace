@@ -1460,7 +1460,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		[self loadTableValues];
 
 		if ([connection queryErrored] && ![connection lastQueryWasCancelled]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't sort table. MySQL said: %@", @"message of panel when sorting of table failed"), [connection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't sort table. database said: %@", @"message of panel when sorting of table failed"), [connection lastErrorMessage]] callback:nil];
 
 			[tableDocumentInstance endTask];
 			return;
@@ -1925,7 +1925,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         } else {
             [self performSelector:@selector(showErrorSheetWith:)
                 withObject:[NSArray arrayWithObjects:NSLocalizedString(@"Error", @"error"),
-                    [NSString stringWithFormat:NSLocalizedString(@"Couldn't delete rows.\n\nMySQL said: %@", @"message when deleteing all rows failed"),
+                    [NSString stringWithFormat:NSLocalizedString(@"Couldn't delete rows.\n\ndatabase said: %@", @"message when deleteing all rows failed"),
                        [connection lastErrorMessage]],
                     nil]
                 afterDelay:0.3];
@@ -2555,7 +2555,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         isSavingRow = NO;
 		return YES;
 	} else { // Report errors which have occurred
-		[NSAlert createAlertWithTitle:NSLocalizedString(@"Unable to write row", @"Unable to write row error") message:[NSString stringWithFormat:NSLocalizedString(@"MySQL said:\n\n%@", @"message of panel when error while adding row to db"), [connection lastErrorMessage]] primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") secondaryButtonTitle:NSLocalizedString(@"Discard changes", @"discard changes button") primaryButtonHandler:^{
+		[NSAlert createAlertWithTitle:NSLocalizedString(@"Unable to write row", @"Unable to write row error") message:[NSString stringWithFormat:NSLocalizedString(@"database said:\n\n%@", @"message of panel when error while adding row to db"), [connection lastErrorMessage]] primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") secondaryButtonTitle:NSLocalizedString(@"Discard changes", @"discard changes button") primaryButtonHandler:^{
 			[self->tableContentView selectRowIndexes:[NSIndexSet indexSetWithIndex:self->currentlyEditingRow] byExtendingSelection:NO];
 			[self->tableContentView performSelector:@selector(keyDown:) withObject:[NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[self->tableContentView window] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x24] afterDelay:0.0];
 			[self->tableContentView reloadData];
@@ -3231,7 +3231,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 		// Check for errors while UPDATE
 		if ([connection queryErrored]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nMySQL said: %@", @"message of panel when error while updating field to db"), [connection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\ndatabase said: %@", @"message of panel when error while updating field to db"), [connection lastErrorMessage]] callback:nil];
 
 			[tableDocumentInstance endTask];
 			[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];

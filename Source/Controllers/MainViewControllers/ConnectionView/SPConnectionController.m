@@ -2333,23 +2333,23 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                 if (!cancellingConnection) {
                     NSString *errorMessage;
                     if (sshTunnel && [sshTunnel state] == SPMySQLProxyForwardingFailed) {
-                        errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@", @"message of panel when SSH port forwarding failed"), [self host], [mysqlConn lastErrorMessage]];
+                        errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\ndatabase said: %@", @"message of panel when SSH port forwarding failed"), [self host], [mysqlConn lastErrorMessage]];
                         [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH port forwarding failed", @"title when ssh tunnel port forwarding failed") errorMessage:errorMessage detail:[sshTunnel debugMessages]];
                     }
                     else if ([mysqlConn lastErrorID] == 1045) { // "Access denied" error
-                        errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@", @"message of panel when connection to host failed due to access denied error"), [self host], [mysqlConn lastErrorMessage]];
+                        errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\ndatabase said: %@", @"message of panel when connection to host failed due to access denied error"), [self host], [mysqlConn lastErrorMessage]];
                         [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Access denied!", @"connection failed due to access denied title") errorMessage:errorMessage detail:nil];
                     }
                     else if ([self type] == SPSocketConnection && (![self socket] || ![[self socket] length]) && ![mysqlConn socketPath]) {
-                        errorMessage = [NSString stringWithFormat:NSLocalizedString(@"The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@", @"message of panel when connection to socket failed because optional socket could not be found"), [mysqlConn lastErrorMessage]];
+                        errorMessage = [NSString stringWithFormat:NSLocalizedString(@"The socket file could not be found in any common location. Please supply the correct socket location.\n\ndatabase said: %@", @"message of panel when connection to socket failed because optional socket could not be found"), [mysqlConn lastErrorMessage]];
                         [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Socket not found!", @"socket not found title") errorMessage:errorMessage detail:nil];
                     }
                     else if ([self type] == SPSocketConnection) {
-                        errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@", @"message of panel when connection to host failed"), [mysqlConn lastErrorMessage]];
+                        errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\ndatabase said: %@", @"message of panel when connection to host failed"), [mysqlConn lastErrorMessage]];
                         [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Socket connection failed!", @"socket connection failed title") errorMessage:errorMessage detail:nil];
                     }
                     else {
-                        errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\nMySQL said: %@", @"message of panel when connection to host failed"), [self host], (long)[[prefs objectForKey:SPConnectionTimeoutValue] integerValue], [mysqlConn lastErrorMessage]];
+                        errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\ndatabase said: %@", @"message of panel when connection to host failed"), [self host], (long)[[prefs objectForKey:SPConnectionTimeoutValue] integerValue], [mysqlConn lastErrorMessage]];
                         [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Connection failed!", @"connection failed title") errorMessage:errorMessage detail:nil];
                     }
                 }
@@ -2371,7 +2371,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         if ([self database] && ![[self database] isEqualToString:@""]) {
             if (![mysqlConn selectDatabase:[self database]]) {
                 if (!isTestingConnection) {
-                    [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Could not select database", @"message when database selection failed") errorMessage:[NSString stringWithFormat:NSLocalizedString(@"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %@", @"message of panel when connection to db failed"), [self database], [mysqlConn lastErrorMessage]] detail:nil];
+                    [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Could not select database", @"message when database selection failed") errorMessage:[NSString stringWithFormat:NSLocalizedString(@"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\ndatabase said: %@", @"message of panel when connection to db failed"), [self database], [mysqlConn lastErrorMessage]] detail:nil];
                 }
 
                 // Tidy up

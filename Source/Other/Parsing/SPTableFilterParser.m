@@ -30,6 +30,7 @@
 
 #import "SPTableFilterParser.h"
 #import "RegexKitLite.h"
+#import "SPDatabaseConnection.h"
 
 @interface SPTableFilterParser ()
 + (NSString *)escapeFilterArgument:(NSString *)argument againstClause:(NSString *)clause;
@@ -46,12 +47,13 @@
 @synthesize numberOfArguments               = numberOfArguments;
 @synthesize clause                          = _clause;
 
-- (instancetype)initWithFilterClause:(NSString *)filter numberOfArguments:(NSUInteger)numArgs
+- (instancetype)initWithFilterClause:(NSString *)filter numberOfArguments:(NSUInteger)numArgs connection:(id<SPDatabaseConnection>)connection
 {
 	self = [super init];
 	if (self) {
 		numberOfArguments               = numArgs;
 		_clause                         = [filter copy];
+		_connection                     = connection;
 		caseSensitive                   = NO;
 		suppressLeadingTablePlaceholder = NO;
 	}
@@ -84,7 +86,7 @@
 
 	[clause replaceOccurrencesOfRegex:@"(?<!\\\\)\\$BINARY " withString:(caseSensitive) ? @"BINARY " : @""];
 	[clause flushCachedRegexData];
-	[clause replaceOccurrencesOfRegex:@"(?<!\\\\)\\$CURRENT_FIELD" withString:(_currentField) ? [_currentField backtickQuotedString] : @""];
+	[clause replaceOccurrencesOfRegex:@"(?<!\\\\)\\$CURRENT_FIELD" withString:(_currentField) ? [_connection quoteIdentifier:_currentField] : @""];
 	[clause flushCachedRegexData];
 	
 	// Escape % sign for format insertion ie if number of arguments is greater than 0
@@ -113,7 +115,7 @@
 	NSMutableString *filterString = [NSMutableString string];
 
 	if(!suppressLeadingTablePlaceholder) {
-		[filterString appendFormat:@"%@ ",[_currentField backtickQuotedString]];
+		[filterString appendFormat:@"%@ ",[_connection quoteIdentifier:_currentField]];
 	}
 
 	NSUInteger numArgs = numberOfArguments;

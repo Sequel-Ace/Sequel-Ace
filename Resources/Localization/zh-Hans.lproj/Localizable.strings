@@ -62,8 +62,8 @@
 /* text showing multiple queries were cancelled */
 "%@; Cancelled in query %ld, after %@" = "%1$@，在第%2$ld条查询时取消，耗时%3$@";
 
-/* Error display text, showing original MySQL error */
-"%@\n\nMySQL said: %@" = "%1$@\n\nMySQL提示：%2$@";
+/* Error display text, showing original database error */
+"%@\n\ndatabase said: %@" = "%1$@\n\n数据库提示：%2$@";
 
 /* favorite singular label (%d == 1) */
 "%lu favorite" = "%lu条个人收藏";
@@ -275,10 +275,10 @@
 "An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane." = "执行SCHEMA指令时发生错误。如果该指令来自一个包指令，则它可能仍在运行，您可以尝试通过按下⌘+.组合键或进入“活动”栏来中止它。";
 
 /* error killing query informative message */
-"An error occurred while attempting to kill connection %lld.\n\nMySQL said: %@" = "尝试断开连接%1$lld时发生错误。\n\nMySQL提示：%2$@";
+"An error occurred while attempting to kill connection %lld.\n\ndatabase said: %@" = "尝试断开连接%1$lld时发生错误。\n\nMySQL提示：%2$@";
 
 /* error killing query informative message */
-"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@" = "中止连接%1$lld进行的查询时发生错误。\n\nMySQL提示：%2$@";
+"An error occurred while attempting to kill the query associated with connection %lld.\n\ndatabase said: %@" = "中止连接%1$lld进行的查询时发生错误。\n\nMySQL提示：%2$@";
 
 /* Error shown when unable to show create table syntax */
 "An error occurred while creating table syntax.\n\n: %@" = "创建CREATE TABLE语法时发生错误：\n\n%@";
@@ -287,31 +287,31 @@
 "An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first." = "重命名'%@'时发生错误，找不到临时名称。请尝试其他名称。";
 
 /* rename table error informative message */
-"An error occurred while renaming '%@'.\n\nMySQL said: %@" = "重命名'%1$@'时发生错误。\n\nMySQL提示：%2$@";
+"An error occurred while renaming '%@'.\n\ndatabase said: %@" = "重命名'%1$@'时发生错误。\n\nMySQL提示：%2$@";
 
 /* rename error - don't know what type the renamed thing is */
 "An error occurred while renaming. '%@' is of an unknown type." = "重命名时发生错误，'%@'类型无法识别。";
 
 /* rename precedure/function error - can't delete old procedure */
-"An error occurred while renaming. I couldn't delete '%@'.\n\nMySQL said: %@" = "重命名时发生错误，未能删除'%1$@'。\n\nMySQL提示：%2$@";
+"An error occurred while renaming. I couldn't delete '%@'.\n\ndatabase said: %@" = "重命名时发生错误，未能删除'%1$@'。\n\nMySQL提示：%2$@";
 
 /* rename precedure/function error - can't recreate procedure */
-"An error occurred while renaming. I couldn't recreate '%@'.\n\nMySQL said: %@" = "重命名时发生错误，未能重新创建'%1$@'。\n\nMySQL提示：%2$@";
+"An error occurred while renaming. I couldn't recreate '%@'.\n\ndatabase said: %@" = "重命名时发生错误，未能重新创建'%1$@'。\n\nMySQL提示：%2$@";
 
 /* rename precedure/function error - can't retrieve syntax */
-"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\nMySQL said: %@" = "重命名时发生错误，未能解析'%1$@'处语法。\n\nMySQL提示：%2$@";
+"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\ndatabase said: %@" = "重命名时发生错误，未能解析'%1$@'处语法。\n\nMySQL提示：%2$@";
 
 /* rename error - invalid create syntax */
 "An error occurred while renaming. The CREATE syntax of '%@' could not be parsed." = "重命名时发生错误。'%@'处的CREATE语法无法解析。";
 
 /* message of panel when retrieving view information failed */
-"An error occurred while retrieving status data.\n\nMySQL said: %@" = "获取状态数据时发生错误。\n\nMySQL提示：%@";
+"An error occurred while retrieving status data.\n\ndatabase said: %@" = "获取状态数据时发生错误。\n\nMySQL提示：%@";
 
 /* message of panel when create syntax cannot be retrieved */
-"An error occurred while retrieving the create syntax for '%@'.\nMySQL said: %@" = "解析'%1$@'处CREATE语法时发生错误。\nMySQL提示：%2$@";
+"An error occurred while retrieving the create syntax for '%@'.\ndatabase said: %@" = "解析'%1$@'处CREATE语法时发生错误。\nMySQL提示：%2$@";
 
 /* add index error informative message */
-"An error occurred while trying to add the index.\n\nMySQL said: %@" = "尝试创建索引时发生错误。\n\nMySQL提示：%@";
+"An error occurred while trying to add the index.\n\ndatabase said: %@" = "尝试创建索引时发生错误。\n\nMySQL提示：%@";
 
 /* error adding password to keychain informative message */
 "An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "尝试将密码导入您的钥匙串时发生错误。修复您的钥匙串可能可以解决问题，但如果未能解决，请联系Sequel Ace团队并提供错误代码%i。";
@@ -320,10 +320,10 @@
 "An error occurred while trying to copy the database '%@' to '%@'." = "尝试将数据库'%1$@'拷贝到'%2$@'时发生错误。";
 
 /* error deleting index informative message */
-"An error occurred while trying to delete the index.\n\nMySQL said: %@" = "尝试删除索引时发生错误。\n\nMySQL提示：%@";
+"An error occurred while trying to delete the index.\n\ndatabase said: %@" = "尝试删除索引时发生错误。\n\nMySQL提示：%@";
 
 /* table status : row count query failed : error message */
-"An error occurred while trying to determine the number of rows for %@.\nMySQL said: %@ (%lu)" = "尝试确定“%1$@”项目条数时发生错误。\nMySQL提示：%2$@ （%3$lu）";
+"An error occurred while trying to determine the number of rows for %@.\ndatabase said: %@ (%lu)" = "尝试确定“%1$@”项目条数时发生错误。\nMySQL提示：%2$@ （%3$lu）";
 
 /* unable to rename database message informative message */
 "An error occurred while trying to rename the database '%@' to '%@'." = "尝试将数据库'%1$@'重命名为'%2$@'时发生错误。";
@@ -338,7 +338,7 @@
 "An error occurred" = "发生错误";
 
 /* MySQL table info retrieval error message */
-"An error occurred retrieving table information.  MySQL said: %@" = "读取表信息时发生错误。MySQL提示：%@";
+"An error occurred retrieving table information.  database said: %@" = "读取表信息时发生错误。MySQL提示：%@";
 
 /* SQL encoding read error */
 "An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed." = "读取文件时发生错误，因为您选择的文本编码（%1$@）无法读取该文件。\n\n只执行了%2$ld条查询。";
@@ -353,91 +353,91 @@
 "An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)" = "读取文件时发生错误。\n\n只导入了%1$ld条数据。\n\n（%2$@）";
 
 /* error adding field informative message */
-"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@" = "%2$@\n\n尝试添加新字段'%1$@'时发生错误。\n\nMySQL提示：%3$@";
+"An error occurred when trying to add the field '%@' via\n\n%@\n\ndatabase said: %@" = "%2$@\n\n尝试添加新字段'%1$@'时发生错误。\n\nMySQL提示：%3$@";
 
 /* error changing field informative message */
-"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@" = "%2$@\n\n尝试更改字段'%1$@'时发生错误。\n\nMySQL提示：%3$@";
+"An error occurred when trying to change the field '%@' via\n\n%@\n\ndatabase said: %@" = "%2$@\n\n尝试更改字段'%1$@'时发生错误。\n\nMySQL提示：%3$@";
 
 /* error changing table collation informative message */
-"An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@" = "尝试将表字符序更改为'%1$@'时发生错误。\n\nMySQL提示：%2$@";
+"An error occurred when trying to change the table collation to '%@'.\n\ndatabase said: %@" = "尝试将表字符序更改为'%1$@'时发生错误。\n\nMySQL提示：%2$@";
 
 /* error changing table encoding informative message */
-"An error occurred when trying to change the table encoding to '%@'.\n\nMySQL said: %@" = "尝试将表文本编码更改为'%1$@'时发生错误。\n\nMySQL提示：%2$@";
+"An error occurred when trying to change the table encoding to '%@'.\n\ndatabase said: %@" = "尝试将表文本编码更改为'%1$@'时发生错误。\n\nMySQL提示：%2$@";
 
 /* error changing table type informative message */
-"An error occurred when trying to change the table type to '%@'.\n\nMySQL said: %@" = "尝试将表类型更改为'%1$@'时发生错误。\n\nMySQL提示：%2$@";
+"An error occurred when trying to change the table type to '%@'.\n\ndatabase said: %@" = "尝试将表类型更改为'%1$@'时发生错误。\n\nMySQL提示：%2$@";
 
 /* error changing table comment informative message */
-"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@" = "尝试将表注释改为'%1$@'时发生错误。\n\nMySQL提示：%2$@";
+"An error occurred when trying to change the table's comment to '%@'.\n\ndatabase said: %@" = "尝试将表注释改为'%1$@'时发生错误。\n\nMySQL提示：%2$@";
 
-/* an error occurred while analyzing the %@.\n\nMySQL said:%@ */
-"An error occurred while analyzing the %@.\n\nMySQL said:%@" = "分析%1$@时发生错误。\n\nMySQL提示：%2$@";
+/* an error occurred while analyzing the %@.\n\ndatabase said:%@ */
+"An error occurred while analyzing the %@.\n\ndatabase said:%@" = "分析%1$@时发生错误。\n\nMySQL提示：%2$@";
 
-/* an error occurred while fetching the optimized field type.\n\nMySQL said:%@ */
-"An error occurred while fetching the optimized field type.\n\nMySQL said:%@" = "获取最优字段类型时发生错误。\n\nMySQL提示：%@";
+/* an error occurred while fetching the optimized field type.\n\ndatabase said:%@ */
+"An error occurred while fetching the optimized field type.\n\ndatabase said:%@" = "获取最优字段类型时发生错误。\n\nMySQL提示：%@";
 
-/* an error occurred while trying to flush the %@.\n\nMySQL said:%@ */
-"An error occurred while flushing the %@.\n\nMySQL said:%@" = "尝试刷新%1$@时发生错误。\n\nMySQL提示：%2$@";
+/* an error occurred while trying to flush the %@.\n\ndatabase said:%@ */
+"An error occurred while flushing the %@.\n\ndatabase said:%@" = "尝试刷新%1$@时发生错误。\n\nMySQL提示：%2$@";
 
 /* sql import error message */
 "An error occurred while importing SQL" = "导入SQL文件时发生错误";
 
-/* an error occurred while trying to optimze the %@.\n\nMySQL said:%@ */
-"An error occurred while optimzing the %@.\n\nMySQL said:%@" = "优化%1$@时发生错误。\n\nMySQL提示：%2$@";
+/* an error occurred while trying to optimze the %@.\n\ndatabase said:%@ */
+"An error occurred while optimzing the %@.\n\ndatabase said:%@" = "优化%1$@时发生错误。\n\nMySQL提示：%2$@";
 
-/* an error occurred while performing the checksum on the %@.\n\nMySQL said:%@ */
-"An error occurred while performing the checksum on %@.\n\nMySQL said:%@" = "校验%1$@完整性时发生错误。\n\nMySQL提示：%2$@";
+/* an error occurred while performing the checksum on the %@.\n\ndatabase said:%@ */
+"An error occurred while performing the checksum on %@.\n\ndatabase said:%@" = "校验%1$@完整性时发生错误。\n\nMySQL提示：%2$@";
 
-/* an error occurred while trying to repair the %@.\n\nMySQL said:%@ */
-"An error occurred while repairing the %@.\n\nMySQL said:%@" = "修复%1$@时发生错误。\n\nMySQL提示：%2$@";
+/* an error occurred while trying to repair the %@.\n\ndatabase said:%@ */
+"An error occurred while repairing the %@.\n\ndatabase said:%@" = "修复%1$@时发生错误。\n\nMySQL提示：%2$@";
 
 /* message of panel when retrieving information failed */
-"An error occurred while retrieving information.\nMySQL said: %@" = "获取信息时发生错误。\nMySQL提示：%@";
+"An error occurred while retrieving information.\ndatabase said: %@" = "获取信息时发生错误。\nMySQL提示：%@";
 
 /* error retrieving table information informative message */
-"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@" = "获取表'%1$@'信息时发生错误，请重试。\n\nMySQL提示：%2$@";
+"An error occurred while retrieving the information for table '%@'. Please try again.\n\ndatabase said: %@" = "获取表'%1$@'信息时发生错误，请重试。\n\nMySQL提示：%2$@";
 
 /* error retrieving table information informative message */
-"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nMySQL said: %@" = "获取表'%1$@'的触发器信息时发生错误，请重试。\n\nMySQL提示：%2$@";
+"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\ndatabase said: %@" = "获取表'%1$@'的触发器信息时发生错误，请重试。\n\nMySQL提示：%2$@";
 
 /* error adding new column informative message */
-"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@" = "%2$@\n\n尝试添加新栏'%1$@'时发生错误。\n\nMySQL提示：%3$@";
+"An error occurred while trying to add the new column '%@' by\n\n%@.\n\ndatabase said: %@" = "%2$@\n\n尝试添加新栏'%1$@'时发生错误。\n\nMySQL提示：%3$@";
 
 /* error adding new table informative message */
-"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@" = "%2$@\n\n尝试添加新表'%1$@'时发生错误。\n\nMySQL提示：%3$@";
+"An error occurred while trying to add the new table '%@' by\n\n%@.\n\ndatabase said: %@" = "%2$@\n\n尝试添加新表'%1$@'时发生错误。\n\nMySQL提示：%3$@";
 
 /* error adding new table informative message */
-"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@" = "尝试创建新表'%1$@'时发生错误。\n\nMySQL提示：%2$@";
+"An error occurred while trying to add the new table '%@'.\n\ndatabase said: %@" = "尝试创建新表'%1$@'时发生错误。\n\nMySQL提示：%2$@";
 
 /* error while trying to alter table message */
-"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@" = "尝试修改表'%1$@'时发生错误。\n\nMySQL提示：%2$@";
+"An error occurred while trying to alter table '%@'.\n\ndatabase said: %@" = "尝试修改表'%1$@'时发生错误。\n\nMySQL提示：%2$@";
 
-/* an error occurred while trying to check the %@.\n\nMySQL said:%@ */
-"An error occurred while trying to check the %@.\n\nMySQL said:%@" = "尝试检查%1$@时发生错误。\n\nMySQL提示：%2$@";
+/* an error occurred while trying to check the %@.\n\ndatabase said:%@ */
+"An error occurred while trying to check the %@.\n\ndatabase said:%@" = "尝试检查%1$@时发生错误。\n\nMySQL提示：%2$@";
 
 /* error deleting relation informative message */
-"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@" = "尝试删除关系'%1$@'时发生错误\n\nMySQL提示：%2$@";
+"An error occurred while trying to delete the relation '%@'.\n\ndatabase said: %@" = "尝试删除关系'%1$@'时发生错误\n\nMySQL提示：%2$@";
 
 /* unable to get list of users informative message */
 "An error occurred while trying to get the list of users. Please make sure you have the necessary privileges to perform user management, including access to the mysql.user table." = "尝试读取用户列表时发生错误。请确保您拥有进行用户管理的权限，包括对mysql.user表的访问权限。";
 
 /* error importing table informative message */
-"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@" = "尝试通过\n%1$@\n导入表时发生错误。\n\nMySQL提示：%2$@";
+"An error occurred while trying to import a table via: \n%@\n\n\ndatabase said: %@" = "尝试通过\n%1$@\n导入表时发生错误。\n\nMySQL提示：%2$@";
 
 /* error moving field informative message */
-"An error occurred while trying to move the field.\n\nMySQL said: %@" = "尝试移动字段时发生错误\n\nMySQL提示：%@";
+"An error occurred while trying to move the field.\n\ndatabase said: %@" = "尝试移动字段时发生错误\n\nMySQL提示：%@";
 
 /* error resetting auto_increment informative message */
-"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@" = "重置表'%1$@'的AUTO_INCREMENT值时发生错误。\n\nMySQL提示：%2$@";
+"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\ndatabase said: %@" = "重置表'%1$@'的AUTO_INCREMENT值时发生错误。\n\nMySQL提示：%2$@";
 
 /* error truncating table informative message */
-"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@" = "清空表'%1$@'时发生错误。\n\nMySQL提示：%2$@";
+"An error occurred while trying to truncate the table '%@'.\n\ndatabase said: %@" = "清空表'%1$@'时发生错误。\n\nMySQL提示：%2$@";
 
 /* mysql error occurred informative message */
-"An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "尝试完成操作时发生错误。\n\nMySQL提示：%@";
+"An error occurred whilst trying to perform the operation.\n\ndatabase said: %@" = "尝试完成操作时发生错误。\n\nMySQL提示：%@";
 
 /* mysql resource limits unsupported message */
-"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "您的 MySQL 版本不支持资源限制。您指定的任何重置限制已被丢弃而未被保存。MySQL ： %@";
+"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. database said: %@" = "您的 MySQL 版本不支持资源限制。您指定的任何重置限制已被丢弃而未被保存。MySQL ： %@";
 
 /* Export files creation error explanatory text */
 "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "尝试创建%lu个导出文件时发生了未处理的错误。请检查详细信息并重试。";
@@ -727,7 +727,7 @@
 "Connected to %@" = "已连接到%@";
 
 /* message of panel when connection to db failed */
-"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %@" = "已连接到主机，但未能连接到数据库%1$@。\n\n请确保数据库存在且您的权限有效。\n\nMySQL提示：%2$@";
+"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\ndatabase said: %@" = "已连接到主机，但未能连接到数据库%1$@。\n\n请确保数据库存在且您的权限有效。\n\nMySQL提示：%2$@";
 
 /* Generic connecting very short status message */
 "Connecting..." = "正在连接...";
@@ -818,13 +818,13 @@
 "Could not select database" = "未能选中数据库";
 
 /* Alter Database : Query Failed ($1 = mysql error message) */
-"Couldn't alter database.\nMySQL said: %@" = "未能编辑数据库。\nMySQL提示：%@";
+"Couldn't alter database.\ndatabase said: %@" = "未能编辑数据库。\nMySQL提示：%@";
 
 /* Couldn't copy default themes to Application Support Theme folder!\nError: %@ */
 "Couldn't copy default themes to Application Support Theme folder!\nError: %@" = "未能将默认主题拷贝到Application Support文件夹！\n错误：%@";
 
 /* message of panel when table cannot be created */
-"Couldn't create '%@'.\nMySQL said: %@" = "未能创建'%1$@'。\nMySQL提示：%2$@";
+"Couldn't create '%@'.\ndatabase said: %@" = "未能创建'%1$@'。\nMySQL提示：%2$@";
 
 /* Couldn't create Application Support Bundle folder!\nError: %@ */
 "Couldn't create Application Support Bundle folder!\nError: %@" = "未能在Application Support文件夹创建包文件夹！\n错误：%@";
@@ -833,31 +833,31 @@
 "Couldn't create Application Support Theme folder!\nError: %@" = "未能在Application Support文件夹创建主题文件夹！\n错误：%@";
 
 /* message of panel when creation of db failed */
-"Couldn't create database.\nMySQL said: %@" = "未能创建数据库。\nMySQL提示：%@";
+"Couldn't create database.\ndatabase said: %@" = "未能创建数据库。\nMySQL提示：%@";
 
 /* message of panel when an item cannot be deleted */
-"Couldn't delete '%@'.\n\nMySQL said: %@" = "未能删除'%1$@'。\n\nMySQL提示：%2$@";
+"Couldn't delete '%@'.\n\ndatabase said: %@" = "未能删除'%1$@'。\n\nMySQL提示：%2$@";
 
 /* message of panel when an item cannot be deleted including informative message about using force deletion */
-"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@" = "未能删除'%1$@'。\n\n选择“强制删除”也许可以解决该问题，但可能会导致数据库不稳定。\n\nMySQL提示：%2$@";
+"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\ndatabase said: %@" = "未能删除'%1$@'。\n\n选择“强制删除”也许可以解决该问题，但可能会导致数据库不稳定。\n\nMySQL提示：%2$@";
 
 /* message of panel when field cannot be deleted */
-"Couldn't delete field %@.\nMySQL said: %@" = "未能删除字段%1$@。\nMySQL提示：%2$@";
+"Couldn't delete field %@.\ndatabase said: %@" = "未能删除字段%1$@。\nMySQL提示：%2$@";
 
 /* message when deleteing all rows failed */
-"Couldn't delete rows.\n\nMySQL said: %@" = "未能删除条目。\n\nMySQL提示：%@";
+"Couldn't delete rows.\n\ndatabase said: %@" = "未能删除条目。\n\nMySQL提示：%@";
 
 /* message of panel when deleting db failed */
-"Couldn't delete the database.\nMySQL said: %@" = "未能删除数据库。\nMySQL提示：%@";
+"Couldn't delete the database.\ndatabase said: %@" = "未能删除数据库。\nMySQL提示：%@";
 
 /* message of panel when an item cannot be renamed */
-"Couldn't duplicate '%@'.\nMySQL said: %@" = "未能复制'%1$@'。\nMySQL提示：%2$@";
+"Couldn't duplicate '%@'.\ndatabase said: %@" = "未能复制'%1$@'。\nMySQL提示：%2$@";
 
 /* message of panel when flushing privs failed */
-"Couldn't flush privileges.\nMySQL said: %@" = "未能刷新权限。\nMySQL提示：%@";
+"Couldn't flush privileges.\ndatabase said: %@" = "未能刷新权限。\nMySQL提示：%@";
 
 /* message of panel when table information cannot be retrieved */
-"Couldn't get create syntax.\nMySQL said: %@" = "无法获取CREATE语法。\nMySQL提示：%@";
+"Couldn't get create syntax.\ndatabase said: %@" = "无法获取CREATE语法。\nMySQL提示：%@";
 
 /* Custom Query result editing error - could not identify a corresponding column */
 "Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table." = "未能唯一确定字段来源，因为栏'%@'包含来自多张表的数据。";
@@ -872,10 +872,10 @@
 "Couldn't sort column." = "未能按栏排序。";
 
 /* message of panel when sorting of table failed */
-"Couldn't sort table. MySQL said: %@" = "未能为表排序。MySQL提示：%@";
+"Couldn't sort table. database said: %@" = "未能为表排序。MySQL提示：%@";
 
 /* message of panel when error while updating field to db */
-"Couldn't write field.\nMySQL said: %@" = "未能写入字段。\nMySQL提示：%@";
+"Couldn't write field.\ndatabase said: %@" = "未能写入字段。\nMySQL提示：%@";
 
 /* create syntax for table comment */
 "Create syntax for" = "CREATE语法 -";
@@ -1760,8 +1760,8 @@
 /* MySQL connecting very short status message */
 "MySQL connecting..." = "MySQL正在连接...";
 
-/* mysql error message */
-"MySQL Error" = "MySQL错误";
+/* database error message */
+"Database Error" = "数据库错误";
 
 /* mysql help */
 "MySQL Help" = "MySQL帮助";
@@ -1776,13 +1776,13 @@
 "MySQL Help – Categories" = "MySQL帮助 - 帮助目录";
 
 /* mysql said message */
-"MySQL said:" = "MySQL提示：";
+"database said:" = "MySQL提示：";
 
 /* shutdown server : error dialog : message */
-"MySQL said:\n%@" = "MySQL提示：\n%@";
+"database said:\n%@" = "MySQL提示：\n%@";
 
 /* message of panel when error while adding row to db */
-"MySQL said:\n\n%@" = "MySQL提示：\n\n%@";
+"database said:\n\n%@" = "MySQL提示：\n\n%@";
 
 /* Preferences : Themes : Initial filename for 'Export' */
 "MyTheme" = "MyTheme";
@@ -2757,22 +2757,22 @@
 "The selected file is either not a valid SPF file or severely corrupted." = "所选择的文件不是一个有效的SPF文件，或者已严重损坏。";
 
 /* error deleting relation informative message */
-"The selected relation couldn't be deleted.\n\nMySQL said: %@" = "未能删除所选择的关系。\n\nMySQL提示：%@";
+"The selected relation couldn't be deleted.\n\ndatabase said: %@" = "未能删除所选择的关系。\n\nMySQL提示：%@";
 
 /* error deleting trigger informative message */
-"The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "未能删除所选择的触发器。\n\nMySQL提示：%@";
+"The selected trigger couldn't be deleted.\n\ndatabase said: %@" = "未能删除所选择的触发器。\n\nMySQL提示：%@";
 
 /* description of tinyint */
 "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "最小的整数类型，需要1字节存储空间。M是可选的显示宽度，不影响表示值的范围。";
 
 /* message of panel when connection to socket failed because optional socket could not be found */
-"The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@" = "未能在任何通用位置找到套接字文件。请提供有效的套接字文件位置。\n\nMySQL提示：%@";
+"The socket file could not be found in any common location. Please supply the correct socket location.\n\ndatabase said: %@" = "未能在任何通用位置找到套接字文件。请提供有效的套接字文件位置。\n\nMySQL提示：%@";
 
 /* error creating relation informative message */
-"The specified relation could not be created.\n\nMySQL said: %@" = "未能创建所请求的关系。\n\nMySQL提示：%@";
+"The specified relation could not be created.\n\ndatabase said: %@" = "未能创建所请求的关系。\n\nMySQL提示：%@";
 
 /* error creating trigger informative message */
-"The specified trigger was unable to be created.\n\nMySQL said: %@" = "未能创建所请求的触发器。\n\nMySQL提示：%@";
+"The specified trigger was unable to be created.\n\ndatabase said: %@" = "未能创建所请求的触发器。\n\nMySQL提示：%@";
 
 /* sql import : charset error alert : detail message */
 "The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!" = "该SQL文件使用了utf8mb4文本编码，但您使用的MySQL版本只支持其受限的子集utf8。\n\n您可以继续导入，但文件中的非BMP字符（如一些印刷学与科学特殊字符、较早的CJK意音文字与emoji表情）将会丢失且无法恢复！";
@@ -2805,10 +2805,10 @@
 "The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds)." = "SSH端口广播与主机%1$@的连接失败或超时。\n\n请确保地址正确且权限有效，或提高超时的等待时间（当前值为%2$ld秒）。";
 
 /* message of panel when loading of table failed and presumably due to used filter argument */
-"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@" = "未能加载表中数据。这很可能是所使用的过滤器参数导致的。\n\nMySQL提示：%@";
+"The table data couldn't be loaded presumably due to used filter clause. \n\ndatabase said: %@" = "未能加载表中数据。这很可能是所使用的过滤器参数导致的。\n\nMySQL提示：%@";
 
 /* message of panel when loading of table failed */
-"The table data couldn't be loaded.\n\nMySQL said: %@" = "未能加载表中数据。\n\nMySQL提示：%@";
+"The table data couldn't be loaded.\n\ndatabase said: %@" = "未能加载表中数据。\n\nMySQL提示：%@";
 
 /* Export folder not writable explanatory text */
 "The target export folder is not writable.  Please select a new export location and try again." = "导出目标文件夹不可写，请选择新的导出位置并重试。";
@@ -2840,7 +2840,7 @@
 "This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone." = "该字段属于表'%@'中的一个外键关系，需要移除关系才能才能删除字段。\n\n确定要同时删除关系和字段吗？您无法撤销该操作。";
 
 /* table structure : indexes : delete index : error 1553, no FK found : description */
-"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@" = "未能删除该索引，因为一个现有的外键关系正在使用它。\n\n请先移除该关系再尝试删除该索引。\n\nMySQL提示：%@";
+"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\ndatabase said: %@" = "未能删除该索引，因为一个现有的外键关系正在使用它。\n\n请先移除该关系再尝试删除该索引。\n\nMySQL提示：%@";
 
 /* description of serial */
 "This is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE." = "这是BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE的别名。";
@@ -2939,16 +2939,16 @@
 "Unable to check table" = "未能检查表";
 
 /* message of panel when connection to host failed due to access denied error */
-"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "未能连接主机%1$@，因为访问被拒绝。\n\n请检查您的用户名与密码并确保您所在的位置可以访问该主机。\n\nMySQL提示：%2$@";
+"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\ndatabase said: %@" = "未能连接主机%1$@，因为访问被拒绝。\n\n请检查您的用户名与密码并确保您所在的位置可以访问该主机。\n\nMySQL提示：%2$@";
 
 /* message of panel when SSH port forwarding failed */
-"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@" = "未能连接主机%1$@，因为SSH连接被拒绝。\n\n请确保您的MySQL主机允许TCP/IP连接（例如没有--skip-networking参数）并且对您端口广播使用的主机开放连接。\n\n同时请检查您使用的端口号是否正确、权限是否有效。\n\n查看错误详情将会显示SSH调试日志，可能提供更多信息。\n\nMySQL提示：%2$@";
+"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\ndatabase said: %@" = "未能连接主机%1$@，因为SSH连接被拒绝。\n\n请确保您的MySQL主机允许TCP/IP连接（例如没有--skip-networking参数）并且对您端口广播使用的主机开放连接。\n\n同时请检查您使用的端口号是否正确、权限是否有效。\n\n查看错误详情将会显示SSH调试日志，可能提供更多信息。\n\nMySQL提示：%2$@";
 
 /* message of panel when connection to host failed */
-"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\nMySQL said: %@" = "与主机%1$@的连接失败或超时。\n\n请确保地址正确且权限有效，或提高超时的等待时间（当前值为%2$ld秒）。\n\nMySQL提示：%3$@";
+"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\ndatabase said: %@" = "与主机%1$@的连接失败或超时。\n\n请确保地址正确且权限有效，或提高超时的等待时间（当前值为%2$ld秒）。\n\nMySQL提示：%3$@";
 
 /* message of panel when connection to host failed */
-"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@" = "套接字连接失败或超时。\n\n请确保套接字文件位置正确，您拥有对应的权限，并且服务器正在运行。\n\nMySQL提示：%@";
+"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\ndatabase said: %@" = "套接字连接失败或超时。\n\n请确保套接字文件位置正确，您拥有对应的权限，并且服务器正在运行。\n\nMySQL提示：%@";
 
 /* unable to copy database message */
 "Unable to copy database" = "未能拷贝数据库";

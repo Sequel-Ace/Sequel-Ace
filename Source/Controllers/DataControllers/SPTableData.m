@@ -489,7 +489,7 @@
     // Check for any errors, but only display them if a connection still exists
     if ([self.connection queryErrored]) {
         if ([self.connection isConnected]) {
-            NSString *errorMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@", @"error retrieving table information informative message"),
+            NSString *errorMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the information for table '%@'. Please try again.\n\ndatabase said: %@", @"error retrieving table information informative message"),
                        tableName, [self.connection lastErrorMessage]];
 
             // If the current table doesn't exist anymore reload table list
@@ -605,7 +605,7 @@
     // Check for any errors, but only display them if a connection still exists
     if ([self.connection queryErrored]) {
         if ([self.connection isConnected]) {
-            NSString *errorMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@", @"error retrieving table information informative message"),
+            NSString *errorMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the information for table '%@'. Please try again.\n\ndatabase said: %@", @"error retrieving table information informative message"),
                                       tableName, [self.connection lastErrorMessage]];
             // If the current table doesn't exist anymore reload table list
             if ([self.connection lastErrorID] == 1146) {
@@ -945,7 +945,7 @@
 		if ([self.connection isConnected]) {
 			NSString *lastErrorMessage = [self.connection lastErrorMessage];
 			SPMainQSync(^{
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nMySQL said: %@", @"message of panel when retrieving information failed"), lastErrorMessage] callback:nil];
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\ndatabase said: %@", @"message of panel when retrieving information failed"), lastErrorMessage] callback:nil];
 			});
 			if (changeEncoding) {
 				[self.connection restoreStoredEncoding];
@@ -980,7 +980,7 @@
 	// Check for any errors, but only display them if a connection still exists
 	if ([self.connection queryErrored]) {
 		if ([self.connection isConnected]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nMySQL said: %@", @"message of panel when retrieving information failed"), [self.connection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\ndatabase said: %@", @"message of panel when retrieving information failed"), [self.connection lastErrorMessage]] callback:nil];
 			if (changeEncoding) [self.connection restoreStoredEncoding];
 		}
 		return nil;
@@ -1090,7 +1090,7 @@
 	if ([self.connection queryErrored]) {
 		if ([self.connection isConnected]) {
 			SPMainQSync(^{
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving status data.\n\nMySQL said: %@", @"message of panel when retrieving view information failed"), [self.connection lastErrorMessage]] callback:nil];
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving status data.\n\ndatabase said: %@", @"message of panel when retrieving view information failed"), [self.connection lastErrorMessage]] callback:nil];
 			});
 			if (changeEncoding) [self.connection restoreStoredEncoding];
 		}
@@ -1126,7 +1126,7 @@
 			}
 			else {
 				//FIXME that error should really show only when trying to view the table content, but we don't even try to load that if Rows==NULL
-				NSString *errorFormat = NSLocalizedString(@"An error occurred while trying to determine the number of rows for \"%@\".\nMySQL said: %@ (%lu)", @"table status : row count query failed : error message");
+				NSString *errorFormat = NSLocalizedString(@"An error occurred while trying to determine the number of rows for \"%@\".\ndatabase said: %@ (%lu)", @"table status : row count query failed : error message");
 				NSString *errorMessage = [NSString stringWithFormat:errorFormat, [tableListInstance tableName], [self.connection lastErrorMessage], [self.connection lastErrorID]];
 				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Querying row count failed", @"table status : row count query failed : error title") message:errorMessage callback:nil];
 			}
@@ -1178,7 +1178,7 @@
 	// Check for any errors, but only display them if a connection still exists
 	if ([self.connection queryErrored]) {
 		if ([self.connection isConnected]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error retrieving trigger information", @"error retrieving trigger information message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nMySQL said: %@", @"error retrieving table information informative message"), [tableListInstance tableName], [self.connection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error retrieving trigger information", @"error retrieving trigger information message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\ndatabase said: %@", @"error retrieving table information informative message"), [tableListInstance tableName], [self.connection lastErrorMessage]] callback:nil];
 			
 			if (changeEncoding) [self.connection restoreStoredEncoding];
 		}

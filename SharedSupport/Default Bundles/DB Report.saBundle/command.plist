@@ -49,7 +49,7 @@ cat &lt;&lt;HTML1
 					&lt;th align=left&gt;
 HTML1
 
-# Check for possible MySQL error
+# Check for possible database error
 if [ `cat "$SP_QUERY_RESULT_STATUS_FILE"` == 1 ]; then
 
 	# If error

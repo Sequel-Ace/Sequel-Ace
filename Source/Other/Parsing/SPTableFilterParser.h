@@ -30,6 +30,8 @@
 
 #import <Foundation/Foundation.h>
 
+@protocol SPDatabaseConnection;
+
 @interface SPTableFilterParser : NSObject
 {
 	NSString *_clause;
@@ -42,9 +44,11 @@
 	
 	BOOL caseSensitive;
 	BOOL suppressLeadingTablePlaceholder;
+	
+	id<SPDatabaseConnection> _connection;
 }
 
-- (instancetype)initWithFilterClause:(NSString *)filter numberOfArguments:(NSUInteger)numArgs;
+- (instancetype)initWithFilterClause:(NSString *)filter numberOfArguments:(NSUInteger)numArgs connection:(id<SPDatabaseConnection>)connection;
 
 @property(readonly) NSString *clause;
 @property(readonly) NSUInteger numberOfArguments;

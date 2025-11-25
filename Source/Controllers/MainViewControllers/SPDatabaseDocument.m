@@ -966,7 +966,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Do you really want to shutdown the server?", @"shutdown server : confirmation dialog : title") message:NSLocalizedString(@"This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!", @"shutdown server : confirmation dialog : message") primaryButtonTitle:NSLocalizedString(@"Shutdown", @"shutdown server : confirmation dialog : shutdown button") primaryButtonHandler:^{
         if (![self->databaseConnection serverShutdown]) {
             if ([self->databaseConnection isConnected]) {
-                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Shutdown failed!", @"shutdown server : error dialog : title") message:[NSString stringWithFormat:NSLocalizedString(@"MySQL said:\n%@", @"shutdown server : error dialog : message"),[self->databaseConnection lastErrorMessage]] callback:nil];
+                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Shutdown failed!", @"shutdown server : error dialog : title") message:[NSString stringWithFormat:NSLocalizedString(@"database said:\n%@", @"shutdown server : error dialog : message"),[self->databaseConnection lastErrorMessage]] callback:nil];
             }
         }
     } cancelButtonHandler:nil];
@@ -1829,7 +1829,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([databaseConnection queryErrored]) {
         NSString *mText = ([selectedItems count]>1) ? NSLocalizedString(@"Unable to check selected items", @"unable to check selected items message") : NSLocalizedString(@"Unable to check table", @"unable to check table message");
         if ([databaseConnection isConnected]) {
-            [NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to check the %@.\n\nMySQL said:%@",@"an error occurred while trying to check the %@.\n\nMySQL said:%@"), what, [databaseConnection lastErrorMessage]] callback:nil];
+            [NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to check the %@.\n\ndatabase said:%@",@"an error occurred while trying to check the %@.\n\ndatabase said:%@"), what, [databaseConnection lastErrorMessage]] callback:nil];
         }
 
         return;
@@ -1850,7 +1850,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         message = ([[lastresult objectForKey:@"Msg_type"] isEqualToString:@"status"]) ? NSLocalizedString(@"Check table successfully passed.",@"check table successfully passed message") : NSLocalizedString(@"Check table failed.", @"check table failed message");
 
-        message = [NSString stringWithFormat:NSLocalizedString(@"%@\n\nMySQL said: %@", @"Error display text, showing original MySQL error"), message, [lastresult objectForKey:@"Msg_text"]];
+        message = [NSString stringWithFormat:NSLocalizedString(@"%@\n\ndatabase said: %@", @"Error display text, showing original database error"), message, [lastresult objectForKey:@"Msg_text"]];
     } else if(statusOK) {
         message = NSLocalizedString(@"Check of all selected items successfully passed.",@"check of all selected items successfully passed message");
     }
@@ -1858,7 +1858,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if(message) {
         [NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Check %@", @"CHECK one or more tables - result title"), what] message:message callback:nil];
     } else {
-        message = NSLocalizedString(@"MySQL said:",@"mysql said message");
+        message = NSLocalizedString(@"database said:",@"database said message");
         statusValues = resultStatuses;
 
         [NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while checking selected items", @"error while checking selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
@@ -1887,7 +1887,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([databaseConnection queryErrored]) {
         NSString *mText = ([selectedItems count]>1) ? NSLocalizedString(@"Unable to analyze selected items", @"unable to analyze selected items message") : NSLocalizedString(@"Unable to analyze table", @"unable to analyze table message");
         if ([databaseConnection isConnected]) {
-            [NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while analyzing the %@.\n\nMySQL said:%@",@"an error occurred while analyzing the %@.\n\nMySQL said:%@"), what, [databaseConnection lastErrorMessage]] callback:nil];
+            [NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while analyzing the %@.\n\ndatabase said:%@",@"an error occurred while analyzing the %@.\n\ndatabase said:%@"), what, [databaseConnection lastErrorMessage]] callback:nil];
         }
 
         return;
@@ -1908,7 +1908,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         message = ([[lastresult objectForKey:@"Msg_type"] isEqualToString:@"status"]) ? NSLocalizedString(@"Successfully analyzed table.",@"analyze table successfully passed message") : NSLocalizedString(@"Analyze table failed.", @"analyze table failed message");
 
-        message = [NSString stringWithFormat:NSLocalizedString(@"%@\n\nMySQL said: %@", @"Error display text, showing original MySQL error"), message, [lastresult objectForKey:@"Msg_text"]];
+        message = [NSString stringWithFormat:NSLocalizedString(@"%@\n\ndatabase said: %@", @"Error display text, showing original database error"), message, [lastresult objectForKey:@"Msg_text"]];
     } else if(statusOK) {
         message = NSLocalizedString(@"Successfully analyzed all selected items.",@"successfully analyzed all selected items message");
     }
@@ -1916,7 +1916,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if(message) {
         [NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Analyze %@", @"ANALYZE one or more tables - result title"), what] message:message callback:nil];
     } else {
-        message = NSLocalizedString(@"MySQL said:",@"mysql said message");
+        message = NSLocalizedString(@"database said:",@"database said message");
 
         statusValues = resultStatuses;
         [NSAlert createAccessoryWarningAlertWithTitle:NSLocalizedString(@"Error while analyzing selected items", @"error while analyzing selected items message") message:message accessoryView:statusTableAccessoryView callback:^{
@@ -1946,7 +1946,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([databaseConnection queryErrored]) {
         NSString *mText = ([selectedItems count]>1) ? NSLocalizedString(@"Unable to optimze selected items", @"unable to optimze selected items message") : NSLocalizedString(@"Unable to optimze table", @"unable to optimze table message");
         if ([databaseConnection isConnected]) {
-            [NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while optimzing the %@.\n\nMySQL said:%@",@"an error occurred while trying to optimze the %@.\n\nMySQL said:%@"), what, [databaseConnection lastErrorMessage]] callback:nil];
+            [NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while optimzing the %@.\n\ndatabase said:%@",@"an error occurred while trying to optimze the %@.\n\ndatabase said:%@"), what, [databaseConnection lastErrorMessage]] callback:nil];
         }
         return;
     }
@@ -1966,7 +1966,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         message = ([[lastresult objectForKey:@"Msg_type"] isEqualToString:@"status"]) ? NSLocalizedString(@"Successfully optimized table.",@"optimize table successfully passed message") : NSLocalizedString(@"Optimize table failed.", @"optimize table failed message");
 
-        message = [NSString stringWithFormat:NSLocalizedString(@"%@\n\nMySQL said: %@", @"Error display text, showing original MySQL error"), message, [lastresult objectForKey:@"Msg_text"]];
+        message = [NSString stringWithFormat:NSLocalizedString(@"%@\n\ndatabase said: %@", @"Error display text, showing original database error"), message, [lastresult objectForKey:@"Msg_text"]];
     } else if(statusOK) {
         message = NSLocalizedString(@"Successfully optimized all selected items.",@"successfully optimized all selected items message");
     }
@@ -1974,7 +1974,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if(message) {
         [NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Optimize %@", @"OPTIMIZE one or more tables - result title"), what] message:message callback:nil];
     } else {
-        message = NSLocalizedString(@"MySQL said:",@"mysql said message");
+        message = NSLocalizedString(@"database said:",@"database said message");
 
         statusValues = resultStatuses;
 
@@ -2004,7 +2004,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([databaseConnection queryErrored]) {
         NSString *mText = ([selectedItems count]>1) ? NSLocalizedString(@"Unable to repair selected items", @"unable to repair selected items message") : NSLocalizedString(@"Unable to repair table", @"unable to repair table message");
         if ([databaseConnection isConnected]) {
-            [NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while repairing the %@.\n\nMySQL said:%@",@"an error occurred while trying to repair the %@.\n\nMySQL said:%@"), what, [databaseConnection lastErrorMessage]] callback:nil];
+            [NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while repairing the %@.\n\ndatabase said:%@",@"an error occurred while trying to repair the %@.\n\ndatabase said:%@"), what, [databaseConnection lastErrorMessage]] callback:nil];
         }
         return;
     }
@@ -2024,7 +2024,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         message = ([[lastresult objectForKey:@"Msg_type"] isEqualToString:@"status"]) ? NSLocalizedString(@"Successfully repaired table.",@"repair table successfully passed message") : NSLocalizedString(@"Repair table failed.", @"repair table failed message");
 
-        message = [NSString stringWithFormat:NSLocalizedString(@"%@\n\nMySQL said: %@", @"Error display text, showing original MySQL error"), message, [lastresult objectForKey:@"Msg_text"]];
+        message = [NSString stringWithFormat:NSLocalizedString(@"%@\n\ndatabase said: %@", @"Error display text, showing original database error"), message, [lastresult objectForKey:@"Msg_text"]];
     } else if(statusOK) {
         message = NSLocalizedString(@"Successfully repaired all selected items.",@"successfully repaired all selected items message");
     }
@@ -2032,7 +2032,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if(message) {
         [NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Repair %@", @"REPAIR one or more tables - result title"), what] message:message callback:nil];
     } else {
-        message = NSLocalizedString(@"MySQL said:",@"mysql said message");
+        message = NSLocalizedString(@"database said:",@"database said message");
 
         statusValues = resultStatuses;
 
@@ -2062,7 +2062,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([databaseConnection queryErrored]) {
         NSString *mText = ([selectedItems count]>1) ? NSLocalizedString(@"Unable to flush selected items", @"unable to flush selected items message") : NSLocalizedString(@"Unable to flush table", @"unable to flush table message");
         if ([databaseConnection isConnected]) {
-            [NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while flushing the %@.\n\nMySQL said:%@",@"an error occurred while trying to flush the %@.\n\nMySQL said:%@"), what, [databaseConnection lastErrorMessage]] callback:nil];
+            [NSAlert createWarningAlertWithTitle:mText message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while flushing the %@.\n\ndatabase said:%@",@"an error occurred while trying to flush the %@.\n\ndatabase said:%@"), what, [databaseConnection lastErrorMessage]] callback:nil];
         }
 
         return;
@@ -2083,7 +2083,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         message = ([[lastresult objectForKey:@"Msg_type"] isEqualToString:@"status"]) ? NSLocalizedString(@"Successfully flushed table.",@"flush table successfully passed message") : NSLocalizedString(@"Flush table failed.", @"flush table failed message");
 
-        message = [NSString stringWithFormat:NSLocalizedString(@"%@\n\nMySQL said: %@", @"Error display text, showing original MySQL error"), message, [lastresult objectForKey:@"Msg_text"]];
+        message = [NSString stringWithFormat:NSLocalizedString(@"%@\n\ndatabase said: %@", @"Error display text, showing original database error"), message, [lastresult objectForKey:@"Msg_text"]];
     } else if(statusOK) {
         message = NSLocalizedString(@"Successfully flushed all selected items.",@"successfully flushed all selected items message");
     }
@@ -2091,7 +2091,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if(message) {
         [NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Flush %@", @"FLUSH one or more tables - result title"), what] message:message callback:nil];
     } else {
-        message = NSLocalizedString(@"MySQL said:",@"mysql said message");
+        message = NSLocalizedString(@"database said:",@"database said message");
 
         statusValues = resultStatuses;
 
@@ -2119,7 +2119,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Check for errors, only displaying if the connection hasn't been terminated
     if ([databaseConnection queryErrored]) {
         if ([databaseConnection isConnected]) {
-            NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while performing the checksum on %@.\n\nMySQL said:%@",@"an error occurred while performing the checksum on the %@.\n\nMySQL said:%@"), what, [databaseConnection lastErrorMessage]];
+            NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while performing the checksum on %@.\n\ndatabase said:%@",@"an error occurred while performing the checksum on the %@.\n\ndatabase said:%@"), what, [databaseConnection lastErrorMessage]];
             [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to perform the checksum", @"unable to perform the checksum") message:alertMessage callback:nil];
         }
 
@@ -2329,7 +2329,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Flushed Privileges", @"title of panel when successfully flushed privs") message:NSLocalizedString(@"Successfully flushed privileges.", @"message of panel when successfully flushed privs") callback:nil];
     } else {
         //error while flushing privileges
-        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't flush privileges.\nMySQL said: %@", @"message of panel when flushing privs failed"), [databaseConnection lastErrorMessage]] callback:nil];
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't flush privileges.\ndatabase said: %@", @"message of panel when flushing privs failed"), [databaseConnection lastErrorMessage]] callback:nil];
     }
 }
 
@@ -4685,7 +4685,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
                 if ( ![queryResult numberOfRows] ) {
                     //error while getting table structure
-                    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't get create syntax.\nMySQL said: %@", @"message of panel when table information cannot be retrieved"), [databaseConnection lastErrorMessage]] callback:nil];
+                    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't get create syntax.\ndatabase said: %@", @"message of panel when table information cannot be retrieved"), [databaseConnection lastErrorMessage]] callback:nil];
                     status = @"1";
                 } else {
                     NSString *syntaxString = [[queryResult getRowAsArray] objectAtIndex:queryCol];
@@ -4761,7 +4761,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 id<SPDatabaseResult>theResult = [databaseConnection streamingQueryString:query];
                 [theResult setReturnDataAsStrings:YES];
                 if ([databaseConnection queryErrored]) {
-                    [fh writeData:[[NSString stringWithFormat:@"MySQL said: %@", [databaseConnection lastErrorMessage]] dataUsingEncoding:NSUTF8StringEncoding]];
+                    [fh writeData:[[NSString stringWithFormat:@"database said: %@", [databaseConnection lastErrorMessage]] dataUsingEncoding:NSUTF8StringEncoding]];
                     status = @"1";
                 } else {
 
@@ -5277,7 +5277,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if (!res) {
         // An error occurred
-        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't create database.\nMySQL said: %@", @"message of panel when creation of db failed"), [databaseConnection lastErrorMessage]] callback:nil];
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't create database.\ndatabase said: %@", @"message of panel when creation of db failed"), [databaseConnection lastErrorMessage]] callback:nil];
         return;
     }
 
@@ -5313,7 +5313,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if ([databaseConnection queryErrored]) {
         // An error occurred
-        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't alter database.\nMySQL said: %@", @"Alter Database : Query Failed ($1 = mysql error message)"), [databaseConnection lastErrorMessage]] callback:nil];
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't alter database.\ndatabase said: %@", @"Alter Database : Query Failed ($1 = mysql error message)"), [databaseConnection lastErrorMessage]] callback:nil];
         return;
     }
 
@@ -5335,7 +5335,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         // An error occurred
         [self performSelector:@selector(showErrorSheetWith:)
                    withObject:[NSArray arrayWithObjects:NSLocalizedString(@"Error", @"error"),
-                               [NSString stringWithFormat:NSLocalizedString(@"Couldn't delete the database.\nMySQL said: %@", @"message of panel when deleting db failed"), [databaseConnection lastErrorMessage]],
+                               [NSString stringWithFormat:NSLocalizedString(@"Couldn't delete the database.\ndatabase said: %@", @"message of panel when deleting db failed"), [databaseConnection lastErrorMessage]],
                                nil]
                    afterDelay:0.3];
 
