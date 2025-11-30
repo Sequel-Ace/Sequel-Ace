@@ -51,7 +51,7 @@
 
 #import "sequel-pace-Swift.h"
 
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 
 #pragma mark -
 #pragma mark attribute definition

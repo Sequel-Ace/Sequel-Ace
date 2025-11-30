@@ -47,7 +47,7 @@
 #import "SPQueryController.h"
 #import "SPConstants.h"
 
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 
 #import "sequel-pace-Swift.h"
 

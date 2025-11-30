@@ -43,7 +43,7 @@
 #import "SPFunctions.h"
 
 #import <objc/message.h>
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 
 static SPNavigatorController *sharedNavigatorController = nil;
 

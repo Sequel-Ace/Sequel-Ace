@@ -34,7 +34,7 @@
 #import "SPDataCellFormatter.h"
 #import "SPThreadAdditions.h"
 
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 
 #import "sequel-pace-Swift.h"
 

@@ -382,14 +382,30 @@
 		9BE765EBBDFD2F121C13D274 /* SPFillView.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BE768F3989033CEDDC2027E /* SPFillView.m */; };
 		9BE76F2886901784E4FD2321 /* SPFilterTableController.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BE76A3D5C9830E2F7738770 /* SPFilterTableController.m */; };
 		9BE76F2B943AFDBA6EDC52BE /* SPHelpViewerController.m in Sources */ = {isa = PBXBuildFile; fileRef = 9BE760B3C4586EA3B1A48600 /* SPHelpViewerController.m */; };
+		A2A868462EDC027900FE08B1 /* SPPostgresFastStreamingResult.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A868392EDC027900FE08B1 /* SPPostgresFastStreamingResult.m */; };
+		A2A868472EDC027900FE08B1 /* SPPostgresResult.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A8683E2EDC027900FE08B1 /* SPPostgresResult.m */; };
+		A2A868482EDC027900FE08B1 /* SPPostgresConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A868362EDC027900FE08B1 /* SPPostgresConnection.m */; };
+		A2A868492EDC027900FE08B1 /* SPPostgresGeometryData.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A8683C2EDC027900FE08B1 /* SPPostgresGeometryData.m */; };
+		A2A8684A2EDC027900FE08B1 /* SPPostgresStreamingResultStore.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A868422EDC027900FE08B1 /* SPPostgresStreamingResultStore.m */; };
+		A2A8684B2EDC027900FE08B1 /* SPPostgresStreamingResult.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A868402EDC027900FE08B1 /* SPPostgresStreamingResult.m */; };
+		A2A868522EDC027900FE08B1 /* SPPostgresFastStreamingResult.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A868392EDC027900FE08B1 /* SPPostgresFastStreamingResult.m */; };
+		A2A868532EDC027900FE08B1 /* SPPostgresResult.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A8683E2EDC027900FE08B1 /* SPPostgresResult.m */; };
+		A2A868542EDC027900FE08B1 /* SPPostgresConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A868362EDC027900FE08B1 /* SPPostgresConnection.m */; };
+		A2A868552EDC027900FE08B1 /* SPPostgresGeometryData.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A8683C2EDC027900FE08B1 /* SPPostgresGeometryData.m */; };
+		A2A868562EDC027900FE08B1 /* SPPostgresStreamingResultStore.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A868422EDC027900FE08B1 /* SPPostgresStreamingResultStore.m */; };
+		A2A868572EDC027900FE08B1 /* SPPostgresStreamingResult.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A868402EDC027900FE08B1 /* SPPostgresStreamingResult.m */; };
+		A2A868582EDC027900FE08B1 /* SPPostgresFastStreamingResult.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A868392EDC027900FE08B1 /* SPPostgresFastStreamingResult.m */; };
+		A2A868592EDC027900FE08B1 /* SPPostgresResult.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A8683E2EDC027900FE08B1 /* SPPostgresResult.m */; };
+		A2A8685A2EDC027900FE08B1 /* SPPostgresConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A868362EDC027900FE08B1 /* SPPostgresConnection.m */; };
+		A2A8685B2EDC027900FE08B1 /* SPPostgresGeometryData.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A8683C2EDC027900FE08B1 /* SPPostgresGeometryData.m */; };
+		A2A8685C2EDC027900FE08B1 /* SPPostgresStreamingResultStore.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A868422EDC027900FE08B1 /* SPPostgresStreamingResultStore.m */; };
+		A2A8685D2EDC027900FE08B1 /* SPPostgresStreamingResult.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A868402EDC027900FE08B1 /* SPPostgresStreamingResult.m */; };
 		A2A868B62EDC06BF00FE08B1 /* SPPostgresResult.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A868B02EDC06BE00FE08B1 /* SPPostgresResult.m */; };
 		A2A868B72EDC06BF00FE08B1 /* SPPostgresStreamingResult.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A868B12EDC06BE00FE08B1 /* SPPostgresStreamingResult.m */; };
 		A2A868B82EDC06BF00FE08B1 /* SPPostgresGeometryData.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A868B22EDC06BF00FE08B1 /* SPPostgresGeometryData.m */; };
 		A2A868B92EDC06BF00FE08B1 /* SPPostgresStreamingResultStore.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A868B32EDC06BF00FE08B1 /* SPPostgresStreamingResultStore.m */; };
 		A2A868BA2EDC06BF00FE08B1 /* SPPostgresConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A868B42EDC06BF00FE08B1 /* SPPostgresConnection.m */; };
 		A2A868BB2EDC06BF00FE08B1 /* SPPostgresFastStreamingResult.m in Sources */ = {isa = PBXBuildFile; fileRef = A2A868B52EDC06BF00FE08B1 /* SPPostgresFastStreamingResult.m */; };
-		A2E041332EDC084C000BD615 /* AppCenterCrashes in Frameworks */ = {isa = PBXBuildFile; productRef = 515D303E25BD7DE60021CF1E /* AppCenterCrashes */; };
-		A2E041342EDC084C000BD615 /* AppCenterAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 515D304025BD7DE60021CF1E /* AppCenterAnalytics */; };
 		B51D6B9E114C310C0074704E /* toolbar-switch-to-table-triggers.png in Resources */ = {isa = PBXBuildFile; fileRef = B51D6B9D114C310C0074704E /* toolbar-switch-to-table-triggers.png */; };
 		B52460D70F8EF92300171639 /* SPArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = B52460D40F8EF92300171639 /* SPArrayAdditions.m */; };
 		B52460D80F8EF92300171639 /* SPTextViewAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = B52460D60F8EF92300171639 /* SPTextViewAdditions.m */; };
@@ -1240,8 +1256,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A2E041342EDC084C000BD615 /* AppCenterAnalytics in Frameworks */,
-				A2E041332EDC084C000BD615 /* AppCenterCrashes in Frameworks */,
 				96A5DDB82D63C8E70079105E /* libc++.tbd in Frameworks */,
 				963DA1C72CACC71000B5A544 /* QuickLookUI.framework in Frameworks */,
 				1A89556F25D6C8880060CE72 /* Alamofire in Frameworks */,
@@ -2915,6 +2929,12 @@
 				502D21F81BA50966000D4CE7 /* SPDataAdditions.m in Sources */,
 				1A9498DE2551776D000BC793 /* DateFormatterExtension.swift in Sources */,
 				51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */,
+				A2A868522EDC027900FE08B1 /* SPPostgresFastStreamingResult.m in Sources */,
+				A2A868532EDC027900FE08B1 /* SPPostgresResult.m in Sources */,
+				A2A868542EDC027900FE08B1 /* SPPostgresConnection.m in Sources */,
+				A2A868552EDC027900FE08B1 /* SPPostgresGeometryData.m in Sources */,
+				A2A868562EDC027900FE08B1 /* SPPostgresStreamingResultStore.m in Sources */,
+				A2A868572EDC027900FE08B1 /* SPPostgresStreamingResult.m in Sources */,
 				1A8B53A52584650700526DED /* SPURLAdditions.m in Sources */,
 				502D21F61BA50710000D4CE7 /* SPDataAdditionsTests.m in Sources */,
 				1A0FA3EE258B758B00486D52 /* SPArrayAdditions.m in Sources */,
@@ -2964,6 +2984,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A2A868582EDC027900FE08B1 /* SPPostgresFastStreamingResult.m in Sources */,
+				A2A868592EDC027900FE08B1 /* SPPostgresResult.m in Sources */,
+				A2A8685A2EDC027900FE08B1 /* SPPostgresConnection.m in Sources */,
+				A2A8685B2EDC027900FE08B1 /* SPPostgresGeometryData.m in Sources */,
+				A2A8685C2EDC027900FE08B1 /* SPPostgresStreamingResultStore.m in Sources */,
+				A2A8685D2EDC027900FE08B1 /* SPPostgresStreamingResult.m in Sources */,
 				58B9097B11C3A4A2000826E5 /* xibLocalizationPostprocessor.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -2974,6 +3000,12 @@
 			files = (
 				17D41A8221700F8200B1888D /* SPFunctions.m in Sources */,
 				1A4CB04F2592535300EDF804 /* StringRegexExtension.swift in Sources */,
+				A2A868462EDC027900FE08B1 /* SPPostgresFastStreamingResult.m in Sources */,
+				A2A868472EDC027900FE08B1 /* SPPostgresResult.m in Sources */,
+				A2A868482EDC027900FE08B1 /* SPPostgresConnection.m in Sources */,
+				A2A868492EDC027900FE08B1 /* SPPostgresGeometryData.m in Sources */,
+				A2A8684A2EDC027900FE08B1 /* SPPostgresStreamingResultStore.m in Sources */,
+				A2A8684B2EDC027900FE08B1 /* SPPostgresStreamingResult.m in Sources */,
 				58CDB3410FCE141900F8ACA3 /* SequelAceTunnelAssistant.m in Sources */,
 				58CDB3420FCE142500F8ACA3 /* SPKeychain.m in Sources */,
 				584D88AA1515034200F24774 /* NSNotificationCenterThreadingAdditions.m in Sources */,
@@ -3468,7 +3500,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
-					/opt/homebrew/include,
+					"/opt/homebrew/include/postgresql@14/**",
 					"$(PROJECT_DIR)/Frameworks/SPPostgresFramework/Source/**",
 				);
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
@@ -3799,7 +3831,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
-					/opt/homebrew/include,
+					"/opt/homebrew/include/postgresql@14/**",
 					"$(PROJECT_DIR)/Frameworks/SPPostgresFramework/Source/**",
 				);
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
@@ -3962,7 +3994,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
-					/opt/homebrew/include,
+					"/opt/homebrew/include/postgresql@14/**",
 					"$(PROJECT_DIR)/Frameworks/SPPostgresFramework/Source/**",
 				);
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
@@ -4030,7 +4062,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
-					/opt/homebrew/include,
+					"/opt/homebrew/include/postgresql@14/**",
 					"$(PROJECT_DIR)/Frameworks/SPPostgresFramework/Source/**",
 				);
 				INFOPLIST_FILE = Resources/Plists/Info.plist;

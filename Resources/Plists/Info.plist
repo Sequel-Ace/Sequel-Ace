@@ -272,6 +272,13 @@
 				<key>NSRequiresCertificateTransparency</key>
 				<false/>
 			</dict>
+			<key>sequel-pace.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
 			<key>www.apple.com</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>

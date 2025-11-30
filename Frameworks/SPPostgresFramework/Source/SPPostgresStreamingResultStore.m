@@ -39,11 +39,13 @@
     // Let's populate dataStorage from the result set
     NSUInteger count = [self numberOfRows];
     for (NSUInteger i = 0; i < count; i++) {
-        NSArray *row = [self getRowAtIndex:i]; // This method is in SPPostgresResult
+        [self seekToRow:i]; // SPPostgresResult has seekToRow
+        NSArray *row = [self getRowAsArray]; // This method is in SPPostgresResult
         if (row) {
             [dataStorage addObject:row];
         }
     }
+
     
     if ([delegate respondsToSelector:@selector(resultStoreDidFinishLoadingData:)]) {
         [delegate resultStoreDidFinishLoadingData:self];

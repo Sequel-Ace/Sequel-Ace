@@ -59,7 +59,7 @@
 #import "SPConstants.h"
 
 #import <WebKit/WebKit.h>
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 
 /**
  * The SPDatabaseDocument class controls the primary database view window.

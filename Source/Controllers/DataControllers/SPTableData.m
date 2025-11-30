@@ -39,7 +39,7 @@
 #import "sequel-pace-Swift.h"
 
 #import <pthread.h>
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 
 @interface SPTableData ()
 

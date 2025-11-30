@@ -38,7 +38,7 @@
 #import "SPCustomQuery.h"
 #import "SPTableContent.h"
 #import "SPJSONFormatter.h"
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 #import "SPFunctions.h"
 
 #import "sequel-pace-Swift.h"

@@ -61,7 +61,7 @@
 #import "SPComboBoxCell.h"
 
 #import <pthread.h>
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 #include <stdlib.h>
 
 #import "sequel-pace-Swift.h"

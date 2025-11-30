@@ -54,7 +54,7 @@
 #import "SPFunctions.h"
 #import "sequel-pace-Swift.h"
 
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 
 // Constants
 static const NSUInteger SPExportUIPadding = 20;

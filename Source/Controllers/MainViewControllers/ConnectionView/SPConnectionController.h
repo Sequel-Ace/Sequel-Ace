@@ -33,7 +33,7 @@
 #import "SPFavoritesImportProtocol.h"
 #import "SPReachability.h"
 
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 
 @class SPDatabaseDocument, 
 	   SPFavoritesController, 

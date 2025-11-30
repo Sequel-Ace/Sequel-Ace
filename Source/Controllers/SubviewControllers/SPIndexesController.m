@@ -38,7 +38,7 @@
 #import "SPThreadAdditions.h"
 #import "SPFunctions.h"
 
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 
 #import "sequel-pace-Swift.h"
 

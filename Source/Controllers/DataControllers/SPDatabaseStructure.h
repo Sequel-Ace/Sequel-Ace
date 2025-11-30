@@ -31,7 +31,7 @@
 @class SPPostgresConnection;
 @class SPDatabaseDocument;
 
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 
 @interface SPDatabaseStructure : NSObject <SPPostgresConnectionDelegate> 
 {

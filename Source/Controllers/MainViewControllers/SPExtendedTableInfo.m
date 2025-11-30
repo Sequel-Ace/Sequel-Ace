@@ -39,7 +39,7 @@
 #import "SPServerSupport.h"
 #import "sequel-pace-Swift.h"
 
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 
 static NSString *SPUpdateTableTypeNewType = @"SPUpdateTableTypeNewType";
 static NSString *SPUpdateTableTypeCurrentType = @"SPUpdateTableTypeCurrentType";

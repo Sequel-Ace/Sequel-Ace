@@ -31,7 +31,7 @@
 #import "SPDataStorage.h"
 #import "SPObjectAdditions.h"
 #import "SPPointerArrayAdditions.h"
-#import <SPPostgresFramework/SPPostgresStreamingResultStore.h>
+#import "SPPostgresStreamingResultStore.h"
 #include <stdlib.h>
 #include <mach/mach_time.h>
 #import "sequel-pace-Swift.h"

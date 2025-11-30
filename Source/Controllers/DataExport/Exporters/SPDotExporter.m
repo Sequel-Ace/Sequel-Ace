@@ -28,7 +28,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 #import "SPDotExporter.h"
 #import "SPFileHandle.h"
 #import "SPTableData.h"

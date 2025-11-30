@@ -55,7 +55,7 @@
 
 #import "sequel-pace-Swift.h"
 
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 
 // New table
 static NSString *SPNewTableName         = @"SPNewTableName";

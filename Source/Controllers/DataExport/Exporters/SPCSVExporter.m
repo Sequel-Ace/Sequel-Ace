@@ -36,7 +36,7 @@
 #import "SPExportController.h"
 #import "SPFunctions.h"
 
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 
 @implementation SPCSVExporter
 

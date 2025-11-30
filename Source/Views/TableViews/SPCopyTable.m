@@ -49,7 +49,7 @@
 #import "SPBundleManager.h"
 #import "SPTableData.h"
 
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 #import "pthread.h"
 #include <stdlib.h>
 

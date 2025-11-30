@@ -36,7 +36,7 @@
 #import "RegexKitLite.h"
 #import "SPServerSupport.h"
 
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 
 #import "sequel-pace-Swift.h"
 

@@ -28,8 +28,8 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-#import <SPPostgresFramework/SPPostgresStreamingResultStoreDelegate.h>
-#import <SPPostgresFramework/SPPostgresStreamingResultStore.h>
+#import "SPPostgresStreamingResultStoreDelegate.h"
+#import "SPPostgresStreamingResultStore.h"
 
 @class SPPostgresStreamingResultStore;
 

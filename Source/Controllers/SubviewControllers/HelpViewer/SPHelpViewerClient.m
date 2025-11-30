@@ -31,7 +31,7 @@
 
 #import "SPHelpViewerClient.h"
 #import "SPHelpViewerController.h"
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 #import "RegexKitLite.h"
 #import "MGTemplateEngine.h"
 #import "ICUTemplateMatcher.h"

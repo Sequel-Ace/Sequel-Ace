@@ -58,7 +58,7 @@
 #import "SPBundleManager.h"
 
 #import <pthread.h>
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 #import "SPBracketHighlighter.h"
 
 #include <libkern/OSAtomic.h>

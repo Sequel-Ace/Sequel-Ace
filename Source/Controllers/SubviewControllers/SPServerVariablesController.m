@@ -32,7 +32,7 @@
 #import "SPDatabaseDocument.h"
 #import "SPAppController.h"
 
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 
 #import "sequel-pace-Swift.h"
 

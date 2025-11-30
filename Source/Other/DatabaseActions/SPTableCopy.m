@@ -30,7 +30,7 @@
 
 #import "SPTableCopy.h"
 
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 
 @interface SPTableCopy ()
 

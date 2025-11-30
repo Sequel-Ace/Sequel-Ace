@@ -33,7 +33,7 @@
 #import "sequel-pace-Swift.h"
 
 #import "SPFunctions.h"
-#import <SPPostgresFramework/SPPostgresConnection.h>
+#import "SPPostgresConnection.h"
 
 @interface SPDatabaseData ()
 

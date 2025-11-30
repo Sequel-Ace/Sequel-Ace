@@ -30,8 +30,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-#import <SPPostgresFramework/SPPostgresConnectionProxy.h>
-
+#import "SPPostgresConnectionProxy.h"
 @interface SPSSHTunnel : NSObject <SPPostgresConnectionProxy>
 {
 	id delegate;

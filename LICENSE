@@ -1,3 +1,39 @@
+================================================================================
+Sequel PAce - PostgreSQL Database Management Tool
+================================================================================
+
+Copyright (c) 2025 Mehmet Karabulut <mehmetik@gmail.com>
+Copyright (c) 2025 Yazılımsoft - https://yazilimsoft.com
+
+This application is forked from Sequel Ace (by Moballo, LLC), 
+which was forked from Sequel Pro (by Sequel Pro & CocoaMySQL Teams).
+
+All original copyrights are preserved below.
+
+================================================================================
+COMMERCIAL SUPPORT BY YAZILIMSOFT
+================================================================================
+
+Professional support and services for Sequel PAce are provided by:
+
+    Yazılımsoft
+    Website: https://yazilimsoft.com
+    Email: info@yazilimsoft.com
+
+Services include:
+- Commercial licensing and support contracts
+- Custom feature development
+- Enterprise deployment and consulting
+- Training and technical documentation
+- Priority bug fixes and updates
+- PostgreSQL database consulting
+
+For business inquiries, please contact us at yazilimsoft.com
+
+================================================================================
+SEQUEL ACE LICENSE (MIT)
+================================================================================
+
 Copyright (c) 2020 Moballo, LLC
 
 All rights reserved.
@@ -25,8 +61,10 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
-------------------------------
-Forked from Sequel Pro (2020):
+================================================================================
+SEQUEL PRO LICENSE (MIT) - Forked from Sequel Pro (2020)
+================================================================================
+
 Copyright (c) 2002-2019 Sequel Pro & CocoaMySQL Teams.
 
 All rights reserved.
@@ -53,3 +91,5 @@ HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
+
+================================================================================
