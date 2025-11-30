@@ -28,17 +28,144 @@ Sequel PAce is released under the **GPL License**, same as the projects it is de
 This is a free and open-source project.
 
 
-## Building
+## 🚀 How to Run (macOS)
 
-To build Sequel PAce, you will need:
-- Xcode
-- CocoaPods (for dependencies)
-- PostgreSQL client libraries (`libpq`)
+### Prerequisites
 
-1. Clone the repository.
-2. Run `pod install` (if applicable).
-3. Open `sequel-pace.xcodeproj`.
-4. Build and Run.
+#### 1. PostgreSQL Library (libpq) Installation
+PostgreSQL client library is required. You can install it via Homebrew:
+
+```bash
+# Install PostgreSQL (includes libpq)
+brew install postgresql@15
+
+# Verify libpq installation
+which pg_config
+# Output: /opt/homebrew/opt/postgresql@15/bin/pg_config (Apple Silicon)
+# or: /usr/local/opt/postgresql@15/bin/pg_config (Intel Mac)
+```
+
+#### 2. Xcode and Command Line Tools
+- **Xcode 15+** must be installed
+- Command Line Tools must be installed:
+```bash
+xcode-select --install
+```
+
+### Step-by-Step Setup
+
+#### 1. Clone the Repository
+```bash
+git clone https://github.com/mehmetik/Sequel-PAce.git
+cd Sequel-PAce
+```
+
+#### 2. Open in Xcode
+```bash
+open sequel-pace.xcodeproj
+```
+
+#### 3. Configure Build Settings
+
+After opening the project in Xcode:
+
+1. Select **sequel-pace** project from the left panel
+2. Select **Sequel PAce** target under **TARGETS**
+3. Click on **Build Settings** tab
+4. Search for **"header search"**
+5. Add to **Header Search Paths**:
+   ```
+   /opt/homebrew/opt/postgresql@15/include  (for Apple Silicon)
+   /usr/local/opt/postgresql@15/include      (for Intel Mac)
+   ```
+   - Add below `$(inherited)`
+   - Check **Recursive** checkbox
+
+6. Search for **"library search"**
+7. Add to **Library Search Paths**:
+   ```
+   /opt/homebrew/opt/postgresql@15/lib  (for Apple Silicon)
+   /usr/local/opt/postgresql@15/lib      (for Intel Mac)
+   ```
+
+8. Search for **"other linker"**
+9. Add to **Other Linker Flags**:
+   ```
+   -lpq
+   ```
+
+#### 4. Select Scheme
+- Üst bar'dan scheme seçiciden **"Sequel Ace"** veya **"Sequel PAce Debug"** seçin
+- Choose **"My Mac"** as destination
+
+#### 5. Build and Run
+```
+⌘ + B  → Build
+⌘ + R  → Run
+```
+
+### First Launch
+
+When the application opens:
+
+1. **Create PostgreSQL Connection**
+   - Host: `localhost` (or remote server IP)
+   - Port: `5432` (default PostgreSQL port)
+   - User: Your PostgreSQL username
+   - Password: Your password
+   - Database: `postgres` (default) or another database
+
+2. **Test Connection**
+   - Click "Test Connection" button
+   - On success, you'll see ✅ "Connection succeeded" message
+
+3. **SSH Tunnel (Optional)**
+   - SSH tunnel support is available for remote servers
+   - Select "SSH" as Connection Type
+   - Enter SSH host, user, and key information
+
+### Troubleshooting
+
+#### Build Error: "libpq-fe.h not found"
+```bash
+# Verify PostgreSQL is installed correctly
+brew list postgresql@15
+
+# Add header path manually (see step 3 above)
+```
+
+#### Build Error: "library not found for -lpq"
+```bash
+# Add library search path
+# Xcode Build Settings → Library Search Paths
+/opt/homebrew/opt/postgresql@15/lib  # Apple Silicon
+# or
+/usr/local/opt/postgresql@15/lib      # Intel Mac
+```
+
+#### Runtime Error: "Cannot connect to PostgreSQL"
+```bash
+# Ensure PostgreSQL is running
+brew services start postgresql@15
+
+# Test connection
+psql -h localhost -U your_username -d postgres
+```
+
+#### PostGIS Geometry Support
+```sql
+-- Enable PostGIS extension in PostgreSQL
+CREATE EXTENSION IF NOT EXISTS postgis;
+
+-- Test geometry functions
+SELECT ST_GeomFromText('POINT(1 2)');
+```
+
+### Development Notes
+
+- **Debug Build**: Use `Sequel PAce Debug` scheme for development
+- **Release Build**: Use `Sequel PAce Release` scheme for production
+- **Unit Tests**: Run tests with `⌘ + U`
 
 ---
 *Developed with ❤️ by Mehmet Karabulut.*

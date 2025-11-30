@@ -2532,7 +2532,7 @@
 				58CDB34B0FCE144000F8ACA3 /* PBXTargetDependency */,
 				58B9097011C3A462000826E5 /* PBXTargetDependency */,
 			);
-			name = "Sequel Ace";
+			name = "Sequel PAce";
 			packageProductDependencies = (
 				51D9527525AE2B5300574BEB /* FMDB */,
 				515D303E25BD7DE60021CF1E /* AppCenterCrashes */,
