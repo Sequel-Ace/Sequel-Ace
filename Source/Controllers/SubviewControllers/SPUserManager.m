@@ -37,7 +37,7 @@
 #import "SPSplitView.h"
 #import "SPDatabaseDocument.h"
 
-#import <SPMySQL/SPMySQL.h> 
+#import <SPPostgresFramework/SPPostgresConnection.h> 
 
 #import "sequel-ace-Swift.h"
 
@@ -172,7 +172,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		NSMutableArray *usersResultArray = [NSMutableArray array];
 
 		// Select users from the mysql.user table
-		SPMySQLResult *result = [connection queryString:@"SELECT * FROM mysql.user ORDER BY user"];
+		SPPostgresResult *result = [connection queryString:@"SELECT * FROM mysql.user ORDER BY user"];
 		[result setReturnDataAsStrings:YES];
 
         if([[result fieldNames] firstObjectCommonWithArray:@[@"Password",@"authentication_string"]] == nil){
@@ -245,7 +245,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	// Retrieve all the user data in order to be able to initialise the schema privs for each child,
 	// copying into a dictionary keyed by user, each with all the host rows.
 	NSMutableDictionary *schemaPrivilegeData = [NSMutableDictionary dictionary];
-	SPMySQLResult *queryResults = [connection queryString:@"SELECT * FROM mysql.db"];
+	SPPostgresResult *queryResults = [connection queryString:@"SELECT * FROM mysql.db"];
 
 	[queryResults setReturnDataAsStrings:YES];
 
@@ -1393,14 +1393,14 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	// Special case when all items are checked, to allow GRANT OPTION to work
 	if ([[self privsSupportedByServer] count] == [thePrivileges count]) {
 		grantStatement = [NSString stringWithFormat:@"GRANT ALL ON %@.* TO %@@%@ WITH GRANT OPTION",
-							aDatabase?[aDatabase backtickQuotedString]:@"*",
+							aDatabase?[aDatabase postgresQuotedIdentifier]:@"*",
 							[aUser tickQuotedString],
 							[aHost tickQuotedString]];
 	} 
 	else {
 		grantStatement = [NSString stringWithFormat:@"GRANT %@ ON %@.* TO %@@%@",
 							[[thePrivileges componentsJoinedByCommas] uppercaseString],
-							aDatabase?[aDatabase backtickQuotedString]:@"*",
+							aDatabase?[aDatabase postgresQuotedIdentifier]:@"*",
 							[aUser tickQuotedString],
 							[aHost tickQuotedString]];
 	}
@@ -1425,7 +1425,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	// Special case when all items are checked, to allow GRANT OPTION to work
 	if ([[self privsSupportedByServer] count] == [thePrivileges count]) {
 		revokeStatement = [NSString stringWithFormat:@"REVOKE ALL PRIVILEGES ON %@.* FROM %@@%@",
-							aDatabase?[aDatabase backtickQuotedString]:@"*",
+							aDatabase?[aDatabase postgresQuotedIdentifier]:@"*",
 							[aUser tickQuotedString],
 							[aHost tickQuotedString]];
 
@@ -1433,14 +1433,14 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		if(![self _checkAndDisplayMySqlError]) return NO;
 
 		revokeStatement = [NSString stringWithFormat:@"REVOKE GRANT OPTION ON %@.* FROM %@@%@",
-							aDatabase?[aDatabase backtickQuotedString]:@"*",
+							aDatabase?[aDatabase postgresQuotedIdentifier]:@"*",
 							[aUser tickQuotedString],
 							[aHost tickQuotedString]];
 	} 
 	else {
 		revokeStatement = [NSString stringWithFormat:@"REVOKE %@ ON %@.* FROM %@@%@",
 							[[thePrivileges componentsJoinedByCommas] uppercaseString],
-							aDatabase?[aDatabase backtickQuotedString]:@"*",
+							aDatabase?[aDatabase postgresQuotedIdentifier]:@"*",
 							[aUser tickQuotedString],
 							[aHost tickQuotedString]];
 	}
@@ -1454,7 +1454,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 }
 
 /**
- * Displays an alert panel if there was an error condition on the MySQL connection.
+ * Displays an alert panel if there was an error condition on the Postgres connection.
  */
 - (BOOL)_checkAndDisplayMySqlError
 {

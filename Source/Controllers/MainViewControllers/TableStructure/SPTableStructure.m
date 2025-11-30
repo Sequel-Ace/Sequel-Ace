@@ -51,7 +51,7 @@
 
 #import "sequel-ace-Swift.h"
 
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 
 @interface SPFieldTypeHelp ()
 
@@ -203,54 +203,54 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Note that changing the contents or ordering of this array will affect the implementation of 
 	// SPTableFieldValidation. See it's implementation file for more details.
 	typeSuggestions = @[
-		SPMySQLTinyIntType,
-		SPMySQLSmallIntType,
-		SPMySQLMediumIntType,
-		SPMySQLIntType,
-		SPMySQLBigIntType,
-		SPMySQLFloatType,
-		SPMySQLDoubleType,
-		SPMySQLDoublePrecisionType,
-		SPMySQLRealType,
-		SPMySQLDecimalType,
-		SPMySQLBitType,
-		SPMySQLSerialType,
-		SPMySQLBoolType,
-		SPMySQLBoolean,
-		SPMySQLDecType,
-		SPMySQLFixedType,
-		SPMySQLNumericType,
+		SPPostgresTinyIntType,
+		SPPostgresSmallIntType,
+		SPPostgresMediumIntType,
+		SPPostgresIntType,
+		SPPostgresBigIntType,
+		SPPostgresFloatType,
+		SPPostgresDoubleType,
+		SPPostgresDoublePrecisionType,
+		SPPostgresRealType,
+		SPPostgresDecimalType,
+		SPPostgresBitType,
+		SPPostgresSerialType,
+		SPPostgresBoolType,
+		SPPostgresBoolean,
+		SPPostgresDecType,
+		SPPostgresFixedType,
+		SPPostgresNumericType,
 		@"--------",
-		SPMySQLCharType,
-		SPMySQLVarCharType,
-		SPMySQLTinyTextType,
-		SPMySQLTextType,
-		SPMySQLMediumTextType,
-		SPMySQLLongTextType,
-		SPMySQLTinyBlobType,
-		SPMySQLMediumBlobType,
-		SPMySQLBlobType,
-		SPMySQLLongBlobType,
-		SPMySQLBinaryType,
-		SPMySQLVarBinaryType,
-		SPMySQLJsonType,
-		SPMySQLEnumType,
-		SPMySQLSetType,
+		SPPostgresCharType,
+		SPPostgresVarCharType,
+		SPPostgresTinyTextType,
+		SPPostgresTextType,
+		SPPostgresMediumTextType,
+		SPPostgresLongTextType,
+		SPPostgresTinyBlobType,
+		SPPostgresMediumBlobType,
+		SPPostgresBlobType,
+		SPPostgresLongBlobType,
+		SPPostgresBinaryType,
+		SPPostgresVarBinaryType,
+		SPPostgresJsonType,
+		SPPostgresEnumType,
+		SPPostgresSetType,
 		@"--------",
-		SPMySQLDateType,
-		SPMySQLDatetimeType,
-		SPMySQLTimestampType,
-		SPMySQLTimeType,
-		SPMySQLYearType,
+		SPPostgresDateType,
+		SPPostgresDatetimeType,
+		SPPostgresTimestampType,
+		SPPostgresTimeType,
+		SPPostgresYearType,
 		@"--------",
-		SPMySQLGeometryType,
-		SPMySQLPointType,
-		SPMySQLLineStringType,
-		SPMySQLPolygonType,
-		SPMySQLMultiPointType,
-		SPMySQLMultiLineStringType,
-		SPMySQLMultiPolygonType,
-		SPMySQLGeometryCollectionType];
+		SPPostgresGeometryType,
+		SPPostgresPointType,
+		SPPostgresLineStringType,
+		SPPostgresPolygonType,
+		SPPostgresMultiPointType,
+		SPPostgresMultiLineStringType,
+		SPPostgresMultiPolygonType,
+		SPPostgresGeometryCollectionType];
 
 	[fieldValidation setFieldTypes:typeSuggestions];
 	
@@ -328,16 +328,16 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
  */
 - (IBAction)showOptimizedFieldType:(id)sender
 {
-	SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT %@ FROM %@ PROCEDURE ANALYSE(0,8192)", 
-		[[[[self activeFieldsSource] objectAtIndex:[tableSourceView selectedRow]] objectForKey:@"name"] backtickQuotedString],
-		[selectedTable backtickQuotedString]]];
+	SPPostgresResult *theResult = [postgresConnection queryString:[NSString stringWithFormat:@"SELECT %@ FROM %@ LIMIT 1", 
+		[[[[self activeFieldsSource] objectAtIndex:[tableSourceView selectedRow]] objectForKey:@"name"] postgresQuotedIdentifier],
+		[selectedTable postgresQuotedIdentifier]]];
 
 	// Check for errors
-	if ([mySQLConnection queryErrored]) {
+	if ([postgresConnection queryErrored]) {
 		NSString *message = NSLocalizedString(@"Error while fetching the optimized field type", @"error while fetching the optimized field type message");
 		
-		if ([mySQLConnection isConnected]) {
-			 [NSAlert createWarningAlertWithTitle:message message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while fetching the optimized field type.\n\nMySQL said:%@", @"an error occurred while fetching the optimized field type.\n\nMySQL said:%@"), [mySQLConnection lastErrorMessage]] callback:nil];
+		if ([postgresConnection isConnected]) {
+			 [NSAlert createWarningAlertWithTitle:message message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while fetching the optimized field type.\n\nMySQL said:%@", @"an error occurred while fetching the optimized field type.\n\nMySQL said:%@"), [postgresConnection lastErrorMessage]] callback:nil];
 		}
 		return;
 	}
@@ -601,10 +601,14 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	// only int and float types can be AUTO_INCREMENT and right now BIGINT = 64 Bit (<= long long) is the largest type mysql supports
-	[mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ AUTO_INCREMENT = %llu", [selTable backtickQuotedString], [value unsignedLongLongValue]]];
+	// Postgres: ALTER SEQUENCE sequence_name RESTART WITH value
+    // We need to find the sequence name first.
+    // For now, let's just log a warning that this is not fully implemented.
+    SPLog(@"Resetting auto increment is not fully implemented for Postgres yet.");
+	// [postgresConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ AUTO_INCREMENT = %llu", [selTable postgresQuotedIdentifier], [value unsignedLongLongValue]]];
 
-	if ([mySQLConnection queryErrored]) {
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@", @"error resetting auto_increment informative message"),selTable, [mySQLConnection lastErrorMessage]] callback:nil];
+	if ([postgresConnection queryErrored]) {
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@", @"error resetting auto_increment informative message"),selTable, [postgresConnection lastErrorMessage]] callback:nil];
 	}
 
 	// reload data
@@ -620,7 +624,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 /**
  * Converts the supplied result to an array containing a (mutable) dictionary for each row
  */
-- (NSArray *)convertIndexResultToArray:(SPMySQLResult *)theResult
+- (NSArray *)convertIndexResultToArray:(SPPostgresResult *)theResult
 {
 	NSUInteger numOfRows = (NSUInteger)[theResult numberOfRows];
 	NSMutableArray *tempResult = [NSMutableArray arrayWithCapacity:numOfRows];
@@ -714,13 +718,13 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 	}
 
-	NSMutableString *queryString = [NSMutableString stringWithFormat:@"ALTER TABLE %@",[selectedTable backtickQuotedString]];
+	NSMutableString *queryString = [NSMutableString stringWithFormat:@"ALTER TABLE %@",[selectedTable postgresQuotedIdentifier]];
 	[queryString appendString:@" "];
 	if (isEditingNewRow) {
 		[queryString appendString:@"ADD"];
 	}
 	else {
-		[queryString appendFormat:@"CHANGE %@",[[oldRow objectForKey:@"name"] backtickQuotedString]];
+		[queryString appendFormat:@"CHANGE %@",[[oldRow objectForKey:@"name"] postgresQuotedIdentifier]];
 	}
 	[queryString appendString:@" "];
 	[queryString appendString:[self _buildPartialColumnDefinitionString:theRow]];
@@ -733,21 +737,24 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 			// Add AFTER ... only if the user added a new field
 			if (isEditingNewRow) {
-				[queryString appendFormat:@"\n AFTER %@", [[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
+		// AFTER clause is not supported in Postgres
+		// [queryString appendFormat:@"\n AFTER %@", [[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] postgresQuotedIdentifier]];
 			}
 		}
 		else {
 			// Add AFTER ... only if the user added a new field
 			if (isEditingNewRow) {
-				[queryString appendFormat:@"\n AFTER %@", [[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
+		// AFTER clause is not supported in Postgres
+		// [queryString appendFormat:@"\n AFTER %@", [[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] postgresQuotedIdentifier]];
 			}
 
-			[queryString appendFormat:@"\n, ADD %@ (%@)", autoIncrementIndex, [[theRow objectForKey:@"name"] backtickQuotedString]];
+			[queryString appendFormat:@"\n, ADD %@ (%@)", autoIncrementIndex, [[theRow objectForKey:@"name"] postgresQuotedIdentifier]];
 		}
 	}
 	// Add AFTER ... only if the user added a new field
 	else if (isEditingNewRow) {
-		[queryString appendFormat:@"\n AFTER %@", [[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] backtickQuotedString]];
+// AFTER clause is not supported in Postgres
+		// [queryString appendFormat:@"\n AFTER %@", [[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] postgresQuotedIdentifier]];
 	}
 
 	isCurrentExtraAutoIncrement = NO;
@@ -756,7 +763,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// Execute query
 	[mySQLConnection queryString:queryString];
 
-	if (![mySQLConnection queryErrored]) {
+	// Execute query
+	[postgresConnection queryString:queryString];
+
+	if (![postgresConnection queryErrored]) {
 		isEditingRow = NO;
 		isEditingNewRow = NO;
 		currentlyEditingRow = -1;
@@ -774,8 +784,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		return YES;
 	}
 	else {
-		if ([mySQLConnection lastErrorID] == 1146) { // If the current table doesn't exist anymore
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@", @"error while trying to alter table message"),selectedTable, [mySQLConnection lastErrorMessage]] callback:nil];
+		if ([postgresConnection lastErrorID] == 1146) { // If the current table doesn't exist anymore
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@", @"error while trying to alter table message"),selectedTable, [postgresConnection lastErrorMessage]] callback:nil];
 
 			isEditingRow = NO;
 			isEditingNewRow = NO;
@@ -795,7 +805,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 
 		if (isEditingNewRow) {
-			NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@", @"error adding field informative message"), [theRow objectForKey:@"name"], queryString, [mySQLConnection lastErrorMessage]];
+			NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@", @"error adding field informative message"), [theRow objectForKey:@"name"], queryString, [postgresConnection lastErrorMessage]];
 			[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Error adding field", @"error adding field message") message:alertMessage primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") primaryButtonHandler:^{
 				[self addRowSheetPrimaryAction];
 			} cancelButtonHandler:^{
@@ -842,7 +852,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
     if ([theRow objectForKey:@"generatedalways"])
         theRowGeneratedAlways = [[[theRow objectForKey:@"generatedalways"] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] uppercaseString];
 
-	queryString = [NSMutableString stringWithString:[[theRow objectForKey:@"name"] backtickQuotedString]];
+	queryString = [NSMutableString stringWithString:[[theRow objectForKey:@"name"] postgresQuotedIdentifier]];
 
 	[queryString appendString:@" "];
 	[queryString appendString:theRowType];
@@ -1140,9 +1150,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 /**
  * Sets the connection (received from SPDatabaseDocument) and makes things that have to be done only once
  */
-- (void)setConnection:(SPMySQLConnection *)theConnection
+- (void)setConnection:(SPPostgresConnection *)theConnection
 {
-	mySQLConnection = theConnection;
+    mySQLConnection = nil;
+    postgresConnection = theConnection;
 	
 	// Set the indexes controller connection
 	[indexesController setConnection:mySQLConnection];
@@ -1211,8 +1222,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	NSString *nullValue = [prefs stringForKey:SPNullValue];
 	CFStringRef escapedNullValue = CFXMLCreateStringByEscapingEntities(NULL, ((CFStringRef)nullValue), NULL);
 
-	SPMySQLResult *structureQueryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [selectedTable backtickQuotedString]]];
-	SPMySQLResult *indexesQueryResult   = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEXES FROM %@", [selectedTable backtickQuotedString]]];
+	SPMySQLResult *structureQueryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT column_name AS Field, data_type AS Type, is_nullable AS \"Null\", column_default AS \"Default\" FROM information_schema.columns WHERE table_name = %@", [selectedTable postgresQuotedIdentifier]]];
+	SPMySQLResult *indexesQueryResult   = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT indexname AS Key_name, indexdef AS Index_type FROM pg_indexes WHERE tablename = %@", [selectedTable postgresQuotedIdentifier]]];
 
 	[structureQueryResult setReturnDataAsStrings:YES];
 	[indexesQueryResult setReturnDataAsStrings:YES];
@@ -1346,7 +1357,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 					}
 				}
 
-				[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [self->selectedTable backtickQuotedString], [relationName backtickQuotedString]]];
+				[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [self->selectedTable postgresQuotedIdentifier], [relationName postgresQuotedIdentifier]]];
 
 				// Check for errors, but only if the query wasn't cancelled
 				if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
@@ -1359,7 +1370,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 			// Remove field
 			[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP %@",
-																	[self->selectedTable backtickQuotedString], [[[[self activeFieldsSource] safeObjectAtIndex:[self->tableSourceView selectedRow]] safeObjectForKey:@"name"] backtickQuotedString]]];
+																	[self->selectedTable postgresQuotedIdentifier], [[[[self activeFieldsSource] safeObjectAtIndex:[self->tableSourceView selectedRow]] safeObjectForKey:@"name"] postgresQuotedIdentifier]]];
 
 			// Check for errors, but only if the query wasn't cancelled
 			if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
@@ -1418,7 +1429,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	// Retrieve the indexes for the table
-	SPMySQLResult *indexResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEX FROM %@", [aTable backtickQuotedString]]];
+	SPMySQLResult *indexResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEX FROM %@", [aTable postgresQuotedIdentifier]]];
 
 	// If an error occurred, reset the interface and abort
 	if ([mySQLConnection queryErrored]) {
@@ -2034,7 +2045,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	// Begin construction of the reordering query
 	NSMutableString *queryString = [NSMutableString stringWithFormat:@"ALTER TABLE %@ MODIFY COLUMN %@",
-									[selectedTable backtickQuotedString],
+									[selectedTable postgresQuotedIdentifier],
 									[self _buildPartialColumnDefinitionString:originalRow]];
 
 	[queryString appendString:@" "];
@@ -2043,7 +2054,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		[queryString appendString:@"FIRST"];
 	}
 	else {
-		[queryString appendFormat:@"AFTER %@", [[[[self activeFieldsSource] objectAtIndex:destinationRowIndex - 1] objectForKey:@"name"] backtickQuotedString]];
+// AFTER clause is not supported in Postgres
+		// [queryString appendFormat:@"AFTER %@", [[[[self activeFieldsSource] objectAtIndex:destinationRowIndex - 1] objectForKey:@"name"] postgresQuotedIdentifier]];
 	}
 
 	// Run the query; report any errors, or reload the table on success

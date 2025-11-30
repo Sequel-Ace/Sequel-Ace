@@ -63,6 +63,7 @@ static inline id NSMutableAttributedStringAttributeAtIndex(NSMutableAttributedSt
 - (NSString *)sha256Hash;
 - (NSString *)HTMLEscapeString;
 - (NSString *)backtickQuotedString;
+- (NSString *)postgresQuotedIdentifier;
 - (NSString *)tickQuotedString;
 - (NSString *)replaceUnderscoreWithSpace;
 - (NSArray *)lineRangesForRange:(NSRange)aRange;

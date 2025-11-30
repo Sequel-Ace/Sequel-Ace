@@ -28,11 +28,11 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-@class SPMySQLConnection;
+@class SPPostgresConnection;
 
 @interface SPProcessListController : NSWindowController 
 {
-	SPMySQLConnection *connection;
+	SPPostgresConnection *connection;
 	
 	BOOL showFullProcessList, processListThreadRunning;
 	
@@ -54,7 +54,7 @@
 	IBOutlet NSMenuItem          *autoRefreshIntervalMenuItem;
 }
 
-@property (readwrite, strong) SPMySQLConnection *connection;
+@property (readwrite, strong) SPPostgresConnection *connection;
 
 - (IBAction)copy:(id)sender;
 - (IBAction)closeSheet:(id)sender;

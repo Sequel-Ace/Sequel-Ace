@@ -456,7 +456,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 					[clause appendString:(lookInAllFields) ? @" OR " : @" AND "];
 				}
 
-				NSString *fieldName = [[filterCellData objectForKey:@"name"] backtickQuotedString];
+				NSString *fieldName = [[filterCellData objectForKey:@"name"] postgresQuotedIdentifier];
 				NSString *filterTableDefaultOperatorWithFieldName = [filterTableDefaultOperator stringByReplacingOccurrencesOfString:@"`@`" withString:fieldName];
 
 				opRange = [filterCell rangeOfString:@"`@`"];

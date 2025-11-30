@@ -38,7 +38,7 @@
 #import "RegexKitLite.h"
 #import "SPDatabaseData.h"
 #import "SPFunctions.h"
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 
 #import "sequel-ace-Swift.h"
 
@@ -220,9 +220,9 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 #pragma mark -
 #pragma mark Setter methods
 
-- (void)setConnection:(SPMySQLConnection *)theConnection
+- (void)setConnection:(SPPostgresConnection *)theConnection
 {
-	mySQLConnection = theConnection;
+	postgresConnection = theConnection;
 }
 
 - (void)setImportDataArray:(id)theFieldMappingImportArray hasHeader:(BOOL)hasHeader isPreview:(BOOL)isPreview
@@ -355,7 +355,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		return [NSString stringWithFormat:@"UPDATE %@%@%@ SET ",
 			([lowPriorityUpdateCheckBox state] == NSControlStateValueOn) ? @"LOW_PRIORITY " : @"",
 			([ignoreUpdateCheckBox state] == NSControlStateValueOn) ? @"IGNORE " : @"",
-			[[self selectedTableTarget] backtickQuotedString]
+			[[self selectedTableTarget] postgresQuotedIdentifier]
 			];
 	}
 	return @"";
@@ -408,14 +408,14 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			NSMutableString *createString = [NSMutableString string];
 
 			[createString appendFormat:@"ALTER TABLE %@ ADD %@ %@",
-				[[tableTargetPopup titleOfSelectedItem] backtickQuotedString],
-				[[fieldMappingTableColumnNames objectAtIndex:currentIndex] backtickQuotedString],
+				[[tableTargetPopup titleOfSelectedItem] postgresQuotedIdentifier],
+				[[fieldMappingTableColumnNames objectAtIndex:currentIndex] postgresQuotedIdentifier],
 				[fieldMappingTableTypes objectAtIndex:currentIndex]];
 
-			[mySQLConnection queryString:createString];
+			[postgresConnection queryString:createString];
 
-			if ([mySQLConnection queryErrored]) {
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new column", @"error adding new column message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@", @"error adding new column informative message"), [fieldMappingTableColumnNames objectAtIndex:currentIndex], createString, [mySQLConnection lastErrorMessage]] callback:nil];
+			if ([postgresConnection queryErrored]) {
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new column", @"error adding new column message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@", @"error adding new column informative message"), [fieldMappingTableColumnNames objectAtIndex:currentIndex], createString, [postgresConnection lastErrorMessage]] callback:nil];
 				return;
 			} else {
 				[toBeEditedRowIndexes removeIndex:currentIndex];
@@ -432,7 +432,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		[[self window] endEditingFor:nil];
 
 		NSMutableString *createString = [NSMutableString string];
-		[createString appendFormat:@"CREATE TABLE %@ (\n", [[newTableNameTextField stringValue] backtickQuotedString]];
+		[createString appendFormat:@"CREATE TABLE %@ (\n", [[newTableNameTextField stringValue] postgresQuotedIdentifier]];
 		NSInteger columnIndex = 0;
 		NSInteger numberOfColumns = [fieldMappingTableColumnNames count];
 		NSMutableArray *columnDetails = [NSMutableArray array];
@@ -443,23 +443,25 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 				continue;
 			}
 
-			[columnDetails addObject:[NSString stringWithFormat:@"\t%@ %@", [[fieldMappingTableColumnNames objectAtIndex:columnIndex] backtickQuotedString], [fieldMappingTableTypes objectAtIndex:columnIndex]]];
+			[columnDetails addObject:[NSString stringWithFormat:@"\t%@ %@", [[fieldMappingTableColumnNames objectAtIndex:columnIndex] postgresQuotedIdentifier], [fieldMappingTableTypes objectAtIndex:columnIndex]]];
 		}
 		[createString appendString:[columnDetails componentsJoinedByString:@", \n"]];
 		[createString appendString:@")"];
 
+		/*
 		if(![[prefs objectForKey:SPLastImportIntoNewTableType] isEqualToString:@"Default"])
 			[createString appendFormat:@" ENGINE=%@", [prefs objectForKey:SPLastImportIntoNewTableType]];
 		if(![[prefs objectForKey:SPLastImportIntoNewTableEncoding] isEqualToString:@"Default"]) {
 			NSString *encodingName = [[prefs objectForKey:SPLastImportIntoNewTableEncoding] stringByMatching:@"\\((.*)\\)" capture:1L];
 			if (!encodingName) encodingName = @"utf8mb4";
-			[createString appendString:[NSString stringWithFormat:@" DEFAULT CHARACTER SET %@", [encodingName backtickQuotedString]]];
+// [createString appendString:[NSString stringWithFormat:@" DEFAULT CHARACTER SET %@", [encodingName postgresQuotedIdentifier]]];
 		}
+		*/
 
-		[mySQLConnection queryString:createString];
+		[postgresConnection queryString:createString];
 
-		if ([mySQLConnection queryErrored]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@", @"error adding new table informative message"), [newTableNameTextField stringValue], createString, [mySQLConnection lastErrorMessage]] callback:nil];
+		if ([postgresConnection queryErrored]) {
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@", @"error adding new table informative message"), [newTableNameTextField stringValue], createString, [postgresConnection lastErrorMessage]] callback:nil];
 			return;
 		}
 
@@ -523,7 +525,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 
 	// Retrieve the information for the newly selected table using a SPTableData instance
 	SPTableData *selectedTableData = [[SPTableData alloc] init];
-	[selectedTableData setConnection:mySQLConnection];
+	[selectedTableData setConnection:postgresConnection];
 	NSDictionary *tableDetails = [selectedTableData informationForTable:[tableTargetPopup titleOfSelectedItem] fromDatabase:nil];
 	targetTableHasPrimaryKey = NO;
 	BOOL isReplacePossible = NO;
@@ -842,7 +844,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	[fieldMappingTableDefaultValues removeAllObjects];
 	[fieldMappingTableTypes removeAllObjects];
 	
-	BOOL serverGreaterThanVersion4 = ([mySQLConnection serverMajorVersion] >= 5) ? YES : NO;
+	BOOL serverGreaterThanVersion4 = ([postgresConnection serverMajorVersion] >= 5) ? YES : NO;
 	BOOL importFirstRowAsFieldNames = [self importFieldNamesHeader];
 
 	NSArray *headerRow = [fieldMappingImportArray firstObject];
@@ -1187,7 +1189,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			[onupdateTextView setSelectedRange:NSMakeRange(0,[[onupdateTextView string] length])];
 			NSMutableArray *queryParts = [NSMutableArray arrayWithCapacity:[primaryKeyFields count]];
 			for (NSString *eachFieldName in primaryKeyFields) {
-				[queryParts addObject:[NSString stringWithFormat:@"%@ = %@", [eachFieldName backtickQuotedString], [eachFieldName backtickQuotedString]]];
+				[queryParts addObject:[NSString stringWithFormat:@"%@ = %@", [eachFieldName postgresQuotedIdentifier], [eachFieldName postgresQuotedIdentifier]]];
 			}
 			[onupdateTextView.textStorage appendAttributedString:[[NSAttributedString alloc] initWithString:[queryParts componentsJoinedByString:@" AND "]]];
 			[onupdateTextView setBackgroundColor:[NSColor lightGrayColor]];

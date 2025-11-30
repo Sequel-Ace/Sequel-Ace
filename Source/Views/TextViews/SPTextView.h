@@ -35,7 +35,7 @@
 @class SPDatabaseDocument;
 @class SPTablesList;
 @class SPCustomQuery;
-@class SPMySQLConnection;
+@class SPPostgresConnection;
 @class SPCopyTable;
 @class NoodleLineNumberView;
 
@@ -75,7 +75,7 @@ typedef struct {
 
 	NSUserDefaults *prefs;
 
-	SPMySQLConnection *mySQLConnection;
+	SPPostgresConnection *postgresConnection;
 	NSInteger mySQLmajorVersion;
 
 	SnippetControlInfo snippetControlArray[20];
@@ -150,7 +150,7 @@ typedef struct {
 - (NSUInteger) getLineNumberForCharacterIndex:(NSUInteger)anIndex;
 - (void) autoHelp;
 - (NSBezierPath*)roundedBezierPathAroundRange:(NSRange)aRange;
-- (void) setConnection:(SPMySQLConnection *)theConnection withVersion:(NSInteger)majorVersion;
+- (void) setConnection:(SPPostgresConnection *)theConnection withVersion:(NSInteger)majorVersion;
 - (void) doCompletionByUsingSpellChecker:(BOOL)isDictMode fuzzyMode:(BOOL)fuzzySearch autoCompleteMode:(BOOL)autoCompleteMode;
 - (void) doAutoCompletion;
 - (void) refreshCompletion;

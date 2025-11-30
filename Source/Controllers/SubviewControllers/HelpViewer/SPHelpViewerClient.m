@@ -31,7 +31,7 @@
 
 #import "SPHelpViewerClient.h"
 #import "SPHelpViewerController.h"
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 #import "RegexKitLite.h"
 #import "MGTemplateEngine.h"
 #import "ICUTemplateMatcher.h"
@@ -95,32 +95,10 @@ typedef NS_ENUM(NSInteger, HelpVersionNumber) {
 
 - (void)openOnlineHelpForTopic:(NSString *)searchString
 {
+	// PostgreSQL documentation search URL
+	// https://www.postgresql.org/search/?q=SELECT
 	
-	
-	//Hmmm. 5.5 dev search no longer exists - 5.5. redirects to 8.0
-	// 5.6 = https://dev.mysql.com/doc/search/?d=11&p=1&q=SELECT
-	// 8.0 https://dev.mysql.com/doc/search/?d=201&p=1&q=SELECT
-	// 5.7 https://dev.mysql.com/doc/search/?d=12&p=1&q=SELECT
-	
-	// OLD: SPMySQLSearchURL = https://dev.mysql.com/doc/refman/%@/%@/%@.html
-	// NEW: SPMySQLSearchURL = https://dev.mysql.com/doc/search/?d=%d&p=1&q=%@
-
-	// default to 8.0
-	HelpVersionNumber version = MySQLVer80;
-	
-	if ([mySQLConnection serverVersionIsGreaterThanOrEqualTo:8 minorVersion:0 releaseVersion:0]){
-		version = MySQLVer80;
-	}
-	else if([mySQLConnection serverVersionIsGreaterThanOrEqualTo:5 minorVersion:7 releaseVersion:0]) {
-		version = MySQLVer57;
-	}
-	else if([mySQLConnection serverVersionIsGreaterThanOrEqualTo:5 minorVersion:6 releaseVersion:0]) {
-		version = MySQLVer56;
-	}
-	
-	SPLog(@"ver = %li", (long)version);
-		
-	NSString *url = [[NSString stringWithFormat: SPMySQLSearchURL, version, searchString] stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet];
+	NSString *url = [[NSString stringWithFormat:@"https://www.postgresql.org/search/?q=%@", searchString] stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet];
 
 	SPLog("search URL: %@",url);
 	
@@ -131,115 +109,15 @@ typedef NS_ENUM(NSInteger, HelpVersionNumber) {
 
 - (NSString *)HTMLHelpContentsForSearchString:(NSString *)searchString autoHelp:(BOOL)autoHelp
 {
-	if(![searchString length]) return @"";
-
-	NSMutableString *theTitle = [NSMutableString stringWithFormat:NSLocalizedString(@"Version %@", @"Mysql Help Viewer : window title : mysql server version"),[mySQLConnection serverVersionString]];
-	NSMutableString *theHelp = [NSMutableString string];
-
-	// Don't escape % when being used as a wildcard, but escape it when it's being used by itself.
-	if ([searchString isEqualToString:@"%"]) searchString = @"\\%";
-
-	// search via: HELP 'searchString'
-	SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"HELP %@", [searchString tickQuotedString]]];
-	if ([mySQLConnection queryErrored]) {
-		[theTitle setString:NSLocalizedString(@"Error", @"Mysql Help Viewer : window title : query error")];
-		NSString *errMsg = [NSString stringWithFormat:@"ERROR %lu (%@): %@", (unsigned long)[mySQLConnection lastErrorID], [mySQLConnection lastSqlstate], [mySQLConnection lastErrorMessage]];
-		[theHelp appendFormat:@"<b>%@:</b><br><p class='error'>%@</p>", NSLocalizedString(@"MySQL Help Query Failed", @"Mysql Help Viewer : title of error message"), errMsg];
-		return [self generateHelp:theTitle theHelp:theHelp];
-	}
-
-	// nothing found?
-	if(![theResult numberOfRows]) {
-		// try to search via: HELP 'searchString%'
-		theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"HELP %@", [[searchString stringByAppendingString:@"%"] tickQuotedString]]];
-
-		// really nothing found?
-		if(![theResult numberOfRows]) {
-			[theTitle appendFormat:@": %@", NSLocalizedString(@"No Results", @"Mysql Help Viewer : window title : nothing found")];
-			[theHelp appendFormat:@"<em class='nothing'>%@</em>", NSLocalizedString(@"No results found.", @"Mysql Help Viewer : Search : No results")];
-			return [self generateHelp:theTitle theHelp:theHelp];
-		}
-	}
-
-	// Ensure rows are returned as strings to prevent data problems with older 4.1 servers
-	[theResult setReturnDataAsStrings:YES];
-
-	NSDictionary *tableDetails = [[NSDictionary alloc] initWithDictionary:[theResult getRowAsDictionary]];
-
-	if ([tableDetails objectForKey:@"description"]) { // one single help topic found
-		if ([tableDetails objectForKey:@"name"]) {
-			[theTitle appendFormat:@": %@", [tableDetails objectForKey:@"name"]];
-			[theHelp appendString:@"<h2 class='header'>"];
-			[theHelp appendString:[tableDetails objectForKey:@"name"]];
-			[theHelp appendString:@"</h2>"];
-		}
-		if ([tableDetails objectForKey:@"description"]) {
-			NSMutableString *desc = [NSMutableString string];
-			NSError *err1 = NULL;
-			NSString *aUrl;
-
-			[desc setString:[tableDetails objectForKey:@"description"]];
-
-			//[desc replaceOccurrencesOfString:[searchString uppercaseString] withString:[NSString stringWithFormat:@"<span class='searchstring'>%@</span>", [searchString uppercaseString]] options:NSLiteralSearch range:NSMakeRange(0,[desc length])];
-
-			// detect and generate http links
-			NSRange aRange = NSMakeRange(0,0);
-			NSInteger safeCnt = 0; // safety counter - not more than 200 loops allowed
-			while(1) {
-				aRange = [desc rangeOfRegex:@"\\s((https?|ftp|file)://.*?html)" options:RKLNoOptions inRange:NSMakeRange(NSMaxRange(aRange), [desc length]-aRange.location-aRange.length) capture:1 error:&err1];
-				if(aRange.location != NSNotFound) {
-					aUrl = [desc substringWithRange:aRange];
-					[desc replaceCharactersInRange:aRange withString:[NSString stringWithFormat:@"<a href='%@'>%@</a>", aUrl, aUrl]];
-				}
-				else {
-					break;
-				}
-				safeCnt++;
-				if(safeCnt > 200) break;
-			}
-
-			// Detect and generate cross-links.  First, handle the old-style [HELP ...] text.
-			[desc replaceOccurrencesOfRegex:@"(\\[HELP ([^\\]]*?)\\]" withString:[[self class] linkToHelpTopic:@"$1"]];
-
-			// Handle "see [...]" and "in [...]"-style 5.x links.
-			//look-behind won't work here because of the \s+
-			[desc replaceOccurrencesOfRegex:@"(See|see|In|in|and)\\s+\\[(?:HELP\\s+)?([^\\]]*?)\\]" withString:[NSString stringWithFormat:@"$1 %@",[[self class] linkToHelpTopic:@"$2"]]];
-
-			[theHelp appendFormat:@"<pre class='description'>%@</pre>", desc];
-		}
-		// are examples available?
-		if([tableDetails objectForKey:@"example"]){
-			NSString *examples = [[tableDetails objectForKey:@"example"] copy];
-			if([examples length]) [theHelp appendFormat:@"<br><i><b>%1$@</b></i><br><pre class='example'>%2$@</pre>",NSLocalizedString(@"Example:",@"Mysql Help Viewer : Help Topic: Example section title"), examples];
-		}
-	}
-	else { // list all found topics
-		// check if HELP 'contents' is called
-		if(![searchString isEqualToString:SPHelpViewerSearchTOC]) {
-			[theTitle appendString:@": "];
-			[theTitle appendFormat:NSLocalizedString(@"Multiple Results for “%@”", @"Mysql Help Viewer : window title : multiple topics found"), searchString];
-			[theHelp appendFormat:@"<br><i>%@</i><br>", [NSString stringWithFormat:NSLocalizedString(@"Help topics for “%@”", @"MySQL Help Viewer : Results list : Page title"), searchString]];
-		}
-		else {
-			[theTitle appendFormat:@": %@", NSLocalizedString(@"Table of Contents", @"Mysql Help Viewer : window title : TOC")];
-			[theHelp appendFormat:@"<br><b>%@:</b><br>", NSLocalizedString(@"MySQL Help – Categories", @"mysql help categories")];
-		}
-
-		// iterate through all found rows and print them as HTML ul/li list
-		[theHelp appendString:@"<ul>"];
-		[theResult setDefaultRowReturnType:SPMySQLResultRowAsArray];
-
-		for (NSArray *eachRow in theResult)
-		{
-			NSString *topic = [eachRow objectAtIndex:[eachRow count] - 2];
-
-			[theHelp appendFormat:@"<li>%@</li>", [[self class] linkToHelpTopic:topic]];
-		}
-
-		[theHelp appendString:@"</ul>"];
-	}
-
-	return [self generateHelp:theTitle theHelp:theHelp];
+    // PostgreSQL does not support HELP command via SQL.
+    // Return a message indicating this or link to online help.
+    NSMutableString *theTitle = [NSMutableString stringWithFormat:NSLocalizedString(@"Version %@", @"Mysql Help Viewer : window title : mysql server version"),[postgresConnection serverVersionString]];
+    NSMutableString *theHelp = [NSMutableString string];
+    
+    [theHelp appendString:@"<p>PostgreSQL does not support the HELP command via SQL.</p>"];
+    [theHelp appendFormat:@"<p><a href='https://www.postgresql.org/search/?q=%@'>Search PostgreSQL Documentation for '%@'</a></p>", searchString, searchString];
+    
+    return [self generateHelp:theTitle theHelp:theHelp];
 }
 
 - (NSString *)generateHelp:(NSString *)theTitle theHelp:(NSString *)theHelp {
@@ -266,9 +144,9 @@ typedef NS_ENUM(NSInteger, HelpVersionNumber) {
 	return [NSString stringWithFormat:@"<a title='%2$@' href='%1$@' class='internallink'>%1$@</a>", aTopic, linkTitle];
 }
 
-- (void)setConnection:(SPMySQLConnection *)theConnection
+- (void)setConnection:(SPPostgresConnection *)theConnection
 {
-	mySQLConnection = theConnection;
+	postgresConnection = theConnection;
 }
 
 /**
@@ -302,7 +180,7 @@ typedef NS_ENUM(NSInteger, HelpVersionNumber) {
 	[controller setDataSource:nil]; // we are the (unretained) datasource, but the controller may outlive us (if retained by other objects)
 	[controller close]; // hide the window if it is still visible (can't update anymore without delegate anyway)
 
-	mySQLConnection = nil;
+	postgresConnection = nil;
 
 }
 

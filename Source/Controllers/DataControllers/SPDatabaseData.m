@@ -33,7 +33,7 @@
 #import "sequel-ace-Swift.h"
 
 #import "SPFunctions.h"
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 
 @interface SPDatabaseData ()
 
@@ -116,7 +116,7 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 		if ([collations count] == 0) {
 			
 			// Try to retrieve the available collations from the database
-            [collations addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`collations` ORDER BY `collation_name` ASC"]];
+            [collations addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT * FROM \"information_schema\".\"collations\" ORDER BY \"collation_name\" ASC"]];
 			
 			// If that failed, get the list of collations from the hard-coded list
 			if (![collations count]) {
@@ -150,14 +150,16 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 			}
 
 			// Try to retrieve the available collations for the supplied encoding from the database
-            [characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", characterSetEncoding]]];
+            [characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM \"information_schema\".\"collations\" WHERE character_set_name = '%@' ORDER BY \"collation_name\" ASC", characterSetEncoding]]];
 
             //Special handling to try utf8 if the encoding is utf8mb3 https://github.com/Sequel-Ace/Sequel-Ace/issues/1064
+            /*
             if (![characterSetCollations count] && [characterSetEncoding isEqualToString:@"utf8mb3"]) {
                 [characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", @"utf8"]]];
             } else if (![characterSetCollations count] && [characterSetEncoding isEqualToString:@"utf8"]) {
                 [characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", @"utf8mb3"]]];
             }
+            */
 
 			// If that failed, get the list of collations matching the supplied encoding from the hard-coded list
 			if (![characterSetCollations count]) {
@@ -230,19 +232,7 @@ copy_return:
  */
 - (NSArray *)getDatabaseStorageEngines
 {	
-	if ([storageEngines count] == 0) {
-        // Check the information_schema.engines table is accessible
-        SPMySQLResult *result = [connection queryString:@"SHOW TABLES IN information_schema LIKE 'ENGINES'"];
-        
-        if ([result numberOfRows] == 1) {
-            
-            // Table is accessible so get available storage engines
-            // Note, that the case of the column names specified in this query are important.
-            [storageEngines addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT Engine, Support FROM `information_schema`.`engines` WHERE SUPPORT IN ('DEFAULT', 'YES') AND Engine != 'PERFORMANCE_SCHEMA'"]];
-        }
-	}
-	
-	return [storageEngines sortedArrayUsingFunction:_sortStorageEngineEntry context:nil];
+	return @[];
 }
 
 /**
@@ -263,7 +253,7 @@ copy_return:
 			
 			// Try to retrieve the available character set encodings from the database
 			// Check the information_schema.character_sets table is accessible
-            [characterSetEncodings addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`character_sets` ORDER BY `character_set_name` ASC"]];
+            [characterSetEncodings addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT * FROM \"information_schema\".\"character_sets\" ORDER BY \"character_set_name\" ASC"]];
 
 			// If that failed, get the list of character set encodings from the hard-coded list
 			if (![characterSetEncodings count]) {			
@@ -387,7 +377,17 @@ copy_return:
  */
 - (NSString *)_getSingleVariableValue:(NSString *)variable
 {
-	SPMySQLResult *result = [connection queryString:[NSString stringWithFormat:@"SHOW VARIABLES LIKE %@", [variable tickQuotedString]]];;
+    // Map MySQL variables to Postgres settings
+    NSString *postgresSetting = variable;
+    if ([variable isEqualToString:@"character_set_database"] || [variable isEqualToString:@"character_set_server"]) {
+        postgresSetting = @"server_encoding";
+    } else if ([variable isEqualToString:@"collation_database"] || [variable isEqualToString:@"collation_server"]) {
+        postgresSetting = @"lc_collate";
+    } else if ([variable isEqualToString:@"storage_engine"] || [variable isEqualToString:@"default_storage_engine"]) {
+        return @"HEAP"; // Default Postgres access method
+    }
+
+	SPPostgresResult *result = [connection queryString:[NSString stringWithFormat:@"SELECT current_setting('%@')", postgresSetting]];
 	
 	[result setReturnDataAsStrings:YES];
 	
@@ -397,7 +397,7 @@ copy_return:
 	if ([result numberOfRows] != 1)
 		return nil;
 	
-	return [[result getRowAsDictionary] objectForKey:@"Value"];
+	return [[result getRowAsArray] firstObject];
 }
 
 /**
@@ -406,7 +406,7 @@ copy_return:
  */
 - (NSArray *)_getDatabaseDataForQuery:(NSString *)query
 {
-	SPMySQLResult *result = [connection queryString:query];
+	SPPostgresResult *result = [connection queryString:query];
 	
 	if ([connection queryErrored]) return @[];
 	

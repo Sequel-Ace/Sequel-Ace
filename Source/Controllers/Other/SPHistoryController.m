@@ -227,7 +227,7 @@
 
 	// If a table is selected, update the table content states with this information - used when switching tables to restore last used view.
 	if (newEntry.table) {
-		NSString * const key = [NSString stringWithFormat:@"%@.%@", newEntry.database.backtickQuotedString, newEntry.table.backtickQuotedString];
+		NSString * const key = [NSString stringWithFormat:@"%@.%@", newEntry.database.postgresQuotedIdentifier, newEntry.table.postgresQuotedIdentifier];
 		[tableContentStates setObject: newEntry forKey: key];
 	}
 
@@ -380,7 +380,7 @@
 	if (!theDatabase || !theTable) { return; }
 
 	// Retrieve the saved content state, returning if none was found
-	NSString * const key = [NSString stringWithFormat:@"%@.%@", theDatabase.backtickQuotedString, theTable.backtickQuotedString];
+	NSString * const key = [NSString stringWithFormat:@"%@.%@", theDatabase.postgresQuotedIdentifier, theTable.postgresQuotedIdentifier];
 	SPTableHistoryEntry *entry = (SPTableHistoryEntry *)[tableContentStates objectForKey: key];
 	if (!entry) { return; }
 

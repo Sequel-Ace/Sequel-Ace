@@ -553,7 +553,7 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 
 	// Begin the SQL string
 	[result appendFormat:@"INSERT INTO %@ (%@)\nVALUES\n",
-     [(selectedTable == nil) ? @"<table>" : selectedTable backtickQuotedString], [self componentsJoinedAndBacktickQuoted:tbColumns]];
+     [(selectedTable == nil) ? @"<table>" : selectedTable postgresQuotedIdentifier], [self componentsJoinedAndBacktickQuoted:tbColumns]];
 
 	NSUInteger rowIndex = [selectedRows firstIndex];
 	Class spTableContentClass = [SPTableContent class];
@@ -587,8 +587,8 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
                     // TODO - this could be preloaded for all selected rows rather than cell-by-cell
                     cellData = [mySQLConnection getFirstFieldFromQuery:
                                 [NSString stringWithFormat:@"SELECT %@ FROM %@ WHERE %@",
-                                    [[data safeObjectForKey:kHeader] backtickQuotedString],
-                                    [selectedTable backtickQuotedString],
+                                    [[data safeObjectForKey:kHeader] postgresQuotedIdentifier],
+                                    [selectedTable postgresQuotedIdentifier],
                                     whereArgument]];
                 }
 
@@ -653,7 +653,7 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 			if ([value length] > 250000) {
 				[result appendFormat:@"%@);\n\nINSERT INTO %@ (%@)\nVALUES\n",
 						value,
-						[(selectedTable == nil) ? @"<table>" : selectedTable backtickQuotedString],
+						[(selectedTable == nil) ? @"<table>" : selectedTable postgresQuotedIdentifier],
                         [self componentsJoinedAndBacktickQuoted:tbColumns]];
 				[value setString:@""];
 			} 
@@ -691,7 +691,7 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
             if ([result length]) {
                 [result appendString: @", "];
             }
-            [result appendString:[header backtickQuotedString]];
+            [result appendString:[header postgresQuotedIdentifier]];
         }
     }
     return result;

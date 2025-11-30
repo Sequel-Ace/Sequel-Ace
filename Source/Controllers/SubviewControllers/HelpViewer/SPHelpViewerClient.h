@@ -30,7 +30,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 @class SPHelpViewerController;
-@class SPMySQLConnection;
+@class SPPostgresConnection;
 @class MGTemplateEngine;
 
 /**
@@ -50,12 +50,12 @@
 	SPHelpViewerController *controller;
 
 	NSString *helpHTMLTemplate;
-	SPMySQLConnection *mySQLConnection;
+	SPPostgresConnection *postgresConnection;
 
 	MGTemplateEngine *engine;
 }
 
-- (void)setConnection:(SPMySQLConnection *)theConnection;
+- (void)setConnection:(SPPostgresConnection *)theConnection;
 
 - (NSWindow *)helpWebViewWindow;
 

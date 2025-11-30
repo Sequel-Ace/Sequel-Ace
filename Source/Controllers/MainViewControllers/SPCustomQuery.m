@@ -58,7 +58,7 @@
 #import "SPBundleManager.h"
 
 #import <pthread.h>
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 #import "SPBracketHighlighter.h"
 
 #include <libkern/OSAtomic.h>
@@ -752,7 +752,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 {
     @autoreleasepool {
         NSArray                     *queries        = [taskArguments objectForKey:@"queries"];
-        SPMySQLStreamingResultStore *resultStore    = nil;
+        SPPostgresResult            *resultStore    = nil;
         NSMutableString             *errors         = [NSMutableString string];
         SEL                          callbackMethod = NULL;
         NSString                    *taskButtonString;
@@ -771,7 +771,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         NSNotificationCenter *defaultNC = [NSNotificationCenter defaultCenter];
         
         // Notify listeners that a query has started
-        [defaultNC postNotificationOnMainThreadWithName:@"SMySQLQueryWillBePerformed" object:tableDocumentInstance];
+        [defaultNC postNotificationOnMainThreadWithName:@"SPQueryWillBePerformed" object:tableDocumentInstance];
         
         // Reset the current table view as necessary to avoid redraw and reload issues.
         // Restore the view position to the top left to be within the results for all datasets.
@@ -787,7 +787,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         }
         
         // Disable automatic query retries on failure for the custom queries
-        [mySQLConnection setRetryQueriesOnConnectionFailure:NO];
+        // [postgresConnection setRetryQueriesOnConnectionFailure:NO];
         
         NSUInteger queryCount = [queries count];
         NSMutableArray *tempQueries = [NSMutableArray arrayWithCapacity:queryCount];
@@ -821,13 +821,13 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             [tempQueries addObject:query];
             
             // Run the query, timing execution (note this also includes network and overhead)
-            resultStore = [mySQLConnection resultStoreFromQueryString:query];
+            resultStore = [postgresConnection queryString:query];
             executionTime += [resultStore queryExecutionTime];
             totalQueriesRun++;
             
             // If this is the last query, retrieve and store the result; otherwise,
             // discard the result without fully loading.
-            if (totalQueriesRun == queryCount || [mySQLConnection lastQueryWasCancelled]) {
+            if (totalQueriesRun == queryCount || [postgresConnection lastQueryWasCancelled]) {
                 
                 // Retrieve and cache the column definitions for the result array
                 cqColumnDefinition = [resultStore fieldDefinitions];
@@ -853,7 +853,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                                     withTableData:resultData
                                       withColumns:cqColumnDefinition
                                     withTableName:resultTableName
-                                   withConnection:mySQLConnection];
+                                   withConnection:postgresConnection];
                 
                 [self updateResultStore:resultStore];
             } else {
@@ -861,27 +861,29 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             }
             
             // Record any affected rows
-            if ( [mySQLConnection rowsAffectedByLastQuery] != (unsigned long long)~0 ) {
-                totalAffectedRows += (NSUInteger) [mySQLConnection rowsAffectedByLastQuery];
+            if ( [postgresConnection rowsAffectedByLastQuery] != (unsigned long long)~0 ) {
+                totalAffectedRows += (NSUInteger) [postgresConnection rowsAffectedByLastQuery];
             }
             else if ( [resultStore numberOfRows] ) {
                 totalAffectedRows += (NSUInteger) [resultStore numberOfRows];
             }
             
             // Store any error messages
-            if ([mySQLConnection queryErrored] || [mySQLConnection lastQueryWasCancelled]) {
+            if ([postgresConnection queryErrored] || [postgresConnection lastQueryWasCancelled]) {
                 
                 NSString *errorString;
-                if ([mySQLConnection lastQueryWasCancelled]) {
+                if ([postgresConnection lastQueryWasCancelled]) {
                     errorString = NSLocalizedString(@"Query cancelled.", @"Query cancelled error");
                 } else {
-                    errorString = [mySQLConnection lastErrorMessage];
+                    errorString = [postgresConnection lastErrorMessage];
                     
                     // If dealing with a "MySQL server has gone away" error, explain the situation.
                     // Error 2006 is CR_SERVER_GONE_ERROR, which means the query write couldn't complete.
-                    if ([mySQLConnection lastErrorID] == 2006) {
+                    /*
+                    if ([postgresConnection lastErrorID] == 2006) {
                         errorString = [NSString stringWithFormat:@"%@.\n\n%@", errorString, NSLocalizedString(@"(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)", @"Explanation for MySQL server has gone away error")];
                     }
+                    */
                 }
                 
                 // If the query errored, append error to the error log for display at the end
@@ -902,13 +904,13 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                         }
                         SPMainQSync(^{
                             // ask the user to continue after detecting an error
-                            if (![self->mySQLConnection lastQueryWasCancelled]) {
+                            if (![self->postgresConnection lastQueryWasCancelled]) {
                                 
                                 [self->tableDocumentInstance setTaskIndicatorShouldAnimate:NO];
                                 
                                 NSAlert *alert = [[NSAlert alloc] init];
-                                [alert setMessageText:NSLocalizedString(@"MySQL Error", @"mysql error message")];
-                                [alert setInformativeText:[self->mySQLConnection lastErrorMessage]];
+                                [alert setMessageText:NSLocalizedString(@"Postgres Error", @"postgres error message")];
+                                [alert setInformativeText:[self->postgresConnection lastErrorMessage]];
                                 
                                 // Order of buttons matters! first button has "firstButtonReturn" return value from runModal()
                                 [alert addButtonWithTitle:NSLocalizedString(@"Run All", @"run all button")];
@@ -923,6 +925,22 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                                     case NSAlertFirstButtonReturn:
                                         suppressErrorSheet = YES;
                                     case NSAlertSecondButtonReturn:
+                                        // Check for errors
+                                        if ([postgresConnection queryErrored]) {
+                                            
+                                            // If the query failed, check if it was a "commands out of sync" error.
+                                            // If so, we can't continue running queries on this connection.
+                                            // Postgres doesn't have "commands out of sync" in the same way, but check for fatal errors.
+                                            
+                                            // Update error string
+                                            if ([errors length]) [errors appendString:@"\n"];
+                                            [errors appendString:[NSString stringWithFormat:NSLocalizedString(@"Error in query %lu: %@", @"error in query x: message"), (unsigned long)(i+1), [postgresConnection lastErrorMessage]]];
+                                            
+                                            firstErrorOccurredInQuery = i;
+                                            
+                                            // Stop running queries
+                                            break;
+                                        }
                                         break;
                                     default:
                                         if (i < queryCount-1) {
@@ -956,7 +974,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             // write errors to console
             [tableDocumentInstance queryGaveError:errors connection:nil];
             // If the query was cancelled, end all queries.
-            if ([mySQLConnection lastQueryWasCancelled]) break;
+            if ([postgresConnection lastQueryWasCancelled]) break;
         }
         // Reload table list if at least one query began with drop, alter, rename, or create
         if(tableListNeedsReload || databaseWasChanged) {
@@ -978,9 +996,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         
         // Perform empty query if no query is given
         if ( !queryCount ) {
-            resultStore = [mySQLConnection resultStoreFromQueryString:@""];
+            resultStore = [postgresConnection queryString:@""];
             [resultStore cancelResultLoad];
-            [errors setStringOrNil:[mySQLConnection lastErrorMessage]];
+            [errors setStringOrNil:[postgresConnection lastErrorMessage]];
         }
         
         // add query to history
@@ -999,7 +1017,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         // Set up the status string
         NSString *statusString = nil;
         NSString *statusErrorString = [errors length]?NSLocalizedString(@"Errors", @"Errors title"):NSLocalizedString(@"No errors", @"No errors title");
-        if ( [mySQLConnection lastQueryWasCancelled] ) {
+        if ( [postgresConnection lastQueryWasCancelled] ) {
             if (totalQueriesRun > 1) {
                 statusString = [NSString stringWithFormat:NSLocalizedString(@"%@; Cancelled in query %ld, after %@", @"text showing multiple queries were cancelled"),
                                 statusErrorString,
@@ -1046,7 +1064,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         [[affectedRowsText onMainThread] setStringValue:statusString];
         
         // Restore automatic query retries
-        [mySQLConnection setRetryQueriesOnConnectionFailure:YES];
+        [postgresConnection setRetryQueriesOnConnectionFailure:YES];
         
         [tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
         
@@ -1057,7 +1075,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             [customQueryView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
             
             // Notify any listeners that the query has completed
-            [defaultNC postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
+            [defaultNC postNotificationOnMainThreadWithName:@"SPQueryHasBeenPerformed" object:tableDocumentInstance];
             
             // Perform the notification for query completion
             NSUserNotification *notification = [[NSUserNotification alloc] init];
@@ -1087,7 +1105,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         }
         
         //query finished
-        [defaultNC postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
+        [defaultNC postNotificationOnMainThreadWithName:@"SPQueryHasBeenPerformed" object:tableDocumentInstance];
         
         // Query finished notification
         NSUserNotification *notification = [[NSUserNotification alloc] init];
@@ -1119,10 +1137,10 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 }
 
 /**
- * Processes a supplied streaming result store, monitoring the load and updating
+ * Processes a supplied SPPostgresResult, monitoring the load and updating
  * the data displayed during download.
  */
-- (void)updateResultStore:(SPMySQLStreamingResultStore *)theResultStore
+- (void)updateResultStore:(SPPostgresResult *)theResultStore
 {
     pthread_mutex_lock(&resultDataLock);
     // Remove all items from the table
@@ -1531,7 +1549,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     NSInteger firstErrorOccurredInQuery = [[errorDetails objectForKey:@"firstErrorQueryNumber"] integerValue];
     
     // If errors occur, display them
-    if ( [mySQLConnection lastQueryWasCancelled] || ([errorsString length] && !queryIsTableSorter)) {
+    if ( [postgresConnection lastQueryWasCancelled] || ([errorsString length] && !queryIsTableSorter)) {
         // set the error text
         [errorText setTextColor:[NSColor redColor]];
         [errorTextTitle setStringValue:NSLocalizedString(@"Last Error Message", @"Last Error Message")];
@@ -1543,7 +1561,10 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         NSRange errorLineNumberRange = [errorsString rangeOfRegex:@"([0-9]+)[^0-9]*$" options:RKLNoOptions inRange:NSMakeRange(0, [errorsString length]) capture:1L error:nil];
         
         // if error ID 1064 and a line number was found
-        if([mySQLConnection lastErrorID] == 1064 && errorLineNumberRange.length)
+        /*
+        if([postgresConnection lastErrorID] == 1064 && errorLineNumberRange.length)
+        */
+        if(errorLineNumberRange.length)
         {
             // Get the line number
             NSUInteger errorAtLine = [[errorsString substringWithRange:errorLineNumberRange] integerValue];
@@ -1824,9 +1845,10 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 /**
  * Sets the connection (received from SPDatabaseDocument) and makes things that have to be done only once
  */
-- (void)setConnection:(SPMySQLConnection *)theConnection
+- (void)setConnection:(SPPostgresConnection *)theConnection
 {
-    mySQLConnection = theConnection;
+    postgresConnection = nil;
+    postgresConnection = theConnection;
     currentQueryRanges = nil;
     
     // Set up the interface
@@ -2055,12 +2077,12 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     [tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Checking field data for editing...", @"checking field data for editing task description")];
     
     // Actual check whether field can be identified bijectively
-    SPMySQLResult *tempResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
-                                                              [[columnDefinition objectForKey:@"db"] backtickQuotedString],
-                                                              [tableForColumn backtickQuotedString],
+    SPMySQLResult *tempResult = [postgresConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
+                                                              [[columnDefinition objectForKey:@"db"] postgresQuotedIdentifier],
+                                                              [tableForColumn postgresQuotedIdentifier],
                                                               fieldIDQueryStr]];
     
-    if ([mySQLConnection queryErrored]) {
+    if ([postgresConnection queryErrored]) {
         [tableDocumentInstance endTask];
         return @[@(-1), @""];
     }
@@ -2075,12 +2097,12 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             return @[@(-1), @""];
         }
         
-        tempResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
-                                                   [[columnDefinition objectForKey:@"db"] backtickQuotedString],
-                                                   [tableForColumn backtickQuotedString],
+        tempResult = [postgresConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
+                                                   [[columnDefinition objectForKey:@"db"] postgresQuotedIdentifier],
+                                                   [tableForColumn postgresQuotedIdentifier],
                                                    fieldIDQueryStr]];
         
-        if ([mySQLConnection queryErrored]) {
+        if ([postgresConnection queryErrored]) {
             [tableDocumentInstance endTask];
             return @[@(-1), @""];
         }
@@ -2122,8 +2144,8 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     dataRow = [resultData rowContentsAtIndex:rowIndex];
     
     // Get the primary key if there is one, using any columns present within it
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@.%@",
-                                                             [database backtickQuotedString], [tableForColumn backtickQuotedString]]];
+    SPMySQLResult *theResult = [postgresConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@.%@",
+                                                             [database postgresQuotedIdentifier], [tableForColumn postgresQuotedIdentifier]]];
     [theResult setReturnDataAsStrings:YES];
     NSMutableArray *primaryColumnsInSpecifiedTable = [NSMutableArray array];
     for (NSDictionary *eachRow in theResult) {
@@ -2143,7 +2165,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     for (field in columnsToQuery) {
         id aValue = [dataRow objectAtIndex:[[field objectForKey:@"datacolumnindex"] integerValue]];
         if ([aValue isNSNull]) {
-            [argumentParts addObject:[NSString stringWithFormat:@"%@ IS NULL", [[field objectForKey:@"org_name"] backtickQuotedString]]];
+            [argumentParts addObject:[NSString stringWithFormat:@"%@ IS NULL", [[field objectForKey:@"org_name"] postgresQuotedIdentifier]]];
         } else {
             NSString *fieldTypeGrouping = [field objectForKey:@"typegrouping"];
             
@@ -2159,17 +2181,17 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             
             // If the field is of type BIT then it needs a binary prefix
             if ([fieldTypeGrouping isEqualToString:@"bit"]) {
-                [argumentParts addObject:[NSString stringWithFormat:@"%@=b'%@'", [[field objectForKey:@"org_name"] backtickQuotedString], [aValue description]]];
+                [argumentParts addObject:[NSString stringWithFormat:@"%@=B'%@'", [[field objectForKey:@"org_name"] postgresQuotedIdentifier], [aValue description]]];
             }
             else if ([fieldTypeGrouping isEqualToString:@"geometry"]) {
-                [argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteData:[aValue data]]]];
+                [argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] postgresQuotedIdentifier], [postgresConnection escapeAndQuoteData:[aValue data]]]];
             }
             // BLOB/TEXT data
             else if ([aValue isKindOfClass:[NSData class]]) {
-                [argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteData:aValue]]];
+                [argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] postgresQuotedIdentifier], [postgresConnection escapeAndQuoteData:aValue]]];
             }
             else {
-                [argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] backtickQuotedString], [mySQLConnection escapeAndQuoteString:aValue]]];
+                [argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] postgresQuotedIdentifier], [postgresConnection escapeAndQuoteString:aValue]]];
             }
         }
     }
@@ -2211,7 +2233,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         if ( [anObject isKindOfClass:[NSNumber class]] ) {
             newObject = [anObject stringValue];
         } else if ( [anObject isKindOfClass:[NSData class]] ) {
-            newObject = [mySQLConnection escapeAndQuoteData:anObject];
+            newObject = [postgresConnection escapeAndQuoteData:anObject];
         } else {
             NSString *desc = [anObject description];
             if ( [desc isMatchedByRegex:SPCurrentTimestampPattern] ) {
@@ -2224,33 +2246,33 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             } else if ([columnTypeGroup isEqualToString:@"geometry"]) {
                 newObject = [(NSString*)anObject getGeomFromTextString];
             } else if ([columnTypeGroup isEqualToString:@"bit"]) {
-                newObject = [NSString stringWithFormat:@"b'%@'", ((![desc length] || [desc isEqualToString:@"0"]) ? @"0" : desc)];
+                newObject = [NSString stringWithFormat:@"B'%@'", ((![desc length] || [desc isEqualToString:@"0"]) ? @"0" : desc)];
             } else if ([columnTypeGroup isEqualToString:@"date"]
                        && [desc isEqualToString:@"NOW()"]) {
                 newObject = @"NOW()";
             } else {
-                newObject = [mySQLConnection escapeAndQuoteString:desc];
+                newObject = [postgresConnection escapeAndQuoteString:desc];
             }
         }
 
         NSString *queryStr = [NSString stringWithFormat:@"UPDATE %@.%@ SET %@.%@.%@ = %@ %@",
-                              [[columnDefinition objectForKey:@"db"] backtickQuotedString], [[columnDefinition objectForKey:@"org_table"] backtickQuotedString],
-                              [[columnDefinition objectForKey:@"db"] backtickQuotedString], [[columnDefinition objectForKey:@"org_table"] backtickQuotedString], [columnName backtickQuotedString], newObject, fieldIDQueryString];
+                              [[columnDefinition objectForKey:@"db"] postgresQuotedIdentifier], [[columnDefinition objectForKey:@"org_table"] postgresQuotedIdentifier],
+                              [[columnDefinition objectForKey:@"db"] postgresQuotedIdentifier], [[columnDefinition objectForKey:@"org_table"] postgresQuotedIdentifier], [columnName postgresQuotedIdentifier], newObject, fieldIDQueryString];
 
 
         SPLog(@"queryStr: %@", queryStr);
 
         if ([prefs boolForKey:SPQueryWarningEnabled] == NO) {
-            [mySQLConnection queryString:queryStr];
+            [postgresConnection queryString:queryStr];
 
             // Check for errors while UPDATE
-            if ([mySQLConnection queryErrored]) {
-                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nMySQL said: %@", @"message of panel when error while updating field to db"), [mySQLConnection lastErrorMessage]] callback:nil];
+            if ([postgresConnection queryErrored]) {
+                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nMySQL said: %@", @"message of panel when error while updating field to db"), [postgresConnection lastErrorMessage]] callback:nil];
                 return;
             }
 
             // This shouldn't happen – for safety reasons
-            if ( ![mySQLConnection rowsAffectedByLastQuery] ) {
+            if ( ![postgresConnection rowsAffectedByLastQuery] ) {
                 if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
                     [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
                 } else {
@@ -2292,16 +2314,16 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
                                   primaryButtonTitle:NSLocalizedString(@"Proceed", @"Proceed")
                                 primaryButtonHandler:^{
                     SPLog(@"User clicked Yes, exec queries");
-                    [self->mySQLConnection queryString:queryStr];
+                    [self->postgresConnection queryString:queryStr];
 
                     // Check for errors while UPDATE
-                    if ([self->mySQLConnection queryErrored]) {
-                        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nMySQL said: %@", @"message of panel when error while updating field to db"), [self->mySQLConnection lastErrorMessage]] callback:nil];
+                    if ([self->postgresConnection queryErrored]) {
+                        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nMySQL said: %@", @"message of panel when error while updating field to db"), [self->postgresConnection lastErrorMessage]] callback:nil];
                         return;
                     }
 
                     // This shouldn't happen – for safety reasons
-                    if ( ![self->mySQLConnection rowsAffectedByLastQuery] ) {
+                    if ( ![self->postgresConnection rowsAffectedByLastQuery] ) {
                         if ( [self->prefs boolForKey:SPShowNoAffectedRowsError] ) {
                             [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
                         } else {
@@ -2564,7 +2586,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 {
     queryIsTableSorter = NO;
     
-    if ([mySQLConnection queryErrored]) {
+    if ([postgresConnection queryErrored]) {
         sortColumn = nil;
         
         return;
@@ -2792,7 +2814,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             
             [fieldEditor editWithObject:originalData
                               fieldName:[columnDefinition objectForKey:@"name"]
-                          usingEncoding:[mySQLConnection stringEncoding]
+                          usingEncoding:[postgresConnection stringEncoding]
                            isObjectBlob:isBlob
                              isEditable:isFieldEditable
                              withWindow:[tableDocumentInstance parentWindowControllerWindow]
@@ -3104,7 +3126,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
  */
 - (void)setMySQLversion:(NSString *)theVersion
 {
-    [textView setConnection:mySQLConnection withVersion:[[[[theVersion substringToIndex:3] componentsSeparatedByString:@"."] objectAtIndex:0] integerValue]];
+    [textView setConnection:postgresConnection withVersion:[[[[theVersion substringToIndex:3] componentsSeparatedByString:@"."] objectAtIndex:0] integerValue]];
 }
 
 - (IBAction)showCompletionList:(id)sender
@@ -3159,7 +3181,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 - (void)historyItemsHaveBeenUpdated:(NSNotification *)notification
 {
     // Abort if the connection has been closed already - sign of a closed window
-    if (![mySQLConnection isConnected]) return;
+    if (![postgresConnection isConnected]) return;
     
     // Refresh history popup menu
     NSMenu* historyMenu = [queryHistoryButton menu];
@@ -3771,7 +3793,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         return preserveNULLs ? value : [prefs objectForKey:SPNullValue];
     
     if ([value isKindOfClass:[NSData class]]) {
-        return [value stringRepresentationUsingEncoding:[mySQLConnection stringEncoding]];
+        return [value stringRepresentationUsingEncoding:[postgresConnection stringEncoding]];
     }
     
     return value;

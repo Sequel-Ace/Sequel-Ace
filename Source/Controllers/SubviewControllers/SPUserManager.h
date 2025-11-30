@@ -29,7 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 @class SPServerSupport;
-@class SPMySQLConnection;
+@class SPPostgresConnection;
 @class SPSplitView;
 @class SPDatabaseDocument;
 @class SPUserMO;
@@ -42,7 +42,7 @@
     NSManagedObjectContext *managedObjectContext;
 	NSDictionary *privColumnToGrantMap;
 	
-	SPMySQLConnection *connection;
+	SPPostgresConnection *connection;
 	SPDatabaseDocument *__weak databaseDocument;
 	SPServerSupport *serverSupport;
 
@@ -85,7 +85,7 @@
 	BOOL requiresPost576PasswordHandling;
 }
 
-@property (nonatomic, strong) SPMySQLConnection *connection;
+@property (nonatomic, strong) SPPostgresConnection *connection;
 @property (nonatomic, weak) SPDatabaseDocument *databaseDocument;
 @property (nonatomic, strong) SPServerSupport *serverSupport;
 @property (nonatomic, strong) NSPersistentStoreCoordinator *persistentStoreCoordinator;

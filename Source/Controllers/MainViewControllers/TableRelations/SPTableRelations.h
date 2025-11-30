@@ -29,7 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 @class SPTableView;
-@class SPMySQLConnection;
+@class SPPostgresConnection;
 @class SPDatabaseDocument;
 @class SPTablesList;
 @class SPTableData;
@@ -63,7 +63,7 @@
 	IBOutlet NSView     *detailErrorView;
 	IBOutlet NSTextView *detailErrorText;
 	
-	SPMySQLConnection *connection;
+	SPPostgresConnection *connection;
 
 	NSUserDefaults *prefs;
 	NSMutableArray *relationData;
@@ -71,7 +71,7 @@
 }
 
 @property (readonly) NSMutableArray *relationData;
-@property (readwrite, strong) SPMySQLConnection *connection;
+@property (readwrite, strong) SPPostgresConnection *connection;
 
 // IB action methods
 - (IBAction)addRelation:(id)sender;

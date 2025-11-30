@@ -36,8 +36,8 @@
 @class SPTablesList;
 @class SPIndexesController;
 @class SPTableView;
-@class SPMySQLConnection;
-@class SPMySQLResult;
+@class SPPostgresConnection;
+@class SPPostgresResult;
 @class SPExtendedTableInfo;
 @class SPTableInfo;
 
@@ -92,7 +92,7 @@
 	IBOutlet id viewColumnsMenu;
 	IBOutlet NSPopUpButtonCell *encodingPopupCell;
 
-	SPMySQLConnection *mySQLConnection;
+	SPPostgresConnection *postgresConnection;
 	
 	SPTableFieldValidation *fieldValidation;
 
@@ -127,8 +127,8 @@
 - (IBAction)closeSheet:(id)sender;
 
 // Additional methods
-- (void)setConnection:(SPMySQLConnection *)theConnection;
-- (NSArray *)convertIndexResultToArray:(SPMySQLResult *)theResult;
+- (void)setConnection:(SPPostgresConnection *)theConnection;
+- (NSArray *)convertIndexResultToArray:(SPPostgresResult *)theResult;
 - (BOOL)saveRowOnDeselect;
 - (BOOL)addRowToDB;
 - (void)setAutoIncrementTo:(NSNumber *)value;

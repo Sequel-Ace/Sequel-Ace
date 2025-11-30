@@ -43,7 +43,7 @@
 #import "SPFunctions.h"
 
 #import <objc/message.h>
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 
 static SPNavigatorController *sharedNavigatorController = nil;
 
@@ -415,7 +415,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 
 	if (doc) {
 
-		SPMySQLConnection *theConnection = [doc getConnection];
+		SPPostgresConnection *theConnection = [doc getConnection];
 		if(!theConnection || ![theConnection isConnected]) return;
 
 		NSString *connectionID = [doc connectionID];
@@ -1104,7 +1104,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 		// Is a table?
 		if([pathComponents count] == 2) {
 			[pboard setString:[NSString stringWithFormat:@"CREATE TABLE IF NOT EXISTS %@ SELECT * FROM %@", 
-					[[pathComponents lastObject] backtickQuotedString],
+					[[pathComponents lastObject] postgresQuotedIdentifier],
 					[pathComponents componentsJoinedByPeriodAndBacktickQuoted]
 				] forType:SPNavigatorTableDataPasteboardDragType];
 		}

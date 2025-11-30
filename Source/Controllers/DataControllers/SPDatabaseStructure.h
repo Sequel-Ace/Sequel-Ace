@@ -28,14 +28,14 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-@class SPMySQLConnection;
+@class SPPostgresConnection;
 @class SPDatabaseDocument;
 
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 
-@interface SPDatabaseStructure : NSObject <SPMySQLConnectionDelegate> 
+@interface SPDatabaseStructure : NSObject <SPPostgresConnectionDelegate> 
 {
-	SPMySQLConnection *mySQLConnection;
+	SPPostgresConnection *postgresConnection;
 
 	NSMutableDictionary *structure;
 	NSMutableArray *allKeysofDbStructure;
@@ -50,10 +50,10 @@
 
 // Setup and teardown
 - (instancetype)initWithDelegate:(SPDatabaseDocument *)theDelegate;
-- (void)setConnectionToClone:(SPMySQLConnection *)aConnection;
+- (void)setConnectionToClone:(SPPostgresConnection *)aConnection;
 
 // Information
-- (SPMySQLConnection *)connection;
+- (SPPostgresConnection *)connection;
 - (SPDatabaseDocument *)delegate;
 
 // Structure retrieval from the server

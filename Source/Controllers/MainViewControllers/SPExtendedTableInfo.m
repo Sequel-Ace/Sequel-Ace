@@ -39,7 +39,7 @@
 #import "SPServerSupport.h"
 #import "sequel-ace-Swift.h"
 
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 
 static NSString *SPUpdateTableTypeNewType = @"SPUpdateTableTypeNewType";
 static NSString *SPUpdateTableTypeCurrentType = @"SPUpdateTableTypeCurrentType";
@@ -149,7 +149,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	if ([currentEncoding isEqualToString:newEncoding]) return;
 
 	// Alter table's character set encoding
-	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ CHARACTER SET = %@", [selectedTable backtickQuotedString], newEncoding]];
+	// [connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ CHARACTER SET = %@", [selectedTable postgresQuotedIdentifier], newEncoding]];
 
 	if (![connection queryErrored]) {
 		// Reload the table's data
@@ -174,7 +174,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	if ([currentCollation isEqualToString:newCollation]) return;
 
 	// Alter table's character set collation
-	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ COLLATE = %@", [selectedTable backtickQuotedString], newCollation]];
+	// [connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ COLLATE = %@", [selectedTable postgresQuotedIdentifier], newCollation]];
 
 	if (![connection queryErrored]) {
 		// Reload the table's data
@@ -315,12 +315,12 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		return;
 	}
 
-	NSArray *engines    = [databaseDataInstance getDatabaseStorageEngines];
-	NSArray *encodings  = [databaseDataInstance getDatabaseCharacterSetEncodings];
-	NSArray *collations = [databaseDataInstance getDatabaseCollationsForEncoding:[tableDataInstance tableEncoding]];
+	// Postgres doesn't support changing engines/encoding/collation per table easily via UI
+    [tableTypePopUpButton setEnabled:NO];
+    [tableEncodingPopUpButton setEnabled:NO];
+    [tableCollationPopUpButton setEnabled:NO];
 
-	NSString *storageEngine = [statusFields safeObjectForKey:SPMySQLEngineField];
-
+    /*
 	if ([engines count] > 0 && storageEngine) {
 
 		// Populate type popup button
@@ -349,6 +349,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	else {
 		[tableTypePopUpButton addItemWithTitle:NSLocalizedString(@"Not available", @"not available label")];
 	}
+    */
 
 	if (([encodings count] > 0) && ([tableDataInstance tableEncoding])) {
 		NSString *selectedTitle = @"";
@@ -557,7 +558,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		if (([currentComment isEqualToString:newComment] == NO && newComment.length > 0) ||(newComment.length == 0 && currentComment.length > 0) ) {
 																							
 			// Alter table's comment
-			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ COMMENT = %@", [selectedTable backtickQuotedString], [connection escapeAndQuoteString:newComment]]];
+			[connection queryString:[NSString stringWithFormat:@"COMMENT ON TABLE %@ IS %@", [selectedTable postgresQuotedIdentifier], [connection escapeAndQuoteString:newComment]]];
 
 			if (![connection queryErrored]) {
 				// Reload the table's data
@@ -641,7 +642,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 - (void)_changeCurrentTableTypeFrom:(NSString *)currentType to:(NSString *)newType
 {
 	// Alter table's storage type
-	[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ ENGINE = %@", [selectedTable backtickQuotedString], newType]];
+	// [connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ ENGINE = %@", [selectedTable postgresQuotedIdentifier], newType]];
 	
 	if ([connection queryErrored]) {
 

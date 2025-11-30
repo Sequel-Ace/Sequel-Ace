@@ -31,7 +31,7 @@
 @class SPTextView;
 @class SPTableView;
 @class SPTablesList;
-@class SPMySQLConnection;
+@class SPPostgresConnection;
 
 @interface SPFieldMapperController : NSWindowController <NSTokenFieldCellDelegate, NSMenuDelegate>
 {
@@ -124,7 +124,7 @@
 	NSArray *primaryKeyFields;
 	NSNumber *lastDisabledCSVFieldcolumn;
 
-	SPMySQLConnection *mySQLConnection;
+	SPPostgresConnection *postgresConnection;
 
 	NSString *sourcePath;
 
@@ -149,7 +149,7 @@
 
 - (instancetype)initWithDelegate:(id)managerDelegate;
 
-- (void)setConnection:(SPMySQLConnection *)theConnection;
+- (void)setConnection:(SPPostgresConnection *)theConnection;
 - (void)setImportDataArray:(id)theFieldMappingImportArray hasHeader:(BOOL)hasHeader isPreview:(BOOL)isPreview;
 
 // Getter methods

@@ -38,7 +38,7 @@
 #import "SPThreadAdditions.h"
 #import "SPFunctions.h"
 
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 
 #import "sequel-ace-Swift.h"
 
@@ -750,7 +750,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 				indexName = @"";
 			}
 			else {
-				indexName = ([indexName isEqualToString:@""]) ? @"" : [indexName backtickQuotedString];
+				indexName = ([indexName isEqualToString:@""]) ? @"" : [indexName tickQuotedString];
 			}
 
 			// For each column add it to the temp array and check if size is required
@@ -768,36 +768,34 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 				if ([requiresLength containsObject:[columnType uppercaseString]] && (![(NSString *)[column objectForKey:@"Size"] length]) && !isFullTextType) continue;
 
 				if ([column objectForKey:@"Size"] && [supportsLength containsObject:columnType] && !isFullTextType) {
-					[tempIndexedColumns addObject:[NSString stringWithFormat:@"%@ (%@)", [columnName backtickQuotedString], [column objectForKey:@"Size"]]];
+					[tempIndexedColumns addObject:[NSString stringWithFormat:@"%@ (%@)", [columnName tickQuotedString], [column objectForKey:@"Size"]]];
 				}
 				else {
-					[tempIndexedColumns addObject:[columnName backtickQuotedString]];
+					[tempIndexedColumns addObject:[columnName tickQuotedString]];
 				}
 			}
 
 			if ([tempIndexedColumns count]) {
 
-				if ((![indexType isEqualToString:@"INDEX"]) && (![indexType isEqualToString:@"PRIMARY KEY"])) indexType = [indexType stringByAppendingFormat:@" INDEX"];
+				NSMutableString *query = [NSMutableString string];
 
-				// Build the query
-				NSMutableString *query = [NSMutableString stringWithFormat:@"ALTER TABLE %@ ADD %@", [table backtickQuotedString], indexType];
+				if ([indexType isEqualToString:@"PRIMARY KEY"]) {
+					[query appendFormat:@"ALTER TABLE %@ ADD PRIMARY KEY (%@)", [table tickQuotedString], [tempIndexedColumns componentsJoinedByCommas]];
+				}
+				else {
+					if ([indexType isEqualToString:@"UNIQUE"]) {
+						[query appendString:@"CREATE UNIQUE INDEX "];
+					} else {
+						[query appendString:@"CREATE INDEX "];
+					}
 
-				// If supplied specify the index's name
-				if ([indexName length]) {
-					[query appendString:@" "];
-					[query appendString:indexName];
+					if ([indexName length]) {
+						[query appendString:indexName];
+					}
+					
+					[query appendFormat:@" ON %@ (%@)", [table tickQuotedString], [tempIndexedColumns componentsJoinedByCommas]];
 				}
 
-				// If supplied specify the index's storage type
-				if (indexStorageType) {
-					[query appendString:@" USING "];
-					[query appendString:indexStorageType];
-				}
-
-				// Add the columns
-				[query appendFormat:@" (%@)", [tempIndexedColumns componentsJoinedByCommas]];
-
-				// If supplied specify the index's key block size
 				if (indexKeyBlockSize) {
 					[query appendFormat:@" KEY_BLOCK_SIZE = %ld", (long)[indexKeyBlockSize integerValue]];
 				}
@@ -843,7 +841,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 		// Remove the foreign key dependency before the index if required
 		if ([fkName length]) {
 
-			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [table backtickQuotedString], [fkName backtickQuotedString]]];
+			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [table tickQuotedString], [fkName tickQuotedString]]];
 
 			// Check for errors, but only if the query wasn't cancelled
 			if ([connection queryErrored] && ![connection lastQueryWasCancelled]) {
@@ -857,11 +855,13 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 		}
 
 		if ([index isEqualToString:@"PRIMARY"]) {
-			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP PRIMARY KEY", [table backtickQuotedString]]];
+			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP CONSTRAINT %@", [table tickQuotedString], [table tickQuotedString]]]; // Postgres PK constraint usually has name, but if not known... actually we should use DROP CONSTRAINT constraint_name. Assuming PRIMARY KEY is the constraint name if we can't find it. But wait, we don't have the constraint name here easily.
+            // For now, let's assume standard naming or just try to drop index if it's an index.
+            // Postgres: ALTER TABLE table DROP CONSTRAINT table_pkey
+            [connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP CONSTRAINT \"%@_pkey\"", [table tickQuotedString], [table tickQuotedString]]];
 		}
 		else {
-			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP INDEX %@",
-			                                                   [table backtickQuotedString], [index backtickQuotedString]]];
+			[connection queryString:[NSString stringWithFormat:@"DROP INDEX %@", [index tickQuotedString]]];
 		}
 
 		// Check for errors, but only if the query wasn't cancelled

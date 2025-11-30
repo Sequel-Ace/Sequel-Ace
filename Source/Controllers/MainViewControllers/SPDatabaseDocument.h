@@ -43,7 +43,7 @@
 @class SPServerSupport;
 @class SPCustomQuery;
 @class SPDatabaseStructure;
-@class SPMySQLConnection;
+@class SPPostgresConnection;
 @class SPCharsetCollationHelper;
 @class SPGotoDatabaseController;
 @class SPCreateDatabaseInfo;
@@ -59,12 +59,12 @@
 #import "SPConstants.h"
 
 #import <WebKit/WebKit.h>
-#import <SPMySQL/SPMySQLConnectionDelegate.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 
 /**
  * The SPDatabaseDocument class controls the primary database view window.
  */
-@interface SPDatabaseDocument : NSObject <SPConnectionControllerDelegateProtocol, SPMySQLConnectionDelegate, NSTextFieldDelegate, NSToolbarDelegate, SPCountedObject, WebFrameLoadDelegate>
+@interface SPDatabaseDocument : NSObject <SPConnectionControllerDelegateProtocol, SPPostgresConnectionDelegate, NSTextFieldDelegate, NSToolbarDelegate, SPCountedObject, WebFrameLoadDelegate>
 {
 	// IBOutlets
 	IBOutlet SPTablesList *tablesListInstance;
@@ -154,7 +154,7 @@
 	NSInteger passwordSheetReturnCode;
 
 	// Master connection
-	SPMySQLConnection *mySQLConnection;
+	SPPostgresConnection *postgresConnection;
 
 	// Controllers
 	SPConnectionController *connectionController;
@@ -274,8 +274,8 @@
 - (void)initQueryEditorWithString:(NSString *)query;
 
 // Connection callback and methods
-- (void)setConnection:(SPMySQLConnection *)theConnection;
-- (SPMySQLConnection *)getConnection;
+- (void)setConnection:(SPPostgresConnection *)theConnection;
+- (SPPostgresConnection *)getConnection;
 
 // Database methods
 - (IBAction)chooseDatabase:(id)sender;

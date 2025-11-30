@@ -128,7 +128,7 @@
         NSDictionary *tableDetails = nil;
         
         // Determine whether the supplied table is actually a table or a view via the CREATE TABLE command, and get the table details
-        SPMySQLResult *queryResult = [connection queryString:[NSString stringWithFormat:@"SHOW CREATE TABLE %@", [[self csvTableName] backtickQuotedString]]];
+        SPMySQLResult *queryResult = [connection queryString:[NSString stringWithFormat:@"SHOW CREATE TABLE %@", [[self csvTableName] postgresQuotedIdentifier]]];
         [queryResult setReturnDataAsStrings:YES];
         
         if ([queryResult numberOfRows]) {
@@ -152,8 +152,8 @@
     
     // Make a streaming request for the data if the data array isn't set
     if ((![self csvDataArray]) && [self csvTableName]) {
-        totalRows		= [[connection getFirstFieldFromQuery:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [[self csvTableName] backtickQuotedString]]] integerValue];
-        streamingResult = [connection streamingQueryString:[NSString stringWithFormat:@"SELECT * FROM %@", [[self csvTableName] backtickQuotedString]] useLowMemoryBlockingStreaming:[self exportUsingLowMemoryBlockingStreaming]];
+        totalRows		= [[connection getFirstFieldFromQuery:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [[self csvTableName] postgresQuotedIdentifier]]] integerValue];
+        streamingResult = [connection streamingQueryString:[NSString stringWithFormat:@"SELECT * FROM %@", [[self csvTableName] postgresQuotedIdentifier]] useLowMemoryBlockingStreaming:[self exportUsingLowMemoryBlockingStreaming]];
     }
     
     // Detect and restore special characters being used as terminating or line end strings

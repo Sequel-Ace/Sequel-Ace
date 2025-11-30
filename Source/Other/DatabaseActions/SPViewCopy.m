@@ -44,13 +44,13 @@
 {
 	NSMutableString *createStatement = [[NSMutableString alloc] initWithString:[self _createViewStatementFor:view inDatabase:sourceDatabase]];
 	
-	NSString *search = [NSString stringWithFormat:@"VIEW %@", [view backtickQuotedString]];
+	NSString *search = [NSString stringWithFormat:@"VIEW %@", [view postgresQuotedIdentifier]];
 
 	NSRange range = [createStatement rangeOfString:search];
 	
 	if (range.location != NSNotFound) {
 		
-		NSUInteger replaced = [createStatement replaceOccurrencesOfString:search withString:[NSString stringWithFormat:@"VIEW %@.%@", [targetDatabase backtickQuotedString], [view backtickQuotedString]] options:0 range:range];
+		NSUInteger replaced = [createStatement replaceOccurrencesOfString:search withString:[NSString stringWithFormat:@"VIEW %@.%@", [targetDatabase postgresQuotedIdentifier], [view postgresQuotedIdentifier]] options:0 range:range];
 		
 		if (replaced != 1) {
 
@@ -58,8 +58,8 @@
 		}
 	
 		// Replace all occurrences of the old database name
-		[createStatement replaceOccurrencesOfString:[sourceDatabase backtickQuotedString]
-										 withString:[targetDatabase backtickQuotedString]
+		[createStatement replaceOccurrencesOfString:[sourceDatabase postgresQuotedIdentifier]
+										 withString:[targetDatabase postgresQuotedIdentifier]
 											options:0
 											  range:NSMakeRange(0, [createStatement length])];
 		
@@ -76,11 +76,18 @@
 
 - (NSString *)_createViewStatementFor:(NSString *)view inDatabase:(NSString *)sourceDatabase 
 {
-	NSString *createStatement = [NSString stringWithFormat:@"SHOW CREATE VIEW %@.%@", [sourceDatabase backtickQuotedString], [view backtickQuotedString]];
+	// Postgres way to get view definition
+	NSString *query = [NSString stringWithFormat:@"SELECT pg_get_viewdef('%@.%@', true)", [sourceDatabase postgresQuotedIdentifier], [view postgresQuotedIdentifier]];
 	
-	SPMySQLResult *theResult = [connection queryString:createStatement];
+	SPMySQLResult *theResult = [connection queryString:query];
 	
-	return [theResult numberOfRows] > 0 ? [[theResult getRowAsArray] objectAtIndex:1] : @"";
+	if ([theResult numberOfRows]) {
+		NSString *viewDef = [[theResult getRowAsArray] objectAtIndex:0];
+		// Construct CREATE VIEW statement
+		return [NSString stringWithFormat:@"CREATE VIEW %@.%@ AS %@", [sourceDatabase postgresQuotedIdentifier], [view postgresQuotedIdentifier], viewDef];
+	}
+	
+	return @"";
 }
 
 @end

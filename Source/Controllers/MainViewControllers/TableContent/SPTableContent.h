@@ -37,8 +37,8 @@
 @class SPDataStorage;
 @class SPTextView;
 @class SPFieldEditorController;
-@class SPMySQLConnection;
-@class SPMySQLStreamingResultStore;
+@class SPPostgresConnection;
+@class SPPostgresResult;
 @class SPTableData;
 @class SPDatabaseDocument;
 @class SPTablesList;
@@ -86,7 +86,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 
 	IBOutlet SPRuleFilterController *ruleFilterController;
 	IBOutlet SPFilterTableController *filterTableController;
-	SPMySQLConnection *mySQLConnection;
+	SPPostgresConnection *postgresConnection;
 
 	BOOL _mainNibLoaded;
 	BOOL isWorking;
@@ -209,10 +209,10 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 - (void)endDocumentTaskForTab:(NSNotification *)aNotification;
 
 // Additional methods
-- (void)setConnection:(SPMySQLConnection *)theConnection;
+- (void)setConnection:(SPPostgresConnection *)theConnection;
 - (void)clickLinkArrow:(SPTextAndLinkCell *)theArrowCell;
 - (void)clickLinkArrowTask:(SPTextAndLinkCell *)theArrowCell;
-- (void)updateResultStore:(SPMySQLStreamingResultStore *)theResultStore approximateRowCount:(NSUInteger)targetRowCount;
+- (void)updateResultStore:(SPPostgresResult *)theResultStore approximateRowCount:(NSUInteger)targetRowCount;
 - (BOOL)saveRowToTable;
 - (NSMutableString *)deriveQueryString;
 - (NSString *)argumentForRow:(NSInteger)row;

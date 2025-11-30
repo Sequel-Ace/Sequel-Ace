@@ -116,7 +116,7 @@
 {
     SPLog(@"_dropDatabase: %@", database);
 
-	[connection queryString:[NSString stringWithFormat:@"DROP DATABASE %@", [database backtickQuotedString]]];	
+	[connection queryString:[NSString stringWithFormat:@"DROP DATABASE %@", [database postgresQuotedIdentifier]]];	
 	
 	return ![connection queryErrored];
 }

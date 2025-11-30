@@ -33,7 +33,7 @@
 @class SPCustomQuery;
 @class SPTablesList;
 @class SPTableData;
-@class SPMySQLConnection;
+@class SPPostgresConnection;
 @class SPServerSupport;
 @class SPCSVExporter;
 @class SPXMLExporter;
@@ -174,7 +174,7 @@
 	/** 
 	 * Database connection
 	 */
-	SPMySQLConnection *connection;
+	SPPostgresConnection *connection;
 	SPServerSupport *serverSupport;
 	
 	/**
@@ -253,7 +253,7 @@
 /**
  * @property connection Database connection
  */
-@property(readwrite, strong) SPMySQLConnection *connection;
+@property(readwrite, strong) SPPostgresConnection *connection;
 @property(readwrite, strong) SPServerSupport *serverSupport;
 
 @property (readwrite, strong) NSData *appScopedBookmark;

@@ -84,7 +84,7 @@
 
 	[clause replaceOccurrencesOfRegex:@"(?<!\\\\)\\$BINARY " withString:(caseSensitive) ? @"BINARY " : @""];
 	[clause flushCachedRegexData];
-	[clause replaceOccurrencesOfRegex:@"(?<!\\\\)\\$CURRENT_FIELD" withString:(_currentField) ? [_currentField backtickQuotedString] : @""];
+	[clause replaceOccurrencesOfRegex:@"(?<!\\\\)\\$CURRENT_FIELD" withString:(_currentField) ? [_currentField postgresQuotedIdentifier] : @""];
 	[clause flushCachedRegexData];
 	
 	// Escape % sign for format insertion ie if number of arguments is greater than 0
@@ -113,7 +113,7 @@
 	NSMutableString *filterString = [NSMutableString string];
 
 	if(!suppressLeadingTablePlaceholder) {
-		[filterString appendFormat:@"%@ ",[_currentField backtickQuotedString]];
+		[filterString appendFormat:@"%@ ",[_currentField postgresQuotedIdentifier]];
 	}
 
 	NSUInteger numArgs = numberOfArguments;

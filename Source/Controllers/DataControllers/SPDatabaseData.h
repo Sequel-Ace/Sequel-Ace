@@ -29,7 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 @class SPServerSupport;
-@class SPMySQLConnection;
+@class SPPostgresConnection;
 
 /**
  * @class SPDatabaseData SPDatabaseData.h
@@ -55,7 +55,7 @@
 	NSMutableArray *characterSetEncodings;
 	NSMutableDictionary *cachedCollationsByEncoding;
 	
-	SPMySQLConnection *connection;
+	SPPostgresConnection *connection;
 	SPServerSupport *serverSupport;
 	
 	NSObject *charsetCollationLock;
@@ -64,7 +64,7 @@
 /**
  * @property connection The current database connection
  */
-@property (readwrite, strong) SPMySQLConnection *connection;
+@property (readwrite, strong) SPPostgresConnection *connection;
 
 /**
  * @property serverSupport The connection's associated SPServerSupport instance

@@ -46,7 +46,7 @@
 		if ([result length])
 			[result appendString: @", "];
 
-		[result appendString:[component backtickQuotedString]];
+		[result appendString:[component postgresQuotedIdentifier]];
 	}
 	return result;
 }
@@ -91,7 +91,7 @@
 		if ([result length])
 			[result appendString: @"."];
 
-		[result appendString:[component backtickQuotedString]];
+		[result appendString:[component postgresQuotedIdentifier]];
 	}
 	return result;
 }
@@ -107,7 +107,7 @@
 			[result appendString: @"."];
 
 		if (notFirst)
-			[result appendString:[component backtickQuotedString]];
+			[result appendString:[component postgresQuotedIdentifier]];
 
 		notFirst = YES;
 	}

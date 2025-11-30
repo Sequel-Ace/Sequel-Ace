@@ -28,11 +28,11 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-@class SPMySQLConnection;
+@class SPPostgresConnection;
 
 @interface SPServerVariablesController : NSWindowController 
 {
-	SPMySQLConnection *connection;
+	SPPostgresConnection *connection;
 
 	NSUserDefaults *prefs;
 	NSMutableArray *variables, *variablesFiltered;
@@ -43,7 +43,7 @@
 	IBOutlet NSSearchField *filterVariablesSearchField;
 }
 
-@property (readwrite, strong) SPMySQLConnection *connection;
+@property (readwrite, strong) SPPostgresConnection *connection;
 
 - (IBAction)copy:(id)sender;
 - (IBAction)copyServerVariableName:(id)sender;

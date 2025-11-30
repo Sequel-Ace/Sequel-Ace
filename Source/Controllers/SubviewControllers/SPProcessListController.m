@@ -34,7 +34,7 @@
 #import "SPDataCellFormatter.h"
 #import "SPThreadAdditions.h"
 
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 
 #import "sequel-ace-Swift.h"
 
@@ -567,7 +567,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 		// Get processes
 		if ([connection isConnected]) {
 
-			SPMySQLResult *processList = (showFullProcessList) ? [connection queryString:@"SHOW FULL PROCESSLIST"] : [connection listProcesses];
+			SPPostgresResult *processList = [connection queryString:@"SELECT pid AS \"Id\", usename AS \"User\", client_addr AS \"Host\", datname AS \"db\", state AS \"Command\", EXTRACT(EPOCH FROM (NOW() - query_start))::int AS \"Time\", state AS \"State\", query AS \"Info\" FROM pg_stat_activity"];
 
 			[processList setReturnDataAsStrings:YES];
 
@@ -575,7 +575,6 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 
 			for (i = 0; i < [processList numberOfRows]; i++)
 			{
-				//SPMySQL.framewokr currently returns numbers as NSString, which will break sorting of numbers in this case.
 				NSMutableDictionary *rowsFixed = [[processList getRowAsDictionary] mutableCopy];
 
 				// The ID can be a 64-bit value on 64-bit servers
@@ -594,10 +593,6 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 					[rowsFixed setObject:num forKey:@"Time"];
 				}
 
-				// This is pretty bad from a performance standpoint, but we must not
-				// interfere with the NSTableView's reload cycle and there is no way
-				// to know when it starts/ends. We only know it will happen on the
-				// main thread, so we have to interlock with that.
 				[[processes onMainThread] addObject:[rowsFixed copy]];
 			}
 		}
@@ -613,16 +608,11 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 - (void)_killProcessQueryWithId:(long long)processId
 {
 	// Kill the query
-	if ([[connection serverVersionString] rangeOfString:@"TiDB"].location != NSNotFound) {
-		[connection queryString:[NSString stringWithFormat:@"KILL TIDB QUERY %lld", processId]];
-	}
-	else {
-		[connection queryString:[NSString stringWithFormat:@"KILL QUERY %lld", processId]];
-	}
+    [connection queryString:[NSString stringWithFormat:@"SELECT pg_cancel_backend(%lld)", processId]];
 	
 	// Check for errors
 	if ([connection queryErrored]) {
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to kill query", @"error killing query message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@", @"error killing query informative message"), processId, [connection lastErrorMessage]] callback:nil];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to kill query", @"error killing query message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while attempting to kill the query associated with connection %lld.\n\nPostgres said: %@", @"error killing query informative message"), processId, [connection lastErrorMessage]] callback:nil];
 	}
 	
 	// Refresh the process list
@@ -635,16 +625,11 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 - (void)_killProcessConnectionWithId:(long long)processId
 {
 	// Kill the connection
-	if ([[connection serverVersionString] rangeOfString:@"TiDB"].location != NSNotFound) {
-		[connection queryString:[NSString stringWithFormat:@"KILL TIDB CONNECTION %lld", processId]];
-	}
-	else {
-		[connection queryString:[NSString stringWithFormat:@"KILL CONNECTION %lld", processId]];
-	}
+    [connection queryString:[NSString stringWithFormat:@"SELECT pg_terminate_backend(%lld)", processId]];
 	
 	// Check for errors
 	if ([connection queryErrored]) {
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to kill connection", @"error killing connection message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while attempting to kill connection %lld.\n\nMySQL said: %@", @"error killing query informative message"), processId, [connection lastErrorMessage]] callback:nil];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to kill connection", @"error killing connection message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while attempting to kill connection %lld.\n\nPostgres said: %@", @"error killing query informative message"), processId, [connection lastErrorMessage]] callback:nil];
 	}
 	
 	// Refresh the process list

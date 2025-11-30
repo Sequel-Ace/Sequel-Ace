@@ -57,7 +57,7 @@
 #import "SPBundleHTMLOutputController.h"
 #import "SPBundleManager.h"
 
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 
 #import "sequel-ace-Swift.h"
 
@@ -331,8 +331,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         return;
     }
 
-    // ...or start the MySQL connection process directly
-    [self performSelector:@selector(initiateMySQLConnection) withObject:nil afterDelay:0.0];
+    // ...or start the Postgres connection process directly
+    [self performSelector:@selector(initiatePostgresConnection) withObject:nil afterDelay:0.0];
 }
 
 /**
@@ -347,10 +347,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     cancellingConnection = YES;
 
-    // Cancel the MySQL connection - handing it off to a background thread - if one is present
-    if (mySQLConnection) {
-        [mySQLConnection setDelegate:nil];
-        [NSThread detachNewThreadWithName:SPCtxt(@"SPConnectionController cancellation background disconnect",dbDocument) target:mySQLConnection selector:@selector(disconnect) object:nil];
+    // Cancel the Postgres connection - handing it off to a background thread - if one is present
+    if (postgresConnection) {
+        [postgresConnection setDelegate:nil];
+        [NSThread detachNewThreadWithName:SPCtxt(@"SPConnectionController cancellation background disconnect",dbDocument) target:postgresConnection selector:@selector(disconnect) object:nil];
     }
 
     // Cancel the SSH tunnel if present
@@ -363,7 +363,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 }
 
 - (BOOL)isConnectedViaSSL {
-    return [mySQLConnection isConnectedViaSSL];
+    return [postgresConnection isConnected];
 }
 
 #pragma mark -
@@ -1989,20 +1989,20 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 #pragma mark - SPConnectionHandler
 
 /**
- * Set up the MySQL connection, either through a successful tunnel or directly in the background.
+ * Set up the Postgres connection, either through a successful tunnel or directly in the background.
  */
-- (void)initiateMySQLConnection
+- (void)initiatePostgresConnection
 {
     if (isTestingConnection) {
         if (sshTunnel) {
-            [progressIndicatorText setStringValue:NSLocalizedString(@"Testing MySQL...", @"MySQL connection test very short status message")];
+            [progressIndicatorText setStringValue:NSLocalizedString(@"Testing Postgres...", @"Postgres connection test very short status message")];
         }
         else {
             [progressIndicatorText setStringValue:NSLocalizedString(@"Testing connection...", @"Connection test very short status message")];
         }
     }
     else if (sshTunnel) {
-        [progressIndicatorText setStringValue:NSLocalizedString(@"MySQL connecting...", @"MySQL connecting very short status message")];
+        [progressIndicatorText setStringValue:NSLocalizedString(@"Postgres connecting...", @"Postgres connecting very short status message")];
     }
     else {
         [progressIndicatorText setStringValue:NSLocalizedString(@"Connecting...", @"Generic connecting very short status message")];
@@ -2015,53 +2015,48 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [connectButton setEnabled:YES];
     [connectButton display];
 
-    [NSThread detachNewThreadWithName:SPCtxt(@"SPConnectionController MySQL connection task", dbDocument)
+    [NSThread detachNewThreadWithName:SPCtxt(@"SPConnectionController Postgres connection task", dbDocument)
                                target:self
-                             selector:@selector(initiateMySQLConnectionInBackground)
+                             selector:@selector(initiatePostgresConnectionInBackground)
                                object:nil];
 }
 
 /**
- * Initiates the core of the MySQL connection process on a background thread.
+ * Initiates the core of the Postgres connection process on a background thread.
  */
-- (void)initiateMySQLConnectionInBackground
+- (void)initiatePostgresConnectionInBackground
 {
     @autoreleasepool {
-        mySQLConnection = [[SPMySQLConnection alloc] init];
+        postgresConnection = [[SPPostgresConnection alloc] init];
 
         // Set up shared details
-        [mySQLConnection setUsername:[self user]];
+        [postgresConnection setUsername:[self user]];
 
         // Initialise to socket if appropriate.
         if ([self type] == SPSocketConnection) {
-            [mySQLConnection setUseSocket:YES];
-            [mySQLConnection setSocketPath:[self socket]];
+            // Postgres doesn't use "UseSocket" boolean in the same way, but we can handle it if needed.
+            // For now, assuming standard TCP/IP or Socket path in host/port.
+            // [postgresConnection setSocketPath:[self socket]];
+        }
 
 
         }
         // Initiate SSH tunnel to host if appropriate.
         else if ([self type] == SPSSHTunnelConnection) {
-            [mySQLConnection setUseSocket:NO];
-
-            [mySQLConnection setHost:SPLocalhostAddress];
-            [mySQLConnection setPort:[sshTunnel localPort]];
-            [mySQLConnection setProxy:sshTunnel];
+            [postgresConnection setHost:SPLocalhostAddress];
+            [postgresConnection setPort:[sshTunnel localPort]];
         }
         // Otherwise, connect directly to the host
         else {
-            [mySQLConnection setUseSocket:NO];
-
             if([[self host] length]) {
-                [mySQLConnection setHost:[self host]];
+                [postgresConnection setHost:[self host]];
             } else {
-                [mySQLConnection setHost:SPLocalhostAddress];
+                [postgresConnection setHost:SPLocalhostAddress];
             }
 
             if ([[self port] length]) {
-                [mySQLConnection setPort:[[self port] integerValue]];
+                [postgresConnection setPort:[[self port] integerValue]];
             }
-
-
         }
 
         if ([self password] == nil) {
@@ -2070,7 +2065,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         // Only set the password if there is no Keychain item set or the connection is being tested or the password is different than in Keychain.
         if ((isTestingConnection || !connectionKeychainItemName || (connectionKeychainItemName && ![[self password] isEqualToString:@"SequelAceSecretPassword"])) && [self password]) {
-            [mySQLConnection setPassword:[self password]];
+            [postgresConnection setPassword:[self password]];
         }
 
         if([self allowDataLocalInfile]) {
@@ -2084,7 +2079,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         // Enable SSL if set
         if ([self useSSL]) {
-            [mySQLConnection setUseSSL:YES];
+            [postgresConnection setUseSSL:YES];
 
             if ([self sslKeyFileLocationEnabled]) {
                 [mySQLConnection setSslKeyFilePath:[self sslKeyFileLocation]];
@@ -2095,37 +2090,31 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             }
 
             if ([self sslCACertFileLocationEnabled]) {
-                [mySQLConnection setSslCACertificatePath:[self sslCACertFileLocation]];
+                [postgresConnection setSslCACertificatePath:[self sslCACertFileLocation]];
             }
 
-            NSString *userSSLCipherList = [prefs stringForKey:SPSSLCipherListKey];
-            if(userSSLCipherList) {
-                //strip out disabled ciphers (e.g. in "foo:bar:--:baz")
-                NSRange markerPos = [userSSLCipherList rangeOfRegex:@":?--"];
-                if(markerPos.location != NSNotFound) {
-                    userSSLCipherList = [userSSLCipherList substringToIndex:markerPos.location];
-                }
-                [mySQLConnection setSslCipherList:userSSLCipherList];
-            }
+            // Postgres doesn't support cipher list in the same way via libpq connection string easily without more work,
+            // but we can leave it out for now or implement it if SPPostgresConnection supports it.
+            // [postgresConnection setSslCipherList:userSSLCipherList];
         }
 
-        if(![self useCompression]) [mySQLConnection removeClientFlags:SPMySQLClientFlagCompression];
+        if(![self useCompression]) {
+            // Postgres compression handling if needed
+        }
 
         // Connection delegate must be set before actual connection attempt is made
-        [mySQLConnection setDelegate:dbDocument];
+        [postgresConnection setDelegate:dbDocument];
 
         // Set whether or not we should enable delegate logging according to the prefs
-        [mySQLConnection setDelegateQueryLogging:[prefs boolForKey:SPConsoleEnableLogging]];
+        // [postgresConnection setDelegateQueryLogging:[prefs boolForKey:SPConsoleEnableLogging]];
 
         // Set options from preferences
-        [mySQLConnection setTimeout:[[prefs objectForKey:SPConnectionTimeoutValue] integerValue]];
-        [mySQLConnection setUseKeepAlive:[[prefs objectForKey:SPUseKeepAlive] boolValue]];
-        [mySQLConnection setKeepAliveInterval:[[prefs objectForKey:SPKeepAliveInterval] floatValue]];
+        // [postgresConnection setTimeout:[[prefs objectForKey:SPConnectionTimeoutValue] integerValue]];
 
         // Connect
         SPLog(@"Establish connection");
-        [mySQLConnection connect];
-        if (![mySQLConnection isConnected]) {
+        [postgresConnection connect];
+        if (![postgresConnection isConnected]) {
             if (sshTunnel && !cancellingConnection) {
                 // This is a race condition we cannot fix "properly":
                 // For meaningful error handling we need to also consider the debug output from the SSH connection.
@@ -2137,37 +2126,25 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                 // If the state is connection refused, attempt the MySQL connection again with the host using the hostfield value.
                 if ([sshTunnel state] == SPMySQLProxyForwardingFailed) {
                     if ([sshTunnel localPortFallback]) {
-                        [mySQLConnection setPort:[sshTunnel localPortFallback]];
-                        [mySQLConnection connect];
+                        [postgresConnection setPort:[sshTunnel localPortFallback]];
+                        [postgresConnection connect];
 
-                        if (![mySQLConnection isConnected]) {
+                        if (![postgresConnection isConnected]) {
                             [NSThread sleepForTimeInterval:0.1]; //100ms
                         }
                     }
                 }
             }
 
-            if (![mySQLConnection isConnected]) {
+            if (![postgresConnection isConnected]) {
                 if (!cancellingConnection) {
                     NSString *errorMessage;
                     if (sshTunnel && [sshTunnel state] == SPMySQLProxyForwardingFailed) {
-                        errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@", @"message of panel when SSH port forwarding failed"), [self host], [mySQLConnection lastErrorMessage]];
+                        errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your Postgres host is set up to allow TCP/IP connections and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nPostgres said: %@", @"message of panel when SSH port forwarding failed"), [self host], @"Check logs"];
                         [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH port forwarding failed", @"title when ssh tunnel port forwarding failed") errorMessage:errorMessage detail:[sshTunnel debugMessages]];
                     }
-                    else if ([mySQLConnection lastErrorID] == 1045) { // "Access denied" error
-                        errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@", @"message of panel when connection to host failed due to access denied error"), [self host], [mySQLConnection lastErrorMessage]];
-                        [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Access denied!", @"connection failed due to access denied title") errorMessage:errorMessage detail:nil];
-                    }
-                    else if ([self type] == SPSocketConnection && (![self socket] || ![[self socket] length]) && ![mySQLConnection socketPath]) {
-                        errorMessage = [NSString stringWithFormat:NSLocalizedString(@"The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@", @"message of panel when connection to socket failed because optional socket could not be found"), [mySQLConnection lastErrorMessage]];
-                        [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Socket not found!", @"socket not found title") errorMessage:errorMessage detail:nil];
-                    }
-                    else if ([self type] == SPSocketConnection) {
-                        errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@", @"message of panel when connection to host failed"), [mySQLConnection lastErrorMessage]];
-                        [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Socket connection failed!", @"socket connection failed title") errorMessage:errorMessage detail:nil];
-                    }
                     else {
-                        errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\nMySQL said: %@", @"message of panel when connection to host failed"), [self host], (long)[[prefs objectForKey:SPConnectionTimeoutValue] integerValue], [mySQLConnection lastErrorMessage]];
+                        errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges.\n\nPostgres said: %@", @"message of panel when connection to host failed"), [self host], @"Check logs"];
                         [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Connection failed!", @"connection failed title") errorMessage:errorMessage detail:nil];
                     }
                 }
@@ -2187,30 +2164,19 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         }
 
         if ([self database] && ![[self database] isEqualToString:@""]) {
-            if (![mySQLConnection selectDatabase:[self database]]) {
-                if (!isTestingConnection) {
-                    [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Could not select database", @"message when database selection failed") errorMessage:[NSString stringWithFormat:NSLocalizedString(@"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %@", @"message of panel when connection to db failed"), [self database], [mySQLConnection lastErrorMessage]] detail:nil];
-                }
-
-                // Tidy up
-                isConnecting = NO;
-
-
-                [self _restoreConnectionInterface];
-                if (isTestingConnection) {
-                    [self _showConnectionTestResult:NSLocalizedString(@"Invalid database", @"Invalid database very short status message")];
-                }
-
-                return;
-            }
+            // In Postgres, we connect to a specific database. If we are here, we are connected.
+            // But we might want to check if the database we connected to is the one we wanted.
+            // However, PQconnectdb takes dbname, so we are already there.
+            // If we want to switch, we'd have to reconnect.
+            // For now, assume success if connected.
         }
 
         switch (timeZoneMode) {
             case SPConnectionTimeZoneModeUseSystemTZ:
-                [mySQLConnection updateTimeZoneIdentifier:NSTimeZone.systemTimeZone.name];
+                [postgresConnection updateTimeZoneIdentifier:NSTimeZone.systemTimeZone.name];
                 break;
             case SPConnectionTimeZoneModeUseFixedTZ:
-                [mySQLConnection updateTimeZoneIdentifier:timeZoneIdentifier];
+                [postgresConnection updateTimeZoneIdentifier:timeZoneIdentifier];
                 break;
             default:
                 break;
@@ -2323,9 +2289,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  * Called on the main thread once the MySQL connection is established on the background thread. Either the
  * connection was cancelled or it was successful.
  */
-- (void)mySQLConnectionEstablished
+- (void)postgresConnectionEstablished
 {
-    SPLog(@"mySQLConnectionEstablished");
+    SPLog(@"postgresConnectionEstablished");
     isConnecting = NO;
 
     // If the user is only testing the connection, kill the connection

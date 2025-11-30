@@ -32,7 +32,7 @@
 @class SPTableData;
 @class SPDatabaseData;
 @class SPTablesList;
-@class SPMySQLConnection;
+@class SPPostgresConnection;
 @class SPDatabaseDocument;
 
 @interface SPExtendedTableInfo : NSObject
@@ -65,10 +65,10 @@
 	
 	NSString *selectedTable;
 	
-	SPMySQLConnection *connection;
+	SPPostgresConnection *connection;
 }
 
-@property (readwrite, strong) SPMySQLConnection *connection;
+@property (readwrite, strong) SPPostgresConnection *connection;
 
 // IBAction methods
 - (IBAction)reloadTable:(id)sender;

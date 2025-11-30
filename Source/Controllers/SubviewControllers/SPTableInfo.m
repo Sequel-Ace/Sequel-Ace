@@ -40,7 +40,7 @@
 
 @interface SPTableInfo ()
 
-- (NSString *)_getUserDefinedDateStringFromMySQLDate:(NSString *)mysqlDate;
+- (NSString *)_getUserDefinedDateStringFromDate:(NSString *)dateString;
 
 @end
 
@@ -173,14 +173,14 @@
 			if (![[tableStatus objectForKey:@"Create_time"] isNSNull]) {
 
 				// Add the creation date to the infoTable
-				[info safeAddObject:[NSString stringWithFormat:NSLocalizedString(@"created: %@", @"Table Info Section : time+date table was created at"), [self _getUserDefinedDateStringFromMySQLDate:[tableStatus objectForKey:@"Create_time"]]]];
+				[info safeAddObject:[NSString stringWithFormat:NSLocalizedString(@"created: %@", @"Table Info Section : time+date table was created at"), [self _getUserDefinedDateStringFromDate:[tableStatus objectForKey:@"Create_time"]]]];
 			}
 
 			// Check for 'Update_time' == NULL - InnoDB tables don't have an update time
 			if (![[tableStatus objectForKey:@"Update_time"] isNSNull]) {
 
 				// Add the update date to the infoTable
-				[info safeAddObject:[NSString stringWithFormat:NSLocalizedString(@"updated: %@", @"updated: %@"), [self _getUserDefinedDateStringFromMySQLDate:[tableStatus objectForKey:@"Update_time"]]]];
+				[info safeAddObject:[NSString stringWithFormat:NSLocalizedString(@"updated: %@", @"updated: %@"), [self _getUserDefinedDateStringFromDate:[tableStatus objectForKey:@"Update_time"]]]];
 			}
 			
 			// Check for 'Engine' == NULL - should not happen (at least not with MySQL)
@@ -281,14 +281,14 @@
 			if (![[tableStatus objectForKey:@"CREATED"] isNSNull]) {
 
 				// Add the creation date to the infoTable
-				[info addObject:[NSString stringWithFormat:NSLocalizedString(@"created: %@", @"created: %@"), [self _getUserDefinedDateStringFromMySQLDate:[tableStatus objectForKey:@"CREATED"]]]];
+				[info addObject:[NSString stringWithFormat:NSLocalizedString(@"created: %@", @"created: %@"), [self _getUserDefinedDateStringFromDate:[tableStatus objectForKey:@"CREATED"]]]];
 			}
 
 			// Check for 'LAST_ALTERED'
 			if (![[tableStatus objectForKey:@"LAST_ALTERED"] isNSNull]) {
 
 				// Add the update date to the infoTable
-				[info addObject:[NSString stringWithFormat:NSLocalizedString(@"updated: %@", @"updated: %@"), [self _getUserDefinedDateStringFromMySQLDate:[tableStatus objectForKey:@"LAST_ALTERED"]]]];
+				[info addObject:[NSString stringWithFormat:NSLocalizedString(@"updated: %@", @"updated: %@"), [self _getUserDefinedDateStringFromDate:[tableStatus objectForKey:@"LAST_ALTERED"]]]];
 			}
 
 			// Check for 'SQL ACCESS' and deterministic
@@ -505,9 +505,9 @@
 #pragma mark -
 #pragma mark Private API
 
-- (NSString *)_getUserDefinedDateStringFromMySQLDate:(NSString *)mysqlDate {
+- (NSString *)_getUserDefinedDateStringFromDate:(NSString *)dateString {
 	// Convert our string date from the result to an NSDate
-	NSDate *updateDate = [NSDateFormatter.naturalLanguageFormatter dateFromString:mysqlDate];
+	NSDate *updateDate = [NSDateFormatter.naturalLanguageFormatter dateFromString:dateString];
 	return [NSDateFormatter.shortStyleFormatter stringFromDate:updateDate];
 }
 

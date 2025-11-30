@@ -32,7 +32,7 @@
 #import "SPDatabaseDocument.h"
 #import "SPAppController.h"
 
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 
 #import "sequel-ace-Swift.h"
 
@@ -270,7 +270,7 @@
 - (void)_getDatabaseServerVariables
 {
 	// Get variables
-	SPMySQLResult *serverVariables = [connection queryString:@"SHOW VARIABLES"];
+	SPPostgresResult *serverVariables = [connection queryString:@"SELECT name AS \"Variable_name\", setting AS \"Value\" FROM pg_settings"];
 	
 	[serverVariables setReturnDataAsStrings:YES];
 	

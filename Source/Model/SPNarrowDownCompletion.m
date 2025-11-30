@@ -1095,7 +1095,7 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 
 			NSString *path = [[[selectedItem objectForKey:@"path"] componentsSeparatedByString:SPUniqueSchemaDelimiter] componentsJoinedByPeriodAndBacktickQuotedAndIgnoreFirst];
 			// Check if path's db name is the current selected db name
-			NSRange r = [path rangeOfString:[currentDb backtickQuotedString] options:NSCaseInsensitiveSearch range:NSMakeRange(0, [[currentDb backtickQuotedString] length])];
+			NSRange r = [path rangeOfString:[currentDb postgresQuotedIdentifier] options:NSCaseInsensitiveSearch range:NSMakeRange(0, [[currentDb postgresQuotedIdentifier] length])];
 			theCharRange = theParseRange;
 			backtickMode = 0; // suppress move the caret one step rightwards
 			if(path && [path length] && r.length) {
@@ -1109,7 +1109,7 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 			if([selectedItem objectForKey:@"isRef"]) {
 				backtickMode = 100; // suppress move the caret one step rightwards
 				if ([prefs boolForKey:SPCustomQueryEditorCompleteWithBackticks]) {
-					[self insert_text:[candidateMatch backtickQuotedString]];
+					[self insert_text:[candidateMatch postgresQuotedIdentifier]];
 				}
 				else {
 					[self insert_text:candidateMatch];

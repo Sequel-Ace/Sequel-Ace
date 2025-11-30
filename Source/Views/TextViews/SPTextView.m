@@ -51,7 +51,7 @@
 
 #import "sequel-ace-Swift.h"
 
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 
 #pragma mark -
 #pragma mark attribute definition
@@ -243,9 +243,9 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
     [prefs addObserver:self forKeyPath:SPCustomQueryAutoComplete options:NSKeyValueObservingOptionNew context:NULL];
 }
 
-- (void) setConnection:(SPMySQLConnection *)theConnection withVersion:(NSInteger)majorVersion
+- (void) setConnection:(SPPostgresConnection *)theConnection withVersion:(NSInteger)majorVersion
 {
-	mySQLConnection = theConnection;
+	postgresConnection = theConnection;
 	mySQLmajorVersion = majorVersion;
 }
 
@@ -400,7 +400,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 	}
 
-	if(!isDictMode && [mySQLConnection isConnected])
+	if(!isDictMode && [postgresConnection isConnected])
 	{
 		// Add structural db/table/field data to completions list or fallback to gathering SPTablesList data
 
@@ -445,9 +445,9 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 			// Put information_schema and/or mysql db at the end if not selected
 			// 5.5.3+ also has performance_schema
-			NSString* mysql_id = [NSString stringWithFormat:@"%@%@%@", connectionID, SPUniqueSchemaDelimiter, SPMySQLDatabase];
-			NSString* inf_id   = [NSString stringWithFormat:@"%@%@%@", connectionID, SPUniqueSchemaDelimiter, SPMySQLInformationSchemaDatabase];
-			NSString* perf_id  = [NSString stringWithFormat:@"%@%@%@", connectionID, SPUniqueSchemaDelimiter, SPMySQLPerformanceSchemaDatabase];
+			NSString* mysql_id = [NSString stringWithFormat:@"%@%@%@", connectionID, SPUniqueSchemaDelimiter, @"postgres"];
+			NSString* inf_id   = [NSString stringWithFormat:@"%@%@%@", connectionID, SPUniqueSchemaDelimiter, @"information_schema"];
+			NSString* perf_id  = [NSString stringWithFormat:@"%@%@%@", connectionID, SPUniqueSchemaDelimiter, @"pg_catalog"];
 
 			if(currentDb && ![currentDb isEqualToString:mysql_id] && [sortedDbs containsObject:mysql_id]) {
 				[sortedDbs removeObject:mysql_id];
@@ -1488,7 +1488,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		// if (tablesListInstance && [tablesListInstance selectedDatabase])
 		// 	currentDb = [tablesListInstance selectedDatabase];
 		//
-		// NSDictionary *dbs = [NSDictionary dictionaryWithDictionary:[[mySQLConnection getDbStructure] objectForKey:connectionID]];
+		// NSDictionary *dbs = [NSDictionary dictionaryWithDictionary:[[postgresConnection getDbStructure] objectForKey:connectionID]];
 		//
 		// if(currentDb != nil && dbs != nil && [dbs count] && [dbs objectForKey:currentDb]) {
 		// 	NSArray *allTables = [[dbs objectForKey:currentDb] allKeys];
@@ -1875,7 +1875,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 					r = [theHintString rangeOfRegex:@"(?<!\\\\)\\$SP_SELECTED_TABLE"];
 					if(r.length) {
 						if(currentTable && [currentTable length])
-							[theHintString replaceCharactersInRange:r withString:[currentTable backtickQuotedString]];
+							[theHintString replaceCharactersInRange:r withString:[currentTable postgresQuotedIdentifier]];
 						else
 							[theHintString replaceCharactersInRange:r withString:@"<table>"];
 					}
@@ -1886,7 +1886,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 					r = [theHintString rangeOfRegex:@"(?<!\\\\)\\$SP_SELECTED_DATABASE"];
 					if(r.length) {
 						if(currentDb && [currentDb length])
-							[theHintString replaceCharactersInRange:r withString:[currentDb backtickQuotedString]];
+							[theHintString replaceCharactersInRange:r withString:[currentDb postgresQuotedIdentifier]];
 						else
 							[theHintString replaceCharactersInRange:r withString:@"<database>"];
 					}

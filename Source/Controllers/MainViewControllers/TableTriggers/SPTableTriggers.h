@@ -29,7 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 @class SPTableView;
-@class SPMySQLConnection;
+@class SPPostgresConnection;
 @class SPDatabaseDocument;
 
 @interface SPTableTriggers : NSObject 
@@ -55,7 +55,7 @@
 	IBOutlet NSBox         *addTriggerTableBox;
 	IBOutlet NSButton      *confirmAddTriggerButton;
 	
-	SPMySQLConnection *connection;
+	SPPostgresConnection *connection;
 	
 	NSMutableArray *triggerData;
 	NSUserDefaults *prefs;
@@ -66,7 +66,7 @@
 	NSDictionary *editedTrigger;
 }
 
-@property (readwrite, strong) SPMySQLConnection *connection;
+@property (readwrite, strong) SPPostgresConnection *connection;
 
 - (void)loadTriggers;
 - (void)resetInterface;

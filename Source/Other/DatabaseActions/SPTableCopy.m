@@ -45,11 +45,12 @@
 	NSString *createTableResult = [self _createTableStatementFor:tableName inDatabase:sourceDatabase];
 	
 	if ([createTableResult hasPrefix:@"CREATE TABLE"]) {
-		NSMutableString *createTableStatement = [[NSMutableString alloc] initWithString:createTableResult];
-		
-		// Add the target DB name and the separator dot after "CREATE TABLE ".
-		[createTableStatement insertString:@"." atIndex:13];
-		[createTableStatement insertString:[targetDatabase backtickQuotedString] atIndex:13];
+		// Postgres specific copy structure
+		NSString *createTableStatement = [NSString stringWithFormat:@"CREATE TABLE %@.%@ (LIKE %@.%@ INCLUDING ALL)",
+										  [targetDatabase postgresQuotedIdentifier],
+										  [tableName postgresQuotedIdentifier],
+										  [sourceDatabase postgresQuotedIdentifier],
+										  [tableName postgresQuotedIdentifier]];
 
 		[connection queryString:createTableStatement];		
 		
@@ -68,10 +69,10 @@
 	if (structureCopySuccess && copyWithContent) {
 		
 		NSString *copyDataStatement = [NSString stringWithFormat:@"INSERT INTO %@.%@ SELECT * FROM %@.%@", 
-									   [targetDatabase backtickQuotedString],
-									   [tableName backtickQuotedString],
-									   [sourceDatabase backtickQuotedString],
-									   [tableName backtickQuotedString]
+									   [targetDatabase postgresQuotedIdentifier],
+									   [tableName postgresQuotedIdentifier],
+									   [sourceDatabase postgresQuotedIdentifier],
+									   [tableName postgresQuotedIdentifier]
 									   ];
 		
 		[connection queryString:copyDataStatement];		
@@ -125,12 +126,31 @@
 }
 
 - (BOOL)moveTable:(NSString *)tableName from:(NSString *)sourceDatabase to:(NSString *)targetDatabase
-{	
-	NSString *moveStatement = [NSString stringWithFormat:@"RENAME TABLE %@.%@ TO %@.%@", 
-							   [sourceDatabase backtickQuotedString],
-							   [tableName backtickQuotedString],
-							   [targetDatabase backtickQuotedString],
-							   [tableName backtickQuotedString]];
+{
+	NSString *moveStatement = [NSString stringWithFormat:@"ALTER TABLE %@.%@ RENAME TO %@", 
+							   [sourceDatabase postgresQuotedIdentifier],
+							   [tableName postgresQuotedIdentifier],
+							   [tableName postgresQuotedIdentifier]];
+	// Postgres RENAME TO only takes the new name, not the schema.
+	// If we want to move to another schema, we use SET SCHEMA.
+	// But here it seems we are renaming across databases? Postgres databases are isolated.
+	// If sourceDatabase and targetDatabase are different, we can't easily move tables between them in Postgres unless they are schemas in the same DB.
+	// Assuming they are schemas for now (since Sequel Ace treats schemas as databases often).
+	
+	if (![sourceDatabase isEqualToString:targetDatabase]) {
+		moveStatement = [NSString stringWithFormat:@"ALTER TABLE %@.%@ SET SCHEMA %@",
+						 [sourceDatabase postgresQuotedIdentifier],
+						 [tableName postgresQuotedIdentifier],
+						 [targetDatabase postgresQuotedIdentifier]];
+	} else {
+		// Just renaming in same schema? The method signature implies moving/renaming.
+		// If just renaming:
+		// moveStatement = [NSString stringWithFormat:@"ALTER TABLE %@.%@ RENAME TO %@", ...];
+		// But the arguments are sourceDatabase and targetDatabase.
+		// If they are same, it's a rename? But tableName is same in args?
+		// The method is moveTable:from:to:
+		// If tableName is same, and db is different, it's a move.
+	}
 
     SPLog(@"moveTable from : %@, to: %@", sourceDatabase, targetDatabase);
     SPLog(@"moveTable moveStatement: %@", moveStatement);
@@ -146,12 +166,12 @@
 - (NSString *)_createTableStatementFor:(NSString *)tableName inDatabase:(NSString *)sourceDatabase
 {
 
-    if([tableName respondsToSelector:@selector(backtickQuotedString)] == NO || [sourceDatabase respondsToSelector:@selector(backtickQuotedString)] == NO){
-        SPLog(@"_createTableStatementFor: tableName or sourceDatabase does not respond to selector: backtickQuotedString");
+    if([tableName respondsToSelector:@selector(postgresQuotedIdentifier)] == NO || [sourceDatabase respondsToSelector:@selector(postgresQuotedIdentifier)] == NO){
+        SPLog(@"_createTableStatementFor: tableName or sourceDatabase does not respond to selector: postgresQuotedIdentifier");
         return  nil;
     }
 
-	NSString *showCreateTableStatment = [NSString stringWithFormat:@"SHOW CREATE TABLE %@.%@", [sourceDatabase backtickQuotedString], [tableName backtickQuotedString]];
+	NSString *showCreateTableStatment = [NSString stringWithFormat:@"SHOW CREATE TABLE %@.%@", [sourceDatabase postgresQuotedIdentifier], [tableName postgresQuotedIdentifier]];
 	
 	SPMySQLResult *result = [connection queryString:showCreateTableStatment];
 	
