@@ -44,20 +44,20 @@
 static NSString *SPUpdateTableTypeNewType = @"SPUpdateTableTypeNewType";
 static NSString *SPUpdateTableTypeCurrentType = @"SPUpdateTableTypeCurrentType";
 
-// MySQL status field names
-static NSString *SPMySQLEngineField           = @"Engine";
-static NSString *SPMySQLRowFormatField        = @"Row_format";
-static NSString *SPMySQLRowsField             = @"Rows";
-static NSString *SPMySQLAverageRowLengthField = @"Avg_row_length";
-static NSString *SPMySQLDataLengthField       = @"Data_length";
-static NSString *SPMySQLMaxDataLengthField    = @"Max_data_length";
-static NSString *SPMySQLIndexLengthField      = @"Index_length";
-static NSString *SPMySQLDataFreeField         = @"Data_free";
-static NSString *SPMySQLAutoIncrementField    = @"Auto_increment";
-static NSString *SPMySQLCreateTimeField       = @"Create_time";
-static NSString *SPMySQLUpdateTimeField       = @"Update_time";
-static NSString *SPMySQLCollationField        = @"Collation";
-static NSString *SPMySQLCommentField          = @"Comment";
+// PostgreSQL table statistics field names (mapped from pg_stat_user_tables and pg_class)
+static NSString *SPPostgresEngineField           = @"Engine";        // Storage engine (not applicable in PostgreSQL, but kept for compatibility)
+static NSString *SPPostgresRowFormatField        = @"Row_format";    // Not directly available in PostgreSQL
+static NSString *SPPostgresRowsField             = @"Rows";          // n_live_tup from pg_stat_user_tables
+static NSString *SPPostgresAverageRowLengthField = @"Avg_row_length"; // Can be calculated
+static NSString *SPPostgresDataLengthField       = @"Data_length";   // pg_total_relation_size
+static NSString *SPPostgresMaxDataLengthField    = @"Max_data_length"; // Not applicable
+static NSString *SPPostgresIndexLengthField      = @"Index_length";  // pg_indexes_size
+static NSString *SPPostgresDataFreeField         = @"Data_free";     // Not directly available
+static NSString *SPPostgresAutoIncrementField    = @"Auto_increment"; // Sequence value for SERIAL columns
+static NSString *SPPostgresCreateTimeField       = @"Create_time";   // Not tracked by PostgreSQL
+static NSString *SPPostgresUpdateTimeField       = @"Update_time";   // Not tracked by PostgreSQL
+static NSString *SPPostgresCollationField        = @"Collation";     // LC_COLLATE
+static NSString *SPPostgresCommentField          = @"Comment";       // obj_description()
 
 @interface SPExtendedTableInfo ()
 
@@ -114,13 +114,13 @@ static NSString *SPMySQLCommentField          = @"Comment";
 - (IBAction)updateTableType:(id)sender
 {
 	NSString *newType = [sender titleOfSelectedItem];
-	NSString *currentType = [tableDataInstance statusValueForKey:SPMySQLEngineField];
+	NSString *currentType = [tableDataInstance statusValueForKey:SPPostgresEngineField];
 
 	// Check if the user selected the same type
 	if ([currentType isEqualToString:newType]) return;
 
 	// If the table is empty, perform the change directly
-	if ([[tableDataInstance statusValueForKey:SPMySQLRowsField] isEqualToString:@"0"]) {
+	if ([[tableDataInstance statusValueForKey:SPPostgresRowsField] isEqualToString:@"0"]) {
 		[self _changeCurrentTableTypeFrom:currentType to:newType];
 		return;
 	}
@@ -168,7 +168,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 - (IBAction)updateTableCollation:(id)sender
 {
 	NSString *newCollation = [sender titleOfSelectedItem];
-	NSString *currentCollation = [tableDataInstance statusValueForKey:SPMySQLCollationField];
+	NSString *currentCollation = [tableDataInstance statusValueForKey:SPPostgresCollationField];
 
 	// Check if the user selected the same collation
 	if ([currentCollation isEqualToString:newCollation]) return;
@@ -257,7 +257,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		[tableEncodingPopUpButton setEnabled:NO];
 		[tableCollationPopUpButton setEnabled:NO];
 
-		if ([[statusFields safeObjectForKey:SPMySQLEngineField] isEqualToString:@"View"]) {
+		if ([[statusFields safeObjectForKey:SPPostgresEngineField] isEqualToString:@"View"]) {
 			[tableTypePopUpButton addItemWithTitle:@"View"];
 			
 			// Set create syntax
@@ -304,12 +304,12 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		[tableCommentsTextView setString:@""];
 		[tableCommentsTextView didChangeText];
 
-		if ([[statusFields safeObjectForKey:SPMySQLEngineField] isEqualToString:@"View"] &&
+		if ([[statusFields safeObjectForKey:SPPostgresEngineField] isEqualToString:@"View"] &&
 			[statusFields safeObjectForKey:@"CharacterSetClient"] &&
-			[statusFields safeObjectForKey:SPMySQLCollationField])
+			[statusFields safeObjectForKey:SPPostgresCollationField])
 		{
 			[tableEncodingPopUpButton safeAddItemWithTitle:[statusFields objectForKey:@"CharacterSetClient"]];
-			[tableCollationPopUpButton safeAddItemWithTitle:[statusFields objectForKey:SPMySQLCollationField]];
+			[tableCollationPopUpButton safeAddItemWithTitle:[statusFields objectForKey:SPPostgresCollationField]];
 		}
 		
 		return;
@@ -326,7 +326,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		// Populate type popup button
 		for (NSDictionary *engine in engines)
 		{
-            NSString *tmpEngine = [engine safeObjectForKey:SPMySQLEngineField];
+            NSString *tmpEngine = [engine safeObjectForKey:SPPostgresEngineField];
 
             if(tmpEngine == nil){
                 SPLog(@"engine string is nil: %@",engine);
@@ -376,7 +376,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		[tableEncodingPopUpButton addItemWithTitle:NSLocalizedString(@"Not available", @"not available label")];
 	}
 
-	if (([collations count] > 0) && ([statusFields safeObjectForKey:SPMySQLCollationField])) {
+	if (([collations count] > 0) && ([statusFields safeObjectForKey:SPPostgresCollationField])) {
 
 		// Populate collation popup button
 		for (NSDictionary *collation in collations)
@@ -384,31 +384,31 @@ static NSString *SPMySQLCommentField          = @"Comment";
 			[tableCollationPopUpButton safeAddItemWithTitle:[collation safeObjectForKey:@"COLLATION_NAME"]];
 		}
 
-		[tableCollationPopUpButton selectItemWithTitle:[statusFields safeObjectForKey:SPMySQLCollationField]];
+		[tableCollationPopUpButton selectItemWithTitle:[statusFields safeObjectForKey:SPPostgresCollationField]];
 		[tableCollationPopUpButton setEnabled:enableInteraction];
 	}
 	else {
 		[tableCollationPopUpButton addItemWithTitle:NSLocalizedString(@"Not available", @"not available label")];
 	}
 
-	[tableCreatedAt setStringValue:[self _formatValueWithKey:SPMySQLCreateTimeField inDictionary:statusFields]];
-	[tableUpdatedAt setStringValue:[self _formatValueWithKey:SPMySQLUpdateTimeField inDictionary:statusFields]];
+	[tableCreatedAt setStringValue:[self _formatValueWithKey:SPPostgresCreateTimeField inDictionary:statusFields]];
+	[tableUpdatedAt setStringValue:[self _formatValueWithKey:SPPostgresUpdateTimeField inDictionary:statusFields]];
 
 	// Set row values
-	[tableRowNumber setStringValue:[self _formatValueWithKey:SPMySQLRowsField inDictionary:statusFields]];
-	[tableRowFormat setStringValue:[self _formatValueWithKey:SPMySQLRowFormatField inDictionary:statusFields]];
-	[tableRowAvgLength setStringValue:[self _formatValueWithKey:SPMySQLAverageRowLengthField inDictionary:statusFields]];
-	[tableRowAutoIncrement setStringValue:[self _formatValueWithKey:SPMySQLAutoIncrementField inDictionary:statusFields]];
+	[tableRowNumber setStringValue:[self _formatValueWithKey:SPPostgresRowsField inDictionary:statusFields]];
+	[tableRowFormat setStringValue:[self _formatValueWithKey:SPPostgresRowFormatField inDictionary:statusFields]];
+	[tableRowAvgLength setStringValue:[self _formatValueWithKey:SPPostgresAverageRowLengthField inDictionary:statusFields]];
+	[tableRowAutoIncrement setStringValue:[self _formatValueWithKey:SPPostgresAutoIncrementField inDictionary:statusFields]];
 
 	// Set size values
-	[tableDataSize setStringValue:[self _formatValueWithKey:SPMySQLDataLengthField inDictionary:statusFields]];
-	[tableMaxDataSize setStringValue:[self _formatValueWithKey:SPMySQLMaxDataLengthField inDictionary:statusFields]];
-	[tableIndexSize setStringValue:[self _formatValueWithKey:SPMySQLIndexLengthField inDictionary:statusFields]];
-	[tableSizeFree setStringValue:[self _formatValueWithKey:SPMySQLDataFreeField inDictionary:statusFields]];
+	[tableDataSize setStringValue:[self _formatValueWithKey:SPPostgresDataLengthField inDictionary:statusFields]];
+	[tableMaxDataSize setStringValue:[self _formatValueWithKey:SPPostgresMaxDataLengthField inDictionary:statusFields]];
+	[tableIndexSize setStringValue:[self _formatValueWithKey:SPPostgresIndexLengthField inDictionary:statusFields]];
+	[tableSizeFree setStringValue:[self _formatValueWithKey:SPPostgresDataFreeField inDictionary:statusFields]];
 
 	// Set comments
 	// Note: On MySQL the comment column is marked as NOT NULL, but we still received crash reports because it was NULL!? (#2791)
-	NSString *commentText = [[statusFields objectForKey:SPMySQLCommentField] unboxNull];
+	NSString *commentText = [[statusFields objectForKey:SPPostgresCommentField] unboxNull];
 	
 	if (!commentText) commentText = @"";
 	
@@ -434,7 +434,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	[tableCreateSyntaxTextView setEditable:NO];
 
 	// Validate Reset AUTO_INCREMENT button
-	if ([statusFields objectForKey:SPMySQLAutoIncrementField] && ![[statusFields objectForKey:SPMySQLAutoIncrementField] isNSNull]) {
+	if ([statusFields objectForKey:SPPostgresAutoIncrementField] && ![[statusFields objectForKey:SPPostgresAutoIncrementField] isNSNull]) {
 		[resetAutoIncrementResetButton setHidden:NO];
 	}
 }
@@ -464,43 +464,43 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		[tableInfo setObject:[tableCollationPopUpButton titleOfSelectedItem] forKey:@"collation"];
 	}
 
-	if ([self _formatValueWithKey:SPMySQLCreateTimeField inDictionary:statusFields]) {
-		[tableInfo setObject:[self _formatValueWithKey:SPMySQLCreateTimeField inDictionary:statusFields] forKey:@"createdAt"];
+	if ([self _formatValueWithKey:SPPostgresCreateTimeField inDictionary:statusFields]) {
+		[tableInfo setObject:[self _formatValueWithKey:SPPostgresCreateTimeField inDictionary:statusFields] forKey:@"createdAt"];
 	}
 	
-	if ([self _formatValueWithKey:SPMySQLUpdateTimeField inDictionary:statusFields]) {
-		[tableInfo setObject:[self _formatValueWithKey:SPMySQLUpdateTimeField inDictionary:statusFields] forKey:@"updatedAt"];
+	if ([self _formatValueWithKey:SPPostgresUpdateTimeField inDictionary:statusFields]) {
+		[tableInfo setObject:[self _formatValueWithKey:SPPostgresUpdateTimeField inDictionary:statusFields] forKey:@"updatedAt"];
 	}
 	
-	if ([self _formatValueWithKey:SPMySQLRowsField inDictionary:statusFields]) {
-		[tableInfo setObject:[self _formatValueWithKey:SPMySQLRowsField inDictionary:statusFields] forKey:@"rowNumber"];
+	if ([self _formatValueWithKey:SPPostgresRowsField inDictionary:statusFields]) {
+		[tableInfo setObject:[self _formatValueWithKey:SPPostgresRowsField inDictionary:statusFields] forKey:@"rowNumber"];
 	}
 	
-	if ([self _formatValueWithKey:SPMySQLRowFormatField inDictionary:statusFields]) {
-		[tableInfo setObject:[self _formatValueWithKey:SPMySQLRowFormatField inDictionary:statusFields] forKey:@"rowFormat"];
+	if ([self _formatValueWithKey:SPPostgresRowFormatField inDictionary:statusFields]) {
+		[tableInfo setObject:[self _formatValueWithKey:SPPostgresRowFormatField inDictionary:statusFields] forKey:@"rowFormat"];
 	}
 	
-	if ([self _formatValueWithKey:SPMySQLAverageRowLengthField inDictionary:statusFields]) {
-		[tableInfo setObject:[self _formatValueWithKey:SPMySQLAverageRowLengthField inDictionary:statusFields] forKey:@"rowAvgLength"];
+	if ([self _formatValueWithKey:SPPostgresAverageRowLengthField inDictionary:statusFields]) {
+		[tableInfo setObject:[self _formatValueWithKey:SPPostgresAverageRowLengthField inDictionary:statusFields] forKey:@"rowAvgLength"];
 	}
 	
-	if ([self _formatValueWithKey:SPMySQLAutoIncrementField inDictionary:statusFields]) {
-		[tableInfo setObject:[self _formatValueWithKey:SPMySQLAutoIncrementField inDictionary:statusFields] forKey:@"rowAutoIncrement"];
+	if ([self _formatValueWithKey:SPPostgresAutoIncrementField inDictionary:statusFields]) {
+		[tableInfo setObject:[self _formatValueWithKey:SPPostgresAutoIncrementField inDictionary:statusFields] forKey:@"rowAutoIncrement"];
 	}
 	
-	if ([self _formatValueWithKey:SPMySQLDataLengthField inDictionary:statusFields]) {
-		[tableInfo setObject:[self _formatValueWithKey:SPMySQLDataLengthField inDictionary:statusFields] forKey:@"dataSize"];
+	if ([self _formatValueWithKey:SPPostgresDataLengthField inDictionary:statusFields]) {
+		[tableInfo setObject:[self _formatValueWithKey:SPPostgresDataLengthField inDictionary:statusFields] forKey:@"dataSize"];
 	}
 	
-	if ([self _formatValueWithKey:SPMySQLMaxDataLengthField inDictionary:statusFields]) {
-		[tableInfo setObject:[self _formatValueWithKey:SPMySQLMaxDataLengthField inDictionary:statusFields] forKey:@"maxDataSize"];
+	if ([self _formatValueWithKey:SPPostgresMaxDataLengthField inDictionary:statusFields]) {
+		[tableInfo setObject:[self _formatValueWithKey:SPPostgresMaxDataLengthField inDictionary:statusFields] forKey:@"maxDataSize"];
 	}
 	
-	if ([self _formatValueWithKey:SPMySQLIndexLengthField inDictionary:statusFields]) {
-		[tableInfo setObject:[self _formatValueWithKey:SPMySQLIndexLengthField inDictionary:statusFields] forKey:@"indexSize"];
+	if ([self _formatValueWithKey:SPPostgresIndexLengthField inDictionary:statusFields]) {
+		[tableInfo setObject:[self _formatValueWithKey:SPPostgresIndexLengthField inDictionary:statusFields] forKey:@"indexSize"];
 	}
 	
-	[tableInfo setObject:[self _formatValueWithKey:SPMySQLDataFreeField inDictionary:statusFields] forKey:@"sizeFree"];
+	[tableInfo setObject:[self _formatValueWithKey:SPPostgresDataFreeField inDictionary:statusFields] forKey:@"sizeFree"];
 
 	if ([tableCommentsTextView string]) {
 		[tableInfo setObject:[tableCommentsTextView string] forKey:@"comments"];
@@ -549,7 +549,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 
 	if ((object == tableCommentsTextView) && ([object isEditable]) && ([selectedTable length] > 0)) {
 
-		NSString *currentComment = [[[tableDataInstance statusValueForKey:SPMySQLCommentField] unboxNull] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+		NSString *currentComment = [[[tableDataInstance statusValueForKey:SPPostgresCommentField] unboxNull] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 		NSString *newComment = [[tableCommentsTextView string] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 
 		// Check that the user actually changed the tables comment
@@ -598,7 +598,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 
 	NSDictionary *statusFields = [tableDataInstance statusValues];
 
-	if (!selectedTable || ![selectedTable length] || [[statusFields safeObjectForKey:SPMySQLEngineField] isEqualToString:@"View"]) return;
+	if (!selectedTable || ![selectedTable length] || [[statusFields safeObjectForKey:SPPostgresEngineField] isEqualToString:@"View"]) return;
 
 	// If we are viewing tables in the information_schema database, then disable all controls that cause table
 	// changes as these tables are not modifiable by anyone.
@@ -607,7 +607,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 							 [[tableDocumentInstance database] isEqualToString:SPMySQLPerformanceSchemaDatabase] || 
 							 [[tableDocumentInstance database] isEqualToString:SPMySQLDatabase]);
 
-	if ([[databaseDataInstance getDatabaseStorageEngines] count] && [statusFields safeObjectForKey:SPMySQLEngineField]) {
+	if ([[databaseDataInstance getDatabaseStorageEngines] count] && [statusFields safeObjectForKey:SPPostgresEngineField]) {
 		[tableTypePopUpButton setEnabled:(!isSystemSchemaDb)];
 	}
 
@@ -617,7 +617,7 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	}
 
 	if ([[databaseDataInstance getDatabaseCollationsForEncoding:[tableDataInstance tableEncoding]] count] && 
-		[statusFields objectForKey:SPMySQLCollationField])
+		[statusFields objectForKey:SPPostgresCollationField])
 	{
 		[tableCollationPopUpButton setEnabled:(!isSystemSchemaDb)];
 	}
@@ -668,29 +668,29 @@ static NSString *SPMySQLCommentField          = @"Comment";
 	}
 	else {
 		// Format size strings
-		if ([key isEqualToString:SPMySQLDataLengthField] ||
-			[key isEqualToString:SPMySQLMaxDataLengthField] ||
-			[key isEqualToString:SPMySQLIndexLengthField] ||
-			[key isEqualToString:SPMySQLDataFreeField]) {
+		if ([key isEqualToString:SPPostgresDataLengthField] ||
+			[key isEqualToString:SPPostgresMaxDataLengthField] ||
+			[key isEqualToString:SPPostgresIndexLengthField] ||
+			[key isEqualToString:SPPostgresDataFreeField]) {
 
             value = [NSByteCountFormatter stringWithByteSize:[value longLongValue]];
 		}
 		// Format date strings to the user's long date format
-		else if ([key isEqualToString:SPMySQLCreateTimeField] ||
-				 [key isEqualToString:SPMySQLUpdateTimeField]) {
+		else if ([key isEqualToString:SPPostgresCreateTimeField] ||
+				 [key isEqualToString:SPPostgresUpdateTimeField]) {
 
 			// 2020-06-30 14:14:11 is one example
 			value = [NSDateFormatter.mediumStyleFormatter stringFromDate:[NSDateFormatter.naturalLanguageFormatter dateFromString:value]];
 		}
 		// Format numbers
-		else if ([key isEqualToString:SPMySQLRowsField] ||
-				 [key isEqualToString:SPMySQLAverageRowLengthField] ||
-				 [key isEqualToString:SPMySQLAutoIncrementField]) {
+		else if ([key isEqualToString:SPPostgresRowsField] ||
+				 [key isEqualToString:SPPostgresAverageRowLengthField] ||
+				 [key isEqualToString:SPPostgresAutoIncrementField]) {
 
 			value = [NSNumberFormatter.decimalStyleFormatter stringFromNumber:[NSNumber numberWithLongLong:[value longLongValue]]];
 
 			// Prefix number of rows with '~' if it is not an accurate count
-			if ([key isEqualToString:SPMySQLRowsField] && ![[infoDict objectForKey:@"RowsCountAccurate"] boolValue]) {
+			if ([key isEqualToString:SPPostgresRowsField] && ![[infoDict objectForKey:@"RowsCountAccurate"] boolValue]) {
 				value = [@"~" stringByAppendingString:value];
 			}
 		}
