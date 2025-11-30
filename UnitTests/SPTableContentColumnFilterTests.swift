@@ -54,14 +54,16 @@ final class SPTableContentColumnFilterTests: XCTestCase {
     /// Parse comma-separated filter string into array of lowercase trimmed terms
     private func parseFilterTerms(_ filterString: String) -> [String] {
         let lowercased = filterString.lowercased().trimmingCharacters(in: .whitespaces)
-        guard !lowercased.isEmpty else { return [] }
+        if lowercased.isEmpty {
+            return []
+        }
 
         let rawTerms = lowercased.components(separatedBy: ",")
         var trimmedTerms: [String] = []
 
         for term in rawTerms {
             let trimmed = term.trimmingCharacters(in: .whitespaces)
-            if !trimmed.isEmpty {
+            if trimmed.isNotEmpty {
                 trimmedTerms.append(trimmed)
             }
         }
@@ -72,10 +74,8 @@ final class SPTableContentColumnFilterTests: XCTestCase {
     /// Check if column name matches any of the filter terms
     private func columnMatches(_ columnName: String, terms: [String]) -> Bool {
         let lowercaseName = columnName.lowercased()
-        for term in terms {
-            if lowercaseName.contains(term) {
-                return true
-            }
+        for term in terms where lowercaseName.contains(term) {
+            return true
         }
         return false
     }
