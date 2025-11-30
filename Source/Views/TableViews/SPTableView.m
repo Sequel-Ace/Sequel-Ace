@@ -33,7 +33,7 @@
 #import "SPDatabaseDocument.h"
 #import "SPFieldMapperController.h"
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 @protocol SPTableViewDelegate <NSObject>
 @optional

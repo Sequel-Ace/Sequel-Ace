@@ -31,7 +31,7 @@
 #import "SPExportFile.h"
 #import "SPFileHandle.h"
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 @interface SPExportFile ()
 

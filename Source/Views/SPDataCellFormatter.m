@@ -31,7 +31,7 @@
 #import "SPDataCellFormatter.h"
 #import "SPTooltip.h"
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 @implementation SPDataCellFormatter
 

@@ -53,7 +53,7 @@
 #import "pthread.h"
 #include <stdlib.h>
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 @import AppCenterAnalytics;
 
 NSInteger SPEditMenuCopy               = 2001;

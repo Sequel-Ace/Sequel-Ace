@@ -30,7 +30,7 @@
 
 #import "SPPreferencePane.h"
 #import "SPAppController.h"
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 @implementation SPPreferencePane
 

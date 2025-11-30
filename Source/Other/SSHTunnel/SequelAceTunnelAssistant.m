@@ -33,7 +33,7 @@
 #import "SPKeychain.h"
 #import "SPSSHTunnel.h"
 #import "SPConstants.h"
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 
 int main(int argc, const char *argv[])

@@ -37,7 +37,7 @@
 #import "SPTableFilterParser.h"
 #import "SPTableContent.h"
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 typedef NS_ENUM(NSInteger, RuleNodeType) {
 	RuleNodeTypeColumn,

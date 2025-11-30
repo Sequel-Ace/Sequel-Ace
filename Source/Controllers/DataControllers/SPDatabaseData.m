@@ -30,7 +30,7 @@
 
 #import "SPDatabaseData.h"
 #import "SPServerSupport.h"
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 #import "SPFunctions.h"
 #import <SPPostgresFramework/SPPostgresConnection.h>

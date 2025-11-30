@@ -41,7 +41,7 @@
 #import <SPPostgresFramework/SPPostgresConnection.h>
 #import "SPFunctions.h"
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 typedef enum {
 	TextSegment = 0,

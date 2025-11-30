@@ -34,7 +34,7 @@
 
 #import <SPPostgresFramework/SPPostgresConnection.h>
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 @interface SPServerVariablesController ()
 

@@ -58,7 +58,7 @@
 
 #import "SPTooltip.h"
 #import "SPFunctions.h"
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 #include <tgmath.h>
 @import AppCenterAnalytics;
 

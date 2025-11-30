@@ -31,7 +31,7 @@
 #import "SPEditSheetTextView.h"
 #import "SPTextViewAdditions.h"
 #import "SPFieldEditorController.h"
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 @implementation SPEditSheetTextView
 

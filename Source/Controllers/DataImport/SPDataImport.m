@@ -49,7 +49,7 @@
 
 #import <SPPostgresFramework/SPPostgresConnection.h>
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 #define SP_FILE_READ_ERROR_STRING NSLocalizedString(@"File read error", @"File read error title (Import Dialog)")
 

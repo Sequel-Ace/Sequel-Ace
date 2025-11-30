@@ -35,7 +35,7 @@
 #import "SPThreadAdditions.h"
 #import "pthread.h"
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 static SPFavoritesController *sharedFavoritesController = nil;
 

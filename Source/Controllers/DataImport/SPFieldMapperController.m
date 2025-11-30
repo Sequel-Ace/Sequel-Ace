@@ -40,7 +40,7 @@
 #import "SPFunctions.h"
 #import <SPPostgresFramework/SPPostgresConnection.h>
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 // Constants
 static NSString *SPTableViewImportValueColumnID = @"import_value";

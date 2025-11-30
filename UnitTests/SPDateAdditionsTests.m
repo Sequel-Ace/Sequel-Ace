@@ -10,7 +10,7 @@
 
 #import <XCTest/XCTest.h>
 #import "SPDateAdditions.h"
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 @interface SPDateAdditionsTests : XCTestCase
 

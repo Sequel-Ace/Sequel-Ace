@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #import <CommonCrypto/CommonDigest.h>
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 

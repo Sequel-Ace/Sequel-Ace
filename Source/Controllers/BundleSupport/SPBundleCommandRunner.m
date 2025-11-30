@@ -32,7 +32,7 @@
 #import "SPDatabaseDocument.h"
 #import "SPAppController.h"
 #import "SPWindow.h"
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 #import <sys/syslimits.h>
 
 // Defined to suppress warnings

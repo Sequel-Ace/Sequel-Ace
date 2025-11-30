@@ -39,7 +39,7 @@
 #import "SPBundleManager.h"
 #import "SABundleRunner.h"
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 @implementation NSTextView (SPTextViewAdditions)
 

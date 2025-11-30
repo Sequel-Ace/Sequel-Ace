@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1620"
+   LastUpgradeVersion = "2610"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "8D15AC270486D014006FF6A4"
-               BuildableName = "Sequel Ace.app"
-               BlueprintName = "Sequel Ace"
+               BuildableName = "Sequel PAce.app"
+               BlueprintName = "Sequel PAce"
                ReferencedContainer = "container:sequel-ace.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -26,38 +26,21 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "NO">
+      shouldUseLaunchSchemeArgsEnv = "YES">
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "8D15AC270486D014006FF6A4"
-            BuildableName = "Sequel Ace.app"
-            BlueprintName = "Sequel Ace"
+            BuildableName = "Sequel PAce.app"
+            BlueprintName = "Sequel PAce"
             ReferencedContainer = "container:sequel-ace.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
-      <EnvironmentVariables>
-         <EnvironmentVariable
-            key = "OBJC_DISABLE_GC"
-            value = "YES"
-            isEnabled = "YES">
-         </EnvironmentVariable>
-      </EnvironmentVariables>
       <Testables>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "380F4ED80FC0B50500B0BFD7"
-               BuildableName = "Unit Tests.xctest"
-               BlueprintName = "Unit Tests"
-               ReferencedContainer = "container:sequel-ace.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
-      buildConfiguration = "Debug"
+      buildConfiguration = "Distribution"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
@@ -71,14 +54,14 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "8D15AC270486D014006FF6A4"
-            BuildableName = "Sequel Ace.app"
-            BlueprintName = "Sequel Ace"
+            BuildableName = "Sequel PAce.app"
+            BlueprintName = "Sequel PAce"
             ReferencedContainer = "container:sequel-ace.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
    <ProfileAction
-      buildConfiguration = "Debug"
+      buildConfiguration = "Release"
       shouldUseLaunchSchemeArgsEnv = "YES"
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
@@ -88,8 +71,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "8D15AC270486D014006FF6A4"
-            BuildableName = "Sequel Ace.app"
-            BlueprintName = "Sequel Ace"
+            BuildableName = "Sequel PAce.app"
+            BlueprintName = "Sequel PAce"
             ReferencedContainer = "container:sequel-ace.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -98,7 +81,8 @@
       buildConfiguration = "Debug">
    </AnalyzeAction>
    <ArchiveAction
-      buildConfiguration = "Release"
+      buildConfiguration = "Distribution"
+      customArchiveName = "Sequel PAce (Release)"
       revealArchiveInOrganizer = "YES">
    </ArchiveAction>
 </Scheme>

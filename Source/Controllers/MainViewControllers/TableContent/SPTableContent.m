@@ -64,7 +64,7 @@
 #import <SPPostgresFramework/SPPostgresConnection.h>
 #include <stdlib.h>
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 /**
  * This is the unique KVO context of code that resides in THIS class.

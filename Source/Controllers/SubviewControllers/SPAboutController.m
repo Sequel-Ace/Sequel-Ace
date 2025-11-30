@@ -29,7 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPAboutController.h"
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 
 static NSString *SPCreditsFilename = @"Credits";

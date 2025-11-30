@@ -34,7 +34,7 @@
 #import <SPPostgresFramework/SPPostgresStreamingResultStore.h>
 #include <stdlib.h>
 #include <mach/mach_time.h>
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 @interface SPDataStorage ()
 

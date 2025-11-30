@@ -37,7 +37,7 @@ To build Sequel PAce, you will need:
 
 1. Clone the repository.
 2. Run `pod install` (if applicable).
-3. Open `Sequel Ace.xcworkspace` (or `.xcodeproj`).
+3. Open `sequel-pace.xcodeproj`.
 4. Build and Run.
 
 ---

@@ -37,7 +37,7 @@
 #import "SPTablesList.h"
 #import "SPTableStructure.h"
 #import "SPServerSupport.h"
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 #import <SPPostgresFramework/SPPostgresConnection.h>
 

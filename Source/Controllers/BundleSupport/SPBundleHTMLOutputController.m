@@ -35,7 +35,7 @@
 #import "SPPrintUtility.h"
 #import "SPBundleManager.h"
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 static NSString *SPSaveDocumentAction = @"SPSaveDocument";
 

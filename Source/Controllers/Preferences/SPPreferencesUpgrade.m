@@ -32,7 +32,7 @@
 #import "SPFavoritesController.h"
 #import "SPTreeNode.h"
 #import "SPFavoriteNode.h"
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 @implementation SPPreferencesUpgrade
 

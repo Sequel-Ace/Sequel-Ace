@@ -60,7 +60,7 @@
 #import "SPConstants.h"
 #import "RegexKitLite.h"
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 #pragma mark Compile time tunables
 

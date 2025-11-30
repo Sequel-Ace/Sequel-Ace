@@ -33,7 +33,7 @@
 #import "SPTablesList.h"
 #import "SPHistoryController.h"
 #import "SPThreadAdditions.h"
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 
 @interface SPHistoryController ()

@@ -32,7 +32,7 @@
 #import "SPStringAdditions.h"
 #import "RegexKitLite.h"
 #import "SPArrayAdditions.h"
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 #import "SPTestingUtils.h"
 #import "SPFunctions.h"
 

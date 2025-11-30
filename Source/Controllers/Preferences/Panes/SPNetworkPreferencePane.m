@@ -33,7 +33,7 @@
 #import "SPAppController.h"
 #import "SPPreferenceController.h"
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 static NSString *SPSSLCipherListMarkerItem = @"--";
 static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";

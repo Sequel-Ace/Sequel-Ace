@@ -38,7 +38,7 @@
 
 @import FMDB;
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 NSString *SPQueryConsoleWindowAutoSaveName = @"QueryConsole";
 NSString *SPTableViewDateColumnID          = @"messageDate";

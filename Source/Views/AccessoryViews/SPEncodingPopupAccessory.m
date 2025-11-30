@@ -29,7 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPEncodingPopupAccessory.h"
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 #include <stdlib.h>
 
 @implementation SPEncodingPopupAccessory

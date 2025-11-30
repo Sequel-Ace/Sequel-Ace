@@ -33,7 +33,7 @@
 #import "SPTablesList.h"
 #import "RegexKitLite.h"
 #import "SPThreadAdditions.h"
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 #import <pthread.h>
 
 @interface SPDatabaseStructure ()

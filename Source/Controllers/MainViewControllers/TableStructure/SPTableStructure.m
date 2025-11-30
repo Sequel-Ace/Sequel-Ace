@@ -49,7 +49,7 @@
 #import "SPIdMenu.h"
 #import "SPComboBoxCell.h"
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 #import <SPPostgresFramework/SPPostgresConnection.h>
 

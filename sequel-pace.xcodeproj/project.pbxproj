@@ -689,7 +689,7 @@
 		17E0937D114AE154007FC1B4 /* SPTableInfoPrintTemplate.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = SPTableInfoPrintTemplate.html; path = Templates/SPTableInfoPrintTemplate.html; sourceTree = "<group>"; };
 		17E5954E14F304000054EE08 /* QueryKit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = QueryKit.xcodeproj; path = Frameworks/QueryKit/QueryKit.xcodeproj; sourceTree = "<group>"; };
 		17E641440EF01EB5001BC333 /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		17E641450EF01EB5001BC333 /* Sequel-Ace.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Sequel-Ace.pch"; sourceTree = "<group>"; };
+		17E641450EF01EB5001BC333 /* Sequel-PAce.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Sequel-PAce.pch"; sourceTree = "<group>"; };
 		17E641480EF01EF6001BC333 /* SPCustomQuery.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPCustomQuery.h; sourceTree = "<group>"; };
 		17E641490EF01EF6001BC333 /* SPCustomQuery.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPCustomQuery.m; sourceTree = "<group>"; };
 		17E6414A0EF01EF6001BC333 /* SPAppController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPAppController.h; sourceTree = "<group>"; };
@@ -937,7 +937,7 @@
 		51CD0BDA258D06D8009E2484 /* DatabaseProcessList.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DatabaseProcessList.xib; sourceTree = "<group>"; };
 		51CD0BDB258D06D8009E2484 /* BundleHTMLOutput.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = BundleHTMLOutput.xib; sourceTree = "<group>"; };
 		51F41FB625F56A5900594BA5 /* MainWindow.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainWindow.xib; sourceTree = "<group>"; };
-		51F4AFBD24B26665006144D5 /* Sequel-Ace-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Sequel-Ace-Bridging-Header.h"; sourceTree = "<group>"; };
+		51F4AFBD24B26665006144D5 /* Sequel-PAce-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Sequel-PAce-Bridging-Header.h"; sourceTree = "<group>"; };
 		51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSAlertExtension.swift; sourceTree = "<group>"; };
 		5806B76211A991EC00813A88 /* SPDocumentController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPDocumentController.h; sourceTree = "<group>"; };
 		5806B76311A991EC00813A88 /* SPDocumentController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPDocumentController.m; sourceTree = "<group>"; };
@@ -1069,11 +1069,11 @@
 		8831EFCC2240175300D10172 /* button_paginationTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = button_paginationTemplate.pdf; sourceTree = "<group>"; };
 		8AEACADD4B36D9819ADC93DD /* TableSortHelperTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TableSortHelperTests.swift; sourceTree = "<group>"; };
 		8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TableSortHelper.swift; sourceTree = "<group>"; };
-		8D15AC370486D014006FF6A4 /* Sequel Ace.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Sequel Ace.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8D15AC370486D014006FF6A4 /* Sequel PAce.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Sequel PAce.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		963DA1C22CACC6F000B5A544 /* QuickLookUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLookUI.framework; path = System/Library/Frameworks/QuickLookUI.framework; sourceTree = SDKROOT; };
 		964908C4249A77CF0052FC4A /* ssh_config */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ssh_config; sourceTree = "<group>"; };
 		965125F524926B6300E65B53 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; usesTabs = 0; };
-		9651261F24926C7900E65B53 /* Sequel Ace.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Sequel Ace.entitlements"; sourceTree = "<group>"; };
+		9651261F24926C7900E65B53 /* Sequel PAce.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Sequel PAce.entitlements"; sourceTree = "<group>"; };
 		967D875A24B67B4300BAE934 /* SPAutosizingTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPAutosizingTextView.swift; sourceTree = "<group>"; };
 		969178A324A5640D0012ED42 /* Default Bundles */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "Default Bundles"; path = "SharedSupport/Default Bundles"; sourceTree = "<group>"; };
 		969178A424A5640D0012ED42 /* Default Themes */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "Default Themes"; path = "SharedSupport/Default Themes"; sourceTree = "<group>"; };
@@ -1802,8 +1802,8 @@
 				17E641440EF01EB5001BC333 /* main.m */,
 				17E6415D0EF01EF9001BC333 /* Model */,
 				17E6416E0EF01F3B001BC333 /* Other */,
-				51F4AFBD24B26665006144D5 /* Sequel-Ace-Bridging-Header.h */,
-				17E641450EF01EB5001BC333 /* Sequel-Ace.pch */,
+				51F4AFBD24B26665006144D5 /* Sequel-PAce-Bridging-Header.h */,
+				17E641450EF01EB5001BC333 /* Sequel-PAce.pch */,
 				17DC8825126B222D00E9AAEC /* Third Party */,
 				17E641670EF01F19001BC333 /* Views */,
 			);
@@ -2131,7 +2131,7 @@
 		19C28FB0FE9D524F11CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				8D15AC370486D014006FF6A4 /* Sequel Ace.app */,
+				8D15AC370486D014006FF6A4 /* Sequel PAce.app */,
 				380F4ED90FC0B50500B0BFD7 /* Unit Tests.xctest */,
 				58CDB3360FCE13C900F8ACA3 /* SequelAceTunnelAssistant */,
 				58B9096111C3A42B000826E5 /* xibLocalizationPostprocessor */,
@@ -2281,7 +2281,7 @@
 		518E02F227B91FBC007973E3 /* Entitlements */ = {
 			isa = PBXGroup;
 			children = (
-				9651261F24926C7900E65B53 /* Sequel Ace.entitlements */,
+				9651261F24926C7900E65B53 /* Sequel PAce.entitlements */,
 				9696538624931AD10003321E /* SequelAceTunnelAssistant.entitlements */,
 				9696538724931AE10003321E /* xibLocalizationPostprocessor.entitlements */,
 			);
@@ -2542,7 +2542,7 @@
 			);
 			productInstallPath = "$(HOME)/Applications";
 			productName = "sequel-pro";
-			productReference = 8D15AC370486D014006FF6A4 /* Sequel Ace.app */;
+			productReference = 8D15AC370486D014006FF6A4 /* Sequel PAce.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -2551,7 +2551,8 @@
 		2A37F4A9FDCFA73011CA2CEA /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1420;
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2610;
 				ORGANIZATIONNAME = "Sequel-Ace";
 				TargetAttributes = {
 					8D15AC270486D014006FF6A4 = {
@@ -3174,7 +3175,6 @@
 		380F4EDB0FC0B50600B0BFD7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
@@ -3213,7 +3213,6 @@
 		380F4EDC0FC0B50600B0BFD7 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
@@ -3249,7 +3248,6 @@
 		380F4EDD0FC0B50600B0BFD7 /* Distribution */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
@@ -3285,7 +3283,6 @@
 		588593F00F7AEB6900ED0E67 /* Distribution */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -3314,9 +3311,10 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Ace.pch";
+				GCC_PREFIX_HEADER = "Source/Sequel-PAce.pch";
 				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_TREAT_NONCONFORMANT_CODE_ERRORS_AS_WARNINGS = YES;
 				GCC_TREAT_WARNINGS_AS_ERRORS = NO;
@@ -3350,6 +3348,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				SCRIPTS_DIR = "$(SRCROOT)/Scripts";
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(PROJECT_NAME)-Swift.h";
 				VERSIONING_SYSTEM = "apple-generic";
 				WARNING_CFLAGS = "-Wmost";
@@ -3362,16 +3361,24 @@
 				APPLY_RULES_IN_COPY_HEADERS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOL_FRAMEWORKS = "UIKit AppKit";
+				AUTOMATION_APPLE_EVENTS = YES;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = "Entitlements/Sequel Ace.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Entitlements/Sequel PAce.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMPRESS_PNG_FILES = YES;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 10095;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_RESOURCE_ACCESS_PRINTING = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
+				ENABLE_USER_SELECTED_FILES = readwrite;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SRCROOT)/Frameworks",
 					"$(PROJECT_DIR)/Frameworks",
@@ -3396,12 +3403,13 @@
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-pace.sequel-pace";
-				PRODUCT_MODULE_NAME = Sequel_Ace;
-				PRODUCT_NAME = "Sequel Ace";
+				PRODUCT_MODULE_NAME = Sequel_PAce;
+				PRODUCT_NAME = "Sequel PAce";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				REGISTER_APP_GROUPS = YES;
 				SEPARATE_STRIP = NO;
 				STRIP_PNG_TEXT = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "Source/Sequel-Ace-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "Source/Sequel-PAce-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(PROJECT_NAME)-Swift.h";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -3411,7 +3419,6 @@
 		58B9096311C3A42C000826E5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_ENTITLEMENTS = Entitlements/xibLocalizationPostprocessor.entitlements;
 				CODE_SIGN_IDENTITY = "-";
@@ -3440,7 +3447,6 @@
 		58B9096411C3A42C000826E5 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_ENTITLEMENTS = Entitlements/xibLocalizationPostprocessor.entitlements;
 				CODE_SIGN_IDENTITY = "-";
@@ -3469,7 +3475,6 @@
 		58B9096511C3A42C000826E5 /* Distribution */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_ENTITLEMENTS = Entitlements/xibLocalizationPostprocessor.entitlements;
 				CODE_SIGN_IDENTITY = "-";
@@ -3496,7 +3501,6 @@
 		58CDB3380FCE13CB00F8ACA3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_ENTITLEMENTS = Entitlements/SequelAceTunnelAssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -3533,7 +3537,6 @@
 		58CDB3390FCE13CB00F8ACA3 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_ENTITLEMENTS = Entitlements/SequelAceTunnelAssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -3570,7 +3573,6 @@
 		58CDB33A0FCE13CB00F8ACA3 /* Distribution */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_ENTITLEMENTS = Entitlements/SequelAceTunnelAssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -3605,7 +3607,6 @@
 		96BC47C72500A84F003C8105 /* Beta */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -3635,9 +3636,10 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Ace.pch";
+				GCC_PREFIX_HEADER = "Source/Sequel-PAce.pch";
 				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_TREAT_NONCONFORMANT_CODE_ERRORS_AS_WARNINGS = YES;
 				GCC_TREAT_WARNINGS_AS_ERRORS = NO;
@@ -3671,7 +3673,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				SCRIPTS_DIR = "$(SRCROOT)/Scripts";
 				SDKROOT = macosx;
-				STRIP_INSTALLED_PRODUCT = NO;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(PROJECT_NAME)-Swift.h";
 				VERSIONING_SYSTEM = "apple-generic";
 				WARNING_CFLAGS = "-Wmost";
@@ -3684,16 +3686,24 @@
 				APPLY_RULES_IN_COPY_HEADERS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOL_FRAMEWORKS = "UIKit AppKit";
+				AUTOMATION_APPLE_EVENTS = YES;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = "Entitlements/Sequel Ace.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Entitlements/Sequel PAce.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMPRESS_PNG_FILES = YES;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 10095;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_RESOURCE_ACCESS_PRINTING = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
+				ENABLE_USER_SELECTED_FILES = readwrite;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SRCROOT)/Frameworks",
 					"$(PROJECT_DIR)/Frameworks",
@@ -3718,12 +3728,13 @@
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-pace.sequel-pace-beta";
-				PRODUCT_MODULE_NAME = Sequel_Ace;
-				PRODUCT_NAME = "Sequel Ace Beta";
+				PRODUCT_MODULE_NAME = Sequel_PAce;
+				PRODUCT_NAME = "Sequel PAce Beta";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				REGISTER_APP_GROUPS = YES;
 				SEPARATE_STRIP = NO;
 				STRIP_PNG_TEXT = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "Source/Sequel-Ace-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "Source/Sequel-PAce-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(PROJECT_NAME)-Swift.h";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -3733,7 +3744,6 @@
 		96BC47C92500A84F003C8105 /* Beta */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
@@ -3769,7 +3779,6 @@
 		96BC47CA2500A84F003C8105 /* Beta */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_ENTITLEMENTS = Entitlements/SequelAceTunnelAssistant.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -3804,7 +3813,6 @@
 		96BC47CC2500A84F003C8105 /* Beta */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_ENTITLEMENTS = Entitlements/xibLocalizationPostprocessor.entitlements;
 				CODE_SIGN_IDENTITY = "-";
@@ -3834,16 +3842,24 @@
 				APPLY_RULES_IN_COPY_HEADERS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOL_FRAMEWORKS = "UIKit AppKit";
+				AUTOMATION_APPLE_EVENTS = YES;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = "Entitlements/Sequel Ace.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Entitlements/Sequel PAce.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMPRESS_PNG_FILES = YES;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 10095;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_RESOURCE_ACCESS_PRINTING = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
+				ENABLE_USER_SELECTED_FILES = readwrite;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SRCROOT)/Frameworks",
 					"$(PROJECT_DIR)/Frameworks",
@@ -3869,12 +3885,13 @@
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-pace.sequel-pace";
-				PRODUCT_MODULE_NAME = Sequel_Ace;
-				PRODUCT_NAME = "Sequel Ace";
+				PRODUCT_MODULE_NAME = Sequel_PAce;
+				PRODUCT_NAME = "Sequel PAce";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				REGISTER_APP_GROUPS = YES;
 				SEPARATE_STRIP = NO;
 				STRIP_PNG_TEXT = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "Source/Sequel-Ace-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "Source/Sequel-PAce-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(PROJECT_NAME)-Swift.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -3888,16 +3905,24 @@
 				APPLY_RULES_IN_COPY_HEADERS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOL_FRAMEWORKS = "UIKit AppKit";
+				AUTOMATION_APPLE_EVENTS = YES;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = "Entitlements/Sequel Ace.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Entitlements/Sequel PAce.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMPRESS_PNG_FILES = YES;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 10095;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_RESOURCE_ACCESS_PRINTING = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = NO;
+				ENABLE_USER_SELECTED_FILES = readwrite;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SRCROOT)/Frameworks",
 					"$(PROJECT_DIR)/Frameworks",
@@ -3922,12 +3947,13 @@
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-pace.sequel-pace";
-				PRODUCT_MODULE_NAME = Sequel_Ace;
-				PRODUCT_NAME = "Sequel Ace";
+				PRODUCT_MODULE_NAME = Sequel_PAce;
+				PRODUCT_NAME = "Sequel PAce";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				REGISTER_APP_GROUPS = YES;
 				SEPARATE_STRIP = NO;
 				STRIP_PNG_TEXT = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "Source/Sequel-Ace-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "Source/Sequel-PAce-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(PROJECT_NAME)-Swift.h";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -3937,7 +3963,6 @@
 		C05733CC08A9546B00998B17 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -3968,10 +3993,11 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREFIX_HEADER = "Source/Sequel-Ace.pch";
+				GCC_PREFIX_HEADER = "Source/Sequel-PAce.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = DEBUG;
 				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_TREAT_NONCONFORMANT_CODE_ERRORS_AS_WARNINGS = YES;
@@ -4011,7 +4037,7 @@
 				OTHER_SWIFT_FLAGS = "-D DEBUG";
 				SCRIPTS_DIR = "$(SRCROOT)/Scripts";
 				SDKROOT = macosx;
-				STRIP_INSTALLED_PRODUCT = NO;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(PROJECT_NAME)-Swift.h";
 				VERSIONING_SYSTEM = "apple-generic";
 				WARNING_CFLAGS = "-Wmost";
@@ -4021,7 +4047,6 @@
 		C05733CD08A9546B00998B17 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -4050,9 +4075,10 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_PREFIX_HEADER = "Source/Sequel-Ace.pch";
+				GCC_PREFIX_HEADER = "Source/Sequel-PAce.pch";
 				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_TREAT_NONCONFORMANT_CODE_ERRORS_AS_WARNINGS = YES;
 				GCC_TREAT_WARNINGS_AS_ERRORS = NO;
@@ -4086,6 +4112,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				SCRIPTS_DIR = "$(SRCROOT)/Scripts";
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(PROJECT_NAME)-Swift.h";
 				VERSIONING_SYSTEM = "apple-generic";

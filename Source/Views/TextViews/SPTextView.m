@@ -49,7 +49,7 @@
 #import "SPTableData.h"
 #import "SPBundleManager.h"
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 #import <SPPostgresFramework/SPPostgresConnection.h>
 

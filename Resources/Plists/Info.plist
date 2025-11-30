@@ -200,7 +200,7 @@
 			<string>Sequel PAce URL scheme</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>sequelace</string>
+				<string>sequelpace</string>
 			</array>
 		</dict>
 		<dict>

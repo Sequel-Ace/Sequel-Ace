@@ -55,7 +55,7 @@
 #import "SPConnectionController.h"
 #import "SPFavoritesOutlineView.h"
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 @import AppCenter;
 @import AppCenterAnalytics;

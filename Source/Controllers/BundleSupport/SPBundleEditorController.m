@@ -37,7 +37,7 @@
 #import "SPNSMutableDictionaryAdditions.h"
 #import "SPBundleManager.h"
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 #define kBundleNameKey @"bundleName"
 #define kChildrenKey @"_children_"

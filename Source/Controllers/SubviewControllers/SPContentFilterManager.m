@@ -36,7 +36,7 @@
 #import "SPConnectionController.h"
 #import "SPSplitView.h"
 #import "SPAppController.h"
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 
 static NSString *SPExportFilterAction = @"SPExportFilter";

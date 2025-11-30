@@ -36,7 +36,7 @@
 #import "SPNetworkPreferencePane.h"
 #import "SPFilePreferencePane.h"
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 @interface SPPreferenceController () <NSWindowDelegate>
 

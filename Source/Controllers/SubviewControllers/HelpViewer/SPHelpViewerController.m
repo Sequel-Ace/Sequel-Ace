@@ -32,7 +32,7 @@
 #import "SPHelpViewerController.h"
 
 #import <WebKit/WebKit.h>
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 
 NSString * const SPHelpViewerSearchTOC = @"contents";

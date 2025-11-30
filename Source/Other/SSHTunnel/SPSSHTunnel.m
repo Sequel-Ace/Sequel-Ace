@@ -42,7 +42,7 @@
 #import "SPConnectionController.h"
 
 
-#import "sequel-ace-Swift.h"
+#import "sequel-pace-Swift.h"
 
 #import <netinet/in.h>
 
