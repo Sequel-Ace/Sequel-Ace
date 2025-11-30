@@ -451,6 +451,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	// Reset data column store
 	[dataColumns removeAllObjects];
 
+	// Clear column filter when switching tables
+	columnFilterTerms = nil;
+	if (columnFilterSearchField) {
+		[columnFilterSearchField setStringValue:@""];
+	}
+
 	// If no table has been supplied, reset the view to a blank table and disabled elements.
 	if (!newTableName) {
         SPLog(@"no table has been supplied, reset the view to a blank table and disabled elements");
@@ -4804,6 +4810,146 @@ static NSNumber* savedWidthForColumn(SPTableContent* tc, NSString *colKey) {
 
 static NSString* dbHostPrefKey(SPTableContent* tc) {
     return [NSString stringWithFormat:@"%@@%@", tc->tableDocumentInstance.database, tc->tableDocumentInstance.host];
+}
+
+#pragma mark -
+#pragma mark Column Filter Methods
+
+- (IBAction)columnFilterChanged:(NSSearchField *)sender {
+	if (sender != columnFilterSearchField) {
+		return;
+	}
+
+	NSString *filterText = [[sender.stringValue lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+
+	// Parse comma-separated filter terms
+	NSArray *newFilterTerms = nil;
+	if (filterText.length > 0) {
+		NSArray *rawTerms = [filterText componentsSeparatedByString:@","];
+		NSMutableArray *trimmedTerms = [NSMutableArray arrayWithCapacity:rawTerms.count];
+		for (NSString *term in rawTerms) {
+			NSString *trimmed = [term stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+			if (trimmed.length > 0) {
+				[trimmedTerms addObject:trimmed];
+			}
+		}
+		if (trimmedTerms.count > 0) {
+			newFilterTerms = trimmedTerms;
+		}
+	}
+
+	// If the filter hasn't changed, do nothing
+	if ((newFilterTerms == nil && columnFilterTerms == nil) ||
+		[newFilterTerms isEqualToArray:columnFilterTerms]) {
+		return;
+	}
+
+	columnFilterTerms = newFilterTerms;
+
+	[self rebuildTableColumnsWithFilter];
+}
+
+- (void)rebuildTableColumnsWithFilter {
+	if (!selectedTable || dataColumns.count == 0) {
+		return;
+	}
+
+	// Preserve current column widths
+	NSMutableDictionary *preservedColumnWidths = [NSMutableDictionary dictionaryWithCapacity:[[tableContentView tableColumns] count]];
+	for (NSTableColumn *eachColumn in [tableContentView tableColumns]) {
+		[preservedColumnWidths setObject:[NSNumber numberWithDouble:[eachColumn width]] forKey:[[eachColumn headerCell] stringValue]];
+	}
+
+	// Remove existing columns from the table
+	while ([[tableContentView tableColumns] count]) {
+		[[[tableContentView tableColumns] safeObjectAtIndex:0] setHeaderToolTip:nil];
+		[tableContentView removeTableColumn:[[tableContentView tableColumns] safeObjectAtIndex:0]];
+	}
+
+	// Rebuild columns with filter applied
+	NSFont *tableFont = [NSUserDefaults getFont];
+	[self _buildTableColumnsFiltered:preservedColumnWidths withFont:tableFont];
+
+	[tableContentView reloadData];
+}
+
+- (void)_buildTableColumnsFiltered:(NSMutableDictionary *)savedColumnWidths withFont:(NSFont *)font {
+	NSString *nullValue = [prefs objectForKey:SPNullValue];
+	BOOL displayColumnTypes = [prefs boolForKey:SPDisplayTableViewColumnTypes];
+	NSInteger sortColumnNumberToRestore = NSNotFound;
+	NSDictionary *formatOverrides = currentFormatters(self);
+	NSFont *headerFont = [[NSFontManager sharedFontManager] convertFont:font toSize:MAX(font.pointSize * 0.75, 11.0)];
+
+	for (NSDictionary *columnDefinition in dataColumns) {
+		id name = columnDefinition[@"name"];
+		id columnIndex = columnDefinition[@"datacolumnindex"];
+
+		// Apply column filter if set (match ANY of the comma-separated terms)
+		if (columnFilterTerms.count > 0) {
+			NSString *lowercaseName = [name lowercaseString];
+			BOOL matchesAnyTerm = NO;
+			for (NSString *term in columnFilterTerms) {
+				if ([lowercaseName containsString:term]) {
+					matchesAnyTerm = YES;
+					break;
+				}
+			}
+			if (!matchesAnyTerm) {
+				continue; // Skip this column - doesn't match any filter term
+			}
+		}
+
+		// Set up the column
+		NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:columnIndex];
+
+		// Set the header font to match table font
+		[[column headerCell] setFont:headerFont];
+
+		if (displayColumnTypes) {
+			[[column headerCell] setAttributedStringValue:[columnDefinition tableContentColumnHeaderAttributedString]];
+		} else {
+			[[column headerCell] setStringValue:name];
+		}
+		[column setHeaderToolTip:buildTooltip(columnDefinition)];
+		[column setEditable:YES];
+
+		NSString *nameKey = column.headerCell.stringValue;
+		// Set up the data cell depending on the column type
+		[column setDataCell:configureDataCell(self, columnDefinition, nullValue, font, formatOverrides, nameKey)];
+
+		// Copy in the width if present in a reloaded table
+		if (savedColumnWidths[nameKey]) {
+			[column setWidth:[savedColumnWidths[nameKey] floatValue]];
+		}
+		else {
+			NSNumber *colWidth = savedWidthForColumn(self, nameKey);
+			if (colWidth) {
+				[column setWidth:[colWidth floatValue]];
+			}
+		}
+
+		// Set the column to be reselected for sorting if appropriate
+		if (sortColumnToRestore && [sortColumnToRestore isEqualToString:name]) {
+			sortColumnNumberToRestore = [columnIndex integerValue];
+		}
+
+		// Add the column to the table
+		[tableContentView addTableColumn:column];
+	}
+
+	if (sortColumnNumberToRestore != NSNotFound) {
+		NSTableColumn *theCol = [tableContentView tableColumnWithIdentifier:[NSString stringWithFormat:@"%lld", (long long)sortColumnNumberToRestore]];
+		if (theCol) {
+			sortCol = [[NSNumber alloc] initWithInteger:sortColumnNumberToRestore];
+			[tableContentView setHighlightedTableColumn:theCol];
+			isDesc = !sortColumnToRestoreIsAsc;
+			if (isDesc) {
+				[tableContentView setIndicatorImage:[NSImage imageNamed:@"NSDescendingSortIndicator"] inTableColumn:theCol];
+			} else {
+				[tableContentView setIndicatorImage:[NSImage imageNamed:@"NSAscendingSortIndicator"] inTableColumn:theCol];
+			}
+		}
+	}
 }
 
 #pragma mark -
