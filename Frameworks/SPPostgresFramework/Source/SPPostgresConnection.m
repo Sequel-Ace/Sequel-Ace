@@ -2,196 +2,149 @@
 //  SPPostgresConnection.m
 //  SPPostgresFramework
 //
-//  Created by Sequel-PAce on 2025.
+//  Created by Mehmet Karabulut (mehmetik@gmail.com) on November 30, 2025.
+//  Copyright (c) 2025 Mehmet Karabulut.
+//  This software is released under the GPL License.
+//  This is an open-source project forked from Sequel Ace.
 //
 
 #import "SPPostgresConnection.h"
-
-// Assuming libpq-fe.h is available in the include path
-#include <libpq-fe.h>
-
-@interface SPPostgresConnection ()
-@property (nonatomic, assign) BOOL lastQueryErrored;
-@end
+#import <libpq-fe.h>
 
 @implementation SPPostgresConnection
 
 - (instancetype)init {
     self = [super init];
     if (self) {
-        _port = 5432; // Default Postgres port
-        _useSSL = NO;
-        _lastQueryErrored = NO;
+        connection = NULL;
+        isConnected = NO;
+        stringEncoding = NSUTF8StringEncoding;
     }
     return self;
 }
 
+- (void)setConnectionDetailsWithHost:(NSString *)theHost username:(NSString *)theUsername password:(NSString *)thePassword port:(NSUInteger)thePort database:(NSString *)theDatabase {
+    host = [theHost copy];
+    username = [theUsername copy];
+    password = [thePassword copy];
+    port = thePort;
+    database = [theDatabase copy];
+}
+
 - (BOOL)connect {
-    if (_pgConnection) {
-        PQfinish(_pgConnection);
-        _pgConnection = NULL;
-    }
+    if (isConnected) [self disconnect];
 
     NSMutableString *connInfo = [NSMutableString string];
-    if (self.host) [connInfo appendFormat:@"host='%@' ", self.host];
-    if (self.port) [connInfo appendFormat:@"port='%lu' ", (unsigned long)self.port];
-    if (self.database) [connInfo appendFormat:@"dbname='%@' ", self.database];
-    if (self.username) [connInfo appendFormat:@"user='%@' ", self.username];
-    if (self.password) [connInfo appendFormat:@"password='%@' ", self.password];
-    if (self.useSSL) [connInfo appendString:@"sslmode='require' "];
-    else [connInfo appendString:@"sslmode='disable' "];
+    if (host) [connInfo appendFormat:@"host='%@' ", host];
+    if (port) [connInfo appendFormat:@"port='%lu' ", (unsigned long)port];
+    if (database) [connInfo appendFormat:@"dbname='%@' ", database];
+    if (username) [connInfo appendFormat:@"user='%@' ", username];
+    if (password) [connInfo appendFormat:@"password='%@' ", password];
+    
+    // Set client encoding to UTF8 by default
+    [connInfo appendString:@"client_encoding='UTF8'"];
 
-    _pgConnection = PQconnectdb([connInfo UTF8String]);
+    connection = PQconnectdb([connInfo UTF8String]);
 
-    if (PQstatus(_pgConnection) != CONNECTION_OK) {
-        NSString *errorMsg = [NSString stringWithUTF8String:PQerrorMessage(_pgConnection)];
-        if ([self.delegate respondsToSelector:@selector(postgresConnection:didFailWithError:)]) {
-            [self.delegate postgresConnection:self didFailWithError:errorMsg];
-        }
-        PQfinish(_pgConnection);
-        _pgConnection = NULL;
+    if (PQstatus(connection) != CONNECTION_OK) {
+        lastErrorMessage = [NSString stringWithUTF8String:PQerrorMessage(connection)];
+        PQfinish(connection);
+        connection = NULL;
+        isConnected = NO;
         return NO;
     }
+
+    isConnected = YES;
+    
+    // Get server version
+    int version = PQserverVersion(connection);
+    serverMajorVersion = version / 10000;
+    serverMinorVersion = (version % 10000) / 100;
+    serverReleaseVersion = version % 100;
+    serverVersion = [NSString stringWithFormat:@"%d.%d.%d", (int)serverMajorVersion, (int)serverMinorVersion, (int)serverReleaseVersion];
 
     return YES;
 }
 
 - (void)disconnect {
-    if (_pgConnection) {
-        PQfinish(_pgConnection);
-        _pgConnection = NULL;
+    if (connection) {
+        PQfinish(connection);
+        connection = NULL;
     }
-}
-
-- (BOOL)reconnect {
-    [self disconnect];
-    return [self connect];
-}
-
-- (BOOL)isConnected {
-    return _pgConnection && PQstatus(_pgConnection) == CONNECTION_OK;
+    isConnected = NO;
 }
 
 - (SPPostgresResult *)queryString:(NSString *)query {
-    self.lastQueryErrored = NO;
+    if (!isConnected || !connection) return nil;
+
+    PGresult *res = PQexec(connection, [query UTF8String]);
     
-    if (!self.isConnected) {
-        self.lastQueryErrored = YES;
-        return nil;
-    }
-
-    if ([self.delegate respondsToSelector:@selector(postgresConnection:willPerformQuery:)]) {
-        [self.delegate postgresConnection:self willPerformQuery:query];
-    }
-
-    PGresult *res = PQexec(_pgConnection, [query UTF8String]);
-    ExecStatusType status = PQresultStatus(res);
-
-    if (status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK) {
-        self.lastQueryErrored = YES;
-        NSString *errorMsg = [NSString stringWithUTF8String:PQresultErrorMessage(res)];
-        // Log error or notify delegate?
-        PQclear(res);
-        return nil;
-    }
-
-    int rows = PQntuples(res);
-    int cols = PQnfields(res);
-
-    NSMutableArray *resultRows = [NSMutableArray arrayWithCapacity:rows];
-    NSMutableArray *fieldNames = [NSMutableArray arrayWithCapacity:cols];
-
-    for (int j = 0; j < cols; j++) {
-        [fieldNames addObject:[NSString stringWithUTF8String:PQfname(res, j)]];
-    }
-
-    for (int i = 0; i < rows; i++) {
-        NSMutableDictionary *rowDict = [NSMutableDictionary dictionaryWithCapacity:cols];
-        for (int j = 0; j < cols; j++) {
-            char *val = PQgetvalue(res, i, j);
-            NSString *key = fieldNames[j];
-            id value = [NSNull null];
-            
-            if (!PQgetisnull(res, i, j)) {
-                value = [NSString stringWithUTF8String:val];
-            }
-            
-            [rowDict setObject:value forKey:key];
-        }
-        [resultRows addObject:rowDict];
-    }
-
-    PQclear(res);
-    return [[SPPostgresResult alloc] initWithRows:resultRows fieldNames:fieldNames];
-}
-
-- (NSArray<NSString *> *)databases {
-    SPPostgresResult *result = [self queryString:@"SELECT datname FROM pg_database WHERE datistemplate = false;"];
-    if (!result) return @[];
+    SPPostgresResult *result = [[SPPostgresResult alloc] initWithPGResult:res];
     
-    NSMutableArray *dbs = [NSMutableArray array];
-    NSDictionary *row;
-    while ((row = [result getRowAsDictionary])) {
-        [dbs addObject:row[@"datname"]];
+    if (PQresultStatus(res) != PGRES_TUPLES_OK && PQresultStatus(res) != PGRES_COMMAND_OK) {
+        lastErrorMessage = [NSString stringWithUTF8String:PQresultErrorMessage(res)];
+    } else {
+        lastErrorMessage = nil;
     }
-    return dbs;
+    
+    return result;
 }
 
-- (NSString *)serverVersionString {
-    if (!self.isConnected) return @"";
-    int version = PQserverVersion(_pgConnection);
-    return [NSString stringWithFormat:@"%d.%d.%d", version / 10000, (version % 10000) / 100, version % 100];
-}
-
-- (NSUInteger)serverMajorVersion {
-    if (!self.isConnected) return 0;
-    return PQserverVersion(_pgConnection) / 10000;
-}
-
-- (NSUInteger)serverMinorVersion {
-    if (!self.isConnected) return 0;
-    return (PQserverVersion(_pgConnection) % 10000) / 100;
-}
-
-- (NSUInteger)serverReleaseVersion {
-    if (!self.isConnected) return 0;
-    return PQserverVersion(_pgConnection) % 100;
+- (SPPostgresStreamingResult *)streamingQueryString:(NSString *)query useLowMemoryBlockingStreaming:(BOOL)lowMemory {
+    // Basic implementation: just run normal query and wrap it. 
+    // Real streaming would use PQsendQuery and PQsetSingleRowMode.
+    if (!isConnected || !connection) return nil;
+    
+    // For now, return a dummy or non-streaming result wrapped as streaming
+    // TODO: Implement real streaming
+    return (SPPostgresStreamingResult *)[self queryString:query];
 }
 
 - (void)setEncoding:(NSString *)encoding {
-    if (!self.isConnected) return;
-    PQsetClientEncoding(_pgConnection, [encoding UTF8String]);
+    if (!isConnected) return;
+    // Map encoding name to Postgres encoding if needed
+    PQsetClientEncoding(connection, [encoding UTF8String]);
 }
 
-- (NSString *)encoding {
-    if (!self.isConnected) return @"";
-    int encoding = PQclientEncoding(_pgConnection);
-    return [NSString stringWithUTF8String:pg_encoding_to_char(encoding)];
+- (NSStringEncoding)encoding {
+    return stringEncoding;
 }
+
+- (NSString *)escapeAndQuoteString:(NSString *)string {
+    if (!string) return @"NULL";
+    if (!isConnected) return [NSString stringWithFormat:@"'%@'", string]; // Fallback
+    
+    char *escaped = malloc(string.length * 2 + 1);
+    int error;
+    PQescapeStringConn(connection, escaped, [string UTF8String], string.length, &error);
+    NSString *result = [NSString stringWithFormat:@"'%s'", escaped];
+    free(escaped);
+    return result;
+}
+
+- (id)delegate { return nil; }
+- (void)setDelegate:(id)delegate {}
 
 - (BOOL)queryErrored {
-    return self.lastQueryErrored;
+    return lastErrorMessage != nil;
 }
 
-- (NSString *)escapeString:(NSString *)string {
-    if (!string) return @"";
-    if (!_pgConnection) return string;
-
-    NSData *data = [string dataUsingEncoding:NSUTF8StringEncoding];
-    size_t length = [data length];
-    char *buffer = malloc(length * 2 + 1);
-    int error = 0;
-    
-    PQescapeStringConn(_pgConnection, buffer, [data bytes], length, &error);
-    
-    NSString *escaped = [NSString stringWithUTF8String:buffer];
-    free(buffer);
-    
-    return escaped;
+- (BOOL)lastQueryWasCancelled {
+    return NO; // TODO
 }
 
-- (void)dealloc {
-    [self disconnect];
+- (void)cancelCurrentQuery {
+    // TODO
+}
+
+- (NSString *)database {
+    return database;
+}
+
+- (void)selectDatabase:(NSString *)db {
+    // Postgres doesn't support "USE db", need to reconnect.
+    // For now, just update the property, assuming caller will reconnect or this is just for tracking.
+    database = [db copy];
 }
 
 @end

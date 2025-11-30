@@ -1664,15 +1664,15 @@ Gw
                         <binding destination="117" name="selectedTag" keyPath="values.ssh_config" id="NXN-uJ-sTe">
                             <dictionary key="options">
                                 <bool key="NSAllowsEditingMultipleValuesSelection" value="NO"/>
-                                <string key="NSNullPlaceholder">Sequel Ace default</string>
+                                <string key="NSNullPlaceholder">Sequel PAce default</string>
                             </dictionary>
                         </binding>
                     </connections>
                 </popUpButton>
                 <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="4Aw-q4-73u">
                     <rect key="frame" x="18" y="190" width="154" height="20"/>
-                    <string key="toolTip">The cipher suites are used for SSL/TLS-secured connections and specify which algorithms Sequel Ace will use to encrypt a connection, as well as their preference.
-Warning: If Sequel Ace and the server do not have at least one cipher suite in common, you will no longer be able to connect!</string>
+                    <string key="toolTip">The cipher suites are used for SSL/TLS-secured connections and specify which algorithms Sequel PAce will use to encrypt a connection, as well as their preference.
+Warning: If Sequel PAce and the server do not have at least one cipher suite in common, you will no longer be able to connect!</string>
                     <constraints>
                         <constraint firstAttribute="height" constant="20" id="CoN-5P-X6h"/>
                         <constraint firstAttribute="width" constant="150" id="fpe-rE-AMc"/>
@@ -1712,7 +1712,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                         <binding destination="117" name="selectedTag" keyPath="values.known_hosts" id="1uC-TG-LLr">
                             <dictionary key="options">
                                 <bool key="NSAllowsEditingMultipleValuesSelection" value="NO"/>
-                                <string key="NSNullPlaceholder">Sequel Ace default</string>
+                                <string key="NSNullPlaceholder">Sequel PAce default</string>
                             </dictionary>
                         </binding>
                     </connections>
@@ -1957,7 +1957,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                         <menu key="menu" title="OtherViews" autoenablesItems="NO" id="1671">
                             <items>
                                 <menuItem state="on" image="NSAdvanced" hidden="YES" id="1672"/>
-                                <menuItem title="Save Current Theme As…" toolTip="Save the current set color theme by providing an unique name into Sequel Ace's Application Support folder." id="1796">
+                                <menuItem title="Save Current Theme As…" toolTip="Save the current set color theme by providing an unique name into Sequel PAce's Application Support folder." id="1796">
                                     <modifierMask key="keyEquivalentModifierMask"/>
                                     <connections>
                                         <action selector="saveAsColorScheme:" target="2144" id="2175"/>
@@ -2561,7 +2561,7 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
                     <constraints>
                         <constraint firstAttribute="height" constant="23" id="2Uu-on-XzS"/>
                     </constraints>
-                    <textFieldCell key="cell" title="This list shows all the files that Sequel Ace has been granted access to." id="g1t-1Q-PEO">
+                    <textFieldCell key="cell" title="This list shows all the files that Sequel PAce has been granted access to." id="g1t-1Q-PEO">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>

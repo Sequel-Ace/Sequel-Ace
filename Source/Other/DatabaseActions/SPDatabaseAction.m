@@ -31,7 +31,7 @@
 #import "SPDatabaseAction.h"
 #import "SPCreateDatabaseInfo.h"
 
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 
 #pragma mark -
 

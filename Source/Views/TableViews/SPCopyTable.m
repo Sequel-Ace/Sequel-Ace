@@ -49,7 +49,7 @@
 #import "SPBundleManager.h"
 #import "SPTableData.h"
 
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 #import "pthread.h"
 #include <stdlib.h>
 
@@ -175,7 +175,7 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 
 	// Loop through the rows, adding their descriptive contents
 	NSString *nullString = [prefs objectForKey:SPNullValue];
-	Class spmysqlGeometryData = [SPMySQLGeometryData class];
+	Class spmysqlGeometryData = [SPPostgresGeometryData class];
 	__block NSUInteger rowCounter = 0;
 
 	if((withBlobHandling == kBlobAsFile || withBlobHandling == kBlobAsImageFile) && tmpBlobFileDirectory && [tmpBlobFileDirectory length]) {
@@ -312,7 +312,7 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 
 	// Loop through the rows, adding their descriptive contents
 	NSString *nullString = [prefs objectForKey:SPNullValue];
-	Class spmysqlGeometryData = [SPMySQLGeometryData class];
+	Class spmysqlGeometryData = [SPPostgresGeometryData class];
 
 	__block NSUInteger rowCounter = 0;
 
@@ -725,7 +725,7 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 	// Loop through the rows, adding their descriptive contents
 	NSString *nullString = [prefs objectForKey:SPNullValue];
 	Class nsDataClass = [NSData class];
-	Class spmysqlGeometryData = [SPMySQLGeometryData class];
+	Class spmysqlGeometryData = [SPPostgresGeometryData class];
 	NSStringEncoding connectionEncoding = [mySQLConnection stringEncoding];
 	BOOL hexBlobs = [prefs boolForKey:SPDisplayBinaryDataAsHex];
 	[selectedRows enumerateIndexesUsingBlock:^(NSUInteger rowIndex, BOOL * _Nonnull stop) {
@@ -870,7 +870,7 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 
 	NSUInteger columnIndex = (NSUInteger)[[columnDefinition objectForKey:@"datacolumnindex"] integerValue];
 	NSDictionary *stringAttributes = @{NSFontAttributeName : tableFont};
-	Class spmysqlGeometryData = [SPMySQLGeometryData class];
+	Class spmysqlGeometryData = [SPPostgresGeometryData class];
 	BOOL hexBlobs = [prefs boolForKey:SPDisplayBinaryDataAsHex];
 
 	// Check the number of rows available to check, sampling every n rows
@@ -895,7 +895,7 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 		if (!contentString)
 			continue;
 
-		// Get WKT string out of the SPMySQLGeometryData for calculation
+		// Get WKT string out of the SPPostgresGeometryData for calculation
 		else if ([contentString isKindOfClass:spmysqlGeometryData])
 			contentString = [contentString wktString];
 

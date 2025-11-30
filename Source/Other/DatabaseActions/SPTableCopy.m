@@ -30,7 +30,7 @@
 
 #import "SPTableCopy.h"
 
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 
 @interface SPTableCopy ()
 
@@ -173,7 +173,7 @@
 
 	NSString *showCreateTableStatment = [NSString stringWithFormat:@"SHOW CREATE TABLE %@.%@", [sourceDatabase postgresQuotedIdentifier], [tableName postgresQuotedIdentifier]];
 	
-	SPMySQLResult *result = [connection queryString:showCreateTableStatment];
+	SPPostgresResult *result = [connection queryString:showCreateTableStatment];
 	
 	if ([result numberOfRows] > 0) return [[result getRowAsArray] objectAtIndex:1];
 	

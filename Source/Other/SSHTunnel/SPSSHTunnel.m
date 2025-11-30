@@ -115,7 +115,7 @@ static unsigned short getRandomPort(void);
 		requestedPassphrase = nil;
 		task = nil;
 		localPort = 0;
-		connectionState = SPMySQLProxyIdle;
+		connectionState = SPPostgresProxyIdle;
 		
 		requestedResponse = NO;
 		passwordInKeychain = NO;
@@ -209,11 +209,11 @@ static unsigned short getRandomPort(void);
 /*
  * Get the state of the connection.
  */
-- (SPMySQLConnectionProxyState)state
+- (SPPostgresConnectionProxyState)state
 {
 	// See if an auth dialog is up
 	if (![answerAvailableLock tryLock]) {
-		return SPMySQLProxyWaitingForAuth;
+		return SPPostgresProxyWaitingForAuth;
 	}
 	
 	[answerAvailableLock unlock];
@@ -261,8 +261,8 @@ static unsigned short getRandomPort(void);
 
 	localPort = 0;
 
-    if (connectionState != SPMySQLProxyIdle){
-        SPLog(@"connect ssh connection state != SPMySQLProxyIdle, returning");
+    if (connectionState != SPPostgresProxyIdle){
+        SPLog(@"connect ssh connection state != SPPostgresProxyIdle, returning");
         return;
     }
 
@@ -286,8 +286,8 @@ static unsigned short getRandomPort(void);
     
     SPLog(@"connection state = %i", connectionState);
 
-    if (connectionState != SPMySQLProxyIdle){
-        SPLog(@"launch task ssh connection state != SPMySQLProxyIdle, returning");
+    if (connectionState != SPPostgresProxyIdle){
+        SPLog(@"launch task ssh connection state != SPPostgresProxyIdle, returning");
         return;
     }
 
@@ -301,12 +301,12 @@ static unsigned short getRandomPort(void);
 		NSMutableDictionary *taskEnvironment;
 		NSString *authenticationAppPath;
 
-		connectionState = SPMySQLProxyConnecting;
+		connectionState = SPPostgresProxyConnecting;
 		if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 
 		// Enforce a parent window being present for dialogs
 		if (!parentWindow) {
-			connectionState = SPMySQLProxyIdle;
+			connectionState = SPPostgresProxyIdle;
 			if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			[self setLastError:@"SSH Tunnel started without a parent window.  A parent window must be present."];
             SPLog(@"launchTask SSH Tunnel started without a parent window, returning");
@@ -328,7 +328,7 @@ static unsigned short getRandomPort(void);
 
 			// Abort if no local free port could be allocated
 			if (!localPort || (useHostFallback && !localPortFallback)) {
-				connectionState = SPMySQLProxyIdle;
+				connectionState = SPPostgresProxyIdle;
 				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 				[self setLastError:NSLocalizedString(@"No local port could be allocated for the SSH Tunnel.", @"SSH tunnel could not be created because no local port could be allocated")];
                 SPLog(@"launchTask No local port could be allocated for the SSH Tunnel, returning");
@@ -436,7 +436,7 @@ static unsigned short getRandomPort(void);
             }
 
             if(alertMessage != nil) {
-                connectionState = SPMySQLProxyIdle;
+                connectionState = SPPostgresProxyIdle;
                 taskExitedUnexpectedly = YES;
                 [self setLastError:alertMessage];
 
@@ -589,8 +589,8 @@ static unsigned short getRandomPort(void);
 			[task waitUntilExit]; // TODO: this leaks
 		}
 		@catch (NSException *e) {
-			connectionState = SPMySQLProxyLaunchFailed;
-            SPLog(@"launchTask SSH Tunnel NSException, connectionState = SPMySQLProxyLaunchFailed");
+			connectionState = SPPostgresProxyLaunchFailed;
+            SPLog(@"launchTask SSH Tunnel NSException, connectionState = SPPostgresProxyLaunchFailed");
 
 			// Log the exception. Could be improved by showing a dedicated alert instead
 			[debugMessagesLock lock];
@@ -608,8 +608,8 @@ static unsigned short getRandomPort(void);
 		                                              object:nil];
 
 		// If the task closed unexpectedly, alert appropriately
-		if (connectionState != SPMySQLProxyIdle) {
-			connectionState = SPMySQLProxyIdle;
+		if (connectionState != SPPostgresProxyIdle) {
+			connectionState = SPPostgresProxyIdle;
 			taskExitedUnexpectedly = YES;
 			[self setLastError:NSLocalizedString(@"The SSH Tunnel has unexpectedly closed.", @"SSH tunnel unexpectedly closed")];
             SPLog(@"SSH Tunnel has unexpectedly closed");
@@ -632,8 +632,8 @@ static unsigned short getRandomPort(void);
 {
     SPLog(@"ssh tunnel disconnect");
 
-    if (connectionState == SPMySQLProxyIdle){
-        SPLog(@"disconnect connectionState == SPMySQLProxyIdle, returning without disconnecting");
+    if (connectionState == SPPostgresProxyIdle){
+        SPLog(@"disconnect connectionState == SPPostgresProxyIdle, returning without disconnecting");
         return;
     }
 
@@ -689,44 +689,44 @@ static unsigned short getRandomPort(void);
 			[debugMessages addObject:[NSString stringWithString:message]];
 			[debugMessagesLock unlock];
 
-			if (connectionState != SPMySQLProxyConnected &&
+			if (connectionState != SPPostgresProxyConnected &&
 				([message rangeOfString:@"Local forwarding listening on"].location != NSNotFound
 				|| [message rangeOfString:@"mux_client_request_session: master session id: "].location != NSNotFound))
 			{
-				connectionState = SPMySQLProxyConnected;
+				connectionState = SPPostgresProxyConnected;
 				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
 
 			if ([message rangeOfString:@"Connection established"].location != NSNotFound) {
-				connectionState = SPMySQLProxyWaitingForAuth;
+				connectionState = SPPostgresProxyWaitingForAuth;
 				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
 			
 			if ([message rangeOfString:@"bind: Address already in use"].location != NSNotFound) {
-				connectionState = SPMySQLProxyIdle;
+				connectionState = SPPostgresProxyIdle;
                 [self abortTask];
 				[self setLastError:NSLocalizedString(@"The SSH Tunnel was unable to bind to the local port. This error may occur if you already have an SSH connection to the same server and are using a 'LocalForward' setting in your SSH configuration.\n\nWould you like to fall back to a standard connection to localhost in order to use the existing tunnel?", @"SSH tunnel unable to bind to local port message")];
 				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
 
 			if ([message rangeOfString:@"closed by remote host." ].location != NSNotFound) {
-				connectionState = SPMySQLProxyIdle;
+				connectionState = SPPostgresProxyIdle;
                 [self abortTask];
 				[self setLastError:NSLocalizedString(@"The SSH Tunnel was closed 'by the remote host'. This may indicate a networking issue or a network timeout.", @"SSH tunnel was closed by remote host message")];
 				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
 			if ([message rangeOfString:@"Permission denied (" ].location != NSNotFound || [message rangeOfString:@"No more authentication methods to try" ].location != NSNotFound) {
-				connectionState = SPMySQLProxyIdle;
+				connectionState = SPPostgresProxyIdle;
                 [self abortTask];
 				[self setLastError:NSLocalizedString(@"The SSH Tunnel could not authenticate with the remote host. Please check your password and ensure you still have access.", @"SSH tunnel authentication failed message")];
 				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
 			}
 			if ([message rangeOfString:@"connect failed: Connection refused" ].location != NSNotFound) {
-				connectionState = SPMySQLProxyForwardingFailed;
+				connectionState = SPPostgresProxyForwardingFailed;
 				[self setLastError:NSLocalizedString(@"The SSH Tunnel was established successfully, but could not forward data to the remote port as the remote port refused the connection.", @"SSH tunnel forwarding port connection refused message")];
 			}
 			if ([message rangeOfString:@"Operation timed out" ].location != NSNotFound) {
-				connectionState = SPMySQLProxyIdle;
+				connectionState = SPPostgresProxyIdle;
                 [self abortTask];
 				[self setLastError:[NSString stringWithFormat:NSLocalizedString(@"The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).", @"SSH tunnel failed or timed out message"), sshHost, (long)[[[NSUserDefaults standardUserDefaults] objectForKey:SPConnectionTimeoutValue] integerValue]]];
 				if (delegate) [delegate performSelectorOnMainThread:stateChangeSelector withObject:self waitUntilDone:NO];
@@ -734,7 +734,7 @@ static unsigned short getRandomPort(void);
 		}
 	}
 
-	if (connectionState != SPMySQLProxyIdle) {
+	if (connectionState != SPPostgresProxyIdle) {
 		[[standardError fileHandleForReading] waitForDataInBackgroundAndNotify]; // TODO: leaks
 	}
 }

@@ -30,7 +30,7 @@
 
 #import "SPViewCopy.h"
 
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 
 @interface SPViewCopy ()
 
@@ -79,7 +79,7 @@
 	// Postgres way to get view definition
 	NSString *query = [NSString stringWithFormat:@"SELECT pg_get_viewdef('%@.%@', true)", [sourceDatabase postgresQuotedIdentifier], [view postgresQuotedIdentifier]];
 	
-	SPMySQLResult *theResult = [connection queryString:query];
+	SPPostgresResult *theResult = [connection queryString:query];
 	
 	if ([theResult numberOfRows]) {
 		NSString *viewDef = [[theResult getRowAsArray] objectAtIndex:0];

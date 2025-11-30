@@ -2,59 +2,62 @@
 //  SPPostgresConnection.h
 //  SPPostgresFramework
 //
-//  Created by Sequel-PAce on 2025.
+//  Created by Mehmet Karabulut (mehmetik@gmail.com) on November 30, 2025.
+//  Copyright (c) 2025 Mehmet Karabulut.
+//  This software is released under the GPL License.
+//  This is an open-source project forked from Sequel Ace.
 //
 
 #import <Foundation/Foundation.h>
-
-// Forward declaration for libpq connection struct
-typedef struct pg_conn PGconn;
-
-@class SPPostgresConnection;
 #import "SPPostgresResult.h"
+#import "SPPostgresStreamingResult.h"
 
-@protocol SPPostgresConnectionDelegate <NSObject>
-@optional
-- (void)postgresConnection:(SPPostgresConnection *)connection willPerformQuery:(NSString *)query;
-- (void)postgresConnection:(SPPostgresConnection *)connection didFailWithError:(NSString *)error;
-@end
+// Forward declaration of PGconn to avoid including libpq-fe.h in header if possible,
+// but usually it's needed for types. For now, using void* to abstract it.
+typedef void PGconn;
 
-@interface SPPostgresConnection : NSObject
+@interface SPPostgresConnection : NSObject {
+    PGconn *connection;
+    NSString *host;
+    NSString *username;
+    NSString *password;
+    NSUInteger port;
+    NSString *database;
+    BOOL isConnected;
+    NSString *lastErrorMessage;
+    NSString *serverVersion;
+    NSUInteger serverMajorVersion;
+    NSUInteger serverMinorVersion;
+    NSUInteger serverReleaseVersion;
+    NSStringEncoding stringEncoding;
+}
 
-@property (nonatomic, weak) id<SPPostgresConnectionDelegate> delegate;
+@property (readonly) BOOL isConnected;
+@property (readonly) NSString *lastErrorMessage;
+@property (readonly) NSString *serverVersionString;
+@property (readonly) NSUInteger serverMajorVersion;
+@property (readonly) NSUInteger serverMinorVersion;
+@property (readonly) NSUInteger serverReleaseVersion;
 
-// Connection Details
-@property (nonatomic, copy) NSString *host;
-@property (nonatomic, copy) NSString *username;
-@property (nonatomic, copy) NSString *password;
-@property (nonatomic, copy) NSString *database;
-@property (nonatomic, assign) NSUInteger port;
-@property (nonatomic, assign) BOOL useSSL;
-
-// State
-@property (nonatomic, readonly) BOOL isConnected;
-@property (nonatomic, readonly) PGconn *pgConnection;
-
-// Methods
+- (void)setConnectionDetailsWithHost:(NSString *)theHost username:(NSString *)theUsername password:(NSString *)thePassword port:(NSUInteger)thePort database:(NSString *)theDatabase;
 - (BOOL)connect;
 - (void)disconnect;
-- (BOOL)reconnect;
 
-// Query Execution
 - (SPPostgresResult *)queryString:(NSString *)query;
-
-// Helper Methods
-- (NSArray<NSString *> *)databases;
-- (NSString *)serverVersionString;
-- (NSUInteger)serverMajorVersion;
-- (NSUInteger)serverMinorVersion;
-- (NSUInteger)serverReleaseVersion;
+- (SPPostgresStreamingResult *)streamingQueryString:(NSString *)query useLowMemoryBlockingStreaming:(BOOL)lowMemory;
 
 - (void)setEncoding:(NSString *)encoding;
-- (NSString *)encoding;
-- (BOOL)queryErrored;
+- (NSStringEncoding)encoding;
 
-// Utility
-- (NSString *)escapeString:(NSString *)string;
+- (NSString *)escapeAndQuoteString:(NSString *)string;
+- (id)delegate;
+- (void)setDelegate:(id)delegate;
+
+- (BOOL)queryErrored;
+- (BOOL)lastQueryWasCancelled;
+- (void)cancelCurrentQuery;
+
+- (NSString *)database;
+- (void)selectDatabase:(NSString *)database;
 
 @end

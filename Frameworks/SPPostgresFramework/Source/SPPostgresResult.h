@@ -2,21 +2,35 @@
 //  SPPostgresResult.h
 //  SPPostgresFramework
 //
-//  Created by Sequel-PAce on 2025.
+//  Created by Mehmet Karabulut (mehmetik@gmail.com) on November 30, 2025.
+//  Copyright (c) 2025 Mehmet Karabulut.
+//  This software is released under the GPL License.
+//  This is an open-source project forked from Sequel Ace.
 //
 
 #import <Foundation/Foundation.h>
 
-@interface SPPostgresResult : NSObject
+typedef void PGresult;
 
-@property (nonatomic, readonly) NSUInteger numberOfRows;
-@property (nonatomic, readonly) NSUInteger numberOfFields;
-@property (nonatomic, readonly) NSArray *fieldNames;
+@interface SPPostgresResult : NSObject <NSFastEnumeration> {
+    PGresult *resultSet;
+    NSUInteger numberOfRows;
+    NSUInteger numberOfFields;
+    NSArray *fieldNames;
+    BOOL returnDataAsStrings;
+    NSUInteger currentRowIndex;
+}
 
-- (instancetype)initWithRows:(NSArray<NSDictionary *> *)rows fieldNames:(NSArray<NSString *> *)fieldNames;
+@property (readwrite, assign) BOOL returnDataAsStrings;
 
-- (NSDictionary *)getRowAsDictionary;
+- (instancetype)initWithPGResult:(PGresult *)result;
+
+- (NSUInteger)numberOfFields;
+- (NSUInteger)numberOfRows;
+- (NSArray *)fieldNames;
+
 - (NSArray *)getRowAsArray;
-- (void)setReturnDataAsStrings:(BOOL)asStrings; // For compatibility
+- (NSDictionary *)getRowAsDictionary;
+- (void)seekToRow:(NSUInteger)index;
 
 @end

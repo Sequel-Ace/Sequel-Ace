@@ -1056,7 +1056,7 @@ set_input:
 	// to set the export's link case sensitivity setting
 	if (isDot && serverLowerCaseTableNameValue == NSNotFound) {
 		
-		SPMySQLResult *caseResult = [connection queryString:@"SHOW VARIABLES LIKE 'lower_case_table_names'"];
+		SPPostgresResult *caseResult = [connection queryString:@"SHOW VARIABLES LIKE 'lower_case_table_names'"];
 		
 		[caseResult setReturnDataAsStrings:YES];
 		

@@ -2077,7 +2077,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     [tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Checking field data for editing...", @"checking field data for editing task description")];
     
     // Actual check whether field can be identified bijectively
-    SPMySQLResult *tempResult = [postgresConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
+    SPPostgresResult *tempResult = [postgresConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
                                                               [[columnDefinition objectForKey:@"db"] postgresQuotedIdentifier],
                                                               [tableForColumn postgresQuotedIdentifier],
                                                               fieldIDQueryStr]];
@@ -2144,7 +2144,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     dataRow = [resultData rowContentsAtIndex:rowIndex];
     
     // Get the primary key if there is one, using any columns present within it
-    SPMySQLResult *theResult = [postgresConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@.%@",
+    SPPostgresResult *theResult = [postgresConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@.%@",
                                                              [database postgresQuotedIdentifier], [tableForColumn postgresQuotedIdentifier]]];
     [theResult setReturnDataAsStrings:YES];
     NSMutableArray *primaryColumnsInSpecifiedTable = [NSMutableArray array];
@@ -2721,7 +2721,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             return nil;
         }
     }
-    else if ([theValue isKindOfClass:[SPMySQLGeometryData class]]) {
+    else if ([theValue isKindOfClass:[SPPostgresGeometryData class]]) {
         SPGeometryDataView *v = [[SPGeometryDataView alloc] initWithCoordinates:[theValue coordinates]];
         image = [v thumbnailImage];
         if(image) {
@@ -3786,7 +3786,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         }
     }
     
-    if ([value isKindOfClass:[SPMySQLGeometryData class]])
+    if ([value isKindOfClass:[SPPostgresGeometryData class]])
         return [value wktString];
     
     if ([value isNSNull])

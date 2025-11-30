@@ -31,7 +31,7 @@
 #import "SPDataStorage.h"
 #import "SPObjectAdditions.h"
 #import "SPPointerArrayAdditions.h"
-#import <SPMySQL/SPMySQLStreamingResultStore.h>
+#import <SPPostgresFramework/SPPostgresStreamingResultStore.h>
 #include <stdlib.h>
 #include <mach/mach_time.h>
 #import "sequel-ace-Swift.h"
@@ -59,10 +59,10 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
  * Set the underlying MySQL data storage.
  * This will clear all edited rows and unloaded column tracking.
  */
-- (void) setDataStorage:(SPMySQLStreamingResultStore *)newDataStorage updatingExisting:(BOOL)updateExistingStore
+- (void) setDataStorage:(SPPostgresStreamingResultStore *)newDataStorage updatingExisting:(BOOL)updateExistingStore
 {
 	BOOL *oldUnloadedColumns;
-	SPMySQLStreamingResultStore *oldDataStorage;
+	SPPostgresStreamingResultStore *oldDataStorage;
 	
 	@synchronized(self) {
 		oldDataStorage = dataStorage;
@@ -128,7 +128,7 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 		}
 		
 		// Otherwise, prepare to return the underlying storage row
-		NSMutableArray *dataArray = SPMySQLResultStoreGetRow(dataStorage, anIndex); //returned array is already a copy
+		NSMutableArray *dataArray = SPPostgresResultStoreGetRow(dataStorage, anIndex); //returned array is already a copy
 		
 		// Modify unloaded cells as appropriate
 		for (NSUInteger i = 0; i < numberOfColumns; i++) {
@@ -168,7 +168,7 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 		}
 
 		// Return the content
-		return SPMySQLResultStoreObjectAtRowAndColumn(dataStorage, rowIndex, columnIndex);
+		return SPPostgresResultStoreObjectAtRowAndColumn(dataStorage, rowIndex, columnIndex);
 	}
 }
 
@@ -204,7 +204,7 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 		}
 
 		// Return the content
-		return SPMySQLResultStorePreviewAtRowAndColumn(dataStorage, rowIndex, columnIndex, previewLength);
+		return SPPostgresResultStorePreviewAtRowAndColumn(dataStorage, rowIndex, columnIndex, previewLength);
 	}
 }
 
@@ -253,7 +253,7 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 	@synchronized(self) {
 		srcObject = (size_t)dataStorage ^ (size_t)editedRows ^ editedRowCount;
 		// If the start index is out of bounds, return 0 to indicate end of results
-		if (state->state >= SPMySQLResultStoreGetRowCount(dataStorage)) return 0;
+		if (state->state >= SPPostgresResultStoreGetRowCount(dataStorage)) return 0;
 
 		// If an edited row exists for the supplied index, use that; otherwise use the underlying
 		// storage row
@@ -265,7 +265,7 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 		}
 
 		if (targetRow == nil) {
-			targetRow = SPMySQLResultStoreGetRow(dataStorage, state->state); //returned array is already a copy
+			targetRow = SPPostgresResultStoreGetRow(dataStorage, state->state); //returned array is already a copy
 
 			// Modify unloaded cells as appropriate
 			for (NSUInteger i = 0; i < numberOfColumns; i++) {
@@ -323,7 +323,7 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 	NSMutableArray *newArray = [[NSMutableArray alloc] initWithArray:aRow];
 	@try {
 		@synchronized(self) {
-			unsigned long long numberOfRows = SPMySQLResultStoreGetRowCount(dataStorage);
+			unsigned long long numberOfRows = SPPostgresResultStoreGetRowCount(dataStorage);
 			
 			// Verify the row is of the correct length
 			[self _checkNewRow:newArray];
@@ -404,8 +404,8 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 {
 	@synchronized(self) {
 		// Throw an exception if the index is out of bounds
-		if (anIndex >= SPMySQLResultStoreGetRowCount(dataStorage)) {
-			[NSException raise:NSRangeException format:@"Requested storage index (%llu) beyond bounds (%llu)", (unsigned long long)anIndex, SPMySQLResultStoreGetRowCount(dataStorage)];
+		if (anIndex >= SPPostgresResultStoreGetRowCount(dataStorage)) {
+			[NSException raise:NSRangeException format:@"Requested storage index (%llu) beyond bounds (%llu)", (unsigned long long)anIndex, SPPostgresResultStoreGetRowCount(dataStorage)];
 		}
 
 		// Remove the row from the edited list and underlying storage
@@ -425,8 +425,8 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 {
 	@synchronized(self) {
 		// Throw an exception if the range is out of bounds
-		if (NSMaxRange(rangeToRemove) > SPMySQLResultStoreGetRowCount(dataStorage)) {
-			[NSException raise:NSRangeException format:@"Requested storage index (%llu) beyond bounds (%llu)", (unsigned long long)(NSMaxRange(rangeToRemove)), SPMySQLResultStoreGetRowCount(dataStorage)];
+		if (NSMaxRange(rangeToRemove) > SPPostgresResultStoreGetRowCount(dataStorage)) {
+			[NSException raise:NSRangeException format:@"Requested storage index (%llu) beyond bounds (%llu)", (unsigned long long)(NSMaxRange(rangeToRemove)), SPPostgresResultStoreGetRowCount(dataStorage)];
 		}
 
 		// Remove the rows from the edited list and underlying storage
@@ -511,7 +511,7 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 /**
  * When the underlying result store finishes downloading, update the row store to match
  */
-- (void)resultStoreDidFinishLoadingData:(SPMySQLStreamingResultStore *)resultStore
+- (void)resultStoreDidFinishLoadingData:(SPPostgresStreamingResultStore *)resultStore
 {
 	@synchronized(self) {
 		if(resultStore != dataStorage) {

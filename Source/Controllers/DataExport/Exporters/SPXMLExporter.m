@@ -34,7 +34,7 @@
 #import "SPExportUtilities.h"
 #import "SPExportController.h"
 #import "SPFunctions.h"
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 
 @implementation SPXMLExporter
 
@@ -73,9 +73,9 @@
     NSString *dataConversionString = nil;
 
     // Result sets
-    SPMySQLResult *statusResult = nil;
-    SPMySQLResult *structureResult = nil;
-    SPMySQLFastStreamingResult *streamingResult = nil;
+    SPPostgresResult *statusResult = nil;
+    SPPostgresResult *structureResult = nil;
+    SPPostgresFastStreamingResult *streamingResult = nil;
 
     NSMutableArray *xmlTags    = [NSMutableArray array];
     NSMutableString *xmlString = [NSMutableString string];

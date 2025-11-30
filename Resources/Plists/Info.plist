@@ -20,7 +20,7 @@
 			<key>CFBundleTypeIconSystemGenerated</key>
 			<integer>1</integer>
 			<key>CFBundleTypeName</key>
-			<string>Sequel Ace Connection</string>
+			<string>Sequel PAce Connection</string>
 			<key>CFBundleTypeOSTypes</key>
 			<array>
 				<string>spf</string>
@@ -47,7 +47,7 @@
 			<key>CFBundleTypeIconSystemGenerated</key>
 			<integer>1</integer>
 			<key>CFBundleTypeName</key>
-			<string>Sequel Ace Session</string>
+			<string>Sequel PAce Session</string>
 			<key>CFBundleTypeOSTypes</key>
 			<array>
 				<string>spfs</string>
@@ -79,7 +79,7 @@
 			<key>CFBundleTypeIconSystemGenerated</key>
 			<integer>1</integer>
 			<key>CFBundleTypeName</key>
-			<string>Sequel Ace Bundle</string>
+			<string>Sequel PAce Bundle</string>
 			<key>CFBundleTypeOSTypes</key>
 			<array>
 				<string>spbn</string>
@@ -109,7 +109,7 @@
 			<key>CFBundleTypeIconSystemGenerated</key>
 			<integer>1</integer>
 			<key>CFBundleTypeName</key>
-			<string>Sequel Ace Color Theme</string>
+			<string>Sequel PAce Color Theme</string>
 			<key>CFBundleTypeOSTypes</key>
 			<array>
 				<string>spct</string>
@@ -180,7 +180,7 @@
 	<key>CFBundleHelpBookFolder</key>
 	<string>english_help</string>
 	<key>CFBundleHelpBookName</key>
-	<string>Sequel Ace Help</string>
+	<string>Sequel PAce Help</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
@@ -197,7 +197,7 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>Sequel Ace URL scheme</string>
+			<string>Sequel PAce URL scheme</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>sequelace</string>
@@ -315,12 +315,12 @@
 			<key>NSMenuItem</key>
 			<dict>
 				<key>default</key>
-				<string>Sequel Ace/Perform selection as MySQL query</string>
+				<string>Sequel PAce/Perform selection as MySQL query</string>
 			</dict>
 			<key>NSMessage</key>
 			<string>doPerformQueryService</string>
 			<key>NSPortName</key>
-			<string>Sequel Ace</string>
+			<string>Sequel PAce</string>
 			<key>NSSendTypes</key>
 			<array>
 				<string>NSPasteboardTypeString</string>
@@ -338,7 +338,7 @@
 				<string>public.plain-text</string>
 			</array>
 			<key>UTTypeDescription</key>
-			<string>Sequel Ace Connection</string>
+			<string>Sequel PAce Connection</string>
 			<key>UTTypeIconFile</key>
 			<string></string>
 			<key>UTTypeIcons</key>
@@ -366,7 +366,7 @@
 				<string>com.apple.package</string>
 			</array>
 			<key>UTTypeDescription</key>
-			<string>Sequel Ace Session</string>
+			<string>Sequel PAce Session</string>
 			<key>UTTypeIconFile</key>
 			<string></string>
 			<key>UTTypeIcons</key>
@@ -392,7 +392,7 @@
 				<string>com.apple.package</string>
 			</array>
 			<key>UTTypeDescription</key>
-			<string>Sequel Ace Bundle</string>
+			<string>Sequel PAce Bundle</string>
 			<key>UTTypeIconFile</key>
 			<string></string>
 			<key>UTTypeIcons</key>
@@ -421,7 +421,7 @@
 				<string>com.apple.package</string>
 			</array>
 			<key>UTTypeDescription</key>
-			<string>Sequel Ace Bundle</string>
+			<string>Sequel PAce Bundle</string>
 			<key>UTTypeIconFile</key>
 			<string></string>
 			<key>UTTypeIcons</key>
@@ -476,7 +476,7 @@
 				<string>public.plain-text</string>
 			</array>
 			<key>UTTypeDescription</key>
-			<string>Sequel Ace Color Theme</string>
+			<string>Sequel PAce Color Theme</string>
 			<key>UTTypeIconFile</key>
 			<string></string>
 			<key>UTTypeIcons</key>

@@ -30,9 +30,9 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnectionProxy.h>
 
-@interface SPSSHTunnel : NSObject <SPMySQLConnectionProxy>
+@interface SPSSHTunnel : NSObject <SPPostgresConnectionProxy>
 {
 	id delegate;
 
@@ -95,7 +95,7 @@
 - (BOOL)setPasswordKeychainName:(NSString *)theName account:(NSString *)theAccount;
 - (BOOL)setPassword:(NSString *)thePassword;
 - (BOOL)setKeyFilePath:(NSString *)thePath;
-- (SPMySQLConnectionProxyState)state;
+- (SPPostgresConnectionProxyState)state;
 - (NSString *)lastError;
 - (NSString *)debugMessages;
 - (NSUInteger)localPort;

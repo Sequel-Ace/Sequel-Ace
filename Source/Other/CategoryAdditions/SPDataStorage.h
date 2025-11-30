@@ -28,20 +28,21 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-#import <SPMySQL/SPMySQLStreamingResultStoreDelegate.h>
+#import <SPPostgresFramework/SPPostgresStreamingResultStoreDelegate.h>
+#import <SPPostgresFramework/SPPostgresStreamingResultStore.h>
 
-@class SPMySQLStreamingResultStore;
+@class SPPostgresStreamingResultStore;
 
 /**
- * This class wraps a SPMySQLStreamingResultStore, providing an editable
+ * This class wraps a SPPostgresStreamingResultStore, providing an editable
  * data store; on a fresh load all data will be proxied from the underlying
  * result store, but if cells or rows are edited, mutable rows are stored
  * directly.
  */
 
-@interface SPDataStorage : NSObject <SPMySQLStreamingResultStoreDelegate>
+@interface SPDataStorage : NSObject <SPPostgresStreamingResultStoreDelegate>
 {
-	SPMySQLStreamingResultStore *dataStorage;
+	SPPostgresStreamingResultStore *dataStorage;
 	NSPointerArray *editedRows;
 	BOOL *unloadedColumns;
 	NSCondition *dataDownloadedLock;
@@ -51,7 +52,7 @@
 }
 
 /* Setting result store */
-- (void) setDataStorage:(SPMySQLStreamingResultStore *) newDataStorage updatingExisting:(BOOL)updateExistingStore;
+- (void) setDataStorage:(SPPostgresStreamingResultStore *) newDataStorage updatingExisting:(BOOL)updateExistingStore;
 
 /* Retrieving rows and cells */
 - (NSMutableArray *) rowContentsAtIndex:(NSUInteger)anIndex;
@@ -83,7 +84,7 @@
 - (void) awaitDataDownloaded;
 
 /* Delegate callback methods */
-- (void)resultStoreDidFinishLoadingData:(SPMySQLStreamingResultStore *)resultStore;
+- (void)resultStoreDidFinishLoadingData:(SPPostgresStreamingResultStore *)resultStore;
 
 @end
 

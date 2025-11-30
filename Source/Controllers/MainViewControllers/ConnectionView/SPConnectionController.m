@@ -2124,7 +2124,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                 [NSThread sleepForTimeInterval:0.1]; // 100ms
 
                 // If the state is connection refused, attempt the MySQL connection again with the host using the hostfield value.
-                if ([sshTunnel state] == SPMySQLProxyForwardingFailed) {
+                if ([sshTunnel state] == SPPostgresProxyForwardingFailed) {
                     if ([sshTunnel localPortFallback]) {
                         [postgresConnection setPort:[sshTunnel localPortFallback]];
                         [postgresConnection connect];
@@ -2139,7 +2139,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             if (![postgresConnection isConnected]) {
                 if (!cancellingConnection) {
                     NSString *errorMessage;
-                    if (sshTunnel && [sshTunnel state] == SPMySQLProxyForwardingFailed) {
+                    if (sshTunnel && [sshTunnel state] == SPPostgresProxyForwardingFailed) {
                         errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your Postgres host is set up to allow TCP/IP connections and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nPostgres said: %@", @"message of panel when SSH port forwarding failed"), [self host], @"Check logs"];
                         [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH port forwarding failed", @"title when ssh tunnel port forwarding failed") errorMessage:errorMessage detail:[sshTunnel debugMessages]];
                     }
@@ -2358,14 +2358,14 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         return;
     }
 
-    if (newState == SPMySQLProxyIdle) {
-        SPLog(@"SPMySQLProxyIdle, failing");
+    if (newState == SPPostgresProxyIdle) {
+        SPLog(@"SPPostgresProxyIdle, failing");
 
         [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH connection failed!", @"SSH connection failed title")
                                         errorMessage:[theTunnel lastError]
                                               detail:[sshTunnel debugMessages]];
-    } else if (newState == SPMySQLProxyConnected) {
-        SPLog(@"SPMySQLProxyConnected, calling initiateMySQLConnection");
+    } else if (newState == SPPostgresProxyConnected) {
+        SPLog(@"SPPostgresProxyConnected, calling initiateMySQLConnection");
 
         [self initiateMySQLConnection];
     }

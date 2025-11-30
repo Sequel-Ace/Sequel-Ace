@@ -36,7 +36,7 @@
 #import "SPExportController.h"
 #import "SPFunctions.h"
 
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 
 @implementation SPCSVExporter
 
@@ -128,7 +128,7 @@
         NSDictionary *tableDetails = nil;
         
         // Determine whether the supplied table is actually a table or a view via the CREATE TABLE command, and get the table details
-        SPMySQLResult *queryResult = [connection queryString:[NSString stringWithFormat:@"SHOW CREATE TABLE %@", [[self csvTableName] postgresQuotedIdentifier]]];
+        SPPostgresResult *queryResult = [connection queryString:[NSString stringWithFormat:@"SHOW CREATE TABLE %@", [[self csvTableName] postgresQuotedIdentifier]]];
         [queryResult setReturnDataAsStrings:YES];
         
         if ([queryResult numberOfRows]) {

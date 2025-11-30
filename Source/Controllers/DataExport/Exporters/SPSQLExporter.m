@@ -38,7 +38,7 @@
 #import "SPExportController.h"
 #import "SPFunctions.h"
 
-#import <SPMySQL/SPMySQL.h>
+#import <SPPostgresFramework/SPPostgresConnection.h>
 #include <stdlib.h>
 
 @interface SPSQLExporter ()
@@ -208,13 +208,17 @@
 
     //fetch old sql mode to restore it later
     {
-        SPMySQLResult *result = [connection queryString:@"SHOW VARIABLES LIKE 'sql_mode'"];
+        // Postgres doesn't use sql_mode
+        /*
+        SPPostgresResult *result = [connection queryString:@"SHOW VARIABLES LIKE 'sql_mode'"];
         if(![connection queryErrored]) {
             [result setReturnDataAsStrings:YES];
             NSArray *row = [result getRowAsArray];
             oldSqlMode = [[row objectAtIndex:1] unboxNull];
             SPLog(@"oldSqlMode: %@", oldSqlMode);
         }
+        */
+        oldSqlMode = nil;
     }
     //set sql mode for export
     if([@"" isEqualToString:oldSqlMode]) {
@@ -296,7 +300,7 @@
             // Determine whether this table is a table or a view via the CREATE TABLE command, and keep the create table syntax
             {
                 // Postgres doesn't support SHOW CREATE TABLE. Using a placeholder or TODO.
-                SPMySQLResult *queryResult = nil; // [connection queryString:[NSString stringWithFormat:@"SHOW CREATE TABLE %@", [tableName postgresQuotedIdentifier]]];
+                SPPostgresResult *queryResult = nil; // [connection queryString:[NSString stringWithFormat:@"SHOW CREATE TABLE %@", [tableName postgresQuotedIdentifier]]];
 
                 [queryResult setReturnDataAsStrings:YES];
 
@@ -621,7 +625,7 @@
 
             // Add triggers if the structure export was enabled
             if (sqlOutputIncludeStructure) {
-                SPMySQLResult *queryResult = [connection queryString:[NSString stringWithFormat:@"/*!50003 SHOW TRIGGERS WHERE `Table` = %@ */", [tableName postgresQuotedIdentifier]]];
+                SPPostgresResult *queryResult = nil; // [connection queryString:[NSString stringWithFormat:@"/*!50003 SHOW TRIGGERS WHERE `Table` = %@ */", [tableName postgresQuotedIdentifier]]];
 
                 [queryResult setReturnDataAsStrings:YES];
 
@@ -734,7 +738,7 @@
         if ([items count] == 0) continue;
 
         // Retrieve the definitions
-        SPMySQLResult *queryResult = [connection queryString:[NSString stringWithFormat:@"/*!50003 SHOW %@ STATUS WHERE `Db` = %@ */", procedureType,
+        SPPostgresResult *queryResult = nil; // [connection queryString:[NSString stringWithFormat:@"/*!50003 SHOW %@ STATUS WHERE `Db` = %@ */", procedureType,
                                                               [[self sqlDatabaseName] postgresQuotedIdentifier]]];
 
         [queryResult setReturnDataAsStrings:YES];
@@ -816,7 +820,7 @@
                                                 [[procedureDefiner firstObject] postgresQuotedIdentifier],
                                                 [[procedureDefiner safeObjectAtIndex:1] postgresQuotedIdentifier]];
 
-                    SPMySQLResult *createProcedureResult = [connection queryString:[NSString stringWithFormat:@"/*!50003 SHOW CREATE %@ %@ */", procedureType,
+                    SPPostgresResult *createProcedureResult = nil; // [connection queryString:[NSString stringWithFormat:@"/*!50003 SHOW CREATE %@ %@ */", procedureType,
                                                                                     [procedureName postgresQuotedIdentifier]]];
                     [createProcedureResult setReturnDataAsStrings:YES];
                     if ([connection queryErrored]) {

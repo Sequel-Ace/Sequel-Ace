@@ -2290,7 +2290,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 				[tempRow addObject:[o description]];
 			}
             /*
-			else if([o isKindOfClass:[SPMySQLGeometryData class]]) {
+			else if([o isKindOfClass:[SPPostgresGeometryData class]]) {
 				SPGeometryDataView *v = [[SPGeometryDataView alloc] initWithCoordinates:[o coordinates]];
 				NSImage *image = [v thumbnailImage];
 				NSString *imageStr = @"";
@@ -2626,7 +2626,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 		// Convert geometry values to their string values
 		} else if ([fieldTypeGroup isEqualToString:@"geometry"]) {
-			fieldValue = [(NSString*)rowObject getGeomFromTextString]; // ([rowObject isKindOfClass:[SPMySQLGeometryData class]]) ? [[rowObject wktString] getGeomFromTextString] : [(NSString*)rowObject getGeomFromTextString];
+			fieldValue = [(NSString*)rowObject getGeomFromTextString]; // ([rowObject isKindOfClass:[SPPostgresGeometryData class]]) ? [[rowObject wktString] getGeomFromTextString] : [(NSString*)rowObject getGeomFromTextString];
 	
 		// Convert the object to a string (here we can add special treatment for date-, number- and data-fields)
 		} else {
@@ -2949,7 +2949,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 				escVal = [mySQLConnection escapeString:tempValue includingQuotes:NO];
 				fmt = @"b'%@'";
 			}
-			else if ([tempValue isKindOfClass:[SPMySQLGeometryData class]]) {
+			else if ([tempValue isKindOfClass:[SPPostgresGeometryData class]]) {
 				escVal = [mySQLConnection escapeAndQuoteData:[tempValue data]];
 			}
 			// BLOB/TEXT data
@@ -4520,7 +4520,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 				return @"";
 			}
 		}
-		else if ([theValue isKindOfClass:[SPMySQLGeometryData class]]) {
+		else if ([theValue isKindOfClass:[SPPostgresGeometryData class]]) {
 			SPGeometryDataView *v = [[SPGeometryDataView alloc] initWithCoordinates:[theValue coordinates]];
 			image = [v thumbnailImage];
 

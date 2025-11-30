@@ -36,13 +36,13 @@
 {
 	NSWindow *messageWindow;
 	SPTablesList *tablesList;
-	SPMySQLConnection *connection;
+	SPPostgresConnection *connection;
 }
 
 /**
  * @property connection References the SPMySQL.framework MySQL connection; it has to be set.
  */
-@property (nonnull, readwrite, strong) SPMySQLConnection *connection;
+@property (nonnull, readwrite, strong) SPPostgresConnection *connection;
 
 /**
  * @property tablesList
