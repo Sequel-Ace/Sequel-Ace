@@ -86,6 +86,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 
 	IBOutlet SPRuleFilterController *ruleFilterController;
 	IBOutlet SPFilterTableController *filterTableController;
+	IBOutlet NSSearchField *columnFilterSearchField;
 	SPMySQLConnection *mySQLConnection;
 
 	BOOL _mainNibLoaded;
@@ -96,6 +97,8 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 	NSString *usedQuery;
 	SPDataStorage *tableValues;
 	NSMutableArray *dataColumns;
+	NSMutableArray *visibleColumns;
+	NSArray *columnFilterTerms;
 	NSMutableArray *keys;
 	NSMutableArray *oldRow;
 	NSUInteger tableRowsCount;
@@ -259,5 +262,9 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 #pragma mark - SPTableContentFilter
 
 - (void)makeContentFilterHaveFocus;
+
+#pragma mark - SPTableContentColumnFilter
+
+- (IBAction)columnFilterChanged:(NSSearchField *)sender;
 
 @end
