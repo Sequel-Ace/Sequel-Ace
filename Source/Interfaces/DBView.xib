@@ -1183,7 +1183,7 @@
                                                                         </connections>
                                                                     </button>
                                                                     <textField focusRingType="none" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="261">
-                                                                        <rect key="frame" x="193" y="-4" width="362" height="22"/>
+                                                                        <rect key="frame" x="338" y="-4" width="217" height="22"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                                                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="left" id="3759">
                                                                             <font key="font" metaFont="message" size="11"/>
@@ -1249,6 +1249,18 @@
                                                                             <action selector="navigatePaginationFromButton:" target="67" id="6666"/>
                                                                         </connections>
                                                                     </button>
+                                                                    <searchField wantsLayer="YES" focusRingType="none" verticalHuggingPriority="750" fixedFrame="YES" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="colFilter-001">
+                                                                        <rect key="frame" x="180" y="1" width="150" height="22"/>
+                                                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                                        <searchFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" borderStyle="bezel" placeholderString="Filter Columns" usesSingleLineMode="YES" bezelStyle="round" id="colFilter-002">
+                                                                            <font key="font" metaFont="smallSystem"/>
+                                                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                        </searchFieldCell>
+                                                                        <connections>
+                                                                            <action selector="columnFilterChanged:" target="67" id="colFilter-003"/>
+                                                                        </connections>
+                                                                    </searchField>
                                                                 </subviews>
                                                             </customView>
                                                         </subviews>
@@ -4385,6 +4397,7 @@ Gw
                 <outlet property="tableSourceInstance" destination="69" id="6882"/>
                 <outlet property="tablesListInstance" destination="68" id="1026"/>
                 <outlet property="toggleRuleFilterButton" destination="LYg-Ux-Lph" id="9eY-dL-AhC"/>
+                <outlet property="columnFilterSearchField" destination="colFilter-001" id="colFilter-004"/>
             </connections>
         </customObject>
         <customObject id="ki9-Po-bdr" userLabel="SPRuleFilter" customClass="SPRuleFilterController">
