@@ -450,6 +450,10 @@
 		COLFILT0001 /* SPTableContentColumnFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLFILT0002 /* SPTableContentColumnFilterTests.swift */; };
 		FD8099A92C59DE1D0084646F /* SABaseFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2056042C3A7E90008DD271 /* SABaseFormatter.swift */; };
 		FDCF55E52788278500D30655 /* TableSortHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */; };
+		AWSIAM00000006 /* SPAWSCredentials.m in Sources */ = {isa = PBXBuildFile; fileRef = AWSIAM00000002 /* SPAWSCredentials.m */; };
+		AWSIAM00000007 /* SPRDSIAMAuthentication.m in Sources */ = {isa = PBXBuildFile; fileRef = AWSIAM00000004 /* SPRDSIAMAuthentication.m */; };
+		AWSIAM00000010 /* SPAWSSTSClient.m in Sources */ = {isa = PBXBuildFile; fileRef = AWSIAM00000009 /* SPAWSSTSClient.m */; };
+		AWSIAM00000013 /* SPAWSMFATokenDialog.m in Sources */ = {isa = PBXBuildFile; fileRef = AWSIAM00000012 /* SPAWSMFATokenDialog.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1183,6 +1187,14 @@
 		FD6DFF862ADB40630057B713 /* SPTableHistoryManager.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SPTableHistoryManager.swift; sourceTree = "<group>"; tabWidth = 4; usesTabs = 1; };
 		FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAUuidFormatterTests.swift; sourceTree = "<group>"; };
 		COLFILT0002 /* SPTableContentColumnFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPTableContentColumnFilterTests.swift; sourceTree = "<group>"; };
+		AWSIAM00000001 /* SPAWSCredentials.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPAWSCredentials.h; sourceTree = "<group>"; };
+		AWSIAM00000002 /* SPAWSCredentials.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPAWSCredentials.m; sourceTree = "<group>"; };
+		AWSIAM00000003 /* SPRDSIAMAuthentication.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPRDSIAMAuthentication.h; sourceTree = "<group>"; };
+		AWSIAM00000004 /* SPRDSIAMAuthentication.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPRDSIAMAuthentication.m; sourceTree = "<group>"; };
+		AWSIAM00000008 /* SPAWSSTSClient.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPAWSSTSClient.h; sourceTree = "<group>"; };
+		AWSIAM00000009 /* SPAWSSTSClient.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPAWSSTSClient.m; sourceTree = "<group>"; };
+		AWSIAM00000011 /* SPAWSMFATokenDialog.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPAWSMFATokenDialog.h; sourceTree = "<group>"; };
+		AWSIAM00000012 /* SPAWSMFATokenDialog.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPAWSMFATokenDialog.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1909,6 +1921,7 @@
 				17E641720EF01F6B001BC333 /* SSH Tunnel */,
 				B57747D60F7A8990003B34F9 /* Category Additions */,
 				58DA884E103E1597000B98DF /* Debugging & Support */,
+				AWSIAM00000005 /* AWS */,
 			);
 			path = Other;
 			sourceTree = "<group>";
@@ -1920,6 +1933,21 @@
 				17E641740EF01F80001BC333 /* SPKeychain.m */,
 			);
 			path = Keychain;
+			sourceTree = "<group>";
+		};
+		AWSIAM00000005 /* AWS */ = {
+			isa = PBXGroup;
+			children = (
+				AWSIAM00000001 /* SPAWSCredentials.h */,
+				AWSIAM00000002 /* SPAWSCredentials.m */,
+				AWSIAM00000003 /* SPRDSIAMAuthentication.h */,
+				AWSIAM00000004 /* SPRDSIAMAuthentication.m */,
+				AWSIAM00000008 /* SPAWSSTSClient.h */,
+				AWSIAM00000009 /* SPAWSSTSClient.m */,
+				AWSIAM00000011 /* SPAWSMFATokenDialog.h */,
+				AWSIAM00000012 /* SPAWSMFATokenDialog.m */,
+			);
+			path = AWS;
 			sourceTree = "<group>";
 		};
 		17E641720EF01F6B001BC333 /* SSH Tunnel */ = {
@@ -3120,6 +3148,10 @@
 				9BE765682376A00C82FB93AA /* SPHelpViewerClient.m in Sources */,
 				8AEAC27B5C5B866575ECDB62 /* TableSortHelper.swift in Sources */,
 				44011FFBC7DF57126761313F /* SQLitePinnedTableManager.swift in Sources */,
+				AWSIAM00000006 /* SPAWSCredentials.m in Sources */,
+				AWSIAM00000007 /* SPRDSIAMAuthentication.m in Sources */,
+				AWSIAM00000010 /* SPAWSSTSClient.m in Sources */,
+				AWSIAM00000013 /* SPAWSMFATokenDialog.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

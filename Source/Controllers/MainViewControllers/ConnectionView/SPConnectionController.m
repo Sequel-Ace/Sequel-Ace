@@ -56,6 +56,10 @@
 #import "SPFunctions.h"
 #import "SPBundleHTMLOutputController.h"
 #import "SPBundleManager.h"
+#import "SPAWSCredentials.h"
+#import "SPRDSIAMAuthentication.h"
+#import "SPAWSSTSClient.h"
+#import "SPAWSMFATokenDialog.h"
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -142,6 +146,14 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 @synthesize timeZoneIdentifier;
 @synthesize allowDataLocalInfile;
 @synthesize enableClearTextPlugin;
+@synthesize useAWSIAMAuth;
+@synthesize awsUseProfile;
+@synthesize awsRegion;
+@synthesize awsProfile;
+@synthesize awsAccessKey;
+@synthesize awsSecretKey;
+@synthesize awsSecretKeyKeychainItemName;
+@synthesize awsSecretKeyKeychainItemAccount;
 @synthesize useSSL;
 @synthesize sslKeyFileLocationEnabled;
 @synthesize sslKeyFileLocation;
@@ -176,6 +188,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 - (NSString *)keychainPassword
 {
+    // For AWS IAM Authentication, generate a fresh token on each request
+    // This ensures token refresh works for long-running sessions
+    if ([self useAWSIAMAuth] && [self type] == SPTCPIPConnection) {
+        return [self generateAWSIAMAuthToken];
+    }
+
     NSString *kcItemName = [self connectionKeychainItemName];
     // If no keychain item is available, return an empty password
     if (!kcItemName) return nil;
@@ -184,6 +202,97 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     NSString *kcPassword = [keychain getPasswordForName:kcItemName account:[self connectionKeychainItemAccount]];
 
     return kcPassword;
+}
+
+/**
+ * Generates a fresh AWS IAM authentication token.
+ * Called both during initial connection and for token refresh on reconnection.
+ */
+- (NSString *)generateAWSIAMAuthToken
+{
+    NSError *awsError = nil;
+    SPAWSCredentials *credentials = nil;
+
+    if ([self awsUseProfile]) {
+        NSString *profileName = [[self awsProfile] length] > 0 ? [self awsProfile] : @"default";
+        credentials = [[SPAWSCredentials alloc] initWithProfile:profileName error:&awsError];
+
+        // Check if profile requires MFA for role assumption
+        if (credentials && !awsError && [credentials requiresMFA] && [credentials requiresRoleAssumption]) {
+            // Prompt for MFA token
+            NSWindow *parentWindow = [dbDocument parentWindowControllerWindow];
+            NSString *mfaToken = [SPAWSMFATokenDialog promptForMFATokenWithProfile:profileName
+                                                                         mfaSerial:credentials.mfaSerial
+                                                                      parentWindow:parentWindow];
+
+            if (!mfaToken) {
+                NSLog(@"AWS IAM Authentication: MFA token entry was cancelled");
+                return nil;
+            }
+
+            // Determine region for STS call
+            NSString *stsRegion = credentials.region;
+            if (!stsRegion.length) {
+                stsRegion = [self awsRegion];
+            }
+            if (!stsRegion.length) {
+                stsRegion = [SPRDSIAMAuthentication regionFromHostname:[self host]];
+            }
+            if (!stsRegion.length) {
+                stsRegion = @"us-east-1";
+            }
+
+            // Call STS AssumeRole with MFA
+            SPAWSCredentials *tempCredentials = [SPAWSSTSClient assumeRoleWithMFA:credentials.roleArn
+                                                                 mfaSerialNumber:credentials.mfaSerial
+                                                                    mfaTokenCode:mfaToken
+                                                                          region:stsRegion
+                                                                     credentials:credentials
+                                                                           error:&awsError];
+
+            if (tempCredentials && !awsError) {
+                credentials = tempCredentials;
+            } else {
+                NSLog(@"AWS IAM Authentication: STS AssumeRole failed: %@", awsError.localizedDescription);
+                return nil;
+            }
+        }
+    } else {
+        NSString *secretKey = [self awsSecretKey];
+
+        // Try to get secret key from keychain if not provided directly
+        if (![secretKey length] && [self awsSecretKeyKeychainItemName]) {
+            secretKey = [keychain getPasswordForName:[self awsSecretKeyKeychainItemName]
+                                             account:[self awsSecretKeyKeychainItemAccount]];
+        }
+
+        if ([[self awsAccessKey] length] && [secretKey length]) {
+            credentials = [[SPAWSCredentials alloc] initWithAccessKeyId:[self awsAccessKey]
+                                                        secretAccessKey:secretKey
+                                                           sessionToken:nil];
+        }
+    }
+
+    if (!credentials || ![credentials isValid]) {
+        NSLog(@"AWS IAM Authentication: Unable to load credentials for token refresh");
+        return nil;
+    }
+
+    NSInteger dbPort = [[self port] length] ? [[self port] integerValue] : 3306;
+
+    NSString *token = [SPRDSIAMAuthentication generateAuthTokenForHost:[self host]
+                                                                  port:dbPort
+                                                              username:[self user]
+                                                                region:[self awsRegion]
+                                                           credentials:credentials
+                                                                 error:&awsError];
+
+    if (awsError) {
+        NSLog(@"AWS IAM Authentication token refresh failed: %@", awsError.localizedDescription);
+        return nil;
+    }
+
+    return token;
 }
 
 - (NSString *)keychainPasswordForSSH
@@ -732,6 +841,82 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 }
 
 #pragma mark -
+#pragma mark AWS IAM Authentication
+
+/**
+ * Called when AWS IAM authentication settings are changed
+ */
+- (IBAction)updateAWSIAMInterface:(id)sender
+{
+    [self _startEditingConnection];
+
+    // Show/hide AWS IAM details container
+    if (standardAWSIAMDetailsContainer) {
+        [standardAWSIAMDetailsContainer setHidden:![self useAWSIAMAuth]];
+    }
+
+    // Disable/enable password field - AWS IAM auth doesn't use password
+    if (standardPasswordField) {
+        [standardPasswordField setEnabled:![self useAWSIAMAuth]];
+        if ([self useAWSIAMAuth]) {
+            [standardPasswordField setStringValue:@""];
+            [standardPasswordField setPlaceholderString:NSLocalizedString(@"Using IAM authentication", @"placeholder when AWS IAM auth is enabled")];
+        } else {
+            [standardPasswordField setPlaceholderString:@""];
+        }
+    }
+
+    // Resize the view to show/hide AWS IAM details
+    [self resizeTabViewToConnectionType:[self type] animating:YES];
+}
+
+/**
+ * Returns available AWS profiles from ~/.aws/credentials
+ */
+- (NSArray<NSString *> *)awsAvailableProfiles
+{
+    return [SPAWSCredentials availableProfiles];
+}
+
+/**
+ * Returns common AWS region identifiers
+ */
+- (NSArray<NSString *> *)awsAvailableRegions
+{
+    return @[
+        @"us-east-1",
+        @"us-east-2",
+        @"us-west-1",
+        @"us-west-2",
+        @"af-south-1",
+        @"ap-east-1",
+        @"ap-south-1",
+        @"ap-south-2",
+        @"ap-southeast-1",
+        @"ap-southeast-2",
+        @"ap-southeast-3",
+        @"ap-southeast-4",
+        @"ap-northeast-1",
+        @"ap-northeast-2",
+        @"ap-northeast-3",
+        @"ca-central-1",
+        @"ca-west-1",
+        @"eu-central-1",
+        @"eu-central-2",
+        @"eu-west-1",
+        @"eu-west-2",
+        @"eu-west-3",
+        @"eu-south-1",
+        @"eu-south-2",
+        @"eu-north-1",
+        @"il-central-1",
+        @"me-south-1",
+        @"me-central-1",
+        @"sa-east-1"
+    ];
+}
+
+#pragma mark -
 #pragma mark Connection details interaction and display
 
 /**
@@ -752,6 +937,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         case SPTCPIPConnection:
             targetResizeRect = [standardConnectionFormContainer frame];
             if ([self useSSL]) additionalFormHeight += [standardConnectionSSLDetailsContainer frame].size.height;
+            // Add height for AWS IAM details when enabled
+            if ([self useAWSIAMAuth] && standardAWSIAMDetailsContainer) {
+                additionalFormHeight += [standardAWSIAMDetailsContainer frame].size.height;
+            }
             break;
         case SPSocketConnection:
             targetResizeRect = [socketConnectionFormContainer frame];
@@ -879,6 +1068,23 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     // Clear text plugin
     [self setEnableClearTextPlugin:([fav objectForKey:SPFavoriteEnableClearTextPluginKey] ? [[fav objectForKey:SPFavoriteEnableClearTextPluginKey] intValue] : NSControlStateValueOff)];
+
+    // AWS IAM Authentication
+    [self setUseAWSIAMAuth:([fav objectForKey:SPFavoriteUseAWSIAMAuthKey] ? [[fav objectForKey:SPFavoriteUseAWSIAMAuthKey] intValue] : NSControlStateValueOff)];
+    [self setAwsUseProfile:([fav objectForKey:SPFavoriteAWSUseProfileKey] ? [[fav objectForKey:SPFavoriteAWSUseProfileKey] intValue] : NSControlStateValueOn)];
+    [self setAwsRegion:([fav objectForKey:SPFavoriteAWSRegionKey] ? [fav objectForKey:SPFavoriteAWSRegionKey] : @"")];
+    [self setAwsProfile:([fav objectForKey:SPFavoriteAWSProfileKey] ? [fav objectForKey:SPFavoriteAWSProfileKey] : @"default")];
+    [self setAwsAccessKey:([fav objectForKey:SPFavoriteAWSAccessKeyKey] ? [fav objectForKey:SPFavoriteAWSAccessKeyKey] : @"")];
+
+    // Update password field state based on AWS IAM auth setting
+    if (standardPasswordField) {
+        [standardPasswordField setEnabled:![self useAWSIAMAuth]];
+        if ([self useAWSIAMAuth]) {
+            [standardPasswordField setPlaceholderString:NSLocalizedString(@"Using IAM authentication", @"placeholder when AWS IAM auth is enabled")];
+        } else {
+            [standardPasswordField setPlaceholderString:@""];
+        }
+    }
 
     // SSL details
     [self setUseSSL:([fav objectForKey:SPFavoriteUseSSLKey] ? [[fav objectForKey:SPFavoriteUseSSLKey] intValue] : NSControlStateValueOff)];
@@ -1388,6 +1594,13 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [theFavorite setObject:[NSNumber numberWithInteger:[self allowDataLocalInfile]] forKey:SPFavoriteAllowDataLocalInfileKey];
     // Clear text plugin
     [theFavorite setObject:[NSNumber numberWithInteger:[self enableClearTextPlugin]] forKey:SPFavoriteEnableClearTextPluginKey];
+    // AWS IAM Authentication
+    [theFavorite setObject:[NSNumber numberWithInteger:[self useAWSIAMAuth]] forKey:SPFavoriteUseAWSIAMAuthKey];
+    [theFavorite setObject:[NSNumber numberWithInteger:[self awsUseProfile]] forKey:SPFavoriteAWSUseProfileKey];
+    _setOrRemoveKey(SPFavoriteAWSRegionKey, [self awsRegion]);
+    _setOrRemoveKey(SPFavoriteAWSProfileKey, [self awsProfile]);
+    _setOrRemoveKey(SPFavoriteAWSAccessKeyKey, [self awsAccessKey]);
+    // Note: AWS Secret Key is stored in keychain, not in favorites
     // SSL details
     [theFavorite setObject:[NSNumber numberWithInteger:[self useSSL]] forKey:SPFavoriteUseSSLKey];
     [theFavorite setObject:[NSNumber numberWithInteger:[self sslKeyFileLocationEnabled]] forKey:SPFavoriteSSLKeyFileLocationEnabledKey];
@@ -2064,12 +2277,127 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         }
 
-        if ([self password] == nil) {
-            [self setPassword:@""];
+        // AWS IAM Authentication: Generate token if enabled
+        NSString *connectionPassword = [self password];
+        BOOL awsIAMAuthUsed = NO;
+
+        if ([self useAWSIAMAuth] && [self type] == SPTCPIPConnection) {
+            awsIAMAuthUsed = YES;
+            NSError *awsError = nil;
+            SPAWSCredentials *credentials = nil;
+            NSString *stsRegion = nil;  // Will store region determined during MFA flow
+
+            if ([self awsUseProfile]) {
+                // Load credentials from AWS profile
+                NSString *profileName = [[self awsProfile] length] > 0 ? [self awsProfile] : @"default";
+                credentials = [[SPAWSCredentials alloc] initWithProfile:profileName error:&awsError];
+
+                // Check if profile requires MFA for role assumption
+                if (credentials && !awsError && [credentials requiresMFA] && [credentials requiresRoleAssumption]) {
+                    // Prompt for MFA token
+                    NSWindow *parentWindow = [dbDocument parentWindowControllerWindow];
+                    NSString *mfaToken = [SPAWSMFATokenDialog promptForMFATokenWithProfile:profileName
+                                                                                 mfaSerial:credentials.mfaSerial
+                                                                              parentWindow:parentWindow];
+
+                    if (!mfaToken) {
+                        // User cancelled MFA prompt
+                        awsError = [NSError errorWithDomain:@"SPConnectionController"
+                                                       code:2
+                                                   userInfo:@{NSLocalizedDescriptionKey: @"MFA authentication was cancelled"}];
+                    } else {
+                        // Determine region for STS call
+                        stsRegion = credentials.region;
+                        if (!stsRegion.length) {
+                            stsRegion = [self awsRegion];
+                        }
+                        if (!stsRegion.length) {
+                            stsRegion = [SPRDSIAMAuthentication regionFromHostname:[self host]];
+                        }
+                        if (!stsRegion.length) {
+                            stsRegion = @"us-east-1"; // Default fallback
+                        }
+
+                        // Call STS AssumeRole with MFA
+                        SPAWSCredentials *tempCredentials = [SPAWSSTSClient assumeRoleWithMFA:credentials.roleArn
+                                                                             mfaSerialNumber:credentials.mfaSerial
+                                                                                mfaTokenCode:mfaToken
+                                                                                      region:stsRegion
+                                                                                 credentials:credentials
+                                                                                       error:&awsError];
+
+                        if (tempCredentials && !awsError) {
+                            credentials = tempCredentials;
+                        }
+                    }
+                }
+            } else {
+                // Use manually entered credentials
+                NSString *secretKey = [self awsSecretKey];
+
+                // Try to get secret key from keychain if not provided directly
+                if (![secretKey length] && [self awsSecretKeyKeychainItemName]) {
+                    secretKey = [keychain getPasswordForName:[self awsSecretKeyKeychainItemName]
+                                                     account:[self awsSecretKeyKeychainItemAccount]];
+                }
+
+                if ([[self awsAccessKey] length] && [secretKey length]) {
+                    credentials = [[SPAWSCredentials alloc] initWithAccessKeyId:[self awsAccessKey]
+                                                                secretAccessKey:secretKey
+                                                                   sessionToken:nil];
+                } else {
+                    awsError = [NSError errorWithDomain:@"SPConnectionController"
+                                                   code:1
+                                               userInfo:@{NSLocalizedDescriptionKey: @"AWS Access Key ID and Secret Access Key are required"}];
+                }
+            }
+
+            if (credentials && [credentials isValid] && !awsError) {
+                // Determine port
+                NSInteger dbPort = [[self port] length] ? [[self port] integerValue] : 3306;
+
+                // Determine region - try UI value, then stsRegion (saved before AssumeRole), then extract from hostname
+                NSString *effectiveRegion = [self awsRegion];
+                if (!effectiveRegion.length && stsRegion.length) {
+                    effectiveRegion = stsRegion;
+                }
+                if (!effectiveRegion.length && credentials.region.length) {
+                    effectiveRegion = credentials.region;
+                }
+                if (!effectiveRegion.length) {
+                    effectiveRegion = [SPRDSIAMAuthentication regionFromHostname:[self host]];
+                }
+
+                // Generate the authentication token
+                connectionPassword = [SPRDSIAMAuthentication generateAuthTokenForHost:[self host]
+                                                                                  port:dbPort
+                                                                              username:[self user]
+                                                                                region:effectiveRegion
+                                                                           credentials:credentials
+                                                                                 error:&awsError];
+            }
+
+            if (awsError) {
+                [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"AWS IAM Authentication Failed", @"AWS IAM auth failed title")
+                                                errorMessage:awsError.localizedDescription
+                                                      detail:nil];
+                return;
+            }
+
+            // AWS IAM auth requires cleartext plugin and SSL
+            [mySQLConnection setEnableClearTextPlugin:YES];
+            [mySQLConnection setUseSSL:YES];
+        }
+
+        if (connectionPassword == nil) {
+            connectionPassword = @"";
         }
 
         // Only set the password if there is no Keychain item set or the connection is being tested or the password is different than in Keychain.
-        if ((isTestingConnection || !connectionKeychainItemName || (connectionKeychainItemName && ![[self password] isEqualToString:@"SequelAceSecretPassword"])) && [self password]) {
+        if (awsIAMAuthUsed) {
+            // For AWS IAM auth, always use the generated token
+            [mySQLConnection setPassword:connectionPassword];
+        } else if ((isTestingConnection || !connectionKeychainItemName || (connectionKeychainItemName && ![[self password] isEqualToString:@"SequelAceSecretPassword"])) && [self password]) {
             [mySQLConnection setPassword:[self password]];
         }
 
@@ -2077,8 +2405,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             [mySQLConnection setAllowDataLocalInfile:YES];
         }
 
-        // Enable Clear Text plugin when enabled
-        if ([self enableClearTextPlugin]) {
+        // Enable Clear Text plugin when enabled (also handled above for AWS IAM)
+        if ([self enableClearTextPlugin] && !awsIAMAuthUsed) {
             [mySQLConnection setEnableClearTextPlugin:YES];
         }
 
@@ -2125,6 +2453,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         // Connect
         SPLog(@"Establish connection");
         [mySQLConnection connect];
+
         if (![mySQLConnection isConnected]) {
             if (sshTunnel && !cancellingConnection) {
                 // This is a race condition we cannot fix "properly":
