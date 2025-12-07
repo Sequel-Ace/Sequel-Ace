@@ -824,6 +824,21 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 - (IBAction)updateSSLInterface:(id)sender
 {
     [self _startEditingConnection];
+
+    // SSL and AWS IAM are mutually exclusive
+    // When SSL is enabled, disable AWS IAM
+    if ([self useSSL] && [self useAWSIAMAuth]) {
+        [self setUseAWSIAMAuth:NO];
+        if (standardAWSIAMDetailsContainer) {
+            [standardAWSIAMDetailsContainer setHidden:YES];
+        }
+        // Re-enable password field
+        if (standardPasswordField) {
+            [standardPasswordField setEnabled:YES];
+            [standardPasswordField setPlaceholderString:@""];
+        }
+    }
+
     [self resizeTabViewToConnectionType:[self type] animating:YES];
 }
 
@@ -849,6 +864,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 - (IBAction)updateAWSIAMInterface:(id)sender
 {
     [self _startEditingConnection];
+
+    // AWS IAM and manual SSL are mutually exclusive
+    // When AWS IAM is enabled, disable SSL checkbox (SSL is implicit for IAM)
+    if ([self useAWSIAMAuth]) {
+        [self setUseSSL:NO];
+        // Hide SSL details container
+        if (standardConnectionSSLDetailsContainer) {
+            [standardConnectionSSLDetailsContainer setHidden:YES];
+        }
+    }
 
     // Show/hide AWS IAM details container
     if (standardAWSIAMDetailsContainer) {
@@ -936,9 +961,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     switch (theType) {
         case SPTCPIPConnection:
             targetResizeRect = [standardConnectionFormContainer frame];
-            if ([self useSSL]) additionalFormHeight += [standardConnectionSSLDetailsContainer frame].size.height;
-            // Add height for AWS IAM details when enabled
-            if ([self useAWSIAMAuth] && standardAWSIAMDetailsContainer) {
+            // SSL and AWS IAM are mutually exclusive
+            if ([self useSSL]) {
+                additionalFormHeight += [standardConnectionSSLDetailsContainer frame].size.height;
+            } else if ([self useAWSIAMAuth] && standardAWSIAMDetailsContainer) {
                 additionalFormHeight += [standardAWSIAMDetailsContainer frame].size.height;
             }
             break;

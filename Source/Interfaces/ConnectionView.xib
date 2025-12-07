@@ -531,7 +531,7 @@ DQ
                                                                                             </connections>
                                                                                         </button>
                                                                                         <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2k2-ul-dtp">
-                                                                                            <rect key="frame" x="108" y="37" width="251" height="18"/>
+                                                                                            <rect key="frame" x="108" y="46" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="check" title="Enable Cleartext plugin (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="mSn-DP-BWp">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -549,9 +549,29 @@ DQ
                                                                                                 </binding>
                                                                                             </connections>
                                                                                         </button>
+                                                                                        <!-- Require SSL Checkbox -->
+                                                                                        <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="TCPIP-SSL-001">
+                                                                                            <rect key="frame" x="108" y="28" width="251" height="18"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <buttonCell key="cell" type="check" title="Require SSL" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="TCPIP-SSL-002">
+                                                                                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                            </buttonCell>
+                                                                                            <connections>
+                                                                                                <action selector="updateSSLInterface:" target="-2" id="TCPIP-SSL-ACT"/>
+                                                                                                <binding destination="-2" name="value" keyPath="useSSL" id="TCPIP-SSL-BND">
+                                                                                                    <dictionary key="options">
+                                                                                                        <integer key="NSMultipleValuesPlaceholder" value="0"/>
+                                                                                                        <integer key="NSNoSelectionPlaceholder" value="0"/>
+                                                                                                        <integer key="NSNotApplicablePlaceholder" value="0"/>
+                                                                                                        <integer key="NSNullPlaceholder" value="0"/>
+                                                                                                    </dictionary>
+                                                                                                </binding>
+                                                                                            </connections>
+                                                                                        </button>
                                                                                         <!-- AWS IAM Authentication Checkbox -->
                                                                                         <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-CHK-001">
-                                                                                            <rect key="frame" x="108" y="9" width="251" height="18"/>
+                                                                                            <rect key="frame" x="108" y="10" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="check" title="Use AWS IAM Authentication" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="AWSIAM-CHK-002">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
