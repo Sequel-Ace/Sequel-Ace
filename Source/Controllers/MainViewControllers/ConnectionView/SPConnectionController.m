@@ -56,10 +56,8 @@
 #import "SPFunctions.h"
 #import "SPBundleHTMLOutputController.h"
 #import "SPBundleManager.h"
-#import "SPAWSCredentials.h"
-#import "SPRDSIAMAuthentication.h"
-#import "SPAWSSTSClient.h"
-#import "SPAWSMFATokenDialog.h"
+// AWS IAM Authentication is now implemented in Swift
+// See: AWSCredentials.swift, RDSIAMAuthentication.swift, AWSSTSClient.swift, AWSMFATokenDialog.swift, AWSIAMAuthManager.swift
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -207,88 +205,36 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 /**
  * Generates a fresh AWS IAM authentication token.
  * Called both during initial connection and for token refresh on reconnection.
+ * Uses the Swift AWSIAMAuthManager for all AWS operations.
  */
 - (NSString *)generateAWSIAMAuthToken
 {
     NSError *awsError = nil;
-    SPAWSCredentials *credentials = nil;
+    NSInteger dbPort = [[self port] length] ? [[self port] integerValue] : 3306;
 
-    if ([self awsUseProfile]) {
-        NSString *profileName = [[self awsProfile] length] > 0 ? [self awsProfile] : @"default";
-        credentials = [[SPAWSCredentials alloc] initWithProfile:profileName error:&awsError];
-
-        // Check if profile requires MFA for role assumption
-        if (credentials && !awsError && [credentials requiresMFA] && [credentials requiresRoleAssumption]) {
-            // Prompt for MFA token
-            NSWindow *parentWindow = [dbDocument parentWindowControllerWindow];
-            NSString *mfaToken = [SPAWSMFATokenDialog promptForMFATokenWithProfile:profileName
-                                                                         mfaSerial:credentials.mfaSerial
-                                                                      parentWindow:parentWindow];
-
-            if (!mfaToken) {
-                NSLog(@"AWS IAM Authentication: MFA token entry was cancelled");
-                return nil;
-            }
-
-            // Determine region for STS call
-            NSString *stsRegion = credentials.region;
-            if (!stsRegion.length) {
-                stsRegion = [self awsRegion];
-            }
-            if (!stsRegion.length) {
-                stsRegion = [SPRDSIAMAuthentication regionFromHostname:[self host]];
-            }
-            if (!stsRegion.length) {
-                stsRegion = @"us-east-1";
-            }
-
-            // Call STS AssumeRole with MFA
-            SPAWSCredentials *tempCredentials = [SPAWSSTSClient assumeRoleWithMFA:credentials.roleArn
-                                                                 mfaSerialNumber:credentials.mfaSerial
-                                                                    mfaTokenCode:mfaToken
-                                                                          region:stsRegion
-                                                                     credentials:credentials
-                                                                           error:&awsError];
-
-            if (tempCredentials && !awsError) {
-                credentials = tempCredentials;
-            } else {
-                NSLog(@"AWS IAM Authentication: STS AssumeRole failed: %@", awsError.localizedDescription);
-                return nil;
-            }
-        }
-    } else {
-        NSString *secretKey = [self awsSecretKey];
-
-        // Try to get secret key from keychain if not provided directly
+    // Get secret key from keychain if using manual credentials
+    NSString *secretKey = nil;
+    if (![self awsUseProfile]) {
+        secretKey = [self awsSecretKey];
         if (![secretKey length] && [self awsSecretKeyKeychainItemName]) {
             secretKey = [keychain getPasswordForName:[self awsSecretKeyKeychainItemName]
                                              account:[self awsSecretKeyKeychainItemAccount]];
         }
-
-        if ([[self awsAccessKey] length] && [secretKey length]) {
-            credentials = [[SPAWSCredentials alloc] initWithAccessKeyId:[self awsAccessKey]
-                                                        secretAccessKey:secretKey
-                                                           sessionToken:nil];
-        }
     }
 
-    if (!credentials || ![credentials isValid]) {
-        NSLog(@"AWS IAM Authentication: Unable to load credentials for token refresh");
-        return nil;
-    }
-
-    NSInteger dbPort = [[self port] length] ? [[self port] integerValue] : 3306;
-
-    NSString *token = [SPRDSIAMAuthentication generateAuthTokenForHost:[self host]
+    // Use the Swift AWSIAMAuthManager for token generation
+    NSString *token = [AWSIAMAuthManager generateAuthTokenWithHostname:[self host]
                                                                   port:dbPort
                                                               username:[self user]
                                                                 region:[self awsRegion]
-                                                           credentials:credentials
+                                                               profile:[self awsUseProfile] ? [self awsProfile] : nil
+                                                             accessKey:[self awsAccessKey]
+                                                             secretKey:secretKey
+                                                          parentWindow:[dbDocument parentWindowControllerWindow]
                                                                  error:&awsError];
 
     if (awsError) {
-        NSLog(@"AWS IAM Authentication token refresh failed: %@", awsError.localizedDescription);
+        NSLog(@"AWS IAM Authentication token generation failed: %@", awsError.localizedDescription);
         return nil;
     }
 
@@ -900,7 +846,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (NSArray<NSString *> *)awsAvailableProfiles
 {
-    return [SPAWSCredentials availableProfiles];
+    return [AWSIAMAuthManager availableProfiles];
 }
 
 /**
@@ -2304,104 +2250,36 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         }
 
         // AWS IAM Authentication: Generate token if enabled
+        // Uses the Swift AWSIAMAuthManager for all AWS operations (credential loading, role assumption, token generation)
         NSString *connectionPassword = [self password];
         BOOL awsIAMAuthUsed = NO;
 
         if ([self useAWSIAMAuth] && [self type] == SPTCPIPConnection) {
             awsIAMAuthUsed = YES;
             NSError *awsError = nil;
-            SPAWSCredentials *credentials = nil;
-            NSString *stsRegion = nil;  // Will store region determined during MFA flow
+            NSInteger dbPort = [[self port] length] ? [[self port] integerValue] : 3306;
 
-            if ([self awsUseProfile]) {
-                // Load credentials from AWS profile
-                NSString *profileName = [[self awsProfile] length] > 0 ? [self awsProfile] : @"default";
-                credentials = [[SPAWSCredentials alloc] initWithProfile:profileName error:&awsError];
-
-                // Check if profile requires MFA for role assumption
-                if (credentials && !awsError && [credentials requiresMFA] && [credentials requiresRoleAssumption]) {
-                    // Prompt for MFA token
-                    NSWindow *parentWindow = [dbDocument parentWindowControllerWindow];
-                    NSString *mfaToken = [SPAWSMFATokenDialog promptForMFATokenWithProfile:profileName
-                                                                                 mfaSerial:credentials.mfaSerial
-                                                                              parentWindow:parentWindow];
-
-                    if (!mfaToken) {
-                        // User cancelled MFA prompt
-                        awsError = [NSError errorWithDomain:@"SPConnectionController"
-                                                       code:2
-                                                   userInfo:@{NSLocalizedDescriptionKey: @"MFA authentication was cancelled"}];
-                    } else {
-                        // Determine region for STS call
-                        stsRegion = credentials.region;
-                        if (!stsRegion.length) {
-                            stsRegion = [self awsRegion];
-                        }
-                        if (!stsRegion.length) {
-                            stsRegion = [SPRDSIAMAuthentication regionFromHostname:[self host]];
-                        }
-                        if (!stsRegion.length) {
-                            stsRegion = @"us-east-1"; // Default fallback
-                        }
-
-                        // Call STS AssumeRole with MFA
-                        SPAWSCredentials *tempCredentials = [SPAWSSTSClient assumeRoleWithMFA:credentials.roleArn
-                                                                             mfaSerialNumber:credentials.mfaSerial
-                                                                                mfaTokenCode:mfaToken
-                                                                                      region:stsRegion
-                                                                                 credentials:credentials
-                                                                                       error:&awsError];
-
-                        if (tempCredentials && !awsError) {
-                            credentials = tempCredentials;
-                        }
-                    }
-                }
-            } else {
-                // Use manually entered credentials
-                NSString *secretKey = [self awsSecretKey];
-
-                // Try to get secret key from keychain if not provided directly
+            // Get secret key from keychain if using manual credentials
+            NSString *secretKey = nil;
+            if (![self awsUseProfile]) {
+                secretKey = [self awsSecretKey];
                 if (![secretKey length] && [self awsSecretKeyKeychainItemName]) {
                     secretKey = [keychain getPasswordForName:[self awsSecretKeyKeychainItemName]
                                                      account:[self awsSecretKeyKeychainItemAccount]];
                 }
-
-                if ([[self awsAccessKey] length] && [secretKey length]) {
-                    credentials = [[SPAWSCredentials alloc] initWithAccessKeyId:[self awsAccessKey]
-                                                                secretAccessKey:secretKey
-                                                                   sessionToken:nil];
-                } else {
-                    awsError = [NSError errorWithDomain:@"SPConnectionController"
-                                                   code:1
-                                               userInfo:@{NSLocalizedDescriptionKey: @"AWS Access Key ID and Secret Access Key are required"}];
-                }
             }
 
-            if (credentials && [credentials isValid] && !awsError) {
-                // Determine port
-                NSInteger dbPort = [[self port] length] ? [[self port] integerValue] : 3306;
-
-                // Determine region - try UI value, then stsRegion (saved before AssumeRole), then extract from hostname
-                NSString *effectiveRegion = [self awsRegion];
-                if (!effectiveRegion.length && stsRegion.length) {
-                    effectiveRegion = stsRegion;
-                }
-                if (!effectiveRegion.length && credentials.region.length) {
-                    effectiveRegion = credentials.region;
-                }
-                if (!effectiveRegion.length) {
-                    effectiveRegion = [SPRDSIAMAuthentication regionFromHostname:[self host]];
-                }
-
-                // Generate the authentication token
-                connectionPassword = [SPRDSIAMAuthentication generateAuthTokenForHost:[self host]
-                                                                                  port:dbPort
-                                                                              username:[self user]
-                                                                                region:effectiveRegion
-                                                                           credentials:credentials
-                                                                                 error:&awsError];
-            }
+            // Use the Swift AWSIAMAuthManager for token generation
+            // This handles: credential loading, role assumption (with or without MFA), and token generation
+            connectionPassword = [AWSIAMAuthManager generateAuthTokenWithHostname:[self host]
+                                                                             port:dbPort
+                                                                         username:[self user]
+                                                                           region:[self awsRegion]
+                                                                          profile:[self awsUseProfile] ? [self awsProfile] : nil
+                                                                        accessKey:[self awsAccessKey]
+                                                                        secretKey:secretKey
+                                                                     parentWindow:[dbDocument parentWindowControllerWindow]
+                                                                            error:&awsError];
 
             if (awsError) {
                 [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"AWS IAM Authentication Failed", @"AWS IAM auth failed title")

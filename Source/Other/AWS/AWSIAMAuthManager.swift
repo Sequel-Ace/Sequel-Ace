@@ -1,0 +1,469 @@
+//
+//  AWSIAMAuthManager.swift
+//  Sequel Ace
+//
+//  Created for AWS IAM authentication support.
+//  Copyright (c) 2024 Sequel-Ace. All rights reserved.
+//
+//  Permission is hereby granted, free of charge, to any person
+//  obtaining a copy of this software and associated documentation
+//  files (the "Software"), to deal in the Software without
+//  restriction, including without limitation the rights to use,
+//  copy, modify, merge, publish, distribute, sublicense, and/or sell
+//  copies of the Software, and to permit persons to whom the
+//  Software is furnished to do so, subject to the following
+//  conditions:
+//
+//  The above copyright notice and this permission notice shall be
+//  included in all copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+//  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+//  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+//  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+//  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+//  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+//  OTHER DEALINGS IN THE SOFTWARE.
+//
+
+import Foundation
+import OSLog
+import Security
+
+/// Errors that can occur during IAM authentication
+@objc enum AWSIAMAuthError: Int, Error, LocalizedError {
+    case credentialsNotFound
+    case credentialsInvalid
+    case mfaCancelled
+    case roleAssumptionFailed
+    case tokenGenerationFailed
+    case keychainError
+
+    var errorDescription: String? {
+        switch self {
+        case .credentialsNotFound:
+            return NSLocalizedString("AWS credentials not found", comment: "IAM auth error")
+        case .credentialsInvalid:
+            return NSLocalizedString("AWS credentials are invalid", comment: "IAM auth error")
+        case .mfaCancelled:
+            return NSLocalizedString("MFA authentication was cancelled", comment: "IAM auth error")
+        case .roleAssumptionFailed:
+            return NSLocalizedString("Failed to assume IAM role", comment: "IAM auth error")
+        case .tokenGenerationFailed:
+            return NSLocalizedString("Failed to generate IAM authentication token", comment: "IAM auth error")
+        case .keychainError:
+            return NSLocalizedString("Failed to access keychain", comment: "IAM auth error")
+        }
+    }
+}
+
+/// Manages AWS IAM authentication flow including credential loading, role assumption, and token generation
+@objc final class AWSIAMAuthManager: NSObject {
+
+    // MARK: - Keychain Constants
+
+    private static let keychainServicePrefix = "Sequel Ace AWS"
+    private static let log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "AWSIAMAuth")
+
+    // MARK: - Credential Caching
+
+    /// Cache for temporary credentials from role assumption (to avoid MFA prompts on reconnect)
+    /// Key: profile name, Value: (credentials, expiration date)
+    private static var credentialCache = [String: (credentials: AWSCredentials, expiration: Date)]()
+    private static let cacheLock = NSLock()
+
+    /// Cache duration margin - refresh credentials 5 minutes before expiration
+    private static let cacheExpirationMargin: TimeInterval = 300
+
+    // MARK: - Token Generation
+
+    /// Generate an IAM authentication token for a database connection
+    /// - Parameters:
+    ///   - hostname: Database hostname
+    ///   - port: Database port
+    ///   - username: Database username
+    ///   - region: AWS region (optional, will detect from hostname)
+    ///   - profile: AWS profile name (optional, uses default if nil)
+    ///   - accessKey: Manual access key (used if profile is nil/empty)
+    ///   - secretKey: Manual secret key (used if profile is nil/empty)
+    ///   - parentWindow: Parent window for MFA dialog
+    /// - Returns: Authentication token to use as database password
+    /// - Note: This method throws and is for Swift callers. Use generateAuthTokenObjC for Obj-C callers.
+    static func generateAuthToken(
+        hostname: String,
+        port: Int,
+        username: String,
+        region: String?,
+        profile: String?,
+        accessKey: String?,
+        secretKey: String?,
+        parentWindow: NSWindow?
+    ) throws -> String {
+        // Determine region
+        var effectiveRegion = region ?? ""
+        if effectiveRegion.isEmpty {
+            effectiveRegion = RDSIAMAuthentication.regionFromHostname(hostname) ?? ""
+        }
+        if effectiveRegion.isEmpty {
+            effectiveRegion = "us-east-1" // Default fallback
+        }
+
+        // Load or create credentials
+        let credentials: AWSCredentials
+        let useProfile = profile?.isEmpty == false
+
+        if useProfile {
+            credentials = try loadCredentialsFromProfile(
+                profile!,
+                region: effectiveRegion,
+                parentWindow: parentWindow
+            )
+        } else {
+            guard let accessKey = accessKey, !accessKey.isEmpty,
+                  let secretKey = secretKey, !secretKey.isEmpty else {
+                throw AWSIAMAuthError.credentialsInvalid
+            }
+            credentials = AWSCredentials(accessKeyId: accessKey, secretAccessKey: secretKey)
+        }
+
+        // Generate the authentication token
+        do {
+            return try RDSIAMAuthentication.generateAuthToken(
+                forHost: hostname,
+                port: port,
+                username: username,
+                region: effectiveRegion,
+                credentials: credentials
+            )
+        } catch {
+            log.error("Failed to generate IAM auth token: \(error.localizedDescription)")
+            throw AWSIAMAuthError.tokenGenerationFailed
+        }
+    }
+
+    // MARK: - Credential Loading
+
+    /// Load credentials from an AWS profile, handling role assumption and MFA as needed
+    private static func loadCredentialsFromProfile(
+        _ profileName: String,
+        region: String,
+        parentWindow: NSWindow?
+    ) throws -> AWSCredentials {
+        // Load base credentials from profile
+        let baseCredentials: AWSCredentials
+        do {
+            baseCredentials = try AWSCredentials(profile: profileName)
+        } catch {
+            log.error("Failed to load profile '\(profileName)': \(error.localizedDescription)")
+            throw AWSIAMAuthError.credentialsNotFound
+        }
+
+        // Check if role assumption is needed (FIX: Handle roles without MFA)
+        guard baseCredentials.requiresRoleAssumption else {
+            // No role assumption needed, use base credentials directly
+            return baseCredentials
+        }
+
+        // Role assumption is required
+        log.info("Profile '\(profileName)' requires role assumption")
+
+        // Check if we have cached credentials from a previous role assumption
+        // This avoids prompting for MFA on every reconnect
+        if let cachedCredentials = getCachedCredentials(for: profileName) {
+            log.info("Using cached credentials for profile '\(profileName)'")
+            return cachedCredentials
+        }
+
+        // Check if MFA is required
+        let assumedCredentials: AWSCredentials
+        if baseCredentials.requiresMFA {
+            assumedCredentials = try assumeRoleWithMFA(
+                baseCredentials: baseCredentials,
+                profileName: profileName,
+                region: region,
+                parentWindow: parentWindow
+            )
+        } else {
+            // Role assumption without MFA
+            assumedCredentials = try assumeRoleWithoutMFA(
+                baseCredentials: baseCredentials,
+                region: region
+            )
+        }
+
+        // Cache the credentials (STS credentials typically last 1 hour)
+        cacheCredentials(assumedCredentials, for: profileName, duration: 3600)
+
+        return assumedCredentials
+    }
+
+    // MARK: - Credential Caching
+
+    /// Get cached credentials if they haven't expired
+    private static func getCachedCredentials(for profileName: String) -> AWSCredentials? {
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
+
+        guard let cached = credentialCache[profileName] else {
+            return nil
+        }
+
+        // Check if credentials are still valid (with margin)
+        let now = Date()
+        if now.addingTimeInterval(cacheExpirationMargin) >= cached.expiration {
+            // Credentials are expired or about to expire
+            credentialCache.removeValue(forKey: profileName)
+            return nil
+        }
+
+        return cached.credentials
+    }
+
+    /// Cache credentials for a profile
+    private static func cacheCredentials(_ credentials: AWSCredentials, for profileName: String, duration: TimeInterval) {
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
+
+        let expiration = Date().addingTimeInterval(duration)
+        credentialCache[profileName] = (credentials, expiration)
+        log.info("Cached credentials for profile '\(profileName)' until \(expiration)")
+    }
+
+    /// Clear cached credentials for a profile (call when connection is closed)
+    @objc static func clearCachedCredentials(for profileName: String?) {
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
+
+        if let profileName = profileName {
+            credentialCache.removeValue(forKey: profileName)
+        } else {
+            credentialCache.removeAll()
+        }
+    }
+
+    /// Assume a role with MFA authentication
+    private static func assumeRoleWithMFA(
+        baseCredentials: AWSCredentials,
+        profileName: String,
+        region: String,
+        parentWindow: NSWindow?
+    ) throws -> AWSCredentials {
+        guard let roleArn = baseCredentials.roleArn,
+              let mfaSerial = baseCredentials.mfaSerial else {
+            throw AWSIAMAuthError.roleAssumptionFailed
+        }
+
+        // Prompt for MFA token
+        guard let mfaToken = AWSMFATokenDialog.promptForMFAToken(
+            profile: profileName,
+            mfaSerial: mfaSerial,
+            parentWindow: parentWindow
+        ) else {
+            throw AWSIAMAuthError.mfaCancelled
+        }
+
+        // Determine region for STS call
+        let stsRegion = baseCredentials.region ?? region
+
+        // Call STS AssumeRole with MFA
+        var error: NSError?
+        guard let tempCredentials = AWSSTSClient.assumeRoleWithMFA(
+            roleArn,
+            mfaSerialNumber: mfaSerial,
+            mfaTokenCode: mfaToken,
+            region: stsRegion,
+            credentials: baseCredentials,
+            error: &error
+        ) else {
+            if let error = error {
+                log.error("STS AssumeRole with MFA failed: \(error.localizedDescription)")
+            }
+            throw AWSIAMAuthError.roleAssumptionFailed
+        }
+
+        return tempCredentials
+    }
+
+    /// Assume a role without MFA (FIX: This was missing in original implementation)
+    private static func assumeRoleWithoutMFA(
+        baseCredentials: AWSCredentials,
+        region: String
+    ) throws -> AWSCredentials {
+        guard let roleArn = baseCredentials.roleArn else {
+            throw AWSIAMAuthError.roleAssumptionFailed
+        }
+
+        // Determine region for STS call
+        let stsRegion = baseCredentials.region ?? region
+
+        // Call STS AssumeRole without MFA
+        var error: NSError?
+        guard let tempCredentials = AWSSTSClient.assumeRole(
+            roleArn,
+            roleSessionName: nil,
+            mfaSerialNumber: nil,
+            mfaTokenCode: nil,
+            durationSeconds: 3600,
+            region: stsRegion,
+            credentials: baseCredentials,
+            error: &error
+        ) else {
+            if let error = error {
+                log.error("STS AssumeRole failed: \(error.localizedDescription)")
+            }
+            throw AWSIAMAuthError.roleAssumptionFailed
+        }
+
+        return tempCredentials
+    }
+
+    // MARK: - Keychain Management
+
+    /// Save AWS secret key to keychain
+    @objc static func saveSecretKey(
+        _ secretKey: String,
+        forAccessKey accessKey: String,
+        connectionName: String
+    ) -> Bool {
+        let service = "\(keychainServicePrefix) - \(connectionName)"
+        let account = accessKey
+
+        // Delete any existing item first
+        let deleteQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account
+        ]
+        SecItemDelete(deleteQuery as CFDictionary)
+
+        // Add new item
+        let addQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecValueData as String: secretKey.data(using: .utf8)!,
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlocked
+        ]
+
+        let status = SecItemAdd(addQuery as CFDictionary, nil)
+
+        if status != errSecSuccess {
+            log.error("Failed to save secret key to keychain: \(status)")
+            return false
+        }
+
+        return true
+    }
+
+    /// Retrieve AWS secret key from keychain
+    @objc static func getSecretKey(
+        forAccessKey accessKey: String,
+        connectionName: String
+    ) -> String? {
+        let service = "\(keychainServicePrefix) - \(connectionName)"
+        let account = accessKey
+
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+
+        guard status == errSecSuccess,
+              let data = result as? Data,
+              let secretKey = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+
+        return secretKey
+    }
+
+    /// Delete AWS secret key from keychain
+    @objc static func deleteSecretKey(
+        forAccessKey accessKey: String,
+        connectionName: String
+    ) -> Bool {
+        let service = "\(keychainServicePrefix) - \(connectionName)"
+        let account = accessKey
+
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account
+        ]
+
+        let status = SecItemDelete(query as CFDictionary)
+        return status == errSecSuccess || status == errSecItemNotFound
+    }
+
+    // MARK: - Utility Methods
+
+    /// Check if AWS credentials file exists
+    @objc static var credentialsFileExists: Bool {
+        AWSCredentials.credentialsFileExists
+    }
+
+    /// Get list of available AWS profiles
+    @objc static func availableProfiles() -> [String] {
+        AWSCredentials.availableProfiles()
+    }
+
+    /// Check if a hostname appears to be an RDS endpoint
+    @objc static func isRDSHostname(_ hostname: String) -> Bool {
+        RDSIAMAuthentication.isRDSHostname(hostname)
+    }
+
+    /// Extract region from RDS hostname
+    @objc static func regionFromHostname(_ hostname: String) -> String? {
+        RDSIAMAuthentication.regionFromHostname(hostname)
+    }
+}
+
+// MARK: - Objective-C Compatibility
+
+extension AWSIAMAuthManager {
+
+    /// Objective-C compatible method that returns nil on error
+    /// Note: Uses a different method name to avoid selector conflicts with the throwing version
+    @objc(generateAuthTokenWithHostname:port:username:region:profile:accessKey:secretKey:parentWindow:error:)
+    static func generateAuthTokenObjC(
+        hostname: String,
+        port: Int,
+        username: String,
+        region: String?,
+        profile: String?,
+        accessKey: String?,
+        secretKey: String?,
+        parentWindow: NSWindow?,
+        error errorPointer: NSErrorPointer
+    ) -> String? {
+        do {
+            return try generateAuthToken(
+                hostname: hostname,
+                port: port,
+                username: username,
+                region: region,
+                profile: profile,
+                accessKey: accessKey,
+                secretKey: secretKey,
+                parentWindow: parentWindow
+            )
+        } catch let authError as AWSIAMAuthError {
+            errorPointer?.pointee = NSError(
+                domain: "AWSIAMAuthErrorDomain",
+                code: authError.rawValue,
+                userInfo: [NSLocalizedDescriptionKey: authError.localizedDescription]
+            )
+            return nil
+        } catch let otherError {
+            errorPointer?.pointee = otherError as NSError
+            return nil
+        }
+    }
+}

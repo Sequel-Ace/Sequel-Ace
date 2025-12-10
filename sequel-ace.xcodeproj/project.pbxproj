@@ -7,6 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AWSTEST0011 /* AWSCredentialsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AWSTEST0001 /* AWSCredentialsTests.swift */; };
+		AWSTEST0012 /* RDSIAMAuthenticationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AWSTEST0002 /* RDSIAMAuthenticationTests.swift */; };
+		AWSSWIFT0011 /* AWSCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = AWSSWIFT0001 /* AWSCredentials.swift */; };
+		AWSSWIFT0012 /* RDSIAMAuthentication.swift in Sources */ = {isa = PBXBuildFile; fileRef = AWSSWIFT0002 /* RDSIAMAuthentication.swift */; };
+		AWSSWIFT0013 /* AWSSTSClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AWSSWIFT0003 /* AWSSTSClient.swift */; };
+		AWSSWIFT0014 /* AWSMFATokenDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AWSSWIFT0004 /* AWSMFATokenDialog.swift */; };
+		AWSSWIFT0015 /* AWSIAMAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AWSSWIFT0005 /* AWSIAMAuthManager.swift */; };
 		1141A389117BBFF200126A28 /* SPTableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1141A388117BBFF200126A28 /* SPTableCopy.m */; };
 		1198F5B31174EDD500670590 /* SPDatabaseCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1198F5B21174EDD500670590 /* SPDatabaseCopy.m */; };
 		11B55BFE1189E3B2009EF465 /* SPDatabaseAction.m in Sources */ = {isa = PBXBuildFile; fileRef = 11B55BFD1189E3B2009EF465 /* SPDatabaseAction.m */; };
@@ -450,10 +457,6 @@
 		COLFILT0001 /* SPTableContentColumnFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLFILT0002 /* SPTableContentColumnFilterTests.swift */; };
 		FD8099A92C59DE1D0084646F /* SABaseFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2056042C3A7E90008DD271 /* SABaseFormatter.swift */; };
 		FDCF55E52788278500D30655 /* TableSortHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */; };
-		AWSIAM00000006 /* SPAWSCredentials.m in Sources */ = {isa = PBXBuildFile; fileRef = AWSIAM00000002 /* SPAWSCredentials.m */; };
-		AWSIAM00000007 /* SPRDSIAMAuthentication.m in Sources */ = {isa = PBXBuildFile; fileRef = AWSIAM00000004 /* SPRDSIAMAuthentication.m */; };
-		AWSIAM00000010 /* SPAWSSTSClient.m in Sources */ = {isa = PBXBuildFile; fileRef = AWSIAM00000009 /* SPAWSSTSClient.m */; };
-		AWSIAM00000013 /* SPAWSMFATokenDialog.m in Sources */ = {isa = PBXBuildFile; fileRef = AWSIAM00000012 /* SPAWSMFATokenDialog.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -577,6 +580,13 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AWSTEST0001 /* AWSCredentialsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSCredentialsTests.swift; sourceTree = "<group>"; };
+		AWSTEST0002 /* RDSIAMAuthenticationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RDSIAMAuthenticationTests.swift; sourceTree = "<group>"; };
+		AWSSWIFT0001 /* AWSCredentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSCredentials.swift; sourceTree = "<group>"; };
+		AWSSWIFT0002 /* RDSIAMAuthentication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RDSIAMAuthentication.swift; sourceTree = "<group>"; };
+		AWSSWIFT0003 /* AWSSTSClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSSTSClient.swift; sourceTree = "<group>"; };
+		AWSSWIFT0004 /* AWSMFATokenDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSMFATokenDialog.swift; sourceTree = "<group>"; };
+		AWSSWIFT0005 /* AWSIAMAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSIAMAuthManager.swift; sourceTree = "<group>"; };
 		1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		112730551180788A000737FD /* SPTableCopyTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTableCopyTest.m; sourceTree = "<group>"; };
 		1141A387117BBFF200126A28 /* SPTableCopy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTableCopy.h; sourceTree = "<group>"; };
@@ -1187,14 +1197,6 @@
 		FD6DFF862ADB40630057B713 /* SPTableHistoryManager.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SPTableHistoryManager.swift; sourceTree = "<group>"; tabWidth = 4; usesTabs = 1; };
 		FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAUuidFormatterTests.swift; sourceTree = "<group>"; };
 		COLFILT0002 /* SPTableContentColumnFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPTableContentColumnFilterTests.swift; sourceTree = "<group>"; };
-		AWSIAM00000001 /* SPAWSCredentials.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPAWSCredentials.h; sourceTree = "<group>"; };
-		AWSIAM00000002 /* SPAWSCredentials.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPAWSCredentials.m; sourceTree = "<group>"; };
-		AWSIAM00000003 /* SPRDSIAMAuthentication.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPRDSIAMAuthentication.h; sourceTree = "<group>"; };
-		AWSIAM00000004 /* SPRDSIAMAuthentication.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPRDSIAMAuthentication.m; sourceTree = "<group>"; };
-		AWSIAM00000008 /* SPAWSSTSClient.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPAWSSTSClient.h; sourceTree = "<group>"; };
-		AWSIAM00000009 /* SPAWSSTSClient.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPAWSSTSClient.m; sourceTree = "<group>"; };
-		AWSIAM00000011 /* SPAWSMFATokenDialog.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPAWSMFATokenDialog.h; sourceTree = "<group>"; };
-		AWSIAM00000012 /* SPAWSMFATokenDialog.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPAWSMFATokenDialog.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1938,14 +1940,11 @@
 		AWSIAM00000005 /* AWS */ = {
 			isa = PBXGroup;
 			children = (
-				AWSIAM00000001 /* SPAWSCredentials.h */,
-				AWSIAM00000002 /* SPAWSCredentials.m */,
-				AWSIAM00000003 /* SPRDSIAMAuthentication.h */,
-				AWSIAM00000004 /* SPRDSIAMAuthentication.m */,
-				AWSIAM00000008 /* SPAWSSTSClient.h */,
-				AWSIAM00000009 /* SPAWSSTSClient.m */,
-				AWSIAM00000011 /* SPAWSMFATokenDialog.h */,
-				AWSIAM00000012 /* SPAWSMFATokenDialog.m */,
+				AWSSWIFT0001 /* AWSCredentials.swift */,
+				AWSSWIFT0002 /* RDSIAMAuthentication.swift */,
+				AWSSWIFT0003 /* AWSSTSClient.swift */,
+				AWSSWIFT0004 /* AWSMFATokenDialog.swift */,
+				AWSSWIFT0005 /* AWSIAMAuthManager.swift */,
 			);
 			path = AWS;
 			sourceTree = "<group>";
@@ -2906,6 +2905,8 @@
 				1A2DD55A25939BEE00616E7E /* SPTestingUtils.m in Sources */,
 				1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */,
 				1798F1C4155018E2004B0AB8 /* SPMutableArrayAdditionsTests.m in Sources */,
+				AWSTEST0011 /* AWSCredentialsTests.swift in Sources */,
+				AWSTEST0012 /* RDSIAMAuthenticationTests.swift in Sources */,
 				FD8099A72C59DCFA0084646F /* SAUuidFormatterTests.swift in Sources */,
 				COLFILT0001 /* SPTableContentColumnFilterTests.swift in Sources */,
 				1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */,
@@ -2995,6 +2996,11 @@
 				BCD0AD490FBBFC340066EA5C /* SPSQLTokenizer.l in Sources */,
 				1A89558725D6E15D0060CE72 /* GitHub.swift in Sources */,
 				1A11E51625A36C62001CB721 /* HyperlinkTextField.swift in Sources */,
+				AWSSWIFT0011 /* AWSCredentials.swift in Sources */,
+				AWSSWIFT0012 /* RDSIAMAuthentication.swift in Sources */,
+				AWSSWIFT0013 /* AWSSTSClient.swift in Sources */,
+				AWSSWIFT0014 /* AWSMFATokenDialog.swift in Sources */,
+				AWSSWIFT0015 /* AWSIAMAuthManager.swift in Sources */,
 				387BBBA80FBCB6CB00B31746 /* SPTableRelations.m in Sources */,
 				1740FABB0FC4372F00CF3699 /* SPDatabaseData.m in Sources */,
 				17C058880FC9FC390077E9CF /* SPNarrowDownCompletion.m in Sources */,
@@ -3148,10 +3154,6 @@
 				9BE765682376A00C82FB93AA /* SPHelpViewerClient.m in Sources */,
 				8AEAC27B5C5B866575ECDB62 /* TableSortHelper.swift in Sources */,
 				44011FFBC7DF57126761313F /* SQLitePinnedTableManager.swift in Sources */,
-				AWSIAM00000006 /* SPAWSCredentials.m in Sources */,
-				AWSIAM00000007 /* SPRDSIAMAuthentication.m in Sources */,
-				AWSIAM00000010 /* SPAWSSTSClient.m in Sources */,
-				AWSIAM00000013 /* SPAWSMFATokenDialog.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
