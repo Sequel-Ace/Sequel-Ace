@@ -39,6 +39,7 @@
 #import "SPFunctions.h"
 
 #import "SPPostgresConnection.h"
+#import "SPPostgresGeometryData.h"
 #include <stdlib.h>
 
 @interface SPSQLExporter ()
@@ -443,7 +444,7 @@
 
                 if (rowCount) {
                     // Set up a result set in streaming mode
-                    SPMySQLStreamingResult *streamingResult = [connection streamingQueryString:[NSString stringWithFormat:@"SELECT %@ FROM %@", [queryColumnDetails componentsJoinedByString:@", "], [tableName postgresQuotedIdentifier]] useLowMemoryBlockingStreaming:([self exportUsingLowMemoryBlockingStreaming])];
+                    SPPostgresStreamingResult *streamingResult = [connection streamingQueryString:[NSString stringWithFormat:@"SELECT %@ FROM %@", [queryColumnDetails componentsJoinedByString:@", "], [tableName postgresQuotedIdentifier]] useLowMemoryBlockingStreaming:([self exportUsingLowMemoryBlockingStreaming])];
 
                     // Inform the delegate that we are about to start writing data for the current table
                     [delegate performSelectorOnMainThread:@selector(sqlExportProcessWillBeginWritingData:) withObject:self waitUntilDone:NO];
@@ -547,7 +548,7 @@
                             }
 
                             // GEOMETRY data types directly as hex data
-                            else if ([object isKindOfClass:[SPMySQLGeometryData class]]) {
+                            else if ([object isKindOfClass:[SPPostgresGeometryData class]]) {
                                 [sqlString appendString:[connection escapeAndQuoteData:[object data]]];
                             }
 
@@ -738,8 +739,8 @@
         if ([items count] == 0) continue;
 
         // Retrieve the definitions
-        SPPostgresResult *queryResult = nil; // [connection queryString:[NSString stringWithFormat:@"/*!50003 SHOW %@ STATUS WHERE `Db` = %@ */", procedureType,
-                                                              [[self sqlDatabaseName] postgresQuotedIdentifier]]];
+        // PostgreSQL: Need to query pg_proc for function/procedure definitions
+        SPPostgresResult *queryResult = nil; // TODO: Implement PostgreSQL procedure listing
 
         [queryResult setReturnDataAsStrings:YES];
 
@@ -820,8 +821,8 @@
                                                 [[procedureDefiner firstObject] postgresQuotedIdentifier],
                                                 [[procedureDefiner safeObjectAtIndex:1] postgresQuotedIdentifier]];
 
-                    SPPostgresResult *createProcedureResult = nil; // [connection queryString:[NSString stringWithFormat:@"/*!50003 SHOW CREATE %@ %@ */", procedureType,
-                                                                                    [procedureName postgresQuotedIdentifier]]];
+                    // PostgreSQL: Need to query pg_get_functiondef for procedure definitions
+                    SPPostgresResult *createProcedureResult = nil; // TODO: Implement PostgreSQL procedure definition retrieval
                     [createProcedureResult setReturnDataAsStrings:YES];
                     if ([connection queryErrored]) {
                         [errors appendFormat:@"%@\n", [connection lastErrorMessage]];

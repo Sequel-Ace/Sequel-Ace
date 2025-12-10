@@ -9,7 +9,7 @@
 //
 
 #import "SPPostgresConnection.h"
-#import <libpq-fe.h>
+#import "/opt/homebrew/include/postgresql@17/libpq-fe.h"
 
 @implementation SPPostgresConnection
 
@@ -66,6 +66,22 @@
     return YES;
 }
 
+- (BOOL)reconnectWithNewDatabase:(NSString *)databaseName {
+    if (!databaseName) return NO;
+    
+    // If we're already connected to this database, do nothing but return success
+    if (isConnected && [database isEqualToString:databaseName]) {
+        return YES;
+    }
+    
+    [self disconnect];
+    
+    database = [databaseName copy];
+    
+    return [self connect];
+}
+
+
 - (void)disconnect {
     if (connection) {
         PQfinish(connection);
@@ -91,13 +107,26 @@
 }
 
 - (SPPostgresStreamingResult *)streamingQueryString:(NSString *)query useLowMemoryBlockingStreaming:(BOOL)lowMemory {
-    // Basic implementation: just run normal query and wrap it. 
-    // Real streaming would use PQsendQuery and PQsetSingleRowMode.
     if (!isConnected || !connection) return nil;
     
-    // For now, return a dummy or non-streaming result wrapped as streaming
-    // TODO: Implement real streaming
-    return (SPPostgresStreamingResult *)[self queryString:query];
+    // 1. Send the query asynchronously
+    if (!PQsendQuery(connection, [query UTF8String])) {
+        lastErrorMessage = [NSString stringWithUTF8String:PQerrorMessage(connection)];
+        return nil;
+    }
+    
+    // 2. Enable single-row mode (Streaming)
+    if (!PQsetSingleRowMode(connection)) {
+         lastErrorMessage = @"Failed to enable single-row mode";
+         // We might want to cancel/drain here?
+         return nil;
+    }
+    
+    // 3. Return the streaming wrapper, passing the connection so it can pump results
+    //    Note: SPPostgresStreamingResult does NOT own the connection, but uses it.
+    SPPostgresStreamingResult *result = [[SPPostgresStreamingResult alloc] initWithConnection:connection];
+    
+    return result;
 }
 
 - (void)setEncoding:(NSString *)encoding {
@@ -145,6 +174,118 @@
     // Postgres doesn't support "USE db", need to reconnect.
     // For now, just update the property, assuming caller will reconnect or this is just for tracking.
     database = [db copy];
+}
+
+- (NSString *)host {
+    return host;
+}
+
+- (NSArray *)databases {
+    if (!isConnected || !connection) return @[];
+    
+    // Query pg_database system catalog for all non-template databases
+    SPPostgresResult *result = [self queryString:@"SELECT datname FROM pg_database WHERE datistemplate = false ORDER BY datname"];
+    
+    if (!result || [self queryErrored]) {
+        return @[];
+    }
+    
+    NSMutableArray *databaseList = [NSMutableArray array];
+    NSDictionary *row;
+    while ((row = [result getRowAsDictionary])) {
+        NSString *dbName = [row objectForKey:@"datname"];
+        if (dbName && ![dbName isKindOfClass:[NSNull class]]) {
+            [databaseList addObject:dbName];
+        }
+    }
+    
+    return [NSArray arrayWithArray:databaseList];
+}
+
+- (void)storeEncodingForRestoration {
+    if (!isConnected || !connection) return;
+    
+    // Get current encoding from libpq
+    const char *enc = pg_encoding_to_char(PQclientEncoding(connection));
+    if (enc) {
+        storedEncoding = [NSString stringWithUTF8String:enc];
+    }
+}
+
+- (void)restoreStoredEncoding {
+    if (!isConnected || !storedEncoding) return;
+    
+    [self setEncoding:storedEncoding];
+    storedEncoding = nil;
+}
+
+- (id)getFirstFieldFromQuery:(NSString *)query {
+    if (!isConnected || !connection || !query) return nil;
+    
+    SPPostgresResult *result = [self queryString:query];
+    
+    if (!result || [result numberOfRows] == 0 || [result numberOfFields] == 0) {
+        return nil;
+    }
+    
+    NSArray *row = [result getRowAsArray];
+    if (row && [row count] > 0) {
+        id val = [row objectAtIndex:0];
+        if ([val isKindOfClass:[NSNull class]]) {
+            return nil;
+        }
+        return val;
+    }
+    
+    return nil;
+}
+
+- (NSUInteger)lastErrorID {
+    // PostgreSQL uses SQLSTATE codes (5-char strings) rather than numeric error IDs.
+    // Return 0 as a placeholder since numeric IDs don't apply.
+    // Callers should use lastErrorMessage for actual error information.
+    return 0;
+}
+
+- (NSString *)escapeAndQuoteData:(NSData *)data {
+    if (!data || [data length] == 0) return @"NULL";
+    if (!isConnected || !connection) {
+        // Fallback: hex encode the data
+        const unsigned char *bytes = [data bytes];
+        NSMutableString *hex = [NSMutableString stringWithString:@"E'\\\\x"];
+        for (NSUInteger i = 0; i < [data length]; i++) {
+            [hex appendFormat:@"%02x", bytes[i]];
+        }
+        [hex appendString:@"'"];
+        return hex;
+    }
+    
+    // Use PostgreSQL's escape function for bytea
+    size_t escapedLen;
+    unsigned char *escaped = PQescapeByteaConn(connection, [data bytes], [data length], &escapedLen);
+    if (escaped) {
+        NSString *result = [NSString stringWithFormat:@"E'%s'", escaped];
+        PQfreemem(escaped);
+        return result;
+    }
+    
+    return @"NULL";
+}
+
+- (BOOL)isNotMariadb103 {
+    // PostgreSQL is not MariaDB, so this always returns YES
+    // This method exists for MySQL/MariaDB compatibility checks
+    return YES;
+}
+
+- (BOOL)isMariaDB {
+    // PostgreSQL is not MariaDB
+    return NO;
+}
+
+- (BOOL)userTriggeredDisconnect {
+    // Return NO as PostgreSQL connections don't track user-triggered disconnects the same way
+    return NO;
 }
 
 @end

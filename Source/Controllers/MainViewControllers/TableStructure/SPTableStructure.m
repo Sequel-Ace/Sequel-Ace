@@ -52,6 +52,7 @@
 #import "sequel-pace-Swift.h"
 
 #import "SPPostgresConnection.h"
+#import "SPPostgresDataTypes.h"
 
 @interface SPFieldTypeHelp ()
 
@@ -761,9 +762,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	autoIncrementIndex = nil;
 
 	// Execute query
-	[mySQLConnection queryString:queryString];
-
-	// Execute query
 	[postgresConnection queryString:queryString];
 
 	if (![postgresConnection queryErrored]) {
@@ -814,7 +812,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			}];
 
 		} else {
-			NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@", @"error changing field informative message"), [theRow objectForKey:@"name"], queryString, [mySQLConnection lastErrorMessage]];
+			NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the field '%@' via\n\n%@\n\nPostgreSQL said: %@", @"error changing field informative message"), [theRow objectForKey:@"name"], queryString, [postgresConnection lastErrorMessage]];
 			[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Error changing field", @"error changing field message") message:alertMessage primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") primaryButtonHandler:^{
 				[self addRowSheetPrimaryAction];
 			} cancelButtonHandler:^{
@@ -883,7 +881,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 		// Otherwise, use the provided default
 		else {
-			[queryString appendFormat:@"\n DEFAULT %@ ", [mySQLConnection escapeAndQuoteString:[theRow objectForKey:@"default"]]];
+			[queryString appendFormat:@"\n DEFAULT %@ ", [postgresConnection escapeAndQuoteString:[theRow objectForKey:@"default"]]];
 		}
 	}
 
@@ -1011,7 +1009,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
             else if ([theRowType hasSuffix:@"CHAR"] || [theRowType hasSuffix:@"TEXT"] || [theRowType hasSuffix:@"ENUM"] || [theRowType isInArray:@[@"TIMESTAMP",@"DATETIME",@"DATE"]]) {
                 // If default value is not an expresion or a string, add quotes.
                 if (!defaultValueIsExpression && !defaultValueIsString)
-                    [queryString appendFormat:@"\n DEFAULT %@", [mySQLConnection escapeAndQuoteString:defaultValue]];
+                    [queryString appendFormat:@"\n DEFAULT %@", [postgresConnection escapeAndQuoteString:defaultValue]];
                 else
                     [queryString appendFormat:@"\n DEFAULT %@", defaultValue];
             }
@@ -1051,7 +1049,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
     // Any column comments
     if ([(NSString *)[theRow objectForKey:@"comment"] length]) {
-        [queryString appendFormat:@"\n COMMENT %@", [mySQLConnection escapeAndQuoteString:[theRow objectForKey:@"comment"]]];
+        [queryString appendFormat:@"\n COMMENT %@", [postgresConnection escapeAndQuoteString:[theRow objectForKey:@"comment"]]];
     }
 
 	return queryString;
@@ -1152,11 +1150,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
  */
 - (void)setConnection:(SPPostgresConnection *)theConnection
 {
-    mySQLConnection = nil;
+    postgresConnection = nil;
     postgresConnection = theConnection;
 	
 	// Set the indexes controller connection
-	[indexesController setConnection:mySQLConnection];
+	[indexesController setConnection:postgresConnection];
 	
 	// Set up tableView
 	[tableSourceView registerForDraggedTypes:@[SPDefaultPasteboardDragType]];
@@ -1222,8 +1220,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	NSString *nullValue = [prefs stringForKey:SPNullValue];
 	CFStringRef escapedNullValue = CFXMLCreateStringByEscapingEntities(NULL, ((CFStringRef)nullValue), NULL);
 
-	SPPostgresResult *structureQueryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT column_name AS Field, data_type AS Type, is_nullable AS \"Null\", column_default AS \"Default\" FROM information_schema.columns WHERE table_name = %@", [selectedTable postgresQuotedIdentifier]]];
-	SPPostgresResult *indexesQueryResult   = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT indexname AS Key_name, indexdef AS Index_type FROM pg_indexes WHERE tablename = %@", [selectedTable postgresQuotedIdentifier]]];
+	SPPostgresResult *structureQueryResult = [postgresConnection queryString:[NSString stringWithFormat:@"SELECT column_name AS Field, data_type AS Type, is_nullable AS \"Null\", column_default AS \"Default\" FROM information_schema.columns WHERE table_name = %@", [selectedTable postgresQuotedIdentifier]]];
+	SPPostgresResult *indexesQueryResult   = [postgresConnection queryString:[NSString stringWithFormat:@"SELECT indexname AS Key_name, indexdef AS Index_type FROM pg_indexes WHERE tablename = %@", [selectedTable postgresQuotedIdentifier]]];
 
 	[structureQueryResult setReturnDataAsStrings:YES];
 	[indexesQueryResult setReturnDataAsStrings:YES];
@@ -1357,28 +1355,28 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 					}
 				}
 
-				[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [self->selectedTable postgresQuotedIdentifier], [relationName postgresQuotedIdentifier]]];
+				[self->postgresConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP CONSTRAINT %@", [self->selectedTable postgresQuotedIdentifier], [relationName postgresQuotedIdentifier]]];
 
 				// Check for errors, but only if the query wasn't cancelled
-				if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
+				if ([self->postgresConnection queryErrored] && ![self->postgresConnection lastQueryWasCancelled]) {
 					NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
 					[errorDictionary setObject:NSLocalizedString(@"Unable to delete relation", @"error deleting relation message") forKey:@"title"];
-					[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@", @"error deleting relation informative message"), relationName, [self->mySQLConnection lastErrorMessage]] forKey:@"message"];
+					[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to delete the relation '%@'.\n\nPostgreSQL said: %@", @"error deleting relation informative message"), relationName, [self->postgresConnection lastErrorMessage]] forKey:@"message"];
 					[[self onMainThread] showErrorSheetWith:errorDictionary];
 				}
 			}
 
 			// Remove field
-			[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP %@",
+			[self->postgresConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP COLUMN %@",
 																	[self->selectedTable postgresQuotedIdentifier], [[[[self activeFieldsSource] safeObjectAtIndex:[self->tableSourceView selectedRow]] safeObjectForKey:@"name"] postgresQuotedIdentifier]]];
 
 			// Check for errors, but only if the query wasn't cancelled
-			if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
+			if ([self->postgresConnection queryErrored] && ![self->postgresConnection lastQueryWasCancelled]) {
 				NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
 				[errorDictionary setObject:NSLocalizedString(@"Error", @"error") forKey:@"title"];
 				[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"Couldn't delete field %@.\nMySQL said: %@", @"message of panel when field cannot be deleted"),
 																	  [[[self activeFieldsSource] objectAtIndex:[self->tableSourceView selectedRow]] objectForKey:@"name"],
-																	  [self->mySQLConnection lastErrorMessage]] forKey:@"message"];
+																	  [self->postgresConnection lastErrorMessage]] forKey:@"message"];
 
 				[[self onMainThread] showErrorSheetWith:errorDictionary];
 			}
@@ -1429,22 +1427,22 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	// Retrieve the indexes for the table
-	SPPostgresResult *indexResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEX FROM %@", [aTable postgresQuotedIdentifier]]];
+	SPPostgresResult *indexesQueryResult   = [postgresConnection queryString:[NSString stringWithFormat:@"SELECT indexname AS Key_name, indexdef AS Index_type FROM pg_indexes WHERE tablename = %@", [selectedTable postgresQuotedIdentifier]]];
 
 	// If an error occurred, reset the interface and abort
-	if ([mySQLConnection queryErrored]) {
+	if ([postgresConnection queryErrored]) {
 		[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 		[[self onMainThread] setTableDetails:nil];
 
-		if ([mySQLConnection isConnected]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nMySQL said: %@", @"message of panel when retrieving information failed"), [mySQLConnection lastErrorMessage]] callback:nil];
+		if ([postgresConnection isConnected]) {
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nPostgreSQL said: %@", @"message of panel when retrieving information failed"), [postgresConnection lastErrorMessage]] callback:nil];
 		}
 
 		return;
 	}
 
 	// Process the indexes into a local array of dictionaries
-	NSArray *tableIndexes = [self convertIndexResultToArray:indexResult];
+	NSArray *tableIndexes = [self convertIndexResultToArray:indexesQueryResult];
 
 	// Set the Key column
 	for (NSDictionary *index in tableIndexes)
@@ -1596,7 +1594,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			[theField setObject:[prefs stringForKey:SPNullValue] forKey:@"default"];
 		}
         else if ([type hasSuffix:@"CHAR"] || [type hasSuffix:@"TEXT"] || [type hasSuffix:@"ENUM"]) {
-            [theField setObject:[mySQLConnection escapeAndQuoteString:[theField objectForKey:@"default"]] forKey:@"default"];
+            [theField setObject:[postgresConnection escapeAndQuoteString:[theField objectForKey:@"default"]] forKey:@"default"];
         }
 
 		// Init Extra field
@@ -2059,10 +2057,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	// Run the query; report any errors, or reload the table on success
-	[mySQLConnection queryString:queryString];
+	[postgresConnection queryString:queryString];
 
-	if ([mySQLConnection queryErrored]) {
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error moving field", @"error moving field message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to move the field.\n\nMySQL said: %@", @"error moving field informative message"), [mySQLConnection lastErrorMessage]] callback:nil];
+	if ([postgresConnection queryErrored]) {
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error moving field", @"error moving field message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to move the field.\n\nPostgreSQL said: %@", @"error moving field informative message"), [postgresConnection lastErrorMessage]] callback:nil];
 	}
 	else {
 		[tableDataInstance resetAllData];

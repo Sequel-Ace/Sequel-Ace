@@ -10,6 +10,12 @@
 
 #import "SPPostgresResult.h"
 
-@interface SPPostgresStreamingResult : SPPostgresResult
+@interface SPPostgresStreamingResult : SPPostgresResult {
+    void *params; // PGconn
+    BOOL isFinished;
+}
+
+- (instancetype)initWithConnection:(void *)connection;
+- (void)cancelResultLoad;
 
 @end

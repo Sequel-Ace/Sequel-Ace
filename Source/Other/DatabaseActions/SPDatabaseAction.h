@@ -31,6 +31,7 @@
 @class SPTablesList;
 @class SPMySQLConnection;
 @class SPCreateDatabaseInfo;
+@class SPPostgresConnection;
 
 @interface SPDatabaseAction : NSObject 
 {

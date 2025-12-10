@@ -9,7 +9,7 @@
 //
 
 #import "SPPostgresResult.h"
-#import <libpq-fe.h>
+#import "/opt/homebrew/include/postgresql@17/libpq-fe.h"
 
 @implementation SPPostgresResult
 
@@ -95,6 +95,32 @@
         count++;
     }
     return count;
+}
+
+- (NSArray *)getAllRows {
+    NSMutableArray *allRows = [NSMutableArray arrayWithCapacity:numberOfRows];
+    for (NSUInteger i = 0; i < numberOfRows; i++) {
+        NSArray *row = [self getRowAtIndex:i];
+        if (row) {
+            [allRows addObject:row];
+        }
+    }
+    return [NSArray arrayWithArray:allRows];
+}
+
+- (NSArray *)getRow {
+    // Alias for getRowAsArray - returns current row and advances
+    return [self getRowAsArray];
+}
+
+- (NSArray *)getRowsAsArray {
+    // Alias for getAllRows
+    return [self getAllRows];
+}
+
+- (void)setDefaultRowReturnType:(NSInteger)type {
+    // This is a no-op for now - can be extended to change how getRow returns data
+    // In the original MySQL implementation, this controlled whether rows were arrays or dictionaries
 }
 
 @end

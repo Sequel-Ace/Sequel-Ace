@@ -248,7 +248,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
     [refDatabasePopUpButton removeAllItems];
 	[refTablePopUpButton removeAllItems];
 
-	BOOL changeEncoding = ![[connection encoding] hasPrefix:@"utf8"];
+	BOOL changeEncoding = NO; // PostgreSQL always uses UTF8
 
 	// Use UTF8 for identifier-based queries
 	if (changeEncoding) {

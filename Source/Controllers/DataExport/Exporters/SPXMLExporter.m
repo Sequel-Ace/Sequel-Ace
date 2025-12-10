@@ -35,6 +35,7 @@
 #import "SPExportController.h"
 #import "SPFunctions.h"
 #import "SPPostgresConnection.h"
+#import "SPPostgresGeometryData.h"
 
 @implementation SPXMLExporter
 
@@ -75,7 +76,7 @@
     // Result sets
     SPPostgresResult *statusResult = nil;
     SPPostgresResult *structureResult = nil;
-    SPPostgresFastStreamingResult *streamingResult = nil;
+    SPPostgresStreamingResult *streamingResult = nil;
 
     NSMutableArray *xmlTags    = [NSMutableArray array];
     NSMutableString *xmlString = [NSMutableString string];
@@ -267,7 +268,7 @@
                         [xmlItem setString:[self xmlNULLString]];
                     }
                 }
-                else if ([data isKindOfClass:[SPMySQLGeometryData class]]) {
+                else if ([data isKindOfClass:[SPPostgresGeometryData class]]) {
                     [xmlItem setString:[data wktString]];
                 }
                 else {

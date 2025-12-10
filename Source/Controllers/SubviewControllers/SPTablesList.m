@@ -73,6 +73,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void)_renameTableOfType:(SPTableType)tableType from:(NSString *)oldTableName to:(NSString *)newTableName;
 - (NSMutableArray *)_allSchemaObjectsOfType:(SPTableType)type;
 - (BOOL)_databaseHasObjectOfType:(SPTableType)type;
+- (void)subscribeToTablePinningNotifications;
 
 @property (readwrite, strong) SQLitePinnedTableManager *_SQLitePinnedTableManager ;
 
@@ -199,7 +200,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	NSString *previousSelectedTable = nil;
 	NSString *previousFilterString = nil;
 	BOOL previousTableListIsSelectable = tableListIsSelectable;
-	BOOL changeEncoding = ![[postgresConnection encoding] hasPrefix:@"UTF8"];
+	BOOL changeEncoding = NO; // PostgreSQL always uses UTF8, no need to change encoding
 
 	if (selectedTableName) previousSelectedTable = [[NSString alloc] initWithString:selectedTableName];
 
@@ -249,14 +250,6 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeTable]];
 			}
 		} else {
-			for (NSDictionary *eachRow in theResult) {
-
-				NSMutableDictionary *mutableRow = [eachRow mutableCopy];
-				NSString *tableType = [mutableRow objectForKey:@"Table_type"];
-				[mutableRow removeObjectForKey:@"Table_type"];
-
-				// Due to encoding problems it can be the case that [resultRow objectAtIndex:0]
-				// return NSNull, thus catch that case for safety reasons
 			for (NSDictionary *eachRow in theResult) {
 
 				NSMutableDictionary *mutableRow = [eachRow mutableCopy];

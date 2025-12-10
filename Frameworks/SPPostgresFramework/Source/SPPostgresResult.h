@@ -10,7 +10,8 @@
 
 #import <Foundation/Foundation.h>
 
-typedef void PGresult;
+// Forward declaration for PGresult - actual definition comes from libpq
+typedef struct pg_result PGresult;
 
 @interface SPPostgresResult : NSObject <NSFastEnumeration> {
     PGresult *resultSet;
@@ -32,5 +33,15 @@ typedef void PGresult;
 - (NSArray *)getRowAsArray;
 - (NSDictionary *)getRowAsDictionary;
 - (void)seekToRow:(NSUInteger)index;
+- (NSArray *)getAllRows;
+- (NSArray *)getRow;
+- (NSArray *)getRowsAsArray;
+- (void)setDefaultRowReturnType:(NSInteger)type;
 
 @end
+
+// Row return type constants
+typedef NS_ENUM(NSInteger, SPPostgresResultRowType) {
+    SPPostgresResultRowAsArray = 0,
+    SPPostgresResultRowAsDictionary = 1
+};

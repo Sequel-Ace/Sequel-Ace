@@ -30,7 +30,29 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-#import "SPPostgresConnectionProxy.h"
+// SPPostgresConnectionProxy protocol - inlined to avoid include path issues
+#import <Foundation/Foundation.h>
+
+#ifndef SPPostgresConnectionProxyState_DEFINED
+#define SPPostgresConnectionProxyState_DEFINED
+typedef enum {
+    SPPostgresProxyIdle             = 0,
+    SPPostgresProxyConnecting       = 1,
+    SPPostgresProxyWaitingForAuth   = 2,
+    SPPostgresProxyConnected        = 3,
+    SPPostgresProxyForwardingFailed = 4,
+    SPPostgresProxyLaunchFailed     = 5
+} SPPostgresConnectionProxyState;
+#endif
+
+@protocol SPPostgresConnectionProxy <NSObject>
+- (void)connect;
+- (void)disconnect;
+- (SPPostgresConnectionProxyState)state;
+- (NSUInteger)localPort;
+- (BOOL)setConnectionStateChangeSelector:(SEL)theStateChangeSelector delegate:(id)theDelegate;
+@end
+
 @interface SPSSHTunnel : NSObject <SPPostgresConnectionProxy>
 {
 	id delegate;
@@ -57,7 +79,7 @@
 	NSInteger remotePort;
 	NSUInteger localPort;
 	NSUInteger localPortFallback;
-	SPMySQLConnectionProxyState connectionState;
+	SPPostgresConnectionProxyState connectionState;
     
     NSLock *answerAvailableLock;
     NSString *currentKeyName;

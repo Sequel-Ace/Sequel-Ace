@@ -685,10 +685,16 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Select the specified database and, optionally, table.
  */
+/**
+ * Select the specified database and, optionally, table.
+ */
 - (void)selectDatabase:(NSString *)database item:(NSString *)item
 {
     // Do not update the navigator since nothing is changed
     [[SPNavigatorController sharedNavigatorController] setIgnoreUpdate:NO];
+
+    // Check if we are actually changing the database
+    BOOL databaseChanged = ![database isEqualToString:[self database]];
 
     // If Navigator runs in syncMode let it follow the selection
     if ([[[SPNavigatorController sharedNavigatorController] onMainThread] syncMode]) {
@@ -707,7 +713,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Start a task
     [self startTaskWithDescription:[NSString stringWithFormat:NSLocalizedString(@"Loading database '%@'...", @"Loading database task string"), database]];
 
-    NSDictionary *selectionDetails = [NSDictionary dictionaryWithObjectsAndKeys:database, @"database", item, @"item", nil];
+    NSDictionary *selectionDetails = [NSDictionary dictionaryWithObjectsAndKeys:database, @"database", item ? item : @"", @"item", nil];
 
     if ([NSThread isMainThread]) {
         [NSThread detachNewThreadWithName:SPCtxt(@"SPDatabaseDocument database and table load task",self)
@@ -717,6 +723,69 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
     else {
         [self _selectDatabaseAndItem:selectionDetails];
+    }
+}
+
+/**
+ * Background task to select database and item
+ */
+- (void)_selectDatabaseAndItem:(NSDictionary *)selectionDetails
+{
+    @autoreleasepool {
+        NSString *database = [selectionDetails objectForKey:@"database"];
+        NSString *item = [selectionDetails objectForKey:@"item"];
+        if ([item isEqualToString:@""]) item = nil;
+
+        // Perform the reconnection if the database has changed
+        NSString *currentDB = [postgresConnection database];
+        
+        if (![database isEqualToString:currentDB]) {
+            BOOL success = [postgresConnection reconnectWithNewDatabase:database];
+            
+            if (!success) {
+                SPMainQSync(^{
+                    NSAlert *alert = [[NSAlert alloc] init];
+                    [alert setMessageText:NSLocalizedString(@"Connection Failed", @"Connection failed alert title")];
+                    [alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Could not connect to database '%@'.\n\nError: %@", @"Connection failed alert message"), database, [self->postgresConnection lastErrorMessage]]];
+                    [alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
+                    [alert runModal];
+                    
+                    [self endTask];
+                    
+                    // Reset selection logic if needed
+                    [self->chooseDatabaseButton selectItemWithTitle:currentDB ? currentDB : @""];
+                });
+                return;
+            }
+            
+            // Update internal state
+            selectedDatabase = [database copy];
+            
+            // Re-detect encoding for the new database
+            [self detectDatabaseEncoding];
+        }
+
+        // Continue with normal loading logic (checking tables, etc) -> This usually calls setTableDetails eventually
+        
+        // Update history
+        SPMainQSync(^{
+            [self->spHistoryControllerInstance updateHistoryEntries];
+            [self updateWindowTitle:self];
+        });
+        
+        // Now generic "use database" logic is done via reconnection.
+        // We still need to refresh the table list for this new database.
+        [tablesListInstance setConnection:postgresConnection]; // Re-set connection to force refresh? Or just refresh?
+        [tablesListInstance updateTables:self]; // This should fetch new tables from information_schema
+
+        // If an item (table) was specified, select it
+        if (item) {
+            SPMainQSync(^{
+                 [self->tablesListInstance selectTableName:item];
+            });
+        }
+        
+        [self endTask];
     }
 }
 

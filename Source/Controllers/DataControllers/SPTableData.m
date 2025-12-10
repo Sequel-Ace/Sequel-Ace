@@ -462,7 +462,7 @@
  */
 - (NSDictionary *) informationForTable:(NSString *)tableName fromDatabase:(NSString *)database
 {
-    BOOL changeEncoding = ![[postgresConnection encoding] hasPrefix:@"utf8"];
+    BOOL changeEncoding = NO; // PostgreSQL always uses UTF8
 
     // Catch unselected tables and return nil
     if ([tableName isEqualToString:@""] || !tableName) return nil;
@@ -928,7 +928,7 @@
 	NSMutableArray *tableColumns;
 	NSDictionary *resultRow;
 	NSMutableDictionary *tableColumn, *viewData;
-	BOOL changeEncoding = ![[postgresConnection encoding] hasPrefix:@"utf8"];
+	BOOL changeEncoding = NO; // PostgreSQL always uses UTF8
 
 	// Catch unselected views and return nil
 	if ([viewName isEqualToString:@""] || !viewName) return nil;
@@ -1046,7 +1046,7 @@
 
 	pthread_mutex_lock(&dataProcessingLock);
 
-	BOOL changeEncoding = ![[postgresConnection encoding] hasPrefix:@"utf8"];
+	BOOL changeEncoding = NO; // PostgreSQL always uses UTF8
 
 	// Catch unselected tables and return false
 	if (![tableListInstance tableName]) {
@@ -1097,7 +1097,7 @@
 	pthread_mutex_lock(&dataProcessingLock);
 
 	// Ensure queries are made in UTF8
-	BOOL changeEncoding = ![[postgresConnection encoding] hasPrefix:@"utf8"];
+	BOOL changeEncoding = NO; // PostgreSQL always uses UTF8
 	if (changeEncoding) {
 		[postgresConnection storeEncodingForRestoration];
 		[postgresConnection setEncoding:@"utf8mb4"];

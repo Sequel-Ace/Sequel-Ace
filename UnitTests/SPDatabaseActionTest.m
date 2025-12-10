@@ -34,6 +34,7 @@
 #import "SPDatabaseAction.h"
 #import <SPMySQL/SPMySQL.h>
 
+
 @interface SPDatabaseActionTest : XCTestCase
 
 - (void)testCreateDatabase_01_emptyName;
@@ -85,5 +86,6 @@
 	
 	OCMVerifyAll(mockConnection);
 }
+
 
 @end

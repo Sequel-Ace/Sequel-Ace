@@ -12,9 +12,24 @@
 #import "SPPostgresResult.h"
 #import "SPPostgresStreamingResult.h"
 
-// Forward declaration of PGconn to avoid including libpq-fe.h in header if possible,
-// but usually it's needed for types. For now, using void* to abstract it.
-typedef void PGconn;
+// Forward declaration of PGconn - actual definition comes from libpq
+typedef struct pg_conn PGconn;
+
+@class SPPostgresConnection;
+
+/**
+ * SPPostgresConnectionDelegate protocol
+ * Classes implementing this protocol can receive notifications about connection events.
+ */
+@protocol SPPostgresConnectionDelegate <NSObject>
+@optional
+- (void)connectionSucceeded:(SPPostgresConnection *)connection;
+- (void)connectionFailed:(SPPostgresConnection *)connection;
+- (void)queryGaveError:(NSString *)error connection:(SPPostgresConnection *)connection;
+- (BOOL)keychainPasswordForConnection:(SPPostgresConnection *)connection;
+- (NSString *)keychainPasswordForSSHConnection:(SPPostgresConnection *)connection;
+@end
+
 
 @interface SPPostgresConnection : NSObject {
     PGconn *connection;
@@ -30,6 +45,7 @@ typedef void PGconn;
     NSUInteger serverMinorVersion;
     NSUInteger serverReleaseVersion;
     NSStringEncoding stringEncoding;
+    NSString *storedEncoding;
 }
 
 @property (readonly) BOOL isConnected;
@@ -41,6 +57,7 @@ typedef void PGconn;
 
 - (void)setConnectionDetailsWithHost:(NSString *)theHost username:(NSString *)theUsername password:(NSString *)thePassword port:(NSUInteger)thePort database:(NSString *)theDatabase;
 - (BOOL)connect;
+- (BOOL)reconnectWithNewDatabase:(NSString *)databaseName;
 - (void)disconnect;
 
 - (SPPostgresResult *)queryString:(NSString *)query;
@@ -56,8 +73,18 @@ typedef void PGconn;
 - (BOOL)queryErrored;
 - (BOOL)lastQueryWasCancelled;
 - (void)cancelCurrentQuery;
+- (id)getFirstFieldFromQuery:(NSString *)query;
+- (NSUInteger)lastErrorID;
+- (NSString *)escapeAndQuoteData:(NSData *)data;
+- (BOOL)isNotMariadb103;
+- (BOOL)isMariaDB;
+- (BOOL)userTriggeredDisconnect;
 
 - (NSString *)database;
+- (NSString *)host;
+- (NSArray *)databases;
 - (void)selectDatabase:(NSString *)database;
+- (void)storeEncodingForRestoration;
+- (void)restoreStoredEncoding;
 
 @end
