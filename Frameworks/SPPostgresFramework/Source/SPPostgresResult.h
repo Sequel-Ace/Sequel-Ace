@@ -38,6 +38,12 @@ typedef struct pg_result PGresult;
 - (NSArray *)getRowsAsArray;
 - (void)setDefaultRowReturnType:(NSInteger)type;
 
+// Additional methods for compatibility
+- (void)cancelResultLoad;
+- (NSArray *)fieldDefinitions;
+- (void)startDownload;
+- (void)setReturnDataAsStrings:(BOOL)flag;
+
 @end
 
 // Row return type constants

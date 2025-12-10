@@ -288,4 +288,133 @@
     return NO;
 }
 
+#pragma mark - Additional Compatibility Methods
+
+- (SPPostgresResult *)resultStoreFromQueryString:(NSString *)query {
+    // For PostgreSQL, we just use the regular query method
+    // The "result store" concept was MySQL-specific
+    return [self queryString:query];
+}
+
+- (NSString *)lastSqlstate {
+    if (!connection) return nil;
+    char *sqlstate = PQresultErrorField(PQexec(connection, "SELECT 1"), PG_DIAG_SQLSTATE);
+    if (sqlstate) {
+        return [NSString stringWithUTF8String:sqlstate];
+    }
+    return @"00000"; // Success state
+}
+
+- (NSUInteger)rowsAffectedByLastQuery {
+    if (!connection) return 0;
+    // PostgreSQL tracks affected rows via PQcmdTuples
+    PGresult *result = PQexec(connection, "SELECT 1"); // Get last result
+    if (result) {
+        char *affected = PQcmdTuples(result);
+        if (affected && strlen(affected) > 0) {
+            return (NSUInteger)atol(affected);
+        }
+        PQclear(result);
+    }
+    return 0;
+}
+
+- (NSString *)escapeString:(NSString *)string includingQuotes:(BOOL)includeQuotes {
+    if (!string || !connection) return includeQuotes ? @"''" : @"";
+    
+    const char *utf8String = [string UTF8String];
+    size_t length = strlen(utf8String);
+    char *escaped = PQescapeLiteral(connection, utf8String, length);
+    
+    if (escaped) {
+        NSString *result;
+        if (includeQuotes) {
+            result = [NSString stringWithUTF8String:escaped];
+        } else {
+            // Remove surrounding quotes
+            NSString *temp = [NSString stringWithUTF8String:escaped];
+            if ([temp hasPrefix:@"'"] && [temp hasSuffix:@"'"]) {
+                result = [temp substringWithRange:NSMakeRange(1, temp.length - 2)];
+            } else {
+                result = temp;
+            }
+        }
+        PQfreemem(escaped);
+        return result;
+    }
+    
+    return includeQuotes ? @"''" : @"";
+}
+
+- (NSString *)escapeData:(NSData *)data includingQuotes:(BOOL)includeQuotes {
+    if (!data || !connection) return includeQuotes ? @"''" : @"";
+    
+    size_t escapedLen;
+    unsigned char *escaped = PQescapeByteaConn(connection, [data bytes], [data length], &escapedLen);
+    
+    if (escaped) {
+        NSString *escapedStr = [NSString stringWithUTF8String:(char *)escaped];
+        PQfreemem(escaped);
+        if (includeQuotes) {
+            return [NSString stringWithFormat:@"E'%@'", escapedStr];
+        }
+        return escapedStr;
+    }
+    
+    return includeQuotes ? @"''" : @"";
+}
+
+- (NSStringEncoding)stringEncoding {
+    return stringEncoding;
+}
+
+- (unsigned long long)lastInsertID {
+    // PostgreSQL doesn't have a global last insert ID like MySQL
+    // Instead, use RETURNING clause or sequences
+    // For compatibility, we try to get the last value from the default sequence
+    if (!connection) return 0;
+    
+    PGresult *result = PQexec(connection, "SELECT lastval()");
+    if (result && PQresultStatus(result) == PGRES_TUPLES_OK && PQntuples(result) > 0) {
+        char *value = PQgetvalue(result, 0, 0);
+        if (value) {
+            unsigned long long lastId = strtoull(value, NULL, 10);
+            PQclear(result);
+            return lastId;
+        }
+        PQclear(result);
+    }
+    if (result) PQclear(result);
+    return 0;
+}
+
+- (BOOL)isConnected {
+    return isConnected && connection && PQstatus(connection) == CONNECTION_OK;
+}
+
+- (NSArray *)tablesFromDatabase:(NSString *)databaseName {
+    if (!connection || !databaseName) return @[];
+    
+    // Query PostgreSQL information_schema for tables in the specified schema/database
+    NSString *query = [NSString stringWithFormat:
+        @"SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_catalog = '%@'",
+        databaseName];
+    
+    SPPostgresResult *result = [self queryString:query];
+    if (!result || [self queryErrored]) {
+        return @[];
+    }
+    
+    NSMutableArray *tables = [NSMutableArray array];
+    NSUInteger rows = [result numberOfRows];
+    for (NSUInteger i = 0; i < rows; i++) {
+        NSArray *row = [result getRowAsArray];
+        if (row && [row count] > 0) {
+            [tables addObject:[row objectAtIndex:0]];
+        }
+    }
+    
+    return [NSArray arrayWithArray:tables];
+}
+
 @end

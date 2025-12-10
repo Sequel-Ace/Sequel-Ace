@@ -351,6 +351,7 @@ static NSString *SPPostgresCommentField          = @"Comment";       // obj_desc
 	}
     */
 
+	NSArray *encodings = [databaseDataInstance getDatabaseCharacterSetEncodings];
 	if (([encodings count] > 0) && ([tableDataInstance tableEncoding])) {
 		NSString *selectedTitle = @"";
 
@@ -376,6 +377,7 @@ static NSString *SPPostgresCommentField          = @"Comment";       // obj_desc
 		[tableEncodingPopUpButton addItemWithTitle:NSLocalizedString(@"Not available", @"not available label")];
 	}
 
+	NSArray *collations = [databaseDataInstance getDatabaseCollationsForEncoding:[tableDataInstance tableEncoding]];
 	if (([collations count] > 0) && ([statusFields safeObjectForKey:SPPostgresCollationField])) {
 
 		// Populate collation popup button

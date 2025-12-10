@@ -2536,6 +2536,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 {
 	@autoreleasepool
 	{
+		NSString *tableName = [tableDetails objectForKey:@"name"];
+		
 		// Postgres simple create table
 		NSString *createStatement = [NSString stringWithFormat:@"CREATE TABLE %@ (id SERIAL PRIMARY KEY)", [tableName postgresQuotedIdentifier]];
 
@@ -2598,8 +2600,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			SPMainQSync(^{
 				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@", @"error adding new table informative message"), tableName, [self->postgresConnection lastErrorMessage]] callback:nil];
 			});
-
-			if (changeEncoding) [postgresConnection restoreStoredEncoding];
+			
+			// PostgreSQL always uses UTF8, no encoding restoration needed
 
 			[[tablesListView onMainThread] reloadData];
 		}

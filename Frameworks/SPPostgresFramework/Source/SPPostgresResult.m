@@ -123,4 +123,47 @@
     // In the original MySQL implementation, this controlled whether rows were arrays or dictionaries
 }
 
+#pragma mark - Compatibility Methods
+
+- (void)cancelResultLoad {
+    // For PostgreSQL synchronous results, there's nothing to cancel
+    // This is a no-op but maintains API compatibility with MySQL streaming results
+}
+
+- (NSArray *)fieldDefinitions {
+    // Return field definitions as array of dictionaries
+    if (!resultSet) return @[];
+    
+    NSMutableArray *definitions = [NSMutableArray array];
+    int numFields = PQnfields(resultSet);
+    
+    for (int i = 0; i < numFields; i++) {
+        NSMutableDictionary *fieldDef = [NSMutableDictionary dictionary];
+        
+        char *name = PQfname(resultSet, i);
+        if (name) {
+            [fieldDef setObject:[NSString stringWithUTF8String:name] forKey:@"name"];
+        }
+        
+        Oid typeOid = PQftype(resultSet, i);
+        [fieldDef setObject:@(typeOid) forKey:@"type_oid"];
+        
+        int mod = PQfmod(resultSet, i);
+        [fieldDef setObject:@(mod) forKey:@"type_mod"];
+        
+        [definitions addObject:fieldDef];
+    }
+    
+    return [NSArray arrayWithArray:definitions];
+}
+
+- (void)startDownload {
+    // For synchronous PostgreSQL results, download happens immediately
+    // This is a no-op but maintains API compatibility with MySQL streaming results
+}
+
+- (void)setReturnDataAsStrings:(BOOL)flag {
+    returnDataAsStrings = flag;
+}
+
 @end

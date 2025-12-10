@@ -39,6 +39,7 @@
 #import "SPTableContent.h"
 #import "SPJSONFormatter.h"
 #import "SPPostgresConnection.h"
+#import "SPPostgresDataTypes.h"
 #import "SPFunctions.h"
 
 #import "sequel-pace-Swift.h"
@@ -228,7 +229,7 @@ typedef enum {
 	contextInfo     = theContextInfo;
 	callerInstance  = sender;
 	_isGeometry     = ([[fieldType uppercaseString] isEqualToString:@"GEOMETRY"]) ? YES : NO;
-	_isJSON         = ([[fieldType uppercaseString] isEqualToString:SPMySQLJsonType]);
+	_isJSON         = ([[fieldType uppercaseString] isEqualToString:SPPostgresJsonType]);
 	NSString *label = [self buildLabelForField:fieldName];
 
 	if ([fieldType length] && [[fieldType uppercaseString] isEqualToString:@"BIT"]) {
@@ -346,7 +347,7 @@ typedef enum {
 			[editSheetSegmentControl setSelectedSegment:HexSegment];
 			[self showHexText:YES];
 		}
-		else if ([sheetEditData isKindOfClass:[SPMySQLGeometryData class]]) {
+		else if ([sheetEditData isKindOfClass:[SPPostgresGeometryData class]]) {
 			SPGeometryDataView *v = [[SPGeometryDataView alloc] initWithCoordinates:[sheetEditData coordinates] targetDimension:2000.0f];
 			image = [v thumbnailImage];
 			stringValue = [sheetEditData wktString];
@@ -575,7 +576,7 @@ typedef enum {
 {
 	NSSavePanel *panel = [NSSavePanel savePanel];
 
-	if ([editSheetSegmentControl selectedSegment] == ImageSegment && [sheetEditData isKindOfClass:[SPMySQLGeometryData class]]) {
+	if ([editSheetSegmentControl selectedSegment] == ImageSegment && [sheetEditData isKindOfClass:[SPPostgresGeometryData class]]) {
 		[panel setAllowedFileTypes:@[@"pdf"]];
 		[panel setAllowsOtherFileTypes:NO];
 	}
@@ -736,7 +737,7 @@ typedef enum {
 			[sheetEditData writeToURL:fileURL atomically:YES];
 
 		}
-		else if ( [sheetEditData isKindOfClass:[SPMySQLGeometryData class]] ) {
+		else if ( [sheetEditData isKindOfClass:[SPPostgresGeometryData class]] ) {
 
 			if ( [editSheetSegmentControl selectedSegment] == TextSegment || editImage == nil ) {
 

@@ -87,4 +87,15 @@ typedef struct pg_conn PGconn;
 - (void)storeEncodingForRestoration;
 - (void)restoreStoredEncoding;
 
+// Additional methods needed for compatibility
+- (SPPostgresResult *)resultStoreFromQueryString:(NSString *)query;
+- (NSString *)lastSqlstate;
+- (NSUInteger)rowsAffectedByLastQuery;
+- (NSString *)escapeString:(NSString *)string includingQuotes:(BOOL)includeQuotes;
+- (NSString *)escapeData:(NSData *)data includingQuotes:(BOOL)includeQuotes;
+- (NSStringEncoding)stringEncoding;
+- (unsigned long long)lastInsertID;
+- (BOOL)isConnected;
+- (NSArray *)tablesFromDatabase:(NSString *)database;
+
 @end

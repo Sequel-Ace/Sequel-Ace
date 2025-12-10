@@ -2548,274 +2548,274 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 #define INTR(sMin,sMax,uMin,uMax) [NSString stringWithFormat:intRangeTpl,FN(sMin),FN(sMax),FN(uMin),FN(uMax)]
 		list = @[
 			MakeFieldTypeHelp(
-				SPMySQLTinyIntType,
+				SPPostgresTinyIntType,
 				@"TINYINT[(M)] [UNSIGNED] [ZEROFILL]",
 				INTR(@(-128),@127,@0,@255),
 				NSLocalizedString(@"The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range.",@"description of tinyint")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLSmallIntType,
+				SPPostgresSmallIntType,
 				@"SMALLINT[(M)] [UNSIGNED] [ZEROFILL]",
 				INTR(@(-32768), @32767, @0, @65535),
 				NSLocalizedString(@"Requires 2 bytes storage space. M is the optional display width and does not affect the possible value range.",@"description of smallint")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLMediumIntType,
+				SPPostgresMediumIntType,
 				@"MEDIUMINT[(M)] [UNSIGNED] [ZEROFILL]",
 				INTR(@(-8388608), @8388607, @0, @16777215),
 				NSLocalizedString(@"Requires 3 bytes storage space. M is the optional display width and does not affect the possible value range.",@"description of mediumint")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLIntType,
+				SPPostgresIntType,
 				@"INT[(M)] [UNSIGNED] [ZEROFILL]",
 				INTR(@(-2147483648), @2147483647, @0, @4294967295),
 				NSLocalizedString(@"Requires 4 bytes storage space. M is the optional display width and does not affect the possible value range. INTEGER is an alias to this type.",@"description of int")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLBigIntType,
+				SPPostgresBigIntType,
 				@"BIGINT[(M)] [UNSIGNED] [ZEROFILL]",
 				INTR([NSDecimalNumber decimalNumberWithString:@"-9223372036854775808"], [NSDecimalNumber decimalNumberWithString:@"9223372036854775807"], @0, [NSDecimalNumber decimalNumberWithString:@"18446744073709551615"]),
 				NSLocalizedString(@"Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers.",@"description of bigint")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLFloatType,
+				SPPostgresFloatType,
 				@"FLOAT[(M,D)] [UNSIGNED] [ZEROFILL]",
 				NSLocalizedString(@"Accurate to approx. 7 decimal places", @"range of float"),
 				NSLocalizedString(@"IEEE 754 single-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results.",@"description of float")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLDoubleType,
+				SPPostgresDoubleType,
 				@"DOUBLE[(M,D)] [UNSIGNED] [ZEROFILL]",
 				NSLocalizedString(@"Accurate to approx. 15 decimal places", @"range of double"),
 				NSLocalizedString(@"IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results.",@"description of double")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLDoublePrecisionType,
+				SPPostgresDoublePrecisionType,
 				@"DOUBLE PRECISION[(M,D)] [UNSIGNED] [ZEROFILL]",
 				@"",
 				NSLocalizedString(@"This is an alias for DOUBLE.",@"description of double precision")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLRealType,
+				SPPostgresRealType,
 				@"REAL[(M,D)] [UNSIGNED] [ZEROFILL]",
 				@"",
 				NSLocalizedString(@"This is an alias for DOUBLE, unless REAL_AS_FLOAT is configured.",@"description of double real")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLDecimalType,
+				SPPostgresDecimalType,
 				@"DECIMAL[(M[,D])] [UNSIGNED] [ZEROFILL]",
 				NSLocalizedString(@"M (precision): Up to 65 digits\nD (scale): 0 to 30 digits", @"range of decimal"),
 				NSLocalizedString(@"A fixed-point, exact decimal value. M is the maxium number of digits, of which D may be after the decimal point. When rounding, 0-4 is always rounded down, 5-9 up (“round towards nearest”).",@"description of decimal")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLSerialType,
+				SPPostgresSerialType,
 				@"SERIAL",
 				[NSString stringWithFormat:NSLocalizedString(@"Range: %@ to %@", @"range for serial type"),FN(@0),FN([NSDecimalNumber decimalNumberWithString:@"18446744073709551615"])],
 				NSLocalizedString(@"This is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE.",@"description of serial")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLBitType,
+				SPPostgresBitType,
 				@"BIT[(M)]",
 				NSLocalizedString(@"M: 1 (default) to 64", @"range for bit type"),
 				NSLocalizedString(@"A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit.",@"description of bit")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLBoolType,
+				SPPostgresBoolType,
 				@"BOOL",
 				@"",
 				NSLocalizedString(@"This is an alias for TINYINT(1).",@"description of bool")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLBoolean,
+				SPPostgresBoolean,
 				@"BOOLEAN",
 				@"",
 				NSLocalizedString(@"This is an alias for TINYINT(1).",@"description of boolean")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLDecType,
+				SPPostgresDecType,
 				@"DEC[(M[,D])] [UNSIGNED] [ZEROFILL]",
 				@"",
 				NSLocalizedString(@"This is an alias for DECIMAL.",@"description of dec")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLFixedType,
+				SPPostgresFixedType,
 				@"FIXED[(M[,D])] [UNSIGNED] [ZEROFILL]",
 				@"",
 				NSLocalizedString(@"This is an alias for DECIMAL.",@"description of fixed")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLNumericType,
+				SPPostgresNumericType,
 				@"NUMERIC[(M[,D])] [UNSIGNED] [ZEROFILL]",
 				@"",
 				NSLocalizedString(@"This is an alias for DECIMAL.",@"description of numeric")
 			),
 			// ----------------------------------------------------------------------------------
 			MakeFieldTypeHelp(
-				SPMySQLCharType,
+				SPPostgresCharType,
 				@"CHAR(M)",
 				NSLocalizedString(@"M: 0 to 255 characters", @"range for char type"),
 				NSLocalizedString(@"A character string that will require M×w bytes per row, independent of the actual content length. w is the maximum number of bytes a single character can occupy in the given encoding.",@"description of char")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLVarCharType,
+				SPPostgresVarCharType,
 				@"VARCHAR(M)",
 				[NSString stringWithFormat:NSLocalizedString(@"M: %@ to %@ characters", @"range for varchar type"),FN(@0),FN(@(65535))],
 				NSLocalizedString(@"A character string that can store up to M bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding and the values of other fields in the row.",@"description of varchar")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLTinyTextType,
+				SPPostgresTinyTextType,
 				@"TINYTEXT",
 				NSLocalizedString(@"Up to 255 characters", @"range for tinytext type"),
 				NSLocalizedString(@"A character string that can store up to 255 bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length.",@"description of tinytext")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLTextType,
+				SPPostgresTextType,
 				@"TEXT[(M)]",
 				[NSString stringWithFormat:NSLocalizedString(@"M: %@ to %@ characters", @"range for text type"),FN(@0),FN(@(65535))],
 				NSLocalizedString(@"A character string that can store up to M bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length.",@"description of text")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLMediumTextType,
+				SPPostgresMediumTextType,
 				@"MEDIUMTEXT",
 				[NSString stringWithFormat:NSLocalizedString(@"Up to %@ characters (16 MiB)", @"range for mediumtext type"),FN(@16777215)],
 				NSLocalizedString(@"A character string with variable length. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length.",@"description of mediumtext")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLLongTextType,
+				SPPostgresLongTextType,
 				@"LONGTEXT",
 				[NSString stringWithFormat:NSLocalizedString(@"M: %@ to %@ characters (4 GiB)", @"range for longtext type"),FN(@0),FN(@4294967295)],
 				NSLocalizedString(@"A character string with variable length. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length.",@"description of longtext")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLTinyBlobType,
+				SPPostgresTinyBlobType,
 				@"TINYBLOB",
 				NSLocalizedString(@"Up to 255 bytes", @"range for tinyblob type"),
 				NSLocalizedString(@"A byte array with variable length. Unlike VARBINARY this type does not count towards the maximum row length.",@"description of tinyblob")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLMediumBlobType,
+				SPPostgresMediumBlobType,
 				@"MEDIUMBLOB",
 				[NSString stringWithFormat:NSLocalizedString(@"Up to %@ bytes (16 MiB)", @"range for mediumblob type"),FN(@16777215)],
 				NSLocalizedString(@"A byte array with variable length. Unlike VARBINARY this type does not count towards the maximum row length.",@"description of mediumblob")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLBlobType,
+				SPPostgresBlobType,
 				@"BLOB[(M)]",
 				[NSString stringWithFormat:NSLocalizedString(@"M: %@ to %@ bytes", @"range for blob type"),FN(@0),FN(@65535)],
 				NSLocalizedString(@"A byte array with variable length. Unlike VARBINARY this type does not count towards the maximum row length.",@"description of blob")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLLongBlobType,
+				SPPostgresLongBlobType,
 				@"LONGBLOB",
 				[NSString stringWithFormat:NSLocalizedString(@"Up to %@ bytes (4 GiB)", @"range for longblob type"),FN(@4294967295)],
 				NSLocalizedString(@"A byte array with variable length. Unlike VARBINARY this type does not count towards the maximum row length.",@"description of longblob")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLBinaryType,
+				SPPostgresBinaryType,
 				@"BINARY(M)",
 				NSLocalizedString(@"M: 0 to 255 bytes", @"range for binary type"),
 				NSLocalizedString(@"A byte array with fixed length. Shorter values will always be padded to the right with 0x00 until they fit M.",@"description of binary")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLVarBinaryType,
+				SPPostgresVarBinaryType,
 				@"VARBINARY(M)",
 				[NSString stringWithFormat:NSLocalizedString(@"M: %@ to %@ bytes", @"range for varbinary type"),FN(@0),FN(@(65535))],
 				NSLocalizedString(@"A byte array with variable length. The actual number of bytes is further limited by the values of other fields in the row.",@"description of varbinary")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLJsonType,
+				SPPostgresJsonType,
 				@"JSON",
 				NSLocalizedString(@"Limited to @@max_allowed_packet", @"range for json type"),
 				NSLocalizedString(@"A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8.", @"description of json")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLEnumType,
+				SPPostgresEnumType,
 				@"ENUM('member',...)",
 				[NSString stringWithFormat:NSLocalizedString(@"Up to %@ distinct members (<%@ in practice)\n1-2 bytes storage", @"range for enum type"),FN(@(65535)),FN(@3000)],
 				NSLocalizedString(@"Defines a list of members, of which every field can use at most one. Values are sorted by their index number (starting at 0 for the first member).",@"description of enum")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLSetType,
+				SPPostgresSetType,
 				@"SET('member',...)",
 				NSLocalizedString(@"Range: 1 to 64 members\n1, 2, 3, 4 or 8 bytes storage", @"range for set type"),
 				NSLocalizedString(@"A SET can define up to 64 members (as strings) of which a field can use one or more using a comma-separated list. Upon insertion the order of members is automatically normalized and duplicate members will be eliminated. Assignment of numbers is supported using the same semantics as for BIT types.",@"description of set")
 			),
 			// --------------------------------------------------------------------------
 			MakeFieldTypeHelp(
-				SPMySQLDateType,
+				SPPostgresDateType,
 				@"DATE",
 				NSLocalizedString(@"Range: 1000-01-01 to 9999-12-31", @"range for date type"),
 				NSLocalizedString(@"Stores a date without time information. The representation is YYYY-MM-DD. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00.",@"description of date")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLDatetimeType,
+				SPPostgresDatetimeType,
 				@"DATETIME[(F)]",
 				NSLocalizedString(@"Range: 1000-01-01 00:00:00.0 to 9999-12-31 23:59:59.999999\nF (precision): 0 (1s) to 6 (1µs)", @"range for datetime type"),
 				NSLocalizedString(@"Stores a date and time of day. The representation is YYYY-MM-DD HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F.",@"description of datetime")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLTimestampType,
+				SPPostgresTimestampType,
 				@"TIMETSTAMP[(F)]",
 				NSLocalizedString(@"Range: 1970-01-01 00:00:01.0 to 2038-01-19 03:14:07.999999\nF (precision): 0 (1s) to 6 (1µs)", @"range for timestamp type"),
 				NSLocalizedString(@"Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply.",@"description of timestamp")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLTimeType,
+				SPPostgresTimeType,
 				@"TIME[(F)]",
 				NSLocalizedString(@"Range: -838:59:59.0 to 838:59:59.0\nF (precision): 0 (1s) to 6 (1µs)", @"range for time type"),
 				NSLocalizedString(@"Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F.",@"description of time")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLYearType,
+				SPPostgresYearType,
 				@"YEAR(4)",
 				NSLocalizedString(@"Range: 0000, 1901 to 2155", @"range for year type"),
 				NSLocalizedString(@"Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5.",@"description of year")
 			),
 			// --------------------------------------------------------------------------
 			MakeFieldTypeHelp(
-				SPMySQLGeometryType,
+				SPPostgresGeometryType,
 				@"GEOMETRY",
 				@"",
 				NSLocalizedString(@"Can store a single spatial value of types POINT, LINESTRING or POLYGON. Spatial support in MySQL is based on the OpenGIS Geometry Model.",@"description of geometry")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLPointType,
+				SPPostgresPointType,
 				@"POINT",
 				@"",
 				NSLocalizedString(@"Represents a single location in coordinate space using X and Y coordinates. The point is zero-dimensional.",@"description of point")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLLineStringType,
+				SPPostgresLineStringType,
 				@"LINESTRING",
 				@"",
 				NSLocalizedString(@"Represents an ordered set of coordinates where each consecutive pair of two points is connected by a straight line.",@"description of linestring")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLPolygonType,
+				SPPostgresPolygonType,
 				@"POLYGON",
 				@"",
 				NSLocalizedString(@"Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\".",@"description of polygon")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLMultiPointType,
+				SPPostgresMultiPointType,
 				@"MULTIPOINT",
 				@"",
 				NSLocalizedString(@"Represents a set of Points without specifying any kind of relation and/or order between them.",@"description of multipoint")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLMultiLineStringType,
+				SPPostgresMultiLineStringType,
 				@"MULTILINESTRING",
 				@"",
 				NSLocalizedString(@"Represents a collection of LineStrings.",@"description of multilinestring")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLMultiPolygonType,
+				SPPostgresMultiPolygonType,
 				@"MULTIPOLYGON",
 				@"",
 				NSLocalizedString(@"Represents a collection of Polygons. The Polygons making up the MultiPolygon must not intersect.",@"description of multipolygon")
 			),
 			MakeFieldTypeHelp(
-				SPMySQLGeometryCollectionType,
+				SPPostgresGeometryCollectionType,
 				@"GEOMETRYCOLLECTION",
 				@"",
 				NSLocalizedString(@"Represents a collection of objects of any other single- or multi-valued spatial type. The only restriction being, that all objects must share a common coordinate system.",@"description of geometrycollection")

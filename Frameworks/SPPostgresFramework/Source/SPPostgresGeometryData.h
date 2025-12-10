@@ -59,4 +59,10 @@
  */
 + (instancetype)geometryWithX:(double)x y:(double)y;
 
+/**
+ * Returns coordinate data as dictionary for visualization
+ * Used by SPGeometryDataView for rendering geometry thumbnails
+ */
+- (NSDictionary *)coordinates;
+
 @end

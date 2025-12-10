@@ -104,4 +104,48 @@
     return [[self wktString] hash];
 }
 
+- (NSDictionary *)coordinates {
+    // Returns coordinate data suitable for SPGeometryDataView
+    // Parses WKT and extracts coordinates as arrays
+    
+    NSMutableDictionary *result = [NSMutableDictionary dictionary];
+    NSString *wkt = [self wktString];
+    
+    if (!wkt || [wkt length] == 0) {
+        return @{@"type": @"GEOMETRY", @"coordinates": @[]};
+    }
+    
+    [result setObject:[self geometryType] forKey:@"type"];
+    
+    // Parse coordinates from WKT string
+    // Extract content between parentheses
+    NSRange openParen = [wkt rangeOfString:@"("];
+    NSRange closeParen = [wkt rangeOfString:@")" options:NSBackwardsSearch];
+    
+    if (openParen.location != NSNotFound && closeParen.location != NSNotFound && closeParen.location > openParen.location + 1) {
+        NSString *coordStr = [wkt substringWithRange:NSMakeRange(openParen.location + 1, closeParen.location - openParen.location - 1)];
+        
+        // Parse coordinate pairs (space-separated x y values)
+        NSArray *pairs = [coordStr componentsSeparatedByString:@","];
+        NSMutableArray *coordArray = [NSMutableArray array];
+        
+        for (NSString *pair in pairs) {
+            NSString *trimmedPair = [pair stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+            NSArray *values = [trimmedPair componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+            
+            if ([values count] >= 2) {
+                double x = [[values objectAtIndex:0] doubleValue];
+                double y = [[values objectAtIndex:1] doubleValue];
+                [coordArray addObject:@[@(x), @(y)]];
+            }
+        }
+        
+        [result setObject:coordArray forKey:@"coordinates"];
+    } else {
+        [result setObject:@[] forKey:@"coordinates"];
+    }
+    
+    return [NSDictionary dictionaryWithDictionary:result];
+}
+
 @end

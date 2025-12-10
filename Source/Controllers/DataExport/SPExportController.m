@@ -1310,8 +1310,9 @@ set_input:
 	}
 
 	// cache the current connection encoding so the exporter can do what it wants.
-	previousConnectionEncoding = [[NSString alloc] initWithString:[connection encoding]];
-	previousConnectionEncodingViaLatin1 = [connection encodingUsesLatin1Transport];
+	// PostgreSQL always uses UTF-8 encoding
+	previousConnectionEncoding = [[NSString alloc] initWithString:@"utf8"];
+	previousConnectionEncodingViaLatin1 = NO;
 
 	// Add the first exporter to the operation queue
 	[operationQueue addOperation:[exporters firstObject]];
