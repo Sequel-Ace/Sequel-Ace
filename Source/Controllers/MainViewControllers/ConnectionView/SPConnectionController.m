@@ -815,10 +815,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         [standardAWSIAMDetailsContainer setHidden:![self useAWSIAMAuth]];
     }
 
-    // Hide manual credential fields - only AWS CLI profiles are supported
-    // Manual credentials were never securely persisted, so we've removed that option
-    [self hideManualAWSCredentialFields];
-
     // Disable/enable password field - AWS IAM auth doesn't use password
     if (standardPasswordField) {
         [standardPasswordField setEnabled:![self useAWSIAMAuth]];
@@ -832,46 +828,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     // Resize the view to show/hide AWS IAM details
     [self resizeTabViewToConnectionType:[self type] animating:YES];
-}
-
-/**
- * Hides the manual AWS credential input fields (access key and secret key).
- * Only AWS CLI profiles are supported for authentication.
- */
-- (void)hideManualAWSCredentialFields
-{
-    // Hide access key field and its label
-    if (awsAccessKeyField) {
-        [awsAccessKeyField setHidden:YES];
-        // Also hide the label (it's the previous sibling in the view)
-        NSView *superview = [awsAccessKeyField superview];
-        if (superview) {
-            for (NSView *sibling in [superview subviews]) {
-                if ([sibling isKindOfClass:[NSTextField class]] && sibling != awsAccessKeyField) {
-                    NSTextField *textField = (NSTextField *)sibling;
-                    if ([[textField stringValue] containsString:@"Access Key"]) {
-                        [textField setHidden:YES];
-                    }
-                }
-            }
-        }
-    }
-
-    // Hide secret key field and its label
-    if (awsSecretKeyField) {
-        [awsSecretKeyField setHidden:YES];
-        NSView *superview = [awsSecretKeyField superview];
-        if (superview) {
-            for (NSView *sibling in [superview subviews]) {
-                if ([sibling isKindOfClass:[NSTextField class]] && sibling != awsSecretKeyField) {
-                    NSTextField *textField = (NSTextField *)sibling;
-                    if ([[textField stringValue] containsString:@"Secret Key"]) {
-                        [textField setHidden:YES];
-                    }
-                }
-            }
-        }
-    }
 }
 
 /**
@@ -3499,9 +3455,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         allowSplitViewResizing = NO;
 
         [self loadNib];
-
-        // Hide manual AWS credential fields - only profiles are supported
-        [self hideManualAWSCredentialFields];
 
         NSArray *colorList = SPFavoriteColorSupport.sharedInstance.userColorList;
         [sshColorField setColorList:colorList];

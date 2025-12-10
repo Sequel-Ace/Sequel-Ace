@@ -145,9 +145,6 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	IBOutlet NSView *standardAWSIAMDetailsContainer;
 	IBOutlet NSPopUpButton *awsProfilePopup;
 	IBOutlet NSComboBox *awsRegionComboBox;
-	// Manual credential fields (kept for XIB compatibility, hidden at runtime)
-	IBOutlet NSTextField *awsAccessKeyField;
-	IBOutlet NSSecureTextField *awsSecretKeyField;
 
 	IBOutlet NSTextField *standardNameField;
 	IBOutlet NSTextField *sshNameField;
