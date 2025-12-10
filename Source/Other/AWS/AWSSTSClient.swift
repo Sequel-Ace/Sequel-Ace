@@ -225,7 +225,22 @@ import OSLog
 
     // MARK: - Role Assumption (Synchronous for Obj-C compatibility)
 
-    /// Synchronous version for Objective-C callers - runs async code on a background queue
+    /// Synchronous version for Objective-C callers - runs async code on a background queue.
+    ///
+    /// - Warning: This method blocks the calling thread using a semaphore.
+    ///   **Do not call from the main thread** as it may cause UI freezes or deadlocks.
+    ///   This method is designed to be called from background threads (e.g., connection threads).
+    ///
+    /// - Parameters:
+    ///   - roleArn: The ARN of the role to assume
+    ///   - roleSessionName: Optional session name (auto-generated if nil)
+    ///   - mfaSerialNumber: Optional MFA device serial number
+    ///   - mfaTokenCode: MFA token code (required if mfaSerialNumber is provided)
+    ///   - durationSeconds: Session duration (900-43200 seconds, default 3600)
+    ///   - region: AWS region for the STS endpoint
+    ///   - credentials: Base credentials to use for the AssumeRole call
+    ///   - error: Error pointer for Objective-C error handling
+    /// - Returns: Temporary credentials from STS, or nil on failure
     @objc static func assumeRole(
         _ roleArn: String,
         roleSessionName: String?,
@@ -236,12 +251,18 @@ import OSLog
         credentials: AWSCredentials,
         error: NSErrorPointer
     ) -> AWSCredentials? {
+        // Warn if called from main thread - this could cause UI freezes
+        if Thread.isMainThread {
+            os_log(.error, log: log, "assumeRole called from main thread - this may cause UI freezes. Call from a background thread instead.")
+            assertionFailure("AWSSTSClient.assumeRole should not be called from the main thread")
+        }
+
         var result: AWSCredentials?
         var asyncError: Error?
 
         let semaphore = DispatchSemaphore(value: 0)
 
-        // Run async code on a background queue to avoid blocking main thread
+        // Run async code on a background queue
         DispatchQueue.global(qos: .userInitiated).async {
             Task {
                 do {
@@ -261,7 +282,7 @@ import OSLog
             }
         }
 
-        // Wait with timeout
+        // Wait with timeout (blocks current thread)
         let waitResult = semaphore.wait(timeout: .now() + requestTimeout + 5)
 
         if waitResult == .timedOut {
@@ -289,7 +310,11 @@ import OSLog
         return result
     }
 
-    /// Convenience method for MFA role assumption
+    /// Convenience method for MFA role assumption.
+    ///
+    /// - Warning: This method blocks the calling thread. **Do not call from the main thread.**
+    ///   See `assumeRole(_:roleSessionName:mfaSerialNumber:mfaTokenCode:durationSeconds:region:credentials:error:)`
+    ///   for details.
     @objc static func assumeRoleWithMFA(
         _ roleArn: String,
         mfaSerialNumber: String,
@@ -298,6 +323,7 @@ import OSLog
         credentials: AWSCredentials,
         error: NSErrorPointer
     ) -> AWSCredentials? {
+        // Main thread check is done in assumeRole
         return assumeRole(
             roleArn,
             roleSessionName: nil,
