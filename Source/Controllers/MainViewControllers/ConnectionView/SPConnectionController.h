@@ -93,13 +93,10 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	// Clear text plugin
 	NSInteger enableClearTextPlugin;
 
-	// AWS IAM Authentication
+	// AWS IAM Authentication (profile-based only)
 	NSInteger useAWSIAMAuth;
-	NSInteger awsUseProfile;
 	NSString *awsRegion;
 	NSString *awsProfile;
-	NSString *awsAccessKey;
-	NSString *awsSecretKey;
 
 	// SSL details
 	NSInteger useSSL;
@@ -143,13 +140,12 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	IBOutlet NSView *sslCertificateLocationHelp;
 	IBOutlet NSView *sslCACertLocationHelp;
 
-	// AWS IAM Authentication UI
+	// AWS IAM Authentication UI (profile-based only)
 	IBOutlet NSButton *standardAWSIAMAuthCheckbox;
 	IBOutlet NSView *standardAWSIAMDetailsContainer;
-	IBOutlet NSButton *awsUseProfileRadio;
-	IBOutlet NSButton *awsUseAccessKeyRadio;
 	IBOutlet NSPopUpButton *awsProfilePopup;
 	IBOutlet NSComboBox *awsRegionComboBox;
+	// Manual credential fields (kept for XIB compatibility, hidden at runtime)
 	IBOutlet NSTextField *awsAccessKeyField;
 	IBOutlet NSSecureTextField *awsSecretKeyField;
 
@@ -230,15 +226,10 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 @property (readwrite, copy) NSString *timeZoneIdentifier;
 @property (readwrite) NSInteger allowDataLocalInfile;
 @property (readwrite) NSInteger enableClearTextPlugin;
-// AWS IAM Authentication
+// AWS IAM Authentication (profile-based only)
 @property (readwrite) NSInteger useAWSIAMAuth;
-@property (readwrite) NSInteger awsUseProfile;
 @property (readwrite, copy) NSString *awsRegion;
 @property (readwrite, copy) NSString *awsProfile;
-@property (readwrite, copy) NSString *awsAccessKey;
-@property (readwrite, copy) NSString *awsSecretKey;
-@property (readwrite, copy) NSString *awsSecretKeyKeychainItemName;
-@property (readwrite, copy) NSString *awsSecretKeyKeychainItemAccount;
 @property (readwrite) NSInteger useSSL;
 @property (readwrite) NSInteger colorIndex;
 @property (readwrite) NSInteger sslKeyFileLocationEnabled;

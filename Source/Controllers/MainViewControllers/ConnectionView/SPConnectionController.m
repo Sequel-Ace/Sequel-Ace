@@ -145,13 +145,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 @synthesize allowDataLocalInfile;
 @synthesize enableClearTextPlugin;
 @synthesize useAWSIAMAuth;
-@synthesize awsUseProfile;
 @synthesize awsRegion;
 @synthesize awsProfile;
-@synthesize awsAccessKey;
-@synthesize awsSecretKey;
-@synthesize awsSecretKeyKeychainItemName;
-@synthesize awsSecretKeyKeychainItemAccount;
 @synthesize useSSL;
 @synthesize sslKeyFileLocationEnabled;
 @synthesize sslKeyFileLocation;
@@ -206,30 +201,24 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  * Generates a fresh AWS IAM authentication token.
  * Called both during initial connection and for token refresh on reconnection.
  * Uses the Swift AWSIAMAuthManager for all AWS operations.
+ * Note: Only AWS CLI profiles are supported. Manual credentials are not persisted securely.
  */
 - (NSString *)generateAWSIAMAuthToken
 {
     NSError *awsError = nil;
     NSInteger dbPort = [[self port] length] ? [[self port] integerValue] : 3306;
 
-    // Get secret key from keychain if using manual credentials
-    NSString *secretKey = nil;
-    if (![self awsUseProfile]) {
-        secretKey = [self awsSecretKey];
-        if (![secretKey length] && [self awsSecretKeyKeychainItemName]) {
-            secretKey = [keychain getPasswordForName:[self awsSecretKeyKeychainItemName]
-                                             account:[self awsSecretKeyKeychainItemAccount]];
-        }
-    }
+    // Get profile name (defaults to "default" if empty)
+    NSString *profileName = [[self awsProfile] length] > 0 ? [self awsProfile] : @"default";
 
-    // Use the Swift AWSIAMAuthManager for token generation
+    // Use the Swift AWSIAMAuthManager for token generation (profile-based only)
     NSString *token = [AWSIAMAuthManager generateAuthTokenWithHostname:[self host]
                                                                   port:dbPort
                                                               username:[self user]
                                                                 region:[self awsRegion]
-                                                               profile:[self awsUseProfile] ? [self awsProfile] : nil
-                                                             accessKey:[self awsAccessKey]
-                                                             secretKey:secretKey
+                                                               profile:profileName
+                                                             accessKey:nil
+                                                             secretKey:nil
                                                           parentWindow:[dbDocument parentWindowControllerWindow]
                                                                  error:&awsError];
 
@@ -826,6 +815,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         [standardAWSIAMDetailsContainer setHidden:![self useAWSIAMAuth]];
     }
 
+    // Hide manual credential fields - only AWS CLI profiles are supported
+    // Manual credentials were never securely persisted, so we've removed that option
+    [self hideManualAWSCredentialFields];
+
     // Disable/enable password field - AWS IAM auth doesn't use password
     if (standardPasswordField) {
         [standardPasswordField setEnabled:![self useAWSIAMAuth]];
@@ -839,6 +832,46 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     // Resize the view to show/hide AWS IAM details
     [self resizeTabViewToConnectionType:[self type] animating:YES];
+}
+
+/**
+ * Hides the manual AWS credential input fields (access key and secret key).
+ * Only AWS CLI profiles are supported for authentication.
+ */
+- (void)hideManualAWSCredentialFields
+{
+    // Hide access key field and its label
+    if (awsAccessKeyField) {
+        [awsAccessKeyField setHidden:YES];
+        // Also hide the label (it's the previous sibling in the view)
+        NSView *superview = [awsAccessKeyField superview];
+        if (superview) {
+            for (NSView *sibling in [superview subviews]) {
+                if ([sibling isKindOfClass:[NSTextField class]] && sibling != awsAccessKeyField) {
+                    NSTextField *textField = (NSTextField *)sibling;
+                    if ([[textField stringValue] containsString:@"Access Key"]) {
+                        [textField setHidden:YES];
+                    }
+                }
+            }
+        }
+    }
+
+    // Hide secret key field and its label
+    if (awsSecretKeyField) {
+        [awsSecretKeyField setHidden:YES];
+        NSView *superview = [awsSecretKeyField superview];
+        if (superview) {
+            for (NSView *sibling in [superview subviews]) {
+                if ([sibling isKindOfClass:[NSTextField class]] && sibling != awsSecretKeyField) {
+                    NSTextField *textField = (NSTextField *)sibling;
+                    if ([[textField stringValue] containsString:@"Secret Key"]) {
+                        [textField setHidden:YES];
+                    }
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -1041,12 +1074,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     // Clear text plugin
     [self setEnableClearTextPlugin:([fav objectForKey:SPFavoriteEnableClearTextPluginKey] ? [[fav objectForKey:SPFavoriteEnableClearTextPluginKey] intValue] : NSControlStateValueOff)];
 
-    // AWS IAM Authentication
+    // AWS IAM Authentication (profile-based only - manual credentials not supported)
     [self setUseAWSIAMAuth:([fav objectForKey:SPFavoriteUseAWSIAMAuthKey] ? [[fav objectForKey:SPFavoriteUseAWSIAMAuthKey] intValue] : NSControlStateValueOff)];
-    [self setAwsUseProfile:([fav objectForKey:SPFavoriteAWSUseProfileKey] ? [[fav objectForKey:SPFavoriteAWSUseProfileKey] intValue] : NSControlStateValueOn)];
     [self setAwsRegion:([fav objectForKey:SPFavoriteAWSRegionKey] ? [fav objectForKey:SPFavoriteAWSRegionKey] : @"")];
     [self setAwsProfile:([fav objectForKey:SPFavoriteAWSProfileKey] ? [fav objectForKey:SPFavoriteAWSProfileKey] : @"default")];
-    [self setAwsAccessKey:([fav objectForKey:SPFavoriteAWSAccessKeyKey] ? [fav objectForKey:SPFavoriteAWSAccessKeyKey] : @"")];
 
     // Update password field state based on AWS IAM auth setting
     if (standardPasswordField) {
@@ -1566,13 +1597,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [theFavorite setObject:[NSNumber numberWithInteger:[self allowDataLocalInfile]] forKey:SPFavoriteAllowDataLocalInfileKey];
     // Clear text plugin
     [theFavorite setObject:[NSNumber numberWithInteger:[self enableClearTextPlugin]] forKey:SPFavoriteEnableClearTextPluginKey];
-    // AWS IAM Authentication
+    // AWS IAM Authentication (profile-based only)
     [theFavorite setObject:[NSNumber numberWithInteger:[self useAWSIAMAuth]] forKey:SPFavoriteUseAWSIAMAuthKey];
-    [theFavorite setObject:[NSNumber numberWithInteger:[self awsUseProfile]] forKey:SPFavoriteAWSUseProfileKey];
     _setOrRemoveKey(SPFavoriteAWSRegionKey, [self awsRegion]);
     _setOrRemoveKey(SPFavoriteAWSProfileKey, [self awsProfile]);
-    _setOrRemoveKey(SPFavoriteAWSAccessKeyKey, [self awsAccessKey]);
-    // Note: AWS Secret Key is stored in keychain, not in favorites
     // SSL details
     [theFavorite setObject:[NSNumber numberWithInteger:[self useSSL]] forKey:SPFavoriteUseSSLKey];
     [theFavorite setObject:[NSNumber numberWithInteger:[self sslKeyFileLocationEnabled]] forKey:SPFavoriteSSLKeyFileLocationEnabledKey];
@@ -2259,25 +2287,18 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             NSError *awsError = nil;
             NSInteger dbPort = [[self port] length] ? [[self port] integerValue] : 3306;
 
-            // Get secret key from keychain if using manual credentials
-            NSString *secretKey = nil;
-            if (![self awsUseProfile]) {
-                secretKey = [self awsSecretKey];
-                if (![secretKey length] && [self awsSecretKeyKeychainItemName]) {
-                    secretKey = [keychain getPasswordForName:[self awsSecretKeyKeychainItemName]
-                                                     account:[self awsSecretKeyKeychainItemAccount]];
-                }
-            }
+            // Get profile name (defaults to "default" if empty)
+            NSString *profileName = [[self awsProfile] length] > 0 ? [self awsProfile] : @"default";
 
-            // Use the Swift AWSIAMAuthManager for token generation
+            // Use the Swift AWSIAMAuthManager for token generation (profile-based only)
             // This handles: credential loading, role assumption (with or without MFA), and token generation
             connectionPassword = [AWSIAMAuthManager generateAuthTokenWithHostname:[self host]
                                                                              port:dbPort
                                                                          username:[self user]
                                                                            region:[self awsRegion]
-                                                                          profile:[self awsUseProfile] ? [self awsProfile] : nil
-                                                                        accessKey:[self awsAccessKey]
-                                                                        secretKey:secretKey
+                                                                          profile:profileName
+                                                                        accessKey:nil
+                                                                        secretKey:nil
                                                                      parentWindow:[dbDocument parentWindowControllerWindow]
                                                                             error:&awsError];
 
@@ -3478,6 +3499,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         allowSplitViewResizing = NO;
 
         [self loadNib];
+
+        // Hide manual AWS credential fields - only profiles are supported
+        [self hideManualAWSCredentialFields];
 
         NSArray *colorList = SPFavoriteColorSupport.sharedInstance.userColorList;
         [sshColorField setColorList:colorList];

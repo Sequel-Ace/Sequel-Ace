@@ -84,12 +84,12 @@ import Security
     ///   - port: Database port
     ///   - username: Database username
     ///   - region: AWS region (optional, will detect from hostname)
-    ///   - profile: AWS profile name (optional, uses default if nil)
-    ///   - accessKey: Manual access key (used if profile is nil/empty)
-    ///   - secretKey: Manual secret key (used if profile is nil/empty)
+    ///   - profile: AWS profile name (required, uses "default" if nil/empty)
+    ///   - accessKey: Deprecated, ignored (kept for API compatibility)
+    ///   - secretKey: Deprecated, ignored (kept for API compatibility)
     ///   - parentWindow: Parent window for MFA dialog
     /// - Returns: Authentication token to use as database password
-    /// - Note: This method throws and is for Swift callers. Use generateAuthTokenObjC for Obj-C callers.
+    /// - Note: Only AWS CLI profiles are supported. Manual credentials are ignored.
     static func generateAuthToken(
         hostname: String,
         port: Int,
@@ -109,23 +109,15 @@ import Security
             effectiveRegion = "us-east-1" // Default fallback
         }
 
-        // Load or create credentials
-        let credentials: AWSCredentials
-        let useProfile = profile?.isEmpty == false
+        // Use profile-based authentication only
+        // Manual credentials (accessKey/secretKey) are ignored - they were never securely persisted
+        let effectiveProfile = (profile?.isEmpty == false) ? profile! : "default"
 
-        if useProfile {
-            credentials = try loadCredentialsFromProfile(
-                profile!,
-                region: effectiveRegion,
-                parentWindow: parentWindow
-            )
-        } else {
-            guard let accessKey = accessKey, !accessKey.isEmpty,
-                  let secretKey = secretKey, !secretKey.isEmpty else {
-                throw AWSIAMAuthError.credentialsInvalid
-            }
-            credentials = AWSCredentials(accessKeyId: accessKey, secretAccessKey: secretKey)
-        }
+        let credentials = try loadCredentialsFromProfile(
+            effectiveProfile,
+            region: effectiveRegion,
+            parentWindow: parentWindow
+        )
 
         // Generate the authentication token
         do {
