@@ -56,6 +56,8 @@
 #import "SPFunctions.h"
 #import "SPBundleHTMLOutputController.h"
 #import "SPBundleManager.h"
+// AWS IAM Authentication is now implemented in Swift
+// See: AWSCredentials.swift, RDSIAMAuthentication.swift, AWSSTSClient.swift, AWSMFATokenDialog.swift, AWSIAMAuthManager.swift
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -142,6 +144,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 @synthesize timeZoneIdentifier;
 @synthesize allowDataLocalInfile;
 @synthesize enableClearTextPlugin;
+@synthesize useAWSIAMAuth;
+@synthesize awsRegion;
+@synthesize awsProfile;
 @synthesize useSSL;
 @synthesize sslKeyFileLocationEnabled;
 @synthesize sslKeyFileLocation;
@@ -176,6 +181,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 - (NSString *)keychainPassword
 {
+    // For AWS IAM Authentication, generate a fresh token on each request
+    // This ensures token refresh works for long-running sessions
+    if ([self useAWSIAMAuth] && [self type] == SPTCPIPConnection) {
+        return [self generateAWSIAMAuthToken];
+    }
+
     NSString *kcItemName = [self connectionKeychainItemName];
     // If no keychain item is available, return an empty password
     if (!kcItemName) return nil;
@@ -184,6 +195,39 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     NSString *kcPassword = [keychain getPasswordForName:kcItemName account:[self connectionKeychainItemAccount]];
 
     return kcPassword;
+}
+
+/**
+ * Generates a fresh AWS IAM authentication token.
+ * Called both during initial connection and for token refresh on reconnection.
+ * Uses the Swift AWSIAMAuthManager for all AWS operations.
+ * Note: Only AWS CLI profiles are supported. Manual credentials are not persisted securely.
+ */
+- (NSString *)generateAWSIAMAuthToken
+{
+    NSError *awsError = nil;
+    NSInteger dbPort = [[self port] length] ? [[self port] integerValue] : 3306;
+
+    // Get profile name (defaults to "default" if empty)
+    NSString *profileName = [[self awsProfile] length] > 0 ? [self awsProfile] : @"default";
+
+    // Use the Swift AWSIAMAuthManager for token generation (profile-based only)
+    NSString *token = [AWSIAMAuthManager generateAuthTokenWithHostname:[self host]
+                                                                  port:dbPort
+                                                              username:[self user]
+                                                                region:[self awsRegion]
+                                                               profile:profileName
+                                                             accessKey:nil
+                                                             secretKey:nil
+                                                          parentWindow:[dbDocument parentWindowControllerWindow]
+                                                                 error:&awsError];
+
+    if (awsError) {
+        NSLog(@"AWS IAM Authentication token generation failed: %@", awsError.localizedDescription);
+        return nil;
+    }
+
+    return token;
 }
 
 - (NSString *)keychainPasswordForSSH
@@ -715,6 +759,21 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 - (IBAction)updateSSLInterface:(id)sender
 {
     [self _startEditingConnection];
+
+    // SSL and AWS IAM are mutually exclusive
+    // When SSL is enabled, disable AWS IAM
+    if ([self useSSL] && [self useAWSIAMAuth]) {
+        [self setUseAWSIAMAuth:NO];
+        if (standardAWSIAMDetailsContainer) {
+            [standardAWSIAMDetailsContainer setHidden:YES];
+        }
+        // Re-enable password field
+        if (standardPasswordField) {
+            [standardPasswordField setEnabled:YES];
+            [standardPasswordField setPlaceholderString:@""];
+        }
+    }
+
     [self resizeTabViewToConnectionType:[self type] animating:YES];
 }
 
@@ -729,6 +788,92 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 - (IBAction)updateClearTextPlugin:(id)sender
 {
     [self _startEditingConnection];
+}
+
+#pragma mark -
+#pragma mark AWS IAM Authentication
+
+/**
+ * Called when AWS IAM authentication settings are changed
+ */
+- (IBAction)updateAWSIAMInterface:(id)sender
+{
+    [self _startEditingConnection];
+
+    // AWS IAM and manual SSL are mutually exclusive
+    // When AWS IAM is enabled, disable SSL checkbox (SSL is implicit for IAM)
+    if ([self useAWSIAMAuth]) {
+        [self setUseSSL:NO];
+        // Hide SSL details container
+        if (standardConnectionSSLDetailsContainer) {
+            [standardConnectionSSLDetailsContainer setHidden:YES];
+        }
+    }
+
+    // Show/hide AWS IAM details container
+    if (standardAWSIAMDetailsContainer) {
+        [standardAWSIAMDetailsContainer setHidden:![self useAWSIAMAuth]];
+    }
+
+    // Disable/enable password field - AWS IAM auth doesn't use password
+    if (standardPasswordField) {
+        [standardPasswordField setEnabled:![self useAWSIAMAuth]];
+        if ([self useAWSIAMAuth]) {
+            [standardPasswordField setStringValue:@""];
+            [standardPasswordField setPlaceholderString:NSLocalizedString(@"Using IAM authentication", @"placeholder when AWS IAM auth is enabled")];
+        } else {
+            [standardPasswordField setPlaceholderString:@""];
+        }
+    }
+
+    // Resize the view to show/hide AWS IAM details
+    [self resizeTabViewToConnectionType:[self type] animating:YES];
+}
+
+/**
+ * Returns available AWS profiles from ~/.aws/credentials
+ */
+- (NSArray<NSString *> *)awsAvailableProfiles
+{
+    return [AWSIAMAuthManager availableProfiles];
+}
+
+/**
+ * Returns common AWS region identifiers
+ */
+- (NSArray<NSString *> *)awsAvailableRegions
+{
+    return @[
+        @"us-east-1",
+        @"us-east-2",
+        @"us-west-1",
+        @"us-west-2",
+        @"af-south-1",
+        @"ap-east-1",
+        @"ap-south-1",
+        @"ap-south-2",
+        @"ap-southeast-1",
+        @"ap-southeast-2",
+        @"ap-southeast-3",
+        @"ap-southeast-4",
+        @"ap-northeast-1",
+        @"ap-northeast-2",
+        @"ap-northeast-3",
+        @"ca-central-1",
+        @"ca-west-1",
+        @"eu-central-1",
+        @"eu-central-2",
+        @"eu-west-1",
+        @"eu-west-2",
+        @"eu-west-3",
+        @"eu-south-1",
+        @"eu-south-2",
+        @"eu-north-1",
+        @"il-central-1",
+        @"me-south-1",
+        @"me-central-1",
+        @"sa-east-1"
+    ];
 }
 
 #pragma mark -
@@ -751,7 +896,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     switch (theType) {
         case SPTCPIPConnection:
             targetResizeRect = [standardConnectionFormContainer frame];
-            if ([self useSSL]) additionalFormHeight += [standardConnectionSSLDetailsContainer frame].size.height;
+            // SSL and AWS IAM are mutually exclusive
+            if ([self useSSL]) {
+                additionalFormHeight += [standardConnectionSSLDetailsContainer frame].size.height;
+            } else if ([self useAWSIAMAuth] && standardAWSIAMDetailsContainer) {
+                additionalFormHeight += [standardAWSIAMDetailsContainer frame].size.height;
+            }
             break;
         case SPSocketConnection:
             targetResizeRect = [socketConnectionFormContainer frame];
@@ -879,6 +1029,21 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     // Clear text plugin
     [self setEnableClearTextPlugin:([fav objectForKey:SPFavoriteEnableClearTextPluginKey] ? [[fav objectForKey:SPFavoriteEnableClearTextPluginKey] intValue] : NSControlStateValueOff)];
+
+    // AWS IAM Authentication (profile-based only - manual credentials not supported)
+    [self setUseAWSIAMAuth:([fav objectForKey:SPFavoriteUseAWSIAMAuthKey] ? [[fav objectForKey:SPFavoriteUseAWSIAMAuthKey] intValue] : NSControlStateValueOff)];
+    [self setAwsRegion:([fav objectForKey:SPFavoriteAWSRegionKey] ? [fav objectForKey:SPFavoriteAWSRegionKey] : @"")];
+    [self setAwsProfile:([fav objectForKey:SPFavoriteAWSProfileKey] ? [fav objectForKey:SPFavoriteAWSProfileKey] : @"default")];
+
+    // Update password field state based on AWS IAM auth setting
+    if (standardPasswordField) {
+        [standardPasswordField setEnabled:![self useAWSIAMAuth]];
+        if ([self useAWSIAMAuth]) {
+            [standardPasswordField setPlaceholderString:NSLocalizedString(@"Using IAM authentication", @"placeholder when AWS IAM auth is enabled")];
+        } else {
+            [standardPasswordField setPlaceholderString:@""];
+        }
+    }
 
     // SSL details
     [self setUseSSL:([fav objectForKey:SPFavoriteUseSSLKey] ? [[fav objectForKey:SPFavoriteUseSSLKey] intValue] : NSControlStateValueOff)];
@@ -1388,6 +1553,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [theFavorite setObject:[NSNumber numberWithInteger:[self allowDataLocalInfile]] forKey:SPFavoriteAllowDataLocalInfileKey];
     // Clear text plugin
     [theFavorite setObject:[NSNumber numberWithInteger:[self enableClearTextPlugin]] forKey:SPFavoriteEnableClearTextPluginKey];
+    // AWS IAM Authentication (profile-based only)
+    [theFavorite setObject:[NSNumber numberWithInteger:[self useAWSIAMAuth]] forKey:SPFavoriteUseAWSIAMAuthKey];
+    _setOrRemoveKey(SPFavoriteAWSRegionKey, [self awsRegion]);
+    _setOrRemoveKey(SPFavoriteAWSProfileKey, [self awsProfile]);
     // SSL details
     [theFavorite setObject:[NSNumber numberWithInteger:[self useSSL]] forKey:SPFavoriteUseSSLKey];
     [theFavorite setObject:[NSNumber numberWithInteger:[self sslKeyFileLocationEnabled]] forKey:SPFavoriteSSLKeyFileLocationEnabledKey];
@@ -2064,12 +2233,52 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         }
 
-        if ([self password] == nil) {
-            [self setPassword:@""];
+        // AWS IAM Authentication: Generate token if enabled
+        // Uses the Swift AWSIAMAuthManager for all AWS operations (credential loading, role assumption, token generation)
+        NSString *connectionPassword = [self password];
+        BOOL awsIAMAuthUsed = NO;
+
+        if ([self useAWSIAMAuth] && [self type] == SPTCPIPConnection) {
+            awsIAMAuthUsed = YES;
+            NSError *awsError = nil;
+            NSInteger dbPort = [[self port] length] ? [[self port] integerValue] : 3306;
+
+            // Get profile name (defaults to "default" if empty)
+            NSString *profileName = [[self awsProfile] length] > 0 ? [self awsProfile] : @"default";
+
+            // Use the Swift AWSIAMAuthManager for token generation (profile-based only)
+            // This handles: credential loading, role assumption (with or without MFA), and token generation
+            connectionPassword = [AWSIAMAuthManager generateAuthTokenWithHostname:[self host]
+                                                                             port:dbPort
+                                                                         username:[self user]
+                                                                           region:[self awsRegion]
+                                                                          profile:profileName
+                                                                        accessKey:nil
+                                                                        secretKey:nil
+                                                                     parentWindow:[dbDocument parentWindowControllerWindow]
+                                                                            error:&awsError];
+
+            if (awsError) {
+                [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"AWS IAM Authentication Failed", @"AWS IAM auth failed title")
+                                                errorMessage:awsError.localizedDescription
+                                                      detail:nil];
+                return;
+            }
+
+            // AWS IAM auth requires cleartext plugin and SSL
+            [mySQLConnection setEnableClearTextPlugin:YES];
+            [mySQLConnection setUseSSL:YES];
+        }
+
+        if (connectionPassword == nil) {
+            connectionPassword = @"";
         }
 
         // Only set the password if there is no Keychain item set or the connection is being tested or the password is different than in Keychain.
-        if ((isTestingConnection || !connectionKeychainItemName || (connectionKeychainItemName && ![[self password] isEqualToString:@"SequelAceSecretPassword"])) && [self password]) {
+        if (awsIAMAuthUsed) {
+            // For AWS IAM auth, always use the generated token
+            [mySQLConnection setPassword:connectionPassword];
+        } else if ((isTestingConnection || !connectionKeychainItemName || (connectionKeychainItemName && ![[self password] isEqualToString:@"SequelAceSecretPassword"])) && [self password]) {
             [mySQLConnection setPassword:[self password]];
         }
 
@@ -2077,8 +2286,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             [mySQLConnection setAllowDataLocalInfile:YES];
         }
 
-        // Enable Clear Text plugin when enabled
-        if ([self enableClearTextPlugin]) {
+        // Enable Clear Text plugin when enabled (also handled above for AWS IAM)
+        if ([self enableClearTextPlugin] && !awsIAMAuthUsed) {
             [mySQLConnection setEnableClearTextPlugin:YES];
         }
 
@@ -2125,6 +2334,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         // Connect
         SPLog(@"Establish connection");
         [mySQLConnection connect];
+
         if (![mySQLConnection isConnected]) {
             if (sshTunnel && !cancellingConnection) {
                 // This is a race condition we cannot fix "properly":

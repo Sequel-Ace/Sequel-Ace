@@ -92,7 +92,12 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	
 	// Clear text plugin
 	NSInteger enableClearTextPlugin;
-	
+
+	// AWS IAM Authentication (profile-based only)
+	NSInteger useAWSIAMAuth;
+	NSString *awsRegion;
+	NSString *awsProfile;
+
 	// SSL details
 	NSInteger useSSL;
 	NSInteger sslKeyFileLocationEnabled;
@@ -134,6 +139,12 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	IBOutlet NSView *sslKeyFileLocationHelp;
 	IBOutlet NSView *sslCertificateLocationHelp;
 	IBOutlet NSView *sslCACertLocationHelp;
+
+	// AWS IAM Authentication UI (profile-based only)
+	IBOutlet NSButton *standardAWSIAMAuthCheckbox;
+	IBOutlet NSView *standardAWSIAMDetailsContainer;
+	IBOutlet NSPopUpButton *awsProfilePopup;
+	IBOutlet NSComboBox *awsRegionComboBox;
 
 	IBOutlet NSTextField *standardNameField;
 	IBOutlet NSTextField *sshNameField;
@@ -212,6 +223,10 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 @property (readwrite, copy) NSString *timeZoneIdentifier;
 @property (readwrite) NSInteger allowDataLocalInfile;
 @property (readwrite) NSInteger enableClearTextPlugin;
+// AWS IAM Authentication (profile-based only)
+@property (readwrite) NSInteger useAWSIAMAuth;
+@property (readwrite, copy) NSString *awsRegion;
+@property (readwrite, copy) NSString *awsProfile;
 @property (readwrite) NSInteger useSSL;
 @property (readwrite) NSInteger colorIndex;
 @property (readwrite) NSInteger sslKeyFileLocationEnabled;
@@ -251,6 +266,11 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 - (IBAction)showHelp:(id)sender;
 - (IBAction)updateSSLInterface:(id)sender;
 - (IBAction)updateKeyLocationFileVisibility:(id)sender;
+
+// AWS IAM Authentication
+- (IBAction)updateAWSIAMInterface:(id)sender;
+- (NSArray<NSString *> *)awsAvailableProfiles;
+- (NSArray<NSString *> *)awsAvailableRegions;
 
 - (void)resizeTabViewToConnectionType:(NSUInteger)theType animating:(BOOL)animate;
 
