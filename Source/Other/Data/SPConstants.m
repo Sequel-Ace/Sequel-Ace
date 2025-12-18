@@ -364,6 +364,13 @@ NSString *SPFavoriteSSLCertificateFileLocationKey        = @"sslCertificateFileL
 NSString *SPFavoriteSSLCACertFileLocationEnabledKey      = @"sslCACertFileLocationEnabled";
 NSString *SPFavoriteSSLCACertFileLocationKey             = @"sslCACertFileLocation";
 NSString *SPFavoriteUseCompressionKey                    = @"useCompression";
+
+// AWS IAM Authentication
+NSString *SPFavoriteUseAWSIAMAuthKey                     = @"useAWSIAMAuth";
+NSString *SPFavoriteAWSRegionKey                         = @"awsRegion";
+NSString *SPFavoriteAWSProfileKey                        = @"awsProfile";
+NSString *SPFavoriteAWSAccessKeyKey                      = @"awsAccessKey";
+NSString *SPFavoriteAWSUseProfileKey                     = @"awsUseProfile";
 NSString *SPConnectionFavoritesChangedNotification       = @"SPConnectionFavoritesChanged";
 NSString *SPConnectionShownSocketHelp                    = @"SPConnectionShownSocketHelp";
 NSString *SPStaleBookmarksHelp                           = @"SPStaleBookmarksHelp";
