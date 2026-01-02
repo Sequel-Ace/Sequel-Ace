@@ -1012,11 +1012,12 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 	NSString *currentQuery = [queryText substringWithRange:currentRange];
 
-	// Regular expression to match table names after FROM, JOIN, ON keywords
+	// Regular expression to match table names after FROM, JOIN keywords
 	// This handles: FROM table, JOIN table, FROM db.table, JOIN db.table, etc.
+	// Supports backtick-quoted identifiers with spaces/special chars
 	NSError *error = nil;
 	NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:
-		@"(?i)\\b(FROM|JOIN|ON)\\s+([`\\w]+(?:\\.`\\w+)?(?:\\s+AS\\s+\\w+)?)"
+		@"(?i)\\b(FROM|JOIN)\\s+((?:`[^`]+`|[\\w]+)(?:\\.(?:`[^`]+`|[\\w]+))?(?:\\s+AS\\s+\\w+)?)"
 		options:0
 		error:&error];
 
