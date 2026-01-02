@@ -360,9 +360,11 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
  */
 - (NSArray *)suggestionsForSQLCompletionWith:(NSString *)currentWord dictMode:(BOOL)isDictMode browseMode:(BOOL)dbBrowseMode withTableName:(NSString*)aTableName withDbName:(NSString*)aDbName
 {
-
 	NSMutableArray *possibleCompletions = [[NSMutableArray alloc] initWithCapacity:32];
 	if(currentWord == nil) currentWord = @"";
+
+	// Extract tables used in current query for prioritization
+	NSMutableSet *queryTables = [self extractTablesFromCurrentQuery];
 
 	// If caret is not inside backticks add keywords and all words coming from the view.
 	if(!dbBrowseMode)
@@ -515,7 +517,29 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 					[sortedTables addObject:aTableName_id];
 				} else {
 					[possibleCompletions addObject:[NSDictionary dictionaryWithObjectsAndKeys:[[db componentsSeparatedByString:SPUniqueSchemaDelimiter] lastObject], @"display", @"database-small", @"image", @"", @"isRef", nil]];
-					[sortedTables addObjectsFromArray:[allTables sortedArrayUsingDescriptors:@[desc]]];
+
+					// Prioritize tables used in current query
+					NSMutableArray *queryTablesInDb = [NSMutableArray array];
+					NSMutableArray *otherTables = [NSMutableArray array];
+
+					for (id tableId in allTables) {
+						NSString *tableName = [[tableId componentsSeparatedByString:SPUniqueSchemaDelimiter] lastObject];
+						if ([queryTables containsObject:[tableName lowercaseString]]) {
+							[queryTablesInDb addObject:tableId];
+						} else {
+							[otherTables addObject:tableId];
+						}
+					}
+
+					// Sort query tables alphabetically first, then other tables
+					[queryTablesInDb sortUsingDescriptors:@[desc]];
+					[otherTables sortUsingDescriptors:@[desc]];
+
+					// Combine with query tables first
+					[sortedTables addObjectsFromArray:queryTablesInDb];
+					[sortedTables addObjectsFromArray:otherTables];
+
+					// Move current table to front if it exists
 					if([sortedTables count] > 1 && [sortedTables containsObject:[NSString stringWithFormat:@"%@%@%@", db, SPUniqueSchemaDelimiter, currentTable]]) {
 						[sortedTables removeObject:[NSString stringWithFormat:@"%@%@%@", db, SPUniqueSchemaDelimiter, currentTable]];
 						[sortedTables insertObject:[NSString stringWithFormat:@"%@%@%@", db, SPUniqueSchemaDelimiter, currentTable] atIndex:0];
@@ -972,6 +996,89 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 	[completionPopup orderFront:self];
 	[completionPopup insertAutocompletePlaceholder];
+}
+
+/**
+ * Extract table names from current query (FROM, JOIN, ON clauses) for prioritization
+ */
+- (NSMutableSet *)extractTablesFromCurrentQuery
+{
+	NSMutableSet *tables = [NSMutableSet set];
+	NSString *queryText = [self string];
+
+	// Find current query boundaries (from last semicolon to current caret or end of query)
+	NSRange currentRange = [self getCurrentQueryRange];
+	if (currentRange.location == NSNotFound) return tables;
+
+	NSString *currentQuery = [queryText substringWithRange:currentRange];
+
+	// Regular expression to match table names after FROM, JOIN, ON keywords
+	// This handles: FROM table, JOIN table, FROM db.table, JOIN db.table, etc.
+	NSError *error = nil;
+	NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:
+		@"(?i)\\b(FROM|JOIN|ON)\\s+([`\\w]+(?:\\.`\\w+)?(?:\\s+AS\\s+\\w+)?)"
+		options:0
+		error:&error];
+
+	if (!error) {
+		[regex enumerateMatchesInString:currentQuery
+								options:0
+								  range:NSMakeRange(0, [currentQuery length])
+							   usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop) {
+			if ([match numberOfRanges] >= 3) {
+				NSString *tableReference = [currentQuery substringWithRange:[match rangeAtIndex:2]];
+
+				// Extract table name (remove backticks and database prefix if present)
+				NSString *tableName = [tableReference stringByReplacingOccurrencesOfString:@"`" withString:@""];
+
+				// Remove alias if present (AS keyword handling)
+				NSRange asRange = [tableName rangeOfString:@" AS " options:NSCaseInsensitiveSearch];
+				if (asRange.location != NSNotFound) {
+					tableName = [tableName substringToIndex:asRange.location];
+				}
+
+				// Remove database prefix if present (db.table -> table)
+				NSRange dotRange = [tableName rangeOfString:@"." options:NSBackwardsSearch];
+				if (dotRange.location != NSNotFound) {
+					tableName = [tableName substringFromIndex:dotRange.location + 1];
+				}
+
+				if ([tableName length] > 0) {
+					[tables addObject:[tableName lowercaseString]];
+				}
+			}
+		}];
+	}
+
+	return tables;
+}
+
+/**
+ * Get the range of the current query being edited
+ */
+- (NSRange)getCurrentQueryRange
+{
+	NSString *text = [self string];
+	NSUInteger caretPos = [self selectedRange].location;
+
+	// Find the last semicolon before caret
+	NSRange lastSemicolonRange = [text rangeOfString:@";"
+											options:NSBackwardsSearch
+											  range:NSMakeRange(0, caretPos)];
+
+	// Find the next semicolon after caret
+	NSRange nextSemicolonRange = [text rangeOfString:@";"
+											options:0
+											  range:NSMakeRange(caretPos, [text length] - caretPos)];
+
+	NSUInteger start = (lastSemicolonRange.location != NSNotFound) ?
+		lastSemicolonRange.location + 1 : 0;
+	NSUInteger end = (nextSemicolonRange.location != NSNotFound) ?
+		nextSemicolonRange.location : [text length];
+
+	if (start >= end) return NSMakeRange(NSNotFound, 0);
+
+	return NSMakeRange(start, end - start);
 }
 
 /**

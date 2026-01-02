@@ -375,6 +375,7 @@ extern NSString *SPCustomQueryAutoCompleteDelay;
 extern NSString *SPCustomQueryFunctionCompletionInsertsArguments;
 extern NSString *SPCustomQueryEditorThemeName;
 extern NSString *SPCustomQuerySoftIndent;
+extern NSString *SPCustomQueryAutoCompletionMaxWidth;
 extern NSString *SPCustomQuerySoftIndentWidth;
 extern NSString *UseDashStyleForBlockComment;
 

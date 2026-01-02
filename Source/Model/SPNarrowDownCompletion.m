@@ -111,7 +111,8 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 // =============================
 - (instancetype)init
 {
-	maxWindowWidth = 450;
+	maxWindowWidth = [[NSUserDefaults standardUserDefaults] integerForKey:SPCustomQueryAutoCompletionMaxWidth];
+	if (maxWindowWidth <= 0) maxWindowWidth = 450; // fallback
 
 	if((self = [super initWithContentRect:NSMakeRect(0,0,maxWindowWidth,0) styleMask:NSWindowStyleMaskBorderless backing:NSBackingStoreBuffered defer:YES]))
 	{
@@ -225,6 +226,9 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 {
 	if ((self = [self init]))
 	{
+		// Update max window width from preferences
+		maxWindowWidth = [[NSUserDefaults standardUserDefaults] integerForKey:SPCustomQueryAutoCompletionMaxWidth];
+		if (maxWindowWidth <= 0) maxWindowWidth = 450; // fallback
 		// Set filter string 
 		if (aUserString) {
 			[mutablePrefix appendString:aUserString];
@@ -340,7 +344,7 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 	[scrollView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
 	[scrollView setAutohidesScrollers:YES];
 	[scrollView setHasVerticalScroller:YES];
-	[scrollView setHasHorizontalScroller:NO];
+	[scrollView setHasHorizontalScroller:YES];
 	[[scrollView verticalScroller] setControlSize:NSControlSizeSmall];
 	[[scrollView horizontalScroller] setControlSize:NSControlSizeSmall];
 
