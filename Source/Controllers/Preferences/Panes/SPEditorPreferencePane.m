@@ -128,9 +128,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	[column setDataCell:colorCell];
 
 	[colorSettingTableView setBackgroundColor:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]]];
-
 }
-
 
 #pragma mark -
 #pragma mark IB action methods
