@@ -58,10 +58,6 @@
 	IBOutlet NSTableView *colorSettingTableView;
 	IBOutlet NSMenu *themeSelectionMenu;
 
-	// Auto completion max width controls
-	NSTextField *autoCompletionMaxWidthLabel;
-	NSTextField *autoCompletionMaxWidthField;
-	NSStepper *autoCompletionMaxWidthStepper;
 
 	NSArray *editorColors;
 	NSArray *editorNameForColors;

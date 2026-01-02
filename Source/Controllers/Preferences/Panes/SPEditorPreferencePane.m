@@ -51,7 +51,6 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 - (NSArray *)_getAvailableThemes;
 - (void)_saveColorThemeAtPath:(NSString *)path;
 - (BOOL)_loadColorSchemeFromFile:(NSString *)filename;
-- (void)setupAutoCompletionMaxWidthControls;
 
 @property (readwrite, strong) NSFileManager *fileManager;
 
@@ -130,37 +129,8 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 
 	[colorSettingTableView setBackgroundColor:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]]];
 
-	// Setup auto completion max width controls
-	[self setupAutoCompletionMaxWidthControls];
 }
 
-- (void)setupAutoCompletionMaxWidthControls
-{
-	// Create label
-	autoCompletionMaxWidthLabel = [[NSTextField alloc] initWithFrame:NSMakeRect(20, 20, 150, 20)];
-	[autoCompletionMaxWidthLabel setStringValue:NSLocalizedString(@"Auto completion max width:", @"Auto completion max width label")];
-	[autoCompletionMaxWidthLabel setBezeled:NO];
-	[autoCompletionMaxWidthLabel setDrawsBackground:NO];
-	[autoCompletionMaxWidthLabel setEditable:NO];
-	[autoCompletionMaxWidthLabel setSelectable:NO];
-	[autoCompletionMaxWidthLabel setFont:[NSFont systemFontOfSize:12]];
-	[autoCompletionMaxWidthLabel setAlignment:NSTextAlignmentRight];
-	[[self view] addSubview:autoCompletionMaxWidthLabel];
-
-	// Create text field
-	autoCompletionMaxWidthField = [[NSTextField alloc] initWithFrame:NSMakeRect(180, 18, 60, 24)];
-	[autoCompletionMaxWidthField setFont:[NSFont systemFontOfSize:12]];
-	[autoCompletionMaxWidthField bind:@"value" toObject:[NSUserDefaultsController sharedUserDefaultsController] withKeyPath:@"values.SPCustomQueryAutoCompletionMaxWidth" options:@{NSContinuouslyUpdatesValueBindingOption: @YES}];
-	[[self view] addSubview:autoCompletionMaxWidthField];
-
-	// Create stepper
-	autoCompletionMaxWidthStepper = [[NSStepper alloc] initWithFrame:NSMakeRect(245, 18, 19, 24)];
-	[autoCompletionMaxWidthStepper setMinValue:200];
-	[autoCompletionMaxWidthStepper setMaxValue:1000];
-	[autoCompletionMaxWidthStepper setIncrement:50];
-	[autoCompletionMaxWidthStepper bind:@"value" toObject:[NSUserDefaultsController sharedUserDefaultsController] withKeyPath:@"values.SPCustomQueryAutoCompletionMaxWidth" options:@{NSContinuouslyUpdatesValueBindingOption: @YES}];
-	[[self view] addSubview:autoCompletionMaxWidthStepper];
-}
 
 #pragma mark -
 #pragma mark IB action methods
