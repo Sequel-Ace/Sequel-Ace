@@ -340,7 +340,7 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 	[scrollView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
 	[scrollView setAutohidesScrollers:YES];
 	[scrollView setHasVerticalScroller:YES];
-	[scrollView setHasHorizontalScroller:NO];
+	[scrollView setHasHorizontalScroller:YES];
 	[[scrollView verticalScroller] setControlSize:NSControlSizeSmall];
 	[[scrollView horizontalScroller] setControlSize:NSControlSizeSmall];
 
