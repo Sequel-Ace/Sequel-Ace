@@ -58,7 +58,6 @@
 	IBOutlet NSTableView *colorSettingTableView;
 	IBOutlet NSMenu *themeSelectionMenu;
 
-
 	NSArray *editorColors;
 	NSArray *editorNameForColors;
 	NSUInteger colorRow;
