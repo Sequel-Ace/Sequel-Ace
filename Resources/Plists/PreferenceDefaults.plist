@@ -61,8 +61,6 @@
 	<true/>
 	<key>SPCustomQueryEditorCompleteWithBackticks</key>
 	<true/>
-	<key>SPCustomQueryAutoCompletionMaxWidth</key>
-	<integer>450</integer>
 	<key>CustomQueryAutoUppercaseKeywords</key>
 	<false/>
 	<key>CustomQueryEditorBackgroundColor</key>

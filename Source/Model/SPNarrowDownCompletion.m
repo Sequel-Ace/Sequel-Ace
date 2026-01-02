@@ -111,8 +111,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 // =============================
 - (instancetype)init
 {
-	maxWindowWidth = [[NSUserDefaults standardUserDefaults] integerForKey:SPCustomQueryAutoCompletionMaxWidth];
-	if (maxWindowWidth <= 0) maxWindowWidth = 450; // fallback
+	maxWindowWidth = 450;
 
 	if((self = [super initWithContentRect:NSMakeRect(0,0,maxWindowWidth,0) styleMask:NSWindowStyleMaskBorderless backing:NSBackingStoreBuffered defer:YES]))
 	{
@@ -226,9 +225,6 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 {
 	if ((self = [self init]))
 	{
-		// Update max window width from preferences
-		maxWindowWidth = [[NSUserDefaults standardUserDefaults] integerForKey:SPCustomQueryAutoCompletionMaxWidth];
-		if (maxWindowWidth <= 0) maxWindowWidth = 450; // fallback
 		// Set filter string 
 		if (aUserString) {
 			[mutablePrefix appendString:aUserString];
