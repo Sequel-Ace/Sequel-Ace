@@ -1415,7 +1415,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     // Grab the password for this connection
     // Add the password to keychain as appropriate
     NSString *sqlPassword = [self password];
-    if (![sqlPassword length] && mySQLConnection && connectionKeychainItemName) {
+    if (![sqlPassword length] && postgresConnection && connectionKeychainItemName) {
         sqlPassword = [keychain getPasswordForName:connectionKeychainItemName account:connectionKeychainItemAccount];
     }
 
@@ -1454,7 +1454,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
      * Password handling for the SSH connection
      */
     NSString *theSSHPassword = [self sshPassword];
-    if (mySQLConnection && connectionSSHKeychainItemName) {
+    if (postgresConnection && connectionSSHKeychainItemName) {
         theSSHPassword = [keychain getPasswordForName:connectionSSHKeychainItemName account:connectionSSHKeychainItemAccount];
     }
 
@@ -1974,9 +1974,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             cancellingConnection = YES;
             dbDocument = nil;
 
-            if (mySQLConnection) {
-                [mySQLConnection setDelegate:nil];
-                [NSThread detachNewThreadWithName:SPCtxt(@"SPConnectionController close background disconnect", dbDocument) target:mySQLConnection selector:@selector(disconnect) object:nil];
+            if (postgresConnection) {
+                [postgresConnection setDelegate:nil];
+                [NSThread detachNewThreadWithName:SPCtxt(@"SPConnectionController close background disconnect", dbDocument) target:postgresConnection selector:@selector(disconnect) object:nil];
             }
 
             if (sshTunnel) {
@@ -2038,9 +2038,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             // For now, assuming standard TCP/IP or Socket path in host/port.
             // [postgresConnection setSocketPath:[self socket]];
         }
-
-
-        }
         // Initiate SSH tunnel to host if appropriate.
         else if ([self type] == SPSSHTunnelConnection) {
             [postgresConnection setHost:SPLocalhostAddress];
@@ -2069,12 +2066,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         }
 
         if([self allowDataLocalInfile]) {
-            [mySQLConnection setAllowDataLocalInfile:YES];
+            [postgresConnection setAllowDataLocalInfile:YES];
         }
 
         // Enable Clear Text plugin when enabled
         if ([self enableClearTextPlugin]) {
-            [mySQLConnection setEnableClearTextPlugin:YES];
+            [postgresConnection setEnableClearTextPlugin:YES];
         }
 
         // Enable SSL if set
@@ -2082,11 +2079,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             [postgresConnection setUseSSL:YES];
 
             if ([self sslKeyFileLocationEnabled]) {
-                [mySQLConnection setSslKeyFilePath:[self sslKeyFileLocation]];
+                [postgresConnection setSslKeyFilePath:[self sslKeyFileLocation]];
             }
 
             if ([self sslCertificateFileLocationEnabled]) {
-                [mySQLConnection setSslCertificatePath:[self sslCertificateFileLocation]];
+                [postgresConnection setSslCertificatePath:[self sslCertificateFileLocation]];
             }
 
             if ([self sslCACertFileLocationEnabled]) {
@@ -2184,7 +2181,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         // Connection established
         SPLog(@"Establisted connection");
-        [self performSelectorOnMainThread:@selector(mySQLConnectionEstablished) withObject:nil waitUntilDone:NO];
+        [self performSelectorOnMainThread:@selector(postgresConnectionEstablished) withObject:nil waitUntilDone:NO];
     }
 }
 
@@ -2254,7 +2251,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     }
 
     // Set up the tunnel details
-    sshTunnel = [[SPSSHTunnel alloc] initToHost:[self sshHost] port:[[self sshPort] integerValue] login:[self sshUser] tunnellingToPort:([[self port] length]?[[self port] integerValue]:3306) onHost:[self host]];
+    sshTunnel = [[SPSSHTunnel alloc] initToHost:[self sshHost] port:[[self sshPort] integerValue] login:[self sshUser] tunnellingToPort:([[self port] length]?[[self port] integerValue]:5432) onHost:[self host]];
 
     if(sshTunnel == nil) {
         [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH connection failed!", @"SSH connection failed title")
@@ -2322,7 +2319,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     // If SSL was enabled, check it was established correctly
     if (useSSL && ([self type] == SPTCPIPConnection || [self type] == SPSocketConnection)) {
-        if (![mySQLConnection isConnectedViaSSL]) {
+        if (![postgresConnection isConnectedViaSSL]) {
             [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"SSL connection not established", @"SSL requested but not used title") message:NSLocalizedString(@"You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted.", @"SSL connection requested but not established error detail") callback:nil];
         }
     }
@@ -2367,7 +2364,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     } else if (newState == SPPostgresProxyConnected) {
         SPLog(@"SPPostgresProxyConnected, calling initiateMySQLConnection");
 
-        [self initiateMySQLConnection];
+        [self initiatePostgresConnection];
     }
 }
 
@@ -2389,7 +2386,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     // Pass the connection to the table document, allowing it to set
     // up the other classes and the rest of the interface.
-    [dbDocument setConnection:mySQLConnection];
+    [dbDocument setConnection:postgresConnection];
 }
 
 /**
@@ -3205,7 +3202,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         isConnecting = NO;
         isTestingConnection = NO;
         sshTunnel = nil;
-        mySQLConnection = nil;
+        postgresConnection = nil;
         cancellingConnection = NO;
         favoriteNameFieldWasAutogenerated = NO;
         allowSplitViewResizing = NO;

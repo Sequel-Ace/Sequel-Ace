@@ -9,11 +9,12 @@
 //
 
 #import "SPPostgresResult.h"
-#import "/opt/homebrew/include/postgresql@17/libpq-fe.h"
+#import <libpq-fe.h>
 
 @implementation SPPostgresResult
 
 @synthesize returnDataAsStrings;
+@synthesize delegate = _delegate;
 
 - (instancetype)initWithPGResult:(PGresult *)result {
     self = [super init];
@@ -21,8 +22,11 @@
         resultSet = result;
         currentRowIndex = 0;
         if (resultSet) {
-            numberOfRows = PQntuples(resultSet);
-            numberOfFields = PQnfields(resultSet);
+            int tuples = PQntuples(resultSet);
+            numberOfRows = (tuples < 0) ? 0 : (NSUInteger)tuples;
+            
+            int fields = PQnfields(resultSet);
+            numberOfFields = (fields < 0) ? 0 : (NSUInteger)fields;
             
             NSMutableArray *names = [NSMutableArray arrayWithCapacity:numberOfFields];
             for (int i = 0; i < numberOfFields; i++) {
@@ -65,7 +69,20 @@
             [row addObject:[NSNull null]];
         } else {
             char *val = PQgetvalue(resultSet, (int)index, i);
-            [row addObject:[NSString stringWithUTF8String:val]];
+            NSString *strVal = [NSString stringWithUTF8String:val];
+            if (strVal) {
+                [row addObject:strVal];
+            } else {
+                // Invalid UTF-8, try Latin1 or fallback to data
+                strVal = [NSString stringWithCString:val encoding:NSISOLatin1StringEncoding];
+                if (strVal) {
+                    [row addObject:strVal];
+                } else {
+                    // Fallback to storing as NSData or string representation of data for now
+                    // Sequel Ace tables expect strings mostly
+                    [row addObject:[[NSData dataWithBytes:val length:strlen(val)] description]];
+                }
+            }
         }
     }
     return row;
@@ -82,15 +99,54 @@
     return [NSDictionary dictionaryWithObjects:row forKeys:fieldNames];
 }
 
+- (NSDictionary *)getRowAsDictionaryAtIndex:(NSUInteger)index {
+    if (index >= numberOfRows) return nil;
+    
+    NSMutableArray *row = [NSMutableArray arrayWithCapacity:numberOfFields];
+    for (int i = 0; i < numberOfFields; i++) {
+        if (PQgetisnull(resultSet, (int)index, i)) {
+            [row addObject:[NSNull null]];
+        } else {
+            char *val = PQgetvalue(resultSet, (int)index, i);
+            NSString *strVal = [NSString stringWithUTF8String:val];
+            if (strVal) {
+                [row addObject:strVal];
+            } else {
+                strVal = [NSString stringWithCString:val encoding:NSISOLatin1StringEncoding];
+                if (strVal) {
+                    [row addObject:strVal];
+                } else {
+                    [row addObject:[[NSData dataWithBytes:val length:strlen(val)] description]];
+                }
+            }
+        }
+    }
+    return [NSDictionary dictionaryWithObjects:row forKeys:fieldNames];
+}
+
 - (NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state objects:(id __unsafe_unretained [])buffer count:(NSUInteger)len {
-    if (state->state >= numberOfRows) return 0;
+    // On first call (state == 0), pre-cache all rows to ensure they stay alive
+    if (state->state == 0) {
+        if (!cachedRows) {
+            cachedRows = [[NSMutableArray alloc] initWithCapacity:numberOfRows];
+            for (NSUInteger i = 0; i < numberOfRows; i++) {
+                NSDictionary *row = [self getRowAsDictionaryAtIndex:i];
+                if (row) {
+                    [cachedRows addObject:row];
+                }
+            }
+        }
+    }
+    
+    if (state->state >= [cachedRows count]) return 0;
     
     state->itemsPtr = buffer;
     state->mutationsPtr = &state->extra[0];
     
     NSUInteger count = 0;
-    while (state->state < numberOfRows && count < len) {
-        buffer[count] = [self getRowAtIndex:state->state];
+    while (state->state < [cachedRows count] && count < len) {
+        // Use cached rows which are retained by the array
+        buffer[count] = [cachedRows objectAtIndex:state->state];
         state->state++;
         count++;
     }
@@ -114,8 +170,20 @@
 }
 
 - (NSArray *)getRowsAsArray {
-    // Alias for getAllRows
+    // Alias for getAllRows - returns array of arrays
     return [self getAllRows];
+}
+
+- (NSArray *)getAllRowsAsDictionaries {
+    // Returns array of dictionaries for code expecting NSDictionary rows
+    NSMutableArray *allRows = [NSMutableArray arrayWithCapacity:numberOfRows];
+    for (NSUInteger i = 0; i < numberOfRows; i++) {
+        NSDictionary *row = [self getRowAsDictionaryAtIndex:i];
+        if (row) {
+            [allRows addObject:row];
+        }
+    }
+    return [NSArray arrayWithArray:allRows];
 }
 
 - (void)setDefaultRowReturnType:(NSInteger)type {
@@ -164,6 +232,21 @@
 
 - (void)setReturnDataAsStrings:(BOOL)flag {
     returnDataAsStrings = flag;
+}
+
+- (double)queryExecutionTime {
+    // PostgreSQL doesn't provide query execution time in the result
+    // Would need to be tracked at query execution time in SPPostgresConnection
+    return 0.0;
+}
+
+- (void)setDelegate:(id)aDelegate {
+    _delegate = aDelegate;
+}
+
+- (BOOL)dataDownloaded {
+    // PostgreSQL results are synchronous - data is always fully downloaded
+    return YES;
 }
 
 @end

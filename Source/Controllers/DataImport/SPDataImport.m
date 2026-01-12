@@ -414,7 +414,7 @@
 	if (![[importEncodingPopup onMainThread]indexOfSelectedItem]) {
 	sqlEncoding = [fileManager detectEncodingforFileAtPath:filename];
 		if (NO /* [SPPostgresConnection mySQLCharsetForStringEncoding:sqlEncoding] */) {
-			connectionEncodingToRestore = [postgresConnection encoding];
+			connectionEncodingToRestore = [postgresConnection encodingName];
 			// [postgresConnection queryString:[NSString stringWithFormat:@"SET NAMES '%@'", [SPPostgresConnection mySQLCharsetForStringEncoding:sqlEncoding]]];
 		}
 

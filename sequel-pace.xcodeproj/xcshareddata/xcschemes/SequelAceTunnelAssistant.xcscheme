@@ -17,7 +17,7 @@
                BlueprintIdentifier = "58CDB3350FCE13C900F8ACA3"
                BuildableName = "SequelProTunnelAssistant"
                BlueprintName = "SequelProTunnelAssistant"
-               ReferencedContainer = "container:sequel-pro.xcodeproj">
+               ReferencedContainer = "container:sequel-pace.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -47,7 +47,7 @@
             BlueprintIdentifier = "58CDB3350FCE13C900F8ACA3"
             BuildableName = "SequelProTunnelAssistant"
             BlueprintName = "SequelProTunnelAssistant"
-            ReferencedContainer = "container:sequel-pro.xcodeproj">
+            ReferencedContainer = "container:sequel-pace.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -64,7 +64,7 @@
             BlueprintIdentifier = "58CDB3350FCE13C900F8ACA3"
             BuildableName = "SequelProTunnelAssistant"
             BlueprintName = "SequelProTunnelAssistant"
-            ReferencedContainer = "container:sequel-pro.xcodeproj">
+            ReferencedContainer = "container:sequel-pace.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

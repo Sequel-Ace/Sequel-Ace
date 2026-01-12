@@ -34,6 +34,7 @@
 
 @class SPDataStorage;
 @class SPTableContent;
+@class SPPostgresConnection;
 
 #define SP_MAX_CELL_WIDTH_MULTICOLUMN 200
 #define SP_MAX_CELL_WIDTH 400
@@ -54,7 +55,7 @@ extern NSInteger SPEditMenuCopyAsSQLNoAutoInc;
 @interface SPCopyTable : SPTableView
 {
 	SPTableContent* tableInstance;    // the table content view instance
-	id mySQLConnection;               // current MySQL connection
+	SPPostgresConnection* postgresConnection;               // current PostgreSQL connection
 	NSArray* columnDefinitions;       // array of NSDictionary containing info about columns
 	NSString* selectedTable;          // the name of the current selected table
 	SPDataStorage* tableStorage;      // the underlying storage array holding the table data

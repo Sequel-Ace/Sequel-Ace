@@ -146,11 +146,12 @@
 /**
  * Updates the dict containing the structure of all available databases (mainly for completion/navigator)
  * executed on the helper connection.
- * Should always be executed on a background thread. // JCS: but it calls delegate getDbStructure which eventually calls initWithWindowNibName .. which needs to be on main
+ * Should always be executed on a background thread.
  */
 - (void)queryDbStructureWithUserInfo:(NSDictionary *)userInfo
 {
 	@autoreleasepool {
+		@try {
 		BOOL structureWasUpdated = NO;
 
 		[self _addToListAndWaitForFrontCancellingOtherThreads:[[userInfo objectForKey:@"cancelQuerying"] boolValue]];
@@ -441,6 +442,21 @@
 
 		// Remove this thread from the processing stack
 		[self _removeThreadFromList];
+		} // end @try
+		@catch (NSException *exception) {
+			NSLog(@"SPDatabaseStructure queryDbStructureWithUserInfo EXCEPTION: %@ - %@", [exception name], [exception reason]);
+			NSLog(@"Stack: %@", [exception callStackSymbols]);
+			[self _removeThreadFromList];
+			// Show alert on main thread
+			dispatch_async(dispatch_get_main_queue(), ^{
+				NSAlert *alert = [[NSAlert alloc] init];
+				[alert setAlertStyle:NSAlertStyleWarning];
+				[alert setMessageText:@"Database Structure Error"];
+				[alert setInformativeText:[NSString stringWithFormat:@"Exception: %@\n\nReason: %@", [exception name], [exception reason]]];
+				[alert addButtonWithTitle:@"OK"];
+				[alert runModal];
+			});
+		}
 	}
 }
 

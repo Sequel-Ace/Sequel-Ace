@@ -17,7 +17,7 @@
                BlueprintIdentifier = "8D15AC270486D014006FF6A4"
                BuildableName = "Sequel PAce.app"
                BlueprintName = "Sequel PAce"
-               ReferencedContainer = "container:sequel-ace.xcodeproj">
+               ReferencedContainer = "container:sequel-pace.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,7 +33,7 @@
             BlueprintIdentifier = "8D15AC270486D014006FF6A4"
             BuildableName = "Sequel PAce.app"
             BlueprintName = "Sequel PAce"
-            ReferencedContainer = "container:sequel-ace.xcodeproj">
+            ReferencedContainer = "container:sequel-pace.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <EnvironmentVariables>
@@ -51,7 +51,7 @@
                BlueprintIdentifier = "380F4ED80FC0B50500B0BFD7"
                BuildableName = "Unit Tests.xctest"
                BlueprintName = "Unit Tests"
-               ReferencedContainer = "container:sequel-ace.xcodeproj">
+               ReferencedContainer = "container:sequel-pace.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -73,7 +73,7 @@
             BlueprintIdentifier = "8D15AC270486D014006FF6A4"
             BuildableName = "Sequel PAce.app"
             BlueprintName = "Sequel PAce"
-            ReferencedContainer = "container:sequel-ace.xcodeproj">
+            ReferencedContainer = "container:sequel-pace.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -90,7 +90,7 @@
             BlueprintIdentifier = "8D15AC270486D014006FF6A4"
             BuildableName = "Sequel PAce.app"
             BlueprintName = "Sequel PAce"
-            ReferencedContainer = "container:sequel-ace.xcodeproj">
+            ReferencedContainer = "container:sequel-pace.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

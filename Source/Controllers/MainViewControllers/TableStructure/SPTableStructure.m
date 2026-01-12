@@ -1020,7 +1020,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
             // Otherwise, use the provided default (Can be an expression, int value....)
             else  {
                 [queryString appendFormat:@"\n DEFAULT %@", defaultValue];
-//                [queryString appendFormat:@"\n DEFAULT %@", [mySQLConnection escapeAndQuoteString:defaultValue]];
+//                [queryString appendFormat:@"\n DEFAULT %@", [postgresConnection escapeAndQuoteString:defaultValue]];
             }
 		}
 
@@ -1473,40 +1473,67 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	NSArray *encodings  = [databaseDataInstance getDatabaseCharacterSetEncodings];
 
 	SPMainQSync(^{
-		[self->encodingPopupCell removeAllItems];
+		@try {
+			[self->encodingPopupCell removeAllItems];
 
-		if ([encodings count]) {
+			if (encodings && [encodings count]) {
 
-			[self->encodingPopupCell addItemWithTitle:@"dummy"];
-			//copy the default attributes and add gray color
-			NSMutableDictionary *defaultAttrs = [NSMutableDictionary dictionaryWithDictionary:[[self->encodingPopupCell attributedTitle] attributesAtIndex:0 effectiveRange:NULL]];
-			[defaultAttrs setObject:[NSColor lightGrayColor] forKey:NSForegroundColorAttributeName];
-			[[self->encodingPopupCell lastItem] setTitle:@""];
+				[self->encodingPopupCell addItemWithTitle:@"dummy"];
+				//copy the default attributes and add gray color - with safety check
+				NSMutableDictionary *defaultAttrs = nil;
+				NSAttributedString *attributedTitle = [self->encodingPopupCell attributedTitle];
+				if (attributedTitle && [attributedTitle length] > 0) {
+					defaultAttrs = [NSMutableDictionary dictionaryWithDictionary:[attributedTitle attributesAtIndex:0 effectiveRange:NULL]];
+				} else {
+					defaultAttrs = [NSMutableDictionary dictionary];
+				}
+				[defaultAttrs setObject:[NSColor lightGrayColor] forKey:NSForegroundColorAttributeName];
+				[[self->encodingPopupCell lastItem] setTitle:@""];
 
-			for (NSDictionary *encoding in encodings)
-			{
-				NSString *encodingName = [encoding safeObjectForKey:@"CHARACTER_SET_NAME"];
-				NSString *title = (![encoding safeObjectForKey:@"DESCRIPTION"]) ? encodingName : [NSString stringWithFormat:@"%@ (%@)", [encoding safeObjectForKey:@"DESCRIPTION"], encodingName];
+				for (NSDictionary *encoding in encodings)
+				{
+					if (!encoding || ![encoding isKindOfClass:[NSDictionary class]]) continue;
+					
+					NSString *encodingName = [encoding safeObjectForKey:@"CHARACTER_SET_NAME"];
+					if (!encodingName || [encodingName isNSNull]) {
+						encodingName = @"";
+					}
+					
+					NSString *title = encodingName;
+					id descObj = [encoding safeObjectForKey:@"DESCRIPTION"];
+					if (descObj && ![descObj isNSNull]) {
+						title = [NSString stringWithFormat:@"%@ (%@)", descObj, encodingName];
+					}
 
-                if(title == nil || [title isNSNull]) {
-                    // default to empty string?
-                    title = @"";
-                }
+					if(title == nil || [title isNSNull]) {
+						title = @"";
+					}
 
-				[self->encodingPopupCell safeAddItemWithTitle:title];
-				NSMenuItem *item = [self->encodingPopupCell lastItem];
+					[self->encodingPopupCell safeAddItemWithTitle:title];
+					NSMenuItem *item = [self->encodingPopupCell lastItem];
 
-				[item setRepresentedObject:encodingName];
+					if (item) {
+						[item setRepresentedObject:encodingName];
 
-				if ([encodingName isEqualToString:[self->tableDataInstance tableEncoding]]) {
-
-					NSAttributedString *itemString = [[NSAttributedString alloc] initWithString:[item title] attributes:defaultAttrs];
-
-					[item setAttributedTitle:itemString];
+						NSString *tableEncoding = [self->tableDataInstance tableEncoding];
+						if (encodingName && tableEncoding && [encodingName isEqualToString:tableEncoding]) {
+							NSString *itemTitle = [item title];
+							if (itemTitle && [itemTitle length] > 0) {
+								NSAttributedString *itemString = [[NSAttributedString alloc] initWithString:itemTitle attributes:defaultAttrs];
+								[item setAttributedTitle:itemString];
+							}
+						}
+					}
 				}
 			}
+			else {
+				[self->encodingPopupCell addItemWithTitle:NSLocalizedString(@"Not available", @"not available label")];
+			}
 		}
-		else {
+		@catch (NSException *exception) {
+			NSLog(@"SPTableStructure loadTable encoding block exception: %@ - %@", [exception name], [exception reason]);
+			// Fallback - just add a default item
+			[self->encodingPopupCell removeAllItems];
 			[self->encodingPopupCell addItemWithTitle:NSLocalizedString(@"Not available", @"not available label")];
 		}
 	});

@@ -12,8 +12,20 @@
 #import "SPPostgresResult.h"
 #import "SPPostgresStreamingResult.h"
 
+@class SPPostgresStreamingResultStore;
+
 // Forward declaration of PGconn - actual definition comes from libpq
 typedef struct pg_conn PGconn;
+
+/**
+ * Connection lost decision enum
+ * Used to indicate user's choice when connection is lost
+ */
+typedef NS_ENUM(NSInteger, SPPostgresConnectionLostDecision) {
+    SPPostgresConnectionLostDisconnect = 0,
+    SPPostgresConnectionLostReconnect = 1,
+    SPPostgresConnectionLostRetry = 2
+};
 
 @class SPPostgresConnection;
 
@@ -26,12 +38,12 @@ typedef struct pg_conn PGconn;
 - (void)connectionSucceeded:(SPPostgresConnection *)connection;
 - (void)connectionFailed:(SPPostgresConnection *)connection;
 - (void)queryGaveError:(NSString *)error connection:(SPPostgresConnection *)connection;
-- (BOOL)keychainPasswordForConnection:(SPPostgresConnection *)connection;
+- (NSString *)keychainPasswordForConnection:(SPPostgresConnection *)connection;
 - (NSString *)keychainPasswordForSSHConnection:(SPPostgresConnection *)connection;
 @end
 
 
-@interface SPPostgresConnection : NSObject {
+@interface SPPostgresConnection : NSObject <NSCopying> {
     PGconn *connection;
     NSString *host;
     NSString *username;
@@ -88,7 +100,7 @@ typedef struct pg_conn PGconn;
 - (void)restoreStoredEncoding;
 
 // Additional methods needed for compatibility
-- (SPPostgresResult *)resultStoreFromQueryString:(NSString *)query;
+- (SPPostgresStreamingResultStore *)resultStoreFromQueryString:(NSString *)query;
 - (NSString *)lastSqlstate;
 - (NSUInteger)rowsAffectedByLastQuery;
 - (NSString *)escapeString:(NSString *)string includingQuotes:(BOOL)includeQuotes;
@@ -98,4 +110,41 @@ typedef struct pg_conn PGconn;
 - (BOOL)isConnected;
 - (NSArray *)tablesFromDatabase:(NSString *)database;
 
+// Connection management methods
+- (NSUInteger)port;
+- (void)setPort:(NSUInteger)thePort;
+- (BOOL)checkConnectionIfNecessary;
+- (BOOL)checkConnection;
+
+// MySQL compatibility methods (stubs or PostgreSQL equivalents)
+- (BOOL)serverShutdown;
+- (void)setLastQueryWasCancelled:(BOOL)wasCancelled;
+- (NSUInteger)mysqlConnectionThreadId;
+- (void)setEncodingUsesLatin1Transport:(BOOL)useLatin1;
+- (void)setDelegateQueryLogging:(BOOL)shouldLog;
+- (void)setRetryQueriesOnConnectionFailure:(BOOL)shouldRetry;
+- (NSUInteger)killQueryOnThreadID:(NSUInteger)threadID;
+- (SPPostgresResult *)queryString:(NSString *)query usingEncoding:(NSStringEncoding)encoding withResultType:(int)resultType;
+- (BOOL)encodingUsesLatin1Transport;
+
+// Additional MySQL compatibility methods
+- (void)setUsername:(NSString *)userName;
+- (void)updateTimeZoneIdentifier:(NSString *)timeZoneIdentifier;
+- (BOOL)isConnectedViaSSL;
+
+// Connection setter methods
+- (void)setHost:(NSString *)theHost;
+- (void)setPassword:(NSString *)thePassword;
+- (void)setDatabase:(NSString *)theDatabase;
+- (void)setUseSSL:(BOOL)useSSL;
+- (void)setSslKeyFilePath:(NSString *)path;
+- (void)setSslCertificatePath:(NSString *)path;
+- (void)setSslCACertificatePath:(NSString *)path;
+- (void)setAllowDataLocalInfile:(BOOL)allow;
+- (void)setEnableClearTextPlugin:(BOOL)enable;
+
+// Encoding helper
+- (NSString *)encodingName;
+
 @end
+

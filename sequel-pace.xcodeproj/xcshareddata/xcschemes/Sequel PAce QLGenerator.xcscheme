@@ -17,7 +17,7 @@
                BlueprintIdentifier = "584754C1120A04560057631F"
                BuildableName = "Sequel PAce.qlgenerator"
                BlueprintName = "Sequel PAce QLGenerator"
-               ReferencedContainer = "container:sequel-ace.xcodeproj">
+               ReferencedContainer = "container:sequel-pace.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -53,7 +53,7 @@
             BlueprintIdentifier = "584754C1120A04560057631F"
             BuildableName = "Sequel PAce.qlgenerator"
             BlueprintName = "Sequel PAce QLGenerator"
-            ReferencedContainer = "container:sequel-pro.xcodeproj">
+            ReferencedContainer = "container:sequel-pace.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </ProfileAction>

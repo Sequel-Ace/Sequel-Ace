@@ -37,6 +37,7 @@
 #import "SPFunctions.h"
 
 #import "SPPostgresConnection.h"
+#import "SPPostgresGeometryData.h"
 
 @implementation SPCSVExporter
 
@@ -81,7 +82,7 @@
     
     NSArray *csvRow = nil;
     NSScanner *csvNumericTester = nil;
-    SPMySQLFastStreamingResult *streamingResult = nil;
+    SPPostgresStreamingResult *streamingResult = nil;
     NSString *escapedEscapeString, *escapedFieldSeparatorString, *escapedEnclosingString, *escapedLineEndString, *dataConversionString;
     
     id csvCell;
@@ -289,7 +290,7 @@
                 
                 [csvCellString setString:[NSString stringWithString:dataConversionString]];
             }
-            else if ([csvCell isKindOfClass:[SPMySQLGeometryData class]]) {
+            else if ([csvCell isKindOfClass:[SPPostgresGeometryData class]]) {
                 [csvCellString setString:[csvCell wktString]];
             }
             else {

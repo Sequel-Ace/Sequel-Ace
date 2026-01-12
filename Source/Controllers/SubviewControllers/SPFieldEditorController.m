@@ -40,6 +40,7 @@
 #import "SPJSONFormatter.h"
 #import "SPPostgresConnection.h"
 #import "SPPostgresDataTypes.h"
+#import "SPPostgresGeometryData.h"
 #import "SPFunctions.h"
 
 #import "sequel-pace-Swift.h"

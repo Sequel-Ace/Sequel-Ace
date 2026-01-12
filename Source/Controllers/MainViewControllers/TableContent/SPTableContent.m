@@ -58,6 +58,7 @@
 #import "SPSplitView.h"
 #import "SPExtendedTableInfo.h"
 #import "SPBundleManager.h"
+#import "SPPostgresStreamingResultStore.h"
 #import "SPComboBoxCell.h"
 
 #import <pthread.h>
@@ -731,6 +732,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
  */
 - (void) loadTableValues
 {
+	@try {
 	// If no table is selected, return
 	if (!selectedTable) return;
 
@@ -827,6 +829,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// Process the result into the data store
 	if (!fullTableReloadRequired) {	// Update the table store
 	[self updateResultStore:resultStore approximateRowCount:rowsToLoad];
+    NSLog(@"SPTableContent: returned from updateResultStore");
 	}
 
 	// If the result is empty, and a late page is selected, reset the page
@@ -848,6 +851,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 	// End cancellation ability
 	[tableDocumentInstance disableTaskCancellation];
+    NSLog(@"SPTableContent: disableTaskCancellation called in loadTableValues");
 
 	// Restore selection indexes if appropriate
 	if (selectionToRestore) {
@@ -946,10 +950,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		if(activeFilter == SPTableContentFilterSourceRuleFilter || activeFilter == SPTableContentFilterSourceNone) {
 			NSString *errorDetail;
 			if([filterString length]){
-				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@", @"message of panel when loading of table failed and presumably due to used filter argument"), [postgresConnection lastErrorMessage]];
+				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded presumably due to used filter clause. \n\nPostgreSQL said: %@", @"message of panel when loading of table failed and presumably due to used filter argument"), [postgresConnection lastErrorMessage]];
 			}
 			else{
-				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded.\n\nMySQL said: %@", @"message of panel when loading of table failed"), [postgresConnection lastErrorMessage]];
+				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded.\n\nPostgreSQL said: %@", @"message of panel when loading of table failed"), [postgresConnection lastErrorMessage]];
 				SPMainQSync(^{
 					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:errorDetail callback:nil];
 				});
@@ -972,6 +976,16 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         }
 		[[filterTableController onMainThread] setFilterError:0 message:nil sqlstate:nil];
 	}
+	} // end @try
+	@catch (NSException *exception) {
+		NSLog(@"SPTableContent loadTableValues EXCEPTION: %@ - %@", [exception name], [exception reason]);
+		NSLog(@"SPTableContent loadTableValues STACK: %@", [exception callStackSymbols]);
+		SPMainQSync(^{
+			[NSAlert createWarningAlertWithTitle:@"Table Load Exception" 
+				message:[NSString stringWithFormat:@"An exception occurred while loading table data:\n\n%@: %@\n\nPlease report this error.", [exception name], [exception reason]]
+				callback:nil];
+		});
+	}
 }
 
 /**
@@ -986,6 +1000,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	
 	// Lock the table values
 	pthread_mutex_lock(&tableValuesLock);
+
+    SPLog(@"SPTableContent: Enter updateResultStore. numberOfRows=%lu", (unsigned long)numberOfRows);
 	
 	// Update the row count
 	tableRowsCount = numberOfRows;
@@ -998,9 +1014,14 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 	
 	// Iterate through the rows and add them to the table values
-	for (i = 0; i < numberOfRows; i++) {
-		[tableValues addRowWithContents:[theResultStore getRowAsArray]];
-	}
+    // SKIP THIS for streaming result stores, as they load data asynchronously
+    if (![theResultStore isKindOfClass:[SPPostgresStreamingResultStore class]]) {
+        for (i = 0; i < numberOfRows; i++) {
+            [tableValues addRowWithContents:[theResultStore getRowAsArray]];
+        }
+    } else {
+        SPLog(@"SPTableContent: Streaming result store detected, skipping synchronous row iteration.");
+    }
 	
 	pthread_mutex_unlock(&tableValuesLock);
 	NSUInteger dataColumnsCount = [dataColumns count];
@@ -1013,7 +1034,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	pthread_mutex_unlock(&tableValuesLock);
 
 	// Start the data downloading
+    SPLog(@"SPTableContent: Calling startDownload");
 	[theResultStore startDownload];
+    SPLog(@"SPTableContent: startDownload returned");
 
 	NSProgressIndicator *dataLoadingIndicator = tableDocumentInstance->queryProgressBar;
 
@@ -1027,11 +1050,15 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 
 	// Set up the table updates timer and wait for it to notify this thread about completion
+    SPLog(@"SPTableContent: Configuring timer");
 	[[self onMainThread] initTableLoadTimer];
 
+    SPLog(@"SPTableContent: Awaiting data downloaded...");
 	[tableValues awaitDataDownloaded];
+    SPLog(@"SPTableContent: Data downloaded signal received.");
 
 	SPMainQSync(^{
+        SPLog(@"SPTableContent: Updating UI in main queue");
 		self->tableRowsCount = [self->tableValues count];
 		
 		// If the final column autoresize wasn't performed, perform it
@@ -1042,7 +1069,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 		// Reset the progress indicator
 		[dataLoadingIndicator setIndeterminate:YES]; // UI method!
+        SPLog(@"SPTableContent: UI update complete");
 	});
+    
+    SPLog(@"SPTableContent: Exiting updateResultStore");
 }
 
 /**
@@ -1481,7 +1511,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		[self loadTableValues];
 
 		if ([postgresConnection queryErrored] && ![postgresConnection lastQueryWasCancelled]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't sort table. MySQL said: %@", @"message of panel when sorting of table failed"), [postgresConnection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't sort table. PostgreSQL said: %@", @"message of panel when sorting of table failed"), [postgresConnection lastErrorMessage]] callback:nil];
 
 			[tableDocumentInstance endTask];
 			return;
@@ -1933,7 +1963,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         } else {
             [self performSelector:@selector(showErrorSheetWith:)
                 withObject:[NSArray arrayWithObjects:NSLocalizedString(@"Error", @"error"),
-                    [NSString stringWithFormat:NSLocalizedString(@"Couldn't delete rows.\n\nMySQL said: %@", @"message when deleteing all rows failed"),
+                    [NSString stringWithFormat:NSLocalizedString(@"Couldn't delete rows.\n\nPostgreSQL said: %@", @"message when deleteing all rows failed"),
                        [postgresConnection lastErrorMessage]],
                     nil]
                 afterDelay:0.3];
@@ -2565,7 +2595,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         isSavingRow = NO;
 		return YES;
 	} else { // Report errors which have occurred
-		[NSAlert createAlertWithTitle:NSLocalizedString(@"Unable to write row", @"Unable to write row error") message:[NSString stringWithFormat:NSLocalizedString(@"MySQL said:\n\n%@", @"message of panel when error while adding row to db"), [postgresConnection lastErrorMessage]] primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") secondaryButtonTitle:NSLocalizedString(@"Discard changes", @"discard changes button") primaryButtonHandler:^{
+		[NSAlert createAlertWithTitle:NSLocalizedString(@"Unable to write row", @"Unable to write row error") message:[NSString stringWithFormat:NSLocalizedString(@"PostgreSQL said:\n\n%@", @"message of panel when error while adding row to db"), [postgresConnection lastErrorMessage]] primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") secondaryButtonTitle:NSLocalizedString(@"Discard changes", @"discard changes button") primaryButtonHandler:^{
 			[self->tableContentView selectRowIndexes:[NSIndexSet indexSetWithIndex:self->currentlyEditingRow] byExtendingSelection:NO];
 			[self->tableContentView performSelector:@selector(keyDown:) withObject:[NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[self->tableContentView window] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x24] afterDelay:0.0];
 			[self->tableContentView reloadData];
@@ -3228,7 +3258,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 		// Check for errors while UPDATE
 		if ([postgresConnection queryErrored]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nMySQL said: %@", @"message of panel when error while updating field to db"), [postgresConnection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nPostgreSQL said: %@", @"message of panel when error while updating field to db"), [postgresConnection lastErrorMessage]] callback:nil];
 
 			[tableDocumentInstance endTask];
 			[[NSNotificationCenter defaultCenter] postNotificationName:@"SPQueryHasBeenPerformed" object:tableDocumentInstance];

@@ -59,6 +59,7 @@
 
 #import <pthread.h>
 #import "SPPostgresConnection.h"
+#import "SPPostgresGeometryData.h"
 #import "SPBracketHighlighter.h"
 
 #include <libkern/OSAtomic.h>
@@ -759,7 +760,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         
         NSUInteger __block i, totalQueriesRun = 0, totalAffectedRows = 0;
         double executionTime = 0;
-        NSInteger firstErrorOccurredInQuery = -1;
+        NSInteger __block firstErrorOccurredInQuery = -1;
         BOOL __block suppressErrorSheet = NO;
         BOOL tableListNeedsReload = NO;
         BOOL databaseWasChanged = NO;

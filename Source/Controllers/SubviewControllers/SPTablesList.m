@@ -241,7 +241,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
         // Postgres: SELECT table_name, table_type FROM information_schema.tables WHERE table_schema = 'public'
         // We might need to handle schemas properly later. For now assuming 'public' or current schema.
         NSString *query = [NSString stringWithFormat:@"SELECT table_name, table_type, obj_description(quote_ident(table_name)::regclass) as comment FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name"];
+        NSLog(@"SPTablesList: Executing query: %@", query);
         theResult = [postgresConnection queryString:query];
+        NSLog(@"SPTablesList: Query returned %lu rows, %lu fields", (unsigned long)[theResult numberOfRows], (unsigned long)[theResult numberOfFields]);
 		// [theResult setDefaultRowReturnType:SPPostgresResultRowAsDictionary];
 		// [theResult setReturnDataAsStrings:YES]; // TODO: workaround for bug #2700 (#2699)
 		if ([theResult numberOfFields] == 1 && [[theResult getRow] isKindOfClass:[NSArray class]]) {
@@ -250,44 +252,68 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeTable]];
 			}
 		} else {
-			for (NSDictionary *eachRow in theResult) {
+            NSUInteger rowIdx = 0;
+			for (id eachRow in theResult) {
+                @try {
+                    NSLog(@"SPTablesList: Row %lu class: %@", (unsigned long)rowIdx, NSStringFromClass([eachRow class]));
+                    
+                    // Safe handling: check if it's a dictionary or array
+                    if (![eachRow isKindOfClass:[NSDictionary class]]) {
+                        NSLog(@"SPTablesList: WARNING - Row is NOT NSDictionary, it's %@", NSStringFromClass([eachRow class]));
+                        if ([eachRow isKindOfClass:[NSArray class]]) {
+                            NSArray *arr = (NSArray *)eachRow;
+                            if ([arr count] > 0) {
+                                [tables addObject:[arr objectAtIndex:0]];
+                                [tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeTable]];
+                            }
+                        }
+                        rowIdx++;
+                        continue;
+                    }
+                    
+                    NSDictionary *dictRow = (NSDictionary *)eachRow;
+                    NSMutableDictionary *mutableRow = [dictRow mutableCopy];
+                    NSString *tableType = [mutableRow objectForKey:@"table_type"];
+                    [mutableRow removeObjectForKey:@"table_type"];
 
-				NSMutableDictionary *mutableRow = [eachRow mutableCopy];
-				NSString *tableType = [mutableRow objectForKey:@"table_type"];
-				[mutableRow removeObjectForKey:@"table_type"];
+                    // Due to encoding problems it can be the case that [resultRow objectAtIndex:0]
+                    // return NSNull, thus catch that case for safety reasons
+                    id tableName = [mutableRow objectForKey:@"table_name"];
+                    if (tableName == nil || [tableName isNSNull]) {
+                        tableName = [mutableRow objectForKey:@"NAME"];
+                    }
+                    if ((tableName == nil || [tableName isNSNull]) && mutableRow.allValues.count == 1) {
+                        tableName = [mutableRow.allValues firstObject];
+                    }
+                    if (tableName == nil || [tableName isNSNull]) {
+                        tableName = @"...";
+                    }
+                    NSLog(@"SPTablesList: Found table: %@, type: %@", tableName, tableType);
+                    [tables addObject:tableName];
+                    
+                    // comments is usefull
+                    id tableComment = [mutableRow objectForKey:@"comment"];
+                    if (tableComment == nil || [tableComment isNSNull]) {
+                        tableComment = [mutableRow objectForKey:@"COMMENT"];
+                    }
+                    if (tableComment == nil || [tableComment isNSNull]) {
+                        tableComment = @"";
+                    }
+                    [tableComments setValue:tableComment forKey:tableName];
 
-				// Due to encoding problems it can be the case that [resultRow objectAtIndex:0]
-				// return NSNull, thus catch that case for safety reasons
-				id tableName = [mutableRow objectForKey:@"table_name"];
-				if (tableName == nil || [tableName isNSNull]) {
-					tableName = [mutableRow objectForKey:@"NAME"];
-				}
-				if ((tableName == nil || [tableName isNSNull]) && mutableRow.allValues.count == 1) {
-					tableName = [mutableRow.allValues firstObject];
-				}
-				if (tableName == nil || [tableName isNSNull]) {
-					tableName = @"...";
-				}
-				[tables addObject:tableName];
-				
-				// comments is usefull
-				id tableComment = [mutableRow objectForKey:@"comment"];
-				if (tableComment == nil || [tableComment isNSNull]) {
-					tableComment = [mutableRow objectForKey:@"COMMENT"];
-				}
-				if (tableComment == nil || [tableComment isNSNull]) {
-					tableComment = @"";
-				}
-				[tableComments setValue:tableComment forKey:tableName];
-
-				if ([@"VIEW" isEqualToString:tableComment] || [@"VIEW" isEqualToString:tableType]) {
-					[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeView]];
-					tableListContainsViews = YES;
-				} else {
-					[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeTable]];
-				}
+                    if ([@"VIEW" isEqualToString:tableComment] || [@"VIEW" isEqualToString:tableType]) {
+                        [tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeView]];
+                        tableListContainsViews = YES;
+                    } else {
+                        [tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeTable]];
+                    }
+                } @catch (NSException *ex) {
+                    NSLog(@"SPTablesList: EXCEPTION at row %lu: %@ - %@", (unsigned long)rowIdx, [ex name], [ex reason]);
+                }
+                rowIdx++;
 			}
 		}
+        NSLog(@"SPTablesList: Table enumeration complete, found %lu tables", (unsigned long)[tables count]);
 
 		/* Grab the procedures and functions
 		 *

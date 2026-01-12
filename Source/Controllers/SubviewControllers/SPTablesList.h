@@ -183,6 +183,7 @@
 // Setters
 - (BOOL)selectItemWithName:(nullable NSString *)theName;
 - (BOOL)selectItemsWithNames:(nonnull NSArray *)theNames;
+- (BOOL)selectTableName:(nullable NSString *)tableName;
 
 // Table list filter interaction
 - (void)showFilter;

@@ -563,6 +563,21 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 // DO NOT CALL THIS METHOD UNLESS YOU CURRENTLY HAVE A LOCK ON SELF!!!
 - (void) _checkNewRow:(NSMutableArray *)aRow
 {
+	// PostgreSQL compatibility: if numberOfColumns is 0, auto-initialize from first row
+	if (numberOfColumns == 0 && [aRow count] > 0) {
+		numberOfColumns = [aRow count];
+		// Reallocate unloadedColumns array  
+		if (unloadedColumns) {
+			free(unloadedColumns);
+		}
+		unloadedColumns = calloc(numberOfColumns, sizeof(BOOL));
+		for (NSUInteger i = 0; i < numberOfColumns; i++) {
+			unloadedColumns[i] = NO;
+		}
+		NSLog(@"SPDataStorage: Auto-initialized numberOfColumns to %llu from first row", (unsigned long long)numberOfColumns);
+		return; // Skip validation since we just set it
+	}
+	
 	if ([aRow count] != numberOfColumns) {
 
         NSString *errString = [NSString stringWithFormat:@"New row length (%llu) does not match store column count (%llu)", (unsigned long long)[aRow count], (unsigned long long)numberOfColumns];

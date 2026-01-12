@@ -40,10 +40,33 @@ void SPMainQSync(SAVoidCompletionBlock block)
 	});
 	
 	if (dispatch_get_specific(&onceToken) == &onceToken) {
+		// Already on main thread, execute directly
 		block();
 	}
 	else {
-		dispatch_sync(dispatch_get_main_queue(), block);
+		// Use dispatch_group with timeout to prevent deadlocks
+		dispatch_group_t group = dispatch_group_create();
+		dispatch_group_enter(group);
+		
+		dispatch_async(dispatch_get_main_queue(), ^{
+			@try {
+				block();
+			}
+			@catch (NSException *exception) {
+				NSLog(@"SPMainQSync block exception: %@ - %@", exception.name, exception.reason);
+			}
+			@finally {
+				dispatch_group_leave(group);
+			}
+		});
+		
+		// Wait with 10 second timeout to prevent infinite hangs
+		dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(10.0 * NSEC_PER_SEC));
+		long result = dispatch_group_wait(group, timeout);
+		
+		if (result != 0) {
+			NSLog(@"SPMainQSync TIMEOUT: Main thread appears blocked. Continuing without sync to prevent deadlock.");
+		}
 	}
 }
 

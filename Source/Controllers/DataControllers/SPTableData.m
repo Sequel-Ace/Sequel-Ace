@@ -523,14 +523,38 @@
     NSMutableDictionary *tableData = [NSMutableDictionary dictionary];
     NSMutableArray *tableColumns = [NSMutableArray array];
     
-    for (NSDictionary *row in [theResult getRowsAsArray]) { // Assuming getRowsAsArray returns array of dictionaries
+    // Use fast enumeration which returns dictionaries
+    for (NSDictionary *row in theResult) {
         NSMutableDictionary *col = [NSMutableDictionary dictionary];
-        [col setObject:[row objectForKey:@"column_name"] forKey:@"name"];
-        [col setObject:[row objectForKey:@"data_type"] forKey:@"type"];
+        [col setObject:[row objectForKey:@"column_name"] ?: @"" forKey:@"name"];
+        [col setObject:[row objectForKey:@"data_type"] ?: @"" forKey:@"type"];
         [col setObject:[row objectForKey:@"character_maximum_length"] ?: @"" forKey:@"length"];
         [col setObject:[[row objectForKey:@"is_nullable"] isEqualToString:@"YES"] ? @"1" : @"0" forKey:@"null"];
         [col setObject:[row objectForKey:@"column_default"] ?: @"" forKey:@"default"];
-        [col setObject:[row objectForKey:@"ordinal_position"] forKey:@"datacolumnindex"];
+        [col setObject:[row objectForKey:@"ordinal_position"] ?: @"0" forKey:@"datacolumnindex"];
+        
+        // Add typegrouping for PostgreSQL types
+        NSString *dataType = [[row objectForKey:@"data_type"] lowercaseString] ?: @"";
+        NSString *typegrouping = @"string";
+        if ([dataType containsString:@"int"] || [dataType containsString:@"serial"]) {
+            typegrouping = @"integer";
+        } else if ([dataType containsString:@"numeric"] || [dataType containsString:@"decimal"] || [dataType containsString:@"real"] || [dataType containsString:@"double"]) {
+            typegrouping = @"float";
+        } else if ([dataType containsString:@"text"] || [dataType containsString:@"varchar"] || [dataType containsString:@"char"]) {
+            typegrouping = @"textdata";
+        } else if ([dataType containsString:@"bytea"]) {
+            typegrouping = @"blobdata";
+        } else if ([dataType containsString:@"bool"]) {
+            typegrouping = @"bit";
+        } else if ([dataType containsString:@"date"] || [dataType containsString:@"time"]) {
+            typegrouping = @"datetime";
+        } else if ([dataType containsString:@"json"]) {
+            typegrouping = @"json";
+        } else if ([dataType containsString:@"geometry"] || [dataType containsString:@"point"] || [dataType containsString:@"polygon"]) {
+            typegrouping = @"geometry";
+        }
+        [col setObject:typegrouping forKey:@"typegrouping"];
+        
         [tableColumns addObject:col];
     }
     
@@ -541,8 +565,11 @@
     NSString *pkQuery = [NSString stringWithFormat:@"SELECT kcu.column_name FROM information_schema.table_constraints tc JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema WHERE tc.constraint_type = 'PRIMARY KEY' AND tc.table_name = %@ AND tc.table_schema = 'public'", [tableName tickQuotedString]];
     SPPostgresResult *pkResult = [postgresConnection queryString:pkQuery];
     NSMutableArray *pks = [NSMutableArray array];
-    for (NSDictionary *row in [pkResult getRowsAsArray]) {
-        [pks addObject:[row objectForKey:@"column_name"]];
+    for (NSDictionary *row in pkResult) {
+        id colName = [row objectForKey:@"column_name"];
+        if (colName && ![colName isKindOfClass:[NSNull class]]) {
+            [pks addObject:colName];
+        }
     }
     [tableData setObject:pks forKey:@"primarykeyfield"];
 

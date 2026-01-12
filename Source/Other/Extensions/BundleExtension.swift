@@ -62,7 +62,11 @@ import Foundation
     }
 
     public func checkForNewVersion(isFromMenuCheck: Bool) {
-
+        // DISABLED: Sequel PAce should not check Sequel Ace for updates
+        // TODO: Set up Sequel PAce update server if needed
+        return
+        
+        /*
         if isMASVersion == false {
             GitHubReleaseManager.setup(GitHubReleaseManager.Config(user: "Sequel-Ace",
                                                                    project: "Sequel-Ace",
@@ -72,6 +76,7 @@ import Foundation
             GitHubReleaseManager.sharedInstance.isFromMenuCheck = isFromMenuCheck
             GitHubReleaseManager.sharedInstance.checkRelease(name: versionString)
         }
+        */
     }
 
     /// Attempts to get the ."Sequel Ace URL scheme" from Info.plist

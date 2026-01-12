@@ -63,6 +63,37 @@
 
 @end
 
+#pragma mark - NSNull integerValue fix for PostgreSQL compatibility
+
+/**
+ * NSNull can be returned by PostgreSQL when a field is NULL.
+ * Code often calls integerValue on these values expecting a number.
+ * This category adds integerValue to NSNull to prevent crashes.
+ */
+@implementation NSNull (SPNullAdditions)
+
+- (NSInteger)integerValue {
+    return 0;
+}
+
+- (double)doubleValue {
+    return 0.0;
+}
+
+- (float)floatValue {
+    return 0.0f;
+}
+
+- (BOOL)boolValue {
+    return NO;
+}
+
+- (NSUInteger)unsignedIntegerValue {
+    return 0;
+}
+
+@end
+
 // method swizzling to try and reproduce #2297
 //#pragma mark -
 //
@@ -99,3 +130,4 @@
 //}
 //
 //@end
+

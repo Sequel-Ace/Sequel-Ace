@@ -21,7 +21,7 @@
                BlueprintIdentifier = "380F4ED80FC0B50500B0BFD7"
                BuildableName = "Unit Tests.xctest"
                BlueprintName = "Unit Tests"
-               ReferencedContainer = "container:sequel-ace.xcodeproj">
+               ReferencedContainer = "container:sequel-pace.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>

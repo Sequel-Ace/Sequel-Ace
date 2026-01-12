@@ -9,7 +9,8 @@
 //
 
 #import "SPPostgresConnection.h"
-#import "/opt/homebrew/include/postgresql@17/libpq-fe.h"
+#import "SPPostgresStreamingResultStore.h"
+#import <libpq-fe.h>
 
 @implementation SPPostgresConnection
 
@@ -290,10 +291,30 @@
 
 #pragma mark - Additional Compatibility Methods
 
-- (SPPostgresResult *)resultStoreFromQueryString:(NSString *)query {
-    // For PostgreSQL, we just use the regular query method
-    // The "result store" concept was MySQL-specific
-    return [self queryString:query];
+- (SPPostgresStreamingResultStore *)resultStoreFromQueryString:(NSString *)query {
+    // Execute query and wrap in streaming result store for SPDataStorage compatibility
+    if (!connection || !query) return nil;
+    
+    const char *utf8Query = [query UTF8String];
+    PGresult *result = PQexec(connection, utf8Query);
+    
+    if (!result || PQresultStatus(result) != PGRES_TUPLES_OK) {
+        if (result) {
+            NSLog(@"Query error: %s", PQerrorMessage(connection));
+            PQclear(result);
+        }
+        return nil;
+    }
+    
+    // Create a streaming result store with the PG result
+    SPPostgresStreamingResultStore *resultStore = [[SPPostgresStreamingResultStore alloc] initWithPGResult:result];
+    
+    // Do NOT start download here - let SPTableContent handle it via updateResultStore
+    // [resultStore startDownload];
+    
+    NSLog(@"SPPostgresConnection: resultStoreFromQueryString created store with %lu rows", (unsigned long)[resultStore numberOfRows]);
+    
+    return resultStore;
 }
 
 - (NSString *)lastSqlstate {
@@ -417,4 +438,189 @@
     return [NSArray arrayWithArray:tables];
 }
 
+#pragma mark - Connection Management
+
+- (NSUInteger)port {
+    return port;
+}
+
+- (void)setPort:(NSUInteger)thePort {
+    port = thePort;
+}
+
+- (BOOL)checkConnectionIfNecessary {
+    if (!connection) return NO;
+    
+    // Check if the connection is still valid
+    if (PQstatus(connection) != CONNECTION_OK) {
+        // Try to reset the connection
+        PQreset(connection);
+        if (PQstatus(connection) != CONNECTION_OK) {
+            isConnected = NO;
+            lastErrorMessage = [NSString stringWithUTF8String:PQerrorMessage(connection)];
+            return NO;
+        }
+    }
+    
+    isConnected = YES;
+    return YES;
+}
+
+#pragma mark - NSCopying
+
+- (id)copyWithZone:(NSZone *)zone {
+    SPPostgresConnection *copy = [[SPPostgresConnection allocWithZone:zone] init];
+    
+    // Copy connection details (but not the actual connection)
+    if (copy) {
+        [copy setConnectionDetailsWithHost:host
+                                  username:username
+                                  password:password
+                                      port:port
+                                  database:database];
+    }
+    
+    return copy;
+}
+
+#pragma mark - MySQL Compatibility Methods
+
+static BOOL _lastQueryWasCancelledFlag = NO;
+static BOOL _useLatin1Transport = NO;
+static BOOL _delegateQueryLogging = NO;
+static BOOL _retryQueriesOnConnectionFailure = NO;
+
+- (BOOL)checkConnection {
+    return [self checkConnectionIfNecessary];
+}
+
+- (BOOL)serverShutdown {
+    // PostgreSQL doesn't support remote shutdown via SQL
+    // This is a MySQL-specific command
+    return NO;
+}
+
+- (void)setLastQueryWasCancelled:(BOOL)wasCancelled {
+    _lastQueryWasCancelledFlag = wasCancelled;
+}
+
+- (NSUInteger)mysqlConnectionThreadId {
+    // PostgreSQL uses backend PID instead of thread ID
+    if (!connection) return 0;
+    return (NSUInteger)PQbackendPID(connection);
+}
+
+- (void)setEncodingUsesLatin1Transport:(BOOL)useLatin1 {
+    _useLatin1Transport = useLatin1;
+}
+
+- (BOOL)encodingUsesLatin1Transport {
+    return _useLatin1Transport;
+}
+
+- (SPPostgresResult *)queryString:(NSString *)query usingEncoding:(NSStringEncoding)encoding withResultType:(int)resultType {
+    // Compatibility stub: Ignore encoding (handled by client_encoding) and resultType for now
+    return [self queryString:query];
+}
+
+- (void)setDelegateQueryLogging:(BOOL)shouldLog {
+    _delegateQueryLogging = shouldLog;
+}
+
+- (void)setRetryQueriesOnConnectionFailure:(BOOL)shouldRetry {
+    _retryQueriesOnConnectionFailure = shouldRetry;
+}
+
+- (NSUInteger)killQueryOnThreadID:(NSUInteger)threadID {
+    // PostgreSQL uses pg_cancel_backend() or pg_terminate_backend()
+    if (!connection || threadID == 0) return 0;
+    
+    NSString *query = [NSString stringWithFormat:@"SELECT pg_cancel_backend(%lu)", (unsigned long)threadID];
+    [self queryString:query];
+    
+    return 0;
+}
+
+
+
+- (void)setUsername:(NSString *)userName {
+    username = [userName copy];
+}
+
+- (void)updateTimeZoneIdentifier:(NSString *)timeZoneIdentifier {
+    // PostgreSQL handles time zones differently
+    // Set the session time zone if needed
+    if (connection && timeZoneIdentifier) {
+        NSString *query = [NSString stringWithFormat:@"SET TIME ZONE '%@'", timeZoneIdentifier];
+        [self queryString:query];
+    }
+}
+
+- (BOOL)isConnectedViaSSL {
+    // Check if the connection is using SSL
+    if (!connection) return NO;
+    // PQsslInUse returns 1 if SSL is in use
+    return PQsslInUse(connection) == 1;
+}
+
+#pragma mark - Connection Setter Methods
+
+static BOOL _useSSL = NO;
+static NSString *_sslKeyFilePath = nil;
+static NSString *_sslCertificatePath = nil;
+static NSString *_sslCACertificatePath = nil;
+static BOOL _allowDataLocalInfile = NO;
+static BOOL _enableClearTextPlugin = NO;
+
+- (void)setHost:(NSString *)theHost {
+    host = [theHost copy];
+}
+
+- (void)setPassword:(NSString *)thePassword {
+    password = [thePassword copy];
+}
+
+- (void)setDatabase:(NSString *)theDatabase {
+    database = [theDatabase copy];
+}
+
+- (void)setUseSSL:(BOOL)useSSL {
+    _useSSL = useSSL;
+}
+
+- (void)setSslKeyFilePath:(NSString *)path {
+    _sslKeyFilePath = [path copy];
+}
+
+- (void)setSslCertificatePath:(NSString *)path {
+    _sslCertificatePath = [path copy];
+}
+
+- (void)setSslCACertificatePath:(NSString *)path {
+    _sslCACertificatePath = [path copy];
+}
+
+- (void)setAllowDataLocalInfile:(BOOL)allow {
+    _allowDataLocalInfile = allow;
+}
+
+- (void)setEnableClearTextPlugin:(BOOL)enable {
+    _enableClearTextPlugin = enable;
+}
+
+- (NSString *)encodingName {
+    // Convert NSStringEncoding to a PostgreSQL encoding name string
+    switch (stringEncoding) {
+        case NSUTF8StringEncoding:
+            return @"UTF8";
+        case NSISOLatin1StringEncoding:
+            return @"LATIN1";
+        case NSASCIIStringEncoding:
+            return @"SQL_ASCII";
+        default:
+            return @"UTF8";
+    }
+}
+
 @end
+

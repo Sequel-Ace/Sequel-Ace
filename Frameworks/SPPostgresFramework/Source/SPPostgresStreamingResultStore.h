@@ -21,6 +21,7 @@
 /* Setup and teardown */
 - (void)replaceExistingResultStore:(SPPostgresStreamingResultStore *)previousResultStore;
 - (void)startDownload;
+- (BOOL)dataDownloaded;
 
 /* Data retrieval */
 - (NSMutableArray *)rowContentsAtIndex:(NSUInteger)rowIndex;

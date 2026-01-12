@@ -17,7 +17,7 @@
                BlueprintIdentifier = "58B9096011C3A42B000826E5"
                BuildableName = "xibLocalizationPostprocessor"
                BlueprintName = "xibLocalizationPostprocessor"
-               ReferencedContainer = "container:sequel-ace.xcodeproj">
+               ReferencedContainer = "container:sequel-pace.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -47,7 +47,7 @@
             BlueprintIdentifier = "58B9096011C3A42B000826E5"
             BuildableName = "xibLocalizationPostprocessor"
             BlueprintName = "xibLocalizationPostprocessor"
-            ReferencedContainer = "container:sequel-ace.xcodeproj">
+            ReferencedContainer = "container:sequel-pace.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -64,7 +64,7 @@
             BlueprintIdentifier = "58B9096011C3A42B000826E5"
             BuildableName = "xibLocalizationPostprocessor"
             BlueprintName = "xibLocalizationPostprocessor"
-            ReferencedContainer = "container:sequel-ace.xcodeproj">
+            ReferencedContainer = "container:sequel-pace.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
