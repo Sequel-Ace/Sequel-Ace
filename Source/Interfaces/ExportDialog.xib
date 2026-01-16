@@ -764,12 +764,12 @@ Gw
                                     <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1365">
                                         <rect key="frame" x="59" y="212" width="119" height="22"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                        <popUpButtonCell key="cell" type="push" title="MySQL Schema" bezelStyle="rounded" alignment="left" controlSize="small" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="1368" id="1366">
+                                        <popUpButtonCell key="cell" type="push" title="PostgreSQL Schema" bezelStyle="rounded" alignment="left" controlSize="small" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="1368" id="1366">
                                             <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="message" size="11"/>
                                             <menu key="menu" title="OtherViews" id="1367">
                                                 <items>
-                                                    <menuItem title="MySQL Schema" state="on" id="1368"/>
+                                                    <menuItem title="PostgreSQL Schema" state="on" id="1368"/>
                                                     <menuItem title="Plain Schema" id="1369"/>
                                                 </items>
                                             </menu>
@@ -810,7 +810,7 @@ Gw
                                         </buttonCell>
                                         <attributedString key="userComments">
                                             <fragment>
-                                                <string key="content">When the default configuration of MySQL server is running on Windows or macOS, or case sensitivity has been disabled, this option should be enabled to allow table relations to work correctly.</string>
+                                                <string key="content">When the default configuration of PostgreSQL server is running on Windows or macOS, or case sensitivity has been disabled, this option should be enabled to allow table relations to work correctly.</string>
                                                 <attributes>
                                                     <color key="NSColor" name="textColor" catalog="System" colorSpace="catalog"/>
                                                     <font key="NSFont" metaFont="message" size="11"/>

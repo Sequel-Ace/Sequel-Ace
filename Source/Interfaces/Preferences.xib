@@ -1480,7 +1480,7 @@ Gw
                         <binding destination="117" name="value" keyPath="values.ConnectionTimeoutValue" id="679"/>
                     </connections>
                 </textField>
-                <button toolTip="Enable to send a MySQL ping to ensure the connection is kept alive if it has not been used for a while" translatesAutoresizingMaskIntoConstraints="NO" id="652">
+                <button toolTip="Enable to send a PostgreSQL ping to ensure the connection is kept alive if it has not been used for a while" translatesAutoresizingMaskIntoConstraints="NO" id="652">
                     <rect key="frame" x="178" y="332" width="342" height="24"/>
                     <buttonCell key="cell" type="check" title="Keep connections alive" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="661">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>

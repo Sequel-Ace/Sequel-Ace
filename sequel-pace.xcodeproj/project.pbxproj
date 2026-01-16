@@ -3468,8 +3468,9 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
-					/opt/homebrew/include,
+					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Headers",
 					"$(PROJECT_DIR)/Frameworks/SPPostgresFramework/Source/**",
+					"$(inherited)",
 				);
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
@@ -3480,14 +3481,6 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Versions/A",
-					"$(inherited)",
-				);
-				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Headers",
-					"$(inherited)",
-				);
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Frameworks",
 					"$(inherited)",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
@@ -3810,8 +3803,9 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
-					/opt/homebrew/include,
+					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Headers",
 					"$(PROJECT_DIR)/Frameworks/SPPostgresFramework/Source/**",
+					"$(inherited)",
 				);
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
@@ -3822,14 +3816,6 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Versions/A",
-					"$(inherited)",
-				);
-				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Headers",
-					"$(inherited)",
-				);
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Frameworks",
 					"$(inherited)",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
@@ -3984,8 +3970,9 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
-					/opt/homebrew/include,
+					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Headers",
 					"$(PROJECT_DIR)/Frameworks/SPPostgresFramework/Source/**",
+					"$(inherited)",
 				);
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
@@ -3996,14 +3983,6 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Versions/A",
-					"$(inherited)",
-				);
-				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Headers",
-					"$(inherited)",
-				);
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Frameworks",
 					"$(inherited)",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
@@ -4063,8 +4042,9 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
-					/opt/homebrew/include,
+					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Headers",
 					"$(PROJECT_DIR)/Frameworks/SPPostgresFramework/Source/**",
+					"$(inherited)",
 				);
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
@@ -4075,14 +4055,6 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Versions/A",
-					"$(inherited)",
-				);
-				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Headers",
-					"$(inherited)",
-				);
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Frameworks",
 					"$(inherited)",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;

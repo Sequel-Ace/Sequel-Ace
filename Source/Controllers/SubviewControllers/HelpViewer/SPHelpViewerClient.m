@@ -111,7 +111,7 @@ typedef NS_ENUM(NSInteger, HelpVersionNumber) {
 {
     // PostgreSQL does not support HELP command via SQL.
     // Return a message indicating this or link to online help.
-    NSMutableString *theTitle = [NSMutableString stringWithFormat:NSLocalizedString(@"Version %@", @"Mysql Help Viewer : window title : mysql server version"),[postgresConnection serverVersionString]];
+    NSMutableString *theTitle = [NSMutableString stringWithFormat:NSLocalizedString(@"Version %@", @"PostgreSQL Help Viewer : window title : postgresql server version"),[postgresConnection serverVersionString]];
     NSMutableString *theHelp = [NSMutableString string];
     
     [theHelp appendString:@"<p>PostgreSQL does not support the HELP command via SQL.</p>"];
@@ -140,7 +140,7 @@ typedef NS_ENUM(NSInteger, HelpVersionNumber) {
 
 + (NSString *)linkToHelpTopic:(NSString *)aTopic
 {
-	NSString *linkTitle = [NSString stringWithFormat:NSLocalizedString(@"Show MySQL help for “%@”", @"MySQL Help Viewer : Results list : Link tooltip"),aTopic];
+	NSString *linkTitle = [NSString stringWithFormat:NSLocalizedString(@"Show PostgreSQL help for "%@"", @"PostgreSQL Help Viewer : Results list : Link tooltip"),aTopic];
 	return [NSString stringWithFormat:@"<a title='%2$@' href='%1$@' class='internallink'>%1$@</a>", aTopic, linkTitle];
 }
 

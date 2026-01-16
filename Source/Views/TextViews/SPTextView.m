@@ -3162,12 +3162,12 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 {
 	// Set title of the menu item
 	if([self selectedRange].length)
-		showMySQLHelpFor = NSLocalizedString(@"MySQL Help for Selection", @"MySQL Help for Selection");
+		showMySQLHelpFor = NSLocalizedString(@"PostgreSQL Help for Selection", @"PostgreSQL Help for Selection");
 	else
-		showMySQLHelpFor = NSLocalizedString(@"MySQL Help for Word", @"MySQL Help for Word");
+		showMySQLHelpFor = NSLocalizedString(@"PostgreSQL Help for Word", @"PostgreSQL Help for Word");
 
 	// Add the menu items for
-	// - MySQL Help for Word/Selection
+	// - PostgreSQL Help for Word/Selection
 	// - Copy as RTF
 	// - Select Active Query
 	// if it doesn't yet exist
@@ -3283,9 +3283,9 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	// selection and whether it is a reasonable length.
 	if ([menuItem action] == @selector(showMySQLHelpForCurrentWord:)) {
 		if ([self selectedRange].length > 0) {
-			[menuItem setTitle:NSLocalizedString(@"MySQL Help for Selection", @"MySQL Help for Selection")];
+			[menuItem setTitle:NSLocalizedString(@"PostgreSQL Help for Selection", @"PostgreSQL Help for Selection")];
 		} else {
-			[menuItem setTitle: NSLocalizedString(@"MySQL Help for Word", @"MySQL Help for Word")];
+			[menuItem setTitle: NSLocalizedString(@"PostgreSQL Help for Word", @"PostgreSQL Help for Word")];
 		}
 		NSUInteger stringSize = [self getRangeForCurrentWord].length;
 		return (0 < stringSize && stringSize < 65); // 1 ≤ stringSize ≤ 64
