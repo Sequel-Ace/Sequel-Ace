@@ -694,9 +694,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 }
 
 /**
- * Tries to write row to mysql-db
- * returns YES if row written to db, otherwies NO
- * returns YES if no row is beeing edited and nothing has to be written to db
+ * Tries to write row to PostgreSQL database
+ * returns YES if row written to db, otherwise NO
+ * returns YES if no row is being edited and nothing has to be written to db
  */
 - (BOOL)addRowToDB
 {
@@ -710,52 +710,80 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	NSDictionary *theRow = [[self activeFieldsSource] safeObjectAtIndex:currentlyEditingRow];
 
-	if ([autoIncrementIndex isEqualToString:@"PRIMARY KEY"]) {
-		// If the field isn't set to be unsigned and we're making it the primary key then make it unsigned
-		if (![[theRow safeObjectForKey:@"unsigned"] boolValue]) {
-			NSMutableDictionary *rowCpy = [theRow mutableCopy];
-			[rowCpy setObject:@YES forKey:@"unsigned"];
-			theRow = rowCpy;
-		}
-	}
+	NSMutableString *queryString = [NSMutableString string];
 
-	NSMutableString *queryString = [NSMutableString stringWithFormat:@"ALTER TABLE %@",[selectedTable postgresQuotedIdentifier]];
-	[queryString appendString:@" "];
 	if (isEditingNewRow) {
-		[queryString appendString:@"ADD"];
+		// PostgreSQL: ADD COLUMN syntax
+		[queryString appendFormat:@"ALTER TABLE %@ ADD COLUMN ", [selectedTable postgresQuotedIdentifier]];
+		[queryString appendString:[self _buildPartialColumnDefinitionString:theRow]];
+
+		// Process index if given for fields set to AUTO_INCREMENT (SERIAL in PostgreSQL)
+		if (autoIncrementIndex) {
+			if ([autoIncrementIndex isEqualToString:@"PRIMARY KEY"]) {
+				[queryString appendString:@" PRIMARY KEY"];
+			}
+			else {
+				// Add index separately
+				[queryString appendFormat:@"; CREATE INDEX ON %@ (%@)",
+					[selectedTable postgresQuotedIdentifier],
+					[[theRow objectForKey:@"name"] postgresQuotedIdentifier]];
+			}
+		}
 	}
 	else {
-		[queryString appendFormat:@"CHANGE %@",[[oldRow objectForKey:@"name"] postgresQuotedIdentifier]];
-	}
-	[queryString appendString:@" "];
-	[queryString appendString:[self _buildPartialColumnDefinitionString:theRow]];
+		// PostgreSQL: Modifying existing column requires multiple ALTER statements
+		NSString *oldName = [oldRow objectForKey:@"name"];
+		NSString *newName = [theRow objectForKey:@"name"];
+		NSString *newType = [[theRow objectForKey:@"type"] uppercaseString];
 
-	// Process index if given for fields set to AUTO_INCREMENT
-	if (autoIncrementIndex) {
-		// User wants to add PRIMARY KEY
-		if ([autoIncrementIndex isEqualToString:@"PRIMARY KEY"]) {
-			[queryString appendString:@"\n PRIMARY KEY"];
-
-			// Add AFTER ... only if the user added a new field
-			if (isEditingNewRow) {
-		// AFTER clause is not supported in Postgres
-		// [queryString appendFormat:@"\n AFTER %@", [[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] postgresQuotedIdentifier]];
-			}
+		// Check if column name changed
+		if (![oldName isEqualToString:newName]) {
+			[queryString appendFormat:@"ALTER TABLE %@ RENAME COLUMN %@ TO %@; ",
+				[selectedTable postgresQuotedIdentifier],
+				[oldName postgresQuotedIdentifier],
+				[newName postgresQuotedIdentifier]];
 		}
-		else {
-			// Add AFTER ... only if the user added a new field
-			if (isEditingNewRow) {
-		// AFTER clause is not supported in Postgres
-		// [queryString appendFormat:@"\n AFTER %@", [[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] postgresQuotedIdentifier]];
-			}
 
-			[queryString appendFormat:@"\n, ADD %@ (%@)", autoIncrementIndex, [[theRow objectForKey:@"name"] postgresQuotedIdentifier]];
+		// Change column type
+		[queryString appendFormat:@"ALTER TABLE %@ ALTER COLUMN %@ TYPE %@",
+			[selectedTable postgresQuotedIdentifier],
+			[newName postgresQuotedIdentifier],
+			newType];
+
+		// Add length if specified
+		if ([theRow objectForKey:@"length"] && [[[theRow objectForKey:@"length"] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] length]) {
+			[queryString appendFormat:@"(%@)", [theRow objectForKey:@"length"]];
 		}
-	}
-	// Add AFTER ... only if the user added a new field
-	else if (isEditingNewRow) {
-// AFTER clause is not supported in Postgres
-		// [queryString appendFormat:@"\n AFTER %@", [[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] postgresQuotedIdentifier]];
+
+		// Handle NULL constraint
+		if ([[theRow objectForKey:@"null"] integerValue] == 0) {
+			[queryString appendFormat:@"; ALTER TABLE %@ ALTER COLUMN %@ SET NOT NULL",
+				[selectedTable postgresQuotedIdentifier],
+				[newName postgresQuotedIdentifier]];
+		} else {
+			[queryString appendFormat:@"; ALTER TABLE %@ ALTER COLUMN %@ DROP NOT NULL",
+				[selectedTable postgresQuotedIdentifier],
+				[newName postgresQuotedIdentifier]];
+		}
+
+		// Handle DEFAULT value
+		NSString *defaultValue = [theRow objectForKey:@"default"];
+		if (defaultValue && [defaultValue length] > 0) {
+			if ([defaultValue isEqualToString:[prefs objectForKey:SPNullValue]]) {
+				[queryString appendFormat:@"; ALTER TABLE %@ ALTER COLUMN %@ SET DEFAULT NULL",
+					[selectedTable postgresQuotedIdentifier],
+					[newName postgresQuotedIdentifier]];
+			} else {
+				[queryString appendFormat:@"; ALTER TABLE %@ ALTER COLUMN %@ SET DEFAULT %@",
+					[selectedTable postgresQuotedIdentifier],
+					[newName postgresQuotedIdentifier],
+					[postgresConnection escapeAndQuoteString:defaultValue]];
+			}
+		} else {
+			[queryString appendFormat:@"; ALTER TABLE %@ ALTER COLUMN %@ DROP DEFAULT",
+				[selectedTable postgresQuotedIdentifier],
+				[newName postgresQuotedIdentifier]];
+		}
 	}
 
 	isCurrentExtraAutoIncrement = NO;
@@ -2056,36 +2084,38 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 /**
  * Having validated a drop, perform the field/column reordering to match.
+ * NOTE: PostgreSQL does not support column reordering directly.
+ * This operation would require recreating the table which is not safe.
  */
 - (BOOL)tableView:(NSTableView*)tableView acceptDrop:(id <NSDraggingInfo>)info row:(NSInteger)destinationRowIndex dropOperation:(NSTableViewDropOperation)operation
 {
 	// Make sure that the drag operation is for the right table view
 	if (tableView != tableSourceView) return NO;
 
-	// Extract the original row position from the pasteboard and retrieve the details
+	// PostgreSQL does not support column reordering (FIRST/AFTER clauses)
+	// Show an informative message to the user
+	[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Column Reordering Not Supported", @"column reordering not supported title")
+								 message:NSLocalizedString(@"PostgreSQL does not support changing column order directly. To reorder columns, you would need to recreate the table with the desired column order.\n\nThe column order in the display can be changed, but this will not affect the actual table structure.", @"column reordering not supported message")
+								callback:nil];
+
+	// Return NO to indicate the drop was not accepted
+	// But we can still reorder the visual display locally if needed
+	return NO;
+
+	// Original MySQL code for reference - PostgreSQL cannot use MODIFY COLUMN with FIRST/AFTER
+	/*
 	NSInteger originalRowIndex = [[[info draggingPasteboard] stringForType:SPDefaultPasteboardDragType] integerValue];
 	NSDictionary *originalRow = [[NSDictionary alloc] initWithDictionary:[[self activeFieldsSource] objectAtIndex:originalRowIndex]];
 
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryWillBePerformed" object:tableDocumentInstance];
 
-	// Begin construction of the reordering query
 	NSMutableString *queryString = [NSMutableString stringWithFormat:@"ALTER TABLE %@ MODIFY COLUMN %@",
 									[selectedTable postgresQuotedIdentifier],
 									[self _buildPartialColumnDefinitionString:originalRow]];
+	*/
 
-	[queryString appendString:@" "];
-	// Add the new location
-	if (destinationRowIndex == 0) {
-		[queryString appendString:@"FIRST"];
-	}
-	else {
-// AFTER clause is not supported in Postgres
-		// [queryString appendFormat:@"AFTER %@", [[[[self activeFieldsSource] objectAtIndex:destinationRowIndex - 1] objectForKey:@"name"] postgresQuotedIdentifier]];
-	}
-
-	// Run the query; report any errors, or reload the table on success
-	[postgresConnection queryString:queryString];
-
+	/*
+	// This code is unreachable but kept for reference
 	if ([postgresConnection queryErrored]) {
 		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error moving field", @"error moving field message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to move the field.\n\nPostgreSQL said: %@", @"error moving field informative message"), [postgresConnection lastErrorMessage]] callback:nil];
 	}
@@ -2104,6 +2134,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 
 	return YES;
+	*/
 }
 
 #pragma mark -
