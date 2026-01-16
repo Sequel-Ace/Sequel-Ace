@@ -949,13 +949,13 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="913"/>
-                            <menuItem title="MySQL Help" id="914">
+                            <menuItem title="PostgreSQL Help" id="914">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="showMySQLHelp:" target="-1" id="916"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="MySQL Help for Word" keyEquivalent="H" id="nXE-rI-RyI">
+                            <menuItem title="PostgreSQL Help for Word" keyEquivalent="H" id="nXE-rI-RyI">
                                 <connections>
                                     <action selector="showMySQLHelpForCurrentWord:" target="-1" id="BUY-hF-nKy"/>
                                 </connections>

@@ -2116,11 +2116,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                 // This is a race condition we cannot fix "properly":
                 // For meaningful error handling we need to also consider the debug output from the SSH connection.
                 // The SSH debug output might be sligthly delayed though (flush, delegates, ...) or
-                // there might not even by any output at all (when it is purely a libmysql issue).
+                // there might not even by any output at all (when it is purely a libpq issue).
                 // TL;DR: No guaranteed events we could wait for, just trying our luck.
                 [NSThread sleepForTimeInterval:0.1]; // 100ms
 
-                // If the state is connection refused, attempt the MySQL connection again with the host using the hostfield value.
+                // If the state is connection refused, attempt the PostgreSQL connection again with the host using the hostfield value.
                 if ([sshTunnel state] == SPPostgresProxyForwardingFailed) {
                     if ([sshTunnel localPortFallback]) {
                         [postgresConnection setPort:[sshTunnel localPortFallback]];
@@ -2188,7 +2188,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 /**
  * Initiate the SSH connection process.
  * This should only be called as part of initiateConnection:, and will indirectly
- * call initiateMySQLConnection if it's successful.
+ * call initiatePostgresConnection if it's successful.
  */
 - (void)initiateSSHTunnelConnection
 {
@@ -2283,7 +2283,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 }
 
 /**
- * Called on the main thread once the MySQL connection is established on the background thread. Either the
+ * Called on the main thread once the PostgreSQL connection is established on the background thread. Either the
  * connection was cancelled or it was successful.
  */
 - (void)postgresConnectionEstablished
@@ -2320,7 +2320,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     // If SSL was enabled, check it was established correctly
     if (useSSL && ([self type] == SPTCPIPConnection || [self type] == SPSocketConnection)) {
         if (![postgresConnection isConnectedViaSSL]) {
-            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"SSL connection not established", @"SSL requested but not used title") message:NSLocalizedString(@"You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted.", @"SSL connection requested but not established error detail") callback:nil];
+            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"SSL connection not established", @"SSL requested but not used title") message:NSLocalizedString(@"You requested that the connection should be established using SSL, but PostgreSQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted.", @"SSL connection requested but not established error detail") callback:nil];
         }
     }
 
@@ -2335,7 +2335,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 /**
  * A callback function for the SSH Tunnel setup process - will be called on a connection
  * state change, allowing connection to fail or proceed as appropriate.  If successful,
- * will call initiateMySQLConnection.
+ * will call initiatePostgresConnection.
  */
 - (void)sshTunnelCallback:(SPSSHTunnel *)theTunnel {
     if (cancellingConnection){
@@ -2362,7 +2362,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                                         errorMessage:[theTunnel lastError]
                                               detail:[sshTunnel debugMessages]];
     } else if (newState == SPPostgresProxyConnected) {
-        SPLog(@"SPPostgresProxyConnected, calling initiateMySQLConnection");
+        SPLog(@"SPPostgresProxyConnected, calling initiatePostgresConnection");
 
         [self initiatePostgresConnection];
     }

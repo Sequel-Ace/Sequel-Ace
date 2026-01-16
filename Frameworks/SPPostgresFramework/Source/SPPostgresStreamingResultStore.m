@@ -18,6 +18,7 @@
     self = [super init];
     if (self) {
         dataStorage = [NSMutableArray array];
+        dataDownloadStarted = NO;
     }
     return self;
 }
@@ -26,6 +27,7 @@
     self = [super initWithPGResult:result];
     if (self) {
         dataStorage = [NSMutableArray array];
+        dataDownloadStarted = NO;
     }
     return self;
 }
@@ -36,19 +38,20 @@
 }
 
 - (void)startDownload {
-    NSLog(@"SPPostgresStreamingResultStore: startDownload called. numberOfRows=%lu", (unsigned long)[self numberOfRows]);
-    
-    // Simulate download or just trigger delegate
-    // In a real implementation, this would fetch rows from the result set
-    // For now, let's assume data is already in the result set or we fetch it all
-    
+    // IMPORTANT: Use [super numberOfRows] to get the actual row count from the PGresult,
+    // NOT [self numberOfRows] which returns dataStorage count (would be 0 here)
+    NSUInteger parentRowCount = [super numberOfRows];
+    NSLog(@"SPPostgresStreamingResultStore: startDownload called. parentRowCount=%lu", (unsigned long)parentRowCount);
+
+    // Mark download as started
+    dataDownloadStarted = YES;
+
+    // Clear existing storage before populating
+    [dataStorage removeAllObjects];
+
     // Fetch all rows from the underlying result set (which we inherit from)
-    // Since we are inheriting from SPPostgresResult (via StreamingResult), we can use its methods
-    // But wait, SPPostgresResult uses libpq result which is already in memory usually.
-    
-    // Let's populate dataStorage from the result set
-    NSUInteger count = [self numberOfRows];
-    for (NSUInteger i = 0; i < count; i++) {
+    // SPPostgresResult uses libpq result which is already in memory
+    for (NSUInteger i = 0; i < parentRowCount; i++) {
         [self seekToRow:i]; // SPPostgresResult has seekToRow
         NSArray *row = [self getRowAsArray]; // This method is in SPPostgresResult
         if (row) {
@@ -57,7 +60,7 @@
     }
 
     NSLog(@"SPPostgresStreamingResultStore: startDownload finished populating %lu rows", (unsigned long)[dataStorage count]);
-    
+
     if ([delegate respondsToSelector:@selector(resultStoreDidFinishLoadingData:)]) {
         [delegate resultStoreDidFinishLoadingData:self];
         NSLog(@"SPPostgresStreamingResultStore: delegate resultStoreDidFinishLoadingData called");
@@ -123,16 +126,20 @@
     [dataStorage removeAllObjects];
 }
 
-// Override numberOfRows to return our storage count if we are managing it
+// Override numberOfRows to return our storage count after download, or parent count before
 - (NSUInteger)numberOfRows {
-    return [dataStorage count];
+    if (dataDownloadStarted) {
+        // After download, return local storage count (can be modified by add/remove operations)
+        return [dataStorage count];
+    } else {
+        // Before download, return the actual row count from the PGresult
+        return [super numberOfRows];
+    }
 }
 
 - (BOOL)dataDownloaded {
     // Returns YES if data has been downloaded to the store
-    // For this implementation, we consider data downloaded if we have rows OR
-    // if we've attempted to download (even if result was empty)
-    return YES; // Simplified - always return YES since data is fetched synchronously
+    return dataDownloadStarted;
 }
 
 @end

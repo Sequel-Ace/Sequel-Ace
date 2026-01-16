@@ -338,7 +338,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		NSString *message = NSLocalizedString(@"Error while fetching the optimized field type", @"error while fetching the optimized field type message");
 		
 		if ([postgresConnection isConnected]) {
-			 [NSAlert createWarningAlertWithTitle:message message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while fetching the optimized field type.\n\nMySQL said:%@", @"an error occurred while fetching the optimized field type.\n\nMySQL said:%@"), [postgresConnection lastErrorMessage]] callback:nil];
+			 [NSAlert createWarningAlertWithTitle:message message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while fetching the optimized field type.\n\nPostgreSQL said:%@", @"an error occurred while fetching the optimized field type.\n\nPostgreSQL said:%@"), [postgresConnection lastErrorMessage]] callback:nil];
 		}
 		return;
 	}
@@ -609,7 +609,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// [postgresConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ AUTO_INCREMENT = %llu", [selTable postgresQuotedIdentifier], [value unsignedLongLongValue]]];
 
 	if ([postgresConnection queryErrored]) {
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@", @"error resetting auto_increment informative message"),selTable, [postgresConnection lastErrorMessage]] callback:nil];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nPostgreSQL said: %@", @"error resetting auto_increment informative message"),selTable, [postgresConnection lastErrorMessage]] callback:nil];
 	}
 
 	// reload data
@@ -694,9 +694,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 }
 
 /**
- * Tries to write row to mysql-db
- * returns YES if row written to db, otherwies NO
- * returns YES if no row is beeing edited and nothing has to be written to db
+ * Tries to write row to PostgreSQL database
+ * returns YES if row written to db, otherwise NO
+ * returns YES if no row is being edited and nothing has to be written to db
  */
 - (BOOL)addRowToDB
 {
@@ -710,52 +710,80 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	NSDictionary *theRow = [[self activeFieldsSource] safeObjectAtIndex:currentlyEditingRow];
 
-	if ([autoIncrementIndex isEqualToString:@"PRIMARY KEY"]) {
-		// If the field isn't set to be unsigned and we're making it the primary key then make it unsigned
-		if (![[theRow safeObjectForKey:@"unsigned"] boolValue]) {
-			NSMutableDictionary *rowCpy = [theRow mutableCopy];
-			[rowCpy setObject:@YES forKey:@"unsigned"];
-			theRow = rowCpy;
-		}
-	}
+	NSMutableString *queryString = [NSMutableString string];
 
-	NSMutableString *queryString = [NSMutableString stringWithFormat:@"ALTER TABLE %@",[selectedTable postgresQuotedIdentifier]];
-	[queryString appendString:@" "];
 	if (isEditingNewRow) {
-		[queryString appendString:@"ADD"];
+		// PostgreSQL: ADD COLUMN syntax
+		[queryString appendFormat:@"ALTER TABLE %@ ADD COLUMN ", [selectedTable postgresQuotedIdentifier]];
+		[queryString appendString:[self _buildPartialColumnDefinitionString:theRow]];
+
+		// Process index if given for fields set to AUTO_INCREMENT (SERIAL in PostgreSQL)
+		if (autoIncrementIndex) {
+			if ([autoIncrementIndex isEqualToString:@"PRIMARY KEY"]) {
+				[queryString appendString:@" PRIMARY KEY"];
+			}
+			else {
+				// Add index separately
+				[queryString appendFormat:@"; CREATE INDEX ON %@ (%@)",
+					[selectedTable postgresQuotedIdentifier],
+					[[theRow objectForKey:@"name"] postgresQuotedIdentifier]];
+			}
+		}
 	}
 	else {
-		[queryString appendFormat:@"CHANGE %@",[[oldRow objectForKey:@"name"] postgresQuotedIdentifier]];
-	}
-	[queryString appendString:@" "];
-	[queryString appendString:[self _buildPartialColumnDefinitionString:theRow]];
+		// PostgreSQL: Modifying existing column requires multiple ALTER statements
+		NSString *oldName = [oldRow objectForKey:@"name"];
+		NSString *newName = [theRow objectForKey:@"name"];
+		NSString *newType = [[theRow objectForKey:@"type"] uppercaseString];
 
-	// Process index if given for fields set to AUTO_INCREMENT
-	if (autoIncrementIndex) {
-		// User wants to add PRIMARY KEY
-		if ([autoIncrementIndex isEqualToString:@"PRIMARY KEY"]) {
-			[queryString appendString:@"\n PRIMARY KEY"];
-
-			// Add AFTER ... only if the user added a new field
-			if (isEditingNewRow) {
-		// AFTER clause is not supported in Postgres
-		// [queryString appendFormat:@"\n AFTER %@", [[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] postgresQuotedIdentifier]];
-			}
+		// Check if column name changed
+		if (![oldName isEqualToString:newName]) {
+			[queryString appendFormat:@"ALTER TABLE %@ RENAME COLUMN %@ TO %@; ",
+				[selectedTable postgresQuotedIdentifier],
+				[oldName postgresQuotedIdentifier],
+				[newName postgresQuotedIdentifier]];
 		}
-		else {
-			// Add AFTER ... only if the user added a new field
-			if (isEditingNewRow) {
-		// AFTER clause is not supported in Postgres
-		// [queryString appendFormat:@"\n AFTER %@", [[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] postgresQuotedIdentifier]];
-			}
 
-			[queryString appendFormat:@"\n, ADD %@ (%@)", autoIncrementIndex, [[theRow objectForKey:@"name"] postgresQuotedIdentifier]];
+		// Change column type
+		[queryString appendFormat:@"ALTER TABLE %@ ALTER COLUMN %@ TYPE %@",
+			[selectedTable postgresQuotedIdentifier],
+			[newName postgresQuotedIdentifier],
+			newType];
+
+		// Add length if specified
+		if ([theRow objectForKey:@"length"] && [[[theRow objectForKey:@"length"] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] length]) {
+			[queryString appendFormat:@"(%@)", [theRow objectForKey:@"length"]];
 		}
-	}
-	// Add AFTER ... only if the user added a new field
-	else if (isEditingNewRow) {
-// AFTER clause is not supported in Postgres
-		// [queryString appendFormat:@"\n AFTER %@", [[[[self activeFieldsSource] safeObjectAtIndex:(currentlyEditingRow -1)] objectForKey:@"name"] postgresQuotedIdentifier]];
+
+		// Handle NULL constraint
+		if ([[theRow objectForKey:@"null"] integerValue] == 0) {
+			[queryString appendFormat:@"; ALTER TABLE %@ ALTER COLUMN %@ SET NOT NULL",
+				[selectedTable postgresQuotedIdentifier],
+				[newName postgresQuotedIdentifier]];
+		} else {
+			[queryString appendFormat:@"; ALTER TABLE %@ ALTER COLUMN %@ DROP NOT NULL",
+				[selectedTable postgresQuotedIdentifier],
+				[newName postgresQuotedIdentifier]];
+		}
+
+		// Handle DEFAULT value
+		NSString *defaultValue = [theRow objectForKey:@"default"];
+		if (defaultValue && [defaultValue length] > 0) {
+			if ([defaultValue isEqualToString:[prefs objectForKey:SPNullValue]]) {
+				[queryString appendFormat:@"; ALTER TABLE %@ ALTER COLUMN %@ SET DEFAULT NULL",
+					[selectedTable postgresQuotedIdentifier],
+					[newName postgresQuotedIdentifier]];
+			} else {
+				[queryString appendFormat:@"; ALTER TABLE %@ ALTER COLUMN %@ SET DEFAULT %@",
+					[selectedTable postgresQuotedIdentifier],
+					[newName postgresQuotedIdentifier],
+					[postgresConnection escapeAndQuoteString:defaultValue]];
+			}
+		} else {
+			[queryString appendFormat:@"; ALTER TABLE %@ ALTER COLUMN %@ DROP DEFAULT",
+				[selectedTable postgresQuotedIdentifier],
+				[newName postgresQuotedIdentifier]];
+		}
 	}
 
 	isCurrentExtraAutoIncrement = NO;
@@ -783,7 +811,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 	else {
 		if ([postgresConnection lastErrorID] == 1146) { // If the current table doesn't exist anymore
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@", @"error while trying to alter table message"),selectedTable, [postgresConnection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to alter table '%@'.\n\nPostgreSQL said: %@", @"error while trying to alter table message"),selectedTable, [postgresConnection lastErrorMessage]] callback:nil];
 
 			isEditingRow = NO;
 			isEditingNewRow = NO;
@@ -803,7 +831,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 
 		if (isEditingNewRow) {
-			NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@", @"error adding field informative message"), [theRow objectForKey:@"name"], queryString, [postgresConnection lastErrorMessage]];
+			NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to add the field '%@' via\n\n%@\n\nPostgreSQL said: %@", @"error adding field informative message"), [theRow objectForKey:@"name"], queryString, [postgresConnection lastErrorMessage]];
 			[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Error adding field", @"error adding field message") message:alertMessage primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") primaryButtonHandler:^{
 				[self addRowSheetPrimaryAction];
 			} cancelButtonHandler:^{
@@ -1374,7 +1402,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			if ([self->postgresConnection queryErrored] && ![self->postgresConnection lastQueryWasCancelled]) {
 				NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
 				[errorDictionary setObject:NSLocalizedString(@"Error", @"error") forKey:@"title"];
-				[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"Couldn't delete field %@.\nMySQL said: %@", @"message of panel when field cannot be deleted"),
+				[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"Couldn't delete field %@.\nPostgreSQL said: %@", @"message of panel when field cannot be deleted"),
 																	  [[[self activeFieldsSource] objectAtIndex:[self->tableSourceView selectedRow]] objectForKey:@"name"],
 																	  [self->postgresConnection lastErrorMessage]] forKey:@"message"];
 
@@ -2056,36 +2084,38 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 /**
  * Having validated a drop, perform the field/column reordering to match.
+ * NOTE: PostgreSQL does not support column reordering directly.
+ * This operation would require recreating the table which is not safe.
  */
 - (BOOL)tableView:(NSTableView*)tableView acceptDrop:(id <NSDraggingInfo>)info row:(NSInteger)destinationRowIndex dropOperation:(NSTableViewDropOperation)operation
 {
 	// Make sure that the drag operation is for the right table view
 	if (tableView != tableSourceView) return NO;
 
-	// Extract the original row position from the pasteboard and retrieve the details
+	// PostgreSQL does not support column reordering (FIRST/AFTER clauses)
+	// Show an informative message to the user
+	[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Column Reordering Not Supported", @"column reordering not supported title")
+								 message:NSLocalizedString(@"PostgreSQL does not support changing column order directly. To reorder columns, you would need to recreate the table with the desired column order.\n\nThe column order in the display can be changed, but this will not affect the actual table structure.", @"column reordering not supported message")
+								callback:nil];
+
+	// Return NO to indicate the drop was not accepted
+	// But we can still reorder the visual display locally if needed
+	return NO;
+
+	// Original MySQL code for reference - PostgreSQL cannot use MODIFY COLUMN with FIRST/AFTER
+	/*
 	NSInteger originalRowIndex = [[[info draggingPasteboard] stringForType:SPDefaultPasteboardDragType] integerValue];
 	NSDictionary *originalRow = [[NSDictionary alloc] initWithDictionary:[[self activeFieldsSource] objectAtIndex:originalRowIndex]];
 
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryWillBePerformed" object:tableDocumentInstance];
 
-	// Begin construction of the reordering query
 	NSMutableString *queryString = [NSMutableString stringWithFormat:@"ALTER TABLE %@ MODIFY COLUMN %@",
 									[selectedTable postgresQuotedIdentifier],
 									[self _buildPartialColumnDefinitionString:originalRow]];
+	*/
 
-	[queryString appendString:@" "];
-	// Add the new location
-	if (destinationRowIndex == 0) {
-		[queryString appendString:@"FIRST"];
-	}
-	else {
-// AFTER clause is not supported in Postgres
-		// [queryString appendFormat:@"AFTER %@", [[[[self activeFieldsSource] objectAtIndex:destinationRowIndex - 1] objectForKey:@"name"] postgresQuotedIdentifier]];
-	}
-
-	// Run the query; report any errors, or reload the table on success
-	[postgresConnection queryString:queryString];
-
+	/*
+	// This code is unreachable but kept for reference
 	if ([postgresConnection queryErrored]) {
 		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error moving field", @"error moving field message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to move the field.\n\nPostgreSQL said: %@", @"error moving field informative message"), [postgresConnection lastErrorMessage]] callback:nil];
 	}
@@ -2104,6 +2134,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
 
 	return YES;
+	*/
 }
 
 #pragma mark -
@@ -2753,7 +2784,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				SPPostgresJsonType,
 				@"JSON",
 				NSLocalizedString(@"Limited to @@max_allowed_packet", @"range for json type"),
-				NSLocalizedString(@"A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8.", @"description of json")
+				NSLocalizedString(@"A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable in PostgreSQL 9.2+.", @"description of json")
 			),
 			MakeFieldTypeHelp(
 				SPPostgresEnumType,
@@ -2778,32 +2809,32 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				SPPostgresDatetimeType,
 				@"DATETIME[(F)]",
 				NSLocalizedString(@"Range: 1000-01-01 00:00:00.0 to 9999-12-31 23:59:59.999999\nF (precision): 0 (1s) to 6 (1µs)", @"range for datetime type"),
-				NSLocalizedString(@"Stores a date and time of day. The representation is YYYY-MM-DD HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F.",@"description of datetime")
+				NSLocalizedString(@"Stores a date and time of day. The representation is YYYY-MM-DD HH:MM:SS[.I*], I being fractional seconds. PostgreSQL supports microsecond precision.",@"description of datetime")
 			),
 			MakeFieldTypeHelp(
 				SPPostgresTimestampType,
 				@"TIMETSTAMP[(F)]",
 				NSLocalizedString(@"Range: 1970-01-01 00:00:01.0 to 2038-01-19 03:14:07.999999\nF (precision): 0 (1s) to 6 (1µs)", @"range for timestamp type"),
-				NSLocalizedString(@"Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply.",@"description of timestamp")
+				NSLocalizedString(@"Stores a date and time of day as a timestamp. The values displayed/stored can be affected by the session's timezone setting.\nPostgreSQL supports both TIMESTAMP and TIMESTAMP WITH TIME ZONE.",@"description of timestamp")
 			),
 			MakeFieldTypeHelp(
 				SPPostgresTimeType,
 				@"TIME[(F)]",
 				NSLocalizedString(@"Range: -838:59:59.0 to 838:59:59.0\nF (precision): 0 (1s) to 6 (1µs)", @"range for time type"),
-				NSLocalizedString(@"Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F.",@"description of time")
+				NSLocalizedString(@"Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. PostgreSQL supports microsecond precision.",@"description of time")
 			),
 			MakeFieldTypeHelp(
 				SPPostgresYearType,
 				@"YEAR(4)",
 				NSLocalizedString(@"Range: 0000, 1901 to 2155", @"range for year type"),
-				NSLocalizedString(@"Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5.",@"description of year")
+				NSLocalizedString(@"Represents a year value. PostgreSQL doesn't have a dedicated YEAR type; use INTEGER or SMALLINT instead.",@"description of year")
 			),
 			// --------------------------------------------------------------------------
 			MakeFieldTypeHelp(
 				SPPostgresGeometryType,
 				@"GEOMETRY",
 				@"",
-				NSLocalizedString(@"Can store a single spatial value of types POINT, LINESTRING or POLYGON. Spatial support in MySQL is based on the OpenGIS Geometry Model.",@"description of geometry")
+				NSLocalizedString(@"Can store a single spatial value of types POINT, LINESTRING or POLYGON. PostgreSQL with PostGIS extension provides comprehensive spatial support.",@"description of geometry")
 			),
 			MakeFieldTypeHelp(
 				SPPostgresPointType,

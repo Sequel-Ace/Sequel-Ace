@@ -142,7 +142,7 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 
 - (void)updateWindowTitle
 {
-	NSString *title = NSLocalizedString(@"MySQL Help", @"mysql help");
+	NSString *title = NSLocalizedString(@"PostgreSQL Help", @"postgresql help");
 
 	NSString *webTitle = [helpWebView mainFrameTitle];
 	if([webTitle length]) title = [title stringByAppendingFormat:@" (%@)", webTitle];
@@ -436,12 +436,12 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 
 		[webViewMenuItems insertObject:[NSMenuItem separatorItem] atIndex:0];
 
-		searchInMySQLonline = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Search in MySQL Documentation", @"Search in MySQL Documentation") action:@selector(searchInDocForWebViewSelection:) keyEquivalent:@""];
+		searchInMySQLonline = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Search in PostgreSQL Documentation", @"Search in PostgreSQL Documentation") action:@selector(searchInDocForWebViewSelection:) keyEquivalent:@""];
 		[searchInMySQLonline setEnabled:YES];
 		[searchInMySQLonline setTarget:self];
 		[webViewMenuItems insertObject:searchInMySQLonline atIndex:0];
 
-		searchInMySQL = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Search in MySQL Help", @"Search in MySQL Help") action:@selector(showHelpForWebViewSelection:) keyEquivalent:@""];
+		searchInMySQL = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Search in PostgreSQL Help", @"Search in PostgreSQL Help") action:@selector(showHelpForWebViewSelection:) keyEquivalent:@""];
 		[searchInMySQL setEnabled:YES];
 		[searchInMySQL setTarget:self];
 		[webViewMenuItems insertObject:searchInMySQL atIndex:0];

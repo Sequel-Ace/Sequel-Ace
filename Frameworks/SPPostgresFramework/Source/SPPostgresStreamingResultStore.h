@@ -14,6 +14,7 @@
 @interface SPPostgresStreamingResultStore : SPPostgresStreamingResult {
     id <SPPostgresStreamingResultStoreDelegate> __unsafe_unretained delegate;
     NSMutableArray *dataStorage; // Simplified storage for now
+    BOOL dataDownloadStarted;    // Track if startDownload has been called
 }
 
 @property (readwrite, unsafe_unretained) id <SPPostgresStreamingResultStoreDelegate> delegate;

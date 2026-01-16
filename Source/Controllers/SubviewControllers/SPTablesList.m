@@ -2030,7 +2030,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		[postgresConnection queryString:query];
 		if ([postgresConnection queryErrored]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while importing table", @"error while importing table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@", @"error importing table informative message"), query, [postgresConnection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while importing table", @"error while importing table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to import a table via: \n%@\n\n\nPostgreSQL said: %@", @"error importing table informative message"), query, [postgresConnection lastErrorMessage]] callback:nil];
 			return NO;
 		}
 		[self updateTables:nil];
@@ -2458,11 +2458,11 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			}
 			
 			NSString *databaseError = [postgresConnection lastErrorMessage];
-			NSString *userMessage = NSLocalizedString(@"Couldn't delete '%@'.\n\nMySQL said: %@", @"message of panel when an item cannot be deleted");
+			NSString *userMessage = NSLocalizedString(@"Couldn't delete '%@'.\n\nPostgreSQL said: %@", @"message of panel when an item cannot be deleted");
 			
 			// Try to provide a more helpful message
 			if ([databaseError rangeOfString:@"a foreign key constraint fails" options:NSCaseInsensitiveSearch].location != NSNotFound) {
-				userMessage = NSLocalizedString(@"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@", @"message of panel when an item cannot be deleted including informative message about using force deletion");
+				userMessage = NSLocalizedString(@"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nPostgreSQL said: %@", @"message of panel when an item cannot be deleted including informative message about using force deletion");
 			}
 			
 			[alert setMessageText:NSLocalizedString(@"Error", @"error")];
@@ -2504,7 +2504,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		// Couldn't truncate table
 		if ([postgresConnection queryErrored]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error truncating table", @"error truncating table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@", @"error truncating table informative message"), [filteredTables objectAtIndex:currentIndex], [postgresConnection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error truncating table", @"error truncating table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to truncate the table '%@'.\n\nPostgreSQL said: %@", @"error truncating table informative message"), [filteredTables objectAtIndex:currentIndex], [postgresConnection lastErrorMessage]] callback:nil];
 			*stop = YES;
 		}
 
@@ -2624,7 +2624,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			// Error while creating new table
 
 			SPMainQSync(^{
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@", @"error adding new table informative message"), tableName, [self->postgresConnection lastErrorMessage]] callback:nil];
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@'.\n\nPostgreSQL said: %@", @"error adding new table informative message"), tableName, [self->postgresConnection lastErrorMessage]] callback:nil];
 			});
 			
 			// PostgreSQL always uses UTF8, no encoding restoration needed
@@ -2699,7 +2699,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if ( ![queryResult numberOfRows] && tblType != SPTableTypeTable) { // Allow table copy without SHOW CREATE TABLE
 
 		//error while getting table structure
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't get create syntax.\nMySQL said: %@", @"message of panel when table information cannot be retrieved"), [postgresConnection lastErrorMessage]] callback:nil];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't get create syntax.\nPostgreSQL said: %@", @"message of panel when table information cannot be retrieved"), [postgresConnection lastErrorMessage]] callback:nil];
 		return;
     }
 
@@ -2729,7 +2729,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		// Check for errors, only displaying if the connection hasn't been terminated
 		if ([postgresConnection queryErrored]) {
 			if ([postgresConnection isConnected]) {
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the create syntax for '%@'.\nMySQL said: %@", @"message of panel when create syntax cannot be retrieved"), selectedTableName, [postgresConnection lastErrorMessage]] callback:nil];
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the create syntax for '%@'.\nPostgreSQL said: %@", @"message of panel when create syntax cannot be retrieved"), selectedTableName, [postgresConnection lastErrorMessage]] callback:nil];
 			}
 			return;
 		}
@@ -2741,14 +2741,14 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[postgresConnection queryString:[[tableSyntax unboxNull] stringByReplacingOccurrencesOfRegex:[NSString stringWithFormat:@"(?<=%@ )(`[^`]+?`)", [tableType uppercaseString]] withString:[tableName postgresQuotedIdentifier]]];
 
 		if ([postgresConnection queryErrored]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't duplicate '%@'.\nMySQL said: %@", @"message of panel when an item cannot be renamed"), tableName, [postgresConnection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't duplicate '%@'.\nPostgreSQL said: %@", @"message of panel when an item cannot be renamed"), tableName, [postgresConnection lastErrorMessage]] callback:nil];
 		}
 
 	}
 
 	if ([postgresConnection queryErrored]) {
 		//error while creating new table
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't create '%@'.\nMySQL said: %@", @"message of panel when table cannot be created"), tableName, [postgresConnection lastErrorMessage]] callback:nil];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't create '%@'.\nPostgreSQL said: %@", @"message of panel when table cannot be created"), tableName, [postgresConnection lastErrorMessage]] callback:nil];
 		return;
 	}
 
@@ -2884,14 +2884,14 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		if ([postgresConnection queryErrored]) {
 
 			if(postgresConnection.lastErrorID == 1050 && tableType == SPTableTypeTableNewDB){
-				NSString *message = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while renaming '%@'.\n\nMySQL said: %@", @"rename table error informative message"), oldTableName, [postgresConnection lastErrorMessage]];
+				NSString *message = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while renaming '%@'.\n\nPostgreSQL said: %@", @"rename table error informative message"), oldTableName, [postgresConnection lastErrorMessage]];
 
 				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:message callback:nil];
 
 				return;
 			}
 			else{
-				[NSException raise:@"MySQL Error" format:NSLocalizedString(@"An error occurred while renaming '%@'.\n\nMySQL said: %@", @"rename table error informative message"), oldTableName, [postgresConnection lastErrorMessage]];
+				[NSException raise:@"PostgreSQL Error" format:NSLocalizedString(@"An error occurred while renaming '%@'.\n\nPostgreSQL said: %@", @"rename table error informative message"), oldTableName, [postgresConnection lastErrorMessage]];
 			}
 		}
 
@@ -2913,7 +2913,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		SPPostgresResult *theResult  = [postgresConnection queryString:[NSString stringWithFormat:@"SELECT pg_get_functiondef(%@::regproc)", [oldTableName tickQuotedString] ] ];
 		if ([postgresConnection queryErrored]) {
-			[NSException raise:@"MySQL Error" format:NSLocalizedString(@"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\nMySQL said: %@", @"rename precedure/function error - can't retrieve syntax"), oldTableName, [postgresConnection lastErrorMessage]];
+			[NSException raise:@"PostgreSQL Error" format:NSLocalizedString(@"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\nPostgreSQL said: %@", @"rename precedure/function error - can't retrieve syntax"), oldTableName, [postgresConnection lastErrorMessage]];
 		}
 		[theResult setReturnDataAsStrings:YES];
 		NSString *oldCreateSyntax = [[theResult getRowAsArray] firstObject];
@@ -2927,12 +2927,12 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			withString: [NSString stringWithFormat:@"%@ %@", stringTableType, [newTableName postgresQuotedIdentifier] ] ];
 		[postgresConnection queryString: newCreateSyntax];
 		if ([postgresConnection queryErrored]) {
-			[NSException raise:@"MySQL Error" format:NSLocalizedString(@"An error occurred while renaming. I couldn't recreate '%@'.\n\nMySQL said: %@", @"rename precedure/function error - can't recreate procedure"), oldTableName, [postgresConnection lastErrorMessage]];
+			[NSException raise:@"PostgreSQL Error" format:NSLocalizedString(@"An error occurred while renaming. I couldn't recreate '%@'.\n\nPostgreSQL said: %@", @"rename precedure/function error - can't recreate procedure"), oldTableName, [postgresConnection lastErrorMessage]];
 		}
 
 		[postgresConnection queryString: [NSString stringWithFormat: @"DROP %@ %@", stringTableType, [oldTableName postgresQuotedIdentifier]]];
 		if ([postgresConnection queryErrored]) {
-			[NSException raise:@"MySQL Error" format:NSLocalizedString(@"An error occurred while renaming. I couldn't delete '%@'.\n\nMySQL said: %@", @"rename precedure/function error - can't delete old procedure"), oldTableName, [postgresConnection lastErrorMessage]];
+			[NSException raise:@"PostgreSQL Error" format:NSLocalizedString(@"An error occurred while renaming. I couldn't delete '%@'.\n\nPostgreSQL said: %@", @"rename precedure/function error - can't delete old procedure"), oldTableName, [postgresConnection lastErrorMessage]];
 		}
 		return;
 	}

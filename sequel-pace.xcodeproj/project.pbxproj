@@ -3468,8 +3468,9 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
-					/opt/homebrew/include,
+					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Headers",
 					"$(PROJECT_DIR)/Frameworks/SPPostgresFramework/Source/**",
+					"$(inherited)",
 				);
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
@@ -3479,12 +3480,15 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Frameworks/SPPostgresFramework/MySQL\\ Client\\ Libraries/lib",
+					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Versions/A",
 					"$(inherited)",
-					"/opt/homebrew/lib/postgresql@14",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				OTHER_LDFLAGS = (
+					"-lpq",
+					"-L$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Versions/A",
+				);
 				OTHER_LIBTOOLFLAGS = "-lpq";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-pace.sequel-pace";
 				PRODUCT_MODULE_NAME = Sequel_PAce;
@@ -3799,8 +3803,9 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
-					/opt/homebrew/include,
+					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Headers",
 					"$(PROJECT_DIR)/Frameworks/SPPostgresFramework/Source/**",
+					"$(inherited)",
 				);
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
@@ -3810,12 +3815,15 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Frameworks/SPPostgresFramework/MySQL\\ Client\\ Libraries/lib",
+					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Versions/A",
 					"$(inherited)",
-					"/opt/homebrew/lib/postgresql@14",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				OTHER_LDFLAGS = (
+					"-lpq",
+					"-L$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Versions/A",
+				);
 				OTHER_LIBTOOLFLAGS = "-lpq";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-pace.sequel-pace-beta";
 				PRODUCT_MODULE_NAME = Sequel_PAce;
@@ -3962,8 +3970,9 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
-					/opt/homebrew/include,
+					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Headers",
 					"$(PROJECT_DIR)/Frameworks/SPPostgresFramework/Source/**",
+					"$(inherited)",
 				);
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
@@ -3973,12 +3982,15 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Frameworks/SPPostgresFramework/MySQL\\ Client\\ Libraries/lib",
+					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Versions/A",
 					"$(inherited)",
-					"/opt/homebrew/lib/postgresql@14",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				OTHER_LDFLAGS = (
+					"-lpq",
+					"-L$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Versions/A",
+				);
 				OTHER_LIBTOOLFLAGS = "-lpq";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-pace.sequel-pace";
 				PRODUCT_MODULE_NAME = Sequel_PAce;
@@ -4030,8 +4042,9 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
-					/opt/homebrew/include,
+					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Headers",
 					"$(PROJECT_DIR)/Frameworks/SPPostgresFramework/Source/**",
+					"$(inherited)",
 				);
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
@@ -4041,12 +4054,15 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Frameworks/SPPostgresFramework/MySQL\\ Client\\ Libraries/lib",
+					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Versions/A",
 					"$(inherited)",
-					"/opt/homebrew/lib/postgresql@14",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				OTHER_LDFLAGS = (
+					"-lpq",
+					"-L$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Versions/A",
+				);
 				OTHER_LIBTOOLFLAGS = "-lpq";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-pace.sequel-pace";
 				PRODUCT_MODULE_NAME = Sequel_PAce;
