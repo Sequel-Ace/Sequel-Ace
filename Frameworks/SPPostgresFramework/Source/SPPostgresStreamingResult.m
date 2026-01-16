@@ -10,7 +10,7 @@
 
 #import "SPPostgresStreamingResult.h"
 
-#import "/opt/homebrew/include/postgresql@17/libpq-fe.h"
+#import <libpq-fe.h>
 
 @implementation SPPostgresStreamingResult
 
