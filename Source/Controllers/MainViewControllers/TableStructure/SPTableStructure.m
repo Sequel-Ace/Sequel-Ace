@@ -338,7 +338,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		NSString *message = NSLocalizedString(@"Error while fetching the optimized field type", @"error while fetching the optimized field type message");
 		
 		if ([postgresConnection isConnected]) {
-			 [NSAlert createWarningAlertWithTitle:message message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while fetching the optimized field type.\n\nMySQL said:%@", @"an error occurred while fetching the optimized field type.\n\nMySQL said:%@"), [postgresConnection lastErrorMessage]] callback:nil];
+			 [NSAlert createWarningAlertWithTitle:message message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while fetching the optimized field type.\n\nPostgreSQL said:%@", @"an error occurred while fetching the optimized field type.\n\nPostgreSQL said:%@"), [postgresConnection lastErrorMessage]] callback:nil];
 		}
 		return;
 	}
@@ -609,7 +609,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	// [postgresConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ AUTO_INCREMENT = %llu", [selTable postgresQuotedIdentifier], [value unsignedLongLongValue]]];
 
 	if ([postgresConnection queryErrored]) {
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@", @"error resetting auto_increment informative message"),selTable, [postgresConnection lastErrorMessage]] callback:nil];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nPostgreSQL said: %@", @"error resetting auto_increment informative message"),selTable, [postgresConnection lastErrorMessage]] callback:nil];
 	}
 
 	// reload data
@@ -783,7 +783,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 	else {
 		if ([postgresConnection lastErrorID] == 1146) { // If the current table doesn't exist anymore
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to alter table '%@'.\n\nMySQL said: %@", @"error while trying to alter table message"),selectedTable, [postgresConnection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to alter table '%@'.\n\nPostgreSQL said: %@", @"error while trying to alter table message"),selectedTable, [postgresConnection lastErrorMessage]] callback:nil];
 
 			isEditingRow = NO;
 			isEditingNewRow = NO;
@@ -803,7 +803,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 
 		if (isEditingNewRow) {
-			NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@", @"error adding field informative message"), [theRow objectForKey:@"name"], queryString, [postgresConnection lastErrorMessage]];
+			NSString *alertMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to add the field '%@' via\n\n%@\n\nPostgreSQL said: %@", @"error adding field informative message"), [theRow objectForKey:@"name"], queryString, [postgresConnection lastErrorMessage]];
 			[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Error adding field", @"error adding field message") message:alertMessage primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") primaryButtonHandler:^{
 				[self addRowSheetPrimaryAction];
 			} cancelButtonHandler:^{
@@ -1374,7 +1374,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			if ([self->postgresConnection queryErrored] && ![self->postgresConnection lastQueryWasCancelled]) {
 				NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
 				[errorDictionary setObject:NSLocalizedString(@"Error", @"error") forKey:@"title"];
-				[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"Couldn't delete field %@.\nMySQL said: %@", @"message of panel when field cannot be deleted"),
+				[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"Couldn't delete field %@.\nPostgreSQL said: %@", @"message of panel when field cannot be deleted"),
 																	  [[[self activeFieldsSource] objectAtIndex:[self->tableSourceView selectedRow]] objectForKey:@"name"],
 																	  [self->postgresConnection lastErrorMessage]] forKey:@"message"];
 
@@ -2753,7 +2753,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				SPPostgresJsonType,
 				@"JSON",
 				NSLocalizedString(@"Limited to @@max_allowed_packet", @"range for json type"),
-				NSLocalizedString(@"A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8.", @"description of json")
+				NSLocalizedString(@"A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable in PostgreSQL 9.2+.", @"description of json")
 			),
 			MakeFieldTypeHelp(
 				SPPostgresEnumType,
@@ -2778,32 +2778,32 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				SPPostgresDatetimeType,
 				@"DATETIME[(F)]",
 				NSLocalizedString(@"Range: 1000-01-01 00:00:00.0 to 9999-12-31 23:59:59.999999\nF (precision): 0 (1s) to 6 (1µs)", @"range for datetime type"),
-				NSLocalizedString(@"Stores a date and time of day. The representation is YYYY-MM-DD HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F.",@"description of datetime")
+				NSLocalizedString(@"Stores a date and time of day. The representation is YYYY-MM-DD HH:MM:SS[.I*], I being fractional seconds. PostgreSQL supports microsecond precision.",@"description of datetime")
 			),
 			MakeFieldTypeHelp(
 				SPPostgresTimestampType,
 				@"TIMETSTAMP[(F)]",
 				NSLocalizedString(@"Range: 1970-01-01 00:00:01.0 to 2038-01-19 03:14:07.999999\nF (precision): 0 (1s) to 6 (1µs)", @"range for timestamp type"),
-				NSLocalizedString(@"Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply.",@"description of timestamp")
+				NSLocalizedString(@"Stores a date and time of day as a timestamp. The values displayed/stored can be affected by the session's timezone setting.\nPostgreSQL supports both TIMESTAMP and TIMESTAMP WITH TIME ZONE.",@"description of timestamp")
 			),
 			MakeFieldTypeHelp(
 				SPPostgresTimeType,
 				@"TIME[(F)]",
 				NSLocalizedString(@"Range: -838:59:59.0 to 838:59:59.0\nF (precision): 0 (1s) to 6 (1µs)", @"range for time type"),
-				NSLocalizedString(@"Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F.",@"description of time")
+				NSLocalizedString(@"Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. PostgreSQL supports microsecond precision.",@"description of time")
 			),
 			MakeFieldTypeHelp(
 				SPPostgresYearType,
 				@"YEAR(4)",
 				NSLocalizedString(@"Range: 0000, 1901 to 2155", @"range for year type"),
-				NSLocalizedString(@"Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5.",@"description of year")
+				NSLocalizedString(@"Represents a year value. PostgreSQL doesn't have a dedicated YEAR type; use INTEGER or SMALLINT instead.",@"description of year")
 			),
 			// --------------------------------------------------------------------------
 			MakeFieldTypeHelp(
 				SPPostgresGeometryType,
 				@"GEOMETRY",
 				@"",
-				NSLocalizedString(@"Can store a single spatial value of types POINT, LINESTRING or POLYGON. Spatial support in MySQL is based on the OpenGIS Geometry Model.",@"description of geometry")
+				NSLocalizedString(@"Can store a single spatial value of types POINT, LINESTRING or POLYGON. PostgreSQL with PostGIS extension provides comprehensive spatial support.",@"description of geometry")
 			),
 			MakeFieldTypeHelp(
 				SPPostgresPointType,

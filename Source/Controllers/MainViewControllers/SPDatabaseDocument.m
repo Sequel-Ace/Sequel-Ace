@@ -504,7 +504,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [tableDataInstance setConnection:postgresConnection];
     [extendedTableInfoInstance setConnection:postgresConnection];
 
-    // Set the custom query editor's MySQL version
+    // Set the custom query editor's PostgreSQL version
     [customQueryInstance setMySQLversion:mySQLVersion];
 
     [helpViewerClientInstance setConnection:postgresConnection];
@@ -1591,25 +1591,25 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Set the encoding for the database connection
  */
-- (void)setConnectionEncoding:(NSString *)mysqlEncoding reloadingViews:(BOOL)reloadViews
+- (void)setConnectionEncoding:(NSString *)encoding reloadingViews:(BOOL)reloadViews
 {
     BOOL useLatin1Transport = NO;
 
     // Special-case UTF-8 over latin 1 to allow viewing/editing of mangled data.
-    if ([mysqlEncoding isEqualToString:@"utf8-"]) {
+    if ([encoding isEqualToString:@"utf8-"]) {
         useLatin1Transport = YES;
-        mysqlEncoding = @"utf8mb4";
+        encoding = @"UTF8";
     }
 
     // Set the connection encoding
-    [postgresConnection setEncoding:mysqlEncoding];
+    [postgresConnection setEncoding:encoding];
     [postgresConnection setEncodingUsesLatin1Transport:useLatin1Transport];
 
     // Update the selected menu item - use PostgreSQL encoding method
     if (useLatin1Transport) {
-        [[self onMainThread] updateEncodingMenuWithSelectedEncoding:[self encodingTagFromPostgresEncoding:[NSString stringWithFormat:@"%@-", mysqlEncoding]]];
+        [[self onMainThread] updateEncodingMenuWithSelectedEncoding:[self encodingTagFromPostgresEncoding:[NSString stringWithFormat:@"%@-", encoding]]];
     } else {
-        [[self onMainThread] updateEncodingMenuWithSelectedEncoding:[self encodingTagFromPostgresEncoding:mysqlEncoding]];
+        [[self onMainThread] updateEncodingMenuWithSelectedEncoding:[self encodingTagFromPostgresEncoding:encoding]];
     }
 
     // Update the stored connection encoding to prevent switches
@@ -1643,7 +1643,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
- * Returns the display name for a mysql encoding
+ * Returns the display name for a PostgreSQL encoding
  */
 - (NSNumber *)encodingTagFromPostgresEncoding:(NSString *)postgresEncoding
 {
@@ -1692,26 +1692,24 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 /**
  * Detect and store the encoding of the currently selected database.
- * Falls back to Latin-1 if the encoding cannot be retrieved.
+ * Falls back to UTF8 if the encoding cannot be retrieved.
  */
 - (void)detectDatabaseEncoding
 {
     _supportsEncoding = YES;
 
-    NSString *mysqlEncoding = [databaseDataInstance getDatabaseDefaultCharacterSet];
+    NSString *dbEncoding = [databaseDataInstance getDatabaseDefaultCharacterSet];
 
+    // Fallback -> set encoding to PostgreSQL default encoding UTF8
+    if (!dbEncoding) {
+        NSLog(@"Error: no character encoding found for db, PostgreSQL version is %@", [self mySQLVersion]);
 
-
-    // Fallback or older version? -> set encoding to mysql default encoding latin1
-    if ( !mysqlEncoding ) {
-        NSLog(@"Error: no character encoding found for db, mysql version is %@", [self mySQLVersion]);
-
-        selectedDatabaseEncoding = @"latin1";
+        selectedDatabaseEncoding = @"UTF8";
 
         _supportsEncoding = NO;
     }
     else {
-        selectedDatabaseEncoding = mysqlEncoding;
+        selectedDatabaseEncoding = dbEncoding;
     }
 }
 
@@ -1723,7 +1721,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
- * return YES if MySQL server supports choosing connection and table encodings (MySQL 4.1 and newer)
+ * return YES if PostgreSQL server supports choosing connection and table encodings
  */
 - (BOOL)supportsEncoding
 {
@@ -3150,10 +3148,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
- * Show the MySQL Help TOC of the current MySQL connection
- * Invoked by the MainMenu > Help > MySQL Help
+ * Show the PostgreSQL Help TOC of the current PostgreSQL connection
+ * Invoked by the MainMenu > Help > PostgreSQL Help
  */
-- (void)showMySQLHelp {
+- (void)showPostgreSQLHelp {
     [helpViewerClientInstance showHelpFor:SPHelpViewerSearchTOC addToHistory:YES calledByAutoHelp:NO];
     [[helpViewerClientInstance helpWebViewWindow] makeKeyWindow];
 }
@@ -3498,7 +3496,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     } else if ([itemIdentifier isEqualToString:SPMainToolbarShowConsole]) {
         [toolbarItem setPaletteLabel:NSLocalizedString(@"Show Console", @"show console")];
-        [toolbarItem setToolTip:NSLocalizedString(@"Show the console which shows all MySQL commands performed by Sequel Ace", @"tooltip for toolbar item for show console")];
+        [toolbarItem setToolTip:NSLocalizedString(@"Show the console which shows all SQL commands performed by Sequel PAce", @"tooltip for toolbar item for show console")];
 
         [toolbarItem setLabel:NSLocalizedString(@"Console", @"Console")];
         if (@available(macOS 11.0, *)) {
@@ -3516,7 +3514,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [toolbarItem setLabel:NSLocalizedString(@"Clear Console", @"toolbar item for clear console")];
         [toolbarItem setPaletteLabel:NSLocalizedString(@"Clear Console", @"toolbar item for clear console")];
         //set up tooltip and image
-        [toolbarItem setToolTip:NSLocalizedString(@"Clear the console which shows all MySQL commands performed by Sequel Ace", @"tooltip for toolbar item for clear console")];
+        [toolbarItem setToolTip:NSLocalizedString(@"Clear the console which shows all SQL commands performed by Sequel PAce", @"tooltip for toolbar item for clear console")];
         if (@available(macOS 11.0, *)) {
             [toolbarItem setImage:textAndCommandMacwindowImage];
         } else {

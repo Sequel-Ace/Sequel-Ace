@@ -29,7 +29,6 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 @class SPTablesList;
-@class SPMySQLConnection;
 @class SPCreateDatabaseInfo;
 @class SPPostgresConnection;
 
@@ -41,7 +40,7 @@
 }
 
 /**
- * @property connection References the SPMySQL.framework MySQL connection; it has to be set.
+ * @property connection References the SPPostgresFramework PostgreSQL connection; it has to be set.
  */
 @property (nonnull, readwrite, strong) SPPostgresConnection *connection;
 

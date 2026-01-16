@@ -2268,7 +2268,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 
             // Check for errors while UPDATE
             if ([postgresConnection queryErrored]) {
-                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nMySQL said: %@", @"message of panel when error while updating field to db"), [postgresConnection lastErrorMessage]] callback:nil];
+                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nPostgreSQL said: %@", @"message of panel when error while updating field to db"), [postgresConnection lastErrorMessage]] callback:nil];
                 return;
             }
 
@@ -2319,7 +2319,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 
                     // Check for errors while UPDATE
                     if ([self->postgresConnection queryErrored]) {
-                        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nMySQL said: %@", @"message of panel when error while updating field to db"), [self->postgresConnection lastErrorMessage]] callback:nil];
+                        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nPostgreSQL said: %@", @"message of panel when error while updating field to db"), [self->postgresConnection lastErrorMessage]] callback:nil];
                         return;
                     }
 

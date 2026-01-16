@@ -302,13 +302,13 @@
 - (void)setTaskIndicatorShouldAnimate:(BOOL)shouldAnimate;
 
 // Encoding methods
-- (void)setConnectionEncoding:(NSString *)mysqlEncoding reloadingViews:(BOOL)reloadViews;
+- (void)setConnectionEncoding:(NSString *)encoding reloadingViews:(BOOL)reloadViews;
 - (NSString *)databaseEncoding;
 - (void)detectDatabaseEncoding;
 - (BOOL)supportsEncoding;
 - (void)updateEncodingMenuWithSelectedEncoding:(NSNumber *)encodingTag;
-- (NSNumber *)encodingTagFromMySQLEncoding:(NSString *)mysqlEncoding;
-- (NSString *)mysqlEncodingFromEncodingTag:(NSNumber *)encodingTag;
+- (NSNumber *)encodingTagFromPostgresEncoding:(NSString *)postgresEncoding;
+- (NSString *)postgresEncodingFromEncodingTag:(NSNumber *)encodingTag;
 
 // Table methods
 - (IBAction)saveCreateSyntax:(id)sender;
@@ -480,6 +480,6 @@
 
 #pragma mark Help menu
 
-- (void)showMySQLHelp;
+- (void)showPostgreSQLHelp;
 
 @end

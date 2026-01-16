@@ -158,7 +158,7 @@ static NSString *SPPostgresCommentField          = @"Comment";       // obj_desc
 	else {
 		[sender selectItemWithTitle:currentEncoding];
 
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error changing table encoding", @"error changing table encoding message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table encoding to '%@'.\n\nMySQL said: %@", @"error changing table encoding informative message"), newEncoding, [connection lastErrorMessage]] callback:nil];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error changing table encoding", @"error changing table encoding message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table encoding to '%@'.\n\nPostgreSQL said: %@", @"error changing table encoding informative message"), newEncoding, [connection lastErrorMessage]] callback:nil];
 	}
 }
 
@@ -183,7 +183,7 @@ static NSString *SPPostgresCommentField          = @"Comment";       // obj_desc
 	else {
 		[sender selectItemWithTitle:currentCollation];
 
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error changing table collation", @"error changing table collation message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@", @"error changing table collation informative message"), newCollation, [connection lastErrorMessage]] callback:nil];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error changing table collation", @"error changing table collation message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table collation to '%@'.\n\nPostgreSQL said: %@", @"error changing table collation informative message"), newCollation, [connection lastErrorMessage]] callback:nil];
 	}
 }
 
@@ -409,7 +409,7 @@ static NSString *SPPostgresCommentField          = @"Comment";       // obj_desc
 	[tableSizeFree setStringValue:[self _formatValueWithKey:SPPostgresDataFreeField inDictionary:statusFields]];
 
 	// Set comments
-	// Note: On MySQL the comment column is marked as NOT NULL, but we still received crash reports because it was NULL!? (#2791)
+	// Note: The comment from obj_description() can be NULL if not set
 	NSString *commentText = [[statusFields objectForKey:SPPostgresCommentField] unboxNull];
 	
 	if (!commentText) commentText = @"";
@@ -567,7 +567,7 @@ static NSString *SPPostgresCommentField          = @"Comment";       // obj_desc
 				[self reloadTable:self];
 			}
 			else {
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error changing table comment", @"error changing table comment message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@", @"error changing table comment informative message"), newComment, [connection lastErrorMessage]] callback:nil];
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error changing table comment", @"error changing table comment message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table's comment to '%@'.\n\nPostgreSQL said: %@", @"error changing table comment informative message"), newComment, [connection lastErrorMessage]] callback:nil];
 			}
 		}
 	}
@@ -604,10 +604,11 @@ static NSString *SPPostgresCommentField          = @"Comment";       // obj_desc
 
 	// If we are viewing tables in the information_schema database, then disable all controls that cause table
 	// changes as these tables are not modifiable by anyone.
-	// also affects mysql and performance_schema
-	BOOL isSystemSchemaDb = ([[tableDocumentInstance database] isEqualToString:SPMySQLInformationSchemaDatabase] || 
-							 [[tableDocumentInstance database] isEqualToString:SPMySQLPerformanceSchemaDatabase] || 
-							 [[tableDocumentInstance database] isEqualToString:SPMySQLDatabase]);
+	// also affects postgres system databases and pg_catalog
+	BOOL isSystemSchemaDb = ([[tableDocumentInstance database] isEqualToString:SPPostgresInformationSchemaDatabase] ||
+							 [[tableDocumentInstance database] isEqualToString:SPPostgresCatalogDatabase] ||
+							 [[tableDocumentInstance database] isEqualToString:SPPostgresDatabase] ||
+							 [[tableDocumentInstance database] hasPrefix:SPPostgresTemplateDatabase]);
 
 	if ([[databaseDataInstance getDatabaseStorageEngines] count] && [statusFields safeObjectForKey:SPPostgresEngineField]) {
 		[tableTypePopUpButton setEnabled:(!isSystemSchemaDb)];
@@ -650,7 +651,7 @@ static NSString *SPPostgresCommentField          = @"Comment";       // obj_desc
 
 		[tableTypePopUpButton selectItemWithTitle:currentType];
 		
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error changing table type", @"error changing table type message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table type to '%@'.\n\nMySQL said: %@", @"error changing table type informative message"), newType, [connection lastErrorMessage]] callback:nil];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error changing table type", @"error changing table type message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table type to '%@'.\n\nPostgreSQL said: %@", @"error changing table type informative message"), newType, [connection lastErrorMessage]] callback:nil];
 		return;
 	}
 	

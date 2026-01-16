@@ -59,11 +59,11 @@
 const NSUInteger SPNarrowDownCompletionMaxRows   = 15;
 const NSUInteger SPMaxQueryLengthForWarning      = 1000;
 
-// System database names
-NSString *SPMySQLDatabase                        = @"mysql";
-NSString *SPMySQLInformationSchemaDatabase       = @"information_schema";
-NSString *SPMySQLPerformanceSchemaDatabase       = @"performance_schema";
-NSString *SPMySQLSysDatabase                     = @"sys";
+// System database/schema names (PostgreSQL)
+NSString *SPPostgresDatabase                     = @"postgres";
+NSString *SPPostgresInformationSchemaDatabase    = @"information_schema";
+NSString *SPPostgresCatalogDatabase              = @"pg_catalog";
+NSString *SPPostgresTemplateDatabase             = @"template";
 
 // Table view drag types
 NSString *SPDefaultPasteboardDragType            = @"SequelProPasteboard";
@@ -91,7 +91,7 @@ NSString *SPFConnectionContentType               = @"connection";
 NSString *SPFavoritesDataFile                    = @"Favorites.plist";
 NSString *SPHTMLPrintTemplate                    = @"SPPrintTemplate";
 NSString *SPHTMLTableInfoPrintTemplate           = @"SPTableInfoPrintTemplate";
-NSString *SPHTMLHelpTemplate                     = @"SPMySQLHelpTemplate";
+NSString *SPHTMLHelpTemplate                     = @"SPPostgresHelpTemplate";
 NSString *SPPreferenceDefaultsFile               = @"PreferenceDefaults";
 NSString *SPSSHConfigFile                        = @"ssh_config";
 NSString *SPSSHUsualKnownHostsFile               = @"known_hosts";
@@ -293,7 +293,7 @@ NSString *SPCopyContentOnTableCopy                    = @"CopyContentOnTableCopy
 NSString *SPDatabaseCreatedRemovedRenamedNotification = @"DatabaseCreatedRemovedRenamedNotification";
 
 // URLs
-NSString *SPMySQLSearchURL                       = @"https://dev.mysql.com/doc/search/?d=%d&p=1&q=%@";
+NSString *SPPostgresSearchURL                    = @"https://www.postgresql.org/search/?q=%@";
 NSString *SPDevURL                               = @"https://github.com/Sequel-Ace/Sequel-Ace";
 NSString *SPDocsSocketConnection                 = @"https://sequel-ace.com/get-started/local-connection.html#connecting-via-a-socket-connection";
 NSString *SPDocsAppSandbox                       = @"https://sequel-ace.com/ref/bookmarks.html#a-quick-introduction-to-app-sandbox";

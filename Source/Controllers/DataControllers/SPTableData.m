@@ -498,7 +498,7 @@
     // Check for any errors, but only display them if a connection still exists
     if ([postgresConnection queryErrored]) {
         if ([postgresConnection isConnected]) {
-            NSString *errorMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@", @"error retrieving table information informative message"),
+            NSString *errorMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the information for table '%@'. Please try again.\n\nPostgreSQL said: %@", @"error retrieving table information informative message"),
                        tableName, [postgresConnection lastErrorMessage]];
 
             // If the current table doesn't exist anymore reload table list
@@ -635,7 +635,7 @@
     // Check for any errors, but only display them if a connection still exists
     if ([postgresConnection queryErrored]) {
         if ([postgresConnection isConnected]) {
-            NSString *errorMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@", @"error retrieving table information informative message"),
+            NSString *errorMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the information for table '%@'. Please try again.\n\nPostgreSQL said: %@", @"error retrieving table information informative message"),
                                       tableName, [postgresConnection lastErrorMessage]];
             // If the current table doesn't exist anymore reload table list
             if ([postgresConnection lastErrorID] == 1146) {
@@ -1138,7 +1138,7 @@
 	// Check for any errors, but only display them if a connection still exists
 	if ([postgresConnection queryErrored]) {
 		if ([postgresConnection isConnected]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error retrieving trigger information", @"error retrieving trigger information message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nMySQL said: %@", @"error retrieving table information informative message"), [tableListInstance tableName], [postgresConnection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error retrieving trigger information", @"error retrieving trigger information message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nPostgreSQL said: %@", @"error retrieving table information informative message"), [tableListInstance tableName], [postgresConnection lastErrorMessage]] callback:nil];
 			
 			if (changeEncoding) [postgresConnection restoreStoredEncoding];
 		}

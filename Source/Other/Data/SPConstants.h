@@ -250,11 +250,11 @@ typedef enum
 extern const NSUInteger SPNarrowDownCompletionMaxRows;
 extern const NSUInteger SPMaxQueryLengthForWarning;
 
-// System database names
-extern NSString *SPMySQLDatabase;
-extern NSString *SPMySQLInformationSchemaDatabase;
-extern NSString *SPMySQLPerformanceSchemaDatabase;
-extern NSString *SPMySQLSysDatabase;
+// System database/schema names (PostgreSQL)
+extern NSString *SPPostgresDatabase;
+extern NSString *SPPostgresInformationSchemaDatabase;
+extern NSString *SPPostgresCatalogDatabase;
+extern NSString *SPPostgresTemplateDatabase;
 
 // Table view drag types
 extern NSString *SPDefaultPasteboardDragType;
@@ -484,7 +484,7 @@ extern NSString *SPCopyContentOnTableCopy;
 
 // URLs
 extern NSString *SPDonationsURL;
-extern NSString *SPMySQLSearchURL;
+extern NSString *SPPostgresSearchURL;
 extern NSString *SPDevURL;
 extern NSString *SPDocsSocketConnection;
 

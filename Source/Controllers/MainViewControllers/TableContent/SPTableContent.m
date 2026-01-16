@@ -2498,7 +2498,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 /**
  * Tries to write a new row to the table.
  *
- * @param queryString The query string that will be sent to the MySQL server
+ * @param queryString The query string that will be sent to the PostgreSQL server
  * @return YES if row is written to table, otherwise NO; also returns YES if no row s being edited or nothing has to be written to the table.
 */
 - (BOOL)_saveRowToTableWithQuery:(NSString*)queryString{
@@ -2522,7 +2522,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// If no rows have been changed, show error if appropriate.
 	if ( ![postgresConnection rowsAffectedByLastQuery] && ![postgresConnection queryErrored] ) {
 		if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the PostgreSQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
 		} else {
 			NSBeep();
 		}
@@ -2908,7 +2908,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		keys = [[NSMutableArray alloc] init];
 		SPPostgresResult *theResult = [postgresConnection queryString:[NSString stringWithFormat:@"SELECT column_name FROM information_schema.columns WHERE table_name = %@", [selectedTable postgresQuotedIdentifier]]];
 		if(!theResult) {
-			SPLog(@"no result from SHOW COLUMNS mysql query! Abort.");
+			SPLog(@"no result from column info query! Abort.");
 			return @"";
 		}
 		[theResult setReturnDataAsStrings:YES];
@@ -3268,7 +3268,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		// This shouldn't happen – for safety reasons
 		if ( ![postgresConnection rowsAffectedByLastQuery] ) {
 			if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the PostgreSQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
 			} else {
 				NSBeep();
 			}
