@@ -3479,12 +3479,23 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Frameworks/SPPostgresFramework/MySQL\\ Client\\ Libraries/lib",
+					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Versions/A",
 					"$(inherited)",
-					"/opt/homebrew/lib/postgresql@14",
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Headers",
+					"$(inherited)",
+				);
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/Frameworks",
+					"$(inherited)",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				OTHER_LDFLAGS = (
+					"-lpq",
+					"-L$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Versions/A",
+				);
 				OTHER_LIBTOOLFLAGS = "-lpq";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-pace.sequel-pace";
 				PRODUCT_MODULE_NAME = Sequel_PAce;
@@ -3810,12 +3821,23 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Frameworks/SPPostgresFramework/MySQL\\ Client\\ Libraries/lib",
+					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Versions/A",
 					"$(inherited)",
-					"/opt/homebrew/lib/postgresql@14",
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Headers",
+					"$(inherited)",
+				);
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/Frameworks",
+					"$(inherited)",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				OTHER_LDFLAGS = (
+					"-lpq",
+					"-L$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Versions/A",
+				);
 				OTHER_LIBTOOLFLAGS = "-lpq";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-pace.sequel-pace-beta";
 				PRODUCT_MODULE_NAME = Sequel_PAce;
@@ -3973,12 +3995,23 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Frameworks/SPPostgresFramework/MySQL\\ Client\\ Libraries/lib",
+					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Versions/A",
 					"$(inherited)",
-					"/opt/homebrew/lib/postgresql@14",
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Headers",
+					"$(inherited)",
+				);
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/Frameworks",
+					"$(inherited)",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				OTHER_LDFLAGS = (
+					"-lpq",
+					"-L$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Versions/A",
+				);
 				OTHER_LIBTOOLFLAGS = "-lpq";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-pace.sequel-pace";
 				PRODUCT_MODULE_NAME = Sequel_PAce;
@@ -4041,12 +4074,23 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Frameworks/SPPostgresFramework/MySQL\\ Client\\ Libraries/lib",
+					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Versions/A",
 					"$(inherited)",
-					"/opt/homebrew/lib/postgresql@14",
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Headers",
+					"$(inherited)",
+				);
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/Frameworks",
+					"$(inherited)",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				OTHER_LDFLAGS = (
+					"-lpq",
+					"-L$(PROJECT_DIR)/Frameworks/PostgreSQL.framework/Versions/A",
+				);
 				OTHER_LIBTOOLFLAGS = "-lpq";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-pace.sequel-pace";
 				PRODUCT_MODULE_NAME = Sequel_PAce;
