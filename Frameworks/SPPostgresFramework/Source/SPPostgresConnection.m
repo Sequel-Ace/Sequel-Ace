@@ -20,6 +20,7 @@
         connection = NULL;
         isConnected = NO;
         stringEncoding = NSUTF8StringEncoding;
+        queryWasCancelled = NO;
     }
     return self;
 }
@@ -35,19 +36,27 @@
 - (BOOL)connect {
     if (isConnected) [self disconnect];
 
+    // DEBUG: Log connection parameters (without password)
+    NSLog(@"[PG-DEBUG] Connecting: host=%@, port=%lu, db=%@, user=%@",
+          host, (unsigned long)port, database, username);
+
     NSMutableString *connInfo = [NSMutableString string];
     if (host) [connInfo appendFormat:@"host='%@' ", host];
     if (port) [connInfo appendFormat:@"port='%lu' ", (unsigned long)port];
     if (database) [connInfo appendFormat:@"dbname='%@' ", database];
     if (username) [connInfo appendFormat:@"user='%@' ", username];
     if (password) [connInfo appendFormat:@"password='%@' ", password];
-    
+
     // Set client encoding to UTF8 by default
     [connInfo appendString:@"client_encoding='UTF8'"];
 
     connection = PQconnectdb([connInfo UTF8String]);
 
+    // DEBUG: Log connection result
+    NSLog(@"[PG-DEBUG] PQstatus=%d (CONNECTION_OK=%d)", PQstatus(connection), CONNECTION_OK);
+
     if (PQstatus(connection) != CONNECTION_OK) {
+        NSLog(@"[PG-DEBUG] Connection failed: %s", PQerrorMessage(connection));
         lastErrorMessage = [NSString stringWithUTF8String:PQerrorMessage(connection)];
         PQfinish(connection);
         connection = NULL;
@@ -55,6 +64,7 @@
         return NO;
     }
 
+    NSLog(@"[PG-DEBUG] Connection successful!");
     isConnected = YES;
     
     // Get server version
@@ -91,25 +101,34 @@
     isConnected = NO;
 }
 
-- (SPPostgresResult *)queryString:(NSString *)query {
+- (SPPostgresStreamingResultStore *)queryString:(NSString *)query {
     if (!isConnected || !connection) return nil;
 
+    queryWasCancelled = NO;  // Reset cancellation flag before new query
     PGresult *res = PQexec(connection, [query UTF8String]);
-    
-    SPPostgresResult *result = [[SPPostgresResult alloc] initWithPGResult:res];
-    
+
+    // Create SPPostgresStreamingResultStore (required by SPDataStorage)
+    SPPostgresStreamingResultStore *result = [[SPPostgresStreamingResultStore alloc] initWithPGResult:res];
+
     if (PQresultStatus(res) != PGRES_TUPLES_OK && PQresultStatus(res) != PGRES_COMMAND_OK) {
         lastErrorMessage = [NSString stringWithUTF8String:PQresultErrorMessage(res)];
     } else {
         lastErrorMessage = nil;
     }
-    
+
+    // For synchronous queries, immediately populate the data storage so callers
+    // can iterate the results without explicitly calling startDownload.
+    // This is safe because startDownload has a guard against re-entry.
+    [result startDownload];
+
     return result;
 }
 
 - (SPPostgresStreamingResult *)streamingQueryString:(NSString *)query useLowMemoryBlockingStreaming:(BOOL)lowMemory {
     if (!isConnected || !connection) return nil;
-    
+
+    queryWasCancelled = NO;  // Reset cancellation flag before new query
+
     // 1. Send the query asynchronously
     if (!PQsendQuery(connection, [query UTF8String])) {
         lastErrorMessage = [NSString stringWithUTF8String:PQerrorMessage(connection)];
@@ -140,10 +159,21 @@
     return stringEncoding;
 }
 
-- (NSString *)escapeAndQuoteString:(NSString *)string {
-    if (!string) return @"NULL";
+- (NSString *)escapeAndQuoteString:(id)value {
+    if (!value) return @"NULL";
+
+    // Convert non-string objects to string representation
+    NSString *string;
+    if ([value isKindOfClass:[NSString class]]) {
+        string = value;
+    } else if ([value isKindOfClass:[NSNumber class]]) {
+        string = [value stringValue];
+    } else {
+        string = [value description];
+    }
+
     if (!isConnected) return [NSString stringWithFormat:@"'%@'", string]; // Fallback
-    
+
     char *escaped = malloc(string.length * 2 + 1);
     int error;
     PQescapeStringConn(connection, escaped, [string UTF8String], string.length, &error);
@@ -160,11 +190,23 @@
 }
 
 - (BOOL)lastQueryWasCancelled {
-    return NO; // TODO
+    return queryWasCancelled;
 }
 
 - (void)cancelCurrentQuery {
-    // TODO
+    if (connection) {
+        char errbuf[256];
+        PGcancel *cancel = PQgetCancel(connection);
+        if (cancel) {
+            if (PQcancel(cancel, errbuf, sizeof(errbuf))) {
+                queryWasCancelled = YES;
+                NSLog(@"SPPostgresConnection: Query cancelled successfully");
+            } else {
+                NSLog(@"SPPostgresConnection: Failed to cancel query: %s", errbuf);
+            }
+            PQfreeCancel(cancel);
+        }
+    }
 }
 
 - (NSString *)database {
@@ -293,27 +335,41 @@
 
 - (SPPostgresStreamingResultStore *)resultStoreFromQueryString:(NSString *)query {
     // Execute query and wrap in streaming result store for SPDataStorage compatibility
-    if (!connection || !query) return nil;
-    
+    if (!connection || !query) {
+        NSLog(@"[PG-DEBUG] resultStoreFromQueryString: connection=%p, query=%@", connection, query);
+        return nil;
+    }
+
+    // DEBUG: Log query and connection status
+    NSLog(@"[PG-DEBUG] Query: %@", query);
+    NSLog(@"[PG-DEBUG] Connection status before query: %d (OK=%d)", PQstatus(connection), CONNECTION_OK);
+
     const char *utf8Query = [query UTF8String];
     PGresult *result = PQexec(connection, utf8Query);
-    
-    if (!result || PQresultStatus(result) != PGRES_TUPLES_OK) {
+
+    // DEBUG: Log result details
+    int rowCount = result ? PQntuples(result) : -1;
+    int fieldCount = result ? PQnfields(result) : -1;
+    ExecStatusType status = result ? PQresultStatus(result) : (ExecStatusType)-1;
+    NSLog(@"[PG-DEBUG] PQntuples=%d, PQnfields=%d, status=%d (TUPLES_OK=%d)", rowCount, fieldCount, status, PGRES_TUPLES_OK);
+
+    if (!result || status != PGRES_TUPLES_OK) {
+        NSLog(@"[PG-DEBUG] Query error: %s", PQerrorMessage(connection));
         if (result) {
-            NSLog(@"Query error: %s", PQerrorMessage(connection));
             PQclear(result);
         }
         return nil;
     }
-    
+
     // Create a streaming result store with the PG result
     SPPostgresStreamingResultStore *resultStore = [[SPPostgresStreamingResultStore alloc] initWithPGResult:result];
-    
+
+    // DEBUG: Log the result store row count
+    NSLog(@"[PG-DEBUG] resultStore created, numberOfRows=%lu (before startDownload)", (unsigned long)[resultStore numberOfRows]);
+
     // Do NOT start download here - let SPTableContent handle it via updateResultStore
     // [resultStore startDownload];
-    
-    NSLog(@"SPPostgresConnection: resultStoreFromQueryString created store with %lu rows", (unsigned long)[resultStore numberOfRows]);
-    
+
     return resultStore;
 }
 
@@ -340,13 +396,23 @@
     return 0;
 }
 
-- (NSString *)escapeString:(NSString *)string includingQuotes:(BOOL)includeQuotes {
-    if (!string || !connection) return includeQuotes ? @"''" : @"";
-    
+- (NSString *)escapeString:(id)value includingQuotes:(BOOL)includeQuotes {
+    if (!value || !connection) return includeQuotes ? @"''" : @"";
+
+    // Convert non-string objects to string representation
+    NSString *string;
+    if ([value isKindOfClass:[NSString class]]) {
+        string = value;
+    } else if ([value isKindOfClass:[NSNumber class]]) {
+        string = [value stringValue];
+    } else {
+        string = [value description];
+    }
+
     const char *utf8String = [string UTF8String];
     size_t length = strlen(utf8String);
     char *escaped = PQescapeLiteral(connection, utf8String, length);
-    
+
     if (escaped) {
         NSString *result;
         if (includeQuotes) {
@@ -363,7 +429,7 @@
         PQfreemem(escaped);
         return result;
     }
-    
+
     return includeQuotes ? @"''" : @"";
 }
 

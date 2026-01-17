@@ -58,6 +58,7 @@ typedef NS_ENUM(NSInteger, SPPostgresConnectionLostDecision) {
     NSUInteger serverReleaseVersion;
     NSStringEncoding stringEncoding;
     NSString *storedEncoding;
+    BOOL queryWasCancelled;
 }
 
 @property (readonly) BOOL isConnected;
@@ -72,13 +73,13 @@ typedef NS_ENUM(NSInteger, SPPostgresConnectionLostDecision) {
 - (BOOL)reconnectWithNewDatabase:(NSString *)databaseName;
 - (void)disconnect;
 
-- (SPPostgresResult *)queryString:(NSString *)query;
+- (SPPostgresStreamingResultStore *)queryString:(NSString *)query;
 - (SPPostgresStreamingResult *)streamingQueryString:(NSString *)query useLowMemoryBlockingStreaming:(BOOL)lowMemory;
 
 - (void)setEncoding:(NSString *)encoding;
 - (NSStringEncoding)encoding;
 
-- (NSString *)escapeAndQuoteString:(NSString *)string;
+- (NSString *)escapeAndQuoteString:(id)value;
 - (id)delegate;
 - (void)setDelegate:(id)delegate;
 
@@ -103,7 +104,7 @@ typedef NS_ENUM(NSInteger, SPPostgresConnectionLostDecision) {
 - (SPPostgresStreamingResultStore *)resultStoreFromQueryString:(NSString *)query;
 - (NSString *)lastSqlstate;
 - (NSUInteger)rowsAffectedByLastQuery;
-- (NSString *)escapeString:(NSString *)string includingQuotes:(BOOL)includeQuotes;
+- (NSString *)escapeString:(id)value includingQuotes:(BOOL)includeQuotes;
 - (NSString *)escapeData:(NSData *)data includingQuotes:(BOOL)includeQuotes;
 - (NSStringEncoding)stringEncoding;
 - (unsigned long long)lastInsertID;

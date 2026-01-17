@@ -33,6 +33,7 @@ typedef struct pg_result PGresult;
 
 - (NSArray *)getRowAsArray;
 - (NSDictionary *)getRowAsDictionary;
+- (id)getRowAtIndex:(NSUInteger)index;
 - (void)seekToRow:(NSUInteger)index;
 - (NSArray *)getAllRows;
 - (NSArray *)getRow;

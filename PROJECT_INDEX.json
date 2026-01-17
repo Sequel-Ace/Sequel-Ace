@@ -1,0 +1,130 @@
+{
+  "project": {
+    "name": "Sequel PAce",
+    "version": "5.0.9",
+    "build": "20095",
+    "description": "PostgreSQL-focused native macOS database client forked from Sequel Ace",
+    "license": "GPL",
+    "platform": "macOS",
+    "languages": ["Objective-C", "Swift"],
+    "database": "PostgreSQL"
+  },
+  "generated": "2026-01-17",
+  "entryPoints": {
+    "main": "Source/main.m",
+    "appController": "Source/Controllers/SPAppController.m",
+    "documentController": "Source/Controllers/Other/SPDocumentController.m",
+    "mainWindow": "Source/Interfaces/MainWindow.xib"
+  },
+  "directories": {
+    "source": "Source/",
+    "controllers": "Source/Controllers/",
+    "models": "Source/Model/",
+    "views": "Source/Views/",
+    "interfaces": "Source/Interfaces/",
+    "frameworks": "Frameworks/",
+    "resources": "Resources/",
+    "tests": "UnitTests/",
+    "scripts": "Scripts/",
+    "docs": "docs/"
+  },
+  "coreModules": {
+    "postgresFramework": {
+      "path": "Frameworks/SPPostgresFramework/Source/",
+      "description": "PostgreSQL connection layer wrapping libpq",
+      "classes": [
+        "SPPostgresConnection",
+        "SPPostgresResult",
+        "SPPostgresStreamingResult",
+        "SPPostgresStreamingResultStore",
+        "SPPostgresGeometryData",
+        "SPPostgresFastStreamingResult"
+      ]
+    },
+    "mainViewControllers": {
+      "path": "Source/Controllers/MainViewControllers/",
+      "description": "Primary view controllers for database interaction",
+      "classes": [
+        "SPDatabaseDocument",
+        "SPConnectionController",
+        "SPCustomQuery",
+        "SPTableContent",
+        "SPTableStructure",
+        "SPExtendedTableInfo",
+        "SPTableRelations",
+        "SPTableTriggers"
+      ]
+    },
+    "dataExport": {
+      "path": "Source/Controllers/DataExport/",
+      "description": "Data export functionality",
+      "formats": ["SQL", "CSV", "XML", "HTML", "PDF", "DOT"],
+      "classes": ["SPExportController", "SPExporter", "SPSQLExporter", "SPCSVExporter", "SPXMLExporter"]
+    },
+    "dataImport": {
+      "path": "Source/Controllers/DataImport/",
+      "description": "Data import functionality",
+      "classes": ["SPDataImport", "SPFieldMapperController"]
+    },
+    "parsing": {
+      "path": "Source/Other/Parsing/",
+      "description": "SQL, CSV, and JSON parsing",
+      "classes": ["SPSQLParser", "SPCSVParser", "SPJSONFormatter", "SPTableFilterParser", "SPSyntaxParser"]
+    },
+    "views": {
+      "path": "Source/Views/",
+      "description": "Custom UI views and controls",
+      "classes": ["SPTextView", "SPCopyTable", "SPTableView", "SPGeometryDataView", "SPSplitView"]
+    }
+  },
+  "configuration": {
+    "infoPlist": "Resources/Plists/Info.plist",
+    "preferences": "Resources/Plists/PreferenceDefaults.plist",
+    "contentFilters": "Resources/Plists/ContentFilters.plist",
+    "completionTokens": "Resources/Plists/CompletionTokens.plist"
+  },
+  "scripts": {
+    "build": "Scripts/build.sh",
+    "embedLibpq": "Scripts/embed_libpq.sh",
+    "setupLibpq": "Scripts/setup_libpq.sh",
+    "generateChangelog": "Scripts/generate-changelog.sh"
+  },
+  "urlSchemes": ["sequelpace", "mysql"],
+  "documentTypes": {
+    "spf": "Connection file",
+    "spfs": "Session file",
+    "saBundle": "Bundle/script package",
+    "spTheme": "Color theme",
+    "sql": "SQL file"
+  },
+  "dependencies": {
+    "runtime": [
+      {"name": "libpq", "purpose": "PostgreSQL client library"},
+      {"name": "ShortcutRecorder", "purpose": "Keyboard shortcut recording"},
+      {"name": "QueryKit", "purpose": "SQL query building"}
+    ],
+    "swift": [
+      {"name": "SnapKit", "purpose": "Auto Layout"},
+      {"name": "FMDB", "purpose": "SQLite for local storage"},
+      {"name": "Alamofire", "purpose": "HTTP networking"},
+      {"name": "PLCrashReporter", "purpose": "Crash reporting"},
+      {"name": "AppCenter", "purpose": "Analytics"}
+    ]
+  },
+  "statistics": {
+    "sourceFiles": 383,
+    "interfaceFiles": 30,
+    "testFiles": 21,
+    "defaultBundles": 17,
+    "colorThemes": 7
+  },
+  "keyFiles": {
+    "connectionLogic": "Frameworks/SPPostgresFramework/Source/SPPostgresConnection.m",
+    "queryExecution": "Source/Controllers/MainViewControllers/SPCustomQuery.h",
+    "tableDataDisplay": "Source/Controllers/MainViewControllers/TableContent/SPTableContent.h",
+    "syntaxHighlighting": "Source/Views/TextViews/SPTextView.m",
+    "exportLogic": "Source/Controllers/DataExport/SPExportController.h",
+    "preferences": "Source/Controllers/Preferences/SPPreferenceController.m",
+    "mainWindowLayout": "Source/Interfaces/MainWindow.xib"
+  }
+}

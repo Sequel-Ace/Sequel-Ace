@@ -32,6 +32,7 @@
 #import "SPObjectAdditions.h"
 #import "SPPointerArrayAdditions.h"
 #import "SPPostgresStreamingResultStore.h"
+#import "SPDebugLogger.h"
 #include <stdlib.h>
 #include <mach/mach_time.h>
 #import "sequel-pace-Swift.h"
@@ -91,19 +92,28 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 		unloadedColumns = newUnloadedColumns;
 		editedRowCount = 0;
 		editedRows = newEditedRows;
+
+		// Set delegate INSIDE synchronized block BEFORE checking dataDownloaded
+		// to prevent race condition where callback is missed
+		[newDataStorage setDelegate:self];
+
+		// For PostgreSQL, data is always loaded synchronously - check and callback immediately
+		// This must be inside @synchronized to ensure dataStorage ivar is set before callback
+		if ([newDataStorage dataDownloaded]) {
+			// Update edited rows to match loaded data
+			[editedRows setCount:(NSUInteger)[newDataStorage numberOfRows]];
+			editedRowCount = [editedRows count];
+		}
 	}
-	
+
 	free(oldUnloadedColumns);
-	
-	// the only delegate callback is resultStoreDidFinishLoadingData:.
-	// We can't set the delegate before exchanging the dataStorage ivar since then
-	// the message would come from an unknown object.
-	// But if we set it afterwards, we risk losing the callback event (since it could've
-	// happened in the meantime) - this is what the following if() is for.
-	[newDataStorage setDelegate:self];
-	
+
+	// Broadcast outside the synchronized block to avoid potential deadlock
+	// with code waiting on dataDownloadedLock while holding other locks
 	if ([newDataStorage dataDownloaded]) {
-		[self resultStoreDidFinishLoadingData:newDataStorage];
+		[dataDownloadedLock lock];
+		[dataDownloadedLock broadcast];
+		[dataDownloadedLock unlock];
 	}
 }
 
@@ -501,9 +511,24 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 
 - (void) awaitDataDownloaded
 {
+	[SPDebugLogger log:@"[SYNC] awaitDataDownloaded entered, dataDownloaded=%d", [self dataDownloaded]];
 	[dataDownloadedLock lock];
-	while(![self dataDownloaded]) [dataDownloadedLock wait];
+
+	// Add timeout to prevent infinite deadlock (30 second timeout)
+	NSDate *timeoutDate = [NSDate dateWithTimeIntervalSinceNow:30.0];
+	while (![self dataDownloaded]) {
+		BOOL signaled = [dataDownloadedLock waitUntilDate:timeoutDate];
+		[SPDebugLogger log:@"[SYNC] Wait loop iteration, signaled=%d, dataDownloaded=%d", signaled, [self dataDownloaded]];
+		if (!signaled) {
+			// Timeout occurred - break out of wait to prevent deadlock
+			[SPDebugLogger log:@"[SYNC] TIMEOUT! awaitDataDownloaded timed out after 30 seconds"];
+			NSLog(@"SPDataStorage: awaitDataDownloaded timed out after 30 seconds");
+			break;
+		}
+	}
+
 	[dataDownloadedLock unlock];
+	[SPDebugLogger log:@"[SYNC] awaitDataDownloaded exiting"];
 }
 
 #pragma mark - Delegate callback methods
@@ -513,9 +538,11 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
  */
 - (void)resultStoreDidFinishLoadingData:(SPPostgresStreamingResultStore *)resultStore
 {
+	[SPDebugLogger log:@"[SYNC] resultStoreDidFinishLoadingData called, broadcasting signal"];
 	@synchronized(self) {
 		if(resultStore != dataStorage) {
 			NSLog(@"%s: received delegate callback from an unknown result store %p (expected: %p). Ignored!", __PRETTY_FUNCTION__, resultStore, dataStorage);
+			[SPDebugLogger log:@"[SYNC] WARNING: Unknown result store, ignored"];
 			return;
 		}
 		[editedRows setCount:(NSUInteger)[resultStore numberOfRows]];
@@ -523,6 +550,7 @@ static inline NSMutableArray* SPDataStorageGetEditedRow(NSPointerArray* rowStore
 	}
 	[dataDownloadedLock lock];
 	[dataDownloadedLock broadcast];
+	[SPDebugLogger log:@"[SYNC] Broadcast sent"];
 	[dataDownloadedLock unlock];
 }
 

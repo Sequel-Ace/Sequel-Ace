@@ -140,7 +140,7 @@ typedef NS_ENUM(NSInteger, HelpVersionNumber) {
 
 + (NSString *)linkToHelpTopic:(NSString *)aTopic
 {
-	NSString *linkTitle = [NSString stringWithFormat:NSLocalizedString(@"Show PostgreSQL help for "%@"", @"PostgreSQL Help Viewer : Results list : Link tooltip"),aTopic];
+	NSString *linkTitle = [NSString stringWithFormat:NSLocalizedString(@"Show PostgreSQL help for \"%@\"", @"PostgreSQL Help Viewer : Results list : Link tooltip"),aTopic];
 	return [NSString stringWithFormat:@"<a title='%2$@' href='%1$@' class='internallink'>%1$@</a>", aTopic, linkTitle];
 }
 

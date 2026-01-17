@@ -55,6 +55,7 @@
 #import "SPProcessListController.h"
 #import "SPServerVariablesController.h"
 #import "SPLogger.h"
+#import "SPDebugLogger.h"
 #import "SPDatabaseCopy.h"
 #import "SPTableCopy.h"
 #import "SPDatabaseRename.h"
@@ -87,6 +88,7 @@
 #import "sequel-pace-Swift.h"
 
 #import "SPPostgresConnection.h"
+#import "SPPostgresStreamingResultStore.h"
 #import "SPPostgresGeometryData.h"
 
 #include <stdatomic.h>
@@ -5769,9 +5771,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)loadTable:(NSString *)aTable ofType:(SPTableType)aTableType
 {
+    [SPDebugLogger log:@"[STEP 2] loadTable called for: %@, type: %ld", aTable, (long)aTableType];
+
     // Ensure a connection is still present
     if (![postgresConnection isConnected]){
         SPLog(@"![postgresConnection isConnected], returning");
+        [SPDebugLogger log:@"[STEP 2] ERROR: Not connected, returning"];
         return;
     }
 
@@ -5900,6 +5905,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)_loadTableTask
 {
+    [SPDebugLogger log:@"[STEP 3] _loadTableTask started on background thread"];
+
     @autoreleasepool {
         NSString *tableEncoding = nil;
 
@@ -5964,6 +5971,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                     structureLoaded = YES;
                     break;
                 case SPTableViewContent:
+                    [SPDebugLogger log:@"[STEP 4] Calling tableContentInstance loadTable"];
                     [tableContentInstance loadTable:selectedTableName];
                     contentLoaded = YES;
                     break;

@@ -21,18 +21,31 @@
     if (self) {
         resultSet = result;
         currentRowIndex = 0;
+
+        // DEBUG: Log PGresult details
         if (resultSet) {
             int tuples = PQntuples(resultSet);
-            numberOfRows = (tuples < 0) ? 0 : (NSUInteger)tuples;
-            
             int fields = PQnfields(resultSet);
+            NSLog(@"[PG-DEBUG] SPPostgresResult.init: tuples=%d, fields=%d, resultSet=%p", tuples, fields, resultSet);
+
+            numberOfRows = (tuples < 0) ? 0 : (NSUInteger)tuples;
             numberOfFields = (fields < 0) ? 0 : (NSUInteger)fields;
-            
+
             NSMutableArray *names = [NSMutableArray arrayWithCapacity:numberOfFields];
-            for (int i = 0; i < numberOfFields; i++) {
-                [names addObject:[NSString stringWithUTF8String:PQfname(resultSet, i)]];
+            for (int i = 0; i < (int)numberOfFields; i++) {
+                char *fname = PQfname(resultSet, i);
+                if (fname) {
+                    [names addObject:[NSString stringWithUTF8String:fname]];
+                } else {
+                    [names addObject:[NSString stringWithFormat:@"column_%d", i]];
+                }
             }
             fieldNames = [NSArray arrayWithArray:names];
+            NSLog(@"[PG-DEBUG] SPPostgresResult.init: fieldNames=%@", fieldNames);
+        } else {
+            NSLog(@"[PG-DEBUG] SPPostgresResult.init: resultSet is NULL!");
+            numberOfRows = 0;
+            numberOfFields = 0;
         }
     }
     return self;
@@ -49,6 +62,9 @@
 }
 
 - (NSUInteger)numberOfRows {
+    if (!resultSet) {
+        NSLog(@"[PG-DEBUG] SPPostgresResult.numberOfRows called but resultSet is NULL, returning %lu", (unsigned long)numberOfRows);
+    }
     return numberOfRows;
 }
 
@@ -69,6 +85,11 @@
             [row addObject:[NSNull null]];
         } else {
             char *val = PQgetvalue(resultSet, (int)index, i);
+            // Safety check: PQgetvalue can return NULL in edge cases
+            if (val == NULL) {
+                [row addObject:[NSNull null]];
+                continue;
+            }
             NSString *strVal = [NSString stringWithUTF8String:val];
             if (strVal) {
                 [row addObject:strVal];
@@ -108,6 +129,11 @@
             [row addObject:[NSNull null]];
         } else {
             char *val = PQgetvalue(resultSet, (int)index, i);
+            // Safety check: PQgetvalue can return NULL in edge cases
+            if (val == NULL) {
+                [row addObject:[NSNull null]];
+                continue;
+            }
             NSString *strVal = [NSString stringWithUTF8String:val];
             if (strVal) {
                 [row addObject:strVal];
@@ -200,29 +226,127 @@
 
 - (NSArray *)fieldDefinitions {
     // Return field definitions as array of dictionaries
-    if (!resultSet) return @[];
-    
-    NSMutableArray *definitions = [NSMutableArray array];
+    if (!resultSet) {
+        NSLog(@"[PG-DEBUG] fieldDefinitions: resultSet is NULL, returning empty array");
+        return @[];
+    }
+
     int numFields = PQnfields(resultSet);
-    
+    NSLog(@"[PG-DEBUG] fieldDefinitions: Building definitions for %d fields", numFields);
+
+    NSMutableArray *definitions = [NSMutableArray array];
+
     for (int i = 0; i < numFields; i++) {
         NSMutableDictionary *fieldDef = [NSMutableDictionary dictionary];
-        
+
+        // Column name
         char *name = PQfname(resultSet, i);
-        if (name) {
-            [fieldDef setObject:[NSString stringWithUTF8String:name] forKey:@"name"];
-        }
-        
+        NSString *columnName = name ? [NSString stringWithUTF8String:name] : @"";
+        [fieldDef setObject:columnName forKey:@"name"];
+        [fieldDef setObject:columnName forKey:@"org_name"];
+
+        // Column index (as string, used as table column identifier)
+        [fieldDef setObject:[NSString stringWithFormat:@"%d", i] forKey:@"datacolumnindex"];
+
+        // Type OID and modifier
         Oid typeOid = PQftype(resultSet, i);
         [fieldDef setObject:@(typeOid) forKey:@"type_oid"];
-        
+
         int mod = PQfmod(resultSet, i);
         [fieldDef setObject:@(mod) forKey:@"type_mod"];
-        
+
+        // Map OID to type name and typegrouping
+        NSString *typeName = [self typeNameForOid:typeOid];
+        NSString *typegrouping = [self typegroupingForOid:typeOid];
+        [fieldDef setObject:typeName forKey:@"type"];
+        [fieldDef setObject:typegrouping forKey:@"typegrouping"];
+
+        // Calculate char_length from type modifier for varchar/char types
+        NSString *charLength = @"";
+        if (typeOid == 1043 || typeOid == 1042) { // varchar or char
+            if (mod > 4) {
+                charLength = [NSString stringWithFormat:@"%d", mod - 4];
+            }
+        } else if (typeOid == 1700) { // numeric
+            if (mod >= 4) {
+                int precision = ((mod - 4) >> 16) & 0xFFFF;
+                int scale = (mod - 4) & 0xFFFF;
+                charLength = [NSString stringWithFormat:@"%d,%d", precision, scale];
+            }
+        }
+        [fieldDef setObject:charLength forKey:@"char_length"];
+
+        // Table and database info (may not be available for computed columns)
+        Oid tableOid = PQftable(resultSet, i);
+        if (tableOid != 0) {
+            [fieldDef setObject:@(tableOid) forKey:@"table_oid"];
+        }
+        [fieldDef setObject:@"" forKey:@"org_table"];
+        [fieldDef setObject:@"" forKey:@"db"];
+
         [definitions addObject:fieldDef];
     }
-    
+
+    NSLog(@"[PG-DEBUG] fieldDefinitions: Returning %lu definitions", (unsigned long)[definitions count]);
     return [NSArray arrayWithArray:definitions];
+}
+
+// Map PostgreSQL OID to type name
+- (NSString *)typeNameForOid:(Oid)oid {
+    switch (oid) {
+        case 16: return @"boolean";
+        case 17: return @"bytea";
+        case 20: return @"bigint";
+        case 21: return @"smallint";
+        case 23: return @"integer";
+        case 25: return @"text";
+        case 700: return @"real";
+        case 701: return @"double precision";
+        case 1042: return @"char";
+        case 1043: return @"varchar";
+        case 1082: return @"date";
+        case 1083: return @"time";
+        case 1114: return @"timestamp";
+        case 1184: return @"timestamptz";
+        case 1700: return @"numeric";
+        case 2950: return @"uuid";
+        case 114: return @"json";
+        case 3802: return @"jsonb";
+        case 1007: return @"integer[]";
+        case 1009: return @"text[]";
+        default: return @"unknown";
+    }
+}
+
+// Map PostgreSQL OID to typegrouping (used for UI formatting)
+- (NSString *)typegroupingForOid:(Oid)oid {
+    switch (oid) {
+        // Integers
+        case 20: case 21: case 23: case 26: // bigint, smallint, int, oid
+        case 1005: case 1007: case 1016:    // int arrays
+            return @"integer";
+        // Floats
+        case 700: case 701: case 1700:      // real, double, numeric
+            return @"float";
+        // Strings
+        case 1042: case 1043:               // char, varchar
+            return @"string";
+        // Text data
+        case 25:                            // text
+        case 114: case 3802:                // json, jsonb
+            return @"textdata";
+        // Binary
+        case 17:                            // bytea
+            return @"blobdata";
+        // Boolean
+        case 16:                            // boolean
+            return @"bit";
+        // Date/time
+        case 1082: case 1083: case 1114: case 1184: // date, time, timestamp
+            return @"date";
+        default:
+            return @"string";
+    }
 }
 
 - (void)startDownload {

@@ -48,6 +48,7 @@
 #import "SPAppController.h"
 #import "SPSplitView.h"
 #import "SPThreadAdditions.h"
+#import "SPDebugLogger.h"
 #import "SPFunctions.h"
 #import "SPCharsetCollationHelper.h"
 #import "SPConstants.h"
@@ -334,7 +335,12 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
             [tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeNone]];
 
             for (NSDictionary *eachRow in theResult) {
-                [tables addObject:[eachRow objectForKey:@"routine_name"]];
+                id routineName = [eachRow objectForKey:@"routine_name"];
+                if (routineName && ![routineName isKindOfClass:[NSNull class]]) {
+                    [tables addObject:routineName];
+                } else {
+                    [tables addObject:@"<unknown>"];
+                }
                 if([[eachRow objectForKey:@"routine_type"] isNSNull] == NO ){
                     if ([[eachRow objectForKey:@"routine_type"] isEqualToString:@"PROCEDURE"]) {
                         [tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeProc]];
@@ -1890,7 +1896,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	
 	selectedTableName = [[NSString alloc] initWithString:newName];
 	selectedTableType = newType;
-	
+
+	[SPDebugLogger log:@"[STEP 1] Table selected: %@, type: %ld", selectedTableName, (long)selectedTableType];
+
 	[tableDocumentInstance loadTable:selectedTableName ofType:selectedTableType];
 
 	if ([[SPNavigatorController sharedNavigatorController] syncMode]) {

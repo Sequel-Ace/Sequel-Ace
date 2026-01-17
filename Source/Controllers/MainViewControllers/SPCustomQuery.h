@@ -45,6 +45,7 @@
 @class SPFieldEditorController;
 @class SPPostgresConnection;
 @class SPPostgresResult;
+@class SPPostgresStreamingResultStore;
 @class SPTextView;
 @class SPDatabaseDocument;
 @class SPTablesList;
@@ -208,7 +209,7 @@
 - (NSArray *)currentResult;
 - (NSArray *)currentDataResultWithNULLs:(BOOL)includeNULLs truncateDataFields:(BOOL)truncate;
 - (NSUInteger)currentResultRowCount;
-- (void)updateResultStore:(SPPostgresResult *)theResultStore;
+- (void)updateResultStore:(SPPostgresStreamingResultStore *)theResultStore;
 
 // Retrieving and setting table state
 - (void)updateTableView;

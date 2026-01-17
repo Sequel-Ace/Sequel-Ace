@@ -601,11 +601,18 @@ static unsigned short getRandomPort(void);
 		}
 
 		// On tunnel close, clean up, ready for re-use if the delegate reconnects.
-		
-		
+
+		// Close the file handle to stop pending notifications before removing observer
+		if (standardError) {
+			[[standardError fileHandleForReading] closeFile];
+		}
+
 		[[NSNotificationCenter defaultCenter] removeObserver:self
 		                                                name:NSFileHandleDataAvailableNotification
-		                                              object:nil];
+		                                              object:[standardError fileHandleForReading]];
+
+		// Release the pipe
+		standardError = nil;
 
 		// If the task closed unexpectedly, alert appropriately
 		if (connectionState != SPPostgresProxyIdle) {
@@ -663,7 +670,7 @@ static unsigned short getRandomPort(void);
             [task SPterminate];
         }
         SPLog(@"Nilling out task");
-//        task = nil;
+        task = nil;
     }
 }
 
@@ -734,8 +741,8 @@ static unsigned short getRandomPort(void);
 		}
 	}
 
-	if (connectionState != SPPostgresProxyIdle) {
-		[[standardError fileHandleForReading] waitForDataInBackgroundAndNotify]; // TODO: leaks
+	if (connectionState != SPPostgresProxyIdle && standardError && task && [task isRunning]) {
+		[[standardError fileHandleForReading] waitForDataInBackgroundAndNotify];
 	}
 }
 
@@ -937,14 +944,21 @@ static unsigned short getRandomPort(void);
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[self disconnect];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self];
-	
+
+	// Explicit cleanup of task and pipe
+	if (standardError) {
+		[[standardError fileHandleForReading] closeFile];
+		standardError = nil;
+	}
+	task = nil;
+
 	[tunnelConnection invalidate];
-	
+
 	[self setLastError:nil];
-	
+
 	[answerAvailableLock tryLock];
 	[answerAvailableLock unlock];
-    
+
     NSLog(@"Dealloc called %s", __FILE_NAME__);
 }
 

@@ -3291,7 +3291,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			NSString *desc = [anObject description];
 			if ( [desc isMatchedByRegex:SPCurrentTimestampPattern] ) {
 				newObject = desc;
-			} else if([anObject isEqualToString:[prefs stringForKey:SPNullValue]]) {
+			} else if([desc isEqualToString:[prefs stringForKey:SPNullValue]]) {
 				newObject = @"NULL";
 			} else if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"geometry"]) {
 				newObject = [(NSString*)anObject getGeomFromTextString];
@@ -4043,7 +4043,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
                 // noop -- object should already be in correct format based on Formatter handling.
             }
             // legacy handling:
-            else if ([object isEqualToString:[prefs objectForKey:SPNullValue]] && [[column objectForKey:@"null"] boolValue]) {
+            else if ([object isKindOfClass:[NSString class]] && [object isEqualToString:[prefs objectForKey:SPNullValue]] && [[column objectForKey:@"null"] boolValue]) {
                 object = [NSNull null];
             }
             else if ([self cellValueIsDisplayedAsHexForColumn:columnIndex]) {

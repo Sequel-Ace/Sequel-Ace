@@ -944,15 +944,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			}
 
 		}
+		// PostgreSQL doesnt support UNSIGNED or ZEROFILL - these are MySQL-only keywords
+		// The else-if block for numeric types is intentionally empty for PostgreSQL compatibility
 		else if ([fieldValidation isFieldTypeNumeric:theRowType] && (![theRowType isEqualToString:@"BIT"])) {
-
-			if ([[theRow objectForKey:@"unsigned"] integerValue] == 1) {
-				[queryString appendString:@"\n UNSIGNED"];
-			}
-
-			if ( [[theRow objectForKey:@"zerofill"] integerValue] == 1) {
-				[queryString appendString:@"\n ZEROFILL"];
-			}
+			// UNSIGNED and ZEROFILL generation removed for PostgreSQL compatibility
 		}
 
         // Don't provide NULL / NOT NULL for generated field

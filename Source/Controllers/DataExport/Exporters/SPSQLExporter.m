@@ -39,6 +39,7 @@
 #import "SPFunctions.h"
 
 #import "SPPostgresConnection.h"
+#import "SPPostgresStreamingResultStore.h"
 #import "SPPostgresGeometryData.h"
 #include <stdlib.h>
 

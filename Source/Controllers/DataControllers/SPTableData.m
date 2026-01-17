@@ -531,7 +531,9 @@
         [col setObject:[row objectForKey:@"character_maximum_length"] ?: @"" forKey:@"length"];
         [col setObject:[[row objectForKey:@"is_nullable"] isEqualToString:@"YES"] ? @"1" : @"0" forKey:@"null"];
         [col setObject:[row objectForKey:@"column_default"] ?: @"" forKey:@"default"];
-        [col setObject:[row objectForKey:@"ordinal_position"] ?: @"0" forKey:@"datacolumnindex"];
+        // PostgreSQL ordinal_position is 1-indexed, convert to 0-indexed for array access
+        NSInteger ordinalPosition = [[row objectForKey:@"ordinal_position"] integerValue];
+        [col setObject:@(ordinalPosition > 0 ? ordinalPosition - 1 : 0) forKey:@"datacolumnindex"];
         
         // Add typegrouping for PostgreSQL types
         NSString *dataType = [[row objectForKey:@"data_type"] lowercaseString] ?: @"";
@@ -1095,7 +1097,8 @@
     NSMutableDictionary *statusDict = [NSMutableDictionary dictionary];
 
     if ([tableListInstance tableType] == SPTableTypeTable) {
-        NSString *query = [NSString stringWithFormat:@"SELECT c.reltuples::bigint AS \"Rows\", pg_total_relation_size(c.oid) AS \"Data_length\", 'PostgreSQL' AS \"Engine\" FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = '%@' AND c.relname = '%@'", schema, tableName];
+        // Use GREATEST to clamp reltuples to 0 - PostgreSQL returns -1 for unanalyzed tables
+        NSString *query = [NSString stringWithFormat:@"SELECT GREATEST(c.reltuples::bigint, 0) AS \"Rows\", pg_total_relation_size(c.oid) AS \"Data_length\", 'PostgreSQL' AS \"Engine\" FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = '%@' AND c.relname = '%@'", schema, tableName];
         
         SPPostgresResult *res = [postgresConnection queryString:query];
         if ([res numberOfRows] > 0) {

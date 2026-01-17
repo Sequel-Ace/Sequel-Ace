@@ -56,6 +56,7 @@
 #import "SPHelpViewerClient.h"
 #import "SPHelpViewerController.h"
 #import "SPBundleManager.h"
+#import "SPPostgresStreamingResultStore.h"
 
 #import <pthread.h>
 #import "SPPostgresConnection.h"
@@ -753,7 +754,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 {
     @autoreleasepool {
         NSArray                     *queries        = [taskArguments objectForKey:@"queries"];
-        SPPostgresResult            *resultStore    = nil;
+        SPPostgresStreamingResultStore *resultStore = nil;
         NSMutableString             *errors         = [NSMutableString string];
         SEL                          callbackMethod = NULL;
         NSString                    *taskButtonString;
@@ -831,32 +832,45 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             if (totalQueriesRun == queryCount || [postgresConnection lastQueryWasCancelled]) {
                 
                 // Retrieve and cache the column definitions for the result array
+                NSLog(@"[PG-DEBUG] SPCustomQuery: Getting fieldDefinitions from resultStore");
                 cqColumnDefinition = [resultStore fieldDefinitions];
-                
+                NSLog(@"[PG-DEBUG] SPCustomQuery: Got %lu column definitions", (unsigned long)[cqColumnDefinition count]);
+
                 if(!reloadingExistingResult) {
+                    NSLog(@"[PG-DEBUG] SPCustomQuery: Calling updateTableView on main thread");
                     [[self onMainThread] updateTableView];
+                    NSLog(@"[PG-DEBUG] SPCustomQuery: updateTableView dispatched");
                 }
-                
+
                 // Find result table name for copying as SQL INSERT.
                 // If more than one table name is found set resultTableName to nil.
-                // resultTableName will be set to the original table name (not defined via AS) provided by mysql return
+                // resultTableName will be set to the original table name (not defined via AS) provided by postgres return
                 // and the resultTableName can differ due to case-sensitive/insensitive settings!.
-                NSString *resultTableName = [[cqColumnDefinition objectAtIndex:0] objectForKey:@"org_table"];
-                for(id field in cqColumnDefinition) {
-                    if(![[field objectForKey:@"org_table"] isEqualToString:resultTableName]) {
-                        resultTableName = nil;
-                        break;
+                NSString *resultTableName = nil;
+                if ([cqColumnDefinition count] > 0) {
+                    resultTableName = [[cqColumnDefinition objectAtIndex:0] objectForKey:@"org_table"];
+                    for(id field in cqColumnDefinition) {
+                        NSString *fieldTable = [field objectForKey:@"org_table"];
+                        if(fieldTable && resultTableName && ![fieldTable isEqualToString:resultTableName]) {
+                            resultTableName = nil;
+                            break;
+                        }
                     }
                 }
-                
+                NSLog(@"[PG-DEBUG] SPCustomQuery: resultTableName=%@", resultTableName);
+
                 // Init copyTable with necessary information for copying selected rows as SQL INSERT
+                NSLog(@"[PG-DEBUG] SPCustomQuery: Calling setTableInstance");
                 [customQueryView setTableInstance:self
                                     withTableData:resultData
                                       withColumns:cqColumnDefinition
                                     withTableName:resultTableName
                                    withConnection:postgresConnection];
-                
+                NSLog(@"[PG-DEBUG] SPCustomQuery: setTableInstance done");
+
+                NSLog(@"[PG-DEBUG] SPCustomQuery: Calling updateResultStore");
                 [self updateResultStore:resultStore];
+                NSLog(@"[PG-DEBUG] SPCustomQuery: updateResultStore done");
             } else {
                 [resultStore cancelResultLoad];
             }
@@ -1141,7 +1155,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  * Processes a supplied SPPostgresResult, monitoring the load and updating
  * the data displayed during download.
  */
-- (void)updateResultStore:(SPPostgresResult *)theResultStore
+- (void)updateResultStore:(SPPostgresStreamingResultStore *)theResultStore
 {
     pthread_mutex_lock(&resultDataLock);
     // Remove all items from the table
@@ -1919,9 +1933,9 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     for (NSDictionary *columnDefinition in cqColumnDefinition) {
         theCol = [[NSTableColumn alloc] initWithIdentifier:[columnDefinition objectForKey:@"datacolumnindex"]];
         [theCol setResizingMask:NSTableColumnUserResizingMask];
-        [theCol setEditable:YES];
+        [theCol setEditable:NO];  // Query results should be read-only
         SPTextAndLinkCell *dataCell = [[SPTextAndLinkCell alloc] initTextCell:@""];
-        [dataCell setEditable:YES];
+        [dataCell setEditable:NO];  // Query results should be read-only
         [dataCell setFont:tableFont];
         
         [dataCell setLineBreakMode:NSLineBreakByTruncatingTail];
@@ -2239,7 +2253,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             NSString *desc = [anObject description];
             if ( [desc isMatchedByRegex:SPCurrentTimestampPattern] ) {
                 newObject = desc;
-            } else if ([anObject isEqualToString:[prefs stringForKey:SPNullValue]]
+            } else if ([desc isEqualToString:[prefs stringForKey:SPNullValue]]
                        || (([columnTypeGroup isEqualToString:@"float"] || [columnTypeGroup isEqualToString:@"integer"] || [columnTypeGroup isEqualToString:@"date"])
                            && [desc isEqualToString:@""]))
             {
@@ -2753,9 +2767,16 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
  */
 - (BOOL)tableView:(NSTableView *)aTableView shouldEditTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
 {
+    // Query results should always be read-only - editing arbitrary query results
+    // is not supported as the source table may not be uniquely identifiable
+    // (e.g., JOINs, UNIONs, subqueries, aggregates)
+    if (aTableView == customQueryView) {
+        return NO;
+    }
+
     // Only allow editing if a task is not active
     if ([tableDocumentInstance isWorking]) return NO;
-    
+
     // Check if the field can identified bijectively
     if ( aTableView == customQueryView ) {
         
