@@ -67,6 +67,7 @@
 #include <stdlib.h>
 
 #import "sequel-pace-Swift.h"
+#import "SPDebugLogger.h"
 
 /**
  * This is the unique KVO context of code that resides in THIS class.
@@ -263,6 +264,12 @@ static void *TableContentKVOContext = &TableContentKVOContext;
  */
 - (void)loadTable:(NSString *)aTable
 {
+	// Clear log and start fresh for this table load
+	[SPDebugLogger clearLog];
+	[SPDebugLogger log:@"========== NEW TABLE LOAD STARTED =========="];
+	[SPDebugLogger log:@"Timestamp: %@", [NSDate date]];
+	[SPDebugLogger log:@"[STEP 5] SPTableContent.loadTable: %@", aTable];
+
 	// Abort the reload if the user is still editing a row
 	if (isEditingRow) return;
 
@@ -732,6 +739,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
  */
 - (void) loadTableValues
 {
+	[SPDebugLogger log:@"[STEP 6] loadTableValues started"];
+
 	@try {
 	// If no table is selected, return
 	if (!selectedTable) return;
@@ -741,6 +750,13 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	NSString *filterString;
 	SPPostgresResult *resultStore;
 	NSInteger rowsToLoad = [[tableDataInstance statusValueForKey:@"Rows"] integerValue];
+
+	// PostgreSQL reltuples can return -1 for unanalyzed tables - treat as 0 (unknown)
+	// This prevents -1 from becoming ULLONG_MAX when cast to NSUInteger
+	if (rowsToLoad < 0) {
+		[SPDebugLogger log:@"[DEBUG] Negative rowsToLoad detected (%ld), clamping to 0", (long)rowsToLoad];
+		rowsToLoad = 0;
+	}
 
 	[[countText onMainThread] setStringValue:NSLocalizedString(@"Loading table data...", @"Loading table data string")];
 
@@ -795,10 +811,20 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// If within a task, allow this query to be cancelled
 	[tableDocumentInstance enableTaskCancellationWithTitle:NSLocalizedString(@"Stop", @"stop button") callbackObject:nil callbackFunction:NULL];
 
+	[SPDebugLogger log:@"[STEP 7] Query: %@", queryString];
+
+	// Show the query in the status bar while loading
+	NSString *queryStringCopy = [queryString copy];
+	dispatch_async(dispatch_get_main_queue(), ^{
+		[self->countText setStringValue:[NSString stringWithFormat:@"Executing: %@", queryStringCopy]];
+	});
+
 	// Perform and process the query
 	[tableContentView performSelectorOnMainThread:@selector(noteNumberOfRowsChanged) withObject:nil waitUntilDone:YES];
 	[self setUsedQuery:queryString];
+	[SPDebugLogger log:@"[STEP 8] Executing query..."];
 	resultStore = [postgresConnection resultStoreFromQueryString:queryString];
+	[SPDebugLogger log:@"[STEP 9] Query returned, resultStore=%@", resultStore];
 
 	// Ensure the number of columns are unchanged; if the column count has changed, abort the load
 	// and queue a full table reload.
@@ -994,10 +1020,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
  */
 - (void)updateResultStore:(SPPostgresResult *)theResultStore approximateRowCount:(NSUInteger)targetRowCount
 {
+	[SPDebugLogger log:@"[STEP 10] updateResultStore started, rowCount=%lu", (unsigned long)targetRowCount];
+
 	NSUInteger i;
 	NSUInteger numberOfRows = [theResultStore numberOfRows];
 	NSUInteger numberOfColumns = [theResultStore numberOfFields];
-	
+
 	// Lock the table values
 	pthread_mutex_lock(&tableValuesLock);
 
@@ -1006,10 +1034,18 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// Update the row count
 	tableRowsCount = numberOfRows;
 	
-	// If the number of rows is 0, clear the table values and unlock
+	// If the number of rows is 0, clear the table values, update UI, and unlock
 	if (numberOfRows == 0) {
-		[self clearTableValues];
+		// Clear values directly (don't call clearTableValues which tries to lock again)
+		tableRowsCount = 0;
+		tableValues = [[SPDataStorage alloc] init];
+		[tableContentView setTableData:tableValues];
 		pthread_mutex_unlock(&tableValuesLock);
+
+		// Update UI for empty results
+		SPMainQSync(^{
+			[self->tableContentView noteNumberOfRowsChanged];
+		});
 		return;
 	}
 	
@@ -1028,15 +1064,24 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	tableLoadTargetRowCount = targetRowCount;
 
 	// Update the data storage, updating the current store if appropriate
+	[SPDebugLogger log:@"[STEP 11] Calling setDataStorage"];
 	pthread_mutex_lock(&tableValuesLock);
 	tableRowsCount = 0;
 	[tableValues setDataStorage:theResultStore updatingExisting:!![tableValues count]];
 	pthread_mutex_unlock(&tableValuesLock);
 
 	// Start the data downloading
+	[SPDebugLogger log:@"[STEP 12] Calling startDownload"];
     SPLog(@"SPTableContent: Calling startDownload");
 	[theResultStore startDownload];
+	[SPDebugLogger log:@"[STEP 13] startDownload returned, dataDownloaded=%d", [theResultStore dataDownloaded]];
     SPLog(@"SPTableContent: startDownload returned");
+
+	// Ensure the signal is sent if data is already downloaded (fixes race condition)
+	if ([theResultStore dataDownloaded]) {
+		SPLog(@"SPTableContent: Data already downloaded, sending explicit signal");
+		[tableValues resultStoreDidFinishLoadingData:theResultStore];
+	}
 
 	NSProgressIndicator *dataLoadingIndicator = tableDocumentInstance->queryProgressBar;
 
@@ -1050,11 +1095,19 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 
 	// Set up the table updates timer and wait for it to notify this thread about completion
+	[SPDebugLogger log:@"[STEP 14] About to init timer on main thread"];
     SPLog(@"SPTableContent: Configuring timer");
-	[[self onMainThread] initTableLoadTimer];
+	// Initialize timer synchronously using SPMainQSync (has 10s timeout to prevent deadlock)
+	// Timer MUST be initialized before awaitDataDownloaded is called
+	SPMainQSync(^{
+		[self initTableLoadTimer];
+	});
+	[SPDebugLogger log:@"[STEP 15] Timer initialized"];
 
+	[SPDebugLogger log:@"[STEP 16] Calling awaitDataDownloaded..."];
     SPLog(@"SPTableContent: Awaiting data downloaded...");
 	[tableValues awaitDataDownloaded];
+	[SPDebugLogger log:@"[STEP 17] awaitDataDownloaded returned!"];
     SPLog(@"SPTableContent: Data downloaded signal received.");
 
 	SPMainQSync(^{
