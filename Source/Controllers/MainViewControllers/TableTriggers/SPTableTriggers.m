@@ -207,7 +207,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 		[connection queryString:queryDelete];
 		
 		if ([connection queryErrored]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete trigger", @"error deleting trigger message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected trigger couldn't be deleted.\n\nPostgreSQL said: %@", @"error deleting trigger informative message"), [connection lastErrorMessage]] callback:^{
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete trigger", @"error deleting trigger message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected trigger couldn't be deleted.\n\nPostgreSQL said: %@", @"error deleting trigger informative message"), [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")] callback:^{
 
 				[self performSelector:@selector(_openTriggerSheet) withObject:nil afterDelay:0.0];
 			}];
@@ -314,7 +314,7 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
 				[self->connection queryString:query];
 
 				if ([self->connection queryErrored]) {
-					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete trigger", @"error deleting trigger message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected trigger couldn't be deleted.\n\nPostgreSQL said: %@", @"error deleting trigger informative message"), [self->connection lastErrorMessage]] callback:nil];
+					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete trigger", @"error deleting trigger message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected trigger couldn't be deleted.\n\nPostgreSQL said: %@", @"error deleting trigger informative message"), [self->connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")] callback:nil];
 					// Abort loop
 					*stop = YES;
 				}

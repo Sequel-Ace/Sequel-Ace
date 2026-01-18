@@ -37,8 +37,8 @@
  * This is the client side of the Help Viewer window, i.e. this class
  * can be instantiated from within an xib file as a custom object.
  *
- * It also contains the logic to look up the help in the mysql database
- * using the mySQLConnection (which does not belong into the Help Viewer's
+ * It also contains the logic to look up the help from PostgreSQL documentation
+ * using the postgresConnection (which does not belong into the Help Viewer's
  * window controller).
  *
  * Notifications posted:

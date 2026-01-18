@@ -862,7 +862,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	if (!fullTableReloadRequired && [prefs boolForKey:SPLimitResults] && queryStringBeforeLimit && !tableRowsCount && ![postgresConnection lastQueryWasCancelled]) {
 		contentPage = 1;
 		previousTableRowsCount = tableRowsCount;
-		queryString = [NSMutableString stringWithFormat:@"%@ LIMIT 0,%ld", queryStringBeforeLimit, (long)[prefs integerForKey:SPLimitResultsValue]];
+		// PostgreSQL uses LIMIT count OFFSET offset syntax instead of MySQL's LIMIT offset, count
+		queryString = [NSMutableString stringWithFormat:@"%@ LIMIT %ld OFFSET 0", queryStringBeforeLimit, (long)[prefs integerForKey:SPLimitResultsValue]];
 		[self setUsedQuery:queryString];
 		resultStore = [postgresConnection resultStoreFromQueryString:queryString];
 		if (resultStore) {
@@ -976,10 +977,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		if(activeFilter == SPTableContentFilterSourceRuleFilter || activeFilter == SPTableContentFilterSourceNone) {
 			NSString *errorDetail;
 			if([filterString length]){
-				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded presumably due to used filter clause. \n\nPostgreSQL said: %@", @"message of panel when loading of table failed and presumably due to used filter argument"), [postgresConnection lastErrorMessage]];
+				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded presumably due to used filter clause. \n\nPostgreSQL said: %@", @"message of panel when loading of table failed and presumably due to used filter argument"), [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")];
 			}
 			else{
-				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded.\n\nPostgreSQL said: %@", @"message of panel when loading of table failed"), [postgresConnection lastErrorMessage]];
+				errorDetail = [NSString stringWithFormat:NSLocalizedString(@"The table data couldn't be loaded.\n\nPostgreSQL said: %@", @"message of panel when loading of table failed"), [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")];
 				SPMainQSync(^{
 					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:errorDetail callback:nil];
 				});
@@ -1564,7 +1565,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		[self loadTableValues];
 
 		if ([postgresConnection queryErrored] && ![postgresConnection lastQueryWasCancelled]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't sort table. PostgreSQL said: %@", @"message of panel when sorting of table failed"), [postgresConnection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't sort table. PostgreSQL said: %@", @"message of panel when sorting of table failed"), [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")] callback:nil];
 
 			[tableDocumentInstance endTask];
 			return;
@@ -1702,7 +1703,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// Check the table/view columns and select only those coming from the supplied database and table
 	NSMutableArray *columnsInSpecifiedTable = [NSMutableArray array];
 	for(field in cqColumnDefinition) {
-		if([[field objectForKey:@"db"] isEqualToString:database] && [[field objectForKey:@"org_table"] isEqualToString:tableForColumn])
+		id dbValue = [field objectForKey:@"db"];
+		id orgTableValue = [field objectForKey:@"org_table"];
+		if(([dbValue isKindOfClass:[NSString class]] && [dbValue isEqualToString:database]) &&
+		   ([orgTableValue isKindOfClass:[NSString class]] && [orgTableValue isEqualToString:tableForColumn]))
 			[columnsInSpecifiedTable addObject:field];
 	}
 
@@ -1716,9 +1720,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	[theResult setReturnDataAsStrings:YES];
 	NSMutableArray *primaryColumnsInSpecifiedTable = [NSMutableArray array];
 	for (NSDictionary *eachRow in theResult) {
-		if ( [[eachRow objectForKey:@"Key"] isEqualToString:@"PRI"] ) {
+		id keyValue = [eachRow objectForKey:@"Key"];
+		if ([keyValue isKindOfClass:[NSString class]] && [keyValue isEqualToString:@"PRI"]) {
 			for (field in columnsInSpecifiedTable) {
-				if([[field objectForKey:@"org_name"] isEqualToString:[eachRow objectForKey:@"Field"]]) {
+				id orgNameValue = [field objectForKey:@"org_name"];
+				id fieldValue = [eachRow objectForKey:@"Field"];
+				if([orgNameValue isKindOfClass:[NSString class]] && [fieldValue isKindOfClass:[NSString class]] && [orgNameValue isEqualToString:fieldValue]) {
 					[primaryColumnsInSpecifiedTable addObject:field];
 				}
 			}
@@ -1734,23 +1741,27 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		if ([aValue isNSNull]) {
 			[argumentParts addObject:[NSString stringWithFormat:@"%@ IS NULL", [[field objectForKey:@"org_name"] postgresQuotedIdentifier]]];
 		} else {
-			NSString *fieldTypeGrouping = [field objectForKey:@"typegrouping"];
+			id fieldTypeGroupingValue = [field objectForKey:@"typegrouping"];
+			id typeValue = [field objectForKey:@"type"];
+			BOOL isTextData = [fieldTypeGroupingValue isKindOfClass:[NSString class]] && [fieldTypeGroupingValue isEqualToString:@"textdata"];
+			BOOL isBlobData = [fieldTypeGroupingValue isKindOfClass:[NSString class]] && [fieldTypeGroupingValue isEqualToString:@"blobdata"];
+			BOOL isBinaryType = [typeValue isKindOfClass:[NSString class]] &&
+				([typeValue isEqualToString:@"BYTEA"]); // PostgreSQL binary type
 
 			// Skip blob-type fields if requested
-			if (!includeBlobs
-				&& ([fieldTypeGrouping isEqualToString:@"textdata"]
-					||  [fieldTypeGrouping isEqualToString:@"blobdata"]
-					|| [[field objectForKey:@"type"] isEqualToString:@"BINARY"]
-					|| [[field objectForKey:@"type"] isEqualToString:@"VARBINARY"]))
+			if (!includeBlobs && (isTextData || isBlobData || isBinaryType))
 			{
 				continue;
 			}
 
+			BOOL isBitType = [fieldTypeGroupingValue isKindOfClass:[NSString class]] && [fieldTypeGroupingValue isEqualToString:@"bit"];
+			BOOL isGeometryType = [fieldTypeGroupingValue isKindOfClass:[NSString class]] && [fieldTypeGroupingValue isEqualToString:@"geometry"];
+
 			// If the field is of type BIT then it needs a binary prefix
-			if ([fieldTypeGrouping isEqualToString:@"bit"]) {
+			if (isBitType) {
 				[argumentParts addObject:[NSString stringWithFormat:@"%@=b'%@'", [[field objectForKey:@"org_name"] postgresQuotedIdentifier], [aValue description]]];
 			}
-			else if ([fieldTypeGrouping isEqualToString:@"geometry"]) {
+			else if (isGeometryType) {
 				[argumentParts addObject:[NSString stringWithFormat:@"%@=%@", [[field objectForKey:@"org_name"] postgresQuotedIdentifier], [postgresConnection escapeAndQuoteData:[aValue data]]]];
 			}
 			// BLOB/TEXT data
@@ -1783,20 +1794,23 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	if ( ![self saveRowOnDeselect] ) return;
 
 	for (NSDictionary *column in dataColumns) {
-		if ([column objectForKey:@"default"] == nil || [[column objectForKey:@"default"] isNSNull]) {
+		id defaultValue = [column objectForKey:@"default"];
+		id typeGrouping = [column objectForKey:@"typegrouping"];
+		BOOL isEmptyDefault = [defaultValue isKindOfClass:[NSString class]] && [defaultValue isEqualToString:@""];
+		BOOL isNumericType = [typeGrouping isKindOfClass:[NSString class]] &&
+			([typeGrouping isEqualToString:@"float"] || [typeGrouping isEqualToString:@"integer"] || [typeGrouping isEqualToString:@"bit"]);
+		BOOL isBitType = [typeGrouping isKindOfClass:[NSString class]] && [typeGrouping isEqualToString:@"bit"];
+		BOOL hasDefaultBitPrefix = [defaultValue isKindOfClass:[NSString class]] && [defaultValue hasPrefix:@"b'"] && [(NSString*)defaultValue length] > 3;
+
+		if (defaultValue == nil || [defaultValue isNSNull]) {
 			[newRow addObject:[NSNull null]];
-		} else if ([[column objectForKey:@"default"] isEqualToString:@""]
-					&& ![[column objectForKey:@"null"] boolValue]
-					&& ([[column objectForKey:@"typegrouping"] isEqualToString:@"float"]
-						|| [[column objectForKey:@"typegrouping"] isEqualToString:@"integer"]
-						|| [[column objectForKey:@"typegrouping"] isEqualToString:@"bit"]))
-		{
+		} else if (isEmptyDefault && ![[column objectForKey:@"null"] boolValue] && isNumericType) {
 			[newRow addObject:@"0"];
-		} else if ([[column objectForKey:@"typegrouping"] isEqualToString:@"bit"] && [[column objectForKey:@"default"] hasPrefix:@"b'"] && [(NSString*)[column objectForKey:@"default"] length] > 3) {
+		} else if (isBitType && hasDefaultBitPrefix) {
 			// remove leading b' and final '
-			[newRow addObject:[[[column objectForKey:@"default"] substringFromIndex:2] substringToIndex:[(NSString*)[column objectForKey:@"default"] length]-3]];
+			[newRow addObject:[[defaultValue substringFromIndex:2] substringToIndex:[(NSString*)defaultValue length]-3]];
 		} else {
-			[newRow addObject:[column objectForKey:@"default"]];
+			[newRow addObject:defaultValue];
 		}
 	}
 	[tableValues addRowWithContents:newRow];
@@ -1854,18 +1868,27 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		dbDataRow = [queryResult getRowAsArray];
 	}
 
-	// Set autoincrement fields to NULL
-	queryResult = [postgresConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [selectedTable postgresQuotedIdentifier]]];
-	
+	// Set autoincrement fields (SERIAL/IDENTITY in PostgreSQL) to NULL
+	// PostgreSQL equivalent: Query information_schema and check column_default for nextval (SERIAL columns)
+	queryResult = [postgresConnection queryString:[NSString stringWithFormat:
+		@"SELECT column_name AS \"Field\", data_type AS \"Type\", "
+		@"CASE WHEN is_nullable = 'YES' THEN 'YES' ELSE 'NO' END AS \"Null\", "
+		@"column_default AS \"Default\", "
+		@"CASE WHEN column_default LIKE 'nextval%%' THEN 'auto_increment' ELSE '' END AS \"Extra\" "
+		@"FROM information_schema.columns "
+		@"WHERE table_schema = 'public' AND table_name = %@",
+		[selectedTable tickQuotedString]]];
+
 	[queryResult setReturnDataAsStrings:YES];
-	
-	for (i = 0; i < [queryResult numberOfRows]; i++) 
+
+	for (i = 0; i < [queryResult numberOfRows]; i++)
 	{
 		row = [queryResult getRowAsDictionary];
-		
-		if ([[row objectForKey:@"Extra"] isEqualToString:@"auto_increment"]) {
+
+		id extraValue = [row objectForKey:@"Extra"];
+		if ([extraValue isKindOfClass:[NSString class]] && [extraValue isEqualToString:@"auto_increment"]) {
 			[tempRow replaceObjectAtIndex:i withObject:[NSNull null]];
-		} 
+		}
 		else if ([tableDataInstance columnIsBlobOrText:[row objectForKey:@"Field"]] &&
 				[prefs boolForKey:SPLoadBlobsAsNeeded]
 				&& dbDataRow) {
@@ -2488,9 +2511,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			id targetFilterValue = [self->tableValues cellDataAtRow:[theArrowCell getClickedRow] column:dataColumnIndex];
 
 			//when navigating binary relations (eg. raw UUID) do so via a hex-encoded value for charset safety
-			BOOL navigateAsHex = ([targetFilterValue isKindOfClass:[NSData class]] && [[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"binary"]);
+			id typeGroupingValue = [columnDefinition objectForKey:@"typegrouping"];
+			id collationValue = [columnDefinition objectForKey:@"collation"];
+			BOOL isBinaryType = [typeGroupingValue isKindOfClass:[NSString class]] && [typeGroupingValue isEqualToString:@"binary"];
+			BOOL navigateAsHex = ([targetFilterValue isKindOfClass:[NSData class]] && isBinaryType);
 			if(navigateAsHex) targetFilterValue = [self->postgresConnection escapeData:(NSData *)targetFilterValue includingQuotes:NO];
-            else if ([targetFilterValue isKindOfClass:[NSData class]] && [[columnDefinition objectForKey:@"collation"] hasSuffix:@"_bin"]) {
+            else if ([targetFilterValue isKindOfClass:[NSData class]] && [collationValue isKindOfClass:[NSString class]] && [collationValue hasSuffix:@"_bin"]) {
                 targetFilterValue = [(NSData *)targetFilterValue stringRepresentationUsingEncoding:[self->postgresConnection stringEncoding]];
             }
 
@@ -2648,7 +2674,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         isSavingRow = NO;
 		return YES;
 	} else { // Report errors which have occurred
-		[NSAlert createAlertWithTitle:NSLocalizedString(@"Unable to write row", @"Unable to write row error") message:[NSString stringWithFormat:NSLocalizedString(@"PostgreSQL said:\n\n%@", @"message of panel when error while adding row to db"), [postgresConnection lastErrorMessage]] primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") secondaryButtonTitle:NSLocalizedString(@"Discard changes", @"discard changes button") primaryButtonHandler:^{
+		[NSAlert createAlertWithTitle:NSLocalizedString(@"Unable to write row", @"Unable to write row error") message:[NSString stringWithFormat:NSLocalizedString(@"PostgreSQL said:\n\n%@", @"message of panel when error while adding row to db"), [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")] primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") secondaryButtonTitle:NSLocalizedString(@"Discard changes", @"discard changes button") primaryButtonHandler:^{
 			[self->tableContentView selectRowIndexes:[NSIndexSet indexSetWithIndex:self->currentlyEditingRow] byExtendingSelection:NO];
 			[self->tableContentView performSelector:@selector(keyDown:) withObject:[NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[self->tableContentView window] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x24] afterDelay:0.0];
 			[self->tableContentView reloadData];
@@ -2966,7 +2992,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		}
 		[theResult setReturnDataAsStrings:YES];
 		for (NSDictionary *eachRow in theResult) {
-			if ( [[eachRow objectForKey:@"Key"] isEqualToString:@"PRI"] ) {
+			id keyValue = [eachRow objectForKey:@"Key"];
+			if ([keyValue isKindOfClass:[NSString class]] && [keyValue isEqualToString:@"PRI"]) {
 				[keys addObject:[eachRow objectForKey:@"Field"]];
 			}
 		}
@@ -3289,15 +3316,20 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			newObject = [postgresConnection escapeAndQuoteData:anObject];
 		} else {
 			NSString *desc = [anObject description];
+			id typeGroupingValue = [columnDefinition objectForKey:@"typegrouping"];
+			BOOL isGeometry = [typeGroupingValue isKindOfClass:[NSString class]] && [typeGroupingValue isEqualToString:@"geometry"];
+			BOOL isBit = [typeGroupingValue isKindOfClass:[NSString class]] && [typeGroupingValue isEqualToString:@"bit"];
+			BOOL isDate = [typeGroupingValue isKindOfClass:[NSString class]] && [typeGroupingValue isEqualToString:@"date"];
+
 			if ( [desc isMatchedByRegex:SPCurrentTimestampPattern] ) {
 				newObject = desc;
 			} else if([desc isEqualToString:[prefs stringForKey:SPNullValue]]) {
 				newObject = @"NULL";
-			} else if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"geometry"]) {
+			} else if (isGeometry) {
 				newObject = [(NSString*)anObject getGeomFromTextString];
-			} else if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"bit"]) {
+			} else if (isBit) {
 				newObject = [NSString stringWithFormat:@"b'%@'", ((![desc length] || [desc isEqualToString:@"0"]) ? @"0" : desc)];
-			} else if ([[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"date"] && [desc isEqualToString:@"NOW()"]) {
+			} else if (isDate && [desc isEqualToString:@"NOW()"]) {
 				newObject = @"NOW()";
 			} else {
 				newObject = [postgresConnection escapeAndQuoteString:desc];
@@ -3311,7 +3343,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 		// Check for errors while UPDATE
 		if ([postgresConnection queryErrored]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nPostgreSQL said: %@", @"message of panel when error while updating field to db"), [postgresConnection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nPostgreSQL said: %@", @"message of panel when error while updating field to db"), [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")] callback:nil];
 
 			[tableDocumentInstance endTask];
 			[[NSNotificationCenter defaultCenter] postNotificationName:@"SPQueryHasBeenPerformed" object:tableDocumentInstance];
@@ -4337,8 +4369,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 				allowNULL = (![[columnDefinition objectForKey:@"null"] integerValue]);
 			}
 
-			if ([columnDefinition objectForKey:@"charset_name"] && ![[columnDefinition objectForKey:@"charset_name"] isEqualToString:@"binary"]) {
-				fieldEncoding = [columnDefinition objectForKey:@"charset_name"];
+			id charsetValue = [columnDefinition objectForKey:@"charset_name"];
+			if (charsetValue && !([charsetValue isKindOfClass:[NSString class]] && [charsetValue isEqualToString:@"binary"])) {
+				fieldEncoding = charsetValue;
 			}
 
 			fieldEditor = [[SPFieldEditorController alloc] init];
@@ -4373,7 +4406,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 			for (NSTableColumn* col in [tableContentView tableColumns])
 			{
-				if ([[col identifier] isEqualToString:[tableColumn identifier]]) break;
+				if ([[col identifier] isEqual:[tableColumn identifier]]) break;
 
 				editedColumn++;
 			}

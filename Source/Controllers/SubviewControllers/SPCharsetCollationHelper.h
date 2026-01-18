@@ -123,7 +123,7 @@
  * If the user picks ANY item below the line (thus making the charset explicit) both the defaultCollation
  * and the defaultCollationFormatString no longer apply and the item at the top of
  * the collation list will be the global default for the given charset (not the inherited one)
- * and named "Default (...)", because that is how MySQL applies the settings.
+ * and named "Default (...)", because that is how PostgreSQL applies the settings.
  */
 @property(readwrite,copy) NSString *defaultCollationFormatString;
 

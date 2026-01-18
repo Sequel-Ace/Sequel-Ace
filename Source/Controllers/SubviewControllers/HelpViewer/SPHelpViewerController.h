@@ -33,7 +33,7 @@
 
 //private
 typedef NS_ENUM(NSUInteger, HelpTarget) {
-	HelpTargetMySQL = 0,
+	HelpTargetPostgres = 0,
 	HelpTargetPage = 1,
 	HelpTargetWeb = 2,
 };
@@ -54,7 +54,7 @@ NSString * const SPUserClosedHelpViewerNotification;
 @required
 /**
  * When called with a search string this method should open the user's default browser
- * with an URL to the MySQL online manual for the page that explains the search string.
+ * with an URL to the PostgreSQL online documentation for the page that explains the search string.
  */
 - (void)openOnlineHelpForTopic:(NSString *)searchString;
 
@@ -70,7 +70,7 @@ NSString * const SPUserClosedHelpViewerNotification;
 @end
 
 /**
- * This is the window controller class for the MySQL Help Viewer panel.
+ * This is the window controller class for the PostgreSQL Help Viewer panel.
  *
  * See SPHelpViewerClient for the class that provides data for this controller and which
  * can be instantiated from within an XIB.

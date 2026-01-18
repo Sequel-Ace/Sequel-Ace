@@ -53,7 +53,7 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 - (IBAction)helpSearchFindNextInPage:(id)sender;
 - (IBAction)helpSearchFindPreviousInPage:(id)sender;
 - (IBAction)helpTargetDispatcher:(id)sender;
-- (IBAction)helpSelectHelpTargetMySQL:(id)sender;
+- (IBAction)helpSelectHelpTargetPostgres:(id)sender;
 - (IBAction)helpSelectHelpTargetPage:(id)sender;
 - (IBAction)helpSelectHelpTargetWeb:(id)sender;
 
@@ -151,7 +151,7 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 }
 
 #pragma mark -
-#pragma mark MySQL Help
+#pragma mark PostgreSQL Help
 
 /**
  * Show the data for "HELP 'searchString'".
@@ -178,9 +178,9 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 			[helpNavigator setEnabled:([[helpWebView backForwardList] forwardListCount] != 0) forSegment:HelpNavButtonGoForward];
 		}
 
-		// set default to search in MySQL help
-		helpTarget = HelpTargetMySQL;
-		[helpTargetSelector setSelectedSegment:HelpTargetMySQL];
+		// set default to search in PostgreSQL help
+		helpTarget = HelpTargetPostgres;
+		[helpTargetSelector setSelectedSegment:HelpTargetPostgres];
 		[self helpTargetValidation];
 
 		// show Help window
@@ -219,7 +219,7 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 			if(![searchString length]) break;
 			[dataSource openOnlineHelpForTopic:searchString];
 			break;
-		case HelpTargetMySQL:
+		case HelpTargetPostgres:
 			[self showHelpFor:searchString addToHistory:YES calledByAutoHelp:NO];
 			break;
 	}
@@ -234,7 +234,7 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 }
 
 /**
- * Show MySQL's online documentation for the selected text in the webview
+ * Show PostgreSQL's online documentation for the selected text in the webview
  */
 - (IBAction)searchInDocForWebViewSelection:(id)sender
 {
@@ -288,10 +288,10 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 /**
  * Set helpTarget according user choice via mouse and keyboard short-cuts.
  */
-- (IBAction)helpSelectHelpTargetMySQL:(id)sender
+- (IBAction)helpSelectHelpTargetPostgres:(id)sender
 {
-	helpTarget = HelpTargetMySQL;
-	[helpTargetSelector setSelectedSegment:HelpTargetMySQL];
+	helpTarget = HelpTargetPostgres;
+	[helpTargetSelector setSelectedSegment:HelpTargetPostgres];
 	[self helpTargetValidation];
 }
 
@@ -325,7 +325,7 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 		case HelpTargetWeb:
 			[helpSearchFieldCell setSendsWholeSearchString:YES];
 			break;
-		case HelpTargetMySQL:
+		case HelpTargetPostgres:
 			[helpSearchFieldCell setSendsWholeSearchString:NO];
 			break;
 	}
@@ -343,7 +343,7 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 
 /**
  * Link detector: If user clicked at an http link open it in the default browser,
- * otherwise search for it in the MySQL help. Additionally handle back/forward events from
+ * otherwise search for it in the PostgreSQL help. Additionally handle back/forward events from
  * keyboard and context menu.
  */
 - (void)webView:(WebView *)webView decidePolicyForNavigationAction:(NSDictionary *)actionInformation request:(NSURLRequest *)request frame:(WebFrame *)frame decisionListener:(id<WebPolicyDecisionListener>)listener
@@ -431,20 +431,20 @@ static void *HelpViewerControllerKVOContext = &HelpViewerControllerKVOContext;
 	    && ![[element objectForKey:@"WebElementLinkIsLive"] boolValue])
 	{
 
-		NSMenuItem *searchInMySQL;
-		NSMenuItem *searchInMySQLonline;
+		NSMenuItem *searchInPostgres;
+		NSMenuItem *searchInPostgresOnline;
 
 		[webViewMenuItems insertObject:[NSMenuItem separatorItem] atIndex:0];
 
-		searchInMySQLonline = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Search in PostgreSQL Documentation", @"Search in PostgreSQL Documentation") action:@selector(searchInDocForWebViewSelection:) keyEquivalent:@""];
-		[searchInMySQLonline setEnabled:YES];
-		[searchInMySQLonline setTarget:self];
-		[webViewMenuItems insertObject:searchInMySQLonline atIndex:0];
+		searchInPostgresOnline = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Search in PostgreSQL Documentation", @"Search in PostgreSQL Documentation") action:@selector(searchInDocForWebViewSelection:) keyEquivalent:@""];
+		[searchInPostgresOnline setEnabled:YES];
+		[searchInPostgresOnline setTarget:self];
+		[webViewMenuItems insertObject:searchInPostgresOnline atIndex:0];
 
-		searchInMySQL = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Search in PostgreSQL Help", @"Search in PostgreSQL Help") action:@selector(showHelpForWebViewSelection:) keyEquivalent:@""];
-		[searchInMySQL setEnabled:YES];
-		[searchInMySQL setTarget:self];
-		[webViewMenuItems insertObject:searchInMySQL atIndex:0];
+		searchInPostgres = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Search in PostgreSQL Help", @"Search in PostgreSQL Help") action:@selector(showHelpForWebViewSelection:) keyEquivalent:@""];
+		[searchInPostgres setEnabled:YES];
+		[searchInPostgres setTarget:self];
+		[webViewMenuItems insertObject:searchInPostgres atIndex:0];
 	}
 
 	return webViewMenuItems;

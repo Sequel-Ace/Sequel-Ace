@@ -230,7 +230,7 @@ typedef enum {
 	contextInfo     = theContextInfo;
 	callerInstance  = sender;
 	_isGeometry     = ([[fieldType uppercaseString] isEqualToString:@"GEOMETRY"]) ? YES : NO;
-	_isJSON         = ([[fieldType uppercaseString] isEqualToString:SPPostgresJsonType]);
+	_isJSON         = ([[fieldType uppercaseString] isEqualToString:SPPostgresJSONType]);
 	NSString *label = [self buildLabelForField:fieldName];
 
 	if ([fieldType length] && [[fieldType uppercaseString] isEqualToString:@"BIT"]) {
@@ -277,7 +277,7 @@ typedef enum {
 		editSheetWillBeInitialized = YES;
 		encoding                   = anEncoding;
 		_isBlob                    = (!_isJSON && isFieldBlob); // we don't want the hex/image controls for JSON
-		BOOL isBinary              = ([[fieldType uppercaseString] isEqualToString:@"BINARY"] || [[fieldType uppercaseString] isEqualToString:@"VARBINARY"]);
+		BOOL isBinary              = ([[fieldType uppercaseString] isEqualToString:@"BYTEA"]); // PostgreSQL binary type
 
 		[editTextView setFont:[self selectFont]];
 		[editTextView setContinuousSpellCheckingEnabled:[prefs boolForKey:SPBlobTextEditorSpellCheckingEnabled]];

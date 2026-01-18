@@ -28,7 +28,11 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
-@interface SPTableFieldValidation : NSObject 
+/**
+ * PostgreSQL field type validation class.
+ * Provides methods to check field types against PostgreSQL-specific categories.
+ */
+@interface SPTableFieldValidation : NSObject
 {
 	NSArray *fieldTypes;
 }
@@ -38,10 +42,22 @@
  */
 @property (readwrite, strong) NSArray *fieldTypes;
 
+// Core type validation methods
 - (BOOL)isFieldTypeNumeric:(NSString *)fieldType;
+- (BOOL)isFieldTypeSerial:(NSString *)fieldType;
 - (BOOL)isFieldTypeDate:(NSString *)fieldType;
 - (BOOL)isFieldTypeGeometry:(NSString *)fieldType;
 - (BOOL)isFieldTypeString:(NSString *)fieldType;
 - (BOOL)isFieldTypeAllowBinary:(NSString *)fieldType;
+
+// PostgreSQL-specific type validation methods
+- (BOOL)isFieldTypeBoolean:(NSString *)fieldType;
+- (BOOL)isFieldTypeNetwork:(NSString *)fieldType;
+- (BOOL)isFieldTypeRange:(NSString *)fieldType;
+- (BOOL)isFieldTypeJSON:(NSString *)fieldType;
+- (BOOL)isFieldTypeBit:(NSString *)fieldType;
+- (BOOL)isFieldTypeUUID:(NSString *)fieldType;
+- (BOOL)isFieldTypeTextSearch:(NSString *)fieldType;
+- (BOOL)isFieldTypeRequiresLength:(NSString *)fieldType;
 
 @end

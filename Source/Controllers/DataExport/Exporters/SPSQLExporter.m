@@ -155,8 +155,8 @@
         [metaString appendString:@"\xef\xbb\xbf"];
     }
 
-    // we require utf8mb4
-    [connection setEncoding:@"utf8mb4"];
+    // we require UTF8
+    [connection setEncoding:@"UTF8"];
 
     // Add the dump header to the dump file
     [metaString appendString:@"# ************************************************************\n"];
@@ -168,85 +168,16 @@
     [metaString appendFormat:@"# %@: %@\n", NSLocalizedString(@"Generation Time", @"export header generation time label"), [NSDate date]];
     [metaString appendString:@"# ************************************************************\n\n\n"];
 
-    // Add commands to store the client encodings used when importing and set to UTF8mb4 to preserve data
-    [metaString appendString:@"/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;\n"];
-    [metaString appendString:@"/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;\n"];
-    [metaString appendString:@"/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;\n"];
-    [metaString appendString:@"SET NAMES utf8mb4;\n"];
+    // PostgreSQL: Set client encoding to UTF8
+    [metaString appendString:@"SET client_encoding = 'UTF8';\n"];
 
-    [metaString appendString:@"/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;\n"];
+    // PostgreSQL: Disable foreign key checks by setting session_replication_role
+    // This is the PostgreSQL equivalent of MySQL's FOREIGN_KEY_CHECKS=0
+    [metaString appendString:@"SET session_replication_role = 'replica';\n"];
 
-    /* A note on SQL_MODE:
-     *
-     *   BEFORE 3.23.6
-     *     No supported
-     *
-     *   FROM 3.23.6
-     *     There is a "--ansi" / "-a" CLI argument to mysqld, which is the predecessor to SQL_MODE.
-     *     It can be queried via "SHOW VARIABLES" -> "ansi_mode" = "OFF" | "ON"
-     *
-     *   FROM 3.23.41
-     *     There is a "--sql-mode=[opt[,opt[...]]]" CLI argument to mysqld.
-     *     It can be queried via "SHOW VARIABLES" -> "sql_mode" but the result will be a bitfield value with
-     *         #define MODE_REAL_AS_FLOAT        1 = "REAL_AS_FLOAT"
-     *         #define MODE_PIPES_AS_CONCAT      2 = "PIPES_AS_CONCAT"
-     *         #define MODE_ANSI_QUOTES          4 = "ANSI_QUOTES"
-     *         #define MODE_IGNORE_SPACE         8 = "IGNORE_SPACE"
-     *         #define MODE_SERIALIZABLE        16 = "SERIALIZE" (!)
-     *         #define MODE_ONLY_FULL_GROUP_BY  32 = "ONLY_FULL_GROUP_BY"
-     *     The "--ansi" switch is still supported but mostly equivalent to setting all of the options above
-     *     (it will also set the transaction isolation level to SERIALIZABLE).
-     *     "ansi_mode" is no longer returned by SHOW VARIABLES.
-     *
-     *   FROM 4.1.0
-     *     - "sql_mode" can be changed at runtime (global or per session).
-     *     - "SHOW VARIABLES" now returns a CSV list of named options
-     *
-     *   FROM 4.1.1
-     *     - "SERIALIZE" is no longer supported (must be changed via "SET TRANSACTION ISOLATION LEVEL")
-     *       (trivia: internally it has become MODE_NOT_USED: 16 = "?")
-     *
-     */
-
-    //fetch old sql mode to restore it later
-    {
-        // Postgres doesn't use sql_mode
-        /*
-        SPPostgresResult *result = [connection queryString:@"SHOW VARIABLES LIKE 'sql_mode'"];
-        if(![connection queryErrored]) {
-            [result setReturnDataAsStrings:YES];
-            NSArray *row = [result getRowAsArray];
-            oldSqlMode = [[row objectAtIndex:1] unboxNull];
-            SPLog(@"oldSqlMode: %@", oldSqlMode);
-        }
-        */
-        oldSqlMode = nil;
-    }
-    //set sql mode for export
-    if([@"" isEqualToString:oldSqlMode]) {
-        // the current sql_mode is already the one we want (empty string), no need to change+revert it
-        oldSqlMode = nil;
-    }
-    else {
-        [connection queryString:@"SET SQL_MODE=''"]; //mysqldump uses a conditional comment for 40100 here, but we want to see the error, since it can't simply be ignored (also ANSI mode is supported before 4.1)
-        if ([connection queryErrored]) {
-            [errors appendFormat:@"%@ (%@)\n", NSLocalizedString(@"The server's SQL_MODE could not be changed to one suitable for export. The export may be missing important details or may not be importable at all!", @"sql export : 'set @@sql_mode' query failed message"), [connection lastErrorMessage]];
-            [metaString appendFormat:@"# SET SQL_MODE Error: %@\n\n\n", [connection lastErrorMessage]];
-            //if we couldn't change it, we don't need to restore it either
-            oldSqlMode = nil;
-        }
-    }
-    // * There is no point in writing out that the file should use a specific SQL mode when we don't even know which one was active during export.
-    // * Triggers, procs/funcs have their own SQL_MODE which is still set/reset below, though.
-    //
-    // But an unknown SQL_MODE could perhaps still affect how MySQL returns the "SHOW CREATE…"
-    // data for those objects (like it does for "SHOW CREATE TABLE") possibly rendering them invalid (need to check that),
-    // so it may be better to flat out refuse to export schema object DDL if we don't have a valid sql_mode.
-
-
-    // JCS Note: per docs: https://dev.mysql.com/doc/refman/8.0/en/sql-mode.html#sqlmode_no_auto_value_on_zero
-    // For example, if you dump the table with mysqldump and then reload it, MySQL normally generates new sequence numbers when it encounters the 0 values,
-    // resulting in a table with contents different from the one that was dumped. Enabling NO_AUTO_VALUE_ON_ZERO before reloading the dump file solves this problem.
+    // PostgreSQL doesn't use SQL_MODE like MySQL
+    // No configuration changes needed for PostgreSQL export
+    oldSqlMode = nil;
     // For this reason, mysqldump automatically includes in its output a statement that enables NO_AUTO_VALUE_ON_ZERO.
     //
     // so to address issue #865, where creating a table with a trigger discards NO_AUTO_VALUE_ON_ZERO,
@@ -326,9 +257,9 @@
                 }
 
                 if ([connection queryErrored]) {
-                    [errors appendFormat:@"%@\n", [connection lastErrorMessage]];
+                    [errors appendFormat:@"%@\n", [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")];
 
-                    [self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n\n\n", [connection lastErrorMessage]]];
+                    [self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n\n\n", [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")]];
 
                     continue;
                 }
@@ -350,7 +281,7 @@
             if (sqlOutputIncludeStructure && createTableSyntax && tableType == SPTableTypeTable) {
 
                 if ([createTableSyntax isKindOfClass:[NSData class]]) {
-#warning This doesn't make sense. If the NSData really contains a string it would be in utf8, utf8mb4 or a mysql pre-4.1 legacy charset, but not in the export output charset. This whole if() is likely a side effect of the BINARY flag confusion (#2700)
+#warning This doesn't make sense. If the NSData really contains a string it would be in utf8, UTF8 or a mysql pre-4.1 legacy charset, but not in the export output charset. This whole if() is likely a side effect of the BINARY flag confusion (#2700)
                     createTableSyntax = [[NSString alloc] initWithData:createTableSyntax encoding:[self exportOutputEncoding]];
                 }
 
@@ -434,8 +365,8 @@
                 NSArray *rowArray = [[connection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [tableName postgresQuotedIdentifier]]] getRowAsArray];
 
                 if ([connection queryErrored] || ![rowArray count]) {
-                    [errors appendFormat:@"%@\n", [connection lastErrorMessage]];
-                    [self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n\n\n", [connection lastErrorMessage]]];
+                    [errors appendFormat:@"%@\n", [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")];
+                    [self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n\n\n", [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")]];
                     free(useRawDataForColumnAtIndex);
                     free(useRawHexDataForColumnAtIndex);
                     continue;
@@ -617,10 +548,10 @@
                 free(useRawHexDataForColumnAtIndex);
 
                 if ([connection queryErrored]) {
-                    [errors appendFormat:@"%@\n", [connection lastErrorMessage]];
+                    [errors appendFormat:@"%@\n", [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")];
 
                     if ([self sqlOutputIncludeErrors]) {
-                        [self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n", [connection lastErrorMessage]]];
+                        [self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n", [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")]];
                     }
                 }
             }
@@ -674,10 +605,10 @@
                 }
 
                 if ([connection queryErrored]) {
-                    [errors appendFormat:@"%@\n", [connection lastErrorMessage]];
+                    [errors appendFormat:@"%@\n", [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")];
 
                     if ([self sqlOutputIncludeErrors]) {
-                        [self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n", [connection lastErrorMessage]]];
+                        [self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n", [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")]];
                     }
                 }
             }
@@ -826,10 +757,10 @@
                     SPPostgresResult *createProcedureResult = nil; // TODO: Implement PostgreSQL procedure definition retrieval
                     [createProcedureResult setReturnDataAsStrings:YES];
                     if ([connection queryErrored]) {
-                        [errors appendFormat:@"%@\n", [connection lastErrorMessage]];
+                        [errors appendFormat:@"%@\n", [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")];
 
                         if ([self sqlOutputIncludeErrors]) {
-                            [self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n", [connection lastErrorMessage]]];
+                            [self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n", [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")]];
                         }
                         continue;
                     }
@@ -870,24 +801,18 @@
         }
 
         if ([connection queryErrored]) {
-            [errors appendFormat:@"%@\n", [connection lastErrorMessage]];
+            [errors appendFormat:@"%@\n", [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")];
 
             if ([self sqlOutputIncludeErrors]) {
-                [self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n", [connection lastErrorMessage]]];
+                [self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n", [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")]];
             }
         }
     }
 
-    // Restore unique checks, foreign key checks, and other settings saved at the start
+    // PostgreSQL: Restore session settings
     [metaString setString:@"\n"];
-    [metaString appendString:@"/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;\n"];
-    [metaString appendString:@"/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;\n"];
-    [metaString appendString:@"/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;\n"];
-
-    // Restore the client encoding to the original encoding before import
-    [metaString appendString:@"/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;\n"];
-    [metaString appendString:@"/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;\n"];
-    [metaString appendString:@"/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;\n"];
+    // Re-enable foreign key checks
+    [metaString appendString:@"SET session_replication_role = 'origin';\n"];
 
     // Write footer-type information to the file
     [self writeUTF8String:metaString];
@@ -908,9 +833,7 @@
 }
 
 - (void)endCleanup:(NSString *)oldSqlMode {
-    if(oldSqlMode) {
-        [connection queryString:[NSString stringWithFormat:@"SET SQL_MODE=%@",[oldSqlMode postgresQuotedIdentifier]]];
-    }
+    // PostgreSQL doesn't use SQL_MODE, nothing to restore
 }
 
 /**
@@ -980,10 +903,8 @@
                 [fieldString appendFormat:@" %@", [column objectForKey:@"type"]];
             }
 
-            // Field specification details
-            if ([[column objectForKey:@"unsigned"] integerValue] == 1) [fieldString appendString:@" UNSIGNED"];
-            if ([[column objectForKey:@"zerofill"] integerValue] == 1) [fieldString appendString:@" ZEROFILL"];
-            if ([[column objectForKey:@"binary"] integerValue] == 1) [fieldString appendString:@" BINARY"];
+            // PostgreSQL doesn't support UNSIGNED, ZEROFILL, or BINARY column modifiers
+            // These MySQL-specific attributes are intentionally not exported for PostgreSQL compatibility
             if ([[column objectForKey:@"null"] integerValue] == 0) {
                 [fieldString appendString:@" NOT NULL"];
             } else {

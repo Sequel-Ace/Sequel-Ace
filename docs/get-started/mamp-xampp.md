@@ -9,7 +9,7 @@
 
 ### Connecting to MAMP or XAMPP
 
-This page describes how to connect to the MySQL Server of [MAMP](http://www.mamp.info/) or [XAMPP](http://www.apachefriends.org/en/xampp-macosx.html) running on the same computer as Sequel Ace. If you want to connect to MAMP/XAMPP running on a different computer, please see [Connecting to a MySQL Server on a Remote Host](remote-connection.html "Connecting to a MySQL Server on a Remote Host").
+This page describes how to connect to the PostgreSQL Server of [MAMP](http://www.mamp.info/) or [XAMPP](http://www.apachefriends.org/en/xampp-macosx.html) running on the same computer as Sequel Ace. If you want to connect to MAMP/XAMPP running on a different computer, please see [Connecting to a PostgreSQL Server on a Remote Host](remote-connection.html "Connecting to a PostgreSQL Server on a Remote Host").
 
 #### MAMP
 
@@ -19,7 +19,7 @@ This is the recommended way of connecting to [MAMP](http://www.mamp.info/ "http:
 
 In the Sequel Ace connection dialog, choose a socket connection.
 
-Usually, socket path will be checked automatically if the field is left empty. Try to use full socket path in case of troubles: `/Applications/MAMP/tmp/mysql/mysql.sock`
+Usually, socket path will be checked automatically if the field is left empty. Try to use full socket path in case of troubles: `/Applications/MAMP/tmp/postgres/postgres.sock`
 
 Type root into the username field. The default password is also root. Optionally enter a name for the connection.
 
@@ -29,9 +29,9 @@ Make sure that MAMP is running and click connect.
 
 You can also connect via a TCP/IP connection.
 
-Enter 127.0.0.1 for the Host. Enter root for the username and for the password. The default MySQL port used by MAMP is 8889.
+Enter 127.0.0.1 for the Host. Enter root for the username and for the password. The default PostgreSQL port used by MAMP is 8889.
 
-**Important**: Regardless of the connection method being used, a preference must be changed in the MAMP Pro settings in order to connect via Sequel Ace. Under Server & Services -> MySQL, check `Allow network access to MySQL` and select `only from this Mac`.
+**Important**: Regardless of the connection method being used, a preference must be changed in the MAMP Pro settings in order to connect via Sequel Ace. Under Server & Services -> PostgreSQL, check `Allow network access to PostgreSQL` and select `only from this Mac`.
 
 #### XAMPP
 
@@ -39,10 +39,10 @@ Just like with MAMP, you can also connect to [XAMPP](http://www.apachefriends.or
 
 ##### Connect to XAMPP via a unix socket
 
-Usually, socket path will be checked automatically if the field is left empty. Try to use full socket path in case of troubles: `/Applications/XAMPP/xamppfiles/var/mysql/mysql.sock`
+Usually, socket path will be checked automatically if the field is left empty. Try to use full socket path in case of troubles: `/Applications/XAMPP/xamppfiles/var/postgres/postgres.sock`
 
 Use root as username, and leave the password field blank.
 
 ##### Connect to XAMPP via a standard TCP/IP connection
 
-Type 127.0.0.1 into the host field. Since XAMPP uses the standard MySQL port 3306, you can leave the port field blank. The user name is root, the default password is blank.
+Type 127.0.0.1 into the host field. Since XAMPP uses the standard PostgreSQL port 5432, you can leave the port field blank. The user name is root, the default password is blank.

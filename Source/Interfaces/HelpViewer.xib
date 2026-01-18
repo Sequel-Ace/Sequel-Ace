@@ -193,7 +193,7 @@
                             <modifierMask key="keyEquivalentModifierMask" command="YES"/>
                         </buttonCell>
                         <connections>
-                            <action selector="helpSelectHelpTargetMySQL:" target="-2" id="aqb-uo-vKI"/>
+                            <action selector="helpSelectHelpTargetPostgres:" target="-2" id="aqb-uo-vKI"/>
                         </connections>
                     </button>
                 </subviews>

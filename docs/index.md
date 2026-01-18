@@ -24,7 +24,7 @@ brew install sequel-ace
 
 ## Get started
 
-Get started using Sequel Ace quickly by browsing through this online documentation to learn how to connect with your MySQL or MariaDB database server.
+Get started using Sequel PAce quickly by browsing through this online documentation to learn how to connect with your PostgreSQL database server.
 
 - [Getting Connected](get-started/)
 - [Moving Saved Connections from Sequel Pro](get-started/migrating-from-sequel-pro.html)

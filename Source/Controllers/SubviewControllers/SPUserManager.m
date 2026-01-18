@@ -160,77 +160,62 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 }
 
 /**
- * This method reads in the users from the mysql.user table of the current
+ * This method reads in the users from the pg_roles table of the current
  * connection. Then uses this information to initialize the NSOutlineView.
  */
 - (void)_initializeUsers
 {
 	isInitializing = YES; // Don't want to do some of the notifications if initializing
-	
+
 	@autoreleasepool {
-		NSArray *privRow;
 		NSMutableArray *usersResultArray = [NSMutableArray array];
 
-		// Select users from the mysql.user table
-		SPPostgresResult *result = [connection queryString:@"SELECT * FROM mysql.user ORDER BY user"];
+		// PostgreSQL: Select users (roles that can login) from pg_roles
+		// Map PostgreSQL role attributes to a MySQL-like structure for compatibility
+		SPPostgresResult *result = [connection queryString:
+			@"SELECT rolname AS \"User\", "
+			@"'localhost' AS \"Host\", "
+			@"CASE WHEN rolpassword IS NOT NULL THEN '********' ELSE '' END AS \"authentication_string\", "
+			@"rolsuper AS \"Super_priv\", "
+			@"rolcreaterole AS \"Create_user_priv\", "
+			@"rolcreatedb AS \"Create_priv\", "
+			@"rolcanlogin AS \"can_login\", "
+			@"rolreplication AS \"Repl_slave_priv\" "
+			@"FROM pg_roles "
+			@"WHERE rolcanlogin = true "
+			@"ORDER BY rolname"];
 		[result setReturnDataAsStrings:YES];
 
-        if([[result fieldNames] firstObjectCommonWithArray:@[@"Password",@"authentication_string"]] == nil){
+		if (![result numberOfRows]) {
+			SPLog(@"No login roles found in pg_roles");
+			isInitializing = NO;
+			return;
+		}
 
-            NSString *message = NSLocalizedString(@"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column.", @"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column.");
-
-            SPLog(@"SELECT * FROM mysql.user ORDER BY user. ERROR: %@", message);
-
-            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"User Data Error", @"User Data Error") message:message callback:^{
-                [self doCancel:nil];
-            }];
-
-            // return otherwise you get a load of mysql errors as it tries to continue without password
-            return;
-        }
-
-		requiresPost576PasswordHandling = ![[result fieldNames] containsObject:@"Password"];
+		// PostgreSQL doesn't use password hashing in the same way as MySQL
+		requiresPost576PasswordHandling = YES;
 		[usersResultArray addObjectsFromArray:[result getAllRows]];
 
 		[self _initializeTree:usersResultArray];
 
-		// Set up the array of privs supported by this server.
+		// Set up the array of privs supported by PostgreSQL
+		// PostgreSQL has different privilege model - set basic privileges
 		[[self privsSupportedByServer] removeAllObjects];
 
-        result = [connection queryString:@"SHOW PRIVILEGES"];
-        [result setReturnDataAsStrings:YES];
-
-		if (result && [result numberOfRows]) {
-			while ((privRow = [result getRowAsArray]))
-			{
-				NSMutableString *privKey = [NSMutableString stringWithString:[[privRow objectAtIndex:0] lowercaseString]];
-
-				// Skip the special "Usage" key
-				if ([privKey isEqualToString:@"usage"]) continue;
-
-				[privKey replaceOccurrencesOfString:@" " withString:@"_" options:NSLiteralSearch range:NSMakeRange(0, [privKey length])];
-				[privKey appendString:@"_priv"];
-
-				[[self privsSupportedByServer] setValue:@YES forKey:privKey];
-			}
-		}
-		// If that fails, base privilege support on the mysql.users columns
-		else {
-			result = [connection queryString:@"SHOW COLUMNS FROM mysql.user"];
-
-			[result setReturnDataAsStrings:YES];
-
-			while ((privRow = [result getRowAsArray]))
-			{
-				NSMutableString *privKey = [NSMutableString stringWithString:[[privRow objectAtIndex:0] lowercaseString]];
-
-				if (![privKey hasSuffix:@"_priv"]) continue;
-
-				if ([privColumnToGrantMap objectForKey:privKey]) privKey = [privColumnToGrantMap objectForKey:privKey];
-
-				[[self privsSupportedByServer] setValue:@YES forKey:privKey];
-			}
-		}
+		// PostgreSQL privileges that map to MySQL-style privilege names
+		[[self privsSupportedByServer] setValue:@YES forKey:@"select_priv"];
+		[[self privsSupportedByServer] setValue:@YES forKey:@"insert_priv"];
+		[[self privsSupportedByServer] setValue:@YES forKey:@"update_priv"];
+		[[self privsSupportedByServer] setValue:@YES forKey:@"delete_priv"];
+		[[self privsSupportedByServer] setValue:@YES forKey:@"create_priv"];
+		[[self privsSupportedByServer] setValue:@YES forKey:@"drop_priv"];
+		[[self privsSupportedByServer] setValue:@YES forKey:@"references_priv"];
+		[[self privsSupportedByServer] setValue:@YES forKey:@"trigger_priv"];
+		[[self privsSupportedByServer] setValue:@YES forKey:@"execute_priv"];
+		// Role-level privileges
+		[[self privsSupportedByServer] setValue:@YES forKey:@"super_priv"];
+		[[self privsSupportedByServer] setValue:@YES forKey:@"create_user_priv"];
+		[[self privsSupportedByServer] setValue:@YES forKey:@"repl_slave_priv"];
 	}
 
 	isInitializing = NO;
@@ -244,8 +229,19 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 {
 	// Retrieve all the user data in order to be able to initialise the schema privs for each child,
 	// copying into a dictionary keyed by user, each with all the host rows.
+	// PostgreSQL: Query information_schema.role_table_grants for database-level privileges
 	NSMutableDictionary *schemaPrivilegeData = [NSMutableDictionary dictionary];
-	SPPostgresResult *queryResults = [connection queryString:@"SELECT * FROM mysql.db"];
+	SPPostgresResult *queryResults = [connection queryString:
+		@"SELECT grantee AS \"User\", "
+		@"table_schema AS \"Db\", "
+		@"privilege_type, "
+		@"CASE WHEN privilege_type = 'SELECT' THEN 'Y' ELSE 'N' END AS \"Select_priv\", "
+		@"CASE WHEN privilege_type = 'INSERT' THEN 'Y' ELSE 'N' END AS \"Insert_priv\", "
+		@"CASE WHEN privilege_type = 'UPDATE' THEN 'Y' ELSE 'N' END AS \"Update_priv\", "
+		@"CASE WHEN privilege_type = 'DELETE' THEN 'Y' ELSE 'N' END AS \"Delete_priv\" "
+		@"FROM information_schema.role_table_grants "
+		@"WHERE grantee IN (SELECT rolname FROM pg_roles WHERE rolcanlogin = true) "
+		@"GROUP BY grantee, table_schema, privilege_type"];
 
 	[queryResults setReturnDataAsStrings:YES];
 
@@ -260,7 +256,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		// If "all database" values were found, add them to the schemas list if not already present
 		NSString *schemaName = [privRow objectForKey:@"Db"];
 
-		if ([schemaName isEqualToString:@""] || [schemaName isEqualToString:@"%"]) {
+		if ([schemaName isEqualToString:@""] || [schemaName isEqualToString:@"%"] || [schemaName isEqualToString:@"public"]) {
 			if (![schemas containsObject:schemaName]) {
 				[schemas addObject:schemaName];
 				[schemasTableView noteNumberOfRowsChanged];
@@ -1241,7 +1237,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
         //And if all else fails tell the user nope
         if ([connection queryErrored]) {
-            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"An error occurred", @"postgresql error occurred message") message:[NSString stringWithFormat:NSLocalizedString(@"Resource Limits are not supported for your version of PostgreSQL. Any Resouce Limits you specified have been discarded and not saved. PostgreSQL said: %@", @"postgresql resource limits unsupported message"), [connection lastErrorMessage]] callback:nil];
+            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"An error occurred", @"postgresql error occurred message") message:[NSString stringWithFormat:NSLocalizedString(@"Resource Limits are not supported for your version of PostgreSQL. Any Resouce Limits you specified have been discarded and not saved. PostgreSQL said: %@", @"postgresql resource limits unsupported message"), [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")] callback:nil];
         }
     }
 	
@@ -1460,10 +1456,10 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 {
 	if ([connection queryErrored]) {
 		if (isSaving) {
-			[errorsString appendFormat:@"%@\n", [connection lastErrorMessage]];
-		} 
+			[errorsString appendFormat:@"%@\n", [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")];
+		}
 		else {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"An error occurred", @"postgresql error occurred message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred whilst trying to perform the operation.\n\nPostgreSQL said: %@", @"mysql error occurred informative message"), [connection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"An error occurred", @"postgresql error occurred message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred whilst trying to perform the operation.\n\nPostgreSQL said: %@", @"PostgreSQL error occurred informative message"), [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")] callback:nil];
 		}
 
 		return NO;

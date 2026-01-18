@@ -87,7 +87,7 @@ typedef NS_ENUM(NSUInteger , SPSQLExportInsertDivider) {
 
 // XML export formats
 typedef NS_ENUM(NSUInteger, SPXMLExportFormat) {
-	SPXMLExportMySQLFormat = 0,
+	SPXMLExportPostgresFormat = 0,
 	SPXMLExportPlainFormat = 1
 };
 

@@ -700,8 +700,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 }
 
 /**
- * Performs the mysql-query given by the user
- * sets the tableView columns corresponding to the mysql-result
+ * Performs the PostgreSQL query given by the user
+ * sets the tableView columns corresponding to the query result
  */
 - (void)performQueries:(NSArray *)queries withCallback:(SEL)customQueryCallbackMethod;
 {
@@ -892,11 +892,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 } else {
                     errorString = [postgresConnection lastErrorMessage];
                     
-                    // If dealing with a "MySQL server has gone away" error, explain the situation.
-                    // Error 2006 is CR_SERVER_GONE_ERROR, which means the query write couldn't complete.
+                    // If dealing with a "PostgreSQL connection lost" error, explain the situation.
+                    // For PostgreSQL, check if connection is lost and explain to the user.
                     /*
-                    if ([postgresConnection lastErrorID] == 2006) {
-                        errorString = [NSString stringWithFormat:@"%@.\n\n%@", errorString, NSLocalizedString(@"(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)", @"Explanation for MySQL server has gone away error")];
+                    if (![postgresConnection isConnected]) {
+                        errorString = [NSString stringWithFormat:@"%@.\n\n%@", errorString, NSLocalizedString(@"(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)", @"Explanation for PostgreSQL connection lost error")];
                     }
                     */
                 }
@@ -949,7 +949,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                                             
                                             // Update error string
                                             if ([errors length]) [errors appendString:@"\n"];
-                                            [errors appendString:[NSString stringWithFormat:NSLocalizedString(@"Error in query %lu: %@", @"error in query x: message"), (unsigned long)(i+1), [postgresConnection lastErrorMessage]]];
+                                            [errors appendString:[NSString stringWithFormat:NSLocalizedString(@"Error in query %lu: %@", @"error in query x: message"), (unsigned long)(i+1), [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")]];
                                             
                                             firstErrorOccurredInQuery = i;
                                             
@@ -2159,12 +2159,27 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     dataRow = [resultData rowContentsAtIndex:rowIndex];
     
     // Get the primary key if there is one, using any columns present within it
-    SPPostgresResult *theResult = [postgresConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@.%@",
-                                                             [database postgresQuotedIdentifier], [tableForColumn postgresQuotedIdentifier]]];
+    // PostgreSQL: Query pg_constraint and information_schema to find primary key columns
+    SPPostgresResult *theResult = [postgresConnection queryString:[NSString stringWithFormat:
+        @"SELECT c.column_name AS \"Field\", "
+        @"CASE WHEN pk.column_name IS NOT NULL THEN 'PRI' ELSE '' END AS \"Key\" "
+        @"FROM information_schema.columns c "
+        @"LEFT JOIN ("
+        @"  SELECT kcu.column_name "
+        @"  FROM information_schema.table_constraints tc "
+        @"  JOIN information_schema.key_column_usage kcu "
+        @"    ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema "
+        @"  WHERE tc.constraint_type = 'PRIMARY KEY' "
+        @"    AND tc.table_schema = %@ AND tc.table_name = %@"
+        @") pk ON c.column_name = pk.column_name "
+        @"WHERE c.table_schema = %@ AND c.table_name = %@",
+        [database tickQuotedString], [tableForColumn tickQuotedString],
+        [database tickQuotedString], [tableForColumn tickQuotedString]]];
     [theResult setReturnDataAsStrings:YES];
     NSMutableArray *primaryColumnsInSpecifiedTable = [NSMutableArray array];
     for (NSDictionary *eachRow in theResult) {
-        if ( [[eachRow objectForKey:@"Key"] isEqualToString:@"PRI"] ) {
+        id keyValue = [eachRow objectForKey:@"Key"];
+        if ([keyValue isKindOfClass:[NSString class]] && [keyValue isEqualToString:@"PRI"]) {
             for (field in columnsInSpecifiedTable) {
                 if([[field objectForKey:@"org_name"] isEqualToString:[eachRow objectForKey:@"Field"]]) {
                     [primaryColumnsInSpecifiedTable addObject:field];
@@ -2184,12 +2199,11 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         } else {
             NSString *fieldTypeGrouping = [field objectForKey:@"typegrouping"];
             
-            // Skip blob-type fields if requested
+            // Skip blob-type fields if requested (PostgreSQL)
             if (!includeBlobs
                 && ([fieldTypeGrouping isEqualToString:@"textdata"]
                     ||  [fieldTypeGrouping isEqualToString:@"blobdata"]
-                    || [[field objectForKey:@"type"] isEqualToString:@"BINARY"]
-                    || [[field objectForKey:@"type"] isEqualToString:@"VARBINARY"]))
+                    || [[field objectForKey:@"type"] isEqualToString:@"BYTEA"]))
             {
                 continue;
             }
@@ -2282,14 +2296,14 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 
             // Check for errors while UPDATE
             if ([postgresConnection queryErrored]) {
-                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nPostgreSQL said: %@", @"message of panel when error while updating field to db"), [postgresConnection lastErrorMessage]] callback:nil];
+                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nPostgreSQL said: %@", @"message of panel when error while updating field to db"), [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")] callback:nil];
                 return;
             }
 
             // This shouldn't happen – for safety reasons
             if ( ![postgresConnection rowsAffectedByLastQuery] ) {
                 if ( [prefs boolForKey:SPShowNoAffectedRowsError] ) {
-                    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
+                    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the PostgreSQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
                 } else {
                     NSBeep();
                 }
@@ -2333,14 +2347,14 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 
                     // Check for errors while UPDATE
                     if ([self->postgresConnection queryErrored]) {
-                        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nPostgreSQL said: %@", @"message of panel when error while updating field to db"), [self->postgresConnection lastErrorMessage]] callback:nil];
+                        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't write field.\nPostgreSQL said: %@", @"message of panel when error while updating field to db"), [self->postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")] callback:nil];
                         return;
                     }
 
                     // This shouldn't happen – for safety reasons
                     if ( ![self->postgresConnection rowsAffectedByLastQuery] ) {
                         if ( [self->prefs boolForKey:SPShowNoAffectedRowsError] ) {
-                            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
+                            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:NSLocalizedString(@"The row was not written to the PostgreSQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)", @"message of panel when no rows have been affected after writing to the db") callback:nil];
                         } else {
                             NSBeep();
                         }
@@ -2576,7 +2590,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         [queryString replaceCharactersInRange:matchedRange withString:newOrder];
     }
     // No ORDER clause found
-    // ORDER clause has to be inserted before LIMIT, PROCEDURE, INTO, FOR, or LOCK due to MySQL syntax for SELECT
+    // ORDER clause has to be inserted before LIMIT, FOR, or LOCK due to SQL syntax for SELECT
     else if([tmpString isMatchedByRegex:@"(?i)\\bSELECT\\b((.|\\n)+?)\\s*(?=(\\sLIMIT\\s|\\sPROCEDURE\\s|\\sINTO\\s|\\sFOR\\s|\\sLOCK\\s))"])
     {
         matchedRange = [tmpString rangeOfRegex:@"(?i)\\bSELECT\\b((.|\\n)+?)(?=(\\sLIMIT\\s|\\sPROCEDURE\\s|\\sINTO\\s|\\sFOR\\s|\\sLOCK\\s))" capture:1];
@@ -3144,9 +3158,9 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 }
 
 /**
- * Set the MySQL version as X.Y
+ * Set the PostgreSQL version as X.Y
  */
-- (void)setMySQLversion:(NSString *)theVersion
+- (void)setPostgresVersion:(NSString *)theVersion
 {
     [textView setConnection:postgresConnection withVersion:[[[[theVersion substringToIndex:3] componentsSeparatedByString:@"."] objectAtIndex:0] integerValue]];
 }

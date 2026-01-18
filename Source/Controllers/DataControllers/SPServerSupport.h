@@ -33,28 +33,24 @@
  *
  * @author Stuart Connolly http://stuconnolly.com/
  *
- * This class is provided as a convenient method of determining what features/functionality the MySQL server
+ * This class is provided as a convenient method of determining what features/functionality the PostgreSQL server
  * with the supplied version numbers supports. Note that this class has no direct connection to the server,
  * all of it's information is simply determined by way of version comparisons using hard coded values of known
  * versions and the functionality they support.
  *
- * Every new MySQL connection that is established should create an instance of this class and make it globally
- * accessible to the rest of the application to remove the need of manual version comparisons. Calling it's 
- * designated initializer (initWithMajorVersion:major:minor:release:) causes the determination of what 
+ * Every new PostgreSQL connection that is established should create an instance of this class and make it globally
+ * accessible to the rest of the application to remove the need of manual version comparisons. Calling it's
+ * designated initializer (initWithMajorVersion:major:minor:release:) causes the determination of what
  * functionality is supported, and so other initializtion is required.
  *
  * See the method evaluate for information regarding adding additional functionality checks.
  */
-@interface SPServerSupport : NSObject 
+@interface SPServerSupport : NSObject
 {
-	// Convenience vars
-	BOOL isMySQL5;
-    BOOL isMySQL8;
-	
-	// Indexes
+	// PostgreSQL supports full-text search natively via tsvector
 	BOOL supportsFulltextOnInnoDB;
-	
-	// Data types
+
+	// Data types - PostgreSQL supports fractional seconds natively
 	BOOL supportsFractionalSeconds;
 	
 	// Server versions
@@ -77,16 +73,6 @@
  * @property serverReleaseVersion
  */
 @property (readwrite, assign) NSInteger serverReleaseVersion;
-
-/**
- * @property isMySQL5 Indicates if the server is MySQL version 5
- */
-@property (readonly) BOOL isMySQL5;
-
-/**
- * @property isMySQL8 Indicates if the server is MySQL version 8
- */
-@property (readonly) BOOL isMySQL8;
 
 /**
  * @property supportsFractionalSeconds Indicates whether the server supports fractional seconds in date/time data types.

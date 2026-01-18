@@ -70,7 +70,7 @@
 #pragma mark -
 #pragma mark Constant definitions
 
-#define SP_CQ_SEARCH_IN_MYSQL_HELP_MENU_ITEM_TAG 1000
+#define SP_CQ_SEARCH_IN_POSTGRES_HELP_MENU_ITEM_TAG 1000
 #define SP_CQ_COPY_AS_RTF_MENU_ITEM_TAG          1001
 #define SP_CQ_SELECT_CURRENT_QUERY_MENU_ITEM_TAG 1002
 
@@ -445,13 +445,13 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 			// Put information_schema and/or mysql db at the end if not selected
 			// 5.5.3+ also has performance_schema
-			NSString* mysql_id = [NSString stringWithFormat:@"%@%@%@", connectionID, SPUniqueSchemaDelimiter, @"postgres"];
+			NSString* postgres_id = [NSString stringWithFormat:@"%@%@%@", connectionID, SPUniqueSchemaDelimiter, @"postgres"];
 			NSString* inf_id   = [NSString stringWithFormat:@"%@%@%@", connectionID, SPUniqueSchemaDelimiter, @"information_schema"];
 			NSString* perf_id  = [NSString stringWithFormat:@"%@%@%@", connectionID, SPUniqueSchemaDelimiter, @"pg_catalog"];
 
-			if(currentDb && ![currentDb isEqualToString:mysql_id] && [sortedDbs containsObject:mysql_id]) {
-				[sortedDbs removeObject:mysql_id];
-				[sortedDbs addObject:mysql_id];
+			if(currentDb && ![currentDb isEqualToString:postgres_id] && [sortedDbs containsObject:postgres_id]) {
+				[sortedDbs removeObject:postgres_id];
+				[sortedDbs addObject:postgres_id];
 			}
 			if(currentDb && ![currentDb isEqualToString:inf_id] && [sortedDbs containsObject:inf_id]) {
 				[sortedDbs removeObject:inf_id];
@@ -1134,9 +1134,9 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 }
 
 /**
- * Search for the current selection or current word in the MySQL Help
+ * Search for the current selection or current word in the PostgreSQL Help
  */
-- (IBAction) showMySQLHelpForCurrentWord:(id)sender
+- (IBAction) showPostgresHelpForCurrentWord:(id)sender
 {
 	[[tableDocumentInstance helpViewerClient] showHelpForCurrentWord:self];
 }
@@ -2667,7 +2667,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 }
 
 /**
- * Set whether MySQL Help should be automatically invoked while typing.
+ * Set whether PostgreSQL Help should be automatically invoked while typing.
  */
 - (void)setAutohelp:(BOOL)enableAutohelp
 {
@@ -2675,7 +2675,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 }
 
 /**
- * Retrieve whether MySQL Help should be automatically invoked while typing.
+ * Retrieve whether PostgreSQL Help should be automatically invoked while typing.
  */
 - (BOOL)autohelp
 {
@@ -2699,7 +2699,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 }
 
 /**
- * If enabled it shows the MySQL Help for the current word (not inside quotes) or for the selection
+ * If enabled it shows the PostgreSQL Help for the current word (not inside quotes) or for the selection
  * after an adjustable delay if the textView is idle, i.e. no user interaction.
  */
 - (void)autoHelp
@@ -3162,9 +3162,9 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 {
 	// Set title of the menu item
 	if([self selectedRange].length)
-		showMySQLHelpFor = NSLocalizedString(@"PostgreSQL Help for Selection", @"PostgreSQL Help for Selection");
+		showPostgresHelpFor = NSLocalizedString(@"PostgreSQL Help for Selection", @"PostgreSQL Help for Selection");
 	else
-		showMySQLHelpFor = NSLocalizedString(@"PostgreSQL Help for Word", @"PostgreSQL Help for Word");
+		showPostgresHelpFor = NSLocalizedString(@"PostgreSQL Help for Word", @"PostgreSQL Help for Word");
 
 	// Add the menu items for
 	// - PostgreSQL Help for Word/Selection
@@ -3173,15 +3173,15 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	// if it doesn't yet exist
 	NSMenu *menu = [[self class] defaultMenu];
 
-	if ([[[self class] defaultMenu] itemWithTag:SP_CQ_SEARCH_IN_MYSQL_HELP_MENU_ITEM_TAG] == nil)
+	if ([[[self class] defaultMenu] itemWithTag:SP_CQ_SEARCH_IN_POSTGRES_HELP_MENU_ITEM_TAG] == nil)
 	{
 		[menu insertItem:[NSMenuItem separatorItem] atIndex:3];
-		NSMenuItem *showMySQLHelpForMenuItem = [[NSMenuItem alloc] initWithTitle:showMySQLHelpFor action:@selector(showMySQLHelpForCurrentWord:) keyEquivalent:@"h"];
-		[showMySQLHelpForMenuItem setTag:SP_CQ_SEARCH_IN_MYSQL_HELP_MENU_ITEM_TAG];
-		[showMySQLHelpForMenuItem setKeyEquivalentModifierMask:NSEventModifierFlagControl];
-		[menu insertItem:showMySQLHelpForMenuItem atIndex:4];
+		NSMenuItem *showPostgresHelpForMenuItem = [[NSMenuItem alloc] initWithTitle:showPostgresHelpFor action:@selector(showPostgresHelpForCurrentWord:) keyEquivalent:@"h"];
+		[showPostgresHelpForMenuItem setTag:SP_CQ_SEARCH_IN_POSTGRES_HELP_MENU_ITEM_TAG];
+		[showPostgresHelpForMenuItem setKeyEquivalentModifierMask:NSEventModifierFlagControl];
+		[menu insertItem:showPostgresHelpForMenuItem atIndex:4];
 	} else {
-		[[menu itemWithTag:SP_CQ_SEARCH_IN_MYSQL_HELP_MENU_ITEM_TAG] setTitle:showMySQLHelpFor];
+		[[menu itemWithTag:SP_CQ_SEARCH_IN_POSTGRES_HELP_MENU_ITEM_TAG] setTitle:showPostgresHelpFor];
 	}
 	if ([[[self class] defaultMenu] itemWithTag:SP_CQ_COPY_AS_RTF_MENU_ITEM_TAG] == nil)
 	{
@@ -3275,13 +3275,13 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 /**
  * Menu validation
- * Disable the search in the MySQL help function when getRangeForCurrentWord returns zero length.
+ * Disable the search in the PostgreSQL help function when getRangeForCurrentWord returns zero length.
  */
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem
 {
-	// Enable or disable the search in the MySQL help menu item depending on whether there is a
+	// Enable or disable the search in the PostgreSQL help menu item depending on whether there is a
 	// selection and whether it is a reasonable length.
-	if ([menuItem action] == @selector(showMySQLHelpForCurrentWord:)) {
+	if ([menuItem action] == @selector(showPostgresHelpForCurrentWord:)) {
 		if ([self selectedRange].length > 0) {
 			[menuItem setTitle:NSLocalizedString(@"PostgreSQL Help for Selection", @"PostgreSQL Help for Selection")];
 		} else {

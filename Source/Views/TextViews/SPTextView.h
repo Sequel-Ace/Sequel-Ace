@@ -68,7 +68,7 @@ typedef struct {
 	
 	BOOL textBufferSizeIncreased;
 
-	NSString *showMySQLHelpFor;
+	NSString *showPostgresHelpFor;
 	
 	IBOutlet NSScrollView *scrollView;
 	SPNarrowDownCompletion *completionPopup;
@@ -125,7 +125,7 @@ typedef struct {
 @property (assign) BOOL completionWasReinvokedAutomatically;
 @property (assign) BOOL completionFuzzyMode;
 
-- (IBAction)showMySQLHelpForCurrentWord:(id)sender;
+- (IBAction)showPostgresHelpForCurrentWord:(id)sender;
 
 - (BOOL) isNextCharMarkedBy:(id)attribute withValue:(id)aValue;
 - (BOOL) areAdjacentCharsLinked;

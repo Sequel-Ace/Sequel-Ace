@@ -29,12 +29,11 @@
 /**
  * @enum QKQueryDatabase
  *
- * Used to specify the underlying database system we're generating queries for. 
+ * Used to specify the underlying database system we're generating queries for.
  */
 typedef enum
 {
 	QKDatabaseUnknown = -1,
-	QKDatabaseMySQL,
-	QKDatabasePostgreSQL
+	QKDatabasePostgreSQL = 0
 }
 QKQueryDatabase;

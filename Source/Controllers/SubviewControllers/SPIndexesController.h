@@ -69,6 +69,8 @@
 	IBOutlet NSTextField *indexKeyBlockSizeTextField;
 		
 	BOOL mainNibLoaded;
+	// Note: PostgreSQL doesn't have storage engine types like MySQL
+	// These flags are kept for compatibility but are always NO
 	BOOL isMyISAMTable;
 	BOOL isInnoDBTable;
 	NSString *table;
@@ -93,7 +95,7 @@
 @property (readwrite, copy) NSString *table;
 
 /**
- * @property connection The MySQL connection to use
+ * @property connection The PostgreSQL connection to use
  */
 @property (readwrite, strong) SPPostgresConnection *connection;
 

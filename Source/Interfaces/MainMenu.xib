@@ -952,12 +952,12 @@
                             <menuItem title="PostgreSQL Help" id="914">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="showMySQLHelp:" target="-1" id="916"/>
+                                    <action selector="showPostgresHelp:" target="-1" id="916"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="PostgreSQL Help for Word" keyEquivalent="H" id="nXE-rI-RyI">
                                 <connections>
-                                    <action selector="showMySQLHelpForCurrentWord:" target="-1" id="BUY-hF-nKy"/>
+                                    <action selector="showPostgresHelpForCurrentWord:" target="-1" id="BUY-hF-nKy"/>
                                 </connections>
                             </menuItem>
                         </items>

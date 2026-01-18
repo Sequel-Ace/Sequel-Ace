@@ -151,17 +151,17 @@
 		<dict>
 			<key>CFBundleTypeExtensions</key>
 			<array>
-				<string>mysql</string>
+				<string>pgsql</string>
 			</array>
 			<key>CFBundleTypeIconFile</key>
 			<string></string>
 			<key>CFBundleTypeIconSystemGenerated</key>
 			<integer>1</integer>
 			<key>CFBundleTypeName</key>
-			<string>MySQL File</string>
+			<string>PostgreSQL File</string>
 			<key>CFBundleTypeOSTypes</key>
 			<array>
-				<string>msql</string>
+				<string>pgsql</string>
 			</array>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
@@ -205,10 +205,11 @@
 		</dict>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>MySQL URL scheme</string>
+			<string>PostgreSQL URL scheme</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>mysql</string>
+				<string>postgresql</string>
+				<string>postgres</string>
 			</array>
 		</dict>
 	</array>
@@ -250,7 +251,7 @@
 				<key>NSRequiresCertificateTransparency</key>
 				<false/>
 			</dict>
-			<key>mysql.com</key>
+			<key>postgresql.org</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<false/>
@@ -322,7 +323,7 @@
 			<key>NSMenuItem</key>
 			<dict>
 				<key>default</key>
-				<string>Sequel PAce/Perform selection as MySQL query</string>
+				<string>Sequel PAce/Perform selection as PostgreSQL query</string>
 			</dict>
 			<key>NSMessage</key>
 			<string>doPerformQueryService</string>

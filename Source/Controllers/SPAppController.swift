@@ -203,7 +203,7 @@ extension SPAppController {
 
     // MARK: Help menu actions
 
-    @IBAction func showMySQLHelp(_ sender: Any) {
+    @IBAction func showPostgresHelp(_ sender: Any) {
         // Help viewer client not accessible from Swift due to forward declaration
         // The help menu action is handled by the SPDatabaseDocument's helpViewerClient directly
     }

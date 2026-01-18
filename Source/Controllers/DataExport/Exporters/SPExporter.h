@@ -77,12 +77,12 @@
 }
 
 /**
- * @property connection The MySQL connection to use
+ * @property connection The PostgreSQL connection to use
  */
 @property(readwrite, strong) SPPostgresConnection *connection;
 
 /**
- * @property serverSupport Information about the features supported by this mysql version
+ * @property serverSupport Information about the features supported by this PostgreSQL version
  */
 @property(readwrite, strong) SPServerSupport *serverSupport;
 

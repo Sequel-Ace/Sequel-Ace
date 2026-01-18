@@ -5,11 +5,11 @@
 default_platform :mac
 fastlane_version "2.168.0"
 
-GITHUB_REPO = "Sequel-Ace/Sequel-Ace"
-PROJECT_NAME = "sequel-ace.xcodeproj"
+GITHUB_REPO = "Sequel-PAce/Sequel-PAce"
+PROJECT_NAME = "sequel-pace.xcodeproj"
 QK_PROJECT_NAME = "Frameworks/QueryKit/QueryKit.xcodeproj"
-SPMYSQL_PROJECT_NAME = "Frameworks/SPMySQLFramework/SPMySQLFramework.xcodeproj"
-TARGET_NAME = "Sequel Ace"
+# PostgreSQL framework is built-in as SPPostgres
+TARGET_NAME = "Sequel PAce"
 
 platform :mac do
 

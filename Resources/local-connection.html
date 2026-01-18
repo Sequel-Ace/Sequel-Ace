@@ -7,17 +7,17 @@
 </style>
 
 <!-- Begin Jekyll SEO tag v2.6.1 -->
-<title>Sequel Ace | MySQL/MariaDB database management for macOS</title>
+<title>Sequel Ace | PostgreSQL database management for macOS</title>
 <meta name="generator" content="Jekyll v3.9.0">
 <meta property="og:title" content="Sequel Ace">
 <meta property="og:locale" content="en_US">
-<meta name="description" content="MySQL/MariaDB database management for macOS">
-<meta property="og:description" content="MySQL/MariaDB database management for macOS">
+<meta name="description" content="PostgreSQL database management for macOS">
+<meta property="og:description" content="PostgreSQL database management for macOS">
 <link rel="canonical" href="https://sequel-ace.com/get-started/local-connection.html">
 <meta property="og:url" content="https://sequel-ace.com/get-started/local-connection.html">
 <meta property="og:site_name" content="Sequel Ace">
 <script type="application/ld+json">
-{"@type":"WebPage","headline":"Sequel Ace","url":"https://sequel-ace.com/get-started/local-connection.html","description":"MySQL/MariaDB database management for macOS","@context":"https://schema.org"}</script>
+{"@type":"WebPage","headline":"Sequel Ace","url":"https://sequel-ace.com/get-started/local-connection.html","description":"PostgreSQL database management for macOS","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -28,34 +28,34 @@
 
 		<header>
 		  <h1>Sequel Ace</h1>
-		  <h2>MySQL/MariaDB database management for macOS</h2>
+		  <h2>PostgreSQL database management for macOS</h2>
 		</header>
 		
 		<section id="main_content">
 <hr>
 
-<h3 id="connect-to-a-local-mysql-server">Connect to a Local MySQL Server</h3>
+<h3 id="connect-to-a-local-postgres-server">Connect to a Local PostgreSQL Server</h3>
 
 <p>This document describes how to connect to a server running on the same computer as Sequel Ace.</p>
 
-<h4 id="making-sure-your-mysql-server-is-running">Making sure your MySQL server is running</h4>
+<h4 id="making-sure-your-postgres-server-is-running">Making sure your PostgreSQL server is running</h4>
 
-<p>If you are not sure if the MySQL server is running, open <em>Activity Viewer</em> (from <em>Applications</em> » <em>Utilities</em>). Choose <em>All Processes</em> in the popup menu. Type mysqld into the search field. If you see a mysqld process, MySQL is running.</p>
+<p>If you are not sure if the PostgreSQL server is running, open <em>Activity Viewer</em> (from <em>Applications</em> » <em>Utilities</em>). Choose <em>All Processes</em> in the popup menu. Type postgresd into the search field. If you see a postgresd process, PostgreSQL is running.</p>
 
 <h4 id="connecting-via-a-socket-connection">Connecting via a socket connection</h4>
 
-<p>Unfortunately, due to sandboxing nature, Sequel Ace is not allowed to connect to the sockets which are out of the Sandbox. As a workaround, you can create a socket in <code class="language-plaintext highlighter-rouge">~/Library/Containers/com.sequel-ace.sequel-ace/Data</code> and connect to it. This can be done by putting these lines to your MySQL configuration file (usually, <code class="language-plaintext highlighter-rouge">my.cnf</code>):</p>
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[mysqld]
-socket=/Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock
+<p>Unfortunately, due to sandboxing nature, Sequel Ace is not allowed to connect to the sockets which are out of the Sandbox. As a workaround, you can create a socket in <code class="language-plaintext highlighter-rouge">~/Library/Containers/com.sequel-ace.sequel-ace/Data</code> and connect to it. This can be done by putting these lines to your PostgreSQL configuration file (usually, <code class="language-plaintext highlighter-rouge">my.cnf</code>):</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[postgresd]
+socket=/Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/postgres.sock
 </code></pre></div></div>
 
 <h4 id="connecting-via-a-standard-connection">Connecting via a standard connection</h4>
 
-<p>Open Sequel Ace. Choose a <em>Standard</em> Connection. Enter 127.0.0.1 for the host. The default username for a new MySQL installation is root, with a blank password. You can leave the port field blank unless your server uses a different port than 3306.</p>
+<p>Open Sequel Ace. Choose a <em>Standard</em> Connection. Enter 127.0.0.1 for the host. The default username for a new PostgreSQL installation is root, with a blank password. You can leave the port field blank unless your server uses a different port than 5432.</p>
 
 <p><strong>Note</strong>: MAMP uses port 8889 per default, and root as the password. See <a href="https://sequel-ace.com/get-started/mamp-xampp.html" title="Connecting to MAMP or XAMPP">Connecting to MAMP or XAMPP</a></p>
 
-<p><strong>Note</strong>: Don’t try using localhost instead of 127.0.0.1. MySQL treats the hostname localhost specially. For details, see <a href="https://dev.mysql.com/doc/refman/en/connecting.html">MySQL manual.</a></p>
+<p><strong>Note</strong>: Don’t try using localhost instead of 127.0.0.1. PostgreSQL treats the hostname localhost specially. For details, see <a href="https://dev.postgres.com/doc/refman/en/connecting.html">PostgreSQL manual.</a></p>
 
 		</section>
 

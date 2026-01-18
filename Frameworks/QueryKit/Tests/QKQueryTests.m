@@ -45,7 +45,7 @@
 	QKQuery *query = [QKQuery selectQueryFromTable:QKTestTableName];
 	
 	[query setUseQuotedIdentifiers:NO];
-	[query setQueryDatabase:QKDatabaseMySQL];
+	[query setQueryDatabase:QKDatabasePostgreSQL];
 	
 	[query setDatabase:QKTestDatabaseName];
 	

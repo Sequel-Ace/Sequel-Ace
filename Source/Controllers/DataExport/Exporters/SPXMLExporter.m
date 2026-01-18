@@ -89,7 +89,7 @@
     // Check to see if we have at least a table name or data array
     if ((![self xmlTableName] && ![self xmlDataArray]) ||
         ([[self xmlTableName] length] == 0 && [[self xmlDataArray] count] == 0) ||
-        (([self xmlFormat] == SPXMLExportMySQLFormat) && ((![self xmlOutputIncludeStructure]) && (![self xmlOutputIncludeContent]))) ||
+        (([self xmlFormat] == SPXMLExportPostgresFormat) && ((![self xmlOutputIncludeStructure]) && (![self xmlOutputIncludeContent]))) ||
         (([self xmlFormat] == SPXMLExportPlainFormat) && (![self xmlNULLString])))
     {
         return;
@@ -110,7 +110,7 @@
         streamingResult = [connection streamingQueryString:[NSString stringWithFormat:@"SELECT * FROM %@", [[self xmlTableName] postgresQuotedIdentifier]] useLowMemoryBlockingStreaming:[self exportUsingLowMemoryBlockingStreaming]];
 
         // Only include the structure if necessary
-        if (([self xmlFormat] == SPXMLExportMySQLFormat) && [self xmlOutputIncludeStructure]) {
+        if (([self xmlFormat] == SPXMLExportPostgresFormat) && [self xmlOutputIncludeStructure]) {
 
             structureResult = [connection queryString:[NSString stringWithFormat:@"SELECT column_name AS Field, data_type AS Type, is_nullable AS \"Null\", column_default AS \"Default\" FROM information_schema.columns WHERE table_name = %@", [[self xmlTableName] postgresQuotedIdentifier]]];
             // SHOW TABLE STATUS is not directly supported in Postgres. Using a placeholder or simplified query.
@@ -154,7 +154,7 @@
             }
         }
 
-        if (([self xmlFormat] == SPXMLExportMySQLFormat) && [self xmlOutputIncludeContent]) {
+        if (([self xmlFormat] == SPXMLExportPostgresFormat) && [self xmlOutputIncludeContent]) {
             [xmlString appendFormat:@"\t<table_data name=\"%@\">\n\n", [self xmlTableName]];
         }
 
@@ -275,7 +275,7 @@
                     [xmlItem setString:[data description]];
                 }
 
-                if ([self xmlFormat] == SPXMLExportMySQLFormat) {
+                if ([self xmlFormat] == SPXMLExportPostgresFormat) {
                     [xmlString appendFormat:@"\t\t<field name=\"%@\"", [[[fieldNames safeObjectAtIndex:i] description] HTMLEscapeString]];
 
                     if (dataIsNULL) {
@@ -318,7 +318,7 @@
             if ([self xmlDataArray] && totalRows == currentRowIndex) break;
         }
 
-        if (([self xmlFormat] == SPXMLExportMySQLFormat) && isTableExport) {
+        if (([self xmlFormat] == SPXMLExportPostgresFormat) && isTableExport) {
             [self writeString:@"\t</table_data>\n\n"];
         }
         else if ([self xmlFormat] == SPXMLExportPlainFormat) {

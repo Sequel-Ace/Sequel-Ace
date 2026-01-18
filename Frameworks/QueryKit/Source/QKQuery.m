@@ -124,9 +124,9 @@ static NSString *QKNoQueryTableException = @"QKNoQueryTable";
 		[self setParameters:[NSMutableArray array]];
 		[self setQueryType:QKUnknownQuery];
 		[self setUseQuotedIdentifiers:YES];
-		
-		// Default to MySQL
-		[self setQueryDatabase:QKDatabaseMySQL];
+
+		// Default to PostgreSQL
+		[self setQueryDatabase:QKDatabasePostgreSQL];
 		
 		_identifierQuote = EMPTY_STRING;
 		

@@ -479,7 +479,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             }
 
             // Skip not connected docs eg if connection controller is displayed (TODO maybe to be improved)
-            if (![windowController.databaseDocument mySQLVersion]) {
+            if (![windowController.databaseDocument postgresVersion]) {
                 continue;
             }
 
@@ -910,8 +910,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     if ([[url scheme] isEqualToString:@"sequelace"]) {
         [self handleEventWithURL:url];
     }
-    else if([[url scheme] isEqualToString:@"mysql"]) {
-        [self handleMySQLConnectWithURL:url];
+    else if([[url scheme] isEqualToString:@"postgres"] || [[url scheme] isEqualToString:@"postgresql"]) {
+        [self handlePostgresConnectWithURL:url];
     }
     else {
         NSBeep();
@@ -919,8 +919,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     }
 }
 
-- (void)handleMySQLConnectWithURL:(NSURL *)url {
-    if(![[url scheme] isEqualToString:@"mysql"]) {
+- (void)handlePostgresConnectWithURL:(NSURL *)url {
+    if(![[url scheme] isEqualToString:@"postgres"] && ![[url scheme] isEqualToString:@"postgresql"]) {
         SPLog(@"unsupported url scheme: %@",url);
         return;
     }

@@ -433,9 +433,8 @@
 		sqlModeToRestore = [[res getRowAsArray] objectAtIndex:0];
 	}
 
-	// SPMySQLServerStatusBits serverStatus;
-	// initialize
-	// serverStatus.noBackslashEscapes = 0; // for the moment we only care about that flag
+	// PostgreSQL doesn't have the same server status flags as MySQL
+	// PostgreSQL uses standard_conforming_strings setting for backslash escaping
     BOOL noBackslashEscapes = NO;
 
 	// Read in the file in a loop
@@ -455,10 +454,10 @@
             // Report file read errors, and bail
             @catch (NSException *exception) {
                 if (connectionEncodingToRestore) {
-                    [postgresConnection queryString:[NSString stringWithFormat:@"SET NAMES '%@'", connectionEncodingToRestore]];
+                    [postgresConnection queryString:[NSString stringWithFormat:@"SET client_encoding = '%@'", connectionEncodingToRestore]];
                 }
                 if (sqlModeToRestore) {
-                    [postgresConnection queryString:[NSString stringWithFormat:@"SET SQL_MODE=%@", [sqlModeToRestore tickQuotedString]]];
+                    // PostgreSQL doesn't use SQL_MODE - no restoration needed
                 }
 
                 [self _closeAndStopProgressSheet];
@@ -497,10 +496,10 @@
                                                       encoding:sqlEncoding];
                     if (!sqlString) {
                         if (connectionEncodingToRestore) {
-                            [postgresConnection queryString:[NSString stringWithFormat:@"SET NAMES '%@'", connectionEncodingToRestore]];
+                            [postgresConnection queryString:[NSString stringWithFormat:@"SET client_encoding = '%@'", connectionEncodingToRestore]];
                         }
                         if (sqlModeToRestore) {
-                            [postgresConnection queryString:[NSString stringWithFormat:@"SET SQL_MODE=%@", [sqlModeToRestore tickQuotedString]]];
+                            // PostgreSQL doesn't use SQL_MODE - no restoration needed
                         }
 
                         [self _closeAndStopProgressSheet];
@@ -572,9 +571,10 @@
                 if ([postgresConnection queryErrored] && ![[postgresConnection lastErrorMessage] isEqualToString:@"Query was empty"]) {
                     [errors appendFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(queriesPerformed+1), [postgresConnection lastErrorMessage]];
 
-                    // if the error is about utf8mb4 not being supported by the server display a more helpful message.
-                    // Note: the same error will occur when doing CREATE TABLE... with utf8mb4.
-                    if([postgresConnection lastErrorID] == 1115 /* ER_UNKNOWN_CHARACTER_SET */ && [[postgresConnection lastErrorMessage] rangeOfString:@"utf8mb4" options:NSCaseInsensitiveSearch].location != NSNotFound && [query rangeOfString:@"SET NAMES" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+                    // if the error is about encoding not being supported by the server display a more helpful message.
+                    // PostgreSQL uses UTF-8 natively, but check for encoding-related errors
+                    NSString *errorMsg = [postgresConnection lastErrorMessage] ?: @"";
+                    if([[errorMsg lowercaseString] rangeOfString:@"encoding" options:NSCaseInsensitiveSearch].location != NSNotFound || [[errorMsg lowercaseString] rangeOfString:@"character set" options:NSCaseInsensitiveSearch].location != NSNotFound) {
                         if (!ignoreCharsetError) {
                             __block NSInteger charsetErrorSheetReturnCode;
 
@@ -610,7 +610,7 @@
                         SPMainQSync(^{
                             NSAlert *sqlErrorAlert = [[NSAlert alloc] init];
                             [sqlErrorAlert setMessageText:NSLocalizedString(@"An error occurred while importing SQL", @"sql import error message")];
-                            [sqlErrorAlert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(queriesPerformed+1), [self->postgresConnection lastErrorMessage]]];
+                            [sqlErrorAlert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(queriesPerformed+1), [self->postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")]];
 
                             // Order of buttons matters! first button has "firstButtonReturn" return value from runModal(), etc
                             [sqlErrorAlert addButtonWithTitle:NSLocalizedString(@"Continue", @"continue button")];
@@ -677,10 +677,10 @@
 
 	// Clean up
 	if (connectionEncodingToRestore) {
-		[postgresConnection queryString:[NSString stringWithFormat:@"SET NAMES '%@'", connectionEncodingToRestore]];
+		[postgresConnection queryString:[NSString stringWithFormat:@"SET client_encoding = '%@'", connectionEncodingToRestore]];
 	}
 	if (sqlModeToRestore) {
-		[postgresConnection queryString:[NSString stringWithFormat:@"SET SQL_MODE=%@", [sqlModeToRestore tickQuotedString]]];
+		// PostgreSQL doesn't use SQL_MODE - no restoration needed
 	}
 	[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 	if([filename hasPrefix:SPImportClipboardTempFileNamePrefix]) [fileManager removeItemAtPath:filename error:nil];

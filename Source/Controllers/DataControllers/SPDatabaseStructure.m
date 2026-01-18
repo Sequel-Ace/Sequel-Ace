@@ -221,10 +221,10 @@
 			// Check to see if a cache already exists for the database.
 			if ([[queriedStructure objectForKey:db_id] isKindOfClass:[NSDictionary class]]) {
 
-				// The cache is available. If the `mysql` or `information_schema` databases are being queried,
+				// The cache is available. If the `postgres` or `information_schema` databases are being queried,
 				// never requery as their structure will never change.
-				// 5.5.3+ also has performance_schema meta database
-				if ([currentDatabase isInArray:@[@"mysql",@"information_schema",@"performance_schema"]]) {
+				// PostgreSQL also has pg_catalog as system catalog
+				if ([currentDatabase isInArray:@[@"postgres",@"information_schema",@"pg_catalog"]]) {
 					shouldQueryStructure = NO;
 				}
 				// Otherwise, if the forceUpdate flag wasn't supplied or evaluates to false, also don't update.

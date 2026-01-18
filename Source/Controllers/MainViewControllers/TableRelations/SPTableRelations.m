@@ -294,7 +294,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
 				if ([self->connection queryErrored]) {
 
-					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete relation", @"error deleting relation message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected relation couldn't be deleted.\n\nPostgreSQL said: %@", @"error deleting relation informative message"), [self->connection lastErrorMessage]] callback:nil];
+					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to delete relation", @"error deleting relation message") message:[NSString stringWithFormat:NSLocalizedString(@"The selected relation couldn't be deleted.\n\nPostgreSQL said: %@", @"error deleting relation informative message"), [self->connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")] callback:nil];
 					// Abort loop
 					*stop = YES;
 				}

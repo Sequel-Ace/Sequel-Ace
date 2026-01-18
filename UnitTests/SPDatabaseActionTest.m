@@ -32,7 +32,7 @@
 #import <XCTest/XCTest.h>
 
 #import "SPDatabaseAction.h"
-#import <SPMySQL/SPMySQL.h>
+#import "SPPostgresConnection.h"
 
 
 @interface SPDatabaseActionTest : XCTestCase
@@ -47,43 +47,45 @@
 
 - (void)testCreateDatabase_01_emptyName
 {
-	id mockConnection = OCMStrictClassMock([SPMySQLConnection class]);
+	id mockConnection = OCMStrictClassMock([SPPostgresConnection class]);
 	//OCMStrictClassMock would fail on any call, which is desired here
-	
+
 	SPDatabaseAction *createDb = [[SPDatabaseAction alloc] init];
 	[createDb setConnection:mockConnection];
 	XCTAssertFalse([createDb createDatabase:@"" withEncoding:nil collation:nil],@"create database = NO with empty db name");
-	
+
 	OCMVerifyAll(mockConnection);
 }
 
 - (void)testCreateDatabase_02_allParams
 {
-	id mockConnection = OCMStrictClassMock([SPMySQLConnection class]);
-	
-	OCMExpect([mockConnection queryString:@"CREATE DATABASE `target_name` DEFAULT CHARACTER SET = `utf8` DEFAULT COLLATE = `utf8_bin_ci`"]);
+	id mockConnection = OCMStrictClassMock([SPPostgresConnection class]);
+
+	// PostgreSQL: Uses double quotes for identifiers and different encoding syntax
+	OCMExpect([mockConnection queryString:@"CREATE DATABASE \"target_name\" ENCODING 'utf8' LC_COLLATE 'utf8_bin_ci'"]);
 	OCMStub([mockConnection queryErrored]).andReturn(NO);
-	
+
 	SPDatabaseAction *createDb = [[SPDatabaseAction alloc] init];
 	[createDb setConnection:mockConnection];
-	
+
 	XCTAssertTrue([createDb createDatabase:@"target_name" withEncoding:@"utf8" collation:@"utf8_bin_ci"], @"create database return");
-	
+
 	OCMVerifyAll(mockConnection);
 }
 
 - (void)testCreateDatabase_03_nameOnly
 {
-	id mockConnection = OCMStrictClassMock([SPMySQLConnection class]);
-	
-	OCMExpect([mockConnection queryString:@"CREATE DATABASE `target_name`"]);
+	id mockConnection = OCMStrictClassMock([SPPostgresConnection class]);
+
+	// PostgreSQL: Uses double quotes for identifiers
+	OCMExpect([mockConnection queryString:@"CREATE DATABASE \"target_name\""]);
 	OCMStub([mockConnection queryErrored]).andReturn(NO);
-	
+
 	SPDatabaseAction *createDb = [[SPDatabaseAction alloc] init];
 	[createDb setConnection:mockConnection];
-	
+
 	XCTAssertTrue([createDb createDatabase:@"target_name" withEncoding:@"" collation:nil], @"create database return");
-	
+
 	OCMVerifyAll(mockConnection);
 }
 

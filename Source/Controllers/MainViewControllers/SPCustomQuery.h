@@ -222,9 +222,9 @@
 - (void)clearResultViewDetailsToRestore;
 - (void)autosizeColumns;
 
-// MySQL Help
+// PostgreSQL Help
 - (void)showAutoHelpForCurrentWord:(id)sender;
-- (void)setMySQLversion:(NSString *)theVersion;
+- (void)setPostgresVersion:(NSString *)theVersion;
 
 // Task interaction
 - (void)startDocumentTaskForTab:(NSNotification *)aNotification;

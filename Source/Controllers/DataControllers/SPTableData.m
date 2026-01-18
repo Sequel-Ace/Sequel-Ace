@@ -498,11 +498,14 @@
     // Check for any errors, but only display them if a connection still exists
     if ([postgresConnection queryErrored]) {
         if ([postgresConnection isConnected]) {
+            NSString *lastError = [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error");
             NSString *errorMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the information for table '%@'. Please try again.\n\nPostgreSQL said: %@", @"error retrieving table information informative message"),
-                       tableName, [postgresConnection lastErrorMessage]];
+                       tableName, lastError];
 
             // If the current table doesn't exist anymore reload table list
-            if ([postgresConnection lastErrorID] == 1146) {
+            // Check for PostgreSQL "does not exist" error pattern instead of MySQL error code 1146
+            NSString *lowerError = [lastError lowercaseString];
+            if ([lowerError containsString:@"does not exist"]) {
 
                 // Release the table loading lock to allow reselection/reloading to requery the database.
                 pthread_mutex_unlock(&dataProcessingLock);
@@ -528,8 +531,25 @@
         NSMutableDictionary *col = [NSMutableDictionary dictionary];
         [col setObject:[row objectForKey:@"column_name"] ?: @"" forKey:@"name"];
         [col setObject:[row objectForKey:@"data_type"] ?: @"" forKey:@"type"];
-        [col setObject:[row objectForKey:@"character_maximum_length"] ?: @"" forKey:@"length"];
-        [col setObject:[[row objectForKey:@"is_nullable"] isEqualToString:@"YES"] ? @"1" : @"0" forKey:@"null"];
+
+        // Safely convert character_maximum_length to string (may be NSNumber from libpq)
+        id maxLength = [row objectForKey:@"character_maximum_length"];
+        if (maxLength && ![maxLength isKindOfClass:[NSNull class]]) {
+            [col setObject:[maxLength isKindOfClass:[NSString class]] ? maxLength : [maxLength stringValue] forKey:@"length"];
+        } else {
+            [col setObject:@"" forKey:@"length"];
+        }
+
+        // Safely check is_nullable (may be NSNumber or NSString from libpq)
+        id isNullable = [row objectForKey:@"is_nullable"];
+        BOOL nullable = NO;
+        if ([isNullable isKindOfClass:[NSString class]]) {
+            nullable = [isNullable isEqualToString:@"YES"];
+        } else if ([isNullable isKindOfClass:[NSNumber class]]) {
+            nullable = [isNullable boolValue];
+        }
+        [col setObject:nullable ? @"1" : @"0" forKey:@"null"];
+
         [col setObject:[row objectForKey:@"column_default"] ?: @"" forKey:@"default"];
         // PostgreSQL ordinal_position is 1-indexed, convert to 0-indexed for array access
         NSInteger ordinalPosition = [[row objectForKey:@"ordinal_position"] integerValue];
@@ -603,15 +623,22 @@
 
         NSString *Default = [tableRow safeObjectForKey:@"column_default"];
         NSString *Field = [tableRow safeObjectForKey:@"column_name"];
-        NSString *Null = [tableRow safeObjectForKey:@"is_nullable"];
+        id nullableValue = [tableRow safeObjectForKey:@"is_nullable"];
         NSString *Type = [tableRow safeObjectForKey:@"data_type"];
 
-        // FIXME: are we sure this handles all scenarios?
-        if([Null isEqualToString:@"YES"]){
+        // Handle is_nullable which may be NSString or NSNumber from PostgreSQL
+        NSString *Null = @"";
+        BOOL isNullable = NO;
+        if ([nullableValue isKindOfClass:[NSString class]]) {
+            isNullable = [nullableValue isEqualToString:@"YES"];
+        } else if ([nullableValue isKindOfClass:[NSNumber class]]) {
+            isNullable = [nullableValue boolValue];
+        }
+
+        if (isNullable) {
             Null = @"";
             Default = @"DEFAULT NULL";
-        }
-        else if([Null isEqualToString:@"NO"]){
+        } else {
             Null = @"NOT NULL";
             Default = @"";
         }
@@ -637,10 +664,13 @@
     // Check for any errors, but only display them if a connection still exists
     if ([postgresConnection queryErrored]) {
         if ([postgresConnection isConnected]) {
+            NSString *lastError = [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error");
             NSString *errorMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the information for table '%@'. Please try again.\n\nPostgreSQL said: %@", @"error retrieving table information informative message"),
-                                      tableName, [postgresConnection lastErrorMessage]];
+                                      tableName, lastError];
             // If the current table doesn't exist anymore reload table list
-            if ([postgresConnection lastErrorID] == 1146) {
+            // Check for PostgreSQL "does not exist" error pattern instead of MySQL error code 1146
+            NSString *lowerError = [lastError lowercaseString];
+            if ([lowerError containsString:@"does not exist"]) {
                 // Release the table loading lock to allow reselection/reloading to requery the database.
                 pthread_mutex_unlock(&dataProcessingLock);
                 [tableListInstance deselectAllTables];
@@ -1008,15 +1038,19 @@
 
 	tableCreateSyntax = [[NSString alloc] initWithString:syntaxString];
 
-	// Retrieve the SHOW COLUMNS syntax for the table
-	// Retrieve the SHOW COLUMNS syntax for the table
-	theResult = [postgresConnection queryString:[NSString stringWithFormat:@"SELECT column_name, data_type, is_nullable, column_default, extra FROM information_schema.columns WHERE table_name = %@ AND table_schema = 'public'", [viewName tickQuotedString]]];
+	// Retrieve column information for the view using PostgreSQL's information_schema
+	// Note: PostgreSQL doesn't have an 'extra' column like MySQL, so we derive it from column_default
+	theResult = [postgresConnection queryString:[NSString stringWithFormat:
+		@"SELECT column_name AS \"Field\", data_type AS \"Type\", is_nullable AS \"Null\", column_default AS \"Default\", "
+		@"CASE WHEN column_default LIKE 'nextval%%' THEN 'auto_increment' ELSE '' END AS \"Extra\" "
+		@"FROM information_schema.columns WHERE table_name = %@ AND table_schema = 'public'", [viewName tickQuotedString]]];
 	[theResult setReturnDataAsStrings:YES];
 
 	// Check for any errors, but only display them if a connection still exists
 	if ([postgresConnection queryErrored]) {
 		if ([postgresConnection isConnected]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nPostgres said: %@", @"message of panel when retrieving information failed"), [postgresConnection lastErrorMessage]] callback:nil];
+			NSString *lastError = [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error");
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nPostgres said: %@", @"message of panel when retrieving information failed"), lastError] callback:nil];
 			if (changeEncoding) [postgresConnection restoreStoredEncoding];
 		}
 		return nil;
@@ -1141,8 +1175,9 @@
 	// Check for any errors, but only display them if a connection still exists
 	if ([postgresConnection queryErrored]) {
 		if ([postgresConnection isConnected]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error retrieving trigger information", @"error retrieving trigger information message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nPostgreSQL said: %@", @"error retrieving table information informative message"), [tableListInstance tableName], [postgresConnection lastErrorMessage]] callback:nil];
-			
+			NSString *lastError = [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error");
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error retrieving trigger information", @"error retrieving trigger information message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nPostgreSQL said: %@", @"error retrieving table information informative message"), [tableListInstance tableName], lastError] callback:nil];
+
 			if (changeEncoding) [postgresConnection restoreStoredEncoding];
 		}
 
@@ -1283,38 +1318,83 @@
 		}
 	}
 
-	// Also capture a general column type "group" to allow behavioural switches
+	// Also capture a general column type "group" to allow behavioural switches (PostgreSQL)
 	detailString = [[NSString alloc] initWithString:[fieldDetails objectForKey:@"type"]];
-	if ([detailString isEqualToString:@"BIT"]) {
-		[fieldDetails setObject:@"bit" forKey:@"typegrouping"];
-	} else if ([detailString isEqualToString:@"TINYINT"] || [detailString isEqualToString:@"SMALLINT"] || [detailString isEqualToString:@"MEDIUMINT"]
-				|| [detailString isEqualToString:@"INT"] || [detailString isEqualToString:@"INTEGER"] || [detailString isEqualToString:@"BIGINT"]) {
-		[fieldDetails setObject:@"integer" forKey:@"typegrouping"];
-	} else if ([detailString isEqualToString:@"REAL"] || [detailString isEqualToString:@"DOUBLE"] || [detailString isEqualToString:@"FLOAT"]
-				|| [detailString isEqualToString:@"DECIMAL"] || [detailString isEqualToString:@"NUMERIC"]) {
-		[fieldDetails setObject:@"float" forKey:@"typegrouping"];
-	} else if ([detailString isEqualToString:@"DATE"] || [detailString isEqualToString:@"TIME"] || [detailString isEqualToString:@"TIMESTAMP"]
-				|| [detailString isEqualToString:@"DATETIME"] || [detailString isEqualToString:@"YEAR"]) {
-		[fieldDetails setObject:@"date" forKey:@"typegrouping"];
-	} else if ([detailString isEqualToString:@"CHAR"] || [detailString isEqualToString:@"VARCHAR"]) {
-		[fieldDetails setObject:@"string" forKey:@"typegrouping"];
-	} else if ([detailString isEqualToString:@"BINARY"] || [detailString isEqualToString:@"VARBINARY"]) {
-		[fieldDetails setObject:@"binary" forKey:@"typegrouping"];
-	} else if ([detailString isEqualToString:@"ENUM"] || [detailString isEqualToString:@"SET"]) {
-		[fieldDetails setObject:@"enum" forKey:@"typegrouping"];
-	} else if ([detailString isEqualToString:@"TINYTEXT"] || [detailString isEqualToString:@"TEXT"]
-				|| [detailString isEqualToString:@"MEDIUMTEXT"] || [detailString isEqualToString:@"LONGTEXT"]
-	            || [detailString isEqualToString:@"JSON"]) { // JSON is seen as a text type by us, but works a bit different (e.g. encoding is always "utf8mb4")
-		[fieldDetails setObject:@"textdata" forKey:@"typegrouping"];
-	} else if ([detailString isEqualToString:@"POINT"] || [detailString isEqualToString:@"GEOMETRY"]
-				|| [detailString isEqualToString:@"LINESTRING"] || [detailString isEqualToString:@"POLYGON"]
-				|| [detailString isEqualToString:@"MULTIPOLYGON"] || [detailString isEqualToString:@"GEOMETRYCOLLECTION"]
-				|| [detailString isEqualToString:@"MULTIPOINT"] || [detailString isEqualToString:@"MULTILINESTRING"]) {
-		[fieldDetails setObject:@"geometry" forKey:@"typegrouping"];
 
-	// Default to "blobdata".  This means that future and currently unsupported types - including spatial extensions -
+	// Bit string types
+	if ([detailString isEqualToString:@"BIT"] || [detailString isEqualToString:@"BIT VARYING"] || [detailString isEqualToString:@"VARBIT"]) {
+		[fieldDetails setObject:@"bit" forKey:@"typegrouping"];
+	}
+	// Integer types (PostgreSQL)
+	else if ([detailString isEqualToString:@"SMALLINT"] || [detailString isEqualToString:@"INTEGER"] || [detailString isEqualToString:@"INT"]
+				|| [detailString isEqualToString:@"BIGINT"]
+				|| [detailString isEqualToString:@"SMALLSERIAL"] || [detailString isEqualToString:@"SERIAL"] || [detailString isEqualToString:@"BIGSERIAL"]) {
+		[fieldDetails setObject:@"integer" forKey:@"typegrouping"];
+	}
+	// Floating point and decimal types (PostgreSQL)
+	else if ([detailString isEqualToString:@"REAL"] || [detailString isEqualToString:@"DOUBLE PRECISION"]
+				|| [detailString isEqualToString:@"DECIMAL"] || [detailString isEqualToString:@"NUMERIC"]
+				|| [detailString isEqualToString:@"MONEY"]) {
+		[fieldDetails setObject:@"float" forKey:@"typegrouping"];
+	}
+	// Date/time types (PostgreSQL)
+	else if ([detailString isEqualToString:@"DATE"] || [detailString isEqualToString:@"TIME"]
+				|| [detailString isEqualToString:@"TIME WITH TIME ZONE"] || [detailString isEqualToString:@"TIMETZ"]
+				|| [detailString isEqualToString:@"TIMESTAMP"] || [detailString isEqualToString:@"TIMESTAMP WITH TIME ZONE"] || [detailString isEqualToString:@"TIMESTAMPTZ"]
+				|| [detailString isEqualToString:@"INTERVAL"]) {
+		[fieldDetails setObject:@"date" forKey:@"typegrouping"];
+	}
+	// Character types (PostgreSQL)
+	else if ([detailString isEqualToString:@"CHARACTER"] || [detailString isEqualToString:@"CHAR"]
+				|| [detailString isEqualToString:@"CHARACTER VARYING"] || [detailString isEqualToString:@"VARCHAR"]) {
+		[fieldDetails setObject:@"string" forKey:@"typegrouping"];
+	}
+	// Binary type (PostgreSQL - bytea)
+	else if ([detailString isEqualToString:@"BYTEA"]) {
+		[fieldDetails setObject:@"binary" forKey:@"typegrouping"];
+	}
+	// Boolean type (PostgreSQL)
+	else if ([detailString isEqualToString:@"BOOLEAN"] || [detailString isEqualToString:@"BOOL"]) {
+		[fieldDetails setObject:@"boolean" forKey:@"typegrouping"];
+	}
+	// Text and JSON types (PostgreSQL)
+	else if ([detailString isEqualToString:@"TEXT"]
+				|| [detailString isEqualToString:@"JSON"] || [detailString isEqualToString:@"JSONB"]) {
+		[fieldDetails setObject:@"textdata" forKey:@"typegrouping"];
+	}
+	// Geometric types (PostgreSQL native)
+	else if ([detailString isEqualToString:@"POINT"] || [detailString isEqualToString:@"LINE"]
+				|| [detailString isEqualToString:@"LSEG"] || [detailString isEqualToString:@"BOX"]
+				|| [detailString isEqualToString:@"PATH"] || [detailString isEqualToString:@"POLYGON"]
+				|| [detailString isEqualToString:@"CIRCLE"]) {
+		[fieldDetails setObject:@"geometry" forKey:@"typegrouping"];
+	}
+	// Network types (PostgreSQL)
+	else if ([detailString isEqualToString:@"CIDR"] || [detailString isEqualToString:@"INET"]
+				|| [detailString isEqualToString:@"MACADDR"] || [detailString isEqualToString:@"MACADDR8"]) {
+		[fieldDetails setObject:@"network" forKey:@"typegrouping"];
+	}
+	// UUID type (PostgreSQL)
+	else if ([detailString isEqualToString:@"UUID"]) {
+		[fieldDetails setObject:@"uuid" forKey:@"typegrouping"];
+	}
+	// Range types (PostgreSQL)
+	else if ([detailString isEqualToString:@"INT4RANGE"] || [detailString isEqualToString:@"INT8RANGE"]
+				|| [detailString isEqualToString:@"NUMRANGE"] || [detailString isEqualToString:@"TSRANGE"]
+				|| [detailString isEqualToString:@"TSTZRANGE"] || [detailString isEqualToString:@"DATERANGE"]) {
+		[fieldDetails setObject:@"range" forKey:@"typegrouping"];
+	}
+	// Text search types (PostgreSQL)
+	else if ([detailString isEqualToString:@"TSVECTOR"] || [detailString isEqualToString:@"TSQUERY"]) {
+		[fieldDetails setObject:@"textsearch" forKey:@"typegrouping"];
+	}
+	// XML type (PostgreSQL)
+	else if ([detailString isEqualToString:@"XML"]) {
+		[fieldDetails setObject:@"xml" forKey:@"typegrouping"];
+	}
+	// Default to "blobdata". This means that future and currently unsupported types
 	// will be preserved unmangled.
-	} else {
+	else {
 		[fieldDetails setObject:@"blobdata" forKey:@"typegrouping"];
 	}
 

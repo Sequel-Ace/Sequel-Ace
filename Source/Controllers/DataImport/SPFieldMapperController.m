@@ -415,7 +415,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			[postgresConnection queryString:createString];
 
 			if ([postgresConnection queryErrored]) {
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new column", @"error adding new column message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nPostgreSQL said: %@", @"error adding new column informative message"), [fieldMappingTableColumnNames objectAtIndex:currentIndex], createString, [postgresConnection lastErrorMessage]] callback:nil];
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new column", @"error adding new column message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nPostgreSQL said: %@", @"error adding new column informative message"), [fieldMappingTableColumnNames objectAtIndex:currentIndex], createString, [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")] callback:nil];
 				return;
 			} else {
 				[toBeEditedRowIndexes removeIndex:currentIndex];
@@ -461,7 +461,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 		[postgresConnection queryString:createString];
 
 		if ([postgresConnection queryErrored]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nPostgreSQL said: %@", @"error adding new table informative message"), [newTableNameTextField stringValue], createString, [postgresConnection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nPostgreSQL said: %@", @"error adding new table informative message"), [newTableNameTextField stringValue], createString, [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")] callback:nil];
 			return;
 		}
 

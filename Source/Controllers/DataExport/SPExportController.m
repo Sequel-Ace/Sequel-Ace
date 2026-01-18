@@ -839,7 +839,7 @@ set_input:
  */
 - (IBAction)toggleXMLOutputFormat:(id)sender
 {
-	if ([sender indexOfSelectedItem] == SPXMLExportMySQLFormat) {
+	if ([sender indexOfSelectedItem] == SPXMLExportPostgresFormat) {
 		[exportXMLIncludeStructure setEnabled:YES];
 		[exportXMLIncludeContent setEnabled:YES];
 		[exportXMLNULLValuesAsTextField setEnabled:NO];
@@ -1054,20 +1054,14 @@ set_input:
 	
 	// When switching to Dot export, ensure the server's lower_case_table_names value is checked the first time
 	// to set the export's link case sensitivity setting
+	// PostgreSQL: PostgreSQL is always case-sensitive for unquoted identifiers (they're folded to lowercase)
+	// and case-preserving for quoted identifiers. There's no equivalent setting.
 	if (isDot && serverLowerCaseTableNameValue == NSNotFound) {
-		
-		SPPostgresResult *caseResult = [connection queryString:@"SHOW VARIABLES LIKE 'lower_case_table_names'"];
-		
-		[caseResult setReturnDataAsStrings:YES];
-		
-		if ([caseResult numberOfRows] == 1) {
-			serverLowerCaseTableNameValue = [[[caseResult getRowAsDictionary] objectForKey:@"Value"] integerValue];
-		} 
-		else {
-			serverLowerCaseTableNameValue = 0;
-		}
-		
-		[exportDotForceLowerTableNamesCheck setState:(serverLowerCaseTableNameValue == 0)?NSControlStateValueOff:NSControlStateValueOn];
+		// PostgreSQL doesn't have lower_case_table_names - identifiers are case-sensitive when quoted
+		// Set to 0 (case-sensitive) as PostgreSQL default behavior
+		serverLowerCaseTableNameValue = 0;
+
+		[exportDotForceLowerTableNamesCheck setState:NSControlStateValueOff];
 	}
 	
 	[self _displayExportTypeOptions:(isSQL || isCSV || isXML || isDot)];
@@ -1542,7 +1536,7 @@ set_input:
 
 		[sqlExporter setSqlDatabaseHost:[tableDocumentInstance host]];
 		[sqlExporter setSqlDatabaseName:[tableDocumentInstance database]];
-		[sqlExporter setSqlDatabaseVersion:[tableDocumentInstance mySQLVersion]];
+		[sqlExporter setSqlDatabaseVersion:[tableDocumentInstance postgresVersion]];
 
 		[sqlExporter setSqlOutputIncludeUTF8BOM:[exportUseUTF8BOMButton state]];
 		[sqlExporter setSqlOutputEncodeBLOBasHex:[exportSQLBLOBFieldsAsHexCheck state]];
@@ -1644,7 +1638,7 @@ set_input:
 		[dotExporter setDotForceLowerTableNames:[exportDotForceLowerTableNamesCheck state]];
 		[dotExporter setDotDatabaseHost:[tableDocumentInstance host]];
 		[dotExporter setDotDatabaseName:[tableDocumentInstance database]];
-		[dotExporter setDotDatabaseVersion:[tableDocumentInstance mySQLVersion]];
+		[dotExporter setDotDatabaseVersion:[tableDocumentInstance postgresVersion]];
 
 		[dotExporter setDotExportTables:exportTables];
 
@@ -1902,12 +1896,12 @@ set_input:
 	[header appendString:@"- Sequel Ace XML dump\n"];
 	[header appendFormat:@"- %@ %@\n-\n", NSLocalizedString(@"Version", @"export header version label"), [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"]];
 	[header appendFormat:@"- %@\n- %@\n-\n", SPLOCALIZEDURL_HOMEPAGE, SPDevURL];
-	[header appendFormat:@"- %@: %@ (MySQL %@)\n", NSLocalizedString(@"Host", @"export header host label"), [tableDocumentInstance host], [tableDocumentInstance mySQLVersion]];
+	[header appendFormat:@"- %@: %@ (PostgreSQL %@)\n", NSLocalizedString(@"Host", @"export header host label"), [tableDocumentInstance host], [tableDocumentInstance postgresVersion]];
 	[header appendFormat:@"- %@: %@\n", NSLocalizedString(@"Database", @"export header database label"), [tableDocumentInstance database]];
 	[header appendFormat:@"- %@ Time: %@\n", NSLocalizedString(@"Generation Time", @"export header generation time label"), [NSDate date]];
 	[header appendString:@"-\n-->\n\n"];
 
-	if ([exportXMLFormatPopUpButton indexOfSelectedItem] == SPXMLExportMySQLFormat) {
+	if ([exportXMLFormatPopUpButton indexOfSelectedItem] == SPXMLExportPostgresFormat) {
 
 		NSString *tag;
 
@@ -2957,7 +2951,7 @@ set_input:
 + (NSString *)describeXMLExportFormat:(SPXMLExportFormat)xf
 {
 	switch (xf) {
-			NAMEOF(SPXMLExportMySQLFormat);
+			NAMEOF(SPXMLExportPostgresFormat);
 			NAMEOF(SPXMLExportPlainFormat);
 	}
 	return nil;
@@ -2965,7 +2959,7 @@ set_input:
 
 + (BOOL)copyXMLExportFormatForDescription:(NSString *)xfd to:(SPXMLExportFormat *)dst
 {
-	VALUEOF(SPXMLExportMySQLFormat, xfd, dst);
+	VALUEOF(SPXMLExportPostgresFormat, xfd, dst);
 	VALUEOF(SPXMLExportPlainFormat, xfd, dst);
 	return NO;
 }
@@ -3762,7 +3756,7 @@ set_input:
 		if (exportToMultipleFiles) {
 			NSString *string = @"";
 
-			if ([exporter xmlFormat] == SPXMLExportMySQLFormat) {
+			if ([exporter xmlFormat] == SPXMLExportPostgresFormat) {
 				string = (exportSource == SPTableExport) ? @"</database>\n</mysqldump>\n" : @"</resultset>\n";;
 			}
 			else if ([exporter xmlFormat] == SPXMLExportPlainFormat) {
@@ -3783,7 +3777,7 @@ set_input:
 	else {
 		NSString *string = @"";
 
-		if ([exporter xmlFormat] == SPXMLExportMySQLFormat) {
+		if ([exporter xmlFormat] == SPXMLExportPostgresFormat) {
 			string = (exportSource == SPTableExport) ? @"</database>\n</mysqldump>\n" : @"</resultset>\n";;
 		}
 		else if ([exporter xmlFormat] == SPXMLExportPlainFormat) {

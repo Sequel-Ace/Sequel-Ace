@@ -127,15 +127,21 @@
     // is being exported
     if ([self csvTableName] && (![self csvDataArray])) {
         NSDictionary *tableDetails = nil;
-        
-        // Determine whether the supplied table is actually a table or a view via the CREATE TABLE command, and get the table details
-        SPPostgresResult *queryResult = [connection queryString:[NSString stringWithFormat:@"SHOW CREATE TABLE %@", [[self csvTableName] postgresQuotedIdentifier]]];
+
+        // Determine whether the supplied table is actually a table or a view using PostgreSQL system catalogs
+        // PostgreSQL: Query pg_class to determine if this is a view ('v') or table ('r')
+        SPPostgresResult *queryResult = [connection queryString:[NSString stringWithFormat:
+            @"SELECT relkind FROM pg_class c "
+            @"JOIN pg_namespace n ON c.relnamespace = n.oid "
+            @"WHERE n.nspname = 'public' AND c.relname = %@",
+            [[self csvTableName] tickQuotedString]]];
         [queryResult setReturnDataAsStrings:YES];
-        
+
         if ([queryResult numberOfRows]) {
-            id object = [[queryResult getRowAsDictionary] objectForKey:@"Create View"];
-            
-            tableDetails = [[NSDictionary alloc] initWithDictionary:(object) ? [[self csvTableData] informationForView:[self csvTableName]] : [[self csvTableData] informationForTable:[self csvTableName] fromDatabase:nil]];
+            NSDictionary *row = [queryResult getRowAsDictionary];
+            BOOL isView = [[row objectForKey:@"relkind"] isEqualToString:@"v"];
+
+            tableDetails = [[NSDictionary alloc] initWithDictionary:(isView) ? [[self csvTableData] informationForView:[self csvTableName]] : [[self csvTableData] informationForTable:[self csvTableName] fromDatabase:nil]];
         }
         
         // Retrieve the table details via the data class, and use it to build an array containing column numeric status

@@ -172,7 +172,7 @@
 	BOOL allowSplitViewResizing;
 
 	NSString *selectedDatabase;
-	NSString *mySQLVersion;
+	NSString *postgresVersion;
 	NSString *selectedDatabaseEncoding;
 	NSUserDefaults *prefs;
 	NSUndoManager *undoManager;
@@ -342,7 +342,7 @@
 - (NSString *)name;
 - (NSString *)database;
 - (NSString *)port;
-- (NSString *)mySQLVersion;
+- (NSString *)postgresVersion;
 - (NSString *)user;
 - (NSString *)connectionID;
 - (NSString *)tabTitleForTooltip;

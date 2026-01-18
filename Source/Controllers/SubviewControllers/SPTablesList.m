@@ -2038,7 +2038,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		[postgresConnection queryString:query];
 		if ([postgresConnection queryErrored]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while importing table", @"error while importing table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to import a table via: \n%@\n\n\nPostgreSQL said: %@", @"error importing table informative message"), query, [postgresConnection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error while importing table", @"error while importing table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to import a table via: \n%@\n\n\nPostgreSQL said: %@", @"error importing table informative message"), query, [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")] callback:nil];
 			return NO;
 		}
 		[self updateTables:nil];
@@ -2474,7 +2474,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			}
 			
 			[alert setMessageText:NSLocalizedString(@"Error", @"error")];
-			[alert setInformativeText:[NSString stringWithFormat:userMessage, [filteredTables objectAtIndex:currentIndex], [postgresConnection lastErrorMessage]]];
+			[alert setInformativeText:[NSString stringWithFormat:userMessage, [filteredTables objectAtIndex:currentIndex], [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")]];
 			[alert setAlertStyle:NSAlertStyleWarning];
 			
 			if ([indexes indexLessThanIndex:currentIndex] == NSNotFound) {
@@ -2512,7 +2512,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		// Couldn't truncate table
 		if ([postgresConnection queryErrored]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error truncating table", @"error truncating table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to truncate the table '%@'.\n\nPostgreSQL said: %@", @"error truncating table informative message"), [filteredTables objectAtIndex:currentIndex], [postgresConnection lastErrorMessage]] callback:nil];
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error truncating table", @"error truncating table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to truncate the table '%@'.\n\nPostgreSQL said: %@", @"error truncating table informative message"), [filteredTables objectAtIndex:currentIndex], [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")] callback:nil];
 			*stop = YES;
 		}
 
@@ -2632,7 +2632,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			// Error while creating new table
 
 			SPMainQSync(^{
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@'.\n\nPostgreSQL said: %@", @"error adding new table informative message"), tableName, [self->postgresConnection lastErrorMessage]] callback:nil];
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@'.\n\nPostgreSQL said: %@", @"error adding new table informative message"), tableName, [self->postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")] callback:nil];
 			});
 			
 			// PostgreSQL always uses UTF8, no encoding restoration needed
@@ -2707,7 +2707,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	if ( ![queryResult numberOfRows] && tblType != SPTableTypeTable) { // Allow table copy without SHOW CREATE TABLE
 
 		//error while getting table structure
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't get create syntax.\nPostgreSQL said: %@", @"message of panel when table information cannot be retrieved"), [postgresConnection lastErrorMessage]] callback:nil];
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't get create syntax.\nPostgreSQL said: %@", @"message of panel when table information cannot be retrieved"), [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")] callback:nil];
 		return;
     }
 
@@ -2737,7 +2737,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		// Check for errors, only displaying if the connection hasn't been terminated
 		if ([postgresConnection queryErrored]) {
 			if ([postgresConnection isConnected]) {
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the create syntax for '%@'.\nPostgreSQL said: %@", @"message of panel when create syntax cannot be retrieved"), selectedTableName, [postgresConnection lastErrorMessage]] callback:nil];
+				NSString *lastError = [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error");
+				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the create syntax for '%@'.\nPostgreSQL said: %@", @"message of panel when create syntax cannot be retrieved"), selectedTableName, lastError] callback:nil];
 			}
 			return;
 		}
@@ -2749,14 +2750,16 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[postgresConnection queryString:[[tableSyntax unboxNull] stringByReplacingOccurrencesOfRegex:[NSString stringWithFormat:@"(?<=%@ )(`[^`]+?`)", [tableType uppercaseString]] withString:[tableName postgresQuotedIdentifier]]];
 
 		if ([postgresConnection queryErrored]) {
-			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't duplicate '%@'.\nPostgreSQL said: %@", @"message of panel when an item cannot be renamed"), tableName, [postgresConnection lastErrorMessage]] callback:nil];
+			NSString *lastError = [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error");
+			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't duplicate '%@'.\nPostgreSQL said: %@", @"message of panel when an item cannot be renamed"), tableName, lastError] callback:nil];
 		}
 
 	}
 
 	if ([postgresConnection queryErrored]) {
 		//error while creating new table
-		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't create '%@'.\nPostgreSQL said: %@", @"message of panel when table cannot be created"), tableName, [postgresConnection lastErrorMessage]] callback:nil];
+		NSString *lastError = [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error");
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Couldn't create '%@'.\nPostgreSQL said: %@", @"message of panel when table cannot be created"), tableName, lastError] callback:nil];
 		return;
 	}
 
@@ -2891,15 +2894,17 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		// check for errors
 		if ([postgresConnection queryErrored]) {
 
-			if(postgresConnection.lastErrorID == 1050 && tableType == SPTableTypeTableNewDB){
-				NSString *message = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while renaming '%@'.\n\nPostgreSQL said: %@", @"rename table error informative message"), oldTableName, [postgresConnection lastErrorMessage]];
+			// PostgreSQL: Check for "already exists" error message instead of MySQL error code
+			NSString *errorMsg = [[postgresConnection lastErrorMessage] lowercaseString] ?: @"";
+			if([errorMsg rangeOfString:@"already exists"].location != NSNotFound && tableType == SPTableTypeTableNewDB){
+				NSString *message = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while renaming '%@'.\n\nPostgreSQL said: %@", @"rename table error informative message"), oldTableName, [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")];
 
 				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Warning", @"warning") message:message callback:nil];
 
 				return;
 			}
 			else{
-				[NSException raise:@"PostgreSQL Error" format:NSLocalizedString(@"An error occurred while renaming '%@'.\n\nPostgreSQL said: %@", @"rename table error informative message"), oldTableName, [postgresConnection lastErrorMessage]];
+				[NSException raise:@"PostgreSQL Error" format:NSLocalizedString(@"An error occurred while renaming '%@'.\n\nPostgreSQL said: %@", @"rename table error informative message"), oldTableName, [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")];
 			}
 		}
 

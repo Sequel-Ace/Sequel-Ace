@@ -1289,11 +1289,12 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 
 	// Retrieve the column definition
 	NSDictionary *columnDefinition = [[(id <SPDatabaseContentViewDelegate>)[self delegate] dataColumnDefinitions] objectAtIndex:colIndex];
-	NSString *columnType = [columnDefinition objectForKey:@"typegrouping"];
+	id columnType = [columnDefinition objectForKey:@"typegrouping"];
 
 	// If the column is a BLOB or TEXT column, and not an enum, trigger sheet editing
-	BOOL isBlob = ([columnType isEqualToString:@"blobdata"]);
-	if (isBlob && ![columnType isEqualToString:@"enum"]) return YES;
+	BOOL isBlob = ([columnType isKindOfClass:[NSString class]] && [columnType isEqualToString:@"blobdata"]);
+	BOOL isEnum = ([columnType isKindOfClass:[NSString class]] && [columnType isEqualToString:@"enum"]);
+	if (isBlob && !isEnum) return YES;
 
 	// Otherwise, check the cell value for newlines.
 	id cellValue = nil;

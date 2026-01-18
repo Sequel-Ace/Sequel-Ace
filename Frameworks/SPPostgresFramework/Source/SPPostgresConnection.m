@@ -570,7 +570,7 @@ static BOOL _retryQueriesOnConnectionFailure = NO;
     _lastQueryWasCancelledFlag = wasCancelled;
 }
 
-- (NSUInteger)mysqlConnectionThreadId {
+- (NSUInteger)connectionThreadId {
     // PostgreSQL uses backend PID instead of thread ID
     if (!connection) return 0;
     return (NSUInteger)PQbackendPID(connection);

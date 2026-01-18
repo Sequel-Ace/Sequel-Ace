@@ -120,7 +120,7 @@ typedef NS_ENUM(NSInteger, SPPostgresConnectionLostDecision) {
 // MySQL compatibility methods (stubs or PostgreSQL equivalents)
 - (BOOL)serverShutdown;
 - (void)setLastQueryWasCancelled:(BOOL)wasCancelled;
-- (NSUInteger)mysqlConnectionThreadId;
+- (NSUInteger)connectionThreadId;
 - (void)setEncodingUsesLatin1Transport:(BOOL)useLatin1;
 - (void)setDelegateQueryLogging:(BOOL)shouldLog;
 - (void)setRetryQueriesOnConnectionFailure:(BOOL)shouldRetry;

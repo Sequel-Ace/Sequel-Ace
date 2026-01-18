@@ -39,7 +39,6 @@
     XCTestSuite *testSuite = [[XCTestSuite alloc] initWithName:NSStringFromClass(self)];
 	
 	[self addTestForDatabase:QKDatabaseUnknown withIdentifierQuote:EMPTY_STRING toTestSuite:testSuite];
-	[self addTestForDatabase:QKDatabaseMySQL withIdentifierQuote:QKMySQLIdentifierQuote toTestSuite:testSuite];
 	[self addTestForDatabase:QKDatabasePostgreSQL withIdentifierQuote:QKPostgreSQLIdentifierQuote toTestSuite:testSuite];
 	
     return testSuite;

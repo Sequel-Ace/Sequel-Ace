@@ -46,8 +46,6 @@
 
 @implementation SPServerSupport
 
-@synthesize isMySQL5;
-@synthesize isMySQL8;
 @synthesize supportsFractionalSeconds;
 @synthesize serverMajorVersion;
 @synthesize serverMinorVersion;
@@ -98,15 +96,12 @@
  */
 - (void)evaluate
 {
-	// By default, assumme the server doesn't support anything
+	// For PostgreSQL, most features are always supported
 	[self _invalidate];
-	
-	isMySQL5 = (serverMajorVersion == 5);
-    isMySQL8 = (serverMajorVersion == 8);
-	
-	// Fractional second support wasn't added until MySQL 5.6.4
-	supportsFractionalSeconds = [self isEqualToOrGreaterThanMajorVersion:5 minor:6 release:4];
-    supportsFulltextOnInnoDB  = [self isEqualToOrGreaterThanMajorVersion:5 minor:6 release:4];
+
+	// PostgreSQL has always supported fractional seconds and full-text search
+	supportsFractionalSeconds = YES;
+    supportsFulltextOnInnoDB  = YES; // PostgreSQL uses GIN/GiST indexes for full-text, always supported
 }
 
 /**
@@ -140,7 +135,7 @@
 - (NSString *)description
 {
 	unsigned int i;
-	NSMutableString *description = [NSMutableString stringWithFormat:@"<%@: Server is MySQL version %ld.%ld.%ld. Supports:\n", [self className], (long)serverMajorVersion, (long)serverMinorVersion, (long)serverReleaseVersion];
+	NSMutableString *description = [NSMutableString stringWithFormat:@"<%@: Server is PostgreSQL version %ld.%ld.%ld. Supports:\n", [self className], (long)serverMajorVersion, (long)serverMinorVersion, (long)serverReleaseVersion];
 	
 	Ivar *vars = class_copyIvarList([self class], &i);
 	
@@ -169,18 +164,15 @@
  */
 - (void)_invalidate
 {
-	isMySQL5 = NO;
-    isMySQL8 = NO;
-
-	supportsFractionalSeconds               = NO;
-	supportsFulltextOnInnoDB                = NO;
+	supportsFractionalSeconds = NO;
+	supportsFulltextOnInnoDB  = NO;
 }
 
 /**
  * Compares the supplied version numbers to determine their order.
  *
- * Note that this method assumes (when comparing MySQL version numbers) that release verions in the form
- * XX are larger than X. For example, version 5.0.18 is greater than version 5.0.8
+ * Note that this method assumes that release versions in the form XX are larger than X.
+ * For example, version 14.0.18 is greater than version 14.0.8
  *
  * @param majorVersionA   The major version number of server A
  * @param minorVersionA   The minor version number of server A

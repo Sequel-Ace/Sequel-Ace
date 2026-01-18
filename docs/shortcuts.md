@@ -115,7 +115,7 @@ Keep Window Open after Insertion by _holding down `⌃` while insertion_
 | `⎋`               | Close Window                                                  |
 | `F5`              | Spell Checker Completion (narrow-down list)                   |
 | `⌃ Y`             | Select current query                                          |
-| `⇧ ⌘ H`           | Show MySQL help for current word or selection                 |
+| `⇧ ⌘ H`           | Show PostgreSQL help for current word or selection            |
 | `⌥ ⌘ F`           | Open query favorites popup menu                               |
 | `⌥ ⌘ Y`           | Open query history popup menu                                 |
 | `⌃ + ↑`           | Insert previous history item (successively)                   |

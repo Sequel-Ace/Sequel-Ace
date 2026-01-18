@@ -11,7 +11,7 @@ about: Create a report to help us improve
 - Sequel Ace Source (App Store/GitHub/Homebrew):
 - macOS Version:
 - Processor Type (Intel/Apple):
-- MySQL Version:
+- PostgreSQL Version:
 - macOS Localization:
 
 **Is Issue Present in [Latest Beta](https://github.com/Sequel-Ace/Sequel-Ace/releases)?**

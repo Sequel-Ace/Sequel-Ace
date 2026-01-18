@@ -81,7 +81,7 @@
 	BOOL isInitializing;
 	NSMutableString *errorsString;
 	
-	// MySQL 5.7.6 removes the "Password" columns and only uses the "plugin" + "authentication_string" columns
+	// PostgreSQL uses role-based authentication with pg_authid
 	BOOL requiresPost576PasswordHandling;
 }
 
