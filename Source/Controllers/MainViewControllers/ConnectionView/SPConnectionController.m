@@ -2347,9 +2347,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                                                                      parentWindow:[dbDocument parentWindowControllerWindow]
                                                                             error:&awsError];
 
-            if (awsError) {
+            if (awsError || ![connectionPassword length]) {
                 [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"AWS IAM Authentication Failed", @"AWS IAM auth failed title")
-                                                errorMessage:awsError.localizedDescription
+                                                errorMessage:awsError ? awsError.localizedDescription : NSLocalizedString(@"Empty authentication token returned", @"AWS IAM empty token error")
                                                       detail:nil];
                 return;
             }

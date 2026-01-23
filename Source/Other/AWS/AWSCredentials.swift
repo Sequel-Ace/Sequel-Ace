@@ -109,7 +109,7 @@ import OSLog
     // MARK: - Validation
 
     @objc var isValid: Bool {
-        !accessKeyId.isEmpty && !secretAccessKey.isEmpty
+        accessKeyId.isNotEmpty && secretAccessKey.isNotEmpty
     }
 
     @objc var requiresMFA: Bool {
@@ -124,7 +124,7 @@ import OSLog
 
     @objc static var credentialsFilePath: String {
         if let envPath = ProcessInfo.processInfo.environment["AWS_SHARED_CREDENTIALS_FILE"],
-           !envPath.isEmpty {
+           envPath.isNotEmpty {
             return envPath
         }
         return NSHomeDirectory() + "/.aws/credentials"
@@ -132,7 +132,7 @@ import OSLog
 
     @objc static var configFilePath: String {
         if let envPath = ProcessInfo.processInfo.environment["AWS_CONFIG_FILE"],
-           !envPath.isEmpty {
+           envPath.isNotEmpty {
             return envPath
         }
         return NSHomeDirectory() + "/.aws/config"
@@ -184,7 +184,18 @@ import OSLog
     }
 
     /// Load configuration for a specific profile
-    private static func loadProfileConfiguration(for profileName: String) throws -> [String: String] {
+    /// - Parameters:
+    ///   - profileName: The name of the profile to load
+    ///   - visited: Set of already visited profiles to detect cycles (used internally)
+    private static func loadProfileConfiguration(for profileName: String, visited: Set<String> = []) throws -> [String: String] {
+        // Guard against cyclical source_profile chains
+        if visited.contains(profileName) {
+            os_log(.error, log: log, "Cyclical source_profile detected for profile: %{public}@", profileName)
+            throw AWSCredentialsError.invalidCredentials
+        }
+        var visited = visited
+        visited.insert(profileName)
+
         var result = [String: String]()
         var foundProfile = false
 
@@ -214,7 +225,7 @@ import OSLog
 
         // If profile has source_profile, load credentials from that
         if let sourceProfile = result["source_profile"], result["aws_access_key_id"] == nil {
-            if let sourceConfig = try? loadProfileConfiguration(for: sourceProfile) {
+            if let sourceConfig = try? loadProfileConfiguration(for: sourceProfile, visited: visited) {
                 if let accessKey = sourceConfig["aws_access_key_id"] {
                     result["aws_access_key_id"] = accessKey
                 }
@@ -294,7 +305,7 @@ import OSLog
                 let key = String(line[..<equalIndex]).trimmingCharacters(in: .whitespaces)
                 let value = String(line[line.index(after: equalIndex)...]).trimmingCharacters(in: .whitespaces)
 
-                if !key.isEmpty && !value.isEmpty {
+                if key.isNotEmpty && value.isNotEmpty {
                     result[key] = value
                 }
             }
@@ -320,7 +331,7 @@ import OSLog
                     profile = String(profile.dropFirst(8)).trimmingCharacters(in: .whitespaces)
                 }
 
-                if !profile.isEmpty {
+                if profile.isNotEmpty {
                     profiles.insert(profile)
                 }
             }
