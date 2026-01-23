@@ -2296,6 +2296,8 @@
 				8AEACADD4B36D9819ADC93DD /* TableSortHelperTests.swift */,
 				FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */,
 				COLFILT0002 /* SPTableContentColumnFilterTests.swift */,
+				AWSTEST0001 /* AWSCredentialsTests.swift */,
+				AWSTEST0002 /* RDSIAMAuthenticationTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
