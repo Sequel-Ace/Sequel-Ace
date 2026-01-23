@@ -1124,7 +1124,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [self setAwsRegion:([fav objectForKey:SPFavoriteAWSRegionKey] ? [fav objectForKey:SPFavoriteAWSRegionKey] : @"")];
     [self setAwsProfile:([fav objectForKey:SPFavoriteAWSProfileKey] ? [fav objectForKey:SPFavoriteAWSProfileKey] : @"default")];
 
-    // Update password field state based on AWS IAM auth setting
+    // Update AWS IAM UI state based on restored setting
+    if (standardAWSIAMDetailsContainer) {
+        [standardAWSIAMDetailsContainer setHidden:![self useAWSIAMAuth]];
+    }
     if (standardPasswordField) {
         [standardPasswordField setEnabled:![self useAWSIAMAuth]];
         if ([self useAWSIAMAuth]) {
