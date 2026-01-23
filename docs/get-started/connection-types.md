@@ -115,3 +115,53 @@ Otherwise you can select one of the databases on the server afterwards.
 Socket
 
 For non-standard MySQL installs (e.g - MAMP) manually set the path. Read more about connecting via sockets to [MAMP, XAMPP and other MySQL server setups](mamp-xampp.html).
+
+
+#### AWS IAM Authentication
+
+If you're connecting to an **Amazon RDS** or **Aurora** MySQL database, you can use **AWS IAM Authentication** instead of a password. This uses your AWS credentials to generate a short-lived authentication token, providing enhanced security and easier credential management.
+
+##### Prerequisites
+
+1. Your RDS/Aurora instance must have IAM authentication enabled
+2. You need an IAM user or role with the `rds-db:connect` permission
+3. AWS credentials configured in `~/.aws/credentials` (via AWS CLI or manually)
+
+##### Setup
+
+1. Select **Standard** connection type
+2. Enter your RDS endpoint as the **Host** (e.g., `mydb.123456789012.us-east-1.rds.amazonaws.com`)
+3. Enter your database **Username** (must match the IAM user configured in your database)
+4. Check **Use AWS IAM Authentication**
+5. Click **Authorize Access to ~/.aws...** to grant Sequel Ace access to your AWS credentials folder
+6. Select your **AWS Profile** (e.g., `default`) from the dropdown
+7. Enter or select the **Region** (e.g., `us-east-1`), or leave empty to auto-detect from the hostname
+
+##### How It Works
+
+When you connect, Sequel Ace:
+1. Reads your AWS credentials from the selected profile
+2. Generates a temporary authentication token (valid for 15 minutes)
+3. Uses this token instead of a password to connect to your database
+
+The token is automatically refreshed as needed during your session.
+
+##### AWS Credentials File
+
+Your `~/.aws/credentials` file should look like:
+
+```ini
+[default]
+aws_access_key_id = AKIAIOSFODNN7EXAMPLE
+aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+
+[production]
+aws_access_key_id = AKIAI44QH8DHBEXAMPLE
+aws_secret_access_key = je7MtGbClwBF/2Zp9Utk/h3yCo8nvbEXAMPLEKEY
+```
+
+##### Sandbox Access
+
+Sequel Ace is a sandboxed application and requires your permission to read the AWS credentials folder. When you first enable AWS IAM Authentication, click the **Authorize Access to ~/.aws...** button and select your `.aws` folder (usually located at `~/.aws` in your home directory). This permission is remembered for future sessions.
+
+> **Note:** AWS IAM Authentication uses SSL/TLS encryption automatically. The SSL checkbox is disabled when IAM authentication is enabled since encryption is always used.
