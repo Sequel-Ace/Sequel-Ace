@@ -145,6 +145,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	IBOutlet NSView *standardAWSIAMDetailsContainer;
 	IBOutlet NSPopUpButton *awsProfilePopup;
 	IBOutlet NSComboBox *awsRegionComboBox;
+	IBOutlet NSButton *awsAuthorizeButton;
 
 	IBOutlet NSTextField *standardNameField;
 	IBOutlet NSTextField *sshNameField;
@@ -269,8 +270,10 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 
 // AWS IAM Authentication
 - (IBAction)updateAWSIAMInterface:(id)sender;
+- (IBAction)authorizeAWSDirectory:(id)sender;
 - (NSArray<NSString *> *)awsAvailableProfiles;
 - (NSArray<NSString *> *)awsAvailableRegions;
+- (BOOL)isAWSDirectoryAuthorized;
 
 - (void)resizeTabViewToConnectionType:(NSUInteger)theType animating:(BOOL)animate;
 

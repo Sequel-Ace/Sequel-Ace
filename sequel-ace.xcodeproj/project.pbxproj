@@ -9,11 +9,13 @@
 /* Begin PBXBuildFile section */
 		AWSTEST0011 /* AWSCredentialsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AWSTEST0001 /* AWSCredentialsTests.swift */; };
 		AWSTEST0012 /* RDSIAMAuthenticationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AWSTEST0002 /* RDSIAMAuthenticationTests.swift */; };
+		AWSTEST0013 /* AWSDirectoryBookmarkManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AWSTEST0003 /* AWSDirectoryBookmarkManagerTests.swift */; };
 		AWSSWIFT0011 /* AWSCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = AWSSWIFT0001 /* AWSCredentials.swift */; };
 		AWSSWIFT0012 /* RDSIAMAuthentication.swift in Sources */ = {isa = PBXBuildFile; fileRef = AWSSWIFT0002 /* RDSIAMAuthentication.swift */; };
 		AWSSWIFT0013 /* AWSSTSClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AWSSWIFT0003 /* AWSSTSClient.swift */; };
 		AWSSWIFT0014 /* AWSMFATokenDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AWSSWIFT0004 /* AWSMFATokenDialog.swift */; };
 		AWSSWIFT0015 /* AWSIAMAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AWSSWIFT0005 /* AWSIAMAuthManager.swift */; };
+		AWSSWIFT0016 /* AWSDirectoryBookmarkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AWSSWIFT0006 /* AWSDirectoryBookmarkManager.swift */; };
 		1141A389117BBFF200126A28 /* SPTableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1141A388117BBFF200126A28 /* SPTableCopy.m */; };
 		1198F5B31174EDD500670590 /* SPDatabaseCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1198F5B21174EDD500670590 /* SPDatabaseCopy.m */; };
 		11B55BFE1189E3B2009EF465 /* SPDatabaseAction.m in Sources */ = {isa = PBXBuildFile; fileRef = 11B55BFD1189E3B2009EF465 /* SPDatabaseAction.m */; };
@@ -582,11 +584,13 @@
 /* Begin PBXFileReference section */
 		AWSTEST0001 /* AWSCredentialsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSCredentialsTests.swift; sourceTree = "<group>"; };
 		AWSTEST0002 /* RDSIAMAuthenticationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RDSIAMAuthenticationTests.swift; sourceTree = "<group>"; };
+		AWSTEST0003 /* AWSDirectoryBookmarkManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSDirectoryBookmarkManagerTests.swift; sourceTree = "<group>"; };
 		AWSSWIFT0001 /* AWSCredentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSCredentials.swift; sourceTree = "<group>"; };
 		AWSSWIFT0002 /* RDSIAMAuthentication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RDSIAMAuthentication.swift; sourceTree = "<group>"; };
 		AWSSWIFT0003 /* AWSSTSClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSSTSClient.swift; sourceTree = "<group>"; };
 		AWSSWIFT0004 /* AWSMFATokenDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSMFATokenDialog.swift; sourceTree = "<group>"; };
 		AWSSWIFT0005 /* AWSIAMAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSIAMAuthManager.swift; sourceTree = "<group>"; };
+		AWSSWIFT0006 /* AWSDirectoryBookmarkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSDirectoryBookmarkManager.swift; sourceTree = "<group>"; };
 		1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		112730551180788A000737FD /* SPTableCopyTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTableCopyTest.m; sourceTree = "<group>"; };
 		1141A387117BBFF200126A28 /* SPTableCopy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTableCopy.h; sourceTree = "<group>"; };
@@ -1945,6 +1949,7 @@
 				AWSSWIFT0003 /* AWSSTSClient.swift */,
 				AWSSWIFT0004 /* AWSMFATokenDialog.swift */,
 				AWSSWIFT0005 /* AWSIAMAuthManager.swift */,
+				AWSSWIFT0006 /* AWSDirectoryBookmarkManager.swift */,
 			);
 			path = AWS;
 			sourceTree = "<group>";
@@ -2298,6 +2303,7 @@
 				COLFILT0002 /* SPTableContentColumnFilterTests.swift */,
 				AWSTEST0001 /* AWSCredentialsTests.swift */,
 				AWSTEST0002 /* RDSIAMAuthenticationTests.swift */,
+				AWSTEST0003 /* AWSDirectoryBookmarkManagerTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -2909,6 +2915,7 @@
 				1798F1C4155018E2004B0AB8 /* SPMutableArrayAdditionsTests.m in Sources */,
 				AWSTEST0011 /* AWSCredentialsTests.swift in Sources */,
 				AWSTEST0012 /* RDSIAMAuthenticationTests.swift in Sources */,
+				AWSTEST0013 /* AWSDirectoryBookmarkManagerTests.swift in Sources */,
 				FD8099A72C59DCFA0084646F /* SAUuidFormatterTests.swift in Sources */,
 				COLFILT0001 /* SPTableContentColumnFilterTests.swift in Sources */,
 				1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */,
@@ -3003,6 +3010,7 @@
 				AWSSWIFT0013 /* AWSSTSClient.swift in Sources */,
 				AWSSWIFT0014 /* AWSMFATokenDialog.swift in Sources */,
 				AWSSWIFT0015 /* AWSIAMAuthManager.swift in Sources */,
+				AWSSWIFT0016 /* AWSDirectoryBookmarkManager.swift in Sources */,
 				387BBBA80FBCB6CB00B31746 /* SPTableRelations.m in Sources */,
 				1740FABB0FC4372F00CF3699 /* SPDatabaseData.m in Sources */,
 				17C058880FC9FC390077E9CF /* SPNarrowDownCompletion.m in Sources */,

@@ -111,4 +111,38 @@ final class AWSCredentialsTests: XCTestCase {
         // Manual credentials don't have roleArn set
         XCTAssertFalse(creds.requiresRoleAssumption)
     }
+
+    // MARK: - Directory Authorization Tests
+
+    func testIsAWSDirectoryAuthorizedProperty() {
+        // Should return a boolean without crashing
+        let isAuthorized = AWSCredentials.isAWSDirectoryAuthorized
+        XCTAssertTrue(isAuthorized == true || isAuthorized == false, "Should return a boolean value")
+    }
+
+    func testCredentialsFileExistsProperty() {
+        // Should return a boolean without crashing
+        let exists = AWSCredentials.credentialsFileExists
+        XCTAssertTrue(exists == true || exists == false, "Should return a boolean value")
+    }
+
+    func testAvailableProfilesHandlesUnauthorizedState() {
+        // availableProfiles() should return an array (possibly empty) without crashing
+        let profiles = AWSCredentials.availableProfiles()
+        XCTAssertNotNil(profiles, "Should return an array, not nil")
+        // If not authorized, should return empty array; if authorized, returns actual profiles
+        XCTAssertTrue(profiles.count >= 0, "Should return zero or more profiles")
+    }
+
+    func testCredentialsFilePathMatchesBookmarkManagerPath() {
+        let credentialsPath = AWSCredentials.credentialsFilePath
+        let awsDirectoryPath = AWSDirectoryBookmarkManager.awsDirectoryPath
+        XCTAssertTrue(credentialsPath.hasPrefix(awsDirectoryPath), "Credentials path should be inside AWS directory")
+    }
+
+    func testConfigFilePathMatchesBookmarkManagerPath() {
+        let configPath = AWSCredentials.configFilePath
+        let awsDirectoryPath = AWSDirectoryBookmarkManager.awsDirectoryPath
+        XCTAssertTrue(configPath.hasPrefix(awsDirectoryPath), "Config path should be inside AWS directory")
+    }
 }

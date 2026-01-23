@@ -839,6 +839,95 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 }
 
 /**
+ * Check if AWS directory access is authorized (for sandbox support)
+ */
+- (BOOL)isAWSDirectoryAuthorized
+{
+    return [AWSDirectoryBookmarkManager.shared isAWSDirectoryAuthorized];
+}
+
+/**
+ * Opens NSOpenPanel to authorize access to ~/.aws directory
+ */
+- (IBAction)authorizeAWSDirectory:(id)sender
+{
+    NSOpenPanel *openPanel = [NSOpenPanel openPanel];
+    [openPanel setCanChooseFiles:NO];
+    [openPanel setCanChooseDirectories:YES];
+    [openPanel setAllowsMultipleSelection:NO];
+    [openPanel setCanCreateDirectories:NO];
+    [openPanel setShowsHiddenFiles:YES];
+    [openPanel setMessage:NSLocalizedString(@"Select your .aws directory to enable AWS IAM authentication", @"AWS directory selection message")];
+    [openPanel setPrompt:NSLocalizedString(@"Authorize", @"AWS directory authorize button")];
+
+    // Start at the home directory
+    NSString *homeDirectory = NSHomeDirectory();
+    [openPanel setDirectoryURL:[NSURL fileURLWithPath:homeDirectory]];
+
+    [openPanel beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:^(NSModalResponse result) {
+        if (result == NSModalResponseOK) {
+            NSURL *selectedURL = [openPanel URL];
+
+            // Verify the selected directory is the .aws folder or contains aws files
+            NSString *selectedPath = [selectedURL path];
+            BOOL isValidAWSDirectory = NO;
+
+            if ([selectedPath hasSuffix:@".aws"]) {
+                isValidAWSDirectory = YES;
+            } else {
+                // Check if it contains credentials or config file
+                NSFileManager *fm = [NSFileManager defaultManager];
+                if ([fm fileExistsAtPath:[selectedPath stringByAppendingPathComponent:@"credentials"]] ||
+                    [fm fileExistsAtPath:[selectedPath stringByAppendingPathComponent:@"config"]]) {
+                    isValidAWSDirectory = YES;
+                }
+            }
+
+            if (!isValidAWSDirectory) {
+                NSAlert *alert = [[NSAlert alloc] init];
+                [alert setMessageText:NSLocalizedString(@"Invalid AWS Directory", @"Invalid AWS directory alert title")];
+                [alert setInformativeText:NSLocalizedString(@"Please select the .aws directory in your home folder (usually ~/.aws). This directory should contain your AWS credentials and/or config files.", @"Invalid AWS directory alert message")];
+                [alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
+                [alert setAlertStyle:NSAlertStyleWarning];
+                [alert runModal];
+                return;
+            }
+
+            // Add the bookmark
+            if ([AWSDirectoryBookmarkManager.shared addAWSDirectoryBookmarkFrom:selectedURL]) {
+                SPLog(@"Successfully authorized AWS directory access");
+
+                // Trigger KVO updates for bindings
+                [self willChangeValueForKey:@"isAWSDirectoryAuthorized"];
+                [self didChangeValueForKey:@"isAWSDirectoryAuthorized"];
+                [self willChangeValueForKey:@"awsAvailableProfiles"];
+                [self didChangeValueForKey:@"awsAvailableProfiles"];
+
+                // Post notification
+                [[NSNotificationCenter defaultCenter] postNotificationName:@"AWSDirectoryAuthorizationChanged" object:self];
+            } else {
+                NSAlert *alert = [[NSAlert alloc] init];
+                [alert setMessageText:NSLocalizedString(@"Authorization Failed", @"AWS authorization failed alert title")];
+                [alert setInformativeText:NSLocalizedString(@"Failed to create a secure bookmark for the AWS directory. Please try again.", @"AWS authorization failed alert message")];
+                [alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
+                [alert setAlertStyle:NSAlertStyleWarning];
+                [alert runModal];
+            }
+        }
+    }];
+}
+
+/**
+ * Update UI elements based on AWS directory authorization state
+ */
+- (void)updateAWSAuthorizationUI
+{
+    // Trigger KVO updates for bindings
+    [self willChangeValueForKey:@"isAWSDirectoryAuthorized"];
+    [self didChangeValueForKey:@"isAWSDirectoryAuthorized"];
+}
+
+/**
  * Returns common AWS region identifiers
  */
 - (NSArray<NSString *> *)awsAvailableRegions
@@ -3529,16 +3618,33 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         currentSortItem = (SPFavoritesSortItem)[prefs integerForKey:SPFavoritesSortedBy];
         reverseFavoritesSort = [prefs boolForKey:SPFavoritesSortedInReverse];
 
+        // Update AWS authorization UI state
+        [self updateAWSAuthorizationUI];
+
         initComplete = YES;
+
+        // Force a resize after a tiny delay to ensure view is fully loaded
+        [self performSelector:@selector(_forceInitialResize) withObject:nil afterDelay:0.0];
     }
 
     return self;
+}
+
+- (void)_forceInitialResize {
+    [self resizeTabViewToConnectionType:[self type] animating:NO];
 }
 
 - (void)_refreshBookmarks{
     SPLog(@"Got SPBookmarksChangedNotification, refreshing bookmarks");
 
     [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
+
+    // Also refresh AWS authorization UI in case AWS directory bookmark changed
+    [self updateAWSAuthorizationUI];
+
+    // Notify that profiles may have changed
+    [self willChangeValueForKey:@"awsAvailableProfiles"];
+    [self didChangeValueForKey:@"awsAvailableProfiles"];
 }
 
 // TODO: this is called once per connection screen - but the timezones don't change right? Should be static/class method?

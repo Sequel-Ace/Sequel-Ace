@@ -139,13 +139,35 @@ import OSLog
     }
 
     @objc static var credentialsFileExists: Bool {
-        FileManager.default.fileExists(atPath: credentialsFilePath)
+        // First check if we have bookmark access
+        let bookmarkManager = AWSDirectoryBookmarkManager.shared
+        if bookmarkManager.isAWSDirectoryAuthorized {
+            return bookmarkManager.awsFileExists(at: credentialsFilePath)
+        }
+        // Fall back to direct access check (works in non-sandboxed builds)
+        return FileManager.default.fileExists(atPath: credentialsFilePath)
+    }
+
+    /// Check if AWS directory access is authorized (for sandbox support)
+    @objc static var isAWSDirectoryAuthorized: Bool {
+        AWSDirectoryBookmarkManager.shared.isAWSDirectoryAuthorized
     }
 
     // MARK: - Profile Loading
 
     /// Returns list of available AWS profiles sorted alphabetically with "default" first
+    /// Returns empty array if AWS directory is not authorized (sandboxed apps)
     @objc static func availableProfiles() -> [String] {
+        // Ensure we have access to the AWS directory
+        let bookmarkManager = AWSDirectoryBookmarkManager.shared
+        guard bookmarkManager.isAWSDirectoryAuthorized else {
+            os_log(.info, log: log, "AWS directory not authorized, returning empty profiles")
+            return []
+        }
+
+        // Start accessing the directory
+        _ = bookmarkManager.startAccessingAWSDirectory()
+
         var profiles = Set<String>()
 
         addProfiles(from: credentialsFilePath, to: &profiles, isConfigFile: false)
@@ -166,26 +188,27 @@ import OSLog
         var result = [String: String]()
         var foundProfile = false
 
+        let bookmarkManager = AWSDirectoryBookmarkManager.shared
+
+        // Ensure we have access to the AWS directory
+        _ = bookmarkManager.startAccessingAWSDirectory()
+
         // Load from ~/.aws/credentials
-        if FileManager.default.fileExists(atPath: credentialsFilePath) {
-            if let contents = try? String(contentsOfFile: credentialsFilePath, encoding: .utf8) {
-                if let creds = parseAWSFile(contents, forProfile: profileName, isConfigFile: false) {
-                    result.merge(creds) { current, _ in current }
-                    foundProfile = true
-                }
+        if let contents = readAWSFileContents(at: credentialsFilePath) {
+            if let creds = parseAWSFile(contents, forProfile: profileName, isConfigFile: false) {
+                result.merge(creds) { current, _ in current }
+                foundProfile = true
             }
         }
 
         // Load from ~/.aws/config
-        if FileManager.default.fileExists(atPath: configFilePath) {
-            if let contents = try? String(contentsOfFile: configFilePath, encoding: .utf8) {
-                if let config = parseAWSFile(contents, forProfile: profileName, isConfigFile: true) {
-                    // Merge config, credentials take precedence
-                    for (key, value) in config where result[key] == nil {
-                        result[key] = value
-                    }
-                    foundProfile = true
+        if let contents = readAWSFileContents(at: configFilePath) {
+            if let config = parseAWSFile(contents, forProfile: profileName, isConfigFile: true) {
+                // Merge config, credentials take precedence
+                for (key, value) in config where result[key] == nil {
+                    result[key] = value
                 }
+                foundProfile = true
             }
         }
 
@@ -209,6 +232,23 @@ import OSLog
         }
 
         return result
+    }
+
+    /// Read AWS file contents using security-scoped access when needed
+    private static func readAWSFileContents(at path: String) -> String? {
+        let bookmarkManager = AWSDirectoryBookmarkManager.shared
+
+        // Try via bookmark manager first (sandbox-compatible)
+        if bookmarkManager.isAWSDirectoryAuthorized {
+            return bookmarkManager.readAWSFileContents(at: path)
+        }
+
+        // Fall back to direct access (non-sandboxed builds)
+        guard FileManager.default.fileExists(atPath: path) else {
+            return nil
+        }
+
+        return try? String(contentsOfFile: path, encoding: .utf8)
     }
 
     /// Parse an AWS credentials or config file for a specific profile
@@ -265,8 +305,7 @@ import OSLog
 
     /// Add profile names from a file to the set
     private static func addProfiles(from filePath: String, to profiles: inout Set<String>, isConfigFile: Bool) {
-        guard FileManager.default.fileExists(atPath: filePath),
-              let contents = try? String(contentsOfFile: filePath, encoding: .utf8) else {
+        guard let contents = readAWSFileContents(at: filePath) else {
             return
         }
 

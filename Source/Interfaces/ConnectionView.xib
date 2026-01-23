@@ -52,6 +52,7 @@
                 <outlet property="sslOverSSHCACertButton" destination="7eD-3o-HAJ" id="1Wh-DE-z2l"/>
                 <outlet property="sslOverSSHCertificateButton" destination="VqZ-mo-IXW" id="Ync-fQ-3aq"/>
                 <outlet property="sslOverSSHKeyFileButton" destination="vPP-gd-c4a" id="VTR-AE-QPt"/>
+                <outlet property="awsAuthorizeButton" destination="AWSIAM-BTN-AUTH" id="AWSIAM-OUT-005"/>
                 <outlet property="standardAWSIAMAuthCheckbox" destination="AWSIAM-CHK-001" id="AWSIAM-OUT-001"/>
                 <outlet property="standardAWSIAMDetailsContainer" destination="AWSIAM-CNT-001" id="AWSIAM-OUT-002"/>
                 <outlet property="standardColorField" destination="5894" id="5895"/>
@@ -587,20 +588,43 @@ DQ
                                                                                     </subviews>
                                                                                 </customView>
                                                                                 <customView hidden="YES" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-CNT-001">
-                                                                                    <rect key="frame" x="22" y="71" width="377" height="74"/>
+                                                                                    <rect key="frame" x="22" y="13" width="377" height="130"/>
                                                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                     <subviews>
+                                                                                        <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-BTN-AUTH">
+                                                                                            <rect key="frame" x="108" y="100" width="180" height="24"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <buttonCell key="cell" type="push" title="Authorize Access to ~/.aws…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="AWSIAM-BTN-AUTH-CELL">
+                                                                                                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                            </buttonCell>
+                                                                                            <connections>
+                                                                                                <action selector="authorizeAWSDirectory:" target="-2" id="AWSIAM-ACT-AUTH"/>
+                                                                                            </connections>
+                                                                                        </button>
+                                                                                        <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-INFO">
+                                                                                            <rect key="frame" x="108" y="72" width="260" height="28"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <textFieldCell key="cell" lineBreakMode="wordWrapping" sendsActionOnEndEditing="YES" alignment="left" title="Click the button above to grant access to your AWS credentials folder (~/.aws)." id="AWSIAM-LBL-INFO-CELL">
+                                                                                                <font key="font" metaFont="smallSystem"/>
+                                                                                                <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </textFieldCell>
+                                                                                        </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-001">
-                                                                                            <rect key="frame" x="7" y="49" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="47" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="AWS Profile:" id="AWSIAM-LBL-002">
                                                                                                 <font key="font" metaFont="system"/>
                                                                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                                                 <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                                             </textFieldCell>
+                                                                                            <connections>
+                                                                                                <binding destination="-2" name="enabled" keyPath="isAWSDirectoryAuthorized" id="AWSIAM-BND-LBL1-EN"/>
+                                                                                            </connections>
                                                                                         </textField>
                                                                                         <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-POP-001">
-                                                                                            <rect key="frame" x="108" y="44" width="249" height="25"/>
+                                                                                            <rect key="frame" x="108" y="42" width="249" height="25"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                                             <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="AWSIAM-POP-002">
                                                                                                 <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -614,19 +638,23 @@ DQ
                                                                                             <connections>
                                                                                                 <binding destination="-2" name="content" keyPath="awsAvailableProfiles" id="AWSIAM-BND-002a"/>
                                                                                                 <binding destination="-2" name="selectedValue" keyPath="awsProfile" id="AWSIAM-BND-002"/>
+                                                                                                <binding destination="-2" name="enabled" keyPath="isAWSDirectoryAuthorized" id="AWSIAM-BND-POP-EN"/>
                                                                                             </connections>
                                                                                         </popUpButton>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-003">
-                                                                                            <rect key="frame" x="7" y="17" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="15" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Region:" id="AWSIAM-LBL-004">
                                                                                                 <font key="font" metaFont="system"/>
                                                                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                                                 <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                                             </textFieldCell>
+                                                                                            <connections>
+                                                                                                <binding destination="-2" name="enabled" keyPath="isAWSDirectoryAuthorized" id="AWSIAM-BND-LBL3-EN"/>
+                                                                                            </connections>
                                                                                         </textField>
                                                                                         <comboBox verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-CMB-001">
-                                                                                            <rect key="frame" x="108" y="12" width="249" height="25"/>
+                                                                                            <rect key="frame" x="108" y="10" width="249" height="25"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                                             <comboBoxCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" numberOfVisibleItems="10" id="AWSIAM-CMB-002">
                                                                                                 <font key="font" metaFont="system"/>
@@ -641,6 +669,7 @@ DQ
                                                                                                         <string key="NSNullPlaceholder">auto-detect from host</string>
                                                                                                     </dictionary>
                                                                                                 </binding>
+                                                                                                <binding destination="-2" name="enabled" keyPath="isAWSDirectoryAuthorized" id="AWSIAM-BND-CMB-EN"/>
                                                                                             </connections>
                                                                                         </comboBox>
                                                                                     </subviews>
