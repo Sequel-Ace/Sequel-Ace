@@ -84,6 +84,9 @@
 
 	IBOutlet NSSearchField *listFilterField;
 
+	// Schema selection (PostgreSQL)
+	IBOutlet NSPopUpButton *schemaPopUpButton;
+
 	// Table list 'gear' menu items
 	IBOutlet NSMenuItem *removeTableMenuItem;
 	IBOutlet NSMenuItem *duplicateTableMenuItem;
@@ -129,8 +132,14 @@
 	BOOL isTableListFiltered;
 	BOOL tableListIsSelectable;
 	BOOL tableListContainsViews;
-	
+
 	SPCharsetCollationHelper *addTableCharsetHelper;
+
+	// Schema selection infrastructure (PostgreSQL)
+	NSString *selectedSchema;
+	NSMutableArray *availableSchemas;
+	NSMutableDictionary *objectsByCategory;
+	BOOL useCategorialView;
 }
 
 // IBAction methods
@@ -180,6 +189,24 @@
 - (BOOL)hasEvents;
 - (BOOL)hasNonTableObjects;
 
+// PostgreSQL-specific object getters
+- (BOOL)hasSequences;
+- (BOOL)hasMaterializedViews;
+- (BOOL)hasForeignTables;
+- (BOOL)hasDomains;
+- (BOOL)hasTypes;
+- (BOOL)hasAggregates;
+- (BOOL)hasOperators;
+- (BOOL)hasFTSConfigurations;
+
+- (nonnull NSArray *)allSequenceNames;
+- (nonnull NSArray *)allMaterializedViewNames;
+- (nonnull NSArray *)allForeignTableNames;
+- (nonnull NSArray *)allDomainNames;
+- (nonnull NSArray *)allTypeNames;
+- (nonnull NSArray *)allAggregateNames;
+- (nonnull NSArray *)allTriggerFunctionNames;
+
 // Setters
 - (BOOL)selectItemWithName:(nullable NSString *)theName;
 - (BOOL)selectItemsWithNames:(nonnull NSArray *)theNames;
@@ -201,5 +228,18 @@
 - (BOOL)isTableNameValid:(nullable NSString *)tableName forType:(SPTableType)tableType;
 - (BOOL)isTableNameValid:(nullable NSString *)tableName forType:(SPTableType)tableType ignoringSelectedTable:(BOOL)ignoreSelectedTable;
 - (BOOL)selectionShouldChangeInTableView:(nullable NSTableView *)aTableView;
+
+// Schema management (PostgreSQL)
+- (IBAction)schemaChanged:(nullable id)sender;
+- (void)loadSchemas;
+- (void)refreshObjectsForSchema:(nullable NSString *)schema;
+- (nullable NSString *)selectedSchema;
+- (void)setSelectedSchema:(nullable NSString *)schema;
+- (nonnull NSArray *)availableSchemas;
+
+// Categorized view management
+- (void)setUseCategorialView:(BOOL)useCategorized;
+- (BOOL)useCategorialView;
+- (nonnull NSDictionary *)objectsByCategory;
 
 @end

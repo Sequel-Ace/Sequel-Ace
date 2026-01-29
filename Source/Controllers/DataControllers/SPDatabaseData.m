@@ -431,6 +431,174 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 }
 
 #pragma mark -
+#pragma mark PostgreSQL Schema Operations
+
+/**
+ * Returns all available schemas in the current database.
+ */
+- (NSArray *)getDatabaseSchemas
+{
+	NSString *query = @"SELECT nspname AS schema_name FROM pg_namespace "
+					   "WHERE nspname NOT LIKE 'pg_%' "
+					   "AND nspname != 'information_schema' "
+					   "ORDER BY nspname";
+	return [self _getDatabaseDataForQuery:query];
+}
+
+/**
+ * Returns all sequences in the specified schema.
+ */
+- (NSArray *)getSequencesForSchema:(NSString *)schema
+{
+	if (!schema) schema = @"public";
+	NSString *query = [NSString stringWithFormat:
+		@"SELECT sequence_name, data_type, start_value, minimum_value, maximum_value, increment "
+		 "FROM information_schema.sequences WHERE sequence_schema = '%@' ORDER BY sequence_name", schema];
+	return [self _getDatabaseDataForQuery:query];
+}
+
+/**
+ * Returns all materialized views in the specified schema.
+ */
+- (NSArray *)getMaterializedViewsForSchema:(NSString *)schema
+{
+	if (!schema) schema = @"public";
+	NSString *query = [NSString stringWithFormat:
+		@"SELECT matviewname AS name, matviewowner AS owner, ispopulated "
+		 "FROM pg_matviews WHERE schemaname = '%@' ORDER BY matviewname", schema];
+	return [self _getDatabaseDataForQuery:query];
+}
+
+/**
+ * Returns all domains in the specified schema.
+ */
+- (NSArray *)getDomainsForSchema:(NSString *)schema
+{
+	if (!schema) schema = @"public";
+	NSString *query = [NSString stringWithFormat:
+		@"SELECT domain_name, data_type, domain_default, character_maximum_length "
+		 "FROM information_schema.domains WHERE domain_schema = '%@' ORDER BY domain_name", schema];
+	return [self _getDatabaseDataForQuery:query];
+}
+
+/**
+ * Returns all aggregate functions in the specified schema.
+ */
+- (NSArray *)getAggregatesForSchema:(NSString *)schema
+{
+	if (!schema) schema = @"public";
+	NSString *query = [NSString stringWithFormat:
+		@"SELECT p.proname AS aggregate_name, pg_get_function_arguments(p.oid) AS arguments "
+		 "FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid "
+		 "WHERE n.nspname = '%@' AND p.prokind = 'a' ORDER BY p.proname", schema];
+	return [self _getDatabaseDataForQuery:query];
+}
+
+/**
+ * Returns all operators in the specified schema.
+ */
+- (NSArray *)getOperatorsForSchema:(NSString *)schema
+{
+	if (!schema) schema = @"public";
+	NSString *query = [NSString stringWithFormat:
+		@"SELECT o.oprname AS operator_name, "
+		 "COALESCE(lt.typname, 'NONE') AS left_type, "
+		 "COALESCE(rt.typname, 'NONE') AS right_type, "
+		 "rest.typname AS result_type "
+		 "FROM pg_operator o "
+		 "JOIN pg_namespace n ON o.oprnamespace = n.oid "
+		 "LEFT JOIN pg_type lt ON o.oprleft = lt.oid "
+		 "LEFT JOIN pg_type rt ON o.oprright = rt.oid "
+		 "JOIN pg_type rest ON o.oprresult = rest.oid "
+		 "WHERE n.nspname = '%@' ORDER BY o.oprname", schema];
+	return [self _getDatabaseDataForQuery:query];
+}
+
+/**
+ * Returns all FTS configurations in the specified schema.
+ */
+- (NSArray *)getFTSConfigurationsForSchema:(NSString *)schema
+{
+	if (!schema) schema = @"public";
+	NSString *query = [NSString stringWithFormat:
+		@"SELECT cfgname AS config_name, cfgowner::regrole AS owner "
+		 "FROM pg_ts_config c JOIN pg_namespace n ON c.cfgnamespace = n.oid "
+		 "WHERE n.nspname = '%@' ORDER BY cfgname", schema];
+	return [self _getDatabaseDataForQuery:query];
+}
+
+/**
+ * Returns all FTS dictionaries in the specified schema.
+ */
+- (NSArray *)getFTSDictionariesForSchema:(NSString *)schema
+{
+	if (!schema) schema = @"public";
+	NSString *query = [NSString stringWithFormat:
+		@"SELECT dictname AS dictionary_name, dictowner::regrole AS owner "
+		 "FROM pg_ts_dict d JOIN pg_namespace n ON d.dictnamespace = n.oid "
+		 "WHERE n.nspname = '%@' ORDER BY dictname", schema];
+	return [self _getDatabaseDataForQuery:query];
+}
+
+/**
+ * Returns all foreign tables in the specified schema.
+ */
+- (NSArray *)getForeignTablesForSchema:(NSString *)schema
+{
+	if (!schema) schema = @"public";
+	NSString *query = [NSString stringWithFormat:
+		@"SELECT foreign_table_name, foreign_server_name "
+		 "FROM information_schema.foreign_tables WHERE foreign_table_schema = '%@' ORDER BY foreign_table_name", schema];
+	return [self _getDatabaseDataForQuery:query];
+}
+
+/**
+ * Returns all custom types in the specified schema.
+ */
+- (NSArray *)getTypesForSchema:(NSString *)schema
+{
+	if (!schema) schema = @"public";
+	NSString *query = [NSString stringWithFormat:
+		@"SELECT t.typname AS type_name, "
+		 "CASE t.typtype "
+		 "  WHEN 'c' THEN 'composite' "
+		 "  WHEN 'e' THEN 'enum' "
+		 "  WHEN 'r' THEN 'range' "
+		 "  WHEN 'd' THEN 'domain' "
+		 "  ELSE 'other' END AS type_category "
+		 "FROM pg_type t JOIN pg_namespace n ON t.typnamespace = n.oid "
+		 "WHERE n.nspname = '%@' AND t.typtype IN ('c', 'e', 'r') ORDER BY t.typname", schema];
+	return [self _getDatabaseDataForQuery:query];
+}
+
+/**
+ * Returns all collations in the specified schema.
+ */
+- (NSArray *)getCollationsForSchema:(NSString *)schema
+{
+	if (!schema) schema = @"public";
+	NSString *query = [NSString stringWithFormat:
+		@"SELECT collname AS collation_name, collprovider AS provider "
+		 "FROM pg_collation c JOIN pg_namespace n ON c.collnamespace = n.oid "
+		 "WHERE n.nspname = '%@' ORDER BY collname", schema];
+	return [self _getDatabaseDataForQuery:query];
+}
+
+/**
+ * Returns all trigger functions in the specified schema.
+ */
+- (NSArray *)getTriggerFunctionsForSchema:(NSString *)schema
+{
+	if (!schema) schema = @"public";
+	NSString *query = [NSString stringWithFormat:
+		@"SELECT p.proname AS function_name, pg_get_function_result(p.oid) AS return_type "
+		 "FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid "
+		 "JOIN pg_type t ON p.prorettype = t.oid "
+		 "WHERE n.nspname = '%@' AND t.typname = 'trigger' ORDER BY p.proname", schema];
+	return [self _getDatabaseDataForQuery:query];
+}
+
+#pragma mark -
 #pragma mark Other
 
 - (void)dealloc

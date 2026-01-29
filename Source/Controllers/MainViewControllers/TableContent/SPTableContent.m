@@ -2096,7 +2096,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
             // Check for uniqueness via LIMIT numberOfRows-1,numberOfRows for speed
             if(numberOfRows > 0) {
-                [postgresConnection queryString:[NSString stringWithFormat:@"SELECT * FROM %@ GROUP BY %@ LIMIT %ld,%ld", [selectedTable postgresQuotedIdentifier], [primaryKeyFieldNames componentsJoinedAndBacktickQuoted], (long)(numberOfRows-1), (long)numberOfRows]];
+                [postgresConnection queryString:[NSString stringWithFormat:@"SELECT * FROM %@ GROUP BY %@ LIMIT %ld OFFSET %ld", [selectedTable postgresQuotedIdentifier], [primaryKeyFieldNames componentsJoinedAndBacktickQuoted], (long)numberOfRows, (long)(numberOfRows-1)]];
                 if ([postgresConnection rowsAffectedByLastQuery] == 0)
                     primaryKeyFieldNames = nil;
             } else {
@@ -2108,7 +2108,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
             // delete row by row
             while (anIndex != NSNotFound) {
 
-                wherePart = [NSString stringWithString:[self argumentForRow:anIndex]];
+                wherePart = [NSString stringWithString:[self argumentForRow:anIndex excludingLimits:YES]];
 
                 //argumentForRow might return empty query, in which case we shouldn't execute the partial query
                 if([wherePart length]) {
@@ -2674,7 +2674,11 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         isSavingRow = NO;
 		return YES;
 	} else { // Report errors which have occurred
-		[NSAlert createAlertWithTitle:NSLocalizedString(@"Unable to write row", @"Unable to write row error") message:[NSString stringWithFormat:NSLocalizedString(@"PostgreSQL said:\n\n%@", @"message of panel when error while adding row to db"), [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")] primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") secondaryButtonTitle:NSLocalizedString(@"Discard changes", @"discard changes button") primaryButtonHandler:^{
+		// Parse PostgreSQL error and create user-friendly message
+		NSString *pgError = [postgresConnection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error");
+		NSString *friendlyMessage = [self userFriendlyErrorMessageForPostgreSQLError:pgError];
+
+		[NSAlert createAlertWithTitle:NSLocalizedString(@"Unable to write row", @"Unable to write row error") message:friendlyMessage primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") secondaryButtonTitle:NSLocalizedString(@"Discard changes", @"discard changes button") primaryButtonHandler:^{
 			[self->tableContentView selectRowIndexes:[NSIndexSet indexSetWithIndex:self->currentlyEditingRow] byExtendingSelection:NO];
 			[self->tableContentView performSelector:@selector(keyDown:) withObject:[NSEvent keyEventWithType:NSEventTypeKeyDown location:NSMakePoint(0,0) modifierFlags:0 timestamp:0 windowNumber:[[self->tableContentView window] windowNumber] context:[NSGraphicsContext currentContext] characters:@"" charactersIgnoringModifiers:@"" isARepeat:NO keyCode:0x24] afterDelay:0.0];
 			[self->tableContentView reloadData];
@@ -2752,8 +2756,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 					fieldValue = [NSString stringWithFormat:@"b'%@'", ((![desc length] || [desc isEqualToString:@"0"]) ? @"0" : desc)];
 				} else if ([fieldTypeGroup isEqualToString:@"date"] && [desc isEqualToString:@"NOW()"]) {
 					fieldValue = @"NOW()";
-				} else if ([fieldTypeGroup isEqualToString:@"string"] && [[rowObject description] isEqualToString:@"UUID()"]) {
-					fieldValue = @"UUID()";
+				} else if ([fieldTypeGroup isEqualToString:@"string"] && [[rowObject description] isEqualToString:@"gen_random_uuid()"]) {
+					fieldValue = @"gen_random_uuid()";
 				} else {
 					fieldValue = [postgresConnection escapeAndQuoteString:desc];
 				}
@@ -2792,7 +2796,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
             [queryString appendFormat:@"%@ = %@",
                                        [[rowFieldsToSave safeObjectAtIndex:i] postgresQuotedIdentifier], [rowValuesToSave safeObjectAtIndex:i]];
         }
-        NSString *whereArg = [self argumentForRow:-2];
+        NSString *whereArg = [self argumentForRow:-2 excludingLimits:YES];
         if(![whereArg length]) {
             SPLog(@"Did not find plausible WHERE condition for UPDATE.");
             NSBeep();
@@ -2985,7 +2989,23 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	if ( !keys ) {
 		setLimit = NO;
 		keys = [[NSMutableArray alloc] init];
-		SPPostgresResult *theResult = [postgresConnection queryString:[NSString stringWithFormat:@"SELECT column_name FROM information_schema.columns WHERE table_name = %@", [selectedTable postgresQuotedIdentifier]]];
+
+		// PostgreSQL primary key query using information_schema
+		SPPostgresResult *theResult = [postgresConnection queryString:[NSString stringWithFormat:
+			@"SELECT c.column_name AS \"Field\", "
+			@"CASE WHEN pk.column_name IS NOT NULL THEN 'PRI' ELSE '' END AS \"Key\" "
+			@"FROM information_schema.columns c "
+			@"LEFT JOIN ("
+			@"  SELECT kcu.column_name "
+			@"  FROM information_schema.table_constraints tc "
+			@"  JOIN information_schema.key_column_usage kcu "
+			@"    ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema "
+			@"  WHERE tc.constraint_type = 'PRIMARY KEY' "
+			@"    AND tc.table_schema = 'public' AND tc.table_name = %@"
+			@") pk ON c.column_name = pk.column_name "
+			@"WHERE c.table_schema = 'public' AND c.table_name = %@",
+			[selectedTable tickQuotedString], [selectedTable tickQuotedString]]];
+
 		if(!theResult) {
 			SPLog(@"no result from column info query! Abort.");
 			return @"";
@@ -3390,6 +3410,84 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	[tableDocumentInstance endTask];
 
 	[self loadTableValues];
+}
+
+#pragma mark -
+#pragma mark Error Message Helpers
+
+/**
+ * Converts PostgreSQL error messages to user-friendly messages
+ */
+- (NSString *)userFriendlyErrorMessageForPostgreSQLError:(NSString *)pgError
+{
+	NSMutableString *friendlyMessage = [NSMutableString string];
+
+	// Check for common error patterns and provide user-friendly explanations
+	if ([pgError containsString:@"invalid input syntax for type"]) {
+		// Extract the type name
+		NSRange typeRange = [pgError rangeOfString:@"for type "];
+		NSString *typeName = @"";
+		if (typeRange.location != NSNotFound) {
+			NSUInteger startIndex = typeRange.location + typeRange.length;
+			NSRange colonRange = [pgError rangeOfString:@":" options:0 range:NSMakeRange(startIndex, pgError.length - startIndex)];
+			if (colonRange.location != NSNotFound) {
+				typeName = [pgError substringWithRange:NSMakeRange(startIndex, colonRange.location - startIndex)];
+			}
+		}
+
+		if ([typeName containsString:@"int"] || [typeName containsString:@"bigint"] || [typeName containsString:@"smallint"]) {
+			[friendlyMessage appendString:NSLocalizedString(@"Invalid value for numeric field.\n\nThe value you entered contains characters that are not allowed in a number field. Please enter only digits (0-9) and optionally a minus sign for negative numbers.", @"User-friendly error for invalid integer input")];
+		} else if ([typeName containsString:@"numeric"] || [typeName containsString:@"decimal"] || [typeName containsString:@"float"] || [typeName containsString:@"double"]) {
+			[friendlyMessage appendString:NSLocalizedString(@"Invalid value for decimal field.\n\nPlease enter a valid number. Use a period (.) as the decimal separator.", @"User-friendly error for invalid decimal input")];
+		} else if ([typeName containsString:@"date"]) {
+			[friendlyMessage appendString:NSLocalizedString(@"Invalid date format.\n\nPlease enter the date in a valid format (e.g., YYYY-MM-DD).", @"User-friendly error for invalid date input")];
+		} else if ([typeName containsString:@"time"]) {
+			[friendlyMessage appendString:NSLocalizedString(@"Invalid time format.\n\nPlease enter the time in a valid format (e.g., HH:MM:SS).", @"User-friendly error for invalid time input")];
+		} else if ([typeName containsString:@"bool"]) {
+			[friendlyMessage appendString:NSLocalizedString(@"Invalid boolean value.\n\nPlease enter 'true', 'false', '1', '0', 'yes', or 'no'.", @"User-friendly error for invalid boolean input")];
+		} else if ([typeName containsString:@"uuid"]) {
+			[friendlyMessage appendString:NSLocalizedString(@"Invalid UUID format.\n\nPlease enter a valid UUID (e.g., 123e4567-e89b-12d3-a456-426614174000).", @"User-friendly error for invalid UUID input")];
+		} else {
+			[friendlyMessage appendFormat:NSLocalizedString(@"Invalid value for %@ field.\n\nThe value you entered is not in the correct format for this field type.", @"User-friendly error for invalid input generic"), typeName];
+		}
+	}
+	else if ([pgError containsString:@"out of range"]) {
+		if ([pgError containsString:@"bigint"]) {
+			[friendlyMessage appendString:NSLocalizedString(@"Number is too large.\n\nThe maximum value for this field is 9,223,372,036,854,775,807.\nThe minimum value is -9,223,372,036,854,775,808.", @"User-friendly error for bigint overflow")];
+		} else if ([pgError containsString:@"integer"] || [pgError containsString:@"int4"]) {
+			[friendlyMessage appendString:NSLocalizedString(@"Number is too large.\n\nThe maximum value for this field is 2,147,483,647.\nThe minimum value is -2,147,483,648.", @"User-friendly error for integer overflow")];
+		} else if ([pgError containsString:@"smallint"] || [pgError containsString:@"int2"]) {
+			[friendlyMessage appendString:NSLocalizedString(@"Number is too large.\n\nThe maximum value for this field is 32,767.\nThe minimum value is -32,768.", @"User-friendly error for smallint overflow")];
+		} else {
+			[friendlyMessage appendString:NSLocalizedString(@"Value is out of range.\n\nThe value you entered is too large or too small for this field type.", @"User-friendly error for generic overflow")];
+		}
+	}
+	else if ([pgError containsString:@"violates not-null constraint"]) {
+		[friendlyMessage appendString:NSLocalizedString(@"This field cannot be empty.\n\nPlease enter a value for this required field.", @"User-friendly error for NOT NULL violation")];
+	}
+	else if ([pgError containsString:@"violates unique constraint"] || [pgError containsString:@"duplicate key"]) {
+		[friendlyMessage appendString:NSLocalizedString(@"Duplicate value not allowed.\n\nThis value already exists in the database. Please enter a unique value.", @"User-friendly error for unique constraint violation")];
+	}
+	else if ([pgError containsString:@"violates foreign key constraint"]) {
+		[friendlyMessage appendString:NSLocalizedString(@"Invalid reference.\n\nThe value you entered does not exist in the referenced table.", @"User-friendly error for foreign key violation")];
+	}
+	else if ([pgError containsString:@"violates check constraint"]) {
+		[friendlyMessage appendString:NSLocalizedString(@"Value does not meet requirements.\n\nThe value you entered does not satisfy the validation rules for this field.", @"User-friendly error for check constraint violation")];
+	}
+	else if ([pgError containsString:@"value too long"]) {
+		[friendlyMessage appendString:NSLocalizedString(@"Text is too long.\n\nThe value you entered exceeds the maximum length allowed for this field.", @"User-friendly error for string too long")];
+	}
+
+	// Always append technical details for advanced users
+	if ([friendlyMessage length] > 0) {
+		[friendlyMessage appendString:@"\n\n"];
+		[friendlyMessage appendFormat:NSLocalizedString(@"Technical details:\n%@", @"Technical error details header"), pgError];
+	} else {
+		// No specific pattern matched, show original error with prefix
+		[friendlyMessage appendFormat:NSLocalizedString(@"PostgreSQL said:\n\n%@", @"message of panel when error while adding row to db"), pgError];
+	}
+
+	return friendlyMessage;
 }
 
 #pragma mark -

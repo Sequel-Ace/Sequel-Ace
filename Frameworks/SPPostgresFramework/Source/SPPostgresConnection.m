@@ -14,6 +14,8 @@
 
 @implementation SPPostgresConnection
 
+@synthesize lastErrorMessage;
+
 - (instancetype)init {
     self = [super init];
     if (self) {
@@ -21,6 +23,7 @@
         isConnected = NO;
         stringEncoding = NSUTF8StringEncoding;
         queryWasCancelled = NO;
+        lastAffectedRows = 0;
     }
     return self;
 }
@@ -106,6 +109,20 @@
 
     queryWasCancelled = NO;  // Reset cancellation flag before new query
     PGresult *res = PQexec(connection, [query UTF8String]);
+
+    // DEBUG: Log query type and affected rows
+    ExecStatusType status = PQresultStatus(res);
+    char *affected = PQcmdTuples(res);
+    NSLog(@"[PG-AFFECTED] Query: %.60s...", [query UTF8String]);
+    NSLog(@"[PG-AFFECTED] Status: %d, PQcmdTuples: '%s'", status, affected ? affected : "(null)");
+
+    // Save affected rows count immediately (for UPDATE/INSERT/DELETE)
+    if (affected && strlen(affected) > 0) {
+        lastAffectedRows = (NSUInteger)atol(affected);
+    } else {
+        lastAffectedRows = 0;
+    }
+    NSLog(@"[PG-AFFECTED] lastAffectedRows set to: %lu", (unsigned long)lastAffectedRows);
 
     // Create SPPostgresStreamingResultStore (required by SPDataStorage)
     SPPostgresStreamingResultStore *result = [[SPPostgresStreamingResultStore alloc] initWithPGResult:res];
@@ -347,6 +364,14 @@
     const char *utf8Query = [query UTF8String];
     PGresult *result = PQexec(connection, utf8Query);
 
+    // Track affected rows for consistency
+    char *affected = PQcmdTuples(result);
+    if (affected && strlen(affected) > 0) {
+        lastAffectedRows = (NSUInteger)atol(affected);
+    } else {
+        lastAffectedRows = 0;
+    }
+
     // DEBUG: Log result details
     int rowCount = result ? PQntuples(result) : -1;
     int fieldCount = result ? PQnfields(result) : -1;
@@ -383,17 +408,8 @@
 }
 
 - (NSUInteger)rowsAffectedByLastQuery {
-    if (!connection) return 0;
-    // PostgreSQL tracks affected rows via PQcmdTuples
-    PGresult *result = PQexec(connection, "SELECT 1"); // Get last result
-    if (result) {
-        char *affected = PQcmdTuples(result);
-        if (affected && strlen(affected) > 0) {
-            return (NSUInteger)atol(affected);
-        }
-        PQclear(result);
-    }
-    return 0;
+    NSLog(@"[PG-AFFECTED] rowsAffectedByLastQuery returning: %lu", (unsigned long)lastAffectedRows);
+    return lastAffectedRows;
 }
 
 - (NSString *)escapeString:(id)value includingQuotes:(BOOL)includeQuotes {

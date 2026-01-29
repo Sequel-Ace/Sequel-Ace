@@ -99,8 +99,8 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		// any difficulty, some keys differ slightly in mysql column storage to GRANT syntax;
 		// this dictionary provides mappings for those values to ensure consistency.
 		
-		// key is:   The name of the actual column in the mysql.users / mysql.db table
-		// value is: The "Privilege" value from "SHOW PRIVILEGES" with " " replaced by "_" and "_priv" appended
+		// key is:   The PostgreSQL privilege name from pg_roles
+		// value is: The internal privilege key with "_priv" appended
 		privColumnToGrantMap = @{
 			@"grant_priv":               @"grant_option_priv",
 			@"show_db_priv":             @"show_databases_priv",
@@ -978,79 +978,38 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 - (BOOL)updateUser:(SPUserMO *)user
 {
 	if (![user parent]) {
-		NSArray *hosts = [user valueForKey:@"children"];
-		
-		// If the user has been changed, update the username on all hosts.
-		// Don't check for errors, as some hosts may be new.
+		// If the role name has been changed, rename it
+		// PostgreSQL doesn't have host-based users, so we only need to rename once
 		if (![[user valueForKey:@"user"] isEqualToString:[user valueForKey:@"originaluser"]]) {
-			
-			for (SPUserMO *child in hosts)
-			{
-				[self _renameUserFrom:[user valueForKey:@"originaluser"]
-								 host:[child valueForKey:@"originalhost"] ? [child valueForKey:@"originalhost"] : [child host]
-								   to:[user valueForKey:@"user"]
-								 host:[child host]];
-			}
+			[self _renameUserFrom:[user valueForKey:@"originaluser"]
+							 host:nil
+							   to:[user valueForKey:@"user"]
+							 host:nil];
 		}
-		
-		// If the password has been changed, use the same password on all hosts
-		if(requiresPost576PasswordHandling) {
-			// the UI password field is bound to the password field, so this is still where the new plaintext value comes from
-			NSString *newPass = [[user changedValues] objectForKey:@"password"];
-			if(newPass) {
-				// 5.7.6+ can update all users at once
-				NSMutableString *alterStmt = [NSMutableString stringWithString:@"ALTER USER "];
-				BOOL first = YES;
-				for (SPUserMO *child in hosts)
-				{
-					if(!first) [alterStmt appendString:@", "];
-					[alterStmt appendFormat:@"%@@%@ IDENTIFIED WITH %@ BY %@", //note: "BY" -> plaintext, "AS" -> hash
-                        [[self connection] escapeAndQuoteString: [user valueForKey:@"user"]],
-                        [[self connection] escapeAndQuoteString: [child host]],
-                        [[self connection] escapeAndQuoteString: [user valueForKey:@"plugin"]],
-                        (![newPass isNSNull] && [newPass length]) ? [[self connection] escapeAndQuoteString:newPass] : @"''"];
-					first = NO;
-				}
-				[connection queryString:alterStmt];
-				if(![self _checkAndDisplayMySqlError]) return NO;
-			}
-		}
-		else {
-			if (![[user valueForKey:@"password"] isEqualToString:[user valueForKey:@"originalpassword"]]) {
-				
-				for (SPUserMO *child in hosts)
-				{
-					NSString *changePasswordStatement = [NSString stringWithFormat:
-                        @"SET PASSWORD FOR %@@%@ = PASSWORD(%@)",
-                        [[self connection] escapeAndQuoteString: [user valueForKey:@"user"]],
-                        [[self connection] escapeAndQuoteString: [child host]],
-                        ([user valueForKey:@"password"]) ? [[self connection] escapeAndQuoteString:[user valueForKey:@"password"]] : @"''"];
-					
-					[connection queryString:changePasswordStatement];
-					if(![self _checkAndDisplayMySqlError]) return NO;
-				}
-			}
+
+		// If the password has been changed, update it
+		// PostgreSQL uses ALTER ROLE ... WITH PASSWORD
+		NSString *newPass = [[user changedValues] objectForKey:@"password"];
+		if(newPass && ![newPass isNSNull] && [newPass length]) {
+			NSString *alterStmt = [NSString stringWithFormat:@"ALTER ROLE %@ WITH PASSWORD %@",
+				[[user valueForKey:@"user"] postgresQuotedIdentifier],
+				[[self connection] escapeAndQuoteString:newPass]];
+			[connection queryString:alterStmt];
+			if(![self _checkAndDisplayMySqlError]) return NO;
 		}
 	}
 	else {
-		// If the hostname has changed, remane the detail before editing details
-		if (![[user valueForKey:@"host"] isEqualToString:[user valueForKey:@"originalhost"]]) {
-			
-			[self _renameUserFrom:[[user parent] valueForKey:@"originaluser"]
-							 host:[user valueForKey:@"originalhost"]
-							   to:[[user parent] valueForKey:@"user"]
-							 host:[user valueForKey:@"host"]];
-		}
-		
+		// PostgreSQL doesn't support per-host role definitions
+		// Just update resources and privileges
         if(![self updateResourcesForUser:user]) {
             return NO;
         }
-		
+
         if(![self grantPrivilegesToUser:user]) {
             return NO;
         }
 	}
-	
+
 	return YES;
 }
 
@@ -1060,90 +1019,51 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
     if(isInitializing || ![user valueForKey:@"host"]) {
         return YES;
     }
-	
-	NSString *droppedUser = [NSString stringWithFormat:@"%@@%@", [[user valueForKey:@"user"] tickQuotedString], [[user valueForKey:@"host"] tickQuotedString]];
-	
-	// DROP USER
-    [connection queryString:[NSString stringWithFormat:@"DROP USER %@", droppedUser]];
-	
+
+	// PostgreSQL uses DROP ROLE (no @host)
+	NSString *roleName = [[user valueForKey:@"user"] postgresQuotedIdentifier];
+
+	// DROP ROLE
+    [connection queryString:[NSString stringWithFormat:@"DROP ROLE %@", roleName]];
+
 	return [self _checkAndDisplayMySqlError];
 }
 
 - (BOOL)insertUser:(SPUserMO *)user
 {
-	//this is also called during the initialize phase. we don't want to write to the db there.
+	// This is also called during the initialize phase. We don't want to write to the db there.
 	if(isInitializing) return YES;
-	
+
 	NSString *createStatement = nil;
-	
-	// Note that if the database does not support the use of the CREATE USER statment, then
-	// we must resort to using GRANT. Doing so means we must specify the privileges and the database
-	// for which these apply, so make them as restrictive as possible, but then revoke them to get the
-	// same affect as CREATE USER. That is, a new user with no privleges.
-	NSString *host = [[user valueForKey:@"host"] tickQuotedString];
-	
-	if ([user parent] && [[user parent] valueForKey:@"user"] && ([[user parent] valueForKey:@"password"] || [[user parent] valueForKey:@"authentication_string"])) {
-		
-		NSString *username = [[[user parent] valueForKey:@"user"] tickQuotedString];
-		
-		NSString *idString;
-		if(requiresPost576PasswordHandling) {
-			// there are three situations to cover here:
-			//   1) host added, parent user unchanged
-			//   2) host added, parent user password changed
-			//   3) host added, parent user is new
-			if([[user parent] valueForKey:@"originaluser"]) {
-				// 1 & 2: If the parent user already exists we always use the old password hash. if the parent password changes at the same time, updateUser: will take care of it afterwards
-				NSString *plugin = [[[user parent] valueForKey:@"plugin"] tickQuotedString];
-				NSString *hash = [[[user parent] valueForKey:@"authentication_string"] tickQuotedString];
-				idString = [NSString stringWithFormat:@"IDENTIFIED WITH %@ AS %@",plugin,hash];
-			}
-			else {
-				// 3: If the user is new, we take the plaintext password value from the UI
-				NSString *password = [[[user parent] valueForKey:@"password"] tickQuotedString];
-				idString = [NSString stringWithFormat:@"IDENTIFIED BY %@",password];
-			}
+
+	// PostgreSQL uses CREATE ROLE ... WITH LOGIN PASSWORD 'password'
+	// No @host syntax - host restrictions are managed in pg_hba.conf
+
+	if ([user parent] && [[user parent] valueForKey:@"user"]) {
+		NSString *roleName = [[[user parent] valueForKey:@"user"] postgresQuotedIdentifier];
+		NSString *password = [[user parent] valueForKey:@"password"];
+
+		if (password && ![password isNSNull] && [password length]) {
+			// Create role with password
+			createStatement = [NSString stringWithFormat:@"CREATE ROLE %@ WITH LOGIN PASSWORD %@",
+				roleName,
+				[[self connection] escapeAndQuoteString:password]];
 		}
 		else {
-			BOOL passwordIsHash;
-			NSString *password;
-			// there are three situations to cover here:
-			//   1) host added, parent user unchanged
-			//   2) host added, parent user password changed
-			//   3) host added, parent user is new
-			if([[user parent] valueForKey:@"originaluser"]) {
-				// 1 & 2: If the parent user already exists we always use the old password hash.
-				// This works because -updateUser: will be called after -insertUser: and update the password for this host, anyway.
-				passwordIsHash = YES;
-				password = [[[user parent] valueForKey:@"originalpassword"] tickQuotedString];
-			}
-			else {
-				// 3: If the user is new, we take the plaintext password value from the UI
-				passwordIsHash = NO;
-				password = [[[user parent] valueForKey:@"password"] tickQuotedString];
-			}
-			idString = [NSString stringWithFormat:@"IDENTIFIED BY %@%@",(passwordIsHash? @"PASSWORD " : @""), password];
+			// Create role without password
+			createStatement = [NSString stringWithFormat:@"CREATE ROLE %@ WITH LOGIN", roleName];
 		}
-		
-        createStatement = [NSString stringWithFormat:@"CREATE USER %@@%@ %@", username, host, idString];
 	}
-	else if ([user parent] && [[user parent] valueForKey:@"user"]) {
-		
-		NSString *username = [[[user parent] valueForKey:@"user"] tickQuotedString];
-		
-		createStatement = [NSString stringWithFormat:@"CREATE USER %@@%@", username, host];
-	}
-	
+
 	if (createStatement) {
-		
-		// Create user in database
+		// Create role in database
 		[connection queryString:createStatement];
-		
+
 		if ([self _checkAndDisplayMySqlError]) {
             if(![self updateResourcesForUser:user]) {
                 return NO;
             }
-			
+
 			return [self grantPrivilegesToUser:user skippingRevoke:YES];
 		}
 	}
@@ -1207,40 +1127,36 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 }
 
 /**
- * Update resource limites for given user
+ * Update resource limits for given user.
+ * Note: PostgreSQL does not support per-role resource limits like MySQL.
+ * Connection limits can be set via ALTER ROLE, but query/update limits are not available.
  */
 - (BOOL)updateResourcesForUser:(SPUserMO *)user
 {
     if ([user valueForKey:@"parent"] != nil) {
-        //Try modern way
-        NSMutableString *alterStmt = [NSMutableString stringWithFormat:@"ALTER USER %@@%@ WITH MAX_QUERIES_PER_HOUR %@ MAX_UPDATES_PER_HOUR %@ MAX_CONNECTIONS_PER_HOUR %@",
-                                      [[[user valueForKey:@"parent"] valueForKey:@"user"] tickQuotedString],
-                                      [[user valueForKey:@"host"] tickQuotedString],
-                                      [user valueForKey:@"max_questions"],
-                                      [user valueForKey:@"max_updates"],
-                                      [user valueForKey:@"max_connections"]];
-        [connection queryString:alterStmt];
+        // PostgreSQL only supports connection limits via ALTER ROLE
+        NSNumber *maxConnections = [user valueForKey:@"max_connections"];
+        if (maxConnections && [maxConnections integerValue] > 0) {
+            NSString *alterStmt = [NSString stringWithFormat:@"ALTER ROLE %@ WITH CONNECTION LIMIT %@",
+                                   [[[user valueForKey:@"parent"] valueForKey:@"user"] postgresQuotedIdentifier],
+                                   maxConnections];
+            [connection queryString:alterStmt];
 
-        //Fallback on legacy way
-        if ([connection queryErrored]) {
-			NSString *updateResourcesStatement = [NSString stringWithFormat:
-												  @"UPDATE mysql.user SET max_questions = %@, max_updates = %@, max_connections = %@ WHERE User = %@ AND Host = %@",
-												  [user valueForKey:@"max_questions"],
-												  [user valueForKey:@"max_updates"],
-												  [user valueForKey:@"max_connections"],
-												  [[[user valueForKey:@"parent"] valueForKey:@"user"] tickQuotedString],
-												  [[user valueForKey:@"host"] tickQuotedString]];
-			
-			[connection queryString:updateResourcesStatement];
-		}
+            if ([connection queryErrored]) {
+                // Connection limit setting failed, but this is not critical
+                SPLog(@"Failed to set connection limit for role: %@", [connection lastErrorMessage]);
+            }
+        }
 
-
-        //And if all else fails tell the user nope
-        if ([connection queryErrored]) {
-            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"An error occurred", @"postgresql error occurred message") message:[NSString stringWithFormat:NSLocalizedString(@"Resource Limits are not supported for your version of PostgreSQL. Any Resouce Limits you specified have been discarded and not saved. PostgreSQL said: %@", @"postgresql resource limits unsupported message"), [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")] callback:nil];
+        // Check if user tried to set query/update limits (not supported in PostgreSQL)
+        NSNumber *maxQuestions = [user valueForKey:@"max_questions"];
+        NSNumber *maxUpdates = [user valueForKey:@"max_updates"];
+        if ((maxQuestions && [maxQuestions integerValue] > 0) ||
+            (maxUpdates && [maxUpdates integerValue] > 0)) {
+            SPLog(@"PostgreSQL does not support max_questions or max_updates resource limits");
         }
     }
-	
+
 	return YES;
 }
 
@@ -1378,31 +1294,34 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 }
 
 /**
- * Grant the supplied privileges to the specified user and host
+ * Grant the supplied privileges to the specified user.
+ * PostgreSQL uses GRANT privilege ON schema.* TO rolename (no @host)
  */
 - (BOOL)_grantPrivileges:(NSArray *)thePrivileges onDatabase:(NSString *)aDatabase forUser:(NSString *)aUser host:(NSString *)aHost
 {
 	if (![thePrivileges count]) return YES;
 
 	NSString *grantStatement;
+	NSString *roleIdentifier = [aUser postgresQuotedIdentifier];
+
+	// PostgreSQL grants on schemas (not database.*)
+	// For global privileges, we grant on ALL TABLES IN SCHEMA public
+	NSString *targetObject;
+	if (aDatabase && [aDatabase length]) {
+		targetObject = [NSString stringWithFormat:@"ALL TABLES IN SCHEMA %@", [aDatabase postgresQuotedIdentifier]];
+	} else {
+		targetObject = @"ALL TABLES IN SCHEMA public";
+	}
 
 	// Special case when all items are checked, to allow GRANT OPTION to work
 	if ([[self privsSupportedByServer] count] == [thePrivileges count]) {
-		grantStatement = [NSString stringWithFormat:@"GRANT ALL ON %@.* TO %@@%@ WITH GRANT OPTION",
-							aDatabase?[aDatabase postgresQuotedIdentifier]:@"*",
-							[aUser tickQuotedString],
-							[aHost tickQuotedString]];
-	} 
-	else {
-		grantStatement = [NSString stringWithFormat:@"GRANT %@ ON %@.* TO %@@%@",
-							[[thePrivileges componentsJoinedByCommas] uppercaseString],
-							aDatabase?[aDatabase postgresQuotedIdentifier]:@"*",
-							[aUser tickQuotedString],
-							[aHost tickQuotedString]];
+		grantStatement = [NSString stringWithFormat:@"GRANT ALL PRIVILEGES ON %@ TO %@ WITH GRANT OPTION",
+							targetObject, roleIdentifier];
 	}
-	
-	if(![connection isNotMariadb103]){
-		grantStatement = [grantStatement stringByReplacingOccurrencesOfString:@"DELETE VERSIONING ROWS" withString:@"DELETE HISTORY"];
+	else {
+		grantStatement = [NSString stringWithFormat:@"GRANT %@ ON %@ TO %@",
+							[[thePrivileges componentsJoinedByCommas] uppercaseString],
+							targetObject, roleIdentifier];
 	}
 
 	[connection queryString:grantStatement];
@@ -1410,39 +1329,39 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 }
 
 /**
- * Revoke the supplied privileges from the specified user and host
+ * Revoke the supplied privileges from the specified user.
+ * PostgreSQL uses REVOKE privilege ON schema.* FROM rolename (no @host)
  */
 - (BOOL)_revokePrivileges:(NSArray *)thePrivileges onDatabase:(NSString *)aDatabase forUser:(NSString *)aUser host:(NSString *)aHost
 {
 	if (![thePrivileges count]) return YES;
 
 	NSString *revokeStatement;
+	NSString *roleIdentifier = [aUser postgresQuotedIdentifier];
 
-	// Special case when all items are checked, to allow GRANT OPTION to work
+	// PostgreSQL revokes on schemas (not database.*)
+	NSString *targetObject;
+	if (aDatabase && [aDatabase length]) {
+		targetObject = [NSString stringWithFormat:@"ALL TABLES IN SCHEMA %@", [aDatabase postgresQuotedIdentifier]];
+	} else {
+		targetObject = @"ALL TABLES IN SCHEMA public";
+	}
+
+	// Special case when all items are checked, to also revoke GRANT OPTION
 	if ([[self privsSupportedByServer] count] == [thePrivileges count]) {
-		revokeStatement = [NSString stringWithFormat:@"REVOKE ALL PRIVILEGES ON %@.* FROM %@@%@",
-							aDatabase?[aDatabase postgresQuotedIdentifier]:@"*",
-							[aUser tickQuotedString],
-							[aHost tickQuotedString]];
+		revokeStatement = [NSString stringWithFormat:@"REVOKE ALL PRIVILEGES ON %@ FROM %@",
+							targetObject, roleIdentifier];
 
 		[connection queryString:revokeStatement];
 		if(![self _checkAndDisplayMySqlError]) return NO;
 
-		revokeStatement = [NSString stringWithFormat:@"REVOKE GRANT OPTION ON %@.* FROM %@@%@",
-							aDatabase?[aDatabase postgresQuotedIdentifier]:@"*",
-							[aUser tickQuotedString],
-							[aHost tickQuotedString]];
-	} 
-	else {
-		revokeStatement = [NSString stringWithFormat:@"REVOKE %@ ON %@.* FROM %@@%@",
-							[[thePrivileges componentsJoinedByCommas] uppercaseString],
-							aDatabase?[aDatabase postgresQuotedIdentifier]:@"*",
-							[aUser tickQuotedString],
-							[aHost tickQuotedString]];
+		revokeStatement = [NSString stringWithFormat:@"REVOKE GRANT OPTION FOR ALL PRIVILEGES ON %@ FROM %@",
+							targetObject, roleIdentifier];
 	}
-	
-	if(![connection isNotMariadb103]){
-		revokeStatement = [revokeStatement stringByReplacingOccurrencesOfString:@"DELETE VERSIONING ROWS" withString:@"DELETE HISTORY"];
+	else {
+		revokeStatement = [NSString stringWithFormat:@"REVOKE %@ ON %@ FROM %@",
+							[[thePrivileges componentsJoinedByCommas] uppercaseString],
+							targetObject, roleIdentifier];
 	}
 
 	[connection queryString:revokeStatement];
@@ -1469,21 +1388,21 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 }
 
 /**
- * Renames a user account using the supplied parameters.
+ * Renames a role using the supplied parameters.
+ * PostgreSQL uses ALTER ROLE ... RENAME TO (no host concept).
  *
- * @param originalUser The user's original user name
- * @param originalHost The user's original host
- * @param newUser      The user's new user name
- * @param newHost      The user's new host
+ * @param originalUser The role's original name
+ * @param originalHost Ignored for PostgreSQL
+ * @param newUser      The role's new name
+ * @param newHost      Ignored for PostgreSQL
  */
 - (BOOL)_renameUserFrom:(NSString *)originalUser host:(NSString *)originalHost to:(NSString *)newUser host:(NSString *)newHost
 {
-	NSString *renameQuery = [NSString stringWithFormat:@"RENAME USER %@@%@ TO %@@%@",
-					   [originalUser tickQuotedString],
-					   [originalHost tickQuotedString],
-					   [newUser tickQuotedString],
-					   [newHost tickQuotedString]];
-	
+	// PostgreSQL doesn't use host-based role names, so we ignore the host parameters
+	NSString *renameQuery = [NSString stringWithFormat:@"ALTER ROLE %@ RENAME TO %@",
+					   [originalUser postgresQuotedIdentifier],
+					   [newUser postgresQuotedIdentifier]];
+
     [connection queryString:renameQuery];
     return [self _checkAndDisplayMySqlError];
 }

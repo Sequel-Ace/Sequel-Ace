@@ -698,7 +698,7 @@
  * assuming information like cardinality isn't needed.
  * This function is rather long due to the painful parsing required, but is fast.
  *
- * *WARNING* This method is only designed to handle the output of a "SHOW CREATE ..." query.
+ * *WARNING* This method is only designed to handle CREATE statement syntax (e.g., from pg_dump).
  *           DO NOT try to use it with user-defined input. The code does not handle the full possible syntax!
  */
 - (NSDictionary *)parseCreateStatement:(NSString *)tableDef ofType:(NSString *)tableType
@@ -975,10 +975,9 @@
 
 /**
  * Retrieve information which can be used to display views.  Unlike tables, all the information
- * for views cannot be extracted from the CREATE ALGORITHM syntax without selecting all the info
- * from the referenced tables.  For the time being we therefore use the column information for
- * SHOW COLUMNS (subsequently parsed), and derive the encoding from the database as no other source
- * is available.
+ * for views cannot be extracted from the view definition syntax without selecting all the info
+ * from the referenced tables.  For the time being we therefore use the column information from
+ * information_schema.columns (subsequently parsed).
  * Returns a boolean indicating success.
  */
 - (NSDictionary *) informationForView:(NSString *)viewName
@@ -998,8 +997,7 @@
 		[postgresConnection setEncoding:@"UTF8"];
 	}
 
-	// Retrieve the CREATE TABLE syntax for the table
-	// Retrieve the CREATE TABLE syntax for the table
+	// Retrieve the view definition syntax
 	SPPostgresResult *theResult = [postgresConnection queryString: [NSString stringWithFormat: @"SELECT pg_get_viewdef(%@, true)",
 																					   [viewName postgresQuotedIdentifier]
 																					]];
@@ -1025,7 +1023,7 @@
 	
 	// Crash reports indicate that this does happen, however I'm not sure why.
 	if (!syntaxString) {
-		NSLog(@"%s: query for 'SHOW CREATE TABLE' returned nil but there was no connection error!? queryErrored=%d, userTriggeredDisconnect=%d, isConnected=%d, theResult=%@",__func__,[postgresConnection queryErrored],[postgresConnection userTriggeredDisconnect],[postgresConnection isConnected],theResult);
+		NSLog(@"%s: query for 'pg_get_viewdef' returned nil but there was no connection error!? queryErrored=%d, userTriggeredDisconnect=%d, isConnected=%d, theResult=%@",__func__,[postgresConnection queryErrored],[postgresConnection userTriggeredDisconnect],[postgresConnection isConnected],theResult);
 		return nil;
 	}
 
@@ -1256,7 +1254,7 @@
 /**
  * Parse an array of field definition parts - not including name but including type and optionally unsigned/zerofill/null
  * and so forth - into a dictionary of parsed details.  Intended for use both with CREATE TABLE syntax - with fuller
- * details - and with the "type" column from SHOW COLUMNS.
+ * details - and with the "data_type" column from information_schema.columns.
  * Returns a dictionary of details with lowercase keys.
  */
 - (NSDictionary *) parseFieldDefinitionStringParts:(NSArray *)definitionParts

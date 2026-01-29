@@ -110,8 +110,14 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		addTableCharsetHelper = nil; //initialized in awakeFromNib
 		_SQLitePinnedTableManager = SQLitePinnedTableManager.sharedInstance;
+
+		// Initialize schema selection (PostgreSQL)
+		selectedSchema = @"public";
+		availableSchemas = [[NSMutableArray alloc] init];
+		objectsByCategory = [[NSMutableDictionary alloc] init];
+		useCategorialView = NO;
 	}
-	
+
 	return self;
 }
 
@@ -238,10 +244,14 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			[postgresConnection setEncoding:@"UTF8"];
 		}
 
-		// Select the table list for the current database.
-        // Postgres: SELECT table_name, table_type FROM information_schema.tables WHERE table_schema = 'public'
-        // We might need to handle schemas properly later. For now assuming 'public' or current schema.
-        NSString *query = [NSString stringWithFormat:@"SELECT table_name, table_type, obj_description(quote_ident(table_name)::regclass) as comment FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name"];
+		// Load available schemas if not already loaded
+		if ([availableSchemas count] == 0) {
+			[self loadSchemas];
+		}
+
+		// Select the table list for the current database and schema.
+		NSString *schemaToUse = selectedSchema ?: @"public";
+		NSString *query = [NSString stringWithFormat:@"SELECT table_name, table_type, obj_description(('%@.' || quote_ident(table_name))::regclass) as comment FROM information_schema.tables WHERE table_schema = '%@' ORDER BY table_name", schemaToUse, schemaToUse];
         NSLog(@"SPTablesList: Executing query: %@", query);
         theResult = [postgresConnection queryString:query];
         NSLog(@"SPTablesList: Query returned %lu rows, %lu fields", (unsigned long)[theResult numberOfRows], (unsigned long)[theResult numberOfFields]);
@@ -321,7 +331,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		 * Using information_schema gives us more info (for information window perhaps?) but breaks
 		 * backward compatibility with pre 4 I believe. I left the other methods below, in case.
 		 */
-        NSString *pQuery = [NSString stringWithFormat:@"SELECT routine_name, routine_type FROM information_schema.routines WHERE routine_schema = 'public' ORDER BY routine_name"];
+		NSString *pQuery = [NSString stringWithFormat:@"SELECT routine_name, routine_type FROM information_schema.routines WHERE routine_schema = '%@' ORDER BY routine_name", schemaToUse];
         theResult = [postgresConnection queryString:pQuery];
         // [theResult setDefaultRowReturnType:SPPostgresResultRowAsArray];
         // [theResult setReturnDataAsStrings:YES]; //see tables above
@@ -350,6 +360,86 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
                 }
             }
         }
+
+		// Grab sequences for the current schema
+		NSString *seqQuery = [NSString stringWithFormat:@"SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = '%@' ORDER BY sequence_name", schemaToUse];
+		theResult = [postgresConnection queryString:seqQuery];
+
+		if (![postgresConnection queryErrored] && theResult != nil && [theResult numberOfRows]) {
+			// Add the header row
+			[tables addObject:NSLocalizedString(@"SEQUENCES", @"header for sequences list")];
+			[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeNone]];
+
+			for (NSDictionary *eachRow in theResult) {
+				id seqName = [eachRow objectForKey:@"sequence_name"];
+				if (seqName && ![seqName isKindOfClass:[NSNull class]]) {
+					[tables addObject:seqName];
+				} else {
+					[tables addObject:@"<unknown>"];
+				}
+				[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeSequence]];
+			}
+		}
+
+		// Grab materialized views for the current schema
+		NSString *matViewQuery = [NSString stringWithFormat:@"SELECT matviewname FROM pg_matviews WHERE schemaname = '%@' ORDER BY matviewname", schemaToUse];
+		theResult = [postgresConnection queryString:matViewQuery];
+
+		if (![postgresConnection queryErrored] && theResult != nil && [theResult numberOfRows]) {
+			// Add the header row
+			[tables addObject:NSLocalizedString(@"MATERIALIZED VIEWS", @"header for materialized views list")];
+			[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeNone]];
+
+			for (NSDictionary *eachRow in theResult) {
+				id mvName = [eachRow objectForKey:@"matviewname"];
+				if (mvName && ![mvName isKindOfClass:[NSNull class]]) {
+					[tables addObject:mvName];
+				} else {
+					[tables addObject:@"<unknown>"];
+				}
+				[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeMaterializedView]];
+			}
+		}
+
+		// Grab domains for the current schema
+		NSString *domainQuery = [NSString stringWithFormat:@"SELECT domain_name FROM information_schema.domains WHERE domain_schema = '%@' ORDER BY domain_name", schemaToUse];
+		theResult = [postgresConnection queryString:domainQuery];
+
+		if (![postgresConnection queryErrored] && theResult != nil && [theResult numberOfRows]) {
+			// Add the header row
+			[tables addObject:NSLocalizedString(@"DOMAINS", @"header for domains list")];
+			[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeNone]];
+
+			for (NSDictionary *eachRow in theResult) {
+				id domName = [eachRow objectForKey:@"domain_name"];
+				if (domName && ![domName isKindOfClass:[NSNull class]]) {
+					[tables addObject:domName];
+				} else {
+					[tables addObject:@"<unknown>"];
+				}
+				[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeDomain]];
+			}
+		}
+
+		// Grab custom types for the current schema
+		NSString *typeQuery = [NSString stringWithFormat:@"SELECT t.typname FROM pg_type t JOIN pg_namespace n ON t.typnamespace = n.oid WHERE n.nspname = '%@' AND t.typtype IN ('c', 'e') ORDER BY t.typname", schemaToUse];
+		theResult = [postgresConnection queryString:typeQuery];
+
+		if (![postgresConnection queryErrored] && theResult != nil && [theResult numberOfRows]) {
+			// Add the header row
+			[tables addObject:NSLocalizedString(@"TYPES", @"header for types list")];
+			[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeNone]];
+
+			for (NSDictionary *eachRow in theResult) {
+				id typeName = [eachRow objectForKey:@"typname"];
+				if (typeName && ![typeName isKindOfClass:[NSNull class]]) {
+					[tables addObject:typeName];
+				} else {
+					[tables addObject:@"<unknown>"];
+				}
+				[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeType]];
+			}
+		}
 
 		// Restore encoding if appropriate
 		if (changeEncoding) [postgresConnection restoreStoredEncoding];
@@ -1308,6 +1398,172 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		[copyCreateSyntaxContextMenuItem setHidden:NO];
 		[copyCreateSyntaxContextMenuItem setTitle:NSLocalizedString(@"Copy Create Function Syntax",@"Table List : Context Menu : copy CREATE FUNCTION syntax")];
 	}
+	// Handle Sequence type
+	else if (selectedTableType == SPTableTypeSequence) {
+		[[tableSubMenu itemAtIndex:4] setTitle:NSLocalizedString(@"Copy Create Sequence Syntax", @"copy create sequence syntax menu item")];
+		[[tableSubMenu itemAtIndex:5] setTitle:NSLocalizedString(@"Show Create Sequence Syntax...", @"show create sequence syntax menu item")];
+		[[tableSubMenu itemAtIndex:6] setHidden:YES];
+		[[tableSubMenu itemAtIndex:7] setHidden:YES];
+		[[tableSubMenu itemAtIndex:8] setHidden:YES];
+		[[tableSubMenu itemAtIndex:9] setHidden:YES];
+		[[tableSubMenu itemAtIndex:10] setHidden:YES];
+		[[tableSubMenu itemAtIndex:11] setHidden:YES];
+		[[tableSubMenu itemAtIndex:12] setHidden:YES];
+		[[tableSubMenu itemAtIndex:13] setHidden:YES];
+
+		[renameTableMenuItem setHidden:NO];
+		[renameTableMenuItem setTitle:NSLocalizedString(@"Rename Sequence...", @"rename sequence menu title")];
+		[duplicateTableMenuItem setHidden:YES];
+		[truncateTableButton setHidden:YES];
+		[removeTableMenuItem setTitle:NSLocalizedString(@"Delete Sequence", @"delete sequence menu title")];
+		[openTableInNewTabMenuItem setHidden:YES];
+		[openTableInNewWindowMenuItem setHidden:YES];
+		[separatorTableMenuItem3 setHidden:YES];
+		[pinTableMenuItem setHidden:YES];
+		[showCreateSyntaxMenuItem setHidden:NO];
+		[showCreateSyntaxMenuItem setTitle:NSLocalizedString(@"Show Create Sequence Syntax...", @"show create sequence syntax menu item")];
+		[copyCreateSyntaxMenuItem setHidden:NO];
+		[copyCreateSyntaxMenuItem setTitle:NSLocalizedString(@"Copy Create Sequence Syntax",@"Table List : Gear Menu : Copy CREATE SEQUENCE syntax")];
+
+		[renameTableContextMenuItem setHidden:NO];
+		[renameTableContextMenuItem setTitle:NSLocalizedString(@"Rename Sequence...", @"rename sequence menu title")];
+		[duplicateTableContextMenuItem setHidden:YES];
+		[truncateTableContextMenuItem setHidden:YES];
+		[removeTableContextMenuItem setTitle:NSLocalizedString(@"Delete Sequence", @"delete sequence menu title")];
+		[openTableInNewTabContextMenuItem setHidden:YES];
+		[openTableInNewWindowContextMenuItem setHidden:YES];
+		[separatorTableContextMenuItem3 setHidden:YES];
+		[pinTableContextMenuItem setHidden:YES];
+		[copyTableNameContextMenuItem setHidden:NO];
+		[copyTableNameContextMenuItem setTitle:NSLocalizedString(@"Copy Sequence Name",@"Table List : Context Menu : copy sequence name")];
+		[showCreateSyntaxContextMenuItem setHidden:NO];
+		[showCreateSyntaxContextMenuItem setTitle:NSLocalizedString(@"Show Create Sequence Syntax...", @"show create sequence syntax menu item")];
+		[copyCreateSyntaxContextMenuItem setHidden:NO];
+		[copyCreateSyntaxContextMenuItem setTitle:NSLocalizedString(@"Copy Create Sequence Syntax",@"Table List : Context Menu : copy CREATE SEQUENCE syntax")];
+	}
+	// Handle Materialized View type
+	else if (selectedTableType == SPTableTypeMaterializedView) {
+		[[tableSubMenu itemAtIndex:4] setTitle:NSLocalizedString(@"Copy Create Materialized View Syntax", @"copy create materialized view syntax menu item")];
+		[[tableSubMenu itemAtIndex:5] setTitle:NSLocalizedString(@"Show Create Materialized View Syntax...", @"show create materialized view syntax menu item")];
+		[[tableSubMenu itemAtIndex:6] setHidden:YES];
+		[[tableSubMenu itemAtIndex:7] setHidden:YES];
+		[[tableSubMenu itemAtIndex:8] setHidden:YES];
+		[[tableSubMenu itemAtIndex:9] setHidden:YES];
+		[[tableSubMenu itemAtIndex:10] setHidden:YES];
+		[[tableSubMenu itemAtIndex:11] setHidden:YES];
+		[[tableSubMenu itemAtIndex:12] setHidden:NO];
+		[[tableSubMenu itemAtIndex:12] setTitle:NSLocalizedString(@"Refresh Materialized View", @"refresh materialized view menu item")];
+		[[tableSubMenu itemAtIndex:13] setHidden:YES];
+
+		[renameTableMenuItem setHidden:NO];
+		[renameTableMenuItem setTitle:NSLocalizedString(@"Rename Materialized View...", @"rename materialized view menu title")];
+		[duplicateTableMenuItem setHidden:YES];
+		[truncateTableButton setHidden:YES];
+		[removeTableMenuItem setTitle:NSLocalizedString(@"Delete Materialized View", @"delete materialized view menu title")];
+		[openTableInNewTabMenuItem setHidden:NO];
+		[openTableInNewWindowMenuItem setHidden:NO];
+		[openTableInNewTabMenuItem setTitle:NSLocalizedString(@"Open Materialized View in New Tab", @"open materialized view in new tab title")];
+		[openTableInNewWindowMenuItem setTitle:NSLocalizedString(@"Open Materialized View in New Window", @"Table List : Gear Menu : Duplicate connection to new window")];
+		NSString *pinMVLocalizedString = NSLocalizedString(isCurrentSelectionPinned ? @"Unpin Materialized View" : @"Pin Materialized View", @"pin materialized view menu item title");
+		[pinTableMenuItem setHidden:NO];
+		[pinTableMenuItem setTitle:pinMVLocalizedString];
+		[separatorTableMenuItem3 setHidden:NO];
+		[showCreateSyntaxMenuItem setHidden:NO];
+		[showCreateSyntaxMenuItem setTitle:NSLocalizedString(@"Show Create Materialized View Syntax...", @"show create materialized view syntax menu item")];
+		[copyCreateSyntaxMenuItem setHidden:NO];
+		[copyCreateSyntaxMenuItem setTitle:NSLocalizedString(@"Copy Create Materialized View Syntax",@"Table List : Gear Menu : Copy CREATE MATERIALIZED VIEW syntax")];
+
+		[renameTableContextMenuItem setHidden:NO];
+		[renameTableContextMenuItem setTitle:NSLocalizedString(@"Rename Materialized View...", @"rename materialized view menu title")];
+		[duplicateTableContextMenuItem setHidden:YES];
+		[truncateTableContextMenuItem setHidden:YES];
+		[removeTableContextMenuItem setTitle:NSLocalizedString(@"Delete Materialized View", @"delete materialized view menu title")];
+		[openTableInNewTabContextMenuItem setHidden:NO];
+		[openTableInNewWindowContextMenuItem setHidden:NO];
+		[separatorTableContextMenuItem3 setHidden:NO];
+		[openTableInNewTabContextMenuItem setTitle:NSLocalizedString(@"Open Materialized View in New Tab", @"open materialized view in new tab title")];
+		[openTableInNewWindowContextMenuItem setTitle:NSLocalizedString(@"Open Materialized View in New Window", @"Table List : Context Menu : Duplicate connection to new window")];
+		[pinTableContextMenuItem setHidden:NO];
+		[pinTableContextMenuItem setTitle:pinMVLocalizedString];
+		[copyTableNameContextMenuItem setHidden:NO];
+		[copyTableNameContextMenuItem setTitle:NSLocalizedString(@"Copy Materialized View Name",@"Table List : Context Menu : copy materialized view name")];
+		[showCreateSyntaxContextMenuItem setHidden:NO];
+		[showCreateSyntaxContextMenuItem setTitle:NSLocalizedString(@"Show Create Materialized View Syntax...", @"show create materialized view syntax menu item")];
+		[copyCreateSyntaxContextMenuItem setHidden:NO];
+		[copyCreateSyntaxContextMenuItem setTitle:NSLocalizedString(@"Copy Create Materialized View Syntax",@"Table List : Context Menu : copy CREATE MATERIALIZED VIEW syntax")];
+	}
+	// Handle Domain type
+	else if (selectedTableType == SPTableTypeDomain) {
+		[[tableSubMenu itemAtIndex:4] setTitle:NSLocalizedString(@"Copy Create Domain Syntax", @"copy create domain syntax menu item")];
+		[[tableSubMenu itemAtIndex:5] setTitle:NSLocalizedString(@"Show Create Domain Syntax...", @"show create domain syntax menu item")];
+		for (int i = 6; i <= 13; i++) {
+			[[tableSubMenu itemAtIndex:i] setHidden:YES];
+		}
+
+		[renameTableMenuItem setHidden:YES];
+		[duplicateTableMenuItem setHidden:YES];
+		[truncateTableButton setHidden:YES];
+		[removeTableMenuItem setTitle:NSLocalizedString(@"Delete Domain", @"delete domain menu title")];
+		[openTableInNewTabMenuItem setHidden:YES];
+		[openTableInNewWindowMenuItem setHidden:YES];
+		[separatorTableMenuItem3 setHidden:YES];
+		[pinTableMenuItem setHidden:YES];
+		[showCreateSyntaxMenuItem setHidden:NO];
+		[showCreateSyntaxMenuItem setTitle:NSLocalizedString(@"Show Create Domain Syntax...", @"show create domain syntax menu item")];
+		[copyCreateSyntaxMenuItem setHidden:NO];
+		[copyCreateSyntaxMenuItem setTitle:NSLocalizedString(@"Copy Create Domain Syntax",@"Table List : Gear Menu : Copy CREATE DOMAIN syntax")];
+
+		[renameTableContextMenuItem setHidden:YES];
+		[duplicateTableContextMenuItem setHidden:YES];
+		[truncateTableContextMenuItem setHidden:YES];
+		[removeTableContextMenuItem setTitle:NSLocalizedString(@"Delete Domain", @"delete domain menu title")];
+		[openTableInNewTabContextMenuItem setHidden:YES];
+		[openTableInNewWindowContextMenuItem setHidden:YES];
+		[separatorTableContextMenuItem3 setHidden:YES];
+		[pinTableContextMenuItem setHidden:YES];
+		[copyTableNameContextMenuItem setHidden:NO];
+		[copyTableNameContextMenuItem setTitle:NSLocalizedString(@"Copy Domain Name",@"Table List : Context Menu : copy domain name")];
+		[showCreateSyntaxContextMenuItem setHidden:NO];
+		[showCreateSyntaxContextMenuItem setTitle:NSLocalizedString(@"Show Create Domain Syntax...", @"show create domain syntax menu item")];
+		[copyCreateSyntaxContextMenuItem setHidden:NO];
+		[copyCreateSyntaxContextMenuItem setTitle:NSLocalizedString(@"Copy Create Domain Syntax",@"Table List : Context Menu : copy CREATE DOMAIN syntax")];
+	}
+	// Handle Type
+	else if (selectedTableType == SPTableTypeType) {
+		[[tableSubMenu itemAtIndex:4] setTitle:NSLocalizedString(@"Copy Create Type Syntax", @"copy create type syntax menu item")];
+		[[tableSubMenu itemAtIndex:5] setTitle:NSLocalizedString(@"Show Create Type Syntax...", @"show create type syntax menu item")];
+		for (int i = 6; i <= 13; i++) {
+			[[tableSubMenu itemAtIndex:i] setHidden:YES];
+		}
+
+		[renameTableMenuItem setHidden:YES];
+		[duplicateTableMenuItem setHidden:YES];
+		[truncateTableButton setHidden:YES];
+		[removeTableMenuItem setTitle:NSLocalizedString(@"Delete Type", @"delete type menu title")];
+		[openTableInNewTabMenuItem setHidden:YES];
+		[openTableInNewWindowMenuItem setHidden:YES];
+		[separatorTableMenuItem3 setHidden:YES];
+		[pinTableMenuItem setHidden:YES];
+		[showCreateSyntaxMenuItem setHidden:NO];
+		[showCreateSyntaxMenuItem setTitle:NSLocalizedString(@"Show Create Type Syntax...", @"show create type syntax menu item")];
+		[copyCreateSyntaxMenuItem setHidden:NO];
+		[copyCreateSyntaxMenuItem setTitle:NSLocalizedString(@"Copy Create Type Syntax",@"Table List : Gear Menu : Copy CREATE TYPE syntax")];
+
+		[renameTableContextMenuItem setHidden:YES];
+		[duplicateTableContextMenuItem setHidden:YES];
+		[truncateTableContextMenuItem setHidden:YES];
+		[removeTableContextMenuItem setTitle:NSLocalizedString(@"Delete Type", @"delete type menu title")];
+		[openTableInNewTabContextMenuItem setHidden:YES];
+		[openTableInNewWindowContextMenuItem setHidden:YES];
+		[separatorTableContextMenuItem3 setHidden:YES];
+		[pinTableContextMenuItem setHidden:YES];
+		[copyTableNameContextMenuItem setHidden:NO];
+		[copyTableNameContextMenuItem setTitle:NSLocalizedString(@"Copy Type Name",@"Table List : Context Menu : copy type name")];
+		[showCreateSyntaxContextMenuItem setHidden:NO];
+		[showCreateSyntaxContextMenuItem setTitle:NSLocalizedString(@"Show Create Type Syntax...", @"show create type syntax menu item")];
+		[copyCreateSyntaxContextMenuItem setHidden:NO];
+		[copyCreateSyntaxContextMenuItem setTitle:NSLocalizedString(@"Copy Create Type Syntax",@"Table List : Context Menu : copy CREATE TYPE syntax")];
+	}
 }
 
 - (void)deselectAllTables
@@ -1520,7 +1776,131 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
  */
 - (BOOL)hasNonTableObjects
 {
-	return [self hasViews] || [self hasProcedures] || [self hasFunctions] || [self hasEvents];
+	return [self hasViews] || [self hasProcedures] || [self hasFunctions] || [self hasEvents] ||
+		   [self hasSequences] || [self hasMaterializedViews] || [self hasForeignTables];
+}
+
+#pragma mark -
+#pragma mark PostgreSQL-specific getters
+
+/**
+ * Returns whether or not the current database has any sequences.
+ */
+- (BOOL)hasSequences
+{
+	return [self _databaseHasObjectOfType:SPTableTypeSequence];
+}
+
+/**
+ * Returns whether or not the current database has any materialized views.
+ */
+- (BOOL)hasMaterializedViews
+{
+	return [self _databaseHasObjectOfType:SPTableTypeMaterializedView];
+}
+
+/**
+ * Returns whether or not the current database has any foreign tables.
+ */
+- (BOOL)hasForeignTables
+{
+	return [self _databaseHasObjectOfType:SPTableTypeForeignTable];
+}
+
+/**
+ * Returns whether or not the current database has any domains.
+ */
+- (BOOL)hasDomains
+{
+	return [self _databaseHasObjectOfType:SPTableTypeDomain];
+}
+
+/**
+ * Returns whether or not the current database has any custom types.
+ */
+- (BOOL)hasTypes
+{
+	return [self _databaseHasObjectOfType:SPTableTypeType];
+}
+
+/**
+ * Returns whether or not the current database has any aggregates.
+ */
+- (BOOL)hasAggregates
+{
+	return [self _databaseHasObjectOfType:SPTableTypeAggregate];
+}
+
+/**
+ * Returns whether or not the current database has any operators.
+ */
+- (BOOL)hasOperators
+{
+	return [self _databaseHasObjectOfType:SPTableTypeOperator];
+}
+
+/**
+ * Returns whether or not the current database has any FTS configurations.
+ */
+- (BOOL)hasFTSConfigurations
+{
+	return [self _databaseHasObjectOfType:SPTableTypeFTSConfiguration];
+}
+
+/**
+ * Returns an array of all sequence names.
+ */
+- (NSArray *)allSequenceNames
+{
+	return [self _allSchemaObjectsOfType:SPTableTypeSequence];
+}
+
+/**
+ * Returns an array of all materialized view names.
+ */
+- (NSArray *)allMaterializedViewNames
+{
+	return [self _allSchemaObjectsOfType:SPTableTypeMaterializedView];
+}
+
+/**
+ * Returns an array of all foreign table names.
+ */
+- (NSArray *)allForeignTableNames
+{
+	return [self _allSchemaObjectsOfType:SPTableTypeForeignTable];
+}
+
+/**
+ * Returns an array of all domain names.
+ */
+- (NSArray *)allDomainNames
+{
+	return [self _allSchemaObjectsOfType:SPTableTypeDomain];
+}
+
+/**
+ * Returns an array of all type names.
+ */
+- (NSArray *)allTypeNames
+{
+	return [self _allSchemaObjectsOfType:SPTableTypeType];
+}
+
+/**
+ * Returns an array of all aggregate names.
+ */
+- (NSArray *)allAggregateNames
+{
+	return [self _allSchemaObjectsOfType:SPTableTypeAggregate];
+}
+
+/**
+ * Returns an array of all trigger function names.
+ */
+- (NSArray *)allTriggerFunctionNames
+{
+	return [self _allSchemaObjectsOfType:SPTableTypeTriggerFunction];
 }
 
 #pragma mark -
@@ -2400,6 +2780,146 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 }
 
 #pragma mark -
+#pragma mark Schema management (PostgreSQL)
+
+/**
+ * Loads all available schemas for the current database.
+ */
+- (void)loadSchemas
+{
+	if (!postgresConnection || ![tableDocumentInstance database]) {
+		return;
+	}
+
+	[availableSchemas removeAllObjects];
+
+	// Query PostgreSQL for all schemas, excluding system schemas
+	NSString *query = @"SELECT nspname FROM pg_namespace "
+					   "WHERE nspname NOT LIKE 'pg_%' "
+					   "AND nspname != 'information_schema' "
+					   "ORDER BY nspname";
+
+	SPPostgresResult *result = [postgresConnection queryString:query];
+
+	if (![postgresConnection queryErrored] && result) {
+		for (NSDictionary *row in result) {
+			NSString *schemaName = [row objectForKey:@"nspname"];
+			if (schemaName && ![schemaName isKindOfClass:[NSNull class]]) {
+				[availableSchemas addObject:schemaName];
+			}
+		}
+	}
+
+	// Ensure 'public' is always available and at the top
+	if (![availableSchemas containsObject:@"public"]) {
+		[availableSchemas insertObject:@"public" atIndex:0];
+	} else {
+		[availableSchemas removeObject:@"public"];
+		[availableSchemas insertObject:@"public" atIndex:0];
+	}
+
+	// Update the schema popup button if it exists
+	if (schemaPopUpButton) {
+		SPMainQSync(^{
+			[self->schemaPopUpButton removeAllItems];
+			for (NSString *schema in self->availableSchemas) {
+				[self->schemaPopUpButton addItemWithTitle:schema];
+			}
+			// Select the current schema
+			if (self->selectedSchema && [self->availableSchemas containsObject:self->selectedSchema]) {
+				[self->schemaPopUpButton selectItemWithTitle:self->selectedSchema];
+			} else {
+				[self->schemaPopUpButton selectItemAtIndex:0];
+				self->selectedSchema = @"public";
+			}
+		});
+	}
+}
+
+/**
+ * Called when the schema popup selection changes.
+ */
+- (IBAction)schemaChanged:(id)sender
+{
+	NSString *newSchema = [[schemaPopUpButton selectedItem] title];
+	if (newSchema && ![newSchema isEqualToString:selectedSchema]) {
+		[self setSelectedSchema:newSchema];
+		[self refreshObjectsForSchema:newSchema];
+		[self updateTables:self];
+	}
+}
+
+/**
+ * Refreshes all objects for the specified schema.
+ */
+- (void)refreshObjectsForSchema:(NSString *)schema
+{
+	if (!schema) {
+		schema = @"public";
+	}
+
+	selectedSchema = [schema copy];
+
+	// Clear and reload the objects by category
+	[objectsByCategory removeAllObjects];
+
+	// The actual loading is done in updateTables: which will use the selectedSchema
+	SPLog(@"Refreshing objects for schema: %@", schema);
+}
+
+/**
+ * Returns the currently selected schema.
+ */
+- (NSString *)selectedSchema
+{
+	return selectedSchema ?: @"public";
+}
+
+/**
+ * Sets the selected schema.
+ */
+- (void)setSelectedSchema:(NSString *)schema
+{
+	selectedSchema = schema ? [schema copy] : @"public";
+}
+
+/**
+ * Returns the list of available schemas.
+ */
+- (NSArray *)availableSchemas
+{
+	return [NSArray arrayWithArray:availableSchemas];
+}
+
+#pragma mark -
+#pragma mark Categorized view management
+
+/**
+ * Enables or disables the categorized view mode.
+ */
+- (void)setUseCategorialView:(BOOL)useCategorized
+{
+	useCategorialView = useCategorized;
+	[self updateTables:self];
+}
+
+/**
+ * Returns whether the categorized view mode is enabled.
+ */
+- (BOOL)useCategorialView
+{
+	return useCategorialView;
+}
+
+/**
+ * Returns the objects organized by category.
+ */
+- (NSDictionary *)objectsByCategory
+{
+	return [NSDictionary dictionaryWithDictionary:objectsByCategory];
+}
+
+#pragma mark -
 #pragma mark Private API
 
 /**
@@ -2424,17 +2944,35 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		
 		if (objectType == SPTableTypeView) {
 			objectIdentifier = @"VIEW";
-		} 
+		}
 		else if (objectType == SPTableTypeTable) {
 			objectIdentifier = @"TABLE";
 		}
 		else if (objectType == SPTableTypeProc) {
 			objectIdentifier = @"PROCEDURE";
-		} 
+		}
 		else if (objectType == SPTableTypeFunc) {
 			objectIdentifier = @"FUNCTION";
 		}
-		
+		else if (objectType == SPTableTypeSequence) {
+			objectIdentifier = @"SEQUENCE";
+		}
+		else if (objectType == SPTableTypeMaterializedView) {
+			objectIdentifier = @"MATERIALIZED VIEW";
+		}
+		else if (objectType == SPTableTypeDomain) {
+			objectIdentifier = @"DOMAIN";
+		}
+		else if (objectType == SPTableTypeType) {
+			objectIdentifier = @"TYPE";
+		}
+		else if (objectType == SPTableTypeAggregate) {
+			objectIdentifier = @"AGGREGATE";
+		}
+		else if (objectType == SPTableTypeTriggerFunction) {
+			objectIdentifier = @"FUNCTION";
+		}
+
 		[postgresConnection queryString:[NSString stringWithFormat:@"DROP %@ %@ %@", objectIdentifier, databaseObject, force ? @"CASCADE" : @""]];
 
 		// If no error is recorded, the table was successfully dropped - remove it from the list

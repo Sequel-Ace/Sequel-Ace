@@ -98,17 +98,64 @@ typedef enum {
 	SPRowCountFetchAlways  = 2
 } SPRowCountQueryUsageLevels;
 
-// Database object (table list) types
-typedef enum
-{
-	SPTableTypeNone  = -1,
-	SPTableTypeTable = 0,
-	SPTableTypeView  = 1,
-	SPTableTypeProc  = 2,
-	SPTableTypeFunc  = 3,
-	SPTableTypeEvent = 4,
-	SPTableTypeTableNewDB = 5
-} SPTableType;
+// Database object (table list) types - Extended for PostgreSQL schema objects
+typedef NS_ENUM(NSInteger, SPTableType) {
+	SPTableTypeNone              = -1,
+	// Core Objects
+	SPTableTypeTable             = 0,
+	SPTableTypeView              = 1,
+	SPTableTypeMaterializedView  = 2,
+	SPTableTypeForeignTable      = 3,
+	// Legacy compatibility (used in UI logic)
+	SPTableTypeTableNewDB        = 5,
+	// Code Objects
+	SPTableTypeFunction          = 10,
+	SPTableTypeProcedure         = 11,
+	SPTableTypeTriggerFunction   = 12,
+	SPTableTypeAggregate         = 13,
+	// Data Types & Sequences
+	SPTableTypeSequence          = 20,
+	SPTableTypeDomain            = 21,
+	SPTableTypeType              = 22,
+	SPTableTypeCollation         = 23,
+	// Operators
+	SPTableTypeOperator          = 30,
+	// Full-Text Search Objects
+	SPTableTypeFTSConfiguration  = 40,
+	SPTableTypeFTSDictionary     = 41,
+	SPTableTypeFTSParser         = 42,
+	SPTableTypeFTSTemplate       = 43,
+	// Container Types (for hierarchy navigation)
+	SPTableTypeSchema            = 100,
+	SPTableTypeCategory          = 101
+};
+
+// Legacy aliases for backwards compatibility
+#define SPTableTypeProc SPTableTypeProcedure
+#define SPTableTypeFunc SPTableTypeFunction
+#define SPTableTypeEvent SPTableTypeNone  // PostgreSQL doesn't have events
+
+// Object category enumeration for grouped display
+typedef NS_ENUM(NSInteger, SPObjectCategory) {
+	SPObjectCategoryNone             = -1,
+	SPObjectCategoryTables           = 0,
+	SPObjectCategoryViews            = 1,
+	SPObjectCategoryMaterializedViews = 2,
+	SPObjectCategoryForeignTables    = 3,
+	SPObjectCategorySequences        = 4,
+	SPObjectCategoryFunctions        = 5,
+	SPObjectCategoryProcedures       = 6,
+	SPObjectCategoryTriggerFunctions = 7,
+	SPObjectCategoryAggregates       = 8,
+	SPObjectCategoryDomains          = 9,
+	SPObjectCategoryTypes            = 10,
+	SPObjectCategoryCollations       = 11,
+	SPObjectCategoryOperators        = 12,
+	SPObjectCategoryFTSConfigurations = 13,
+	SPObjectCategoryFTSDictionaries  = 14,
+	SPObjectCategoryFTSParsers       = 15,
+	SPObjectCategoryFTSTemplates     = 16
+};
 
 // Content views
 typedef NS_ENUM(NSInteger, SPTableViewType)

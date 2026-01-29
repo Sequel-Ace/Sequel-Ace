@@ -146,6 +146,19 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 	functionIcon = [NSImage imageNamed:@"func-small"];
 	fieldIcon = [NSImage imageNamed:@"field-small-square"];
 
+	// PostgreSQL-specific icons (fallback to existing icons if specific ones don't exist)
+	schemaIcon = [NSImage imageNamed:@"database-small"]; // Use database icon for schemas
+	sequenceIcon = [NSImage imageNamed:@"table-small-square"] ?: tableIcon; // Fallback to table icon
+	materializedViewIcon = [NSImage imageNamed:@"table-view-small-square"] ?: viewIcon; // Use view icon
+	domainIcon = [NSImage imageNamed:@"field-small-square"] ?: fieldIcon; // Use field icon
+	typeIcon = [NSImage imageNamed:@"field-small-square"] ?: fieldIcon; // Use field icon
+	aggregateIcon = [NSImage imageNamed:@"func-small"] ?: functionIcon; // Use function icon
+	triggerFunctionIcon = [NSImage imageNamed:@"func-small"] ?: functionIcon; // Use function icon
+	operatorIcon = [NSImage imageNamed:@"func-small"] ?: functionIcon; // Use function icon
+	ftsIcon = [NSImage imageNamed:@"table-small-square"] ?: tableIcon; // Fallback
+	foreignTableIcon = [NSImage imageNamed:@"table-small-square"] ?: tableIcon; // Use table icon
+	collationIcon = [NSImage imageNamed:@"field-small-square"] ?: fieldIcon; // Use field icon
+
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateNavigator:) name:@"SPDBStructureWasUpdated" object:nil];
 
 }
@@ -831,13 +844,37 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 - (BOOL)outlineView:(id)outlineView isItemExpandable:(id)item
 {
 	if([item isKindOfClass:NSDictionaryClass]) {
-		// Suppress expanding for PROCEDUREs and FUNCTIONs
-		if((SPTableType)[[item objectForKey:@"  struct_type  "] intValue] > SPTableTypeView) {
-			return NO;
+		SPTableType type = (SPTableType)[[item objectForKey:@"  struct_type  "] intValue];
+		// Allow expanding for tables, views, materialized views, foreign tables, and schemas
+		// Suppress expanding for procedures, functions, sequences, domains, types, operators, etc.
+		switch (type) {
+			case SPTableTypeNone: // No type means it's a container (database/schema)
+			case SPTableTypeTable:
+			case SPTableTypeView:
+			case SPTableTypeMaterializedView:
+			case SPTableTypeForeignTable:
+			case SPTableTypeSchema:
+				return YES;
+			case SPTableTypeFunction: // SPTableTypeFunc is an alias
+			case SPTableTypeProcedure: // SPTableTypeProc is an alias
+			case SPTableTypeTriggerFunction:
+			case SPTableTypeAggregate:
+			case SPTableTypeSequence:
+			case SPTableTypeDomain:
+			case SPTableTypeType:
+			case SPTableTypeOperator:
+			case SPTableTypeCollation:
+			case SPTableTypeFTSConfiguration:
+			case SPTableTypeFTSDictionary:
+			case SPTableTypeFTSParser:
+			case SPTableTypeFTSTemplate:
+				return NO;
+			default:
+				// For unknown types, check if it has children
+				return [item count] > 1; // More than just struct_type key
 		}
-		return YES;
 	}
-	
+
 	return NO;
 }
 
@@ -901,13 +938,50 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 						case SPTableTypeView:
 							[[tableColumn dataCell] setImage:viewIcon];
 							break;
-						case SPTableTypeProc:
+						case SPTableTypeProcedure: // SPTableTypeProc is an alias
 							[[tableColumn dataCell] setImage:procedureIcon];
 							break;
-						case SPTableTypeFunc:
+						case SPTableTypeFunction: // SPTableTypeFunc is an alias
 							[[tableColumn dataCell] setImage:functionIcon];
 							break;
+						case SPTableTypeSequence:
+							[[tableColumn dataCell] setImage:sequenceIcon];
+							break;
+						case SPTableTypeMaterializedView:
+							[[tableColumn dataCell] setImage:materializedViewIcon];
+							break;
+						case SPTableTypeForeignTable:
+							[[tableColumn dataCell] setImage:foreignTableIcon];
+							break;
+						case SPTableTypeDomain:
+							[[tableColumn dataCell] setImage:domainIcon];
+							break;
+						case SPTableTypeType:
+							[[tableColumn dataCell] setImage:typeIcon];
+							break;
+						case SPTableTypeAggregate:
+							[[tableColumn dataCell] setImage:aggregateIcon];
+							break;
+						case SPTableTypeTriggerFunction:
+							[[tableColumn dataCell] setImage:triggerFunctionIcon];
+							break;
+						case SPTableTypeOperator:
+							[[tableColumn dataCell] setImage:operatorIcon];
+							break;
+						case SPTableTypeCollation:
+							[[tableColumn dataCell] setImage:collationIcon];
+							break;
+						case SPTableTypeFTSConfiguration:
+						case SPTableTypeFTSDictionary:
+						case SPTableTypeFTSParser:
+						case SPTableTypeFTSTemplate:
+							[[tableColumn dataCell] setImage:ftsIcon];
+							break;
+						case SPTableTypeSchema:
+							[[tableColumn dataCell] setImage:schemaIcon];
+							break;
 						default:
+							[[tableColumn dataCell] setImage:tableIcon];
 							break;
 					}
 				} else {

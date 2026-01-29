@@ -230,28 +230,103 @@
 
             id createTableSyntax = nil;
             SPTableType tableType = SPTableTypeTable;
-            // Determine whether this table is a table or a view via the CREATE TABLE command, and keep the create table syntax
+            // Determine whether this table is a table or a view, and generate the CREATE syntax
             {
-                // Postgres doesn't support SHOW CREATE TABLE. Using a placeholder or TODO.
-                SPPostgresResult *queryResult = nil; // [connection queryString:[NSString stringWithFormat:@"SHOW CREATE TABLE %@", [tableName postgresQuotedIdentifier]]];
+                // PostgreSQL: First check if this is a view
+                SPPostgresResult *viewCheck = [connection queryString:[NSString stringWithFormat:
+                    @"SELECT pg_get_viewdef(%@, true) AS view_def FROM pg_views WHERE viewname = %@",
+                    [tableName tickQuotedString], [tableName tickQuotedString]]];
+                [viewCheck setReturnDataAsStrings:YES];
 
-                [queryResult setReturnDataAsStrings:YES];
-
-                if ([queryResult numberOfRows]) {
-                    NSDictionary *tableDetails = [[NSDictionary alloc] initWithDictionary:[queryResult getRowAsDictionary]];
-
-                    if ([tableDetails objectForKey:@"Create View"]) {
+                if ([viewCheck numberOfRows] > 0) {
+                    // This is a view
+                    NSDictionary *viewRow = [viewCheck getRowAsDictionary];
+                    NSString *viewDef = [viewRow objectForKey:@"view_def"];
+                    if (viewDef && ![viewDef isNSNull]) {
+                        NSString *createViewSyntax = [NSString stringWithFormat:@"CREATE VIEW %@ AS\n%@", [tableName postgresQuotedIdentifier], viewDef];
                         [viewSyntaxes
                             setValue: [NSString stringWithFormat:@"%@%@",
                                             (sqlOutputIncludeDropSyntax ? [NSString stringWithFormat:@"DROP TABLE IF EXISTS %@; DROP VIEW IF EXISTS %@;\n\n", [tableName postgresQuotedIdentifier], [tableName postgresQuotedIdentifier]] : @""),
-                                            [[[tableDetails objectForKey:@"Create View"] copy] createViewSyntaxPrettifier]]
+                                            createViewSyntax]
                             forKey: tableName
                         ];
                         createTableSyntax = [self _createViewPlaceholderSyntaxForView:tableName];
                         tableType = SPTableTypeView;
                     }
-                    else {
-                        createTableSyntax = [[tableDetails objectForKey:@"Create Table"] copy];
+                }
+                else {
+                    // This is a table - build CREATE TABLE from information_schema
+                    NSString *columnsQuery = [NSString stringWithFormat:
+                        @"SELECT column_name, data_type, character_maximum_length, numeric_precision, numeric_scale, "
+                        @"is_nullable, column_default "
+                        @"FROM information_schema.columns "
+                        @"WHERE table_schema = 'public' AND table_name = %@ "
+                        @"ORDER BY ordinal_position", [tableName tickQuotedString]];
+
+                    SPPostgresResult *columnsResult = [connection queryString:columnsQuery];
+                    [columnsResult setReturnDataAsStrings:YES];
+
+                    if ([columnsResult numberOfRows] > 0) {
+                        NSMutableString *createStmt = [NSMutableString stringWithFormat:@"CREATE TABLE %@ (\n", [tableName postgresQuotedIdentifier]];
+                        NSMutableArray *columnDefs = [NSMutableArray array];
+
+                        for (NSDictionary *row in columnsResult) {
+                            NSMutableString *colDef = [NSMutableString stringWithFormat:@"  %@", [[row objectForKey:@"column_name"] postgresQuotedIdentifier]];
+
+                            NSString *dataType = [row objectForKey:@"data_type"];
+                            id maxLength = [row objectForKey:@"character_maximum_length"];
+                            id numericPrecision = [row objectForKey:@"numeric_precision"];
+                            id numericScale = [row objectForKey:@"numeric_scale"];
+
+                            if (maxLength && ![maxLength isKindOfClass:[NSNull class]]) {
+                                [colDef appendFormat:@" %@(%@)", dataType, maxLength];
+                            } else if (numericPrecision && ![numericPrecision isKindOfClass:[NSNull class]] &&
+                                       numericScale && ![numericScale isKindOfClass:[NSNull class]]) {
+                                [colDef appendFormat:@" %@(%@,%@)", dataType, numericPrecision, numericScale];
+                            } else {
+                                [colDef appendFormat:@" %@", dataType];
+                            }
+
+                            id isNullable = [row objectForKey:@"is_nullable"];
+                            BOOL isNotNullable = NO;
+                            if ([isNullable isKindOfClass:[NSString class]]) {
+                                isNotNullable = [isNullable isEqualToString:@"NO"];
+                            } else if ([isNullable isKindOfClass:[NSNumber class]]) {
+                                isNotNullable = ![isNullable boolValue];
+                            }
+                            if (isNotNullable) {
+                                [colDef appendString:@" NOT NULL"];
+                            }
+
+                            id defaultValue = [row objectForKey:@"column_default"];
+                            if (defaultValue && ![defaultValue isKindOfClass:[NSNull class]] && [defaultValue length]) {
+                                [colDef appendFormat:@" DEFAULT %@", defaultValue];
+                            }
+
+                            [columnDefs addObject:colDef];
+                        }
+
+                        // Add primary key constraint if exists
+                        NSString *pkQuery = [NSString stringWithFormat:
+                            @"SELECT string_agg(kcu.column_name, ', ') AS pk_columns "
+                            @"FROM information_schema.table_constraints tc "
+                            @"JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name "
+                            @"WHERE tc.table_name = %@ AND tc.constraint_type = 'PRIMARY KEY' "
+                            @"GROUP BY tc.constraint_name", [tableName tickQuotedString]];
+                        SPPostgresResult *pkResult = [connection queryString:pkQuery];
+                        [pkResult setReturnDataAsStrings:YES];
+                        if ([pkResult numberOfRows] > 0) {
+                            NSDictionary *pkRow = [pkResult getRowAsDictionary];
+                            NSString *pkColumns = [pkRow objectForKey:@"pk_columns"];
+                            if (pkColumns && ![pkColumns isNSNull]) {
+                                [columnDefs addObject:[NSString stringWithFormat:@"  PRIMARY KEY (%@)", pkColumns]];
+                            }
+                        }
+
+                        [createStmt appendString:[columnDefs componentsJoinedByString:@",\n"]];
+                        [createStmt appendString:@"\n)"];
+
+                        createTableSyntax = createStmt;
                         tableType = SPTableTypeTable;
                     }
                 }
@@ -259,7 +334,7 @@
                 if ([connection queryErrored]) {
                     [errors appendFormat:@"%@\n", [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")];
 
-                    [self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n\n\n", [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")]];
+                    [self writeUTF8String:[NSString stringWithFormat:@"-- Error: %@\n\n\n", [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")]];
 
                     continue;
                 }
@@ -558,14 +633,19 @@
 
             // Add triggers if the structure export was enabled
             if (sqlOutputIncludeStructure) {
-                SPPostgresResult *queryResult = nil; // [connection queryString:[NSString stringWithFormat:@"/*!50003 SHOW TRIGGERS WHERE `Table` = %@ */", [tableName postgresQuotedIdentifier]]];
+                // PostgreSQL: Query triggers from information_schema
+                SPPostgresResult *queryResult = [connection queryString:[NSString stringWithFormat:
+                    @"SELECT trigger_name, event_manipulation, action_timing, action_statement "
+                    @"FROM information_schema.triggers "
+                    @"WHERE event_object_table = %@ AND trigger_schema = 'public'",
+                    [tableName tickQuotedString]]];
 
                 [queryResult setReturnDataAsStrings:YES];
 
                 if ([queryResult numberOfRows]) {
 
                     [metaString setString:@"\n"];
-                    [metaString appendString:@"DELIMITER ;;\n"];
+                    [metaString appendString:@"-- Triggers\n"];
 
                     for (NSUInteger s = 0; s < [queryResult numberOfRows]; s++)
                     {
@@ -585,21 +665,16 @@
 
                         NSDictionary *triggers = [[NSDictionary alloc] initWithDictionary:[queryResult getRowAsDictionary]];
 
-                        // Definer is user@host but we need to escape it to `user`@`host`
-                        NSArray *triggersDefiner = [[triggers objectForKey:@"Definer"] componentsSeparatedByString:@"@"];
-
-                        [metaString appendFormat:@"/*!50003 SET SESSION SQL_MODE=\"%@\" */;;\n/*!50003 CREATE */ ", [triggers objectForKey:@"sql_mode"]];
-                        [metaString appendFormat:@"/*!50017 DEFINER=%@@%@ */ /*!50003 TRIGGER %@ %@ %@ ON %@ FOR EACH ROW %@ */;;\n",
-                         [[triggersDefiner firstObject] postgresQuotedIdentifier],
-                         [[triggersDefiner safeObjectAtIndex:1] postgresQuotedIdentifier],
-                         [[triggers objectForKey:@"Trigger"] postgresQuotedIdentifier],
-                         [triggers objectForKey:@"Timing"],
-                         [triggers objectForKey:@"Event"],
-                         [[triggers objectForKey:@"Table"] postgresQuotedIdentifier],
-                         [triggers objectForKey:@"Statement"]];
+                        // PostgreSQL trigger format
+                        [metaString appendFormat:@"CREATE TRIGGER %@ %@ %@ ON %@ FOR EACH ROW %@;\n",
+                         [[triggers objectForKey:@"trigger_name"] postgresQuotedIdentifier],
+                         [triggers objectForKey:@"action_timing"],
+                         [triggers objectForKey:@"event_manipulation"],
+                         [tableName postgresQuotedIdentifier],
+                         [triggers objectForKey:@"action_statement"]];
                     }
 
-                    [metaString appendString:@"DELIMITER ;\n/*!50003 SET SESSION SQL_MODE=@OLD_SQL_MODE */;\n"];
+                    [metaString appendString:@"\n"];
 
                     [self writeUTF8String:metaString];
                 }
@@ -670,16 +745,21 @@
 
         if ([items count] == 0) continue;
 
-        // Retrieve the definitions
-        // PostgreSQL: Need to query pg_proc for function/procedure definitions
-        SPPostgresResult *queryResult = nil; // TODO: Implement PostgreSQL procedure listing
+        // Retrieve the definitions from PostgreSQL
+        // PostgreSQL: Query pg_proc for function/procedure definitions
+        NSString *prokind = [procedureType isEqualToString:@"PROCEDURE"] ? @"p" : @"f";
+        SPPostgresResult *queryResult = [connection queryString:[NSString stringWithFormat:
+            @"SELECT p.proname AS \"Name\", pg_get_functiondef(p.oid) AS definition "
+            @"FROM pg_proc p "
+            @"JOIN pg_namespace n ON p.pronamespace = n.oid "
+            @"WHERE n.nspname = 'public' AND p.prokind = '%@'", prokind]];
 
         [queryResult setReturnDataAsStrings:YES];
 
         if ([queryResult numberOfRows]) {
 
             [metaString setString:@"\n"];
-            [metaString appendFormat:@"--\n-- Dumping routines (%@) for database %@\n--\nDELIMITER ;;\n\n", procedureType,
+            [metaString appendFormat:@"--\n-- Dumping routines (%@) for database %@\n--\n\n", procedureType,
              [[self sqlDatabaseName] postgresQuotedIdentifier]];
 
             // Loop through the definitions, exporting if enabled
@@ -733,11 +813,11 @@
                     }
 
                     if (sqlOutputIncludeStructure || sqlOutputIncludeDropSyntax)
-                        [metaString appendFormat:@"# Dump of %@ %@\n# ------------------------------------------------------------\n\n", procedureType, procedureName];
+                        [metaString appendFormat:@"-- Dump of %@ %@\n-- ------------------------------------------------------------\n\n", procedureType, procedureName];
 
                     // Add the 'DROP' command if required
                     if (sqlOutputIncludeDropSyntax) {
-                        [metaString appendFormat:@"/*!50003 DROP %@ IF EXISTS %@ */;;\n", procedureType,
+                        [metaString appendFormat:@"DROP %@ IF EXISTS %@;\n", procedureType,
                          [procedureName postgresQuotedIdentifier]];
                     }
 
@@ -746,56 +826,14 @@
                         continue;
                     }
 
-                    // Definer is user@host but we need to escape it to `user`@`host`
-                    NSArray *procedureDefiner = [[proceduresList objectForKey:@"Definer"] componentsSeparatedByString:@"@"];
-
-                    NSString *escapedDefiner = [NSString stringWithFormat:@"%@@%@",
-                                                [[procedureDefiner firstObject] postgresQuotedIdentifier],
-                                                [[procedureDefiner safeObjectAtIndex:1] postgresQuotedIdentifier]];
-
-                    // PostgreSQL: Need to query pg_get_functiondef for procedure definitions
-                    SPPostgresResult *createProcedureResult = nil; // TODO: Implement PostgreSQL procedure definition retrieval
-                    [createProcedureResult setReturnDataAsStrings:YES];
-                    if ([connection queryErrored]) {
-                        [errors appendFormat:@"%@\n", [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")];
-
-                        if ([self sqlOutputIncludeErrors]) {
-                            [self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n", [connection lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"unknown error")]];
-                        }
-                        continue;
+                    // Get the function definition directly from the query result
+                    NSString *functionDef = [proceduresList objectForKey:@"definition"];
+                    if (functionDef && ![functionDef isNSNull]) {
+                        [metaString appendFormat:@"%@;\n\n", functionDef];
                     }
-
-                    NSDictionary *procedureInfo = [[NSDictionary alloc] initWithDictionary:[createProcedureResult getRowAsDictionary]];
-
-                    [metaString appendFormat:@"/*!50003 SET SESSION SQL_MODE=\"%@\"*/;;\n", [procedureInfo objectForKey:@"sql_mode"]];
-
-                    NSString *createProcedure = [procedureInfo objectForKey:[NSString stringWithFormat:@"Create %@", [procedureType capitalizedString]]];
-
-                    // A NULL result indicates a permission problem
-                    if ([createProcedure isNSNull]) {
-                        NSString *errorString = [NSString stringWithFormat:NSLocalizedString(@"Could not export the %@ '%@' because of a permissions error.\n", @"Procedure/function export permission error"), procedureType, procedureName];
-                        [errors appendString:errorString];
-                        if ([self sqlOutputIncludeErrors]) {
-                            [self writeUTF8String:[NSString stringWithFormat:@"# Error: %@\n", errorString]];
-                        }
-                        continue;
-                    }
-
-                    NSRange procedureRange    = [createProcedure rangeOfString:procedureType options:NSCaseInsensitiveSearch];
-                    NSString *procedureBody   = [createProcedure substringFromIndex:procedureRange.location];
-
-                    // /*!50003 CREATE*/ /*!50020 DEFINER=`sequelpro`@`%`*/ /*!50003 PROCEDURE `p`()
-                    // 													  BEGIN
-                    // 													  /* This procedure does nothing */
-                    // END */;;
-                    //
-                    // Build the CREATE PROCEDURE string to include MySQL Version limiters
-                    [metaString appendFormat:@"/*!50003 CREATE*/ /*!50020 DEFINER=%@*/ /*!50003 %@ */;;\n\n/*!50003 SET SESSION SQL_MODE=@OLD_SQL_MODE */;;\n", escapedDefiner, procedureBody];
 
                 }
             }
-
-            [metaString appendString:@"DELIMITER ;\n"];
 
             [self writeUTF8String:metaString];
         }

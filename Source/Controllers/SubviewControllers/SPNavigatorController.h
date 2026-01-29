@@ -62,7 +62,20 @@
 	NSImage *procedureIcon;
 	NSImage *functionIcon;
 	NSImage *fieldIcon;
-	
+
+	// PostgreSQL-specific icons
+	NSImage *schemaIcon;
+	NSImage *sequenceIcon;
+	NSImage *materializedViewIcon;
+	NSImage *domainIcon;
+	NSImage *typeIcon;
+	NSImage *aggregateIcon;
+	NSImage *triggerFunctionIcon;
+	NSImage *operatorIcon;
+	NSImage *ftsIcon;
+	NSImage *foreignTableIcon;
+	NSImage *collationIcon;
+
 	Class NSDictionaryClass;
 }
 

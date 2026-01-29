@@ -87,4 +87,66 @@
 - (NSString *)getServerDefaultCharacterSet;
 - (NSString *)getServerDefaultCollation;
 
+#pragma mark - PostgreSQL Schema Operations
+
+/**
+ * Returns all available schemas in the current database.
+ */
+- (NSArray *)getDatabaseSchemas;
+
+/**
+ * Returns all sequences in the specified schema.
+ */
+- (NSArray *)getSequencesForSchema:(NSString *)schema;
+
+/**
+ * Returns all materialized views in the specified schema.
+ */
+- (NSArray *)getMaterializedViewsForSchema:(NSString *)schema;
+
+/**
+ * Returns all domains in the specified schema.
+ */
+- (NSArray *)getDomainsForSchema:(NSString *)schema;
+
+/**
+ * Returns all aggregate functions in the specified schema.
+ */
+- (NSArray *)getAggregatesForSchema:(NSString *)schema;
+
+/**
+ * Returns all operators in the specified schema.
+ */
+- (NSArray *)getOperatorsForSchema:(NSString *)schema;
+
+/**
+ * Returns all FTS configurations in the specified schema.
+ */
+- (NSArray *)getFTSConfigurationsForSchema:(NSString *)schema;
+
+/**
+ * Returns all FTS dictionaries in the specified schema.
+ */
+- (NSArray *)getFTSDictionariesForSchema:(NSString *)schema;
+
+/**
+ * Returns all foreign tables in the specified schema.
+ */
+- (NSArray *)getForeignTablesForSchema:(NSString *)schema;
+
+/**
+ * Returns all custom types in the specified schema.
+ */
+- (NSArray *)getTypesForSchema:(NSString *)schema;
+
+/**
+ * Returns all collations in the specified schema.
+ */
+- (NSArray *)getCollationsForSchema:(NSString *)schema;
+
+/**
+ * Returns all trigger functions in the specified schema.
+ */
+- (NSArray *)getTriggerFunctionsForSchema:(NSString *)schema;
+
 @end
