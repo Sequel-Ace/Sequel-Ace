@@ -1288,8 +1288,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	NSString *nullValue = [prefs stringForKey:SPNullValue];
 	CFStringRef escapedNullValue = CFXMLCreateStringByEscapingEntities(NULL, ((CFStringRef)nullValue), NULL);
 
-	SPPostgresResult *structureQueryResult = [postgresConnection queryString:[NSString stringWithFormat:@"SELECT column_name AS Field, data_type AS Type, is_nullable AS \"Null\", column_default AS \"Default\" FROM information_schema.columns WHERE table_name = %@", [selectedTable postgresQuotedIdentifier]]];
-	SPPostgresResult *indexesQueryResult   = [postgresConnection queryString:[NSString stringWithFormat:@"SELECT indexname AS Key_name, indexdef AS Index_type FROM pg_indexes WHERE tablename = %@", [selectedTable postgresQuotedIdentifier]]];
+	SPPostgresResult *structureQueryResult = [postgresConnection queryString:[NSString stringWithFormat:@"SELECT column_name AS Field, data_type AS Type, is_nullable AS \"Null\", column_default AS \"Default\" FROM information_schema.columns WHERE table_name = %@", [selectedTable tickQuotedString]]];
+	SPPostgresResult *indexesQueryResult   = [postgresConnection queryString:[NSString stringWithFormat:@"SELECT indexname AS Key_name, indexdef AS Index_type FROM pg_indexes WHERE tablename = %@", [selectedTable tickQuotedString]]];
 
 	[structureQueryResult setReturnDataAsStrings:YES];
 	[indexesQueryResult setReturnDataAsStrings:YES];
@@ -1495,7 +1495,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	// Retrieve the indexes for the table
-	SPPostgresResult *indexesQueryResult   = [postgresConnection queryString:[NSString stringWithFormat:@"SELECT indexname AS Key_name, indexdef AS Index_type FROM pg_indexes WHERE tablename = %@", [selectedTable postgresQuotedIdentifier]]];
+	SPPostgresResult *indexesQueryResult   = [postgresConnection queryString:[NSString stringWithFormat:@"SELECT indexname AS Key_name, indexdef AS Index_type FROM pg_indexes WHERE tablename = %@", [selectedTable tickQuotedString]]];
 
 	// If an error occurred, reset the interface and abort
 	if ([postgresConnection queryErrored]) {

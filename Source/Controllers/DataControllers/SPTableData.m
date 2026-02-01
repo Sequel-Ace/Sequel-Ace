@@ -1165,7 +1165,7 @@
 		[postgresConnection setEncoding:@"utf8mb4"];
 	}
 
-    NSString *query = [NSString stringWithFormat:@"SELECT trigger_name AS \"Trigger\", event_manipulation AS \"Event\", event_object_table AS \"Table\", action_statement AS \"Statement\", action_timing AS \"Timing\" FROM information_schema.triggers WHERE event_object_table = %@", [[tableListInstance tableName] postgresQuotedIdentifier]];
+    NSString *query = [NSString stringWithFormat:@"SELECT trigger_name AS \"Trigger\", event_manipulation AS \"Event\", event_object_table AS \"Table\", action_statement AS \"Statement\", action_timing AS \"Timing\" FROM information_schema.triggers WHERE event_object_table = %@", [[tableListInstance tableName] tickQuotedString]];
 
 	SPPostgresResult *theResult = [postgresConnection queryString:query];
 	[theResult setReturnDataAsStrings:YES];
