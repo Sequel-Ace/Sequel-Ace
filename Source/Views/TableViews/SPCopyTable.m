@@ -48,6 +48,7 @@
 #import "SPDatabaseContentViewDelegate.h"
 #import "SPBundleManager.h"
 #import "SPTableData.h"
+#import "SPFieldTypeClassification.h"
 
 #import <SPMySQL/SPMySQL.h>
 #import "pthread.h"
@@ -71,30 +72,6 @@ NSString *kColMapping = @"MAPPING";
 NSString *kHeader     = @"HEADER";
 NSString *kFieldType = @"FIELD_TYPE";
 NSString *kFieldTypeGroup = @"FIELDGROUP";
-
-static BOOL SPFieldTypeShouldBeUnquoted(NSString *fieldTypeGroup, NSString *fieldType)
-{
-	if ([fieldTypeGroup isKindOfClass:[NSString class]]) {
-		NSString *normalizedGroup = [[fieldTypeGroup lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-		if ([normalizedGroup isEqualToString:@"bit"] || [normalizedGroup isEqualToString:@"integer"] || [normalizedGroup isEqualToString:@"float"]) {
-			return YES;
-		}
-	}
-
-	if (![fieldType isKindOfClass:[NSString class]]) return NO;
-
-	NSString *baseType = [[fieldType componentsSeparatedByString:@"("] firstObject];
-	baseType = [[baseType componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] firstObject];
-	NSString *normalizedType = [[baseType ?: @"" uppercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-
-	static NSSet<NSString *> *unquotedFieldTypes = nil;
-	static dispatch_once_t onceToken;
-	dispatch_once(&onceToken, ^{
-		unquotedFieldTypes = [NSSet setWithArray:@[@"BIT", @"BOOL", @"BOOLEAN", @"TINYINT", @"SMALLINT", @"MEDIUMINT", @"INT", @"INTEGER", @"BIGINT", @"FLOAT", @"DOUBLE", @"REAL", @"DECIMAL", @"DEC", @"NUMERIC", @"FIXED", @"SERIAL", @"YEAR"]];
-	});
-
-	return [unquotedFieldTypes containsObject:normalizedType];
-}
 
 @implementation SPCopyTable
 

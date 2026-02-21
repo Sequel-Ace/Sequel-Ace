@@ -30,6 +30,7 @@
 
 #import "SPTableCopy.h"
 #import <SPMySQL/SPMySQL.h>
+#import "../Source/Views/TableViews/SPFieldTypeClassification.h"
 
 #import <XCTest/XCTest.h>
 #import <OCMock/OCMock.h>
@@ -90,6 +91,36 @@
 	}
 	
 	[mockConnection verify];
+}
+
+@end
+
+@interface SPFieldTypeClassificationTests : XCTestCase
+
+- (void)testNumericTypeIsUnquotedWhenTypeGroupingIsMissing;
+- (void)testNumericTypeIsUnquotedWhenTypeGroupingIsWrong;
+- (void)testNonNumericTypeStaysQuoted;
+
+@end
+
+@implementation SPFieldTypeClassificationTests
+
+- (void)testNumericTypeIsUnquotedWhenTypeGroupingIsMissing
+{
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(nil, @"DECIMAL(10,2)"));
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(nil, @" BIGINT unsigned "));
+}
+
+- (void)testNumericTypeIsUnquotedWhenTypeGroupingIsWrong
+{
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(@"string", @"BIGINT unsigned"));
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(@"textdata", @"NUMERIC(8, 4)"));
+}
+
+- (void)testNonNumericTypeStaysQuoted
+{
+	XCTAssertFalse(SPFieldTypeShouldBeUnquoted(nil, @"VARCHAR(255)"));
+	XCTAssertFalse(SPFieldTypeShouldBeUnquoted(@"string", @"JSON"));
 }
 
 @end
