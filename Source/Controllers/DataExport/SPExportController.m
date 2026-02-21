@@ -1085,12 +1085,13 @@ set_input:
 	NSUInteger i = [tables count];
 	
 	[tablesListInstance updateTables:self];
-		
-	NSUInteger j = [[tablesListInstance allTableAndViewNames] count];
+
+	NSUInteger j = [[[NSOrderedSet alloc] initWithArray:[tablesListInstance allTableAndViewNames]] count];
 	
 	// If this is an SQL export, include procs and functions
 	if (exportType == SPSQLExport) {
-		j += ([[tablesListInstance allProcedureNames] count] + [[tablesListInstance allFunctionNames] count]);
+		j += [[[NSOrderedSet alloc] initWithArray:[tablesListInstance allProcedureNames]] count];
+		j += [[[NSOrderedSet alloc] initWithArray:[tablesListInstance allFunctionNames]] count];
 	}
 		
 	if (j > i) {
