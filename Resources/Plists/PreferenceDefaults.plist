@@ -115,6 +115,8 @@
 	<integer>2</integer>
 	<key>CustomQueryUpdateAutoHelp</key>
 	<false/>
+	<key>NSAutoFillHeuristicControllerEnabled</key>
+	<false/>
 	<key>UseDashStyleForBlockComment</key>
 	<false/>
 	<key>DefaultEncodingTag</key>
