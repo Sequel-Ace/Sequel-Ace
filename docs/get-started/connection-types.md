@@ -90,7 +90,7 @@ Defaults to port 3306.
 
 A **Socket connection** is a connection to a copy of MySQL running on your local machine. If you are connecting to MySQL that you have installed from a package installer or source, then you won't normally need to enter anything into the socket field.
 
-On macOS, Sequel Ace may be blocked from accessing socket files outside its sandbox container (and Full Disk Access does not bypass this restriction). If you hit socket connection errors, see [Connect to a Local MySQL Server](local-connection.html#connecting-via-a-socket-connection) for the supported workarounds.
+On macOS, Sequel Ace may be blocked from accessing socket files outside its sandbox container (and Full Disk Access does not bypass this restriction). The socket file must be created inside Sequel Ace's container path, and a `/tmp` symlink alone is not enough for Sequel Ace. If you hit socket connection errors, see [Connect to a Local MySQL Server](local-connection.html#connecting-via-a-socket-connection) for the supported workarounds.
 
 Required Fields
 

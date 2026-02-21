@@ -24,10 +24,12 @@ This is a known macOS sandboxing limitation. Sequel Ace cannot access socket fil
 
 Use one of these workarounds:
 
-1. Move the socket path into `~/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock` (and optionally symlink `/tmp/mysql.sock` for other tools).
+1. Configure MySQL/MariaDB so it creates the socket directly inside `~/Library/Containers/com.sequel-ace.sequel-ace/Data/` (for example, `.../Data/mysql.sock`).
 2. Switch to a standard TCP/IP connection (`127.0.0.1`) and enable networking in `my.cnf` if needed.
 
-For full step-by-step instructions (including MacPorts commands and multi-version port setup), see [Connect to a Local MySQL Server](local-connection.html#connecting-via-a-socket-connection).
+Important: a symlink from `/tmp/mysql.sock` to the Sequel Ace path does not fix Sequel Ace by itself. The socket's core location must be in Sequel Ace's container.
+
+For full step-by-step instructions (including Homebrew/MacPorts/Oracle package context and multi-version port setup), see [Connect to a Local MySQL Server](local-connection.html#connecting-via-a-socket-connection).
 
 **I'm having trouble connecting to a MySQL 4 or MySQL 5 database on localhost with a MAMP install.**
 

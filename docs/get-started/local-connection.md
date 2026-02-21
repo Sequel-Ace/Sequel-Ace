@@ -19,28 +19,66 @@ If you are not sure if the MySQL server is running, open _Activity Viewer_ (from
 
 #### Connecting via a socket connection
 
-Apple's macOS sandboxing restrictions prevent Sequel Ace from accessing socket files outside the app container, even when Full Disk Access is enabled for Sequel Ace.
+On macOS, Sequel Ace is sandboxed. It can only use a socket if the database server creates the socket file inside Sequel Ace's container path.
 
-There are two common workarounds:
+Important notes:
 
-##### Option 1: Move the socket to a path Sequel Ace can access
+- Full Disk Access does **not** bypass this sandbox restriction.
+- The socket's real path must be inside Sequel Ace's container.
+- A symlink-based workaround by itself is not enough. In particular, a symlink from `/tmp/mysql.sock` to a Sequel Ace path does not fix Sequel Ace unless the server itself is configured to create the socket in Sequel Ace's container.
 
-Edit your MySQL configuration file (usually `my.cnf`, often `/usr/local/etc/my.cnf`) and set:
+There are two supported approaches:
+
+##### Option 1: Keep using a socket (set socket path inside Sequel Ace)
+
+1. Find which config file your server actually reads.
+
+Use whichever server binary you have:
+```
+mysqld --verbose --help | sed -n '/Default options are read from the following files in the given order:/,/^$/p'
+mariadbd --verbose --help | sed -n '/Default options are read from the following files in the given order:/,/^$/p'
+```
+
+You can also check the current socket setting:
+```
+my_print_defaults mysqld | tr ' ' '\n' | grep '^--socket='
+my_print_defaults mariadbd | tr ' ' '\n' | grep '^--socket='
+```
+
+Common locations on macOS:
+- Homebrew (Apple Silicon): `/opt/homebrew/etc/my.cnf`
+- Homebrew (Intel): `/usr/local/etc/my.cnf`
+- MacPorts: `/opt/local/etc/<variant>/my.cnf`
+- Oracle MySQL packages: often `/etc/my.cnf` (or files included from there)
+- MAMP / MAMP PRO / XAMPP: app-managed config files
+
+2. Set the socket path to a Sequel Ace container location, for example:
+```
+/Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock
+```
+
+Add or update:
 ```
 [mysqld]
 socket=/Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock
+
+[client]
+socket=/Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock
 ```
 
-Then restart MySQL/MariaDB.
+3. Restart MySQL/MariaDB.
 
-If other tools still expect the previous socket path (for example, `/tmp/mysql.sock`), create a symbolic link:
+4. If startup fails with an error like `Could not create unix socket lock file`, verify permissions so the server process user can write in that directory:
 ```
-ln -s /Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock /tmp/mysql.sock
+ps -Ao user,comm | egrep 'mariadbd|mysqld'
+ls -ld /Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data
 ```
 
-##### Option 2: Use a standard TCP/IP connection instead of a socket connection
+5. In Sequel Ace, use a **Socket** connection with the same socket path.
 
-If your local server is configured socket-only, enable networking in your server config:
+##### Option 2: Use standard TCP/IP instead of a socket
+
+If socket setup is not practical on your install, enable local TCP networking:
 ```
 [mysqld]
 skip_networking=0
@@ -69,6 +107,11 @@ sudo port reload {variant-version}-server
 ```
 
 If you run multiple versions at once, assign a different `port=<number>` to each version and use the same port in Sequel Ace.
+
+References:
+- [MySQL Option Files](https://dev.mysql.com/doc/refman/8.0/en/option-files.html)
+- [MariaDB: Configuring MariaDB with Option Files](https://mariadb.com/docs/server/server-management/install-and-upgrade-mariadb/configuring-mariadb/configuring-mariadb-with-option-files)
+- [MySQL: Can't connect to local MySQL server](https://dev.mysql.com/doc/refman/8.0/en/can-not-connect-to-server.html)
 
 
 #### Connecting via a standard connection
