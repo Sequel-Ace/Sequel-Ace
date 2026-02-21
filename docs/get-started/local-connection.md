@@ -19,11 +19,56 @@ If you are not sure if the MySQL server is running, open _Activity Viewer_ (from
 
 #### Connecting via a socket connection
 
-Unfortunately, due to sandboxing nature, Sequel Ace is not allowed to connect to the sockets which are out of the sandbox. As a workaround, you can create a socket in `~/Library/Containers/com.sequel-ace.sequel-ace/Data` and connect to it. This can be done by putting these lines to your MySQL configuration file (usually, `my.cnf`):
+Apple's macOS sandboxing restrictions prevent Sequel Ace from accessing socket files outside the app container, even when Full Disk Access is enabled for Sequel Ace.
+
+There are two common workarounds:
+
+##### Option 1: Move the socket to a path Sequel Ace can access
+
+Edit your MySQL configuration file (usually `my.cnf`, often `/usr/local/etc/my.cnf`) and set:
 ```
 [mysqld]
 socket=/Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock
 ```
+
+Then restart MySQL/MariaDB.
+
+If other tools still expect the previous socket path (for example, `/tmp/mysql.sock`), create a symbolic link:
+```
+ln -s /Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock /tmp/mysql.sock
+```
+
+##### Option 2: Use a standard TCP/IP connection instead of a socket connection
+
+If your local server is configured socket-only, enable networking in your server config:
+```
+[mysqld]
+skip_networking=0
+bind_address=127.0.0.1
+```
+
+Then restart MySQL/MariaDB and connect in Sequel Ace using a **Standard** connection with:
+
+- Host: `127.0.0.1` (not `localhost`)
+- Username/password: same credentials you used before
+- Port: `3306` unless you configured another port
+
+For MacPorts installs:
+
+1. Find your active MySQL/MariaDB variant:
+```
+port select --show mysql
+```
+2. Edit that variant's config file:
+```
+/opt/local/etc/{variant-version}/my.cnf
+```
+3. Restart it:
+```
+sudo port reload {variant-version}-server
+```
+
+If you run multiple versions at once, assign a different `port=<number>` to each version and use the same port in Sequel Ace.
 
 
 #### Connecting via a standard connection

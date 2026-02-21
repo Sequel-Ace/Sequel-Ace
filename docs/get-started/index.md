@@ -20,49 +20,14 @@ Please check out [this page](migrating-from-sequel-pro.html) for info on how to 
 
 **I am having trouble connecting to a database. It says: Can't connect to local MySQL server through socket '/tmp/mysql.sock' (2)**
 
-Unfortunately, due to sandboxing nature, Sequel Ace is not allowed to connect to the sockets which are out of the Sandbox. As a workaround, you can create a socket in `~/Library/Containers/com.sequel-ace.sequel-ace/Data` and connect to it. This can be done by putting these lines to your MySQL configuration file (usually, `my.cnf`). First, make a note of the file already specified in this file, typically, `/tmp/mysql.sock`.
- ```
- [mysqld]
- socket=/Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock
- ```
-To allow other database applications to continue working, make a symbolic link from the new socket file to the one previously used, like this:
-```
-# ln -s /Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock /tmp/mysql.sock
-```
+This is a known macOS sandboxing limitation. Sequel Ace cannot access socket files outside its container, even with Full Disk Access enabled.
 
-If you are still having trouble using the new socket connection, it may be a permission problem, which you can check and correct:
-```
-# ls -la /Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/
-drwx------  14 jan     staff    448 14 Jun 09:41 .
-drwx------@  4 jan     staff    128 13 Jun 11:23 ..
-lrwxr-xr-x   1 jan     staff     31 13 Jun 11:23 .CFUserTextEncoding -> ../../../../.CFUserTextEncoding
-drwxr-xr-x@  2 jan     staff     64 13 Jun 11:23 .keys
-lrwxr-xr-x   1 jan     staff     19 13 Jun 11:23 Desktop -> ../../../../Desktop
-drwx------   2 jan     staff     64 13 Jun 11:23 Documents
-lrwxr-xr-x   1 jan     staff     21 13 Jun 11:23 Downloads -> ../../../../Downloads
-drwx------  32 jan     staff   1024 13 Jun 11:23 Library
-lrwxr-xr-x   1 jan     staff     18 13 Jun 11:23 Movies -> ../../../../Movies
-lrwxr-xr-x   1 jan     staff     17 13 Jun 11:23 Music -> ../../../../Music
-lrwxr-xr-x   1 jan     staff     20 13 Jun 11:23 Pictures -> ../../../../Pictures
-drwx------   2 jan     staff     64 13 Jun 11:23 SystemData
-srwxrwxrwx   1 _mysql  _mysql     0 14 Jun 09:41 mysql.sock
-drwx------   2 jan     staff     64 13 Jun 22:26 tmp
-```
-Note that neither the target directory nor its containing directory allow any access to user `_mysql`
+Use one of these workarounds:
 
-You can change the group to `_mysql` and set group permissions accordingly:
-```
-# for d in \
-  /Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/ \
-  /Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/ \
-  /Users/YourUserName/Library/Containers/ \
-  /Users/YourUserName/Library/Containers/ \
-  /Users/YourUserName/
-do
-  chgrp $d _mysql
-  chmod g+rwx $d
-done
-```
+1. Move the socket path into `~/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock` (and optionally symlink `/tmp/mysql.sock` for other tools).
+2. Switch to a standard TCP/IP connection (`127.0.0.1`) and enable networking in `my.cnf` if needed.
+
+For full step-by-step instructions (including MacPorts commands and multi-version port setup), see [Connect to a Local MySQL Server](local-connection.html#connecting-via-a-socket-connection).
 
 **I'm having trouble connecting to a MySQL 4 or MySQL 5 database on localhost with a MAMP install.**
 
