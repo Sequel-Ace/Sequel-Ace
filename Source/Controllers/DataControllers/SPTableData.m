@@ -45,10 +45,27 @@
 
 - (void)_loopWhileWorking;
 - (NSDictionary *)parseCreateStatement:(NSString *)tableDef ofType:(NSString *)tableType;
+- (BOOL)_shouldSkipTableInformationLoadForTable:(NSString *)tableName database:(NSString *)database tableType:(SPTableType)tableType;
+- (void)_recordTableInformationLoadFailureForTable:(NSString *)tableName database:(NSString *)database tableType:(SPTableType)tableType;
+- (void)_clearTableInformationLoadFailure;
+- (BOOL)_shouldSkipStatusLoadForTable:(NSString *)tableName database:(NSString *)database tableType:(SPTableType)tableType;
+- (void)_recordStatusLoadFailureForTable:(NSString *)tableName database:(NSString *)database tableType:(SPTableType)tableType;
+- (void)_clearStatusLoadFailure;
 
 @end
 
 @implementation SPTableData
+{
+	NSString *_failedTableInformationTableName;
+	NSString *_failedTableInformationDatabaseName;
+	SPTableType _failedTableInformationTableType;
+	BOOL _failedTableInformationIsSet;
+
+	NSString *_failedStatusTableName;
+	NSString *_failedStatusDatabaseName;
+	SPTableType _failedStatusTableType;
+	BOOL _failedStatusIsSet;
+}
 
 @synthesize tableHasAutoIncrementField;
 @synthesize connection = mySQLConnection;
@@ -85,6 +102,62 @@
             [self setConnection:nil];
         }
     }
+}
+
+- (BOOL)_shouldSkipTableInformationLoadForTable:(NSString *)tableName database:(NSString *)database tableType:(SPTableType)tableType
+{
+	if (!_failedTableInformationIsSet) return NO;
+
+	NSString *normalizedTableName = tableName ?: @"";
+	NSString *normalizedDatabase = database ?: @"";
+
+	return (_failedTableInformationTableType == tableType
+			&& [_failedTableInformationTableName isEqualToString:normalizedTableName]
+			&& [_failedTableInformationDatabaseName isEqualToString:normalizedDatabase]);
+}
+
+- (void)_recordTableInformationLoadFailureForTable:(NSString *)tableName database:(NSString *)database tableType:(SPTableType)tableType
+{
+	_failedTableInformationTableName = [NSString stringWithString:(tableName ?: @"")];
+	_failedTableInformationDatabaseName = [NSString stringWithString:(database ?: @"")];
+	_failedTableInformationTableType = tableType;
+	_failedTableInformationIsSet = YES;
+}
+
+- (void)_clearTableInformationLoadFailure
+{
+	_failedTableInformationTableName = nil;
+	_failedTableInformationDatabaseName = nil;
+	_failedTableInformationTableType = SPTableTypeNone;
+	_failedTableInformationIsSet = NO;
+}
+
+- (BOOL)_shouldSkipStatusLoadForTable:(NSString *)tableName database:(NSString *)database tableType:(SPTableType)tableType
+{
+	if (!_failedStatusIsSet) return NO;
+
+	NSString *normalizedTableName = tableName ?: @"";
+	NSString *normalizedDatabase = database ?: @"";
+
+	return (_failedStatusTableType == tableType
+			&& [_failedStatusTableName isEqualToString:normalizedTableName]
+			&& [_failedStatusDatabaseName isEqualToString:normalizedDatabase]);
+}
+
+- (void)_recordStatusLoadFailureForTable:(NSString *)tableName database:(NSString *)database tableType:(SPTableType)tableType
+{
+	_failedStatusTableName = [NSString stringWithString:(tableName ?: @"")];
+	_failedStatusDatabaseName = [NSString stringWithString:(database ?: @"")];
+	_failedStatusTableType = tableType;
+	_failedStatusIsSet = YES;
+}
+
+- (void)_clearStatusLoadFailure
+{
+	_failedStatusTableName = nil;
+	_failedStatusDatabaseName = nil;
+	_failedStatusTableType = SPTableTypeNone;
+	_failedStatusIsSet = NO;
 }
 
 /**
@@ -331,6 +404,8 @@
 	[columns removeAllObjects];
 	[columnNames removeAllObjects];
 	[status removeAllObjects];
+	[self _clearTableInformationLoadFailure];
+	[self _clearStatusLoadFailure];
 
 	if (triggers != nil) {
 		triggers = nil;
@@ -353,6 +428,7 @@
     if(status){
         [status removeAllObjects];
     }
+	[self _clearStatusLoadFailure];
 }
 
 /**
@@ -366,6 +442,7 @@
     if(columnNames){
         [columnNames removeAllObjects];
     }
+	[self _clearTableInformationLoadFailure];
 }
 
 /**
@@ -386,8 +463,18 @@
 	tableHasAutoIncrementField = NO;
 	[primaryKeyColumns removeAllObjects];
 
-	if( [tableListInstance tableType] == SPTableTypeTable || [tableListInstance tableType] == SPTableTypeView ) {
-		tableData = [self informationForTable:[tableListInstance tableName] fromDatabase:[tableListInstance selectedDatabase]];
+	NSString *selectedTableName = [tableListInstance tableName];
+	NSString *selectedDatabaseName = [tableListInstance selectedDatabase];
+	SPTableType selectedTableType = [tableListInstance tableType];
+
+	if ((selectedTableType == SPTableTypeTable || selectedTableType == SPTableTypeView)
+		&& [self _shouldSkipTableInformationLoadForTable:selectedTableName database:selectedDatabaseName tableType:selectedTableType]) {
+		pthread_mutex_unlock(&dataProcessingLock);
+		return NO;
+	}
+
+	if( selectedTableType == SPTableTypeTable || selectedTableType == SPTableTypeView ) {
+		tableData = [self informationForTable:selectedTableName fromDatabase:selectedDatabaseName];
 	}
 
 	// If nil is returned, return failure.
@@ -422,7 +509,18 @@
 {
 	pthread_mutex_lock(&dataProcessingLock);
 
-	NSDictionary *viewData = [self informationForView:[tableListInstance tableName]];
+	NSString *selectedViewName = [tableListInstance tableName];
+	NSString *selectedDatabaseName = [tableListInstance selectedDatabase];
+
+	if ([self _shouldSkipTableInformationLoadForTable:selectedViewName database:selectedDatabaseName tableType:SPTableTypeView]) {
+		[columns removeAllObjects];
+		[columnNames removeAllObjects];
+		[constraints removeAllObjects];
+		pthread_mutex_unlock(&dataProcessingLock);
+		return NO;
+	}
+
+	NSDictionary *viewData = [self informationForView:selectedViewName];
 	NSDictionary *columnData;
 	NSEnumerator *enumerator;
 
@@ -497,6 +595,10 @@
 
     // Check for any errors, but only display them if a connection still exists
     if ([mySQLConnection queryErrored]) {
+        SPTableType failureTableType = ([tableListInstance tableType] == SPTableTypeView) ? SPTableTypeView : SPTableTypeTable;
+        NSString *failureDatabaseName = database ?: [tableListInstance selectedDatabase];
+        [self _recordTableInformationLoadFailureForTable:tableName database:failureDatabaseName tableType:failureTableType];
+
         if ([mySQLConnection isConnected]) {
             NSString *errorMessage = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@", @"error retrieving table information informative message"),
                        tableName, [mySQLConnection lastErrorMessage]];
@@ -543,6 +645,10 @@
     
     // A NULL value indicates that the user does not have permission to view the syntax
     if ([[syntaxResult safeObjectAtIndex:1] isNSNull] || [syntaxResult safeObjectAtIndex:1] == nil) {
+        SPTableType failureTableType = ([tableListInstance tableType] == SPTableTypeView) ? SPTableTypeView : SPTableTypeTable;
+        NSString *failureDatabaseName = database ?: [tableListInstance selectedDatabase];
+        [self _recordTableInformationLoadFailureForTable:tableName database:failureDatabaseName tableType:failureTableType];
+
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Permission Denied", @"Permission Denied") message:NSLocalizedString(@"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator.", @"Create syntax permission denied detail") callback:nil];
          
          if (changeEncoding) [mySQLConnection restoreStoredEncoding];
@@ -552,6 +658,7 @@
     tableCreateSyntax = [[NSString alloc] initWithString:[syntaxResult objectAtIndex:1]];
     
     NSDictionary *tableData = [self parseCreateStatement:tableCreateSyntax ofType:[resultFieldNames objectAtIndex:0]];
+    [self _clearTableInformationLoadFailure];
     
     if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 
@@ -954,6 +1061,7 @@
 
 	// Check for any errors, but only display them if a connection still exists
 	if ([mySQLConnection queryErrored]) {
+		[self _recordTableInformationLoadFailureForTable:viewName database:[tableListInstance selectedDatabase] tableType:SPTableTypeView];
 		if ([mySQLConnection isConnected]) {
 			NSString *lastErrorMessage = [mySQLConnection lastErrorMessage];
 			SPMainQSync(^{
@@ -978,6 +1086,7 @@
 
 	// A NULL value indicates that the user does not have permission to view the syntax
 	if ([syntaxString isNSNull]) {
+		[self _recordTableInformationLoadFailureForTable:viewName database:[tableListInstance selectedDatabase] tableType:SPTableTypeView];
 		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Permission Denied", @"Permission Denied") message:NSLocalizedString(@"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator.", @"Create syntax permission denied detail") callback:nil];
 		if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 		return nil;
@@ -991,6 +1100,7 @@
 
 	// Check for any errors, but only display them if a connection still exists
 	if ([mySQLConnection queryErrored]) {
+		[self _recordTableInformationLoadFailureForTable:viewName database:[tableListInstance selectedDatabase] tableType:SPTableTypeView];
 		if ([mySQLConnection isConnected]) {
 			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nMySQL said: %@", @"message of panel when retrieving information failed"), [mySQLConnection lastErrorMessage]] callback:nil];
 			if (changeEncoding) [mySQLConnection restoreStoredEncoding];
@@ -1038,6 +1148,7 @@
 	[viewData setObject:[NSArray arrayWithArray:tableColumns] forKey:@"columns"];
 
 	if (changeEncoding) [mySQLConnection restoreStoredEncoding];
+	[self _clearTableInformationLoadFailure];
 
 	return viewData;
 }
@@ -1058,6 +1169,15 @@
 	if (![tableListInstance tableName]) {
 		pthread_mutex_unlock(&dataProcessingLock);
         SPLog(@"No table selected, returning");
+		return NO;
+	}
+
+	NSString *selectedTableName = [tableListInstance tableName];
+	NSString *selectedDatabaseName = [tableListInstance selectedDatabase];
+	SPTableType selectedTableType = [tableListInstance tableType];
+
+	if ([self _shouldSkipStatusLoadForTable:selectedTableName database:selectedDatabaseName tableType:selectedTableType]) {
+		pthread_mutex_unlock(&dataProcessingLock);
 		return NO;
 	}
 
@@ -1099,6 +1219,7 @@
 			
 	// Check for any errors, only displaying them if the connection hasn't been terminated
 	if ([mySQLConnection queryErrored]) {
+		[self _recordStatusLoadFailureForTable:selectedTableName database:selectedDatabaseName tableType:selectedTableType];
 		if ([mySQLConnection isConnected]) {
 			SPMainQSync(^{
 				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving status data.\n\nMySQL said: %@", @"message of panel when retrieving view information failed"), [self->mySQLConnection lastErrorMessage]] callback:nil];
@@ -1111,6 +1232,7 @@
 
 	// Retrieve the status as a dictionary and set as the cache
 	[status setDictionary:[tableStatusResult getRowAsDictionary]];
+	[self _clearStatusLoadFailure];
 
 	if ([tableListInstance tableType] == SPTableTypeTable) {
 
