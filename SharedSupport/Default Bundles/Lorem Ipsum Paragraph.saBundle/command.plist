@@ -4,12 +4,14 @@
 <dict>
 	<key>author</key>
 	<string>Boris Guéry</string>
+	<key>bundleVersion</key>
+	<integer>2</integer>
 	<key>category</key>
 	<string>Lorem Ipsum</string>
 	<key>command</key>
-	<string>#!/usr/bin/ruby
+	<string>#!/bin/sh
 
-print "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel mi lacus. Sed vitae lacus et mauris vulputate auctor. Nulla facilisi. Phasellus ac lacus mi, cursus dapibus odio. Suspendisse sem justo, elementum ut interdum ut, auctor in velit. Donec id purus id urna vestibulum mollis. Nunc pellentesque sapien et lorem fermentum lacinia. Vivamus erat nisl, auctor mollis pretium id, dapibus et ipsum. Nunc convallis sodales massa, vitae tincidunt elit accumsan in. Duis sit amet lorem nunc, vel viverra eros. Integer scelerisque gravida quam ut venenatis. Etiam sit amet purus metus, quis rhoncus libero."</string>
+printf "%s" "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel mi lacus. Sed vitae lacus et mauris vulputate auctor. Nulla facilisi. Phasellus ac lacus mi, cursus dapibus odio. Suspendisse sem justo, elementum ut interdum ut, auctor in velit. Donec id purus id urna vestibulum mollis. Nunc pellentesque sapien et lorem fermentum lacinia. Vivamus erat nisl, auctor mollis pretium id, dapibus et ipsum. Nunc convallis sodales massa, vitae tincidunt elit accumsan in. Duis sit amet lorem nunc, vel viverra eros. Integer scelerisque gravida quam ut venenatis. Etiam sit amet purus metus, quis rhoncus libero."</string>
 	<key>contact</key>
 	<string>threl.o@tznvy.pbz</string>
 	<key>description</key>
@@ -23,6 +25,8 @@ print "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel mi lacus
 		<key>modifierFlags</key>
 		<integer>393216</integer>
 	</dict>
+	<key>isDefaultBundle</key>
+	<true/>
 	<key>keyEquivalent</key>
 	<string>^$P</string>
 	<key>name</key>
@@ -33,9 +37,5 @@ print "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel mi lacus
 	<string>inputfield</string>
 	<key>uuid</key>
 	<string>C73F7EA3-4CDC-4F3F-B9EE-FEED7E3F0B71</string>
-	<key>isDefaultBundle</key>
-	<true/>
-	<key>bundleVersion</key>
-	<integer>2</integer>
 </dict>
 </plist>

@@ -4,37 +4,38 @@
 <dict>
 	<key>author</key>
 	<string>Hans-Jörg Bibiko</string>
+	<key>bundleVersion</key>
+	<integer>2</integer>
 	<key>category</key>
 	<string>Format</string>
 	<key>command</key>
-	<string>DATA=$(cat)
+	<string>#!/usr/bin/perl
 
-FORMAT=$(echo "$DATA" | head -n 1 | /usr/bin/perl -e '$l=&lt;&gt;;if($l=~m/^\s*\{\s*$/) {print "1";} else {print "2";}')
+use strict;
+use warnings;
+use JSON::PP;
 
-# if FORMAT == 1 then serialize JSON data otherwise pretty print them
-if [ "$FORMAT" -eq "1" ]; then
+local $/;
+my $data = &lt;STDIN&gt;;
+$data = '' unless defined $data;
 
-	DATA=$(echo "$DATA" | php -r '
-	$jsonData = "";
-	$inputStream = fopen("php://stdin", "r");
-	while($d = fgets($inputStream)) { $jsonData .= $d; }
-	print json_encode(json_decode($jsonData));
-	')
-  	if [ "$DATA" == "null" ]; then
-		echo "&lt;font&gt;An error occurred while serializing JSON data!&lt;/font&gt;"
-		exit $SP_BUNDLE_EXIT_SHOW_AS_HTML_TOOLTIP
-  	fi
+my ($firstLine) = split /\n/, $data, 2;
+$firstLine = '' unless defined $firstLine;
+my $serialize = ($firstLine =~ /^\s*\{\s*$/) ? 1 : 0;
 
-else
+my $decoded;
+eval {
+    $decoded = JSON::PP-&gt;new-&gt;utf8-&gt;allow_nonref-&gt;decode($data);
+    1;
+} or do {
+    print "&lt;font&gt;An error occurred while formatting JSON data!&lt;/font&gt;";
+    exit($ENV{SP_BUNDLE_EXIT_SHOW_AS_HTML_TOOLTIP} // 1);
+};
 
-	DATA=$(echo "$DATA" | python -mjson.tool)
+my $encoder = JSON::PP-&gt;new-&gt;utf8-&gt;allow_nonref-&gt;canonical;
+$encoder = $encoder-&gt;pretty unless $serialize;
 
-fi
-
-# if there's a need to preserve Unicode characters remove the first to characters of the following line 
-# DATA=$(echo "$DATA"  | /usr/bin/perl -Xpe 'binmode STDIN,":utf8";binmode STDOUT,":utf8";s/\\u([0-9A-F]{4})/chr(hex($1))/ieg')
-
-printf "%b" "$DATA"</string>
+print $encoder-&gt;encode($decoded);</string>
 	<key>contact</key>
 	<string>znvy@ovovxb.qr</string>
 	<key>description</key>
@@ -54,6 +55,8 @@ Version 1.0</string>
 		<key>modifierFlags</key>
 		<integer>1572864</integer>
 	</dict>
+	<key>isDefaultBundle</key>
+	<true/>
 	<key>keyEquivalent</key>
 	<string>~@j</string>
 	<key>name</key>
@@ -66,9 +69,5 @@ Version 1.0</string>
 	<string>Serialize or pretty print JSON data</string>
 	<key>uuid</key>
 	<string>87FD8A4F-90AA-4020-9E0B-8CDD05764D08</string>
-	<key>isDefaultBundle</key>
-	<true/>
-	<key>bundleVersion</key>
-	<integer>2</integer>
 </dict>
 </plist>
