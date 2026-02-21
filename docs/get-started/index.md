@@ -18,6 +18,10 @@ When you open Sequel Ace, the first screen that you will see is the database con
 
 Please check out [this page](migrating-from-sequel-pro.html) for info on how to migrate from Sequel Pro!
 
+**Can I open a Sequel Ace connection via URL (for automation or PAM tools)?**
+
+Yes. Sequel Ace supports `mysql://` URLs including SSH query parameters. See [Open a Connection via URL (`mysql://`)](connect-via-url.html).
+
 **I am having trouble connecting to a database. It says: Can't connect to local MySQL server through socket '/tmp/mysql.sock' (2)**
 
 Unfortunately, due to sandboxing nature, Sequel Ace is not allowed to connect to the sockets which are out of the Sandbox. As a workaround, you can create a socket in `~/Library/Containers/com.sequel-ace.sequel-ace/Data` and connect to it. This can be done by putting these lines to your MySQL configuration file (usually, `my.cnf`). First, make a note of the file already specified in this file, typically, `/tmp/mysql.sock`.
@@ -91,5 +95,6 @@ Sequel Ace runs in a sandboxed mode and by default cannot access your SSH config
 -   [What type of connection do I have?](connection-types.html)
 -   [Connect to a Local MySQL Server](local-connection.html)
 -   [Connect to a Remote MySQL Server](remote-connection.html)
+-   [Open a Connection via URL (`mysql://`)](connect-via-url.html)
 -   [Connecting to MAMP or XAMPP](mamp-xampp.html)
 -   [Migrating from Sequel Pro](migrating-from-sequel-pro.html)
