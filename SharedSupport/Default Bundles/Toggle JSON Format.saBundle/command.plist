@@ -27,7 +27,14 @@ if [ "$FORMAT" -eq "1" ]; then
 
 else
 
-	DATA=$(echo "$DATA" | python -mjson.tool)
+	if command -v python3 &gt;/dev/null 2&gt;&amp;1; then
+		DATA=$(echo "$DATA" | python3 -mjson.tool)
+	elif command -v python &gt;/dev/null 2&gt;&amp;1; then
+		DATA=$(echo "$DATA" | python -mjson.tool)
+	else
+		echo "&lt;font&gt;Python is required to format JSON data. Install python3 and try again.&lt;/font&gt;"
+		exit $SP_BUNDLE_EXIT_SHOW_AS_HTML_TOOLTIP
+	fi
 
 fi
 
