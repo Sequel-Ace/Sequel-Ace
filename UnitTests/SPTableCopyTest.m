@@ -99,6 +99,7 @@
 
 - (void)testNumericTypeIsUnquotedWhenTypeGroupingIsMissing;
 - (void)testNumericTypeIsUnquotedWhenTypeGroupingIsWrong;
+- (void)testIntUnsignedTypeIsUnquotedForIssue2252;
 - (void)testNonNumericTypeStaysQuoted;
 
 @end
@@ -115,6 +116,13 @@
 {
 	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(@"string", @"BIGINT unsigned"));
 	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(@"textdata", @"NUMERIC(8, 4)"));
+}
+
+- (void)testIntUnsignedTypeIsUnquotedForIssue2252
+{
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(@"integer", @"INT UNSIGNED"));
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(nil, @"INT UNSIGNED"));
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(@"string", @"INT(10) UNSIGNED"));
 }
 
 - (void)testNonNumericTypeStaysQuoted
