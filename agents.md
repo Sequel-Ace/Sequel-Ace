@@ -1,0 +1,3 @@
+- This code base is for a macOS MySQL/MariaDB utility called Sequel Ace
+- The codebase is a mix of Objective-C and Swift. All new files and significant refactors should be done in Swift.
+- Appropriate test cases should be written whenever possible
