@@ -80,3 +80,26 @@ final class SPTableContentColumnFilterTests: XCTestCase {
         return false
     }
 }
+
+final class PinnedTableMigrationPlannerTests: XCTestCase {
+
+    func testPinnedTableMigrationTokenGeneration() {
+        let token = PinnedTableMigrationPlanner.migrationToken(legacyHostName: "", connectionIdentifier: "user@localhost:3306", databaseName: "db_name")
+        XCTAssertEqual(token, "|user@localhost:3306|db_name")
+    }
+
+    func testPinnedTableMigrationTokenRejectsInvalidInputs() {
+        XCTAssertNil(PinnedTableMigrationPlanner.migrationToken(legacyHostName: "legacy", connectionIdentifier: "", databaseName: "db_name"))
+        XCTAssertNil(PinnedTableMigrationPlanner.migrationToken(legacyHostName: "legacy", connectionIdentifier: "user@localhost:3306", databaseName: ""))
+        XCTAssertNil(PinnedTableMigrationPlanner.migrationToken(legacyHostName: "same_key", connectionIdentifier: "same_key", databaseName: "db_name"))
+    }
+
+    func testPinnedTableMigrationTableMerge() {
+        let tablesToMigrate = PinnedTableMigrationPlanner.tablesToMigrate(
+            legacyPinnedTables: ["users", "orders", "users", "", "products", "orders"],
+            existingPinnedTables: ["orders", "existing"]
+        )
+
+        XCTAssertEqual(tablesToMigrate, ["users", "products"])
+    }
+}

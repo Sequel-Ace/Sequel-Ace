@@ -2129,7 +2129,13 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
  */
 - (void)initPinnedTables {
     NSString * connectionIdentifier = [self _pinnedTablesConnectionIdentifier];
-    NSString * databaseName = [mySQLConnection database];
+    NSString * legacyHostName = [mySQLConnection host] ?: @"";
+    NSString * databaseName = [mySQLConnection database] ?: @"";
+
+    [_SQLitePinnedTableManager migratePinnedTablesFromLegacyHost:legacyHostName
+                                          toConnectionIdentifier:connectionIdentifier
+                                                    databaseName:databaseName];
+
     NSArray *tablesToPin = [_SQLitePinnedTableManager getPinnedTablesWithHostName:connectionIdentifier databaseName:databaseName];
     if (tablesToPin.count > 0) {
         [tables insertObject:NSLocalizedString(@"PINNED", @"header for pinned tables") atIndex:0];
