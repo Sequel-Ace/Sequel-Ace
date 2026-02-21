@@ -72,6 +72,30 @@ NSString *kHeader     = @"HEADER";
 NSString *kFieldType = @"FIELD_TYPE";
 NSString *kFieldTypeGroup = @"FIELDGROUP";
 
+static BOOL SPFieldTypeShouldBeUnquoted(NSString *fieldTypeGroup, NSString *fieldType)
+{
+	if ([fieldTypeGroup isKindOfClass:[NSString class]]) {
+		NSString *normalizedGroup = [[fieldTypeGroup lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+		if ([normalizedGroup isEqualToString:@"bit"] || [normalizedGroup isEqualToString:@"integer"] || [normalizedGroup isEqualToString:@"float"]) {
+			return YES;
+		}
+	}
+
+	if (![fieldType isKindOfClass:[NSString class]]) return NO;
+
+	NSString *baseType = [[fieldType componentsSeparatedByString:@"("] firstObject];
+	baseType = [[baseType componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] firstObject];
+	NSString *normalizedType = [[baseType ?: @"" uppercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+
+	static NSSet<NSString *> *unquotedFieldTypes = nil;
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		unquotedFieldTypes = [NSSet setWithArray:@[@"BIT", @"BOOL", @"BOOLEAN", @"TINYINT", @"SMALLINT", @"MEDIUMINT", @"INT", @"INTEGER", @"BIGINT", @"FLOAT", @"DOUBLE", @"REAL", @"DECIMAL", @"DEC", @"NUMERIC", @"FIXED", @"SERIAL", @"YEAR"]];
+	});
+
+	return [unquotedFieldTypes containsObject:normalizedType];
+}
+
 @implementation SPCopyTable
 
 /**
@@ -521,8 +545,8 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
             data[kHeader]     = [[[[columns safeObjectAtIndex:c] headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0];
             data[kFieldType]  = t;
             data[kFieldTypeGroup] = tGroup;
-            // Numeric data
-            if ([tGroup isEqualToString:@"bit"] || [tGroup isEqualToString:@"integer"] || [tGroup isEqualToString:@"float"])
+            // Numeric types should not be wrapped in quotes in INSERT statements.
+            if (SPFieldTypeShouldBeUnquoted(tGroup, t))
                 data[kColType] = @(0);
             // Blob data or long text data
             else if ([tGroup isEqualToString:@"blobdata"] || [tGroup isEqualToString:@"textdata"])
