@@ -487,9 +487,9 @@ copy_return:
 - (NSArray *)_fallbackCharacterSetEncodings
 {
 	return @[
-		@{@"CHARACTER_SET_NAME" : @"utf8mb4", @"DESCRIPTION" : @"UTF-8 Unicode"},
-		@{@"CHARACTER_SET_NAME" : @"utf8", @"DESCRIPTION" : @"UTF-8 Unicode (BMP only)"},
-		@{@"CHARACTER_SET_NAME" : @"latin1", @"DESCRIPTION" : @"cp1252 West European"}
+		@{@"CHARACTER_SET_NAME" : @"utf8mb4", @"DESCRIPTION" : @"UTF-8 Unicode", @"DEFAULT_COLLATE_NAME" : @"utf8mb4_general_ci", @"MAXLEN" : @"4"},
+		@{@"CHARACTER_SET_NAME" : @"utf8", @"DESCRIPTION" : @"UTF-8 Unicode (BMP only)", @"DEFAULT_COLLATE_NAME" : @"utf8_general_ci", @"MAXLEN" : @"3"},
+		@{@"CHARACTER_SET_NAME" : @"latin1", @"DESCRIPTION" : @"cp1252 West European", @"DEFAULT_COLLATE_NAME" : @"latin1_swedish_ci", @"MAXLEN" : @"1"}
 	];
 }
 
