@@ -97,6 +97,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	NSInteger useAWSIAMAuth;
 	NSString *awsRegion;
 	NSString *awsProfile;
+	NSArray<NSString *> *awsAvailableRegionValues;
 
 	// SSL details
 	NSInteger useSSL;
@@ -256,6 +257,11 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 
 - (NSString *)keychainPassword;
 - (NSString *)keychainPasswordForSSH;
+/**
+ * Returns the password to use for an actual MySQL connect/reconnect request.
+ * For AWS IAM TCP/IP connections this generates a fresh token.
+ */
+- (NSString *)passwordForConnectionRequest;
 
 // Connection processes
 - (IBAction)initiateConnection:(id)sender;

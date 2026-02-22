@@ -502,6 +502,37 @@ final class AWSIAMAuthManagerTests: XCTestCase {
             }
         }
     }
+
+    func testRegionsFromIPRangesResponseFiltersAndSortsRegions() throws {
+        let response = """
+        {
+          "syncToken": "1",
+          "createDate": "2026-01-01-00-00-00",
+          "prefixes": [
+            { "ip_prefix": "3.5.140.0/22", "region": "ap-northeast-1", "service": "AMAZON" },
+            { "ip_prefix": "3.5.141.0/24", "region": "GLOBAL", "service": "AMAZON" },
+            { "ip_prefix": "3.5.142.0/24", "region": "us-east-1", "service": "AMAZON" }
+          ],
+          "ipv6_prefixes": [
+            { "ipv6_prefix": "2406:da00::/28", "region": "cn-north-1", "service": "AMAZON" },
+            { "ipv6_prefix": "2406:da10::/28", "region": "invalid", "service": "AMAZON" }
+          ]
+        }
+        """
+
+        let data = try XCTUnwrap(response.data(using: .utf8))
+        let regions = try XCTUnwrap(AWSIAMAuthManager.regionsFromIPRangesResponse(data))
+
+        XCTAssertEqual(regions, ["ap-northeast-1", "cn-north-1", "us-east-1"])
+    }
+
+    func testMergeWithFallbackRegionsIncludesFallbackEntries() {
+        let merged = AWSIAMAuthManager.mergeWithFallbackRegions(["us-east-1"])
+
+        XCTAssertTrue(merged.contains("us-east-1"))
+        XCTAssertTrue(merged.contains("us-east-2"))
+        XCTAssertTrue(merged.contains("eu-west-1"))
+    }
 }
 
 private enum AWSTestEnvironment {

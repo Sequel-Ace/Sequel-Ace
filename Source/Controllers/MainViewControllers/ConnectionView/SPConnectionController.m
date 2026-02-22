@@ -107,6 +107,7 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 - (void)_startEditingConnection;
 - (BOOL)_isAWSIAMEnabledForTCPIPConnection;
 - (void)_syncAWSIAMAndSSLInterfaceState;
+- (void)_refreshAWSAvailableRegions;
 
 static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, void *key);
 
@@ -183,12 +184,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 - (NSString *)keychainPassword
 {
-    // For AWS IAM Authentication, generate a fresh token on each request
-    // This ensures token refresh works for long-running sessions
-    if ([self useAWSIAMAuth] && [self type] == SPTCPIPConnection) {
-        return [self generateAWSIAMAuthToken];
-    }
-
     NSString *kcItemName = [self connectionKeychainItemName];
     // If no keychain item is available, return an empty password
     if (!kcItemName) return nil;
@@ -197,6 +192,15 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     NSString *kcPassword = [keychain getPasswordForName:kcItemName account:[self connectionKeychainItemAccount]];
 
     return kcPassword;
+}
+
+- (NSString *)passwordForConnectionRequest
+{
+    if ([self useAWSIAMAuth] && [self type] == SPTCPIPConnection) {
+        return [self generateAWSIAMAuthToken];
+    }
+
+    return [self keychainPassword];
 }
 
 /**
@@ -940,41 +944,37 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 }
 
 /**
- * Returns common AWS region identifiers
+ * Refreshes AWS regions from AWS public metadata with a fallback cache/list.
+ * The async callback updates the bound combo box values via KVO.
+ */
+- (void)_refreshAWSAvailableRegions
+{
+    [AWSIAMAuthManager refreshAWSRegionsIfNeededWithCompletion:^(NSArray<NSString *> *regions) {
+        if (!regions || !regions.count) return;
+        if ([awsAvailableRegionValues isEqualToArray:regions]) return;
+
+        NSString *currentRegion = [[self awsRegion] copy];
+
+        [self willChangeValueForKey:@"awsAvailableRegions"];
+        awsAvailableRegionValues = [regions copy];
+        [self didChangeValueForKey:@"awsAvailableRegions"];
+
+        if (awsRegionComboBox) {
+            [awsRegionComboBox reloadData];
+        }
+
+        if ([currentRegion length]) {
+            [self setAwsRegion:currentRegion];
+        }
+    }];
+}
+
+/**
+ * Returns AWS region identifiers for the IAM region picker.
  */
 - (NSArray<NSString *> *)awsAvailableRegions
 {
-    return @[
-        @"us-east-1",
-        @"us-east-2",
-        @"us-west-1",
-        @"us-west-2",
-        @"af-south-1",
-        @"ap-east-1",
-        @"ap-south-1",
-        @"ap-south-2",
-        @"ap-southeast-1",
-        @"ap-southeast-2",
-        @"ap-southeast-3",
-        @"ap-southeast-4",
-        @"ap-northeast-1",
-        @"ap-northeast-2",
-        @"ap-northeast-3",
-        @"ca-central-1",
-        @"ca-west-1",
-        @"eu-central-1",
-        @"eu-central-2",
-        @"eu-west-1",
-        @"eu-west-2",
-        @"eu-west-3",
-        @"eu-south-1",
-        @"eu-south-2",
-        @"eu-north-1",
-        @"il-central-1",
-        @"me-south-1",
-        @"me-central-1",
-        @"sa-east-1"
-    ];
+    return awsAvailableRegionValues ?: [AWSIAMAuthManager cachedOrFallbackRegions];
 }
 
 #pragma mark -
@@ -3600,6 +3600,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         prefs = [NSUserDefaults standardUserDefaults];
 
         bookmarks = [NSMutableArray arrayWithArray:SecureBookmarkManager.sharedInstance.bookmarks];
+        awsAvailableRegionValues = [AWSIAMAuthManager cachedOrFallbackRegions];
 
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(_refreshBookmarks) name:SPBookmarksChangedNotification object:SecureBookmarkManager.sharedInstance];
 
@@ -3634,8 +3635,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         currentSortItem = (SPFavoritesSortItem)[prefs integerForKey:SPFavoritesSortedBy];
         reverseFavoritesSort = [prefs boolForKey:SPFavoritesSortedInReverse];
 
-        // Update AWS authorization UI state
+        // Update AWS authorization UI state and kick off async region refresh.
         [self updateAWSAuthorizationUI];
+        [self _refreshAWSAvailableRegions];
 
         // Track profile/region edits the same way as the IAM toggle.
         [awsProfilePopup setTarget:self];

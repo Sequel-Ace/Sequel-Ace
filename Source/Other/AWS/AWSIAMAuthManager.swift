@@ -66,6 +66,46 @@ import Security
 
     private static let keychainServicePrefix = "Sequel Ace AWS"
     private static let log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "AWSIAMAuth")
+    private static let awsRegionCatalogURL = URL(string: "https://ip-ranges.amazonaws.com/ip-ranges.json")!
+    private static let awsRegionCacheKey = "AWSIAMAvailableRegionsCache"
+    private static let awsRegionCacheTimestampKey = "AWSIAMAvailableRegionsCacheTimestamp"
+    private static let awsRegionCacheTTL: TimeInterval = 60 * 60 * 24 * 7 // 7 days
+    private static let fallbackRegions: [String] = [
+        "af-south-1",
+        "ap-east-1",
+        "ap-northeast-1",
+        "ap-northeast-2",
+        "ap-northeast-3",
+        "ap-south-1",
+        "ap-south-2",
+        "ap-southeast-1",
+        "ap-southeast-2",
+        "ap-southeast-3",
+        "ap-southeast-4",
+        "ca-central-1",
+        "ca-west-1",
+        "cn-north-1",
+        "cn-northwest-1",
+        "eu-central-1",
+        "eu-central-2",
+        "eu-north-1",
+        "eu-south-1",
+        "eu-south-2",
+        "eu-west-1",
+        "eu-west-2",
+        "eu-west-3",
+        "il-central-1",
+        "me-central-1",
+        "me-south-1",
+        "mx-central-1",
+        "sa-east-1",
+        "us-east-1",
+        "us-east-2",
+        "us-gov-east-1",
+        "us-gov-west-1",
+        "us-west-1",
+        "us-west-2"
+    ]
 
     // MARK: - Credential Caching
 
@@ -412,6 +452,60 @@ import Security
         AWSCredentials.availableProfiles()
     }
 
+    /// Regions used by the connection UI.
+    /// Returns cached regions when available, otherwise a built-in fallback list.
+    @objc static func cachedOrFallbackRegions() -> [String] {
+        if let cachedRegions = cachedRegions() {
+            return cachedRegions
+        }
+        return fallbackRegions
+    }
+
+    /// Refresh the cached region catalog from AWS when cache is stale.
+    /// Falls back to cached or built-in regions if refresh fails.
+    @objc(refreshAWSRegionsIfNeededWithCompletion:)
+    static func refreshAWSRegionsIfNeeded(completion: @escaping ([String]) -> Void) {
+        if isRegionCacheFresh(), let cachedRegions = cachedRegions() {
+            DispatchQueue.main.async {
+                completion(cachedRegions)
+            }
+            return
+        }
+
+        let request = URLRequest(
+            url: awsRegionCatalogURL,
+            cachePolicy: .reloadIgnoringLocalCacheData,
+            timeoutInterval: 15
+        )
+
+        URLSession.shared.dataTask(with: request) { data, _, error in
+            if let error = error {
+                log.error("Failed to refresh AWS region catalog: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    completion(cachedOrFallbackRegions())
+                }
+                return
+            }
+
+            guard let data = data,
+                  let parsedRegions = regionsFromIPRangesResponse(data),
+                  !parsedRegions.isEmpty else {
+                log.error("Failed to parse AWS region catalog response")
+                DispatchQueue.main.async {
+                    completion(cachedOrFallbackRegions())
+                }
+                return
+            }
+
+            let mergedRegions = mergeWithFallbackRegions(parsedRegions)
+            persistRegionCache(mergedRegions)
+
+            DispatchQueue.main.async {
+                completion(mergedRegions)
+            }
+        }.resume()
+    }
+
     /// Check if a hostname appears to be an RDS endpoint
     @objc static func isRDSHostname(_ hostname: String) -> Bool {
         RDSIAMAuthentication.isRDSHostname(hostname)
@@ -420,6 +514,58 @@ import Security
     /// Extract region from RDS hostname
     @objc static func regionFromHostname(_ hostname: String) -> String? {
         RDSIAMAuthentication.regionFromHostname(hostname)
+    }
+
+    // MARK: - Region Catalog Helpers
+
+    static func regionsFromIPRangesResponse(_ data: Data) -> [String]? {
+        guard let jsonObject = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+
+        let ipv4Regions = (jsonObject["prefixes"] as? [[String: Any]] ?? [])
+            .compactMap { $0["region"] as? String }
+        let ipv6Regions = (jsonObject["ipv6_prefixes"] as? [[String: Any]] ?? [])
+            .compactMap { $0["region"] as? String }
+
+        let uniqueRegions = Set((ipv4Regions + ipv6Regions).map { $0.lowercased() })
+        let validRegions = uniqueRegions.filter { region in
+            region != "global" && RDSIAMAuthentication.isValidAWSRegion(region)
+        }
+
+        return validRegions.sorted { lhs, rhs in
+            lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
+        }
+    }
+
+    static func mergeWithFallbackRegions(_ regions: [String]) -> [String] {
+        let merged = Set(fallbackRegions.map { $0.lowercased() })
+            .union(regions.map { $0.lowercased() })
+
+        return merged.sorted { lhs, rhs in
+            lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
+        }
+    }
+
+    private static func cachedRegions() -> [String]? {
+        guard let regions = UserDefaults.standard.array(forKey: awsRegionCacheKey) as? [String],
+              !regions.isEmpty else {
+            return nil
+        }
+        return mergeWithFallbackRegions(regions)
+    }
+
+    private static func isRegionCacheFresh() -> Bool {
+        let timestamp = UserDefaults.standard.double(forKey: awsRegionCacheTimestampKey)
+        guard timestamp > 0 else {
+            return false
+        }
+        return Date().timeIntervalSince1970 - timestamp < awsRegionCacheTTL
+    }
+
+    private static func persistRegionCache(_ regions: [String]) {
+        UserDefaults.standard.set(regions, forKey: awsRegionCacheKey)
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: awsRegionCacheTimestampKey)
     }
 }
 
