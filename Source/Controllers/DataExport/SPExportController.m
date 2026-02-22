@@ -1775,7 +1775,8 @@ set_input:
 			}
 		}
 		else {
-			[exportFilename setString:(dataArray) ? [tableDocumentInstance database] : table];
+			BOOL isSingleTableExport = (exportSource == SPTableExport && exportTableCount == 1);
+			[exportFilename setString:(isSingleTableExport) ? [self generateDefaultExportFilename] : ((dataArray) ? [tableDocumentInstance database] : table)];
 		}
 
 		// Only append the extension if necessary
@@ -1837,7 +1838,8 @@ set_input:
 			}
 		}
 		else {
-			[exportFilename setString:(dataArray) ? [tableDocumentInstance database] : table];
+			BOOL isSingleTableExport = (exportSource == SPTableExport && exportTableCount == 1);
+			[exportFilename setString:(isSingleTableExport) ? [self generateDefaultExportFilename] : ((dataArray) ? [tableDocumentInstance database] : table)];
 		}
 
 		// Only append the extension if necessary
