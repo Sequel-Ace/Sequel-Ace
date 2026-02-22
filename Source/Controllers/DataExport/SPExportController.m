@@ -559,6 +559,13 @@ set_input:
 	
 	// Cancel all of the currently running operations
 	[operationQueue cancelAllOperations]; // async call
+
+    // Also cancel any currently running MySQL query immediately; waiting for the next exporter loop
+    // cancellation check can otherwise leave the UI looking frozen for large/early-streaming exports.
+    if (connection) {
+        [connection cancelCurrentQuery];
+    }
+
 	[NSThread detachNewThreadWithName:SPCtxt(@"SPExportController cancelExport: waiting for empty queue", tableDocumentInstance) target:self selector:@selector(_waitUntilQueueIsEmptyAfterCancelling:) object:sender];
 }
 
