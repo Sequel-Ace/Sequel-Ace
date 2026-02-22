@@ -102,6 +102,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 @interface SPCustomQuery ()
 
 - (id)_resultDataItemAtRow:(NSInteger)row columnIndex:(NSUInteger)column preserveNULLs:(BOOL)preserveNULLs asPreview:(BOOL)asPreview;
+- (void)_updateColumnHeadersForCurrentPreference;
++ (NSAttributedString *)columnHeaderAttributedStringForColumnDefinition:(NSDictionary *)columnDefinition showColumnTypes:(BOOL)showColumnTypes;
 - (void)documentWillClose:(NSNotification *)notification;
 - (void)queryFavoritesHaveBeenUpdated:(NSNotification *)notification;
 - (void)historyItemsHaveBeenUpdated:(NSNotification *)notification;
@@ -117,6 +119,15 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 @synthesize textViewWasChanged;
 @synthesize bracketHighlighter;
 @synthesize sortCount;
+
++ (NSAttributedString *)columnHeaderAttributedStringForColumnDefinition:(NSDictionary *)columnDefinition showColumnTypes:(BOOL)showColumnTypes
+{
+    if (![columnDefinition isKindOfClass:[NSDictionary class]]) {
+        return [[NSAttributedString alloc] initWithString:@""];
+    }
+    
+    return [columnDefinition tableContentColumnHeaderAttributedStringWithColumnTypesVisible:showColumnTypes];
+}
 
 #pragma mark IBAction methods
 
@@ -1876,6 +1887,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 {
     NSArray *theColumns;
     NSTableColumn *theCol;
+    BOOL showColumnTypes = [prefs boolForKey:SPDisplayTableViewColumnTypes];
     
     // Remove all existing columns from the table
     theColumns = [customQueryView tableColumns];
@@ -1923,11 +1935,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         // Set field type for validations
         [[dataCell formatter] setFieldType:[columnDefinition objectForKey:@"type"]];
         [theCol setDataCell:dataCell];
-        if ([prefs boolForKey:SPDisplayTableViewColumnTypes]) {
-            [[theCol headerCell] setAttributedStringValue:[columnDefinition tableContentColumnHeaderAttributedString]];
-        } else {
-            [[theCol headerCell] setStringValue:[columnDefinition objectForKey:@"name"]];
-        }
+        [[theCol headerCell] setAttributedStringValue:[SPCustomQuery columnHeaderAttributedStringForColumnDefinition:columnDefinition showColumnTypes:showColumnTypes]];
         [theCol setHeaderToolTip:[NSString stringWithFormat:@"%@ – %@%@", [columnDefinition objectForKey:@"name"], [columnDefinition objectForKey:@"type"], ([columnDefinition objectForKey:@"char_length"]) ? [NSString stringWithFormat:@"(%@)", [columnDefinition objectForKey:@"char_length"]] : @""]];
         
         // Set the width of this column to saved value if exists and maps to a real column
@@ -1940,6 +1948,20 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         
         [customQueryView addTableColumn:theCol];
     }
+}
+
+- (void)_updateColumnHeadersForCurrentPreference
+{
+    BOOL showColumnTypes = [prefs boolForKey:SPDisplayTableViewColumnTypes];
+    
+    for (NSTableColumn *column in [customQueryView tableColumns]) {
+        NSDictionary *columnDefinition = [cqColumnDefinition safeObjectAtIndex:[[column identifier] integerValue]];
+        if (!columnDefinition) continue;
+        
+        [[column headerCell] setAttributedStringValue:[SPCustomQuery columnHeaderAttributedStringForColumnDefinition:columnDefinition showColumnTypes:showColumnTypes]];
+    }
+    
+    [customQueryView.headerView setNeedsDisplay:YES];
 }
 
 /**
@@ -3347,29 +3369,21 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     // Result Table Font preference changed
     else if ([keyPath isEqualToString:SPGlobalFontSettings]) {
         NSFont *tableFont = [NSUserDefaults getFont];
-        NSFont *headerFont = [[NSFontManager sharedFontManager] convertFont:tableFont toSize:MAX(tableFont.pointSize * 0.75, 11.0)];
         [customQueryView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
         [customQueryView setFont:tableFont];
 
-        // Update header cells
-        for (NSTableColumn *column in [customQueryView tableColumns]) {
-            if ([prefs boolForKey:SPDisplayTableViewColumnTypes]) {
-                NSAttributedString *attrString = [[cqColumnDefinition safeObjectAtIndex:[[column identifier] integerValue]] tableContentColumnHeaderAttributedString];
-
-                [[column headerCell] setAttributedStringValue:attrString];
-            } else {
-                [[column headerCell] setFont:headerFont];
-            }
-        }
-
-        // Force header view to redraw
-        [customQueryView.headerView setNeedsDisplay:YES];
+        [self _updateColumnHeadersForCurrentPreference];
 
         [customQueryView reloadData];
     } else if ([keyPath isEqualToString:SPCustomQueryEnableBracketHighlighting]) {
         self.bracketHighlighter.enabled = [[change valueForKey:NSKeyValueChangeNewKey] boolValue];
     } else if ([keyPath isEqualToString:SPDisplayTableViewColumnTypes]) {
-        [self updateTableView];
+        if ([customQueryView numberOfColumns] != [cqColumnDefinition count]) {
+            [self updateTableView];
+        } else {
+            [self _updateColumnHeadersForCurrentPreference];
+            [customQueryView reloadData];
+        }
     }
 }
 
