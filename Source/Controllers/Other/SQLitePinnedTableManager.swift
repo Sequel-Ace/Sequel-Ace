@@ -16,10 +16,12 @@ import OSLog
     private let prefs: UserDefaults = UserDefaults.standard
     private var traceExecution: Bool
     private var newSchemaVersion: Int32 = 0
+    private var migratedLegacyPinnedTableTokens: Set<String> = []
     @objc private var pinnedTablesDatabaseDictionary: [String: [String: [String]]] = [:]
 
     override private init() {
         traceExecution = prefs.bool(forKey: SPTraceSQLiteExecutions)
+        migratedLegacyPinnedTableTokens = Set(prefs.stringArray(forKey: SPMigratedPinnedTablesToConnectionIDs) ?? [])
 
         var SPDataPath: String = ""
         do {
@@ -147,6 +149,44 @@ import OSLog
         }
         queue.close()
     }
+
+    /// Migrates host-scoped pinned tables to a connection-scoped key once per host+connection+database tuple.
+    /// - Parameters:
+    ///   - legacyHostName: Legacy key used by older versions (host only, can be empty for socket connections).
+    ///   - connectionIdentifier: New key based on connectionID.
+    ///   - databaseName: Database scope for pinned tables.
+    @objc(migratePinnedTablesFromLegacyHost:toConnectionIdentifier:databaseName:)
+    func migratePinnedTablesFromLegacyHost(_ legacyHostName: String, toConnectionIdentifier connectionIdentifier: String, databaseName: String) {
+        let trimmedLegacyHostName = legacyHostName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedConnectionIdentifier = connectionIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedDatabaseName = databaseName.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard let migrationToken = PinnedTableMigrationPlanner.migrationToken(
+                legacyHostName: trimmedLegacyHostName,
+                connectionIdentifier: trimmedConnectionIdentifier,
+                databaseName: trimmedDatabaseName
+        ) else {
+            return
+        }
+
+        guard migratedLegacyPinnedTableTokens.contains(migrationToken) == false else {
+            return
+        }
+
+        let legacyPinnedTables = getPinnedTables(hostName: trimmedLegacyHostName, databaseName: trimmedDatabaseName)
+        let existingPinnedTables = getPinnedTables(hostName: trimmedConnectionIdentifier, databaseName: trimmedDatabaseName)
+        let tablesToMigrate = PinnedTableMigrationPlanner.tablesToMigrate(legacyPinnedTables: legacyPinnedTables, existingPinnedTables: existingPinnedTables)
+
+        if tablesToMigrate.isNotEmpty {
+            Log.info("Migrating pinned tables from legacy host key '\(trimmedLegacyHostName)' to connection key '\(trimmedConnectionIdentifier)' for database '\(trimmedDatabaseName)'")
+        }
+
+        for tableName in tablesToMigrate {
+            pinTable(hostName: trimmedConnectionIdentifier, databaseName: trimmedDatabaseName, tableToPin: tableName)
+        }
+
+        markLegacyPinnedTableMigrationComplete(migrationToken: migrationToken)
+    }
     
 
     @objc func unpinTable(hostName: String, databaseName: String, tableToUnpin: String) {
@@ -174,6 +214,11 @@ import OSLog
             pinnedTablesDatabaseDictionary[hostName]?[databaseName] = []
         }
         pinnedTablesDatabaseDictionary[hostName]?[databaseName]?.append(tableToPin)
+    }
+
+    private func markLegacyPinnedTableMigrationComplete(migrationToken: String) {
+        migratedLegacyPinnedTableTokens.insert(migrationToken)
+        prefs.set(migratedLegacyPinnedTableTokens.sorted(), forKey: SPMigratedPinnedTablesToConnectionIDs)
     }
     
     
