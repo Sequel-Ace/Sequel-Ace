@@ -741,7 +741,7 @@ set_input:
 	if (exportType == SPSQLExport) {
 		// Procedures
 		{
-			NSArray *procedures = [tablesListInstance allProcedureNames];
+			NSOrderedSet *procedures = [[NSOrderedSet alloc] initWithArray:[tablesListInstance allProcedureNames]];
 
 			for (id procName in procedures) {
 				[tables safeAddObject:[NSMutableArray arrayWithObjects:
@@ -755,7 +755,7 @@ set_input:
 		}
 		// Functions
 		{
-			NSArray *functions = [tablesListInstance allFunctionNames];
+			NSOrderedSet *functions = [[NSOrderedSet alloc] initWithArray:[tablesListInstance allFunctionNames]];
 
 			for (id funcName in functions) {
 				[tables safeAddObject:[NSMutableArray arrayWithObjects:
