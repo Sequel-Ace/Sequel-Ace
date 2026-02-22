@@ -166,7 +166,6 @@ static BOOL SPIsPrivateIPv4Address(struct in_addr address)
 
     // Common local-only ranges.
     if ((hostAddress & 0xFFFF0000) == 0xA9FE0000) return YES;   // 169.254.0.0/16 link-local
-    if ((hostAddress & 0xFFC00000) == 0x64400000) return YES;   // 100.64.0.0/10 CGNAT
 
     return NO;
 }
@@ -203,6 +202,9 @@ BOOL SPIsLikelyLocalNetworkHost(NSString *host)
     }
 
     // Hostnames without a DNS suffix are often local/intranet aliases.
+    // This can also match SSH config aliases for public hosts when no parsed SSH debug IP
+    // is available, so SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue prioritizes parsed
+    // debug candidates before falling back to this hostname heuristic.
     if ([normalizedHost rangeOfString:@"."].location == NSNotFound) {
         return YES;
     }

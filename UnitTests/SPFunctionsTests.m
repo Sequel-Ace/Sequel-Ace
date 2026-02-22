@@ -80,6 +80,7 @@
     XCTAssertFalse(SPIsLikelyLocalNetworkHost(@"127.0.0.1"));
     XCTAssertFalse(SPIsLikelyLocalNetworkHost(@"::1"));
     XCTAssertFalse(SPIsLikelyLocalNetworkHost(@"8.8.8.8"));
+    XCTAssertFalse(SPIsLikelyLocalNetworkHost(@"100.64.2.1"));
     XCTAssertFalse(SPIsLikelyLocalNetworkHost(@"example.com"));
 }
 
