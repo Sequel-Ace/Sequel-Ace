@@ -3372,3 +3372,18 @@
 
 /* sequelace URL scheme error: LaunchFavorite alert description (favorite name not found) */
 "The variable in the ?name= query parameter could not be matched with any of your favorites." = "The variable in the ?name= query parameter could not be matched with any of your favorites.";
+
+/* title for local network privacy alert */
+"Local Network Access is Required" = "Local Network Access is Required";
+
+/* informative text for local network privacy alert */
+"Sequel Ace could not reach the SSH host on your local network. On macOS 15 (Sequoia) and later, this often means Local Network access is disabled for Sequel Ace.\n\nOpen System Settings > Privacy & Security > Local Network and enable Sequel Ace, then try connecting again." = "Sequel Ace could not reach the SSH host on your local network. On macOS 15 (Sequoia) and later, this often means Local Network access is disabled for Sequel Ace.\n\nOpen System Settings > Privacy & Security > Local Network and enable Sequel Ace, then try connecting again.";
+
+/* button title to open local network privacy settings */
+"Open Local Network Settings" = "Open Local Network Settings";
+
+/* title when local network privacy settings deep link fails */
+"Unable to Open System Settings" = "Unable to Open System Settings";
+
+/* message shown when local network privacy settings deep link fails */
+"Couldn't open the Local Network privacy settings automatically.\n\nIn macOS, open System Settings > Privacy & Security > Local Network and enable Sequel Ace." = "Couldn't open the Local Network privacy settings automatically.\n\nIn macOS, open System Settings > Privacy & Security > Local Network and enable Sequel Ace.";

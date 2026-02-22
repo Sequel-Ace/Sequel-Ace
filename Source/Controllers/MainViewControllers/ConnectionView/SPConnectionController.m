@@ -113,6 +113,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 #pragma mark - SPConnectionHandlerPrivateAPI
 
 - (void)_showConnectionTestResult:(NSString *)resultString;
+- (BOOL)_shouldShowLocalNetworkPermissionAlertForErrorMessage:(NSString *)errorMessage detail:(NSString *)errorDetail;
+- (void)_showLocalNetworkPermissionAlert;
+- (BOOL)_openLocalNetworkPrivacySettings;
 
 #pragma mark - SPConnectionControllerDelegate_Private_API
 
@@ -2465,8 +2468,23 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         errorMessage = [errorMessage stringByAppendingString:theErrorMessage];
     }
 
+    BOOL shouldShowLocalNetworkPermissionAlert = [self _shouldShowLocalNetworkPermissionAlertForErrorMessage:theErrorMessage detail:errorDetail];
+
     // Only display the connection error message if there is a window visible
     if ([[dbDocument parentWindowControllerWindow] isVisible]) {
+        if (shouldShowLocalNetworkPermissionAlert) {
+            errorShowing = YES;
+            [self _showLocalNetworkPermissionAlert];
+            errorShowing = NO;
+
+            // we're not connecting anymore, it failed.
+            isConnecting = NO;
+            // update tab and window title
+            [dbDocument updateWindowTitle:self];
+
+            return;
+        }
+
         NSScrollView *scrollView = [[NSScrollView alloc] initWithFrame:NSMakeRect(0,0,488,140)];
         [scrollView setDrawsBackground:NO];
         [scrollView setHasVerticalScroller:YES];
@@ -2517,6 +2535,55 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         // update tab and window title
         [dbDocument updateWindowTitle:self];
     }
+}
+
+- (BOOL)_shouldShowLocalNetworkPermissionAlertForErrorMessage:(NSString *)errorMessage detail:(NSString *)errorDetail
+{
+    if ([self type] != SPSSHTunnelConnection) return NO;
+
+    // Local Network privacy restrictions for sandboxed macOS apps started with macOS 15 (Sequoia).
+    if (@available(macOS 15.0, *)) {
+        return SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(errorMessage, errorDetail, [self sshHost]);
+    }
+
+    return NO;
+}
+
+- (void)_showLocalNetworkPermissionAlert
+{
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:NSLocalizedString(@"Local Network Access is Required", @"title for local network privacy alert")];
+    [alert setInformativeText:NSLocalizedString(@"Sequel Ace could not reach the SSH host on your local network. On macOS 15 (Sequoia) and later, this often means Local Network access is disabled for Sequel Ace.\n\nOpen System Settings > Privacy & Security > Local Network and enable Sequel Ace, then try connecting again.", @"informative text for local network privacy alert")];
+    [alert addButtonWithTitle:NSLocalizedString(@"Open Local Network Settings", @"button title to open local network privacy settings")];
+    [alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
+
+    NSModalResponse alertResponse = [alert runModal];
+    if (alertResponse != NSAlertFirstButtonReturn) return;
+
+    if ([self _openLocalNetworkPrivacySettings]) return;
+
+    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Unable to Open System Settings", @"title when local network privacy settings deep link fails")
+                                 message:NSLocalizedString(@"Couldn't open the Local Network privacy settings automatically.\n\nIn macOS, open System Settings > Privacy & Security > Local Network and enable Sequel Ace.", @"message shown when local network privacy settings deep link fails")
+                                callback:nil];
+}
+
+- (BOOL)_openLocalNetworkPrivacySettings
+{
+    NSWorkspace *workspace = [NSWorkspace sharedWorkspace];
+
+    NSArray<NSString *> *settingsURLs = @[
+        @"x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_LocalNetwork",
+        @"x-apple.systempreferences:com.apple.preference.security?Privacy_LocalNetwork",
+        @"x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension",
+        @"x-apple.systempreferences:com.apple.preference.security"
+    ];
+
+    for (NSString *settingsURL in settingsURLs) {
+        NSURL *url = [NSURL URLWithString:settingsURL];
+        if (url && [workspace openURL:url]) return YES;
+    }
+
+    return NO;
 }
 
 #pragma mark - SPConnectionHandlerPrivateAPI

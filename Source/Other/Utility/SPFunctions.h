@@ -79,6 +79,16 @@ NSInteger intSortDesc(id num1, id num2, void *context);
 void executeOnBackgroundThread(SAVoidCompletionBlock block);
 void executeOnBackgroundThreadSync(SAVoidCompletionBlock block);
 
+/**
+ * Returns YES when a host value appears to be in a private/local network range.
+ */
+BOOL SPIsLikelyLocalNetworkHost(NSString *host);
+
+/**
+ * Returns YES when SSH output indicates "No route to host" for a likely local-network target.
+ */
+BOOL SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(NSString *errorMessage, NSString *debugDetail, NSString *sshHost);
+
 void SP_swizzleInstanceMethod(Class c, SEL original, SEL replacement);
 
 id DumpObjCMethods(Class clz);
