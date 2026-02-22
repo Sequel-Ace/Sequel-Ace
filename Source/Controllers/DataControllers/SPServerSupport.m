@@ -102,7 +102,7 @@
 	[self _invalidate];
 	
 	isMySQL5 = (serverMajorVersion == 5);
-    isMySQL8 = (serverMajorVersion == 8);
+	isMySQL8 = (serverMajorVersion >= 8);
 	
 	// Fractional second support wasn't added until MySQL 5.6.4
 	supportsFractionalSeconds = [self isEqualToOrGreaterThanMajorVersion:5 minor:6 release:4];
