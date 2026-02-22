@@ -2099,7 +2099,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (NSString *)_pinnedTablesConnectionIdentifier
 {
     NSString *connectionIdentifier = [tableDocumentInstance connectionID];
-    if ([connectionIdentifier length] > 0 && [connectionIdentifier isNotEqualTo:@"_"]) {
+    if ([connectionIdentifier length] > 0 && ![connectionIdentifier isEqualToString:@"_"]) {
         return connectionIdentifier;
     }
 
@@ -2196,8 +2196,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
             object:nil];
     }
     
-    // craft notification name such that notification goes only to tabs with same connection+database
-    pinnedTableNotificationName = [NSString stringWithFormat:@"PinnedTableNotification-Connection:%@-Database:%@", connectionIdentifier, databaseName];
+    // Use an encoded composite key so delimiters in values cannot collide.
+    NSString *encodedConnectionIdentifier = [connectionIdentifier stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]] ?: @"";
+    NSString *encodedDatabaseName = [databaseName stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]] ?: @"";
+    pinnedTableNotificationName = [NSString stringWithFormat:@"PinnedTableNotification|Connection=%@|Database=%@", encodedConnectionIdentifier, encodedDatabaseName];
     
     [[NSNotificationCenter defaultCenter]
         addObserver:self
