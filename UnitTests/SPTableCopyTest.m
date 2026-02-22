@@ -30,7 +30,7 @@
 
 #import "SPTableCopy.h"
 #import <SPMySQL/SPMySQL.h>
-#import "../Source/Views/TableViews/SPFieldTypeClassification.h"
+#import "SPFieldTypeClassification.h"
 
 #import <XCTest/XCTest.h>
 #import <OCMock/OCMock.h>
