@@ -49,6 +49,19 @@ final class SPTableContentColumnFilterTests: XCTestCase {
         XCTAssertFalse(columnMatches("created_at", terms: terms))
     }
 
+    // MARK: - Regression Guardrails
+
+    /// Ensure the app defaults include the autofill heuristic workaround used for Tahoe lag regressions.
+    func testAutoFillHeuristicControllerDisabledByDefault() {
+        guard let defaults = preferenceDefaultsDictionary() else {
+            XCTFail("Could not find PreferenceDefaults.plist in any loaded bundle")
+            return
+        }
+
+        let value = defaults["NSAutoFillHeuristicControllerEnabled"] as? Bool
+        XCTAssertEqual(value, false)
+    }
+
     // MARK: - Helper Functions (mirrors SPTableContent logic)
 
     /// Parse comma-separated filter string into array of lowercase trimmed terms
@@ -78,6 +91,21 @@ final class SPTableContentColumnFilterTests: XCTestCase {
             return true
         }
         return false
+    }
+
+    private func preferenceDefaultsDictionary() -> [String: Any]? {
+        let candidateBundles = [Bundle.main, Bundle(for: Self.self)] + Bundle.allBundles + Bundle.allFrameworks
+        for bundle in candidateBundles {
+            guard let path = bundle.path(forResource: "PreferenceDefaults", ofType: "plist") else {
+                continue
+            }
+
+            if let defaults = NSDictionary(contentsOfFile: path) as? [String: Any] {
+                return defaults
+            }
+        }
+
+        return nil
     }
 }
 
