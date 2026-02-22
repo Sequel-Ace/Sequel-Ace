@@ -1951,6 +1951,9 @@
 /* menu item open %@ in new window */
 "Open %@ in New Window" = "Open %@ in New Window";
 
+/* button title opening Apple documentation about removed scripting runtimes */
+"Open Apple Release Notes" = "Open Apple Release Notes";
+
 /* OPTIMIZE one or more tables - result title */
 "Optimize %@" = "Optimize %@";
 
@@ -2098,6 +2101,9 @@
 
 /* remote error */
 "Remote Error" = "Remote Error";
+
+/* removed macOS runtime warning title */
+"Removed macOS Runtime" = "Removed macOS Runtime";
 
 /* Bundle Editor : Remove-Bundle: remove button
  remove button */
@@ -2838,6 +2844,9 @@
 
 /* delete field and foreign key informative message */
 "This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone." = "This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone.";
+
+/* removed macOS runtime warning message */
+"This Bundle attempted to run “%@”, but that runtime is not available on this macOS version.\n\nApple deprecated and removed built-in scripting runtimes from macOS updates.\n\nSource materials:\n• %@\n• %@\n\nPlease update the Bundle to use an available runtime or command." = "This Bundle attempted to run “%@”, but that runtime is not available on this macOS version.\n\nApple deprecated and removed built-in scripting runtimes from macOS updates.\n\nSource materials:\n• %@\n• %@\n\nPlease update the Bundle to use an available runtime or command.";
 
 /* table structure : indexes : delete index : error 1553, no FK found : description */
 "This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@" = "This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@";
