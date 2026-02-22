@@ -34,13 +34,13 @@ There are two supported approaches:
 1. Find which config file your server actually reads.
 
 Use whichever server binary you have:
-```
+```bash
 mysqld --verbose --help | sed -n '/Default options are read from the following files in the given order:/,/^$/p'
 mariadbd --verbose --help | sed -n '/Default options are read from the following files in the given order:/,/^$/p'
 ```
 
 You can also check the current socket setting:
-```
+```bash
 my_print_defaults mysqld | tr ' ' '\n' | grep '^--socket='
 my_print_defaults mariadbd | tr ' ' '\n' | grep '^--socket='
 ```
@@ -53,12 +53,12 @@ Common locations on macOS:
 - MAMP / MAMP PRO / XAMPP: app-managed config files
 
 2. Set the socket path to a Sequel Ace container location, for example:
-```
+```text
 /Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock
 ```
 
 Add or update:
-```
+```ini
 [mysqld]
 socket=/Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock
 
@@ -69,8 +69,8 @@ socket=/Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mys
 3. Restart MySQL/MariaDB.
 
 4. If startup fails with an error like `Could not create unix socket lock file`, verify permissions so the server process user can write in that directory:
-```
-ps -Ao user,comm | egrep 'mariadbd|mysqld'
+```bash
+ps -Ao user,comm | grep -E 'mariadbd|mysqld'
 ls -ld /Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data
 ```
 
@@ -79,7 +79,7 @@ ls -ld /Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data
 ##### Option 2: Use standard TCP/IP instead of a socket
 
 If socket setup is not practical on your install, enable local TCP networking:
-```
+```ini
 [mysqld]
 skip_networking=0
 bind_address=127.0.0.1
@@ -93,16 +93,17 @@ Then restart MySQL/MariaDB and connect in Sequel Ace using a **Standard** connec
 
 For MacPorts installs:
 
-1. Find your active MySQL/MariaDB variant:
-```
-port select --show mysql
+1. Find your active variant:
+```bash
+port select --show mysql    # MySQL
+port select --show mariadb  # MariaDB
 ```
 2. Edit that variant's config file:
-```
+```text
 /opt/local/etc/{variant-version}/my.cnf
 ```
 3. Restart it:
-```
+```bash
 sudo port reload {variant-version}-server
 ```
 
