@@ -621,30 +621,27 @@ set_input:
 	[changeExportOutputPathPanel setCanChooseDirectories:YES];
 	[changeExportOutputPathPanel setCanCreateDirectories:YES];
 
-    [changeExportOutputPathPanel setDirectoryURL:[NSURL URLWithString:[exportPathField stringValue]]];
+    NSString *currentExportPath = [exportPathField stringValue];
+    NSURL *initialDirectoryURL = nil;
+
+    if ([currentExportPath length] > 0) {
+        initialDirectoryURL = [NSURL fileURLWithPath:[currentExportPath stringByExpandingTildeInPath] isDirectory:YES];
+    } else {
+        initialDirectoryURL = [NSURL fileURLWithPath:NSHomeDirectory() isDirectory:YES];
+    }
+
+    if (initialDirectoryURL) [changeExportOutputPathPanel setDirectoryURL:initialDirectoryURL];
+
     [changeExportOutputPathPanel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
         if (returnCode == NSModalResponseOK) {
-
-            NSMutableString *path = [[NSMutableString alloc] initWithCapacity:self->changeExportOutputPathPanel.directoryURL.absoluteString.length];
-            [path setString:[[self->changeExportOutputPathPanel directoryURL] path]];
-
-			if(!path) {
-				@throw [NSException exceptionWithName:NSInternalInconsistencyException
-											   reason:[NSString stringWithFormat:@"File panel ended with OK, but returned nil for path!? directoryURL=%@,isFileURL=%d",[self->changeExportOutputPathPanel directoryURL],[[self->changeExportOutputPathPanel directoryURL] isFileURL]]
-											 userInfo:nil];
-			}
-
-            [self->exportPathField setStringValue:path];
-
+            NSURL *selectedURL = self->changeExportOutputPathPanel.URL;
             NSMutableString *classStr = [NSMutableString string];
-            [classStr appendStringOrNil:NSStringFromClass(self->changeExportOutputPathPanel.URL.class)];
+            [classStr appendStringOrNil:NSStringFromClass(selectedURL.class)];
 
             SPLog(@"self->changeExportOutputPathPanel.URL.class: %@", classStr);
 
-            // check it's really a URL
-            if(![self->changeExportOutputPathPanel.URL isKindOfClass:[NSURL class]]){
-
-                SPLog(@"self->changeExportOutputPathPanel.URL is not a valid URL: %@", classStr);
+            if (![selectedURL isKindOfClass:[NSURL class]] || ![selectedURL isFileURL]) {
+                SPLog(@"self->changeExportOutputPathPanel.URL is not a valid file URL: %@", classStr);
 
                 NSView __block *helpView;
 
@@ -667,14 +664,26 @@ set_input:
 
                     SPLog(@"userInfo: %@", userInfo);
                 }];
+
+                return;
+            }
+
+            NSString *path = [selectedURL path];
+            if (![path length]) {
+                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"No directory selected.", @"No directory selected.")
+                                             message:NSLocalizedString(@"Please select a new export location and try again.", @"Please select a new export location and try again")
+                                            callback:nil];
+                return;
+            }
+
+            [self->exportPathField setStringValue:path];
+
+            // this needs to be read-write
+            if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:selectedURL options:(NSURLBookmarkCreationWithSecurityScope) isForStaleBookmark:NO isForKnownHostsFile:NO] == YES){
+                SPLog(@"addBookmarkForUrl success: %@", selectedURL.absoluteString);
             }
             else{
-                // this needs to be read-write
-                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->changeExportOutputPathPanel.URL options:(NSURLBookmarkCreationWithSecurityScope) isForStaleBookmark:NO isForKnownHostsFile:NO] == YES){
-                    SPLog(@"addBookmarkForUrl success: %@", self->changeExportOutputPathPanel.URL.absoluteString);
-                } else{
-                    SPLog(@"addBookmarkForUrl failed: %@", self->changeExportOutputPathPanel.URL);
-                }
+                SPLog(@"addBookmarkForUrl failed: %@", selectedURL);
             }
         }// end of OK
         else if(returnCode == NSModalResponseCancel){
