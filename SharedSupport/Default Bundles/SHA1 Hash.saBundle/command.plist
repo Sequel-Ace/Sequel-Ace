@@ -4,27 +4,22 @@
 <dict>
 	<key>author</key>
 	<string>Abhi Beckert</string>
+	<key>bundleVersion</key>
+	<integer>2</integer>
 	<key>category</key>
 	<string>Hash</string>
 	<key>command</key>
-	<string>#!/usr/bin/ruby
+	<string>#!/bin/sh
 
-# fetch selected text from STDIN
-selectedText = gets
-
-# create sha1 hash
-require 'digest/sha1'
-hash = Digest::SHA1.hexdigest(selectedText)
-
-# output hash
-print hash
-</string>
+/usr/bin/openssl dgst -sha1 -r | /usr/bin/awk '{print $1}'</string>
 	<key>description</key>
 	<string>Convert the selected text to a sha1 hash.</string>
 	<key>input</key>
 	<string>selectedtext</string>
 	<key>input_fallback</key>
 	<string>entirecontent</string>
+	<key>isDefaultBundle</key>
+	<true/>
 	<key>name</key>
 	<string>SHA1</string>
 	<key>output</key>
@@ -33,9 +28,5 @@ print hash
 	<string>inputfield</string>
 	<key>uuid</key>
 	<string>19F272BA-1369-48A7-B10A-4F25EF5B9DD3</string>
-	<key>isDefaultBundle</key>
-	<true/>
-	<key>bundleVersion</key>
-	<integer>2</integer>
 </dict>
 </plist>
