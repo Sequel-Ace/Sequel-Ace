@@ -6,7 +6,6 @@
 //
 
 import XCTest
-@testable import Sequel_Ace
 
 final class AWSCredentialsTests: XCTestCase {
 
@@ -175,8 +174,25 @@ final class AWSCredentialsTests: XCTestCase {
                     return XCTFail("Expected AWSCredentialsError, got \(error)")
                 }
 
-                let expected: Set<AWSCredentialsError> = [.invalidCredentials, .missingCredentials]
-                XCTAssertTrue(expected.contains(credentialsError), "Unexpected error for cyclical source_profile: \(credentialsError)")
+                XCTAssertEqual(credentialsError, .invalidCredentials)
+            }
+        }
+    }
+
+    func testProfileThrowsWhenSourceProfileIsMissing() throws {
+        let credentialsContents = """
+        [app]
+        role_arn = arn:aws:iam::123456789012:role/DatabaseAccess
+        source_profile = missing
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: "") { _, _ in
+            XCTAssertThrowsError(try AWSCredentials(profile: "app")) { error in
+                guard let credentialsError = error as? AWSCredentialsError else {
+                    return XCTFail("Expected AWSCredentialsError, got \(error)")
+                }
+
+                XCTAssertEqual(credentialsError, .profileNotFound)
             }
         }
     }
@@ -227,6 +243,14 @@ final class AWSCredentialsTests: XCTestCase {
 }
 
 final class AWSSTSClientTests: XCTestCase {
+
+    func testEndpointHostUsesStandardPartitionByDefault() {
+        XCTAssertEqual(AWSSTSClient.endpointHost(for: "us-east-1"), "sts.us-east-1.amazonaws.com")
+    }
+
+    func testEndpointHostUsesChinaPartitionForCnRegions() {
+        XCTAssertEqual(AWSSTSClient.endpointHost(for: "cn-north-1"), "sts.cn-north-1.amazonaws.com.cn")
+    }
 
     func testAssumeRoleAsyncThrowsForInvalidCredentials() async {
         let credentials = AWSCredentials(accessKeyId: "", secretAccessKey: "")
@@ -366,6 +390,20 @@ final class AWSIAMAuthManagerTests: XCTestCase {
             XCTAssertTrue(token.contains("DBUser=db_admin"))
             XCTAssertTrue(token.contains("X-Amz-Credential=AKIADEFAULT0000000000"))
         }
+    }
+
+    func testPreferredSTSRegionUsesFallbackWhenBaseRegionIsEmpty() {
+        XCTAssertEqual(
+            AWSIAMAuthManager.preferredSTSRegion(baseRegion: "   ", fallbackRegion: "us-west-2"),
+            "us-west-2"
+        )
+    }
+
+    func testPreferredSTSRegionUsesBaseRegionWhenPresent() {
+        XCTAssertEqual(
+            AWSIAMAuthManager.preferredSTSRegion(baseRegion: "eu-central-1", fallbackRegion: "us-west-2"),
+            "eu-central-1"
+        )
     }
 
     func testGenerateAuthTokenFallsBackToUsEast1WhenRegionCannotBeDetected() throws {

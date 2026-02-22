@@ -28,6 +28,7 @@
 //
 
 import Foundation
+import AppKit
 import OSLog
 import Security
 
@@ -75,6 +76,11 @@ import Security
 
     /// Cache duration margin - refresh credentials 5 minutes before expiration
     private static let cacheExpirationMargin: TimeInterval = 300
+
+    static func preferredSTSRegion(baseRegion: String?, fallbackRegion: String) -> String {
+        let trimmedBaseRegion = baseRegion?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmedBaseRegion.isEmpty ? fallbackRegion : trimmedBaseRegion
+    }
 
     // MARK: - Token Generation
 
@@ -256,7 +262,7 @@ import Security
         }
 
         // Determine region for STS call
-        let stsRegion = baseCredentials.region ?? region
+        let stsRegion = preferredSTSRegion(baseRegion: baseCredentials.region, fallbackRegion: region)
 
         // Call STS AssumeRole with MFA
         var error: NSError?
@@ -287,7 +293,7 @@ import Security
         }
 
         // Determine region for STS call
-        let stsRegion = baseCredentials.region ?? region
+        let stsRegion = preferredSTSRegion(baseRegion: baseCredentials.region, fallbackRegion: region)
 
         // Call STS AssumeRole without MFA
         var error: NSError?

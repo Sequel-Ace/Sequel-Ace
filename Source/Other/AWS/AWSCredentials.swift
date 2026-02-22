@@ -36,6 +36,7 @@ import OSLog
     case missingCredentials
     case invalidCredentials
     case fileReadError
+    case directoryAccessFailed
 
     var errorDescription: String? {
         switch self {
@@ -47,6 +48,8 @@ import OSLog
             return NSLocalizedString("Invalid AWS credentials", comment: "AWS credentials error")
         case .fileReadError:
             return NSLocalizedString("Failed to read AWS credentials file", comment: "AWS credentials error")
+        case .directoryAccessFailed:
+            return NSLocalizedString("Failed to access the AWS credentials directory", comment: "AWS credentials error")
         }
     }
 }
@@ -127,7 +130,7 @@ import OSLog
            envPath.isNotEmpty {
             return envPath
         }
-        return NSHomeDirectory() + "/.aws/credentials"
+        return AWSDirectoryBookmarkManager.shared.awsDirectoryBasePath + "/credentials"
     }
 
     @objc static var configFilePath: String {
@@ -135,7 +138,7 @@ import OSLog
            envPath.isNotEmpty {
             return envPath
         }
-        return NSHomeDirectory() + "/.aws/config"
+        return AWSDirectoryBookmarkManager.shared.awsDirectoryBasePath + "/config"
     }
 
     @objc static var credentialsFileExists: Bool {
@@ -166,7 +169,10 @@ import OSLog
         }
 
         // Start accessing the directory
-        _ = bookmarkManager.startAccessingAWSDirectory()
+        guard bookmarkManager.startAccessingAWSDirectory() else {
+            os_log(.error, log: log, "Failed to start accessing AWS directory while loading profiles")
+            return []
+        }
 
         var profiles = Set<String>()
 
@@ -200,9 +206,18 @@ import OSLog
         var foundProfile = false
 
         let bookmarkManager = AWSDirectoryBookmarkManager.shared
+        let environment = ProcessInfo.processInfo.environment
+        let usesDefaultCredentialsPath = environment["AWS_SHARED_CREDENTIALS_FILE"]?.isNotEmpty != true
+        let usesDefaultConfigPath = environment["AWS_CONFIG_FILE"]?.isNotEmpty != true
 
-        // Ensure we have access to the AWS directory
-        _ = bookmarkManager.startAccessingAWSDirectory()
+        // Default ~/.aws paths require sandbox bookmark access. Explicit file
+        // overrides can be read directly and do not require AWS directory access.
+        if usesDefaultCredentialsPath || usesDefaultConfigPath {
+            guard bookmarkManager.startAccessingAWSDirectory() else {
+                os_log(.error, log: log, "Failed to access AWS directory while loading profile: %{public}@", profileName)
+                throw AWSCredentialsError.directoryAccessFailed
+            }
+        }
 
         // Load from ~/.aws/credentials
         if let contents = readAWSFileContents(at: credentialsFilePath) {
@@ -225,16 +240,15 @@ import OSLog
 
         // If profile has source_profile, load credentials from that
         if let sourceProfile = result["source_profile"], result["aws_access_key_id"] == nil {
-            if let sourceConfig = try? loadProfileConfiguration(for: sourceProfile, visited: visited) {
-                if let accessKey = sourceConfig["aws_access_key_id"] {
-                    result["aws_access_key_id"] = accessKey
-                }
-                if let secretKey = sourceConfig["aws_secret_access_key"] {
-                    result["aws_secret_access_key"] = secretKey
-                }
-                if result["aws_session_token"] == nil, let token = sourceConfig["aws_session_token"] {
-                    result["aws_session_token"] = token
-                }
+            let sourceConfig = try loadProfileConfiguration(for: sourceProfile, visited: visited)
+            if let accessKey = sourceConfig["aws_access_key_id"] {
+                result["aws_access_key_id"] = accessKey
+            }
+            if let secretKey = sourceConfig["aws_secret_access_key"] {
+                result["aws_secret_access_key"] = secretKey
+            }
+            if result["aws_session_token"] == nil, let token = sourceConfig["aws_session_token"] {
+                result["aws_session_token"] = token
             }
         }
 

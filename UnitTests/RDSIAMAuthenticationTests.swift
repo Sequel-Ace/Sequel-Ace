@@ -6,7 +6,6 @@
 //
 
 import XCTest
-@testable import Sequel_Ace
 
 final class RDSIAMAuthenticationTests: XCTestCase {
 
@@ -160,6 +159,24 @@ final class RDSIAMAuthenticationTests: XCTestCase {
         )
 
         XCTAssertTrue(token.contains("X-Amz-Security-Token="))
+    }
+
+    func testGenerateAuthTokenWithEmptySessionTokenOmitsSecurityTokenParameter() throws {
+        let creds = AWSCredentials(
+            accessKeyId: "AKIAIOSFODNN7EXAMPLE",
+            secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            sessionToken: ""
+        )
+
+        let token = try RDSIAMAuthentication.generateAuthToken(
+            forHost: "mydb.123456789012.us-east-1.rds.amazonaws.com",
+            port: 3306,
+            username: "admin",
+            region: "us-east-1",
+            credentials: creds
+        )
+
+        XCTAssertFalse(token.contains("X-Amz-Security-Token="))
     }
 
     func testGenerateAuthTokenAutoDetectsRegion() throws {

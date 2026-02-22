@@ -6,7 +6,6 @@
 //
 
 import XCTest
-@testable import Sequel_Ace
 
 final class AWSDirectoryBookmarkManagerTests: XCTestCase {
 
