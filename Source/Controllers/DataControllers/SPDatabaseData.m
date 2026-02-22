@@ -271,6 +271,7 @@ copy_return:
 - (NSArray *)getDatabaseCharacterSetEncodings
 {
 	BOOL shouldShowFallbackWarning = NO;
+	NSArray *result = nil;
 
 	@synchronized(charsetCollationLock) {
 		if ([characterSetEncodings count] == 0) {
@@ -292,13 +293,15 @@ copy_return:
 				}
 			}
 		}
+
+		result = [NSArray arrayWithArray:characterSetEncodings]; // return a copy since we keep changing it
 	}
 
 	if (shouldShowFallbackWarning) {
 		[self _showCharacterSetFallbackWarning];
 	}
 
-	return [NSArray arrayWithArray:characterSetEncodings]; // return a copy since we keep changing it
+	return result;
 }
 
 /**
