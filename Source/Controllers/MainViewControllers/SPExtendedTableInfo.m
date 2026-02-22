@@ -560,24 +560,25 @@ static NSString *SPMySQLCommentField          = @"Comment";
 		if (([currentComment isEqualToString:newComment] == NO && newComment.length > 0) ||(newComment.length == 0 && currentComment.length > 0) ) {
 			NSString *query = [NSString stringWithFormat:@"ALTER TABLE %@ COMMENT = %@", [selectedTable backtickQuotedString], [connection escapeAndQuoteString:newComment]];
 
-			void (^executeCommentChange)(void) = ^{
-				[self->connection queryString:query];
+				void (^executeCommentChange)(void) = ^{
+					[self->connection queryString:query];
 
-				if (![self->connection queryErrored]) {
-					// Reload the table's data
-					[self reloadTable:self];
-				}
-				else {
-					[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error changing table comment", @"error changing table comment message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@", @"error changing table comment informative message"), newComment, [self->connection lastErrorMessage]] callback:nil];
-				}
-			};
+					if (![self->connection queryErrored]) {
+						// Reload the table's data
+						[self reloadTable:self];
+					}
+					else {
+						[self->tableCommentsTextView setString:currentCommentRaw];
+						[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error changing table comment", @"error changing table comment message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@", @"error changing table comment informative message"), newComment, [self->connection lastErrorMessage]] callback:nil];
+					}
+				};
 
-			if ([[NSUserDefaults standardUserDefaults] boolForKey:SPQueryWarningEnabled]) {
-				NSString *infoText = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with this query?\n\n %@", @"message of panel asking for confirmation for exec query"), query];
-				[NSAlert createDefaultAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Execute SQL?", @"Execute SQL?")]
-											 message:infoText
-								  primaryButtonTitle:NSLocalizedString(@"Proceed", @"Proceed")
-								primaryButtonHandler:^{
+				if ([[NSUserDefaults standardUserDefaults] boolForKey:SPQueryWarningEnabled]) {
+					NSString *infoText = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with this query?\n\n %@", @"message of panel asking for confirmation for exec query"), query];
+					[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Execute SQL?", @"Execute SQL?")
+												 message:infoText
+									  primaryButtonTitle:NSLocalizedString(@"Proceed", @"Proceed")
+									primaryButtonHandler:^{
 					executeCommentChange();
 				}
 								 cancelButtonHandler:^{
