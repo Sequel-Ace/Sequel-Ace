@@ -195,15 +195,22 @@ import OSLog
                     //a bookmark might be "stale" because the app hasn't been used
                     //in many months, macOS has been upgraded, the app was
                     //re-installed, the app's preferences .plist file was deleted, etc.
-                    if bookmarkDataIsStale {
-                        Log.error("The bookmark is outdated and needs to be regenerated: key = \(key)")
-                        staleBookmarks.appendIfNotContains(key)
-                    } else {
-                        Log.info("Resolved bookmark: \(key)")
-                        let res = urlForBookmark.startAccessingSecurityScopedResource()
-                        if res == true {
-                            Log.info("success: startAccessingSecurityScopedResource for: \(key)")
-                            resolvedBookmarks.appendIfNotContains(urlForBookmark)
+                        if bookmarkDataIsStale {
+                            Log.error("The bookmark is outdated and needs to be regenerated: key = \(key)")
+                            staleBookmarks.appendIfNotContains(key)
+                        } else {
+                            if urlForBookmark.path.hasPrefix("/Volumes/"), FileManager.default.fileExists(atPath: urlForBookmark.path) == false {
+                                Log.info("Skipping bookmark activation for unavailable mounted volume path: \(urlForBookmark.path)")
+                                // Keep the bookmark so it can be reactivated later when the volume is available again.
+                                bookmarks.append([key: urlData])
+                                continue
+                            }
+
+                            Log.info("Resolved bookmark: \(key)")
+                            let res = urlForBookmark.startAccessingSecurityScopedResource()
+                            if res == true {
+                                Log.info("success: startAccessingSecurityScopedResource for: \(key)")
+                                resolvedBookmarks.appendIfNotContains(urlForBookmark)
                             bookmarks.append([urlForBookmark.absoluteString: urlData])
                         } else {
                             Log.error("ERROR: startAccessingSecurityScopedResource for: \(key)")
