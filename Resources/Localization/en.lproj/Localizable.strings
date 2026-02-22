@@ -3372,3 +3372,9 @@
 
 /* sequelace URL scheme error: LaunchFavorite alert description (favorite name not found) */
 "The variable in the ?name= query parameter could not be matched with any of your favorites." = "The variable in the ?name= query parameter could not be matched with any of your favorites.";
+
+/* Title for SQL execution confirmation alert */
+"Execute SQL?" = "Execute SQL?";
+
+/* SQL execution confirmation body text */
+"Do you really want to proceed with this query?\n\n %@" = "Do you really want to proceed with this query?\n\n %@";
