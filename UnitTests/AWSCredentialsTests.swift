@@ -252,6 +252,26 @@ final class AWSSTSClientTests: XCTestCase {
         XCTAssertEqual(AWSSTSClient.endpointHost(for: "cn-north-1"), "sts.cn-north-1.amazonaws.com.cn")
     }
 
+    func testEndpointHostUsesGovCloudPartition() {
+        XCTAssertEqual(AWSSTSClient.endpointHost(for: "us-gov-west-1"), "sts.us-gov-west-1.amazonaws.com")
+    }
+
+    func testEndpointHostUsesIsoPartition() {
+        XCTAssertEqual(AWSSTSClient.endpointHost(for: "us-iso-east-1"), "sts.us-iso-east-1.c2s.ic.gov")
+    }
+
+    func testEndpointHostUsesIsoBPartition() {
+        XCTAssertEqual(AWSSTSClient.endpointHost(for: "us-isob-east-1"), "sts.us-isob-east-1.sc2s.sgov.gov")
+    }
+
+    func testEndpointHostFallsBackToStandardForUnknownRegions() {
+        XCTAssertEqual(AWSSTSClient.endpointHost(for: "il-central-1"), "sts.il-central-1.amazonaws.com")
+    }
+
+    func testEndpointHostNormalizesCaseAndWhitespace() {
+        XCTAssertEqual(AWSSTSClient.endpointHost(for: " CN-NORTH-1 "), "sts.cn-north-1.amazonaws.com.cn")
+    }
+
     func testAssumeRoleAsyncThrowsForInvalidCredentials() async {
         let credentials = AWSCredentials(accessKeyId: "", secretAccessKey: "")
 

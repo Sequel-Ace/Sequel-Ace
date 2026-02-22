@@ -73,6 +73,34 @@ import OSLog
     private static let requestTimeout: TimeInterval = 30
 
     private static let log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "AWSSTSClient")
+    private static let defaultAWSDNSSuffix = "amazonaws.com"
+    private static let partitionDNSSuffixByRegionPrefix: [String: String] = [
+        "us-isob-": "sc2s.sgov.gov",
+        "us-iso-": "c2s.ic.gov",
+        "cn-": "amazonaws.com.cn",
+        "us-gov-": "amazonaws.com"
+    ]
+    private static let regionPrefixesBySpecificity = partitionDNSSuffixByRegionPrefix.keys.sorted { $0.count > $1.count }
+
+    // MARK: - Endpoint Helpers
+
+    static func endpointHost(for region: String) -> String {
+        let normalizedRegion = region
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        let domain = endpointDNSSuffix(for: normalizedRegion)
+        return "sts.\(normalizedRegion).\(domain)"
+    }
+
+    private static func endpointDNSSuffix(for region: String) -> String {
+        // Longest-prefix match ensures more specific partitions win.
+        for prefix in regionPrefixesBySpecificity {
+            if region.hasPrefix(prefix), let suffix = partitionDNSSuffixByRegionPrefix[prefix] {
+                return suffix
+            }
+        }
+        return defaultAWSDNSSuffix
+    }
 
     // MARK: - Role Assumption (Async)
 
@@ -115,8 +143,8 @@ import OSLog
         var effectiveDuration = durationSeconds > 0 ? durationSeconds : defaultSessionDuration
         effectiveDuration = max(900, min(43200, effectiveDuration))
 
-        // Build the STS endpoint
-        let host = "sts.\(region).amazonaws.com"
+        // Build the STS endpoint using partition-aware DNS suffix resolution.
+        let host = endpointHost(for: region)
         guard let endpoint = URL(string: "https://\(host)/") else {
             throw AWSSTSClientError.invalidParameters
         }
