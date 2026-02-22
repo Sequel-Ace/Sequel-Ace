@@ -541,6 +541,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	NSDictionary *stats = nil;
+	NSDictionary *byteLengthStats = nil;
 	if (isIntegerType) {
 		stats = [self _columnStatsForFieldName:fieldName lengthFunction:nil];
 	}
@@ -549,9 +550,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 	else {
 		stats = [self _columnStatsForFieldName:fieldName lengthFunction:@"CHAR_LENGTH"];
+		byteLengthStats = [self _columnStatsForFieldName:fieldName lengthFunction:@"OCTET_LENGTH"];
 	}
 
-	if (!stats) {
+	if (!stats || (isStringType && !byteLengthStats)) {
 		if (failureReason) {
 			*failureReason = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while estimating an optimized field type.\n\nMySQL said:%@", @"show optimized field type fallback query error message"), [mySQLConnection lastErrorMessage]];
 		}
@@ -582,6 +584,12 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	NSUInteger minLength = [self _unsignedIntegerValueFromStatValue:[stats objectForKey:@"min_length"]];
 	NSUInteger maxLength = [self _unsignedIntegerValueFromStatValue:[stats objectForKey:@"max_length"]];
 	maxLength = MAX((NSUInteger)1, maxLength);
+	NSUInteger maxByteLength = maxLength;
+
+	if (isStringType) {
+		maxByteLength = [self _unsignedIntegerValueFromStatValue:[byteLengthStats objectForKey:@"max_length"]];
+		maxByteLength = MAX((NSUInteger)1, maxByteLength);
+	}
 
 	if (isBinaryType) {
 		if (minLength == maxLength && maxLength <= 255) {
@@ -599,10 +607,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	if (minLength == maxLength && maxLength <= 255) {
 		return [NSString stringWithFormat:@"CHAR(%lu)", (unsigned long)maxLength];
 	}
-	if (maxLength <= 65535) {
+	if (maxByteLength <= 65535) {
 		return [NSString stringWithFormat:@"VARCHAR(%lu)", (unsigned long)maxLength];
 	}
-	if (maxLength <= 16777215) {
+	if (maxByteLength <= 16777215) {
 		return @"MEDIUMTEXT";
 	}
 
