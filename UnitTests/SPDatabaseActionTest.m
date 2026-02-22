@@ -32,6 +32,7 @@
 #import <XCTest/XCTest.h>
 
 #import "SPDatabaseAction.h"
+#import "SPDatabaseData.h"
 #import <SPMySQL/SPMySQL.h>
 
 @interface SPDatabaseActionTest : XCTestCase
@@ -39,6 +40,21 @@
 - (void)testCreateDatabase_01_emptyName;
 - (void)testCreateDatabase_02_allParams;
 - (void)testCreateDatabase_03_nameOnly;
+
+@end
+
+@interface SPDatabaseDataCharsetTests : XCTestCase
+
+- (void)testNormalizeCharacterSetRows_MapsShowCharacterSetColumns;
+- (void)testNormalizeCharacterSetRows_DeduplicatesByCharacterSetName;
+- (void)testFallbackCharacterSetEncodings_UsesExpectedOrder;
+
+@end
+
+@interface SPDatabaseData (SPDatabaseDataTests)
+
+- (NSArray *)_normalizedCharacterSetEncodingsFromRows:(NSArray *)rows;
+- (NSArray *)_fallbackCharacterSetEncodings;
 
 @end
 
@@ -84,6 +100,61 @@
 	XCTAssertTrue([createDb createDatabase:@"target_name" withEncoding:@"" collation:nil], @"create database return");
 	
 	OCMVerifyAll(mockConnection);
+}
+
+@end
+
+@implementation SPDatabaseDataCharsetTests
+
+- (void)testNormalizeCharacterSetRows_MapsShowCharacterSetColumns
+{
+	SPDatabaseData *databaseData = [[SPDatabaseData alloc] init];
+
+	NSArray *rows = @[
+		@{
+			@"Charset": @"utf8mb4",
+			@"Description": @"UTF-8 Unicode",
+			@"Default collation": @"utf8mb4_general_ci",
+			@"Maxlen": @4
+		}
+	];
+
+	NSArray *normalizedRows = [databaseData _normalizedCharacterSetEncodingsFromRows:rows];
+
+	XCTAssertEqual([normalizedRows count], 1UL);
+	NSDictionary *row = [normalizedRows firstObject];
+	XCTAssertEqualObjects([row objectForKey:@"CHARACTER_SET_NAME"], @"utf8mb4");
+	XCTAssertEqualObjects([row objectForKey:@"DESCRIPTION"], @"UTF-8 Unicode");
+	XCTAssertEqualObjects([row objectForKey:@"DEFAULT_COLLATE_NAME"], @"utf8mb4_general_ci");
+	XCTAssertEqualObjects([row objectForKey:@"MAXLEN"], @"4");
+}
+
+- (void)testNormalizeCharacterSetRows_DeduplicatesByCharacterSetName
+{
+	SPDatabaseData *databaseData = [[SPDatabaseData alloc] init];
+
+	NSArray *rows = @[
+		@{@"Charset": @"utf8", @"Description": @"first"},
+		@{@"CHARACTER_SET_NAME": @"utf8", @"DESCRIPTION": @"second"},
+		@{@"Charset": @"latin1", @"Description": @"third"}
+	];
+
+	NSArray *normalizedRows = [databaseData _normalizedCharacterSetEncodingsFromRows:rows];
+
+	XCTAssertEqual([normalizedRows count], 2UL);
+	XCTAssertEqualObjects([[normalizedRows firstObject] objectForKey:@"CHARACTER_SET_NAME"], @"utf8");
+	XCTAssertEqualObjects([[normalizedRows objectAtIndex:1] objectForKey:@"CHARACTER_SET_NAME"], @"latin1");
+}
+
+- (void)testFallbackCharacterSetEncodings_UsesExpectedOrder
+{
+	SPDatabaseData *databaseData = [[SPDatabaseData alloc] init];
+	NSArray *fallbackRows = [databaseData _fallbackCharacterSetEncodings];
+
+	XCTAssertEqual([fallbackRows count], 3UL);
+	XCTAssertEqualObjects([[fallbackRows firstObject] objectForKey:@"CHARACTER_SET_NAME"], @"utf8mb4");
+	XCTAssertEqualObjects([[fallbackRows objectAtIndex:1] objectForKey:@"CHARACTER_SET_NAME"], @"utf8");
+	XCTAssertEqualObjects([[fallbackRows objectAtIndex:2] objectForKey:@"CHARACTER_SET_NAME"], @"latin1");
 }
 
 @end

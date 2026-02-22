@@ -35,16 +35,26 @@
 #import "SPFunctions.h"
 #import <SPMySQL/SPMySQL.h>
 
+@interface NSAlert (SPDatabaseDataAlertCompatibility)
++ (void)createWarningAlertWithTitle:(NSString *)title message:(NSString *)message callback:(void (^)(void))callback;
+@end
+
 @interface SPDatabaseData ()
 
 - (NSString *)_getSingleVariableValue:(NSString *)variable;
 - (NSArray *)_getDatabaseDataForQuery:(NSString *)query;
+- (NSArray *)_normalizedCharacterSetEncodingsFromRows:(NSArray *)rows;
+- (NSArray *)_fallbackCharacterSetEncodings;
+- (void)_showCharacterSetFallbackWarning;
 
 NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, void *context);
 
 @end
 
 @implementation SPDatabaseData
+{
+	BOOL _hasShownCharacterSetFallbackWarning;
+}
 
 @synthesize connection;
 @synthesize serverSupport;
@@ -68,6 +78,7 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 		characterSetEncodings  = [[NSMutableArray alloc] init];
 		
 		cachedCollationsByEncoding = [[NSMutableDictionary alloc] init];
+		_hasShownCharacterSetFallbackWarning = NO;
 		
 		charsetCollationLock = [[NSObject alloc] init];
 	}
@@ -102,6 +113,7 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 		[collations removeAllObjects];
 		[characterSetEncodings removeAllObjects];
 		[characterSetCollations removeAllObjects];
+		_hasShownCharacterSetFallbackWarning = NO;
 	}
 }
 
@@ -247,7 +259,7 @@ copy_return:
 
 /**
  * Returns all of the database's currently available character set encodings 
- * @return [{Charset: 'utf8',Description: 'UTF-8 Unicode', Default collation: 'utf8_general_ci',Maxlen: 3},...]
+ * @return [{CHARACTER_SET_NAME: 'utf8', DESCRIPTION: 'UTF-8 Unicode', DEFAULT_COLLATE_NAME: 'utf8_general_ci', MAXLEN: 3},...]
  *         The Array is never empty and never nil but results might be unreliable.
  *
  * On MySQL 5+ this will query information_schema.character_sets
@@ -258,21 +270,35 @@ copy_return:
  */ 
 - (NSArray *)getDatabaseCharacterSetEncodings
 {
+	BOOL shouldShowFallbackWarning = NO;
+
 	@synchronized(charsetCollationLock) {
 		if ([characterSetEncodings count] == 0) {
-			
-			// Try to retrieve the available character set encodings from the database
-			// Check the information_schema.character_sets table is accessible
-            [characterSetEncodings addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`character_sets` ORDER BY `character_set_name` ASC"]];
 
-			// If that failed, get the list of character set encodings from the hard-coded list
-			if (![characterSetEncodings count]) {			
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Unable to get database character set encodings", @"Unable to get database character set encodings") callback:nil];
+			// Prefer information_schema when available.
+			[characterSetEncodings addObjectsFromArray:[self _normalizedCharacterSetEncodingsFromRows:[self _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`character_sets` ORDER BY `character_set_name` ASC"]]];
+
+			// Fallback for MySQL-compatible proxies that don't fully expose information_schema.
+			if (![characterSetEncodings count]) {
+				[characterSetEncodings addObjectsFromArray:[self _normalizedCharacterSetEncodingsFromRows:[self _getDatabaseDataForQuery:@"SHOW CHARACTER SET"]]];
+			}
+
+			// Last-resort fallback keeps the app usable with limited protocol implementations.
+			if (![characterSetEncodings count]) {
+				[characterSetEncodings addObjectsFromArray:[self _fallbackCharacterSetEncodings]];
+				if (!_hasShownCharacterSetFallbackWarning) {
+					_hasShownCharacterSetFallbackWarning = YES;
+					shouldShowFallbackWarning = YES;
+				}
 			}
 		}
-			
-		return [NSArray arrayWithArray:characterSetEncodings]; //return a copy since we keep changing it
 	}
+
+	if (shouldShowFallbackWarning) {
+		[self _showCharacterSetFallbackWarning];
+	}
+
+	return [NSArray arrayWithArray:characterSetEncodings]; // return a copy since we keep changing it
 }
 
 /**
@@ -413,6 +439,64 @@ copy_return:
 	[result setReturnDataAsStrings:YES];
 	
 	return [result getAllRows];
+}
+
+- (NSArray *)_normalizedCharacterSetEncodingsFromRows:(NSArray *)rows
+{
+	if (![rows count]) return @[];
+
+	NSMutableArray *normalizedRows = [NSMutableArray array];
+	NSMutableSet *seenCharsetNames = [NSMutableSet set];
+
+	for (NSDictionary *row in rows) {
+
+		NSString *charsetName = [row objectForKey:@"CHARACTER_SET_NAME"];
+		if (![charsetName length]) charsetName = [row objectForKey:@"character_set_name"];
+		if (![charsetName length]) charsetName = [row objectForKey:@"Charset"];
+		if (![charsetName length]) charsetName = [row objectForKey:@"charset"];
+		if (![charsetName length] || [seenCharsetNames containsObject:charsetName]) continue;
+
+		NSString *description = [row objectForKey:@"DESCRIPTION"];
+		if (!description) description = [row objectForKey:@"Description"];
+		if (!description) description = [row objectForKey:@"description"];
+
+		NSString *defaultCollationName = [row objectForKey:@"DEFAULT_COLLATE_NAME"];
+		if (!defaultCollationName) defaultCollationName = [row objectForKey:@"default_collate_name"];
+		if (!defaultCollationName) defaultCollationName = [row objectForKey:@"Default collation"];
+		if (!defaultCollationName) defaultCollationName = [row objectForKey:@"Default Collation"];
+
+		id maxLength = [row objectForKey:@"MAXLEN"];
+		if (!maxLength) maxLength = [row objectForKey:@"Maxlen"];
+		if (!maxLength) maxLength = [row objectForKey:@"maxlen"];
+
+		NSMutableDictionary *normalizedRow = [NSMutableDictionary dictionaryWithObject:charsetName forKey:@"CHARACTER_SET_NAME"];
+		[normalizedRow setObject:(description ?: @"") forKey:@"DESCRIPTION"];
+		if (defaultCollationName) [normalizedRow setObject:defaultCollationName forKey:@"DEFAULT_COLLATE_NAME"];
+		if (maxLength) [normalizedRow setObject:[NSString stringWithFormat:@"%@", maxLength] forKey:@"MAXLEN"];
+
+		[seenCharsetNames addObject:charsetName];
+		[normalizedRows addObject:normalizedRow];
+	}
+
+	return normalizedRows;
+}
+
+- (NSArray *)_fallbackCharacterSetEncodings
+{
+	return @[
+		@{@"CHARACTER_SET_NAME" : @"utf8mb4", @"DESCRIPTION" : @"UTF-8 Unicode"},
+		@{@"CHARACTER_SET_NAME" : @"utf8", @"DESCRIPTION" : @"UTF-8 Unicode (BMP only)"},
+		@{@"CHARACTER_SET_NAME" : @"latin1", @"DESCRIPTION" : @"cp1252 West European"}
+	];
+}
+
+- (void)_showCharacterSetFallbackWarning
+{
+	SPMainQSync(^{
+		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Limited Character Set Metadata", @"charset fallback warning title")
+									 message:NSLocalizedString(@"The server did not provide character set metadata. Sequel Ace will continue using a fallback UTF-8 compatible character set list.", @"charset fallback warning message")
+									callback:nil];
+	});
 }
 
 
