@@ -39,7 +39,7 @@ print $encoder-&gt;encode($decoded);</string>
 	<key>contact</key>
 	<string>znvy@ovovxb.qr</string>
 	<key>description</key>
-	<string>If the first line of the selection or the entire content of the current text input field only contains a "{" then serialize the JSON data otherwise the JSON data will be pretty printed. If there's a need to preserve the Unicode characters you can uncomment the line 22.
+	<string>If the first line of the selection or the entire content of the current text input field only contains a "{" then serialize the JSON data otherwise the JSON data will be pretty printed. This bundle uses Perl's built-in JSON::PP module with UTF-8 decoding and encoding.
 
 Version 1.0</string>
 	<key>input</key>

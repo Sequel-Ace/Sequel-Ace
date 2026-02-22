@@ -53,7 +53,7 @@ static NSString * const SPBundlePythonRuntimeRemovalURL = @"https://developer.ap
 	static NSSet<NSString *> *removedRuntimeNames = nil;
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^{
-		removedRuntimeNames = [NSSet setWithArray:@[@"python", @"python2", @"python2.7", @"php", @"ruby", @"perl"]];
+		removedRuntimeNames = [NSSet setWithArray:@[@"python", @"python2", @"python2.7", @"php", @"ruby"]];
 	});
 	return removedRuntimeNames;
 }
@@ -251,7 +251,7 @@ static NSString * const SPBundlePythonRuntimeRemovalURL = @"https://developer.ap
 												   code:9
 											   userInfo:@{NSLocalizedDescriptionKey: @""}];
 		}
-		return nil;
+		return @"";
 	}
 
 	NSTask *bashTask = [[NSTask alloc] init];
@@ -447,7 +447,7 @@ static NSString * const SPBundlePythonRuntimeRemovalURL = @"https://developer.ap
 												   code:9
 											   userInfo:@{NSLocalizedDescriptionKey: @""}];
 		}
-		return nil;
+		return @"";
 	}
 
 	// Check STDERR

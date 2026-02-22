@@ -20,6 +20,7 @@ $sql = '' unless defined $sql;
 print $sql and exit 0 unless $sql =~ /\S/;
 
 my @placeholders;
+my $line_comment_break = "__SA_FMT_LINE_BREAK__";
 sub _stash_placeholder {
     my ($value) = @_;
     my $token = "__SA_FMT_" . scalar(@placeholders) . "__";
@@ -34,10 +35,18 @@ $working =~ s{
   | ('(?:\\.|''|[^'])*')
   | ("(?:\\.|""|[^"])*")
   | (/\*.*?\*/)
-  | (--[^\n]*)
-  | (\#[^\n]*)
+  | (--[^\n]*(?:\n|$))
+  | (\#[^\n]*(?:\n|$))
 }{
-    _stash_placeholder($&amp;)
+    my $matched = $&amp;;
+    if (defined $5 || defined $6) {
+        my $had_newline = ($matched =~ s/\n\z//);
+        my $token = _stash_placeholder($matched);
+        $token .= $line_comment_break if $had_newline;
+        $token;
+    } else {
+        _stash_placeholder($matched);
+    }
 }gsex;
 
 $working =~ s/\r\n?/\n/g;
@@ -102,6 +111,7 @@ for my $idx (0 .. $#placeholders) {
     my $value = $placeholders[$idx];
     $formatted =~ s/\Q$token\E/$value/g;
 }
+$formatted =~ s/\Q$line_comment_break\E/\n/g;
 
 print $formatted;
 </string>

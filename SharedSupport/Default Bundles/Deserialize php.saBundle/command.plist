@@ -94,29 +94,32 @@ sub _parse_value {
 
         my @pairs;
         for (1 .. $count) {
+            my $key_start = $$pos_ref;
             my $key = _parse_value($input, $pos_ref);
+            my $key_type = substr($input, $key_start, 1);
             my $value = _parse_value($input, $pos_ref);
-            push @pairs, [$key, $value];
+            push @pairs, [$key_type, $key, $value];
         }
 
         _expect($input, $pos_ref, '}');
 
         my $is_list = 1;
         for my $idx (0 .. $#pairs) {
-            my $key = $pairs[$idx]-&gt;[0];
-            if (ref($key) || !defined($key) || "$key" !~ /^\d+$/ || int($key) != $idx) {
+            my $key_type = $pairs[$idx]-&gt;[0];
+            my $key = $pairs[$idx]-&gt;[1];
+            if ($key_type ne 'i' || ref($key) || !defined($key) || $key != $idx) {
                 $is_list = 0;
                 last;
             }
         }
 
         if ($is_list) {
-            return [map { $_-&gt;[1] } @pairs];
+            return [map { $_-&gt;[2] } @pairs];
         }
 
         my %hash;
         for my $pair (@pairs) {
-            $hash{_stringify_key($pair-&gt;[0])} = $pair-&gt;[1];
+            $hash{_stringify_key($pair-&gt;[1])} = $pair-&gt;[2];
         }
         return \%hash;
     }
