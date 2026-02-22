@@ -1934,7 +1934,8 @@ set_input:
 		}
 		else {
 			NSString *queryString = (exportSource == SPFilteredExport) ? [tableContentInstance usedQuery] : [customQueryInstance usedQuery];
-			tag = [NSString stringWithFormat:@"<resultset statement=\"%@\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n\n", [queryString HTMLEscapeString]];
+			NSString *escapedQueryString = [(queryString ?: @"") HTMLEscapeString];
+			tag = [NSString stringWithFormat:@"<resultset statement=\"%@\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n\n", escapedQueryString];
 		}
 
 		[header appendString:tag];

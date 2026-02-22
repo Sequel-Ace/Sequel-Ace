@@ -199,8 +199,8 @@ import OSLog
                             Log.error("The bookmark is outdated and needs to be regenerated: key = \(key)")
                             staleBookmarks.appendIfNotContains(key)
                         } else {
-                            if urlForBookmark.path.hasPrefix("/Volumes/"), FileManager.default.fileExists(atPath: urlForBookmark.path) == false {
-                                Log.info("Skipping bookmark activation for unavailable mounted volume path: \(urlForBookmark.path)")
+                            if let unavailableVolumeRoot = unavailableMountedVolumeRoot(for: urlForBookmark.path) {
+                                Log.info("Skipping bookmark activation for unavailable mounted volume root: \(unavailableVolumeRoot)")
                                 // Keep the bookmark so it can be reactivated later when the volume is available again.
                                 bookmarks.append([key: urlData])
                                 continue
@@ -228,6 +228,20 @@ import OSLog
         iChangedTheBookmarks = true
         prefs.set(bookmarks, forKey: SASecureBookmarks)
         prefs.set(staleBookmarks, forKey: SPStaleSecureBookmarks)
+    }
+
+    private func unavailableMountedVolumeRoot(for path: String) -> String? {
+        guard path.hasPrefix("/Volumes/") else {
+            return nil
+        }
+
+        let pathComponents = URL(fileURLWithPath: path).standardizedFileURL.pathComponents
+        guard pathComponents.count >= 3 else {
+            return nil
+        }
+
+        let volumeRootPath = NSString.path(withComponents: Array(pathComponents.prefix(3)))
+        return FileManager.default.fileExists(atPath: volumeRootPath) ? nil : volumeRootPath
     }
 
     /// addBookmark 
