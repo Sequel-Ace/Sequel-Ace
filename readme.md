@@ -5,14 +5,15 @@ Sequel Ace <img alt="Logo" src="https://sequel-ace.com/images/appIcon-1024.png" 
 Sequel Ace is the "sequel" to the longtime macOS tool Sequel Pro.
 Sequel Ace is a fast, easy-to-use Mac database management application for working with MySQL & MariaDB databases.
 
-If you would like to sponsor Sequel Ace, please check out our [Open Collective](https://opencollective.com/sequel-ace)!
+If you would like to sponsor Sequel Ace, please check out our [Open Collective](https://opencollective.com/sequel-ace) or sponsor one of our maintainers via GitHub Sponsors!
 
 ## Compatibility
 
 - **macOS:** >= 12.0
-- **Processor:** Intel & Apple Silicon
-- **MySQL:** >= 5.7
-- **MariaDB:** >= 10.0
+- **Processors:** Intel & Apple Silicon
+- **Databases:**
+  - **MySQL:** >= 5.7
+  - **MariaDB:** >= 10.0
 
 
 ### Previous Versions:
@@ -77,7 +78,7 @@ Please refer [here](https://github.com/Sequel-Ace/Sequel-Ace/blob/main/Guides/Co
 
 ## License
 
-Copyright (c) 2020-2022 Moballo, LLC.  All rights reserved.
+Copyright (c) 2020-2026 Moballo, LLC.  All rights reserved.
 Forked from Sequel Pro: Copyright (c) 2002-2019 Sequel Pro & CocoaMySQL Teams. All rights reserved.
 
 Sequel Ace is free and open-source software licensed under [MIT](https://opensource.org/licenses/MIT). See [LICENSE](https://github.com/sequel-ace/sequel-ace/blob/master/LICENSE) for complete details.
