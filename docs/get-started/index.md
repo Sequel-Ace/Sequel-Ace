@@ -43,6 +43,8 @@ On the server, configure MySQL by editing /etc/my.cnf and comment or remove `ski
 
 Sequel Ace runs in a sandboxed mode and by default cannot access your SSH config file. If you'd like to use a custom SSH config file, open Sequel Ace's preferences (from the menu bar), go to the "Network" settings tab, and select the SSH config file you would like to use. The same config file will be used for all connections. If your config file references other files in the filesystem, Sequel Ace will not be able to access these other files by default due to security constraints - to allow access to these files, please go to the "Files" tab in Sequel Ace's Preferences and grant access to these other support files.
 
+If SSH works in Terminal but fails in Sequel Ace with errors like `ssh_get_authentication_socket: Operation not permitted`, `load pubkey ...: Operation not permitted`, or ProxyCommand helper failures, see [Connect to a Remote MySQL Server](remote-connection.html#ssh-agent-and-proxycommand-limitations-on-macos) for supported workarounds (including external tunnel setup).
+
 
 #### General Notes
 

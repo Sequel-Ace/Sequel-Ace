@@ -63,6 +63,39 @@ $ ssh -L 1234:mysqlhost:3306 sshuser@sshhost
 
 Here `mysqlhost` is what you have to enter in Sequel Ace as the MySQL host, `sshuser` corresponds to the SSH user, and `sshhost` corresponds to the SSH host field, obviously. The first number, `1234`, is the local port of the SSH tunnel. Sequel Ace chooses this port automatically. The second number in the command, `3306`, is the port used by the MySQL server.
 
+#### SSH Agent and ProxyCommand Limitations on macOS
+
+Sequel Ace is sandboxed on macOS and uses the system SSH client. Some advanced SSH setups that work in Terminal may fail in Sequel Ace if they require direct access to sockets, helper binaries, or files outside what Sequel Ace can access.
+
+Common failure messages include:
+
+- `ssh_get_authentication_socket: Operation not permitted`
+- `load pubkey "...": Operation not permitted`
+- `.../zsh: Operation not permitted` (or similar errors for shell/helper paths)
+
+This most often affects setups using `SSH_AUTH_SOCK`, `IdentityAgent`, `PKCS11Provider`, `ProxyCommand`, hardware keys (for example YubiKey/OpenSC), or non-system shell/tool paths.
+
+Recommended troubleshooting steps:
+
+1. In Sequel Ace, go to _Preferences_ > _Network_ and select your custom SSH config file.
+2. In _Preferences_ > _Files_, grant access to all SSH support paths your config uses (for example `~/.ssh`, key files, `known_hosts`, include files, helper scripts, certificate files).
+3. In your SSH config, prefer built-in macOS tools when possible (for example `/usr/bin/ssh`, `/usr/bin/nc`, `/bin/zsh`) instead of symlinked/non-system paths.
+4. If agent-based auth still fails, create the SSH tunnel outside Sequel Ace and connect with a **Standard** connection to `127.0.0.1`.
+
+Example external tunnel:
+
+```bash
+ssh -f -N -L 127.0.0.1:3307:mysql-host:3306 -o ExitOnForwardFailure=yes ssh-user@jump-host
+```
+
+Then connect in Sequel Ace with:
+
+- Host: `127.0.0.1`
+- Port: `3307`
+- Username/password/database: your normal MySQL credentials
+
+Advanced option: If your SSH agent supports a custom socket location, point `IdentityAgent` to a socket path inside `~/Library/Containers/com.sequel-ace.sequel-ace/Data/` and configure the agent itself to create that socket there.
+
 
 #### Notes
 
