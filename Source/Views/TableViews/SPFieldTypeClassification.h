@@ -29,12 +29,12 @@ NS_INLINE BOOL SPFieldTypeShouldBeUnquoted(NSString *fieldTypeGroup, NSString *f
 		}
 	}
 
-	NSString *normalizedType = [[typeToken ?: @"" uppercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+	NSString *normalizedType = [typeToken uppercaseString];
 
 	static NSSet<NSString *> *unquotedFieldTypes = nil;
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^{
-		unquotedFieldTypes = [NSSet setWithArray:@[@"BIT", @"BOOL", @"BOOLEAN", @"TINYINT", @"SMALLINT", @"MEDIUMINT", @"INT", @"INTEGER", @"BIGINT", @"FLOAT", @"DOUBLE", @"REAL", @"DECIMAL", @"DEC", @"NUMERIC", @"FIXED", @"SERIAL", @"YEAR"]];
+		unquotedFieldTypes = [NSSet setWithArray:@[@"BIT", @"TINYINT", @"SMALLINT", @"MEDIUMINT", @"INT", @"INTEGER", @"BIGINT", @"FLOAT", @"DOUBLE", @"REAL", @"DECIMAL", @"DEC", @"NUMERIC", @"FIXED"]];
 	});
 
 	return [unquotedFieldTypes containsObject:normalizedType];
