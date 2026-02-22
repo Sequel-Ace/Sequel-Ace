@@ -65,6 +65,9 @@
 /* Error display text, showing original MySQL error */
 "%@\n\nMySQL said: %@" = "%1$@\n\nMySQL said: %2$@";
 
+/* optimized field type fallback estimate message */
+"%@\n\nEstimated from current column values because PROCEDURE ANALYSE() is unavailable on this server version." = "%1$@\n\nEstimated from current column values because PROCEDURE ANALYSE() is unavailable on this server version.";
+
 /* favorite singular label (%d == 1) */
 "%lu favorite" = "%lu favorite";
 
@@ -375,6 +378,12 @@
 
 /* an error occurred while fetching the optimized field type.\n\nMySQL said:%@ */
 "An error occurred while fetching the optimized field type.\n\nMySQL said:%@" = "An error occurred while fetching the optimized field type.\n\nMySQL said:%@";
+
+/* an error occurred while fetching the optimized field type.\n\nMySQL said: %@ */
+"An error occurred while fetching the optimized field type.\n\nMySQL said: %@" = "An error occurred while fetching the optimized field type.\n\nMySQL said: %@";
+
+/* fallback optimized field type estimation query error */
+"An error occurred while estimating an optimized field type.\n\nMySQL said: %@" = "An error occurred while estimating an optimized field type.\n\nMySQL said: %@";
 
 /* an error occurred while trying to flush the %@.\n\nMySQL said:%@ */
 "An error occurred while flushing the %@.\n\nMySQL said:%@" = "An error occurred while flushing the %1$@.\n\nMySQL said:%2$@";
@@ -1310,6 +1319,9 @@
 /* Errors title */
 "Errors" = "Errors";
 
+/* task status while estimating optimized field type */
+"Estimating optimized field type..." = "Estimating optimized field type...";
+
 /* Mysql Help Viewer : Help Topic: Example section title */
 "Example:" = "Example:";
 
@@ -1855,6 +1867,15 @@
 
 /* header for no matches in filtered list */
 "NO MATCHES" = "NO MATCHES";
+
+/* optimized field type fallback unsupported type message */
+"No fallback estimate is currently available for %@ columns." = "No fallback estimate is currently available for %@ columns.";
+
+/* optimized field type fallback no-values message */
+"No non-NULL values were found in this column, so no fallback estimate could be produced." = "No non-NULL values were found in this column, so no fallback estimate could be produced.";
+
+/* optimized field type fallback unavailable metadata message */
+"No optimized field type could be estimated for this column." = "No optimized field type could be estimated for this column.";
 
 /* no optimized field type found. message */
 "No optimized field type found." = "No optimized field type found.";
@@ -3003,6 +3024,9 @@
 
 /* Unable to write row error */
 "Unable to write row" = "Unable to write row";
+
+/* optimized field type fallback missing numeric stats */
+"Unable to read enough numeric statistics to estimate an optimized integer type." = "Unable to read enough numeric statistics to estimate an optimized integer type.";
 
 /* Table Content : Remove Row : Result : n Error title */
 "Unexpected number of rows removed!" = "Unexpected number of rows removed!";
