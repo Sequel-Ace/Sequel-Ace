@@ -27,6 +27,7 @@ brew install sequel-ace
 Get started using Sequel Ace quickly by browsing through this online documentation to learn how to connect with your MySQL or MariaDB database server.
 
 - [Getting Connected](get-started/)
+- [Open a Connection via URL (`mysql://`)](get-started/connect-via-url.html)
 - [Moving Saved Connections from Sequel Pro](get-started/migrating-from-sequel-pro.html)
 - [Making Queries](queries.html)
 - [Keyboard Shortcuts](shortcuts.html)

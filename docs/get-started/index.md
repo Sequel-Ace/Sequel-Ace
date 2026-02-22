@@ -18,6 +18,10 @@ When you open Sequel Ace, the first screen that you will see is the database con
 
 Please check out [this page](migrating-from-sequel-pro.html) for info on how to migrate from Sequel Pro!
 
+**Can I open a Sequel Ace connection via URL (for automation or PAM tools)?**
+
+Yes. Sequel Ace supports `mysql://` URLs including SSH query parameters. See [Open a Connection via URL (`mysql://`)](connect-via-url.html).
+
 **I am having trouble connecting to a database. It says: Can't connect to local MySQL server through socket '/tmp/mysql.sock' (2)**
 
 This is a known macOS sandboxing limitation. Sequel Ace cannot access socket files outside its container, even with Full Disk Access enabled.
@@ -60,5 +64,6 @@ If SSH works in Terminal but fails in Sequel Ace with errors like `ssh_get_authe
 -   [What type of connection do I have?](connection-types.html)
 -   [Connect to a Local MySQL Server](local-connection.html)
 -   [Connect to a Remote MySQL Server](remote-connection.html)
+-   [Open a Connection via URL (`mysql://`)](connect-via-url.html)
 -   [Connecting to MAMP or XAMPP](mamp-xampp.html)
 -   [Migrating from Sequel Pro](migrating-from-sequel-pro.html)
