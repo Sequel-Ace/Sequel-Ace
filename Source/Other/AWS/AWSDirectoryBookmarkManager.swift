@@ -61,6 +61,14 @@ import OSLog
         return NSHomeDirectory() + "/.aws"
     }
 
+    /// The active AWS directory path when bookmark access is active.
+    @objc var awsDirectoryBasePath: String {
+        if let resolvedPath = resolvedAWSDirectoryURL?.path, resolvedPath.isNotEmpty {
+            return resolvedPath
+        }
+        return Self.awsDirectoryPath
+    }
+
     // MARK: - Debug/Testing Options
 
     // Uncomment the following lines to simulate sandboxed environment for testing:
@@ -75,10 +83,16 @@ import OSLog
         //     return false
         // }
 
-        // First check if we have a bookmark for the AWS directory
+        // First check if we have a bookmark for the AWS directory.
+        // Validate that the bookmark still resolves and grants access.
         if hasAWSDirectoryBookmark() {
-            os_log(.info, log: Self.log, "AWS directory authorized via bookmark")
-            return true
+            if startAccessingAWSDirectory() {
+                os_log(.info, log: Self.log, "AWS directory authorized via bookmark")
+                return true
+            }
+
+            os_log(.error, log: Self.log, "AWS bookmark exists but no longer grants access; revoking stale bookmark")
+            revokeAllAWSDirectoryBookmarks()
         }
 
         // Also check if the directory is directly accessible (non-sandboxed builds)
@@ -105,6 +119,16 @@ import OSLog
             }
         }
         return false
+    }
+
+    private func revokeAllAWSDirectoryBookmarks() {
+        let bookmarkManager = SecureBookmarkManager.sharedInstance
+
+        for bookmarkDict in bookmarkManager.bookmarks {
+            for key in bookmarkDict.keys where isAWSDirectoryBookmarkKey(key) {
+                _ = bookmarkManager.revokeBookmark(filename: key)
+            }
+        }
     }
 
     /// Start accessing the AWS directory via security-scoped bookmark
@@ -228,13 +252,15 @@ import OSLog
             return nil
         }
 
+        let resolvedPath = resolvePathForCurrentAWSDirectory(path)
+
         // Try to read the file
         do {
-            let contents = try String(contentsOfFile: path, encoding: .utf8)
-            os_log(.debug, log: Self.log, "Successfully read AWS file: %{public}@", path)
+            let contents = try String(contentsOfFile: resolvedPath, encoding: .utf8)
+            os_log(.debug, log: Self.log, "Successfully read AWS file: %{public}@", resolvedPath)
             return contents
         } catch {
-            os_log(.error, log: Self.log, "Failed to read AWS file %{public}@: %{public}@", path, error.localizedDescription)
+            os_log(.error, log: Self.log, "Failed to read AWS file %{public}@: %{public}@", resolvedPath, error.localizedDescription)
             return nil
         }
     }
@@ -246,7 +272,28 @@ import OSLog
             return false
         }
 
-        return FileManager.default.fileExists(atPath: path)
+        return FileManager.default.fileExists(atPath: resolvePathForCurrentAWSDirectory(path))
+    }
+
+    private func resolvePathForCurrentAWSDirectory(_ path: String) -> String {
+        guard let resolvedURL = resolvedAWSDirectoryURL else {
+            return path
+        }
+
+        let normalizedInputPath = URL(fileURLWithPath: path).standardized.path
+        let normalizedDefaultAWSPath = URL(fileURLWithPath: Self.awsDirectoryPath).standardized.path
+
+        if normalizedInputPath == normalizedDefaultAWSPath {
+            return resolvedURL.path
+        }
+
+        let defaultPrefix = normalizedDefaultAWSPath + "/"
+        if normalizedInputPath.hasPrefix(defaultPrefix) {
+            let relativeComponent = String(normalizedInputPath.dropFirst(defaultPrefix.count))
+            return resolvedURL.appendingPathComponent(relativeComponent).path
+        }
+
+        return path
     }
 }
 

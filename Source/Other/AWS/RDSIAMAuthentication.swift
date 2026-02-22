@@ -213,8 +213,15 @@ import OSLog
         // Calculate signature
         let signature = hmacSHA256Hex(stringToSign, key: signingKey)
 
+        let securityTokenComponent: String
+        if let sessionToken = credentials.sessionToken, !sessionToken.isEmpty {
+            securityTokenComponent = "&X-Amz-Security-Token=\(urlEncode(sessionToken))"
+        } else {
+            securityTokenComponent = ""
+        }
+
         // Build final token (presigned URL format, but without the scheme)
-        return "\(hostWithPort)/?Action=\(connectAction)&DBUser=\(encodedUsername)&X-Amz-Algorithm=\(algorithm)&X-Amz-Credential=\(urlEncode("\(credentials.accessKeyId)/\(credentialScope)"))&X-Amz-Date=\(amzDate)&X-Amz-Expires=\(tokenExpirationSeconds)\(credentials.sessionToken != nil ? "&X-Amz-Security-Token=\(urlEncode(credentials.sessionToken!))" : "")&X-Amz-SignedHeaders=host&X-Amz-Signature=\(signature)"
+        return "\(hostWithPort)/?Action=\(connectAction)&DBUser=\(encodedUsername)&X-Amz-Algorithm=\(algorithm)&X-Amz-Credential=\(urlEncode("\(credentials.accessKeyId)/\(credentialScope)"))&X-Amz-Date=\(amzDate)&X-Amz-Expires=\(tokenExpirationSeconds)\(securityTokenComponent)&X-Amz-SignedHeaders=host&X-Amz-Signature=\(signature)"
     }
 
     // MARK: - AWS Signature V4 Helper Methods

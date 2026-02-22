@@ -6117,7 +6117,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (NSString *)keychainPasswordForConnection:(SPMySQLConnection *)connection
 {
-    return [connectionController keychainPassword];
+    return [connectionController passwordForConnectionRequest];
 }
 
 /**
@@ -6620,4 +6620,3 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 @end
-
