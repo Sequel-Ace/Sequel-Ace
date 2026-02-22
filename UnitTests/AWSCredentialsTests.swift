@@ -2,7 +2,7 @@
 //  AWSCredentialsTests.swift
 //  Sequel Ace
 //
-//  Unit tests for AWS credentials management.
+//  Unit tests for AWS credentials, STS validation, and IAM auth integration.
 //
 
 import XCTest
@@ -10,139 +10,496 @@ import XCTest
 
 final class AWSCredentialsTests: XCTestCase {
 
-    // MARK: - Manual Credentials Tests
+    // MARK: - Manual Credentials
 
-    func testInitWithValidManualCredentials() {
-        let creds = AWSCredentials(
-            accessKeyId: "AKIAIOSFODNN7EXAMPLE",
-            secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-        )
-
-        XCTAssertEqual(creds.accessKeyId, "AKIAIOSFODNN7EXAMPLE")
-        XCTAssertEqual(creds.secretAccessKey, "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")
-        XCTAssertNil(creds.sessionToken)
-        XCTAssertNil(creds.profileName)
-        XCTAssertTrue(creds.isValid)
-    }
-
-    func testInitWithSessionToken() {
-        let creds = AWSCredentials(
+    func testManualCredentialsValidationAndFlags() {
+        let credentials = AWSCredentials(
             accessKeyId: "AKIAIOSFODNN7EXAMPLE",
             secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-            sessionToken: "FwoGZXIvYXdzEBYaDExample"
+            sessionToken: "session-token"
         )
 
-        XCTAssertEqual(creds.sessionToken, "FwoGZXIvYXdzEBYaDExample")
-        XCTAssertTrue(creds.isValid)
+        XCTAssertTrue(credentials.isValid)
+        XCTAssertFalse(credentials.requiresMFA)
+        XCTAssertFalse(credentials.requiresRoleAssumption)
+        XCTAssertEqual(credentials.sessionToken, "session-token")
+        XCTAssertNil(credentials.profileName)
     }
 
-    func testIsValidWithEmptyAccessKey() {
-        let creds = AWSCredentials(
-            accessKeyId: "",
-            secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-        )
-
-        XCTAssertFalse(creds.isValid, "Credentials with empty access key should be invalid")
+    func testManualCredentialsInvalidWhenAccessKeyMissing() {
+        let credentials = AWSCredentials(accessKeyId: "", secretAccessKey: "secret")
+        XCTAssertFalse(credentials.isValid)
     }
 
-    func testIsValidWithEmptySecretKey() {
-        let creds = AWSCredentials(
-            accessKeyId: "AKIAIOSFODNN7EXAMPLE",
-            secretAccessKey: ""
-        )
-
-        XCTAssertFalse(creds.isValid, "Credentials with empty secret key should be invalid")
+    func testManualCredentialsInvalidWhenSecretMissing() {
+        let credentials = AWSCredentials(accessKeyId: "AKIAIOSFODNN7EXAMPLE", secretAccessKey: "")
+        XCTAssertFalse(credentials.isValid)
     }
 
-    // MARK: - Profile Tests
+    // MARK: - File Paths
 
-    func testCredentialsFilePath() {
-        let path = AWSCredentials.credentialsFilePath
-        XCTAssertFalse(path.isEmpty, "Credentials file path should not be empty")
-        XCTAssertTrue(path.hasSuffix(".aws/credentials"), "Path should end with .aws/credentials")
-    }
-
-    func testConfigFilePath() {
-        let path = AWSCredentials.configFilePath
-        XCTAssertFalse(path.isEmpty, "Config file path should not be empty")
-        XCTAssertTrue(path.hasSuffix(".aws/config"), "Path should end with .aws/config")
-    }
-
-    func testAvailableProfilesReturnsArray() {
-        let profiles = AWSCredentials.availableProfiles()
-        XCTAssertTrue(profiles is [String], "Should return array of strings")
-    }
-
-    func testInitWithNonExistentProfile() {
-        XCTAssertThrowsError(try AWSCredentials(profile: "this-profile-definitely-does-not-exist-12345")) { error in
-            XCTAssertTrue(error is AWSCredentialsError, "Should throw AWSCredentialsError")
+    func testCredentialsAndConfigFilePathsUseEnvironmentOverrides() throws {
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: "", config: "") { credentialsPath, configPath in
+            XCTAssertEqual(AWSCredentials.credentialsFilePath, credentialsPath)
+            XCTAssertEqual(AWSCredentials.configFilePath, configPath)
         }
     }
 
-    // MARK: - Description Tests
+    // MARK: - Profile Loading
 
-    func testDescription() {
-        let creds = AWSCredentials(
+    func testProfileLoadsDefaultFromCredentialsFile() throws {
+        let credentialsContents = """
+        [default]
+        aws_access_key_id = AKIADEFAULT0000000000
+        aws_secret_access_key = defaultSecret
+        aws_session_token = defaultToken
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: "") { _, _ in
+            let credentials = try AWSCredentials(profile: nil)
+
+            XCTAssertEqual(credentials.profileName, "default")
+            XCTAssertEqual(credentials.accessKeyId, "AKIADEFAULT0000000000")
+            XCTAssertEqual(credentials.secretAccessKey, "defaultSecret")
+            XCTAssertEqual(credentials.sessionToken, "defaultToken")
+            XCTAssertTrue(credentials.isValid)
+        }
+    }
+
+    func testProfileLoadsRoleMetadataFromConfigAndKeysFromSourceProfile() throws {
+        let credentialsContents = """
+        [base]
+        aws_access_key_id = AKIABASE000000000000
+        aws_secret_access_key = baseSecret
+
+        [default]
+        aws_access_key_id = AKIADEFAULT0000000000
+        aws_secret_access_key = defaultSecret
+        """
+
+        let configContents = """
+        [profile app]
+        role_arn = arn:aws:iam::123456789012:role/DatabaseAccess
+        source_profile = base
+        mfa_serial = arn:aws:iam::123456789012:mfa/dev-user
+        region = us-west-2
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: configContents) { _, _ in
+            let credentials = try AWSCredentials(profile: "app")
+
+            XCTAssertEqual(credentials.accessKeyId, "AKIABASE000000000000")
+            XCTAssertEqual(credentials.secretAccessKey, "baseSecret")
+            XCTAssertEqual(credentials.roleArn, "arn:aws:iam::123456789012:role/DatabaseAccess")
+            XCTAssertEqual(credentials.sourceProfile, "base")
+            XCTAssertEqual(credentials.mfaSerial, "arn:aws:iam::123456789012:mfa/dev-user")
+            XCTAssertEqual(credentials.region, "us-west-2")
+            XCTAssertTrue(credentials.requiresMFA)
+            XCTAssertTrue(credentials.requiresRoleAssumption)
+        }
+    }
+
+    func testCredentialsFileValuesTakePrecedenceOverConfigFile() throws {
+        let credentialsContents = """
+        [app]
+        aws_access_key_id = AKIAFROMCREDENTIALS01
+        aws_secret_access_key = secret-from-credentials
+        aws_session_token = token-from-credentials
+        """
+
+        let configContents = """
+        [profile app]
+        aws_access_key_id = AKIAFROMCONFIGFILE000
+        aws_secret_access_key = secret-from-config
+        aws_session_token = token-from-config
+        region = eu-central-1
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: configContents) { _, _ in
+            let credentials = try AWSCredentials(profile: "app")
+
+            XCTAssertEqual(credentials.accessKeyId, "AKIAFROMCREDENTIALS01")
+            XCTAssertEqual(credentials.secretAccessKey, "secret-from-credentials")
+            XCTAssertEqual(credentials.sessionToken, "token-from-credentials")
+            XCTAssertEqual(credentials.region, "eu-central-1")
+        }
+    }
+
+    func testProfileThrowsProfileNotFoundForMissingProfile() throws {
+        let credentialsContents = """
+        [default]
+        aws_access_key_id = AKIADEFAULT0000000000
+        aws_secret_access_key = defaultSecret
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: "") { _, _ in
+            XCTAssertThrowsError(try AWSCredentials(profile: "missing")) { error in
+                guard let credentialsError = error as? AWSCredentialsError else {
+                    return XCTFail("Expected AWSCredentialsError, got \(error)")
+                }
+
+                XCTAssertEqual(credentialsError, .profileNotFound)
+            }
+        }
+    }
+
+    func testProfileThrowsMissingCredentialsWhenProfileLacksKeys() throws {
+        let credentialsContents = """
+        [app]
+        role_arn = arn:aws:iam::123456789012:role/DatabaseAccess
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: "") { _, _ in
+            XCTAssertThrowsError(try AWSCredentials(profile: "app")) { error in
+                guard let credentialsError = error as? AWSCredentialsError else {
+                    return XCTFail("Expected AWSCredentialsError, got \(error)")
+                }
+
+                XCTAssertEqual(credentialsError, .missingCredentials)
+            }
+        }
+    }
+
+    func testProfileWithSourceProfileCycleThrows() throws {
+        let credentialsContents = """
+        [a]
+        source_profile = b
+
+        [b]
+        source_profile = a
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: "") { _, _ in
+            XCTAssertThrowsError(try AWSCredentials(profile: "a")) { error in
+                guard let credentialsError = error as? AWSCredentialsError else {
+                    return XCTFail("Expected AWSCredentialsError, got \(error)")
+                }
+
+                let expected: Set<AWSCredentialsError> = [.invalidCredentials, .missingCredentials]
+                XCTAssertTrue(expected.contains(credentialsError), "Unexpected error for cyclical source_profile: \(credentialsError)")
+            }
+        }
+    }
+
+    // MARK: - Obj-C Compatibility
+
+    func testCredentialsFactoryMethodSetsNSErrorOnFailure() throws {
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: "", config: "") { _, _ in
+            var error: NSError?
+            let credentials = AWSCredentials.credentials(withProfile: "missing", error: &error)
+
+            XCTAssertNil(credentials)
+            XCTAssertEqual(error?.domain, "AWSCredentialsErrorDomain")
+            XCTAssertEqual(error?.code, AWSCredentialsError.profileNotFound.rawValue)
+        }
+    }
+
+    func testProfileConfigurationReturnsParsedValues() throws {
+        let credentialsContents = """
+        [default]
+        aws_access_key_id = AKIADEFAULT0000000000
+        aws_secret_access_key = defaultSecret
+        """
+
+        let configContents = """
+        [default]
+        region = ap-southeast-2
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: configContents) { _, _ in
+            let profileConfiguration = AWSCredentials.profileConfiguration(forProfile: "default")
+
+            XCTAssertEqual(profileConfiguration?["aws_access_key_id"], "AKIADEFAULT0000000000")
+            XCTAssertEqual(profileConfiguration?["aws_secret_access_key"], "defaultSecret")
+            XCTAssertEqual(profileConfiguration?["region"], "ap-southeast-2")
+        }
+    }
+
+    // MARK: - Description
+
+    func testDescriptionDoesNotLeakSecretAccessKey() {
+        let credentials = AWSCredentials(accessKeyId: "AKIA123456789", secretAccessKey: "my-secret")
+        let description = credentials.description
+
+        XCTAssertTrue(description.contains("AKIA"))
+        XCTAssertFalse(description.contains("my-secret"))
+    }
+}
+
+final class AWSSTSClientTests: XCTestCase {
+
+    func testAssumeRoleAsyncThrowsForInvalidCredentials() async {
+        let credentials = AWSCredentials(accessKeyId: "", secretAccessKey: "")
+
+        do {
+            _ = try await AWSSTSClient.assumeRole(
+                roleArn: "arn:aws:iam::123456789012:role/DatabaseAccess",
+                region: "us-east-1",
+                credentials: credentials
+            )
+            XCTFail("Expected invalidCredentials")
+        } catch let error as AWSSTSClientError {
+            XCTAssertEqual(error, .invalidCredentials)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    func testAssumeRoleAsyncThrowsForMissingRoleArn() async {
+        let credentials = AWSCredentials(
             accessKeyId: "AKIAIOSFODNN7EXAMPLE",
-            secretAccessKey: "secret"
+            secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
         )
 
-        let desc = creds.description
-        XCTAssertTrue(desc.contains("AKIA"), "Description should contain partial access key")
-        XCTAssertFalse(desc.contains("secret"), "Description should NOT contain secret key")
+        do {
+            _ = try await AWSSTSClient.assumeRole(
+                roleArn: "",
+                region: "us-east-1",
+                credentials: credentials
+            )
+            XCTFail("Expected invalidParameters")
+        } catch let error as AWSSTSClientError {
+            XCTAssertEqual(error, .invalidParameters)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
     }
 
-    // MARK: - Role Assumption Properties
-
-    func testRequiresMFA() {
-        let credsWithMFA = AWSCredentials(
+    func testAssumeRoleAsyncThrowsForMissingRegion() async {
+        let credentials = AWSCredentials(
             accessKeyId: "AKIAIOSFODNN7EXAMPLE",
-            secretAccessKey: "secret"
+            secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
         )
-        // Manual credentials don't have mfaSerial set
-        XCTAssertFalse(credsWithMFA.requiresMFA)
+
+        do {
+            _ = try await AWSSTSClient.assumeRole(
+                roleArn: "arn:aws:iam::123456789012:role/DatabaseAccess",
+                region: "",
+                credentials: credentials
+            )
+            XCTFail("Expected invalidParameters")
+        } catch let error as AWSSTSClientError {
+            XCTAssertEqual(error, .invalidParameters)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
     }
 
-    func testRequiresRoleAssumption() {
-        let creds = AWSCredentials(
+    func testAssumeRoleAsyncThrowsWhenMFASerialProvidedWithoutToken() async {
+        let credentials = AWSCredentials(
             accessKeyId: "AKIAIOSFODNN7EXAMPLE",
-            secretAccessKey: "secret"
+            secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
         )
-        // Manual credentials don't have roleArn set
-        XCTAssertFalse(creds.requiresRoleAssumption)
+
+        do {
+            _ = try await AWSSTSClient.assumeRole(
+                roleArn: "arn:aws:iam::123456789012:role/DatabaseAccess",
+                mfaSerialNumber: "arn:aws:iam::123456789012:mfa/dev-user",
+                mfaTokenCode: nil,
+                region: "us-east-1",
+                credentials: credentials
+            )
+            XCTFail("Expected mfaRequired")
+        } catch let error as AWSSTSClientError {
+            XCTAssertEqual(error, .mfaRequired)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
     }
 
-    // MARK: - Directory Authorization Tests
+    func testAssumeRoleObjCReturnsNSErrorForInvalidCredentials() {
+        let outcome: (AWSCredentials?, NSError?) = DispatchQueue.global(qos: .userInitiated).sync {
+            var error: NSError?
+            let result = AWSSTSClient.assumeRole(
+                "arn:aws:iam::123456789012:role/DatabaseAccess",
+                roleSessionName: nil,
+                mfaSerialNumber: nil,
+                mfaTokenCode: nil,
+                durationSeconds: 3600,
+                region: "us-east-1",
+                credentials: AWSCredentials(accessKeyId: "", secretAccessKey: ""),
+                error: &error
+            )
 
-    func testIsAWSDirectoryAuthorizedProperty() {
-        // Should return a boolean without crashing
-        let isAuthorized = AWSCredentials.isAWSDirectoryAuthorized
-        XCTAssertTrue(isAuthorized == true || isAuthorized == false, "Should return a boolean value")
+            return (result, error)
+        }
+
+        let (result, returnedError) = outcome
+
+        XCTAssertNil(result)
+        XCTAssertEqual(returnedError?.domain, "AWSSTSClientErrorDomain")
+        XCTAssertEqual(returnedError?.code, AWSSTSClientError.invalidCredentials.rawValue)
+    }
+}
+
+final class AWSIAMAuthManagerTests: XCTestCase {
+
+    override func setUp() {
+        super.setUp()
+        AWSIAMAuthManager.clearCachedCredentials(for: nil)
     }
 
-    func testCredentialsFileExistsProperty() {
-        // Should return a boolean without crashing
-        let exists = AWSCredentials.credentialsFileExists
-        XCTAssertTrue(exists == true || exists == false, "Should return a boolean value")
+    override func tearDown() {
+        AWSIAMAuthManager.clearCachedCredentials(for: nil)
+        super.tearDown()
     }
 
-    func testAvailableProfilesHandlesUnauthorizedState() {
-        // availableProfiles() should return an array (possibly empty) without crashing
-        let profiles = AWSCredentials.availableProfiles()
-        XCTAssertNotNil(profiles, "Should return an array, not nil")
-        // If not authorized, should return empty array; if authorized, returns actual profiles
-        XCTAssertTrue(profiles.count >= 0, "Should return zero or more profiles")
+    func testGenerateAuthTokenUsesProfileCredentialsAndIgnoresManualCredentialFields() throws {
+        let credentialsContents = """
+        [default]
+        aws_access_key_id = AKIADEFAULT0000000000
+        aws_secret_access_key = defaultSecret
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: "") { _, _ in
+            let token = try AWSIAMAuthManager.generateAuthToken(
+                hostname: "mydb.123456789012.us-east-1.rds.amazonaws.com",
+                port: 3306,
+                username: "db_admin",
+                region: nil,
+                profile: nil,
+                accessKey: "MANUALKEYSHOULDBEIGNORED",
+                secretKey: "manual-secret-should-be-ignored",
+                parentWindow: nil
+            )
+
+            XCTAssertTrue(token.contains("DBUser=db_admin"))
+            XCTAssertTrue(token.contains("X-Amz-Credential=AKIADEFAULT0000000000"))
+        }
     }
 
-    func testCredentialsFilePathMatchesBookmarkManagerPath() {
-        let credentialsPath = AWSCredentials.credentialsFilePath
-        let awsDirectoryPath = AWSDirectoryBookmarkManager.awsDirectoryPath
-        XCTAssertTrue(credentialsPath.hasPrefix(awsDirectoryPath), "Credentials path should be inside AWS directory")
+    func testGenerateAuthTokenFallsBackToUsEast1WhenRegionCannotBeDetected() throws {
+        let credentialsContents = """
+        [default]
+        aws_access_key_id = AKIADEFAULT0000000000
+        aws_secret_access_key = defaultSecret
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: "") { _, _ in
+            let token = try AWSIAMAuthManager.generateAuthToken(
+                hostname: "localhost",
+                port: 3306,
+                username: "admin",
+                region: nil,
+                profile: "default",
+                accessKey: nil,
+                secretKey: nil,
+                parentWindow: nil
+            )
+
+            XCTAssertTrue(token.contains("us-east-1%2Frds-db%2Faws4_request"))
+        }
     }
 
-    func testConfigFilePathMatchesBookmarkManagerPath() {
-        let configPath = AWSCredentials.configFilePath
-        let awsDirectoryPath = AWSDirectoryBookmarkManager.awsDirectoryPath
-        XCTAssertTrue(configPath.hasPrefix(awsDirectoryPath), "Config path should be inside AWS directory")
+    func testGenerateAuthTokenThrowsCredentialsNotFoundForUnknownProfile() throws {
+        let credentialsContents = """
+        [default]
+        aws_access_key_id = AKIADEFAULT0000000000
+        aws_secret_access_key = defaultSecret
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: "") { _, _ in
+            XCTAssertThrowsError(try AWSIAMAuthManager.generateAuthToken(
+                hostname: "mydb.123456789012.us-east-1.rds.amazonaws.com",
+                port: 3306,
+                username: "admin",
+                region: "us-east-1",
+                profile: "missing-profile",
+                accessKey: nil,
+                secretKey: nil,
+                parentWindow: nil
+            )) { error in
+                guard let iamError = error as? AWSIAMAuthError else {
+                    return XCTFail("Expected AWSIAMAuthError, got \(error)")
+                }
+
+                XCTAssertEqual(iamError, .credentialsNotFound)
+            }
+        }
+    }
+
+    func testGenerateAuthTokenMapsGenerationErrorsToTokenGenerationFailed() throws {
+        let credentialsContents = """
+        [default]
+        aws_access_key_id = AKIADEFAULT0000000000
+        aws_secret_access_key = defaultSecret
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: "") { _, _ in
+            XCTAssertThrowsError(try AWSIAMAuthManager.generateAuthToken(
+                hostname: "mydb.123456789012.us-east-1.rds.amazonaws.com",
+                port: 3306,
+                username: "",
+                region: "us-east-1",
+                profile: "default",
+                accessKey: nil,
+                secretKey: nil,
+                parentWindow: nil
+            )) { error in
+                guard let iamError = error as? AWSIAMAuthError else {
+                    return XCTFail("Expected AWSIAMAuthError, got \(error)")
+                }
+
+                XCTAssertEqual(iamError, .tokenGenerationFailed)
+            }
+        }
+    }
+}
+
+private enum AWSTestEnvironment {
+
+    private static let lock = NSLock()
+
+    static func withTemporaryAWSFiles(
+        credentials: String,
+        config: String,
+        _ body: (_ credentialsPath: String, _ configPath: String) throws -> Void
+    ) throws {
+        lock.lock()
+        defer { lock.unlock() }
+
+        let fileManager = FileManager.default
+        let rootPath = fileManager.temporaryDirectory
+            .appendingPathComponent("SequelAce-AWSTests-\(UUID().uuidString)", isDirectory: true)
+
+        let credentialsURL = rootPath.appendingPathComponent("credentials", isDirectory: false)
+        let configURL = rootPath.appendingPathComponent("config", isDirectory: false)
+
+        try fileManager.createDirectory(at: rootPath, withIntermediateDirectories: true)
+        try credentials.write(to: credentialsURL, atomically: true, encoding: .utf8)
+        try config.write(to: configURL, atomically: true, encoding: .utf8)
+
+        let oldCredentialsPath = currentEnvironmentValue(for: "AWS_SHARED_CREDENTIALS_FILE")
+        let oldConfigPath = currentEnvironmentValue(for: "AWS_CONFIG_FILE")
+
+        setenv("AWS_SHARED_CREDENTIALS_FILE", credentialsURL.path, 1)
+        setenv("AWS_CONFIG_FILE", configURL.path, 1)
+
+        defer {
+            if let oldCredentialsPath {
+                setenv("AWS_SHARED_CREDENTIALS_FILE", oldCredentialsPath, 1)
+            } else {
+                unsetenv("AWS_SHARED_CREDENTIALS_FILE")
+            }
+
+            if let oldConfigPath {
+                setenv("AWS_CONFIG_FILE", oldConfigPath, 1)
+            } else {
+                unsetenv("AWS_CONFIG_FILE")
+            }
+
+            try? fileManager.removeItem(at: rootPath)
+            AWSIAMAuthManager.clearCachedCredentials(for: nil)
+        }
+
+        try body(credentialsURL.path, configURL.path)
+    }
+
+    private static func currentEnvironmentValue(for key: String) -> String? {
+        guard let value = getenv(key) else {
+            return nil
+        }
+
+        return String(cString: value)
     }
 }

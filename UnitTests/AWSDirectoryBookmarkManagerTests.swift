@@ -43,7 +43,7 @@ final class AWSDirectoryBookmarkManagerTests: XCTestCase {
     func testIsAWSDirectoryAuthorizedReturnsBool() {
         let manager = AWSDirectoryBookmarkManager.shared
         // Just verify it returns without crashing and returns a boolean
-        let _ = manager.isAWSDirectoryAuthorized
+        _ = manager.isAWSDirectoryAuthorized
         // If we get here, the property works
         XCTAssertTrue(true)
     }
@@ -68,7 +68,7 @@ final class AWSDirectoryBookmarkManagerTests: XCTestCase {
     func testStartAccessingAWSDirectoryDoesNotCrash() {
         let manager = AWSDirectoryBookmarkManager.shared
         // Should not crash regardless of authorization state
-        let _ = manager.startAccessingAWSDirectory()
+        _ = manager.startAccessingAWSDirectory()
         XCTAssertTrue(true, "Should complete without crashing")
     }
 

@@ -105,6 +105,8 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 - (NSString *)_generateNameForConnection;
 
 - (void)_startEditingConnection;
+- (BOOL)_isAWSIAMEnabledForTCPIPConnection;
+- (void)_syncAWSIAMAndSSLInterfaceState;
 
 static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, void *key);
 
@@ -224,6 +226,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     if (awsError) {
         NSLog(@"AWS IAM Authentication token generation failed: %@", awsError.localizedDescription);
+        return nil;
+    }
+
+    if (![token length]) {
+        NSLog(@"AWS IAM Authentication token generation failed: empty authentication token returned");
         return nil;
     }
 
@@ -760,20 +767,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 {
     [self _startEditingConnection];
 
-    // SSL and AWS IAM are mutually exclusive
-    // When SSL is enabled, disable AWS IAM
-    if ([self useSSL] && [self useAWSIAMAuth]) {
-        [self setUseAWSIAMAuth:NO];
-        if (standardAWSIAMDetailsContainer) {
-            [standardAWSIAMDetailsContainer setHidden:YES];
-        }
-        // Re-enable password field
-        if (standardPasswordField) {
-            [standardPasswordField setEnabled:YES];
-            [standardPasswordField setPlaceholderString:@""];
-        }
+    if ([self useSSL] && [self _isAWSIAMEnabledForTCPIPConnection]) {
+        [self setUseAWSIAMAuth:NSControlStateValueOff];
     }
 
+    [self _syncAWSIAMAndSSLInterfaceState];
     [self resizeTabViewToConnectionType:[self type] animating:YES];
 }
 
@@ -790,6 +788,44 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [self _startEditingConnection];
 }
 
+- (BOOL)_isAWSIAMEnabledForTCPIPConnection
+{
+    return ([self type] == SPTCPIPConnection) && [self useAWSIAMAuth];
+}
+
+- (void)_syncAWSIAMAndSSLInterfaceState
+{
+    BOOL isTCPIPConnection = ([self type] == SPTCPIPConnection);
+    BOOL awsIAMEnabled = [self _isAWSIAMEnabledForTCPIPConnection];
+
+    // IAM connections always use TLS internally, so manual SSL settings are disabled for that mode.
+    if (awsIAMEnabled && [self useSSL]) {
+        [self setUseSSL:NSControlStateValueOff];
+    }
+
+    if (standardConnectionSSLDetailsContainer) {
+        [standardConnectionSSLDetailsContainer setHidden:(!isTCPIPConnection || awsIAMEnabled || ![self useSSL])];
+    }
+
+    if (standardAWSIAMDetailsContainer) {
+        [standardAWSIAMDetailsContainer setHidden:(!isTCPIPConnection || !awsIAMEnabled)];
+    }
+
+    if (standardPasswordField) {
+        [standardPasswordField setEnabled:!awsIAMEnabled];
+        if (awsIAMEnabled) {
+            [standardPasswordField setStringValue:@""];
+            [standardPasswordField setPlaceholderString:NSLocalizedString(@"Using IAM authentication", @"placeholder when AWS IAM auth is enabled")];
+        } else {
+            [standardPasswordField setPlaceholderString:@""];
+        }
+    }
+
+    if (awsAuthorizeButton) {
+        [awsAuthorizeButton setHidden:[self isAWSDirectoryAuthorized]];
+    }
+}
+
 #pragma mark -
 #pragma mark AWS IAM Authentication
 
@@ -800,33 +836,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 {
     [self _startEditingConnection];
 
-    // AWS IAM and manual SSL are mutually exclusive
-    // When AWS IAM is enabled, disable SSL checkbox (SSL is implicit for IAM)
-    if ([self useAWSIAMAuth]) {
-        [self setUseSSL:NO];
-        // Hide SSL details container
-        if (standardConnectionSSLDetailsContainer) {
-            [standardConnectionSSLDetailsContainer setHidden:YES];
-        }
-    }
-
-    // Show/hide AWS IAM details container
-    if (standardAWSIAMDetailsContainer) {
-        [standardAWSIAMDetailsContainer setHidden:![self useAWSIAMAuth]];
-    }
-
-    // Disable/enable password field - AWS IAM auth doesn't use password
-    if (standardPasswordField) {
-        [standardPasswordField setEnabled:![self useAWSIAMAuth]];
-        if ([self useAWSIAMAuth]) {
-            [standardPasswordField setStringValue:@""];
-            [standardPasswordField setPlaceholderString:NSLocalizedString(@"Using IAM authentication", @"placeholder when AWS IAM auth is enabled")];
-        } else {
-            [standardPasswordField setPlaceholderString:@""];
-        }
-    }
-
-    // Resize the view to show/hide AWS IAM details
+    [self _syncAWSIAMAndSSLInterfaceState];
     [self resizeTabViewToConnectionType:[self type] animating:YES];
 }
 
@@ -925,6 +935,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     // Trigger KVO updates for bindings
     [self willChangeValueForKey:@"isAWSDirectoryAuthorized"];
     [self didChangeValueForKey:@"isAWSDirectoryAuthorized"];
+
+    [self _syncAWSIAMAndSSLInterfaceState];
 }
 
 /**
@@ -1124,19 +1136,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [self setAwsRegion:([fav objectForKey:SPFavoriteAWSRegionKey] ? [fav objectForKey:SPFavoriteAWSRegionKey] : @"")];
     [self setAwsProfile:([fav objectForKey:SPFavoriteAWSProfileKey] ? [fav objectForKey:SPFavoriteAWSProfileKey] : @"default")];
 
-    // Update AWS IAM UI state based on restored setting
-    if (standardAWSIAMDetailsContainer) {
-        [standardAWSIAMDetailsContainer setHidden:![self useAWSIAMAuth]];
-    }
-    if (standardPasswordField) {
-        [standardPasswordField setEnabled:![self useAWSIAMAuth]];
-        if ([self useAWSIAMAuth]) {
-            [standardPasswordField setPlaceholderString:NSLocalizedString(@"Using IAM authentication", @"placeholder when AWS IAM auth is enabled")];
-        } else {
-            [standardPasswordField setPlaceholderString:@""];
-        }
-    }
-
     // SSL details
     [self setUseSSL:([fav objectForKey:SPFavoriteUseSSLKey] ? [[fav objectForKey:SPFavoriteUseSSLKey] intValue] : NSControlStateValueOff)];
     [self setSslKeyFileLocationEnabled:([fav objectForKey:SPFavoriteSSLKeyFileLocationEnabledKey] ? [[fav objectForKey:SPFavoriteSSLKeyFileLocationEnabledKey] intValue] : NSControlStateValueOff)];
@@ -1153,9 +1152,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [self setSshKeyLocation:([fav objectForKey:SPFavoriteSSHKeyLocationKey] ? [fav objectForKey:SPFavoriteSSHKeyLocationKey] : @"")];
     [self setSshPort:([fav objectForKey:SPFavoriteSSHPortKey] ? [fav objectForKey:SPFavoriteSSHPortKey] : @"")];
 
-    // Trigger an interface update
-    [self resizeTabViewToConnectionType:[self type] animating:(sender == self)];
-
     // Check whether the password exists in the keychain, and if so add it; also record the
     // keychain details so we can pass around only those details if the password doesn't change
     connectionKeychainItemName = !fav ? nil : [keychain nameForFavoriteName:[fav objectForKey:SPFavoriteNameKey] id:[fav objectForKey:SPFavoriteIDKey]];
@@ -1168,6 +1164,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     if (!fav || ![[self password] length]) {
         [self setPassword:nil];
     }
+
+    [self _syncAWSIAMAndSSLInterfaceState];
+
+    // Trigger an interface update
+    [self resizeTabViewToConnectionType:[self type] animating:(sender == self)];
 
     // Store the selected favorite ID for use with the document on connection
     if ([fav objectForKey:SPFavoriteIDKey]){
@@ -1202,8 +1203,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     switch ([self type])
     {
         case SPTCPIPConnection:
-            [favoritesOutlineView setNextKeyView:(![[standardPasswordField stringValue] length]) ? standardPasswordField : standardNameField];
+        {
+            BOOL shouldFocusPassword = (![self _isAWSIAMEnabledForTCPIPConnection] && ![[standardPasswordField stringValue] length]);
+            [favoritesOutlineView setNextKeyView:shouldFocusPassword ? standardPasswordField : standardNameField];
             break;
+        }
         case SPSocketConnection:
             [favoritesOutlineView setNextKeyView:(![[socketPasswordField stringValue] length]) ? socketPasswordField : socketNameField];
             break;
@@ -1285,6 +1289,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         @(NSControlStateValueOff),
         @(NSControlStateValueOff),
         @(NSControlStateValueOff),
+        @"",
+        @"default",
+        @(NSControlStateValueOff),
         @(NSControlStateValueOff),
         @(NSControlStateValueOff),
         @"",
@@ -1308,6 +1315,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         SPFavoriteTimeZoneIdentifierKey,
         SPFavoriteAllowDataLocalInfileKey,
         SPFavoriteEnableClearTextPluginKey,
+        SPFavoriteUseAWSIAMAuthKey,
+        SPFavoriteAWSRegionKey,
+        SPFavoriteAWSProfileKey,
         SPFavoriteUseSSLKey,
         SPFavoriteSSLKeyFileLocationEnabledKey,
         SPFavoriteSSLCertificateFileLocationEnabledKey,
@@ -1938,6 +1948,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             [self setName:favoriteName];
         }
     }
+
+    [self _syncAWSIAMAndSSLInterfaceState];
 }
 
 /**
@@ -2656,8 +2668,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [progressIndicator stopAnimation:self];
     [progressIndicatorText setHidden:YES];
 
-    // If SSL was enabled, check it was established correctly
-    if (useSSL && ([self type] == SPTCPIPConnection || [self type] == SPSocketConnection)) {
+    // If SSL was enabled (manually or implicitly via IAM), check it was established correctly
+    BOOL requiresSSL = (useSSL || [self _isAWSIAMEnabledForTCPIPConnection]);
+    if (requiresSSL && ([self type] == SPTCPIPConnection || [self type] == SPSocketConnection)) {
         if (![mySQLConnection isConnectedViaSSL]) {
             [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"SSL connection not established", @"SSL requested but not used title") message:NSLocalizedString(@"You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted.", @"SSL connection requested but not established error detail") callback:nil];
         }
@@ -3623,6 +3636,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         // Update AWS authorization UI state
         [self updateAWSAuthorizationUI];
+
+        // Track profile/region edits the same way as the IAM toggle.
+        [awsProfilePopup setTarget:self];
+        [awsProfilePopup setAction:@selector(updateAWSIAMInterface:)];
+        [awsRegionComboBox setTarget:self];
+        [awsRegionComboBox setAction:@selector(updateAWSIAMInterface:)];
 
         initComplete = YES;
 

@@ -35,7 +35,7 @@ If the MySQL server is on a different computer as Sequel Ace, it's called a _rem
 
 You can use a standard connection if the MySQL server is directly reachable -- e.g. if it is on your local network. If you cannot directly reach your server (e.g. it's behind a firewall), you will have to use a SSH connection. For more details see [Connecting to a MySQL Server on a Remote Host](remote-connection.html "Connecting to a MySQL Server on a Remote Host").
 
-At the moment, **Sequel Ace does not support SSL** encryption. If possible, use a SSH connection instead.
+Sequel Ace supports **SSL/TLS encryption** for MySQL connections. For remote servers, prefer SSL/TLS (or use an SSH tunnel) instead of plain TCP whenever possible.
 
 
 #### Standard Connection
@@ -125,7 +125,8 @@ If you're connecting to an **Amazon RDS** or **Aurora** MySQL database, you can 
 
 1. Your RDS/Aurora instance must have IAM authentication enabled
 2. You need an IAM user or role with the `rds-db:connect` permission
-3. AWS credentials configured in `~/.aws/credentials` (via AWS CLI or manually)
+3. AWS credentials configured in `~/.aws/credentials` and/or `~/.aws/config` (usually via AWS CLI)
+4. If your profile uses role assumption or MFA, make sure that flow already works in your local AWS CLI setup
 
 ##### Setup
 
@@ -136,21 +137,24 @@ If you're connecting to an **Amazon RDS** or **Aurora** MySQL database, you can 
 5. Click **Authorize Access to ~/.aws...** to grant Sequel Ace access to your AWS credentials folder
 6. Select your **AWS Profile** (e.g., `default`) from the dropdown
 7. Enter or select the **Region** (e.g., `us-east-1`), or leave empty to auto-detect from the hostname
+8. Connect as normal; Sequel Ace generates and uses an IAM token in place of the password
 
 ##### How It Works
 
 When you connect, Sequel Ace:
 1. Reads your AWS credentials from the selected profile
-2. Generates a temporary authentication token (valid for 15 minutes)
-3. Uses this token instead of a password to connect to your database
+2. Resolves role-assumption/MFA profiles when needed
+3. Generates a temporary authentication token (valid for 15 minutes)
+4. Uses this token instead of a password to connect to your database
 
 The token is automatically refreshed as needed during your session.
 
 ##### AWS Credentials File
 
-Your `~/.aws/credentials` file should look like:
+Your AWS profile files can look like this:
 
 ```ini
+# ~/.aws/credentials
 [default]
 aws_access_key_id = AKIAIOSFODNN7EXAMPLE
 aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
@@ -160,8 +164,47 @@ aws_access_key_id = AKIAI44QH8DHBEXAMPLE
 aws_secret_access_key = je7MtGbClwBF/2Zp9Utk/h3yCo8nvbEXAMPLEKEY
 ```
 
+```ini
+# ~/.aws/config
+[profile app-with-role]
+role_arn = arn:aws:iam::123456789012:role/DatabaseRole
+source_profile = default
+mfa_serial = arn:aws:iam::123456789012:mfa/your-user
+region = us-east-1
+```
+
 ##### Sandbox Access
 
 Sequel Ace is a sandboxed application and requires your permission to read the AWS credentials folder. When you first enable AWS IAM Authentication, click the **Authorize Access to ~/.aws...** button and select your `.aws` folder (usually located at `~/.aws` in your home directory). This permission is remembered for future sessions.
 
 > **Note:** AWS IAM Authentication uses SSL/TLS encryption automatically. The SSL checkbox is disabled when IAM authentication is enabled since encryption is always used.
+
+##### Network Paths and Tunnels (SSH, SSM, and Custom Setups)
+
+Sequel Ace handles IAM token generation, but it does not create AWS SSM sessions or custom VPN/port-forward workflows for you. If your database is not directly reachable from your Mac, you can always open your own tunnel outside Sequel Ace and then connect through `127.0.0.1:<local-port>`.
+
+Common approaches:
+
+- SSH local port forward (through a bastion host)
+- AWS Systems Manager Session Manager port forwarding
+- Any other local port-forward workflow used in your environment
+
+For example, AWS SSM supports forwarding a local port to a remote database host. See AWS documentation and announcement: [New Port Forwarding Using AWS System Manager Session Manager](https://aws.amazon.com/blogs/aws/new-port-forwarding-using-aws-system-manager-sessions-manager/).
+
+Example SSM port forward command:
+
+```bash
+aws ssm start-session \
+  --target i-0123456789abcdef0 \
+  --document-name AWS-StartPortForwardingSessionToRemoteHost \
+  --parameters '{"host":["mydb.123456789012.us-east-1.rds.amazonaws.com"],"portNumber":["3306"],"localPortNumber":["13306"]}'
+```
+
+With the tunnel/session running, connect Sequel Ace to:
+
+- Host: `127.0.0.1`
+- Port: `13306` (or your chosen local port)
+- Username: your DB/IAM-enabled username
+- AWS IAM Authentication: enabled (if your DB auth model expects IAM tokens)
+
+This pattern is often the most reliable option for bespoke enterprise networking, private subnets, and zero-trust environments.

@@ -110,6 +110,10 @@ final class RDSIAMAuthenticationTests: XCTestCase {
         XCTAssertTrue(RDSIAMAuthentication.isRDSHostname("something.rds.local"))
     }
 
+    func testIsRDSHostnameCaseInsensitive() {
+        XCTAssertTrue(RDSIAMAuthentication.isRDSHostname("MYDB.123456789012.US-EAST-1.RDS.AMAZONAWS.COM"))
+    }
+
     func testIsNotRDSHostname() {
         XCTAssertFalse(RDSIAMAuthentication.isRDSHostname("localhost"))
         XCTAssertFalse(RDSIAMAuthentication.isRDSHostname("192.168.1.1"))
@@ -177,6 +181,40 @@ final class RDSIAMAuthenticationTests: XCTestCase {
         XCTAssertTrue(token.contains("eu-west-2"))
     }
 
+    func testGenerateAuthTokenUsesDefaultMySQLPortWhenPortIsZero() throws {
+        let creds = AWSCredentials(
+            accessKeyId: "AKIAIOSFODNN7EXAMPLE",
+            secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+        )
+
+        let token = try RDSIAMAuthentication.generateAuthToken(
+            forHost: "mydb.123456789012.us-east-1.rds.amazonaws.com",
+            port: 0,
+            username: "admin",
+            region: "us-east-1",
+            credentials: creds
+        )
+
+        XCTAssertTrue(token.hasPrefix("mydb.123456789012.us-east-1.rds.amazonaws.com:3306/?"))
+    }
+
+    func testGenerateAuthTokenEncodesUsernameForQueryString() throws {
+        let creds = AWSCredentials(
+            accessKeyId: "AKIAIOSFODNN7EXAMPLE",
+            secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+        )
+
+        let token = try RDSIAMAuthentication.generateAuthToken(
+            forHost: "mydb.123456789012.us-east-1.rds.amazonaws.com",
+            port: 3306,
+            username: "admin+ops@example.com",
+            region: "us-east-1",
+            credentials: creds
+        )
+
+        XCTAssertTrue(token.contains("DBUser=admin%2Bops%40example.com"))
+    }
+
     func testGenerateAuthTokenThrowsForInvalidCredentials() {
         let invalidCreds = AWSCredentials(accessKeyId: "", secretAccessKey: "")
 
@@ -219,6 +257,25 @@ final class RDSIAMAuthenticationTests: XCTestCase {
             region: "us-east-1",
             credentials: creds
         ))
+    }
+
+    func testGenerateAuthTokenObjCMapsErrorsToNSError() {
+        var error: NSError?
+        let token = RDSIAMAuthentication.generateAuthTokenObjC(
+            forHost: "",
+            port: 3306,
+            username: "admin",
+            region: "us-east-1",
+            credentials: AWSCredentials(
+                accessKeyId: "AKIAIOSFODNN7EXAMPLE",
+                secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+            ),
+            error: &error
+        )
+
+        XCTAssertNil(token)
+        XCTAssertEqual(error?.domain, "RDSIAMAuthenticationErrorDomain")
+        XCTAssertEqual(error?.code, RDSIAMAuthenticationError.invalidParameters.rawValue)
     }
 
     // MARK: - Token Lifetime Tests

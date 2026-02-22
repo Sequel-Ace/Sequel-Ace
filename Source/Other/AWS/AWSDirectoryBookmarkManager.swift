@@ -39,7 +39,10 @@ import OSLog
     private static let log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "AWSDirectoryBookmark")
 
     /// The bookmark creation options for security-scoped access
-    private let bookmarkCreationOptions = URL.BookmarkCreationOptions(rawValue: 1 << 11) // NSURLBookmarkCreationWithSecurityScope
+    private let bookmarkCreationOptions: URL.BookmarkCreationOptions = [
+        .withSecurityScope,
+        .securityScopeAllowOnlyReadAccess
+    ]
 
     /// Track if we're currently accessing the AWS directory
     private var isAccessingAWSDirectory = false
@@ -47,7 +50,7 @@ import OSLog
     /// The resolved URL for the AWS directory (if access has been started)
     private var resolvedAWSDirectoryURL: URL?
 
-    private override init() {
+    override private init() {
         super.init()
     }
 
@@ -95,9 +98,7 @@ import OSLog
 
         for bookmarkDict in bookmarkManager.bookmarks {
             for key in bookmarkDict.keys {
-                // The key is stored as a file:// URL string
-                if let decodedKey = key.removingPercentEncoding,
-                   decodedKey.contains(".aws") || key.contains(".aws") {
+                if isAWSDirectoryBookmarkKey(key) {
                     os_log(.info, log: Self.log, "Found AWS directory bookmark: %{public}@", key)
                     return true
                 }
@@ -120,8 +121,7 @@ import OSLog
         // Look for the AWS directory bookmark
         for bookmarkDict in bookmarkManager.bookmarks {
             for (key, _) in bookmarkDict {
-                if let decodedKey = key.removingPercentEncoding,
-                   decodedKey.contains(".aws") || key.contains(".aws") {
+                if isAWSDirectoryBookmarkKey(key) {
                     // Try to get the resolved URL via the bookmark manager
                     if let resolvedURL = bookmarkManager.bookmarkFor(filename: key) {
                         os_log(.info, log: Self.log, "Started accessing AWS directory via bookmark")
@@ -191,8 +191,7 @@ import OSLog
         // Find and revoke the AWS directory bookmark
         for bookmarkDict in bookmarkManager.bookmarks {
             for key in bookmarkDict.keys {
-                if let decodedKey = key.removingPercentEncoding,
-                   decodedKey.contains(".aws") || key.contains(".aws") {
+                if isAWSDirectoryBookmarkKey(key) {
                     if bookmarkManager.revokeBookmark(filename: key) {
                         os_log(.info, log: Self.log, "Revoked AWS directory bookmark")
                         return true
@@ -202,6 +201,20 @@ import OSLog
         }
 
         return false
+    }
+
+    private func isAWSDirectoryBookmarkKey(_ key: String) -> Bool {
+        let decodedKey = key.removingPercentEncoding ?? key
+        let path: String
+
+        if let url = URL(string: decodedKey), url.isFileURL {
+            path = url.path
+        } else {
+            path = decodedKey
+        }
+
+        let normalizedPath = path.replacingOccurrences(of: "\\", with: "/")
+        return normalizedPath.hasSuffix("/.aws") || URL(fileURLWithPath: normalizedPath).lastPathComponent == ".aws"
     }
 
     // MARK: - File Reading
