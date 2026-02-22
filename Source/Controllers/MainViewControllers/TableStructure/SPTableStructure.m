@@ -120,11 +120,13 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 - (NSString *)_normalizedFieldTypeFromDefinition:(NSDictionary *)fieldDefinition;
 - (BOOL)_isIntegerFieldType:(NSString *)fieldType;
 - (BOOL)_isBinaryFieldType:(NSString *)fieldType;
+- (BOOL)_isStringFieldType:(NSString *)fieldType;
 - (NSDictionary *)_columnStatsForFieldName:(NSString *)fieldName lengthFunction:(NSString *)lengthFunction;
 - (NSDecimalNumber *)_decimalNumberFromStatValue:(id)value;
 - (NSUInteger)_unsignedIntegerValueFromStatValue:(id)value;
 - (NSString *)_estimatedIntegerTypeForMinimum:(NSDecimalNumber *)minimum maximum:(NSDecimalNumber *)maximum;
 - (NSString *)_estimatedOptimizedFieldTypeForField:(NSDictionary *)fieldDefinition failureReason:(NSString **)failureReason;
+- (void)_showOptimizedFieldTypeFallbackTask:(NSDictionary *)context;
 
 #pragma mark - SPTableStructureDelegate
 
@@ -362,7 +364,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				NSString *message = NSLocalizedString(@"Error while fetching the optimized field type", @"error while fetching the optimized field type message");
 
 				if ([mySQLConnection isConnected]) {
-					 [NSAlert createWarningAlertWithTitle:message message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while fetching the optimized field type.\n\nMySQL said:%@", @"an error occurred while fetching the optimized field type.\n\nMySQL said:%@"), lastErrorMessage] callback:nil];
+					 [NSAlert createWarningAlertWithTitle:message message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while fetching the optimized field type.\n\nMySQL said: %@", @"an error occurred while fetching the optimized field type.\n\nMySQL said: %@"), lastErrorMessage] callback:nil];
 				}
 				return;
 			}
@@ -384,24 +386,59 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		}
 	}
 
-	NSString *fallbackFailureReason = nil;
-	NSString *estimatedType = [self _estimatedOptimizedFieldTypeForField:selectedField failureReason:&fallbackFailureReason];
-	NSString *message = nil;
+	NSDictionary *fallbackContext = @{
+		@"field" : [NSDictionary dictionaryWithDictionary:selectedField],
+		@"fieldName" : (fieldName ?: @"")
+	};
 
-	if ([estimatedType length]) {
-		message = [NSString stringWithFormat:NSLocalizedString(@"%@\n\nEstimated from current column values because PROCEDURE ANALYSE() is unavailable on this server version.", @"show optimized field type fallback estimate message"), estimatedType];
+	[tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Estimating optimized field type...", @"estimating optimized field type task status message")];
+
+	if ([NSThread isMainThread]) {
+		[NSThread detachNewThreadWithName:SPCtxt(@"SPTableStructure optimized field type estimate task", tableDocumentInstance)
+								   target:self
+								 selector:@selector(_showOptimizedFieldTypeFallbackTask:)
+								   object:fallbackContext];
+
+		[tableDocumentInstance enableTaskCancellationWithTitle:NSLocalizedString(@"Cancel", @"cancel button")
+												callbackObject:self
+											  callbackFunction:NULL];
 	}
 	else {
-		message = fallbackFailureReason ?: NSLocalizedString(@"No optimized field type found.", @"no optimized field type found. message");
+		[self _showOptimizedFieldTypeFallbackTask:fallbackContext];
 	}
+}
 
-	[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Optimized type for field '%@'", @"Optimized type for field %@"), fieldName] message:message callback:nil];
+- (void)_showOptimizedFieldTypeFallbackTask:(NSDictionary *)context
+{
+	@autoreleasepool {
+		NSDictionary *selectedField = [context objectForKey:@"field"];
+		NSString *fieldName = [context objectForKey:@"fieldName"];
+		NSString *fallbackFailureReason = nil;
+		NSString *estimatedType = [self _estimatedOptimizedFieldTypeForField:selectedField failureReason:&fallbackFailureReason];
+		NSString *message = nil;
+
+		if ([estimatedType length]) {
+			message = [NSString stringWithFormat:NSLocalizedString(@"%@\n\nEstimated from current column values because PROCEDURE ANALYSE() is unavailable on this server version.", @"show optimized field type fallback estimate message"), estimatedType];
+		}
+		else {
+			message = fallbackFailureReason ?: NSLocalizedString(@"No optimized field type found.", @"no optimized field type found. message");
+		}
+
+		SPMainQSync(^{
+			[self->tableDocumentInstance endTask];
+			[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Optimized type for field '%@'", @"Optimized type for field %@"), fieldName] message:message callback:nil];
+		});
+	}
 }
 
 - (NSString *)_normalizedFieldTypeFromDefinition:(NSDictionary *)fieldDefinition
 {
-	NSString *fieldType = [[[fieldDefinition objectForKey:@"type"] description] uppercaseString];
-	if (!fieldType) return @"";
+	id rawType = [fieldDefinition objectForKey:@"type"];
+	if (!rawType || [rawType isNSNull]) return @"";
+
+	NSString *fieldType = [[rawType description] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+	if (![fieldType length]) return @"";
+	fieldType = [fieldType uppercaseString];
 
 	NSRange typeSuffixRange = [fieldType rangeOfString:@"("];
 	if (typeSuffixRange.location != NSNotFound) {
@@ -413,14 +450,35 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 - (BOOL)_isIntegerFieldType:(NSString *)fieldType
 {
-	NSSet *integerTypes = [NSSet setWithObjects:@"TINYINT", @"SMALLINT", @"MEDIUMINT", @"INT", @"INTEGER", @"BIGINT", nil];
+	static NSSet *integerTypes = nil;
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		integerTypes = [NSSet setWithObjects:@"TINYINT", @"SMALLINT", @"MEDIUMINT", @"INT", @"INTEGER", @"BIGINT", nil];
+	});
+
 	return [integerTypes containsObject:fieldType];
 }
 
 - (BOOL)_isBinaryFieldType:(NSString *)fieldType
 {
-	NSSet *binaryTypes = [NSSet setWithObjects:@"BINARY", @"VARBINARY", @"TINYBLOB", @"BLOB", @"MEDIUMBLOB", @"LONGBLOB", nil];
+	static NSSet *binaryTypes = nil;
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		binaryTypes = [NSSet setWithObjects:@"BINARY", @"VARBINARY", @"TINYBLOB", @"BLOB", @"MEDIUMBLOB", @"LONGBLOB", nil];
+	});
+
 	return [binaryTypes containsObject:fieldType];
+}
+
+- (BOOL)_isStringFieldType:(NSString *)fieldType
+{
+	static NSSet *stringTypes = nil;
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		stringTypes = [NSSet setWithObjects:@"CHAR", @"VARCHAR", @"NCHAR", @"NVARCHAR", @"TINYTEXT", @"TEXT", @"MEDIUMTEXT", @"LONGTEXT", @"JSON", nil];
+	});
+
+	return [stringTypes containsObject:fieldType];
 }
 
 - (NSDictionary *)_columnStatsForFieldName:(NSString *)fieldName lengthFunction:(NSString *)lengthFunction
@@ -523,17 +581,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	BOOL isIntegerType = [self _isIntegerFieldType:fieldType];
 	BOOL isBinaryType = [self _isBinaryFieldType:fieldType];
-	NSSet *stringTypes = [NSSet setWithObjects:@"CHAR", @"VARCHAR", @"NCHAR", @"NVARCHAR", @"TINYTEXT", @"TEXT", @"MEDIUMTEXT", @"LONGTEXT", @"JSON", nil];
-	BOOL isStringType = [stringTypes containsObject:fieldType];
+	BOOL isStringType = [self _isStringFieldType:fieldType];
 
 	if (!isIntegerType && !isBinaryType && !isStringType) {
-		if (failureReason) {
-			*failureReason = [NSString stringWithFormat:NSLocalizedString(@"No fallback estimate is currently available for %@ columns.", @"show optimized field type fallback unsupported field type"), fieldType];
-		}
-		return nil;
-	}
-
-	if ([fieldType isEqualToString:@"ENUM"] || [fieldType isEqualToString:@"SET"]) {
 		if (failureReason) {
 			*failureReason = [NSString stringWithFormat:NSLocalizedString(@"No fallback estimate is currently available for %@ columns.", @"show optimized field type fallback unsupported field type"), fieldType];
 		}
@@ -555,7 +605,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	if (!stats || (isStringType && !byteLengthStats)) {
 		if (failureReason) {
-			*failureReason = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while estimating an optimized field type.\n\nMySQL said:%@", @"show optimized field type fallback query error message"), [mySQLConnection lastErrorMessage]];
+			*failureReason = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while estimating an optimized field type.\n\nMySQL said: %@", @"show optimized field type fallback query error message"), [mySQLConnection lastErrorMessage]];
 		}
 		return nil;
 	}
