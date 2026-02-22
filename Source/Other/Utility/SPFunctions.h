@@ -28,6 +28,8 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
+#import <Foundation/Foundation.h>
+
 typedef void(^SAVoidCompletionBlock)(void);
 
 void executeOnMainThreadAfterADelay(SAVoidCompletionBlock block, double delayInSeconds);

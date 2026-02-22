@@ -95,6 +95,11 @@
                                  @"ssh: connect to host example.com port 22: No route to host";
     XCTAssertFalse(SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(@"The SSH Tunnel has unexpectedly closed.", publicIPDebugLog, @"example.com"));
 
+    NSString *aliasedPublicIPDebugLog = @"debug1: Connecting to prod-db [8.8.8.8] port 22.\n"
+                                        @"debug1: connect to address 8.8.8.8 port 22: No route to host\n"
+                                        @"ssh: connect to host prod-db port 22: No route to host";
+    XCTAssertFalse(SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(@"The SSH Tunnel has unexpectedly closed.", aliasedPublicIPDebugLog, @"prod-db"));
+
     XCTAssertTrue(SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(@"No route to host", nil, @"db.local"));
     XCTAssertFalse(SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(@"Connection timed out", @"Operation timed out", @"192.168.1.5"));
 }

@@ -241,18 +241,21 @@ BOOL SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(NSString *errorMessage, NS
         return NO;
     }
 
-    NSMutableOrderedSet<NSString *> *candidates = [NSMutableOrderedSet orderedSet];
-    NSString *trimmedSSHHost = SPTrimmedHostCandidate(sshHost);
-    if ([trimmedSSHHost length]) [candidates addObject:trimmedSSHHost];
+    NSMutableOrderedSet<NSString *> *parsedCandidates = [NSMutableOrderedSet orderedSet];
 
-    SPAddSSHRegexMatches(candidates, debugDetail, @"connect to address ([^\\s]+)\\s+port\\s+\\d+:\\s+No route to host");
-    SPAddSSHRegexMatches(candidates, debugDetail, @"Connecting to .*?\\[([^\\]]+)\\]\\s+port\\s+\\d+");
+    SPAddSSHRegexMatches(parsedCandidates, debugDetail, @"connect to address ([^\\s]+)\\s+port\\s+\\d+:\\s+No route to host");
+    SPAddSSHRegexMatches(parsedCandidates, debugDetail, @"Connecting to .*?\\[([^\\]]+)\\]\\s+port\\s+\\d+");
 
-    for (NSString *candidate in candidates) {
+    for (NSString *candidate in parsedCandidates) {
         if (SPIsLikelyLocalNetworkHost(candidate)) return YES;
     }
 
-    return NO;
+    if ([parsedCandidates count]) return NO;
+
+    NSString *trimmedSSHHost = SPTrimmedHostCandidate(sshHost);
+    if (![trimmedSSHHost length]) return NO;
+
+    return SPIsLikelyLocalNetworkHost(trimmedSSHHost);
 }
 
 void SP_swizzleInstanceMethod(Class c, SEL original, SEL replacement)
