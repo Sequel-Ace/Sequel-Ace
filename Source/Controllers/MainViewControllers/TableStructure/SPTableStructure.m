@@ -124,6 +124,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 - (NSDictionary *)_columnStatsForFieldName:(NSString *)fieldName lengthFunction:(NSString *)lengthFunction;
 - (NSDecimalNumber *)_decimalNumberFromStatValue:(id)value;
 - (NSUInteger)_unsignedIntegerValueFromStatValue:(id)value;
+- (NSUInteger)_maxBytesPerCharacterForFieldDefinition:(NSDictionary *)fieldDefinition;
 - (NSString *)_estimatedIntegerTypeForMinimum:(NSDecimalNumber *)minimum maximum:(NSDecimalNumber *)maximum;
 - (NSString *)_estimatedOptimizedFieldTypeForField:(NSDictionary *)fieldDefinition failureReason:(NSString **)failureReason;
 - (void)_showOptimizedFieldTypeFallbackTask:(NSDictionary *)context;
@@ -528,6 +529,35 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	return (NSUInteger)parsedValue;
 }
 
+- (NSUInteger)_maxBytesPerCharacterForFieldDefinition:(NSDictionary *)fieldDefinition
+{
+	NSString *encodingName = [fieldDefinition objectForKey:@"encodingName"];
+	if (![encodingName length]) encodingName = [fieldDefinition objectForKey:@"encoding"];
+	if (![encodingName length]) encodingName = [tableDataInstance tableEncoding];
+	if (![encodingName length]) return 1;
+
+	NSArray *availableEncodings = [databaseDataInstance getDatabaseCharacterSetEncodings];
+	for (NSDictionary *encoding in availableEncodings) {
+		NSString *characterSetName = [encoding safeObjectForKey:@"CHARACTER_SET_NAME"];
+		if (![characterSetName length]) characterSetName = [encoding safeObjectForKey:@"Charset"];
+		if (![characterSetName length]) continue;
+
+		if ([characterSetName caseInsensitiveCompare:encodingName] != NSOrderedSame) continue;
+
+		NSUInteger maxBytes = [self _unsignedIntegerValueFromStatValue:[encoding safeObjectForKey:@"MAXLEN"]];
+		if (!maxBytes) maxBytes = [self _unsignedIntegerValueFromStatValue:[encoding safeObjectForKey:@"Maxlen"]];
+
+		return MAX((NSUInteger)1, maxBytes);
+	}
+
+	NSString *lowercaseEncoding = [encodingName lowercaseString];
+	if ([lowercaseEncoding hasPrefix:@"utf8mb4"] || [lowercaseEncoding hasPrefix:@"utf16"] || [lowercaseEncoding hasPrefix:@"utf32"]) return 4;
+	if ([lowercaseEncoding hasPrefix:@"utf8"]) return 3;
+	if ([lowercaseEncoding hasPrefix:@"ucs2"]) return 2;
+
+	return 1;
+}
+
 - (NSString *)_estimatedIntegerTypeForMinimum:(NSDecimalNumber *)minimum maximum:(NSDecimalNumber *)maximum
 {
 	typedef struct {
@@ -657,8 +687,13 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	if (minLength == maxLength && maxLength <= 255) {
 		return [NSString stringWithFormat:@"CHAR(%lu)", (unsigned long)maxLength];
 	}
-	if (maxByteLength <= 65535) {
+	NSUInteger maxBytesPerCharacter = [self _maxBytesPerCharacterForFieldDefinition:fieldDefinition];
+	NSUInteger maxSafeVarcharLength = (maxBytesPerCharacter > 0) ? (65535 / maxBytesPerCharacter) : 65535;
+	if (maxByteLength <= 65535 && maxLength <= maxSafeVarcharLength) {
 		return [NSString stringWithFormat:@"VARCHAR(%lu)", (unsigned long)maxLength];
+	}
+	if (maxByteLength <= 65535) {
+		return @"TEXT";
 	}
 	if (maxByteLength <= 16777215) {
 		return @"MEDIUMTEXT";
