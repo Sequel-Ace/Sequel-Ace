@@ -3796,6 +3796,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     [prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
     [prefs removeObserver:self forKeyPath:SPCustomQueryEnableBracketHighlighting];
+    [prefs removeObserver:self forKeyPath:SPDisplayTableViewColumnTypes];
     [NSObject cancelPreviousPerformRequestsWithTarget:customQueryView];
     
     [self clearQueryLoadTimer];
