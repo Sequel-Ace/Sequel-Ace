@@ -476,7 +476,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	static NSSet *stringTypes = nil;
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^{
-		stringTypes = [NSSet setWithObjects:@"CHAR", @"VARCHAR", @"NCHAR", @"NVARCHAR", @"TINYTEXT", @"TEXT", @"MEDIUMTEXT", @"LONGTEXT", @"JSON", nil];
+		stringTypes = [NSSet setWithObjects:@"CHAR", @"VARCHAR", @"NCHAR", @"NVARCHAR", @"TINYTEXT", @"TEXT", @"MEDIUMTEXT", @"LONGTEXT", nil];
 	});
 
 	return [stringTypes containsObject:fieldType];
