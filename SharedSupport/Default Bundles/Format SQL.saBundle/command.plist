@@ -20,10 +20,15 @@ $sql = '' unless defined $sql;
 print $sql and exit 0 unless $sql =~ /\S/;
 
 my @placeholders;
-my $line_comment_break = "__SA_FMT_LINE_BREAK__";
+my $placeholder_prefix;
+do {
+    $placeholder_prefix = "__SA_FMT_" . $$ . "_" . int(rand(1_000_000_000)) . "__";
+} while (index($sql, $placeholder_prefix) &gt;= 0);
+
+my $line_comment_break = "${placeholder_prefix}LINE_BREAK__";
 sub _stash_placeholder {
     my ($value) = @_;
-    my $token = "__SA_FMT_" . scalar(@placeholders) . "__";
+    my $token = "${placeholder_prefix}" . scalar(@placeholders) . "__";
     push @placeholders, $value;
     return $token;
 }
@@ -107,7 +112,7 @@ for my $line (@lines) {
 my $formatted = join("\n", @formatted_lines);
 
 for my $idx (0 .. $#placeholders) {
-    my $token = "__SA_FMT_${idx}__";
+    my $token = "${placeholder_prefix}${idx}__";
     my $value = $placeholders[$idx];
     $formatted =~ s/\Q$token\E/$value/g;
 }
