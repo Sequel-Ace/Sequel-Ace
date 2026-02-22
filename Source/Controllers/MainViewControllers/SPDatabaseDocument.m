@@ -5404,6 +5404,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 return;
             }
 
+            if (targetDatabaseIndex == NSNotFound) {
+                SPMainQSync(^{
+                    [self->chooseDatabaseButton safeAddItemWithTitle:targetDatabaseName];
+                });
+                targetDatabaseIndex = [[chooseDatabaseButton onMainThread] indexOfItemWithTitle:targetDatabaseName];
+            }
+
             if (targetDatabaseIndex != NSNotFound) {
                 [[chooseDatabaseButton onMainThread] selectItemWithTitle:targetDatabaseName];
             } else {
