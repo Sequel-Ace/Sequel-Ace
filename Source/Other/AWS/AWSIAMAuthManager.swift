@@ -113,6 +113,9 @@ import Security
     /// Key: profile name, Value: (credentials, expiration date)
     private static var credentialCache = [String: (credentials: AWSCredentials, expiration: Date)]()
     private static let cacheLock = NSLock()
+    private static let defaultRoleCredentialCacheDuration: TimeInterval = 3600
+    private static let minimumRoleCredentialCacheDuration: TimeInterval = 1
+    private static let maximumRoleCredentialCacheDuration: TimeInterval = 3600
 
     /// Cache duration margin - refresh credentials 5 minutes before expiration
     private static let cacheExpirationMargin: TimeInterval = 300
@@ -230,8 +233,10 @@ import Security
             )
         }
 
-        // Cache the credentials (STS credentials typically last 1 hour)
-        cacheCredentials(assumedCredentials, for: profileName, duration: 3600)
+        // Cache for the remaining STS credential lifetime when available.
+        // If expiration is absent, fall back to the default one-hour behavior.
+        let cacheDuration = cacheDurationForAssumedCredentials(assumedCredentials)
+        cacheCredentials(assumedCredentials, for: profileName, duration: cacheDuration)
 
         return assumedCredentials
     }
@@ -266,6 +271,22 @@ import Security
         let expiration = Date().addingTimeInterval(duration)
         credentialCache[profileName] = (credentials, expiration)
         log.info("Cached credentials for profile '\(profileName)' until \(expiration)")
+    }
+
+    private static func cacheDurationForAssumedCredentials(_ credentials: AWSCredentials) -> TimeInterval {
+        guard let expiration = credentials.expiration else {
+            return defaultRoleCredentialCacheDuration
+        }
+
+        let secondsRemaining = expiration.timeIntervalSinceNow
+        if !secondsRemaining.isFinite {
+            return defaultRoleCredentialCacheDuration
+        }
+
+        return min(
+            maximumRoleCredentialCacheDuration,
+            max(minimumRoleCredentialCacheDuration, secondsRemaining)
+        )
     }
 
     /// Clear cached credentials for a profile (call when connection is closed)

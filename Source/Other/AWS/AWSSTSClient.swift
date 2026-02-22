@@ -114,6 +114,10 @@ import OSLog
         region: String,
         credentials: AWSCredentials
     ) async throws -> AWSCredentials {
+        let normalizedRegion = region
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+
         // Validate inputs
         guard credentials.isValid else {
             throw AWSSTSClientError.invalidCredentials
@@ -123,7 +127,7 @@ import OSLog
             throw AWSSTSClientError.invalidParameters
         }
 
-        guard !region.isEmpty else {
+        guard !normalizedRegion.isEmpty else {
             throw AWSSTSClientError.invalidParameters
         }
 
@@ -144,7 +148,7 @@ import OSLog
         effectiveDuration = max(900, min(43200, effectiveDuration))
 
         // Build the STS endpoint using partition-aware DNS suffix resolution.
-        let host = endpointHost(for: region)
+        let host = endpointHost(for: normalizedRegion)
         guard let endpoint = URL(string: "https://\(host)/") else {
             throw AWSSTSClientError.invalidParameters
         }
@@ -195,7 +199,7 @@ import OSLog
         let canonicalRequest = "POST\n/\n\n\(canonicalHeaders)\n\(signedHeaders)\n\(payloadHash)"
 
         // Create string to sign
-        let credentialScope = "\(dateStamp)/\(region)/\(service)/\(awsRequest)"
+        let credentialScope = "\(dateStamp)/\(normalizedRegion)/\(service)/\(awsRequest)"
         let canonicalRequestHash = sha256Hex(canonicalRequest)
         let stringToSign = "\(algorithm)\n\(amzDate)\n\(credentialScope)\n\(canonicalRequestHash)"
 
@@ -203,7 +207,7 @@ import OSLog
         let signingKey = deriveSigningKey(
             secretKey: credentials.secretAccessKey,
             dateStamp: dateStamp,
-            region: region,
+            region: normalizedRegion,
             service: service
         )
         let signature = hmacSHA256Hex(stringToSign, key: signingKey)
@@ -377,11 +381,26 @@ import OSLog
             throw AWSSTSClientError.invalidResponse
         }
 
+        let expirationDate = parseISO8601Date(result.expiration)
         return AWSCredentials(
             accessKeyId: accessKeyId,
             secretAccessKey: secretAccessKey,
-            sessionToken: result.sessionToken
+            sessionToken: result.sessionToken,
+            expiration: expirationDate
         )
+    }
+
+    private static func parseISO8601Date(_ value: String?) -> Date? {
+        guard let value, !value.isEmpty else { return nil }
+
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: value) {
+            return date
+        }
+
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.date(from: value)
     }
 
     private static func parseErrorFromXML(_ xml: String) -> String? {

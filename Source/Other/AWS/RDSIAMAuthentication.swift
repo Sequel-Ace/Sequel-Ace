@@ -315,8 +315,7 @@ import OSLog
 
         let lowercased = hostname.lowercased()
         return lowercased.hasSuffix(".rds.amazonaws.com") ||
-               lowercased.hasSuffix(".rds.amazonaws.com.cn") ||
-               lowercased.contains(".rds.")
+               lowercased.hasSuffix(".rds.amazonaws.com.cn")
     }
 
     /// Token lifetime in seconds

@@ -329,6 +329,26 @@ final class AWSSTSClientTests: XCTestCase {
         }
     }
 
+    func testAssumeRoleAsyncThrowsForWhitespaceOnlyRegion() async {
+        let credentials = AWSCredentials(
+            accessKeyId: "AKIAIOSFODNN7EXAMPLE",
+            secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+        )
+
+        do {
+            _ = try await AWSSTSClient.assumeRole(
+                roleArn: "arn:aws:iam::123456789012:role/DatabaseAccess",
+                region: "   ",
+                credentials: credentials
+            )
+            XCTFail("Expected invalidParameters")
+        } catch let error as AWSSTSClientError {
+            XCTAssertEqual(error, .invalidParameters)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
     func testAssumeRoleAsyncThrowsWhenMFASerialProvidedWithoutToken() async {
         let credentials = AWSCredentials(
             accessKeyId: "AKIAIOSFODNN7EXAMPLE",

@@ -3458,7 +3458,7 @@
 "Please select the .aws directory in your home folder (usually ~/.aws). This directory should contain your AWS credentials and/or config files." = "Please select the .aws directory in your home folder (usually ~/.aws). This directory should contain your AWS credentials and/or config files.";
 
 /* AWS MFA dialog content */
-"Profile: %@\nMFA Device: %@\n\nEnter your 6-digit MFA code from your authenticator app:" = "Profile: %@\nMFA Device: %@\n\nEnter your 6-digit MFA code from your authenticator app:";
+"Profile: %@\nMFA Device: %@\n\nEnter your 6-digit MFA code from your authenticator app:" = "Profile: %1$@\nMFA Device: %2$@\n\nEnter your 6-digit MFA code from your authenticator app:";
 
 /* AWS STS timeout error */
 "STS request timed out" = "STS request timed out";

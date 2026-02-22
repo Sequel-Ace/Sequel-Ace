@@ -43,9 +43,11 @@ import OSLog
         .withSecurityScope,
         .securityScopeAllowOnlyReadAccess
     ]
+    private let stateLock = NSLock()
 
     /// Track if we're currently accessing the AWS directory
     private var isAccessingAWSDirectory = false
+    private var accessReferenceCount = 0
 
     /// The resolved URL for the AWS directory (if access has been started)
     private var resolvedAWSDirectoryURL: URL?
@@ -63,7 +65,7 @@ import OSLog
 
     /// The active AWS directory path when bookmark access is active.
     @objc var awsDirectoryBasePath: String {
-        if let resolvedPath = resolvedAWSDirectoryURL?.path, resolvedPath.isNotEmpty {
+        if let resolvedPath = currentResolvedAWSDirectoryURL()?.path, resolvedPath.isNotEmpty {
             return resolvedPath
         }
         return Self.awsDirectoryPath
@@ -87,6 +89,7 @@ import OSLog
         // Validate that the bookmark still resolves and grants access.
         if hasAWSDirectoryBookmark() {
             if startAccessingAWSDirectory() {
+                defer { stopAccessingAWSDirectory() }
                 os_log(.info, log: Self.log, "AWS directory authorized via bookmark")
                 return true
             }
@@ -135,8 +138,12 @@ import OSLog
     /// Returns true if access was successfully started
     @objc @discardableResult
     func startAccessingAWSDirectory() -> Bool {
+        stateLock.lock()
         if isAccessingAWSDirectory {
-            os_log(.debug, log: Self.log, "Already accessing AWS directory")
+            accessReferenceCount += 1
+            let activeReferences = accessReferenceCount
+            stateLock.unlock()
+            os_log(.debug, log: Self.log, "Already accessing AWS directory (%{public}d active references)", activeReferences)
             return true
         }
 
@@ -148,9 +155,11 @@ import OSLog
                 if isAWSDirectoryBookmarkKey(key) {
                     // Try to get the resolved URL via the bookmark manager
                     if let resolvedURL = bookmarkManager.bookmarkFor(filename: key) {
-                        os_log(.info, log: Self.log, "Started accessing AWS directory via bookmark")
                         resolvedAWSDirectoryURL = resolvedURL
                         isAccessingAWSDirectory = true
+                        accessReferenceCount = 1
+                        stateLock.unlock()
+                        os_log(.info, log: Self.log, "Started accessing AWS directory via bookmark")
                         return true
                     }
                 }
@@ -160,22 +169,45 @@ import OSLog
         // Check if directly accessible (non-sandboxed)
         let awsPath = Self.awsDirectoryPath
         if FileManager.default.isReadableFile(atPath: awsPath + "/credentials") {
-            os_log(.info, log: Self.log, "AWS directory directly accessible")
+            resolvedAWSDirectoryURL = nil
             isAccessingAWSDirectory = true
+            accessReferenceCount = 1
+            stateLock.unlock()
+            os_log(.info, log: Self.log, "AWS directory directly accessible")
             return true
         }
 
+        stateLock.unlock()
         os_log(.error, log: Self.log, "Failed to start accessing AWS directory")
         return false
     }
 
     /// Stop accessing the AWS directory
     @objc func stopAccessingAWSDirectory() {
-        if let url = resolvedAWSDirectoryURL {
-            url.stopAccessingSecurityScopedResource()
-            resolvedAWSDirectoryURL = nil
+        var urlToStop: URL?
+        var remainingReferences = 0
+
+        stateLock.lock()
+        if accessReferenceCount > 1 {
+            accessReferenceCount -= 1
+            remainingReferences = accessReferenceCount
+            stateLock.unlock()
+            os_log(.debug, log: Self.log, "Retaining AWS directory access (%{public}d active references)", remainingReferences)
+            return
         }
+
+        if accessReferenceCount == 1 {
+            urlToStop = resolvedAWSDirectoryURL
+        }
+
+        resolvedAWSDirectoryURL = nil
+        accessReferenceCount = 0
         isAccessingAWSDirectory = false
+        stateLock.unlock()
+
+        if let url = urlToStop {
+            url.stopAccessingSecurityScopedResource()
+        }
         os_log(.debug, log: Self.log, "Stopped accessing AWS directory")
     }
 
@@ -197,8 +229,10 @@ import OSLog
             // DEBUG: Uncomment if using simulateSandboxedEnvironment for testing
             // authorizedThisSession = true
 
-            // Start accessing immediately
-            _ = startAccessingAWSDirectory()
+            // Validate that the bookmark can be opened, then release.
+            if startAccessingAWSDirectory() {
+                stopAccessingAWSDirectory()
+            }
         } else {
             os_log(.error, log: Self.log, "Failed to add AWS directory bookmark")
         }
@@ -208,7 +242,7 @@ import OSLog
 
     /// Revoke the AWS directory bookmark
     @objc func revokeAWSDirectoryBookmark() -> Bool {
-        stopAccessingAWSDirectory()
+        stopAllAccessingAWSDirectory()
 
         let bookmarkManager = SecureBookmarkManager.sharedInstance
 
@@ -251,6 +285,7 @@ import OSLog
             os_log(.error, log: Self.log, "Cannot read AWS file: no access to AWS directory")
             return nil
         }
+        defer { stopAccessingAWSDirectory() }
 
         let resolvedPath = resolvePathForCurrentAWSDirectory(path)
 
@@ -271,12 +306,13 @@ import OSLog
         guard startAccessingAWSDirectory() else {
             return false
         }
+        defer { stopAccessingAWSDirectory() }
 
         return FileManager.default.fileExists(atPath: resolvePathForCurrentAWSDirectory(path))
     }
 
     private func resolvePathForCurrentAWSDirectory(_ path: String) -> String {
-        guard let resolvedURL = resolvedAWSDirectoryURL else {
+        guard let resolvedURL = currentResolvedAWSDirectoryURL() else {
             return path
         }
 
@@ -294,6 +330,26 @@ import OSLog
         }
 
         return path
+    }
+
+    private func currentResolvedAWSDirectoryURL() -> URL? {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return resolvedAWSDirectoryURL
+    }
+
+    private func stopAllAccessingAWSDirectory() {
+        while true {
+            stateLock.lock()
+            let hasActiveReferences = accessReferenceCount > 0
+            stateLock.unlock()
+
+            if !hasActiveReferences {
+                return
+            }
+
+            stopAccessingAWSDirectory()
+        }
     }
 }
 

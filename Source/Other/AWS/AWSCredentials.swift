@@ -62,6 +62,7 @@ import OSLog
     @objc let accessKeyId: String
     @objc let secretAccessKey: String
     @objc let sessionToken: String?
+    @objc let expiration: Date?
     @objc let profileName: String?
 
     // Profile configuration for role assumption
@@ -75,10 +76,20 @@ import OSLog
     // MARK: - Initialization
 
     /// Initialize with explicit credentials
-    @objc init(accessKeyId: String, secretAccessKey: String, sessionToken: String? = nil) {
+    @objc convenience init(accessKeyId: String, secretAccessKey: String, sessionToken: String? = nil) {
+        self.init(
+            accessKeyId: accessKeyId,
+            secretAccessKey: secretAccessKey,
+            sessionToken: sessionToken,
+            expiration: nil
+        )
+    }
+
+    init(accessKeyId: String, secretAccessKey: String, sessionToken: String?, expiration: Date?) {
         self.accessKeyId = accessKeyId
         self.secretAccessKey = secretAccessKey
         self.sessionToken = sessionToken
+        self.expiration = expiration
         self.profileName = nil
         self.roleArn = nil
         self.mfaSerial = nil
@@ -97,6 +108,7 @@ import OSLog
         self.accessKeyId = config["aws_access_key_id"] ?? ""
         self.secretAccessKey = config["aws_secret_access_key"] ?? ""
         self.sessionToken = config["aws_session_token"]
+        self.expiration = nil
         self.roleArn = config["role_arn"]
         self.mfaSerial = config["mfa_serial"]
         self.sourceProfile = config["source_profile"]
@@ -173,6 +185,7 @@ import OSLog
             os_log(.error, log: log, "Failed to start accessing AWS directory while loading profiles")
             return []
         }
+        defer { bookmarkManager.stopAccessingAWSDirectory() }
 
         var profiles = Set<String>()
 
@@ -212,10 +225,18 @@ import OSLog
 
         // Default ~/.aws paths require sandbox bookmark access. Explicit file
         // overrides can be read directly and do not require AWS directory access.
-        if usesDefaultCredentialsPath || usesDefaultConfigPath {
+        var startedDirectoryAccess = false
+        let requiresDirectoryAccess = usesDefaultCredentialsPath || usesDefaultConfigPath
+        if requiresDirectoryAccess {
             guard bookmarkManager.startAccessingAWSDirectory() else {
                 os_log(.error, log: log, "Failed to access AWS directory while loading profile: %{public}@", profileName)
                 throw AWSCredentialsError.directoryAccessFailed
+            }
+            startedDirectoryAccess = true
+        }
+        defer {
+            if startedDirectoryAccess {
+                bookmarkManager.stopAccessingAWSDirectory()
             }
         }
 

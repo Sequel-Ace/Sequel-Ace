@@ -106,7 +106,6 @@ final class RDSIAMAuthenticationTests: XCTestCase {
     func testIsRDSHostname() {
         XCTAssertTrue(RDSIAMAuthentication.isRDSHostname("mydb.123456789012.us-east-1.rds.amazonaws.com"))
         XCTAssertTrue(RDSIAMAuthentication.isRDSHostname("mydb.123456789012.cn-north-1.rds.amazonaws.com.cn"))
-        XCTAssertTrue(RDSIAMAuthentication.isRDSHostname("something.rds.local"))
     }
 
     func testIsRDSHostnameCaseInsensitive() {
@@ -117,6 +116,7 @@ final class RDSIAMAuthenticationTests: XCTestCase {
         XCTAssertFalse(RDSIAMAuthentication.isRDSHostname("localhost"))
         XCTAssertFalse(RDSIAMAuthentication.isRDSHostname("192.168.1.1"))
         XCTAssertFalse(RDSIAMAuthentication.isRDSHostname("mydb.amazonaws.com"))
+        XCTAssertFalse(RDSIAMAuthentication.isRDSHostname("something.rds.local"))
         XCTAssertFalse(RDSIAMAuthentication.isRDSHostname(""))
     }
 
