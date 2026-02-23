@@ -94,6 +94,7 @@
 - (void)testSerializedProcessRow_01_nullValuesBecomeEmptyTokens;
 - (void)testSerializedProcessRow_02_progressIsIncludedWhenRequestedAndPresent;
 - (void)testSerializedProcessRow_03_progressIsSkippedWhenNullOrMissing;
+- (void)testSerializedProcessRow_04_progressIsIgnoredWhenNotRequested;
 
 @end
 
@@ -168,6 +169,26 @@
 
 	XCTAssertEqualObjects([self _nonEmptyTokensFromSerializedRow:serializedWithNullProgress], (@[@"12", @"carol", @"127.0.0.1", @"sales", @"Sleep", @"22", @"idle", @"-"]));
 	XCTAssertEqualObjects(serializedWithNullProgress, serializedWithoutProgress);
+}
+
+- (void)testSerializedProcessRow_04_progressIsIgnoredWhenNotRequested
+{
+	NSDictionary *process = @{
+		@"Id": @100,
+		@"User": @"dave",
+		@"Host": @"10.0.0.4",
+		@"db": @"reporting",
+		@"Command": @"Query",
+		@"Time": @5,
+		@"State": @"running",
+		@"Info": @"SELECT 1",
+		@"Progress": @"33.20"
+	};
+
+	NSString *serialized = [self _serializeProcess:process includeProgress:NO];
+
+	XCTAssertFalse([serialized containsString:@"33.20"]);
+	XCTAssertEqualObjects([self _nonEmptyTokensFromSerializedRow:serialized], (@[@"100", @"dave", @"10.0.0.4", @"reporting", @"Query", @"5", @"running", @"SELECT", @"1"]));
 }
 
 - (NSArray<NSString *> *)_nonEmptyTokensFromSerializedRow:(NSString *)serializedRow
