@@ -451,7 +451,7 @@ Gw
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="bHb-uY-JgS">
                     <rect key="frame" x="178" y="185" width="342" height="24"/>
-                    <buttonCell key="cell" type="check" title="Display column types on content view" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="Z7f-0u-a0e">
+                    <buttonCell key="cell" type="check" title="Display column types in content and query views" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="Z7f-0u-a0e">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>

@@ -11,6 +11,8 @@
 
 When you open Sequel Ace, the first screen that you will see is the database connection window. If you don't have access to a MySQL server, perhaps you could try installing [MySQL](https://dev.mysql.com/doc/mysql-osx-excerpt/en/osx-installation.html "MySQL:Installing on MacOS") or [MariaDB](https://mariadb.com/kb/en/installing-mariadb-on-macos-using-homebrew "MariaDB:Installing on MacOS") on your Mac.
 
+If you want to launch Sequel Ace programmatically, see [Open a Connection via URL (`mysql://`)](connect-via-url.html).
+
 
 #### Local Connections
 
@@ -89,6 +91,8 @@ Defaults to port 3306.
 #### Socket Connection
 
 A **Socket connection** is a connection to a copy of MySQL running on your local machine. If you are connecting to MySQL that you have installed from a package installer or source, then you won't normally need to enter anything into the socket field.
+
+On macOS, Sequel Ace may be blocked from accessing socket files outside its sandbox container (and Full Disk Access does not bypass this restriction). The socket file must be created inside Sequel Ace's container path, and a `/tmp` symlink alone is not enough for Sequel Ace. If you hit socket connection errors, see [Connect to a Local MySQL Server](local-connection.html#connecting-via-a-socket-connection) for the supported workarounds.
 
 Required Fields
 
