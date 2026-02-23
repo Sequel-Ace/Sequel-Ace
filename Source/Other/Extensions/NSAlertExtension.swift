@@ -115,6 +115,7 @@ import AppKit
 	///   - title: String for title of the alert
 	///   - message: string for informative message
 	///   - callback: Optional block that's invoked when user hits OK button
+	@objc(createWarningAlertWithTitle:message:callback:)
 	static func createWarningAlert(title: String,
 								   message: String,
 								   callback: (() -> ())? = nil) {

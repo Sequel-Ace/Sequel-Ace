@@ -1689,6 +1689,9 @@
 /* range for json type */
 "Limited to @@max_allowed_packet" = "Limited to @@max_allowed_packet";
 
+/* charset fallback warning title */
+"Limited Character Set Metadata" = "Limited Character Set Metadata";
+
 /* Loading table task string */
 "Loading %@..." = "Loading %@...";
 
@@ -2785,6 +2788,9 @@
 
 /* error deleting relation informative message */
 "The selected relation couldn't be deleted.\n\nMySQL said: %@" = "The selected relation couldn't be deleted.\n\nMySQL said: %@";
+
+/* charset fallback warning message */
+"The server did not provide character set metadata. Sequel Ace will continue using a fallback UTF-8 compatible character set list." = "The server did not provide character set metadata. Sequel Ace will continue using a fallback UTF-8 compatible character set list.";
 
 /* error deleting trigger informative message */
 "The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "The selected trigger couldn't be deleted.\n\nMySQL said: %@";
