@@ -1249,7 +1249,7 @@
                                                                             <action selector="navigatePaginationFromButton:" target="67" id="6666"/>
                                                                         </connections>
                                                                     </button>
-                                                                    <searchField wantsLayer="YES" focusRingType="none" verticalHuggingPriority="750" fixedFrame="YES" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="colFilter-001">
+                                                                    <searchField focusRingType="none" verticalHuggingPriority="750" fixedFrame="YES" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="colFilter-001">
                                                                         <rect key="frame" x="180" y="1" width="150" height="22"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                         <searchFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" borderStyle="bezel" placeholderString="Filter Columns" usesSingleLineMode="YES" bezelStyle="round" id="colFilter-002">

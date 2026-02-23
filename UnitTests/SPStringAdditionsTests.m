@@ -57,6 +57,22 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 @implementation SPStringAdditionsTests
 
+- (void)testHTMLEscapeStringEscapesQuotes
+{
+	NSString *source = @"\"quoted\" & <tag>";
+	NSString *escaped = [source HTMLEscapeString];
+
+	XCTAssertEqualObjects(escaped, @"&quot;quoted&quot; &amp; &lt;tag&gt;");
+}
+
+- (void)testXMLEscapeStringForContentPreservesQuotes
+{
+	NSString *source = @"a \"quoted\" value & <tag>";
+	NSString *escaped = [source XMLEscapeStringForContent];
+
+	XCTAssertEqualObjects(escaped, @"a \"quoted\" value &amp; &lt;tag&gt;");
+}
+
 
 - (void)teststringForByteSize{
 
