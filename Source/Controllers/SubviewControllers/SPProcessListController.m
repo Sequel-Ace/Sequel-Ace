@@ -61,6 +61,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 - (void)_updateServerProcessesFilterForFilterString:(NSString *)filterString;
 - (void)_addPreferenceObservers;
 - (void)_removePreferenceObservers;
++ (NSString *)_serializedProcessRow:(NSDictionary *)process includeProgress:(BOOL)includeProgress;
 
 @end
 
@@ -152,17 +153,8 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 		[rows enumerateIndexesUsingBlock:^(NSUInteger i, BOOL * _Nonnull stop) {
 			if (i < [processesFiltered count]) {
 				NSDictionary *process = [processesFiltered safeObjectAtIndex:i];
-				
-				NSString *stringTmp = [NSString stringWithFormat:@"%@ %@ %@ %@ %@ %@ %@ %@ %@",
-                               [process objectForKey:@"Id"],
-                               [process objectForKey:@"User"],
-                               [process objectForKey:@"Host"],
-                               [process objectForKey:@"db"],
-                               [process objectForKey:@"Command"],
-                               [process objectForKey:@"Time"],
-                               [process objectForKey:@"State"],
-                               [process objectForKey:@"Info"],
-                               [process objectForKey:@"Progress"]];
+
+				NSString *stringTmp = [SPProcessListController _serializedProcessRow:process includeProgress:[connection isMariaDB]];
 				
 				[string appendString:stringTmp];
 				[string appendString:@"\n"];
@@ -247,16 +239,7 @@ static NSString * const SPKillIdKey   = @"SPKillId";
                 
                 for (NSDictionary *process in self->processesFiltered)
                 {
-                    NSString *stringTmp = [NSString stringWithFormat:@"%@ %@ %@ %@ %@ %@ %@ %@ %@",
-                                           [process objectForKey:@"Id"],
-                                           [process objectForKey:@"User"],
-                                           [process objectForKey:@"Host"],
-                                           [process objectForKey:@"db"],
-                                           [process objectForKey:@"Command"],
-                                           [process objectForKey:@"Time"],
-                                           [process objectForKey:@"State"],
-                                           [process objectForKey:@"Info"],
-                                           [process objectForKey:@"Progress"]];
+                    NSString *stringTmp = [SPProcessListController _serializedProcessRow:process includeProgress:[self->connection isMariaDB]];
                     
                     [processesString appendString:stringTmp];
                     [processesString appendString:@"\n"];

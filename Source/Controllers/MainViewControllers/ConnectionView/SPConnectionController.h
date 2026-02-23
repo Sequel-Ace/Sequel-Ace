@@ -92,7 +92,13 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	
 	// Clear text plugin
 	NSInteger enableClearTextPlugin;
-	
+
+	// AWS IAM Authentication (profile-based only)
+	NSInteger useAWSIAMAuth;
+	NSString *awsRegion;
+	NSString *awsProfile;
+	NSArray<NSString *> *awsAvailableRegionValues;
+
 	// SSL details
 	NSInteger useSSL;
 	NSInteger sslKeyFileLocationEnabled;
@@ -134,6 +140,13 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	IBOutlet NSView *sslKeyFileLocationHelp;
 	IBOutlet NSView *sslCertificateLocationHelp;
 	IBOutlet NSView *sslCACertLocationHelp;
+
+	// AWS IAM Authentication UI (profile-based only)
+	IBOutlet NSButton *standardAWSIAMAuthCheckbox;
+	IBOutlet NSView *standardAWSIAMDetailsContainer;
+	IBOutlet NSPopUpButton *awsProfilePopup;
+	IBOutlet NSComboBox *awsRegionComboBox;
+	IBOutlet NSButton *awsAuthorizeButton;
 
 	IBOutlet NSTextField *standardNameField;
 	IBOutlet NSTextField *sshNameField;
@@ -212,6 +225,10 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 @property (readwrite, copy) NSString *timeZoneIdentifier;
 @property (readwrite) NSInteger allowDataLocalInfile;
 @property (readwrite) NSInteger enableClearTextPlugin;
+// AWS IAM Authentication (profile-based only)
+@property (readwrite) NSInteger useAWSIAMAuth;
+@property (readwrite, copy) NSString *awsRegion;
+@property (readwrite, copy) NSString *awsProfile;
 @property (readwrite) NSInteger useSSL;
 @property (readwrite) NSInteger colorIndex;
 @property (readwrite) NSInteger sslKeyFileLocationEnabled;
@@ -240,6 +257,11 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 
 - (NSString *)keychainPassword;
 - (NSString *)keychainPasswordForSSH;
+/**
+ * Returns the password to use for an actual MySQL connect/reconnect request.
+ * For AWS IAM TCP/IP connections this generates a fresh token.
+ */
+- (NSString *)passwordForConnectionRequest;
 
 // Connection processes
 - (IBAction)initiateConnection:(id)sender;
@@ -251,6 +273,13 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 - (IBAction)showHelp:(id)sender;
 - (IBAction)updateSSLInterface:(id)sender;
 - (IBAction)updateKeyLocationFileVisibility:(id)sender;
+
+// AWS IAM Authentication
+- (IBAction)updateAWSIAMInterface:(id)sender;
+- (IBAction)authorizeAWSDirectory:(id)sender;
+- (NSArray<NSString *> *)awsAvailableProfiles;
+- (NSArray<NSString *> *)awsAvailableRegions;
+- (BOOL)isAWSDirectoryAuthorized;
 
 - (void)resizeTabViewToConnectionType:(NSUInteger)theType animating:(BOOL)animate;
 

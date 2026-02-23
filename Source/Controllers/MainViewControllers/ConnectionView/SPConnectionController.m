@@ -56,6 +56,8 @@
 #import "SPFunctions.h"
 #import "SPBundleHTMLOutputController.h"
 #import "SPBundleManager.h"
+// AWS IAM Authentication is now implemented in Swift
+// See: AWSCredentials.swift, RDSIAMAuthentication.swift, AWSSTSClient.swift, AWSMFATokenDialog.swift, AWSIAMAuthManager.swift
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -103,6 +105,9 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 - (NSString *)_generateNameForConnection;
 
 - (void)_startEditingConnection;
+- (BOOL)_isAWSIAMEnabledForTCPIPConnection;
+- (void)_syncAWSIAMAndSSLInterfaceState;
+- (void)_refreshAWSAvailableRegions;
 
 static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, void *key);
 
@@ -142,6 +147,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 @synthesize timeZoneIdentifier;
 @synthesize allowDataLocalInfile;
 @synthesize enableClearTextPlugin;
+@synthesize useAWSIAMAuth;
+@synthesize awsRegion;
+@synthesize awsProfile;
 @synthesize useSSL;
 @synthesize sslKeyFileLocationEnabled;
 @synthesize sslKeyFileLocation;
@@ -184,6 +192,71 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     NSString *kcPassword = [keychain getPasswordForName:kcItemName account:[self connectionKeychainItemAccount]];
 
     return kcPassword;
+}
+
+- (NSString *)passwordForConnectionRequest
+{
+    if ([self useAWSIAMAuth] && [self type] == SPTCPIPConnection) {
+        return [self generateAWSIAMAuthToken];
+    }
+
+    return [self keychainPassword];
+}
+
+/**
+ * Generates a fresh AWS IAM authentication token.
+ * Called both during initial connection and for token refresh on reconnection.
+ * Uses the Swift AWSIAMAuthManager for all AWS operations.
+ * Note: Only AWS CLI profiles are supported. Manual credentials are not persisted securely.
+ */
+- (NSString *)generateAWSIAMAuthTokenWithError:(NSError **)errorPointer
+{
+    NSInteger dbPort = [[self port] length] ? [[self port] integerValue] : 3306;
+
+    // Get profile name (defaults to "default" if empty)
+    NSString *trimmedProfileName = [[self awsProfile] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    NSString *profileName = [trimmedProfileName length] > 0 ? trimmedProfileName : @"default";
+
+    NSError *awsError = nil;
+
+    // Use the Swift AWSIAMAuthManager for token generation (profile-based only)
+    NSString *token = [AWSIAMAuthManager generateAuthTokenWithHostname:[self host]
+                                                                  port:dbPort
+                                                              username:[self user]
+                                                                region:[self awsRegion]
+                                                               profile:profileName
+                                                             accessKey:nil
+                                                             secretKey:nil
+                                                          parentWindow:[dbDocument parentWindowControllerWindow]
+                                                                 error:&awsError];
+
+    if (errorPointer) {
+        *errorPointer = awsError;
+    }
+
+    if (awsError) {
+        NSLog(@"AWS IAM Authentication token generation failed: %@", awsError.localizedDescription);
+        return nil;
+    }
+
+    if (![token length]) {
+        if (errorPointer && !*errorPointer) {
+            *errorPointer = [NSError errorWithDomain:@"AWSIAMAuthErrorDomain"
+                                                code:-1
+                                            userInfo:@{
+                                                NSLocalizedDescriptionKey: NSLocalizedString(@"Empty authentication token returned", @"AWS IAM empty token error")
+                                            }];
+        }
+        NSLog(@"AWS IAM Authentication token generation failed: empty authentication token returned");
+        return nil;
+    }
+
+    return token;
+}
+
+- (NSString *)generateAWSIAMAuthToken
+{
+    return [self generateAWSIAMAuthTokenWithError:nil];
 }
 
 - (NSString *)keychainPasswordForSSH
@@ -715,6 +788,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 - (IBAction)updateSSLInterface:(id)sender
 {
     [self _startEditingConnection];
+
+    if ([self useSSL] && [self _isAWSIAMEnabledForTCPIPConnection]) {
+        [self setUseAWSIAMAuth:NSControlStateValueOff];
+    }
+
+    [self _syncAWSIAMAndSSLInterfaceState];
     [self resizeTabViewToConnectionType:[self type] animating:YES];
 }
 
@@ -729,6 +808,191 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 - (IBAction)updateClearTextPlugin:(id)sender
 {
     [self _startEditingConnection];
+}
+
+- (BOOL)_isAWSIAMEnabledForTCPIPConnection
+{
+    return ([self type] == SPTCPIPConnection) && [self useAWSIAMAuth];
+}
+
+- (void)_syncAWSIAMAndSSLInterfaceState
+{
+    BOOL isTCPIPConnection = ([self type] == SPTCPIPConnection);
+    BOOL awsIAMEnabled = [self _isAWSIAMEnabledForTCPIPConnection];
+
+    // IAM connections always use TLS internally, so manual SSL settings are disabled for that mode.
+    if (awsIAMEnabled && [self useSSL]) {
+        [self setUseSSL:NSControlStateValueOff];
+    }
+
+    if (standardConnectionSSLDetailsContainer) {
+        [standardConnectionSSLDetailsContainer setHidden:(!isTCPIPConnection || awsIAMEnabled || ![self useSSL])];
+    }
+
+    if (standardAWSIAMDetailsContainer) {
+        [standardAWSIAMDetailsContainer setHidden:(!isTCPIPConnection || !awsIAMEnabled)];
+    }
+
+    if (standardPasswordField) {
+        [standardPasswordField setEnabled:!awsIAMEnabled];
+        if (awsIAMEnabled) {
+            [standardPasswordField setStringValue:@""];
+            [standardPasswordField setPlaceholderString:NSLocalizedString(@"Using IAM authentication", @"placeholder when AWS IAM auth is enabled")];
+        } else {
+            [standardPasswordField setPlaceholderString:@""];
+        }
+    }
+
+    if (awsAuthorizeButton) {
+        [awsAuthorizeButton setHidden:[self isAWSDirectoryAuthorized]];
+    }
+}
+
+#pragma mark -
+#pragma mark AWS IAM Authentication
+
+/**
+ * Called when AWS IAM authentication settings are changed
+ */
+- (IBAction)updateAWSIAMInterface:(id)sender
+{
+    [self _startEditingConnection];
+
+    [self _syncAWSIAMAndSSLInterfaceState];
+    [self resizeTabViewToConnectionType:[self type] animating:YES];
+}
+
+/**
+ * Returns available AWS profiles from ~/.aws/credentials
+ */
+- (NSArray<NSString *> *)awsAvailableProfiles
+{
+    return [AWSIAMAuthManager availableProfiles];
+}
+
+/**
+ * Check if AWS directory access is authorized (for sandbox support)
+ */
+- (BOOL)isAWSDirectoryAuthorized
+{
+    return [AWSDirectoryBookmarkManager.shared isAWSDirectoryAuthorized];
+}
+
+/**
+ * Opens NSOpenPanel to authorize access to ~/.aws directory
+ */
+- (IBAction)authorizeAWSDirectory:(id)sender
+{
+    NSOpenPanel *openPanel = [NSOpenPanel openPanel];
+    [openPanel setCanChooseFiles:NO];
+    [openPanel setCanChooseDirectories:YES];
+    [openPanel setAllowsMultipleSelection:NO];
+    [openPanel setCanCreateDirectories:NO];
+    [openPanel setShowsHiddenFiles:YES];
+    [openPanel setMessage:NSLocalizedString(@"Select your .aws directory to enable AWS IAM authentication", @"AWS directory selection message")];
+    [openPanel setPrompt:NSLocalizedString(@"Authorize", @"AWS directory authorize button")];
+
+    // Start at the home directory
+    NSString *homeDirectory = NSHomeDirectory();
+    [openPanel setDirectoryURL:[NSURL fileURLWithPath:homeDirectory]];
+
+    [openPanel beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:^(NSModalResponse result) {
+        if (result == NSModalResponseOK) {
+            NSURL *selectedURL = [openPanel URL];
+
+            // Verify the selected directory is the .aws folder or contains aws files
+            NSString *selectedPath = [selectedURL path];
+            BOOL isValidAWSDirectory = NO;
+
+            if ([selectedPath hasSuffix:@".aws"]) {
+                isValidAWSDirectory = YES;
+            } else {
+                // Check if it contains credentials or config file
+                NSFileManager *fm = [NSFileManager defaultManager];
+                if ([fm fileExistsAtPath:[selectedPath stringByAppendingPathComponent:@"credentials"]] ||
+                    [fm fileExistsAtPath:[selectedPath stringByAppendingPathComponent:@"config"]]) {
+                    isValidAWSDirectory = YES;
+                }
+            }
+
+            if (!isValidAWSDirectory) {
+                NSAlert *alert = [[NSAlert alloc] init];
+                [alert setMessageText:NSLocalizedString(@"Invalid AWS Directory", @"Invalid AWS directory alert title")];
+                [alert setInformativeText:NSLocalizedString(@"Please select the .aws directory in your home folder (usually ~/.aws). This directory should contain your AWS credentials and/or config files.", @"Invalid AWS directory alert message")];
+                [alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
+                [alert setAlertStyle:NSAlertStyleWarning];
+                [alert runModal];
+                return;
+            }
+
+            // Add the bookmark
+            if ([AWSDirectoryBookmarkManager.shared addAWSDirectoryBookmarkFrom:selectedURL]) {
+                SPLog(@"Successfully authorized AWS directory access");
+
+                // Trigger KVO updates for bindings
+                [self willChangeValueForKey:@"isAWSDirectoryAuthorized"];
+                [self didChangeValueForKey:@"isAWSDirectoryAuthorized"];
+                [self willChangeValueForKey:@"awsAvailableProfiles"];
+                [self didChangeValueForKey:@"awsAvailableProfiles"];
+
+                // Post notification
+                [[NSNotificationCenter defaultCenter] postNotificationName:@"AWSDirectoryAuthorizationChanged" object:self];
+            } else {
+                NSAlert *alert = [[NSAlert alloc] init];
+                [alert setMessageText:NSLocalizedString(@"Authorization Failed", @"AWS authorization failed alert title")];
+                [alert setInformativeText:NSLocalizedString(@"Failed to create a secure bookmark for the AWS directory. Please try again.", @"AWS authorization failed alert message")];
+                [alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
+                [alert setAlertStyle:NSAlertStyleWarning];
+                [alert runModal];
+            }
+        }
+    }];
+}
+
+/**
+ * Update UI elements based on AWS directory authorization state
+ */
+- (void)updateAWSAuthorizationUI
+{
+    // Trigger KVO updates for bindings
+    [self willChangeValueForKey:@"isAWSDirectoryAuthorized"];
+    [self didChangeValueForKey:@"isAWSDirectoryAuthorized"];
+
+    [self _syncAWSIAMAndSSLInterfaceState];
+}
+
+/**
+ * Refreshes AWS regions from AWS public metadata with a fallback cache/list.
+ * The async callback updates the bound combo box values via KVO.
+ */
+- (void)_refreshAWSAvailableRegions
+{
+    [AWSIAMAuthManager refreshAWSRegionsIfNeededWithCompletion:^(NSArray<NSString *> *regions) {
+        if (!regions || !regions.count) return;
+        if ([awsAvailableRegionValues isEqualToArray:regions]) return;
+
+        NSString *currentRegion = [[self awsRegion] copy];
+
+        [self willChangeValueForKey:@"awsAvailableRegions"];
+        awsAvailableRegionValues = [regions copy];
+        [self didChangeValueForKey:@"awsAvailableRegions"];
+
+        if (awsRegionComboBox) {
+            [awsRegionComboBox reloadData];
+        }
+
+        if ([currentRegion length]) {
+            [self setAwsRegion:currentRegion];
+        }
+    }];
+}
+
+/**
+ * Returns AWS region identifiers for the IAM region picker.
+ */
+- (NSArray<NSString *> *)awsAvailableRegions
+{
+    return awsAvailableRegionValues ?: [AWSIAMAuthManager cachedOrFallbackRegions];
 }
 
 #pragma mark -
@@ -751,7 +1015,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     switch (theType) {
         case SPTCPIPConnection:
             targetResizeRect = [standardConnectionFormContainer frame];
-            if ([self useSSL]) additionalFormHeight += [standardConnectionSSLDetailsContainer frame].size.height;
+            // SSL and AWS IAM are mutually exclusive
+            if ([self useSSL]) {
+                additionalFormHeight += [standardConnectionSSLDetailsContainer frame].size.height;
+            } else if ([self useAWSIAMAuth] && standardAWSIAMDetailsContainer) {
+                additionalFormHeight += [standardAWSIAMDetailsContainer frame].size.height;
+            }
             break;
         case SPSocketConnection:
             targetResizeRect = [socketConnectionFormContainer frame];
@@ -880,6 +1149,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     // Clear text plugin
     [self setEnableClearTextPlugin:([fav objectForKey:SPFavoriteEnableClearTextPluginKey] ? [[fav objectForKey:SPFavoriteEnableClearTextPluginKey] intValue] : NSControlStateValueOff)];
 
+    // AWS IAM Authentication (profile-based only - manual credentials not supported)
+    [self setUseAWSIAMAuth:([fav objectForKey:SPFavoriteUseAWSIAMAuthKey] ? [[fav objectForKey:SPFavoriteUseAWSIAMAuthKey] intValue] : NSControlStateValueOff)];
+    [self setAwsRegion:([fav objectForKey:SPFavoriteAWSRegionKey] ? [fav objectForKey:SPFavoriteAWSRegionKey] : @"")];
+    [self setAwsProfile:([fav objectForKey:SPFavoriteAWSProfileKey] ? [fav objectForKey:SPFavoriteAWSProfileKey] : @"default")];
+
     // SSL details
     [self setUseSSL:([fav objectForKey:SPFavoriteUseSSLKey] ? [[fav objectForKey:SPFavoriteUseSSLKey] intValue] : NSControlStateValueOff)];
     [self setSslKeyFileLocationEnabled:([fav objectForKey:SPFavoriteSSLKeyFileLocationEnabledKey] ? [[fav objectForKey:SPFavoriteSSLKeyFileLocationEnabledKey] intValue] : NSControlStateValueOff)];
@@ -896,9 +1170,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [self setSshKeyLocation:([fav objectForKey:SPFavoriteSSHKeyLocationKey] ? [fav objectForKey:SPFavoriteSSHKeyLocationKey] : @"")];
     [self setSshPort:([fav objectForKey:SPFavoriteSSHPortKey] ? [fav objectForKey:SPFavoriteSSHPortKey] : @"")];
 
-    // Trigger an interface update
-    [self resizeTabViewToConnectionType:[self type] animating:(sender == self)];
-
     // Check whether the password exists in the keychain, and if so add it; also record the
     // keychain details so we can pass around only those details if the password doesn't change
     connectionKeychainItemName = !fav ? nil : [keychain nameForFavoriteName:[fav objectForKey:SPFavoriteNameKey] id:[fav objectForKey:SPFavoriteIDKey]];
@@ -911,6 +1182,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     if (!fav || ![[self password] length]) {
         [self setPassword:nil];
     }
+
+    [self _syncAWSIAMAndSSLInterfaceState];
+
+    // Trigger an interface update
+    [self resizeTabViewToConnectionType:[self type] animating:(sender == self)];
 
     // Store the selected favorite ID for use with the document on connection
     if ([fav objectForKey:SPFavoriteIDKey]){
@@ -945,8 +1221,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     switch ([self type])
     {
         case SPTCPIPConnection:
-            [favoritesOutlineView setNextKeyView:(![[standardPasswordField stringValue] length]) ? standardPasswordField : standardNameField];
+        {
+            BOOL shouldFocusPassword = (![self _isAWSIAMEnabledForTCPIPConnection] && ![[standardPasswordField stringValue] length]);
+            [favoritesOutlineView setNextKeyView:shouldFocusPassword ? standardPasswordField : standardNameField];
             break;
+        }
         case SPSocketConnection:
             [favoritesOutlineView setNextKeyView:(![[socketPasswordField stringValue] length]) ? socketPasswordField : socketNameField];
             break;
@@ -1028,6 +1307,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         @(NSControlStateValueOff),
         @(NSControlStateValueOff),
         @(NSControlStateValueOff),
+        @"",
+        @"default",
+        @(NSControlStateValueOff),
         @(NSControlStateValueOff),
         @(NSControlStateValueOff),
         @"",
@@ -1051,6 +1333,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         SPFavoriteTimeZoneIdentifierKey,
         SPFavoriteAllowDataLocalInfileKey,
         SPFavoriteEnableClearTextPluginKey,
+        SPFavoriteUseAWSIAMAuthKey,
+        SPFavoriteAWSRegionKey,
+        SPFavoriteAWSProfileKey,
         SPFavoriteUseSSLKey,
         SPFavoriteSSLKeyFileLocationEnabledKey,
         SPFavoriteSSLCertificateFileLocationEnabledKey,
@@ -1388,6 +1673,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [theFavorite setObject:[NSNumber numberWithInteger:[self allowDataLocalInfile]] forKey:SPFavoriteAllowDataLocalInfileKey];
     // Clear text plugin
     [theFavorite setObject:[NSNumber numberWithInteger:[self enableClearTextPlugin]] forKey:SPFavoriteEnableClearTextPluginKey];
+    // AWS IAM Authentication (profile-based only)
+    [theFavorite setObject:[NSNumber numberWithInteger:[self useAWSIAMAuth]] forKey:SPFavoriteUseAWSIAMAuthKey];
+    _setOrRemoveKey(SPFavoriteAWSRegionKey, [self awsRegion]);
+    _setOrRemoveKey(SPFavoriteAWSProfileKey, [self awsProfile]);
     // SSL details
     [theFavorite setObject:[NSNumber numberWithInteger:[self useSSL]] forKey:SPFavoriteUseSSLKey];
     [theFavorite setObject:[NSNumber numberWithInteger:[self sslKeyFileLocationEnabled]] forKey:SPFavoriteSSLKeyFileLocationEnabledKey];
@@ -1677,6 +1966,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             [self setName:favoriteName];
         }
     }
+
+    [self _syncAWSIAMAndSSLInterfaceState];
 }
 
 /**
@@ -2064,12 +2355,37 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         }
 
-        if ([self password] == nil) {
-            [self setPassword:@""];
+        // AWS IAM Authentication: Generate token if enabled
+        // Uses the Swift AWSIAMAuthManager for all AWS operations (credential loading, role assumption, token generation)
+        NSString *connectionPassword = [self password];
+        BOOL awsIAMAuthUsed = NO;
+
+        if ([self useAWSIAMAuth] && [self type] == SPTCPIPConnection) {
+            awsIAMAuthUsed = YES;
+            NSError *awsError = nil;
+            connectionPassword = [self generateAWSIAMAuthTokenWithError:&awsError];
+
+            if (awsError || ![connectionPassword length]) {
+                [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"AWS IAM Authentication Failed", @"AWS IAM auth failed title")
+                                                errorMessage:awsError ? awsError.localizedDescription : NSLocalizedString(@"Empty authentication token returned", @"AWS IAM empty token error")
+                                                      detail:nil];
+                return;
+            }
+
+            // AWS IAM auth requires cleartext plugin and SSL
+            [mySQLConnection setEnableClearTextPlugin:YES];
+            [mySQLConnection setUseSSL:YES];
+        }
+
+        if (connectionPassword == nil) {
+            connectionPassword = @"";
         }
 
         // Only set the password if there is no Keychain item set or the connection is being tested or the password is different than in Keychain.
-        if ((isTestingConnection || !connectionKeychainItemName || (connectionKeychainItemName && ![[self password] isEqualToString:@"SequelAceSecretPassword"])) && [self password]) {
+        if (awsIAMAuthUsed) {
+            // For AWS IAM auth, always use the generated token
+            [mySQLConnection setPassword:connectionPassword];
+        } else if ((isTestingConnection || !connectionKeychainItemName || (connectionKeychainItemName && ![[self password] isEqualToString:@"SequelAceSecretPassword"])) && [self password]) {
             [mySQLConnection setPassword:[self password]];
         }
 
@@ -2077,8 +2393,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             [mySQLConnection setAllowDataLocalInfile:YES];
         }
 
-        // Enable Clear Text plugin when enabled
-        if ([self enableClearTextPlugin]) {
+        // Enable Clear Text plugin when enabled (also handled above for AWS IAM)
+        if ([self enableClearTextPlugin] && !awsIAMAuthUsed) {
             [mySQLConnection setEnableClearTextPlugin:YES];
         }
 
@@ -2125,6 +2441,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         // Connect
         SPLog(@"Establish connection");
         [mySQLConnection connect];
+
         if (![mySQLConnection isConnected]) {
             if (sshTunnel && !cancellingConnection) {
                 // This is a race condition we cannot fix "properly":
@@ -2354,8 +2671,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [progressIndicator stopAnimation:self];
     [progressIndicatorText setHidden:YES];
 
-    // If SSL was enabled, check it was established correctly
-    if (useSSL && ([self type] == SPTCPIPConnection || [self type] == SPSocketConnection)) {
+    // If SSL was enabled (manually or implicitly via IAM), check it was established correctly
+    BOOL requiresSSL = (useSSL || [self _isAWSIAMEnabledForTCPIPConnection]);
+    if (requiresSSL && ([self type] == SPTCPIPConnection || [self type] == SPSocketConnection)) {
         if (![mySQLConnection isConnectedViaSSL]) {
             [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"SSL connection not established", @"SSL requested but not used title") message:NSLocalizedString(@"You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted.", @"SSL connection requested but not established error detail") callback:nil];
         }
@@ -3285,6 +3603,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         prefs = [NSUserDefaults standardUserDefaults];
 
         bookmarks = [NSMutableArray arrayWithArray:SecureBookmarkManager.sharedInstance.bookmarks];
+        awsAvailableRegionValues = [AWSIAMAuthManager cachedOrFallbackRegions];
 
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(_refreshBookmarks) name:SPBookmarksChangedNotification object:SecureBookmarkManager.sharedInstance];
 
@@ -3319,16 +3638,40 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         currentSortItem = (SPFavoritesSortItem)[prefs integerForKey:SPFavoritesSortedBy];
         reverseFavoritesSort = [prefs boolForKey:SPFavoritesSortedInReverse];
 
+        // Update AWS authorization UI state and kick off async region refresh.
+        [self updateAWSAuthorizationUI];
+        [self _refreshAWSAvailableRegions];
+
+        // Track profile/region edits the same way as the IAM toggle.
+        [awsProfilePopup setTarget:self];
+        [awsProfilePopup setAction:@selector(updateAWSIAMInterface:)];
+        [awsRegionComboBox setTarget:self];
+        [awsRegionComboBox setAction:@selector(updateAWSIAMInterface:)];
+
         initComplete = YES;
+
+        // Force a resize after a tiny delay to ensure view is fully loaded
+        [self performSelector:@selector(_forceInitialResize) withObject:nil afterDelay:0.0];
     }
 
     return self;
+}
+
+- (void)_forceInitialResize {
+    [self resizeTabViewToConnectionType:[self type] animating:NO];
 }
 
 - (void)_refreshBookmarks{
     SPLog(@"Got SPBookmarksChangedNotification, refreshing bookmarks");
 
     [bookmarks setArray:SecureBookmarkManager.sharedInstance.bookmarks];
+
+    // Also refresh AWS authorization UI in case AWS directory bookmark changed
+    [self updateAWSAuthorizationUI];
+
+    // Notify that profiles may have changed
+    [self willChangeValueForKey:@"awsAvailableProfiles"];
+    [self didChangeValueForKey:@"awsAvailableProfiles"];
 }
 
 // TODO: this is called once per connection screen - but the timezones don't change right? Should be static/class method?

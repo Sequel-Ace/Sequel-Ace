@@ -35,3 +35,10 @@ import Foundation
         return attributedString
     }
 }
+
+extension SPProcessListController {
+    @objc(_serializedProcessRow:includeProgress:)
+    class func serializedProcessRow(_ process: NSDictionary, includeProgress: Bool) -> String {
+        return SPProcessListRowSerializer.serializedProcessRow(process, includeProgress: includeProgress)
+    }
+}

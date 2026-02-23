@@ -545,6 +545,13 @@ extern NSString *SPFavoriteSSLCertificateFileLocationKey;
 extern NSString *SPFavoriteSSLCACertFileLocationEnabledKey;
 extern NSString *SPFavoriteSSLCACertFileLocationKey;
 extern NSString *SPFavoriteUseCompressionKey;
+
+// AWS IAM Authentication
+extern NSString *SPFavoriteUseAWSIAMAuthKey;
+extern NSString *SPFavoriteAWSRegionKey;
+extern NSString *SPFavoriteAWSProfileKey;
+extern NSString *SPFavoriteAWSAccessKeyKey;
+extern NSString *SPFavoriteAWSUseProfileKey;
 extern NSString *SPConnectionFavoritesChangedNotification;
 extern NSString *SPConnectionShownSocketHelp;
 extern NSString *SPStaleBookmarksHelp;

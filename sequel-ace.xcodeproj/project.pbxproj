@@ -7,6 +7,23 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F3A4B8C191E14E7094C9A111 /* AWSCredentialsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9A101 /* AWSCredentialsTests.swift */; };
+		F3A4B8C191E14E7094C9A112 /* RDSIAMAuthenticationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9A102 /* RDSIAMAuthenticationTests.swift */; };
+		F3A4B8C191E14E7094C9A113 /* AWSDirectoryBookmarkManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9A103 /* AWSDirectoryBookmarkManagerTests.swift */; };
+		F4C0BDAE2E9F4D5E8A1B0101 /* AWSCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9B001 /* AWSCredentials.swift */; };
+		F4C0BDAE2E9F4D5E8A1B0102 /* RDSIAMAuthentication.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9B002 /* RDSIAMAuthentication.swift */; };
+		F4C0BDAE2E9F4D5E8A1B0103 /* AWSSTSClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9B003 /* AWSSTSClient.swift */; };
+		F4C0BDAE2E9F4D5E8A1B0104 /* AWSMFATokenDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9B004 /* AWSMFATokenDialog.swift */; };
+		F4C0BDAE2E9F4D5E8A1B0105 /* AWSIAMAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9B005 /* AWSIAMAuthManager.swift */; };
+		F4C0BDAE2E9F4D5E8A1B0106 /* AWSDirectoryBookmarkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9B006 /* AWSDirectoryBookmarkManager.swift */; };
+		F4C0BDAE2E9F4D5E8A1B0109 /* OSLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD785E325B749760007E153 /* OSLog.swift */; };
+		F4C0BDAE2E9F4D5E8A1B0110 /* SecureBookmarkManagerStub.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4C0BDAE2E9F4D5E8A1B0201 /* SecureBookmarkManagerStub.swift */; };
+		F3A4B8C191E14E7094C9B011 /* AWSCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9B001 /* AWSCredentials.swift */; };
+		F3A4B8C191E14E7094C9B012 /* RDSIAMAuthentication.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9B002 /* RDSIAMAuthentication.swift */; };
+		F3A4B8C191E14E7094C9B013 /* AWSSTSClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9B003 /* AWSSTSClient.swift */; };
+		F3A4B8C191E14E7094C9B014 /* AWSMFATokenDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9B004 /* AWSMFATokenDialog.swift */; };
+		F3A4B8C191E14E7094C9B015 /* AWSIAMAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9B005 /* AWSIAMAuthManager.swift */; };
+		F3A4B8C191E14E7094C9B016 /* AWSDirectoryBookmarkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9B006 /* AWSDirectoryBookmarkManager.swift */; };
 		1141A389117BBFF200126A28 /* SPTableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1141A388117BBFF200126A28 /* SPTableCopy.m */; };
 		1198F5B31174EDD500670590 /* SPDatabaseCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1198F5B21174EDD500670590 /* SPDatabaseCopy.m */; };
 		11B55BFE1189E3B2009EF465 /* SPDatabaseAction.m in Sources */ = {isa = PBXBuildFile; fileRef = 11B55BFD1189E3B2009EF465 /* SPDatabaseAction.m */; };
@@ -575,6 +592,16 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		F3A4B8C191E14E7094C9A101 /* AWSCredentialsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSCredentialsTests.swift; sourceTree = "<group>"; };
+		F3A4B8C191E14E7094C9A102 /* RDSIAMAuthenticationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RDSIAMAuthenticationTests.swift; sourceTree = "<group>"; };
+		F3A4B8C191E14E7094C9A103 /* AWSDirectoryBookmarkManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSDirectoryBookmarkManagerTests.swift; sourceTree = "<group>"; };
+		F4C0BDAE2E9F4D5E8A1B0201 /* SecureBookmarkManagerStub.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureBookmarkManagerStub.swift; sourceTree = "<group>"; };
+		F3A4B8C191E14E7094C9B001 /* AWSCredentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSCredentials.swift; sourceTree = "<group>"; };
+		F3A4B8C191E14E7094C9B002 /* RDSIAMAuthentication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RDSIAMAuthentication.swift; sourceTree = "<group>"; };
+		F3A4B8C191E14E7094C9B003 /* AWSSTSClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSSTSClient.swift; sourceTree = "<group>"; };
+		F3A4B8C191E14E7094C9B004 /* AWSMFATokenDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSMFATokenDialog.swift; sourceTree = "<group>"; };
+		F3A4B8C191E14E7094C9B005 /* AWSIAMAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSIAMAuthManager.swift; sourceTree = "<group>"; };
+		F3A4B8C191E14E7094C9B006 /* AWSDirectoryBookmarkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSDirectoryBookmarkManager.swift; sourceTree = "<group>"; };
 		1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		112730551180788A000737FD /* SPTableCopyTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTableCopyTest.m; sourceTree = "<group>"; };
 		1141A387117BBFF200126A28 /* SPTableCopy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTableCopy.h; sourceTree = "<group>"; };
@@ -1911,6 +1938,7 @@
 				17E641720EF01F6B001BC333 /* SSH Tunnel */,
 				B57747D60F7A8990003B34F9 /* Category Additions */,
 				58DA884E103E1597000B98DF /* Debugging & Support */,
+				F3A4B8C191E14E7094C9C005 /* AWS */,
 			);
 			path = Other;
 			sourceTree = "<group>";
@@ -1922,6 +1950,19 @@
 				17E641740EF01F80001BC333 /* SPKeychain.m */,
 			);
 			path = Keychain;
+			sourceTree = "<group>";
+		};
+		F3A4B8C191E14E7094C9C005 /* AWS */ = {
+			isa = PBXGroup;
+			children = (
+				F3A4B8C191E14E7094C9B001 /* AWSCredentials.swift */,
+				F3A4B8C191E14E7094C9B002 /* RDSIAMAuthentication.swift */,
+				F3A4B8C191E14E7094C9B003 /* AWSSTSClient.swift */,
+				F3A4B8C191E14E7094C9B004 /* AWSMFATokenDialog.swift */,
+				F3A4B8C191E14E7094C9B005 /* AWSIAMAuthManager.swift */,
+				F3A4B8C191E14E7094C9B006 /* AWSDirectoryBookmarkManager.swift */,
+			);
+			path = AWS;
 			sourceTree = "<group>";
 		};
 		17E641720EF01F6B001BC333 /* SSH Tunnel */ = {
@@ -2271,6 +2312,10 @@
 				8AEACADD4B36D9819ADC93DD /* TableSortHelperTests.swift */,
 				FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */,
 				COLFILT0002 /* SPTableContentColumnFilterTests.swift */,
+				F3A4B8C191E14E7094C9A101 /* AWSCredentialsTests.swift */,
+				F3A4B8C191E14E7094C9A102 /* RDSIAMAuthenticationTests.swift */,
+				F3A4B8C191E14E7094C9A103 /* AWSDirectoryBookmarkManagerTests.swift */,
+				F4C0BDAE2E9F4D5E8A1B0201 /* SecureBookmarkManagerStub.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -2882,6 +2927,17 @@
 				1A2DD55A25939BEE00616E7E /* SPTestingUtils.m in Sources */,
 				1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */,
 				1798F1C4155018E2004B0AB8 /* SPMutableArrayAdditionsTests.m in Sources */,
+				F3A4B8C191E14E7094C9A111 /* AWSCredentialsTests.swift in Sources */,
+				F3A4B8C191E14E7094C9A112 /* RDSIAMAuthenticationTests.swift in Sources */,
+				F3A4B8C191E14E7094C9A113 /* AWSDirectoryBookmarkManagerTests.swift in Sources */,
+				F4C0BDAE2E9F4D5E8A1B0101 /* AWSCredentials.swift in Sources */,
+				F4C0BDAE2E9F4D5E8A1B0102 /* RDSIAMAuthentication.swift in Sources */,
+				F4C0BDAE2E9F4D5E8A1B0103 /* AWSSTSClient.swift in Sources */,
+				F4C0BDAE2E9F4D5E8A1B0104 /* AWSMFATokenDialog.swift in Sources */,
+				F4C0BDAE2E9F4D5E8A1B0105 /* AWSIAMAuthManager.swift in Sources */,
+				F4C0BDAE2E9F4D5E8A1B0106 /* AWSDirectoryBookmarkManager.swift in Sources */,
+				F4C0BDAE2E9F4D5E8A1B0109 /* OSLog.swift in Sources */,
+				F4C0BDAE2E9F4D5E8A1B0110 /* SecureBookmarkManagerStub.swift in Sources */,
 				FD8099A72C59DCFA0084646F /* SAUuidFormatterTests.swift in Sources */,
 				COLFILT0001 /* SPTableContentColumnFilterTests.swift in Sources */,
 				1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */,
@@ -2971,6 +3027,12 @@
 				BCD0AD490FBBFC340066EA5C /* SPSQLTokenizer.l in Sources */,
 				1A89558725D6E15D0060CE72 /* GitHub.swift in Sources */,
 				1A11E51625A36C62001CB721 /* HyperlinkTextField.swift in Sources */,
+				F3A4B8C191E14E7094C9B011 /* AWSCredentials.swift in Sources */,
+				F3A4B8C191E14E7094C9B012 /* RDSIAMAuthentication.swift in Sources */,
+				F3A4B8C191E14E7094C9B013 /* AWSSTSClient.swift in Sources */,
+				F3A4B8C191E14E7094C9B014 /* AWSMFATokenDialog.swift in Sources */,
+				F3A4B8C191E14E7094C9B015 /* AWSIAMAuthManager.swift in Sources */,
+				F3A4B8C191E14E7094C9B016 /* AWSDirectoryBookmarkManager.swift in Sources */,
 				387BBBA80FBCB6CB00B31746 /* SPTableRelations.m in Sources */,
 				1740FABB0FC4372F00CF3699 /* SPDatabaseData.m in Sources */,
 				17C058880FC9FC390077E9CF /* SPNarrowDownCompletion.m in Sources */,
@@ -3200,7 +3262,10 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				HEADER_SEARCH_PATHS = "$CONFIGURATION_TEMP_DIR/sequel-ace.build/DerivedSources";
+				HEADER_SEARCH_PATHS = (
+					"$CONFIGURATION_TEMP_DIR/sequel-ace.build/DerivedSources",
+					"$(SRCROOT)/Source/Views/TableViews",
+				);
 				INFOPLIST_FILE = "Resources/Plists/Unit Tests-Info.plist";
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
 				LD_RUNPATH_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
@@ -3236,7 +3301,10 @@
 				);
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				HEADER_SEARCH_PATHS = "$CONFIGURATION_TEMP_DIR/sequel-ace.build/DerivedSources";
+				HEADER_SEARCH_PATHS = (
+					"$CONFIGURATION_TEMP_DIR/sequel-ace.build/DerivedSources",
+					"$(SRCROOT)/Source/Views/TableViews",
+				);
 				INFOPLIST_FILE = "Resources/Plists/Unit Tests-Info.plist";
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
 				LD_RUNPATH_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
@@ -3272,7 +3340,10 @@
 				);
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				HEADER_SEARCH_PATHS = "$CONFIGURATION_TEMP_DIR/sequel-ace.build/DerivedSources";
+				HEADER_SEARCH_PATHS = (
+					"$CONFIGURATION_TEMP_DIR/sequel-ace.build/DerivedSources",
+					"$(SRCROOT)/Source/Views/TableViews",
+				);
 				INFOPLIST_FILE = "Resources/Plists/Unit Tests-Info.plist";
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
 				LD_RUNPATH_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
@@ -3756,7 +3827,10 @@
 				);
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				HEADER_SEARCH_PATHS = "$CONFIGURATION_TEMP_DIR/sequel-ace.build/DerivedSources";
+				HEADER_SEARCH_PATHS = (
+					"$CONFIGURATION_TEMP_DIR/sequel-ace.build/DerivedSources",
+					"$(SRCROOT)/Source/Views/TableViews",
+				);
 				INFOPLIST_FILE = "Resources/Plists/Unit Tests-Info.plist";
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
 				LD_RUNPATH_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
