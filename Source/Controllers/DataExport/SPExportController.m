@@ -559,6 +559,13 @@ set_input:
 	
 	// Cancel all of the currently running operations
 	[operationQueue cancelAllOperations]; // async call
+
+    // Also cancel any currently running MySQL query immediately; waiting for the next exporter loop
+    // cancellation check can otherwise leave the UI looking frozen for large/early-streaming exports.
+    if (connection) {
+        [connection cancelCurrentQuery];
+    }
+
 	[NSThread detachNewThreadWithName:SPCtxt(@"SPExportController cancelExport: waiting for empty queue", tableDocumentInstance) target:self selector:@selector(_waitUntilQueueIsEmptyAfterCancelling:) object:sender];
 }
 
@@ -621,30 +628,27 @@ set_input:
 	[changeExportOutputPathPanel setCanChooseDirectories:YES];
 	[changeExportOutputPathPanel setCanCreateDirectories:YES];
 
-    [changeExportOutputPathPanel setDirectoryURL:[NSURL URLWithString:[exportPathField stringValue]]];
+    NSString *currentExportPath = [exportPathField stringValue];
+    NSURL *initialDirectoryURL = nil;
+
+    if ([currentExportPath length] > 0) {
+        initialDirectoryURL = [NSURL fileURLWithPath:[currentExportPath stringByExpandingTildeInPath] isDirectory:YES];
+    } else {
+        initialDirectoryURL = [NSURL fileURLWithPath:NSHomeDirectory() isDirectory:YES];
+    }
+
+    if (initialDirectoryURL) [changeExportOutputPathPanel setDirectoryURL:initialDirectoryURL];
+
     [changeExportOutputPathPanel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
         if (returnCode == NSModalResponseOK) {
-
-            NSMutableString *path = [[NSMutableString alloc] initWithCapacity:self->changeExportOutputPathPanel.directoryURL.absoluteString.length];
-            [path setString:[[self->changeExportOutputPathPanel directoryURL] path]];
-
-			if(!path) {
-				@throw [NSException exceptionWithName:NSInternalInconsistencyException
-											   reason:[NSString stringWithFormat:@"File panel ended with OK, but returned nil for path!? directoryURL=%@,isFileURL=%d",[self->changeExportOutputPathPanel directoryURL],[[self->changeExportOutputPathPanel directoryURL] isFileURL]]
-											 userInfo:nil];
-			}
-
-            [self->exportPathField setStringValue:path];
-
+            NSURL *selectedURL = self->changeExportOutputPathPanel.URL;
             NSMutableString *classStr = [NSMutableString string];
-            [classStr appendStringOrNil:NSStringFromClass(self->changeExportOutputPathPanel.URL.class)];
+            [classStr appendStringOrNil:NSStringFromClass(selectedURL.class)];
 
             SPLog(@"self->changeExportOutputPathPanel.URL.class: %@", classStr);
 
-            // check it's really a URL
-            if(![self->changeExportOutputPathPanel.URL isKindOfClass:[NSURL class]]){
-
-                SPLog(@"self->changeExportOutputPathPanel.URL is not a valid URL: %@", classStr);
+            if (![selectedURL isKindOfClass:[NSURL class]] || ![selectedURL isFileURL]) {
+                SPLog(@"self->changeExportOutputPathPanel.URL is not a valid file URL: %@", classStr);
 
                 NSView __block *helpView;
 
@@ -667,14 +671,26 @@ set_input:
 
                     SPLog(@"userInfo: %@", userInfo);
                 }];
+
+                return;
+            }
+
+            NSString *path = [selectedURL path];
+            if (![path length]) {
+                [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"No directory selected.", @"No directory selected.")
+                                             message:NSLocalizedString(@"Please select a new export location and try again.", @"Please select a new export location and try again")
+                                            callback:nil];
+                return;
+            }
+
+            [self->exportPathField setStringValue:path];
+
+            // this needs to be read-write
+            if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:selectedURL options:(NSURLBookmarkCreationWithSecurityScope) isForStaleBookmark:NO isForKnownHostsFile:NO] == YES){
+                SPLog(@"addBookmarkForUrl success: %@", selectedURL.absoluteString);
             }
             else{
-                // this needs to be read-write
-                if([SecureBookmarkManager.sharedInstance addBookmarkForUrl:self->changeExportOutputPathPanel.URL options:(NSURLBookmarkCreationWithSecurityScope) isForStaleBookmark:NO isForKnownHostsFile:NO] == YES){
-                    SPLog(@"addBookmarkForUrl success: %@", self->changeExportOutputPathPanel.URL.absoluteString);
-                } else{
-                    SPLog(@"addBookmarkForUrl failed: %@", self->changeExportOutputPathPanel.URL);
-                }
+                SPLog(@"addBookmarkForUrl failed: %@", selectedURL);
             }
         }// end of OK
         else if(returnCode == NSModalResponseCancel){
@@ -725,7 +741,7 @@ set_input:
 	if (exportType == SPSQLExport) {
 		// Procedures
 		{
-			NSArray *procedures = [tablesListInstance allProcedureNames];
+			NSOrderedSet *procedures = [[NSOrderedSet alloc] initWithArray:[tablesListInstance allProcedureNames]];
 
 			for (id procName in procedures) {
 				[tables safeAddObject:[NSMutableArray arrayWithObjects:
@@ -739,7 +755,7 @@ set_input:
 		}
 		// Functions
 		{
-			NSArray *functions = [tablesListInstance allFunctionNames];
+			NSOrderedSet *functions = [[NSOrderedSet alloc] initWithArray:[tablesListInstance allFunctionNames]];
 
 			for (id funcName in functions) {
 				[tables safeAddObject:[NSMutableArray arrayWithObjects:
@@ -1085,12 +1101,13 @@ set_input:
 	NSUInteger i = [tables count];
 	
 	[tablesListInstance updateTables:self];
-		
-	NSUInteger j = [[tablesListInstance allTableAndViewNames] count];
+
+	NSUInteger j = [[[NSOrderedSet alloc] initWithArray:[tablesListInstance allTableAndViewNames]] count];
 	
 	// If this is an SQL export, include procs and functions
 	if (exportType == SPSQLExport) {
-		j += ([[tablesListInstance allProcedureNames] count] + [[tablesListInstance allFunctionNames] count]);
+		j += [[[NSOrderedSet alloc] initWithArray:[tablesListInstance allProcedureNames]] count];
+		j += [[[NSOrderedSet alloc] initWithArray:[tablesListInstance allFunctionNames]] count];
 	}
 		
 	if (j > i) {
@@ -1765,7 +1782,8 @@ set_input:
 			}
 		}
 		else {
-			[exportFilename setString:(dataArray) ? [tableDocumentInstance database] : table];
+			BOOL isSingleTableExport = (exportSource == SPTableExport && exportTableCount == 1);
+			[exportFilename setString:(isSingleTableExport) ? [self generateDefaultExportFilename] : ((dataArray) ? [tableDocumentInstance database] : table)];
 		}
 
 		// Only append the extension if necessary
@@ -1827,7 +1845,8 @@ set_input:
 			}
 		}
 		else {
-			[exportFilename setString:(dataArray) ? [tableDocumentInstance database] : table];
+			BOOL isSingleTableExport = (exportSource == SPTableExport && exportTableCount == 1);
+			[exportFilename setString:(isSingleTableExport) ? [self generateDefaultExportFilename] : ((dataArray) ? [tableDocumentInstance database] : table)];
 		}
 
 		// Only append the extension if necessary
@@ -1911,10 +1930,12 @@ set_input:
 		NSString *tag;
 
 		if (exportSource == SPTableExport) {
-			tag = [NSString stringWithFormat:@"<mysqldump xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n<database name=\"%@\">\n\n", [tableDocumentInstance database]];
+			tag = [NSString stringWithFormat:@"<mysqldump xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n<database name=\"%@\">\n\n", [[tableDocumentInstance database] HTMLEscapeString]];
 		}
 		else {
-			tag = [NSString stringWithFormat:@"<resultset statement=\"%@\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n\n", (exportSource == SPFilteredExport) ? [tableContentInstance usedQuery] : [customQueryInstance usedQuery]];
+			NSString *queryString = (exportSource == SPFilteredExport) ? [tableContentInstance usedQuery] : [customQueryInstance usedQuery];
+			NSString *escapedQueryString = [(queryString ?: @"") HTMLEscapeString];
+			tag = [NSString stringWithFormat:@"<resultset statement=\"%@\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n\n", escapedQueryString];
 		}
 
 		[header appendString:tag];

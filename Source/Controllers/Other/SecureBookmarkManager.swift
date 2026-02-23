@@ -195,15 +195,22 @@ import OSLog
                     //a bookmark might be "stale" because the app hasn't been used
                     //in many months, macOS has been upgraded, the app was
                     //re-installed, the app's preferences .plist file was deleted, etc.
-                    if bookmarkDataIsStale {
-                        Log.error("The bookmark is outdated and needs to be regenerated: key = \(key)")
-                        staleBookmarks.appendIfNotContains(key)
-                    } else {
-                        Log.info("Resolved bookmark: \(key)")
-                        let res = urlForBookmark.startAccessingSecurityScopedResource()
-                        if res == true {
-                            Log.info("success: startAccessingSecurityScopedResource for: \(key)")
-                            resolvedBookmarks.appendIfNotContains(urlForBookmark)
+                        if bookmarkDataIsStale {
+                            Log.error("The bookmark is outdated and needs to be regenerated: key = \(key)")
+                            staleBookmarks.appendIfNotContains(key)
+                        } else {
+                            if let unavailableVolumeRoot = unavailableMountedVolumeRoot(for: urlForBookmark.path) {
+                                Log.info("Skipping bookmark activation for unavailable mounted volume root: \(unavailableVolumeRoot)")
+                                // Keep the bookmark so it can be reactivated later when the volume is available again.
+                                bookmarks.append([key: urlData])
+                                continue
+                            }
+
+                            Log.info("Resolved bookmark: \(key)")
+                            let res = urlForBookmark.startAccessingSecurityScopedResource()
+                            if res == true {
+                                Log.info("success: startAccessingSecurityScopedResource for: \(key)")
+                                resolvedBookmarks.appendIfNotContains(urlForBookmark)
                             bookmarks.append([urlForBookmark.absoluteString: urlData])
                         } else {
                             Log.error("ERROR: startAccessingSecurityScopedResource for: \(key)")
@@ -221,6 +228,20 @@ import OSLog
         iChangedTheBookmarks = true
         prefs.set(bookmarks, forKey: SASecureBookmarks)
         prefs.set(staleBookmarks, forKey: SPStaleSecureBookmarks)
+    }
+
+    private func unavailableMountedVolumeRoot(for path: String) -> String? {
+        guard path.hasPrefix("/Volumes/") else {
+            return nil
+        }
+
+        let pathComponents = URL(fileURLWithPath: path).standardizedFileURL.pathComponents
+        guard pathComponents.count >= 3 else {
+            return nil
+        }
+
+        let volumeRootPath = NSString.path(withComponents: Array(pathComponents.prefix(3)))
+        return FileManager.default.fileExists(atPath: volumeRootPath) ? nil : volumeRootPath
     }
 
     /// addBookmark 

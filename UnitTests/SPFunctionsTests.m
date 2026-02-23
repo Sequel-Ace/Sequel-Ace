@@ -11,6 +11,10 @@
 
 #import <XCTest/XCTest.h>
 
+@interface NSString (TestingColumnHeader)
++ (NSString *)tableContentColumnHeaderStringForColumnName:(NSString *)columnName columnType:(NSString *)columnType columnTypesVisible:(BOOL)columnTypesVisible;
+@end
+
 @interface SPFunctionsTests : XCTestCase
 
 @end
@@ -103,6 +107,28 @@
 
     XCTAssertTrue(SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(@"No route to host", nil, @"db.local"));
     XCTAssertFalse(SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(@"Connection timed out", @"Operation timed out", @"192.168.1.5"));
+}
+
+- (void)testQueryColumnHeaderIncludesTypeWhenEnabled
+{
+    NSString *expectedHeader = @"hire_time TIMESTAMP";
+    NSString *header = [NSString tableContentColumnHeaderStringForColumnName:@"hire_time" columnType:@"TIMESTAMP" columnTypesVisible:YES];
+    
+    XCTAssertEqualObjects(header, expectedHeader);
+}
+
+- (void)testQueryColumnHeaderOmitsTypeWhenDisabled
+{
+    NSString *header = [NSString tableContentColumnHeaderStringForColumnName:@"hire_time" columnType:@"TIMESTAMP" columnTypesVisible:NO];
+    
+    XCTAssertEqualObjects(header, @"hire_time");
+}
+
+- (void)testQueryColumnHeaderFallsBackToNameWhenTypeIsMissing
+{
+    NSString *header = [NSString tableContentColumnHeaderStringForColumnName:@"hire_time" columnType:nil columnTypesVisible:YES];
+    
+    XCTAssertEqualObjects(header, @"hire_time");
 }
 
 // 0.0354 s

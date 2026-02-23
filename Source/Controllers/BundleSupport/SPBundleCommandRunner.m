@@ -35,6 +35,9 @@
 #import "sequel-ace-Swift.h"
 #import <sys/syslimits.h>
 
+static NSString * const SPBundleRemovedScriptingRuntimeDeprecationURL = @"https://developer.apple.com/documentation/macos-release-notes/macos-catalina-10_15-release-notes#Scripting-Language-Runtimes";
+static NSString * const SPBundlePythonRuntimeRemovalURL = @"https://developer.apple.com/documentation/macos-release-notes/macos-12_3-release-notes";
+
 // Defined to suppress warnings
 @interface NSObject (SPBundleMethods)
 
@@ -44,6 +47,114 @@
 @end
 
 @implementation SPBundleCommandRunner
+
++ (NSSet<NSString *> *)removedSystemScriptingRuntimeNames
+{
+	static NSSet<NSString *> *removedRuntimeNames = nil;
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		removedRuntimeNames = [NSSet setWithArray:@[@"python", @"python2", @"python2.7", @"php", @"ruby"]];
+	});
+	return removedRuntimeNames;
+}
+
++ (BOOL)isCommandAvailableOnPath:(NSString *)command withEnvironment:(NSDictionary *)environment
+{
+	if (![command isKindOfClass:[NSString class]] || !command.length) return NO;
+
+	NSString *pathValue = [environment objectForKey:@"PATH"];
+	if (![pathValue isKindOfClass:[NSString class]] || !pathValue.length) {
+		pathValue = [[[NSProcessInfo processInfo] environment] objectForKey:@"PATH"];
+	}
+	if (!pathValue.length) return NO;
+
+	NSFileManager *fileManager = [NSFileManager defaultManager];
+	for (NSString *dir in [pathValue componentsSeparatedByString:@":"]) {
+		if (![dir isKindOfClass:[NSString class]] || !dir.length) continue;
+		NSString *candidatePath = [dir stringByAppendingPathComponent:command];
+		if ([fileManager isExecutableFileAtPath:candidatePath]) return YES;
+	}
+
+	return NO;
+}
+
++ (NSString *)missingRemovedScriptingRuntimeForInterpreterArguments:(NSArray *)interpreterArguments environment:(NSDictionary *)environment
+{
+	if (![interpreterArguments isKindOfClass:[NSArray class]] || !interpreterArguments.count) return nil;
+
+	NSString *firstArgument = [interpreterArguments firstObject];
+	if (![firstArgument isKindOfClass:[NSString class]] || !firstArgument.length) return nil;
+
+	NSString *runtimeName = nil;
+	BOOL launchedViaEnv = NO;
+	NSString *launcherName = [[firstArgument lastPathComponent] lowercaseString];
+	if ([launcherName isEqualToString:@"env"]) {
+		launchedViaEnv = YES;
+		for (NSUInteger idx = 1; idx < [interpreterArguments count]; idx++) {
+			NSString *candidate = [interpreterArguments objectAtIndex:idx];
+			if (![candidate isKindOfClass:[NSString class]] || !candidate.length) continue;
+			if ([candidate hasPrefix:@"-"]) continue;
+			runtimeName = [[candidate lastPathComponent] lowercaseString];
+			break;
+		}
+	} else {
+		runtimeName = launcherName;
+	}
+
+	if (!runtimeName.length || ![[self removedSystemScriptingRuntimeNames] containsObject:runtimeName]) return nil;
+
+	if (launchedViaEnv) {
+		return [self isCommandAvailableOnPath:runtimeName withEnvironment:environment] ? nil : runtimeName;
+	}
+
+	if (![firstArgument hasPrefix:@"/"]) {
+		return [self isCommandAvailableOnPath:runtimeName withEnvironment:environment] ? nil : runtimeName;
+	}
+
+	NSFileManager *fileManager = [NSFileManager defaultManager];
+	BOOL isDir = NO;
+	BOOL exists = [fileManager fileExistsAtPath:firstArgument isDirectory:&isDir];
+	if (!exists || isDir || ![fileManager isExecutableFileAtPath:firstArgument]) return runtimeName;
+
+	return nil;
+}
+
++ (NSString *)missingRemovedScriptingRuntimeFromErrorMessage:(NSString *)errorMessage
+{
+	if (![errorMessage isKindOfClass:[NSString class]] || !errorMessage.length) return nil;
+
+	NSString *lowerErrorMessage = [errorMessage lowercaseString];
+	if (![lowerErrorMessage containsString:@"no such file or directory"] && ![lowerErrorMessage containsString:@"command not found"]) return nil;
+
+	for (NSString *runtimeName in [self removedSystemScriptingRuntimeNames]) {
+		NSString *runtimePathNeedle = [NSString stringWithFormat:@"/usr/bin/%@", runtimeName];
+		NSString *envNeedle = [NSString stringWithFormat:@": %@: no such file or directory", runtimeName];
+		NSString *shellNeedle = [NSString stringWithFormat:@"%@: command not found", runtimeName];
+		NSString *zshNeedle = [NSString stringWithFormat:@"command not found: %@", runtimeName];
+		if ([lowerErrorMessage containsString:runtimePathNeedle] || [lowerErrorMessage containsString:envNeedle] || [lowerErrorMessage containsString:shellNeedle] || [lowerErrorMessage containsString:zshNeedle]) {
+			return runtimeName;
+		}
+	}
+
+	return nil;
+}
+
++ (void)showRemovedScriptingRuntimeUnavailableAlertForRuntime:(NSString *)runtimeName
+{
+	NSString *title = NSLocalizedString(@"Removed macOS Runtime", @"removed macos runtime warning title");
+	NSString *message = [NSString stringWithFormat:NSLocalizedString(@"This Bundle attempted to run “%@”, but that runtime is not available on this macOS version.\n\nApple deprecated and removed built-in scripting runtimes from macOS updates.\n\nSource materials:\n• %@\n• %@\n\nPlease update the Bundle to use an available runtime or command.", @"removed macos runtime warning message"), runtimeName, SPBundleRemovedScriptingRuntimeDeprecationURL, SPBundlePythonRuntimeRemovalURL];
+
+	[NSAlert createAlertWithTitle:title
+						  message:message
+			   primaryButtonTitle:NSLocalizedString(@"Open Apple Release Notes", @"open apple release notes button")
+			 secondaryButtonTitle:NSLocalizedString(@"OK", @"ok button")
+			 primaryButtonHandler:^{
+		NSURL *deprecationURL = [NSURL URLWithString:SPBundleRemovedScriptingRuntimeDeprecationURL];
+		if (deprecationURL) {
+			[[NSWorkspace sharedWorkspace] openURL:deprecationURL];
+		}
+	} secondaryButtonHandler:nil];
+}
 
 /**
  * Run the supplied string as a BASH command(s) and return the result.
@@ -76,6 +187,7 @@
 
 	BOOL userTerminated = NO;
 	BOOL isDir = NO;
+	NSString *missingRemovedRuntime = nil;
 
 	NSMutableArray *scriptHeaderArguments = [NSMutableArray array];
 	NSString *scriptPath = @"";
@@ -116,6 +228,8 @@
 				NSLog(@"Couldn't write script file.");
 			}
 		}
+
+		missingRemovedRuntime = [self missingRemovedScriptingRuntimeForInterpreterArguments:scriptHeaderArguments environment:shellEnvironment];
 	} else {
 		[scriptHeaderArguments addObject:@"/bin/sh"];
 		NSError *writeError = nil;
@@ -126,6 +240,18 @@
 			NSBeep();
 			NSLog(@"Couldn't write script file.");
 		}
+	}
+
+	if (missingRemovedRuntime.length) {
+		[self showRemovedScriptingRuntimeUnavailableAlertForRuntime:missingRemovedRuntime];
+		[fileManager removeItemAtPath:scriptFilePath error:nil];
+		[fileManager removeItemAtPath:stdoutFilePath error:nil];
+		if (theError != NULL) {
+			*theError = [[NSError alloc] initWithDomain:NSPOSIXErrorDomain
+												   code:9
+											   userInfo:@{NSLocalizedDescriptionKey: @""}];
+		}
+		return @"";
 	}
 
 	NSTask *bashTask = [[NSTask alloc] init];
@@ -310,6 +436,19 @@
 
 	NSInteger status = [bashTask terminationStatus];
 	NSData *errdata  = [stderr_file readDataToEndOfFile];
+	NSString *stderrMessage = [[NSString alloc] initWithData:errdata encoding:NSUTF8StringEncoding];
+
+	NSString *missingRemovedRuntimeFromStderr = [self missingRemovedScriptingRuntimeFromErrorMessage:stderrMessage];
+	if (missingRemovedRuntimeFromStderr.length) {
+		[fileManager removeItemAtPath:stdoutFilePath error:nil];
+		[self showRemovedScriptingRuntimeUnavailableAlertForRuntime:missingRemovedRuntimeFromStderr];
+		if (theError != NULL) {
+			*theError = [[NSError alloc] initWithDomain:NSPOSIXErrorDomain
+												   code:9
+											   userInfo:@{NSLocalizedDescriptionKey: @""}];
+		}
+		return @"";
+	}
 
 	// Check STDERR
 	if([errdata length] && (status < SPBundleRedirectActionNone || status > SPBundleRedirectActionLastCode)) {
@@ -317,7 +456,7 @@
 
 		if(status == 9 || userTerminated) return @"";
 		if(theError != NULL) {
-			NSMutableString *errMessage = [[NSMutableString alloc] initWithData:errdata encoding:NSUTF8StringEncoding];
+			NSMutableString *errMessage = [[NSMutableString alloc] initWithString:stderrMessage ?: @""];
 			[errMessage replaceOccurrencesOfString:[NSString stringWithFormat:@"%@: ", scriptFilePath] withString:@"" options:NSLiteralSearch range:NSMakeRange(0, [errMessage length])];
 			*theError = [[NSError alloc] initWithDomain:NSPOSIXErrorDomain
 													code:status
@@ -342,7 +481,7 @@
 			} else {
 				if(theError != NULL) {
 					if(status == 9 || userTerminated) return @"";
-					NSMutableString *errMessage = [[NSMutableString alloc] initWithData:errdata encoding:NSUTF8StringEncoding];
+					NSMutableString *errMessage = [[NSMutableString alloc] initWithString:stderrMessage ?: @""];
 					[errMessage replaceOccurrencesOfString:[SPBundleTaskScriptCommandFilePath stringByExpandingTildeInPath] withString:@"" options:NSLiteralSearch range:NSMakeRange(0, [errMessage length])];
 					*theError = [[NSError alloc] initWithDomain:NSPOSIXErrorDomain
 															code:status

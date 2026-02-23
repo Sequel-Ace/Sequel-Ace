@@ -783,7 +783,7 @@ static unsigned short getRandomPort(void);
 	[self performSelectorOnMainThread:@selector(workerGetResponseForQuestion:) withObject:theQuestion waitUntilDone:YES];
 
 	// Wait for closeSSHQuestionSheet: to unlock the lock, indicating an answer is available
-	while (![answerAvailableLock tryLock]) usleep(25000);
+	[answerAvailableLock lock];
 
 	// Save the answer
 	BOOL response = requestedResponse;
@@ -809,6 +809,7 @@ static unsigned short getRandomPort(void);
 
 	//show the question window
 	[parentWindow beginSheet:sshQuestionDialog completionHandler:nil];
+	[[NSApplication sharedApplication] runModalForWindow:sshQuestionDialog];
 }
 
 /*
@@ -819,6 +820,7 @@ static unsigned short getRandomPort(void);
 	requestedResponse = [sender tag] == 1 ? YES : NO;
 	[NSApp endSheet:sshQuestionDialog];
 	[sshQuestionDialog orderOut:nil];
+	[[NSApplication sharedApplication] abortModal];
 	[[answerAvailableLock onMainThread] unlock];
 }
 
@@ -839,7 +841,7 @@ static unsigned short getRandomPort(void);
 	[self performSelectorOnMainThread:@selector(workerGetPasswordForQuery:) withObject:theQuery waitUntilDone:YES];
 
 	// Wait for closeSSHPasswordSheet: to unlock the lock, indicating an answer is available
-	while (![answerAvailableLock tryLock]) usleep(25000);
+	[answerAvailableLock lock];
 
 	// Save the answer
 	NSString *thePassword = nil;
@@ -971,4 +973,3 @@ unsigned short getRandomPort() {
 	}
 	return port;
 }
-
