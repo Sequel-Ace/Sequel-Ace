@@ -200,6 +200,58 @@ extension String {
     }
 }
 
+@objc(SPProcessListRowSerializer)
+@objcMembers
+public class SPProcessListRowSerializer: NSObject {
+    private enum ProcessListColumnKey: String {
+        case id = "Id"
+        case user = "User"
+        case host = "Host"
+        case database = "db"
+        case command = "Command"
+        case time = "Time"
+        case state = "State"
+        case info = "Info"
+        case progress = "Progress"
+    }
+
+    @objc(serializedProcessRow:includeProgress:)
+    public class func serializedProcessRow(_ process: NSDictionary, includeProgress: Bool) -> String {
+        let typedProcess = process as? [AnyHashable: Any] ?? [:]
+
+        var rowValues = [
+            ProcessListColumnKey.id,
+            .user,
+            .host,
+            .database,
+            .command,
+            .time,
+            .state,
+            .info
+        ].map { processValue(for: $0, in: typedProcess) }
+
+        if includeProgress {
+            let progressValue = processValue(for: .progress, in: typedProcess)
+            if !progressValue.isEmpty {
+                rowValues.append(progressValue)
+            }
+        }
+
+        return rowValues.joined(separator: " ")
+    }
+
+    private class func processValue(
+        for key: ProcessListColumnKey,
+        in process: [AnyHashable: Any]
+    ) -> String {
+        guard let rawValue = process[key.rawValue], !(rawValue is NSNull) else {
+            return ""
+        }
+
+        return String(describing: rawValue)
+    }
+}
+
 @objc extension NSString {
     //Special space-character used to separate the column name and column type
     @objc static let columnHeaderSplittingSpace: String = " "
@@ -295,5 +347,48 @@ extension String {
             return formatter.string(from: date) as NSString
         }
         return nil
+    }
+}
+
+@objcMembers public final class SPFieldTypeClassifier: NSObject {
+    private enum FieldTypeGroup: String {
+        case bit
+        case integer
+        case float
+    }
+
+    private static let unquotedFieldTypes: Set<String> = [
+        "BIT",
+        "TINYINT",
+        "SMALLINT",
+        "MEDIUMINT",
+        "INT",
+        "INTEGER",
+        "BIGINT",
+        "FLOAT",
+        "DOUBLE",
+        "REAL",
+        "DECIMAL",
+        "DEC",
+        "NUMERIC",
+        "FIXED"
+    ]
+
+    @objc(shouldBeUnquotedWithFieldTypeGroup:fieldType:)
+    public class func shouldBeUnquoted(fieldTypeGroup: String?, fieldType: String?) -> Bool {
+        if let normalizedGroup = fieldTypeGroup?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+           FieldTypeGroup(rawValue: normalizedGroup) != nil {
+            return true
+        }
+
+        guard let fieldType else { return false }
+
+        let normalizedFieldType = fieldType.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedFieldType.isEmpty else { return false }
+
+        let baseType = normalizedFieldType.split(separator: "(", maxSplits: 1, omittingEmptySubsequences: false).first ?? ""
+        guard let typeToken = baseType.split(whereSeparator: \.isWhitespace).first else { return false }
+
+        return unquotedFieldTypes.contains(typeToken.uppercased())
     }
 }

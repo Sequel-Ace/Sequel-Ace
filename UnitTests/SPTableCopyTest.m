@@ -30,11 +30,17 @@
 
 #import "SPTableCopy.h"
 #import <SPMySQL/SPMySQL.h>
+#import "sequel-ace-Swift.h"
 
 #import <XCTest/XCTest.h>
 #import <OCMock/OCMock.h>
 
 #define USE_APPLICATION_UNIT_TEST 1
+
+static inline BOOL SPFieldTypeShouldBeUnquoted(NSString *fieldTypeGroup, NSString *fieldType)
+{
+	return [SPFieldTypeClassifier shouldBeUnquotedWithFieldTypeGroup:fieldTypeGroup fieldType:fieldType];
+}
 
 @interface SPTableCopyTest : XCTestCase
 
@@ -90,6 +96,67 @@
 	}
 	
 	[mockConnection verify];
+}
+
+@end
+
+@interface SPFieldTypeClassificationTests : XCTestCase
+
+- (void)testNumericTypeIsUnquotedWhenTypeGroupingIsMissing;
+- (void)testNumericTypeIsUnquotedWhenFieldTypeHasLeadingTrailingSpaces;
+- (void)testNumericTypeIsUnquotedWhenTypeGroupingIsWrong;
+- (void)testIntUnsignedTypeIsUnquotedForIssue2252;
+- (void)testBitTypeIsUnquoted;
+- (void)testNonNumericTypeStaysQuoted;
+- (void)testGroupingFallbackBehaviorWithNilFieldType;
+
+@end
+
+@implementation SPFieldTypeClassificationTests
+
+- (void)testNumericTypeIsUnquotedWhenTypeGroupingIsMissing
+{
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(nil, @"DECIMAL(10,2)"));
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(nil, @"BIGINT unsigned"));
+}
+
+- (void)testNumericTypeIsUnquotedWhenFieldTypeHasLeadingTrailingSpaces
+{
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(nil, @" BIGINT unsigned "));
+}
+
+- (void)testNumericTypeIsUnquotedWhenTypeGroupingIsWrong
+{
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(@"string", @"BIGINT unsigned"));
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(@"textdata", @"NUMERIC(8, 4)"));
+}
+
+- (void)testIntUnsignedTypeIsUnquotedForIssue2252
+{
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(@"integer", @"INT UNSIGNED"));
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(nil, @"INT UNSIGNED"));
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(@"string", @"INT(10) UNSIGNED"));
+}
+
+- (void)testBitTypeIsUnquoted
+{
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(nil, @"BIT"));
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(nil, @"BIT(1)"));
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(@"string", @"BIT(8)"));
+}
+
+- (void)testNonNumericTypeStaysQuoted
+{
+	XCTAssertFalse(SPFieldTypeShouldBeUnquoted(nil, @"VARCHAR(255)"));
+	XCTAssertFalse(SPFieldTypeShouldBeUnquoted(@"string", @"JSON"));
+}
+
+- (void)testGroupingFallbackBehaviorWithNilFieldType
+{
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(@"float", nil));
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(@"integer", nil));
+	XCTAssertFalse(SPFieldTypeShouldBeUnquoted(@"string", nil));
+	XCTAssertFalse(SPFieldTypeShouldBeUnquoted(nil, nil));
 }
 
 @end

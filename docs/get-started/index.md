@@ -43,6 +43,10 @@ See [Connecting to MAMP or XAMPP](mamp-xampp.html "Connecting to MAMP or XAMPP")
 
 On the server, configure MySQL by editing /etc/my.cnf and comment or remove `skip-networking` from the `[mysqld]` section. Then, restart MySQL Server.
 
+**How do I connect to AWS RDS/Aurora with IAM authentication and tunnels (including SSM)?**
+
+See [What type of connection do I have?](connection-types.html#aws-iam-authentication) for the full AWS IAM setup, sandbox permission details, and external tunnel options (SSH/SSM/custom port forwarding).
+
 **Sequel Ace doesn't read my `~/.ssh/config` parameters.**
 
 Sequel Ace runs in a sandboxed mode and by default cannot access your SSH config file. If you'd like to use a custom SSH config file, open Sequel Ace's preferences (from the menu bar), go to the "Network" settings tab, and select the SSH config file you would like to use. The same config file will be used for all connections. If your config file references other files in the filesystem, Sequel Ace will not be able to access these other files by default due to security constraints - to allow access to these files, please go to the "Files" tab in Sequel Ace's Preferences and grant access to these other support files.

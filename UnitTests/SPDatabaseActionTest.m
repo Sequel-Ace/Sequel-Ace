@@ -32,6 +32,7 @@
 #import <XCTest/XCTest.h>
 
 #import "SPDatabaseAction.h"
+#import "sequel-ace-Swift.h"
 #import <SPMySQL/SPMySQL.h>
 
 @interface SPDatabaseActionTest : XCTestCase
@@ -84,6 +85,122 @@
 	XCTAssertTrue([createDb createDatabase:@"target_name" withEncoding:@"" collation:nil], @"create database return");
 	
 	OCMVerifyAll(mockConnection);
+}
+
+@end
+
+@interface SPProcessListSerializationTest : XCTestCase
+
+- (void)testSerializedProcessRow_01_nullValuesBecomeEmptyTokens;
+- (void)testSerializedProcessRow_02_progressIsIncludedWhenRequestedAndPresent;
+- (void)testSerializedProcessRow_03_progressIsSkippedWhenNullOrMissing;
+- (void)testSerializedProcessRow_04_progressIsIgnoredWhenNotRequested;
+
+@end
+
+@implementation SPProcessListSerializationTest
+
+- (void)testSerializedProcessRow_01_nullValuesBecomeEmptyTokens
+{
+	NSDictionary *process = @{
+		@"Id": @42,
+		@"User": @"alice",
+		@"Host": @"localhost:3306",
+		@"db": [NSNull null],
+		@"Command": @"Query",
+		@"Time": @15,
+		@"State": [NSNull null],
+		@"Info": [NSNull null]
+	};
+
+	NSString *serialized = [self _serializeProcess:process includeProgress:NO];
+
+	XCTAssertFalse([serialized containsString:@"(null)"]);
+	XCTAssertEqualObjects([self _nonEmptyTokensFromSerializedRow:serialized], (@[@"42", @"alice", @"localhost:3306", @"Query", @"15"]));
+}
+
+- (void)testSerializedProcessRow_02_progressIsIncludedWhenRequestedAndPresent
+{
+	NSDictionary *process = @{
+		@"Id": @7,
+		@"User": @"bob",
+		@"Host": @"db.internal",
+		@"db": @"analytics",
+		@"Command": @"Query",
+		@"Time": @3,
+		@"State": @"executing",
+		@"Info": @"SELECT_1",
+		@"Progress": @"99.50"
+	};
+
+	NSString *serialized = [self _serializeProcess:process includeProgress:YES];
+
+	XCTAssertFalse([serialized containsString:@"(null)"]);
+	XCTAssertEqualObjects([self _nonEmptyTokensFromSerializedRow:serialized], (@[@"7", @"bob", @"db.internal", @"analytics", @"Query", @"3", @"executing", @"SELECT_1", @"99.50"]));
+}
+
+- (void)testSerializedProcessRow_03_progressIsSkippedWhenNullOrMissing
+{
+	NSDictionary *processWithNullProgress = @{
+		@"Id": @12,
+		@"User": @"carol",
+		@"Host": @"127.0.0.1",
+		@"db": @"sales",
+		@"Command": @"Sleep",
+		@"Time": @22,
+		@"State": @"idle",
+		@"Info": @"-",
+		@"Progress": [NSNull null]
+	};
+
+	NSDictionary *processWithoutProgress = @{
+		@"Id": @12,
+		@"User": @"carol",
+		@"Host": @"127.0.0.1",
+		@"db": @"sales",
+		@"Command": @"Sleep",
+		@"Time": @22,
+		@"State": @"idle",
+		@"Info": @"-"
+	};
+
+	NSString *serializedWithNullProgress = [self _serializeProcess:processWithNullProgress includeProgress:YES];
+	NSString *serializedWithoutProgress = [self _serializeProcess:processWithoutProgress includeProgress:YES];
+
+	XCTAssertEqualObjects([self _nonEmptyTokensFromSerializedRow:serializedWithNullProgress], (@[@"12", @"carol", @"127.0.0.1", @"sales", @"Sleep", @"22", @"idle", @"-"]));
+	XCTAssertEqualObjects(serializedWithNullProgress, serializedWithoutProgress);
+}
+
+- (void)testSerializedProcessRow_04_progressIsIgnoredWhenNotRequested
+{
+	NSDictionary *process = @{
+		@"Id": @100,
+		@"User": @"dave",
+		@"Host": @"10.0.0.4",
+		@"db": @"reporting",
+		@"Command": @"Query",
+		@"Time": @5,
+		@"State": @"running",
+		@"Info": @"SELECT 1",
+		@"Progress": @"33.20"
+	};
+
+	NSString *serialized = [self _serializeProcess:process includeProgress:NO];
+
+	XCTAssertFalse([serialized containsString:@"33.20"]);
+	XCTAssertEqualObjects([self _nonEmptyTokensFromSerializedRow:serialized], (@[@"100", @"dave", @"10.0.0.4", @"reporting", @"Query", @"5", @"running", @"SELECT", @"1"]));
+}
+
+- (NSArray<NSString *> *)_nonEmptyTokensFromSerializedRow:(NSString *)serializedRow
+{
+	NSArray<NSString *> *tokens = [serializedRow componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+	NSPredicate *nonEmptyPredicate = [NSPredicate predicateWithFormat:@"length > 0"];
+	return [tokens filteredArrayUsingPredicate:nonEmptyPredicate];
+}
+
+- (NSString *)_serializeProcess:(NSDictionary *)process includeProgress:(BOOL)includeProgress
+{
+	return [SPProcessListRowSerializer serializedProcessRow:process includeProgress:includeProgress];
 }
 
 @end
