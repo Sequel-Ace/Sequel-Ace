@@ -33,12 +33,21 @@
 
 #import "SPDatabaseAction.h"
 #import <SPMySQL/SPMySQL.h>
+#import "../Source/Controllers/DataControllers/SPServerSupport.m"
 
 @interface SPDatabaseActionTest : XCTestCase
 
 - (void)testCreateDatabase_01_emptyName;
 - (void)testCreateDatabase_02_allParams;
 - (void)testCreateDatabase_03_nameOnly;
+
+@end
+
+@interface SPServerSupportTests : XCTestCase
+
+- (void)testIsMySQL8Flag_IsTrueForVersion8AndHigher;
+- (void)testIsMySQL8Flag_IsFalseForPreMySQL8Versions;
+- (void)testIsMySQL5Flag_RemainsLimitedToMajorVersion5;
 
 @end
 
@@ -84,6 +93,28 @@
 	XCTAssertTrue([createDb createDatabase:@"target_name" withEncoding:@"" collation:nil], @"create database return");
 	
 	OCMVerifyAll(mockConnection);
+}
+
+@end
+
+@implementation SPServerSupportTests
+
+- (void)testIsMySQL8Flag_IsTrueForVersion8AndHigher
+{
+	XCTAssertTrue([[SPServerSupport alloc] initWithMajorVersion:8 minor:0 release:0].isMySQL8);
+	XCTAssertTrue([[SPServerSupport alloc] initWithMajorVersion:9 minor:2 release:1].isMySQL8);
+}
+
+- (void)testIsMySQL8Flag_IsFalseForPreMySQL8Versions
+{
+	XCTAssertFalse([[SPServerSupport alloc] initWithMajorVersion:7 minor:9 release:0].isMySQL8);
+	XCTAssertFalse([[SPServerSupport alloc] initWithMajorVersion:5 minor:7 release:44].isMySQL8);
+}
+
+- (void)testIsMySQL5Flag_RemainsLimitedToMajorVersion5
+{
+	XCTAssertTrue([[SPServerSupport alloc] initWithMajorVersion:5 minor:7 release:44].isMySQL5);
+	XCTAssertFalse([[SPServerSupport alloc] initWithMajorVersion:8 minor:0 release:0].isMySQL5);
 }
 
 @end
