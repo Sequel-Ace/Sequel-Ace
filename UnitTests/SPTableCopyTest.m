@@ -30,12 +30,17 @@
 
 #import "SPTableCopy.h"
 #import <SPMySQL/SPMySQL.h>
-#import "SPFieldTypeClassification.h"
+#import "sequel-ace-Swift.h"
 
 #import <XCTest/XCTest.h>
 #import <OCMock/OCMock.h>
 
 #define USE_APPLICATION_UNIT_TEST 1
+
+static inline BOOL SPFieldTypeShouldBeUnquoted(NSString *fieldTypeGroup, NSString *fieldType)
+{
+	return [SPFieldTypeClassifier shouldBeUnquotedWithFieldTypeGroup:fieldTypeGroup fieldType:fieldType];
+}
 
 @interface SPTableCopyTest : XCTestCase
 

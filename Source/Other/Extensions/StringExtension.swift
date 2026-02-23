@@ -288,3 +288,46 @@ extension String {
         return nil
     }
 }
+
+@objcMembers public final class SPFieldTypeClassifier: NSObject {
+    private enum FieldTypeGroup: String {
+        case bit
+        case integer
+        case float
+    }
+
+    private static let unquotedFieldTypes: Set<String> = [
+        "BIT",
+        "TINYINT",
+        "SMALLINT",
+        "MEDIUMINT",
+        "INT",
+        "INTEGER",
+        "BIGINT",
+        "FLOAT",
+        "DOUBLE",
+        "REAL",
+        "DECIMAL",
+        "DEC",
+        "NUMERIC",
+        "FIXED"
+    ]
+
+    @objc(shouldBeUnquotedWithFieldTypeGroup:fieldType:)
+    public class func shouldBeUnquoted(fieldTypeGroup: String?, fieldType: String?) -> Bool {
+        if let normalizedGroup = fieldTypeGroup?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+           FieldTypeGroup(rawValue: normalizedGroup) != nil {
+            return true
+        }
+
+        guard let fieldType else { return false }
+
+        let normalizedFieldType = fieldType.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedFieldType.isEmpty else { return false }
+
+        let baseType = normalizedFieldType.split(separator: "(", maxSplits: 1, omittingEmptySubsequences: false).first ?? ""
+        guard let typeToken = baseType.split(whereSeparator: \.isWhitespace).first else { return false }
+
+        return unquotedFieldTypes.contains(typeToken.uppercased())
+    }
+}

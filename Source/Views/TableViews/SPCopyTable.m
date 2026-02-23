@@ -48,7 +48,6 @@
 #import "SPDatabaseContentViewDelegate.h"
 #import "SPBundleManager.h"
 #import "SPTableData.h"
-#import "SPFieldTypeClassification.h"
 
 #import <SPMySQL/SPMySQL.h>
 #import "pthread.h"
@@ -523,7 +522,7 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
             data[kFieldType]  = t;
             data[kFieldTypeGroup] = tGroup;
             // Numeric types should not be wrapped in quotes in INSERT statements.
-            if (SPFieldTypeShouldBeUnquoted(tGroup, t))
+            if ([SPFieldTypeClassifier shouldBeUnquotedWithFieldTypeGroup:tGroup fieldType:t])
                 data[kColType] = @(0);
             // Blob data or long text data
             else if ([tGroup isEqualToString:@"blobdata"] || [tGroup isEqualToString:@"textdata"])
