@@ -377,6 +377,7 @@
 
                 NSMutableArray *rawColumnNames = [NSMutableArray arrayWithCapacity:(colCountRetained)];
                 NSMutableArray *queryColumnDetails = [NSMutableArray arrayWithCapacity:(colCountRetained)];
+                NSMutableArray *retainedColumnDetails = [NSMutableArray arrayWithCapacity:(colCountRetained)];
 
                 BOOL *useRawDataForColumnAtIndex = calloc(colCountRetained, sizeof(BOOL));
                 BOOL *useRawHexDataForColumnAtIndex = calloc(colCountRetained, sizeof(BOOL));
@@ -388,6 +389,8 @@
                     NSDictionary *theColumnDetail = [[tableDetails objectForKey:@"columns"] safeObjectAtIndex:j];
                     NSString *theTypeGrouping = [theColumnDetail objectForKey:@"typegrouping"];
                     NSString *generatedAlways = [theColumnDetail objectForKey:@"generatedalways"];
+                    NSString *fieldType = [[theColumnDetail objectForKey:@"type"] lowercaseString];
+                    BOOL isBitField = [[theTypeGrouping lowercaseString] isEqualToString:@"bit"] || [fieldType hasPrefix:@"bit"];
 
                     if ( sqlOutputIncludeGeneratedColumns || !generatedAlways ) {
                         // Start by setting the column as non-safe
@@ -400,7 +403,7 @@
                             && [theTypeGrouping isEqualToString:@"string"]
                             && ([[theColumnDetail objectForKey:@"binary"] boolValue] || [[theColumnDetail objectForKey:@"collation"] hasSuffix:@"_bin"]))
                         {
-                            useRawHexDataForColumnAtIndex[j] = YES;
+                            useRawHexDataForColumnAtIndex[jj] = YES;
                         }
 
                         // Floats, integers can be output directly assuming they're non-binary
@@ -409,11 +412,20 @@
                             useRawDataForColumnAtIndex[jj] = YES;
                         }
 
+                        // BIT columns should be exported in a numeric representation for reliable round-tripping.
+                        if (isBitField) {
+                            useRawDataForColumnAtIndex[jj] = YES;
+                        }
+
                         // Set up the column query string parts
                         [rawColumnNames addObject:[theColumnDetail objectForKey:@"name"]];
+                        [retainedColumnDetails addObject:theColumnDetail];
 
                         if (useRawHexDataForColumnAtIndex[jj]) {
                             [queryColumnDetails addObject:[NSString stringWithFormat:@"HEX(%@)", [[theColumnDetail objectForKey:@"name"] mySQLBacktickQuotedString]]];
+                        }
+                        else if (isBitField) {
+                            [queryColumnDetails addObject:[NSString stringWithFormat:@"CAST(%@ AS UNSIGNED)", [[theColumnDetail objectForKey:@"name"] mySQLBacktickQuotedString]]];
                         }
                         else {
                             [queryColumnDetails addObject:[[theColumnDetail objectForKey:@"name"] mySQLBacktickQuotedString]];
@@ -517,7 +529,7 @@
                         for (NSUInteger t = 0; t < colCountRetained; t++)
                         {
                             id object = [row safeObjectAtIndex:t];
-                          	NSDictionary *fieldDetails = [[tableDetails safeObjectForKey:@"columns"] safeObjectAtIndex:t];
+                          	NSDictionary *fieldDetails = [retainedColumnDetails safeObjectAtIndex:t];
 
                             // Add NULL values directly to the output row; use a pointer comparison to the singleton
                             // instance for speed.
@@ -531,7 +543,8 @@
                             }
 
                             // If the field is of type BIT, the values need a binary prefix of b'x'.
-                            else if ([[fieldDetails safeObjectForKey:@"type"] isEqualToString:@"BIT"]) {
+                            else if ([[[fieldDetails safeObjectForKey:@"typegrouping"] lowercaseString] isEqualToString:@"bit"]
+                                     || [[[fieldDetails safeObjectForKey:@"type"] lowercaseString] hasPrefix:@"bit"]) {
                                 [sqlString appendFormat:@"b'%@'", [object description]];
                             }
 

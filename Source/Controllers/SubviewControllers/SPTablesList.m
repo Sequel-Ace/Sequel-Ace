@@ -73,6 +73,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void)_renameTableOfType:(SPTableType)tableType from:(NSString *)oldTableName to:(NSString *)newTableName;
 - (NSMutableArray *)_allSchemaObjectsOfType:(SPTableType)type;
 - (BOOL)_databaseHasObjectOfType:(SPTableType)type;
+- (NSString *)_pinnedTablesConnectionIdentifier;
 
 @property (readwrite, strong) SQLitePinnedTableManager *_SQLitePinnedTableManager ;
 
@@ -738,7 +739,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	}
   
   NSString *databaseName = [mySQLConnection database];
-  NSString *hostName = [mySQLConnection host];
+  NSString *connectionIdentifier = [self _pinnedTablesConnectionIdentifier];
   
   NSMutableArray *selectedTables = [NSMutableArray array];
   BOOL isPinned = NO;
@@ -753,9 +754,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
   
   for (NSString *tableName in selectedTables) {
     if (isPinned) { // unpin selection
-      [_SQLitePinnedTableManager unpinTableWithHostName:hostName databaseName:databaseName tableToUnpin:tableName];
+      [_SQLitePinnedTableManager unpinTableWithHostName:connectionIdentifier databaseName:databaseName tableToUnpin:tableName];
     } else { // pin selection
-      [_SQLitePinnedTableManager pinTableWithHostName:hostName databaseName:databaseName tableToPin:tableName];
+      [_SQLitePinnedTableManager pinTableWithHostName:connectionIdentifier databaseName:databaseName tableToPin:tableName];
     }
   }
   
@@ -2095,6 +2096,17 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
     
 }
 
+- (NSString *)_pinnedTablesConnectionIdentifier
+{
+    NSString *connectionIdentifier = [tableDocumentInstance connectionID];
+    if ([connectionIdentifier length] > 0 && ![connectionIdentifier isEqualToString:@"_"]) {
+        return connectionIdentifier;
+    }
+
+    NSString *hostName = [mySQLConnection host];
+    return hostName ? hostName : @"";
+}
+
 /**
  * Remove all currently pinned tables,
  * Doesn't reload the UI
@@ -2116,9 +2128,15 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
  * Doesn't reload the UI
  */
 - (void)initPinnedTables {
-    NSString * hostName = [mySQLConnection host];
-    NSString * databaseName = [mySQLConnection database];
-    NSArray *tablesToPin = [_SQLitePinnedTableManager getPinnedTablesWithHostName:hostName databaseName:databaseName];
+    NSString * connectionIdentifier = [self _pinnedTablesConnectionIdentifier];
+    NSString * legacyHostName = [mySQLConnection host] ?: @"";
+    NSString * databaseName = [mySQLConnection database] ?: @"";
+
+    [_SQLitePinnedTableManager migratePinnedTablesFromLegacyHost:legacyHostName
+                                          toConnectionIdentifier:connectionIdentifier
+                                                    databaseName:databaseName];
+
+    NSArray *tablesToPin = [_SQLitePinnedTableManager getPinnedTablesWithHostName:connectionIdentifier databaseName:databaseName];
     if (tablesToPin.count > 0) {
         [tables insertObject:NSLocalizedString(@"PINNED", @"header for pinned tables") atIndex:0];
         [tableTypes insertObject:@(SPTableTypeNone) atIndex:0];
@@ -2140,12 +2158,12 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void)handlePinnedTableRenameFrom: (NSString*) originalTableName To: (NSString*) newTableName {
 
     NSString *databaseName = [mySQLConnection database];
-    NSString *hostName = [mySQLConnection host];
+    NSString *connectionIdentifier = [self _pinnedTablesConnectionIdentifier];
 
     if ([pinnedTables containsObject:originalTableName]) {
-        [_SQLitePinnedTableManager unpinTableWithHostName:hostName databaseName:databaseName tableToUnpin:originalTableName];
+        [_SQLitePinnedTableManager unpinTableWithHostName:connectionIdentifier databaseName:databaseName tableToUnpin:originalTableName];
         if (![pinnedTables containsObject:newTableName]) {
-            [_SQLitePinnedTableManager pinTableWithHostName:hostName databaseName:databaseName tableToPin:newTableName];
+            [_SQLitePinnedTableManager pinTableWithHostName:connectionIdentifier databaseName:databaseName tableToPin:newTableName];
         }
         [[NSNotificationCenter defaultCenter] postNotificationName:pinnedTableNotificationName object:nil];
     }
@@ -2155,10 +2173,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void)unpinDeletedTableIfPinned: (NSString*) tableName {
 
     NSString *databaseName = [mySQLConnection database];
-    NSString *hostName = [mySQLConnection host];
+    NSString *connectionIdentifier = [self _pinnedTablesConnectionIdentifier];
 
     if ([pinnedTables containsObject:tableName]) {
-        [_SQLitePinnedTableManager unpinTableWithHostName:hostName databaseName:databaseName tableToUnpin:tableName];
+        [_SQLitePinnedTableManager unpinTableWithHostName:connectionIdentifier databaseName:databaseName tableToUnpin:tableName];
         [[NSNotificationCenter defaultCenter] postNotificationName:pinnedTableNotificationName object:nil];
     }
     
@@ -2167,10 +2185,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 - (void)subscribeToTablePinningNotifications {
     
-    NSString * hostName = [mySQLConnection host];
+    NSString * connectionIdentifier = [self _pinnedTablesConnectionIdentifier];
     NSString * databaseName = [mySQLConnection database];
     
-    // remove observer for previous hostname+database on database selection change by user
+    // remove observer for previous connection+database on database selection change by user
     if (pinnedTableNotificationName != nil) {
         [[NSNotificationCenter defaultCenter]
             removeObserver:self
@@ -2178,8 +2196,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
             object:nil];
     }
     
-    // craft notification name such that notification goes only to tabs with same hostname+database
-    pinnedTableNotificationName = [NSString stringWithFormat:@"PinnedTableNotification-Host:%@-Database:%@", hostName, databaseName];
+    // Use an encoded composite key so delimiters in values cannot collide.
+    NSString *encodedConnectionIdentifier = [connectionIdentifier stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]] ?: @"";
+    NSString *encodedDatabaseName = [databaseName stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]] ?: @"";
+    pinnedTableNotificationName = [NSString stringWithFormat:@"PinnedTableNotification|Connection=%@|Database=%@", encodedConnectionIdentifier, encodedDatabaseName];
     
     [[NSNotificationCenter defaultCenter]
         addObserver:self

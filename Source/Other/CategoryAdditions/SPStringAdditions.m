@@ -203,6 +203,28 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 }
 
 /**
+ * Escapes XML element content while preserving quote characters.
+ */
+- (NSString *)XMLEscapeStringForContent
+{
+	NSMutableString *mutableString = [NSMutableString stringWithString:self];
+
+	[mutableString replaceOccurrencesOfString:@"&" withString:@"&amp;"
+									  options:NSLiteralSearch
+										range:NSMakeRange(0, [mutableString length])];
+
+	[mutableString replaceOccurrencesOfString:@"<" withString:@"&lt;"
+									  options:NSLiteralSearch
+										range:NSMakeRange(0, [mutableString length])];
+
+	[mutableString replaceOccurrencesOfString:@">" withString:@"&gt;"
+									  options:NSLiteralSearch
+										range:NSMakeRange(0, [mutableString length])];
+
+	return [NSString stringWithString:mutableString];
+}
+
+/**
  * Returns the string quoted with backticks as required for MySQL identifiers.
  *
  * eg.: tablename    =>   `tablename`
