@@ -521,8 +521,8 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
             data[kHeader]     = [[[[columns safeObjectAtIndex:c] headerCell] stringValue] componentsSeparatedByString:[NSString columnHeaderSplittingSpace]][0];
             data[kFieldType]  = t;
             data[kFieldTypeGroup] = tGroup;
-            // Numeric data
-            if ([tGroup isEqualToString:@"bit"] || [tGroup isEqualToString:@"integer"] || [tGroup isEqualToString:@"float"])
+            // Numeric types should not be wrapped in quotes in INSERT statements.
+            if ([SPFieldTypeClassifier shouldBeUnquotedWithFieldTypeGroup:tGroup fieldType:t])
                 data[kColType] = @(0);
             // Blob data or long text data
             else if ([tGroup isEqualToString:@"blobdata"] || [tGroup isEqualToString:@"textdata"])
