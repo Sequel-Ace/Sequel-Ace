@@ -50,7 +50,7 @@ import OSLog
 }
 
 /// Generates RDS IAM authentication tokens using AWS Signature Version 4
-@objc final class RDSIAMAuthentication: NSObject {
+@objcMembers final class RDSIAMAuthentication: NSObject {
 
     // MARK: - Constants
 
@@ -79,7 +79,7 @@ import OSLog
     ///   - credentials: AWS credentials to use for signing
     /// - Returns: Authentication token to use as password
     /// - Note: This method throws and is for Swift callers. Use the error pointer version for Obj-C.
-    static func generateAuthToken(
+    @nonobjc static func generateAuthToken(
         forHost hostname: String,
         port: Int,
         username: String,
@@ -280,7 +280,7 @@ import OSLog
     // MARK: - Region Detection
 
     /// Extract AWS region from RDS hostname
-    @objc static func regionFromHostname(_ hostname: String) -> String? {
+    static func regionFromHostname(_ hostname: String) -> String? {
         guard !hostname.isEmpty else { return nil }
 
         // RDS hostnames typically follow these patterns:
@@ -301,7 +301,7 @@ import OSLog
     }
 
     /// Validate if a string is a valid AWS region
-    @objc static func isValidAWSRegion(_ string: String) -> Bool {
+    static func isValidAWSRegion(_ string: String) -> Bool {
         guard let regex = try? NSRegularExpression(pattern: regionPattern, options: .caseInsensitive) else {
             return false
         }
@@ -310,7 +310,7 @@ import OSLog
     }
 
     /// Check if hostname appears to be an RDS endpoint
-    @objc static func isRDSHostname(_ hostname: String) -> Bool {
+    static func isRDSHostname(_ hostname: String) -> Bool {
         guard !hostname.isEmpty else { return false }
 
         let lowercased = hostname.lowercased()
@@ -319,7 +319,7 @@ import OSLog
     }
 
     /// Token lifetime in seconds
-    @objc static var tokenLifetimeSeconds: Int {
+    static var tokenLifetimeSeconds: Int {
         tokenExpirationSeconds
     }
 }

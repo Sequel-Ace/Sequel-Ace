@@ -32,9 +32,9 @@ import OSLog
 
 /// Manages access to the AWS credentials directory (~/.aws) via security-scoped bookmarks
 /// for sandbox-compatible AWS IAM authentication.
-@objc final class AWSDirectoryBookmarkManager: NSObject {
+@objcMembers final class AWSDirectoryBookmarkManager: NSObject {
 
-    @objc static let shared = AWSDirectoryBookmarkManager()
+    static let shared = AWSDirectoryBookmarkManager()
 
     private static let log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "AWSDirectoryBookmark")
 
@@ -59,12 +59,12 @@ import OSLog
     // MARK: - Public API
 
     /// The expected path to the AWS credentials directory
-    @objc static var awsDirectoryPath: String {
+    static var awsDirectoryPath: String {
         return NSHomeDirectory() + "/.aws"
     }
 
     /// The active AWS directory path when bookmark access is active.
-    @objc var awsDirectoryBasePath: String {
+    var awsDirectoryBasePath: String {
         if let resolvedPath = currentResolvedAWSDirectoryURL()?.path, resolvedPath.isNotEmpty {
             return resolvedPath
         }
@@ -78,7 +78,7 @@ import OSLog
     // private var authorizedThisSession = false
 
     /// Check if the AWS directory bookmark exists and is valid
-    @objc var isAWSDirectoryAuthorized: Bool {
+    var isAWSDirectoryAuthorized: Bool {
         // DEBUG: Uncomment to simulate sandboxed environment for testing UI
         // if simulateSandboxedEnvironment && !authorizedThisSession {
         //     os_log(.info, log: Self.log, "Simulating sandboxed environment - requires authorization")
@@ -136,7 +136,7 @@ import OSLog
 
     /// Start accessing the AWS directory via security-scoped bookmark
     /// Returns true if access was successfully started
-    @objc @discardableResult
+    @discardableResult
     func startAccessingAWSDirectory() -> Bool {
         stateLock.lock()
         if isAccessingAWSDirectory {
@@ -183,7 +183,7 @@ import OSLog
     }
 
     /// Stop accessing the AWS directory
-    @objc func stopAccessingAWSDirectory() {
+    func stopAccessingAWSDirectory() {
         var urlToStop: URL?
         var remainingReferences = 0
 
@@ -213,7 +213,7 @@ import OSLog
 
     /// Add a bookmark for the AWS directory from a user-selected URL
     /// Call this after the user selects the ~/.aws folder via NSOpenPanel
-    @objc func addAWSDirectoryBookmark(from url: URL) -> Bool {
+    func addAWSDirectoryBookmark(from url: URL) -> Bool {
         let bookmarkManager = SecureBookmarkManager.sharedInstance
 
         // Create bookmark with security scope
@@ -241,7 +241,7 @@ import OSLog
     }
 
     /// Revoke the AWS directory bookmark
-    @objc func revokeAWSDirectoryBookmark() -> Bool {
+    func revokeAWSDirectoryBookmark() -> Bool {
         stopAllAccessingAWSDirectory()
 
         let bookmarkManager = SecureBookmarkManager.sharedInstance
@@ -279,7 +279,7 @@ import OSLog
 
     /// Read contents of a file within the AWS directory with security-scoped access
     /// Returns nil if the file cannot be read
-    @objc func readAWSFileContents(at path: String) -> String? {
+    func readAWSFileContents(at path: String) -> String? {
         // Ensure we have access
         guard startAccessingAWSDirectory() else {
             os_log(.error, log: Self.log, "Cannot read AWS file: no access to AWS directory")
@@ -301,7 +301,7 @@ import OSLog
     }
 
     /// Check if a file exists within the AWS directory
-    @objc func awsFileExists(at path: String) -> Bool {
+    func awsFileExists(at path: String) -> Bool {
         // Ensure we have access first
         guard startAccessingAWSDirectory() else {
             return false

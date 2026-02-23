@@ -7,20 +7,21 @@
 
 import Foundation
 
-@objc final class SecureBookmarkManager: NSObject {
+@objc(SecureBookmarkManager)
+@objcMembers final class SecureBookmarkManagerStub: NSObject {
 
-    @objc static let sharedInstance = SecureBookmarkManager()
+    static let sharedInstance = SecureBookmarkManagerStub()
 
     // Mirrors the API consumed by AWSDirectoryBookmarkManager.
-    @objc var bookmarks: [[String: Data]] = []
+    var bookmarks: [[String: Data]] = []
 
     private var resolvedURLs = [String: URL]()
 
-    @objc func bookmarkFor(filename: String) -> URL? {
+    func bookmarkFor(filename: String) -> URL? {
         return resolvedURLs[filename]
     }
 
-    @objc func addBookmarkFor(
+    func addBookmarkFor(
         url: URL,
         options: UInt,
         isForStaleBookmark: Bool,
@@ -34,9 +35,12 @@ import Foundation
         return true
     }
 
-    @objc func revokeBookmark(filename: String) -> Bool {
+    func revokeBookmark(filename: String) -> Bool {
         bookmarks.removeAll { $0.keys.contains(filename) }
         resolvedURLs.removeValue(forKey: filename)
         return true
     }
 }
+
+// Keep the production class name available to Swift call sites in tests.
+typealias SecureBookmarkManager = SecureBookmarkManagerStub

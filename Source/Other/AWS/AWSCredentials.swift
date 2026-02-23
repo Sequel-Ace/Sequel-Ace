@@ -55,28 +55,28 @@ import OSLog
 }
 
 /// Represents AWS credentials loaded from a profile or provided manually
-@objc final class AWSCredentials: NSObject {
+@objcMembers final class AWSCredentials: NSObject {
 
     // MARK: - Properties
 
-    @objc let accessKeyId: String
-    @objc let secretAccessKey: String
-    @objc let sessionToken: String?
-    @objc let expiration: Date?
-    @objc let profileName: String?
+    let accessKeyId: String
+    let secretAccessKey: String
+    let sessionToken: String?
+    let expiration: Date?
+    let profileName: String?
 
     // Profile configuration for role assumption
-    @objc let roleArn: String?
-    @objc let mfaSerial: String?
-    @objc let sourceProfile: String?
-    @objc let region: String?
+    let roleArn: String?
+    let mfaSerial: String?
+    let sourceProfile: String?
+    let region: String?
 
     private static let log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "AWSCredentials")
 
     // MARK: - Initialization
 
     /// Initialize with explicit credentials
-    @objc convenience init(accessKeyId: String, secretAccessKey: String, sessionToken: String? = nil) {
+    convenience init(accessKeyId: String, secretAccessKey: String, sessionToken: String? = nil) {
         self.init(
             accessKeyId: accessKeyId,
             secretAccessKey: secretAccessKey,
@@ -99,7 +99,7 @@ import OSLog
     }
 
     /// Initialize from an AWS profile
-    @objc init(profile profileName: String?) throws {
+    init(profile profileName: String?) throws {
         let effectiveProfile = profileName ?? "default"
         self.profileName = effectiveProfile
 
@@ -123,21 +123,21 @@ import OSLog
 
     // MARK: - Validation
 
-    @objc var isValid: Bool {
+    var isValid: Bool {
         accessKeyId.isNotEmpty && secretAccessKey.isNotEmpty
     }
 
-    @objc var requiresMFA: Bool {
+    var requiresMFA: Bool {
         mfaSerial?.isEmpty == false
     }
 
-    @objc var requiresRoleAssumption: Bool {
+    var requiresRoleAssumption: Bool {
         roleArn?.isEmpty == false
     }
 
     // MARK: - File Paths
 
-    @objc static var credentialsFilePath: String {
+    static var credentialsFilePath: String {
         if let envPath = ProcessInfo.processInfo.environment["AWS_SHARED_CREDENTIALS_FILE"],
            envPath.isNotEmpty {
             return envPath
@@ -145,7 +145,7 @@ import OSLog
         return AWSDirectoryBookmarkManager.shared.awsDirectoryBasePath + "/credentials"
     }
 
-    @objc static var configFilePath: String {
+    static var configFilePath: String {
         if let envPath = ProcessInfo.processInfo.environment["AWS_CONFIG_FILE"],
            envPath.isNotEmpty {
             return envPath
@@ -153,7 +153,7 @@ import OSLog
         return AWSDirectoryBookmarkManager.shared.awsDirectoryBasePath + "/config"
     }
 
-    @objc static var credentialsFileExists: Bool {
+    static var credentialsFileExists: Bool {
         // First check if we have bookmark access
         let bookmarkManager = AWSDirectoryBookmarkManager.shared
         if bookmarkManager.isAWSDirectoryAuthorized {
@@ -164,7 +164,7 @@ import OSLog
     }
 
     /// Check if AWS directory access is authorized (for sandbox support)
-    @objc static var isAWSDirectoryAuthorized: Bool {
+    static var isAWSDirectoryAuthorized: Bool {
         AWSDirectoryBookmarkManager.shared.isAWSDirectoryAuthorized
     }
 
@@ -172,7 +172,7 @@ import OSLog
 
     /// Returns list of available AWS profiles sorted alphabetically with "default" first
     /// Returns empty array if AWS directory is not authorized (sandboxed apps)
-    @objc static func availableProfiles() -> [String] {
+    static func availableProfiles() -> [String] {
         // Ensure we have access to the AWS directory
         let bookmarkManager = AWSDirectoryBookmarkManager.shared
         guard bookmarkManager.isAWSDirectoryAuthorized else {

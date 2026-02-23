@@ -235,15 +235,13 @@ final class RDSIAMAuthenticationTests: XCTestCase {
     func testGenerateAuthTokenThrowsForInvalidCredentials() {
         let invalidCreds = AWSCredentials(accessKeyId: "", secretAccessKey: "")
 
-        XCTAssertThrowsError(try RDSIAMAuthentication.generateAuthToken(
+        assertThrowsError(RDSIAMAuthenticationError.invalidCredentials, from: try RDSIAMAuthentication.generateAuthToken(
             forHost: "mydb.us-east-1.rds.amazonaws.com",
             port: 3306,
             username: "admin",
             region: "us-east-1",
             credentials: invalidCreds
-        )) { error in
-            XCTAssertTrue(error is RDSIAMAuthenticationError)
-        }
+        ))
     }
 
     func testGenerateAuthTokenThrowsForEmptyHostname() {
@@ -252,7 +250,7 @@ final class RDSIAMAuthenticationTests: XCTestCase {
             secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
         )
 
-        XCTAssertThrowsError(try RDSIAMAuthentication.generateAuthToken(
+        assertThrowsError(RDSIAMAuthenticationError.invalidParameters, from: try RDSIAMAuthentication.generateAuthToken(
             forHost: "",
             port: 3306,
             username: "admin",
@@ -267,7 +265,7 @@ final class RDSIAMAuthenticationTests: XCTestCase {
             secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
         )
 
-        XCTAssertThrowsError(try RDSIAMAuthentication.generateAuthToken(
+        assertThrowsError(RDSIAMAuthenticationError.invalidParameters, from: try RDSIAMAuthentication.generateAuthToken(
             forHost: "mydb.us-east-1.rds.amazonaws.com",
             port: 3306,
             username: "",
@@ -299,5 +297,21 @@ final class RDSIAMAuthenticationTests: XCTestCase {
 
     func testTokenLifetimeSeconds() {
         XCTAssertEqual(RDSIAMAuthentication.tokenLifetimeSeconds, 900) // 15 minutes
+    }
+}
+
+private func assertThrowsError<T: Error & Equatable>(
+    _ expectedError: T,
+    from expression: @autoclosure () throws -> Any,
+    file: StaticString = #filePath,
+    line: UInt = #line
+) {
+    do {
+        _ = try expression()
+        XCTFail("Expected error \(expectedError), but no error was thrown", file: file, line: line)
+    } catch let error as T {
+        XCTAssertEqual(error, expectedError, file: file, line: line)
+    } catch {
+        XCTFail("Expected \(T.self), got \(error)", file: file, line: line)
     }
 }

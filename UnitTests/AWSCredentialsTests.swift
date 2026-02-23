@@ -132,13 +132,7 @@ final class AWSCredentialsTests: XCTestCase {
         """
 
         try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: "") { _, _ in
-            XCTAssertThrowsError(try AWSCredentials(profile: "missing")) { error in
-                guard let credentialsError = error as? AWSCredentialsError else {
-                    return XCTFail("Expected AWSCredentialsError, got \(error)")
-                }
-
-                XCTAssertEqual(credentialsError, .profileNotFound)
-            }
+            assertThrowsError(AWSCredentialsError.profileNotFound, from: try AWSCredentials(profile: "missing"))
         }
     }
 
@@ -149,13 +143,7 @@ final class AWSCredentialsTests: XCTestCase {
         """
 
         try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: "") { _, _ in
-            XCTAssertThrowsError(try AWSCredentials(profile: "app")) { error in
-                guard let credentialsError = error as? AWSCredentialsError else {
-                    return XCTFail("Expected AWSCredentialsError, got \(error)")
-                }
-
-                XCTAssertEqual(credentialsError, .missingCredentials)
-            }
+            assertThrowsError(AWSCredentialsError.missingCredentials, from: try AWSCredentials(profile: "app"))
         }
     }
 
@@ -169,13 +157,7 @@ final class AWSCredentialsTests: XCTestCase {
         """
 
         try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: "") { _, _ in
-            XCTAssertThrowsError(try AWSCredentials(profile: "a")) { error in
-                guard let credentialsError = error as? AWSCredentialsError else {
-                    return XCTFail("Expected AWSCredentialsError, got \(error)")
-                }
-
-                XCTAssertEqual(credentialsError, .invalidCredentials)
-            }
+            assertThrowsError(AWSCredentialsError.invalidCredentials, from: try AWSCredentials(profile: "a"))
         }
     }
 
@@ -187,13 +169,7 @@ final class AWSCredentialsTests: XCTestCase {
         """
 
         try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: "") { _, _ in
-            XCTAssertThrowsError(try AWSCredentials(profile: "app")) { error in
-                guard let credentialsError = error as? AWSCredentialsError else {
-                    return XCTFail("Expected AWSCredentialsError, got \(error)")
-                }
-
-                XCTAssertEqual(credentialsError, .profileNotFound)
-            }
+            assertThrowsError(AWSCredentialsError.profileNotFound, from: try AWSCredentials(profile: "app"))
         }
     }
 
@@ -477,7 +453,7 @@ final class AWSIAMAuthManagerTests: XCTestCase {
         """
 
         try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: "") { _, _ in
-            XCTAssertThrowsError(try AWSIAMAuthManager.generateAuthToken(
+            assertThrowsError(AWSIAMAuthError.credentialsNotFound, from: try AWSIAMAuthManager.generateAuthToken(
                 hostname: "mydb.123456789012.us-east-1.rds.amazonaws.com",
                 port: 3306,
                 username: "admin",
@@ -486,13 +462,7 @@ final class AWSIAMAuthManagerTests: XCTestCase {
                 accessKey: nil,
                 secretKey: nil,
                 parentWindow: nil
-            )) { error in
-                guard let iamError = error as? AWSIAMAuthError else {
-                    return XCTFail("Expected AWSIAMAuthError, got \(error)")
-                }
-
-                XCTAssertEqual(iamError, .credentialsNotFound)
-            }
+            ))
         }
     }
 
@@ -504,7 +474,7 @@ final class AWSIAMAuthManagerTests: XCTestCase {
         """
 
         try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: "") { _, _ in
-            XCTAssertThrowsError(try AWSIAMAuthManager.generateAuthToken(
+            assertThrowsError(AWSIAMAuthError.tokenGenerationFailed, from: try AWSIAMAuthManager.generateAuthToken(
                 hostname: "mydb.123456789012.us-east-1.rds.amazonaws.com",
                 port: 3306,
                 username: "",
@@ -513,13 +483,7 @@ final class AWSIAMAuthManagerTests: XCTestCase {
                 accessKey: nil,
                 secretKey: nil,
                 parentWindow: nil
-            )) { error in
-                guard let iamError = error as? AWSIAMAuthError else {
-                    return XCTFail("Expected AWSIAMAuthError, got \(error)")
-                }
-
-                XCTAssertEqual(iamError, .tokenGenerationFailed)
-            }
+            ))
         }
     }
 
@@ -610,5 +574,21 @@ private enum AWSTestEnvironment {
         }
 
         return String(cString: value)
+    }
+}
+
+private func assertThrowsError<T: Error & Equatable>(
+    _ expectedError: T,
+    from expression: @autoclosure () throws -> Any,
+    file: StaticString = #filePath,
+    line: UInt = #line
+) {
+    do {
+        _ = try expression()
+        XCTFail("Expected error \(expectedError), but no error was thrown", file: file, line: line)
+    } catch let error as T {
+        XCTAssertEqual(error, expectedError, file: file, line: line)
+    } catch {
+        XCTFail("Expected \(T.self), got \(error)", file: file, line: line)
     }
 }

@@ -60,7 +60,7 @@ import Security
 }
 
 /// Manages AWS IAM authentication flow including credential loading, role assumption, and token generation
-@objc final class AWSIAMAuthManager: NSObject {
+@objcMembers final class AWSIAMAuthManager: NSObject {
 
     // MARK: - Keychain Constants
 
@@ -139,7 +139,7 @@ import Security
     ///   - parentWindow: Parent window for MFA dialog
     /// - Returns: Authentication token to use as database password
     /// - Note: Only AWS CLI profiles are supported. Manual credentials are ignored.
-    static func generateAuthToken(
+    @nonobjc static func generateAuthToken(
         hostname: String,
         port: Int,
         username: String,
@@ -290,7 +290,7 @@ import Security
     }
 
     /// Clear cached credentials for a profile (call when connection is closed)
-    @objc static func clearCachedCredentials(for profileName: String?) {
+    static func clearCachedCredentials(for profileName: String?) {
         cacheLock.lock()
         defer { cacheLock.unlock() }
 
@@ -380,7 +380,7 @@ import Security
     // MARK: - Keychain Management
 
     /// Save AWS secret key to keychain
-    @objc static func saveSecretKey(
+    static func saveSecretKey(
         _ secretKey: String,
         forAccessKey accessKey: String,
         connectionName: String
@@ -416,7 +416,7 @@ import Security
     }
 
     /// Retrieve AWS secret key from keychain
-    @objc static func getSecretKey(
+    static func getSecretKey(
         forAccessKey accessKey: String,
         connectionName: String
     ) -> String? {
@@ -444,7 +444,7 @@ import Security
     }
 
     /// Delete AWS secret key from keychain
-    @objc static func deleteSecretKey(
+    static func deleteSecretKey(
         forAccessKey accessKey: String,
         connectionName: String
     ) -> Bool {
@@ -464,18 +464,18 @@ import Security
     // MARK: - Utility Methods
 
     /// Check if AWS credentials file exists
-    @objc static var credentialsFileExists: Bool {
+    static var credentialsFileExists: Bool {
         AWSCredentials.credentialsFileExists
     }
 
     /// Get list of available AWS profiles
-    @objc static func availableProfiles() -> [String] {
+    static func availableProfiles() -> [String] {
         AWSCredentials.availableProfiles()
     }
 
     /// Regions used by the connection UI.
     /// Returns cached regions when available, otherwise a built-in fallback list.
-    @objc static func cachedOrFallbackRegions() -> [String] {
+    static func cachedOrFallbackRegions() -> [String] {
         if let cachedRegions = cachedRegions() {
             return cachedRegions
         }
@@ -528,12 +528,12 @@ import Security
     }
 
     /// Check if a hostname appears to be an RDS endpoint
-    @objc static func isRDSHostname(_ hostname: String) -> Bool {
+    static func isRDSHostname(_ hostname: String) -> Bool {
         RDSIAMAuthentication.isRDSHostname(hostname)
     }
 
     /// Extract region from RDS hostname
-    @objc static func regionFromHostname(_ hostname: String) -> String? {
+    static func regionFromHostname(_ hostname: String) -> String? {
         RDSIAMAuthentication.regionFromHostname(hostname)
     }
 

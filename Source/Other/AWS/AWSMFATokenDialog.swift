@@ -31,7 +31,7 @@ import AppKit
 import OSLog
 
 /// Dialog for prompting the user for their AWS MFA token code
-@objc final class AWSMFATokenDialog: NSObject {
+@objcMembers final class AWSMFATokenDialog: NSObject {
 
     private static let log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "AWSMFADialog")
 
@@ -41,7 +41,7 @@ import OSLog
     ///   - mfaSerial: The MFA device serial number
     ///   - parentWindow: Optional parent window for the dialog
     /// - Returns: The entered MFA token code, or nil if cancelled
-    @objc static func promptForMFAToken(
+    static func promptForMFAToken(
         profile profileName: String?,
         mfaSerial: String?,
         parentWindow: NSWindow?

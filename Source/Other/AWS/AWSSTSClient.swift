@@ -62,7 +62,7 @@ import OSLog
 }
 
 /// AWS STS client for assuming roles with optional MFA
-@objc final class AWSSTSClient: NSObject {
+@objcMembers final class AWSSTSClient: NSObject {
 
     // MARK: - Constants
 
@@ -273,7 +273,7 @@ import OSLog
     ///   - credentials: Base credentials to use for the AssumeRole call
     ///   - error: Error pointer for Objective-C error handling
     /// - Returns: Temporary credentials from STS, or nil on failure
-    @objc static func assumeRole(
+    static func assumeRole(
         _ roleArn: String,
         roleSessionName: String?,
         mfaSerialNumber: String?,
@@ -347,7 +347,7 @@ import OSLog
     /// - Warning: This method blocks the calling thread. **Do not call from the main thread.**
     ///   See `assumeRole(_:roleSessionName:mfaSerialNumber:mfaTokenCode:durationSeconds:region:credentials:error:)`
     ///   for details.
-    @objc static func assumeRoleWithMFA(
+    static func assumeRoleWithMFA(
         _ roleArn: String,
         mfaSerialNumber: String,
         mfaTokenCode: String,
