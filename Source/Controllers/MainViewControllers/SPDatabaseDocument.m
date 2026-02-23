@@ -5371,24 +5371,51 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
 
         if (![targetDatabaseName isEqualToString:selectedDatabase]) {
-            // Attempt to select the specified database, and abort on failure
-            if ([[chooseDatabaseButton onMainThread] indexOfItemWithTitle:targetDatabaseName] == NSNotFound || ![mySQLConnection selectDatabase:targetDatabaseName])
-            {
+            NSInteger targetDatabaseIndex = [[chooseDatabaseButton onMainThread] indexOfItemWithTitle:targetDatabaseName];
+            BOOL didSelectDatabase = [mySQLConnection selectDatabase:targetDatabaseName];
+
+            // Refresh database metadata and retry once when the list is stale or the initial selection failed.
+            if ((targetDatabaseIndex == NSNotFound || !didSelectDatabase) && [mySQLConnection isConnected]) {
+                SPMainQSync(^{
+                    [self setDatabases];
+                });
+
+                targetDatabaseIndex = [[chooseDatabaseButton onMainThread] indexOfItemWithTitle:targetDatabaseName];
+
+                if (!didSelectDatabase) {
+                    didSelectDatabase = [mySQLConnection selectDatabase:targetDatabaseName];
+                }
+            }
+
+            // Abort only if the database still can't be selected after refreshing and retrying.
+            if (!didSelectDatabase) {
                 // End the task first to ensure the database dropdown can be reselected
                 [self endTask];
 
                 if ([mySQLConnection isConnected]) {
-
-                    // Update the database list
-                    [[self onMainThread] setDatabases];
-
                     [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists.", @"message of panel when connection to db failed after selecting from popupbutton"), targetDatabaseName] callback:nil];
+                }
+
+                if (!historyStateChanging) {
+                    [spHistoryControllerInstance setModifyingState:NO];
+                    [spHistoryControllerInstance updateHistoryEntries];
                 }
 
                 return;
             }
 
-            [[chooseDatabaseButton onMainThread] selectItemWithTitle:targetDatabaseName];
+            if (targetDatabaseIndex == NSNotFound) {
+                SPMainQSync(^{
+                    [self->chooseDatabaseButton safeAddItemWithTitle:targetDatabaseName];
+                });
+                targetDatabaseIndex = [[chooseDatabaseButton onMainThread] indexOfItemWithTitle:targetDatabaseName];
+            }
+
+            if (targetDatabaseIndex != NSNotFound) {
+                [[chooseDatabaseButton onMainThread] selectItemWithTitle:targetDatabaseName];
+            } else {
+                [[chooseDatabaseButton onMainThread] selectItemAtIndex:0];
+            }
 
             selectedDatabase = [[NSString alloc] initWithString:targetDatabaseName];
             selectedTableName = nil;
@@ -5404,12 +5431,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
             // Update the window title
             [self updateWindowTitle:self];
-
-            // Add a history entry
-            if (!historyStateChanging) {
-                [spHistoryControllerInstance setModifyingState:NO];
-                [spHistoryControllerInstance updateHistoryEntries];
-            }
         }
 
         SPMainQSync(^{
@@ -5430,6 +5451,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             }
             [self->tablesListInstance setTableListSelectability:NO];
         });
+
+        if (!historyStateChanging) {
+            [spHistoryControllerInstance setModifyingState:NO];
+            [spHistoryControllerInstance updateHistoryEntries];
+        }
 
         [self endTask];
         [self _processDatabaseChangedBundleTriggerActions];

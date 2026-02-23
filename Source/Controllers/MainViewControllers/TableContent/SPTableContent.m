@@ -212,6 +212,18 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
     [self->tableContentView setFieldEditorSelectedRange:NSMakeRange(0,0)];
 
+    if (self->columnFilterSearchField) {
+        // Keep this control non-layer-backed to avoid expensive AppKit redraw paths on newer macOS versions.
+        self->columnFilterSearchField.wantsLayer = NO;
+
+        NSSearchFieldCell *searchFieldCell = (NSSearchFieldCell *)self->columnFilterSearchField.cell;
+        if ([searchFieldCell isKindOfClass:[NSSearchFieldCell class]]) {
+            [searchFieldCell setMaximumRecents:0];
+            [searchFieldCell setRecentsAutosaveName:nil];
+            [searchFieldCell setSearchMenuTemplate:nil];
+        }
+    }
+
     [self->prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
     [self->prefs addObserver:self forKeyPath:SPDisplayTableViewColumnTypes options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
     [self->prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:TableContentKVOContext];

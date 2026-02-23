@@ -18,51 +18,22 @@ When you open Sequel Ace, the first screen that you will see is the database con
 
 Please check out [this page](migrating-from-sequel-pro.html) for info on how to migrate from Sequel Pro!
 
+**Can I open a Sequel Ace connection via URL (for automation or PAM tools)?**
+
+Yes. Sequel Ace supports `mysql://` URLs including SSH query parameters. See [Open a Connection via URL (`mysql://`)](connect-via-url.html).
+
 **I am having trouble connecting to a database. It says: Can't connect to local MySQL server through socket '/tmp/mysql.sock' (2)**
 
-Unfortunately, due to sandboxing nature, Sequel Ace is not allowed to connect to the sockets which are out of the Sandbox. As a workaround, you can create a socket in `~/Library/Containers/com.sequel-ace.sequel-ace/Data` and connect to it. This can be done by putting these lines to your MySQL configuration file (usually, `my.cnf`). First, make a note of the file already specified in this file, typically, `/tmp/mysql.sock`.
- ```
- [mysqld]
- socket=/Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock
- ```
-To allow other database applications to continue working, make a symbolic link from the new socket file to the one previously used, like this:
-```
-# ln -s /Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock /tmp/mysql.sock
-```
+This is a known macOS sandboxing limitation. Sequel Ace cannot access socket files outside its container, even with Full Disk Access enabled.
 
-If you are still having trouble using the new socket connection, it may be a permission problem, which you can check and correct:
-```
-# ls -la /Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/
-drwx------  14 jan     staff    448 14 Jun 09:41 .
-drwx------@  4 jan     staff    128 13 Jun 11:23 ..
-lrwxr-xr-x   1 jan     staff     31 13 Jun 11:23 .CFUserTextEncoding -> ../../../../.CFUserTextEncoding
-drwxr-xr-x@  2 jan     staff     64 13 Jun 11:23 .keys
-lrwxr-xr-x   1 jan     staff     19 13 Jun 11:23 Desktop -> ../../../../Desktop
-drwx------   2 jan     staff     64 13 Jun 11:23 Documents
-lrwxr-xr-x   1 jan     staff     21 13 Jun 11:23 Downloads -> ../../../../Downloads
-drwx------  32 jan     staff   1024 13 Jun 11:23 Library
-lrwxr-xr-x   1 jan     staff     18 13 Jun 11:23 Movies -> ../../../../Movies
-lrwxr-xr-x   1 jan     staff     17 13 Jun 11:23 Music -> ../../../../Music
-lrwxr-xr-x   1 jan     staff     20 13 Jun 11:23 Pictures -> ../../../../Pictures
-drwx------   2 jan     staff     64 13 Jun 11:23 SystemData
-srwxrwxrwx   1 _mysql  _mysql     0 14 Jun 09:41 mysql.sock
-drwx------   2 jan     staff     64 13 Jun 22:26 tmp
-```
-Note that neither the target directory nor its containing directory allow any access to user `_mysql`
+Use one of these workarounds:
 
-You can change the group to `_mysql` and set group permissions accordingly:
-```
-# for d in \
-  /Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/Data/ \
-  /Users/YourUserName/Library/Containers/com.sequel-ace.sequel-ace/ \
-  /Users/YourUserName/Library/Containers/ \
-  /Users/YourUserName/Library/Containers/ \
-  /Users/YourUserName/
-do
-  chgrp $d _mysql
-  chmod g+rwx $d
-done
-```
+1. Configure MySQL/MariaDB so it creates the socket directly inside `~/Library/Containers/com.sequel-ace.sequel-ace/Data/` (for example, `.../Data/mysql.sock`).
+2. Switch to a standard TCP/IP connection (`127.0.0.1`) and enable networking in `my.cnf` if needed.
+
+Important: a symlink from `/tmp/mysql.sock` to the Sequel Ace path does not fix Sequel Ace by itself. The socket's core location must be in Sequel Ace's container.
+
+For full step-by-step instructions (including Homebrew/MacPorts/Oracle package context and multi-version port setup), see [Connect to a Local MySQL Server](local-connection.html#connecting-via-a-socket-connection).
 
 **I'm having trouble connecting to a MySQL 4 or MySQL 5 database on localhost with a MAMP install.**
 
@@ -80,6 +51,8 @@ See [What type of connection do I have?](connection-types.html#aws-iam-authentic
 
 Sequel Ace runs in a sandboxed mode and by default cannot access your SSH config file. If you'd like to use a custom SSH config file, open Sequel Ace's preferences (from the menu bar), go to the "Network" settings tab, and select the SSH config file you would like to use. The same config file will be used for all connections. If your config file references other files in the filesystem, Sequel Ace will not be able to access these other files by default due to security constraints - to allow access to these files, please go to the "Files" tab in Sequel Ace's Preferences and grant access to these other support files.
 
+If SSH works in Terminal but fails in Sequel Ace with errors like `ssh_get_authentication_socket: Operation not permitted`, `load pubkey ...: Operation not permitted`, or ProxyCommand helper failures, see [Connect to a Remote MySQL Server](remote-connection.html#ssh-agent-and-proxycommand-limitations-on-macos) for supported workarounds (including external tunnel setup).
+
 
 #### General Notes
 
@@ -95,5 +68,6 @@ Sequel Ace runs in a sandboxed mode and by default cannot access your SSH config
 -   [What type of connection do I have?](connection-types.html)
 -   [Connect to a Local MySQL Server](local-connection.html)
 -   [Connect to a Remote MySQL Server](remote-connection.html)
+-   [Open a Connection via URL (`mysql://`)](connect-via-url.html)
 -   [Connecting to MAMP or XAMPP](mamp-xampp.html)
 -   [Migrating from Sequel Pro](migrating-from-sequel-pro.html)

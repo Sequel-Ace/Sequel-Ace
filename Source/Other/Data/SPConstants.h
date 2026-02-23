@@ -696,6 +696,7 @@ typedef NS_ENUM(NSInteger, SPBundleRedirectAction) {
 extern const NSInteger SPBundleRedirectActionLastCode;
 
 extern NSString *SPMigratedQueriesFromPrefs;
+extern NSString *SPMigratedPinnedTablesToConnectionIDs;
 extern NSString *SPTraceSQLiteExecutions;
 extern NSString *SPCustomQuerySaveHistoryIndividually;
 extern NSString *SPSaveApplicationUsageAnalytics;

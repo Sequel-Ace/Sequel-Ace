@@ -282,13 +282,13 @@
                         [xmlString appendString:@" xsi:nil=\"true\" />\n"];
                     }
                     else {
-                        [xmlString appendFormat:@">%@</field>\n", [xmlItem HTMLEscapeString]];
+                        [xmlString appendFormat:@">%@</field>\n", [xmlItem XMLEscapeStringForContent]];
                     }
                 }
                 else if ([self xmlFormat] == SPXMLExportPlainFormat) {
                     // Add the opening and closing tag and the contents to the XML string
                     [xmlString appendString:[[xmlTags safeObjectAtIndex:i] firstObject]];
-                    [xmlString appendString:[xmlItem HTMLEscapeString]];
+                    [xmlString appendString:[xmlItem XMLEscapeStringForContent]];
                     [xmlString appendString:[[xmlTags safeObjectAtIndex:i] safeObjectAtIndex:1]];
                 }
             }

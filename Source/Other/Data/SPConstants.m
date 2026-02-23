@@ -500,6 +500,7 @@ NSString *SPBundleShellVariableSelectedText                 = @"SP_SELECTED_TEXT
 NSString *SPBundleShellVariableSelectedTextRange            = @"SP_SELECTED_TEXT_RANGE";
 NSString *SPBundleShellVariableUsedQueryForTable            = @"SP_USED_QUERY_FOR_TABLE";
 NSString *SPMigratedQueriesFromPrefs                        = @"SPMigratedQueriesFromPrefs";
+NSString *SPMigratedPinnedTablesToConnectionIDs            = @"SPMigratedPinnedTablesToConnectionIDs";
 NSString *SPTraceSQLiteExecutions                           = @"SPTraceSQLiteExecutions";
 NSString *SPBundleShellVariableAppCallbackURL               = @"SP_APP_CALLBACK_URL";
 
