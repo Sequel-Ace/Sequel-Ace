@@ -117,15 +117,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 - (NSString *)_buildPartialColumnDefinitionString:(NSDictionary *)theRow;
 - (BOOL)filterFieldsWithString:(NSString *)filterString;
 - (BOOL)sort:(NSMutableArray *)data withDescriptor:(NSSortDescriptor *)descriptor;
-- (NSString *)_normalizedFieldTypeFromDefinition:(NSDictionary *)fieldDefinition;
-- (BOOL)_isIntegerFieldType:(NSString *)fieldType;
-- (BOOL)_isBinaryFieldType:(NSString *)fieldType;
-- (BOOL)_isStringFieldType:(NSString *)fieldType;
 - (NSDictionary *)_columnStatsForFieldName:(NSString *)fieldName lengthFunction:(NSString *)lengthFunction;
-- (NSDecimalNumber *)_decimalNumberFromStatValue:(id)value;
-- (NSUInteger)_unsignedIntegerValueFromStatValue:(id)value;
-- (NSUInteger)_maxBytesPerCharacterForFieldDefinition:(NSDictionary *)fieldDefinition;
-- (NSString *)_estimatedIntegerTypeForMinimum:(NSDecimalNumber *)minimum maximum:(NSDecimalNumber *)maximum;
 - (NSString *)_estimatedOptimizedFieldTypeForField:(NSDictionary *)fieldDefinition failureReason:(NSString **)failureReason;
 - (void)_showOptimizedFieldTypeFallbackTask:(NSDictionary *)context;
 
@@ -432,56 +424,6 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 }
 
-- (NSString *)_normalizedFieldTypeFromDefinition:(NSDictionary *)fieldDefinition
-{
-	id rawType = [fieldDefinition objectForKey:@"type"];
-	if (!rawType || [rawType isNSNull]) return @"";
-
-	NSString *fieldType = [[rawType description] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-	if (![fieldType length]) return @"";
-	fieldType = [fieldType uppercaseString];
-
-	NSRange typeSuffixRange = [fieldType rangeOfString:@"("];
-	if (typeSuffixRange.location != NSNotFound) {
-		fieldType = [fieldType substringToIndex:typeSuffixRange.location];
-	}
-
-	return [fieldType stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-}
-
-- (BOOL)_isIntegerFieldType:(NSString *)fieldType
-{
-	static NSSet *integerTypes = nil;
-	static dispatch_once_t onceToken;
-	dispatch_once(&onceToken, ^{
-		integerTypes = [NSSet setWithObjects:@"TINYINT", @"SMALLINT", @"MEDIUMINT", @"INT", @"INTEGER", @"BIGINT", nil];
-	});
-
-	return [integerTypes containsObject:fieldType];
-}
-
-- (BOOL)_isBinaryFieldType:(NSString *)fieldType
-{
-	static NSSet *binaryTypes = nil;
-	static dispatch_once_t onceToken;
-	dispatch_once(&onceToken, ^{
-		binaryTypes = [NSSet setWithObjects:@"BINARY", @"VARBINARY", @"TINYBLOB", @"BLOB", @"MEDIUMBLOB", @"LONGBLOB", nil];
-	});
-
-	return [binaryTypes containsObject:fieldType];
-}
-
-- (BOOL)_isStringFieldType:(NSString *)fieldType
-{
-	static NSSet *stringTypes = nil;
-	static dispatch_once_t onceToken;
-	dispatch_once(&onceToken, ^{
-		stringTypes = [NSSet setWithObjects:@"CHAR", @"VARCHAR", @"NCHAR", @"NVARCHAR", @"TINYTEXT", @"TEXT", @"MEDIUMTEXT", @"LONGTEXT", nil];
-	});
-
-	return [stringTypes containsObject:fieldType];
-}
-
 - (NSDictionary *)_columnStatsForFieldName:(NSString *)fieldName lengthFunction:(NSString *)lengthFunction
 {
 	NSString *escapedFieldName = [fieldName backtickQuotedString];
@@ -504,103 +446,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	return [result getRowAsDictionary];
 }
 
-- (NSDecimalNumber *)_decimalNumberFromStatValue:(id)value
-{
-	if (!value || [value isNSNull]) return nil;
-
-	NSString *numberString = [[value description] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-	if (![numberString length]) return nil;
-
-	NSDecimalNumber *number = [NSDecimalNumber decimalNumberWithString:numberString];
-	if ([number isEqualToNumber:[NSDecimalNumber notANumber]]) return nil;
-
-	return number;
-}
-
-- (NSUInteger)_unsignedIntegerValueFromStatValue:(id)value
-{
-	if (!value || [value isNSNull]) return 0;
-
-	NSString *numberString = [[value description] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-	if (![numberString length]) return 0;
-
-	unsigned long long parsedValue = (unsigned long long)MAX(0, [numberString longLongValue]);
-
-	return (NSUInteger)parsedValue;
-}
-
-- (NSUInteger)_maxBytesPerCharacterForFieldDefinition:(NSDictionary *)fieldDefinition
-{
-	NSString *encodingName = [fieldDefinition objectForKey:@"encodingName"];
-	if (![encodingName length]) encodingName = [fieldDefinition objectForKey:@"encoding"];
-	if (![encodingName length]) encodingName = [tableDataInstance tableEncoding];
-	if (![encodingName length]) return 1;
-
-	NSArray *availableEncodings = [databaseDataInstance getDatabaseCharacterSetEncodings];
-	for (NSDictionary *encoding in availableEncodings) {
-		NSString *characterSetName = [encoding safeObjectForKey:@"CHARACTER_SET_NAME"];
-		if (![characterSetName length]) characterSetName = [encoding safeObjectForKey:@"Charset"];
-		if (![characterSetName length]) continue;
-
-		if ([characterSetName caseInsensitiveCompare:encodingName] != NSOrderedSame) continue;
-
-		NSUInteger maxBytes = [self _unsignedIntegerValueFromStatValue:[encoding safeObjectForKey:@"MAXLEN"]];
-		if (!maxBytes) maxBytes = [self _unsignedIntegerValueFromStatValue:[encoding safeObjectForKey:@"Maxlen"]];
-
-		return MAX((NSUInteger)1, maxBytes);
-	}
-
-	NSString *lowercaseEncoding = [encodingName lowercaseString];
-	if ([lowercaseEncoding hasPrefix:@"utf8mb4"] || [lowercaseEncoding hasPrefix:@"utf16"] || [lowercaseEncoding hasPrefix:@"utf32"]) return 4;
-	if ([lowercaseEncoding hasPrefix:@"utf8"]) return 3;
-	if ([lowercaseEncoding hasPrefix:@"ucs2"]) return 2;
-
-	return 1;
-}
-
-- (NSString *)_estimatedIntegerTypeForMinimum:(NSDecimalNumber *)minimum maximum:(NSDecimalNumber *)maximum
-{
-	typedef struct {
-		__unsafe_unretained NSString *type;
-		__unsafe_unretained NSString *signedMin;
-		__unsafe_unretained NSString *signedMax;
-		__unsafe_unretained NSString *unsignedMax;
-	} SPIntegerRange;
-
-	SPIntegerRange ranges[] = {
-		{ @"TINYINT",   @"-128",                 @"127",                 @"255" },
-		{ @"SMALLINT",  @"-32768",               @"32767",               @"65535" },
-		{ @"MEDIUMINT", @"-8388608",             @"8388607",             @"16777215" },
-		{ @"INT",       @"-2147483648",          @"2147483647",          @"4294967295" },
-		{ @"BIGINT",    @"-9223372036854775808", @"9223372036854775807", @"18446744073709551615" }
-	};
-
-	BOOL canUseUnsigned = ([minimum compare:[NSDecimalNumber zero]] != NSOrderedAscending);
-	NSUInteger rangeCount = sizeof(ranges) / sizeof(SPIntegerRange);
-
-	for (NSUInteger i = 0; i < rangeCount; i++) {
-		if (canUseUnsigned) {
-			NSDecimalNumber *unsignedMax = [NSDecimalNumber decimalNumberWithString:ranges[i].unsignedMax];
-			if ([maximum compare:unsignedMax] != NSOrderedDescending) {
-				return [NSString stringWithFormat:@"%@ UNSIGNED", ranges[i].type];
-			}
-		}
-		else {
-			NSDecimalNumber *signedMin = [NSDecimalNumber decimalNumberWithString:ranges[i].signedMin];
-			NSDecimalNumber *signedMax = [NSDecimalNumber decimalNumberWithString:ranges[i].signedMax];
-			if ([minimum compare:signedMin] != NSOrderedAscending && [maximum compare:signedMax] != NSOrderedDescending) {
-				return ranges[i].type;
-			}
-		}
-	}
-
-	return canUseUnsigned ? @"BIGINT UNSIGNED" : @"BIGINT";
-}
-
 - (NSString *)_estimatedOptimizedFieldTypeForField:(NSDictionary *)fieldDefinition failureReason:(NSString **)failureReason
 {
 	NSString *fieldName = [fieldDefinition objectForKey:@"name"];
-	NSString *fieldType = [self _normalizedFieldTypeFromDefinition:fieldDefinition];
+	NSString *fieldType = [SPOptimizedFieldTypeEstimator normalizedFieldTypeFromDefinition:fieldDefinition];
 
 	if (![fieldName length] || ![fieldType length]) {
 		if (failureReason) {
@@ -609,9 +458,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		return nil;
 	}
 
-	BOOL isIntegerType = [self _isIntegerFieldType:fieldType];
-	BOOL isBinaryType = [self _isBinaryFieldType:fieldType];
-	BOOL isStringType = [self _isStringFieldType:fieldType];
+	BOOL isIntegerType = [SPOptimizedFieldTypeEstimator isIntegerFieldType:fieldType];
+	BOOL isBinaryType = [SPOptimizedFieldTypeEstimator isBinaryFieldType:fieldType];
+	BOOL isStringType = [SPOptimizedFieldTypeEstimator isStringFieldType:fieldType];
 
 	if (!isIntegerType && !isBinaryType && !isStringType) {
 		if (failureReason) {
@@ -640,8 +489,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		return nil;
 	}
 
-	NSUInteger rowCount = [self _unsignedIntegerValueFromStatValue:[stats objectForKey:@"row_count"]];
-	NSUInteger nullCount = [self _unsignedIntegerValueFromStatValue:[stats objectForKey:@"null_count"]];
+	NSUInteger rowCount = [SPOptimizedFieldTypeEstimator unsignedIntegerValueFromStatValue:[stats objectForKey:@"row_count"]];
+	NSUInteger nullCount = [SPOptimizedFieldTypeEstimator unsignedIntegerValueFromStatValue:[stats objectForKey:@"null_count"]];
 	if (rowCount <= nullCount) {
 		if (failureReason) {
 			*failureReason = NSLocalizedString(@"No non-NULL values were found in this column, so no fallback estimate could be produced.", @"show optimized field type fallback no values");
@@ -650,24 +499,24 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	if (isIntegerType) {
-		NSDecimalNumber *minimum = [self _decimalNumberFromStatValue:[stats objectForKey:@"min_value"]];
-		NSDecimalNumber *maximum = [self _decimalNumberFromStatValue:[stats objectForKey:@"max_value"]];
+		NSDecimalNumber *minimum = [SPOptimizedFieldTypeEstimator decimalNumberFromStatValue:[stats objectForKey:@"min_value"]];
+		NSDecimalNumber *maximum = [SPOptimizedFieldTypeEstimator decimalNumberFromStatValue:[stats objectForKey:@"max_value"]];
 		if (!minimum || !maximum) {
 			if (failureReason) {
 				*failureReason = NSLocalizedString(@"Unable to read enough numeric statistics to estimate an optimized integer type.", @"show optimized field type fallback missing integer stats");
 			}
 			return nil;
 		}
-		return [self _estimatedIntegerTypeForMinimum:minimum maximum:maximum];
+		return [SPOptimizedFieldTypeEstimator estimatedIntegerTypeForMinimum:minimum maximum:maximum];
 	}
 
-	NSUInteger minLength = [self _unsignedIntegerValueFromStatValue:[stats objectForKey:@"min_length"]];
-	NSUInteger maxLength = [self _unsignedIntegerValueFromStatValue:[stats objectForKey:@"max_length"]];
+	NSUInteger minLength = [SPOptimizedFieldTypeEstimator unsignedIntegerValueFromStatValue:[stats objectForKey:@"min_length"]];
+	NSUInteger maxLength = [SPOptimizedFieldTypeEstimator unsignedIntegerValueFromStatValue:[stats objectForKey:@"max_length"]];
 	maxLength = MAX((NSUInteger)1, maxLength);
 	NSUInteger maxByteLength = maxLength;
 
 	if (isStringType) {
-		maxByteLength = [self _unsignedIntegerValueFromStatValue:[byteLengthStats objectForKey:@"max_length"]];
+		maxByteLength = [SPOptimizedFieldTypeEstimator unsignedIntegerValueFromStatValue:[byteLengthStats objectForKey:@"max_length"]];
 		maxByteLength = MAX((NSUInteger)1, maxByteLength);
 	}
 
@@ -687,7 +536,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	if (minLength == maxLength && maxLength <= 255) {
 		return [NSString stringWithFormat:@"CHAR(%lu)", (unsigned long)maxLength];
 	}
-	NSUInteger maxBytesPerCharacter = [self _maxBytesPerCharacterForFieldDefinition:fieldDefinition];
+	NSUInteger maxBytesPerCharacter = [SPOptimizedFieldTypeEstimator maxBytesPerCharacterForFieldDefinition:fieldDefinition
+	                                                                                           tableEncoding:[tableDataInstance tableEncoding]
+	                                                                                       availableEncodings:(NSArray<NSDictionary *> *)[databaseDataInstance getDatabaseCharacterSetEncodings]];
 	NSUInteger maxSafeVarcharLength = (maxBytesPerCharacter > 0) ? (65535 / maxBytesPerCharacter) : 65535;
 	if (maxByteLength <= 65535 && maxLength <= maxSafeVarcharLength) {
 		return [NSString stringWithFormat:@"VARCHAR(%lu)", (unsigned long)maxLength];
