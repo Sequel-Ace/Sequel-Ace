@@ -438,33 +438,6 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 #pragma mark -
 #pragma mark Private API
 
-+ (NSString *)_serializedProcessRow:(NSDictionary *)process includeProgress:(BOOL)includeProgress
-{
-	NSMutableArray<NSString *> *rowValues = [NSMutableArray arrayWithCapacity:9];
-	NSArray<NSString *> *requiredKeys = @[@"Id", @"User", @"Host", @"db", @"Command", @"Time", @"State", @"Info"];
-
-	for (NSString *key in requiredKeys) {
-		id value = [process objectForKey:key];
-		if ((value == nil) || [value isNSNull]) {
-			[rowValues addObject:@""];
-			continue;
-		}
-		[rowValues addObject:[value description]];
-	}
-
-	if (includeProgress) {
-		id progress = [process objectForKey:@"Progress"];
-		if ((progress != nil) && ![progress isNSNull]) {
-			NSString *progressValue = [progress description];
-			if ([progressValue length] > 0) {
-				[rowValues addObject:progressValue];
-			}
-		}
-	}
-
-	return [rowValues componentsJoinedByString:@" "];
-}
-
 /**
  * Called by the background thread on the main thread once it has completed getting the list of processes.
  */
