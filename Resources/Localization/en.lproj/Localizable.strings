@@ -3382,6 +3382,102 @@
 /* sequelace URL scheme error: LaunchFavorite alert description (favorite name not found) */
 "The variable in the ?name= query parameter could not be matched with any of your favorites." = "The variable in the ?name= query parameter could not be matched with any of your favorites.";
 
+/* AWS IAM auth error title shown when token generation fails */
+"AWS IAM Authentication Failed" = "AWS IAM Authentication Failed";
+
+/* AWS MFA dialog title */
+"AWS MFA Authentication Required" = "AWS MFA Authentication Required";
+
+/* AWS IAM auth error message */
+"AWS credentials are invalid" = "AWS credentials are invalid";
+
+/* AWS credentials parser error */
+"AWS credentials are missing required fields (access key ID or secret access key)" = "AWS credentials are missing required fields (access key ID or secret access key)";
+
+/* AWS IAM auth error message */
+"AWS credentials not found" = "AWS credentials not found";
+
+/* AWS credentials parser error */
+"AWS profile not found" = "AWS profile not found";
+
+/* STS error message */
+"Access denied by AWS STS" = "Access denied by AWS STS";
+
+/* AWS directory authorization button */
+"Authorize" = "Authorize";
+
+/* AWS MFA dialog primary action */
+"Authenticate" = "Authenticate";
+
+/* AWS directory authorization alert title */
+"Authorization Failed" = "Authorization Failed";
+
+/* AWS IAM auth error detail */
+"Empty authentication token returned" = "Empty authentication token returned";
+
+/* AWS IAM auth error message */
+"Failed to access keychain" = "Failed to access keychain";
+
+/* AWS IAM auth error message */
+"Failed to assume IAM role" = "Failed to assume IAM role";
+
+/* AWS directory authorization alert message */
+"Failed to create a secure bookmark for the AWS directory. Please try again." = "Failed to create a secure bookmark for the AWS directory. Please try again.";
+
+/* AWS IAM auth error message */
+"Failed to generate IAM authentication token" = "Failed to generate IAM authentication token";
+
+/* AWS credentials parser error */
+"Failed to read AWS credentials file" = "Failed to read AWS credentials file";
+
+/* AWS credentials access error */
+"Failed to access the AWS credentials directory" = "Failed to access the AWS credentials directory";
+
+/* AWS directory authorization alert title */
+"Invalid AWS Directory" = "Invalid AWS Directory";
+
+/* AWS shared credentials validation error */
+"Invalid AWS credentials" = "Invalid AWS credentials";
+
+/* AWS MFA dialog validation title */
+"Invalid MFA Code" = "Invalid MFA Code";
+
+/* RDS IAM auth parameter validation error */
+"Invalid parameters for IAM authentication" = "Invalid parameters for IAM authentication";
+
+/* AWS STS parameter validation error */
+"Invalid parameters for STS request" = "Invalid parameters for STS request";
+
+/* AWS STS response parsing error */
+"Invalid response from STS" = "Invalid response from STS";
+
+/* AWS IAM auth error message */
+"MFA authentication was cancelled" = "MFA authentication was cancelled";
+
+/* AWS STS validation error */
+"MFA token code is required" = "MFA token code is required";
+
+/* AWS STS network error */
+"Network request failed" = "Network request failed";
+
+/* AWS MFA dialog validation message */
+"Please enter a valid 6-digit MFA code." = "Please enter a valid 6-digit MFA code.";
+
+/* AWS directory chooser validation message */
+"Please select the .aws directory in your home folder (usually ~/.aws). This directory should contain your AWS credentials and/or config files." = "Please select the .aws directory in your home folder (usually ~/.aws). This directory should contain your AWS credentials and/or config files.";
+
+/* AWS MFA dialog content */
+"Profile: %@\nMFA Device: %@\n\nEnter your 6-digit MFA code from your authenticator app:" = "Profile: %1$@\nMFA Device: %2$@\n\nEnter your 6-digit MFA code from your authenticator app:";
+
+/* AWS STS timeout error */
+"STS request timed out" = "STS request timed out";
+
+/* AWS directory chooser title */
+"Select your .aws directory to enable AWS IAM authentication" = "Select your .aws directory to enable AWS IAM authentication";
+
+/* Password field placeholder when IAM auth is enabled */
+"Using IAM authentication" = "Using IAM authentication";
+
 /* Title for SQL execution confirmation alert */
 "Execute SQL?" = "Execute SQL?";
 
