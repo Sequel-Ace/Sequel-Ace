@@ -446,51 +446,12 @@ copy_return:
 
 - (NSArray *)_normalizedCharacterSetEncodingsFromRows:(NSArray *)rows
 {
-	if (![rows count]) return @[];
-
-	NSMutableArray *normalizedRows = [NSMutableArray array];
-	NSMutableSet *seenCharsetNames = [NSMutableSet set];
-
-	for (NSDictionary *row in rows) {
-
-		NSString *charsetName = [row objectForKey:@"CHARACTER_SET_NAME"];
-		if (![charsetName length]) charsetName = [row objectForKey:@"character_set_name"];
-		if (![charsetName length]) charsetName = [row objectForKey:@"Charset"];
-		if (![charsetName length]) charsetName = [row objectForKey:@"charset"];
-		if (![charsetName length] || [seenCharsetNames containsObject:charsetName]) continue;
-
-		NSString *description = [row objectForKey:@"DESCRIPTION"];
-		if (!description) description = [row objectForKey:@"Description"];
-		if (!description) description = [row objectForKey:@"description"];
-
-		NSString *defaultCollationName = [row objectForKey:@"DEFAULT_COLLATE_NAME"];
-		if (!defaultCollationName) defaultCollationName = [row objectForKey:@"default_collate_name"];
-		if (!defaultCollationName) defaultCollationName = [row objectForKey:@"Default collation"];
-		if (!defaultCollationName) defaultCollationName = [row objectForKey:@"Default Collation"];
-
-		id maxLength = [row objectForKey:@"MAXLEN"];
-		if (!maxLength) maxLength = [row objectForKey:@"Maxlen"];
-		if (!maxLength) maxLength = [row objectForKey:@"maxlen"];
-
-		NSMutableDictionary *normalizedRow = [NSMutableDictionary dictionaryWithObject:charsetName forKey:@"CHARACTER_SET_NAME"];
-		[normalizedRow setObject:(description ?: @"") forKey:@"DESCRIPTION"];
-		if (defaultCollationName) [normalizedRow setObject:defaultCollationName forKey:@"DEFAULT_COLLATE_NAME"];
-		if (maxLength) [normalizedRow setObject:[NSString stringWithFormat:@"%@", maxLength] forKey:@"MAXLEN"];
-
-		[seenCharsetNames addObject:charsetName];
-		[normalizedRows addObject:normalizedRow];
-	}
-
-	return normalizedRows;
+	return [SPCharacterSetMetadataNormalizer normalizedCharacterSetEncodingsFromRows:(NSArray<NSDictionary *> *)rows];
 }
 
 - (NSArray *)_fallbackCharacterSetEncodings
 {
-	return @[
-		@{@"CHARACTER_SET_NAME" : @"utf8mb4", @"DESCRIPTION" : @"UTF-8 Unicode", @"DEFAULT_COLLATE_NAME" : @"utf8mb4_general_ci", @"MAXLEN" : @"4"},
-		@{@"CHARACTER_SET_NAME" : @"utf8", @"DESCRIPTION" : @"UTF-8 Unicode (BMP only)", @"DEFAULT_COLLATE_NAME" : @"utf8_general_ci", @"MAXLEN" : @"3"},
-		@{@"CHARACTER_SET_NAME" : @"latin1", @"DESCRIPTION" : @"cp1252 West European", @"DEFAULT_COLLATE_NAME" : @"latin1_swedish_ci", @"MAXLEN" : @"1"}
-	];
+	return [SPCharacterSetMetadataNormalizer fallbackCharacterSetEncodings];
 }
 
 - (void)_showCharacterSetFallbackWarning

@@ -288,3 +288,95 @@ extension String {
         return nil
     }
 }
+
+@objcMembers public final class SPTableLoadFailure: NSObject {
+    public let tableName: String
+    public let databaseName: String
+    public let loadTableType: Int
+
+    private init(tableName: String, databaseName: String, tableType: Int) {
+        self.tableName = tableName
+        self.databaseName = databaseName
+        self.loadTableType = tableType
+        super.init()
+    }
+
+    @objc(failureWithTableName:database:tableType:)
+    public class func failure(withTableName tableName: String?, database: String?, tableType: Int) -> SPTableLoadFailure {
+        return SPTableLoadFailure(
+            tableName: tableName ?? "",
+            databaseName: database ?? "",
+            tableType: tableType
+        )
+    }
+
+    @objc(matchesTableName:database:tableType:)
+    public func matches(tableName: String?, database: String?, tableType: Int) -> Bool {
+        return self.loadTableType == tableType
+            && self.tableName == (tableName ?? "")
+            && self.databaseName == (database ?? "")
+    }
+}
+
+@objcMembers public final class SPCharacterSetMetadataNormalizer: NSObject {
+    private static let charsetNameKeys = ["CHARACTER_SET_NAME", "character_set_name", "Charset", "charset"]
+    private static let descriptionKeys = ["DESCRIPTION", "Description", "description"]
+    private static let defaultCollationKeys = ["DEFAULT_COLLATE_NAME", "default_collate_name", "Default collation", "Default Collation"]
+    private static let maxLengthKeys = ["MAXLEN", "Maxlen", "maxlen"]
+
+    @objc(normalizedCharacterSetEncodingsFromRows:)
+    public class func normalizedCharacterSetEncodings(fromRows rows: [NSDictionary]) -> [NSDictionary] {
+        guard !rows.isEmpty else { return [] }
+
+        var normalizedRows: [NSDictionary] = []
+        var seenCharsetNames = Set<String>()
+
+        for row in rows {
+            guard let charsetName = firstNonEmptyString(in: row, keys: charsetNameKeys),
+                  !seenCharsetNames.contains(charsetName) else {
+                continue
+            }
+
+            let description = firstNonEmptyString(in: row, keys: descriptionKeys) ?? ""
+            let defaultCollationName = firstNonEmptyString(in: row, keys: defaultCollationKeys)
+            let maxLength = firstNonEmptyString(in: row, keys: maxLengthKeys)
+
+            var normalizedRow: [String: String] = [
+                "CHARACTER_SET_NAME": charsetName,
+                "DESCRIPTION": description
+            ]
+
+            if let defaultCollationName {
+                normalizedRow["DEFAULT_COLLATE_NAME"] = defaultCollationName
+            }
+            if let maxLength {
+                normalizedRow["MAXLEN"] = maxLength
+            }
+
+            seenCharsetNames.insert(charsetName)
+            normalizedRows.append(normalizedRow as NSDictionary)
+        }
+
+        return normalizedRows
+    }
+
+    @objc(fallbackCharacterSetEncodings)
+    public class func fallbackCharacterSetEncodings() -> [NSDictionary] {
+        return [
+            ["CHARACTER_SET_NAME": "utf8mb4", "DESCRIPTION": "UTF-8 Unicode", "DEFAULT_COLLATE_NAME": "utf8mb4_general_ci", "MAXLEN": "4"],
+            ["CHARACTER_SET_NAME": "utf8", "DESCRIPTION": "UTF-8 Unicode (BMP only)", "DEFAULT_COLLATE_NAME": "utf8_general_ci", "MAXLEN": "3"],
+            ["CHARACTER_SET_NAME": "latin1", "DESCRIPTION": "cp1252 West European", "DEFAULT_COLLATE_NAME": "latin1_swedish_ci", "MAXLEN": "1"]
+        ] as [NSDictionary]
+    }
+
+    private class func firstNonEmptyString(in row: NSDictionary, keys: [String]) -> String? {
+        for key in keys {
+            guard let value = row[key] else { continue }
+            let stringValue = String(describing: value).trimmingCharacters(in: .whitespacesAndNewlines)
+            if !stringValue.isEmpty {
+                return stringValue
+            }
+        }
+        return nil
+    }
+}

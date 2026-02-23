@@ -56,15 +56,8 @@
 
 @implementation SPTableData
 {
-	NSString *_failedTableInformationTableName;
-	NSString *_failedTableInformationDatabaseName;
-	SPTableType _failedTableInformationTableType;
-	BOOL _failedTableInformationIsSet;
-
-	NSString *_failedStatusTableName;
-	NSString *_failedStatusDatabaseName;
-	SPTableType _failedStatusTableType;
-	BOOL _failedStatusIsSet;
+	SPTableLoadFailure *_failedTableInformationLoad;
+	SPTableLoadFailure *_failedStatusLoad;
 }
 
 @synthesize tableHasAutoIncrementField;
@@ -106,58 +99,36 @@
 
 - (BOOL)_shouldSkipTableInformationLoadForTable:(NSString *)tableName database:(NSString *)database tableType:(SPTableType)tableType
 {
-	if (!_failedTableInformationIsSet) return NO;
+	if (!_failedTableInformationLoad) return NO;
 
-	NSString *normalizedTableName = tableName ?: @"";
-	NSString *normalizedDatabase = database ?: @"";
-
-	return (_failedTableInformationTableType == tableType
-			&& [_failedTableInformationTableName isEqualToString:normalizedTableName]
-			&& [_failedTableInformationDatabaseName isEqualToString:normalizedDatabase]);
+	return [_failedTableInformationLoad matchesTableName:tableName database:database tableType:tableType];
 }
 
 - (void)_recordTableInformationLoadFailureForTable:(NSString *)tableName database:(NSString *)database tableType:(SPTableType)tableType
 {
-	_failedTableInformationTableName = [NSString stringWithString:(tableName ?: @"")];
-	_failedTableInformationDatabaseName = [NSString stringWithString:(database ?: @"")];
-	_failedTableInformationTableType = tableType;
-	_failedTableInformationIsSet = YES;
+	_failedTableInformationLoad = [SPTableLoadFailure failureWithTableName:tableName database:database tableType:tableType];
 }
 
 - (void)_clearTableInformationLoadFailure
 {
-	_failedTableInformationTableName = nil;
-	_failedTableInformationDatabaseName = nil;
-	_failedTableInformationTableType = SPTableTypeNone;
-	_failedTableInformationIsSet = NO;
+	_failedTableInformationLoad = nil;
 }
 
 - (BOOL)_shouldSkipStatusLoadForTable:(NSString *)tableName database:(NSString *)database tableType:(SPTableType)tableType
 {
-	if (!_failedStatusIsSet) return NO;
+	if (!_failedStatusLoad) return NO;
 
-	NSString *normalizedTableName = tableName ?: @"";
-	NSString *normalizedDatabase = database ?: @"";
-
-	return (_failedStatusTableType == tableType
-			&& [_failedStatusTableName isEqualToString:normalizedTableName]
-			&& [_failedStatusDatabaseName isEqualToString:normalizedDatabase]);
+	return [_failedStatusLoad matchesTableName:tableName database:database tableType:tableType];
 }
 
 - (void)_recordStatusLoadFailureForTable:(NSString *)tableName database:(NSString *)database tableType:(SPTableType)tableType
 {
-	_failedStatusTableName = [NSString stringWithString:(tableName ?: @"")];
-	_failedStatusDatabaseName = [NSString stringWithString:(database ?: @"")];
-	_failedStatusTableType = tableType;
-	_failedStatusIsSet = YES;
+	_failedStatusLoad = [SPTableLoadFailure failureWithTableName:tableName database:database tableType:tableType];
 }
 
 - (void)_clearStatusLoadFailure
 {
-	_failedStatusTableName = nil;
-	_failedStatusDatabaseName = nil;
-	_failedStatusTableType = SPTableTypeNone;
-	_failedStatusIsSet = NO;
+	_failedStatusLoad = nil;
 }
 
 /**

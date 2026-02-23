@@ -33,6 +33,7 @@
 
 #import "SPDatabaseAction.h"
 #import "SPDatabaseData.h"
+#import "sequel-ace-Swift.h"
 #import <SPMySQL/SPMySQL.h>
 
 @interface SPDatabaseActionTest : XCTestCase
@@ -48,6 +49,13 @@
 - (void)testNormalizeCharacterSetRows_MapsShowCharacterSetColumns;
 - (void)testNormalizeCharacterSetRows_DeduplicatesByCharacterSetName;
 - (void)testFallbackCharacterSetEncodings_UsesExpectedOrder;
+
+@end
+
+@interface SPTableDataLoadFailureTests : XCTestCase
+
+- (void)testTableInformationLoadFailureTracking_MatchesOnlySameTarget;
+- (void)testTableInformationLoadFailureTracking_HandlesNilTargetValues;
 
 @end
 
@@ -100,6 +108,28 @@
 	XCTAssertTrue([createDb createDatabase:@"target_name" withEncoding:@"" collation:nil], @"create database return");
 	
 	OCMVerifyAll(mockConnection);
+}
+
+@end
+
+@implementation SPTableDataLoadFailureTests
+
+- (void)testTableInformationLoadFailureTracking_MatchesOnlySameTarget
+{
+	SPTableLoadFailure *failure = [SPTableLoadFailure failureWithTableName:@"orders" database:@"app" tableType:1];
+
+	XCTAssertTrue([failure matchesTableName:@"orders" database:@"app" tableType:1]);
+	XCTAssertFalse([failure matchesTableName:@"orders" database:@"analytics" tableType:1]);
+	XCTAssertFalse([failure matchesTableName:@"orders" database:@"app" tableType:2]);
+}
+
+- (void)testTableInformationLoadFailureTracking_HandlesNilTargetValues
+{
+	SPTableLoadFailure *failure = [SPTableLoadFailure failureWithTableName:nil database:nil tableType:3];
+
+	XCTAssertTrue([failure matchesTableName:nil database:nil tableType:3]);
+	XCTAssertTrue([failure matchesTableName:@"" database:@"" tableType:3]);
+	XCTAssertFalse([failure matchesTableName:@"users" database:nil tableType:3]);
 }
 
 @end
