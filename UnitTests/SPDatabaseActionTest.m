@@ -48,6 +48,7 @@
 
 - (void)testNormalizeCharacterSetRows_MapsShowCharacterSetColumns;
 - (void)testNormalizeCharacterSetRows_DeduplicatesByCharacterSetName;
+- (void)testNormalizeCharacterSetRows_SkipsRowsWithoutCharacterSetName;
 - (void)testFallbackCharacterSetEncodings_UsesExpectedOrder;
 
 @end
@@ -174,6 +175,23 @@
 	XCTAssertEqual([normalizedRows count], 2UL);
 	XCTAssertEqualObjects([[normalizedRows firstObject] objectForKey:@"CHARACTER_SET_NAME"], @"utf8");
 	XCTAssertEqualObjects([[normalizedRows objectAtIndex:1] objectForKey:@"CHARACTER_SET_NAME"], @"latin1");
+}
+
+- (void)testNormalizeCharacterSetRows_SkipsRowsWithoutCharacterSetName
+{
+	SPDatabaseData *databaseData = [[SPDatabaseData alloc] init];
+
+	NSArray *rows = @[
+		@{@"Charset": @"", @"Description": @"empty"},
+		@{@"CHARACTER_SET_NAME": @"   ", @"DESCRIPTION": @"spaces"},
+		@{@"description": @"missing name"},
+		@{@"CHARACTER_SET_NAME": @"utf8mb4", @"DESCRIPTION": @"valid"}
+	];
+
+	NSArray *normalizedRows = [databaseData _normalizedCharacterSetEncodingsFromRows:rows];
+
+	XCTAssertEqual([normalizedRows count], 1UL);
+	XCTAssertEqualObjects([[normalizedRows firstObject] objectForKey:@"CHARACTER_SET_NAME"], @"utf8mb4");
 }
 
 - (void)testFallbackCharacterSetEncodings_UsesExpectedOrder
