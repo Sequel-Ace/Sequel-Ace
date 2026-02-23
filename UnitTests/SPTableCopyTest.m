@@ -107,6 +107,7 @@ static inline BOOL SPFieldTypeShouldBeUnquoted(NSString *fieldTypeGroup, NSStrin
 - (void)testIntUnsignedTypeIsUnquotedForIssue2252;
 - (void)testBitTypeIsUnquoted;
 - (void)testNonNumericTypeStaysQuoted;
+- (void)testGroupingFallbackBehaviorWithNilFieldType;
 
 @end
 
@@ -142,6 +143,14 @@ static inline BOOL SPFieldTypeShouldBeUnquoted(NSString *fieldTypeGroup, NSStrin
 {
 	XCTAssertFalse(SPFieldTypeShouldBeUnquoted(nil, @"VARCHAR(255)"));
 	XCTAssertFalse(SPFieldTypeShouldBeUnquoted(@"string", @"JSON"));
+}
+
+- (void)testGroupingFallbackBehaviorWithNilFieldType
+{
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(@"float", nil));
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(@"integer", nil));
+	XCTAssertFalse(SPFieldTypeShouldBeUnquoted(@"string", nil));
+	XCTAssertFalse(SPFieldTypeShouldBeUnquoted(nil, nil));
 }
 
 @end
