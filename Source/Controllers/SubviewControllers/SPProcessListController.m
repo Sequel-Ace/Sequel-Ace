@@ -70,6 +70,16 @@ static NSString * const SPKillIdKey   = @"SPKillId";
 @synthesize connection;
 
 #pragma mark -
+#pragma mark Serialization
+
++ (NSString *)_serializedProcessRow:(NSDictionary *)process includeProgress:(BOOL)includeProgress
+{
+	if (![process isKindOfClass:[NSDictionary class]]) return @"";
+
+	return [SPProcessListRowSerializer serializedProcessRow:process includeProgress:includeProgress];
+}
+
+#pragma mark -
 #pragma mark Initialisation
 
 - (instancetype)init
