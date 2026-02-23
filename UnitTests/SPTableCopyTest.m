@@ -103,6 +103,7 @@ static inline BOOL SPFieldTypeShouldBeUnquoted(NSString *fieldTypeGroup, NSStrin
 @interface SPFieldTypeClassificationTests : XCTestCase
 
 - (void)testNumericTypeIsUnquotedWhenTypeGroupingIsMissing;
+- (void)testNumericTypeIsUnquotedWhenFieldTypeHasLeadingTrailingSpaces;
 - (void)testNumericTypeIsUnquotedWhenTypeGroupingIsWrong;
 - (void)testIntUnsignedTypeIsUnquotedForIssue2252;
 - (void)testBitTypeIsUnquoted;
@@ -116,6 +117,11 @@ static inline BOOL SPFieldTypeShouldBeUnquoted(NSString *fieldTypeGroup, NSStrin
 - (void)testNumericTypeIsUnquotedWhenTypeGroupingIsMissing
 {
 	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(nil, @"DECIMAL(10,2)"));
+	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(nil, @"BIGINT unsigned"));
+}
+
+- (void)testNumericTypeIsUnquotedWhenFieldTypeHasLeadingTrailingSpaces
+{
 	XCTAssertTrue(SPFieldTypeShouldBeUnquoted(nil, @" BIGINT unsigned "));
 }
 
