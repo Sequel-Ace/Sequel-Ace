@@ -36,51 +36,9 @@ import Foundation
     }
 }
 
-private enum ProcessListColumnKey: String, CaseIterable {
-    case id = "Id"
-    case user = "User"
-    case host = "Host"
-    case database = "db"
-    case command = "Command"
-    case time = "Time"
-    case state = "State"
-    case info = "Info"
-    case progress = "Progress"
-}
-
 extension SPProcessListController {
     @objc(_serializedProcessRow:includeProgress:)
     class func serializedProcessRow(_ process: NSDictionary, includeProgress: Bool) -> String {
-        let typedProcess = process as? [AnyHashable: Any] ?? [:]
-
-        var rowValues = [
-            ProcessListColumnKey.id,
-            .user,
-            .host,
-            .database,
-            .command,
-            .time,
-            .state,
-            .info
-        ].map { processValue(for: $0, in: typedProcess) }
-
-        if includeProgress {
-            let progressValue = processValue(for: .progress, in: typedProcess)
-            if !progressValue.isEmpty {
-                rowValues.append(progressValue)
-            }
-        }
-
-        return rowValues.joined(separator: " ")
-    }
-
-    private class func processValue(
-        for key: ProcessListColumnKey,
-        in process: [AnyHashable: Any]
-    ) -> String {
-        guard let rawValue = process[key.rawValue], !(rawValue is NSNull) else {
-            return ""
-        }
-        return String(describing: rawValue)
+        return SPProcessListRowSerializer.serializedProcessRow(process, includeProgress: includeProgress)
     }
 }
