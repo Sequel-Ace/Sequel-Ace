@@ -374,13 +374,20 @@ final class AWSSTSClientTests: XCTestCase {
 
 final class AWSIAMAuthManagerTests: XCTestCase {
 
+    private enum RegionCacheKeys {
+        static let regions = "AWSIAMAvailableRegionsCache"
+        static let timestamp = "AWSIAMAvailableRegionsCacheTimestamp"
+    }
+
     override func setUp() {
         super.setUp()
         AWSIAMAuthManager.clearCachedCredentials(for: nil)
+        clearRegionCatalogCache()
     }
 
     override func tearDown() {
         AWSIAMAuthManager.clearCachedCredentials(for: nil)
+        clearRegionCatalogCache()
         super.tearDown()
     }
 
@@ -516,6 +523,70 @@ final class AWSIAMAuthManagerTests: XCTestCase {
         XCTAssertTrue(merged.contains("us-east-1"))
         XCTAssertTrue(merged.contains("us-east-2"))
         XCTAssertTrue(merged.contains("eu-west-1"))
+    }
+
+    func testCachedOrFallbackRegionsUsesFallbackWhenNoCacheExists() {
+        let regions = AWSIAMAuthManager.cachedOrFallbackRegions()
+
+        XCTAssertEqual(regions, AWSIAMAuthManager.mergeWithFallbackRegions([]))
+    }
+
+    func testCachedOrFallbackRegionsMergesCachedRegionsWithFallback() {
+        UserDefaults.standard.set(["US-EAST-1", "custom-region-1"], forKey: RegionCacheKeys.regions)
+
+        let regions = AWSIAMAuthManager.cachedOrFallbackRegions()
+
+        XCTAssertTrue(regions.contains("us-east-1"))
+        XCTAssertTrue(regions.contains("custom-region-1"))
+        XCTAssertEqual(regions.filter { $0 == "us-east-1" }.count, 1)
+    }
+
+    func testRegionsFromIPRangesResponseReturnsNilForMalformedJSON() {
+        let data = Data("not valid json".utf8)
+
+        XCTAssertNil(AWSIAMAuthManager.regionsFromIPRangesResponse(data))
+    }
+
+    func testRegionsFromIPRangesResponseNormalizesAndDeduplicatesCaseVariants() throws {
+        let response = """
+        {
+          "prefixes": [
+            { "region": "US-EAST-1", "service": "AMAZON" },
+            { "region": "us-east-1", "service": "AMAZON" }
+          ],
+          "ipv6_prefixes": [
+            { "region": "Us-East-1", "service": "AMAZON" },
+            { "region": "EU-WEST-1", "service": "AMAZON" }
+          ]
+        }
+        """
+
+        let data = try XCTUnwrap(response.data(using: .utf8))
+        let regions = try XCTUnwrap(AWSIAMAuthManager.regionsFromIPRangesResponse(data))
+
+        XCTAssertEqual(regions, ["eu-west-1", "us-east-1"])
+    }
+
+    func testRegionsFromIPRangesResponseReturnsEmptyArrayWhenNoValidRegions() throws {
+        let response = """
+        {
+          "prefixes": [
+            { "region": "GLOBAL", "service": "AMAZON" },
+            { "region": "invalid", "service": "AMAZON" }
+          ],
+          "ipv6_prefixes": []
+        }
+        """
+
+        let data = try XCTUnwrap(response.data(using: .utf8))
+        let regions = try XCTUnwrap(AWSIAMAuthManager.regionsFromIPRangesResponse(data))
+
+        XCTAssertTrue(regions.isEmpty)
+    }
+
+    private func clearRegionCatalogCache() {
+        UserDefaults.standard.removeObject(forKey: RegionCacheKeys.regions)
+        UserDefaults.standard.removeObject(forKey: RegionCacheKeys.timestamp)
     }
 }
 
