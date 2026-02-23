@@ -66,7 +66,12 @@ import Security
 
     private static let keychainServicePrefix = "Sequel Ace AWS"
     private static let log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "AWSIAMAuth")
-    private static let awsRegionCatalogURL = URL(string: "https://ip-ranges.amazonaws.com/ip-ranges.json")!
+    private static let awsRegionCatalogURL: URL = {
+        guard let url = URL(string: "https://ip-ranges.amazonaws.com/ip-ranges.json") else {
+            preconditionFailure("Invalid URL literal for AWS region catalog")
+        }
+        return url
+    }()
     private static let awsRegionCacheKey = "AWSIAMAvailableRegionsCache"
     private static let awsRegionCacheTimestampKey = "AWSIAMAvailableRegionsCacheTimestamp"
     private static let awsRegionCacheTTL: TimeInterval = 60 * 60 * 24 * 7 // 7 days
@@ -150,9 +155,13 @@ import Security
         parentWindow: NSWindow?
     ) throws -> String {
         // Determine region
-        var effectiveRegion = region ?? ""
+        var effectiveRegion = region?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased() ?? ""
         if effectiveRegion.isEmpty {
-            effectiveRegion = RDSIAMAuthentication.regionFromHostname(hostname) ?? ""
+            effectiveRegion = RDSIAMAuthentication.regionFromHostname(hostname)?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased() ?? ""
         }
         if effectiveRegion.isEmpty {
             effectiveRegion = "us-east-1" // Default fallback
@@ -160,7 +169,8 @@ import Security
 
         // Use profile-based authentication only
         // Manual credentials (accessKey/secretKey) are ignored - they were never securely persisted
-        let effectiveProfile = (profile?.isEmpty == false) ? profile! : "default"
+        let trimmedProfile = profile?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let effectiveProfile = (trimmedProfile?.isEmpty == false ? trimmedProfile : nil) ?? "default"
 
         let credentials = try loadCredentialsFromProfile(
             effectiveProfile,
@@ -401,7 +411,7 @@ import Security
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
-            kSecValueData as String: secretKey.data(using: .utf8)!,
+            kSecValueData as String: Data(secretKey.utf8),
             kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlocked
         ]
 

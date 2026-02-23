@@ -209,13 +209,15 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  * Uses the Swift AWSIAMAuthManager for all AWS operations.
  * Note: Only AWS CLI profiles are supported. Manual credentials are not persisted securely.
  */
-- (NSString *)generateAWSIAMAuthToken
+- (NSString *)generateAWSIAMAuthTokenWithError:(NSError **)errorPointer
 {
-    NSError *awsError = nil;
     NSInteger dbPort = [[self port] length] ? [[self port] integerValue] : 3306;
 
     // Get profile name (defaults to "default" if empty)
-    NSString *profileName = [[self awsProfile] length] > 0 ? [self awsProfile] : @"default";
+    NSString *trimmedProfileName = [[self awsProfile] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    NSString *profileName = [trimmedProfileName length] > 0 ? trimmedProfileName : @"default";
+
+    NSError *awsError = nil;
 
     // Use the Swift AWSIAMAuthManager for token generation (profile-based only)
     NSString *token = [AWSIAMAuthManager generateAuthTokenWithHostname:[self host]
@@ -228,17 +230,33 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                                                           parentWindow:[dbDocument parentWindowControllerWindow]
                                                                  error:&awsError];
 
+    if (errorPointer) {
+        *errorPointer = awsError;
+    }
+
     if (awsError) {
         NSLog(@"AWS IAM Authentication token generation failed: %@", awsError.localizedDescription);
         return nil;
     }
 
     if (![token length]) {
+        if (errorPointer && !*errorPointer) {
+            *errorPointer = [NSError errorWithDomain:@"AWSIAMAuthErrorDomain"
+                                                code:-1
+                                            userInfo:@{
+                                                NSLocalizedDescriptionKey: NSLocalizedString(@"Empty authentication token returned", @"AWS IAM empty token error")
+                                            }];
+        }
         NSLog(@"AWS IAM Authentication token generation failed: empty authentication token returned");
         return nil;
     }
 
     return token;
+}
+
+- (NSString *)generateAWSIAMAuthToken
+{
+    return [self generateAWSIAMAuthTokenWithError:nil];
 }
 
 - (NSString *)keychainPasswordForSSH
@@ -2345,22 +2363,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         if ([self useAWSIAMAuth] && [self type] == SPTCPIPConnection) {
             awsIAMAuthUsed = YES;
             NSError *awsError = nil;
-            NSInteger dbPort = [[self port] length] ? [[self port] integerValue] : 3306;
-
-            // Get profile name (defaults to "default" if empty)
-            NSString *profileName = [[self awsProfile] length] > 0 ? [self awsProfile] : @"default";
-
-            // Use the Swift AWSIAMAuthManager for token generation (profile-based only)
-            // This handles: credential loading, role assumption (with or without MFA), and token generation
-            connectionPassword = [AWSIAMAuthManager generateAuthTokenWithHostname:[self host]
-                                                                             port:dbPort
-                                                                         username:[self user]
-                                                                           region:[self awsRegion]
-                                                                          profile:profileName
-                                                                        accessKey:nil
-                                                                        secretKey:nil
-                                                                     parentWindow:[dbDocument parentWindowControllerWindow]
-                                                                            error:&awsError];
+            connectionPassword = [self generateAWSIAMAuthTokenWithError:&awsError];
 
             if (awsError || ![connectionPassword length]) {
                 [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"AWS IAM Authentication Failed", @"AWS IAM auth failed title")

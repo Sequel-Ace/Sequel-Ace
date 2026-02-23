@@ -415,6 +415,52 @@ final class AWSIAMAuthManagerTests: XCTestCase {
         }
     }
 
+    func testGenerateAuthTokenUsesDefaultProfileWhenProvidedProfileIsWhitespace() throws {
+        let credentialsContents = """
+        [default]
+        aws_access_key_id = AKIADEFAULT0000000000
+        aws_secret_access_key = defaultSecret
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: "") { _, _ in
+            let token = try AWSIAMAuthManager.generateAuthToken(
+                hostname: "mydb.123456789012.us-east-1.rds.amazonaws.com",
+                port: 3306,
+                username: "db_admin",
+                region: "us-east-1",
+                profile: "   ",
+                accessKey: nil,
+                secretKey: nil,
+                parentWindow: nil
+            )
+
+            XCTAssertTrue(token.contains("X-Amz-Credential=AKIADEFAULT0000000000"))
+        }
+    }
+
+    func testGenerateAuthTokenNormalizesProvidedRegionWhitespaceAndCase() throws {
+        let credentialsContents = """
+        [default]
+        aws_access_key_id = AKIADEFAULT0000000000
+        aws_secret_access_key = defaultSecret
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: "") { _, _ in
+            let token = try AWSIAMAuthManager.generateAuthToken(
+                hostname: "localhost",
+                port: 3306,
+                username: "admin",
+                region: " US-EAST-1 ",
+                profile: "default",
+                accessKey: nil,
+                secretKey: nil,
+                parentWindow: nil
+            )
+
+            XCTAssertTrue(token.contains("us-east-1%2Frds-db%2Faws4_request"))
+        }
+    }
+
     func testPreferredSTSRegionUsesFallbackWhenBaseRegionIsEmpty() {
         XCTAssertEqual(
             AWSIAMAuthManager.preferredSTSRegion(baseRegion: "   ", fallbackRegion: "us-west-2"),

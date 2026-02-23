@@ -198,6 +198,40 @@ final class RDSIAMAuthenticationTests: XCTestCase {
         XCTAssertTrue(token.contains("eu-west-2"))
     }
 
+    func testGenerateAuthTokenNormalizesProvidedRegionWhitespaceAndCase() throws {
+        let creds = AWSCredentials(
+            accessKeyId: "AKIAIOSFODNN7EXAMPLE",
+            secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+        )
+
+        let token = try RDSIAMAuthentication.generateAuthToken(
+            forHost: "mydb.123456789012.us-east-1.rds.amazonaws.com",
+            port: 3306,
+            username: "admin",
+            region: " US-EAST-1 ",
+            credentials: creds
+        )
+
+        XCTAssertTrue(token.contains("us-east-1%2Frds-db%2Faws4_request"))
+    }
+
+    func testGenerateAuthTokenNormalizesAutoDetectedRegionFromUppercaseHostname() throws {
+        let creds = AWSCredentials(
+            accessKeyId: "AKIAIOSFODNN7EXAMPLE",
+            secretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+        )
+
+        let token = try RDSIAMAuthentication.generateAuthToken(
+            forHost: "MYDB.123456789012.US-EAST-1.RDS.AMAZONAWS.COM",
+            port: 3306,
+            username: "admin",
+            region: nil,
+            credentials: creds
+        )
+
+        XCTAssertTrue(token.contains("us-east-1%2Frds-db%2Faws4_request"))
+    }
+
     func testGenerateAuthTokenUsesDefaultMySQLPortWhenPortIsZero() throws {
         let creds = AWSCredentials(
             accessKeyId: "AKIAIOSFODNN7EXAMPLE",

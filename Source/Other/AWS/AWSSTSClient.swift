@@ -139,9 +139,8 @@ import OSLog
         }
 
         // Generate session name if not provided
-        let effectiveSessionName = roleSessionName?.isEmpty == false
-            ? roleSessionName!
-            : "SequelAce-\(Int(Date().timeIntervalSince1970))"
+        let effectiveSessionName = (roleSessionName?.isEmpty == false ? roleSessionName : nil)
+            ?? "SequelAce-\(Int(Date().timeIntervalSince1970))"
 
         // Clamp duration to valid range (900 - 43200 seconds)
         var effectiveDuration = durationSeconds > 0 ? durationSeconds : defaultSessionDuration
@@ -192,8 +191,8 @@ import OSLog
             : "content-type;host;x-amz-date"
 
         var canonicalHeaders = "content-type:\(contentType)\nhost:\(host)\nx-amz-date:\(amzDate)\n"
-        if hasSessionToken {
-            canonicalHeaders += "x-amz-security-token:\(credentials.sessionToken!)\n"
+        if hasSessionToken, let sessionToken = credentials.sessionToken {
+            canonicalHeaders += "x-amz-security-token:\(sessionToken)\n"
         }
 
         let canonicalRequest = "POST\n/\n\n\(canonicalHeaders)\n\(signedHeaders)\n\(payloadHash)"
@@ -430,18 +429,23 @@ import OSLog
 
     private static func buildQueryString(from params: [String: String]) -> String {
         params.keys.sorted()
-            .map { key in "\(urlEncode(key))=\(urlEncode(params[key]!))" }
+            .compactMap { key in
+                guard let value = params[key] else {
+                    return nil
+                }
+                return "\(urlEncode(key))=\(urlEncode(value))"
+            }
             .joined(separator: "&")
     }
 
     // MARK: - AWS Signature V4 Helper Methods
 
     private static func deriveSigningKey(secretKey: String, dateStamp: String, region: String, service: String) -> Data {
-        let kSecret = "AWS4\(secretKey)".data(using: .utf8)!
-        let kDate = hmacSHA256(dateStamp.data(using: .utf8)!, key: kSecret)
-        let kRegion = hmacSHA256(region.data(using: .utf8)!, key: kDate)
-        let kService = hmacSHA256(service.data(using: .utf8)!, key: kRegion)
-        let kSigning = hmacSHA256(awsRequest.data(using: .utf8)!, key: kService)
+        let kSecret = Data("AWS4\(secretKey)".utf8)
+        let kDate = hmacSHA256(Data(dateStamp.utf8), key: kSecret)
+        let kRegion = hmacSHA256(Data(region.utf8), key: kDate)
+        let kService = hmacSHA256(Data(service.utf8), key: kRegion)
+        let kSigning = hmacSHA256(Data(awsRequest.utf8), key: kService)
         return kSigning
     }
 
@@ -463,13 +467,13 @@ import OSLog
     }
 
     private static func hmacSHA256Hex(_ string: String, key: Data) -> String {
-        let data = string.data(using: .utf8)!
+        let data = Data(string.utf8)
         let hmac = hmacSHA256(data, key: key)
         return hexEncode(hmac)
     }
 
     private static func sha256Hex(_ string: String) -> String {
-        let data = string.data(using: .utf8)!
+        let data = Data(string.utf8)
         var result = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
         data.withUnsafeBytes { ptr in
             _ = CC_SHA256(ptr.baseAddress, CC_LONG(data.count), &result)
