@@ -84,7 +84,7 @@
 @property (readonly) BOOL isMySQL5;
 
 /**
- * @property isMySQL8 Indicates if the server is MySQL version 8
+ * @property isMySQL8 Indicates if the server is MySQL version 8 or newer
  */
 @property (readonly) BOOL isMySQL8;
 

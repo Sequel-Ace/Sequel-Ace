@@ -117,6 +117,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 - (NSString *)_buildPartialColumnDefinitionString:(NSDictionary *)theRow;
 - (BOOL)filterFieldsWithString:(NSString *)filterString;
 - (BOOL)sort:(NSMutableArray *)data withDescriptor:(NSSortDescriptor *)descriptor;
+- (NSDictionary *)_columnStatsForFieldName:(NSString *)fieldName lengthFunction:(NSString *)lengthFunction;
+- (NSString *)_estimatedOptimizedFieldTypeForField:(NSDictionary *)fieldDefinition failureReason:(NSString **)failureReason;
+- (void)_showOptimizedFieldTypeFallbackTask:(NSDictionary *)context;
 
 #pragma mark - SPTableStructureDelegate
 
@@ -328,33 +331,226 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
  */
 - (IBAction)showOptimizedFieldType:(id)sender
 {
-	SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT %@ FROM %@ PROCEDURE ANALYSE(0,8192)", 
-		[[[[self activeFieldsSource] objectAtIndex:[tableSourceView selectedRow]] objectForKey:@"name"] backtickQuotedString],
-		[selectedTable backtickQuotedString]]];
+	NSInteger selectedRow = [tableSourceView selectedRow];
+	if (selectedRow < 0 || selectedRow >= (NSInteger)[[self activeFieldsSource] count]) return;
 
-	// Check for errors
-	if ([mySQLConnection queryErrored]) {
-		NSString *message = NSLocalizedString(@"Error while fetching the optimized field type", @"error while fetching the optimized field type message");
-		
-		if ([mySQLConnection isConnected]) {
-			 [NSAlert createWarningAlertWithTitle:message message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while fetching the optimized field type.\n\nMySQL said:%@", @"an error occurred while fetching the optimized field type.\n\nMySQL said:%@"), [mySQLConnection lastErrorMessage]] callback:nil];
+	NSDictionary *selectedField = [[self activeFieldsSource] objectAtIndex:selectedRow];
+	NSString *fieldName = [selectedField objectForKey:@"name"];
+	BOOL useFallbackEstimate = [[tableDocumentInstance serverSupport] isMySQL8];
+
+	if (!useFallbackEstimate) {
+		SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT %@ FROM %@ PROCEDURE ANALYSE(0,8192)",
+			[fieldName backtickQuotedString],
+			[selectedTable backtickQuotedString]]];
+
+		// Check for errors
+		if ([mySQLConnection queryErrored]) {
+			NSString *lastErrorMessage = [mySQLConnection lastErrorMessage] ?: @"";
+			BOOL procedureAnalyseUnavailable = ([mySQLConnection lastErrorID] == 1064
+				|| [mySQLConnection lastErrorID] == 1305
+				|| [lastErrorMessage rangeOfString:@"PROCEDURE ANALYSE" options:NSCaseInsensitiveSearch].location != NSNotFound);
+
+			if ([mySQLConnection isConnected] && procedureAnalyseUnavailable) {
+				useFallbackEstimate = YES;
+			}
+			else {
+				NSString *message = NSLocalizedString(@"Error while fetching the optimized field type", @"error while fetching the optimized field type message");
+
+				if ([mySQLConnection isConnected]) {
+					 [NSAlert createWarningAlertWithTitle:message message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while fetching the optimized field type.\n\nMySQL said: %@", @"an error occurred while fetching the optimized field type.\n\nMySQL said: %@"), lastErrorMessage] callback:nil];
+				}
+				return;
+			}
 		}
-		return;
+		else {
+			[theResult setReturnDataAsStrings:YES];
+
+			NSDictionary *analysisResult = [theResult getRowAsDictionary];
+
+			NSString *type = [analysisResult objectForKey:@"Optimal_fieldtype"];
+
+			if (!type || [type isNSNull] || ![type length]) {
+				type = NSLocalizedString(@"No optimized field type found.", @"no optimized field type found. message");
+			}
+			[NSAlert createWarningAlertWithTitle:
+				[NSString stringWithFormat:NSLocalizedString(@"Optimized type for field '%@'", @"Optimized type for field %@"), fieldName] message:type callback:nil];
+
+			return;
+		}
 	}
 
-	[theResult setReturnDataAsStrings:YES];
-	
-	NSDictionary *analysisResult = [theResult getRowAsDictionary];
+	NSDictionary *fallbackContext = @{
+		@"field" : [NSDictionary dictionaryWithDictionary:selectedField],
+		@"fieldName" : (fieldName ?: @"")
+	};
 
-	NSString *type = [analysisResult objectForKey:@"Optimal_fieldtype"];
-	
-	if (!type || [type isNSNull] || ![type length]) {
-		type = NSLocalizedString(@"No optimized field type found.", @"no optimized field type found. message");
+	[tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Estimating optimized field type...", @"estimating optimized field type task status message")];
+
+	if ([NSThread isMainThread]) {
+		[NSThread detachNewThreadWithName:SPCtxt(@"SPTableStructure optimized field type estimate task", tableDocumentInstance)
+								   target:self
+								 selector:@selector(_showOptimizedFieldTypeFallbackTask:)
+								   object:fallbackContext];
+
+		[tableDocumentInstance enableTaskCancellationWithTitle:NSLocalizedString(@"Cancel", @"cancel button")
+												callbackObject:self
+											  callbackFunction:NULL];
 	}
-	[NSAlert createWarningAlertWithTitle:
-		[NSString stringWithFormat:NSLocalizedString(@"Optimized type for field '%@'", @"Optimized type for field %@"),
-			[[[self activeFieldsSource] objectAtIndex:[tableSourceView selectedRow]] objectForKey:@"name"]] message:type callback:nil];
+	else {
+		[self _showOptimizedFieldTypeFallbackTask:fallbackContext];
+	}
+}
 
+- (void)_showOptimizedFieldTypeFallbackTask:(NSDictionary *)context
+{
+	@autoreleasepool {
+		NSDictionary *selectedField = [context objectForKey:@"field"];
+		NSString *fieldName = [context objectForKey:@"fieldName"];
+		NSString *fallbackFailureReason = nil;
+		NSString *estimatedType = [self _estimatedOptimizedFieldTypeForField:selectedField failureReason:&fallbackFailureReason];
+		NSString *message = nil;
+
+		if ([estimatedType length]) {
+			message = [NSString stringWithFormat:NSLocalizedString(@"%@\n\nEstimated from current column values because PROCEDURE ANALYSE() is unavailable on this server version.", @"show optimized field type fallback estimate message"), estimatedType];
+		}
+		else {
+			message = fallbackFailureReason ?: NSLocalizedString(@"No optimized field type found.", @"no optimized field type found. message");
+		}
+
+		SPMainQSync(^{
+			[self->tableDocumentInstance endTask];
+			[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Optimized type for field '%@'", @"Optimized type for field %@"), fieldName] message:message callback:nil];
+		});
+	}
+}
+
+- (NSDictionary *)_columnStatsForFieldName:(NSString *)fieldName lengthFunction:(NSString *)lengthFunction
+{
+	NSString *escapedFieldName = [fieldName backtickQuotedString];
+	NSMutableString *queryString = nil;
+
+	if ([lengthFunction length]) {
+		NSString *lengthExpression = [NSString stringWithFormat:@"%@(%@)", lengthFunction, escapedFieldName];
+		queryString = [NSMutableString stringWithFormat:@"SELECT COUNT(*) AS row_count, SUM(%1$@ IS NULL) AS null_count, MIN(%2$@) AS min_length, MAX(%2$@) AS max_length", escapedFieldName, lengthExpression];
+	}
+	else {
+		queryString = [NSMutableString stringWithFormat:@"SELECT COUNT(*) AS row_count, SUM(%1$@ IS NULL) AS null_count, MIN(%1$@) AS min_value, MAX(%1$@) AS max_value", escapedFieldName];
+	}
+
+	[queryString appendFormat:@" FROM %@", [selectedTable backtickQuotedString]];
+
+	SPMySQLResult *result = [mySQLConnection queryString:queryString];
+	if ([mySQLConnection queryErrored] || !result) return nil;
+
+	[result setReturnDataAsStrings:YES];
+	return [result getRowAsDictionary];
+}
+
+- (NSString *)_estimatedOptimizedFieldTypeForField:(NSDictionary *)fieldDefinition failureReason:(NSString **)failureReason
+{
+	NSString *fieldName = [fieldDefinition objectForKey:@"name"];
+	NSString *fieldType = [SPOptimizedFieldTypeEstimator normalizedFieldTypeFromDefinition:fieldDefinition];
+
+	if (![fieldName length] || ![fieldType length]) {
+		if (failureReason) {
+			*failureReason = NSLocalizedString(@"No optimized field type could be estimated for this column.", @"show optimized field type fallback failed because field metadata is unavailable");
+		}
+		return nil;
+	}
+
+	BOOL isIntegerType = [SPOptimizedFieldTypeEstimator isIntegerFieldType:fieldType];
+	BOOL isBinaryType = [SPOptimizedFieldTypeEstimator isBinaryFieldType:fieldType];
+	BOOL isStringType = [SPOptimizedFieldTypeEstimator isStringFieldType:fieldType];
+
+	if (!isIntegerType && !isBinaryType && !isStringType) {
+		if (failureReason) {
+			*failureReason = [NSString stringWithFormat:NSLocalizedString(@"No fallback estimate is currently available for %@ columns.", @"show optimized field type fallback unsupported field type"), fieldType];
+		}
+		return nil;
+	}
+
+	NSDictionary *stats = nil;
+	NSDictionary *byteLengthStats = nil;
+	if (isIntegerType) {
+		stats = [self _columnStatsForFieldName:fieldName lengthFunction:nil];
+	}
+	else if (isBinaryType) {
+		stats = [self _columnStatsForFieldName:fieldName lengthFunction:@"OCTET_LENGTH"];
+	}
+	else {
+		stats = [self _columnStatsForFieldName:fieldName lengthFunction:@"CHAR_LENGTH"];
+		byteLengthStats = [self _columnStatsForFieldName:fieldName lengthFunction:@"OCTET_LENGTH"];
+	}
+
+	if (!stats || (isStringType && !byteLengthStats)) {
+		if (failureReason) {
+			*failureReason = [NSString stringWithFormat:NSLocalizedString(@"An error occurred while estimating an optimized field type.\n\nMySQL said: %@", @"show optimized field type fallback query error message"), [mySQLConnection lastErrorMessage]];
+		}
+		return nil;
+	}
+
+	NSUInteger rowCount = [SPOptimizedFieldTypeEstimator unsignedIntegerValueFromStatValue:[stats objectForKey:@"row_count"]];
+	NSUInteger nullCount = [SPOptimizedFieldTypeEstimator unsignedIntegerValueFromStatValue:[stats objectForKey:@"null_count"]];
+	if (rowCount <= nullCount) {
+		if (failureReason) {
+			*failureReason = NSLocalizedString(@"No non-NULL values were found in this column, so no fallback estimate could be produced.", @"show optimized field type fallback no values");
+		}
+		return nil;
+	}
+
+	if (isIntegerType) {
+		NSDecimalNumber *minimum = [SPOptimizedFieldTypeEstimator decimalNumberFromStatValue:[stats objectForKey:@"min_value"]];
+		NSDecimalNumber *maximum = [SPOptimizedFieldTypeEstimator decimalNumberFromStatValue:[stats objectForKey:@"max_value"]];
+		if (!minimum || !maximum) {
+			if (failureReason) {
+				*failureReason = NSLocalizedString(@"Unable to read enough numeric statistics to estimate an optimized integer type.", @"show optimized field type fallback missing integer stats");
+			}
+			return nil;
+		}
+		return [SPOptimizedFieldTypeEstimator estimatedIntegerTypeForMinimum:minimum maximum:maximum];
+	}
+
+	NSUInteger minLength = [SPOptimizedFieldTypeEstimator unsignedIntegerValueFromStatValue:[stats objectForKey:@"min_length"]];
+	NSUInteger maxLength = [SPOptimizedFieldTypeEstimator unsignedIntegerValueFromStatValue:[stats objectForKey:@"max_length"]];
+	maxLength = MAX((NSUInteger)1, maxLength);
+	NSUInteger maxByteLength = maxLength;
+
+	if (isStringType) {
+		maxByteLength = [SPOptimizedFieldTypeEstimator unsignedIntegerValueFromStatValue:[byteLengthStats objectForKey:@"max_length"]];
+		maxByteLength = MAX((NSUInteger)1, maxByteLength);
+	}
+
+	if (isBinaryType) {
+		if (minLength == maxLength && maxLength <= 255) {
+			return [NSString stringWithFormat:@"BINARY(%lu)", (unsigned long)maxLength];
+		}
+		if (maxLength <= 65535) {
+			return [NSString stringWithFormat:@"VARBINARY(%lu)", (unsigned long)maxLength];
+		}
+		if (maxLength <= 16777215) {
+			return @"MEDIUMBLOB";
+		}
+		return @"LONGBLOB";
+	}
+
+	if (minLength == maxLength && maxLength <= 255) {
+		return [NSString stringWithFormat:@"CHAR(%lu)", (unsigned long)maxLength];
+	}
+	NSUInteger maxBytesPerCharacter = [SPOptimizedFieldTypeEstimator maxBytesPerCharacterForFieldDefinition:fieldDefinition
+	                                                                                           tableEncoding:[tableDataInstance tableEncoding]
+	                                                                                       availableEncodings:(NSArray<NSDictionary *> *)[databaseDataInstance getDatabaseCharacterSetEncodings]];
+	NSUInteger maxSafeVarcharLength = (maxBytesPerCharacter > 0) ? (65535 / maxBytesPerCharacter) : 65535;
+	if (maxByteLength <= 65535 && maxLength <= maxSafeVarcharLength) {
+		return [NSString stringWithFormat:@"VARCHAR(%lu)", (unsigned long)maxLength];
+	}
+	if (maxByteLength <= 65535) {
+		return @"TEXT";
+	}
+	if (maxByteLength <= 16777215) {
+		return @"MEDIUMTEXT";
+	}
+
+	return @"LONGTEXT";
 }
 
 /**

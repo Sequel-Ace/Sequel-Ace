@@ -350,6 +350,150 @@ public class SPProcessListRowSerializer: NSObject {
     }
 }
 
+@objcMembers final class SPOptimizedFieldTypeEstimator: NSObject {
+
+    private static let integerFieldTypes: Set<String> = [
+        "TINYINT", "SMALLINT", "MEDIUMINT", "INT", "INTEGER", "BIGINT"
+    ]
+    private static let binaryFieldTypes: Set<String> = [
+        "BINARY", "VARBINARY", "TINYBLOB", "BLOB", "MEDIUMBLOB", "LONGBLOB"
+    ]
+    private static let stringFieldTypes: Set<String> = [
+        "CHAR", "VARCHAR", "NCHAR", "NVARCHAR", "TINYTEXT", "TEXT", "MEDIUMTEXT", "LONGTEXT"
+    ]
+
+    @objc(normalizedFieldTypeFromDefinition:)
+    static func normalizedFieldType(fromDefinition fieldDefinition: NSDictionary) -> String {
+        guard let rawType = fieldDefinition["type"], !(rawType is NSNull) else { return "" }
+        let fieldType = String(describing: rawType).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !fieldType.isEmpty else { return "" }
+        let uppercasedType = fieldType.uppercased()
+        if let suffixStart = uppercasedType.firstIndex(of: "(") {
+            return String(uppercasedType[..<suffixStart]).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return uppercasedType.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    @objc(isIntegerFieldType:)
+    static func isIntegerFieldType(_ fieldType: String?) -> Bool {
+        guard let fieldType = fieldType else { return false }
+        return integerFieldTypes.contains(fieldType)
+    }
+
+    @objc(isBinaryFieldType:)
+    static func isBinaryFieldType(_ fieldType: String?) -> Bool {
+        guard let fieldType = fieldType else { return false }
+        return binaryFieldTypes.contains(fieldType)
+    }
+
+    @objc(isStringFieldType:)
+    static func isStringFieldType(_ fieldType: String?) -> Bool {
+        guard let fieldType = fieldType else { return false }
+        return stringFieldTypes.contains(fieldType)
+    }
+
+    @objc(decimalNumberFromStatValue:)
+    static func decimalNumber(fromStatValue value: Any?) -> NSDecimalNumber? {
+        guard let value = value, !(value is NSNull) else { return nil }
+        let numberString = String(describing: value).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !numberString.isEmpty else { return nil }
+        let number = NSDecimalNumber(string: numberString)
+        if number == NSDecimalNumber.notANumber {
+            return nil
+        }
+        return number
+    }
+
+    @objc(unsignedIntegerValueFromStatValue:)
+    static func unsignedIntegerValue(fromStatValue value: Any?) -> UInt {
+        guard let value = value, !(value is NSNull) else { return 0 }
+        let numberString = String(describing: value).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !numberString.isEmpty else { return 0 }
+        let parsedValue = max(Int64(numberString) ?? 0, 0)
+        return UInt(parsedValue)
+    }
+
+    @objc(maxBytesPerCharacterForFieldDefinition:tableEncoding:availableEncodings:)
+    static func maxBytesPerCharacter(
+        forFieldDefinition fieldDefinition: NSDictionary,
+        tableEncoding: String?,
+        availableEncodings: [NSDictionary]
+    ) -> UInt {
+        var encodingName = (fieldDefinition["encodingName"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if encodingName.isEmpty {
+            encodingName = (fieldDefinition["encoding"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        }
+        if encodingName.isEmpty {
+            encodingName = tableEncoding?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        }
+        guard !encodingName.isEmpty else { return 1 }
+
+        for encoding in availableEncodings {
+            var characterSetName = (encoding["CHARACTER_SET_NAME"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if characterSetName.isEmpty {
+                characterSetName = (encoding["Charset"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            }
+            guard !characterSetName.isEmpty else { continue }
+            guard characterSetName.caseInsensitiveCompare(encodingName) == .orderedSame else { continue }
+
+            var maxBytes = unsignedIntegerValue(fromStatValue: encoding["MAXLEN"])
+            if maxBytes == 0 {
+                maxBytes = unsignedIntegerValue(fromStatValue: encoding["Maxlen"])
+            }
+            return max(maxBytes, 1)
+        }
+
+        let lowercaseEncoding = encodingName.lowercased()
+        if lowercaseEncoding.hasPrefix("utf8mb4") || lowercaseEncoding.hasPrefix("utf16") || lowercaseEncoding.hasPrefix("utf32") {
+            return 4
+        }
+        if lowercaseEncoding.hasPrefix("utf8") {
+            return 3
+        }
+        if lowercaseEncoding.hasPrefix("ucs2") {
+            return 2
+        }
+        return 1
+    }
+
+    @objc(estimatedIntegerTypeForMinimum:maximum:)
+    static func estimatedIntegerType(forMinimum minimum: NSDecimalNumber, maximum: NSDecimalNumber) -> String {
+        struct IntegerRange {
+            let type: String
+            let signedMin: String
+            let signedMax: String
+            let unsignedMax: String
+        }
+
+        let ranges: [IntegerRange] = [
+            IntegerRange(type: "TINYINT", signedMin: "-128", signedMax: "127", unsignedMax: "255"),
+            IntegerRange(type: "SMALLINT", signedMin: "-32768", signedMax: "32767", unsignedMax: "65535"),
+            IntegerRange(type: "MEDIUMINT", signedMin: "-8388608", signedMax: "8388607", unsignedMax: "16777215"),
+            IntegerRange(type: "INT", signedMin: "-2147483648", signedMax: "2147483647", unsignedMax: "4294967295"),
+            IntegerRange(type: "BIGINT", signedMin: "-9223372036854775808", signedMax: "9223372036854775807", unsignedMax: "18446744073709551615")
+        ]
+
+        let canUseUnsigned = minimum.compare(NSDecimalNumber.zero) != .orderedAscending
+
+        for range in ranges {
+            if canUseUnsigned {
+                let unsignedMax = NSDecimalNumber(string: range.unsignedMax)
+                if maximum.compare(unsignedMax) != .orderedDescending {
+                    return "\(range.type) UNSIGNED"
+                }
+            } else {
+                let signedMin = NSDecimalNumber(string: range.signedMin)
+                let signedMax = NSDecimalNumber(string: range.signedMax)
+                if minimum.compare(signedMin) != .orderedAscending && maximum.compare(signedMax) != .orderedDescending {
+                    return range.type
+                }
+            }
+        }
+
+        return canUseUnsigned ? "BIGINT UNSIGNED" : "BIGINT"
+    }
+}
+
 @objcMembers public final class SPFieldTypeClassifier: NSObject {
     private enum FieldTypeGroup: String {
         case bit

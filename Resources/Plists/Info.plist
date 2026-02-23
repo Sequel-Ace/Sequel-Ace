@@ -298,6 +298,8 @@
 	</dict>
 	<key>NSAppleScriptEnabled</key>
 	<true/>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Sequel Ace needs Local Network access to connect to MySQL and SSH hosts on your local network.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright 2020 Moballo, LLC</string>
 	<key>NSMainNibFile</key>

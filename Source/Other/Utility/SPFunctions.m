@@ -31,6 +31,8 @@
 #import "SPFunctions.h"
 #import <Security/SecRandom.h>
 #import <objc/runtime.h>
+#import <arpa/inet.h>
+#import <netinet/in.h>
 
 void SPMainQSync(SAVoidCompletionBlock block)
 {
@@ -135,6 +137,129 @@ id SPBoxNil(id object)
 	return object;
 }
 
+static NSString *SPTrimmedHostCandidate(NSString *candidate)
+{
+    if (!candidate) return nil;
+
+    NSString *trimmedCandidate = [candidate stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (![trimmedCandidate length]) return nil;
+
+    // SSH logs often wrap IP addresses in square brackets.
+    if ([trimmedCandidate hasPrefix:@"["] && [trimmedCandidate hasSuffix:@"]"] && [trimmedCandidate length] > 2) {
+        trimmedCandidate = [trimmedCandidate substringWithRange:NSMakeRange(1, [trimmedCandidate length] - 2)];
+    }
+
+    return trimmedCandidate;
+}
+
+static BOOL SPIsPrivateIPv4Address(struct in_addr address)
+{
+    uint32_t hostAddress = ntohl(address.s_addr);
+
+    // Loopback is local-only and does not require Local Network privacy permission.
+    if ((hostAddress & 0xFF000000) == 0x7F000000) return NO;
+
+    // RFC1918 private ranges.
+    if ((hostAddress & 0xFF000000) == 0x0A000000) return YES;   // 10.0.0.0/8
+    if ((hostAddress & 0xFFF00000) == 0xAC100000) return YES;   // 172.16.0.0/12
+    if ((hostAddress & 0xFFFF0000) == 0xC0A80000) return YES;   // 192.168.0.0/16
+
+    // Common local-only ranges.
+    if ((hostAddress & 0xFFFF0000) == 0xA9FE0000) return YES;   // 169.254.0.0/16 link-local
+
+    return NO;
+}
+
+static BOOL SPIsPrivateIPv6Address(struct in6_addr address)
+{
+    if (IN6_IS_ADDR_LOOPBACK(&address)) return NO;
+
+    // fc00::/7 (unique local), fe80::/10 (link-local)
+    BOOL isUniqueLocal = ((address.s6_addr[0] & 0xFE) == 0xFC);
+    BOOL isLinkLocal = (address.s6_addr[0] == 0xFE) && ((address.s6_addr[1] & 0xC0) == 0x80);
+
+    return isUniqueLocal || isLinkLocal;
+}
+
+BOOL SPIsLikelyLocalNetworkHost(NSString *host)
+{
+    NSString *trimmedHost = SPTrimmedHostCandidate(host);
+    if (![trimmedHost length]) return NO;
+
+    NSString *normalizedHost = [trimmedHost lowercaseString];
+
+    if ([normalizedHost isEqualToString:@"localhost"] || [normalizedHost isEqualToString:@"::1"]) return NO;
+    if ([normalizedHost hasSuffix:@".local"]) return YES;
+
+    struct in_addr ipv4Address;
+    if (inet_pton(AF_INET, [normalizedHost UTF8String], &ipv4Address) == 1) {
+        return SPIsPrivateIPv4Address(ipv4Address);
+    }
+
+    struct in6_addr ipv6Address;
+    if (inet_pton(AF_INET6, [normalizedHost UTF8String], &ipv6Address) == 1) {
+        return SPIsPrivateIPv6Address(ipv6Address);
+    }
+
+    // Hostnames without a DNS suffix are often local/intranet aliases.
+    // This can also match SSH config aliases for public hosts when no parsed SSH debug IP
+    // is available, so SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue prioritizes parsed
+    // debug candidates before falling back to this hostname heuristic.
+    if ([normalizedHost rangeOfString:@"."].location == NSNotFound) {
+        return YES;
+    }
+
+    return NO;
+}
+
+static void SPAddSSHRegexMatches(NSMutableOrderedSet<NSString *> *candidates, NSString *debugDetail, NSString *pattern)
+{
+    if (![debugDetail length]) return;
+
+    NSError *regexError = nil;
+    NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:pattern options:NSRegularExpressionCaseInsensitive error:&regexError];
+    if (regexError || !regex) return;
+
+    NSArray<NSTextCheckingResult *> *matches = [regex matchesInString:debugDetail options:0 range:NSMakeRange(0, [debugDetail length])];
+    for (NSTextCheckingResult *result in matches) {
+        if ([result numberOfRanges] < 2) continue;
+        NSRange captureRange = [result rangeAtIndex:1];
+        if (captureRange.location == NSNotFound) continue;
+        NSString *candidate = SPTrimmedHostCandidate([debugDetail substringWithRange:captureRange]);
+        if ([candidate length]) [candidates addObject:candidate];
+    }
+}
+
+BOOL SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(NSString *errorMessage, NSString *debugDetail, NSString *sshHost)
+{
+    NSMutableString *combinedMessage = [NSMutableString string];
+    if ([errorMessage length]) [combinedMessage appendString:errorMessage];
+    if ([debugDetail length]) {
+        if ([combinedMessage length]) [combinedMessage appendString:@"\n"];
+        [combinedMessage appendString:debugDetail];
+    }
+
+    if ([combinedMessage rangeOfString:@"No route to host" options:NSCaseInsensitiveSearch].location == NSNotFound) {
+        return NO;
+    }
+
+    NSMutableOrderedSet<NSString *> *parsedCandidates = [NSMutableOrderedSet orderedSet];
+
+    SPAddSSHRegexMatches(parsedCandidates, debugDetail, @"connect to address ([^\\s]+)\\s+port\\s+\\d+:\\s+No route to host");
+    SPAddSSHRegexMatches(parsedCandidates, debugDetail, @"Connecting to .*?\\[([^\\]]+)\\]\\s+port\\s+\\d+");
+
+    for (NSString *candidate in parsedCandidates) {
+        if (SPIsLikelyLocalNetworkHost(candidate)) return YES;
+    }
+
+    if ([parsedCandidates count]) return NO;
+
+    NSString *trimmedSSHHost = SPTrimmedHostCandidate(sshHost);
+    if (![trimmedSSHHost length]) return NO;
+
+    return SPIsLikelyLocalNetworkHost(trimmedSSHHost);
+}
+
 void SP_swizzleInstanceMethod(Class c, SEL original, SEL replacement)
 {
 	Method a = class_getInstanceMethod(c, original);
@@ -181,5 +306,3 @@ NSInteger intSortDesc(id num1, id num2, void *context)
     else
         return NSOrderedSame;
 }
-
-
