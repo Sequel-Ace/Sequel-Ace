@@ -29,6 +29,7 @@
 
 #import "SPAppController.h"
 #import "SPDatabaseDocument.h"
+#import "SPProcessListController.h"
 #import "SPBundleManager.h"
 #import "SPWindow.h"
 
