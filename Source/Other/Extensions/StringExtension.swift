@@ -204,6 +204,15 @@ extension String {
     //Special space-character used to separate the column name and column type
     @objc static let columnHeaderSplittingSpace: String = " "
 
+    @objc(tableContentColumnHeaderStringForColumnName:columnType:columnTypesVisible:)
+    static func tableContentColumnHeaderString(columnName: String, columnType: String?, columnTypesVisible: Bool) -> String {
+        guard columnTypesVisible, let columnType, !columnType.isEmpty else {
+            return columnName
+        }
+
+        return "\(columnName)\(columnHeaderSplittingSpace)\(columnType)"
+    }
+
     static func rawByteString(data: NSData) -> NSString {
         return String.rawByteString(data as Data) as NSString
     }

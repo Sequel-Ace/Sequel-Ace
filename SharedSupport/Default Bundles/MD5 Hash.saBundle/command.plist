@@ -4,27 +4,22 @@
 <dict>
 	<key>author</key>
 	<string>Abhi Beckert</string>
+	<key>bundleVersion</key>
+	<integer>2</integer>
 	<key>category</key>
 	<string>Hash</string>
 	<key>command</key>
-	<string>#!/usr/bin/ruby
+	<string>#!/bin/sh
 
-# fetch selected text from STDIN
-selectedText = gets
-
-# create sha1 hash
-require 'digest/md5'
-hash = Digest::MD5.hexdigest(selectedText)
-
-# output hash
-print hash
-</string>
+/sbin/md5 -q</string>
 	<key>description</key>
 	<string>Convert the selected text to an MD5 hash.</string>
 	<key>input</key>
 	<string>selectedtext</string>
 	<key>input_fallback</key>
 	<string>entirecontent</string>
+	<key>isDefaultBundle</key>
+	<true/>
 	<key>keyEquivalent</key>
 	<string></string>
 	<key>name</key>
@@ -35,9 +30,5 @@ print hash
 	<string>inputfield</string>
 	<key>uuid</key>
 	<string>8CAA33B3-D168-47FC-A9BE-EA5A8576E380</string>
-	<key>isDefaultBundle</key>
-	<true/>
-	<key>bundleVersion</key>
-	<integer>2</integer>
 </dict>
 </plist>

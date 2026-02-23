@@ -62,6 +62,7 @@ static inline id NSMutableAttributedStringAttributeAtIndex(NSMutableAttributedSt
 - (NSString *)rot13;
 - (NSString *)sha256Hash;
 - (NSString *)HTMLEscapeString;
+- (NSString *)XMLEscapeStringForContent;
 - (NSString *)backtickQuotedString;
 - (NSString *)tickQuotedString;
 - (NSString *)replaceUnderscoreWithSpace;

@@ -4,26 +4,226 @@
 <dict>
 	<key>author</key>
 	<string>Andrew Fulton</string>
+	<key>bundleVersion</key>
+	<integer>2</integer>
 	<key>category</key>
 	<string>Format</string>
 	<key>command</key>
-	<string>#!/usr/bin/php
+	<string>#!/usr/bin/perl
 
-&lt;pre&gt;
-&lt;?php
-function goFormatVarExport($string) {
-	return preg_replace(array(
-		'/=&gt;\s+array\(/im',
-		'/array\(\s+\)/im',
-	), array(
-		'=&gt; array(',
-		'array()',
-	), str_replace('array (', 'array(', $string));
+use strict;
+use warnings;
+use bytes;
+use Data::Dumper;
+
+sub _fail {
+    my ($message) = @_;
+    die $message;
 }
 
-print_r(goFormatVarExport(var_export(unserialize(fgets(STDIN)), TRUE)));
-?&gt;
-&lt;/pre&gt;</string>
+sub _expect {
+    my ($input, $pos_ref, $expected) = @_;
+    my $actual = substr($input, $$pos_ref, length($expected));
+    _fail("Expected '$expected'") unless $actual eq $expected;
+    $$pos_ref += length($expected);
+}
+
+sub _read_until {
+    my ($input, $pos_ref, $delimiter) = @_;
+    my $idx = index($input, $delimiter, $$pos_ref);
+    _fail("Expected delimiter '$delimiter'") if $idx &lt; 0;
+    my $value = substr($input, $$pos_ref, $idx - $$pos_ref);
+    $$pos_ref = $idx + length($delimiter);
+    return $value;
+}
+
+sub _stringify_key {
+    my ($key) = @_;
+    return '' unless defined $key;
+    return "$key" unless ref($key);
+    return Data::Dumper-&gt;new([$key])-&gt;Terse(1)-&gt;Indent(0)-&gt;Sortkeys(1)-&gt;Dump;
+}
+
+sub _parse_value {
+    my ($input, $pos_ref) = @_;
+    _fail('Unexpected end of input') if $$pos_ref &gt;= length($input);
+
+    my $type = substr($input, $$pos_ref, 1);
+    $$pos_ref++;
+
+    if ($type eq 'N') {
+        _expect($input, $pos_ref, ';');
+        return undef;
+    }
+
+    _expect($input, $pos_ref, ':');
+
+    if ($type eq 'b') {
+        my $raw = _read_until($input, $pos_ref, ';');
+        _fail('Invalid boolean') unless $raw eq '0' || $raw eq '1';
+        return $raw eq '1' ? 1 : 0;
+    }
+
+    if ($type eq 'i') {
+        my $raw = _read_until($input, $pos_ref, ';');
+        _fail('Invalid integer') unless $raw =~ /^-?\d+$/;
+        return int($raw);
+    }
+
+    if ($type eq 'd') {
+        my $raw = _read_until($input, $pos_ref, ';');
+        _fail('Invalid float') unless $raw =~ /^(?:-?(?:\d+(?:\.\d+)?(?:E[+-]?\d+)?)|NAN|INF|-INF)$/i;
+        return $raw + 0;
+    }
+
+    if ($type eq 's') {
+        my $len = _read_until($input, $pos_ref, ':');
+        _fail('Invalid string length') unless $len =~ /^\d+$/;
+        _expect($input, $pos_ref, '"');
+        _fail('String length exceeds input') if $$pos_ref + $len &gt; length($input);
+        my $value = substr($input, $$pos_ref, $len);
+        $$pos_ref += $len;
+        _expect($input, $pos_ref, '";');
+        return $value;
+    }
+
+    if ($type eq 'a') {
+        my $count = _read_until($input, $pos_ref, ':');
+        _fail('Invalid array length') unless $count =~ /^\d+$/;
+        _expect($input, $pos_ref, '{');
+
+        my @pairs;
+        for (1 .. $count) {
+            my $key_start = $$pos_ref;
+            my $key = _parse_value($input, $pos_ref);
+            my $key_type = substr($input, $key_start, 1);
+            my $value = _parse_value($input, $pos_ref);
+            push @pairs, [$key_type, $key, $value];
+        }
+
+        _expect($input, $pos_ref, '}');
+
+        my $is_list = 1;
+        for my $idx (0 .. $#pairs) {
+            my $key_type = $pairs[$idx]-&gt;[0];
+            my $key = $pairs[$idx]-&gt;[1];
+            if ($key_type ne 'i' || ref($key) || !defined($key) || $key != $idx) {
+                $is_list = 0;
+                last;
+            }
+        }
+
+        if ($is_list) {
+            return [map { $_-&gt;[2] } @pairs];
+        }
+
+        my %hash;
+        for my $pair (@pairs) {
+            $hash{_stringify_key($pair-&gt;[1])} = $pair-&gt;[2];
+        }
+        return \%hash;
+    }
+
+    if ($type eq 'O') {
+        my $class_len = _read_until($input, $pos_ref, ':');
+        _fail('Invalid class length') unless $class_len =~ /^\d+$/;
+        _expect($input, $pos_ref, '"');
+        _fail('Class length exceeds input') if $$pos_ref + $class_len &gt; length($input);
+        my $class_name = substr($input, $$pos_ref, $class_len);
+        $$pos_ref += $class_len;
+        _expect($input, $pos_ref, '":');
+        my $count = _read_until($input, $pos_ref, ':');
+        _fail('Invalid property count') unless $count =~ /^\d+$/;
+        _expect($input, $pos_ref, '{');
+
+        my %props;
+        for (1 .. $count) {
+            my $key = _parse_value($input, $pos_ref);
+            my $value = _parse_value($input, $pos_ref);
+            $props{_stringify_key($key)} = $value;
+        }
+
+        _expect($input, $pos_ref, '}');
+
+        return {
+            __php_class =&gt; $class_name,
+            __php_properties =&gt; \%props,
+        };
+    }
+
+    if ($type eq 'C') {
+        my $class_len = _read_until($input, $pos_ref, ':');
+        _fail('Invalid class length') unless $class_len =~ /^\d+$/;
+        _expect($input, $pos_ref, '"');
+        _fail('Class length exceeds input') if $$pos_ref + $class_len &gt; length($input);
+        my $class_name = substr($input, $$pos_ref, $class_len);
+        $$pos_ref += $class_len;
+        _expect($input, $pos_ref, '":');
+        my $payload_len = _read_until($input, $pos_ref, ':{');
+        _fail('Invalid payload length') unless $payload_len =~ /^\d+$/;
+        _fail('Payload length exceeds input') if $$pos_ref + $payload_len &gt; length($input);
+        my $payload = substr($input, $$pos_ref, $payload_len);
+        $$pos_ref += $payload_len;
+        _expect($input, $pos_ref, '}');
+
+        return {
+            __php_class =&gt; $class_name,
+            __php_custom_serialized =&gt; $payload,
+        };
+    }
+
+    if ($type eq 'r' || $type eq 'R') {
+        my $id = _read_until($input, $pos_ref, ';');
+        _fail('Invalid reference id') unless $id =~ /^\d+$/;
+        return {
+            __php_reference_type =&gt; $type,
+            __php_reference_id =&gt; int($id),
+        };
+    }
+
+    _fail("Unsupported serialized type '$type'");
+}
+
+local $/;
+my $input = &lt;STDIN&gt;;
+$input = '' unless defined $input;
+$input =~ s/^\s+//;
+$input =~ s/\s+\z//;
+
+if ($input eq '') {
+    print '&lt;pre&gt;No input provided.&lt;/pre&gt;';
+    exit 0;
+}
+
+my $value;
+my $pos = 0;
+
+my $ok = eval {
+    $value = _parse_value($input, \$pos);
+    _fail('Unexpected trailing characters') if $pos != length($input);
+    1;
+};
+
+if (!$ok) {
+    my $error = $@ || 'Unknown parse error';
+    $error =~ s/\s+\z//;
+    $error =~ s/&amp;/&amp;amp;/g;
+    $error =~ s/&lt;/&amp;lt;/g;
+    $error =~ s/&gt;/&amp;gt;/g;
+    print "&lt;pre&gt;Unable to deserialize input:\n$error&lt;/pre&gt;";
+    exit 0;
+}
+
+local $Data::Dumper::Terse = 1;
+local $Data::Dumper::Indent = 2;
+local $Data::Dumper::Sortkeys = 1;
+my $output = Dumper($value);
+$output =~ s/&amp;/&amp;amp;/g;
+$output =~ s/&lt;/&amp;lt;/g;
+$output =~ s/&gt;/&amp;gt;/g;
+
+print "&lt;pre&gt;$output&lt;/pre&gt;";
+</string>
 	<key>contact</key>
 	<string>ns@zbaxvv.pbz</string>
 	<key>description</key>
@@ -39,6 +239,8 @@ print_r(goFormatVarExport(var_export(unserialize(fgets(STDIN)), TRUE)));
 		<key>modifierFlags</key>
 		<integer>1179648</integer>
 	</dict>
+	<key>isDefaultBundle</key>
+	<true/>
 	<key>keyEquivalent</key>
 	<string>$@D</string>
 	<key>name</key>
@@ -49,9 +251,5 @@ print_r(goFormatVarExport(var_export(unserialize(fgets(STDIN)), TRUE)));
 	<string>inputfield</string>
 	<key>uuid</key>
 	<string>4E0126ED-3AC6-4BB5-B836-5F9718FE36D5</string>
-	<key>isDefaultBundle</key>
-	<true/>
-	<key>bundleVersion</key>
-	<integer>2</integer>
 </dict>
 </plist>

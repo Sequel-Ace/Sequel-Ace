@@ -37,6 +37,7 @@
 #import "SPTablesList.h"
 #import "SPTableStructure.h"
 #import "SPServerSupport.h"
+#import "SPConstants.h"
 #import "sequel-ace-Swift.h"
 
 #import <SPMySQL/SPMySQL.h>
@@ -548,23 +549,44 @@ static NSString *SPMySQLCommentField          = @"Comment";
 
 	if ((object == tableCommentsTextView) && ([object isEditable]) && ([selectedTable length] > 0)) {
 
-		NSString *currentComment = [[[tableDataInstance statusValueForKey:SPMySQLCommentField] unboxNull] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+		NSString *currentCommentRaw = [[tableDataInstance statusValueForKey:SPMySQLCommentField] unboxNull];
+		if (!currentCommentRaw) currentCommentRaw = @"";
+		NSString *currentComment = [currentCommentRaw stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 		NSString *newComment = [[tableCommentsTextView string] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 
 		// Check that the user actually changed the tables comment
 		// what if the new comment is "" and the current is nil?
 		// or current is not nil and new new is "" or nil?
 		if (([currentComment isEqualToString:newComment] == NO && newComment.length > 0) ||(newComment.length == 0 && currentComment.length > 0) ) {
-																							
-			// Alter table's comment
-			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ COMMENT = %@", [selectedTable backtickQuotedString], [connection escapeAndQuoteString:newComment]]];
+			NSString *query = [NSString stringWithFormat:@"ALTER TABLE %@ COMMENT = %@", [selectedTable backtickQuotedString], [connection escapeAndQuoteString:newComment]];
 
-			if (![connection queryErrored]) {
-				// Reload the table's data
-				[self reloadTable:self];
+				void (^executeCommentChange)(void) = ^{
+					[self->connection queryString:query];
+
+					if (![self->connection queryErrored]) {
+						// Reload the table's data
+						[self reloadTable:self];
+					}
+					else {
+						[self->tableCommentsTextView setString:currentCommentRaw];
+						[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error changing table comment", @"error changing table comment message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@", @"error changing table comment informative message"), newComment, [self->connection lastErrorMessage]] callback:nil];
+					}
+				};
+
+				if ([[NSUserDefaults standardUserDefaults] boolForKey:SPQueryWarningEnabled]) {
+					NSString *infoText = [NSString stringWithFormat:NSLocalizedString(@"Do you really want to proceed with this query?\n\n %@", @"message of panel asking for confirmation for exec query"), query];
+					[NSAlert createDefaultAlertWithTitle:NSLocalizedString(@"Execute SQL?", @"Execute SQL?")
+												 message:infoText
+									  primaryButtonTitle:NSLocalizedString(@"Proceed", @"Proceed")
+									primaryButtonHandler:^{
+					executeCommentChange();
+				}
+								 cancelButtonHandler:^{
+					[self->tableCommentsTextView setString:currentCommentRaw];
+				}];
 			}
 			else {
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error changing table comment", @"error changing table comment message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@", @"error changing table comment informative message"), newComment, [connection lastErrorMessage]] callback:nil];
+				executeCommentChange();
 			}
 		}
 	}

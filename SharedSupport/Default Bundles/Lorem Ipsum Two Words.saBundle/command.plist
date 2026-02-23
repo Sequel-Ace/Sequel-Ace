@@ -4,12 +4,14 @@
 <dict>
 	<key>author</key>
 	<string>Boris Guéry</string>
+	<key>bundleVersion</key>
+	<integer>2</integer>
 	<key>category</key>
 	<string>Lorem Ipsum</string>
 	<key>command</key>
-	<string>#!/usr/bin/ruby
+	<string>#!/bin/sh
 
-print "Lorem Ipsum"</string>
+printf "%s" "Lorem Ipsum"</string>
 	<key>contact</key>
 	<string>threl.o@tznvy.pbz</string>
 	<key>description</key>
@@ -25,6 +27,8 @@ print "Lorem Ipsum"</string>
 		<key>modifierFlags</key>
 		<integer>393216</integer>
 	</dict>
+	<key>isDefaultBundle</key>
+	<true/>
 	<key>keyEquivalent</key>
 	<string>^$T</string>
 	<key>name</key>
@@ -35,9 +39,5 @@ print "Lorem Ipsum"</string>
 	<string>inputfield</string>
 	<key>uuid</key>
 	<string>8F858F4D-9DCC-488A-B01C-D9F7FA32FE32</string>
-	<key>isDefaultBundle</key>
-	<true/>
-	<key>bundleVersion</key>
-	<integer>2</integer>
 </dict>
 </plist>
