@@ -69,6 +69,57 @@
 
 }
 
+- (void)testIsLikelyLocalNetworkHost
+{
+    XCTAssertTrue(SPIsLikelyLocalNetworkHost(@" [192.168.1.7] "));
+    XCTAssertTrue(SPIsLikelyLocalNetworkHost(@"[fe80::2]"));
+    XCTAssertTrue(SPIsLikelyLocalNetworkHost(@"10.0.0.8"));
+    XCTAssertTrue(SPIsLikelyLocalNetworkHost(@"172.16.2.10"));
+    XCTAssertTrue(SPIsLikelyLocalNetworkHost(@"192.168.88.88"));
+    XCTAssertTrue(SPIsLikelyLocalNetworkHost(@"169.254.2.1"));
+    XCTAssertTrue(SPIsLikelyLocalNetworkHost(@"devbox.local"));
+    XCTAssertTrue(SPIsLikelyLocalNetworkHost(@"internal-dev-host"));
+    XCTAssertTrue(SPIsLikelyLocalNetworkHost(@"fc00::1"));
+    XCTAssertTrue(SPIsLikelyLocalNetworkHost(@"fe80::1"));
+
+    XCTAssertFalse(SPIsLikelyLocalNetworkHost(@"localhost"));
+    XCTAssertFalse(SPIsLikelyLocalNetworkHost(@"127.0.0.1"));
+    XCTAssertFalse(SPIsLikelyLocalNetworkHost(@"::1"));
+    XCTAssertFalse(SPIsLikelyLocalNetworkHost(@"8.8.8.8"));
+    XCTAssertFalse(SPIsLikelyLocalNetworkHost(@"100.64.2.1"));
+    XCTAssertFalse(SPIsLikelyLocalNetworkHost(@"example.com"));
+    XCTAssertFalse(SPIsLikelyLocalNetworkHost(@""));
+    XCTAssertFalse(SPIsLikelyLocalNetworkHost(nil));
+}
+
+- (void)testSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue
+{
+    NSString *privateIPDebugLog = @"debug1: Connecting to dev.ifg.io [192.168.88.88] port 22.\n"
+                                  @"debug1: connect to address 192.168.88.88 port 22: No route to host\n"
+                                  @"ssh: connect to host dev.ifg.io port 22: No route to host";
+    XCTAssertTrue(SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(@"The SSH Tunnel has unexpectedly closed.", privateIPDebugLog, @"dev.ifg.io"));
+
+    NSString *publicIPDebugLog = @"debug1: Connecting to example.com [8.8.8.8] port 22.\n"
+                                 @"debug1: connect to address 8.8.8.8 port 22: No route to host\n"
+                                 @"ssh: connect to host example.com port 22: No route to host";
+    XCTAssertFalse(SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(@"The SSH Tunnel has unexpectedly closed.", publicIPDebugLog, @"example.com"));
+
+    NSString *aliasedPublicIPDebugLog = @"debug1: Connecting to prod-db [8.8.8.8] port 22.\n"
+                                        @"debug1: connect to address 8.8.8.8 port 22: No route to host\n"
+                                        @"ssh: connect to host prod-db port 22: No route to host";
+    XCTAssertFalse(SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(@"The SSH Tunnel has unexpectedly closed.", aliasedPublicIPDebugLog, @"prod-db"));
+
+    NSString *ipv6LinkLocalDebugLog = @"debug1: Connecting to test-host [fe80::1234] port 22.\n"
+                                      @"ssh: connect to host test-host port 22: No route to host";
+    XCTAssertTrue(SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(nil, ipv6LinkLocalDebugLog, @"test-host"));
+
+    NSString *noCandidateDebugLog = @"ssh: connect to host remote.example.com port 22: No route to host";
+    XCTAssertFalse(SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(nil, noCandidateDebugLog, @"remote.example.com"));
+
+    XCTAssertTrue(SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(@"No route to host", nil, @"db.local"));
+    XCTAssertFalse(SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(@"Connection timed out", @"Operation timed out", @"192.168.1.5"));
+}
+
 - (void)testQueryColumnHeaderIncludesTypeWhenEnabled
 {
     NSString *expectedHeader = @"hire_time TIMESTAMP";
