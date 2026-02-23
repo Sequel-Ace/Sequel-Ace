@@ -421,7 +421,7 @@ extension String {
             IntegerRange(type: "BIGINT", signedMin: "-9223372036854775808", signedMax: "9223372036854775807", unsignedMax: "18446744073709551615")
         ]
 
-        let canUseUnsigned = minimum.compare(.zero) != .orderedAscending
+        let canUseUnsigned = minimum.compare(NSDecimalNumber.zero) != .orderedAscending
 
         for range in ranges {
             if canUseUnsigned {
