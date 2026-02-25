@@ -470,6 +470,9 @@
 			6CB1977AAE8D7D64B7593E66 /* SPBundleManagerAdditionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7CAA1A274071383C33F2E4C /* SPBundleManagerAdditionsTests.swift */; };
 			806D36A543D1AAFC5E992B08 /* SABundleVersionUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */; };
 			C812F06F0D4A95968C1B0154 /* SABundleVersionUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */; };
+			B6E4019A9F1C4A8AA0B3D101 /* SALocalNetworkPermissionCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E4019A9F1C4A8AA0B3D104 /* SALocalNetworkPermissionCheckerTests.swift */; };
+			B6E4019A9F1C4A8AA0B3D102 /* SALocalNetworkPermissionChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E4019A9F1C4A8AA0B3D105 /* SALocalNetworkPermissionChecker.swift */; };
+			B6E4019A9F1C4A8AA0B3D103 /* SALocalNetworkPermissionChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E4019A9F1C4A8AA0B3D105 /* SALocalNetworkPermissionChecker.swift */; };
 			FD8099A92C59DE1D0084646F /* SABaseFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2056042C3A7E90008DD271 /* SABaseFormatter.swift */; };
 			FDCF55E52788278500D30655 /* TableSortHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */; };
 /* End PBXBuildFile section */
@@ -1217,6 +1220,8 @@
 			C0F17A1A2B3C4D5E6F708092 /* SPTableContentColumnFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPTableContentColumnFilterTests.swift; sourceTree = "<group>"; };
 			C7CAA1A274071383C33F2E4C /* SPBundleManagerAdditionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPBundleManagerAdditionsTests.swift; sourceTree = "<group>"; };
 			4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SABundleVersionUpdater.swift; sourceTree = "<group>"; };
+			B6E4019A9F1C4A8AA0B3D104 /* SALocalNetworkPermissionCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SALocalNetworkPermissionCheckerTests.swift; sourceTree = "<group>"; };
+			B6E4019A9F1C4A8AA0B3D105 /* SALocalNetworkPermissionChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SALocalNetworkPermissionChecker.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -2300,6 +2305,7 @@
 					1A11E4FC25A32789001CB721 /* SPPanelOptions.h */,
 					1A11E50325A327F1001CB721 /* SPPanelOptions.m */,
 					4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */,
+					B6E4019A9F1C4A8AA0B3D105 /* SALocalNetworkPermissionChecker.swift */,
 				);
 				path = Utility;
 				sourceTree = "<group>";
@@ -2318,6 +2324,7 @@
 					8AEACADD4B36D9819ADC93DD /* TableSortHelperTests.swift */,
 					FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */,
 					C7CAA1A274071383C33F2E4C /* SPBundleManagerAdditionsTests.swift */,
+					B6E4019A9F1C4A8AA0B3D104 /* SALocalNetworkPermissionCheckerTests.swift */,
 					C0F17A1A2B3C4D5E6F708092 /* SPTableContentColumnFilterTests.swift */,
 					F3A4B8C191E14E7094C9A101 /* AWSCredentialsTests.swift */,
 					F3A4B8C191E14E7094C9A102 /* RDSIAMAuthenticationTests.swift */,
@@ -2899,6 +2906,7 @@
 				502D21F81BA50966000D4CE7 /* SPDataAdditions.m in Sources */,
 					1A9498DE2551776D000BC793 /* DateFormatterExtension.swift in Sources */,
 					C812F06F0D4A95968C1B0154 /* SABundleVersionUpdater.swift in Sources */,
+					B6E4019A9F1C4A8AA0B3D102 /* SALocalNetworkPermissionChecker.swift in Sources */,
 					51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */,
 					1A8B53A52584650700526DED /* SPURLAdditions.m in Sources */,
 					502D21F61BA50710000D4CE7 /* SPDataAdditionsTests.m in Sources */,
@@ -2948,6 +2956,7 @@
 					F4C0BDAE2E9F4D5E8A1B0110 /* SecureBookmarkManagerStub.swift in Sources */,
 					FD8099A72C59DCFA0084646F /* SAUuidFormatterTests.swift in Sources */,
 					6CB1977AAE8D7D64B7593E66 /* SPBundleManagerAdditionsTests.swift in Sources */,
+					B6E4019A9F1C4A8AA0B3D101 /* SALocalNetworkPermissionCheckerTests.swift in Sources */,
 					C0F17A1A2B3C4D5E6F708091 /* SPTableContentColumnFilterTests.swift in Sources */,
 					1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */,
 					1AEA768425EF05D500AC4DA6 /* ByteCountFormatterExtension.swift in Sources */,
@@ -3009,6 +3018,7 @@
 				1A1EE9582551249C0056FECD /* NumberFormatterExtension.swift in Sources */,
 					1A4CB03425923C4B00EDF804 /* StringRegexExtension.swift in Sources */,
 					806D36A543D1AAFC5E992B08 /* SABundleVersionUpdater.swift in Sources */,
+					B6E4019A9F1C4A8AA0B3D103 /* SALocalNetworkPermissionChecker.swift in Sources */,
 					58FEF57E0F3B4E9700518E8E /* SPTableData.m in Sources */,
 					58C56EF50F438E120035701E /* SPDataCellFormatter.m in Sources */,
 				1A2711CF2539D9B10066ED58 /* SPReachability.m in Sources */,
