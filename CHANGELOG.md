@@ -1,3 +1,40 @@
+## [5.1.1]
+
+### Added
+- a91c54cdc, Add MySQL 8 fallback for optimized field type (#2345)
+- c8f8989eb, Add support for authenticating via AWS IAM to RDS - building on top of work by ostark (#2346)
+- 9c1ec8e02, Add minimal agents.md
+
+### Fixed
+- 6ca28f8b6, Fix process-list copy/save regression from missing serializer bridge (#2349)
+- 2728c07bb, Fix repeated modal loop for failing view metadata/status loads (#2342)
+- 6cc9f24ea, Fix Copy as SQL INSERT quoting for numeric fields (#2337)
+- 293575709, Fix process list copy/save appending `(null)` on MySQL (#2333)
+- 96b83e0ad, Fix query result column-type preference handling and add regression tests (#2344)
+- 887fdcd92, Recover from stale database list during database reselection (#2343)
+- 4e41e5841, Fix SSH host key prompt freeze on reconnect (#2340)
+- cdb2f522d, Fix export-system bugs across path, cancel, XML, BIT, and bookmark handling (#2336)
+- 59f7df047, Fix pinned table leakage across different connections (#2334)
+
+### Changed
+- 4eff50bc7, Detect Local Network permission denial for SSH no-route failures (#2347)
+- e4496f011, Rewrite default bundles to avoid removed macOS interpreters (#2338)
+- 9cb3a13ff, Respect query warning preferences for table comment edits (#2335)
+- d8ba62c53, Update readme.md
+
+### Removed
+
+
+### Infra
+- 545ae538d, Document mysql:// connection URLs and improve discoverability (#2341)
+- add5d407b, Bump nokogiri from 1.18.9 to 1.19.1 in /docs (#2330)
+- 03794198a, Bump faraday from 1.10.4 to 1.10.5 (#2328)
+- 39129add1, Bump faraday from 2.7.10 to 2.14.1 in /docs (#2327)
+- a0fbd5f33, Bump aws-sdk-s3 from 1.179.0 to 1.208.0 (#2319)
+
+### Unfinished
+
+
 ## [5.1.0]
 
 ### Added
