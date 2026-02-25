@@ -2721,6 +2721,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     if (newState == SPMySQLProxyIdle) {
         SPLog(@"SPMySQLProxyIdle, failing");
+        self.localNetworkPermissionDeniedForCurrentAttempt = [self _isLocalNetworkAccessDeniedForCurrentConnectionAttempt];
 
         [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH connection failed!", @"SSH connection failed title")
                                         errorMessage:[theTunnel lastError]
@@ -2877,16 +2878,25 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 - (BOOL)_isLocalNetworkAccessDeniedForCurrentConnectionAttempt
 {
     if (@available(macOS 15.0, *)) {
-        NSUInteger lastErrorID = [mySQLConnection lastErrorID];
-        if (lastErrorID == 1045) return NO; // Access denied credentials error.
+        BOOL shouldProbeForLocalNetworkDenial = NO;
 
-        NSString *lastErrorMessage = [[mySQLConnection lastErrorMessage] lowercaseString] ?: @"";
-        BOOL looksLikeNetworkFailure = ([lastErrorMessage rangeOfString:@"can't connect"].location != NSNotFound
-                                        || [lastErrorMessage rangeOfString:@"timed out"].location != NSNotFound
-                                        || [lastErrorMessage rangeOfString:@"no route to host"].location != NSNotFound
-                                        || [lastErrorMessage rangeOfString:@"network is unreachable"].location != NSNotFound);
+        if ([self type] == SPSSHTunnelConnection && sshTunnel && [sshTunnel state] == SPMySQLProxyIdle) {
+            // SSH setup failed before MySQL had a chance to emit a network error.
+            shouldProbeForLocalNetworkDenial = YES;
+        } else {
+            NSUInteger lastErrorID = [mySQLConnection lastErrorID];
+            if (lastErrorID == 1045) return NO; // Access denied credentials error.
 
-        if (!looksLikeNetworkFailure && lastErrorID != 2002 && lastErrorID != 2003) return NO;
+            NSString *lastErrorMessage = [[mySQLConnection lastErrorMessage] lowercaseString] ?: @"";
+            BOOL looksLikeNetworkFailure = ([lastErrorMessage rangeOfString:@"can't connect"].location != NSNotFound
+                                            || [lastErrorMessage rangeOfString:@"timed out"].location != NSNotFound
+                                            || [lastErrorMessage rangeOfString:@"no route to host"].location != NSNotFound
+                                            || [lastErrorMessage rangeOfString:@"network is unreachable"].location != NSNotFound);
+
+            shouldProbeForLocalNetworkDenial = (looksLikeNetworkFailure || lastErrorID == 2002 || lastErrorID == 2003);
+        }
+
+        if (!shouldProbeForLocalNetworkDenial) return NO;
 
         NSString *probeHost = nil;
         NSInteger probePort = 0;

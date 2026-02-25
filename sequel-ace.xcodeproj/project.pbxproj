@@ -468,8 +468,8 @@
 			FD8099A82C59DDF70084646F /* SAUuidFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD18C8982C3C9B2F002A5D57 /* SAUuidFormatter.swift */; };
 			COLFILT0001 /* SPTableContentColumnFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLFILT0002 /* SPTableContentColumnFilterTests.swift */; };
 			6CB1977AAE8D7D64B7593E66 /* SPBundleManagerAdditionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7CAA1A274071383C33F2E4C /* SPBundleManagerAdditionsTests.swift */; };
-			806D36A543D1AAFC5E992B08 /* SABundleVersionUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */; };
-			C812F06F0D4A95968C1B0154 /* SABundleVersionUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */; };
+			806D36A543D1AAFC5E992B08 /* SALocalNetworkPermissionChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4262EAB6230F7996EC17A13A /* SALocalNetworkPermissionChecker.swift */; };
+			C812F06F0D4A95968C1B0154 /* SALocalNetworkPermissionChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4262EAB6230F7996EC17A13A /* SALocalNetworkPermissionChecker.swift */; };
 			FD8099A92C59DE1D0084646F /* SABaseFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2056042C3A7E90008DD271 /* SABaseFormatter.swift */; };
 			FDCF55E52788278500D30655 /* TableSortHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */; };
 /* End PBXBuildFile section */
@@ -1216,7 +1216,7 @@
 			FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAUuidFormatterTests.swift; sourceTree = "<group>"; };
 			COLFILT0002 /* SPTableContentColumnFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPTableContentColumnFilterTests.swift; sourceTree = "<group>"; };
 			C7CAA1A274071383C33F2E4C /* SPBundleManagerAdditionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPBundleManagerAdditionsTests.swift; sourceTree = "<group>"; };
-			4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SABundleVersionUpdater.swift; sourceTree = "<group>"; };
+			4262EAB6230F7996EC17A13A /* SALocalNetworkPermissionChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SALocalNetworkPermissionChecker.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -2299,7 +2299,7 @@
 					5174122F2573E10C00EB6935 /* SPPrintUtility.m */,
 					1A11E4FC25A32789001CB721 /* SPPanelOptions.h */,
 					1A11E50325A327F1001CB721 /* SPPanelOptions.m */,
-					4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */,
+					4262EAB6230F7996EC17A13A /* SALocalNetworkPermissionChecker.swift */,
 				);
 				path = Utility;
 				sourceTree = "<group>";
@@ -2898,7 +2898,7 @@
 				FD8099A82C59DDF70084646F /* SAUuidFormatter.swift in Sources */,
 				502D21F81BA50966000D4CE7 /* SPDataAdditions.m in Sources */,
 					1A9498DE2551776D000BC793 /* DateFormatterExtension.swift in Sources */,
-					C812F06F0D4A95968C1B0154 /* SABundleVersionUpdater.swift in Sources */,
+					C812F06F0D4A95968C1B0154 /* SALocalNetworkPermissionChecker.swift in Sources */,
 					51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */,
 					1A8B53A52584650700526DED /* SPURLAdditions.m in Sources */,
 					502D21F61BA50710000D4CE7 /* SPDataAdditionsTests.m in Sources */,
@@ -3008,7 +3008,7 @@
 				1789343C0F30C1DD0097539A /* SPStringAdditions.m in Sources */,
 				1A1EE9582551249C0056FECD /* NumberFormatterExtension.swift in Sources */,
 					1A4CB03425923C4B00EDF804 /* StringRegexExtension.swift in Sources */,
-					806D36A543D1AAFC5E992B08 /* SABundleVersionUpdater.swift in Sources */,
+					806D36A543D1AAFC5E992B08 /* SALocalNetworkPermissionChecker.swift in Sources */,
 					58FEF57E0F3B4E9700518E8E /* SPTableData.m in Sources */,
 					58C56EF50F438E120035701E /* SPDataCellFormatter.m in Sources */,
 				1A2711CF2539D9B10066ED58 /* SPReachability.m in Sources */,

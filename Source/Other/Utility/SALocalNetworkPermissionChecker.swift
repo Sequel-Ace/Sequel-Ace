@@ -9,7 +9,7 @@ import Network
 @objcMembers final class SALocalNetworkPermissionChecker: NSObject {
     /// Performs a short Network.framework probe for the provided endpoint and
     /// returns true when the system reports Local Network access is denied.
-    class func isLocalNetworkAccessDenied(forHost host: String, port: Int, timeout: TimeInterval = 1.5) -> Bool {
+    static func isLocalNetworkAccessDenied(forHost host: String, port: Int, timeout: TimeInterval = 1.5) -> Bool {
         guard #available(macOS 15.0, *) else { return false }
 
         let trimmedHost = normalizedHost(host)
@@ -30,10 +30,10 @@ import Network
             semaphore.signal()
         }
 
-        connection.stateUpdateHandler = { state in
+        connection.stateUpdateHandler = { [weak connection] state in
             switch state {
             case .waiting, .failed:
-                if connection.currentPath?.unsatisfiedReason == .localNetworkDenied {
+                if connection?.currentPath?.unsatisfiedReason == .localNetworkDenied {
                     localNetworkDenied = true
                 }
                 finish()
@@ -52,11 +52,12 @@ import Network
             localNetworkDenied = true
         }
 
+        connection.stateUpdateHandler = nil
         connection.cancel()
         return localNetworkDenied
     }
 
-    private class func normalizedHost(_ host: String) -> String {
+    private static func normalizedHost(_ host: String) -> String {
         var trimmedHost = host.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmedHost.hasPrefix("[") && trimmedHost.hasSuffix("]") && trimmedHost.count > 2 {
             trimmedHost.removeFirst()
