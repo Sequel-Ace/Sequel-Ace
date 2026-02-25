@@ -4,6 +4,8 @@
 <dict>
 	<key>author</key>
 	<string>Matt Dolan</string>
+	<key>bundleVersion</key>
+	<integer>3</integer>
 	<key>category</key>
 	<string>Copy</string>
 	<key>command</key>
@@ -29,6 +31,8 @@ Ideal for using in a subsequent query, e.g.:
 UPDATE ... WHERE id IN (1,2,3,4)</string>
 	<key>input</key>
 	<string>selectedtablerowsastab</string>
+	<key>isDefaultBundle</key>
+	<true/>
 	<key>keyEquivalent</key>
 	<string></string>
 	<key>name</key>
@@ -41,9 +45,5 @@ UPDATE ... WHERE id IN (1,2,3,4)</string>
 	<string>Copy IDs</string>
 	<key>uuid</key>
 	<string>3C9F6E07-DF65-44D3-B0F2-8220E9BE009C</string>
-	<key>isDefaultBundle</key>
-	<true/>
-	<key>bundleVersion</key>
-	<integer>2</integer>
 </dict>
 </plist>

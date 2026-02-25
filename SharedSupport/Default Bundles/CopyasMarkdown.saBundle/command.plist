@@ -5,7 +5,7 @@
 	<key>author</key>
 	<string>Christian Nadolle</string>
 	<key>bundleVersion</key>
-	<integer>2</integer>
+	<integer>3</integer>
 	<key>category</key>
 	<string>Copy</string>
 	<key>command</key>
