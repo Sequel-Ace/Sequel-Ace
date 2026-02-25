@@ -1,4 +1,4 @@
-## [5.1.1]
+## [5.2.0]
 
 ### Added
 - a91c54cdc, Add MySQL 8 fallback for optimized field type (#2345)
