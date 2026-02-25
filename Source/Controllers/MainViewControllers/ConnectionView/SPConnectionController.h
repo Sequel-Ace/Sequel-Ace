@@ -132,6 +132,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	IBOutlet NSView *connectionResizeContainer;
 	IBOutlet NSView *standardConnectionFormContainer;
 	IBOutlet NSView *standardConnectionSSLDetailsContainer;
+	IBOutlet NSView *awsIAMConnectionFormContainer;
 	IBOutlet NSView *socketConnectionFormContainer;
 	IBOutlet NSView *socketConnectionSSLDetailsContainer;
 	IBOutlet NSView *sshConnectionFormContainer;
@@ -142,11 +143,18 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	IBOutlet NSView *sslCACertLocationHelp;
 
 	// AWS IAM Authentication UI (profile-based only)
-	IBOutlet NSButton *standardAWSIAMAuthCheckbox;
-	IBOutlet NSView *standardAWSIAMDetailsContainer;
 	IBOutlet NSPopUpButton *awsProfilePopup;
 	IBOutlet NSComboBox *awsRegionComboBox;
 	IBOutlet NSButton *awsAuthorizeButton;
+	IBOutlet NSTextField *awsAuthorizeInfoLabel;
+	IBOutlet NSTextField *awsProfileLabel;
+	IBOutlet NSTextField *awsRegionLabel;
+	IBOutlet NSTextField *awsIAMNameField;
+	IBOutlet NSTextField *awsIAMSQLHostField;
+	IBOutlet NSTextField *awsIAMUserField;
+	IBOutlet NSSecureTextField *awsIAMPasswordField;
+	IBOutlet SPColorSelectorView *awsIAMColorField;
+	IBOutlet NSPopUpButton *awsIAMTimeZoneField;
 
 	IBOutlet NSTextField *standardNameField;
 	IBOutlet NSTextField *sshNameField;
@@ -259,7 +267,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 - (NSString *)keychainPasswordForSSH;
 /**
  * Returns the password to use for an actual MySQL connect/reconnect request.
- * For AWS IAM TCP/IP connections this generates a fresh token.
+ * For AWS IAM connections this generates a fresh token.
  */
 - (NSString *)passwordForConnectionRequest;
 

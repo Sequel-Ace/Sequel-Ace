@@ -105,7 +105,7 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 - (NSString *)_generateNameForConnection;
 
 - (void)_startEditingConnection;
-- (BOOL)_isAWSIAMEnabledForTCPIPConnection;
+- (BOOL)_isAWSIAMConnection;
 - (void)_syncAWSIAMAndSSLInterfaceState;
 - (void)_refreshAWSAvailableRegions;
 
@@ -199,7 +199,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 - (NSString *)passwordForConnectionRequest
 {
-    if ([self useAWSIAMAuth] && [self type] == SPTCPIPConnection) {
+    if ([self _isAWSIAMConnection]) {
         return [self generateAWSIAMAuthToken];
     }
 
@@ -300,9 +300,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     NSFileManager *fileManager = [NSFileManager defaultManager];
 
-    // Ensure that host is not empty if this is a TCP/IP or SSH connection
-    if (([self type] == SPTCPIPConnection || [self type] == SPSSHTunnelConnection) && ![[self host] length]) {
+    // Ensure that host is not empty if this is a TCP/IP, SSH, or AWS IAM connection
+    if (([self type] == SPTCPIPConnection || [self type] == SPSSHTunnelConnection || [self type] == SPAWSIAMConnection) && ![[self host] length]) {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message") message:NSLocalizedString(@"Insufficient details provided to establish a connection. Please enter at least the hostname.", @"insufficient details informative message") callback:nil];
+        return;
+    }
+
+    if ([self _isAWSIAMConnection] && ![self isAWSDirectoryAuthorized]) {
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"AWS Authorization Required", @"AWS authorization required title")
+                                     message:NSLocalizedString(@"Authorize access to your ~/.aws directory before testing or connecting with an AWS IAM favorite.", @"AWS authorization required message")
+                                    callback:nil];
         return;
     }
 
@@ -792,10 +799,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 {
     [self _startEditingConnection];
 
-    if ([self useSSL] && [self _isAWSIAMEnabledForTCPIPConnection]) {
-        [self setUseAWSIAMAuth:NSControlStateValueOff];
-    }
-
     [self _syncAWSIAMAndSSLInterfaceState];
     [self resizeTabViewToConnectionType:[self type] animating:YES];
 }
@@ -813,41 +816,61 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [self _startEditingConnection];
 }
 
-- (BOOL)_isAWSIAMEnabledForTCPIPConnection
+- (BOOL)_isAWSIAMConnection
 {
-    return ([self type] == SPTCPIPConnection) && [self useAWSIAMAuth];
+    return [self type] == SPAWSIAMConnection;
 }
 
 - (void)_syncAWSIAMAndSSLInterfaceState
 {
     BOOL isTCPIPConnection = ([self type] == SPTCPIPConnection);
-    BOOL awsIAMEnabled = [self _isAWSIAMEnabledForTCPIPConnection];
+    BOOL isAWSIAMConnection = [self _isAWSIAMConnection];
+    BOOL isAWSDirectoryAuthorized = [self isAWSDirectoryAuthorized];
+    BOOL showAWSAuthorizationPrompt = (isAWSIAMConnection && !isAWSDirectoryAuthorized);
+    BOOL showAWSProfileRegionSelectors = (isAWSIAMConnection && isAWSDirectoryAuthorized);
 
     // IAM connections always use TLS internally, so manual SSL settings are disabled for that mode.
-    if (awsIAMEnabled && [self useSSL]) {
+    if (isAWSIAMConnection && [self useSSL]) {
         [self setUseSSL:NSControlStateValueOff];
     }
 
     if (standardConnectionSSLDetailsContainer) {
-        [standardConnectionSSLDetailsContainer setHidden:(!isTCPIPConnection || awsIAMEnabled || ![self useSSL])];
+        [standardConnectionSSLDetailsContainer setHidden:(!isTCPIPConnection || ![self useSSL])];
     }
 
-    if (standardAWSIAMDetailsContainer) {
-        [standardAWSIAMDetailsContainer setHidden:(!isTCPIPConnection || !awsIAMEnabled)];
+    if (awsIAMPasswordField) {
+        [awsIAMPasswordField setEnabled:NO];
+        [awsIAMPasswordField setStringValue:@""];
+        [awsIAMPasswordField setPlaceholderString:NSLocalizedString(@"Generated from AWS IAM profile", @"placeholder when AWS IAM auth is enabled")];
     }
 
     if (standardPasswordField) {
-        [standardPasswordField setEnabled:!awsIAMEnabled];
-        if (awsIAMEnabled) {
-            [standardPasswordField setStringValue:@""];
-            [standardPasswordField setPlaceholderString:NSLocalizedString(@"Using IAM authentication", @"placeholder when AWS IAM auth is enabled")];
-        } else {
-            [standardPasswordField setPlaceholderString:@""];
-        }
+        [standardPasswordField setEnabled:YES];
+        [standardPasswordField setPlaceholderString:@""];
     }
 
     if (awsAuthorizeButton) {
-        [awsAuthorizeButton setHidden:[self isAWSDirectoryAuthorized]];
+        [awsAuthorizeButton setHidden:!showAWSAuthorizationPrompt];
+    }
+
+    if (awsAuthorizeInfoLabel) {
+        [awsAuthorizeInfoLabel setHidden:!showAWSAuthorizationPrompt];
+    }
+
+    if (awsProfileLabel) {
+        [awsProfileLabel setHidden:!isAWSIAMConnection];
+    }
+
+    if (awsProfilePopup) {
+        [awsProfilePopup setHidden:!showAWSProfileRegionSelectors];
+    }
+
+    if (awsRegionLabel) {
+        [awsRegionLabel setHidden:!showAWSProfileRegionSelectors];
+    }
+
+    if (awsRegionComboBox) {
+        [awsRegionComboBox setHidden:!showAWSProfileRegionSelectors];
     }
 }
 
@@ -1018,12 +1041,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     switch (theType) {
         case SPTCPIPConnection:
             targetResizeRect = [standardConnectionFormContainer frame];
-            // SSL and AWS IAM are mutually exclusive
             if ([self useSSL]) {
                 additionalFormHeight += [standardConnectionSSLDetailsContainer frame].size.height;
-            } else if ([self useAWSIAMAuth] && standardAWSIAMDetailsContainer) {
-                additionalFormHeight += [standardAWSIAMDetailsContainer frame].size.height;
             }
+            break;
+        case SPAWSIAMConnection:
+            targetResizeRect = [awsIAMConnectionFormContainer frame];
             break;
         case SPSocketConnection:
             targetResizeRect = [socketConnectionFormContainer frame];
@@ -1121,6 +1144,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     switch ([fav objectForKey:SPFavoriteTimeZoneModeKey] ? [[fav objectForKey:SPFavoriteTimeZoneModeKey] intValue] : SPConnectionTimeZoneModeUseServerTZ) {
         case SPConnectionTimeZoneModeUseSystemTZ: {
             [standardTimeZoneField selectItemWithTag:SPUseSystemTimeZoneTag];
+            [awsIAMTimeZoneField selectItemWithTag:SPUseSystemTimeZoneTag];
             [socketTimeZoneField selectItemWithTag:SPUseSystemTimeZoneTag];
             [sshTimeZoneField selectItemWithTag:SPUseSystemTimeZoneTag];
             [self setTimeZoneMode:SPConnectionTimeZoneModeUseSystemTZ];
@@ -1130,6 +1154,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         case SPConnectionTimeZoneModeUseFixedTZ: {
             NSString *tzIdentifier = [fav objectForKey:SPFavoriteTimeZoneIdentifierKey];
             [standardTimeZoneField selectItemWithTitle:tzIdentifier];
+            [awsIAMTimeZoneField selectItemWithTitle:tzIdentifier];
             [socketTimeZoneField selectItemWithTitle:tzIdentifier];
             [sshTimeZoneField selectItemWithTitle:tzIdentifier];
             [self setTimeZoneMode:SPConnectionTimeZoneModeUseFixedTZ];
@@ -1138,6 +1163,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         }
         default: {
             [standardTimeZoneField selectItemWithTag:SPUseServerTimeZoneTag];
+            [awsIAMTimeZoneField selectItemWithTag:SPUseServerTimeZoneTag];
             [socketTimeZoneField selectItemWithTag:SPUseServerTimeZoneTag];
             [sshTimeZoneField selectItemWithTag:SPUseServerTimeZoneTag];
             [self setTimeZoneMode:SPConnectionTimeZoneModeUseServerTZ];
@@ -1153,7 +1179,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [self setEnableClearTextPlugin:([fav objectForKey:SPFavoriteEnableClearTextPluginKey] ? [[fav objectForKey:SPFavoriteEnableClearTextPluginKey] intValue] : NSControlStateValueOff)];
 
     // AWS IAM Authentication (profile-based only - manual credentials not supported)
-    [self setUseAWSIAMAuth:([fav objectForKey:SPFavoriteUseAWSIAMAuthKey] ? [[fav objectForKey:SPFavoriteUseAWSIAMAuthKey] intValue] : NSControlStateValueOff)];
+    [self setUseAWSIAMAuth:([self type] == SPAWSIAMConnection ? NSControlStateValueOn : NSControlStateValueOff)];
     [self setAwsRegion:([fav objectForKey:SPFavoriteAWSRegionKey] ? [fav objectForKey:SPFavoriteAWSRegionKey] : @"")];
     [self setAwsProfile:([fav objectForKey:SPFavoriteAWSProfileKey] ? [fav objectForKey:SPFavoriteAWSProfileKey] : @"default")];
 
@@ -1225,10 +1251,13 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     {
         case SPTCPIPConnection:
         {
-            BOOL shouldFocusPassword = (![self _isAWSIAMEnabledForTCPIPConnection] && ![[standardPasswordField stringValue] length]);
+            BOOL shouldFocusPassword = ![[standardPasswordField stringValue] length];
             [favoritesOutlineView setNextKeyView:shouldFocusPassword ? standardPasswordField : standardNameField];
             break;
         }
+        case SPAWSIAMConnection:
+            [favoritesOutlineView setNextKeyView:awsIAMNameField];
+            break;
         case SPSocketConnection:
             [favoritesOutlineView setNextKeyView:(![[socketPasswordField stringValue] length]) ? socketPasswordField : socketNameField];
             break;
@@ -1309,9 +1338,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         @(NSControlStateValueOff),
         @(NSControlStateValueOff),
         @(NSControlStateValueOff),
-        @(NSControlStateValueOff),
         @"",
         @"default",
+        @(NSControlStateValueOff),
         @(NSControlStateValueOff),
         @(NSControlStateValueOff),
         @(NSControlStateValueOff),
@@ -1571,6 +1600,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     }
 
     [standardTimeZoneField selectItemAtIndex:sender.indexOfSelectedItem];
+    [awsIAMTimeZoneField selectItemAtIndex:sender.indexOfSelectedItem];
     [sshTimeZoneField selectItemAtIndex:sender.indexOfSelectedItem];
     [socketTimeZoneField selectItemAtIndex:sender.indexOfSelectedItem];
 
@@ -1619,9 +1649,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         [[connectionView window] endEditingFor:[[connectionView window] firstResponder]];
     }
 
-    // Ensure that host is not empty if this is a TCP/IP or SSH connection
-    if (validateDetails && ([self type] == SPTCPIPConnection || [self type] == SPSSHTunnelConnection) && ![[self host] length]) {
+    // Ensure that host is not empty if this is a TCP/IP, SSH, or AWS IAM connection
+    if (validateDetails && ([self type] == SPTCPIPConnection || [self type] == SPSSHTunnelConnection || [self type] == SPAWSIAMConnection) && ![[self host] length]) {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message") message:NSLocalizedString(@"Insufficient details provided to establish a connection. Please provide at least a host.", @"insufficient details informative message") callback:nil];
+        return;
+    }
+
+    if (validateDetails && [self _isAWSIAMConnection] && ![self isAWSDirectoryAuthorized]) {
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"AWS Authorization Required", @"AWS authorization required title")
+                                     message:NSLocalizedString(@"Authorize access to your ~/.aws directory before saving an AWS IAM favorite.", @"AWS authorization required save message")
+                                    callback:nil];
         return;
     }
 
@@ -1677,7 +1714,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     // Clear text plugin
     [theFavorite setObject:[NSNumber numberWithInteger:[self enableClearTextPlugin]] forKey:SPFavoriteEnableClearTextPluginKey];
     // AWS IAM Authentication (profile-based only)
-    [theFavorite setObject:[NSNumber numberWithInteger:[self useAWSIAMAuth]] forKey:SPFavoriteUseAWSIAMAuthKey];
+    NSInteger awsIAMEnabled = ([self type] == SPAWSIAMConnection) ? NSControlStateValueOn : NSControlStateValueOff;
+    [theFavorite setObject:[NSNumber numberWithInteger:awsIAMEnabled] forKey:SPFavoriteUseAWSIAMAuthKey];
     _setOrRemoveKey(SPFavoriteAWSRegionKey, [self awsRegion]);
     _setOrRemoveKey(SPFavoriteAWSProfileKey, [self awsProfile]);
     // SSL details
@@ -1962,6 +2000,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 - (void)_favoriteTypeDidChange {
 
+    [self setUseAWSIAMAuth:([self type] == SPAWSIAMConnection ? NSControlStateValueOn : NSControlStateValueOff)];
+
     // Update the name for newly added favorites if not already touched by the user, by triggering a KVO update
     if (![[self name] length] || favoriteNameFieldWasAutogenerated) {
         NSString *favoriteName = [self _generateNameForConnection];
@@ -1998,6 +2038,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         case SPTCPIPConnection:
             if (![[standardPasswordField stringValue] length]) {
                 [[dbDocument parentWindowControllerWindow] makeFirstResponder:standardPasswordField];
+            }
+            break;
+        case SPAWSIAMConnection:
+            if (awsIAMNameField) {
+                [[dbDocument parentWindowControllerWindow] makeFirstResponder:awsIAMNameField];
             }
             break;
         case SPSocketConnection:
@@ -2363,7 +2408,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         NSString *connectionPassword = [self password];
         BOOL awsIAMAuthUsed = NO;
 
-        if ([self useAWSIAMAuth] && [self type] == SPTCPIPConnection) {
+        if ([self _isAWSIAMConnection]) {
             awsIAMAuthUsed = YES;
             NSError *awsError = nil;
             connectionPassword = [self generateAWSIAMAuthTokenWithError:&awsError];
@@ -2675,8 +2720,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [progressIndicatorText setHidden:YES];
 
     // If SSL was enabled (manually or implicitly via IAM), check it was established correctly
-    BOOL requiresSSL = (useSSL || [self _isAWSIAMEnabledForTCPIPConnection]);
-    if (requiresSSL && ([self type] == SPTCPIPConnection || [self type] == SPSocketConnection)) {
+    BOOL requiresSSL = (useSSL || [self _isAWSIAMConnection]);
+    if (requiresSSL && ([self type] == SPTCPIPConnection || [self type] == SPSocketConnection || [self type] == SPAWSIAMConnection)) {
         if (![mySQLConnection isConnectedViaSSL]) {
             [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"SSL connection not established", @"SSL requested but not used title") message:NSLocalizedString(@"You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted.", @"SSL connection requested but not established error detail") callback:nil];
         }
@@ -3278,7 +3323,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     // If a 'name' field was edited, and is now of zero length, trigger a replacement
     // with a standard suggestion
-    if (((field == standardNameField) || (field == socketNameField) || (field == sshNameField)) && [self selectedFavoriteNode]) {
+    if (((field == standardNameField) || (field == awsIAMNameField) || (field == socketNameField) || (field == sshNameField)) && [self selectedFavoriteNode]) {
         if (![[self _stripInvalidCharactersFromString:[field stringValue]] length]) {
             [self controlTextDidEndEditing:notification];
         }
@@ -3286,7 +3331,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     [self _startEditingConnection];
 
-    if (favoriteNameFieldWasAutogenerated && (field != standardNameField && field != socketNameField && field != sshNameField)) {
+    if (favoriteNameFieldWasAutogenerated && (field != standardNameField && field != awsIAMNameField && field != socketNameField && field != sshNameField)) {
         [self setName:[self _generateNameForConnection]];
     }
 
@@ -3306,7 +3351,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     // Handle updates to the 'name' field of the selected favourite.  The favourite name should
     // have leading or trailing spaces removed at the end of editing, and if it's left empty,
     // should have a default name set.
-    if (((field == standardNameField) || (field == socketNameField) || (field == sshNameField)) && [self selectedFavoriteNode]) {
+    if (((field == standardNameField) || (field == awsIAMNameField) || (field == socketNameField) || (field == sshNameField)) && [self selectedFavoriteNode]) {
 
         NSString *favoriteName = [self _stripInvalidCharactersFromString:[field stringValue]];
 
@@ -3636,16 +3681,20 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         [sshColorField      bind:@"selectedTag" toObject:self withKeyPath:@"colorIndex" options:nil];
         [standardColorField setColorList:colorList];
         [standardColorField bind:@"selectedTag" toObject:self withKeyPath:@"colorIndex" options:nil];
+        [awsIAMColorField setColorList:colorList];
+        [awsIAMColorField bind:@"selectedTag" toObject:self withKeyPath:@"colorIndex" options:nil];
         [socketColorField setColorList:colorList];
         [socketColorField   bind:@"selectedTag" toObject:self withKeyPath:@"colorIndex" options:nil];
 
         // An instance of NSMenuItem can not be assigned to more than one menu so we have to clone items.
         // Cannot bulk set items on macOS < 10.14, must removeAllItems and addItem https://github.com/Sequel-Ace/Sequel-Ace/issues/403
         [standardTimeZoneField.menu removeAllItems];
+        [awsIAMTimeZoneField.menu removeAllItems];
         [sshTimeZoneField.menu removeAllItems];
         [socketTimeZoneField.menu removeAllItems];
         for (NSMenuItem *menuItem in [self generateTimeZoneMenuItems]) {
             [standardTimeZoneField.menu addItem:[menuItem copy]];
+            [awsIAMTimeZoneField.menu addItem:[menuItem copy]];
             [sshTimeZoneField.menu addItem:[menuItem copy]];
             [socketTimeZoneField.menu addItem:[menuItem copy]];
         }

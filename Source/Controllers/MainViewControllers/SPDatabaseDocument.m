@@ -2465,6 +2465,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                     [connectionController host] ? [connectionController host] : @"",
                     port];
             break;
+        case SPAWSIAMConnection:
+            return [NSString stringWithFormat:@"%@@%@%@&AWSIAM&%@&%@",
+                    ([connectionController user] && [[connectionController user] length]) ? [connectionController user] : @"anonymous",
+                    [connectionController host] ? [connectionController host] : @"",
+                    port,
+                    ([[connectionController awsProfile] length]) ? [connectionController awsProfile] : @"default",
+                    ([[connectionController awsRegion] length]) ? [connectionController awsRegion] : @"auto"];
+            break;
         case SPSSHTunnelConnection:
             return [NSString stringWithFormat:@"%@@%@%@&SSH&%@@%@:%@",
                     ([connectionController user] && [[connectionController user] length]) ? [connectionController user] : @"anonymous",
@@ -3860,6 +3868,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             case SPTCPIPConnection:
                 connectionType = @"SPTCPIPConnection";
                 break;
+            case SPAWSIAMConnection:
+                connectionType = @"SPAWSIAMConnection";
+                if ([[connectionController awsProfile] length]) [connection setObject:[connectionController awsProfile] forKey:@"aws_profile"];
+                if ([[connectionController awsRegion] length]) [connection setObject:[connectionController awsRegion] forKey:@"aws_region"];
+                break;
             case SPSocketConnection:
                 connectionType = @"SPSocketConnection";
                 if ([connectionController socket] && [[connectionController socket] length]) [connection setObject:[connectionController socket] forKey:@"socket"];
@@ -4031,11 +4044,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     NSString *typeString = [connection objectForKey:@"type"];
     if (typeString) {
         if ([typeString isEqualToString:@"SPTCPIPConnection"])          connectionType = SPTCPIPConnection;
+        else if ([typeString isEqualToString:@"SPAWSIAMConnection"])    connectionType = SPAWSIAMConnection;
         else if ([typeString isEqualToString:@"SPSocketConnection"])    connectionType = SPSocketConnection;
         else if ([typeString isEqualToString:@"SPSSHTunnelConnection"]) connectionType = SPSSHTunnelConnection;
         else                                                            connectionType = SPTCPIPConnection;
 
         [connectionController setType:connectionType];
+        [connectionController setUseAWSIAMAuth:(connectionType == SPAWSIAMConnection ? NSControlStateValueOn : NSControlStateValueOff)];
         [connectionController resizeTabViewToConnectionType:connectionType animating:NO];
     }
 
@@ -4045,6 +4060,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([connection objectForKey:@"host"])                 [connectionController setHost:[connection objectForKey:@"host"]];
     if ([connection objectForKey:@"port"])                 [connectionController setPort:[NSString stringWithFormat:@"%ld", (long)[[connection objectForKey:@"port"] integerValue]]];
     if ([connection objectForKey:SPFavoriteColorIndexKey]) [connectionController setColorIndex:[(NSNumber *)[connection objectForKey:SPFavoriteColorIndexKey] integerValue]];
+    if ([connection objectForKey:@"aws_profile"])          [connectionController setAwsProfile:[connection objectForKey:@"aws_profile"]];
+    if ([connection objectForKey:@"aws_region"])           [connectionController setAwsRegion:[connection objectForKey:@"aws_region"]];
 
 
     //Set special connection settings

@@ -72,6 +72,7 @@ If any unsupported query parameter is included, Sequel Ace shows an error and do
 - If no host is provided, Sequel Ace uses `127.0.0.1`.
 - The first path segment is treated as the database name.
 - Socket paths are not currently supported in `mysql://` URLs. For socket-based connections, use a regular socket favorite (see [Connect to a Local MySQL Server](local-connection.html)).
+- AWS IAM-specific settings (profile/region) are not currently supported in `mysql://` URLs; configure those in the connection UI.
 - If you use `ssh_keyLocation`, Sequel Ace must already have sandbox access to that key path. Grant access in **Sequel Ace → Preferences → Files** (add the key file or its containing folder).
 
 #### Related History

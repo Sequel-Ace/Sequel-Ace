@@ -7,8 +7,18 @@
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="SPConnectionController">
             <connections>
+                <outlet property="awsIAMColorField" destination="AWSIAM-COLOR-FIELD" id="AWSIAM-OUT-010"/>
+                <outlet property="awsIAMConnectionFormContainer" destination="AWSIAM-FORM-001" id="AWSIAM-OUT-006"/>
+                <outlet property="awsIAMNameField" destination="AWSIAM-NAME-FIELD" id="AWSIAM-OUT-007"/>
+                <outlet property="awsIAMPasswordField" destination="AWSIAM-PASS-FIELD" id="AWSIAM-OUT-008"/>
+                <outlet property="awsIAMSQLHostField" destination="AWSIAM-HOST-FIELD" id="AWSIAM-OUT-009"/>
+                <outlet property="awsIAMTimeZoneField" destination="AWSIAM-TZ-POP" id="AWSIAM-OUT-011"/>
+                <outlet property="awsIAMUserField" destination="AWSIAM-USER-FIELD" id="AWSIAM-OUT-012"/>
+                <outlet property="awsAuthorizeInfoLabel" destination="AWSIAM-LBL-INFO" id="AWSIAM-OUT-013"/>
                 <outlet property="awsProfilePopup" destination="AWSIAM-POP-001" id="AWSIAM-OUT-003"/>
+                <outlet property="awsProfileLabel" destination="AWSIAM-LBL-001" id="AWSIAM-OUT-014"/>
                 <outlet property="awsRegionComboBox" destination="AWSIAM-CMB-001" id="AWSIAM-OUT-004"/>
+                <outlet property="awsRegionLabel" destination="AWSIAM-LBL-003" id="AWSIAM-OUT-015"/>
                 <outlet property="connectButton" destination="5157" id="5444"/>
                 <outlet property="connectionDetailsScrollView" destination="5588" id="5592"/>
                 <outlet property="connectionInstructionsTextField" destination="5154" id="5800"/>
@@ -53,8 +63,6 @@
                 <outlet property="sslOverSSHCertificateButton" destination="VqZ-mo-IXW" id="Ync-fQ-3aq"/>
                 <outlet property="sslOverSSHKeyFileButton" destination="vPP-gd-c4a" id="VTR-AE-QPt"/>
                 <outlet property="awsAuthorizeButton" destination="AWSIAM-BTN-AUTH" id="AWSIAM-OUT-005"/>
-                <outlet property="standardAWSIAMAuthCheckbox" destination="AWSIAM-CHK-001" id="AWSIAM-OUT-001"/>
-                <outlet property="standardAWSIAMDetailsContainer" destination="AWSIAM-CNT-001" id="AWSIAM-OUT-002"/>
                 <outlet property="standardColorField" destination="5894" id="5895"/>
                 <outlet property="standardConnectionFormContainer" destination="5156" id="5161"/>
                 <outlet property="standardConnectionSSLDetailsContainer" destination="5595" id="5620"/>
@@ -254,10 +262,10 @@
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <scrollView fixedFrame="YES" borderType="none" autohidesScrollers="YES" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5588">
-                                    <rect key="frame" x="0.0" y="0.0" width="681" height="759"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="681" height="730"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="gFs-TM-wGu">
-                                        <rect key="frame" x="0.0" y="0.0" width="681" height="759"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="681" height="730"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <subviews>
                                             <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5447">
@@ -489,7 +497,7 @@ DQ
                                                                                             </connections>
                                                                                         </customView>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Qjy-56-fjI">
-                                                                                            <rect key="frame" x="7" y="97" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="99" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Time Zone:" id="htb-Ht-iA8">
                                                                                                 <font key="font" metaFont="system"/>
@@ -498,7 +506,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="JYc-99-MtL">
-                                                                                            <rect key="frame" x="108" y="92" width="252" height="25"/>
+                                                                                            <rect key="frame" x="108" y="94" width="252" height="25"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="MXg-Pz-0Nh">
                                                                                                 <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -510,7 +518,7 @@ DQ
                                                                                             </connections>
                                                                                         </popUpButton>
                                                                                         <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="oIH-sM-vBJ">
-                                                                                            <rect key="frame" x="108" y="64" width="251" height="18"/>
+                                                                                            <rect key="frame" x="108" y="66" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="check" title="Allow LOCAL_DATA_INFILE (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="Ot7-jd-TIL">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -529,7 +537,7 @@ DQ
                                                                                             </connections>
                                                                                         </button>
                                                                                         <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2k2-ul-dtp">
-                                                                                            <rect key="frame" x="108" y="46" width="251" height="18"/>
+                                                                                            <rect key="frame" x="108" y="38" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="check" title="Enable Cleartext plugin (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="mSn-DP-BWp">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -548,7 +556,7 @@ DQ
                                                                                             </connections>
                                                                                         </button>
                                                                                         <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="TCPIP-SSL-001">
-                                                                                            <rect key="frame" x="108" y="28" width="251" height="18"/>
+                                                                                            <rect key="frame" x="108" y="10" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="check" title="Require SSL" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="TCPIP-SSL-002">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -566,120 +574,7 @@ DQ
                                                                                                 </binding>
                                                                                             </connections>
                                                                                         </button>
-                                                                                        <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-CHK-001">
-                                                                                            <rect key="frame" x="108" y="10" width="251" height="18"/>
-                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                                                            <buttonCell key="cell" type="check" title="Use AWS IAM Authentication" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="AWSIAM-CHK-002">
-                                                                                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                                                                                                <font key="font" metaFont="system"/>
-                                                                                            </buttonCell>
-                                                                                            <connections>
-                                                                                                <action selector="updateAWSIAMInterface:" target="-2" id="AWSIAM-ACT-001"/>
-                                                                                                <binding destination="-2" name="value" keyPath="useAWSIAMAuth" id="AWSIAM-BND-001">
-                                                                                                    <dictionary key="options">
-                                                                                                        <integer key="NSMultipleValuesPlaceholder" value="0"/>
-                                                                                                        <integer key="NSNoSelectionPlaceholder" value="0"/>
-                                                                                                        <integer key="NSNotApplicablePlaceholder" value="0"/>
-                                                                                                        <integer key="NSNullPlaceholder" value="0"/>
-                                                                                                    </dictionary>
-                                                                                                </binding>
-                                                                                            </connections>
-                                                                                        </button>
                                                                                     </subviews>
-                                                                                </customView>
-                                                                                <customView hidden="YES" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-CNT-001">
-                                                                                    <rect key="frame" x="22" y="13" width="377" height="130"/>
-                                                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                                                    <subviews>
-                                                                                        <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-BTN-AUTH">
-                                                                                            <rect key="frame" x="108" y="100" width="180" height="24"/>
-                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                                                            <buttonCell key="cell" type="push" title="Authorize Access to ~/.aws…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="AWSIAM-BTN-AUTH-CELL">
-                                                                                                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                                                                                <font key="font" metaFont="system"/>
-                                                                                            </buttonCell>
-                                                                                            <connections>
-                                                                                                <action selector="authorizeAWSDirectory:" target="-2" id="AWSIAM-ACT-AUTH"/>
-                                                                                            </connections>
-                                                                                        </button>
-                                                                                        <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-INFO">
-                                                                                            <rect key="frame" x="108" y="72" width="260" height="28"/>
-                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                                                            <textFieldCell key="cell" lineBreakMode="wordWrapping" sendsActionOnEndEditing="YES" alignment="left" title="Click the button above to grant access to your AWS credentials folder (~/.aws)." id="AWSIAM-LBL-INFO-CELL">
-                                                                                                <font key="font" metaFont="smallSystem"/>
-                                                                                                <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
-                                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                                                                            </textFieldCell>
-                                                                                        </textField>
-                                                                                        <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-001">
-                                                                                            <rect key="frame" x="7" y="47" width="98" height="17"/>
-                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="AWS Profile:" id="AWSIAM-LBL-002">
-                                                                                                <font key="font" metaFont="system"/>
-                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                                                                            </textFieldCell>
-                                                                                            <connections>
-                                                                                                <binding destination="-2" name="enabled" keyPath="isAWSDirectoryAuthorized" id="AWSIAM-BND-LBL1-EN"/>
-                                                                                            </connections>
-                                                                                        </textField>
-                                                                                        <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-POP-001">
-                                                                                            <rect key="frame" x="108" y="42" width="249" height="25"/>
-                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                                                                            <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="AWSIAM-POP-002">
-                                                                                                <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                                                                                <font key="font" metaFont="message"/>
-                                                                                                <menu key="menu" id="AWSIAM-MNU-001">
-                                                                                                    <items>
-                                                                                                        <menuItem title="default" id="AWSIAM-MNU-002"/>
-                                                                                                    </items>
-                                                                                                </menu>
-                                                                                            </popUpButtonCell>
-                                                                                            <connections>
-                                                                                                <binding destination="-2" name="content" keyPath="awsAvailableProfiles" id="AWSIAM-BND-002a"/>
-                                                                                                <binding destination="-2" name="selectedValue" keyPath="awsProfile" id="AWSIAM-BND-002"/>
-                                                                                                <binding destination="-2" name="enabled" keyPath="isAWSDirectoryAuthorized" id="AWSIAM-BND-POP-EN"/>
-                                                                                            </connections>
-                                                                                        </popUpButton>
-                                                                                        <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-003">
-                                                                                            <rect key="frame" x="7" y="15" width="98" height="17"/>
-                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Region:" id="AWSIAM-LBL-004">
-                                                                                                <font key="font" metaFont="system"/>
-                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                                                                                            </textFieldCell>
-                                                                                            <connections>
-                                                                                                <binding destination="-2" name="enabled" keyPath="isAWSDirectoryAuthorized" id="AWSIAM-BND-LBL3-EN"/>
-                                                                                            </connections>
-                                                                                        </textField>
-                                                                                        <comboBox verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-CMB-001">
-                                                                                            <rect key="frame" x="108" y="10" width="249" height="25"/>
-                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                                                                            <comboBoxCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" numberOfVisibleItems="10" id="AWSIAM-CMB-002">
-                                                                                                <font key="font" metaFont="system"/>
-                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                                                                                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                                                                            </comboBoxCell>
-                                                                                            <connections>
-                                                                                                <binding destination="-2" name="contentValues" keyPath="awsAvailableRegions" id="AWSIAM-BND-004"/>
-                                                                                                <binding destination="-2" name="value" keyPath="awsRegion" id="AWSIAM-BND-003">
-                                                                                                    <dictionary key="options">
-                                                                                                        <bool key="NSContinuouslyUpdatesValue" value="YES"/>
-                                                                                                        <string key="NSNullPlaceholder">auto-detect from host</string>
-                                                                                                    </dictionary>
-                                                                                                </binding>
-                                                                                                <binding destination="-2" name="enabled" keyPath="isAWSDirectoryAuthorized" id="AWSIAM-BND-CMB-EN"/>
-                                                                                            </connections>
-                                                                                        </comboBox>
-                                                                                    </subviews>
-                                                                                    <connections>
-                                                                                        <binding destination="-2" name="hidden" keyPath="useAWSIAMAuth" id="AWSIAM-BND-006">
-                                                                                            <dictionary key="options">
-                                                                                                <string key="NSValueTransformerName">NSNegateBoolean</string>
-                                                                                            </dictionary>
-                                                                                        </binding>
-                                                                                    </connections>
                                                                                 </customView>
                                                                                 <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5595">
                                                                                     <rect key="frame" x="22" y="34" width="377" height="104"/>
@@ -1231,7 +1126,7 @@ DQ
                                                                                     <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                     <subviews>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5523">
-                                                                                            <rect key="frame" x="110" y="130" width="219" height="22"/>
+                                                                                            <rect key="frame" x="110" y="172" width="219" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" lineBreakMode="truncatingHead" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="5524">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1257,7 +1152,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5525">
-                                                                                            <rect key="frame" x="7" y="132" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="174" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="SSH Key:" id="5526">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1304,7 +1199,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5291">
-                                                                                            <rect key="frame" x="7" y="98" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="140" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="SSH Port:" id="5292">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1313,7 +1208,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the port to use when connecting to the SSH server.  The default SSH port is 22" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5290">
-                                                                                            <rect key="frame" x="110" y="96" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="138" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="optional" drawsBackground="YES" usesSingleLineMode="YES" id="5293">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1331,7 +1226,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5289">
-                                                                                            <rect key="frame" x="7" y="132" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="174" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="SSH Password:" id="5294">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1350,7 +1245,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the password to use when connecting to the SSH server." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5288" customClass="NSSecureTextField">
-                                                                                            <rect key="frame" x="110" y="130" width="219" height="22"/>
+                                                                                            <rect key="frame" x="110" y="172" width="219" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="5295">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1368,7 +1263,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5287">
-                                                                                            <rect key="frame" x="7" y="166" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="208" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="SSH User:" id="5296">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1377,7 +1272,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the SSH username to connect with" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5286">
-                                                                                            <rect key="frame" x="110" y="164" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="206" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="5297">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1394,7 +1289,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5285">
-                                                                                            <rect key="frame" x="10" y="200" width="95" height="17"/>
+                                                                                            <rect key="frame" x="10" y="242" width="95" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="SSH Host:" id="5298">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1403,7 +1298,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField toolTip="Enter the hostname of the SSH server to tunnel via when connecting to the MySQL server" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5284">
-                                                                                            <rect key="frame" x="110" y="198" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="240" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="5299">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1580,7 +1475,7 @@ DQ
                                                                                             </connections>
                                                                                         </button>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="pI7-sy-bsp">
-                                                                                            <rect key="frame" x="7" y="248" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="99" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Time Zone:" id="UEC-JC-iN3">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1627,7 +1522,7 @@ DQ
                                                                                             </connections>
                                                                                         </button>
                                                                                         <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="XXN-zL-2iW">
-                                                                                            <rect key="frame" x="108" y="243" width="252" height="25"/>
+                                                                                            <rect key="frame" x="108" y="94" width="252" height="25"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="gcf-uF-VQA">
                                                                                                 <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -1639,7 +1534,7 @@ DQ
                                                                                             </connections>
                                                                                         </popUpButton>
                                                                                         <button toolTip="Click to choose the SSH key file to use with this connection.  Standard locations like ~/.ssh are NOT checked automatically." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5492">
-                                                                                            <rect key="frame" x="328" y="129" width="29" height="24"/>
+                                                                                            <rect key="frame" x="328" y="171" width="29" height="24"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="key-icon" imagePosition="overlaps" alignment="center" alternateImage="key-icon-alternate" borderStyle="border" inset="2" id="5493">
                                                                                                 <behavior key="behavior" pushIn="YES" changeContents="YES" lightByContents="YES"/>
@@ -1810,6 +1705,317 @@ DQ
                                                                                             </dictionary>
                                                                                         </binding>
                                                                                     </connections>
+                                                                                </customView>
+                                                                            </subviews>
+                                                                        </view>
+                                                                    </tabViewItem>
+                                                                    <tabViewItem label="AWS IAM" identifier="3" id="AWSIAM-TAB-ITEM">
+                                                                        <view key="view" id="AWSIAM-TAB-VIEW">
+                                                                            <rect key="frame" x="10" y="33" width="420" height="494"/>
+                                                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                            <subviews>
+                                                                                <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-FORM-001">
+                                                                                    <rect key="frame" x="22" y="-4" width="377" height="505"/>
+                                                                                    <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                    <subviews>
+                                                                                        <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-NAME">
+                                                                                            <rect key="frame" x="7" y="468" width="98" height="17"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Name:" id="AWSIAM-LBL-NAME-CELL">
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </textFieldCell>
+                                                                                        </textField>
+                                                                                        <textField toolTip="Enter a nickname to use if adding to favorites. Optional." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-NAME-FIELD">
+                                                                                            <rect key="frame" x="110" y="466" width="247" height="22"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="optional" drawsBackground="YES" usesSingleLineMode="YES" id="AWSIAM-NAME-CELL">
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </textFieldCell>
+                                                                                            <connections>
+                                                                                                <binding destination="-2" name="value" keyPath="name" id="AWSIAM-BND-NAME">
+                                                                                                    <dictionary key="options">
+                                                                                                        <bool key="NSContinuouslyUpdatesValue" value="YES"/>
+                                                                                                        <string key="NSNullPlaceholder">optional</string>
+                                                                                                    </dictionary>
+                                                                                                </binding>
+                                                                                                <outlet property="delegate" destination="-2" id="AWSIAM-DEL-NAME"/>
+                                                                                            </connections>
+                                                                                        </textField>
+                                                                                        <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-HOST">
+                                                                                            <rect key="frame" x="7" y="408" width="98" height="17"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Host:" id="AWSIAM-LBL-HOST-CELL">
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </textFieldCell>
+                                                                                        </textField>
+                                                                                        <textField toolTip="Enter your RDS or Aurora endpoint hostname." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-HOST-FIELD">
+                                                                                            <rect key="frame" x="110" y="406" width="247" height="22"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="AWSIAM-HOST-CELL">
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </textFieldCell>
+                                                                                            <connections>
+                                                                                                <binding destination="-2" name="value" keyPath="host" id="AWSIAM-BND-HOST">
+                                                                                                    <dictionary key="options">
+                                                                                                        <bool key="NSContinuouslyUpdatesValue" value="YES"/>
+                                                                                                    </dictionary>
+                                                                                                </binding>
+                                                                                                <outlet property="delegate" destination="-2" id="AWSIAM-DEL-HOST"/>
+                                                                                            </connections>
+                                                                                        </textField>
+                                                                                        <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-USER">
+                                                                                            <rect key="frame" x="7" y="374" width="98" height="17"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Username:" id="AWSIAM-LBL-USER-CELL">
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </textFieldCell>
+                                                                                        </textField>
+                                                                                        <textField toolTip="Enter the MySQL username configured for IAM authentication." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-USER-FIELD">
+                                                                                            <rect key="frame" x="110" y="372" width="247" height="22"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="AWSIAM-USER-CELL">
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </textFieldCell>
+                                                                                            <connections>
+                                                                                                <binding destination="-2" name="value" keyPath="user" id="AWSIAM-BND-USER">
+                                                                                                    <dictionary key="options">
+                                                                                                        <bool key="NSContinuouslyUpdatesValue" value="YES"/>
+                                                                                                    </dictionary>
+                                                                                                </binding>
+                                                                                                <outlet property="delegate" destination="-2" id="AWSIAM-DEL-USER"/>
+                                                                                                <outlet property="nextKeyView" destination="AWSIAM-PASS-FIELD" id="AWSIAM-NEXT-USER"/>
+                                                                                            </connections>
+                                                                                        </textField>
+                                                                                        <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-PASS">
+                                                                                            <rect key="frame" x="7" y="340" width="98" height="17"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Password:" id="AWSIAM-LBL-PASS-CELL">
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </textFieldCell>
+                                                                                        </textField>
+                                                                                        <textField toolTip="Generated automatically for AWS IAM connections." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-PASS-FIELD" customClass="NSSecureTextField">
+                                                                                            <rect key="frame" x="110" y="338" width="247" height="22"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="AWSIAM-PASS-CELL">
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </textFieldCell>
+                                                                                            <connections>
+                                                                                                <binding destination="-2" name="value" keyPath="password" id="AWSIAM-BND-PASS">
+                                                                                                    <dictionary key="options">
+                                                                                                        <bool key="NSContinuouslyUpdatesValue" value="YES"/>
+                                                                                                    </dictionary>
+                                                                                                </binding>
+                                                                                                <outlet property="delegate" destination="-2" id="AWSIAM-DEL-PASS"/>
+                                                                                            </connections>
+                                                                                        </textField>
+                                                                                        <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-DB">
+                                                                                            <rect key="frame" x="7" y="306" width="98" height="17"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Database:" id="AWSIAM-LBL-DB-CELL">
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </textFieldCell>
+                                                                                        </textField>
+                                                                                        <textField toolTip="Optionally enter a database to select after successfully connecting." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-DB-FIELD">
+                                                                                            <rect key="frame" x="110" y="304" width="247" height="22"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="optional" drawsBackground="YES" usesSingleLineMode="YES" id="AWSIAM-DB-CELL">
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </textFieldCell>
+                                                                                            <connections>
+                                                                                                <binding destination="-2" name="value" keyPath="database" id="AWSIAM-BND-DB">
+                                                                                                    <dictionary key="options">
+                                                                                                        <bool key="NSContinuouslyUpdatesValue" value="YES"/>
+                                                                                                        <string key="NSNullPlaceholder">optional</string>
+                                                                                                    </dictionary>
+                                                                                                </binding>
+                                                                                                <outlet property="delegate" destination="-2" id="AWSIAM-DEL-DB"/>
+                                                                                            </connections>
+                                                                                        </textField>
+                                                                                        <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-PORT">
+                                                                                            <rect key="frame" x="7" y="272" width="98" height="17"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Port:" id="AWSIAM-LBL-PORT-CELL">
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </textFieldCell>
+                                                                                        </textField>
+                                                                                        <textField toolTip="Enter the port to use when connecting to the MySQL server. The default is 3306." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-PORT-FIELD">
+                                                                                            <rect key="frame" x="110" y="270" width="247" height="22"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="3306" drawsBackground="YES" usesSingleLineMode="YES" id="AWSIAM-PORT-CELL">
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </textFieldCell>
+                                                                                            <connections>
+                                                                                                <binding destination="-2" name="value" keyPath="port" id="AWSIAM-BND-PORT">
+                                                                                                    <dictionary key="options">
+                                                                                                        <bool key="NSContinuouslyUpdatesValue" value="YES"/>
+                                                                                                        <string key="NSNullPlaceholder">3306</string>
+                                                                                                    </dictionary>
+                                                                                                </binding>
+                                                                                                <outlet property="delegate" destination="-2" id="AWSIAM-DEL-PORT"/>
+                                                                                            </connections>
+                                                                                        </textField>
+                                                                                        <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-COLOR-FIELD" customClass="SPColorSelectorView">
+                                                                                            <rect key="frame" x="110" y="436" width="247" height="22"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <connections>
+                                                                                                <outlet property="delegate" destination="-2" id="AWSIAM-DEL-COLOR"/>
+                                                                                            </connections>
+                                                                                        </customView>
+                                                                                        <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-TIMEZONE">
+                                                                                            <rect key="frame" x="7" y="99" width="98" height="17"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Time Zone:" id="AWSIAM-LBL-TIMEZONE-CELL">
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </textFieldCell>
+                                                                                        </textField>
+                                                                                        <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-TZ-POP">
+                                                                                            <rect key="frame" x="108" y="94" width="252" height="25"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="AWSIAM-TZ-CELL">
+                                                                                                <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                                                                                <font key="font" metaFont="message"/>
+                                                                                                <menu key="menu" id="AWSIAM-TZ-MENU"/>
+                                                                                            </popUpButtonCell>
+                                                                                            <connections>
+                                                                                                <action selector="didChangeSelectedTimeZone:" target="-2" id="AWSIAM-ACT-TZ"/>
+                                                                                            </connections>
+                                                                                        </popUpButton>
+                                                                                        <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-CHK-LDI">
+                                                                                            <rect key="frame" x="108" y="66" width="251" height="18"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <buttonCell key="cell" type="check" title="Allow LOCAL_DATA_INFILE (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="AWSIAM-CHK-LDI-CELL">
+                                                                                                <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                            </buttonCell>
+                                                                                            <connections>
+                                                                                                <action selector="allowLocalDataInfileChanged:" target="-2" id="AWSIAM-ACT-LDI"/>
+                                                                                                <binding destination="-2" name="value" keyPath="allowDataLocalInfile" id="AWSIAM-BND-LDI">
+                                                                                                    <dictionary key="options">
+                                                                                                        <integer key="NSMultipleValuesPlaceholder" value="0"/>
+                                                                                                        <integer key="NSNoSelectionPlaceholder" value="0"/>
+                                                                                                        <integer key="NSNotApplicablePlaceholder" value="0"/>
+                                                                                                        <integer key="NSNullPlaceholder" value="0"/>
+                                                                                                    </dictionary>
+                                                                                                </binding>
+                                                                                            </connections>
+                                                                                        </button>
+                                                                                        <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-AUTO">
+                                                                                            <rect key="frame" x="108" y="26" width="249" height="30"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <textFieldCell key="cell" lineBreakMode="wordWrapping" sendsActionOnEndEditing="YES" alignment="left" title="SSL/TLS and cleartext plugin are enabled automatically for AWS IAM connections." id="AWSIAM-LBL-AUTO-CELL">
+                                                                                                <font key="font" metaFont="smallSystem"/>
+                                                                                                <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </textFieldCell>
+                                                                                        </textField>
+                                                                                        <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-BTN-AUTH">
+                                                                                            <rect key="frame" x="108" y="212" width="252" height="24"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <buttonCell key="cell" type="push" title="Authorize Access to ~/.aws…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="AWSIAM-BTN-AUTH-CELL">
+                                                                                                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                            </buttonCell>
+                                                                                            <connections>
+                                                                                                <action selector="authorizeAWSDirectory:" target="-2" id="AWSIAM-ACT-AUTH"/>
+                                                                                            </connections>
+                                                                                        </button>
+                                                                                        <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-INFO">
+                                                                                            <rect key="frame" x="108" y="180" width="252" height="28"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <textFieldCell key="cell" lineBreakMode="wordWrapping" sendsActionOnEndEditing="YES" alignment="left" title="Click the button above to grant access to your AWS credentials folder (~/.aws)." id="AWSIAM-LBL-INFO-CELL">
+                                                                                                <font key="font" metaFont="smallSystem"/>
+                                                                                                <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </textFieldCell>
+                                                                                        </textField>
+                                                                                        <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-001">
+                                                                                            <rect key="frame" x="7" y="217" width="98" height="17"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="AWS Profile:" id="AWSIAM-LBL-002">
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </textFieldCell>
+                                                                                            <connections>
+                                                                                                <binding destination="-2" name="enabled" keyPath="isAWSDirectoryAuthorized" id="AWSIAM-BND-LBL1-EN"/>
+                                                                                            </connections>
+                                                                                        </textField>
+                                                                                        <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-POP-001">
+                                                                                            <rect key="frame" x="108" y="212" width="252" height="25"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                                                            <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="AWSIAM-POP-002">
+                                                                                                <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                                                                                <font key="font" metaFont="message"/>
+                                                                                                <menu key="menu" id="AWSIAM-MNU-001">
+                                                                                                    <items>
+                                                                                                        <menuItem title="default" id="AWSIAM-MNU-002"/>
+                                                                                                    </items>
+                                                                                                </menu>
+                                                                                            </popUpButtonCell>
+                                                                                            <connections>
+                                                                                                <binding destination="-2" name="content" keyPath="awsAvailableProfiles" id="AWSIAM-BND-002a"/>
+                                                                                                <binding destination="-2" name="selectedValue" keyPath="awsProfile" id="AWSIAM-BND-002"/>
+                                                                                                <binding destination="-2" name="enabled" keyPath="isAWSDirectoryAuthorized" id="AWSIAM-BND-POP-EN"/>
+                                                                                            </connections>
+                                                                                        </popUpButton>
+                                                                                        <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-003">
+                                                                                            <rect key="frame" x="7" y="185" width="98" height="17"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Region:" id="AWSIAM-LBL-004">
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </textFieldCell>
+                                                                                            <connections>
+                                                                                                <binding destination="-2" name="enabled" keyPath="isAWSDirectoryAuthorized" id="AWSIAM-BND-LBL3-EN"/>
+                                                                                            </connections>
+                                                                                        </textField>
+                                                                                        <comboBox verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-CMB-001">
+                                                                                            <rect key="frame" x="108" y="180" width="252" height="25"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                                                            <comboBoxCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" numberOfVisibleItems="10" id="AWSIAM-CMB-002">
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </comboBoxCell>
+                                                                                            <connections>
+                                                                                                <binding destination="-2" name="contentValues" keyPath="awsAvailableRegions" id="AWSIAM-BND-004"/>
+                                                                                                <binding destination="-2" name="value" keyPath="awsRegion" id="AWSIAM-BND-003">
+                                                                                                    <dictionary key="options">
+                                                                                                        <bool key="NSContinuouslyUpdatesValue" value="YES"/>
+                                                                                                        <string key="NSNullPlaceholder">auto-detect from host</string>
+                                                                                                    </dictionary>
+                                                                                                </binding>
+                                                                                                <binding destination="-2" name="enabled" keyPath="isAWSDirectoryAuthorized" id="AWSIAM-BND-CMB-EN"/>
+                                                                                            </connections>
+                                                                                        </comboBox>
+                                                                                    </subviews>
                                                                                 </customView>
                                                                             </subviews>
                                                                         </view>
