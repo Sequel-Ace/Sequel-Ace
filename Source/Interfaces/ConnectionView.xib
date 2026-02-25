@@ -497,7 +497,7 @@ DQ
                                                                                             </connections>
                                                                                         </customView>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Qjy-56-fjI">
-                                                                                            <rect key="frame" x="7" y="99" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="97" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Time Zone:" id="htb-Ht-iA8">
                                                                                                 <font key="font" metaFont="system"/>
@@ -506,7 +506,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="JYc-99-MtL">
-                                                                                            <rect key="frame" x="108" y="94" width="252" height="25"/>
+                                                                                            <rect key="frame" x="108" y="92" width="252" height="25"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="MXg-Pz-0Nh">
                                                                                                 <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -518,7 +518,7 @@ DQ
                                                                                             </connections>
                                                                                         </popUpButton>
                                                                                         <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="oIH-sM-vBJ">
-                                                                                            <rect key="frame" x="108" y="66" width="251" height="18"/>
+                                                                                            <rect key="frame" x="108" y="64" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="check" title="Allow LOCAL_DATA_INFILE (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="Ot7-jd-TIL">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -537,7 +537,7 @@ DQ
                                                                                             </connections>
                                                                                         </button>
                                                                                         <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2k2-ul-dtp">
-                                                                                            <rect key="frame" x="108" y="38" width="251" height="18"/>
+                                                                                            <rect key="frame" x="108" y="36" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="check" title="Enable Cleartext plugin (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="mSn-DP-BWp">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -556,7 +556,7 @@ DQ
                                                                                             </connections>
                                                                                         </button>
                                                                                         <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="TCPIP-SSL-001">
-                                                                                            <rect key="frame" x="108" y="10" width="251" height="18"/>
+                                                                                            <rect key="frame" x="108" y="8" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="check" title="Require SSL" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="TCPIP-SSL-002">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1456,7 +1456,7 @@ DQ
                                                                                             </connections>
                                                                                         </customView>
                                                                                         <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="FtV-HG-DIU">
-                                                                                            <rect key="frame" x="108" y="10" width="251" height="18"/>
+                                                                                            <rect key="frame" x="108" y="17" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="check" title="Require SSL" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="w3N-9r-DzN">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1475,7 +1475,7 @@ DQ
                                                                                             </connections>
                                                                                         </button>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="pI7-sy-bsp">
-                                                                                            <rect key="frame" x="7" y="99" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="106" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Time Zone:" id="UEC-JC-iN3">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1484,7 +1484,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5DJ-XN-oYd">
-                                                                                            <rect key="frame" x="108" y="66" width="251" height="18"/>
+                                                                                            <rect key="frame" x="108" y="73" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="check" title="Allow LOCAL_DATA_INFILE (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="FJo-A3-GTr">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1503,7 +1503,7 @@ DQ
                                                                                             </connections>
                                                                                         </button>
                                                                                         <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="9zy-Sk-eFd">
-                                                                                            <rect key="frame" x="108" y="38" width="251" height="18"/>
+                                                                                            <rect key="frame" x="108" y="45" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="check" title="Enable Cleartext plugin (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="Dcr-B7-c20">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1522,7 +1522,7 @@ DQ
                                                                                             </connections>
                                                                                         </button>
                                                                                         <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="XXN-zL-2iW">
-                                                                                            <rect key="frame" x="108" y="94" width="252" height="25"/>
+                                                                                            <rect key="frame" x="108" y="101" width="252" height="25"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="gcf-uF-VQA">
                                                                                                 <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -1886,7 +1886,7 @@ DQ
                                                                                             </connections>
                                                                                         </customView>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-TIMEZONE">
-                                                                                            <rect key="frame" x="7" y="133" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="170" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Time Zone:" id="AWSIAM-LBL-TIMEZONE-CELL">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1895,7 +1895,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-TZ-POP">
-                                                                                            <rect key="frame" x="108" y="128" width="252" height="25"/>
+                                                                                            <rect key="frame" x="108" y="165" width="252" height="25"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="AWSIAM-TZ-CELL">
                                                                                                 <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -1907,7 +1907,7 @@ DQ
                                                                                             </connections>
                                                                                         </popUpButton>
                                                                                         <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-CHK-LDI">
-                                                                                            <rect key="frame" x="108" y="100" width="251" height="18"/>
+                                                                                            <rect key="frame" x="108" y="137" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="check" title="Allow LOCAL_DATA_INFILE (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="AWSIAM-CHK-LDI-CELL">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1926,16 +1926,16 @@ DQ
                                                                                             </connections>
                                                                                         </button>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-AUTO">
-                                                                                            <rect key="frame" x="108" y="60" width="249" height="30"/>
+                                                                                            <rect key="frame" x="108" y="97" width="251" height="30"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                                                            <textFieldCell key="cell" lineBreakMode="wordWrapping" sendsActionOnEndEditing="YES" alignment="left" title="SSL/TLS and cleartext plugin are enabled automatically for AWS IAM connections." id="AWSIAM-LBL-AUTO-CELL">
+                                                                                            <textFieldCell key="cell" lineBreakMode="wordWrapping" sendsActionOnEndEditing="YES" alignment="left" title="SSL/TLS and cleartext plugins are enabled automatically for AWS IAM connections." id="AWSIAM-LBL-AUTO-CELL">
                                                                                                 <font key="font" metaFont="smallSystem"/>
                                                                                                 <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                                                                                                 <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-BTN-AUTH">
-                                                                                            <rect key="frame" x="108" y="220" width="252" height="24"/>
+                                                                                            <rect key="frame" x="108" y="236" width="252" height="24"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="push" title="Authorize Access to ~/.aws…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="AWSIAM-BTN-AUTH-CELL">
                                                                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -1946,7 +1946,7 @@ DQ
                                                                                             </connections>
                                                                                         </button>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-INFO">
-                                                                                            <rect key="frame" x="108" y="178" width="252" height="28"/>
+                                                                                            <rect key="frame" x="108" y="202" width="252" height="28"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" lineBreakMode="wordWrapping" sendsActionOnEndEditing="YES" alignment="left" title="Click the button above to grant access to your AWS credentials folder (~/.aws)." id="AWSIAM-LBL-INFO-CELL">
                                                                                                 <font key="font" metaFont="smallSystem"/>
@@ -1955,7 +1955,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-001">
-                                                                                            <rect key="frame" x="7" y="225" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="241" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="AWS Profile:" id="AWSIAM-LBL-002">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1967,7 +1967,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-POP-001">
-                                                                                            <rect key="frame" x="108" y="220" width="252" height="25"/>
+                                                                                            <rect key="frame" x="108" y="236" width="252" height="25"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                                             <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="AWSIAM-POP-002">
                                                                                                 <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -1985,7 +1985,7 @@ DQ
                                                                                             </connections>
                                                                                         </popUpButton>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-003">
-                                                                                            <rect key="frame" x="7" y="183" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="207" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Region:" id="AWSIAM-LBL-004">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1997,7 +1997,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <comboBox verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-CMB-001">
-                                                                                            <rect key="frame" x="108" y="178" width="252" height="25"/>
+                                                                                            <rect key="frame" x="108" y="202" width="252" height="25"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                                             <comboBoxCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" numberOfVisibleItems="10" id="AWSIAM-CMB-002">
                                                                                                 <font key="font" metaFont="system"/>

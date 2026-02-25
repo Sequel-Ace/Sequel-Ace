@@ -1047,6 +1047,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             break;
         case SPAWSIAMConnection:
             targetResizeRect = [awsIAMConnectionFormContainer frame];
+            // IAM only has one security checkbox and a helper message at the bottom.
+            // Use a smaller footer area to keep its vertical density aligned with the other tabs.
+            additionalFormHeight = 29;
             break;
         case SPSocketConnection:
             targetResizeRect = [socketConnectionFormContainer frame];
@@ -3497,7 +3500,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     }
     // Otherwise, center
     else {
-        connectionDetailsFrame.origin.y = (scrollViewFrame.size.height - connectionDetailsFrame.size.height)/3;
+        // Keep near-centered placement, with a slight upward bias so the details don't appear too low.
+        CGFloat availableVerticalSpace = scrollViewFrame.size.height - connectionDetailsFrame.size.height;
+        connectionDetailsFrame.origin.y = availableVerticalSpace * 0.58f;
         // the division may lead to values that are not valid for the current screen size (e.g. non-integer values on a
         // @1x non-retina screen). The OS works something out when not using layer-backed views, but in the latter
         // case the result will look like garbage if we don't fix this.
