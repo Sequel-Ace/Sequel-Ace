@@ -2,7 +2,7 @@
 # Copyright © 2020 Sequel-Ace. All rights reserved.
 
 source 'https://rubygems.org'
-gem 'fastlane', '~> 2.226'
+gem 'fastlane', '~> 2.232'
 gem 'rake', '~> 13'
 gem 'abbrev'
 gem 'logger'

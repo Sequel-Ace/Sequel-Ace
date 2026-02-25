@@ -3,7 +3,7 @@
 
 # Fastlane Constants
 default_platform :mac
-fastlane_version "2.168.0"
+fastlane_version "2.232.1"
 
 GITHUB_REPO = "Sequel-Ace/Sequel-Ace"
 PROJECT_NAME = "sequel-ace.xcodeproj"
