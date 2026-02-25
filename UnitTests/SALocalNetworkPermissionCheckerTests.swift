@@ -5,7 +5,7 @@
 
 import XCTest
 
-final class SPBundleManagerAdditionsTests: XCTestCase {
+final class SALocalNetworkPermissionCheckerTests: XCTestCase {
 
     func testLocalNetworkPermissionCheckerReturnsFalseForEmptyHost() {
         XCTAssertFalse(
