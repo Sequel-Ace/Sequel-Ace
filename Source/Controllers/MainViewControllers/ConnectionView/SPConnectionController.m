@@ -1066,6 +1066,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     else {
         [connectionResizeContainer setFrame:frameRect];
     }
+
+    // Re-apply scroll layout after every details resize to avoid clipped top rows in small windows.
+    [self scrollViewFrameChanged:nil];
 }
 
 #pragma mark -
@@ -3480,12 +3483,17 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     // Scroll view is smaller than contents - keep positioned at top.
     if (scrollViewFrame.size.height < connectionDetailsFrame.size.height + 10) {
-        if (connectionDetailsFrame.origin.y != 0) {
-            connectionDetailsFrame.origin.y = 0;
-            [connectionResizeContainer setFrame:connectionDetailsFrame];
-            scrollDocumentFrame.size.height = connectionDetailsFrame.size.height + 10;
-            [[connectionDetailsScrollView documentView] setFrame:scrollDocumentFrame];
-        }
+        connectionDetailsFrame.origin.y = 0;
+        [connectionResizeContainer setFrame:connectionDetailsFrame];
+        scrollDocumentFrame.size.height = connectionDetailsFrame.size.height + 10;
+        [[connectionDetailsScrollView documentView] setFrame:scrollDocumentFrame];
+
+        // Keep the visible area pinned to the top of the connection form.
+        NSClipView *clipView = [connectionDetailsScrollView contentView];
+        BOOL documentIsFlipped = [[connectionDetailsScrollView documentView] isFlipped];
+        CGFloat topY = documentIsFlipped ? 0.f : MAX(0.f, NSMaxY(scrollDocumentFrame) - NSHeight([clipView bounds]));
+        [clipView scrollToPoint:NSMakePoint(0.f, topY)];
+        [connectionDetailsScrollView reflectScrolledClipView:clipView];
     }
     // Otherwise, center
     else {
@@ -3699,6 +3707,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             [socketTimeZoneField.menu addItem:[menuItem copy]];
         }
 
+        [connectionDetailsScrollView setPostsFrameChangedNotifications:YES];
+        [[connectionDetailsScrollView contentView] setPostsFrameChangedNotifications:YES];
+
         [self registerForNotifications];
 
         // Hide the main view and position and display the connection view
@@ -3850,7 +3861,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [nc addObserver:self
            selector:@selector(scrollViewFrameChanged:)
                name:NSViewFrameDidChangeNotification
-             object:nil];
+             object:connectionDetailsScrollView];
+    [nc addObserver:self
+           selector:@selector(scrollViewFrameChanged:)
+               name:NSViewFrameDidChangeNotification
+             object:[connectionDetailsScrollView contentView]];
     [nc addObserver:self
            selector:@selector(_processFavoritesDataChange:)
                name:SPConnectionFavoritesChangedNotification

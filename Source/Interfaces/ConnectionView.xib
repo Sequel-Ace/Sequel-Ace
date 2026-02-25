@@ -1715,7 +1715,7 @@ DQ
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
                                                                                 <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-FORM-001">
-                                                                                    <rect key="frame" x="22" y="-4" width="377" height="505"/>
+                                                                                    <rect key="frame" x="22" y="-4" width="377" height="491"/>
                                                                                     <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                     <subviews>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-NAME">
@@ -1886,7 +1886,7 @@ DQ
                                                                                             </connections>
                                                                                         </customView>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-TIMEZONE">
-                                                                                            <rect key="frame" x="7" y="99" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="133" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Time Zone:" id="AWSIAM-LBL-TIMEZONE-CELL">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1895,7 +1895,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-TZ-POP">
-                                                                                            <rect key="frame" x="108" y="94" width="252" height="25"/>
+                                                                                            <rect key="frame" x="108" y="128" width="252" height="25"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="AWSIAM-TZ-CELL">
                                                                                                 <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -1907,7 +1907,7 @@ DQ
                                                                                             </connections>
                                                                                         </popUpButton>
                                                                                         <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-CHK-LDI">
-                                                                                            <rect key="frame" x="108" y="66" width="251" height="18"/>
+                                                                                            <rect key="frame" x="108" y="100" width="251" height="18"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="check" title="Allow LOCAL_DATA_INFILE (insecure)" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="AWSIAM-CHK-LDI-CELL">
                                                                                                 <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1926,7 +1926,7 @@ DQ
                                                                                             </connections>
                                                                                         </button>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-AUTO">
-                                                                                            <rect key="frame" x="108" y="26" width="249" height="30"/>
+                                                                                            <rect key="frame" x="108" y="60" width="249" height="30"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" lineBreakMode="wordWrapping" sendsActionOnEndEditing="YES" alignment="left" title="SSL/TLS and cleartext plugin are enabled automatically for AWS IAM connections." id="AWSIAM-LBL-AUTO-CELL">
                                                                                                 <font key="font" metaFont="smallSystem"/>
@@ -1935,7 +1935,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-BTN-AUTH">
-                                                                                            <rect key="frame" x="108" y="212" width="252" height="24"/>
+                                                                                            <rect key="frame" x="108" y="220" width="252" height="24"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <buttonCell key="cell" type="push" title="Authorize Access to ~/.aws…" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="AWSIAM-BTN-AUTH-CELL">
                                                                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -1946,7 +1946,7 @@ DQ
                                                                                             </connections>
                                                                                         </button>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-INFO">
-                                                                                            <rect key="frame" x="108" y="180" width="252" height="28"/>
+                                                                                            <rect key="frame" x="108" y="178" width="252" height="28"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" lineBreakMode="wordWrapping" sendsActionOnEndEditing="YES" alignment="left" title="Click the button above to grant access to your AWS credentials folder (~/.aws)." id="AWSIAM-LBL-INFO-CELL">
                                                                                                 <font key="font" metaFont="smallSystem"/>
@@ -1955,7 +1955,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-001">
-                                                                                            <rect key="frame" x="7" y="217" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="225" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="AWS Profile:" id="AWSIAM-LBL-002">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1967,7 +1967,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-POP-001">
-                                                                                            <rect key="frame" x="108" y="212" width="252" height="25"/>
+                                                                                            <rect key="frame" x="108" y="220" width="252" height="25"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                                             <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="AWSIAM-POP-002">
                                                                                                 <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -1985,7 +1985,7 @@ DQ
                                                                                             </connections>
                                                                                         </popUpButton>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-003">
-                                                                                            <rect key="frame" x="7" y="185" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="183" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Region:" id="AWSIAM-LBL-004">
                                                                                                 <font key="font" metaFont="system"/>
@@ -1997,7 +1997,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <comboBox verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-CMB-001">
-                                                                                            <rect key="frame" x="108" y="180" width="252" height="25"/>
+                                                                                            <rect key="frame" x="108" y="178" width="252" height="25"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                                             <comboBoxCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" numberOfVisibleItems="10" id="AWSIAM-CMB-002">
                                                                                                 <font key="font" metaFont="system"/>
