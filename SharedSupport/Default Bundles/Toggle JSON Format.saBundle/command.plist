@@ -41,7 +41,7 @@ print $encoder-&gt;encode($decoded);</string>
 	<key>description</key>
 	<string>If the first line of the selection or the entire content of the current text input field only contains a "{" then serialize the JSON data otherwise the JSON data will be pretty printed. This bundle uses Perl's built-in JSON::PP module with UTF-8 decoding and encoding.
 
-Version 2.0</string>
+Version 3.0</string>
 	<key>input</key>
 	<string>selectedtext</string>
 	<key>input_fallback</key>

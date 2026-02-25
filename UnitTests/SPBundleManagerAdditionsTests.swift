@@ -42,4 +42,13 @@ final class SPBundleManagerAdditionsTests: XCTestCase {
             )
         )
     }
+
+    func testShouldNotUpdateDefaultBundleWhenBundledVersionIsMissing() {
+        XCTAssertFalse(
+            SABundleVersionUpdater.shouldUpdateDefaultBundle(
+                installedVersion: NSNumber(value: 3),
+                bundledVersion: nil
+            )
+        )
+    }
 }

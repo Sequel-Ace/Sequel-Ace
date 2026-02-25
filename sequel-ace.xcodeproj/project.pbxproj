@@ -466,7 +466,7 @@
 		FD6DFF872ADB40630057B713 /* SPTableHistoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD6DFF862ADB40630057B713 /* SPTableHistoryManager.swift */; };
 			FD8099A72C59DCFA0084646F /* SAUuidFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */; };
 			FD8099A82C59DDF70084646F /* SAUuidFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD18C8982C3C9B2F002A5D57 /* SAUuidFormatter.swift */; };
-			COLFILT0001 /* SPTableContentColumnFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLFILT0002 /* SPTableContentColumnFilterTests.swift */; };
+			C0F17A1A2B3C4D5E6F708091 /* SPTableContentColumnFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0F17A1A2B3C4D5E6F708092 /* SPTableContentColumnFilterTests.swift */; };
 			6CB1977AAE8D7D64B7593E66 /* SPBundleManagerAdditionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7CAA1A274071383C33F2E4C /* SPBundleManagerAdditionsTests.swift */; };
 			806D36A543D1AAFC5E992B08 /* SABundleVersionUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */; };
 			C812F06F0D4A95968C1B0154 /* SABundleVersionUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */; };
@@ -1214,7 +1214,7 @@
 		FD2056042C3A7E90008DD271 /* SABaseFormatter.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SABaseFormatter.swift; sourceTree = "<group>"; };
 			FD6DFF862ADB40630057B713 /* SPTableHistoryManager.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SPTableHistoryManager.swift; sourceTree = "<group>"; tabWidth = 4; usesTabs = 1; };
 			FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAUuidFormatterTests.swift; sourceTree = "<group>"; };
-			COLFILT0002 /* SPTableContentColumnFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPTableContentColumnFilterTests.swift; sourceTree = "<group>"; };
+			C0F17A1A2B3C4D5E6F708092 /* SPTableContentColumnFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPTableContentColumnFilterTests.swift; sourceTree = "<group>"; };
 			C7CAA1A274071383C33F2E4C /* SPBundleManagerAdditionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPBundleManagerAdditionsTests.swift; sourceTree = "<group>"; };
 			4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SABundleVersionUpdater.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -2318,7 +2318,7 @@
 					8AEACADD4B36D9819ADC93DD /* TableSortHelperTests.swift */,
 					FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */,
 					C7CAA1A274071383C33F2E4C /* SPBundleManagerAdditionsTests.swift */,
-					COLFILT0002 /* SPTableContentColumnFilterTests.swift */,
+					C0F17A1A2B3C4D5E6F708092 /* SPTableContentColumnFilterTests.swift */,
 					F3A4B8C191E14E7094C9A101 /* AWSCredentialsTests.swift */,
 					F3A4B8C191E14E7094C9A102 /* RDSIAMAuthenticationTests.swift */,
 				F3A4B8C191E14E7094C9A103 /* AWSDirectoryBookmarkManagerTests.swift */,
@@ -2948,7 +2948,7 @@
 					F4C0BDAE2E9F4D5E8A1B0110 /* SecureBookmarkManagerStub.swift in Sources */,
 					FD8099A72C59DCFA0084646F /* SAUuidFormatterTests.swift in Sources */,
 					6CB1977AAE8D7D64B7593E66 /* SPBundleManagerAdditionsTests.swift in Sources */,
-					COLFILT0001 /* SPTableContentColumnFilterTests.swift in Sources */,
+					C0F17A1A2B3C4D5E6F708091 /* SPTableContentColumnFilterTests.swift in Sources */,
 					1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */,
 					1AEA768425EF05D500AC4DA6 /* ByteCountFormatterExtension.swift in Sources */,
 				17DB5F441555CA300046834B /* SPMutableArrayAdditions.m in Sources */,

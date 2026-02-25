@@ -18,6 +18,8 @@
 Version 1.0</string>
 	<key>input</key>
 	<string>selectedtablerowsastab</string>
+	<key>isDefaultBundle</key>
+	<true/>
 	<key>keyEquivalent</key>
 	<string></string>
 	<key>name</key>
