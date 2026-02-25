@@ -83,6 +83,7 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 @property (readwrite, assign) BOOL isEditingConnection;
 @property (readwrite, assign) BOOL allowSplitViewResizing;
 @property (readwrite, assign) BOOL errorShowing;
+@property (readwrite, assign) BOOL localNetworkPermissionDeniedForCurrentAttempt;
 
 - (void)_saveCurrentDetailsCreatingNewFavorite:(BOOL)createNewFavorite validateDetails:(BOOL)validateDetails;
 - (void)_sortFavorites;
@@ -119,6 +120,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 - (void)_showConnectionTestResult:(NSString *)resultString;
 - (BOOL)_shouldShowLocalNetworkPermissionAlertForErrorMessage:(NSString *)errorMessage detail:(NSString *)errorDetail;
+- (BOOL)_isLocalNetworkAccessDeniedForCurrentConnectionAttempt;
 - (void)_showLocalNetworkPermissionAlert;
 - (BOOL)_openLocalNetworkPrivacySettings;
 
@@ -297,6 +299,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     // If triggered via the "Test Connection" button, set the state - otherwise clear it
     isTestingConnection = (sender == testConnectButton);
+    self.localNetworkPermissionDeniedForCurrentAttempt = NO;
 
     NSFileManager *fileManager = [NSFileManager defaultManager];
 
@@ -2468,6 +2471,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             }
 
             if (![mySQLConnection isConnected]) {
+                self.localNetworkPermissionDeniedForCurrentAttempt = [self _isLocalNetworkAccessDeniedForCurrentConnectionAttempt];
+
                 if (!cancellingConnection) {
                     NSString *errorMessage;
                     if (sshTunnel && [sshTunnel state] == SPMySQLProxyForwardingFailed) {
@@ -2647,6 +2652,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 {
     SPLog(@"mySQLConnectionEstablished");
     isConnecting = NO;
+    self.localNetworkPermissionDeniedForCurrentAttempt = NO;
 
     // If the user is only testing the connection, kill the connection
     // once established and reset the UI.  Also catch connection cancels.
@@ -2786,7 +2792,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         errorMessage = [errorMessage stringByAppendingString:theErrorMessage];
     }
 
-    BOOL shouldShowLocalNetworkPermissionAlert = [self _shouldShowLocalNetworkPermissionAlertForErrorMessage:theErrorMessage detail:errorDetail];
+    BOOL shouldShowLocalNetworkPermissionAlert = self.localNetworkPermissionDeniedForCurrentAttempt || [self _shouldShowLocalNetworkPermissionAlertForErrorMessage:theErrorMessage detail:errorDetail];
+    self.localNetworkPermissionDeniedForCurrentAttempt = NO;
 
     // Only display the connection error message if there is a window visible
     if ([[dbDocument parentWindowControllerWindow] isVisible]) {
@@ -2867,11 +2874,55 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     return NO;
 }
 
+- (BOOL)_isLocalNetworkAccessDeniedForCurrentConnectionAttempt
+{
+    if (@available(macOS 15.0, *)) {
+        NSUInteger lastErrorID = [mySQLConnection lastErrorID];
+        if (lastErrorID == 1045) return NO; // Access denied credentials error.
+
+        NSString *lastErrorMessage = [[mySQLConnection lastErrorMessage] lowercaseString] ?: @"";
+        BOOL looksLikeNetworkFailure = ([lastErrorMessage rangeOfString:@"can't connect"].location != NSNotFound
+                                        || [lastErrorMessage rangeOfString:@"timed out"].location != NSNotFound
+                                        || [lastErrorMessage rangeOfString:@"no route to host"].location != NSNotFound
+                                        || [lastErrorMessage rangeOfString:@"network is unreachable"].location != NSNotFound);
+
+        if (!looksLikeNetworkFailure && lastErrorID != 2002 && lastErrorID != 2003) return NO;
+
+        NSString *probeHost = nil;
+        NSInteger probePort = 0;
+
+        if ([self type] == SPTCPIPConnection) {
+            probeHost = [self host];
+            probePort = ([[self port] length] ? [[self port] integerValue] : 3306);
+        } else if ([self type] == SPSSHTunnelConnection) {
+            probeHost = [self sshHost];
+            probePort = ([[self sshPort] length] ? [[self sshPort] integerValue] : 22);
+        } else {
+            return NO;
+        }
+
+        probeHost = [probeHost stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        if (![probeHost length]) return NO;
+        if (probePort <= 0) return NO;
+        if ([[probeHost lowercaseString] isEqualToString:@"localhost"] || [probeHost isEqualToString:@"127.0.0.1"] || [probeHost isEqualToString:@"::1"]) return NO;
+
+        return [SALocalNetworkPermissionChecker isLocalNetworkAccessDeniedForHost:probeHost port:probePort timeout:0.75];
+    }
+
+    return NO;
+}
+
 - (void)_showLocalNetworkPermissionAlert
 {
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:NSLocalizedString(@"Local Network Access is Required", @"title for local network privacy alert")];
-    [alert setInformativeText:NSLocalizedString(@"Sequel Ace could not reach the SSH host on your local network. On macOS 15 (Sequoia) and later, this often means Local Network access is disabled for Sequel Ace.\n\nOpen System Settings > Privacy & Security > Local Network and enable Sequel Ace, then try connecting again.", @"informative text for local network privacy alert")];
+    NSString *informativeText = nil;
+    if ([self type] == SPSSHTunnelConnection) {
+        informativeText = NSLocalizedString(@"Sequel Ace could not reach the SSH host on your local network. On macOS 15 (Sequoia) and later, this often means Local Network access is disabled for Sequel Ace.\n\nOpen System Settings > Privacy & Security > Local Network and enable Sequel Ace, then try connecting again.", @"informative text for local network privacy alert (ssh)");
+    } else {
+        informativeText = NSLocalizedString(@"Sequel Ace could not reach the database host on your local network. On macOS 15 (Sequoia) and later, this often means Local Network access is disabled for Sequel Ace.\n\nOpen System Settings > Privacy & Security > Local Network and enable Sequel Ace, then try connecting again.", @"informative text for local network privacy alert (direct)");
+    }
+    [alert setInformativeText:informativeText];
     [alert addButtonWithTitle:NSLocalizedString(@"Open Local Network Settings", @"button title to open local network privacy settings")];
     [alert addButtonWithTitle:NSLocalizedString(@"OK", @"OK button")];
 
