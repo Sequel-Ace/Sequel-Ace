@@ -2737,11 +2737,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     if (newState == SPMySQLProxyIdle) {
         SPLog(@"SPMySQLProxyIdle, failing");
-        BOOL localNetworkPermissionDenied = [self _isLocalNetworkAccessDeniedForCurrentConnectionAttempt];
-        [self _failConnectionWithTitle:NSLocalizedString(@"SSH connection failed!", @"SSH connection failed title")
-                           errorMessage:[theTunnel lastError]
-                                 detail:[sshTunnel debugMessages]
-          localNetworkPermissionDenied:localNetworkPermissionDenied];
+        NSString *tunnelErrorMessage = [[theTunnel lastError] copy];
+        NSString *tunnelDebugMessages = [[sshTunnel debugMessages] copy];
+
+        dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+            BOOL localNetworkPermissionDenied = [self _isLocalNetworkAccessDeniedForCurrentConnectionAttempt];
+            [self _failConnectionWithTitle:NSLocalizedString(@"SSH connection failed!", @"SSH connection failed title")
+                               errorMessage:tunnelErrorMessage
+                                     detail:tunnelDebugMessages
+              localNetworkPermissionDenied:localNetworkPermissionDenied];
+        });
     } else if (newState == SPMySQLProxyConnected) {
         SPLog(@"SPMySQLProxyConnected, calling initiateMySQLConnection");
 

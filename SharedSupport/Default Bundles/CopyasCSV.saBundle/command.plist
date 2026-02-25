@@ -4,6 +4,8 @@
 <dict>
 	<key>author</key>
 	<string>Liviu Tudor</string>
+	<key>bundleVersion</key>
+	<integer>3</integer>
 	<key>category</key>
 	<string>Copy</string>
 	<key>command</key>
@@ -87,6 +89,8 @@ print "\n";
 	<string>Copies the selected rows to clipboard as CSV separating data by semi-colon</string>
 	<key>input</key>
 	<string>selectedtablerowsastab</string>
+	<key>isDefaultBundle</key>
+	<true/>
 	<key>keyEquivalent</key>
 	<string>^c</string>
 	<key>name</key>
@@ -101,9 +105,5 @@ print "\n";
 	<string>none</string>
 	<key>uuid</key>
 	<string>E24C4537-0AAB-4C17-B5F9-C5054CADA77C</string>
-	<key>isDefaultBundle</key>
-	<true/>
-	<key>bundleVersion</key>
-	<integer>2</integer>
 </dict>
 </plist>
