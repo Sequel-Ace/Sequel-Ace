@@ -121,6 +121,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 - (void)_showConnectionTestResult:(NSString *)resultString;
 - (BOOL)_shouldShowLocalNetworkPermissionAlertForErrorMessage:(NSString *)errorMessage detail:(NSString *)errorDetail;
 - (BOOL)_isLocalNetworkAccessDeniedForCurrentConnectionAttempt;
+- (void)_failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail localNetworkPermissionDenied:(BOOL)localNetworkPermissionDenied;
 - (void)_showLocalNetworkPermissionAlert;
 - (BOOL)_openLocalNetworkPrivacySettings;
 
@@ -2471,29 +2472,44 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             }
 
             if (![mySQLConnection isConnected]) {
-                self.localNetworkPermissionDeniedForCurrentAttempt = [self _isLocalNetworkAccessDeniedForCurrentConnectionAttempt];
+                BOOL localNetworkPermissionDenied = [self _isLocalNetworkAccessDeniedForCurrentConnectionAttempt];
 
                 if (!cancellingConnection) {
                     NSString *errorMessage;
                     if (sshTunnel && [sshTunnel state] == SPMySQLProxyForwardingFailed) {
                         errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@", @"message of panel when SSH port forwarding failed"), [self host], [mySQLConnection lastErrorMessage]];
-                        [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH port forwarding failed", @"title when ssh tunnel port forwarding failed") errorMessage:errorMessage detail:[sshTunnel debugMessages]];
+                        [self _failConnectionWithTitle:NSLocalizedString(@"SSH port forwarding failed", @"title when ssh tunnel port forwarding failed")
+                                           errorMessage:errorMessage
+                                                 detail:[sshTunnel debugMessages]
+                          localNetworkPermissionDenied:localNetworkPermissionDenied];
                     }
                     else if ([mySQLConnection lastErrorID] == 1045) { // "Access denied" error
                         errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@", @"message of panel when connection to host failed due to access denied error"), [self host], [mySQLConnection lastErrorMessage]];
-                        [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Access denied!", @"connection failed due to access denied title") errorMessage:errorMessage detail:nil];
+                        [self _failConnectionWithTitle:NSLocalizedString(@"Access denied!", @"connection failed due to access denied title")
+                                           errorMessage:errorMessage
+                                                 detail:nil
+                          localNetworkPermissionDenied:localNetworkPermissionDenied];
                     }
                     else if ([self type] == SPSocketConnection && (![self socket] || ![[self socket] length]) && ![mySQLConnection socketPath]) {
                         errorMessage = [NSString stringWithFormat:NSLocalizedString(@"The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@", @"message of panel when connection to socket failed because optional socket could not be found"), [mySQLConnection lastErrorMessage]];
-                        [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Socket not found!", @"socket not found title") errorMessage:errorMessage detail:nil];
+                        [self _failConnectionWithTitle:NSLocalizedString(@"Socket not found!", @"socket not found title")
+                                           errorMessage:errorMessage
+                                                 detail:nil
+                          localNetworkPermissionDenied:localNetworkPermissionDenied];
                     }
                     else if ([self type] == SPSocketConnection) {
                         errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@", @"message of panel when connection to host failed"), [mySQLConnection lastErrorMessage]];
-                        [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Socket connection failed!", @"socket connection failed title") errorMessage:errorMessage detail:nil];
+                        [self _failConnectionWithTitle:NSLocalizedString(@"Socket connection failed!", @"socket connection failed title")
+                                           errorMessage:errorMessage
+                                                 detail:nil
+                          localNetworkPermissionDenied:localNetworkPermissionDenied];
                     }
                     else {
                         errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\nMySQL said: %@", @"message of panel when connection to host failed"), [self host], (long)[[prefs objectForKey:SPConnectionTimeoutValue] integerValue], [mySQLConnection lastErrorMessage]];
-                        [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Connection failed!", @"connection failed title") errorMessage:errorMessage detail:nil];
+                        [self _failConnectionWithTitle:NSLocalizedString(@"Connection failed!", @"connection failed title")
+                                           errorMessage:errorMessage
+                                                 detail:nil
+                          localNetworkPermissionDenied:localNetworkPermissionDenied];
                     }
                 }
 
@@ -2721,11 +2737,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     if (newState == SPMySQLProxyIdle) {
         SPLog(@"SPMySQLProxyIdle, failing");
-        self.localNetworkPermissionDeniedForCurrentAttempt = [self _isLocalNetworkAccessDeniedForCurrentConnectionAttempt];
-
-        [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"SSH connection failed!", @"SSH connection failed title")
-                                        errorMessage:[theTunnel lastError]
-                                              detail:[sshTunnel debugMessages]];
+        BOOL localNetworkPermissionDenied = [self _isLocalNetworkAccessDeniedForCurrentConnectionAttempt];
+        [self _failConnectionWithTitle:NSLocalizedString(@"SSH connection failed!", @"SSH connection failed title")
+                           errorMessage:[theTunnel lastError]
+                                 detail:[sshTunnel debugMessages]
+          localNetworkPermissionDenied:localNetworkPermissionDenied];
     } else if (newState == SPMySQLProxyConnected) {
         SPLog(@"SPMySQLProxyConnected, calling initiateMySQLConnection");
 
@@ -2752,6 +2768,20 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     // Pass the connection to the table document, allowing it to set
     // up the other classes and the rest of the interface.
     [dbDocument setConnection:mySQLConnection];
+}
+
+- (void)_failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail localNetworkPermissionDenied:(BOOL)localNetworkPermissionDenied
+{
+    void (^presentFailure)(void) = ^{
+        self.localNetworkPermissionDeniedForCurrentAttempt = localNetworkPermissionDenied;
+        [self failConnectionWithTitle:theTitle errorMessage:theErrorMessage detail:errorDetail];
+    };
+
+    if ([NSThread isMainThread]) {
+        presentFailure();
+    } else {
+        dispatch_async(dispatch_get_main_queue(), presentFailure);
+    }
 }
 
 /**
@@ -2880,9 +2910,14 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     if (@available(macOS 15.0, *)) {
         BOOL shouldProbeForLocalNetworkDenial = NO;
 
-        if ([self type] == SPSSHTunnelConnection && sshTunnel && [sshTunnel state] == SPMySQLProxyIdle) {
-            // SSH setup failed before MySQL had a chance to emit a network error.
-            shouldProbeForLocalNetworkDenial = YES;
+        if ([self type] == SPSSHTunnelConnection && sshTunnel) {
+            if ([sshTunnel state] == SPMySQLProxyIdle) {
+                // SSH setup failed before MySQL had a chance to emit a network error.
+                shouldProbeForLocalNetworkDenial = YES;
+            } else if ([sshTunnel state] == SPMySQLProxyConnected) {
+                // SSH is already connected; probing the SSH host cannot indicate local-network denial.
+                return NO;
+            }
         } else {
             NSUInteger lastErrorID = [mySQLConnection lastErrorID];
             if (lastErrorID == 1045) return NO; // Access denied credentials error.

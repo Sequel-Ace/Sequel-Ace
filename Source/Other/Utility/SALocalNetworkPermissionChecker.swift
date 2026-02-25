@@ -25,7 +25,9 @@ import Network
         var didComplete = false
 
         func finish() {
-            if didComplete { return }
+            if didComplete {
+                return
+            }
             didComplete = true
             semaphore.signal()
         }
@@ -48,12 +50,14 @@ import Network
 
         _ = semaphore.wait(timeout: .now() + max(0.1, timeout))
 
-        if connection.currentPath?.unsatisfiedReason == .localNetworkDenied {
-            localNetworkDenied = true
+        queue.sync {
+            if connection.currentPath?.unsatisfiedReason == .localNetworkDenied {
+                localNetworkDenied = true
+            }
+            connection.stateUpdateHandler = nil
+            connection.cancel()
         }
 
-        connection.stateUpdateHandler = nil
-        connection.cancel()
         return localNetworkDenied
     }
 
