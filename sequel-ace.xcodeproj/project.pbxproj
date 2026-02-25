@@ -464,11 +464,14 @@
 		FD18C8992C3C9B2F002A5D57 /* SAUuidFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD18C8982C3C9B2F002A5D57 /* SAUuidFormatter.swift */; };
 		FD2056052C3A7E90008DD271 /* SABaseFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2056042C3A7E90008DD271 /* SABaseFormatter.swift */; };
 		FD6DFF872ADB40630057B713 /* SPTableHistoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD6DFF862ADB40630057B713 /* SPTableHistoryManager.swift */; };
-		FD8099A72C59DCFA0084646F /* SAUuidFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */; };
-		FD8099A82C59DDF70084646F /* SAUuidFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD18C8982C3C9B2F002A5D57 /* SAUuidFormatter.swift */; };
-		COLFILT0001 /* SPTableContentColumnFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLFILT0002 /* SPTableContentColumnFilterTests.swift */; };
-		FD8099A92C59DE1D0084646F /* SABaseFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2056042C3A7E90008DD271 /* SABaseFormatter.swift */; };
-		FDCF55E52788278500D30655 /* TableSortHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */; };
+			FD8099A72C59DCFA0084646F /* SAUuidFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */; };
+			FD8099A82C59DDF70084646F /* SAUuidFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD18C8982C3C9B2F002A5D57 /* SAUuidFormatter.swift */; };
+			C0F17A1A2B3C4D5E6F708091 /* SPTableContentColumnFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0F17A1A2B3C4D5E6F708092 /* SPTableContentColumnFilterTests.swift */; };
+			6CB1977AAE8D7D64B7593E66 /* SPBundleManagerAdditionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7CAA1A274071383C33F2E4C /* SPBundleManagerAdditionsTests.swift */; };
+			806D36A543D1AAFC5E992B08 /* SABundleVersionUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */; };
+			C812F06F0D4A95968C1B0154 /* SABundleVersionUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */; };
+			FD8099A92C59DE1D0084646F /* SABaseFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2056042C3A7E90008DD271 /* SABaseFormatter.swift */; };
+			FDCF55E52788278500D30655 /* TableSortHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1209,9 +1212,11 @@
 		FD0E72EB2C391F44007EF348 /* SQLiteDisplayFormatManager.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SQLiteDisplayFormatManager.swift; sourceTree = "<group>"; };
 		FD18C8982C3C9B2F002A5D57 /* SAUuidFormatter.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SAUuidFormatter.swift; sourceTree = "<group>"; };
 		FD2056042C3A7E90008DD271 /* SABaseFormatter.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SABaseFormatter.swift; sourceTree = "<group>"; };
-		FD6DFF862ADB40630057B713 /* SPTableHistoryManager.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SPTableHistoryManager.swift; sourceTree = "<group>"; tabWidth = 4; usesTabs = 1; };
-		FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAUuidFormatterTests.swift; sourceTree = "<group>"; };
-		COLFILT0002 /* SPTableContentColumnFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPTableContentColumnFilterTests.swift; sourceTree = "<group>"; };
+			FD6DFF862ADB40630057B713 /* SPTableHistoryManager.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SPTableHistoryManager.swift; sourceTree = "<group>"; tabWidth = 4; usesTabs = 1; };
+			FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAUuidFormatterTests.swift; sourceTree = "<group>"; };
+			C0F17A1A2B3C4D5E6F708092 /* SPTableContentColumnFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPTableContentColumnFilterTests.swift; sourceTree = "<group>"; };
+			C7CAA1A274071383C33F2E4C /* SPBundleManagerAdditionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPBundleManagerAdditionsTests.swift; sourceTree = "<group>"; };
+			4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SABundleVersionUpdater.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -2289,15 +2294,16 @@
 				507FF1111BBCC57600104523 /* SPFunctions.m */,
 				5089B0251BE714E300E226CD /* SPIdMenu.h */,
 				5089B0261BE714E300E226CD /* SPIdMenu.m */,
-				50A77DA61E8EB903007466BC /* SPCompatibility.h */,
-				5174122E2573E10C00EB6935 /* SPPrintUtility.h */,
-				5174122F2573E10C00EB6935 /* SPPrintUtility.m */,
-				1A11E4FC25A32789001CB721 /* SPPanelOptions.h */,
-				1A11E50325A327F1001CB721 /* SPPanelOptions.m */,
-			);
-			path = Utility;
-			sourceTree = "<group>";
-		};
+					50A77DA61E8EB903007466BC /* SPCompatibility.h */,
+					5174122E2573E10C00EB6935 /* SPPrintUtility.h */,
+					5174122F2573E10C00EB6935 /* SPPrintUtility.m */,
+					1A11E4FC25A32789001CB721 /* SPPanelOptions.h */,
+					1A11E50325A327F1001CB721 /* SPPanelOptions.m */,
+					4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */,
+				);
+				path = Utility;
+				sourceTree = "<group>";
+			};
 		50D3C3591A771C2300B5429C /* Other */ = {
 			isa = PBXGroup;
 			children = (
@@ -2309,11 +2315,12 @@
 				1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */,
 				1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */,
 				1AE6C1CC25B07E9500880D73 /* SPFunctionsTests.m */,
-				8AEACADD4B36D9819ADC93DD /* TableSortHelperTests.swift */,
-				FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */,
-				COLFILT0002 /* SPTableContentColumnFilterTests.swift */,
-				F3A4B8C191E14E7094C9A101 /* AWSCredentialsTests.swift */,
-				F3A4B8C191E14E7094C9A102 /* RDSIAMAuthenticationTests.swift */,
+					8AEACADD4B36D9819ADC93DD /* TableSortHelperTests.swift */,
+					FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */,
+					C7CAA1A274071383C33F2E4C /* SPBundleManagerAdditionsTests.swift */,
+					C0F17A1A2B3C4D5E6F708092 /* SPTableContentColumnFilterTests.swift */,
+					F3A4B8C191E14E7094C9A101 /* AWSCredentialsTests.swift */,
+					F3A4B8C191E14E7094C9A102 /* RDSIAMAuthenticationTests.swift */,
 				F3A4B8C191E14E7094C9A103 /* AWSDirectoryBookmarkManagerTests.swift */,
 				F4C0BDAE2E9F4D5E8A1B0201 /* SecureBookmarkManagerStub.swift */,
 			);
@@ -2890,10 +2897,11 @@
 				505F568F1BCEE485007467DD /* SPFunctions.m in Sources */,
 				FD8099A82C59DDF70084646F /* SAUuidFormatter.swift in Sources */,
 				502D21F81BA50966000D4CE7 /* SPDataAdditions.m in Sources */,
-				1A9498DE2551776D000BC793 /* DateFormatterExtension.swift in Sources */,
-				51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */,
-				1A8B53A52584650700526DED /* SPURLAdditions.m in Sources */,
-				502D21F61BA50710000D4CE7 /* SPDataAdditionsTests.m in Sources */,
+					1A9498DE2551776D000BC793 /* DateFormatterExtension.swift in Sources */,
+					C812F06F0D4A95968C1B0154 /* SABundleVersionUpdater.swift in Sources */,
+					51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */,
+					1A8B53A52584650700526DED /* SPURLAdditions.m in Sources */,
+					502D21F61BA50710000D4CE7 /* SPDataAdditionsTests.m in Sources */,
 				1A0FA3EE258B758B00486D52 /* SPArrayAdditions.m in Sources */,
 				1A70BC9225EF7EE9004BB992 /* FileManagerExtension.swift in Sources */,
 				1A1667112584D94800A9686E /* SPURLAdditionsTests.m in Sources */,
@@ -2937,11 +2945,12 @@
 				F4C0BDAE2E9F4D5E8A1B0105 /* AWSIAMAuthManager.swift in Sources */,
 				F4C0BDAE2E9F4D5E8A1B0106 /* AWSDirectoryBookmarkManager.swift in Sources */,
 				F4C0BDAE2E9F4D5E8A1B0109 /* OSLog.swift in Sources */,
-				F4C0BDAE2E9F4D5E8A1B0110 /* SecureBookmarkManagerStub.swift in Sources */,
-				FD8099A72C59DCFA0084646F /* SAUuidFormatterTests.swift in Sources */,
-				COLFILT0001 /* SPTableContentColumnFilterTests.swift in Sources */,
-				1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */,
-				1AEA768425EF05D500AC4DA6 /* ByteCountFormatterExtension.swift in Sources */,
+					F4C0BDAE2E9F4D5E8A1B0110 /* SecureBookmarkManagerStub.swift in Sources */,
+					FD8099A72C59DCFA0084646F /* SAUuidFormatterTests.swift in Sources */,
+					6CB1977AAE8D7D64B7593E66 /* SPBundleManagerAdditionsTests.swift in Sources */,
+					C0F17A1A2B3C4D5E6F708091 /* SPTableContentColumnFilterTests.swift in Sources */,
+					1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */,
+					1AEA768425EF05D500AC4DA6 /* ByteCountFormatterExtension.swift in Sources */,
 				17DB5F441555CA300046834B /* SPMutableArrayAdditions.m in Sources */,
 				1717FA401558313A0065C036 /* RegexKitLite.m in Sources */,
 				50D3C35C1A771C4C00B5429C /* SPParserUtilsTest.m in Sources */,
@@ -2998,9 +3007,10 @@
 				58FEF16D0F23D66600518E8E /* SPSQLParser.m in Sources */,
 				1789343C0F30C1DD0097539A /* SPStringAdditions.m in Sources */,
 				1A1EE9582551249C0056FECD /* NumberFormatterExtension.swift in Sources */,
-				1A4CB03425923C4B00EDF804 /* StringRegexExtension.swift in Sources */,
-				58FEF57E0F3B4E9700518E8E /* SPTableData.m in Sources */,
-				58C56EF50F438E120035701E /* SPDataCellFormatter.m in Sources */,
+					1A4CB03425923C4B00EDF804 /* StringRegexExtension.swift in Sources */,
+					806D36A543D1AAFC5E992B08 /* SABundleVersionUpdater.swift in Sources */,
+					58FEF57E0F3B4E9700518E8E /* SPTableData.m in Sources */,
+					58C56EF50F438E120035701E /* SPDataCellFormatter.m in Sources */,
 				1A2711CF2539D9B10066ED58 /* SPReachability.m in Sources */,
 				172A65110F7BED7A001E861A /* SPConsoleMessage.m in Sources */,
 				6F0EA8ED272F33B700514FF1 /* SPBundleManagerAdditions.swift in Sources */,

@@ -5,7 +5,7 @@
 	<key>author</key>
 	<string>Abhi Beckert</string>
 	<key>bundleVersion</key>
-	<integer>2</integer>
+	<integer>3</integer>
 	<key>category</key>
 	<string>Hash</string>
 	<key>command</key>

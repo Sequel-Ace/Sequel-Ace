@@ -4,6 +4,8 @@
 <dict>
 	<key>author</key>
 	<string>Hans-Jörg Bibiko</string>
+	<key>bundleVersion</key>
+	<integer>3</integer>
 	<key>category</key>
 	<string>Copy</string>
 	<key>command</key>
@@ -114,6 +116,8 @@ Version 1.0</string>
 		<key>modifierFlags</key>
 		<integer>262144</integer>
 	</dict>
+	<key>isDefaultBundle</key>
+	<true/>
 	<key>keyEquivalent</key>
 	<string></string>
 	<key>name</key>
@@ -126,9 +130,5 @@ Version 1.0</string>
 	<string>Copies the selected rows excluding any BLOB data JSON formatted into the pasteboard</string>
 	<key>uuid</key>
 	<string>CBB8B7A7-5AB9-4F4C-A404-D99CA9521337</string>
-	<key>isDefaultBundle</key>
-	<true/>
-	<key>bundleVersion</key>
-	<integer>2</integer>
 </dict>
 </plist>
