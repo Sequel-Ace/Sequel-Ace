@@ -20,7 +20,7 @@ Please check out [this page](migrating-from-sequel-pro.html) for info on how to 
 
 **Can I open a Sequel Ace connection via URL (for automation or PAM tools)?**
 
-Yes. Sequel Ace supports `mysql://` URLs including SSH query parameters. See [Open a Connection via URL (`mysql://`)](connect-via-url.html).
+Yes. Sequel Ace supports `mysql://` URLs including Socket, SSH, and AWS IAM query parameters. See [Open a Connection via URL (`mysql://`)](connect-via-url.html).
 
 **I am having trouble connecting to a database. It says: Can't connect to local MySQL server through socket '/tmp/mysql.sock' (2)**
 
