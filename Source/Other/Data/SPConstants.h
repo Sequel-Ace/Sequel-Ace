@@ -57,7 +57,8 @@ typedef NS_ENUM(NSUInteger, SPQueryMode) {
 typedef NS_ENUM(NSUInteger, SPConnectionType) {
 	SPTCPIPConnection     = 0,
 	SPSocketConnection    = 1,
-	SPSSHTunnelConnection = 2
+	SPSSHTunnelConnection = 2,
+	SPAWSIAMConnection    = 3
 };
 
 // Export type constants

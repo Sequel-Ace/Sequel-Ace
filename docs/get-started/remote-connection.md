@@ -14,10 +14,13 @@ This page explains how to connect to a MySQL Server running on a different compu
 
 #### Connection Types For Connecting to a Remote Host
 
-At the moment, Sequel Ace supports two methods for connecting to remote MySQL servers:
+Sequel Ace supports three methods for connecting to remote MySQL servers:
 
 -   **Standard** connection
 -   **SSH** connection
+-   **AWS IAM** connection (Amazon RDS/Aurora)
+
+For AWS IAM setup details, see [What type of connection do I have?](connection-types.html#aws-iam-authentication).
 
 
 ##### Standard Connections

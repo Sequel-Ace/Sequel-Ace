@@ -34,6 +34,7 @@ If the MySQL server is on a different computer as Sequel Ace, it's called a _rem
 
 -   using a **Standard** connection
 -   using a **SSH** connection
+-   using an **AWS IAM** connection
 
 You can use a standard connection if the MySQL server is directly reachable -- e.g. if it is on your local network. If you cannot directly reach your server (e.g. it's behind a firewall), you will have to use a SSH connection. For more details see [Connecting to a MySQL Server on a Remote Host](remote-connection.html "Connecting to a MySQL Server on a Remote Host").
 
@@ -134,14 +135,13 @@ If you're connecting to an **Amazon RDS** or **Aurora** MySQL database, you can 
 
 ##### Setup
 
-1. Select **Standard** connection type
+1. Select **AWS IAM** connection type
 2. Enter your RDS endpoint as the **Host** (e.g., `mydb.123456789012.us-east-1.rds.amazonaws.com`)
 3. Enter your database **Username** (must match the IAM user configured in your database)
-4. Check **Use AWS IAM Authentication**
-5. Click **Authorize Access to ~/.aws...** to grant Sequel Ace access to your AWS credentials folder
-6. Select your **AWS Profile** (e.g., `default`) from the dropdown
-7. Enter or select the **Region** (e.g., `us-east-1`), or leave empty to auto-detect from the hostname
-8. Connect as normal; Sequel Ace generates and uses an IAM token in place of the password
+4. Click **Authorize Access to ~/.aws...** to grant Sequel Ace access to your AWS credentials folder
+5. Select your **AWS Profile** (e.g., `default`) from the dropdown
+6. Enter or select the **Region** (e.g., `us-east-1`), or leave empty to auto-detect from the hostname
+7. Connect as normal; Sequel Ace generates and uses an IAM token in place of the password
 
 ##### How It Works
 
@@ -181,7 +181,7 @@ region = us-east-1
 
 Sequel Ace is a sandboxed application and requires your permission to read the AWS credentials folder. When you first enable AWS IAM Authentication, click the **Authorize Access to ~/.aws...** button and select your `.aws` folder (usually located at `~/.aws` in your home directory). This permission is remembered for future sessions.
 
-> **Note:** AWS IAM Authentication uses SSL/TLS encryption automatically. The SSL checkbox is disabled when IAM authentication is enabled since encryption is always used.
+> **Note:** AWS IAM connections always use SSL/TLS and enable the cleartext plugin automatically.
 
 ##### Network Paths and Tunnels (SSH, SSM, and Custom Setups)
 
@@ -206,9 +206,9 @@ aws ssm start-session \
 
 With the tunnel/session running, connect Sequel Ace to:
 
+- Connection Type: `AWS IAM`
 - Host: `127.0.0.1`
 - Port: `13306` (or your chosen local port)
 - Username: your DB/IAM-enabled username
-- AWS IAM Authentication: enabled (if your DB auth model expects IAM tokens)
 
 This pattern is often the most reliable option for bespoke enterprise networking, private subnets, and zero-trust environments.
