@@ -52,14 +52,17 @@ These query parameters are currently supported:
 - `aws_profile`
 - `aws_region`
 
-If `type=ssh` or `ssh_host` is present, Sequel Ace opens the connection in SSH mode.
-If `ssh_keyLocation` is provided but `ssh_keyLocationEnabled` is not `1`, Sequel Ace still uses password auth.
-If `type=socket` is present, Sequel Ace opens the connection in Socket mode.
-If `socket` is present, Sequel Ace also opens in Socket mode (even when `type` is omitted).
-If `type=aws_iam` is present, Sequel Ace opens the connection in AWS IAM mode.
-If `aws_profile` or `aws_region` is present, Sequel Ace also opens in AWS IAM mode (even when `type` is omitted).
+`type` explicitly sets the connection mode (`tcpip`, `socket`, `ssh`, or `aws_iam`) and takes precedence over inferred mode.
 
-`type=tcpip` forces a standard TCP/IP connection.
+When `type` is omitted, Sequel Ace infers mode in this order:
+
+1. AWS IAM if `aws_profile` or `aws_region` is present
+2. Socket if `socket` is present
+3. SSH if `ssh_host` is present
+4. TCP/IP otherwise
+
+If both `socket` and `ssh_host` are present without `type`, Socket mode is used.
+If `ssh_keyLocation` is provided but `ssh_keyLocationEnabled` is not `1`, Sequel Ace still uses password auth.
 
 Examples:
 

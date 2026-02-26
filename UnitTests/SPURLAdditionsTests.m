@@ -88,6 +88,84 @@
 	XCTAssertEqualObjects(details[@"type"], @"SPAWSIAMConnection");
 }
 
+- (void)testMySQLURLParserDefaultsHostTo127001
+{
+	NSURL *url = [NSURL URLWithString:@"mysql://db_user:db_password@/my_database"];
+	NSMutableDictionary *details = [NSMutableDictionary dictionary];
+	BOOL autoConnect = NO;
+	NSArray<NSString *> *invalidParameters = nil;
+
+	BOOL parsed = SPExtractConnectionDetailsFromMySQLURL(url,
+														 details,
+														 &autoConnect,
+														 &invalidParameters);
+
+	XCTAssertTrue(parsed);
+	XCTAssertTrue(autoConnect);
+	XCTAssertEqual(invalidParameters.count, 0);
+	XCTAssertEqualObjects(details[@"type"], @"SPTCPIPConnection");
+	XCTAssertEqualObjects(details[@"host"], @"127.0.0.1");
+	XCTAssertEqualObjects(details[@"user"], @"db_user");
+	XCTAssertEqualObjects(details[@"password"], @"db_password");
+	XCTAssertEqualObjects(details[@"database"], @"my_database");
+}
+
+- (void)testMySQLURLParserParsesBasicTCPIPURL
+{
+	NSURL *url = [NSURL URLWithString:@"mysql://db_user@db.example.com:3306/my_database"];
+	NSMutableDictionary *details = [NSMutableDictionary dictionary];
+	BOOL autoConnect = NO;
+	NSArray<NSString *> *invalidParameters = nil;
+
+	BOOL parsed = SPExtractConnectionDetailsFromMySQLURL(url,
+														 details,
+														 &autoConnect,
+														 &invalidParameters);
+
+	XCTAssertTrue(parsed);
+	XCTAssertFalse(autoConnect);
+	XCTAssertEqual(invalidParameters.count, 0);
+	XCTAssertEqualObjects(details[@"type"], @"SPTCPIPConnection");
+	XCTAssertEqualObjects(details[@"host"], @"db.example.com");
+	XCTAssertEqualObjects(details[@"port"], @3306);
+	XCTAssertEqualObjects(details[@"user"], @"db_user");
+	XCTAssertEqualObjects(details[@"database"], @"my_database");
+	XCTAssertNil(details[@"password"]);
+}
+
+- (void)testMySQLURLParserEmptyPasswordVsNoPasswordAutoConnect
+{
+	NSURL *emptyPasswordURL = [NSURL URLWithString:@"mysql://db_user:@db.example.com:3306/my_database"];
+	NSMutableDictionary *emptyPasswordDetails = [NSMutableDictionary dictionary];
+	BOOL emptyPasswordAutoConnect = NO;
+	NSArray<NSString *> *emptyPasswordInvalidParameters = nil;
+
+	BOOL emptyPasswordParsed = SPExtractConnectionDetailsFromMySQLURL(emptyPasswordURL,
+																	  emptyPasswordDetails,
+																	  &emptyPasswordAutoConnect,
+																	  &emptyPasswordInvalidParameters);
+
+	XCTAssertTrue(emptyPasswordParsed);
+	XCTAssertTrue(emptyPasswordAutoConnect);
+	XCTAssertEqual(emptyPasswordInvalidParameters.count, 0);
+	XCTAssertEqualObjects(emptyPasswordDetails[@"password"], @"");
+
+	NSURL *noPasswordURL = [NSURL URLWithString:@"mysql://db_user@db.example.com:3306/my_database"];
+	NSMutableDictionary *noPasswordDetails = [NSMutableDictionary dictionary];
+	BOOL noPasswordAutoConnect = NO;
+	NSArray<NSString *> *noPasswordInvalidParameters = nil;
+
+	BOOL noPasswordParsed = SPExtractConnectionDetailsFromMySQLURL(noPasswordURL,
+																   noPasswordDetails,
+																   &noPasswordAutoConnect,
+																   &noPasswordInvalidParameters);
+
+	XCTAssertTrue(noPasswordParsed);
+	XCTAssertFalse(noPasswordAutoConnect);
+	XCTAssertEqual(noPasswordInvalidParameters.count, 0);
+	XCTAssertNil(noPasswordDetails[@"password"]);
+}
+
 - (void)testMySQLURLParserSupportsExplicitSocketType
 {
 	NSURL *url = [NSURL URLWithString:@"mysql://root@localhost/my_database?type=socket&socket=%2Ftmp%2Fmysql.sock"];
@@ -125,6 +203,44 @@
 	XCTAssertEqual(invalidParameters.count, 0);
 	XCTAssertEqualObjects(details[@"type"], @"SPSocketConnection");
 	XCTAssertEqualObjects(details[@"socket"], @"/Users/jason/Library/Containers/com.sequel-ace.sequel-ace/Data/mysql.sock");
+}
+
+- (void)testMySQLURLParserPrefersSocketTypeWhenSocketAndSSHIndicatorsAreBothPresent
+{
+	NSURL *url = [NSURL URLWithString:@"mysql://db_user@localhost/my_database?socket=%2Ftmp%2Fmysql.sock&ssh_host=ssh.example.com"];
+	NSMutableDictionary *details = [NSMutableDictionary dictionary];
+	BOOL autoConnect = NO;
+	NSArray<NSString *> *invalidParameters = nil;
+
+	BOOL parsed = SPExtractConnectionDetailsFromMySQLURL(url,
+														 details,
+														 &autoConnect,
+														 &invalidParameters);
+
+	XCTAssertTrue(parsed);
+	XCTAssertFalse(autoConnect);
+	XCTAssertEqual(invalidParameters.count, 0);
+	XCTAssertEqualObjects(details[@"type"], @"SPSocketConnection");
+	XCTAssertEqualObjects(details[@"socket"], @"/tmp/mysql.sock");
+	XCTAssertEqualObjects(details[@"ssh_host"], @"ssh.example.com");
+}
+
+- (void)testMySQLURLParserDecodesQueryValuesOnlyOnce
+{
+	NSURL *url = [NSURL URLWithString:@"mysql://db_user@db.example.com/my_database?type=aws_iam&aws_profile=default%2525profile"];
+	NSMutableDictionary *details = [NSMutableDictionary dictionary];
+	BOOL autoConnect = NO;
+	NSArray<NSString *> *invalidParameters = nil;
+
+	BOOL parsed = SPExtractConnectionDetailsFromMySQLURL(url,
+														 details,
+														 &autoConnect,
+														 &invalidParameters);
+
+	XCTAssertTrue(parsed);
+	XCTAssertEqual(invalidParameters.count, 0);
+	XCTAssertEqualObjects(details[@"type"], @"SPAWSIAMConnection");
+	XCTAssertEqualObjects(details[@"aws_profile"], @"default%25profile");
 }
 
 - (void)testMySQLURLParserRejectsInvalidConnectionTypeParameter

@@ -301,8 +301,6 @@ BOOL SPExtractConnectionDetailsFromMySQLURL(NSURL *url, NSMutableDictionary *det
 			}
 
 			NSString *decodedValue = queryItem.value ?: @"";
-			NSString *unescapedValue = [decodedValue stringByRemovingPercentEncoding];
-			if (unescapedValue) decodedValue = unescapedValue;
 
 			if ([queryItem.name isEqualToString:@"type"]) {
 				requestedType = [[decodedValue lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
@@ -340,11 +338,11 @@ BOOL SPExtractConnectionDetailsFromMySQLURL(NSURL *url, NSMutableDictionary *det
 	else if (hasAWSIAMIndicators) {
 		[details setObject:@"SPAWSIAMConnection" forKey:@"type"];
 	}
-	else if ([details objectForKey:@"ssh_host"]) {
-		[details setObject:@"SPSSHTunnelConnection" forKey:@"type"];
-	}
 	else if (hasSocketIndicators) {
 		[details setObject:@"SPSocketConnection" forKey:@"type"];
+	}
+	else if ([details objectForKey:@"ssh_host"]) {
+		[details setObject:@"SPSSHTunnelConnection" forKey:@"type"];
 	}
 	else {
 		[details setObject:@"SPTCPIPConnection" forKey:@"type"];
