@@ -7,6 +7,9 @@ Sequel Ace is a fast, easy-to-use Mac database management application for workin
 
 If you would like to sponsor Sequel Ace, please check out our [Open Collective](https://opencollective.com/sequel-ace) or sponsor one of our maintainers via GitHub Sponsors!
 
+<img width="1440" height="900" alt="1" src="https://github.com/user-attachments/assets/1ed88ef5-c89d-4dca-95d5-0a567aa1409b" />
+
+
 ## Compatibility
 
 - **macOS:** >= 12.0
