@@ -28,17 +28,52 @@ entries_file="$(mktemp -t sequel-ace-changelog-entries)"
 trap 'rm -f "${temp_file}" "${clean_changelog_file}" "${entries_file}"' EXIT
 
 find_last_release_ref() {
-  local release_ref
-  release_ref="$(git describe --match "production/*" --tags --abbrev=0 2>/dev/null || true)"
+  local stable_tags release_ref
+  local latest_stable_tag="" latest_stable_version="" latest_stable_build=0
+  local latest_prior_tag="" latest_prior_version="" latest_prior_build=0
 
-  if [[ -z "${release_ref}" ]] && git remote get-url origin >/dev/null 2>&1; then
+  stable_tags="$(git tag --merged "${RANGE_END}" --list "production/*" 2>/dev/null || true)"
+  if [[ -z "${stable_tags}" ]] && git remote get-url origin >/dev/null 2>&1; then
     # Release runners can start from clones without tags; fetch tags and retry.
     git fetch --tags --quiet origin >/dev/null 2>&1 || true
-    release_ref="$(git describe --match "production/*" --tags --abbrev=0 2>/dev/null || true)"
+    stable_tags="$(git tag --merged "${RANGE_END}" --list "production/*" 2>/dev/null || true)"
   fi
 
-  if [[ -n "${release_ref}" ]]; then
-    printf '%s' "${release_ref}"
+  while IFS= read -r tag; do
+    local version build
+    [[ -z "${tag}" ]] && continue
+
+    # Stable production tags are expected as production/<semver>-<build>.
+    # Ignore pre-release tags and any malformed tags.
+    if [[ "${tag}" =~ ^production/([0-9]+\.[0-9]+\.[0-9]+)-([0-9]+)$ ]]; then
+      version="${BASH_REMATCH[1]}"
+      build="${BASH_REMATCH[2]}"
+
+      if [[ -z "${latest_stable_tag}" ]] || version_gt "${version}" "${latest_stable_version}" || { [[ "${version}" == "${latest_stable_version}" ]] && (( build > latest_stable_build )); }; then
+        latest_stable_tag="${tag}"
+        latest_stable_version="${version}"
+        latest_stable_build="${build}"
+      fi
+
+      # Use the latest stable release *before* CURRENT_VERSION so reruns
+      # for the same version remain idempotent.
+      if version_lt "${version}" "${CURRENT_VERSION}"; then
+        if [[ -z "${latest_prior_tag}" ]] || version_gt "${version}" "${latest_prior_version}" || { [[ "${version}" == "${latest_prior_version}" ]] && (( build > latest_prior_build )); }; then
+          latest_prior_tag="${tag}"
+          latest_prior_version="${version}"
+          latest_prior_build="${build}"
+        fi
+      fi
+    fi
+  done <<< "${stable_tags}"
+
+  if [[ -n "${latest_prior_tag}" ]]; then
+    printf '%s' "${latest_prior_tag}"
+    return
+  fi
+
+  if [[ -n "${latest_stable_tag}" ]]; then
+    printf '%s' "${latest_stable_tag}"
     return
   fi
 
@@ -58,6 +93,18 @@ ensure_ref_exists() {
     echo "Unknown git ref: ${ref}" >&2
     exit 1
   fi
+}
+
+version_lt() {
+  local left="$1"
+  local right="$2"
+  [[ "${left}" != "${right}" ]] && [[ "$(printf '%s\n%s\n' "${left}" "${right}" | sort -V | head -n 1)" == "${left}" ]]
+}
+
+version_gt() {
+  local left="$1"
+  local right="$2"
+  version_lt "${right}" "${left}"
 }
 
 release_link() {
