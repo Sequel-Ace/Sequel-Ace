@@ -1,11 +1,13 @@
 ## [5.2.0](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%225.2.0+%28*%29%22&expanded=true)
 
 ### Added
+- Add support for mysql urls for sockets and iam connections ([7cc618829](https://github.com/Sequel-Ace/Sequel-Ace/commit/7cc6188298aea86f2a80841a810488ac5b821ada), [#2355](https://github.com/Sequel-Ace/Sequel-Ace/pull/2355))
 - Add MySQL 8 fallback for optimized field type ([a91c54cdc](https://github.com/Sequel-Ace/Sequel-Ace/commit/a91c54cdcf99299f77f55c0b669d2e6f2e78a8d0), [#2345](https://github.com/Sequel-Ace/Sequel-Ace/pull/2345))
 - Add support for authenticating via AWS IAM to RDS - building on top of work by ostark ([c8f8989eb](https://github.com/Sequel-Ace/Sequel-Ace/commit/c8f8989eb5b2488c4bb5ad4d50523c8f1251ffca), [#2346](https://github.com/Sequel-Ace/Sequel-Ace/pull/2346))
 - Add minimal agents.md ([9c1ec8e02](https://github.com/Sequel-Ace/Sequel-Ace/commit/9c1ec8e0245234d72fe3651df84a002165cf3407))
 
 ### Fixed
+- Fix default bundle migration and bump built-in bundle versions ([38a093ad3](https://github.com/Sequel-Ace/Sequel-Ace/commit/38a093ad3c72aec00990513571aaa1243f858837), [#2351](https://github.com/Sequel-Ace/Sequel-Ace/pull/2351))
 - Fix process-list copy/save regression from missing serializer bridge ([6ca28f8b6](https://github.com/Sequel-Ace/Sequel-Ace/commit/6ca28f8b6ab623fc619962f657059c764efac695), [#2349](https://github.com/Sequel-Ace/Sequel-Ace/pull/2349))
 - Fix repeated modal loop for failing view metadata/status loads ([2728c07bb](https://github.com/Sequel-Ace/Sequel-Ace/commit/2728c07bb33821821a9fae2a240d88c31b7ba1a9), [#2342](https://github.com/Sequel-Ace/Sequel-Ace/pull/2342))
 - Fix Copy as SQL INSERT quoting for numeric fields ([6cc9f24ea](https://github.com/Sequel-Ace/Sequel-Ace/commit/6cc9f24ea8a9753d9c357165e4d6ea8edc2ba116), [#2337](https://github.com/Sequel-Ace/Sequel-Ace/pull/2337))
@@ -17,9 +19,12 @@
 - Fix pinned table leakage across different connections ([59f7df047](https://github.com/Sequel-Ace/Sequel-Ace/commit/59f7df0477bb9be4d991b63c12abff342ce02e72), [#2334](https://github.com/Sequel-Ace/Sequel-Ace/pull/2334))
 
 ### Changed
-- Changelog updates ([5a4849755](https://github.com/Sequel-Ace/Sequel-Ace/commit/5a48497557a1277e074f4569f86b428620680028))
-- Increment build version ([c902c0613](https://github.com/Sequel-Ace/Sequel-Ace/commit/c902c061361a27f2a8b202e241b4d66ea1df6ef6))
-- Increment app patch version ([09450444f](https://github.com/Sequel-Ace/Sequel-Ace/commit/09450444fae28e214b50e99277cde40b9b35883b))
+- Changelog updates ([156238e3b](https://github.com/Sequel-Ace/Sequel-Ace/commit/156238e3bd7bc25a5b74f9654c79fafd07bdc27f))
+- Increment build version ([b5cf17e46](https://github.com/Sequel-Ace/Sequel-Ace/commit/b5cf17e46cedf27f9d45a29ec057b575662fbd0a))
+- Revamp AWS IAM Auth to a tier 1 auth type ([538f14034](https://github.com/Sequel-Ace/Sequel-Ace/commit/538f140349daae2bab8c0f0a35d1e88181e3476c), [#2353](https://github.com/Sequel-Ace/Sequel-Ace/pull/2353))
+- Detect local network privacy denial via Network.framework ([58c6a5258](https://github.com/Sequel-Ace/Sequel-Ace/commit/58c6a5258829c43a85c6336a423600c343ff27c5), [#2352](https://github.com/Sequel-Ace/Sequel-Ace/pull/2352))
+- Increment build version ([75affcdc9](https://github.com/Sequel-Ace/Sequel-Ace/commit/75affcdc9676b97e5a4386e310fdff36f21620a9))
+- Prepare release ([290884067](https://github.com/Sequel-Ace/Sequel-Ace/commit/29088406730b0779451016932d8968c5583bc8cd), [#2350](https://github.com/Sequel-Ace/Sequel-Ace/pull/2350))
 - Detect Local Network permission denial for SSH no-route failures ([4eff50bc7](https://github.com/Sequel-Ace/Sequel-Ace/commit/4eff50bc7608f1e5d9267e822d309868a32653f6), [#2347](https://github.com/Sequel-Ace/Sequel-Ace/pull/2347))
 - Expand socket workaround documentation (Issue #113) ([9ce397dff](https://github.com/Sequel-Ace/Sequel-Ace/commit/9ce397dffcb17b23b6fce171b4480e6c93b3de93), [#2339](https://github.com/Sequel-Ace/Sequel-Ace/pull/2339))
 - Rewrite default bundles to avoid removed macOS interpreters ([e4496f011](https://github.com/Sequel-Ace/Sequel-Ace/commit/e4496f011a5c681d63207ee0c3dd0c3acea13644), [#2338](https://github.com/Sequel-Ace/Sequel-Ace/pull/2338))
@@ -29,10 +34,9 @@
 - feat: Improve auto-completion with table prioritization and horizontal scrolling ([7ec6d3c45](https://github.com/Sequel-Ace/Sequel-Ace/commit/7ec6d3c45decc40f5813b1391a00d3b4d0e21881), [#2320](https://github.com/Sequel-Ace/Sequel-Ace/pull/2320))
 
 ### Removed
-
+- Delete temp file ([afa18ee06](https://github.com/Sequel-Ace/Sequel-Ace/commit/afa18ee06b5c2541b183400a471ae36f382e5c12))
 
 ### Infra
-- Bump to 5.2.0 ([2b33386f5](https://github.com/Sequel-Ace/Sequel-Ace/commit/2b33386f5425e3fe868600061295c3b9a4a5acd0))
 - Document mysql:// connection URLs and improve discoverability ([545ae538d](https://github.com/Sequel-Ace/Sequel-Ace/commit/545ae538d61e86a9c33f1ab1b2db3d1e14c429f6), [#2341](https://github.com/Sequel-Ace/Sequel-Ace/pull/2341))
 - Bump nokogiri from 1.18.9 to 1.19.1 in /docs ([add5d407b](https://github.com/Sequel-Ace/Sequel-Ace/commit/add5d407bb11fd8770fe26dad1053a7668383cbf), [#2330](https://github.com/Sequel-Ace/Sequel-Ace/pull/2330))
 - Bump faraday from 1.10.4 to 1.10.5 ([03794198a](https://github.com/Sequel-Ace/Sequel-Ace/commit/03794198aa694819b8c7968588dd10a4f42fd94a), [#2328](https://github.com/Sequel-Ace/Sequel-Ace/pull/2328))
