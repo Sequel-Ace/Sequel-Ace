@@ -920,71 +920,31 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 }
 
 - (void)handleMySQLConnectWithURL:(NSURL *)url {
-    if(![[url scheme] isEqualToString:@"mysql"]) {
-        SPLog(@"unsupported url scheme: %@",url);
+    NSMutableDictionary *details = [NSMutableDictionary dictionary];
+    BOOL connect = NO;
+    NSArray<NSString *> *invalidParameters = nil;
+    BOOL parsed = SPExtractConnectionDetailsFromMySQLURL(url, details, &connect, &invalidParameters);
+
+    if (!parsed) {
+        if ([invalidParameters count] > 0) {
+            NSArray<NSString *> *validParameters = SPValidMySQLConnectionURLQueryParameters();
+            NSBeep();
+            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"sequelace URL Scheme Error", @"sequelace url Scheme Error")
+                                         message:[NSString stringWithFormat:@"%@:\n\n%@: %@\n\n%@: %@",
+                                                  NSLocalizedString(@"Error for", @"error for message"),
+                                                  NSLocalizedString(@"Invalid query parameters given", @"Invalid query parameters given"),
+                                                  [invalidParameters componentsJoinedByString:@", "],
+                                                  NSLocalizedString(@"Allowed query parameters are", @"Allowed query parameters are"),
+                                                  [validParameters componentsJoinedByString:@", "]]
+                                        callback:nil];
+        } else {
+            SPLog(@"unsupported url scheme: %@", url);
+        }
         return;
     }
 
-    NSMutableDictionary *details = [NSMutableDictionary dictionary];
-
-    NSValue *connect = @NO;
-
-    if ([url query]) {
-        NSArray *valid = @[@"ssh_host", @"ssh_port", @"ssh_user", @"ssh_password", @"ssh_keyLocation", @"ssh_keyLocationEnabled"];
-        NSMutableArray *invalid = [NSMutableArray array];
-        NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
-        for (NSURLQueryItem *queryItem in [components queryItems]) {
-            if ([valid containsObject:queryItem.name]) {
-                NSString *decodedQueryItem = [queryItem.value stringByRemovingPercentEncoding];
-                [details setObject:decodedQueryItem forKey:queryItem.name];
-            }
-            else {
-                [invalid addObject:queryItem.name];
-            }
-        }
-        if ([invalid count] > 0) {
-            NSBeep();
-            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"sequelace URL Scheme Error", @"sequelace url Scheme Error") message:[NSString stringWithFormat:@"%@:\n\n%@: %@\n\n%@: %@", NSLocalizedString(@"Error for", @"error for message"), NSLocalizedString(@"Invalid query parameters given", @"Invalid query parameters given"), [invalid componentsJoinedByString:@", "], NSLocalizedString(@"Allowed query parameters are", @"Allowed query parameters are"), [valid componentsJoinedByString:@", "]] callback:nil];
-            return;
-        }
-    }
-
-    if ([details objectForKey:@"ssh_host"]) {
-        [details setObject:@"SPSSHTunnelConnection" forKey:@"type"];
-    }
-    else {
-        [details setObject:@"SPTCPIPConnection" forKey:@"type"];
-    }
-
-    if ([url port]) {
-        [details setObject:[url port] forKey:@"port"];
-    }
-
-    if ([url user]) {
-        NSString *decodedUser = [[url user] stringByRemovingPercentEncoding];
-        [details setObject:decodedUser forKey:@"user"];
-    }
-
-    if ([url password]) {
-        NSString *decodedPassword = [[url password] stringByRemovingPercentEncoding];
-        [details setObject:decodedPassword forKey:@"password"];
-        connect = @YES;
-    }
-
-    if ([[url host] length]) {
-        NSString *decodedHost = [[url host] stringByRemovingPercentEncoding];
-        [details setObject:decodedHost forKey:@"host"];
-    } else {
-        [details setObject:@"127.0.0.1" forKey:@"host"];
-    }
-
-    NSArray *pc = [url pathComponents];
-    if ([pc count] > 1) { // first object is "/"
-        [details setObject:[pc objectAtIndex:1] forKey:@"database"];
-    }
-
     SPWindowController *windowController = [self.tabManager newWindowForWindow];
-    [windowController.databaseDocument setState:@{@"connection":details,@"auto_connect": connect} fromFile:NO];
+    [windowController.databaseDocument setState:@{@"connection":details,@"auto_connect": @(connect)} fromFile:NO];
 }
 
 - (void)handleEventWithURL:(NSURL*)url

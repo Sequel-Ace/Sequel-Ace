@@ -34,6 +34,25 @@
 #import <arpa/inet.h>
 #import <netinet/in.h>
 
+NSArray<NSString *> *SPValidMySQLConnectionURLQueryParameters(void)
+{
+	return @[@"ssh_host",
+	         @"ssh_port",
+	         @"ssh_user",
+	         @"ssh_password",
+	         @"ssh_keyLocation",
+	         @"ssh_keyLocationEnabled",
+	         @"socket",
+	         @"aws_profile",
+	         @"aws_region",
+	         @"type"];
+}
+
+static NSSet<NSString *> *SPValidMySQLConnectionURLTypes(void)
+{
+	return [NSSet setWithArray:@[@"tcpip", @"socket", @"ssh", @"aws_iam"]];
+}
+
 void SPMainQSync(SAVoidCompletionBlock block)
 {
 	static dispatch_once_t onceToken;
@@ -258,6 +277,109 @@ BOOL SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(NSString *errorMessage, NS
     if (![trimmedSSHHost length]) return NO;
 
     return SPIsLikelyLocalNetworkHost(trimmedSSHHost);
+}
+
+BOOL SPExtractConnectionDetailsFromMySQLURL(NSURL *url, NSMutableDictionary *details, BOOL *autoConnect, NSArray<NSString *> **invalidParameters)
+{
+	if (autoConnect) *autoConnect = NO;
+	if (invalidParameters) *invalidParameters = @[];
+
+	if (!url || ![[url scheme] isEqualToString:@"mysql"] || !details) return NO;
+
+	NSString *requestedType = nil;
+	NSSet<NSString *> *validParameterSet = [NSSet setWithArray:SPValidMySQLConnectionURLQueryParameters()];
+	NSMutableArray<NSString *> *invalid = [NSMutableArray array];
+
+	if ([url query]) {
+		NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
+		for (NSURLQueryItem *queryItem in [components queryItems]) {
+			if (![queryItem.name length]) continue;
+
+			if (![validParameterSet containsObject:queryItem.name]) {
+				[invalid addObject:queryItem.name];
+				continue;
+			}
+
+			NSString *decodedValue = queryItem.value ?: @"";
+
+			if ([queryItem.name isEqualToString:@"type"]) {
+				requestedType = [[decodedValue lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+				continue;
+			}
+
+			[details setObject:decodedValue forKey:queryItem.name];
+		}
+	}
+
+	if ([requestedType length] && ![SPValidMySQLConnectionURLTypes() containsObject:requestedType]) {
+		[invalid addObject:@"type"];
+	}
+
+	if ([invalid count] > 0) {
+		if (invalidParameters) *invalidParameters = [invalid copy];
+		return NO;
+	}
+
+	BOOL hasAWSIAMIndicators = ([[details objectForKey:@"aws_profile"] length]
+								|| [[details objectForKey:@"aws_region"] length]
+								|| [requestedType isEqualToString:@"aws_iam"]);
+	BOOL hasSocketIndicators = ([[details objectForKey:@"socket"] length]
+								|| [requestedType isEqualToString:@"socket"]);
+
+	if ([requestedType isEqualToString:@"socket"]) {
+		[details setObject:@"SPSocketConnection" forKey:@"type"];
+	}
+	else if ([requestedType isEqualToString:@"ssh"]) {
+		[details setObject:@"SPSSHTunnelConnection" forKey:@"type"];
+	}
+	else if ([requestedType isEqualToString:@"tcpip"]) {
+		[details setObject:@"SPTCPIPConnection" forKey:@"type"];
+	}
+	else if (hasAWSIAMIndicators) {
+		[details setObject:@"SPAWSIAMConnection" forKey:@"type"];
+	}
+	else if (hasSocketIndicators) {
+		[details setObject:@"SPSocketConnection" forKey:@"type"];
+	}
+	else if ([details objectForKey:@"ssh_host"]) {
+		[details setObject:@"SPSSHTunnelConnection" forKey:@"type"];
+	}
+	else {
+		[details setObject:@"SPTCPIPConnection" forKey:@"type"];
+	}
+
+	if ([url port]) {
+		[details setObject:[url port] forKey:@"port"];
+	}
+
+	if ([url user]) {
+		NSString *decodedUser = [[url user] stringByRemovingPercentEncoding];
+		[details setObject:(decodedUser ?: [url user]) forKey:@"user"];
+	}
+
+	if ([url password]) {
+		NSString *decodedPassword = [[url password] stringByRemovingPercentEncoding];
+		[details setObject:(decodedPassword ?: [url password]) forKey:@"password"];
+		if (autoConnect) *autoConnect = YES;
+	}
+
+	if ([[url host] length]) {
+		NSString *decodedHost = [[url host] stringByRemovingPercentEncoding];
+		[details setObject:(decodedHost ?: [url host]) forKey:@"host"];
+	}
+	else {
+		[details setObject:@"127.0.0.1" forKey:@"host"];
+	}
+
+	NSArray *pathComponents = [url pathComponents];
+	if ([pathComponents count] > 1) { // first object is "/"
+		NSString *database = [pathComponents objectAtIndex:1];
+		NSString *decodedDatabase = [database stringByRemovingPercentEncoding];
+		if (decodedDatabase) database = decodedDatabase;
+		if ([database length]) [details setObject:database forKey:@"database"];
+	}
+
+	return YES;
 }
 
 void SP_swizzleInstanceMethod(Class c, SEL original, SEL replacement)

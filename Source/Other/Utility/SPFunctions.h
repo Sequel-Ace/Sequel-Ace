@@ -91,6 +91,22 @@ BOOL SPIsLikelyLocalNetworkHost(NSString *host);
  */
 BOOL SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(NSString *errorMessage, NSString *debugDetail, NSString *sshHost);
 
+/**
+ * Returns the supported query parameters for mysql:// connection URLs.
+ */
+NSArray<NSString *> *SPValidMySQLConnectionURLQueryParameters(void);
+
+/**
+ * Parse mysql:// URL connection details into the supplied dictionary.
+ *
+ * @param url The URL to parse.
+ * @param details Mutable dictionary to receive parsed values (type, host, user, etc).
+ * @param autoConnect Set to YES when URL parsing implies immediate connect behavior.
+ * @param invalidParameters Set to unsupported/invalid query parameter names when parsing fails.
+ * @return YES when parsing succeeds; NO for unsupported scheme or invalid query parameters.
+ */
+BOOL SPExtractConnectionDetailsFromMySQLURL(NSURL *url, NSMutableDictionary *details, BOOL *autoConnect, NSArray<NSString *> **invalidParameters);
+
 void SP_swizzleInstanceMethod(Class c, SEL original, SEL replacement);
 
 id DumpObjCMethods(Class clz);

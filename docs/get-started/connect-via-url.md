@@ -41,14 +41,27 @@ open 'mysql://root:secret@/my_database'
 
 These query parameters are currently supported:
 
+- `type` (`tcpip`, `socket`, `ssh`, or `aws_iam`)
 - `ssh_host`
 - `ssh_port`
 - `ssh_user`
 - `ssh_password`
 - `ssh_keyLocation`
 - `ssh_keyLocationEnabled` (set to `1` to enable key-based auth; `0` or omission keeps password auth)
+- `socket`
+- `aws_profile`
+- `aws_region`
 
-If `ssh_host` is present, Sequel Ace opens the connection in SSH mode.
+`type` explicitly sets the connection mode (`tcpip`, `socket`, `ssh`, or `aws_iam`) and takes precedence over inferred mode.
+
+When `type` is omitted, Sequel Ace infers mode in this order:
+
+1. AWS IAM if `aws_profile` or `aws_region` is present
+2. Socket if `socket` is present
+3. SSH if `ssh_host` is present
+4. TCP/IP otherwise
+
+If both `socket` and `ssh_host` are present without `type`, Socket mode is used.
 If `ssh_keyLocation` is provided but `ssh_keyLocationEnabled` is not `1`, Sequel Ace still uses password auth.
 
 Examples:
@@ -62,6 +75,18 @@ open 'mysql://db_user:db_password@127.0.0.1:3306/my_database?ssh_host=ssh.exampl
 
 # `ssh_keyLocation` without enabling key auth still uses password auth
 open 'mysql://db_user:db_password@127.0.0.1:3306/my_database?ssh_host=ssh.example.com&ssh_port=22&ssh_user=ssh_user&ssh_keyLocation=%2FUsers%2Fyou%2F.ssh%2Fid_rsa&ssh_keyLocationEnabled=0'
+
+# Socket connection (explicit type)
+open 'mysql://root@localhost/my_database?type=socket&socket=%2FUsers%2Fyou%2FLibrary%2FContainers%2Fcom.sequel-ace.sequel-ace%2FData%2Fmysql.sock'
+
+# Socket connection (type inferred from socket query parameter)
+open 'mysql://root@localhost/my_database?socket=%2FUsers%2Fyou%2FLibrary%2FContainers%2Fcom.sequel-ace.sequel-ace%2FData%2Fmysql.sock'
+
+# AWS IAM connection (explicit type)
+open 'mysql://db_user@mydb.cluster-abcdefghijkl.us-east-1.rds.amazonaws.com:3306/my_database?type=aws_iam&aws_profile=default&aws_region=us-east-1'
+
+# AWS IAM connection (type inferred from AWS parameters)
+open 'mysql://db_user@mydb.cluster-abcdefghijkl.us-east-1.rds.amazonaws.com:3306/my_database?aws_profile=default'
 ```
 
 If any unsupported query parameter is included, Sequel Ace shows an error and does not process that URL.
@@ -71,8 +96,8 @@ If any unsupported query parameter is included, Sequel Ace shows an error and do
 - URL values should be percent-encoded when they contain special characters (`@`, `:`, `/`, `?`, `&`, spaces, etc.).
 - If no host is provided, Sequel Ace uses `127.0.0.1`.
 - The first path segment is treated as the database name.
-- Socket paths are not currently supported in `mysql://` URLs. For socket-based connections, use a regular socket favorite (see [Connect to a Local MySQL Server](local-connection.html)).
-- AWS IAM-specific settings (profile/region) are not currently supported in `mysql://` URLs; configure those in the connection UI.
+- For socket URLs, use the `socket` query parameter for the Unix socket path. Socket files must be inside Sequel Ace's container path due to macOS sandboxing.
+- AWS IAM URLs require Sequel Ace to already have sandbox access to your `~/.aws` directory. Grant access from the **AWS IAM** tab first.
 - If you use `ssh_keyLocation`, Sequel Ace must already have sandbox access to that key path. Grant access in **Sequel Ace → Preferences → Files** (add the key file or its containing folder).
 
 #### Related History
