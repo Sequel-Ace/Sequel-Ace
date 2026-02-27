@@ -4,6 +4,8 @@
 <dict>
 	<key>author</key>
 	<string>Hans-Jörg Bibiko</string>
+	<key>bundleVersion</key>
+	<integer>3</integer>
 	<key>category</key>
 	<string>Query Editor</string>
 	<key>command</key>
@@ -58,6 +60,8 @@ Version 1.0
 	<string>selectedtext</string>
 	<key>input_fallback</key>
 	<string>currentquery</string>
+	<key>isDefaultBundle</key>
+	<true/>
 	<key>keyEquivalent</key>
 	<string></string>
 	<key>name</key>
@@ -70,9 +74,5 @@ Version 1.0
 	<string>Takes the current query or the selection and copies it as a single line quoted multi-line string by appending a ; into the pasteboard</string>
 	<key>uuid</key>
 	<string>CDAC825A-AE80-4544-9DBB-8E68A5C540D0</string>
-	<key>isDefaultBundle</key>
-	<true/>
-	<key>bundleVersion</key>
-	<integer>2</integer>
 </dict>
 </plist>
