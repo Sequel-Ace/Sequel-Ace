@@ -995,7 +995,7 @@ Gw
                             <nil key="negativeInfinitySymbol"/>
                             <nil key="positiveInfinitySymbol"/>
                             <real key="minimum" value="0.0"/>
-                            <real key="maximum" value="100000"/>
+                            <real key="maximum" value="1000000"/>
                         </numberFormatter>
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -1012,7 +1012,7 @@ Gw
                         <constraint firstAttribute="height" constant="16" id="4O1-HE-XH8"/>
                         <constraint firstAttribute="width" constant="11" id="BgY-gn-Agc"/>
                     </constraints>
-                    <stepperCell key="cell" continuous="YES" alignment="left" minValue="1" maxValue="100000" doubleValue="100" valueWraps="YES" id="523"/>
+                    <stepperCell key="cell" continuous="YES" alignment="left" minValue="1" maxValue="1000000" doubleValue="100" valueWraps="YES" id="523"/>
                     <connections>
                         <action selector="takeIntValueFrom:" target="520" id="530"/>
                         <binding destination="117" name="enabled" keyPath="values.LimitResults" id="625"/>
