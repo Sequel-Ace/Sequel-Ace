@@ -100,7 +100,7 @@
                 <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="OtF-Sn-bou">
                     <rect key="frame" x="241" y="28" width="15" height="22"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <stepperCell key="cell" controlSize="small" continuous="YES" alignment="left" minValue="1" maxValue="100000" doubleValue="100" valueWraps="YES" id="389-RH-6nn">
+                    <stepperCell key="cell" controlSize="small" continuous="YES" alignment="left" minValue="1" maxValue="1000000" doubleValue="100" valueWraps="YES" id="389-RH-6nn">
                         <font key="font" metaFont="message" size="11"/>
                     </stepperCell>
                     <connections>
@@ -116,7 +116,7 @@
                         <numberFormatter key="formatter" formatterBehavior="custom10_4" allowsFloats="NO" minimumIntegerDigits="1" maximumIntegerDigits="309" decimalSeparator="." groupingSeparator="," id="Pxb-UY-tce">
                             <real key="roundingIncrement" value="1"/>
                             <real key="minimum" value="0.0"/>
-                            <real key="maximum" value="100000"/>
+                            <real key="maximum" value="1000000"/>
                         </numberFormatter>
                         <font key="font" metaFont="message" size="11"/>
                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
