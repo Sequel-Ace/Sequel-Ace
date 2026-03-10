@@ -879,7 +879,14 @@
 		csvDataBufferBytes = [csvDataBuffer bytes];
 		dataBufferLength = [csvDataBuffer length];
 		for ( ; dataBufferPosition < dataBufferLength || allDataRead; dataBufferPosition++) {
-			if (csvDataBufferBytes[dataBufferPosition] == 0x0A || csvDataBufferBytes[dataBufferPosition] == 0x0D || allDataRead) {
+			if (!allDataRead && csvDataBufferBytes[dataBufferPosition] == 0x0D && dataBufferPosition == dataBufferLength - 1) {
+				break;
+			}
+			if ((dataBufferPosition < dataBufferLength
+					&& (csvDataBufferBytes[dataBufferPosition] == 0x0A
+						|| csvDataBufferBytes[dataBufferPosition] == 0x0D))
+				|| (allDataRead && dataBufferPosition >= dataBufferLength))
+			{
 #warning This EOL detection logic will break for multibyte encodings (like UTF16)!
 				NSInteger segmentEndPosition;
 				BOOL atLineEnding = !allDataRead;
@@ -917,7 +924,7 @@
 				}
 
 				if (atLineEnding) {
-					csvString = [csvString stringByAppendingString:@"\n"];
+					csvString = [csvString stringByAppendingString:[csvParser lineTerminatorString]];
 				}
 
 				// Add the NSString segment to the CSV parser and release it
