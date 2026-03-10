@@ -879,18 +879,33 @@
 		csvDataBufferBytes = [csvDataBuffer bytes];
 		dataBufferLength = [csvDataBuffer length];
 		for ( ; dataBufferPosition < dataBufferLength || allDataRead; dataBufferPosition++) {
-			if (csvDataBufferBytes[dataBufferPosition] == 0x0A || csvDataBufferBytes[dataBufferPosition] == 0x0D || allDataRead) {
+			if (!allDataRead && csvDataBufferBytes[dataBufferPosition] == 0x0D && dataBufferPosition == dataBufferLength - 1) {
+				break;
+			}
+			if ((dataBufferPosition < dataBufferLength
+					&& (csvDataBufferBytes[dataBufferPosition] == 0x0A
+						|| csvDataBufferBytes[dataBufferPosition] == 0x0D))
+				|| (allDataRead && dataBufferPosition >= dataBufferLength))
+			{
 #warning This EOL detection logic will break for multibyte encodings (like UTF16)!
-				// Keep reading through any other line endings
-				while (dataBufferPosition + 1 < dataBufferLength
-						&& (csvDataBufferBytes[dataBufferPosition+1] == 0x0A
-							|| csvDataBufferBytes[dataBufferPosition+1] == 0x0D))
-				{
-					dataBufferPosition++;
+				NSInteger segmentEndPosition;
+				BOOL atLineEnding = !allDataRead;
+
+				if (allDataRead) {
+					segmentEndPosition = dataBufferLength;
+				} else {
+					segmentEndPosition = dataBufferPosition;
+					// Keep reading through any other line endings
+					while (dataBufferPosition + 1 < dataBufferLength
+							&& (csvDataBufferBytes[dataBufferPosition+1] == 0x0A
+								|| csvDataBufferBytes[dataBufferPosition+1] == 0x0D))
+					{
+						dataBufferPosition++;
+					}
 				}
 
 				// Try to generate a NSString with the resulting data
-				csvString = [[NSString alloc] initWithData:[csvDataBuffer subdataWithRange:NSMakeRange(dataBufferLastQueryEndPosition, dataBufferPosition - dataBufferLastQueryEndPosition)] encoding:csvEncoding];
+				csvString = [[NSString alloc] initWithData:[csvDataBuffer subdataWithRange:NSMakeRange(dataBufferLastQueryEndPosition, segmentEndPosition - dataBufferLastQueryEndPosition)] encoding:csvEncoding];
 				if (!csvString) {
 					[self _closeAndStopProgressSheet];
 					SPMainQSync(^{
@@ -908,13 +923,19 @@
 					return;
 				}
 
+				if (atLineEnding) {
+					csvString = [csvString stringByAppendingString:[csvParser lineTerminatorString]];
+				}
+
 				// Add the NSString segment to the CSV parser and release it
 				[csvParser appendString:csvString];
 
-				if (allDataRead) break;
+				if (allDataRead) {
+					dataBufferLastQueryEndPosition = dataBufferLength;
+					break;
+				}
 
-				// Increment the buffer end position marker
-				dataBufferLastQueryEndPosition = dataBufferPosition;
+				dataBufferLastQueryEndPosition = dataBufferPosition + 1;
 			}
 		}
 
