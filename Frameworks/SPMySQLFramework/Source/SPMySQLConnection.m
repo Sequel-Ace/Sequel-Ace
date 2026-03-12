@@ -30,6 +30,7 @@
 
 #import "SPMySQL Private APIs.h"
 #import "SPMySQLKeepAliveTimer.h"
+#include <arpa/inet.h>
 #include <mach/mach_time.h>
 #include <pthread.h>
 #include <SystemConfiguration/SCNetworkReachability.h>
@@ -46,6 +47,25 @@
 // Thread flag constant
 static pthread_key_t mySQLThreadInitFlagKey;
 static void *mySQLThreadFlag;
+
+static BOOL SPHostIsLoopbackIPv4Address(NSString *normalizedHost)
+{
+	struct in_addr ipv4Address;
+	if (inet_pton(AF_INET, [normalizedHost UTF8String], &ipv4Address) == 1) {
+		return ((ntohl(ipv4Address.s_addr) >> 24) == 127);
+	}
+
+	NSArray<NSString *> *components = [normalizedHost componentsSeparatedByString:@"."];
+	if (![components count] || [components count] > 4) return NO;
+	if (![[components firstObject] isEqualToString:@"127"]) return NO;
+
+	NSCharacterSet *nonDigitCharacters = [[NSCharacterSet decimalDigitCharacterSet] invertedSet];
+	for (NSString *component in components) {
+		if (![component length] || [component rangeOfCharacterFromSet:nonDigitCharacters].location != NSNotFound) return NO;
+	}
+
+	return YES;
+}
 
 #pragma mark Class constants
 
@@ -237,6 +257,46 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	return defaultTLSSuiteListString;
 }
 
++ (NSArray<NSString *> *)_mergedSSLCipherPreferenceListFromSavedCipherString:(NSString *)savedCipherString disabledMarker:(NSString *)disabledMarker
+{
+	NSMutableArray<NSString *> *enabledCiphers = [NSMutableArray array];
+	NSMutableArray<NSString *> *disabledCiphers = [NSMutableArray array];
+	NSMutableSet<NSString *> *validCiphers = [NSMutableSet setWithArray:[self defaultSSLCipherList]];
+	BOOL inDisabledSection = NO;
+
+	[validCiphers addObjectsFromArray:[self legacySSLCipherList]];
+
+	for (NSString *savedCipher in [savedCipherString componentsSeparatedByString:@":"]) {
+		if ([savedCipher isEqualToString:disabledMarker]) {
+			inDisabledSection = YES;
+			continue;
+		}
+		if (![validCiphers containsObject:savedCipher]) continue;
+		if ([enabledCiphers containsObject:savedCipher] || [disabledCiphers containsObject:savedCipher]) continue;
+		[(inDisabledSection ? disabledCiphers : enabledCiphers) addObject:savedCipher];
+	}
+
+	NSUInteger enabledInsertIndex = 0;
+	for (NSString *cipher in [self defaultSSLCipherList]) {
+		if (![enabledCiphers containsObject:cipher] && ![disabledCiphers containsObject:cipher]) {
+			[enabledCiphers insertObject:cipher atIndex:enabledInsertIndex++];
+		}
+	}
+
+	NSUInteger disabledInsertIndex = 0;
+	for (NSString *cipher in [self legacySSLCipherList]) {
+		if (![enabledCiphers containsObject:cipher] && ![disabledCiphers containsObject:cipher]) {
+			[disabledCiphers insertObject:cipher atIndex:disabledInsertIndex++];
+		}
+	}
+
+	NSMutableArray<NSString *> *mergedCiphers = [NSMutableArray arrayWithArray:enabledCiphers];
+	[mergedCiphers addObject:disabledMarker];
+	[mergedCiphers addObjectsFromArray:disabledCiphers];
+
+	return mergedCiphers;
+}
+
 + (NSString *)_reachabilityProbeHostForHost:(NSString *)aHost useSocket:(BOOL)shouldUseSocket hasProxy:(BOOL)hasProxy
 {
 	if (hasProxy || shouldUseSocket || ![aHost length]) return nil;
@@ -249,7 +309,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	if (![trimmedHost length]) return nil;
 
 	NSString *normalizedHost = [trimmedHost lowercaseString];
-	if ([normalizedHost isEqualToString:@"localhost"] || [trimmedHost isEqualToString:@"127.0.0.1"] || [trimmedHost isEqualToString:@"::1"]) {
+	if ([normalizedHost isEqualToString:@"localhost"] || [normalizedHost isEqualToString:@"::1"] || SPHostIsLoopbackIPv4Address(normalizedHost)) {
 		return nil;
 	}
 

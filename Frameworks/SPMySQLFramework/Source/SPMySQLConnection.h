@@ -160,11 +160,16 @@
 @property (readwrite, copy) NSString *sslCACertificatePath;
 
 /**
- * List of supported ciphers for SSL/TLS connections.
+ * List of pre-TLS 1.3 ciphers for SSL/TLS connections.
  * This is a colon-separated string of names as used by
  * `openssl ciphers`. The order of entries specifies
  * their preference (earlier = better).
- * A value of nil (default) means SPMySQL will use its built-in cipher list.
+ * A value of nil (default) means SPMySQLConnection will use its built-in
+ * pre-TLS 1.3 cipher list when calling `mysql_ssl_set()`.
+ *
+ * TLS 1.3 ciphersuites are configured separately via `MYSQL_OPT_TLS_CIPHERSUITES`
+ * using SPMySQLConnection's built-in `_defaultTLSSuiteListString` and are not
+ * currently overridden by `sslCipherList`.
  */
 @property (readwrite, copy) NSString *sslCipherList;
 
@@ -186,9 +191,6 @@
 @property (readwrite, assign, nonatomic) SPMySQLClientFlags clientFlags;
 - (void)addClientFlags:(SPMySQLClientFlags)opts;
 - (void)removeClientFlags:(SPMySQLClientFlags)opts;
-
-+ (NSArray<NSString *> *)defaultSSLCipherList;
-+ (NSArray<NSString *> *)legacySSLCipherList;
 
 #pragma mark -
 #pragma mark Connection and disconnection

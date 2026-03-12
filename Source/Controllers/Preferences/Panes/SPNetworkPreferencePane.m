@@ -39,6 +39,12 @@
 static NSString *SPSSLCipherListMarkerItem = @"--";
 static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 
+@interface SPMySQLConnection (CipherPreferenceMerging)
++ (NSArray<NSString *> *)defaultSSLCipherList;
++ (NSArray<NSString *> *)legacySSLCipherList;
++ (NSArray<NSString *> *)_mergedSSLCipherPreferenceListFromSavedCipherString:(NSString *)savedCipherString disabledMarker:(NSString *)disabledMarker;
+@end
+
 @interface SPNetworkPreferencePane ()
 - (void)updateHiddenFiles;
 - (void)loadSSLCiphers;
@@ -644,27 +650,8 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	
 	NSString *userCipherString = [prefs stringForKey:SPSSLCipherListKey];
 	if(userCipherString) {
-		//expand user list
-		NSArray *userCipherList = [userCipherString componentsSeparatedByString:@":"];
-		
-		//compare the users list to the valid list and only copy over valid items
-		for (NSString *userCipher in userCipherList) {
-			if (![supportedCiphers containsObject:userCipher] || [sslCiphers containsObject:userCipher]) {
-				SPLog(@"Unknown ssl cipher in users' list: %@",userCipher);
-				continue;
-			}
-			[sslCiphers addObject:userCipher];
-		}
-		
-		//now we do the reverse and add valid ciphers that are not yet in the users list.
-		//We'll just assume the ones not in the users' list are newer and therefore better and add
-		//them at the top
-		NSUInteger shift = 0;
-		for (NSString *validCipher in supportedCiphers) {
-			if(![sslCiphers containsObject:validCipher]) {
-				[sslCiphers insertObject:validCipher atIndex:shift++];
-			}
-		}
+		// Preserve the disabled marker when merging newly supported ciphers into saved user prefs.
+		[sslCiphers addObjectsFromArray:[SPMySQLConnection _mergedSSLCipherPreferenceListFromSavedCipherString:userCipherString disabledMarker:SPSSLCipherListMarkerItem]];
 	}
 	else {
 		//no user prefs configured, so we'll just go with the defaults
