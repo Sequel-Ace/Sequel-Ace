@@ -187,6 +187,9 @@
 - (void)addClientFlags:(SPMySQLClientFlags)opts;
 - (void)removeClientFlags:(SPMySQLClientFlags)opts;
 
++ (NSArray<NSString *> *)defaultSSLCipherList;
++ (NSArray<NSString *> *)legacySSLCipherList;
+
 #pragma mark -
 #pragma mark Connection and disconnection
 

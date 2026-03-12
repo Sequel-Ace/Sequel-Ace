@@ -55,9 +55,6 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 					SPMySQLClientFlagInteractive |  // Mark ourselves as an interactive client
 					SPMySQLClientFlagMultiResults;  // Multiple result support (very basic, but present)
 
-// List of permissible ciphers to use for SSL connections
-const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RSA-AES128-SHA:AES128-SHA:AES256-RMD:AES128-RMD:DES-CBC3-RMD:DHE-RSA-AES256-RMD:DHE-RSA-AES128-RMD:DHE-RSA-DES-CBC3-RMD:RC4-SHA:RC4-MD5:DES-CBC3-SHA:DES-CBC-SHA:EDH-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC-SHA";
-
 @implementation SPMySQLConnection
 
 #pragma mark -
@@ -117,6 +114,146 @@ const char *SPMySQLSSLPermissibleCiphers = "DHE-RSA-AES256-SHA:AES256-SHA:DHE-RS
 	// No arguments are required.
 	// Note that this will install MySQL's SIGPIPE handler.
 	mysql_library_init(0, NULL, NULL);
+}
+
++ (NSArray<NSString *> *)defaultSSLCipherList
+{
+	static dispatch_once_t onceToken;
+	static NSArray<NSString *> *defaultSSLCipherList = nil;
+
+	dispatch_once(&onceToken, ^{
+		defaultSSLCipherList = @[
+			@"ECDHE-ECDSA-AES256-GCM-SHA384",
+			@"ECDHE-ECDSA-AES128-GCM-SHA256",
+			@"ECDHE-RSA-AES256-GCM-SHA384",
+			@"ECDHE-RSA-AES128-GCM-SHA256",
+			@"ECDHE-ECDSA-CHACHA20-POLY1305",
+			@"ECDHE-RSA-CHACHA20-POLY1305",
+			@"DHE-RSA-AES256-GCM-SHA384",
+			@"DHE-RSA-AES128-GCM-SHA256",
+			@"DHE-RSA-CHACHA20-POLY1305",
+			@"ECDHE-ECDSA-AES256-SHA384",
+			@"ECDHE-ECDSA-AES128-SHA256",
+			@"ECDHE-RSA-AES256-SHA384",
+			@"ECDHE-RSA-AES128-SHA256",
+			@"DHE-RSA-AES256-SHA256",
+			@"DHE-RSA-AES128-SHA256",
+			@"AES256-GCM-SHA384",
+			@"AES128-GCM-SHA256",
+			@"AES256-SHA256",
+			@"AES128-SHA256",
+			@"DHE-RSA-AES256-SHA",
+			@"DHE-RSA-AES128-SHA",
+			@"AES256-SHA",
+			@"AES128-SHA",
+		];
+	});
+
+	return defaultSSLCipherList;
+}
+
++ (NSArray<NSString *> *)legacySSLCipherList
+{
+	static dispatch_once_t onceToken;
+	static NSArray<NSString *> *legacySSLCipherList = nil;
+
+	dispatch_once(&onceToken, ^{
+		legacySSLCipherList = @[
+			@"CAMELLIA128-SHA",
+			@"CAMELLIA256-SHA",
+			@"DH-DSS-AES128-GCM-SHA256",
+			@"DH-DSS-AES128-SHA",
+			@"DH-DSS-AES128-SHA256",
+			@"DH-DSS-AES256-GCM-SHA384",
+			@"DH-DSS-AES256-SHA",
+			@"DH-DSS-AES256-SHA256",
+			@"DH-RSA-AES128-GCM-SHA256",
+			@"DH-RSA-AES128-SHA",
+			@"DH-RSA-AES128-SHA256",
+			@"DH-RSA-AES256-GCM-SHA384",
+			@"DH-RSA-AES256-SHA",
+			@"DH-RSA-AES256-SHA256",
+			@"DHE-DSS-AES256-GCM-SHA384",
+			@"DHE-DSS-AES128-GCM-SHA256",
+			@"DHE-DSS-AES128-SHA256",
+			@"DHE-DSS-AES256-SHA256",
+			@"DHE-DSS-AES128-SHA",
+			@"DHE-DSS-AES256-SHA",
+			@"ECDH-ECDSA-AES128-GCM-SHA256",
+			@"ECDH-ECDSA-AES128-SHA",
+			@"ECDH-ECDSA-AES128-SHA256",
+			@"ECDH-ECDSA-AES256-GCM-SHA384",
+			@"ECDH-ECDSA-AES256-SHA",
+			@"ECDH-ECDSA-AES256-SHA384",
+			@"ECDH-RSA-AES128-GCM-SHA256",
+			@"ECDH-RSA-AES128-SHA",
+			@"ECDH-RSA-AES128-SHA256",
+			@"ECDH-RSA-AES256-GCM-SHA384",
+			@"ECDH-RSA-AES256-SHA",
+			@"ECDH-RSA-AES256-SHA384",
+			@"ECDHE-ECDSA-AES128-SHA",
+			@"ECDHE-ECDSA-AES256-SHA",
+			@"ECDHE-RSA-AES128-SHA",
+			@"ECDHE-RSA-AES256-SHA",
+			@"AES256-RMD",
+			@"AES128-RMD",
+			@"DES-CBC3-RMD",
+			@"DHE-RSA-AES256-RMD",
+			@"DHE-RSA-AES128-RMD",
+			@"DHE-RSA-DES-CBC3-RMD",
+			@"RC4-SHA",
+			@"RC4-MD5",
+			@"DES-CBC3-SHA",
+			@"DES-CBC-SHA",
+			@"EDH-RSA-DES-CBC3-SHA",
+			@"EDH-RSA-DES-CBC-SHA",
+		];
+	});
+
+	return legacySSLCipherList;
+}
+
++ (NSString *)_defaultSSLCipherListString
+{
+	static dispatch_once_t onceToken;
+	static NSString *defaultSSLCipherListString = nil;
+
+	dispatch_once(&onceToken, ^{
+		defaultSSLCipherListString = [[self defaultSSLCipherList] componentsJoinedByString:@":"];
+	});
+
+	return defaultSSLCipherListString;
+}
+
++ (NSString *)_defaultTLSSuiteListString
+{
+	static dispatch_once_t onceToken;
+	static NSString *defaultTLSSuiteListString = nil;
+
+	dispatch_once(&onceToken, ^{
+		defaultTLSSuiteListString = @"TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256";
+	});
+
+	return defaultTLSSuiteListString;
+}
+
++ (NSString *)_reachabilityProbeHostForHost:(NSString *)aHost useSocket:(BOOL)shouldUseSocket hasProxy:(BOOL)hasProxy
+{
+	if (hasProxy || shouldUseSocket || ![aHost length]) return nil;
+
+	NSString *trimmedHost = [aHost stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+	if ([trimmedHost hasPrefix:@"["] && [trimmedHost hasSuffix:@"]"] && [trimmedHost length] > 2) {
+		trimmedHost = [trimmedHost substringWithRange:NSMakeRange(1, [trimmedHost length] - 2)];
+	}
+
+	if (![trimmedHost length]) return nil;
+
+	NSString *normalizedHost = [trimmedHost lowercaseString];
+	if ([normalizedHost isEqualToString:@"localhost"] || [trimmedHost isEqualToString:@"127.0.0.1"] || [trimmedHost isEqualToString:@"::1"]) {
+		return nil;
+	}
+
+	return trimmedHost;
 }
 
 /**
@@ -731,7 +868,8 @@ asm(".desc ___crashreporter_info__, 0x10");
 		const char *theSSLKeyFilePath = NULL;
 		const char *theSSLCertificatePath = NULL;
 		const char *theCACertificatePath = NULL;
-		const char *theSSLCiphers = SPMySQLSSLPermissibleCiphers;
+		const char *theSSLCiphers = [[SPMySQLConnection _defaultSSLCipherListString] UTF8String];
+		const char *theTLSCipherSuites = [[SPMySQLConnection _defaultTLSSuiteListString] UTF8String];
 
 		if ([sslKeyFilePath length]) {
 			theSSLKeyFilePath = [[sslKeyFilePath stringByExpandingTildeInPath] fileSystemRepresentation];
@@ -742,7 +880,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 		if ([sslCACertificatePath length]) {
 			theCACertificatePath = [[sslCACertificatePath stringByExpandingTildeInPath] fileSystemRepresentation];
 		}
-		if(sslCipherList) {
+		if ([sslCipherList length]) {
 			theSSLCiphers = [sslCipherList UTF8String];
 		}
 
@@ -757,6 +895,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 		//   mysql 5.7.11+ (5.7.3 - 5.7.10 with a different name)
 		//   mysql 8.0+
 		mysql_ssl_set(theConnection, theSSLKeyFilePath, theSSLCertificatePath, theCACertificatePath, NULL, theSSLCiphers);
+		if (mysql_options(theConnection, MYSQL_OPT_TLS_CIPHERSUITES, (const void *)theTLSCipherSuites)) {
+			SPLog(@"Failed to set default TLS 1.3 cipher suites; continuing with libmysqlclient defaults.");
+		}
 		enum mysql_ssl_mode opt_ssl_mode = SSL_MODE_REQUIRED;
 		if(mysql_options(theConnection, MYSQL_OPT_SSL_MODE, (void *)&opt_ssl_mode)) {
 			if(isMaster) {
@@ -1057,9 +1198,14 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (BOOL)_waitForNetworkConnectionWithTimeout:(double)timeoutSeconds
 {
-    SPLog(@"_waitForNetworkConnectionWithTimeout: %f", timeoutSeconds);
-	// Set up the reachability target - the host is not important, and is not connected to.
-    SCNetworkReachabilityRef reachabilityTarget = SCNetworkReachabilityCreateWithName(NULL, "google.com"); 
+	NSString *probeHost = [SPMySQLConnection _reachabilityProbeHostForHost:host useSocket:useSocket hasProxy:(proxy != nil)];
+	if (![probeHost length]) return YES;
+
+    SPLog(@"_waitForNetworkConnectionWithTimeout: %f probeHost: %@", timeoutSeconds, probeHost);
+	// This is only a lightweight route check for direct TCP reconnects; it must not block
+	// socket or proxy reconnects on unrelated external hosts.
+    SCNetworkReachabilityRef reachabilityTarget = SCNetworkReachabilityCreateWithName(NULL, [probeHost UTF8String]);
+	if (!reachabilityTarget) return YES;
 
 	BOOL hostReachable;
 	// In a loop until success or the timeout, test reachability

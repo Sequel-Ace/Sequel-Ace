@@ -49,6 +49,9 @@
 - (void)_restoreConnectionVariables;
 - (void)_validateThreadSetup;
 + (void)_removeThreadVariables:(NSNotification *)aNotification;
++ (NSString *)_defaultSSLCipherListString;
++ (NSString *)_defaultTLSSuiteListString;
++ (NSString *)_reachabilityProbeHostForHost:(NSString *)host useSocket:(BOOL)useSocket hasProxy:(BOOL)hasProxy;
 
 @end
 

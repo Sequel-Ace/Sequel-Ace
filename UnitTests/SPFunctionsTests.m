@@ -9,7 +9,14 @@
 #import "SPFunctions.h"
 #import "SPTestingUtils.h"
 
+#import <SPMySQL/SPMySQL.h>
+
 #import <XCTest/XCTest.h>
+
+@interface SPMySQLConnection (TestingPrivateAPI)
++ (NSString *)_defaultTLSSuiteListString;
++ (NSString *)_reachabilityProbeHostForHost:(NSString *)host useSocket:(BOOL)useSocket hasProxy:(BOOL)hasProxy;
+@end
 
 @interface NSString (TestingColumnHeader)
 + (NSString *)tableContentColumnHeaderStringForColumnName:(NSString *)columnName columnType:(NSString *)columnType columnTypesVisible:(BOOL)columnTypesVisible;
@@ -140,6 +147,40 @@
     NSString *header = [NSString tableContentColumnHeaderStringForColumnName:@"hire_time" columnType:nil columnTypesVisible:YES];
     
     XCTAssertEqualObjects(header, @"hire_time");
+}
+
+- (void)testDefaultSSLCipherListsIncludeModernAndLegacySuites
+{
+    NSArray<NSString *> *defaultCiphers = [SPMySQLConnection defaultSSLCipherList];
+    NSArray<NSString *> *legacyCiphers = [SPMySQLConnection legacySSLCipherList];
+
+    XCTAssertTrue([defaultCiphers containsObject:@"ECDHE-RSA-CHACHA20-POLY1305"]);
+    XCTAssertTrue([defaultCiphers containsObject:@"ECDHE-ECDSA-AES256-GCM-SHA384"]);
+    XCTAssertTrue([defaultCiphers containsObject:@"AES256-GCM-SHA384"]);
+    XCTAssertFalse([defaultCiphers containsObject:@"RC4-MD5"]);
+
+    XCTAssertTrue([legacyCiphers containsObject:@"RC4-MD5"]);
+    XCTAssertTrue([legacyCiphers containsObject:@"CAMELLIA128-SHA"]);
+
+    NSArray<NSString *> *defaultTLSSuites = [[SPMySQLConnection _defaultTLSSuiteListString] componentsSeparatedByString:@":"];
+    XCTAssertEqualObjects(defaultTLSSuites, (@[
+        @"TLS_AES_256_GCM_SHA384",
+        @"TLS_CHACHA20_POLY1305_SHA256",
+        @"TLS_AES_128_GCM_SHA256",
+    ]));
+}
+
+- (void)testReachabilityProbeHostSelectionIsPureStringLogic
+{
+    // This helper only normalizes and filters candidate hosts for a later reachability check.
+    // It must not depend on DNS, network access, or any machine-specific local setup.
+    XCTAssertNil([SPMySQLConnection _reachabilityProbeHostForHost:@"db.lan" useSocket:YES hasProxy:NO]);
+    XCTAssertNil([SPMySQLConnection _reachabilityProbeHostForHost:@"db.lan" useSocket:NO hasProxy:YES]);
+    XCTAssertNil([SPMySQLConnection _reachabilityProbeHostForHost:@" localhost " useSocket:NO hasProxy:NO]);
+    XCTAssertNil([SPMySQLConnection _reachabilityProbeHostForHost:@"127.0.0.1" useSocket:NO hasProxy:NO]);
+    XCTAssertNil([SPMySQLConnection _reachabilityProbeHostForHost:@"[::1]" useSocket:NO hasProxy:NO]);
+    XCTAssertEqualObjects([SPMySQLConnection _reachabilityProbeHostForHost:@" db.example.test " useSocket:NO hasProxy:NO], @"db.example.test");
+    XCTAssertEqualObjects([SPMySQLConnection _reachabilityProbeHostForHost:@"[2001:db8::5]" useSocket:NO hasProxy:NO], @"2001:db8::5");
 }
 
 // 0.0354 s
