@@ -2444,20 +2444,43 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			BOOL navigateAsHex = NO;
 			if ([targetFilterValue isKindOfClass:[NSData class]]) {
 				if (targetColumnIsBinary) {
-					// Source value is binary data and target is binary column: hex-encode the raw bytes
+					// Source and target are both binary: hex-encode the raw bytes
 					navigateAsHex = YES;
 					targetFilterValue = [self->mySQLConnection escapeData:(NSData *)targetFilterValue includingQuotes:NO];
-				} else if ([[columnDefinition objectForKey:@"collation"] hasSuffix:@"_bin"]) {
-					// Source value is binary data due to binary collation but target is not binary: decode to string
-					targetFilterValue = [(NSData *)targetFilterValue stringRepresentationUsingEncoding:[self->mySQLConnection stringEncoding]];
+				} else {
+					// Source is binary but target is not (eg. BINARY(16) → CHAR(36) UUID):
+					// Convert 16 raw bytes to dashed UUID string format
+					NSData *rawData = (NSData *)targetFilterValue;
+					if ([rawData length] == 16) {
+						const unsigned char *bytes = [rawData bytes];
+						targetFilterValue = [NSString stringWithFormat:
+							@"%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+							bytes[0], bytes[1], bytes[2], bytes[3],
+							bytes[4], bytes[5],
+							bytes[6], bytes[7],
+							bytes[8], bytes[9],
+							bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]];
+					} else if ([[columnDefinition objectForKey:@"collation"] hasSuffix:@"_bin"]) {
+						// Non-UUID binary collation data: decode to string
+						targetFilterValue = [(NSData *)targetFilterValue stringRepresentationUsingEncoding:[self->mySQLConnection stringEncoding]];
+					}
 				}
 			} else if ([targetFilterValue isKindOfClass:[NSString class]] && targetColumnIsBinary) {
-				// Source value is a string (eg. UUID as CHAR(36)) but target column is binary:
-				// convert the string to hex so UNHEX() can reconstruct the binary value
-				navigateAsHex = YES;
-				NSData *stringData = [(NSString *)targetFilterValue dataUsingEncoding:NSUTF8StringEncoding];
-				if (stringData) {
-					targetFilterValue = [self->mySQLConnection escapeData:stringData includingQuotes:NO];
+				// Source is a string but target is binary (eg. CHAR(36) UUID → BINARY(16)):
+				// Strip dashes from UUID and pass the 32 hex digits directly for UNHEX()
+				NSString *strValue = (NSString *)targetFilterValue;
+				NSString *strippedValue = [strValue stringByReplacingOccurrencesOfString:@"-" withString:@""];
+				if ([strippedValue length] == 32) {
+					// Looks like a UUID: pass the 32 hex digits so UNHEX() produces the 16 raw bytes
+					navigateAsHex = YES;
+					targetFilterValue = strippedValue;
+				} else {
+					// Not a UUID; fall back to hex-encoding the raw string bytes
+					navigateAsHex = YES;
+					NSData *stringData = [strValue dataUsingEncoding:NSUTF8StringEncoding];
+					if (stringData) {
+						targetFilterValue = [self->mySQLConnection escapeData:stringData includingQuotes:NO];
+					}
 				}
 			}
 
