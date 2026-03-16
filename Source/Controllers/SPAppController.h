@@ -33,7 +33,7 @@
 #import <Foundation/Foundation.h>
 
 @class SPPreferenceController;
-@class SPAboutController;
+@class SAAboutWindowController;
 @class SPDatabaseDocument;
 @class SPBundleEditorController;
 @class SPWindowController;
@@ -42,7 +42,7 @@
 
 @interface SPAppController : NSObject <NSApplicationDelegate, NSOpenSavePanelDelegate, NSFileManagerDelegate, NSWindowDelegate>
 {
-	SPAboutController *aboutController;
+	SAAboutWindowController *aboutController;
 	SPPreferenceController *prefsController;
 
 	id encodingPopUp;

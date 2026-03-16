@@ -32,7 +32,6 @@
 #import "SPAppController.h"
 #import "SPDatabaseDocument.h"
 #import "SPPreferenceController.h"
-#import "SPAboutController.h"
 #import "SPDataImport.h"
 #import "SPEncodingPopupAccessory.h"
 #import "SPPreferencesUpgrade.h"
@@ -1369,8 +1368,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (IBAction)openAboutPanel:(id)sender
 {
     if (!aboutController) {
-        aboutController = [[SPAboutController alloc] init];
-        aboutController.window.delegate = self;
+        aboutController = [[SAAboutWindowController alloc] initWithDelegate:self];
     }
 
     [aboutController showWindow:self];
