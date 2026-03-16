@@ -49,6 +49,12 @@
 - (void)_restoreConnectionVariables;
 - (void)_validateThreadSetup;
 + (void)_removeThreadVariables:(NSNotification *)aNotification;
++ (NSArray<NSString *> *)defaultSSLCipherList;
++ (NSArray<NSString *> *)legacySSLCipherList;
++ (NSString *)_defaultSSLCipherListString;
++ (NSString *)_defaultTLSSuiteListString;
++ (NSArray<NSString *> *)_mergedSSLCipherPreferenceListFromSavedCipherString:(NSString *)savedCipherString disabledMarker:(NSString *)disabledMarker;
++ (NSString *)_reachabilityProbeHostForHost:(NSString *)host useSocket:(BOOL)useSocket hasProxy:(BOOL)hasProxy;
 
 @end
 
