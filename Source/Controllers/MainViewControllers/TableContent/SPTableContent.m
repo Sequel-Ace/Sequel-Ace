@@ -2422,12 +2422,67 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 			id targetFilterValue = [self->tableValues cellDataAtRow:[theArrowCell getClickedRow] column:dataColumnIndex];
 
-			//when navigating binary relations (eg. raw UUID) do so via a hex-encoded value for charset safety
-			BOOL navigateAsHex = ([targetFilterValue isKindOfClass:[NSData class]] && [[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"binary"]);
-			if(navigateAsHex) targetFilterValue = [self->mySQLConnection escapeData:(NSData *)targetFilterValue includingQuotes:NO];
-            else if ([targetFilterValue isKindOfClass:[NSData class]] && [[columnDefinition objectForKey:@"collation"] hasSuffix:@"_bin"]) {
-                targetFilterValue = [(NSData *)targetFilterValue stringRepresentationUsingEncoding:[self->mySQLConnection stringEncoding]];
-            }
+			// Determine the referenced (target) column's type to choose the correct filter operator.
+			// We must check the TARGET column type, not the source, because the filter is applied on the target table.
+			NSString *refColumnName = [refDictionary objectForKey:@"column"];
+			NSString *refTableName = [refDictionary objectForKey:@"table"];
+			NSString *refDatabaseName = [refDictionary objectForKey:@"database"];
+			BOOL targetColumnIsBinary = NO;
+
+			NSDictionary *refTableInfo = [self->tableDataInstance informationForTable:refTableName fromDatabase:refDatabaseName];
+			if (refTableInfo) {
+				for (NSDictionary *col in [refTableInfo objectForKey:@"columns"]) {
+					if ([[col objectForKey:@"name"] isEqualToString:refColumnName]) {
+						targetColumnIsBinary = [[col objectForKey:@"typegrouping"] isEqualToString:@"binary"];
+						break;
+					}
+				}
+			}
+
+			// When the target column is binary (eg. raw UUID stored as BINARY(16)),
+			// navigate via hex-encoded value for charset safety
+			BOOL navigateAsHex = NO;
+			if ([targetFilterValue isKindOfClass:[NSData class]]) {
+				if (targetColumnIsBinary) {
+					// Source and target are both binary: hex-encode the raw bytes
+					navigateAsHex = YES;
+					targetFilterValue = [self->mySQLConnection escapeData:(NSData *)targetFilterValue includingQuotes:NO];
+				} else {
+					// Source is binary but target is not (eg. BINARY(16) → CHAR(36) UUID):
+					// Convert 16 raw bytes to dashed UUID string format
+					NSData *rawData = (NSData *)targetFilterValue;
+					if ([rawData length] == 16) {
+						const unsigned char *bytes = [rawData bytes];
+						targetFilterValue = [NSString stringWithFormat:
+							@"%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+							bytes[0], bytes[1], bytes[2], bytes[3],
+							bytes[4], bytes[5],
+							bytes[6], bytes[7],
+							bytes[8], bytes[9],
+							bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]];
+					} else if ([[columnDefinition objectForKey:@"collation"] hasSuffix:@"_bin"]) {
+						// Non-UUID binary collation data: decode to string
+						targetFilterValue = [(NSData *)targetFilterValue stringRepresentationUsingEncoding:[self->mySQLConnection stringEncoding]];
+					}
+				}
+			} else if ([targetFilterValue isKindOfClass:[NSString class]] && targetColumnIsBinary) {
+				// Source is a string but target is binary (eg. CHAR(36) UUID → BINARY(16)):
+				// Strip dashes from UUID and pass the 32 hex digits directly for UNHEX()
+				NSString *strValue = (NSString *)targetFilterValue;
+				NSString *strippedValue = [strValue stringByReplacingOccurrencesOfString:@"-" withString:@""];
+				if ([strippedValue length] == 32) {
+					// Looks like a UUID: pass the 32 hex digits so UNHEX() produces the 16 raw bytes
+					navigateAsHex = YES;
+					targetFilterValue = strippedValue;
+				} else {
+					// Not a UUID; fall back to hex-encoding the raw string bytes
+					navigateAsHex = YES;
+					NSData *stringData = [strValue dataUsingEncoding:NSUTF8StringEncoding];
+					if (stringData) {
+						targetFilterValue = [self->mySQLConnection escapeData:stringData includingQuotes:NO];
+					}
+				}
+			}
 
 			NSString *filterComparison = @"=";
 			if([targetFilterValue isNSNull]) filterComparison = @"IS NULL";
@@ -2438,15 +2493,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 																						operator:filterComparison
 																						  values:@[targetFilterValue]];
 
-			NSString *databaseToJumpTo = [refDictionary objectForKey:@"database"];
-			NSString *tableToJumpTo = [refDictionary objectForKey:@"table"];
-
-			if (![databaseToJumpTo isEqualToString:[self->tableDocumentInstance database]]) {
+			if (![refDatabaseName isEqualToString:[self->tableDocumentInstance database]]) {
 				// fk points to a table in another database; switch database, and select the target table
-				[[self->tableDocumentInstance onMainThread] selectDatabase:databaseToJumpTo item:tableToJumpTo];
-			} else if (![tableToJumpTo isEqualToString:self->selectedTable]) {
+				[[self->tableDocumentInstance onMainThread] selectDatabase:refDatabaseName item:refTableName];
+			} else if (![refTableName isEqualToString:self->selectedTable]) {
 				// fk points to another table in the same database: switch to the target table
-				if (![self->tablesListInstance selectItemWithName:tableToJumpTo]) {
+				if (![self->tablesListInstance selectItemWithName:refTableName]) {
 					NSBeep();
 					[self setFiltersToRestore:nil];
 					[self setActiveFilterToRestore:SPTableContentFilterSourceNone];
