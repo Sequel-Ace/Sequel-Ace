@@ -5852,6 +5852,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         // Update the selected table name and type
 
 
+        selectedTableName = nil;
         selectedTableType = SPTableTypeNone;
 
         // Clear the views
