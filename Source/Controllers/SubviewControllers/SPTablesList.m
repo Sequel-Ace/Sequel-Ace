@@ -2443,9 +2443,11 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			// Get next index (beginning from the end)
 			currentIndex = [indexes indexLessThanIndex:currentIndex];
 
-			selectedTableName = nil;
-			selectedTableType = SPTableTypeNone;
-			[tableDocumentInstance loadTable:nil ofType:SPTableTypeNone];
+			if ([selectedTableName isEqualToString:databaseObjectName]) {
+				selectedTableName = nil;
+				selectedTableType = SPTableTypeNone;
+				[tableDocumentInstance loadTable:nil ofType:SPTableTypeNone];
+			}
 		} 
 		// Otherwise, display an alert - and if there's tables left, ask whether to proceed
 		else {
