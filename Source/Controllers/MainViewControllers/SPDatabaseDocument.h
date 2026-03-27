@@ -262,6 +262,7 @@
 @property (readonly, strong) SPTableContent <SPDatabaseContentViewDelegate> *tableContentInstance;
 
 @property (readonly) int64_t instanceId;
+@property (readonly, strong) SPSplitView *contentViewSplitter;
 @property (strong) IBOutlet NSButton *multipleLineEditingButton;
 
 - (instancetype)initWithWindowController:(SPWindowController *)windowController;

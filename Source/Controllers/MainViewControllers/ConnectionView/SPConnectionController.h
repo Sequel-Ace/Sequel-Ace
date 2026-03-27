@@ -35,8 +35,11 @@
 
 #import <SPMySQL/SPMySQL.h>
 
-@class SPDatabaseDocument, 
-	   SPFavoritesController, 
+@protocol SADatabaseDocumentProviding;
+@class SAConnectionViewCoordinator;
+
+@class SPDatabaseDocument,
+	   SPFavoritesController,
 	   SPSSHTunnel,
 	   SPTreeNode,
 	   SPFavoritesOutlineView,
@@ -55,8 +58,8 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 };
 
 @interface SPConnectionController : NSViewController <SPMySQLConnectionDelegate, NSOpenSavePanelDelegate, SPFavoritesImportProtocol, SPFavoritesExportProtocol, NSSplitViewDelegate>
-{	
-	__weak SPDatabaseDocument *dbDocument;
+{
+	__weak id dbDocument;
 	SPMySQLConnection *mySQLConnection;
 
 	SPKeychain *keychain;
@@ -221,6 +224,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 }
 
 @property (readwrite, weak) id <SPConnectionControllerDelegateProtocol> delegate;
+@property (readwrite, strong) SAConnectionViewCoordinator *viewCoordinator;
 @property (readwrite) NSInteger type;
 @property (readwrite, copy) NSString *name;
 @property (readwrite, copy) NSString *host;
@@ -339,7 +343,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 
 #pragma mark - SPConnectionControllerInitializer
 
-- (instancetype)initWithDocument:(SPDatabaseDocument *)document;
+- (instancetype)initWithDocument:(id<SADatabaseDocumentProviding>)document;
 
 - (void)loadNib;
 - (void)registerForNotifications;

@@ -140,6 +140,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @synthesize sqlFileURL;
 @synthesize sqlFileEncoding;
 @synthesize isProcessing;
+@synthesize contentViewSplitter;
 @synthesize serverSupport;
 @synthesize databaseStructureRetrieval;
 @synthesize processID;

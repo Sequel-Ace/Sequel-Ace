@@ -8,6 +8,20 @@
 
 import AppKit
 
+// MARK: - SADatabaseDocumentProviding
+
+// SPDatabaseDocument conforms to SADatabaseDocumentProviding.
+// All requirements are satisfied by the ObjC declarations in SPDatabaseDocument.h.
+// If a requirement is not visible to Swift, we add an explicit forwarding stub below.
+extension SPDatabaseDocument: SADatabaseDocumentProviding {
+
+    public func setIsProcessing(_ value: Bool) {
+        isProcessing = value
+    }
+}
+
+// MARK: - Save Accessory
+
 extension SPDatabaseDocument {
     @objc func prepareSaveAccessoryView(panel: NSSavePanel) {
         guard Bundle.main.loadNibNamed("SaveSPFAccessory", owner: self, topLevelObjects: nil) else {
