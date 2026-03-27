@@ -36,6 +36,7 @@
 #import <SPMySQL/SPMySQL.h>
 
 @protocol SADatabaseDocumentProviding;
+@protocol SAConnectionDelegate;
 @class SAConnectionViewCoordinator;
 
 @class SPDatabaseDocument,
@@ -224,6 +225,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 }
 
 @property (readwrite, weak) id <SPConnectionControllerDelegateProtocol> delegate;
+@property (readwrite, weak) id <SAConnectionDelegate> connectionDelegate;
 @property (readwrite, strong) SAConnectionViewCoordinator *viewCoordinator;
 @property (readwrite) NSInteger type;
 @property (readwrite, copy) NSString *name;

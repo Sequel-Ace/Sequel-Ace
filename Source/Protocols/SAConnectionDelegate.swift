@@ -22,14 +22,16 @@ import Foundation
     /// - Parameters:
     ///   - connection: The established MySQL connection.
     ///   - info: The connection parameters that were used.
-    @objc func connectionDidEstablish(_ connection: SPMySQLConnection, info: SAConnectionInfoObjC)
+    @objc(connectionDidEstablish:info:)
+    func connectionDidEstablish(_ connection: SPMySQLConnection, info: SAConnectionInfoObjC)
 
     /// Called when a connection attempt has failed.
     ///
     /// - Parameters:
     ///   - error: A description of what went wrong.
     ///   - detail: Optional detailed error information.
-    @objc func connectionDidFail(withError error: String, detail: String?)
+    @objc(connectionDidFailWithError:detail:)
+    func connectionDidFail(withError error: String, detail: String?)
 
     /// Called when an active connection has been disconnected.
     @objc optional func connectionDidDisconnect()

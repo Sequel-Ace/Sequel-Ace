@@ -37,7 +37,8 @@
 
 #import "SPFileManagerAdditions.h"
 
-// Phase 0: Modernization — expose ObjC types needed by new Swift protocols
+// Phase 0-1: Modernization — expose ObjC types needed by new Swift code
+#import "SPConnectionController.h"
 #import "SPFavoritesController.h"
 #import "SPCompatibility.h"
 #import "SPSplitView.h"
