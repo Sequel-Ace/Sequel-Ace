@@ -36,3 +36,13 @@
 #import "SPConstants.h"
 
 #import "SPFileManagerAdditions.h"
+
+// Phase 0: Modernization — expose ObjC types needed by new Swift protocols
+#import "SPFavoritesController.h"
+#import "SPCompatibility.h"
+#import "SPSplitView.h"
+#import "SPTreeNode.h"
+#import <SPMySQL/SPMySQLConstants.h>
+#import <SPMySQL/SPMySQLConnectionDelegate.h>
+#import <SPMySQL/SPMySQLConnectionProxy.h>
+#import <SPMySQL/SPMySQLConnection.h>
