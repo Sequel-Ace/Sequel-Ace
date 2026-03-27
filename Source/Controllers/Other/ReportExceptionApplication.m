@@ -9,8 +9,8 @@
 #import "SPFunctions.h"
 #import "SPAppController.h"
 @import Cocoa;
-@import AppCenterCrashes;
 
+@import FirebaseCrashlytics;
 
 // see: https://docs.microsoft.com/en-us/appcenter/sdk/crashes/macos#enable-catching-uncaught-exceptions-thrown-on-the-main-thread
 @interface ReportExceptionApplication : NSApplication
