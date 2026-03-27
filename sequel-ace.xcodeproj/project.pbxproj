@@ -233,6 +233,7 @@
 		51B09FDF2F767A53003BAFFF /* SADatabaseDocumentProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B09FDE2F767A53003BAFFF /* SADatabaseDocumentProviding.swift */; };
 		51B09FE12F767A5E003BAFFF /* SAFavoritesProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B09FE02F767A5E003BAFFF /* SAFavoritesProviding.swift */; };
 		51B09FE72F768E39003BAFFF /* SAConnectionViewCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B09FE62F768E39003BAFFF /* SAConnectionViewCoordinator.swift */; };
+		51B09FEC2F7696C7003BAFFF /* SAConnectionWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B09FEB2F7696C7003BAFFF /* SAConnectionWindowController.swift */; };
 		51BB391C25F82B060048CA69 /* SPAppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BB391B25F82B060048CA69 /* SPAppController.swift */; };
 		51BC14F825BE135500F1CDC9 /* SPWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC14F725BE135500F1CDC9 /* SPWindowController.swift */; };
 		51BC150125BE138700F1CDC9 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 51BC150025BE138700F1CDC9 /* SnapKit */; };
@@ -933,6 +934,7 @@
 		51B09FDE2F767A53003BAFFF /* SADatabaseDocumentProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SADatabaseDocumentProviding.swift; sourceTree = "<group>"; };
 		51B09FE02F767A5E003BAFFF /* SAFavoritesProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoritesProviding.swift; sourceTree = "<group>"; };
 		51B09FE62F768E39003BAFFF /* SAConnectionViewCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionViewCoordinator.swift; sourceTree = "<group>"; };
+		51B09FEB2F7696C7003BAFFF /* SAConnectionWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionWindowController.swift; sourceTree = "<group>"; };
 		51BB391B25F82B060048CA69 /* SPAppController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPAppController.swift; sourceTree = "<group>"; };
 		51BB3DFC25AEF020005AAE44 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51BB3E0425AEF0D7005AAE44 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
@@ -1696,6 +1698,7 @@
 				17D38FC3127B0CFC00672B13 /* SPConnectionControllerDelegateProtocol.h */,
 				1798F1801550172A004B0AB8 /* Import & Export */,
 				51B09FE62F768E39003BAFFF /* SAConnectionViewCoordinator.swift */,
+				51B09FEB2F7696C7003BAFFF /* SAConnectionWindowController.swift */,
 			);
 			name = "Connection View";
 			path = ConnectionView;
@@ -3158,6 +3161,7 @@
 				1ACA0B6625BEBE18002FA618 /* PopupButtonExtensions.swift in Sources */,
 				17F90E481210B42700274C98 /* SPExportFile.m in Sources */,
 				BC85F5D012193B7D00E255B5 /* SPColorAdditions.m in Sources */,
+				51B09FEC2F7696C7003BAFFF /* SAConnectionWindowController.swift in Sources */,
 				1AF5A262250AC401009885DF /* SPBrackets.m in Sources */,
 				BC878A71121A836F00AE5066 /* SPColorWellCell.m in Sources */,
 				BC398A2D121D526200BE3EF4 /* SPCopyTable.m in Sources */,

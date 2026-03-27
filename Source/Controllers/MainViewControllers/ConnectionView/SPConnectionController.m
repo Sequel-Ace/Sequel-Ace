@@ -2820,9 +2820,36 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     for (NSUInteger i = 0; i < [toolbarItems count]; i++) [[toolbarItems objectAtIndex:i] setEnabled:YES];
 
-    // Pass the connection to the table document, allowing it to set
-    // up the other classes and the rest of the interface.
-    [dbDocument setConnection:mySQLConnection];
+    // Notify the connection delegate if set; otherwise fall back to the legacy
+    // direct document call. This allows a standalone connection window to receive
+    // the connection without being a document.
+    if (self.connectionDelegate) {
+        SAConnectionInfoObjC *info = [[SAConnectionInfoObjC alloc] init];
+        info.type = (SAConnectionType)self.type;
+        info.name = self.name ?: @"";
+        info.host = self.host ?: @"";
+        info.user = self.user ?: @"";
+        info.password = self.password ?: @"";
+        info.database = self.database ?: @"";
+        info.socket = self.socket ?: @"";
+        info.port = self.port ?: @"";
+        info.colorIndex = self.colorIndex;
+        info.useCompression = self.useCompression;
+        info.useSSL = self.useSSL;
+        info.sshHost = self.sshHost ?: @"";
+        info.sshUser = self.sshUser ?: @"";
+        info.sshPassword = self.sshPassword ?: @"";
+        info.sshPort = self.sshPort ?: @"";
+        info.connectionKeychainID = connectionKeychainID ?: @"";
+        info.connectionKeychainItemName = connectionKeychainItemName ?: @"";
+        info.connectionKeychainItemAccount = connectionKeychainItemAccount ?: @"";
+        info.connectionSSHKeychainItemName = connectionSSHKeychainItemName ?: @"";
+        info.connectionSSHKeychainItemAccount = connectionSSHKeychainItemAccount ?: @"";
+        [self.connectionDelegate connectionDidEstablish:mySQLConnection info:info];
+    } else {
+        // Legacy path: pass the connection directly to the document.
+        [dbDocument setConnection:mySQLConnection];
+    }
 }
 
 - (void)_failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail localNetworkPermissionDenied:(BOOL)localNetworkPermissionDenied
@@ -2870,6 +2897,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     // Inform the delegate that the connection attempt failed
     if (delegate && [delegate respondsToSelector:@selector(connectionControllerConnectAttemptFailed:)]) {
         [[(id)delegate onMainThread] connectionControllerConnectAttemptFailed:self];
+    }
+
+    // Notify the new-style connection delegate about the failure
+    if (self.connectionDelegate) {
+        [self.connectionDelegate connectionDidFailWithError:theTitle ?: @"Connection failed"
+                                                     detail:errorDetail];
     }
 
     NSString *errorMessage = errorDetail ? : @"";
