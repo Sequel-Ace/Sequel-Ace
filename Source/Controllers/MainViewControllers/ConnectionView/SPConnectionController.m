@@ -2812,9 +2812,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 - (void)addConnectionToDocument
 {
     SPLog(@"addConnectionToDocument");
-    // Hide the connection view and restore the main view
-    [connectionView removeFromSuperviewWithoutNeedingDisplay];
-    [databaseConnectionView setHidden:NO];
+    // Restore the database content view via coordinator
+    [self.viewCoordinator restoreDatabaseViewRemovingConnectionView:connectionView];
 
     // Restore the toolbar icons
     NSArray *toolbarItems = [[[dbDocument parentWindowControllerWindow] toolbar] items];
@@ -3759,7 +3758,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 /**
  * Initialise the connection controller, linking it to the parent document and setting up the parent window.
  */
-- (instancetype)initWithDocument:(SPDatabaseDocument *)document
+- (instancetype)initWithDocument:(id<SADatabaseDocumentProviding>)document
 {
 
     SPLog(@"initWithDocument");
@@ -3769,7 +3768,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         // Weak reference
         dbDocument = document;
 
-        databaseConnectionView = dbDocument->contentViewSplitter;
+        databaseConnectionView = [dbDocument contentViewSplitter];
 
 
         // Keychain references
@@ -3818,10 +3817,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         [self registerForNotifications];
 
-        // Hide the main view and position and display the connection view
-        [databaseConnectionView setHidden:YES];
-        [connectionView setFrame:[databaseConnectionView frame]];
-        [[dbDocument databaseView] addSubview:connectionView];
+        // Create the view coordinator and show the connection view
+        self.viewCoordinator = [[SAConnectionViewCoordinator alloc]
+            initWithDatabaseContentView:databaseConnectionView
+            containerView:[dbDocument databaseView]];
+        [self.viewCoordinator showConnectionView:connectionView];
 
         // Set up the splitview
         [connectionSplitView setMinSize:150.f ofSubviewAtIndex:0];

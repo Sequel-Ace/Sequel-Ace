@@ -25,9 +25,15 @@ import AppKit
     @objc func databaseView() -> NSView
 
     /// The window associated with this document, used for toolbar and sheet operations.
-    @objc var parentWindowControllerWindow: NSWindow? { get }
+    @objc func parentWindowControllerWindow() -> NSWindow?
 
     /// Called when a connection is successfully established, to hand off the connection
     /// to the document for distributing to sub-controllers.
     @objc func setConnection(_ connection: SPMySQLConnection)
+
+    /// Toggles the processing state indicator for this document's tab.
+    @objc func setIsProcessing(_ value: Bool)
+
+    /// Updates the window title to reflect connection state.
+    @objc func updateWindowTitle(_ sender: Any)
 }
