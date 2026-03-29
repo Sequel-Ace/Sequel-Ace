@@ -52,3 +52,4 @@
 #import <SPMySQL/SPMySQLConnectionDelegate.h>
 #import <SPMySQL/SPMySQLConnectionProxy.h>
 #import <SPMySQL/SPMySQLConnection.h>
+#import "SPSSHTunnel.h"
