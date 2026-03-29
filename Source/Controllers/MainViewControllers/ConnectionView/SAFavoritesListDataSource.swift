@@ -221,6 +221,9 @@ extension SAFavoritesListDataSource: NSOutlineViewDataSource {
         favoritesController.saveFavorites()
         reloadData(in: outlineView)
 
+        // Notify delegate to handle sort state reset and notifications
+        delegate?.favoritesListDidReorderNodes?()
+
         // Restore selection
         let restoredIndexes = NSMutableIndexSet()
         for node in preDragSelection {

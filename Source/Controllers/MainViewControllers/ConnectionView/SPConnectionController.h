@@ -37,7 +37,9 @@
 
 @protocol SADatabaseDocumentProviding;
 @protocol SAConnectionDelegate;
+@protocol SAFavoritesListDelegate;
 @class SAConnectionViewCoordinator;
+@class SAFavoritesListDataSource;
 
 @class SPDatabaseDocument,
 	   SPFavoritesController,
@@ -58,7 +60,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
     SPConnectionTimeZoneModeUseFixedTZ
 };
 
-@interface SPConnectionController : NSViewController <SPMySQLConnectionDelegate, NSOpenSavePanelDelegate, SPFavoritesImportProtocol, SPFavoritesExportProtocol, NSSplitViewDelegate>
+@interface SPConnectionController : NSViewController <SPMySQLConnectionDelegate, NSOpenSavePanelDelegate, SPFavoritesImportProtocol, SPFavoritesExportProtocol, NSSplitViewDelegate, SAFavoritesListDelegate>
 {
 	__weak id dbDocument;
 	SPMySQLConnection *mySQLConnection;
@@ -227,6 +229,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 @property (readwrite, weak) id <SPConnectionControllerDelegateProtocol> delegate;
 @property (readwrite, weak) id <SAConnectionDelegate> connectionDelegate;
 @property (readwrite, strong) SAConnectionViewCoordinator *viewCoordinator;
+@property (readwrite, strong) SAFavoritesListDataSource *favoritesListDataSource;
 @property (readwrite) NSInteger type;
 @property (readwrite, copy) NSString *name;
 @property (readwrite, copy) NSString *host;
