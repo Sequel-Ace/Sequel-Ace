@@ -314,6 +314,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             [newWindowController.databaseDocument connect];
         }
     }
+
+    // Install the standalone connection window menu item (Cmd+Shift+N)
+    [self installStandaloneConnectionMenuItem];
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {

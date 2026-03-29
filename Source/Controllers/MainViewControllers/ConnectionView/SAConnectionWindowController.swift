@@ -28,6 +28,9 @@ import AppKit
     /// The connection controller managing the favorites list and connection logic.
     private var connectionController: SPConnectionController?
 
+    /// The connection service for direct (non-UI-controller) connection attempts.
+    private let connectionService = SAConnectionService()
+
     /// Coordinator managing the view swap between connection and content views.
     /// In standalone mode, the content view is just an empty placeholder.
     private var viewCoordinator: SAConnectionViewCoordinator?
@@ -109,6 +112,32 @@ import AppKit
         // The connection controller already shows error UI inline,
         // so we don't need to do anything extra here.
         NSLog("Standalone connection failed: %@", error)
+    }
+
+    // MARK: - Direct Connection via SAConnectionService
+
+    /// Connects directly using SAConnectionService, bypassing SPConnectionController.
+    /// Use this for programmatic connections (e.g. from a SwiftUI favorites list).
+    @objc func connectDirectly(with info: SAConnectionInfoObjC, password: String, sshPassword: String) {
+        connectionService.connect(
+            with: info,
+            preferences: .fromUserDefaults(),
+            password: password,
+            sshPassword: sshPassword,
+            parentWindow: window
+        ) { [weak self] result in
+            guard let self = self else { return }
+
+            if result.isSuccess, let connection = result.connection {
+                let wrappedInfo = SAConnectionInfoObjC(info: info.info)
+                self.connectionDidEstablish(connection, info: wrappedInfo)
+            } else {
+                self.connectionDidFail(
+                    withError: result.errorTitle ?? "Connection failed",
+                    detail: result.errorDetail
+                )
+            }
+        }
     }
 }
 
