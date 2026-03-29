@@ -1487,7 +1487,9 @@ set_input:
 	[exportProgressIndicator setUsesThreadedAnimation:YES];
 
 	// Open the progress sheet
-	[[tableDocumentInstance parentWindowControllerWindow] beginSheet:exportProgressWindow completionHandler:nil];
+	[[tableDocumentInstance parentWindowControllerWindow] beginSheet:exportProgressWindow completionHandler:^(NSModalResponse returnCode) {
+		[self->tableDocumentInstance refreshTables];
+	}];
 
 	// CSV export
 	if (exportType == SPCSVExport) {
