@@ -23,6 +23,10 @@ import AppKit
     /// The user renamed a favorite. The owner should persist the new name.
     @objc func favoritesListDidRenameNode(_ node: SPTreeNode, to newName: String)
 
+    /// The user reordered favorites via drag & drop. The owner should reset
+    /// sort state and post change notifications.
+    @objc optional func favoritesListDidReorderNodes()
+
     /// The user started or stopped editing a connection (for UI state sync).
     @objc optional func favoritesListEditingStateChanged(isEditing: Bool)
 }
