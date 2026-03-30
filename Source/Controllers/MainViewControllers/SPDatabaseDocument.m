@@ -3482,89 +3482,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [toolbarItem setTarget:self];
         [toolbarItem setAction:@selector(clearConsole:)];
 
-    } else if ([itemIdentifier isEqualToString:SPMainToolbarTableStructure]) {
-        [toolbarItem setLabel:NSLocalizedString(@"Structure", @"toolbar item label for switching to the Table Structure tab")];
-        [toolbarItem setPaletteLabel:NSLocalizedString(@"Edit Table Structure", @"toolbar item label for switching to the Table Structure tab")];
-        //set up tooltip and image
-        [toolbarItem setToolTip:NSLocalizedString(@"Switch to the Table Structure tab", @"tooltip for toolbar item for switching to the Table Structure tab")];
-        if (@available(macOS 11.0, *)) {
-            [toolbarItem setImage:[NSImage imageWithSystemSymbolName:@"scale.3d" accessibilityDescription:nil]];
-        } else {
-            [toolbarItem setImage:[NSImage imageNamed:@"toolbar-switch-to-structure"]];
+    } else if ([[SAViewModeHelper allToolbarIdentifiers] containsObject:itemIdentifier]) {
+        // Use data-driven SAViewMode for view-switching toolbar items
+        for (NSInteger i = 0; i <= SAViewModeTriggers; i++) {
+            NSToolbarItem *modeItem = [SAViewModeHelper makeToolbarItemFor:(SAViewMode)i target:self];
+            if ([modeItem.itemIdentifier isEqualToString:itemIdentifier]) {
+                return modeItem;
+            }
         }
-        //set up the target action
-        [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(viewStructure)];
-
-    } else if ([itemIdentifier isEqualToString:SPMainToolbarTableContent]) {
-        [toolbarItem setLabel:NSLocalizedString(@"Content", @"toolbar item label for switching to the Table Content tab")];
-        [toolbarItem setPaletteLabel:NSLocalizedString(@"Browse & Edit Table Content", @"toolbar item label for switching to the Table Content tab")];
-        //set up tooltip and image
-        [toolbarItem setToolTip:NSLocalizedString(@"Switch to the Table Content tab", @"tooltip for toolbar item for switching to the Table Content tab")];
-        if (@available(macOS 11.0, *)) {
-            [toolbarItem setImage:[NSImage imageWithSystemSymbolName:@"text.justify" accessibilityDescription:nil]];
-        } else {
-            [toolbarItem setImage:[NSImage imageNamed:@"toolbar-switch-to-browse"]];
-        }
-        //set up the target action
-        [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(viewContent)];
-
-    } else if ([itemIdentifier isEqualToString:SPMainToolbarCustomQuery]) {
-        [toolbarItem setLabel:NSLocalizedString(@"Query", @"toolbar item label for switching to the Run Query tab")];
-        [toolbarItem setPaletteLabel:NSLocalizedString(@"Run Custom Query", @"toolbar item label for switching to the Run Query tab")];
-        //set up tooltip and image
-        [toolbarItem setToolTip:NSLocalizedString(@"Switch to the Run Query tab", @"tooltip for toolbar item for switching to the Run Query tab")];
-        if (@available(macOS 11.0, *)) {
-            [toolbarItem setImage:[NSImage imageWithSystemSymbolName:@"terminal" accessibilityDescription:nil]];
-        } else {
-            [toolbarItem setImage:[NSImage imageNamed:@"toolbar-switch-to-sql"]];
-        }
-        //set up the target action
-        [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(viewQuery)];
-
-    } else if ([itemIdentifier isEqualToString:SPMainToolbarTableInfo]) {
-        [toolbarItem setLabel:NSLocalizedString(@"Table Info", @"toolbar item label for switching to the Table Info tab")];
-        [toolbarItem setPaletteLabel:NSLocalizedString(@"Table Info", @"toolbar item label for switching to the Table Info tab")];
-        //set up tooltip and image
-        [toolbarItem setToolTip:NSLocalizedString(@"Switch to the Table Info tab", @"tooltip for toolbar item for switching to the Table Info tab")];
-        if (@available(macOS 11.0, *)) {
-            [toolbarItem setImage:[NSImage imageWithSystemSymbolName:@"info.circle" accessibilityDescription:nil]];
-        } else {
-            [toolbarItem setImage:[NSImage imageNamed:NSImageNameInfo]];
-        }
-        //set up the target action
-        [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(viewStatus)];
-
-    } else if ([itemIdentifier isEqualToString:SPMainToolbarTableRelations]) {
-        [toolbarItem setLabel:NSLocalizedString(@"Relations", @"toolbar item label for switching to the Table Relations tab")];
-        [toolbarItem setPaletteLabel:NSLocalizedString(@"Table Relations", @"toolbar item label for switching to the Table Relations tab")];
-        //set up tooltip and image
-        [toolbarItem setToolTip:NSLocalizedString(@"Switch to the Table Relations tab", @"tooltip for toolbar item for switching to the Table Relations tab")];
-        if (@available(macOS 11.0, *)) {
-            [toolbarItem setImage:[NSImage imageWithSystemSymbolName:@"arrow.2.squarepath" accessibilityDescription:nil]];
-        } else {
-            [toolbarItem setImage:[NSImage imageNamed:@"toolbar-switch-to-table-relations"]];
-        }
-        //set up the target action
-        [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(viewRelations)];
-
-    } else if ([itemIdentifier isEqualToString:SPMainToolbarTableTriggers]) {
-        [toolbarItem setLabel:NSLocalizedString(@"Triggers", @"toolbar item label for switching to the Table Triggers tab")];
-        [toolbarItem setPaletteLabel:NSLocalizedString(@"Table Triggers", @"toolbar item label for switching to the Table Triggers tab")];
-        //set up tooltip and image
-        [toolbarItem setToolTip:NSLocalizedString(@"Switch to the Table Triggers tab", @"tooltip for toolbar item for switching to the Table Triggers tab")];
-        if (@available(macOS 11.0, *)) {
-            [toolbarItem setImage:[NSImage imageWithSystemSymbolName:@"bolt.circle" accessibilityDescription:nil]];
-        } else {
-            [toolbarItem setImage:[NSImage imageNamed:@"toolbar-switch-to-table-triggers"]];
-        }
-        //set up the target action
-        [toolbarItem setTarget:self];
-        [toolbarItem setAction:@selector(viewTriggers)];
 
     } else if ([itemIdentifier isEqualToString:SPMainToolbarUserManager]) {
         [toolbarItem setLabel:NSLocalizedString(@"Users", @"toolbar item label for switching to the User Manager tab")];
