@@ -20,6 +20,33 @@ extension SPDatabaseDocument: SADatabaseDocumentProviding {
     }
 }
 
+// MARK: - SATaskManaging
+
+// SPDatabaseDocument conforms to SATaskManaging.
+// All methods are implemented in SPDatabaseDocument.m.
+// The ObjC method names map directly to the protocol requirements:
+//   startTask(withDescription:) -> startTaskWithDescription:
+//   endTask -> endTask
+//   setTaskPercentage(_:) -> setTaskPercentage:
+//   setTaskProgressToIndeterminate(afterDelay:) -> setTaskProgressToIndeterminateAfterDelay:
+//   enableTaskCancellation(withTitle:callbackObject:callbackFunction:) -> enableTaskCancellationWithTitle:callbackObject:callbackFunction:
+//   disableTaskCancellation -> disableTaskCancellation
+//   isWorking -> isWorking
+//   setDatabaseListIsSelectable(_:) -> setDatabaseListIsSelectable:
+//   setTaskDescription(_:) -> setTaskDescription:
+extension SPDatabaseDocument: SATaskManaging {
+    // Explicit forwarding stubs to bridge ObjC method signatures to Swift protocol.
+    // These call through to the ObjC implementations using the exact ObjC selectors.
+
+    public func setTaskProgressToIndeterminate(afterDelay: Bool) {
+        setTaskProgressToIndeterminateAfterDelay(afterDelay)
+    }
+
+    public func enableTaskCancellation(withTitle title: String, callbackObject: AnyObject?, callbackFunction: Selector?) {
+        enableTaskCancellation(withTitle: title, callbackObject: callbackObject, callbackFunction: callbackFunction ?? Selector(("_")))
+    }
+}
+
 // MARK: - Save Accessory
 
 extension SPDatabaseDocument {
