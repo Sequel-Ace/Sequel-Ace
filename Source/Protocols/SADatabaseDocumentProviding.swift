@@ -32,7 +32,9 @@ import AppKit
     @objc func setConnection(_ connection: SPMySQLConnection)
 
     /// Toggles the processing state indicator for this document's tab.
-    @objc func setIsProcessing(_ value: Bool)
+    /// Note: SPDatabaseDocument satisfies this via its synthesized `isProcessing` property setter.
+    /// Standalone hosts (SAConnectionWindowController) implement this as a no-op.
+    @objc var isProcessing: Bool { get set }
 
     /// Updates the window title to reflect connection state.
     @objc func updateWindowTitle(_ sender: Any)

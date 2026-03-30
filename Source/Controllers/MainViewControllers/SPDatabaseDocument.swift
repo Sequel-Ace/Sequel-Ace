@@ -13,12 +13,8 @@ import AppKit
 // SPDatabaseDocument conforms to SADatabaseDocumentProviding.
 // All requirements are satisfied by the ObjC declarations in SPDatabaseDocument.h.
 // If a requirement is not visible to Swift, we add an explicit forwarding stub below.
-extension SPDatabaseDocument: SADatabaseDocumentProviding {
-
-    public func setIsProcessing(_ value: Bool) {
-        isProcessing = value
-    }
-}
+// isProcessing property requirement is satisfied by the ObjC @property (readwrite) BOOL isProcessing.
+extension SPDatabaseDocument: SADatabaseDocumentProviding {}
 
 // MARK: - SATaskManaging
 

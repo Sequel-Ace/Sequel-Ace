@@ -164,8 +164,9 @@ extension SAConnectionWindowController: SADatabaseDocumentProviding {
         // delivered via SAConnectionDelegate instead.
     }
 
-    @objc func setIsProcessing(_ value: Bool) {
-        // No tab progress indicator in standalone mode.
+    @objc var isProcessing: Bool {
+        get { false }
+        set { /* No tab progress indicator in standalone mode. */ }
     }
 
     @objc func updateWindowTitle(_ sender: Any) {
