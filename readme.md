@@ -52,6 +52,81 @@ To install an unofficial community maintained [Homebrew](https://brew.sh) [Cask]
 brew install --cask sequel-ace
 ```
 
+## MCP Server (AI Agent Integration)
+
+Sequel Ace includes a built-in [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that lets AI agents — such as Claude Code, Claude Desktop, Cursor, and others — query your databases directly through Sequel Ace's existing connections.
+
+### Enabling the MCP Server
+
+1. Open **Sequel Ace → Preferences** (⌘,)
+2. Click the **MCP Server** tab
+3. Check **Enable MCP Server (localhost only)**
+4. Optionally change the port (default: `8765`)
+
+The server listens only on `127.0.0.1` and is not accessible from other machines.
+
+### Available Tools
+
+| Tool | Description |
+|---|---|
+| `list_connections` | List all saved connection favourites |
+| `list_databases` | List databases on the active connection |
+| `list_tables` | List tables in a given database |
+| `describe_table` | Show columns, indexes, and foreign keys |
+| `run_query` | Execute SQL and return results as JSON |
+| `export_results` | Run a query and save results to a JSON or CSV file |
+
+### Connecting Claude Desktop
+
+Add the following to your `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "sequel-ace": {
+      "url": "http://127.0.0.1:8765/sse"
+    }
+  }
+}
+```
+
+Then restart Claude Desktop.
+
+### Connecting Claude Code
+
+```sh
+claude mcp add sequel-ace http://127.0.0.1:8765/sse
+```
+
+Or add to your project's `.claude/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "sequel-ace": {
+      "url": "http://127.0.0.1:8765/sse"
+    }
+  }
+}
+```
+
+### Example Usage
+
+Once connected, you can ask your AI agent natural-language questions like:
+
+- *"What tables are in the `production` database?"*
+- *"Show me the last 10 orders from the orders table"*
+- *"Describe the schema of the `users` table"*
+- *"Export all products with stock < 10 to a CSV file"*
+
+### Security Notes
+
+- The server **only** accepts connections from `127.0.0.1` (localhost). Remote connections are rejected.
+- The server exposes whatever databases and permissions the active Sequel Ace connection has. Use a read-only database user if you want to prevent write operations.
+- Disable the server in Preferences when not in use.
+
+---
+
 ## Moving Saved Connections from Sequel Pro
 
 To migrate your favorites, please check the [migration guide](https://sequel-ace.com/get-started/migrating-from-sequel-pro.html).

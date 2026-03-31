@@ -36,6 +36,7 @@
 @class SPEditorPreferencePane;
 @class SPNetworkPreferencePane;
 @class SPFilePreferencePane;
+@class SPMCPPreferencePane;
 
 /**
  * @class SPPreferenceController SPPreferenceController.h
@@ -53,6 +54,7 @@
 	IBOutlet SPEditorPreferencePane <SPPreferencePaneProtocol>        *editorPreferencePane;
 	IBOutlet SPNetworkPreferencePane <SPPreferencePaneProtocol>       *networkPreferencePane;
 	IBOutlet SPFilePreferencePane <SPPreferencePaneProtocol>          *filePreferencePane;
+	SPMCPPreferencePane <SPPreferencePaneProtocol>                    *mcpPreferencePane;
 	IBOutlet NSPopUpButton                                            *appearancePopUp;
 	IBOutlet NSTextField                                              *appearanceMacOSVersionLabel;
 
@@ -65,6 +67,7 @@
 	NSToolbarItem *tablesItem;
 	NSToolbarItem *editorItem;
 	NSToolbarItem *shortcutItem;
+	NSToolbarItem *mcpItem;
     SPPreferenceFontChangeTarget fontChangeTarget;
 
     @package
@@ -78,7 +81,8 @@
 @property (readonly) SPNotificationsPreferencePane *notificationsPreferencePane;
 @property (readonly) SPEditorPreferencePane        *editorPreferencePane;
 @property (readonly) SPNetworkPreferencePane       *networkPreferencePane;
-@property (readonly) SPFilePreferencePane		   *filePreferencePane;
+@property (readonly) SPFilePreferencePane          *filePreferencePane;
+@property (readonly) SPMCPPreferencePane           *mcpPreferencePane;
 
 /**
  * @property fontChangeTarget Indicates which font was changed. See SPPreferenceFontChangeTarget for values.

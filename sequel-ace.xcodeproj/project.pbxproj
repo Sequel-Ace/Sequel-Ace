@@ -475,6 +475,9 @@
 		FD8099A82C59DDF70084646F /* SAUuidFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD18C8982C3C9B2F002A5D57 /* SAUuidFormatter.swift */; };
 		FD8099A92C59DE1D0084646F /* SABaseFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2056042C3A7E90008DD271 /* SABaseFormatter.swift */; };
 		FDCF55E52788278500D30655 /* TableSortHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */; };
+		B04369CDAE73936C539212F7 /* SPMCPServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB4D0AEB506704E1B3B2A8C6 /* SPMCPServer.swift */; };
+		DED43344A1EF436082168C62 /* SPMCPPreferencePane.m in Sources */ = {isa = PBXBuildFile; fileRef = FD8227E56592F76CBB5B6A78 /* SPMCPPreferencePane.m */; };
+		A78A6C70204B194531366D6B /* SPAppController+MCP.m in Sources */ = {isa = PBXBuildFile; fileRef = 95E9618D51C0ADA8C40BFA1A /* SPAppController+MCP.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1221,6 +1224,11 @@
 		FD2056042C3A7E90008DD271 /* SABaseFormatter.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SABaseFormatter.swift; sourceTree = "<group>"; };
 		FD6DFF862ADB40630057B713 /* SPTableHistoryManager.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SPTableHistoryManager.swift; sourceTree = "<group>"; tabWidth = 4; usesTabs = 1; };
 		FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAUuidFormatterTests.swift; sourceTree = "<group>"; };
+		CB4D0AEB506704E1B3B2A8C6 /* SPMCPServer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "SPMCPServer.swift"; sourceTree = "<group>"; };
+		83227FEA8834F15439114E37 /* SPMCPPreferencePane.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "SPMCPPreferencePane.h"; sourceTree = "<group>"; };
+		FD8227E56592F76CBB5B6A78 /* SPMCPPreferencePane.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "SPMCPPreferencePane.m"; sourceTree = "<group>"; };
+		AA4CC261BC0EADE36F58F1CB /* SPAppController+MCP.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "SPAppController+MCP.h"; sourceTree = "<group>"; };
+		95E9618D51C0ADA8C40BFA1A /* SPAppController+MCP.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "SPAppController+MCP.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1648,6 +1656,7 @@
 			children = (
 				5132930925F586A900D803AD /* NotificationToken.swift */,
 				51BC14F725BE135500F1CDC9 /* SPWindowController.swift */,
+				CB4D0AEB506704E1B3B2A8C6 /* SPMCPServer.swift */,
 				5132930A25F586A900D803AD /* TabManager.swift */,
 			);
 			path = Window;
@@ -1717,7 +1726,9 @@
 				1785EB68127DD79300F468C8 /* SPEditorPreferencePane.h */,
 				1785EB69127DD79300F468C8 /* SPEditorPreferencePane.m */,
 				1785EB64127DD5EA00F468C8 /* SPNetworkPreferencePane.h */,
+				83227FEA8834F15439114E37 /* SPMCPPreferencePane.h */,
 				1785EB65127DD5EA00F468C8 /* SPNetworkPreferencePane.m */,
+				FD8227E56592F76CBB5B6A78 /* SPMCPPreferencePane.m */,
 				65F52CCC24AE21F200FED3CB /* SPFilePreferencePane.h */,
 				65F52CC724AE21D600FED3CB /* SPFilePreferencePane.m */,
 			);
@@ -1880,7 +1891,9 @@
 				173E70D5107FF7AF008733C9 /* Other */,
 				17D390A6127B54F300672B13 /* Preferences */,
 				17E6414A0EF01EF6001BC333 /* SPAppController.h */,
+				AA4CC261BC0EADE36F58F1CB /* SPAppController+MCP.h */,
 				17E6414B0EF01EF6001BC333 /* SPAppController.m */,
+				95E9618D51C0ADA8C40BFA1A /* SPAppController+MCP.m */,
 				51BB391B25F82B060048CA69 /* SPAppController.swift */,
 				173E70D2107FF687008733C9 /* Subview Controllers */,
 				17D3583C1533766800A654D7 /* Window */,
@@ -3071,6 +3084,9 @@
 				967D875B24B67B4300BAE934 /* SPAutosizingTextView.swift in Sources */,
 				503B02CA1AE82C5E0060CAB1 /* SPTableFilterParser.m in Sources */,
 				1A9F343F257B0DBE0062EC87 /* SPBundleManager.m in Sources */,
+				B04369CDAE73936C539212F7 /* SPMCPServer.swift in Sources */,
+				DED43344A1EF436082168C62 /* SPMCPPreferencePane.m in Sources */,
+				A78A6C70204B194531366D6B /* SPAppController+MCP.m in Sources */,
 				4D90B79A101E0CDF00D116A1 /* SPUserManager.m in Sources */,
 				FD18C8992C3C9B2F002A5D57 /* SAUuidFormatter.swift in Sources */,
 				4D90B79E101E0CF200D116A1 /* SPUserManager.xcdatamodel in Sources */,
