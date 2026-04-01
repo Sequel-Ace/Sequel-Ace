@@ -2890,6 +2890,93 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     return info;
 }
 
+/**
+ * Resolves the MySQL password for use with SAConnectionService.
+ * Handles: AWS IAM token generation, keychain marker detection, plaintext.
+ * Returns nil and calls failConnectionWithTitle: on AWS IAM error.
+ */
+- (NSString *)_resolvedMySQLPassword
+{
+    // AWS IAM: generate auth token
+    if ([self _isAWSIAMConnection]) {
+        NSError *awsError = nil;
+        NSString *token = [self generateAWSIAMAuthTokenWithError:&awsError];
+        if (awsError || ![token length]) {
+            [self failConnectionWithTitle:NSLocalizedString(@"AWS IAM Authentication Failed", @"AWS IAM auth failed title")
+                             errorMessage:awsError ? awsError.localizedDescription : NSLocalizedString(@"Empty authentication token returned", @"AWS IAM empty token error")
+                                   detail:nil];
+            return nil;
+        }
+        return token;
+    }
+
+    // Keychain marker: if password matches the marker, fetch from keychain
+    if (connectionKeychainItemName && [[self password] isEqualToString:@"SequelAceSecretPassword"]) {
+        NSString *keychainPassword = [keychain getPasswordForName:connectionKeychainItemName account:connectionKeychainItemAccount];
+        return keychainPassword ?: @"";
+    }
+
+    return [self password] ?: @"";
+}
+
+/**
+ * Resolves the SSH password for use with SAConnectionService.
+ * If keychain item is set and password is the marker, returns empty string
+ * (the service passes keychain names through to the tunnel).
+ */
+- (NSString *)_resolvedSSHPassword
+{
+    if (connectionSSHKeychainItemName && [[self sshPassword] isEqualToString:@"SequelAceSecretPassword"]) {
+        return @""; // Tunnel will use keychain names from SAConnectionInfoObjC
+    }
+    return [self sshPassword] ?: @"";
+}
+
+/**
+ * Validates the SSH config file is accessible. Shows alert if not.
+ * Returns YES if connection should proceed, NO to abort.
+ */
+- (BOOL)_validateSSHConfigFile
+{
+    NSString *sshConfigFile = [[NSUserDefaults standardUserDefaults] stringForKey:SPSSHConfigFile];
+    if (sshConfigFile == nil) {
+        sshConfigFile = [[NSBundle mainBundle] pathForResource:SPSSHConfigFile ofType:@""];
+    }
+
+    if ([SPFileHandle fileHandleForReadingAtPath:sshConfigFile]) {
+        return YES; // Config file is accessible
+    }
+
+    SPLog(@"Cannot read sshConfigFile: %@", sshConfigFile);
+
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert addButtonWithTitle:NSLocalizedString(@"Go to Network Settings", @"SSH config file error alert - Go to network settings button")];
+    [alert addButtonWithTitle:NSLocalizedString(@"Reset to Default & Continue", @"SSH config file error alert - Reset to default button")];
+    [alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"SSH config file error alert - Cancel button")];
+    [alert setMessageText:NSLocalizedString(@"Cannot Access SSH Config File", @"SSH config file error alert title")];
+    [alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Sequel Ace does not have permission to read the configured SSH config file at '%@'.\n\nThis might be due to Sandbox restrictions. You can configure a different SSH Config File in the Network tab of Preferences or correct access to the exiting file in the Files tab of Preferences, or you can reset the path to the Sequel Ace default.", @"SSH config file error alert message"), sshConfigFile]];
+    [alert setAlertStyle:NSAlertStyleWarning];
+
+    NSInteger response = [alert runModal];
+
+    if (response == NSAlertFirstButtonReturn) { // Go to Settings
+        SPPreferenceController *prefCon = [((SPAppController *)[NSApp delegate]) preferenceController];
+        [prefCon showWindow:nil];
+        id filePaneItem = prefCon->networkItem;
+        [prefCon displayPreferencePane:filePaneItem];
+        [self _restoreConnectionInterface];
+        return NO;
+    } else if (response == NSAlertSecondButtonReturn) { // Reset to Default
+        NSString *defaultSSHConfigPath = [[NSBundle mainBundle] pathForResource:SPSSHConfigFile ofType:@""];
+        [[NSUserDefaults standardUserDefaults] setObject:defaultSSHConfigPath forKey:SPSSHConfigFile];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+        return YES; // Continue with default config
+    } else { // Cancel
+        [self _restoreConnectionInterface];
+        return NO;
+    }
+}
+
 - (void)_failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail localNetworkPermissionDenied:(BOOL)localNetworkPermissionDenied
 {
     void (^presentFailure)(void) = ^{
