@@ -10,7 +10,8 @@
 
 import Foundation
 
-/// Result of a connection attempt.
+/// Result of a connection attempt, carrying either a live connection or
+/// diagnostic error information for the controller to format into UI.
 @objc class SAConnectionResult: NSObject {
     @objc let connection: SPMySQLConnection?
     @objc let sshTunnel: SPSSHTunnel?
@@ -19,25 +20,53 @@ import Foundation
     @objc let errorDetail: String?
     @objc let isLocalNetworkDenied: Bool
 
+    // Diagnostic fields for controller-side error formatting
+    @objc let lastErrorID: UInt
+    @objc let rawErrorMessage: String
+    @objc let sshDebugMessages: String
+    @objc let connectionType: SAConnectionType
+    @objc let socketPath: String
+    @objc let databaseSelectionFailed: Bool
+    @objc let databaseSelectionError: String
+
     @objc var isSuccess: Bool { connection != nil && errorTitle == nil }
 
-    @objc init(connection: SPMySQLConnection, sshTunnel: SPSSHTunnel?) {
+    @objc init(connection: SPMySQLConnection, sshTunnel: SPSSHTunnel?,
+               databaseSelectionFailed: Bool = false, databaseSelectionError: String = "") {
         self.connection = connection
         self.sshTunnel = sshTunnel
         self.errorTitle = nil
         self.errorMessage = nil
         self.errorDetail = nil
         self.isLocalNetworkDenied = false
+        self.lastErrorID = 0
+        self.rawErrorMessage = ""
+        self.sshDebugMessages = ""
+        self.connectionType = .tcpIP
+        self.socketPath = ""
+        self.databaseSelectionFailed = databaseSelectionFailed
+        self.databaseSelectionError = databaseSelectionError
         super.init()
     }
 
-    @objc init(errorTitle: String, errorMessage: String?, errorDetail: String?, isLocalNetworkDenied: Bool = false) {
+    @objc init(errorTitle: String, errorMessage: String?, errorDetail: String?,
+               isLocalNetworkDenied: Bool = false,
+               lastErrorID: UInt = 0, rawErrorMessage: String = "",
+               sshDebugMessages: String = "",
+               connectionType: SAConnectionType = .tcpIP, socketPath: String = "") {
         self.connection = nil
         self.sshTunnel = nil
         self.errorTitle = errorTitle
         self.errorMessage = errorMessage
         self.errorDetail = errorDetail
         self.isLocalNetworkDenied = isLocalNetworkDenied
+        self.lastErrorID = lastErrorID
+        self.rawErrorMessage = rawErrorMessage
+        self.sshDebugMessages = sshDebugMessages
+        self.connectionType = connectionType
+        self.socketPath = socketPath
+        self.databaseSelectionFailed = false
+        self.databaseSelectionError = ""
         super.init()
     }
 }
@@ -202,28 +231,34 @@ import Foundation
                 let errorString = conn.lastErrorMessage() ?? ""
                 let errorID = conn.lastErrorID()
 
-                let result: SAConnectionResult
-                if errorID == 1045 {
-                    result = SAConnectionResult(
-                        errorTitle: NSLocalizedString("Unable to connect", comment: ""),
-                        errorMessage: errorString,
-                        errorDetail: NSLocalizedString("Please check your username and password and try again.", comment: "")
-                    )
-                } else {
-                    result = SAConnectionResult(
-                        errorTitle: NSLocalizedString("Unable to connect", comment: ""),
-                        errorMessage: errorString,
-                        errorDetail: nil,
-                        isLocalNetworkDenied: errorString.lowercased().contains("network")
-                    )
-                }
+                let result = SAConnectionResult(
+                    errorTitle: NSLocalizedString("Unable to connect", comment: ""),
+                    errorMessage: errorString,
+                    errorDetail: errorID == 1045
+                        ? NSLocalizedString("Please check your username and password and try again.", comment: "")
+                        : nil,
+                    isLocalNetworkDenied: errorString.lowercased().contains("network"),
+                    lastErrorID: errorID,
+                    rawErrorMessage: errorString,
+                    sshDebugMessages: tunnel?.debugMessages?() ?? "",
+                    connectionType: info.type,
+                    socketPath: info.socket
+                )
 
                 DispatchQueue.main.async { completion(result) }
                 return
             }
 
+            // Database selection
             if !info.database.isEmpty && !conn.selectDatabase(info.database) {
-                NSLog("Failed to select database: %@", info.database)
+                let dbError = conn.lastErrorMessage() ?? ""
+                let result = SAConnectionResult(
+                    connection: conn, sshTunnel: tunnel,
+                    databaseSelectionFailed: true,
+                    databaseSelectionError: dbError
+                )
+                DispatchQueue.main.async { completion(result) }
+                return
             }
 
             switch info.timeZoneMode {
