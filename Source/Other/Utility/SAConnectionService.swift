@@ -227,6 +227,20 @@ import Foundation
 
             conn.connect()
 
+            // SSH tunnel fallback: if connection failed through tunnel,
+            // wait briefly for SSH debug output, then retry with fallback port
+            if !conn.isConnected(), let tunnel = tunnel {
+                Thread.sleep(forTimeInterval: 0.1)
+                if tunnel.state() == SPMySQLProxyForwardingFailed,
+                   tunnel.localPortFallback() > 0 {
+                    conn.port = UInt(tunnel.localPortFallback())
+                    conn.connect()
+                    if !conn.isConnected() {
+                        Thread.sleep(forTimeInterval: 0.1)
+                    }
+                }
+            }
+
             if !conn.isConnected() {
                 let errorString = conn.lastErrorMessage() ?? ""
                 let errorID = conn.lastErrorID()
