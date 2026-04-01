@@ -2845,6 +2845,51 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     }
 }
 
+/**
+ * Builds an SAConnectionInfoObjC from the current controller state.
+ * Used by the connection service and addConnectionToDocument.
+ */
+- (SAConnectionInfoObjC *)_buildConnectionInfo
+{
+    SAConnectionInfoObjC *info = [[SAConnectionInfoObjC alloc] init];
+    info.type = (SAConnectionType)self.type;
+    info.name = self.name ?: @"";
+    info.host = self.host ?: @"";
+    info.user = self.user ?: @"";
+    info.password = self.password ?: @"";
+    info.database = self.database ?: @"";
+    info.socket = self.socket ?: @"";
+    info.port = self.port ?: @"";
+    info.colorIndex = self.colorIndex;
+    info.useCompression = self.useCompression;
+    info.useSSL = self.useSSL;
+    info.sslKeyFileLocationEnabled = self.sslKeyFileLocationEnabled;
+    info.sslKeyFileLocation = self.sslKeyFileLocation ?: @"";
+    info.sslCertificateFileLocationEnabled = self.sslCertificateFileLocationEnabled;
+    info.sslCertificateFileLocation = self.sslCertificateFileLocation ?: @"";
+    info.sslCACertFileLocationEnabled = self.sslCACertFileLocationEnabled;
+    info.sslCACertFileLocation = self.sslCACertFileLocation ?: @"";
+    info.sshHost = self.sshHost ?: @"";
+    info.sshUser = self.sshUser ?: @"";
+    info.sshPassword = self.sshPassword ?: @"";
+    info.sshKeyLocationEnabled = self.sshKeyLocationEnabled;
+    info.sshKeyLocation = self.sshKeyLocation ?: @"";
+    info.sshPort = self.sshPort ?: @"";
+    info.connectionKeychainID = connectionKeychainID ?: @"";
+    info.connectionKeychainItemName = connectionKeychainItemName ?: @"";
+    info.connectionKeychainItemAccount = connectionKeychainItemAccount ?: @"";
+    info.connectionSSHKeychainItemName = connectionSSHKeychainItemName ?: @"";
+    info.connectionSSHKeychainItemAccount = connectionSSHKeychainItemAccount ?: @"";
+    info.timeZoneMode = (SAConnectionTimeZoneMode)timeZoneMode;
+    info.timeZoneIdentifier = timeZoneIdentifier ?: @"";
+    info.allowDataLocalInfile = self.allowDataLocalInfile;
+    info.enableClearTextPlugin = self.enableClearTextPlugin;
+    info.useAWSIAMAuth = self.useAWSIAMAuth;
+    info.awsRegion = self.awsRegion ?: @"";
+    info.awsProfile = self.awsProfile ?: @"";
+    return info;
+}
+
 - (void)_failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail localNetworkPermissionDenied:(BOOL)localNetworkPermissionDenied
 {
     void (^presentFailure)(void) = ^{
@@ -3619,6 +3664,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         [awsProfilePopup setAction:@selector(updateAWSIAMInterface:)];
         [awsRegionComboBox setTarget:self];
         [awsRegionComboBox setAction:@selector(updateAWSIAMInterface:)];
+
+        // Initialize the connection service
+        self.connectionService = [[SAConnectionService alloc] init];
+        self.connectionService.mySQLDelegate = (id)dbDocument;
 
         initComplete = YES;
 
