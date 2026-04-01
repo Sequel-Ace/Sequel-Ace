@@ -406,15 +406,80 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     // Trim whitespace and newlines from the host field before attempting to connect
     [self setHost:[[self host] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
 
-    // Initiate the SSH connection process for tunnels
+    // For SSH connections, validate the config file before proceeding
     if ([self type] == SPSSHTunnelConnection) {
-        [self performSelector:@selector(initiateSSHTunnelConnection) withObject:nil afterDelay:0.0];
-
-        return;
+        [self setSshHost:[[self sshHost] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
+        if (![self _validateSSHConfigFile]) {
+            return;
+        }
     }
 
-    // ...or start the MySQL connection process directly
-    [self performSelector:@selector(initiateMySQLConnection) withObject:nil afterDelay:0.0];
+    // Resolve passwords (handles keychain marker and AWS IAM token)
+    NSString *resolvedPassword = [self _resolvedMySQLPassword];
+    if (!resolvedPassword) return; // AWS IAM error already shown
+
+    NSString *resolvedSSHPassword = [self _resolvedSSHPassword];
+
+    // Build connection info and preferences
+    SAConnectionInfoObjC *info = [self _buildConnectionInfo];
+    SAConnectionPreferences *preferences = [SAConnectionPreferences fromUserDefaults];
+
+    // Update progress text
+    if (isTestingConnection) {
+        [progressIndicatorText setStringValue:([self type] == SPSSHTunnelConnection)
+            ? NSLocalizedString(@"Testing SSH...", @"testing SSH status message")
+            : NSLocalizedString(@"Testing MySQL...", @"testing MySQL status message")];
+    } else {
+        [progressIndicatorText setStringValue:([self type] == SPSSHTunnelConnection)
+            ? NSLocalizedString(@"SSH connecting...", @"SSH connecting status message")
+            : NSLocalizedString(@"MySQL connecting...", @"MySQL connecting status message")];
+    }
+
+    // Change Connect button to Cancel
+    [connectButton setTitle:NSLocalizedString(@"Cancel", @"cancel button")];
+    [connectButton setAction:@selector(cancelConnection:)];
+    [connectButton setEnabled:YES];
+    [connectButton display];
+
+    // Connect via service (async — completion called on main thread)
+    __weak typeof(self) weakSelf = self;
+    [self.connectionService connectWith:info
+                            preferences:preferences
+                               password:resolvedPassword
+                            sshPassword:resolvedSSHPassword
+                           parentWindow:[dbDocument parentWindowControllerWindow]
+                             completion:^(SAConnectionResult *result) {
+        __strong typeof(weakSelf) self = weakSelf;
+        if (!self) return;
+
+        // Store connection/tunnel on controller ivars for cancelConnection: etc.
+        self->mySQLConnection = result.connection;
+        self->sshTunnel = result.sshTunnel;
+
+        if (result.databaseSelectionFailed) {
+            if (self->isTestingConnection) {
+                [self cancelConnection:nil];
+                [self _showConnectionTestResult:NSLocalizedString(@"Invalid database", @"Invalid database very short status message")];
+            } else {
+                [self failConnectionWithTitle:NSLocalizedString(@"Unable to connect", @"connection failed title")
+                                 errorMessage:[NSString stringWithFormat:NSLocalizedString(@"Connected but unable to select database '%@'.", @"message when database selection fails"), info.database]
+                                       detail:result.databaseSelectionError];
+            }
+            return;
+        }
+
+        if (!result.isSuccess) {
+            BOOL localNetworkDenied = result.isLocalNetworkDenied || [self _isLocalNetworkAccessDeniedForCurrentConnectionAttempt];
+            [self _failConnectionWithTitle:result.errorTitle ?: @""
+                              errorMessage:result.errorMessage
+                                    detail:result.errorDetail
+                   localNetworkPermissionDenied:localNetworkDenied];
+            return;
+        }
+
+        // Success — delegate to existing handler
+        [self mySQLConnectionEstablished];
+    }];
 }
 
 /**
@@ -429,16 +494,15 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     cancellingConnection = YES;
 
-    // Cancel the MySQL connection - handing it off to a background thread - if one is present
+    // Cancel via connection service (handles both MySQL and SSH tunnel)
+    [self.connectionService cancel];
+
+    // Also clean up any locally-held references
     if (mySQLConnection) {
         [mySQLConnection setDelegate:nil];
-        [NSThread detachNewThreadWithName:SPCtxt(@"SPConnectionController cancellation background disconnect",dbDocument) target:mySQLConnection selector:@selector(disconnect) object:nil];
+        mySQLConnection = nil;
     }
-
-    // Cancel the SSH tunnel if present
-    if (sshTunnel) {
-        [sshTunnel disconnect];
-    }
+    sshTunnel = nil;
 
     // Restore the connection interface
     [self _restoreConnectionInterface];
