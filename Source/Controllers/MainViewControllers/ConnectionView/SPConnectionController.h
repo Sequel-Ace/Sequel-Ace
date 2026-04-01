@@ -40,6 +40,7 @@
 @protocol SAFavoritesListDelegate;
 @class SAConnectionViewCoordinator;
 @class SAFavoritesListDataSource;
+@class SAConnectionService;
 
 @class SPDatabaseDocument,
 	   SPFavoritesController,
@@ -230,6 +231,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 @property (readwrite, weak) id <SAConnectionDelegate> connectionDelegate;
 @property (readwrite, strong) SAConnectionViewCoordinator *viewCoordinator;
 @property (readwrite, strong) SAFavoritesListDataSource *favoritesListDataSource;
+@property (readwrite, strong) SAConnectionService *connectionService;
 @property (readwrite) NSInteger type;
 @property (readwrite, copy) NSString *name;
 @property (readwrite, copy) NSString *host;
