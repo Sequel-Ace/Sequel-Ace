@@ -337,13 +337,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 
 #pragma mark - SPConnectionHandler
 
-- (void)initiateMySQLConnection;
-- (void)initiateMySQLConnectionInBackground;
-- (void)initiateSSHTunnelConnection;
-
 - (void)mySQLConnectionEstablished;
-- (void)sshTunnelCallback:(SPSSHTunnel *)theTunnel;
-
 - (void)addConnectionToDocument;
 
 - (void)failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail;
