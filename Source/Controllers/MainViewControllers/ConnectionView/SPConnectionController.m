@@ -442,26 +442,26 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [connectButton display];
 
     // Connect via service (async — completion called on main thread)
-    __weak typeof(self) weakSelf = self;
+    __weak __kindof SPConnectionController *weakSelf = self;
     [self.connectionService connectWith:info
                             preferences:preferences
                                password:resolvedPassword
                             sshPassword:resolvedSSHPassword
                            parentWindow:[dbDocument parentWindowControllerWindow]
                              completion:^(SAConnectionResult *result) {
-        __strong typeof(weakSelf) self = weakSelf;
-        if (!self) return;
+        SPConnectionController *strongSelf = weakSelf;
+        if (!strongSelf) return;
 
         // Store connection/tunnel on controller ivars for cancelConnection: etc.
-        self->mySQLConnection = result.connection;
-        self->sshTunnel = result.sshTunnel;
+        strongSelf->mySQLConnection = result.connection;
+        strongSelf->sshTunnel = result.sshTunnel;
 
         if (result.databaseSelectionFailed) {
-            if (self->isTestingConnection) {
-                [self cancelConnection:nil];
-                [self _showConnectionTestResult:NSLocalizedString(@"Invalid database", @"Invalid database very short status message")];
+            if (strongSelf->isTestingConnection) {
+                [strongSelf cancelConnection:nil];
+                [strongSelf _showConnectionTestResult:NSLocalizedString(@"Invalid database", @"Invalid database very short status message")];
             } else {
-                [self failConnectionWithTitle:NSLocalizedString(@"Unable to connect", @"connection failed title")
+                [strongSelf failConnectionWithTitle:NSLocalizedString(@"Unable to connect", @"connection failed title")
                                  errorMessage:[NSString stringWithFormat:NSLocalizedString(@"Connected but unable to select database '%@'.", @"message when database selection fails"), info.database]
                                        detail:result.databaseSelectionError];
             }
@@ -469,8 +469,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         }
 
         if (!result.isSuccess) {
-            BOOL localNetworkDenied = result.isLocalNetworkDenied || [self _isLocalNetworkAccessDeniedForCurrentConnectionAttempt];
-            [self _failConnectionWithTitle:result.errorTitle ?: @""
+            BOOL localNetworkDenied = result.isLocalNetworkDenied || [strongSelf _isLocalNetworkAccessDeniedForCurrentConnectionAttempt];
+            [strongSelf _failConnectionWithTitle:result.errorTitle ?: @""
                               errorMessage:result.errorMessage
                                     detail:result.errorDetail
                    localNetworkPermissionDenied:localNetworkDenied];
@@ -478,7 +478,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         }
 
         // Success — delegate to existing handler
-        [self mySQLConnectionEstablished];
+        [strongSelf mySQLConnectionEstablished];
     }];
 }
 
