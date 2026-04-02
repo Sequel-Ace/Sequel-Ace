@@ -254,7 +254,7 @@ import Foundation
                     isLocalNetworkDenied: errorString.lowercased().contains("network"),
                     lastErrorID: errorID,
                     rawErrorMessage: errorString,
-                    sshDebugMessages: tunnel?.debugMessages?() ?? "",
+                    sshDebugMessages: tunnel?.debugMessages() ?? "",
                     connectionType: info.type,
                     socketPath: info.socket
                 )
