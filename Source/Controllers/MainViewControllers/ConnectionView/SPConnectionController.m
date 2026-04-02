@@ -2465,28 +2465,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     // direct document call. This allows a standalone connection window to receive
     // the connection without being a document.
     if (self.connectionDelegate) {
-        SAConnectionInfoObjC *info = [[SAConnectionInfoObjC alloc] init];
-        info.type = (SAConnectionType)self.type;
-        info.name = self.name ?: @"";
-        info.host = self.host ?: @"";
-        info.user = self.user ?: @"";
-        info.password = self.password ?: @"";
-        info.database = self.database ?: @"";
-        info.socket = self.socket ?: @"";
-        info.port = self.port ?: @"";
-        info.colorIndex = self.colorIndex;
-        info.useCompression = self.useCompression;
-        info.useSSL = self.useSSL;
-        info.sshHost = self.sshHost ?: @"";
-        info.sshUser = self.sshUser ?: @"";
-        info.sshPassword = self.sshPassword ?: @"";
-        info.sshPort = self.sshPort ?: @"";
-        info.connectionKeychainID = connectionKeychainID ?: @"";
-        info.connectionKeychainItemName = connectionKeychainItemName ?: @"";
-        info.connectionKeychainItemAccount = connectionKeychainItemAccount ?: @"";
-        info.connectionSSHKeychainItemName = connectionSSHKeychainItemName ?: @"";
-        info.connectionSSHKeychainItemAccount = connectionSSHKeychainItemAccount ?: @"";
-        [self.connectionDelegate connectionDidEstablish:mySQLConnection info:info];
+        [self.connectionDelegate connectionDidEstablish:mySQLConnection info:[self _buildConnectionInfo]];
     } else {
         // Legacy path: pass the connection directly to the document.
         [dbDocument setConnection:mySQLConnection];
