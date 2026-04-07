@@ -453,8 +453,14 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         if (!strongSelf) return;
 
         // Store connection/tunnel on controller ivars for cancelConnection: etc.
+        // Only overwrite sshTunnel if result carries one (error results have nil tunnel
+        // but the service's activeTunnel may still be alive for cleanup by failConnectionWithTitle:).
         strongSelf->mySQLConnection = result.connection;
-        strongSelf->sshTunnel = result.sshTunnel;
+        if (result.sshTunnel) {
+            strongSelf->sshTunnel = result.sshTunnel;
+        } else if (strongSelf.connectionService.activeTunnel) {
+            strongSelf->sshTunnel = strongSelf.connectionService.activeTunnel;
+        }
 
         if (result.databaseSelectionFailed) {
             if (strongSelf->isTestingConnection) {
