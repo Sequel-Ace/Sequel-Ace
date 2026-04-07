@@ -3389,7 +3389,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         // Initialize the connection service
         self.connectionService = [[SAConnectionService alloc] init];
-        self.connectionService.mySQLDelegate = (id)dbDocument;
+        if ([dbDocument conformsToProtocol:@protocol(SPMySQLConnectionDelegate)]) {
+            self.connectionService.mySQLDelegate = (id<SPMySQLConnectionDelegate>)dbDocument;
+        }
 
         initComplete = YES;
 

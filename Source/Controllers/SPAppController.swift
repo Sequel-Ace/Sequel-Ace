@@ -34,12 +34,16 @@ extension SPAppController {
 
         // Retain the controller; remove when its window closes.
         Self.standaloneConnectionWindows.append(controller)
-        NotificationCenter.default.addObserver(
+        var token: NSObjectProtocol?
+        token = NotificationCenter.default.addObserver(
             forName: NSWindow.willCloseNotification,
             object: controller.window,
             queue: .main
         ) { _ in
             Self.standaloneConnectionWindows.removeAll { $0 === controller }
+            if let token = token {
+                NotificationCenter.default.removeObserver(token)
+            }
         }
     }
 
