@@ -86,7 +86,14 @@ import Foundation
         cp.useKeepAlive = prefs.bool(forKey: SPUseKeepAlive)
         cp.keepAliveInterval = prefs.float(forKey: SPKeepAliveInterval)
         cp.enableQueryLogging = prefs.bool(forKey: SPConsoleEnableLogging)
-        cp.sslCipherList = prefs.string(forKey: SPSSLCipherListKey)
+        // Strip disabled ciphers: the preference stores "enabled1:enabled2:--:disabled1:disabled2"
+        // where "--" is a UI marker separating enabled from disabled ciphers.
+        if var cipherString = prefs.string(forKey: SPSSLCipherListKey) {
+            if let markerRange = cipherString.range(of: ":?--", options: .regularExpression) {
+                cipherString = String(cipherString[..<markerRange.lowerBound])
+            }
+            cp.sslCipherList = cipherString.isEmpty ? nil : cipherString
+        }
         return cp
     }
 }
