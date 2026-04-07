@@ -211,7 +211,13 @@ import Foundation
             conn.allowDataLocalInfile = info.allowDataLocalInfile != 0
             conn.enableClearTextPlugin = info.enableClearTextPlugin != 0
 
-            if info.useSSL != 0 {
+            // AWS IAM auth requires cleartext plugin and SSL regardless of saved flags
+            if info.type == .awsIAM {
+                conn.enableClearTextPlugin = true
+                conn.useSSL = true
+            }
+
+            if info.useSSL != 0 || info.type == .awsIAM {
                 conn.useSSL = true
                 if info.sslKeyFileLocationEnabled != 0 {
                     conn.sslKeyFilePath = info.sslKeyFileLocation
@@ -272,6 +278,10 @@ import Foundation
                     connectionType: info.type,
                     socketPath: info.socket
                 )
+
+                // Clean up: disconnect tunnel so it doesn't leak ports
+                tunnel?.disconnect()
+                self.activeConnection = nil
 
                 DispatchQueue.main.async { completion(result) }
                 return

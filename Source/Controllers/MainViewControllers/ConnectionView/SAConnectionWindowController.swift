@@ -111,10 +111,16 @@ import AppKit
     }
 
     func connectionDidFail(withError error: String, detail: String?) {
-        // For the embedded SPConnectionController path, error UI is shown inline.
-        // For the direct connectDirectly path, show an alert so the user sees the error.
+        // The embedded SPConnectionController path shows its own error UI inline,
+        // so this delegate method is a no-op for that flow.
+        // The connectDirectly path shows its own alert below.
+        NSLog("Standalone connection failed: %@", error)
+    }
+
+    /// Shows an error alert as a sheet on the standalone window.
+    private func showConnectionError(title: String, detail: String?) {
         let alert = NSAlert()
-        alert.messageText = error
+        alert.messageText = title
         alert.informativeText = detail ?? ""
         alert.alertStyle = .warning
         alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
@@ -139,13 +145,26 @@ import AppKit
         ) { [weak self] result in
             guard let self = self else { return }
 
+            if result.databaseSelectionFailed, let connection = result.connection {
+                // Connected but couldn't select database — hand off anyway,
+                // the document will show the database list.
+                let wrappedInfo = SAConnectionInfoObjC(info: info.info)
+                self.connectionDidEstablish(connection, info: wrappedInfo)
+                return
+            }
+
             if result.isSuccess, let connection = result.connection {
                 let wrappedInfo = SAConnectionInfoObjC(info: info.info)
                 self.connectionDidEstablish(connection, info: wrappedInfo)
             } else {
-                self.connectionDidFail(
-                    withError: result.errorTitle ?? "Connection failed",
-                    detail: result.errorDetail
+                // Build a meaningful error from all available fields
+                let detail = [result.errorMessage, result.errorDetail]
+                    .compactMap { $0 }
+                    .filter { !$0.isEmpty }
+                    .joined(separator: "\n")
+                self.showConnectionError(
+                    title: result.errorTitle ?? "Connection failed",
+                    detail: detail.isEmpty ? nil : detail
                 )
             }
         }
