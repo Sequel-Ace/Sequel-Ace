@@ -289,6 +289,7 @@ import Foundation
                 // Clean up: disconnect tunnel so it doesn't leak ports
                 tunnel?.disconnect()
                 self.activeConnection = nil
+                self.activeTunnel = nil
 
                 DispatchQueue.main.async { completion(result) }
                 return
