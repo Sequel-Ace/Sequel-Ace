@@ -543,7 +543,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem {
     SEL action = [menuItem action];
-    if (action == @selector(newWindow:) || action == @selector(openConnectionSheet:)) {
+    if (action == @selector(newWindow:) || action == @selector(openConnectionSheet:) || action == @selector(openStandaloneConnectionWindow:)) {
         return YES;
     }
     if (action == @selector(newTab:)) {

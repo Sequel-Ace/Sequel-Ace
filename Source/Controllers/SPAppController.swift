@@ -25,11 +25,22 @@ extension SPAppController {
     /// Opens a standalone connection window (decoupled from document lifecycle).
     /// This is the modernized connection flow — the connection screen exists
     /// independently, and only creates a document tab on successful connect.
+    /// Tracks open standalone connection windows so they don't get deallocated.
+    private static var standaloneConnectionWindows: [SAConnectionWindowController] = []
+
     @IBAction func openStandaloneConnectionWindow(_ sender: Any) {
         let controller = SAConnectionWindowController()
         controller.showWindow(sender)
-        // Keep a strong reference so the window stays alive
-        objc_setAssociatedObject(controller.window as Any, "standaloneController", controller, .OBJC_ASSOCIATION_RETAIN)
+
+        // Retain the controller; remove when its window closes.
+        Self.standaloneConnectionWindows.append(controller)
+        NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification,
+            object: controller.window,
+            queue: .main
+        ) { _ in
+            Self.standaloneConnectionWindows.removeAll { $0 === controller }
+        }
     }
 
     @IBAction func export(_ sender: Any) {

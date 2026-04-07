@@ -39,7 +39,10 @@ extension SPDatabaseDocument: SATaskManaging {
     }
 
     public func enableTaskCancellation(withTitle title: String, callbackObject: AnyObject?, callbackFunction: Selector?) {
-        enableTaskCancellation(withTitle: title, callbackObject: callbackObject, callbackFunction: callbackFunction ?? Selector(("_")))
+        // The ObjC method checks both callbackObject && callbackSelector before calling,
+        // so passing nil object when selector is nil is safe.
+        let obj = callbackFunction != nil ? callbackObject : nil
+        enableTaskCancellation(withTitle: title, callbackObject: obj, callbackFunction: callbackFunction ?? Selector(("noop")))
     }
 }
 

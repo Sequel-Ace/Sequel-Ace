@@ -2898,6 +2898,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 - (void)favoritesListDidRenameNode:(SPTreeNode *)node to:(NSString *)newName
 {
     if (![node isGroup]) {
+        // Note: this saves the full form state, matching the original outlineView:setObjectValue:
+        // behavior. A future improvement could save only the name field.
         [self setName:newName];
         [self _saveCurrentDetailsCreatingNewFavorite:NO validateDetails:NO];
     }
