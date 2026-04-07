@@ -101,7 +101,9 @@ import AppKit
 
         guard let document = windowController?.databaseDocument else { return }
 
-        // 2. Hand off the established connection to the new document
+        // 2. Hand off the established connection to the new document.
+        // setConnection: transitions the document out of connection mode
+        // into the database UI (same as the embedded flow's addConnectionToDocument).
         document.setConnection(connection)
 
         // 3. Close the standalone connection window
@@ -109,9 +111,18 @@ import AppKit
     }
 
     func connectionDidFail(withError error: String, detail: String?) {
-        // The connection controller already shows error UI inline,
-        // so we don't need to do anything extra here.
-        NSLog("Standalone connection failed: %@", error)
+        // For the embedded SPConnectionController path, error UI is shown inline.
+        // For the direct connectDirectly path, show an alert so the user sees the error.
+        let alert = NSAlert()
+        alert.messageText = error
+        alert.informativeText = detail ?? ""
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
+        if let window = self.window {
+            alert.beginSheetModal(for: window, completionHandler: nil)
+        } else {
+            alert.runModal()
+        }
     }
 
     // MARK: - Direct Connection via SAConnectionService

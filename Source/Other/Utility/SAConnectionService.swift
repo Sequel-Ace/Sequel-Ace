@@ -29,7 +29,7 @@ import Foundation
     @objc let databaseSelectionFailed: Bool
     @objc let databaseSelectionError: String
 
-    @objc var isSuccess: Bool { connection != nil && errorTitle == nil }
+    @objc var isSuccess: Bool { connection != nil && errorTitle == nil && !databaseSelectionFailed }
 
     @objc init(connection: SPMySQLConnection, sshTunnel: SPSSHTunnel?,
                databaseSelectionFailed: Bool = false, databaseSelectionError: String = "") {
@@ -109,6 +109,9 @@ import Foundation
     /// Stored completion for SSH tunnel callback.
     private var sshTunnelCompletion: ((SPSSHTunnel?, String?) -> Void)?
 
+    /// Set to true when cancel() is called; checked before delivering results.
+    private var cancelled = false
+
     // MARK: - Public API
 
     /// Creates and configures an SPMySQLConnection from the given parameters.
@@ -121,28 +124,39 @@ import Foundation
         parentWindow: NSWindow?,
         completion: @escaping (SAConnectionResult) -> Void
     ) {
+        cancelled = false
+
+        // Wrap completion to suppress delivery after cancel
+        let safeCompletion: (SAConnectionResult) -> Void = { [weak self] result in
+            guard self?.cancelled != true else { return }
+            completion(result)
+        }
+
         if info.type == .sshTunnel {
             establishSSHTunnel(info: info, sshPassword: sshPassword, parentWindow: parentWindow) { [weak self] (tunnel: SPSSHTunnel?, error: String?) in
-                guard let self = self else { return }
+                guard let self = self, !self.cancelled else { return }
                 if let tunnel = tunnel {
                     self.activeTunnel = tunnel
-                    self.connectMySQL(info: info, preferences: preferences, password: password, tunnel: tunnel, completion: completion)
+                    self.connectMySQL(info: info, preferences: preferences, password: password, tunnel: tunnel, completion: safeCompletion)
                 } else {
                     let result = SAConnectionResult(
                         errorTitle: NSLocalizedString("SSH connection failed!", comment: ""),
                         errorMessage: error,
                         errorDetail: nil
                     )
-                    DispatchQueue.main.async { completion(result) }
+                    DispatchQueue.main.async { safeCompletion(result) }
                 }
             }
         } else {
-            connectMySQL(info: info, preferences: preferences, password: password, tunnel: nil, completion: completion)
+            connectMySQL(info: info, preferences: preferences, password: password, tunnel: nil, completion: safeCompletion)
         }
     }
 
     /// Cancels an in-progress connection attempt.
     @objc func cancel() {
+        cancelled = true
+        sshTunnelCompletion = nil
+
         if let conn = activeConnection {
             conn.setDelegate(nil)
             Thread.detachNewThread {
@@ -319,11 +333,13 @@ import Foundation
             tunnel.setParentWindow(window)
         }
 
-        if !info.connectionSSHKeychainItemName.isEmpty {
+        // Prefer an explicit SSH password over the stored keychain entry,
+        // so ad-hoc overrides on existing favorites work correctly.
+        if !sshPassword.isEmpty {
+            tunnel.setPassword(sshPassword)
+        } else if !info.connectionSSHKeychainItemName.isEmpty {
             tunnel.setPasswordKeychainName(info.connectionSSHKeychainItemName,
                                           account: info.connectionSSHKeychainItemAccount)
-        } else {
-            tunnel.setPassword(sshPassword)
         }
 
         if info.sshKeyLocationEnabled != 0 && !info.sshKeyLocation.isEmpty {
