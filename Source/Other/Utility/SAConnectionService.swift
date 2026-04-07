@@ -135,13 +135,15 @@ import Foundation
 
         // Wrap completion to suppress delivery after cancel
         let safeCompletion: (SAConnectionResult) -> Void = { [weak self] result in
-            guard self?.cancelled != true else { return }
+            guard self?.cancelled != true
+            else { return }
             completion(result)
         }
 
         if info.type == .sshTunnel {
             establishSSHTunnel(info: info, sshPassword: sshPassword, parentWindow: parentWindow) { [weak self] (tunnel: SPSSHTunnel?, error: String?) in
-                guard let self = self, !self.cancelled else { return }
+                guard let self = self, !self.cancelled
+                else { return }
                 if let tunnel = tunnel {
                     self.activeTunnel = tunnel
                     self.connectMySQL(info: info, preferences: preferences, password: password, tunnel: tunnel, completion: safeCompletion)
@@ -185,7 +187,8 @@ import Foundation
         completion: @escaping (SAConnectionResult) -> Void
     ) {
         Thread.detachNewThread { [weak self] in
-            guard let self = self else { return }
+            guard let self = self
+            else { return }
 
             let conn = SPMySQLConnection()
             self.activeConnection = conn
@@ -379,12 +382,17 @@ import Foundation
             let completion = sshTunnelCompletion
             sshTunnelCompletion = nil
             completion?(tunnel, nil)
-        } else if state == SPMySQLProxyLaunchFailed || state == SPMySQLProxyForwardingFailed {
+        } else if state == SPMySQLProxyIdle
+                    || state == SPMySQLProxyLaunchFailed
+                    || state == SPMySQLProxyForwardingFailed {
+            // SPMySQLProxyIdle covers auth failures, timeouts, permission denied, etc.
             let error = tunnel.lastError() ?? "SSH tunnel failed"
             let completion = sshTunnelCompletion
             sshTunnelCompletion = nil
             tunnel.disconnect()
             completion?(nil, error)
         }
+        // Other transient states (e.g. SPMySQLProxyWaitingForAuth) are ignored;
+        // the tunnel will eventually transition to connected or idle/failed.
     }
 }
