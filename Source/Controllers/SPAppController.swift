@@ -240,7 +240,14 @@ extension SPAppController {
     /// Adds a "New Connection Window" menu item to the File menu.
     /// Called from applicationDidFinishLaunching via ObjC.
     @objc func installStandaloneConnectionMenuItem() {
-        guard let fileMenu = NSApp.mainMenu?.item(withTitle: "File")?.submenu else { return }
+        guard let fileMenu = NSApp.mainMenu?.item(withTitle: "File")?.submenu else {
+            return
+        }
+
+        // Idempotent: don't add if already present
+        if fileMenu.items.contains(where: { $0.action == #selector(openStandaloneConnectionWindow(_:)) }) {
+            return
+        }
 
         // Insert after "New Tab" (index 1) or at index 2
         let insertIndex = min(2, fileMenu.items.count)
