@@ -12,7 +12,6 @@
 
 @import FirebaseCrashlytics;
 
-// see: https://docs.microsoft.com/en-us/appcenter/sdk/crashes/macos#enable-catching-uncaught-exceptions-thrown-on-the-main-thread
 @interface ReportExceptionApplication : NSApplication
 @end
 
@@ -30,14 +29,20 @@
         [killTask waitUntilExit];
     });
 
-    // forward exception to MSACCrashes
+    // forward exception to Firebase Crashlytics
     NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
     @try {
         if ([prefs boolForKey:SPSaveApplicationUsageAnalytics]) {
-            [MSACCrashes applicationDidReportException:exception];
+            FIRExceptionModel *model = [FIRExceptionModel exceptionModelWithName:exception.name reason:exception.reason];
+            NSMutableArray<FIRStackFrame *> *frames = [NSMutableArray array];
+            for (NSString *symbol in exception.callStackSymbols) {
+                [frames addObject:[FIRStackFrame stackFrameWithSymbol:symbol]];
+            }
+            model.stackTrace = frames;
+            [[FIRCrashlytics crashlytics] recordExceptionModel:model];
         }
     } @catch (NSException * e) {
-        SPLog(@"MSACAppCenter Exception on Crash Report: %@", e);
+        SPLog(@"Firebase Crashlytics Exception on Crash Report: %@", e);
     }
 
     [super reportException:exception];
