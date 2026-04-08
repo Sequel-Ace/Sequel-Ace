@@ -8,6 +8,46 @@
 
 import AppKit
 
+// MARK: - SADatabaseDocumentProviding
+
+// SPDatabaseDocument conforms to SADatabaseDocumentProviding.
+// All requirements are satisfied by the ObjC declarations in SPDatabaseDocument.h.
+// If a requirement is not visible to Swift, we add an explicit forwarding stub below.
+// isProcessing property requirement is satisfied by the ObjC @property (readwrite) BOOL isProcessing.
+extension SPDatabaseDocument: SADatabaseDocumentProviding {}
+
+// MARK: - SATaskManaging
+
+// SPDatabaseDocument conforms to SATaskManaging.
+// All methods are implemented in SPDatabaseDocument.m.
+// The ObjC method names map directly to the protocol requirements:
+//   startTask(withDescription:) -> startTaskWithDescription:
+//   endTask -> endTask
+//   setTaskPercentage(_:) -> setTaskPercentage:
+//   setTaskProgressToIndeterminate(afterDelay:) -> setTaskProgressToIndeterminateAfterDelay:
+//   enableTaskCancellation(withTitle:callbackObject:callbackFunction:) -> enableTaskCancellationWithTitle:callbackObject:callbackFunction:
+//   disableTaskCancellation -> disableTaskCancellation
+//   isWorking -> isWorking
+//   setDatabaseListIsSelectable(_:) -> setDatabaseListIsSelectable:
+//   setTaskDescription(_:) -> setTaskDescription:
+extension SPDatabaseDocument: SATaskManaging {
+    // Explicit forwarding stubs to bridge ObjC method signatures to Swift protocol.
+    // These call through to the ObjC implementations using the exact ObjC selectors.
+
+    public func setTaskProgressToIndeterminate(afterDelay: Bool) {
+        setTaskProgressToIndeterminateAfterDelay(afterDelay)
+    }
+
+    public func enableTaskCancellation(withTitle title: String, callbackObject: AnyObject?, callbackFunction: Selector?) {
+        // The ObjC method checks both callbackObject && callbackSelector before calling,
+        // so passing nil object when selector is nil is safe.
+        let obj = callbackFunction != nil ? callbackObject : nil
+        enableTaskCancellation(withTitle: title, callbackObject: obj, callbackFunction: callbackFunction ?? Selector(("noop")))
+    }
+}
+
+// MARK: - Save Accessory
+
 extension SPDatabaseDocument {
     @objc func prepareSaveAccessoryView(panel: NSSavePanel) {
         guard Bundle.main.loadNibNamed("SaveSPFAccessory", owner: self, topLevelObjects: nil) else {

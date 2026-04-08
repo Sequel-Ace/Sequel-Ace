@@ -789,7 +789,6 @@
 					"\"$(SRCROOT)/MySQL Client Libraries/lib\"",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				OTHER_LDFLAGS = "-lc++";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql";
 				PRODUCT_NAME = SPMySQL;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -823,7 +822,6 @@
 					"\"$(SRCROOT)/MySQL Client Libraries/lib\"",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				OTHER_LDFLAGS = "-lc++";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql";
 				PRODUCT_NAME = SPMySQL;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1116,7 +1114,6 @@
 					"\"$(SRCROOT)/MySQL Client Libraries/lib\"",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				OTHER_LDFLAGS = "-lc++";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql";
 				PRODUCT_NAME = SPMySQL;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1237,7 +1234,6 @@
 					"\"$(SRCROOT)/MySQL Client Libraries/lib\"",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				OTHER_LDFLAGS = "-lc++";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql";
 				PRODUCT_NAME = SPMySQL;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1321,7 +1317,6 @@
 					"\"$(SRCROOT)/MySQL Client Libraries/lib\"",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				OTHER_LDFLAGS = "-lc++";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.spmysql";
 				PRODUCT_NAME = SPMySQL;
 				PROVISIONING_PROFILE_SPECIFIER = "";
