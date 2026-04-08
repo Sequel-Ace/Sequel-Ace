@@ -473,6 +473,14 @@
 	useStrictEscapeMatching = strictMatching;
 }
 
+/**
+ * Return the currently configured line terminator string.
+ */
+- (NSString *)lineTerminatorString
+{
+	return lineEndString;
+}
+
 #pragma mark -
 #pragma mark Init and internal update methods
 
