@@ -190,7 +190,7 @@ static CGFloat slow_in_out (CGFloat t)
         }
         
         if(errorDict.count > 0){
-            SPLog(@"Show with object error");
+            SPLog(@"Show with object error: %@", errorDict);
         }
 
 		if(text)

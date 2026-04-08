@@ -35,8 +35,8 @@
         if ([prefs boolForKey:SPSaveApplicationUsageAnalytics]) {
             FIRExceptionModel *model = [FIRExceptionModel exceptionModelWithName:exception.name reason:exception.reason];
             NSMutableArray<FIRStackFrame *> *frames = [NSMutableArray array];
-            for (NSString *symbol in exception.callStackSymbols) {
-                [frames addObject:[FIRStackFrame stackFrameWithSymbol:symbol]];
+            for (NSNumber *address in exception.callStackReturnAddresses) {
+                [frames addObject:[FIRStackFrame stackFrameWithAddress:[address unsignedIntegerValue]]];
             }
             model.stackTrace = frames;
             [[FIRCrashlytics crashlytics] recordExceptionModel:model];

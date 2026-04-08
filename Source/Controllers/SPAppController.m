@@ -202,10 +202,12 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
 
+    [FIRApp configure];
+
     NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
-    if ([prefs boolForKey:SPSaveApplicationUsageAnalytics]) {
-        [FIRApp configure];
-    }
+    BOOL analyticsEnabled = [prefs boolForKey:SPSaveApplicationUsageAnalytics];
+    [FIRAnalytics setAnalyticsCollectionEnabled:analyticsEnabled];
+    [[FIRCrashlytics crashlytics] setCrashlyticsCollectionEnabled:analyticsEnabled];
 
 
     // this reRequests access to all bookmarks

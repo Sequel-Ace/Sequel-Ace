@@ -111,6 +111,7 @@
 		1A5A83532545DA8B00EDC196 /* SPObjectAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 584D878A15140FEB00F24774 /* SPObjectAdditions.m */; };
 		1A6377D4259B414400B1E96D /* SecureBookmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A96E4B42588F34C0055F5F5 /* SecureBookmark.swift */; };
 		1A6D28FE25DD8018007509F1 /* ProgressWindowController.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1A6D28FD25DD8018007509F1 /* ProgressWindowController.storyboard */; };
+		1A70BC6625EF4243004BB992 /* ReportExceptionApplication.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A0751DF25EAF37700FFDF6B /* ReportExceptionApplication.m */; };
 		1A70BC6B25EF439F004BB992 /* FileManagerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A70BC6A25EF439F004BB992 /* FileManagerExtension.swift */; };
 		1A70BC9225EF7EE9004BB992 /* FileManagerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A70BC6A25EF439F004BB992 /* FileManagerExtension.swift */; };
 		1A85CB8D2493BC4A00B57B93 /* SPSyncTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */; };
@@ -757,6 +758,7 @@
 		17FDB04B1280778B00DBBBC2 /* SPFontPreviewTextField.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPFontPreviewTextField.m; sourceTree = "<group>"; };
 		1A071B8B254D983700246912 /* SPNSMutableDictionaryAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPNSMutableDictionaryAdditions.h; sourceTree = "<group>"; };
 		1A071B8C254D983700246912 /* SPNSMutableDictionaryAdditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPNSMutableDictionaryAdditions.m; sourceTree = "<group>"; };
+		1A0751DF25EAF37700FFDF6B /* ReportExceptionApplication.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ReportExceptionApplication.m; sourceTree = "<group>"; };
 		1A0751E725EAF83300FFDF6B /* SPTaskAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPTaskAdditions.h; sourceTree = "<group>"; };
 		1A11E4FC25A32789001CB721 /* SPPanelOptions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPPanelOptions.h; sourceTree = "<group>"; };
 		1A11E50325A327F1001CB721 /* SPPanelOptions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPPanelOptions.m; sourceTree = "<group>"; };
@@ -1549,6 +1551,7 @@
 		173E70D5107FF7AF008733C9 /* Other */ = {
 			isa = PBXGroup;
 			children = (
+				1A0751DF25EAF37700FFDF6B /* ReportExceptionApplication.m */,
 				1A96E4B42588F34C0055F5F5 /* SecureBookmark.swift */,
 				1A24B626258A2E9A00541E88 /* SecureBookmarkData.swift */,
 				1A96E4B52588F34C0055F5F5 /* SecureBookmarkManager.swift */,
@@ -2890,7 +2893,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"${CONFIGURATION}\" = \"Release\" ] || [ \"${CONFIGURATION}\" = \"Beta\" ] || [ \"${CONFIGURATION}\" = \"Distribution\" ]; then\n    echo \"[SA] Uploading dSYM symbols to Firebase Crashlytics for \\\"${CONFIGURATION}\\\" build\"\n\n    UPLOAD_SYMBOLS=\"${BUILD_DIR%/Build/*}/SourcePackages/artifacts/firebase-ios-sdk/FirebaseCrashlytics/upload-symbols\"\n\n    if [ ! -x \"${UPLOAD_SYMBOLS}\" ]; then\n        echo \"[SA] Error: Firebase upload-symbols not found at ${UPLOAD_SYMBOLS}\"\n        exit 1\n    fi\n\n    \"${UPLOAD_SYMBOLS}\" -gsp \"${PROJECT_DIR}/Resources/GoogleService-Info.plist\" -p macos \"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}\"\nelse\n    echo \"[SA] Not uploading symbols for \\\"${CONFIGURATION}\\\" build\"\nfi\n";
+			shellScript = "if [ \"${CONFIGURATION}\" = \"Release\" ] || [ \"${CONFIGURATION}\" = \"Beta\" ] || [ \"${CONFIGURATION}\" = \"Distribution\" ]; then\n    echo \"[SA] Uploading dSYM symbols to Firebase Crashlytics for \\\"${CONFIGURATION}\\\" build\"\n\n    UPLOAD_SYMBOLS=\"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/upload-symbols\"\n\n    if [ ! -x \"${UPLOAD_SYMBOLS}\" ]; then\n        echo \"warning: [SA] Firebase upload-symbols not found at ${UPLOAD_SYMBOLS}, skipping dSYM upload\"\n        exit 0\n    fi\n\n    \"${UPLOAD_SYMBOLS}\" -gsp \"${PROJECT_DIR}/Resources/GoogleService-Info.plist\" -p macos \"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}\"\nelse\n    echo \"[SA] Not uploading symbols for \\\"${CONFIGURATION}\\\" build\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -3107,6 +3110,7 @@
 				174CE14210AB9281008F892B /* SPProcessListController.m in Sources */,
 				517412302573E10C00EB6935 /* SPPrintUtility.m in Sources */,
 				1792C13710AD75C800ABE758 /* SPServerVariablesController.m in Sources */,
+				1A70BC6625EF4243004BB992 /* ReportExceptionApplication.m in Sources */,
 				5089B0271BE714E300E226CD /* SPIdMenu.m in Sources */,
 				51C4626D254ED02500F63E70 /* UserDefaultsExtension.swift in Sources */,
 				5870868410FA3E9C00D58E1C /* SPDataStorage.m in Sources */,
@@ -3503,6 +3507,7 @@
 				STRIP_PNG_TEXT = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "Source/Sequel-Ace-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(PROJECT_NAME)-Swift.h";
+				OTHER_LDFLAGS = "-ObjC";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
@@ -3825,6 +3830,7 @@
 				STRIP_PNG_TEXT = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "Source/Sequel-Ace-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(PROJECT_NAME)-Swift.h";
+				OTHER_LDFLAGS = "-ObjC";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
@@ -3979,6 +3985,7 @@
 				STRIP_PNG_TEXT = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "Source/Sequel-Ace-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(PROJECT_NAME)-Swift.h";
+				OTHER_LDFLAGS = "-ObjC";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -4031,6 +4038,7 @@
 				SEPARATE_STRIP = NO;
 				STRIP_PNG_TEXT = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "Source/Sequel-Ace-Bridging-Header.h";
+				OTHER_LDFLAGS = "-ObjC";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(PROJECT_NAME)-Swift.h";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
