@@ -2,16 +2,19 @@
 
 ## What's been done (decoupling branch)
 
-30 commits, 26 files changed, +2500/-958 lines. Key deliverables:
+32 commits, 28 files changed, +2630/-959 lines. PR: Sequel-Ace/Sequel-Ace#2375
+
+Key deliverables:
 
 - **Connection screen decoupled from document** — SPConnectionController depends on `SADatabaseDocumentProviding` protocol, not concrete SPDatabaseDocument
-- **Connection logic extracted to Swift** — `SAConnectionService` handles TCP/IP, socket, SSH tunnel, AWS IAM connections. SPConnectionController uses it instead of inline ObjC.
+- **Connection logic extracted to Swift** — `SAConnectionService` handles TCP/IP, socket, SSH tunnel, AWS IAM connections (with SSH fallback retry, cancel support, cipher stripping). SPConnectionController uses it instead of inline ObjC.
 - **Favorites sidebar extracted to Swift** — `SAFavoritesListDataSource` replaces 393 lines of ObjC outline view code
-- **Standalone connection window** — `SAConnectionWindowController` + Cmd+Shift+N, connection screen independent of document lifecycle
+- **Standalone connection window** — `SAConnectionWindowController`, connection screen independent of document lifecycle (menu item deferred until it replaces the embedded flow)
 - **Data-driven toolbar** — `SAViewMode` enum replaces repetitive toolbar item configuration
 - **Protocols** — `SADatabaseDocumentProviding`, `SAConnectionDelegate`, `SAFavoritesProviding`, `SATaskManaging`, `SAFavoritesListDelegate`
 - **SPConnectionController.m**: 4,375 → 3,755 lines (−14%)
 - **18 unit tests** for SAConnectionInfoObjC
+- **Bug fixes found during review**: Enter key crash (outline view sent action to delegate instead of target), `setIsProcessing:` infinite recursion, SSH tunnel idle state hang, tunnel port leak on MySQL failure, AWS IAM missing forced SSL
 
 ## Current codebase pain points
 
@@ -84,10 +87,12 @@ SPDatabaseDocument.m at 6,592 lines is the biggest bottleneck. Break it apart:
 - Bind to SAConnectionInfoObjC
 - Files: new `SAConnectionFormView.swift`
 
-**C3. Wire SwiftUI into SAConnectionWindowController**
+**C3. Wire SwiftUI into SAConnectionWindowController + expose in menu**
 - The standalone connection window is the ideal host for SwiftUI views
 - Replace the embedded SPConnectionController with SwiftUI favorites list + connection form
 - Use `SAConnectionService` directly for connection establishment
+- Re-enable the "New Connection Window" menu item (currently deferred to avoid duplicate with XIB item)
+- Eventually the XIB menu item (`newWindow:`) gets replaced by the standalone window flow
 
 ### Phase D: SPConnectionController further cleanup
 
