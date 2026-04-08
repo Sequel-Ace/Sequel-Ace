@@ -88,7 +88,7 @@
 	// one, so call the same selector.
 	if (([self numberOfSelectedRows] == 1) && (([event keyCode] == 36) || ([event keyCode] == 76))) {
 		[self setItemForDoubleAction:[self itemAtRow:[self selectedRow]]];
-		[NSApp sendAction:[self doubleAction] to:[self delegate] from:self];
+		[NSApp sendAction:[self doubleAction] to:[self target] from:self];
 		[self setItemForDoubleAction:nil];
 		return;
 	}

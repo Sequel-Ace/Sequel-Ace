@@ -315,8 +315,10 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         }
     }
 
-    // Install the standalone connection window menu item (Cmd+Shift+N)
-    [self installStandaloneConnectionMenuItem];
+    // Note: standalone connection window (SAConnectionWindowController) is available
+    // programmatically but not yet exposed in the menu to avoid confusion with the
+    // existing "New Connection Window" XIB menu item. Menu item can be added once
+    // the standalone window fully replaces the embedded connection flow.
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {
