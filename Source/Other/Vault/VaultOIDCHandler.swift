@@ -257,14 +257,28 @@ enum VaultOIDCError: Error, LocalizedError {
         return listener
     }
 
-    private static func receiveHTTPRequest(on connection: NWConnection, completion: @escaping (String) -> Void) {
+    private static func receiveHTTPRequest(on connection: NWConnection,
+                                           buffer: Data = Data(),
+                                           completion: @escaping (String) -> Void) {
+        // Buffer chunks until we have at least the first line (terminated by \r\n).
+        // A single receive() call may return only a partial chunk if the OS splits
+        // the stream, which would cause parseQueryParams to silently miss state/code.
         connection.receive(minimumIncompleteLength: 1, maximumLength: 4096) { data, _, _, _ in
-            guard let data = data, let request = String(data: data, encoding: .utf8) else {
-                completion("")
-                return
+            var accumulated = buffer
+            if let data = data { accumulated.append(data) }
+
+            // Check whether the first line is complete yet.
+            let crlf = Data([0x0D, 0x0A]) // \r\n
+            if let range = accumulated.range(of: crlf) {
+                let firstLineData = accumulated[accumulated.startIndex..<range.lowerBound]
+                let firstLine = String(data: firstLineData, encoding: .utf8) ?? ""
+                completion(firstLine)
+            } else if accumulated.count < 8192 {
+                // First line not yet complete — read more (cap at 8 KB to prevent abuse).
+                receiveHTTPRequest(on: connection, buffer: accumulated, completion: completion)
+            } else {
+                completion("") // Oversized / malformed request.
             }
-            let firstLine = request.components(separatedBy: "\r\n").first ?? ""
-            completion(firstLine)
         }
     }
 
