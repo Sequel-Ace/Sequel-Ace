@@ -1944,7 +1944,7 @@ DQ
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-AUTO">
                                                                                             <rect key="frame" x="108" y="97" width="251" height="30"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                                                            <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="SSL/TLS and cleartext plugins are enabled automatically for AWS IAM connections." id="AWSIAM-LBL-AUTO-CELL">
+                                                                                            <textFieldCell key="cell" lineBreakMode="wordWrapping" sendsActionOnEndEditing="YES" alignment="left" title="SSL/TLS and cleartext plugins are enabled automatically for AWS IAM connections." id="AWSIAM-LBL-AUTO-CELL">
                                                                                                 <font key="font" metaFont="smallSystem"/>
                                                                                                 <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                                                                                                 <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -1964,7 +1964,7 @@ DQ
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-LBL-INFO">
                                                                                             <rect key="frame" x="108" y="202" width="252" height="28"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                                                            <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Click the button above to grant access to your AWS credentials folder (~/.aws)." id="AWSIAM-LBL-INFO-CELL">
+                                                                                            <textFieldCell key="cell" lineBreakMode="wordWrapping" sendsActionOnEndEditing="YES" alignment="left" title="Click the button above to grant access to your AWS credentials folder (~/.aws)." id="AWSIAM-LBL-INFO-CELL">
                                                                                                 <font key="font" metaFont="smallSystem"/>
                                                                                                 <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                                                                                                 <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
