@@ -2538,6 +2538,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                                                                username:&outUsername
                                                                password:&outPassword
                                                                   error:&vaultError];
+            // The OIDC flow can block for up to 120 s; the user may have cancelled
+            // the connection in the meantime.  Bail out without showing an error.
+            if (cancellingConnection) return;
+
             if (!success || ![outUsername length] || ![outPassword length]) {
                 [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Vault Authentication Failed", @"Vault auth failed title")
                                                errorMessage:vaultError ? vaultError.localizedDescription : NSLocalizedString(@"Vault returned empty credentials.", @"Vault auth empty creds error")
