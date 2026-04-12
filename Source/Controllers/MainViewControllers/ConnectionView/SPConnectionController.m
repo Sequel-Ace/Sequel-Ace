@@ -2548,7 +2548,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                                                                   error:&vaultError];
             // The OIDC flow can block for up to 120 s; the user may have cancelled
             // the connection in the meantime.  Bail out without showing an error.
-            if (cancellingConnection) return;
+            // Also evict any credentials that were cached during the flow so a
+            // subsequent connect attempt re-fetches them cleanly.
+            if (cancellingConnection) {
+                [VaultAuthManager clearCachedCredentialsForHost:credHost port:credPort credPath:credPath];
+                return;
+            }
 
             if (!success || ![outUsername length] || ![outPassword length]) {
                 [[self onMainThread] failConnectionWithTitle:NSLocalizedString(@"Vault Authentication Failed", @"Vault auth failed title")
