@@ -466,6 +466,15 @@
 		F4C0BDAE2E9F4D5E8A1B0106 /* AWSDirectoryBookmarkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9B006 /* AWSDirectoryBookmarkManager.swift */; };
 		F4C0BDAE2E9F4D5E8A1B0109 /* OSLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD785E325B749760007E153 /* OSLog.swift */; };
 		F4C0BDAE2E9F4D5E8A1B0110 /* SecureBookmarkManagerStub.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4C0BDAE2E9F4D5E8A1B0201 /* SecureBookmarkManagerStub.swift */; };
+		FA1B2C3D4E5F6A7B8C9D0E11 /* VaultClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E01 /* VaultClient.swift */; };
+		FA1B2C3D4E5F6A7B8C9D0E12 /* VaultClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E01 /* VaultClient.swift */; };
+		FA1B2C3D4E5F6A7B8C9D0E13 /* VaultClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E02 /* VaultClientTests.swift */; };
+		FA1B2C3D4E5F6A7B8C9D0E14 /* VaultOIDCHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E03 /* VaultOIDCHandler.swift */; };
+		FA1B2C3D4E5F6A7B8C9D0E15 /* VaultAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E04 /* VaultAuthManager.swift */; };
+		FA1B2C3D4E5F6A7B8C9D0E16 /* VaultAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E04 /* VaultAuthManager.swift */; };
+		FA1B2C3D4E5F6A7B8C9D0E17 /* VaultAuthManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E05 /* VaultAuthManagerTests.swift */; };
+		FA1B2C3D4E5F6A7B8C9D0E18 /* VaultOIDCHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E03 /* VaultOIDCHandler.swift */; };
+		FA1B2C3D4E5F6A7B8C9D0E19 /* VaultOIDCHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E06 /* VaultOIDCHandlerTests.swift */; };
 		FD0E72EA2C38DEA1007EF348 /* SATableHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0E72E92C38DC0E007EF348 /* SATableHeaderView.swift */; };
 		FD0E72EC2C391F44007EF348 /* SQLiteDisplayFormatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0E72EB2C391F44007EF348 /* SQLiteDisplayFormatManager.swift */; };
 		FD18C8992C3C9B2F002A5D57 /* SAUuidFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD18C8982C3C9B2F002A5D57 /* SAUuidFormatter.swift */; };
@@ -1215,6 +1224,12 @@
 		F3A4B8C191E14E7094C9B005 /* AWSIAMAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSIAMAuthManager.swift; sourceTree = "<group>"; };
 		F3A4B8C191E14E7094C9B006 /* AWSDirectoryBookmarkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSDirectoryBookmarkManager.swift; sourceTree = "<group>"; };
 		F4C0BDAE2E9F4D5E8A1B0201 /* SecureBookmarkManagerStub.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureBookmarkManagerStub.swift; sourceTree = "<group>"; };
+		FA1B2C3D4E5F6A7B8C9D0E01 /* VaultClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultClient.swift; sourceTree = "<group>"; };
+		FA1B2C3D4E5F6A7B8C9D0E02 /* VaultClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultClientTests.swift; sourceTree = "<group>"; };
+		FA1B2C3D4E5F6A7B8C9D0E03 /* VaultOIDCHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultOIDCHandler.swift; sourceTree = "<group>"; };
+		FA1B2C3D4E5F6A7B8C9D0E04 /* VaultAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultAuthManager.swift; sourceTree = "<group>"; };
+		FA1B2C3D4E5F6A7B8C9D0E05 /* VaultAuthManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultAuthManagerTests.swift; sourceTree = "<group>"; };
+		FA1B2C3D4E5F6A7B8C9D0E06 /* VaultOIDCHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultOIDCHandlerTests.swift; sourceTree = "<group>"; };
 		FD0E72E92C38DC0E007EF348 /* SATableHeaderView.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SATableHeaderView.swift; sourceTree = "<group>"; };
 		FD0E72EB2C391F44007EF348 /* SQLiteDisplayFormatManager.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SQLiteDisplayFormatManager.swift; sourceTree = "<group>"; };
 		FD18C8982C3C9B2F002A5D57 /* SAUuidFormatter.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SAUuidFormatter.swift; sourceTree = "<group>"; };
@@ -1947,6 +1962,7 @@
 				B57747D60F7A8990003B34F9 /* Category Additions */,
 				58DA884E103E1597000B98DF /* Debugging & Support */,
 				F3A4B8C191E14E7094C9C005 /* AWS */,
+				FA1B2C3D4E5F6A7B8C9D0E21 /* Vault */,
 			);
 			path = Other;
 			sourceTree = "<group>";
@@ -2314,6 +2330,9 @@
 				F3A4B8C191E14E7094C9A101 /* AWSCredentialsTests.swift */,
 				F3A4B8C191E14E7094C9A102 /* RDSIAMAuthenticationTests.swift */,
 				F3A4B8C191E14E7094C9A103 /* AWSDirectoryBookmarkManagerTests.swift */,
+				FA1B2C3D4E5F6A7B8C9D0E02 /* VaultClientTests.swift */,
+				FA1B2C3D4E5F6A7B8C9D0E05 /* VaultAuthManagerTests.swift */,
+				FA1B2C3D4E5F6A7B8C9D0E06 /* VaultOIDCHandlerTests.swift */,
 				F4C0BDAE2E9F4D5E8A1B0201 /* SecureBookmarkManagerStub.swift */,
 			);
 			name = Other;
@@ -2506,6 +2525,16 @@
 				F3A4B8C191E14E7094C9B006 /* AWSDirectoryBookmarkManager.swift */,
 			);
 			path = AWS;
+			sourceTree = "<group>";
+		};
+		FA1B2C3D4E5F6A7B8C9D0E21 /* Vault */ = {
+			isa = PBXGroup;
+			children = (
+				FA1B2C3D4E5F6A7B8C9D0E01 /* VaultClient.swift */,
+				FA1B2C3D4E5F6A7B8C9D0E03 /* VaultOIDCHandler.swift */,
+				FA1B2C3D4E5F6A7B8C9D0E04 /* VaultAuthManager.swift */,
+			);
+			path = Vault;
 			sourceTree = "<group>";
 		};
 		FD2056032C3A7E64008DD271 /* Formatters */ = {
@@ -2943,6 +2972,12 @@
 				F3A4B8C191E14E7094C9A111 /* AWSCredentialsTests.swift in Sources */,
 				F3A4B8C191E14E7094C9A112 /* RDSIAMAuthenticationTests.swift in Sources */,
 				F3A4B8C191E14E7094C9A113 /* AWSDirectoryBookmarkManagerTests.swift in Sources */,
+				FA1B2C3D4E5F6A7B8C9D0E13 /* VaultClientTests.swift in Sources */,
+				FA1B2C3D4E5F6A7B8C9D0E17 /* VaultAuthManagerTests.swift in Sources */,
+				FA1B2C3D4E5F6A7B8C9D0E18 /* VaultOIDCHandler.swift in Sources */,
+				FA1B2C3D4E5F6A7B8C9D0E19 /* VaultOIDCHandlerTests.swift in Sources */,
+				FA1B2C3D4E5F6A7B8C9D0E12 /* VaultClient.swift in Sources */,
+				FA1B2C3D4E5F6A7B8C9D0E16 /* VaultAuthManager.swift in Sources */,
 				F4C0BDAE2E9F4D5E8A1B0101 /* AWSCredentials.swift in Sources */,
 				F4C0BDAE2E9F4D5E8A1B0102 /* RDSIAMAuthentication.swift in Sources */,
 				F4C0BDAE2E9F4D5E8A1B0103 /* AWSSTSClient.swift in Sources */,
@@ -3051,6 +3086,9 @@
 				F3A4B8C191E14E7094C9B014 /* AWSMFATokenDialog.swift in Sources */,
 				F3A4B8C191E14E7094C9B015 /* AWSIAMAuthManager.swift in Sources */,
 				F3A4B8C191E14E7094C9B016 /* AWSDirectoryBookmarkManager.swift in Sources */,
+				FA1B2C3D4E5F6A7B8C9D0E11 /* VaultClient.swift in Sources */,
+				FA1B2C3D4E5F6A7B8C9D0E14 /* VaultOIDCHandler.swift in Sources */,
+				FA1B2C3D4E5F6A7B8C9D0E15 /* VaultAuthManager.swift in Sources */,
 				387BBBA80FBCB6CB00B31746 /* SPTableRelations.m in Sources */,
 				1740FABB0FC4372F00CF3699 /* SPDatabaseData.m in Sources */,
 				17C058880FC9FC390077E9CF /* SPNarrowDownCompletion.m in Sources */,
