@@ -1712,6 +1712,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         return;
     }
 
+    if (validateDetails && [self type] == SPVaultConnection && ![[self host] length]) {
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message")
+                                     message:NSLocalizedString(@"Please provide a database host to save a Vault favorite.", @"vault db host required save message")
+                                    callback:nil];
+        return;
+    }
     if (validateDetails && [self type] == SPVaultConnection && ![[self vaultHost] length]) {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message")
                                      message:NSLocalizedString(@"A Vault host is required to save a Vault favorite.", @"vault host required save message")
