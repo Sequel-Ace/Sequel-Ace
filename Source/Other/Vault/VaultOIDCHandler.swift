@@ -148,11 +148,22 @@ enum VaultOIDCError: Error, LocalizedError {
             return
         }
         defer { close(fd) }
+        // Enforce 0600 even if the file already existed — O_CREAT mode only applies at creation time.
+        if fchmod(fd, 0o600) != 0 {
+            os_log("Failed to set ~/.vault-token permissions: errno=%d", log: log, type: .error, Darwin.errno)
+        }
         let data = Data(token.utf8)
         guard !data.isEmpty else { return }
-        let written = data.withUnsafeBytes { write(fd, $0.baseAddress!, $0.count) }
-        if written < 0 {
-            os_log("Failed to write ~/.vault-token: errno=%d", log: log, type: .error, Darwin.errno)
+        var totalWritten = 0
+        data.withUnsafeBytes { buffer in
+            while totalWritten < buffer.count {
+                let n = write(fd, buffer.baseAddress!.advanced(by: totalWritten), buffer.count - totalWritten)
+                if n <= 0 {
+                    os_log("Failed to write ~/.vault-token: errno=%d", log: log, type: .error, Darwin.errno)
+                    return
+                }
+                totalWritten += n
+            }
         }
     }
 
