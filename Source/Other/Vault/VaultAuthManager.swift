@@ -50,6 +50,12 @@ import OSLog
     private static var credentialCache = [String: CacheEntry]()
     private static let cacheLock = NSLock()
 
+    // Per-key in-flight coalescing: if two threads simultaneously miss the cache for
+    // the same key, the second waits for the first to finish and then reads from cache
+    // rather than launching a duplicate OIDC flow and creating extra Vault leases.
+    private static var inFlightKeys = Set<String>()
+    private static let inFlightCondition = NSCondition()
+
     /// Builds a cache key unique per Vault server + OIDC mount + credentials path.
     /// All three must be included: two favorites sharing the same DB host and cred path
     /// but pointing at different OIDC mounts would otherwise collide and reuse each
@@ -139,11 +145,37 @@ import OSLog
 
         let key = cacheKey(baseURL: baseURL, oidcMount: effectiveMount, credPath: effectiveCredPath)
 
-        // Return cached credentials if still valid
+        // Return cached credentials if still valid.
         if let cached = cachedCredentials(for: key) {
             username.pointee = cached.username as NSString
             password.pointee = cached.password as NSString
             return true
+        }
+
+        // Coalesce concurrent misses for the same key: if another thread is already
+        // running the OIDC + generateCredentials flow for this key, wait for it to
+        // finish and then read its result from the cache rather than launching a
+        // duplicate flow that creates extra Vault leases and races the callback listener.
+        inFlightCondition.lock()
+        while inFlightKeys.contains(key) {
+            inFlightCondition.wait()
+        }
+        // Re-check cache after waking — the in-flight thread may have populated it.
+        if let cached = cachedCredentials(for: key) {
+            inFlightCondition.unlock()
+            username.pointee = cached.username as NSString
+            password.pointee = cached.password as NSString
+            return true
+        }
+        inFlightKeys.insert(key)
+        inFlightCondition.unlock()
+
+        // Helper: signal waiting threads and remove the in-flight marker on any exit.
+        func finishInFlight() {
+            inFlightCondition.lock()
+            inFlightKeys.remove(key)
+            inFlightCondition.broadcast()
+            inFlightCondition.unlock()
         }
 
         // Ensure we have a valid Vault token.
@@ -166,9 +198,10 @@ import OSLog
                             code: VaultAuthError.credentialsFailed.rawValue,
                             userInfo: [NSLocalizedDescriptionKey: error.localizedDescription]
                         )
-                        return false
+                        finishInFlight(); return false
                     }
                     setCachedCredentials(username: creds.username, password: creds.password, leaseDuration: creds.leaseDuration, for: key)
+                    finishInFlight()
                     username.pointee = creds.username as NSString
                     password.pointee = creds.password as NSString
                     return true
@@ -182,7 +215,7 @@ import OSLog
                     code: VaultAuthError.loginFailed.rawValue,
                     userInfo: [NSLocalizedDescriptionKey: error.localizedDescription]
                 )
-                return false
+                finishInFlight(); return false
             }
         }
 
@@ -198,7 +231,7 @@ import OSLog
                 userInfo: [NSLocalizedDescriptionKey: oidcError.localizedDescription ?? ""]
             )
             os_log("Vault OIDC login failed: %{public}@", log: log, type: .error, oidcError.localizedDescription ?? "unknown")
-            return false
+            finishInFlight(); return false
         } catch {
             errorPointer?.pointee = NSError(
                 domain: errorDomain,
@@ -206,7 +239,7 @@ import OSLog
                 userInfo: [NSLocalizedDescriptionKey: error.localizedDescription]
             )
             os_log("Vault login error: %{public}@", log: log, type: .error, error.localizedDescription)
-            return false
+            finishInFlight(); return false
         }
 
         // Generate credentials from Vault.
@@ -219,10 +252,11 @@ import OSLog
                 code: VaultAuthError.credentialsFailed.rawValue,
                 userInfo: [NSLocalizedDescriptionKey: error.localizedDescription]
             )
-            return false
+            finishInFlight(); return false
         }
 
         setCachedCredentials(username: creds.username, password: creds.password, leaseDuration: creds.leaseDuration, for: key)
+        finishInFlight()
 
         username.pointee = creds.username as NSString
         password.pointee = creds.password as NSString
