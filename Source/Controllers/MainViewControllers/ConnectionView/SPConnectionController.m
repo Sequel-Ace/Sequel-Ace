@@ -1400,6 +1400,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         @(NSControlStateValueOff),
         @"",
         @"",
+        @"",
+        @"",
+        @"",
+        @"",
         favoriteID
     ];
 
@@ -1428,6 +1432,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         SPFavoriteSSHKeyLocationEnabledKey,
         SPFavoriteSSHKeyLocationKey,
         SPFavoriteSSHPortKey,
+        SPFavoriteVaultHostKey,
+        SPFavoriteVaultPortKey,
+        SPFavoriteVaultOIDCMountKey,
+        SPFavoriteVaultCredentialsPathKey,
         SPFavoriteIDKey
     ];
 
