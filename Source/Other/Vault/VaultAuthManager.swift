@@ -138,35 +138,67 @@ import OSLog
             return true
         }
 
-        // Ensure we have a valid Vault token
+        // Ensure we have a valid Vault token.
+        // Distinguish network failures (propagate as errors) from invalid/expired tokens
+        // (proceed to OIDC login). Using try? would collapse both cases and trigger a
+        // spurious browser login on transient network errors.
         let token: String
-        let rawToken = VaultOIDCHandler.readCachedToken()
-        let lookupOK = rawToken.flatMap { t in try? VaultClient.tokenLookupSelf(baseURL: baseURL, token: t) } == true
-        if let cachedToken = rawToken, lookupOK {
-            token = cachedToken
-        } else {
-            // Run OIDC flow
+        if let rawToken = VaultOIDCHandler.readCachedToken() {
             do {
-                token = try VaultOIDCHandler.login(baseURL: baseURL, mount: effectiveMount)
-            } catch let oidcError as VaultOIDCError {
-                let isCancel = (oidcError == .cancelled)
-                let authError: VaultAuthError = isCancel ? .loginCancelled : .loginFailed
-                errorPointer?.pointee = NSError(
-                    domain: errorDomain,
-                    code: authError.rawValue,
-                    userInfo: [NSLocalizedDescriptionKey: oidcError.localizedDescription ?? ""]
-                )
-                os_log("Vault OIDC login failed: %{public}@", log: log, type: .error, oidcError.localizedDescription ?? "unknown")
-                return false
+                let valid = try VaultClient.tokenLookupSelf(baseURL: baseURL, token: rawToken)
+                if valid {
+                    token = rawToken
+                    // Token is valid — skip OIDC and go straight to credential generation.
+                    let creds: VaultCredentials
+                    do {
+                        creds = try VaultClient.generateCredentials(baseURL: baseURL, credPath: effectiveCredPath, token: token)
+                    } catch {
+                        errorPointer?.pointee = NSError(
+                            domain: errorDomain,
+                            code: VaultAuthError.credentialsFailed.rawValue,
+                            userInfo: [NSLocalizedDescriptionKey: error.localizedDescription]
+                        )
+                        return false
+                    }
+                    setCachedCredentials(username: creds.username, password: creds.password, leaseDuration: creds.leaseDuration, for: key)
+                    username.pointee = creds.username as NSString
+                    password.pointee = creds.password as NSString
+                    return true
+                }
+                // Token is present but invalid/expired — fall through to OIDC login below.
             } catch {
+                // Network error talking to Vault — surface this rather than falling through to login.
+                os_log("Vault tokenLookupSelf network error: %{public}@", log: log, type: .error, error.localizedDescription)
                 errorPointer?.pointee = NSError(
                     domain: errorDomain,
                     code: VaultAuthError.loginFailed.rawValue,
                     userInfo: [NSLocalizedDescriptionKey: error.localizedDescription]
                 )
-                os_log("Vault login error: %{public}@", log: log, type: .error, error.localizedDescription)
                 return false
             }
+        }
+
+        // Run OIDC flow — no cached token or token was invalid/expired.
+        do {
+            token = try VaultOIDCHandler.login(baseURL: baseURL, mount: effectiveMount)
+        } catch let oidcError as VaultOIDCError {
+            let isCancel = (oidcError == .cancelled)
+            let authError: VaultAuthError = isCancel ? .loginCancelled : .loginFailed
+            errorPointer?.pointee = NSError(
+                domain: errorDomain,
+                code: authError.rawValue,
+                userInfo: [NSLocalizedDescriptionKey: oidcError.localizedDescription ?? ""]
+            )
+            os_log("Vault OIDC login failed: %{public}@", log: log, type: .error, oidcError.localizedDescription ?? "unknown")
+            return false
+        } catch {
+            errorPointer?.pointee = NSError(
+                domain: errorDomain,
+                code: VaultAuthError.loginFailed.rawValue,
+                userInfo: [NSLocalizedDescriptionKey: error.localizedDescription]
+            )
+            os_log("Vault login error: %{public}@", log: log, type: .error, error.localizedDescription)
+            return false
         }
 
         // Generate credentials from Vault.
