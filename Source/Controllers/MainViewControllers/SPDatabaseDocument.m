@@ -2480,6 +2480,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                     ([connectionController sshUser] && [[connectionController sshUser] length]) ? [connectionController sshUser] : @"anonymous",
                     [connectionController sshHost] ? [connectionController sshHost] : @"",
                     ([[connectionController sshPort] length]) ? [connectionController sshPort] : @"22"];
+        case SPVaultConnection:
+            return [NSString stringWithFormat:@"%@@%@%@&Vault",
+                    ([connectionController user] && [[connectionController user] length]) ? [connectionController user] : @"anonymous",
+                    [connectionController host] ? [connectionController host] : @"",
+                    port];
     }
 
     return @"_";
@@ -3884,6 +3889,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 [connection setObject:[NSNumber numberWithInteger:[connectionController sshKeyLocationEnabled]] forKey:@"ssh_keyLocationEnabled"];
                 if ([connectionController sshKeyLocation]) [connection setObject:[connectionController sshKeyLocation] forKey:@"ssh_keyLocation"];
                 if ([connectionController sshPort] && [[connectionController sshPort] length]) [connection setObject:[NSNumber numberWithInteger:[[connectionController sshPort] integerValue]] forKey:@"ssh_port"];
+                break;
+            case SPVaultConnection:
+                connectionType = @"SPVaultConnection";
+                if ([[connectionController vaultHost] length]) [connection setObject:[connectionController vaultHost] forKey:@"vault_host"];
+                if ([[connectionController vaultPort] length]) [connection setObject:[connectionController vaultPort] forKey:@"vault_port"];
+                if ([[connectionController vaultOIDCMount] length]) [connection setObject:[connectionController vaultOIDCMount] forKey:@"vault_oidc_mount"];
+                if ([[connectionController vaultCredentialsPath] length]) [connection setObject:[connectionController vaultCredentialsPath] forKey:@"vault_credentials_path"];
                 break;
             default:
                 connectionType = @"SPTCPIPConnection";
