@@ -190,7 +190,10 @@ enum VaultOIDCError: Error, LocalizedError {
     // MARK: - Callback listener
 
     private static func startCallbackListener(onCallback: @escaping ([String: String]) -> Void) throws -> NWListener {
+        // Bind exclusively to loopback so only the local browser (not remote or
+        // other-user processes) can reach the callback endpoint.
         let parameters = NWParameters.tcp
+        parameters.requiredLocalEndpoint = NWEndpoint.hostPort(host: "::1", port: callbackPort)
         let listener = try NWListener(using: parameters, on: callbackPort)
 
         let readySemaphore = DispatchSemaphore(value: 0)
@@ -211,6 +214,11 @@ enum VaultOIDCError: Error, LocalizedError {
         listener.newConnectionHandler = { connection in
             connection.start(queue: .global(qos: .utility))
             receiveHTTPRequest(on: connection) { requestLine in
+                // Only process requests to the expected callback path.
+                guard requestLine.hasPrefix("GET /oidc/callback") else {
+                    connection.cancel()
+                    return
+                }
                 let responseHTML = "<html><body><h2>Authentication successful. You may close this tab.</h2></body></html>"
                 let response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: \(responseHTML.utf8.count)\r\nConnection: close\r\n\r\n\(responseHTML)"
                 connection.send(content: response.data(using: .utf8), completion: .contentProcessed { _ in
