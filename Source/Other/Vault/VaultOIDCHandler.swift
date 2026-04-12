@@ -200,12 +200,22 @@ enum VaultOIDCError: Error, LocalizedError {
         let readySemaphore = DispatchSemaphore(value: 0)
         var listenerError: NWError?
 
+        // One-shot flag — prevents a second concurrent TCP connection from invoking
+        // onCallback again and racing against the semaphore consumer in login().
+        var callbackFired = false
+        let callbackLock = NSLock()
+
         listener.stateUpdateHandler = { state in
             switch state {
             case .ready:
                 readySemaphore.signal()
             case .failed(let error):
                 listenerError = error
+                readySemaphore.signal()
+            case .waiting:
+                // Port is temporarily unavailable — treat as a binding failure rather
+                // than waiting indefinitely, which would deadlock login().
+                listenerError = NWError.posix(.EADDRINUSE)
                 readySemaphore.signal()
             default:
                 break
@@ -223,6 +233,13 @@ enum VaultOIDCError: Error, LocalizedError {
                 let responseHTML = "<html><body><h2>Authentication successful. You may close this tab.</h2></body></html>"
                 let response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: \(responseHTML.utf8.count)\r\nConnection: close\r\n\r\n\(responseHTML)"
                 connection.send(content: response.data(using: .utf8), completion: .contentProcessed { _ in
+                    // Guard against concurrent callbacks from multiple TCP connections.
+                    callbackLock.lock()
+                    let alreadyFired = callbackFired
+                    if !alreadyFired { callbackFired = true }
+                    callbackLock.unlock()
+                    guard !alreadyFired else { return }
+
                     let params = parseQueryParams(from: requestLine)
                     onCallback(params)
                 })
