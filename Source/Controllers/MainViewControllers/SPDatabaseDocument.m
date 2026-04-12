@@ -2481,10 +2481,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                     [connectionController sshHost] ? [connectionController sshHost] : @"",
                     ([[connectionController sshPort] length]) ? [connectionController sshPort] : @"22"];
         case SPVaultConnection:
-            return [NSString stringWithFormat:@"%@@%@%@&Vault",
+            return [NSString stringWithFormat:@"%@@%@%@&Vault:%@:%@/%@",
                     ([connectionController user] && [[connectionController user] length]) ? [connectionController user] : @"anonymous",
                     [connectionController host] ? [connectionController host] : @"",
-                    port];
+                    port,
+                    [connectionController vaultHost] ? [connectionController vaultHost] : @"",
+                    [connectionController vaultOIDCMount] ? [connectionController vaultOIDCMount] : @"",
+                    [connectionController vaultCredentialsPath] ? [connectionController vaultCredentialsPath] : @""];
     }
 
     return @"_";
