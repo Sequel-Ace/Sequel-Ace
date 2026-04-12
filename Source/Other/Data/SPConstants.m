@@ -371,6 +371,13 @@ NSString *SPFavoriteAWSRegionKey                         = @"awsRegion";
 NSString *SPFavoriteAWSProfileKey                        = @"awsProfile";
 NSString *SPFavoriteAWSAccessKeyKey                      = @"awsAccessKey";
 NSString *SPFavoriteAWSUseProfileKey                     = @"awsUseProfile";
+
+// Vault Connection
+NSString *SPFavoriteVaultHostKey                         = @"vaultHost";
+NSString *SPFavoriteVaultPortKey                         = @"vaultPort";
+NSString *SPFavoriteVaultOIDCMountKey                    = @"vaultOIDCMount";
+NSString *SPFavoriteVaultCredentialsPathKey              = @"vaultCredentialsPath";
+
 NSString *SPConnectionFavoritesChangedNotification       = @"SPConnectionFavoritesChanged";
 NSString *SPConnectionShownSocketHelp                    = @"SPConnectionShownSocketHelp";
 NSString *SPStaleBookmarksHelp                           = @"SPStaleBookmarksHelp";
