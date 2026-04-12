@@ -2414,6 +2414,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             if ([self _isVaultConnection]) {
                 [VaultAuthManager clearCachedCredentialsForHost:[self vaultHost]
                                                            port:[self vaultPort] ?: @""
+                                                      oidcMount:[self vaultOIDCMount] ?: @""
                                                        credPath:[self vaultCredentialsPath]];
             }
 
@@ -2551,7 +2552,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             // Also evict any credentials that were cached during the flow so a
             // subsequent connect attempt re-fetches them cleanly.
             if (cancellingConnection) {
-                [VaultAuthManager clearCachedCredentialsForHost:credHost port:credPort credPath:credPath];
+                [VaultAuthManager clearCachedCredentialsForHost:credHost port:credPort oidcMount:credMount credPath:credPath];
                 return;
             }
 

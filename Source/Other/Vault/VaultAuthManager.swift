@@ -50,12 +50,14 @@ import OSLog
     private static var credentialCache = [String: CacheEntry]()
     private static let cacheLock = NSLock()
 
-    /// Builds a cache key that includes the Vault server identity so two servers
-    /// with the same credentials path don't share cached entries.
-    static func cacheKey(baseURL: URL, credPath: String) -> String {
+    /// Builds a cache key unique per Vault server + OIDC mount + credentials path.
+    /// All three must be included: two favorites sharing the same DB host and cred path
+    /// but pointing at different OIDC mounts would otherwise collide and reuse each
+    /// other's cached DB credentials.
+    static func cacheKey(baseURL: URL, oidcMount: String, credPath: String) -> String {
         let host = baseURL.host ?? ""
         let port = baseURL.port.map(String.init) ?? "443"
-        return "\(host):\(port)/\(credPath)"
+        return "\(host):\(port)@\(oidcMount)/\(credPath)"
     }
 
     static func cachedCredentials(for key: String) -> (username: String, password: String)? {
@@ -87,10 +89,11 @@ import OSLog
     }
 
     /// ObjC-compatible clear — constructs the same composite key used at connect time.
-    @objc(clearCachedCredentialsForHost:port:credPath:)
-    static func clearCachedCredentials(host: String, port: String, credPath: String) {
+    @objc(clearCachedCredentialsForHost:port:oidcMount:credPath:)
+    static func clearCachedCredentials(host: String, port: String, oidcMount: String, credPath: String) {
         guard let baseURL = VaultClient.buildBaseURL(host: host, port: port) else { return }
-        clearCachedCredentials(for: cacheKey(baseURL: baseURL, credPath: credPath))
+        let effectiveMount = oidcMount.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "oidc" : oidcMount.trimmingCharacters(in: .whitespacesAndNewlines)
+        clearCachedCredentials(for: cacheKey(baseURL: baseURL, oidcMount: effectiveMount, credPath: credPath))
     }
 
     // MARK: - Token helpers
@@ -129,7 +132,7 @@ import OSLog
         let trimmedMount = oidcMount.trimmingCharacters(in: .whitespacesAndNewlines)
         let effectiveMount = trimmedMount.isEmpty ? "oidc" : trimmedMount
 
-        let key = cacheKey(baseURL: baseURL, credPath: effectiveCredPath)
+        let key = cacheKey(baseURL: baseURL, oidcMount: effectiveMount, credPath: effectiveCredPath)
 
         // Return cached credentials if still valid
         if let cached = cachedCredentials(for: key) {
