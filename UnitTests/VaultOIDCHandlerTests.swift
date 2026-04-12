@@ -5,6 +5,32 @@ import XCTest
 
 final class VaultOIDCHandlerTests: XCTestCase {
 
+    // MARK: - Token file isolation
+
+    private var savedTokenData: Data?
+    private var realTokenExistedBeforeTest = false
+
+    override func setUp() {
+        super.setUp()
+        // Back up the real ~/.vault-token so tests do not corrupt the developer's
+        // Vault CLI session. The file is restored in tearDown regardless of outcome.
+        let realPath = VaultOIDCHandler.tokenFilePath()
+        realTokenExistedBeforeTest = FileManager.default.fileExists(atPath: realPath)
+        if realTokenExistedBeforeTest {
+            savedTokenData = try? Data(contentsOf: URL(fileURLWithPath: realPath))
+        }
+        try? FileManager.default.removeItem(atPath: realPath)
+    }
+
+    override func tearDown() {
+        let realPath = VaultOIDCHandler.tokenFilePath()
+        try? FileManager.default.removeItem(atPath: realPath)
+        if realTokenExistedBeforeTest, let data = savedTokenData {
+            try? data.write(to: URL(fileURLWithPath: realPath))
+        }
+        super.tearDown()
+    }
+
     // MARK: - parseQueryParams
 
     func testParseQueryParamsExtractsStateAndCode() {
@@ -79,9 +105,6 @@ final class VaultOIDCHandlerTests: XCTestCase {
     }
 
     func testReadCachedTokenTrimsWhitespace() {
-        VaultOIDCHandler.saveToken("  hvs.abc123\n")
-        // saveToken writes exactly what it's given; test that readCachedToken trims
-        // by writing via Foundation and reading back
         let path = VaultOIDCHandler.tokenFilePath()
         try? "  hvs.abc123\n".write(toFile: path, atomically: true, encoding: .utf8)
         XCTAssertEqual(VaultOIDCHandler.readCachedToken(), "hvs.abc123")
