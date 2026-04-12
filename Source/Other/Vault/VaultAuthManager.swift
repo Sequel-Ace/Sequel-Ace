@@ -100,7 +100,10 @@ import OSLog
 
     // MARK: - Token helpers
 
+    /// Check whether there is a valid cached Vault token for the given Vault server.
+    /// MUST be called from a background thread — performs synchronous network I/O.
     static func isAuthorized(baseURL: URL) -> Bool {
+        assert(!Thread.isMainThread, "isAuthorized must not be called on the main thread")
         guard let token = VaultOIDCHandler.readCachedToken() else { return false }
         return (try? VaultClient.tokenLookupSelf(baseURL: baseURL, token: token)) == true
     }
@@ -227,8 +230,10 @@ import OSLog
     }
 
     /// Check whether there is a valid cached Vault token for the given host.
+    /// MUST be called from a background thread — performs synchronous network I/O.
     @objc(isAuthorizedWithHost:port:)
     static func isAuthorized(host: String, port: String) -> Bool {
+        assert(!Thread.isMainThread, "isAuthorized must not be called on the main thread")
         guard let baseURL = VaultClient.buildBaseURL(host: host, port: port) else { return false }
         return isAuthorized(baseURL: baseURL)
     }
