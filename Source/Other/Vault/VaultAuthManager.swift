@@ -92,8 +92,10 @@ import OSLog
     @objc(clearCachedCredentialsForHost:port:oidcMount:credPath:)
     static func clearCachedCredentials(host: String, port: String, oidcMount: String, credPath: String) {
         guard let baseURL = VaultClient.buildBaseURL(host: host, port: port) else { return }
-        let effectiveMount = oidcMount.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "oidc" : oidcMount.trimmingCharacters(in: .whitespacesAndNewlines)
-        clearCachedCredentials(for: cacheKey(baseURL: baseURL, oidcMount: effectiveMount, credPath: credPath))
+        let effectiveMount = oidcMount.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedMount = effectiveMount.isEmpty ? "oidc" : effectiveMount
+        let effectiveCredPath = credPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        clearCachedCredentials(for: cacheKey(baseURL: baseURL, oidcMount: normalizedMount, credPath: effectiveCredPath))
     }
 
     // MARK: - Token helpers
