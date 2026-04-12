@@ -115,8 +115,9 @@ import OSLog
         error errorPointer: NSErrorPointer
     ) -> Bool {
         assert(!Thread.isMainThread, "generateCredentials must not be called on the main thread")
+        let effectiveCredPath = credPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let baseURL = VaultClient.buildBaseURL(host: host, port: port),
-              !credPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+              !effectiveCredPath.isEmpty else {
             errorPointer?.pointee = NSError(
                 domain: errorDomain,
                 code: VaultAuthError.invalidConfiguration.rawValue,
@@ -128,7 +129,7 @@ import OSLog
         let trimmedMount = oidcMount.trimmingCharacters(in: .whitespacesAndNewlines)
         let effectiveMount = trimmedMount.isEmpty ? "oidc" : trimmedMount
 
-        let key = cacheKey(baseURL: baseURL, credPath: credPath)
+        let key = cacheKey(baseURL: baseURL, credPath: effectiveCredPath)
 
         // Return cached credentials if still valid
         if let cached = cachedCredentials(for: key) {
@@ -171,7 +172,7 @@ import OSLog
         // Generate credentials from Vault.
         let creds: VaultCredentials
         do {
-            creds = try VaultClient.generateCredentials(baseURL: baseURL, credPath: credPath, token: token)
+            creds = try VaultClient.generateCredentials(baseURL: baseURL, credPath: effectiveCredPath, token: token)
         } catch {
             errorPointer?.pointee = NSError(
                 domain: errorDomain,
