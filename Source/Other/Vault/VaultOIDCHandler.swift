@@ -254,7 +254,11 @@ enum VaultOIDCError: Error, LocalizedError {
     /// matching the format used by vault-plugin-auth-jwt's CLIHandler.
     static func randomBase64URLToken() -> String {
         var bytes = [UInt8](repeating: 0, count: 16)
-        SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        if status != errSecSuccess {
+            os_log("SecRandomCopyBytes failed: %d — falling back to arc4random", log: log, type: .fault, status)
+            for i in bytes.indices { bytes[i] = UInt8(truncatingIfNeeded: arc4random()) }
+        }
         return Data(bytes).base64EncodedString()
             .replacingOccurrences(of: "+", with: "-")
             .replacingOccurrences(of: "/", with: "_")
