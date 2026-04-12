@@ -2876,8 +2876,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [progressIndicatorText setHidden:YES];
 
     // If SSL was enabled (manually or implicitly via IAM), check it was established correctly
-    BOOL requiresSSL = (useSSL || [self _isAWSIAMConnection] || [self _isVaultConnection]);
-    if (requiresSSL && ([self type] == SPTCPIPConnection || [self type] == SPSocketConnection || [self type] == SPAWSIAMConnection || [self type] == SPVaultConnection)) {
+    BOOL requiresSSL = (useSSL || [self _isAWSIAMConnection]);
+    if (useSSL && ([self type] == SPTCPIPConnection || [self type] == SPSocketConnection || [self type] == SPAWSIAMConnection || [self type] == SPVaultConnection)) {
         if (![mySQLConnection isConnectedViaSSL]) {
             [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"SSL connection not established", @"SSL requested but not used title") message:NSLocalizedString(@"You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted.", @"SSL connection requested but not established error detail") callback:nil];
         }
