@@ -39,8 +39,13 @@ extension SPDatabaseDocument: SATaskManaging {
     }
 
     public func enableTaskCancellation(withTitle title: String, callbackObject: AnyObject?, callbackFunction: Selector?) {
-        // ObjC method now accepts nullable SEL directly thanks to nullability annotations.
-        enableTaskCancellation(withTitle: title, callbackObject: callbackObject, callbackFunction: callbackFunction)
+        // Use perform() to dispatch to the ObjC implementation directly,
+        // avoiding infinite recursion with this Swift stub (same selector name).
+        let sel = NSSelectorFromString("enableTaskCancellationWithTitle:callbackObject:callbackFunction:")
+        let impl = method(for: sel)
+        typealias ObjCMethod = @convention(c) (AnyObject, Selector, NSString, AnyObject?, Selector?) -> Void
+        let call = unsafeBitCast(impl, to: ObjCMethod.self)
+        call(self, sel, title as NSString, callbackObject, callbackFunction)
     }
 }
 

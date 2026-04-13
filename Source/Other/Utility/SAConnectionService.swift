@@ -110,23 +110,36 @@ import Foundation
     /// The delegate that receives MySQL connection callbacks (query logging, etc).
     @objc weak var mySQLDelegate: (any SPMySQLConnectionDelegate)?
 
+    /// Lock protecting all mutable state accessed across threads:
+    /// activeTunnel, activeConnection, sshTunnelCompletion, _cancelled.
+    private let stateLock = NSLock()
+
     /// Active SSH tunnel, kept alive for the duration of the connection.
-    @objc private(set) var activeTunnel: SPSSHTunnel?
+    @objc private(set) var activeTunnel: SPSSHTunnel? {
+        get { stateLock.lock(); defer { stateLock.unlock() }; return _activeTunnel }
+        set { stateLock.lock(); _activeTunnel = newValue; stateLock.unlock() }
+    }
+    private var _activeTunnel: SPSSHTunnel?
 
     /// The active MySQL connection being established (nil when idle).
-    @objc private(set) var activeConnection: SPMySQLConnection?
+    @objc private(set) var activeConnection: SPMySQLConnection? {
+        get { stateLock.lock(); defer { stateLock.unlock() }; return _activeConnection }
+        set { stateLock.lock(); _activeConnection = newValue; stateLock.unlock() }
+    }
+    private var _activeConnection: SPMySQLConnection?
 
     /// Stored completion for SSH tunnel callback.
-    private var sshTunnelCompletion: ((SPSSHTunnel?, String?) -> Void)?
-
-    /// Set to true when cancel() is called; checked before delivering results.
-    /// Access synchronized via lock for thread safety (written from main, read from background).
-    private let cancelLock = NSLock()
-    private var _cancelled = false
-    private var cancelled: Bool {
-        get { cancelLock.lock(); defer { cancelLock.unlock() }; return _cancelled }
-        set { cancelLock.lock(); _cancelled = newValue; cancelLock.unlock() }
+    private var sshTunnelCompletion: ((SPSSHTunnel?, String?) -> Void)? {
+        get { stateLock.lock(); defer { stateLock.unlock() }; return _sshTunnelCompletion }
+        set { stateLock.lock(); _sshTunnelCompletion = newValue; stateLock.unlock() }
     }
+    private var _sshTunnelCompletion: ((SPSSHTunnel?, String?) -> Void)?
+
+    private var cancelled: Bool {
+        get { stateLock.lock(); defer { stateLock.unlock() }; return _cancelled }
+        set { stateLock.lock(); _cancelled = newValue; stateLock.unlock() }
+    }
+    private var _cancelled = false
 
     // MARK: - Public API
 

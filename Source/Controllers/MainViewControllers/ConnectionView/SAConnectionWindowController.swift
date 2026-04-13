@@ -21,7 +21,7 @@ import AppKit
 /// let controller = SAConnectionWindowController()
 /// controller.showWindow(nil)
 /// ```
-@objc class SAConnectionWindowController: NSWindowController, SAConnectionDelegate {
+@objc class SAConnectionWindowController: NSWindowController, SAConnectionDelegate, NSWindowDelegate {
 
     // MARK: - Properties
 
@@ -79,6 +79,13 @@ import AppKit
             setupConnectionController()
         }
         super.showWindow(sender)
+        window?.delegate = self
+    }
+
+    /// Cancel any in-progress connection when the window closes.
+    func windowWillClose(_ notification: Notification) {
+        connectionController?.cancelConnection(nil)
+        connectionService.cancel()
     }
 
     // MARK: - Connection Controller Setup

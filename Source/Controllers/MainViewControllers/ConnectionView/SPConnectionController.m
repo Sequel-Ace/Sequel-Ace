@@ -458,15 +458,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             return;
         }
 
-        // Store connection/tunnel on controller ivars for cancelConnection: etc.
-        strongSelf->mySQLConnection = result.connection;
+        // Store tunnel on controller ivar for failConnectionWithTitle: cleanup.
         if (result.sshTunnel) {
             strongSelf->sshTunnel = result.sshTunnel;
         } else if (strongSelf.connectionService.activeTunnel) {
             strongSelf->sshTunnel = strongSelf.connectionService.activeTunnel;
         }
 
+        // Database selection failure
         if (result.databaseSelectionFailed) {
+            strongSelf->mySQLConnection = result.connection;
             if (strongSelf->isTestingConnection) {
                 [strongSelf cancelConnection:nil];
                 [strongSelf _showConnectionTestResult:NSLocalizedString(@"Invalid database", @"Invalid database very short status message")];
@@ -478,21 +479,42 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             return;
         }
 
+        // Connection failure — format case-specific error messages
         if (!result.isSuccess) {
+            // Check local network denial before clearing mySQLConnection
             BOOL localNetworkDenied = result.isLocalNetworkDenied || [strongSelf _isLocalNetworkAccessDeniedForCurrentConnectionAttempt];
-            // Use SSH debug messages as detail when available (for tunnel failures),
-            // falling back to the result's errorDetail
-            NSString *failDetail = (result.sshDebugMessages.length > 0)
-                ? result.sshDebugMessages
-                : result.errorDetail;
-            [strongSelf _failConnectionWithTitle:result.errorTitle ?: @""
-                              errorMessage:result.errorMessage
+            strongSelf->mySQLConnection = nil;
+
+            NSString *failTitle = result.errorTitle ?: NSLocalizedString(@"Unable to connect", @"connection failed title");
+            NSString *failMessage = result.rawErrorMessage ?: @"";
+            NSString *failDetail = nil;
+
+            // Format detailed error based on connection type and error code
+            if (result.sshDebugMessages.length > 0 && strongSelf->sshTunnel) {
+                // SSH tunnel failure — show debug messages
+                failTitle = NSLocalizedString(@"SSH port forwarding failed", @"title when ssh tunnel port forwarding failed");
+                failDetail = result.sshDebugMessages;
+            } else if (result.lastErrorID == 1045) {
+                // Access denied
+                failTitle = NSLocalizedString(@"Access denied!", @"connection failed due to access denied title");
+                failDetail = NSLocalizedString(@"Please check your username and password and try again.", @"");
+            } else if (result.connectionType == SAConnectionTypeSocket) {
+                if ([result.rawErrorMessage rangeOfString:@"No such file"].location != NSNotFound) {
+                    failTitle = NSLocalizedString(@"Socket not found!", @"socket not found title");
+                } else {
+                    failTitle = NSLocalizedString(@"Socket connection failed!", @"socket connection failed title");
+                }
+            }
+
+            [strongSelf _failConnectionWithTitle:failTitle
+                              errorMessage:failMessage
                                     detail:failDetail
                    localNetworkPermissionDenied:localNetworkDenied];
             return;
         }
 
-        // Success — delegate to existing handler
+        // Success — store connection and delegate to existing handler
+        strongSelf->mySQLConnection = result.connection;
         [strongSelf mySQLConnectionEstablished];
     }];
 }
@@ -2147,6 +2169,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 {
     // Must be performed on the main thread
     if (![NSThread isMainThread]) return [[self onMainThread] _restoreConnectionInterface];
+
+    isConnecting = NO;
 
     // Reset the window title
     [dbDocument updateWindowTitle:self];
