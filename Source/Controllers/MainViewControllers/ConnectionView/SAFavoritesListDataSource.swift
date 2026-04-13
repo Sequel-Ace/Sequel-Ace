@@ -127,7 +127,9 @@ extension SAFavoritesListDataSource: NSOutlineViewDataSource {
         }
 
         let node = (item as? SPTreeNode) ?? favoritesRoot
-        return node.children?[adjustedIndex] as Any
+        guard let children = node.children, adjustedIndex < children.count
+        else { return NSNull() }
+        return children[adjustedIndex]
     }
 
     func outlineView(_ outlineView: NSOutlineView, objectValueFor tableColumn: NSTableColumn?, byItem item: Any?) -> Any? {
@@ -150,6 +152,11 @@ extension SAFavoritesListDataSource: NSOutlineViewDataSource {
     // MARK: Drag & Drop
 
     func outlineView(_ outlineView: NSOutlineView, writeItems items: [Any], to pasteboard: NSPasteboard) -> Bool {
+        // Check with delegate if drag is allowed (e.g. not during name editing)
+        if delegate?.favoritesListShouldBeginDrag?() == false {
+            return false
+        }
+
         // Prevent dragging root-level items
         for item in items {
             guard let node = item as? SPTreeNode,
@@ -244,6 +251,11 @@ extension SAFavoritesListDataSource: NSOutlineViewDelegate {
     func outlineView(_ outlineView: NSOutlineView, isGroupItem item: Any) -> Bool {
         guard let node = item as? SPTreeNode else { return false }
         return node.parent?.parent == nil
+    }
+
+    func outlineViewSelectionIsChanging(_ notification: Notification) {
+        // Notify delegate to stop editing during selection change (prevents visual glitches)
+        delegate?.favoritesListEditingStateChanged?(isEditing: false)
     }
 
     func outlineViewSelectionDidChange(_ notification: Notification) {

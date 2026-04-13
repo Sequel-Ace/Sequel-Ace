@@ -27,6 +27,9 @@ import AppKit
     /// sort state and post change notifications.
     @objc optional func favoritesListDidReorderNodes()
 
+    /// Whether drag should be allowed to start. Return NO if editing is in progress.
+    @objc optional func favoritesListShouldBeginDrag() -> Bool
+
     /// The user started or stopped editing a connection (for UI state sync).
     @objc optional func favoritesListEditingStateChanged(isEditing: Bool)
 }

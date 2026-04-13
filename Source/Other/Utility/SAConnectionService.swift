@@ -29,6 +29,9 @@ import Foundation
     @objc let databaseSelectionFailed: Bool
     @objc let databaseSelectionError: String
 
+    /// True when the user cancelled (e.g. SSH password prompt). Not an error — just restore UI.
+    @objc var userCancelled: Bool = false
+
     @objc var isSuccess: Bool { connection != nil && errorTitle == nil && !databaseSelectionFailed }
 
     @objc init(connection: SPMySQLConnection, sshTunnel: SPSSHTunnel?,
@@ -117,7 +120,13 @@ import Foundation
     private var sshTunnelCompletion: ((SPSSHTunnel?, String?) -> Void)?
 
     /// Set to true when cancel() is called; checked before delivering results.
-    private var cancelled = false
+    /// Access synchronized via lock for thread safety (written from main, read from background).
+    private let cancelLock = NSLock()
+    private var _cancelled = false
+    private var cancelled: Bool {
+        get { cancelLock.lock(); defer { cancelLock.unlock() }; return _cancelled }
+        set { cancelLock.lock(); _cancelled = newValue; cancelLock.unlock() }
+    }
 
     // MARK: - Public API
 
@@ -147,6 +156,13 @@ import Foundation
                 if let tunnel = tunnel {
                     self.activeTunnel = tunnel
                     self.connectMySQL(info: info, preferences: preferences, password: password, tunnel: tunnel, completion: safeCompletion)
+                } else if error == nil {
+                    // User cancelled the SSH password prompt — restore UI silently
+                    let result = SAConnectionResult(
+                        errorTitle: "", errorMessage: nil, errorDetail: nil
+                    )
+                    result.userCancelled = true
+                    DispatchQueue.main.async { safeCompletion(result) }
                 } else {
                     let result = SAConnectionResult(
                         errorTitle: NSLocalizedString("SSH connection failed!", comment: ""),
@@ -210,7 +226,7 @@ import Foundation
 
             case .tcpIP, .awsIAM:
                 conn.useSocket = false
-                conn.host = info.host
+                conn.host = info.host.isEmpty ? "127.0.0.1" : info.host
                 conn.port = UInt(info.port) ?? 3306
 
             @unknown default:
@@ -376,6 +392,14 @@ import Foundation
     }
 
     @objc private func sshTunnelStateChanged(_ tunnel: SPSSHTunnel) {
+        // User cancelled the SSH password dialog — silently abort
+        if tunnel.passwordPromptCancelled {
+            let completion = sshTunnelCompletion
+            sshTunnelCompletion = nil
+            completion?(nil, nil)
+            return
+        }
+
         let state = tunnel.state()
 
         if state == SPMySQLProxyConnected {

@@ -452,9 +452,13 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         SPConnectionController *strongSelf = weakSelf;
         if (!strongSelf) return;
 
+        // User cancelled (e.g. SSH password prompt) — silently restore UI
+        if (result.userCancelled) {
+            [strongSelf _restoreConnectionInterface];
+            return;
+        }
+
         // Store connection/tunnel on controller ivars for cancelConnection: etc.
-        // Only overwrite sshTunnel if result carries one (error results have nil tunnel
-        // but the service's activeTunnel may still be alive for cleanup by failConnectionWithTitle:).
         strongSelf->mySQLConnection = result.connection;
         if (result.sshTunnel) {
             strongSelf->sshTunnel = result.sshTunnel;
@@ -476,9 +480,14 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         if (!result.isSuccess) {
             BOOL localNetworkDenied = result.isLocalNetworkDenied || [strongSelf _isLocalNetworkAccessDeniedForCurrentConnectionAttempt];
+            // Use SSH debug messages as detail when available (for tunnel failures),
+            // falling back to the result's errorDetail
+            NSString *failDetail = (result.sshDebugMessages.length > 0)
+                ? result.sshDebugMessages
+                : result.errorDetail;
             [strongSelf _failConnectionWithTitle:result.errorTitle ?: @""
                               errorMessage:result.errorMessage
-                                    detail:result.errorDetail
+                                    detail:failDetail
                    localNetworkPermissionDenied:localNetworkDenied];
             return;
         }
@@ -2930,6 +2939,25 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     [[NSNotificationCenter defaultCenter] postNotificationName:SPConnectionFavoritesChangedNotification object:self];
     [[[SPAppDelegate preferenceController] generalPreferencePane] updateDefaultFavoritePopup];
+}
+
+- (void)favoritesListEditingStateChangedWithIsEditing:(BOOL)isEditing
+{
+    if (!isEditing && isEditingConnection) {
+        [self _stopEditingConnection];
+        [favoritesOutlineView setNeedsDisplay:YES];
+    }
+}
+
+- (BOOL)favoritesListShouldBeginDrag
+{
+    if (isEditingItemName) {
+        [favoritesController saveFavorites];
+        [self _reloadFavoritesViewData];
+        isEditingItemName = NO;
+        return NO;
+    }
+    return YES;
 }
 
 #pragma mark -
