@@ -486,7 +486,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             strongSelf->mySQLConnection = nil;
 
             NSString *failTitle = result.errorTitle ?: NSLocalizedString(@"Unable to connect", @"connection failed title");
-            NSString *failMessage = result.rawErrorMessage ?: @"";
+            // rawErrorMessage is populated for MySQL errors; errorMessage for SSH tunnel errors
+            NSString *failMessage = (result.rawErrorMessage.length > 0) ? result.rawErrorMessage : (result.errorMessage ?: @"");
             NSString *failDetail = nil;
 
             // Format detailed error based on connection type and error code

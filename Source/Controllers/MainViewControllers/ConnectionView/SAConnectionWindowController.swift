@@ -31,6 +31,10 @@ import AppKit
     /// The connection service for direct (non-UI-controller) connection attempts.
     private let connectionService = SAConnectionService()
 
+    /// Set to true after a successful connection handoff to prevent
+    /// windowWillClose from disconnecting the just-handed-off connection.
+    private var connectionHandedOff = false
+
     /// Coordinator managing the view swap between connection and content views.
     /// In standalone mode, the content view is just an empty placeholder.
     private var viewCoordinator: SAConnectionViewCoordinator?
@@ -82,8 +86,10 @@ import AppKit
         window?.delegate = self
     }
 
-    /// Cancel any in-progress connection when the window closes.
+    /// Cancel any in-progress connection when the window closes,
+    /// unless we've already handed off a successful connection.
     func windowWillClose(_ notification: Notification) {
+        guard !connectionHandedOff else { return }
         connectionController?.cancelConnection(nil)
         connectionService.cancel()
     }
@@ -113,7 +119,10 @@ import AppKit
         // into the database UI (same as the embedded flow's addConnectionToDocument).
         document.setConnection(connection)
 
-        // 3. Close the standalone connection window
+        // 3. Mark handoff complete so windowWillClose doesn't cancel the connection
+        connectionHandedOff = true
+
+        // 4. Close the standalone connection window
         close()
     }
 
