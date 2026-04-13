@@ -60,7 +60,6 @@
 #import "SPFunctions.h"
 #import "sequel-ace-Swift.h"
 #include <tgmath.h>
-@import AppCenterAnalytics;
 
 static NSInteger spTooltipCounter = 0;
 
@@ -191,20 +190,7 @@ static CGFloat slow_in_out (CGFloat t)
         }
         
         if(errorDict.count > 0){
-            NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
-            @try {
-                if ([prefs boolForKey:SPSaveApplicationUsageAnalytics]) {
-                    executeOnBackgroundThread(^{
-                        @try {
-                            [MSACAnalytics trackEvent:@"error" withProperties:errorDict];
-                        } @catch (NSException * e) {
-                            SPLog(@"MSACAppCenter Exception on trackEvent Report callback: %@", e);
-                        }
-                    });
-                }
-            } @catch (NSException * e) {
-                SPLog(@"MSACAppCenter Exception on trackEvent Report: %@", e);
-            }
+            SPLog(@"Show with object error: %@", errorDict);
         }
 
 		if(text)

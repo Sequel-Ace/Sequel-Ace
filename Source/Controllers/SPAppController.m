@@ -56,9 +56,9 @@
 
 #import "sequel-ace-Swift.h"
 
-@import AppCenter;
-@import AppCenterAnalytics;
-@import AppCenterCrashes;
+@import FirebaseCore;
+@import FirebaseAnalytics;
+@import FirebaseCrashlytics;
 
 static const double SPDelayBeforeCheckingForNewReleases = 10;
 
@@ -202,34 +202,12 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
 
+    [FIRApp configure];
+
     NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
-    @try {
-        if ([prefs boolForKey:SPSaveApplicationUsageAnalytics]) {
-            // Send time interval for non-critical logs
-            // must set before calling AppCenter.start
-            // 5 mins?
-            [MSACAnalytics setTransmissionInterval:60*5];
-
-            // Use 30 MB for storage for logs
-            [MSACAppCenter setMaxStorageSize:(30 * 1024 * 1024) completionHandler:nil];
-            [MSACAppCenter start:@"65535bfb-1763-40fd-896b-a3aaae06227f" withServices:@[[MSACAnalytics class], [MSACCrashes class]]];
-
-#ifdef DEBUG
-            // default is 5 = MSACLogLevelWarning
-            [MSACAppCenter setLogLevel:MSACLogLevelDebug];
-#endif
-
-            if(MSACAppCenter.isEnabled == YES && MSACAppCenter.isConfigured == YES){
-                SPLog(@"Started MSACAppCenter. sdkVersion: %@. defaultLogLevel: %lu", MSACAppCenter.sdkVersion, (unsigned long) MSACAppCenter.logLevel);
-            }
-            else{
-                SPLog(@"MSACAppCenter FAILED to start.");
-            }
-        }
-    }
-    @catch (NSException * e) {
-        SPLog(@"MSACAppCenter Exception on Init: %@", e);
-    }
+    BOOL analyticsEnabled = [prefs boolForKey:SPSaveApplicationUsageAnalytics];
+    [FIRAnalytics setAnalyticsCollectionEnabled:analyticsEnabled];
+    [[FIRCrashlytics crashlytics] setCrashlyticsCollectionEnabled:analyticsEnabled];
 
 
     // this reRequests access to all bookmarks

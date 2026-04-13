@@ -4,8 +4,6 @@
 <dict>
 	<key>ATSApplicationFontsPath</key>
 	<string>Fonts</string>
-	<key>AppCenterApplicationForwarderEnabled</key>
-	<false/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleDocumentTypes</key>
@@ -228,17 +226,6 @@
 		<true/>
 		<key>NSExceptionDomains</key>
 		<dict>
-			<key>appcenter.ms</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<false/>
-				<key>NSExceptionMinimumTLSVersion</key>
-				<string>TLSv1.2</string>
-				<key>NSIncludeSubdomains</key>
-				<true/>
-				<key>NSRequiresCertificateTransparency</key>
-				<false/>
-			</dict>
 			<key>github.com</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
