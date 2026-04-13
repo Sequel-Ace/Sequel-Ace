@@ -288,13 +288,13 @@
 - (NSArray *)allSchemaKeys;
 
 // Task progress and notification methods
-- (void)startTaskWithDescription:(NSString *)description;
-- (void)fadeInTaskProgressWindow:(NSTimer *)theTimer;
-- (void)setTaskDescription:(NSString *)description;
+- (void)startTaskWithDescription:(nonnull NSString *)description;
+- (void)fadeInTaskProgressWindow:(nonnull NSTimer *)theTimer;
+- (void)setTaskDescription:(nonnull NSString *)description;
 - (void)setTaskPercentage:(CGFloat)taskPercentage;
 - (void)setTaskProgressToIndeterminateAfterDelay:(BOOL)afterDelay;
 - (void)endTask;
-- (void)enableTaskCancellationWithTitle:(NSString *)buttonTitle callbackObject:(id)callbackObject callbackFunction:(SEL)callbackFunction;
+- (void)enableTaskCancellationWithTitle:(nonnull NSString *)buttonTitle callbackObject:(nullable id)callbackObject callbackFunction:(nullable SEL)callbackFunction;
 - (void)disableTaskCancellation;
 - (IBAction)cancelTask:(id)sender;
 - (BOOL)isWorking;
