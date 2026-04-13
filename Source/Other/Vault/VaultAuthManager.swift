@@ -200,6 +200,14 @@ import OSLog
                         )
                         finishInFlight(); return false
                     }
+                    guard !creds.username.isEmpty, !creds.password.isEmpty else {
+                        errorPointer?.pointee = NSError(
+                            domain: errorDomain,
+                            code: VaultAuthError.emptyCredentials.rawValue,
+                            userInfo: [NSLocalizedDescriptionKey: VaultAuthError.emptyCredentials.localizedDescription ?? ""]
+                        )
+                        finishInFlight(); return false
+                    }
                     setCachedCredentials(username: creds.username, password: creds.password, leaseDuration: creds.leaseDuration, for: key)
                     finishInFlight()
                     username.pointee = creds.username as NSString
@@ -255,6 +263,14 @@ import OSLog
             finishInFlight(); return false
         }
 
+        guard !creds.username.isEmpty, !creds.password.isEmpty else {
+            errorPointer?.pointee = NSError(
+                domain: errorDomain,
+                code: VaultAuthError.emptyCredentials.rawValue,
+                userInfo: [NSLocalizedDescriptionKey: VaultAuthError.emptyCredentials.localizedDescription ?? ""]
+            )
+            finishInFlight(); return false
+        }
         setCachedCredentials(username: creds.username, password: creds.password, leaseDuration: creds.leaseDuration, for: key)
         finishInFlight()
 
