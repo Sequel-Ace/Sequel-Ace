@@ -208,6 +208,7 @@ import Foundation
 
     // MARK: - Private: MySQL Connection
 
+    /// Establishes the MySQL-side connection once any required SSH tunnel is ready.
     private func connectMySQL(
         info: SAConnectionInfoObjC,
         preferences: SAConnectionPreferences,
@@ -231,7 +232,7 @@ import Foundation
 
             case .sshTunnel:
                 conn.useSocket = false
-                conn.host = "127.0.0.1"
+                conn.host = SAConnectionInfoObjC.resolvedMySQLConnectHost(for: info) ?? "127.0.0.1"
                 if let tunnel = tunnel {
                     conn.port = UInt(tunnel.localPort())
                     conn.setProxy(tunnel)
@@ -239,7 +240,7 @@ import Foundation
 
             case .tcpIP, .awsIAM:
                 conn.useSocket = false
-                conn.host = info.host.isEmpty ? "127.0.0.1" : info.host
+                conn.host = SAConnectionInfoObjC.resolvedMySQLConnectHost(for: info) ?? "127.0.0.1"
                 conn.port = UInt(info.port) ?? 3306
 
             @unknown default:
