@@ -1758,31 +1758,31 @@
 "multiple selection" = "çoklu seçim";
 
 /* MySQL connecting very short status message */
-"MySQL connecting..." = "MySQL bağlanıyor...";
+"MySQL connecting..." = "MySQL connecting...";
 
 /* mysql error message */
-"MySQL Error" = "MySQL Hatası";
+"MySQL Error" = "MySQL Error";
 
 /* mysql help */
-"MySQL Help" = "MySQL Yardım";
+"MySQL Help" = "MySQL Help";
 
 /* MySQL Help for Selection */
-"MySQL Help for Selection" = "Seçim için MySQL Yardımı";
+"MySQL Help for Selection" = "MySQL Help for Selection";
 
 /* MySQL Help for Word */
-"MySQL Help for Word" = "Kelime için MySQL Yardımı";
+"MySQL Help for Word" = "MySQL Help for Word";
 
 /* mysql help categories */
-"MySQL Help – Categories" = "MySQL Yardımı – Kategoriler";
+"MySQL Help – Categories" = "MySQL Help – Categories";
 
 /* mysql said message */
-"MySQL said:" = "MySQL şöyle dedi:";
+"MySQL said:" = "MySQL said:";
 
 /* shutdown server : error dialog : message */
-"MySQL said:\n%@" = "MySQL şöyle dedi:\n%@";
+"MySQL said:\n%@" = "MySQL said:\n%@";
 
 /* message of panel when error while adding row to db */
-"MySQL said:\n\n%@" = "MySQL şöyle dedi:\n\n%@";
+"MySQL said:\n\n%@" = "MySQL said:\n\n%@";
 
 /* Preferences : Themes : Initial filename for 'Export' */
 "MyTheme" = "Tema";
@@ -2669,7 +2669,7 @@
 "Testing connection..." = "Bağlantı test ediliyor...";
 
 /* MySQL connection test very short status message */
-"Testing MySQL..." = "MySQL test ediliyor...";
+"Testing MySQL..." = "Testing MySQL...";
 
 /* SSH testing very short status message */
 "Testing SSH..." = "SSH test ediliyor...";
@@ -3113,7 +3113,7 @@
 "View Structure" = "Yapıyı Görüntüle";
 
 /* views */
-"views" = "görüntülenmeler";
+"views" = "views";
 
 /* warning */
 "Warning" = "Uyarı";
@@ -3293,7 +3293,7 @@
 "Calculating time remaining..." = "Kalan süre hesaplanıyor...";
 
 /* downloading new version window message */
-"Downloading Sequel Ace - %@" = "Sequel Ace İndiriliyor - %@";
+"Downloading Sequel Ace - %@" = "Downloading Sequel Ace - %@";
 
 /* downloading new version time remaining estimate text */
 "About %.1f seconds left" = "About %.1f seconds left";
