@@ -107,6 +107,17 @@ import Foundation
 /// making it testable and reusable from different UI contexts.
 @objc class SAConnectionService: NSObject {
 
+    @objc class func resolvedMySQLHost(for info: SAConnectionInfoObjC) -> String? {
+        switch info.type {
+        case .socket:
+            return nil
+        case .sshTunnel, .tcpIP, .awsIAM:
+            return info.host.isEmpty ? "127.0.0.1" : info.host
+        @unknown default:
+            return nil
+        }
+    }
+
     /// The delegate that receives MySQL connection callbacks (query logging, etc).
     @objc weak var mySQLDelegate: (any SPMySQLConnectionDelegate)?
 
@@ -231,7 +242,7 @@ import Foundation
 
             case .sshTunnel:
                 conn.useSocket = false
-                conn.host = "127.0.0.1"
+                conn.host = Self.resolvedMySQLHost(for: info)
                 if let tunnel = tunnel {
                     conn.port = UInt(tunnel.localPort())
                     conn.setProxy(tunnel)
@@ -239,7 +250,7 @@ import Foundation
 
             case .tcpIP, .awsIAM:
                 conn.useSocket = false
-                conn.host = info.host.isEmpty ? "127.0.0.1" : info.host
+                conn.host = Self.resolvedMySQLHost(for: info)
                 conn.port = UInt(info.port) ?? 3306
 
             @unknown default:
