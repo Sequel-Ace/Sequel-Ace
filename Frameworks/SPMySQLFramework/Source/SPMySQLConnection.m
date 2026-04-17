@@ -1038,6 +1038,7 @@ asm(".desc ___crashreporter_info__, 0x10");
     SPLog(@"_reconnectAllowingRetries");
 	if (userTriggeredDisconnect) return NO;
 	BOOL reconnectSucceeded = NO;
+    NSString *timeZoneIdentifierToRestore = nil;
 
 	@autoreleasepool {
 		// Check whether a reconnection attempt is already being made - if so, wait
@@ -1080,6 +1081,12 @@ asm(".desc ___crashreporter_info__, 0x10");
 			encodingUsesLatin1TransportToRestore = encodingUsesLatin1Transport;
 			databaseToRestore = [database copy];
 		}
+        // Keep this per-attempt capture aligned with self.timeZoneIdentifier:
+        // reconnect retries re-capture it from the surviving property value, so
+        // revisit this if disconnect teardown ever clears timeZoneIdentifier.
+        if (!timeZoneIdentifierToRestore && [self.timeZoneIdentifier length]) {
+            timeZoneIdentifierToRestore = [self.timeZoneIdentifier copy];
+        }
 
 		// If there is a connection proxy, temporarily disassociate the state change action
 		if (proxy) proxyStateChangeNotificationsIgnored = YES;
@@ -1186,18 +1193,14 @@ asm(".desc ___crashreporter_info__, 0x10");
 		// If the reconnection succeeded, restore the connection state as appropriate
 		if (state == SPMySQLConnected && ![[NSThread currentThread] isCancelled]) {
 			reconnectSucceeded = YES;
-			if (databaseToRestore) {
-				[self selectDatabase:databaseToRestore];
-				// When the connection is restored successfully, reset the relevant variables to prepare for the next time
-				databaseToRestore = nil;
-			}
-			if (encodingToRestore) {
-				[self setEncoding:encodingToRestore];
-				[self setEncodingUsesLatin1Transport:encodingUsesLatin1TransportToRestore];
-				// When the connection is restored successfully, reset the relevant variables to prepare for the next time
-				encodingToRestore = nil;
-				encodingUsesLatin1TransportToRestore = NO;
-			}
+            [self _restoreSessionStateAfterReconnectWithDatabase:databaseToRestore
+                                                        encoding:encodingToRestore
+                                    encodingUsesLatin1Transport:encodingUsesLatin1TransportToRestore
+                                               timeZoneIdentifier:timeZoneIdentifierToRestore];
+            // When the connection is restored successfully, reset the relevant variables to prepare for the next time
+            databaseToRestore = nil;
+            encodingToRestore = nil;
+            encodingUsesLatin1TransportToRestore = NO;
 		}
 			// If the connection failed and the connection is permitted to retry,
 			// then retry the reconnection.
@@ -1447,6 +1450,28 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	[self setEncoding:encoding];
 	[self setEncodingUsesLatin1Transport:encodingUsesLatin1Transport];
+}
+
+- (void)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
+                                              encoding:(NSString *)encodingName
+                      encodingUsesLatin1Transport:(BOOL)useLatin1Transport
+                                 timeZoneIdentifier:(NSString *)timeZoneIdentifier
+{
+    if (databaseName) {
+        [self selectDatabase:databaseName];
+    }
+
+    if (encodingName) {
+        [self setEncoding:encodingName];
+        [self setEncodingUsesLatin1Transport:useLatin1Transport];
+    }
+
+    if ([timeZoneIdentifier length]) {
+        // Clear the cached timeZoneIdentifier so updateTimeZoneIdentifier:
+        // bypasses its equality guard and re-runs SET time_zone after reconnect.
+        self.timeZoneIdentifier = nil;
+        [self updateTimeZoneIdentifier:timeZoneIdentifier];
+    }
 }
 
 /**

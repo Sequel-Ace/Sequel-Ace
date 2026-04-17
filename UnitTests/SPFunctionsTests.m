@@ -19,10 +19,56 @@
 + (NSString *)_defaultTLSSuiteListString;
 + (NSArray<NSString *> *)_mergedSSLCipherPreferenceListFromSavedCipherString:(NSString *)savedCipherString disabledMarker:(NSString *)disabledMarker;
 + (NSString *)_reachabilityProbeHostForHost:(NSString *)host useSocket:(BOOL)useSocket hasProxy:(BOOL)hasProxy;
+- (BOOL)selectDatabase:(NSString *)aDatabase;
+- (BOOL)setEncoding:(NSString *)theEncoding;
+- (BOOL)setEncodingUsesLatin1Transport:(BOOL)useLatin1;
+- (void)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
+                                              encoding:(NSString *)encodingName
+                      encodingUsesLatin1Transport:(BOOL)useLatin1Transport
+                                 timeZoneIdentifier:(NSString *)timeZoneIdentifier;
 @end
 
 @interface NSString (TestingColumnHeader)
 + (NSString *)tableContentColumnHeaderStringForColumnName:(NSString *)columnName columnType:(NSString *)columnType columnTypesVisible:(BOOL)columnTypesVisible;
+@end
+
+@interface SPMySQLReconnectStateTestConnection : SPMySQLConnection
+@property (nonatomic, copy) NSString *recordedDatabaseName;
+@property (nonatomic, copy) NSString *recordedEncodingName;
+@property (nonatomic, assign) BOOL recordedLatin1Transport;
+@property (nonatomic, copy) NSString *recordedTimeZoneIdentifier;
+@property (nonatomic, assign) NSUInteger recordedTimeZoneUpdateCallCount;
+@end
+
+@implementation SPMySQLReconnectStateTestConnection
+
+- (BOOL)selectDatabase:(NSString *)aDatabase
+{
+    self.recordedDatabaseName = aDatabase;
+    return YES;
+}
+
+- (BOOL)setEncoding:(NSString *)theEncoding
+{
+    self.recordedEncodingName = theEncoding;
+    return YES;
+}
+
+- (BOOL)setEncodingUsesLatin1Transport:(BOOL)useLatin1
+{
+    self.recordedLatin1Transport = useLatin1;
+    return YES;
+}
+
+- (void)updateTimeZoneIdentifier:(NSString *)timeZoneIdentifier
+{
+    // _restoreSessionStateAfterReconnect... clears timeZoneIdentifier before
+    // calling this method, so the double only needs to model a successful reapply.
+    self.recordedTimeZoneUpdateCallCount += 1;
+    self.recordedTimeZoneIdentifier = timeZoneIdentifier;
+    [self setValue:timeZoneIdentifier forKey:@"timeZoneIdentifier"];
+}
+
 @end
 
 @interface SPFunctionsTests : XCTestCase
@@ -206,6 +252,51 @@
     XCTAssertLessThan(userEnabledLegacyIndex, markerIndex);
     XCTAssertGreaterThan(userDisabledModernIndex, markerIndex);
     XCTAssertGreaterThan(missingLegacyIndex, markerIndex);
+}
+
+- (void)testReconnectSessionStateRestoreReappliesTimeZoneIdentifier
+{
+    SPMySQLReconnectStateTestConnection *connection = [SPMySQLReconnectStateTestConnection new];
+    // Preload the cached value to prove reconnect still forces a reapply when
+    // the restored identifier matches the pre-disconnect session setting.
+    [connection setValue:@"Europe/London" forKey:@"timeZoneIdentifier"];
+
+    [connection _restoreSessionStateAfterReconnectWithDatabase:@"reporting"
+                                                      encoding:@"utf8mb4"
+                                      encodingUsesLatin1Transport:YES
+                                                 timeZoneIdentifier:@"Europe/London"];
+
+    XCTAssertEqualObjects(connection.recordedDatabaseName, @"reporting");
+    XCTAssertEqualObjects(connection.recordedEncodingName, @"utf8mb4");
+    XCTAssertTrue(connection.recordedLatin1Transport);
+    XCTAssertEqualObjects(connection.recordedTimeZoneIdentifier, @"Europe/London");
+    XCTAssertEqual(connection.recordedTimeZoneUpdateCallCount, (NSUInteger)1);
+}
+
+- (void)testReconnectSessionStateRestoreSkipsEmptyTimeZoneIdentifier
+{
+    SPMySQLReconnectStateTestConnection *connection = [SPMySQLReconnectStateTestConnection new];
+
+    [connection _restoreSessionStateAfterReconnectWithDatabase:nil
+                                                      encoding:nil
+                                      encodingUsesLatin1Transport:NO
+                                                 timeZoneIdentifier:@""];
+
+    XCTAssertNil(connection.recordedTimeZoneIdentifier);
+    XCTAssertEqual(connection.recordedTimeZoneUpdateCallCount, (NSUInteger)0);
+}
+
+- (void)testReconnectSessionStateRestoreSkipsNilTimeZoneIdentifier
+{
+    SPMySQLReconnectStateTestConnection *connection = [SPMySQLReconnectStateTestConnection new];
+
+    [connection _restoreSessionStateAfterReconnectWithDatabase:nil
+                                                      encoding:nil
+                                      encodingUsesLatin1Transport:NO
+                                                 timeZoneIdentifier:nil];
+
+    XCTAssertNil(connection.recordedTimeZoneIdentifier);
+    XCTAssertEqual(connection.recordedTimeZoneUpdateCallCount, (NSUInteger)0);
 }
 
 // 0.0354 s
