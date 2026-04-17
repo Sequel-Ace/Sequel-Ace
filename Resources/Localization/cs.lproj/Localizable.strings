@@ -81,10 +81,10 @@
 "%ld additional rows were removed!" = "%ld další řádky byly odstraněny!";
 
 /* Label showing the index of the selected CSV row */
-"%ld of %lu record(s)" = "%1$ld záznamu z %2$lu";
+"%ld of %lu record(s)" = "%1$ld z %2$lu záznamu(ů)";
 
 /* Label showing the index of the selected CSV row (csv partially loaded) */
-"%ld of first %lu record(s)" = "%1$ld prvního %2$lu záznamu";
+"%ld of first %lu record(s)" = "%1$ld z prvních %2$lu záznamu(ů)";
 
 /* Table Content : Remove Row : Result : Too Few : Part 1 : n-x (x!=1) of n selected rows were deleted. */
 "%ld rows were not removed." = "%ld řádky nebyly odstraněny.";
@@ -114,7 +114,7 @@
 "(not loaded)" = "(nenačteno)";
 
 /* Explanation for MySQL server has gone away error */
-"(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)" = "(To obvykle znamená, že připojení bylo uzavřeno serverem po neaktivitě, ale může k němu dojít také kvůli jiným podmínkám. Připojení bylo obnoveno; zkuste to prosím znovu, pokud je dotaz bezpečný pro opakovaný spuštění.)";
+"(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)" = "(To obvykle znamená, že spojení bylo po nečinnosti uzavřeno serverem, ale může nastat i z jiných důvodů. Spojení bylo obnoveno; zkuste to prosím znovu, pokud je dotaz bezpečné opakovat.)";
 
 /* Custom Query : text appended to the “x row(s) affected” messages. $1 is a time interval */
 ", first row available after %1$@" = ", první řádek je k dispozici po %1$@";
@@ -144,13 +144,13 @@
 "\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)" = "\n\n(Kromě toho došlo k jedné nebo více chybám při pokusu o vytvoření exportních souborů: %lu nelze vytvořit. Tyto soubory budou ignorovány.)";
 
 /* \n\npress shift for binary search tooltip message */
-"\n\nPress ⇧ for binary search (case-sensitive)." = "\n\nStiskněte <unk> pro binární vyhledávání (rozlište malá a velká písmena).";
+"\n\nPress ⇧ for binary search (case-sensitive)." = "\n\nStiskněte ⇧ pro binární hledání (rozlišuje velikost písmen).";
 
 /* description of bit */
 "A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit." = "Typ bitového pole. M určuje počet bitů. Pokud jsou vloženy kratší hodnoty, budou zarovnány na nejméně významném bitu. Pokud chcete explicitně pojmenovat každou část, podívejte se na typ SET.";
 
 /* Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog message */
-"A Bundle ‘%@’ is already installed. Do you want to update it?" = "Bundle ‘%@je již nainstalován. Chcete jej aktualizovat?";
+"A Bundle ‘%@’ is already installed. Do you want to update it?" = "Balíček ‚%@‘ je již nainstalován. Chcete jej aktualizovat?";
 
 /* description of binary */
 "A byte array with fixed length. Shorter values will always be padded to the right with 0x00 until they fit M." = "Bajtové pole s pevnou délkou. Krátké hodnoty budou vždy umístěny vpravo s 0x00, dokud se nevejde M.";
@@ -174,7 +174,7 @@
 "A character string that can store up to M bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "Řetězec znaků, který může ukládat až M bajtů, ale vyžaduje méně místa pro kratší hodnoty. Skutečný počet znaků je dále omezen použitým kódováním. Na rozdíl od VARCHAR se tento typ nezapočítává do maximální délky řádku.";
 
 /* description of char */
-"A character string that will require M×w bytes per row, independent of the actual content length. w is the maximum number of bytes a single character can occupy in the given encoding." = "Řetězec znaků, který bude vyžadovat M×w bytů na řádek, nezávisle na skutečné délce obsahu. w je maximální počet bytů, které může jeden znak obsadit v daném kódování.";
+"A character string that will require M×w bytes per row, independent of the actual content length. w is the maximum number of bytes a single character can occupy in the given encoding." = "Řetězec znaků, který bude vyžadovat M×w bajtů na řádek, nezávisle na skutečné délce obsahu. w je maximální počet bajtů, které může jeden znak v daném kódování zabírat.";
 
 /* description of longtext
  description of mediumtext */
@@ -215,7 +215,7 @@
 "A user with the name '%@' already exists" = "Uživatel s jménem '%@' již existuje";
 
 /* table content : editing : error message description when parsing as hex string failed */
-"A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too." = "Platný hex řetězec může obsahovat pouze čísla 0–9 a písmena A-F (a-f). Volitelně může začínat znakem „0x“ a mezery budou ignorovány.\nAlternativně je podporována syntaxe X'val.";
+"A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too." = "Platný hexadecimální řetězec může obsahovat pouze číslice 0-9 a písmena A-F (a-f). Volitelně může začínat „0x“ a mezery budou ignorovány.\nAlternativně je podporován i zápis X'val'.";
 
 /* connection failed due to access denied title */
 "Access denied!" = "Přístup odepřen!";
@@ -272,7 +272,7 @@
 "An error has occurred and there doesn't seem to be a connection available." = "Došlo k chybě a zdá se, že není k dispozici připojení.";
 
 /* an error occur while executing a scheme command. if the scheme command was invoked by a bundle command, it could be that the command still runs. you can try to terminate it by pressing ⌘+. or via the activities pane. */
-"An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane." = "Při provádění příkazu schématu došlo k chybě. Pokud byl příkaz Bundle vyvolán příkazem Bundle, mohl by to být tak, že příkaz stále běží. Můžete se ho pokusit ukončit stisknutím klávesy <unk> +. nebo v panelu Aktivity.";
+"An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane." = "Při vykonávání příkazu Scheme došlo k chybě. Pokud byl příkaz Scheme spuštěn z Bundle příkazu, může být tento příkaz stále spuštěný. Pokusit se jej ukončit můžete stisknutím ⌘+. nebo v panelu Aktivity.";
 
 /* error killing query informative message */
 "An error occurred while attempting to kill connection %lld.\n\nMySQL said: %@" = "Došlo k chybě při pokusu o ukončení spojení %1$lld.\n\nMySQL řekl: %2$@";
@@ -305,7 +305,7 @@
 "An error occurred while renaming. The CREATE syntax of '%@' could not be parsed." = "Došlo k chybě při přejmenování. CREATE syntaxe '%@' nelze analyzovat.";
 
 /* message of panel when retrieving view information failed */
-"An error occurred while retrieving status data.\n\nMySQL said: %@" = "An error occurred while retrieving status data.\n\nMySQL said: %@";
+"An error occurred while retrieving status data.\n\nMySQL said: %@" = "Při načítání stavových dat došlo k chybě.\n\nMySQL řekl: %@";
 
 /* message of panel when create syntax cannot be retrieved */
 "An error occurred while retrieving the create syntax for '%@'.\nMySQL said: %@" = "Nastala chyba při získávání syntaxe pro '%1$@'.\nMySQL řekl: %2$@";
@@ -347,19 +347,19 @@
 "An error occurred when reading the file, as it could not be read using the encoding you selected (%@).\n\nOnly %ld rows were imported." = "Došlo k chybě při čtení souboru, protože nelze číst pomocí vybraného kódování (%1$@).\n\nPouze %2$ld řádky byly importovány.";
 
 /* SQL read error, including detail from system */
-"An error occurred when reading the file.\n\nOnly %ld queries were executed.\n\n(%@)" = "An error occurred when reading the file.\n\nOnly %1$ld queries were executed.\n\n(%2$@)";
+"An error occurred when reading the file.\n\nOnly %ld queries were executed.\n\n(%@)" = "Při čtení souboru došlo k chybě.\n\nByly provedeny pouze %1$ld dotazy.\n\n(%2$@)";
 
 /* CSV read error, including detail string from system */
-"An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)" = "Při čtení souboru došlo k chybě.\n\nByly importovány pouze řádky %1$ld .\n\n(%2$@)";
+"An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)" = "Při čtení souboru došlo k chybě.\n\nBylo importováno pouze %1$ld řádků.\n\n(%2$@)";
 
 /* error adding field informative message */
-"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@" = "Nastala chyba při přidávání pole '%1$@' přes\n\n%2$@\n\nMySQL řekl: %3$@";
+"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@" = "Při pokusu přidat pole '%1$@' přes\n\n%2$@\n\ndošlo k chybě.\n\nMySQL řekl: %3$@";
 
 /* error changing field informative message */
-"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@" = "Nastala chyba při pokusu změnit pole '%1$@' přes\n\n%2$@\n\nMySQL řekl: %3$@";
+"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@" = "Při pokusu změnit pole '%1$@' přes\n\n%2$@\n\ndošlo k chybě.\n\nMySQL řekl: %3$@";
 
 /* error changing table collation informative message */
-"An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@" = "Nastala chyba při pokusu změnit kollaci tabulky na '%1$@'.\n\nMySQL řekl: %2$@";
+"An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@" = "Při pokusu změnit kolaci tabulky na '%1$@' došlo k chybě.\n\nMySQL řekl: %2$@";
 
 /* error changing table encoding informative message */
 "An error occurred when trying to change the table encoding to '%@'.\n\nMySQL said: %@" = "Nastala chyba při pokusu změnit tabulkové kódování na '%1$@'.\n\nMySQL řekl: %2$@";
@@ -422,7 +422,7 @@
 "An error occurred while trying to get the list of users. Please make sure you have the necessary privileges to perform user management, including access to the mysql.user table." = "Nastala chyba při pokusu získat seznam uživatelů. Ujistěte se, že máte potřebná oprávnění k provádění uživatelského řízení, včetně přístupu k mysql.user tabulce.";
 
 /* error importing table informative message */
-"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@" = "Nastala chyba při importu tabulky via: \n%1$@\n\n\nMySQL řekl: %2$@";
+"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@" = "Při pokusu importovat tabulku přes: \n%1$@\n\n\ndošlo k chybě.\n\nMySQL řekl: %2$@";
 
 /* error moving field informative message */
 "An error occurred while trying to move the field.\n\nMySQL said: %@" = "Nastala chyba při pokusu přesunout pole.\n\nMySQL řekl: %@";
@@ -437,7 +437,7 @@
 "An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "Při pokusu o provedení operace došlo k chybě.\n\nMySQL řekl: %@";
 
 /* mysql resource limits unsupported message */
-"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Limity zdrojů nejsou pro vaši verzi MySQL podporovány. Jakékoliv limity Resouce limit, které jste zadali, byly zahozeny a neuloženy. MySQL řekl: %@";
+"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Omezení prostředků nejsou ve vaší verzi MySQL podporována. Jakákoli zadaná omezení prostředků byla zahozena a uložena nebyla. MySQL řekl: %@";
 
 /* Export files creation error explanatory text */
 "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "Při pokusu o vytvoření %lu exportovaných souborů došlo k neošetřené chybě. Zkontrolujte podrobnosti a zkuste to znovu.";
@@ -500,7 +500,7 @@
 "Are you sure you want to delete the selected %@? This operation cannot be undone." = "Opravdu chcete odstranit vybranou %@? Tuto operaci nelze vrátit zpět.";
 
 /* delete rows informative message */
-"Are you sure you want to delete the selected %ld rows from this table? This action cannot be undone." = "Are you sure you want to delete the selected %ld rows from this table? This action cannot be undone.";
+"Are you sure you want to delete the selected %ld rows from this table? This action cannot be undone." = "Opravdu chcete smazat vybraných %ld řádků z této tabulky? Tuto akci nelze vrátit zpět.";
 
 /* delete selected relation informative message */
 "Are you sure you want to delete the selected relations? This action cannot be undone." = "Jste si jisti, že chcete odstranit vybrané vztahy? Tuto akci nelze vrátit zpět.";
@@ -536,7 +536,7 @@
 "auto_increment: %@" = "auto_přírůstek: %@";
 
 /* Encoding autodetect menu item */
-"Autodetect" = "Autodetekovat";
+"Autodetect" = "Detekce automaticky";
 
 /* background label for color table (Prefs > Editor) */
 "Background" = "Pozadí";
@@ -563,7 +563,7 @@
 "Bundle Error" = "Chyba balíčku";
 
 /* bundles menu item label */
-"Bundles" = "Bundles";
+"Bundles" = "Balíčky";
 
 /* Bundle Editor : Outline View : 'BUNDLES' item */
 "BUNDLES" = "BUNDLES";
@@ -578,7 +578,7 @@
 "bzip2 compression" = "bzip2 komprese";
 
 /* description of geometry */
-"Can store a single spatial value of types POINT, LINESTRING or POLYGON. Spatial support in MySQL is based on the OpenGIS Geometry Model." = "Lze uložit jedinou prostorovou hodnotu typů POINT, LINESTRING nebo POLYGON. Prostorová podpora v MySQL je založena na modelu geometrie OpenGIS.";
+"Can store a single spatial value of types POINT, LINESTRING or POLYGON. Spatial support in MySQL is based on the OpenGIS Geometry Model." = "Může uložit jednu prostorovou hodnotu typů POINT, LINESTRING nebo POLYGON. Prostorová podpora v MySQL vychází z modelu OpenGIS Geometry.";
 
 /* Bundle Editor : Remove-Bundle: cancel button
  cancel
@@ -613,13 +613,13 @@
 "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "Byly provedeny změny, které budou ztraceny, pokud bude toto okno uzavřeno. Jste si jisti, že chcete pokračovat";
 
 /* quitting app informal alert title */
-"Close the app?" = "Close the app?";
+"Close the app?" = "Zavřít aplikaci?";
 
 /* quitting app informal alert body */
-"Are you sure you want to quit the app?" = "Are you sure you want to quit the app?";
+"Are you sure you want to quit the app?" = "Opravdu chcete aplikaci ukončit?";
 
 /* character set client: %@ */
-"character set client: %@" = "Klient sady znaků: %@";
+"character set client: %@" = "znakov? sada klienta: %@";
 
 /* CHECK one or more tables - result title */
 "Check %@" = "Zkontrolovat %@";
@@ -700,7 +700,7 @@
 "Close Window" = "Zavřít okno";
 
 /* collation label (Navigator) */
-"Collation" = "Kollace";
+"Collation" = "Kolace";
 
 /* collation connection: %@ */
 "collation connection: %@" = "spojení: %@";
@@ -754,7 +754,7 @@
 "Console" = "Konzole";
 
 /* Console : Save as : Initial filename */
-"ConsoleLog" = "KonsoleLog";
+"ConsoleLog" = "Konzolový protokol";
 
 /* toolbar item label for switching to the Table Content tab */
 "Content" = "Obsah";
@@ -812,7 +812,7 @@
 "Could not export the %@ '%@' because of a permissions error.\n" = "Nelze exportovat %1$@ '%2$@' z důvodu chyby oprávnění.\n";
 
 /* Error when we can't parse/split file as CSV */
-"Could not parse file as CSV" = "Nepodařilo se naparsovat soubor jako CSV";
+"Could not parse file as CSV" = "Nepodařilo se soubor rozparsovat jako CSV";
 
 /* message when database selection failed */
 "Could not select database" = "Nelze vybrat databázi";
@@ -875,7 +875,7 @@
 "Couldn't sort table. MySQL said: %@" = "Nelze seřadit tabulku. MySQL řekl: %@";
 
 /* message of panel when error while updating field to db */
-"Couldn't write field.\nMySQL said: %@" = "Couldn't write field.\nMySQL said: %@";
+"Couldn't write field.\nMySQL said: %@" = "Nepodařilo se zapsat pole.\nMySQL řekl: %@";
 
 /* create syntax for table comment */
 "Create syntax for" = "Vytvořit syntaxi pro";
@@ -894,7 +894,7 @@
 "created: %@" = "vytvořeno: %@";
 
 /* description of polygon */
-"Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\"." = "Vytvoří povrch kombinací jedné linearringu. LineString, který je uzavřený a jednoduchý) jako vnější hranice s nulovou nebo více vnitřních linearingů, které působí jako \"dírky\".";
+"Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\"." = "Vytvoří plochu kombinací jedné LinearRing (tj. LineString, který je uzavřený a jednoduchý) jako vnějšího ohraničení a nul nebo více vnitřních LinearRingů fungujících jako \"díry\".";
 
 /* Creating table task string */
 "Creating %@..." = "Vytváření %@...";
@@ -925,7 +925,7 @@
 "Data Table" = "Tabulka údajů";
 
 /* Bundle Editor : Outline View : 'Data Table' item : tooltip */
-"Data Table Scope\ncommands will run on the Content and Query data tables" = "Příkazy s datovou tabulkou\nbudou spuštěny na tabulkách obsahu a dotazů";
+"Data Table Scope\ncommands will run on the Content and Query data tables" = "Rozsah datové tabulky\npříkazy poběží na datových tabulkách Content a Query";
 
 /* export filename database token
  export header database label
@@ -945,7 +945,7 @@
 "Database Rename Unsupported" = "Přejmenování databáze není podporováno";
 
 /* export filename date token */
-"Date" = "Datum:";
+"Date" = "Datum";
 
 /* export filename date token */
 "Day" = "Den";
@@ -973,7 +973,7 @@
 "default_value" = "výchozí_hodnota";
 
 /* definer label (Navigator) */
-"Definer" = "Definátor";
+"Definer" = "Definér";
 
 /* definer: %@ */
 "definer: %@" = "definice: %@";
@@ -1066,7 +1066,7 @@
 "Delete Views" = "Odstranit zobrazení";
 
 /* Preferences : Network : SSL Chiper suites : List seperator */
-"Disabled Cipher Suites" = "Zakázané Cipher Suites";
+"Disabled Cipher Suites" = "Zakázané šifrovací sady";
 
 /* force table deltion button text tooltip */
 "Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards." = "Zakáže kontroly cizího klíče (FOREIGN_KEY_CHECKS) před smazáním a poté je znovu povolí.";
@@ -1144,7 +1144,7 @@
 "Empty query" = "Prázdný dotaz";
 
 /* MySQL search language code - eg in http://search.mysql.com/search?q=select&site=refman-50&lr=lang_en */
-"en" = "cs-cs";
+"en" = "en";
 
 /* encoding label (Navigator) */
 "Encoding" = "Kódování";
@@ -1188,7 +1188,7 @@
 "Error changing field" = "Chyba při změně pole";
 
 /* error changing table collation message */
-"Error changing table collation" = "Chyba při změně collace tabulky";
+"Error changing table collation" = "Chyba při změně kolace tabulky";
 
 /* error changing table comment message */
 "Error changing table comment" = "Chyba při změně komentáře tabulky";
@@ -1215,7 +1215,7 @@
 "Error moving field" = "Chyba při přesunu pole";
 
 /* error occurred */
-"error occurred" = "Došlo k chybě";
+"error occurred" = "došlo k chybě";
 
 /* error reading import file */
 "Error reading import file." = "Chyba při čtení importního souboru.";
@@ -1260,10 +1260,10 @@
 "Error while deleting field" = "Chyba při mazání pole";
 
 /* Bundle Editor : Copy-Command-Error : Copying failed error message */
-"Error while duplicating Bundle content." = "Chyba při kopírování obsahu balíčku";
+"Error while duplicating Bundle content." = "Chyba při duplikování obsahu balíčku.";
 
 /* error while executing javascript bash command */
-"Error while executing JavaScript BASH command" = "Chyba při provádění JavaScriptu BASH příkazu";
+"Error while executing JavaScript BASH command" = "Chyba při provádění JavaScript BASH příkazu";
 
 /* error while fetching the optimized field type message */
 "Error while fetching the optimized field type" = "Chyba při načítání optimalizovaného typu pole";
@@ -1290,7 +1290,7 @@
 "Error while optimizing selected items" = "Chyba při optimalizaci vybraných položek";
 
 /* error while parsing CREATE TABLE syntax */
-"Error while parsing CREATE TABLE syntax" = "Chyba při parsování TABULKA syntaxi";
+"Error while parsing CREATE TABLE syntax" = "Chyba při parsování syntaxe CREATE TABLE";
 
 /* error while reading connection data file */
 "Error while reading connection data file" = "Chyba při čtení datového souboru";
@@ -1362,13 +1362,13 @@
 "Fetching data..." = "Načítání dat...";
 
 /* fetching database structure data in progress */
-"fetching database structure data in progress" = "Probíhá načítání dat o struktuře databáze";
+"fetching database structure data in progress" = "probíhá načítání struktury databáze";
 
 /* fetching database structure in progress */
 "fetching database structure in progress" = "probíhá načítání databázové struktury";
 
 /* fetching table data for completion in progress message */
-"fetching table data…" = "Načítání údajů tabulky…";
+"fetching table data…" = "načítání dat tabulky…";
 
 /* popup menuitem for field (showing only if disabled) */
 "field" = "pole";
@@ -1380,13 +1380,13 @@
 "Field is not editable. Couldn't identify field origin unambiguously (%ld matches)." = "Pole není upravitelné. Nelze jednoznačně identifikovat původ pole (%ld shody).";
 
 /* field is not editable due to no table/database */
-"Field is not editable. Field has no or multiple table or database origin(s)." = "Pole nelze upravit. Pole nemá žádnou nebo více tabulek nebo původ databáze.";
+"Field is not editable. Field has no or multiple table or database origin(s)." = "Pole nelze upravovat. Pole nemá žádný nebo více původů v tabulce či databázi.";
 
 /* Custom Query result editing error - could not identify original row */
-"Field is not editable. No matching record found.\nReload data, check encoding, or try to add\na primary key field or more fields\nin your SELECT statement for table '%@'\nto identify field origin unambiguously." = "Pole nelze upravit. Nebyl nalezen žádný odpovídající záznam.\nNačíst data, zkontrolovat kódování nebo zkuste přidat\nprimární pole klíče nebo více polí\nve vašem příkazu SELECT pro tabulku '%@'\npro jednoznačnou identifikaci původu polí.";
+"Field is not editable. No matching record found.\nReload data, check encoding, or try to add\na primary key field or more fields\nin your SELECT statement for table '%@'\nto identify field origin unambiguously." = "Field is not editable. No matching record found.\nReload data, check encoding, or try to add\na primary key field or more fields\nin your SELECT statement for table '%@'\nto identify field origin unambiguously.";
 
 /* Table Content result editing error - could not identify original row */
-"Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously." = "Pole nelze upravit. Nebyl nalezen žádný odpovídající záznam.\nZnovu načíst tabulku, zkontrolujte kódování, nebo zkuste přidat\nprimární pole klíče nebo více polí\nv deklaraci zobrazení '%@' pro jednoznačnou identifikaci\npůvodu polí.";
+"Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously." = "Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously.";
 
 /* error while reading data file */
 "File couldn't be read." = "Soubor nelze přečíst.";
@@ -1402,7 +1402,7 @@
 "Filter" = "Filtr";
 
 /* apply filter label */
-"Apply Filter(s)" = "Použít filtry";
+"Apply Filter(s)" = "Použít filtr(y)";
 
 /* filter tables menu item */
 "Filter Tables" = "Filtrovat tabulky";
@@ -1423,7 +1423,7 @@
 "Finished importing %@" = "Dokončeno importování %@";
 
 /* FLUSH one or more tables - result title */
-"Flush %@" = "Flush %@";
+"Flush %@" = "Vyprázdnit %@";
 
 /* flush selected items menu item */
 "Flush Selected Items" = "Vyprázdnit vybrané položky";
@@ -1467,7 +1467,7 @@
 "General Preferences" = "Obecné předvolby";
 
 /* Bundle Editor : Outline View : 'General' item : tooltip */
-"General Scope\ncommands will run application-wide" = "Obecné příkazy rozsahu\nbudou spouštět celou aplikaci";
+"General Scope\ncommands will run application-wide" = "Obecný rozsah\npříkazy poběží v celé aplikaci";
 
 /* generating print document status message */
 "Generating print document..." = "Generování tiskového dokumentu...";
@@ -1486,7 +1486,7 @@
 "Notifications are delivered via the Notification Center." = "Oznámení se doručují prostřednictvím střediska oznámení.";
 
 /* Gzip compression export summary - within a sentence */
-"Gzip compression" = "Komprese Gzip";
+"Gzip compression" = "Gzip komprese";
 
 /* MySQL Help Viewer : Results list : Page title */
 "Help topics for %@" = "Témata nápovědy pro %@";
@@ -1495,7 +1495,7 @@
 "Hide Console" = "Skrýt konzoli";
 
 /* hide navigator */
-"Hide Navigator" = "Hide Navigator";
+"Hide Navigator" = "Skrýt navigaci";
 
 /* hide tab bar */
 "Hide Tab Bar" = "Skrýt panel záložek";
@@ -1508,10 +1508,10 @@
 "Host" = "Hostitel";
 
 /* description of double */
-"IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "„Technologie“ ve smyslu všeobecné poznámky k technologii pro „vývoj“, „výrobu“ nebo „užití“ zařízení nebo „softwaru“ uvedených v položkách 1.A., 19.A.1. nebo 19.A.2. Poznámka: Mnoho desetinných čísel může být aproximováno pouze hodnotami s pohyblivou řádovou čárkou. Pokud potřebujete přesné výsledky, podívejte se DECIMAL.";
+"IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "Hodnota s plovoucí řádovou čárkou v dvojnásobné přesnosti podle IEEE 754. M je maximální počet číslic, z nichž D může být za desetinnou čárkou. Poznámka: Mnoho desetinných čísel lze plovoucími typy pouze aproximovat. Pokud potřebujete přesné výsledky, použijte DECIMAL.";
 
 /* description of float */
-"IEEE 754 single-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "\"Technologie\" ve smyslu všeobecné poznámky k technologii pro \"vývoj\", \"výrobu\" nebo \"užití\" zařízení nebo \"softwaru\" uvedených v položkách 1.A., 19.A.1. nebo 19.A.2. Poznámka: Mnoho desetinných čísel může být aproximováno pouze hodnotami s pohyblivou řádovou čárkou. Pokud potřebujete přesné výsledky, podívejte se DECIMAL.";
+"IEEE 754 single-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "Hodnota s plovoucí řádovou čárkou v jednoduché přesnosti podle IEEE 754. M je maximální počet číslic, z nichž D může být za desetinnou čárkou. Poznámka: Mnoho desetinných čísel lze plovoucími typy pouze aproximovat. Pokud potřebujete přesné výsledky, použijte DECIMAL.";
 
 /* ignore button */
 "Ignore" = "Ignorovat";
@@ -1591,13 +1591,13 @@
 "Input Field" = "Vstupní pole";
 
 /* input field  doesn't support insertion of snippets. */
-"Input Field doesn't support insertion of snippets." = "Vstupní pole nepodporuje vložení snippetů.";
+"Input Field doesn't support insertion of snippets." = "Vstupní pole nepodporuje vkládání snippetů.";
 
 /* input field is not editable. */
 "Input Field is not editable." = "Vstupní pole není upravitelné.";
 
 /* Bundle Editor : Outline View : 'Input Field' item : tooltip */
-"Input Field Scope\ncommands will run on each text input field" = "Příkazy rozsahu vstupního pole\nbudou spuštěny na každém vstupním poli";
+"Input Field Scope\ncommands will run on each text input field" = "Rozsah vstupního pole\npříkazy poběží na každém textovém vstupním poli";
 
 /* Bundle Editor : Scope=Field : Output dropdown : 'insert as snippet' item */
 "Insert as Snippet" = "Vložit jako snippet";
@@ -1609,7 +1609,7 @@
 "Installed Bundles" = "Nainstalované balíčky";
 
 /* Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog title */
-"Installing Bundle" = "Instalace balíčku Bundle";
+"Installing Bundle" = "Instalace balíčku";
 
 /* insufficient details message */
 "Insufficient connection details" = "Nedostatečné podrobnosti o připojení";
@@ -1639,7 +1639,7 @@
 "Is Deterministic" = "Je deterministický";
 
 /* is nullable label (Navigator) */
-"Is Nullable" = "Je nenulovatelný";
+"Is Nullable" = "Je povoleno null";
 
 /* is updatable: %@ */
 "is updatable: %@" = "je nahoru: %@";
@@ -1651,13 +1651,13 @@
 "JavaScript Exception" = "Výjimka JavaScriptu";
 
 /* javascript parsing error */
-"JavaScript Parsing Error" = "Chyba při analýze JavaScriptu";
+"JavaScript Parsing Error" = "Chyba parsování JavaScriptu";
 
 /* key label (Navigator) */
 "Key" = "Klíč";
 
 /* keyword label for color table (Prefs > Editor) */
-"Keyword" = "Keyword";
+"Keyword" = "Klíčové slovo";
 
 /* kill button */
 "Kill" = "Ukončit";
@@ -1678,7 +1678,7 @@
 "Limited to @@max_allowed_packet" = "Omezeno na @@max_allowed_packet";
 
 /* Loading table task string */
-"Loading %@..." = "Loading %@...";
+"Loading %@..." = "Načítá se %@...";
 
 /* Loading database task string */
 "Loading database '%@'..." = "Načítání databáze '%@'...";
@@ -1699,7 +1699,7 @@
 "Low memory" = "Nedostatečná paměť";
 
 /* range of decimal */
-"M (precision): Up to 65 digits\nD (scale): 0 to 30 digits" = "M (přesnost): až do 65 číslic\nD (stupnice): 0 až 30 číslic";
+"M (precision): Up to 65 digits\nD (scale): 0 to 30 digits" = "M (přesnost): až 65 číslic\nD (škála): 0 až 30 číslic";
 
 /* range for blob type
  range for varbinary type */
@@ -1761,10 +1761,10 @@
 "MySQL connecting..." = "Připojování k MySQL...";
 
 /* mysql error message */
-"MySQL Error" = "MySQL Error";
+"MySQL Error" = "Chyba MySQL";
 
 /* mysql help */
-"MySQL Help" = "MySQL Help";
+"MySQL Help" = "Nápověda MySQL";
 
 /* MySQL Help for Selection */
 "MySQL Help for Selection" = "MySQL Nápověda pro výběr";
@@ -1785,7 +1785,7 @@
 "MySQL said:\n\n%@" = "MySQL řekl:\n\n%@";
 
 /* Preferences : Themes : Initial filename for 'Export' */
-"MyTheme" = "Mymotiv";
+"MyTheme" = "MyTheme";
 
 /* network preference pane name */
 "Network" = "Síť";
@@ -1886,7 +1886,7 @@
 "Number of arguments: %lu" = "Počet argumentů: %lu";
 
 /* numeric label for color table (Prefs > Editor) */
-"Numeric" = "Numeric";
+"Numeric" = "Číselné";
 
 /* Bundle Editor : Copy-Command-Error : OK button
  Bundle Editor : Save-and-Close-Error : OK button
@@ -1979,7 +1979,7 @@
 "Please choose a favorite" = "Vyberte si prosím oblíbené";
 
 /* message of panel when ssh details are incomplete */
-"Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "Zadejte prosím název hostitele SSH Tunnel, nebo zakažte SSH tunel.";
+"Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "Zadejte prosím název hostitele pro SSH tunel, nebo SSH tunel vypněte.";
 
 /* Please enter the password */
 "Please enter the password for ‘%@’:" = "Zadejte prosím heslo pro „%@“:";
@@ -2049,7 +2049,7 @@
 "Quote" = "Cenová nabídka";
 
 /* databsse rename unsupported informative message */
-"Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database." = "Přejmenování databáze '%@' není v současné době podporováno, protože obsahuje jiné objekty než tabulky (např. zobrazení, postupy, funkce atd.).\n\nPokud chcete přejmenovat databázi, použijte prosím 'Duplicate Database', přesunout všechny nestolní objekty ručně a pak přetáhněte starou databázi.";
+"Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database." = "Přejmenování databáze '%@' není momentálně podporováno, protože obsahuje objekty jiné než tabulky (např. views, procedury, funkce atd.).\n\nPokud chcete databázi přejmenovat, použijte prosím 'Duplicate Database', přesuňte ne-tabulkové objekty ručně a poté starou databázi odstraňte.";
 
 /* range for serial type */
 "Range: %@ to %@" = "Rozsah: %1$@ až %2$@";
@@ -2094,7 +2094,7 @@
 "Reloading data..." = "Načítání dat...";
 
 /* Reloading table task string */
-"Reloading..." = "Reloading...";
+"Reloading..." = "Znovu načítám...";
 
 /* remote error */
 "Remote Error" = "Vzdálená chyba";
@@ -2140,7 +2140,7 @@
 "Rename View..." = "Přejmenovat zobrazení...";
 
 /* REPAIR one or more tables - result title */
-"Repair %@" = "Repair %@";
+"Repair %@" = "Opravit %@";
 
 /* repair selected items menu item */
 "Repair Selected Items" = "Opravit vybrané položky";
@@ -2164,13 +2164,13 @@
 "Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5." = "Představuje čtyřmístnou hodnotu roku uloženou jako 1 byt. Neplatné hodnoty jsou převedeny na 0000 a dvě číslice hodnoty 0 až 69 budou převedeny na roky 2000 až 2069, resp. hodnoty 70 až 99 do let 1970 až 1999.\nTyp YEAR(2) byl odstraněn v MySQL 5.7.5.";
 
 /* description of multilinestring */
-"Represents a collection of LineStrings." = "Představuje sbírku LineStrings.";
+"Represents a collection of LineStrings." = "Představuje kolekci LineStringů.";
 
 /* description of geometrycollection */
 "Represents a collection of objects of any other single- or multi-valued spatial type. The only restriction being, that all objects must share a common coordinate system." = "Představuje množinu objektů jakéhokoli jiného jednotlivého nebo vícenásobného prostorového typu. Jediné omezení, že všechny objekty musí sdílet společný souřadnicový systém.";
 
 /* description of multipolygon */
-"Represents a collection of Polygons. The Polygons making up the MultiPolygon must not intersect." = "Představuje sbírku polygonů. Polygony tvořící MultiPolygon nesmí křižovat.";
+"Represents a collection of Polygons. The Polygons making up the MultiPolygon must not intersect." = "Představuje kolekci polygonů. Polygony tvořící MultiPolygon se nesmějí překrývat.";
 
 /* description of multipoint */
 "Represents a set of Points without specifying any kind of relation and/or order between them." = "Představuje soubor bodů, aniž by mezi nimi specifikoval jakýkoli druh vztahu nebo příkazu.";
@@ -2218,10 +2218,10 @@
 "return type: %@" = "typ návratu: %@";
 
 /* singular word for row */
-"row" = "Řádek";
+"row" = "řádek";
 
 /* plural word for rows */
-"rows" = "Řádky";
+"rows" = "řádky";
 
 /* text showing how many rows are in the limited filter match */
 "Rows %@ - %@ from filtered matches" = "Řádky %1$@ - %2$@ z filtrovaných zápasů";
@@ -2341,10 +2341,10 @@
 "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace nemohl najít žádné sloupce náležející k tomuto indexu. Možná již byl odstraněn?";
 
 /* Preferences : Network : Custom SSH client : warning dialog message */
-"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace podporuje a testuje se s výchozími OpenSSH klientskými verzemi včetně macOS. Použití různých klientů může způsobit problémy s připojením, bezpečnostní rizika nebo vůbec nefungovat.\n\nMějte prosím na paměti, že pro takové konfigurace nemůžeme poskytnout podporu.";
+"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace podporuje a testuje pouze výchozí verze klienta OpenSSH dodávané v macOS. Použití jiných klientů může způsobit problémy s připojením, bezpečnostní rizika nebo zcela nefungovat.\n\nVezměte prosím na vědomí, že pro takové konfigurace nemůžeme poskytnout podporu.";
 
 /* sequelace URL scheme command not supported. */
-"sequelace URL scheme command not supported." = "příkaz URL sekvenování není podporován.";
+"sequelace URL scheme command not supported." = "příkaz URL schématu sequelace není podporován.";
 
 /* sequelace url Scheme Error */
 "sequelace URL Scheme Error" = "chyba následného schématu URL";
@@ -2403,7 +2403,7 @@
 "Show MySQL help for %@" = "Zobrazit MySQL nápovědu pro %@";
 
 /* show navigator */
-"Show Navigator" = "Show Navigator";
+"Show Navigator" = "Zobrazit navigátor";
 
 /* show tab bar */
 "Show Tab Bar" = "Zobrazit panel záložek";
@@ -2439,7 +2439,7 @@
 "Beta Build" = "Beta sestavení";
 
 /* socket connection failed title */
-"Socket connection failed!" = "Spojení se Socket selhalo!";
+"Socket connection failed!" = "Připojení soketu selhalo!";
 
 /* socket not found title */
 "Socket not found!" = "Socket nenalezen!";
@@ -2503,7 +2503,7 @@
 "started" = "začal";
 
 /* status file for sequelace url scheme command couldn't be written error message */
-"Status file for sequelace url scheme command couldn't be written!" = "Stavový soubor pro příkaz url schéma sekvelace nelze zapsat!";
+"Status file for sequelace url scheme command couldn't be written!" = "Stavový soubor pro příkaz schématu URL sequelace se nepodařilo zapsat!";
 
 /* stop button */
 "Stop" = "Zastavit";
@@ -2515,13 +2515,13 @@
 "Stop query" = "Ukončit dotaz";
 
 /* description of timestamp */
-"Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply." = "Ukládá datum a denní dobu od začátku epochy UNIX (1970-01-01 00:00:00). Zobrazené/uložené hodnoty jsou ovlivněny nastavením připojení @@time_zone.\nZástupce je stejná jako v případě DATETIME. Neplatné hodnoty, stejně jako \"druhá nula\", jsou převedeny na 0000-00-00 00:00:00.0. Frakční sekundy byly přidány do MySQL 5. .4 s přesností na mikrosekundy (6), specifikovanou v F. mohou platit některá další pravidla.";
+"Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply." = "Ukládá datum a čas dne jako sekundy od začátku UNIX epochy (1970-01-01 00:00:00). Hodnoty zobrazené/uložené jsou ovlivněny nastavením připojení @@time_zone.\nReprezentace je stejná jako pro DATETIME. Neplatné hodnoty, stejně jako „sekunda nula“, jsou převedeny na 0000-00-00 00:00:00.0. Drobné sekundy byly přidány v MySQL 5.6.4 s přesností až na mikrosekundy (6), specifikované pomocí F. Mohou platit některá další pravidla.";
 
 /* description of datetime */
-"Stores a date and time of day. The representation is YYYY-MM-DD HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Uloží datum a čas dne. Zastupování je YYYY-MM-DD HH:MM:SS[. *], Jsem zlomek sekund. Hodnota není ovlivněna nastavením časového pásma. Neplatné hodnoty jsou převedeny na 0000-00-00 00:00:00.0. Frakční sekundy byly přidány do MySQL 5.6.4 s přesností dolů na microsekundy (6), zadané F.";
+"Stores a date and time of day. The representation is YYYY-MM-DD HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Ukládá datum a čas dne. Reprezentace je YYYY-MM-DD HH:MM:SS[.I*], kde I jsou zlomkové sekundy. Hodnota není ovlivněna žádným nastavením časového pásma. Neplatné hodnoty jsou převedeny na 0000-00-00 00:00:00.0. Drobné sekundy byly přidány v MySQL 5.6.4 s přesností až na mikrosekundy (6), specifikované pomocí F.";
 
 /* description of date */
-"Stores a date without time information. The representation is YYYY-MM-DD. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00." = "Uloží datum bez časových informací. Reprezentace je YYYY-MM-DD. Hodnota není ovlivněna nastavením časového pásma. Neplatné hodnoty jsou převedeny na 0000-00-00.";
+"Stores a date without time information. The representation is YYYY-MM-DD. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00." = "Ukládá datum bez informací o čase. Reprezentace je YYYY-MM-DD. Hodnota není ovlivněna nastavením časového pásma. Neplatné hodnoty jsou převedeny na 0000-00-00.";
 
 /* description of time */
 "Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Uloží denní dobu, dobu trvání nebo časový interval. Zastupování je HH:MM:SS[. *], Jsem zlomek sekund. Hodnota není ovlivněna nastavením časového pásma. Neplatné hodnoty jsou převedeny na 00:00:00. Frakční sekundy byly přidány do MySQL 5.6.4 s přesností na mikrosekundy (6), zadané F.";
@@ -2563,7 +2563,7 @@
 "Switch to the Table Content tab" = "Přepnout na záložku obsahu tabulky";
 
 /* tooltip for toolbar item for switching to the Table Info tab */
-"Switch to the Table Info tab" = "Přepnout na záložku Info tabulky";
+"Switch to the Table Info tab" = "Přepnout na kartu Informace o tabulce";
 
 /* tooltip for toolbar item for switching to the Table Relations tab */
 "Switch to the Table Relations tab" = "Přepnout na záložku Vztahy tabulky";
@@ -2581,7 +2581,7 @@
 "Syntax for %@ table copied" = "Syntaxe pro %@ tabulka zkopírována";
 
 /* table */
-"table" = "Tabulka";
+"table" = "tabulka";
 
 /* csv export table heading
  table
@@ -2657,7 +2657,7 @@
 "Tables" = "Tabulky";
 
 /* tables */
-"tables" = "Tabulky";
+"tables" = "tabulky";
 
 /* header for table list */
 "TABLES" = "TABULKY";
@@ -2669,7 +2669,7 @@
 "Testing connection..." = "Testování připojení...";
 
 /* MySQL connection test very short status message */
-"Testing MySQL..." = "Testing MySQL...";
+"Testing MySQL..." = "Testuji MySQL...";
 
 /* SSH testing very short status message */
 "Testing SSH..." = "Testování SSH...";
@@ -2684,12 +2684,12 @@
 "Thanks for updating Sequel Ace!" = "Děkujeme za aktualizaci Sequel Ace!";
 
 /* Open Files : Bundle : Install-Error : Destination path already exists error dialog message */
-"The Bundle ‘%@’ already exists." = "Bundle ‘%@již existuje.";
+"The Bundle ‘%@’ already exists." = "Balíček „%@“ už existuje.";
 
 /* Open Files : Bundle: UUID : UUID-Attribute is missing in bundle's command.plist file */
 "The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles." = "Balíček „%@“ nemá žádný UUID, který je nezbytný k identifikaci nainstalovaných balíčků.";
 
-"‘%@’ Bundle contains legacy components" = "„%@’ Bundle obsahuje starší složky";
+"‘%@’ Bundle contains legacy components" = "Balíček „%@“ obsahuje zastaralé komponenty";
 
 "In these files:\n\n%@\n\nDo you still want to install the bundle?" = "V těchto souborech:\n\n%@\n\nChcete stále nainstalovat balíček?";
 
@@ -2721,7 +2721,7 @@
 "The current color theme is unsaved. Do you want to proceed without saving it?" = "Aktuální barevný motiv není uložen. Chcete pokračovat bez uložení?";
 
 /* Short important release note for swap of custom query buttons */
-"The Custom Query \"Run\" and \"Run All\" button positions and their shortcuts have been swapped." = "Vlastní Query run a Spustit všechny pozice tlačítek a jejich zkratky byly přeskočeny.";
+"The Custom Query \"Run\" and \"Run All\" button positions and their shortcuts have been swapped." = "Tlačítka „Spustit“ a „Spustit vše“ v Custom Query si prohodila pozice a jejich klávesové zkratky.";
 
 /* the following default bundles were updated:\n%@\nyour modifications were stored as “(user)”. */
 "The following default Bundles were updated:\n%@\nYour modifications were stored as “(user)”." = "Následující výchozí balíčky byly aktualizovány:\n%@\nTvé úpravy byly uloženy jako “(uživatel)”.";
@@ -2742,13 +2742,13 @@
 "The name '%@' is already used." = "Název '%@' je již použit.";
 
 /* table list change alert informative message */
-"The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?" = "Počet tabulek v této databázi se změnil od otevření dialogového okna. Nyní existuje %lu další tabulka(y), s největší pravděpodobností přidána externí aplikací.\n\nJak chcete pokračovat?";
+"The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?" = "Počet tabulek v této databázi se od otevření dialogu exportu změnil. Nyní je zde o %lu tabulku(y) více, pravděpodobně přidaných externí aplikací.\n\nJak chcete pokračovat?";
 
 /* message of panel when no rows have been affected after writing to the db */
 "The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)" = "Řádek nebyl zapsán do databáze MySQL. Pravděpodobně jste nic nezměnili.\nZnovu načtěte tabulku a ujistěte se, že řádek existuje a použijte primární klíč pro vaši tabulku.\n(Tuto chybu lze vypnout v nastavení.)";
 
 /* export : import settings : file version error description ($1 = is version, $2 = list of supported versions); note: the u00A0 is a non-breaking space, do not add more whitespace. */
-"The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "Vybrané nastavení exportu bylo uloženo s verzí%1$ld, ale pouze nastavení s následujícími verzemi lze importovat: %2$@.\n\nBuď uložte nastavení zpět kompatibilním způsobem, nebo aktualizujte verzi Sequel Ace.";
+"The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "Vybrané exportní nastavení bylo uloženo ve verzi %1$ld, ale importovat lze pouze nastavení z následujících verzí: %2$@.\n\nBuď uložte nastavení v zpětně kompatibilním formátu, nebo aktualizujte svou verzi Sequel Ace.";
 
 /* export : import settings : spf content type error description */
 "The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file." = "Vybraný soubor obsahuje data typu „%1$@”, ale je třeba napsat „%2$@“. Zvolte prosím jiný soubor.";
@@ -2760,7 +2760,7 @@
 "The selected relation couldn't be deleted.\n\nMySQL said: %@" = "Vybrané relace nelze odstranit.\n\nMySQL řekl: %@";
 
 /* error deleting trigger informative message */
-"The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "The selected trigger couldn't be deleted.\n\nMySQL said: %@";
+"The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "Vybraný trigger se nepodařilo smazat.\n\nMySQL uvedl: %@";
 
 /* description of tinyint */
 "The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "Nejmenší celočíselný typ vyžaduje 1 bajtový úložný prostor. M je volitelná šířka displeje a nemá vliv na rozsah možných hodnot.";
@@ -2775,7 +2775,7 @@
 "The specified trigger was unable to be created.\n\nMySQL said: %@" = "Zadaný spouštěč nemohl být vytvořen.\n\nMySQL řekl: %@";
 
 /* sql import : charset error alert : detail message */
-"The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!" = "SQL soubor používá kódování utf8mb4, ale vaše verze MySQL podporuje pouze omezenou podsadu utf8.\n\nMůžete pokračovat v importu, ale jakékoli jiné než BMP znaky v SQL souboru (např. některé typografické a vědecké speciální znaky, archaické CJK logy, emojis) budou nenávratně ztraceny!";
+"The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!" = "SQL soubor používá kódování utf8mb4, ale vaše verze MySQL podporuje pouze omezenou podmnožinu utf8.\n\nImport můžete pokračovat, ale všechny znaky mimo BMP v SQL souboru (např. některé typografické a vědecké speciální znaky, archaické znaky CJK, emoji) budou nenávratně ztraceny!";
 
 /* SQL file open error */
 "The SQL file you selected could not be found or read." = "Vybraný SQL soubor nebyl nalezen nebo načten.";
@@ -2799,7 +2799,7 @@
 "The SSH Tunnel was established successfully, but could not forward data to the remote port as the remote port refused the connection." = "SSH tunel byl úspěšně vytvořen, ale nemohl předat data do vzdáleného portu, protože vzdálený port odmítl připojení.";
 
 /* SSH tunnel unable to bind to local port message */
-"The SSH Tunnel was unable to bind to the local port. This error may occur if you already have an SSH connection to the same server and are using a 'LocalForward' setting in your SSH configuration.\n\nWould you like to fall back to a standard connection to localhost in order to use the existing tunnel?" = "SSH tunel se nepodařilo navázat na místní port. Tato chyba může nastat v případě, že již máte SSH připojení ke stejnému serveru a používáte v konfiguraci SSH nastavení 'LocalForward'.\n\nChcete se vrátit ke standardnímu připojení k localhostu, abyste mohli používat existující tunel?";
+"The SSH Tunnel was unable to bind to the local port. This error may occur if you already have an SSH connection to the same server and are using a 'LocalForward' setting in your SSH configuration.\n\nWould you like to fall back to a standard connection to localhost in order to use the existing tunnel?" = "SSH tunel se nemohl navázat na lokální port. Tato chyba může nastat, pokud už máte SSH spojení na stejný server a ve své konfiguraci SSH používáte nastavení 'LocalForward'.\n\nChcete se vrátit k běžnému připojení na localhost a použít tak stávající tunel?";
 
 /* SSH tunnel failed or timed out message */
 "The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds)." = "SSH tunel se nepodařilo připojit k hostiteli %1$@nebo vypršel časový limit požadavku.\n\nUjistěte se, že adresa je správná a že máte potřebná oprávnění, nebo zkuste zvýšit časový limit připojení (v současné době %2$ld sekund).";
@@ -2882,7 +2882,7 @@
 "This is the default encoding of this server." = "Toto je výchozí kódování tohoto serveru.";
 
 /* This table currently does not support relations. Only tables that use the InnoDB storage engine support them. */
-"This table currently does not support relations. Only tables that use the InnoDB storage engine support them." = "Tato tabulka v současné době nepodporuje vztahy. Podporují je pouze tabulky, které používají úložiště InnoDB.";
+"This table currently does not support relations. Only tables that use the InnoDB storage engine support them." = "Tato tabulka momentálně nepodporuje relace. Relace podporují pouze tabulky používající úložiště InnoDB.";
 
 /* user has no hosts informative message */
 "This user doesn't have any hosts associated with it. It will be deleted unless one is added" = "Tento uživatel nemá přiřazené žádné hostitele. Bude smazán, pokud nebude přidán";
@@ -2891,7 +2891,7 @@
 "This user doesn't seem to have any associated hosts and will be removed unless a host is added." = "Zdá se, že tento uživatel nemá žádné přidružené hostitele a bude odstraněn, dokud nebude přidán hostitele.";
 
 /* shutdown server : confirmation dialog : message */
-"This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!" = "To bude čekat na otevřené transakce na dokončení a pak skončit mysql daemon. Poté se k této databázi nemůžete připojit ani vy, ani kdokoli jiný!\n\nÚplný přístup k operačnímu systému serveru je vyžadován pro restartování MySQL!";
+"This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!" = "Toto počká na dokončení otevřených transakcí a poté ukončí daemon mysql. Poté se nikdo, včetně vás, nebude moci k této databázi připojit!\n\nPro restart MySQL je nutný plný přístup k operačnímu systému serveru!";
 
 /* export filename time token */
 "Time" = "Čas";
@@ -2939,16 +2939,16 @@
 "Unable to check table" = "Nelze zkontrolovat tabulku";
 
 /* message of panel when connection to host failed due to access denied error */
-"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "Nelze se připojit k hostiteli %1$@ , protože přístup byl odepřen.\n\nZkontrolujte své uživatelské jméno a heslo a ujistěte se, že je povolen přístup z vaší aktuální polohy.\n\nMySQL řekl: %2$@";
+"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "Nelze se připojit k hostiteli %1$@, protože byl odepřen přístup.\n\nZkontrolujte uživatelské jméno a heslo a ujistěte se, že je povolen přístup z vaší aktuální lokace.\n\nMySQL uvedl: %2$@";
 
 /* message of panel when SSH port forwarding failed */
-"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@" = "Nelze se připojit k hostování %1$@ , protože připojení k portu přes SSH bylo odmítnuto.\n\nUjistěte se, že Váš MySQL host je nastaven pro povolení TCP/IP připojení (ne --skip-networking) a je nastaven tak, aby bylo možné povolit připojení z hostitele, který tunelling via.\n\nMůžete také zkontrolovat, že port je správný a že máte potřebná oprávnění.\n\nKontrola detailu chyb zobrazí protokol SSH ladění, který může poskytnout více podrobností.\n\nMySQL řekl: %2$@";
+"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@" = "Nelze se připojit k hostiteli %1$@, protože bylo odmítnuto připojení přes SSH port.\n\nUjistěte se, že váš MySQL hostitel je nastaven pro povolení TCP/IP připojení (bez --skip-networking) a je nakonfigurován tak, aby povoloval připojení z hostitele, přes který tunelujete.\n\nTaké zkontrolujte, zda je port správný a zda máte potřebná oprávnění.\n\nZobrazení detailu chyby ukáže SSH debug log, který může poskytnout více informací.\n\nMySQL uvedl: %2$@";
 
 /* message of panel when connection to host failed */
 "Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\nMySQL said: %@" = "Nelze se připojit k hostiteli %1$@nebo vypršel časový limit požadavku.\n\nUjistěte se, že adresa je správná a že máte potřebná oprávnění, nebo zkuste zvýšit časový limit připojení (v současné době %2$ld sekund).\n\nMySQL řekl: %3$@";
 
 /* message of panel when connection to host failed */
-"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@" = "Nelze se připojit pomocí socketu, nebo vypršel časový limit požadavku.\n\nZkontrolujte, zda je cesta k soketu správná a zda máte potřebná oprávnění a že server běží.\n\nMySQL řekl: %@";
+"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@" = "Nelze se připojit přes socket nebo vypršel čas požadavku.\n\nZkontrolujte, zda je cesta socketu správná, že máte potřebná oprávnění a že server běží.\n\nMySQL uvedl: %@";
 
 /* unable to copy database message */
 "Unable to copy database" = "Nelze zkopírovat databázi";
@@ -3029,13 +3029,13 @@
 "Untitled %ld" = "Bez názvu %ld";
 
 /* range for mediumblob type */
-"Up to %@ bytes (16 MiB)" = "Až do %@ bajtů (16 MiB)";
+"Up to %@ bytes (16 MiB)" = "Až %@ bajtů (16 MiB)";
 
 /* range for longblob type */
-"Up to %@ bytes (4 GiB)" = "Až do %@ bajtů (4 GiB)";
+"Up to %@ bytes (4 GiB)" = "Až %@ bajtů (4 GiB)";
 
 /* range for mediumtext type */
-"Up to %@ characters (16 MiB)" = "Až do %@ znaků (16 MiB)";
+"Up to %@ characters (16 MiB)" = "Až %@ znaků (16 MiB)";
 
 /* range for enum type */
 "Up to %@ distinct members (<%@ in practice)\n1-2 bytes storage" = "Až %1$@ různé členy (<%2$@ v praxi)\n1-2 bajtů";
@@ -3098,7 +3098,7 @@
 "Version" = "Verze";
 
 /* view */
-"view" = "Zobrazit";
+"view" = "zobrazení";
 
 /* Release notes button title */
 "View full release notes" = "Zobrazit poznámky k plnému vydání";
@@ -3119,7 +3119,7 @@
 "Warning" = "Varování";
 
 /* Short important release note for why password prompts may occur */
-"We've changed Sequel Ace's digital signature for GateKeeper compatibility; you'll have to allow access to your passwords again." = "Pro kompatibilitu s GateKeeper jsme změnili digitální podpis Sequel Ace; budete muset znovu povolit přístup ke svým heslům.";
+"We've changed Sequel Ace's digital signature for GateKeeper compatibility; you'll have to allow access to your passwords again." = "Změnili jsme digitální podpis Sequel Ace kvůli kompatibilitě s GateKeeperem; budete muset znovu povolit přístup k vašim heslům.";
 
 /* Important release notes informational text, single change */
 "We've made a few changes but we thought you should know about one particularly important one:" = "Provedli jsme několik změn, ale mysleli jsme si, že byste měli vědět o jednom zvláště důležitém:";
@@ -3161,7 +3161,7 @@
 "You can only copy single rows." = "Můžete kopírovat pouze jeden řádek.";
 
 /* message of panel when trying to edit tables without index and with hidden blob/text fields */
-"You can't hide blob and text fields when working with tables without index." = "Nemůžete skrýt blob a textová pole při práci s tabulkami bez indexu.";
+"You can't hide blob and text fields when working with tables without index." = "Nelze skrýt blob a textová pole při práci s tabulkami bez indexu.";
 
 /* You cannot delete the last field in a table. Delete the table instead. */
 "You cannot delete the last field in a table. Delete the table instead." = "Poslední pole v tabulce nelze odstranit. Namísto toho odstraňte tabulku.";
@@ -3170,7 +3170,7 @@
 "You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted." = "Požádali jste o navázání spojení pomocí SSL, ale MySQL se připojil bez SSL.\n\nMůže to být proto, že server nepodporuje připojení SSL nebo že je SSL zakázáno; nebo nebyly poskytnuty dostatečné podrobnosti pro navázání spojení SSL.\n\nToto připojení není šifrované.";
 
 /* Query Favorites : List : Section Heading : current connection document : tooltip (arg is the name of the spf file) */
-"‘%@’ based favorites" = "‘%@’ based favorites";
+"‘%@’ based favorites" = "Oblíbené založené na „%@“";
 
 /* table column header. Read: 'Showing all content filters for fields of type %@' (ContentFilterManager) */
 "‘%@’ Fields Content Filters" = "„%@“ Filtry obsahu polí";
@@ -3194,13 +3194,13 @@
 "%@ is not a valid private key file." = "%@ není platný soubor soukromého klíče.";
 
 /* text shown when there are App Sandbox Issues */
-"App Sandbox Issue" = "Problém se Sandboxem";
+"App Sandbox Issue" = "Problém s App Sandbox";
 
 /* Stale Bookmarks error title */
 "Stale Bookmarks" = "Zastaralé záložky";
 
 /* App Sandbox info link text */
-"App Sandbox Info" = "Informace o aplikaci Sandbox";
+"App Sandbox Info" = "Informace o App Sandbox";
 
 /* error while selecting file title */
 "File Selection Error" = "Chyba výběru souboru";
@@ -3209,13 +3209,13 @@
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "Vybraný soubor není platný soubor.\n\nZkuste to prosím znovu.\n\nTřída: %@";
 
 /* known hosts not writable error message */
-"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "Vybraný soubor hosts není zapisovatelný.\n\n%@\n\nProsím znovu vyberte soubor v předvolbách Sequel Ace a zkuste to znovu.";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "Vybraný soubor known_hosts není zapisovatelný.\n\n%@\n\nProsím znovu vyberte soubor v Předvolbách Sequel Ace a zkuste to znovu.";
 
 /* known hosts is invalid message */
-"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "Vybraný soubor hosts je neplatný.\n\nProsím znovu vyberte soubor v předvolbách Sequel Ace a zkuste to znovu.";
+"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "Vybraný soubor known_hosts je neplatný.\n\nProsím znovu vyberte soubor v Předvolbách Sequel Ace a zkuste to znovu.";
 
 /* known hosts contains quote message */
-"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "Vybraný soubor hosts obsahuje cenovou nabídku (\") ve své cestě k souboru, která není podporována.\n\n%@\n\nProsím vyberte jiný soubor v nastavení Sequel Ace, nebo přejmenujte soubor/cestu pro odstranění cenové nabídky.";
+"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "Cesta k vybranému souboru known_hosts obsahuje uvozovku (\") v cestě k souboru, což není podporováno.\n\n%@\n\nVyberte prosím jiný soubor v Předvolbách Sequel Ace nebo přejmenujte soubor či cestu tak, aby neobsahovaly uvozovku.";
 
 /* SSH Tunnel Debugging menu and window title */
 "SSH Tunnel Debugging Info" = "Informace o ladění SSH tunelu";
@@ -3227,7 +3227,7 @@
 "You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?" = "Chybí ti bezpečné záložky:\n\n%@\n\nChceš požádat o přístup?";
 
 /* known hosts advance menu item title */
-"Use known hosts from ssh config (ADVANCED)" = "Použít známé hostitele z konfigurace ssh (ADVANCED)";
+"Use known hosts from ssh config (ADVANCED)" = "Použít known_hosts ze ssh configu (POKROČILÉ)";
 
 /* The answer, yes */
 "Yes" = "Ano";
@@ -3257,10 +3257,10 @@
 "Please choose a file or folder to grant Sequel Ace access to." = "Vyberte soubor nebo složku, ke které chcete povolit přístup Sequel Ace.";
 
 /* Title for Network Preference ssh config file selection dialog */
-"Please choose your ssh config files(s)" = "Prosím, vyberte konfigurační soubory ssh";
+"Please choose your ssh config files(s)" = "Vyberte prosím svůj/é ssh konfigurační soubor(y)";
 
 /* Title for Network Preference ssh known hosts file selection dialog */
-"Please choose your known hosts file" = "Vyberte prosím váš známý soubor hosts";
+"Please choose your known hosts file" = "Vyberte prosím svůj soubor known_hosts";
 
 /* Message for field editor JSON segment when JSON is invalid */
 "Invalid JSON" = "Neplatný JSON";
@@ -3302,7 +3302,7 @@
 "Download Failed" = "Stahování se nezdařilo";
 
 /* Tool tip for the Show alert when update is available preference on the Notifications pane */
-"Only available for GitHub downloads" = "Dostupné pouze pro stažení GitHub";
+"Only available for GitHub downloads" = "K dispozici pouze pro stahování z GitHubu";
 
 /* Tool tip warning for when the user sets auto-complete delay to zero */
 "WARNING: Setting the auto-complete delay to 0.0 can result in strange output." = "VAROVÁNÍ: Nastavení zpoždění automatického dokončování na 0.0 může mít za následek podivný výstup.";
@@ -3317,10 +3317,10 @@
 "Check for Updates..." = "Zkontrolovat aktualizace...";
 
 /* Warning message during connection in case the variable skip-show-database is set to ON */
-"The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "Proměnná přeskakovací databáze databázového serveru je zapnutá. Takže nebudete moci vypisovat databáze, dokud nebudete mít oprávnění SHOW DATABASES.\n\nNicméně databáze jsou stále přístupné přímo prostřednictvím SQL dotazů v závislosti na vašich oprávněních.";
+"The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "Proměnná skip-show-database na databázovém serveru je nastavena na ON. Proto nebudete moci zobrazit seznam databází, pokud nemáte oprávnění SHOW DATABASES.\n\nDatabáze jsou však nadále přístupné přímo prostřednictvím SQL dotazů v závislosti na vašich oprávněních.";
 
 /* Error alert title when the request to GitHub fails */
-"GitHub Request Failed" = "Žádost o GitHub selhala";
+"GitHub Request Failed" = "Požadavek na GitHub selhal";
 
 /* Info alert title when there are Newer Releases Available */
 "No Newer Release Available" = "Žádné novější vydání není k dispozici";
@@ -3335,10 +3335,10 @@
 "The current field \"%@\" is a generated column and therefore cannot be edited." = "Aktuální pole \"%@\" je vygenerovaný sloupec, a proto nelze editovat.";
 
 /* Release note / info modal about change in latest release about column behavior */
-"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "Použití \"default\" sloupce se změnilo od poslední verze Sequel ACE:\n\n- Žádná výchozí hodnota: Ponechte prázdné.\n- Hodnota řetězce : Použijte jednoduchý '' nebo dvojité uvozovky \"\" pokud chcete prázdný řetězec nebo zalomit řetězec\n- Výraz : Použijte závorky (). S výjimkou sloupců TIMESTAMP a DATETIME, kde můžete specifikovat funkci CURRENT_TIMESTAMP bez uzavření závorek.";
+"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "Používání sloupce „default“ se od poslední verze Sequel ACE změnilo:\n\n- Žádná výchozí hodnota: Nechte prázdné.\n- Řetězcová hodnota: Použijte jednoduché '' nebo dvojité uvozovky \"\" pokud chcete prázdný řetězec nebo ohraničit řetězec.\n- Výraz: Použijte závorky (). Výjimkou jsou sloupce TIMESTAMP a DATETIME, kde můžete uvést funkci CURRENT_TIMESTAMP bez závorek.";
 
 /* Menu option to pin a view to the top of the list of tables */
-"Pin View" = "Zobrazení PIN";
+"Pin View" = "Připnout zobrazení";
 
 /* Menu option to pin a table to the top of the list of tables */
 "Pin Table" = "Připnout tabulka";
@@ -3347,7 +3347,7 @@
 "Pin Procedure" = "Připnout postup";
 
 /* Menu option to pin a function to the top of the list of tables */
-"Pin Function" = "Funkce PIN";
+"Pin Function" = "Připnout funkci";
 
 /* Menu option to unpin a view which is currently pinned at the top of the list of tables */
 "Unpin View" = "Odepnout zobrazení";
@@ -3368,7 +3368,7 @@
 "Copy Table Name" = "Kopírovat název tabulky";
 
 /* sequelace URL scheme error: LaunchFavorite alert title (favorite name not found) */
-"LaunchFavorite URL Scheme Error" = "Chyba URL schématu LaunchFavorite";
+"LaunchFavorite URL Scheme Error" = "Chyba schématu URL LaunchFavorite";
 
 /* sequelace URL scheme error: LaunchFavorite alert description (favorite name not found) */
-"The variable in the ?name= query parameter could not be matched with any of your favorites." = "Proměnnou v parametru dotazu ?name= nelze porovnat s žádnou z vašich oblíbených.";
+"The variable in the ?name= query parameter could not be matched with any of your favorites." = "Proměnná v parametru ?name= se nepodařilo přiřadit k žádnému z vašich oblíbených.";
