@@ -37,6 +37,7 @@
 @property (nonatomic, copy) NSString *recordedEncodingName;
 @property (nonatomic, assign) BOOL recordedLatin1Transport;
 @property (nonatomic, copy) NSString *recordedTimeZoneIdentifier;
+@property (nonatomic, assign) NSUInteger recordedTimeZoneUpdateCallCount;
 @end
 
 @implementation SPMySQLReconnectStateTestConnection
@@ -61,7 +62,14 @@
 
 - (void)updateTimeZoneIdentifier:(NSString *)timeZoneIdentifier
 {
+    NSString *currentTimeZoneIdentifier = [self valueForKey:@"timeZoneIdentifier"];
+    if (currentTimeZoneIdentifier == timeZoneIdentifier || [currentTimeZoneIdentifier isEqualToString:timeZoneIdentifier]) {
+        return;
+    }
+
+    self.recordedTimeZoneUpdateCallCount += 1;
     self.recordedTimeZoneIdentifier = timeZoneIdentifier;
+    [self setValue:timeZoneIdentifier forKey:@"timeZoneIdentifier"];
 }
 
 @end
@@ -252,6 +260,7 @@
 - (void)testReconnectSessionStateRestoreReappliesTimeZoneIdentifier
 {
     SPMySQLReconnectStateTestConnection *connection = [SPMySQLReconnectStateTestConnection new];
+    [connection setValue:@"Europe/London" forKey:@"timeZoneIdentifier"];
 
     [connection _restoreSessionStateAfterReconnectWithDatabase:@"reporting"
                                                       encoding:@"utf8mb4"
@@ -262,6 +271,7 @@
     XCTAssertEqualObjects(connection.recordedEncodingName, @"utf8mb4");
     XCTAssertTrue(connection.recordedLatin1Transport);
     XCTAssertEqualObjects(connection.recordedTimeZoneIdentifier, @"Europe/London");
+    XCTAssertEqual(connection.recordedTimeZoneUpdateCallCount, (NSUInteger)1);
 }
 
 - (void)testReconnectSessionStateRestoreSkipsEmptyTimeZoneIdentifier
@@ -274,6 +284,20 @@
                                                  timeZoneIdentifier:@""];
 
     XCTAssertNil(connection.recordedTimeZoneIdentifier);
+    XCTAssertEqual(connection.recordedTimeZoneUpdateCallCount, (NSUInteger)0);
+}
+
+- (void)testReconnectSessionStateRestoreSkipsNilTimeZoneIdentifier
+{
+    SPMySQLReconnectStateTestConnection *connection = [SPMySQLReconnectStateTestConnection new];
+
+    [connection _restoreSessionStateAfterReconnectWithDatabase:nil
+                                                      encoding:nil
+                                      encodingUsesLatin1Transport:NO
+                                                 timeZoneIdentifier:nil];
+
+    XCTAssertNil(connection.recordedTimeZoneIdentifier);
+    XCTAssertEqual(connection.recordedTimeZoneUpdateCallCount, (NSUInteger)0);
 }
 
 // 0.0354 s

@@ -1081,6 +1081,8 @@ asm(".desc ___crashreporter_info__, 0x10");
 			encodingUsesLatin1TransportToRestore = encodingUsesLatin1Transport;
 			databaseToRestore = [database copy];
 		}
+        // Keep this per-attempt capture aligned with self.timeZoneIdentifier:
+        // reconnect retries rely on that property surviving the disconnect cycle.
         if (!timeZoneIdentifierToRestore && [self.timeZoneIdentifier length]) {
             timeZoneIdentifierToRestore = [self.timeZoneIdentifier copy];
         }
@@ -1464,6 +1466,8 @@ asm(".desc ___crashreporter_info__, 0x10");
     }
 
     if ([timeZoneIdentifier length]) {
+        // Clear the cached timeZoneIdentifier so updateTimeZoneIdentifier:
+        // reapplies the session time zone after reconnect instead of exiting early.
         self.timeZoneIdentifier = nil;
         [self updateTimeZoneIdentifier:timeZoneIdentifier];
     }
