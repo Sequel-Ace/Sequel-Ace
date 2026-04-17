@@ -63,7 +63,7 @@
 "%@; Cancelled in query %ld, after %@" = "%1$@; Annulé dans la requête %2$ld, après %3$@";
 
 /* Error display text, showing original MySQL error */
-"%@\n\nMySQL said: %@" = "%1$@\n\nnMySQL dit : %2$@";
+"%@\n\nMySQL said: %@" = "%1$@\n\nMySQL a dit : %2$@";
 
 /* favorite singular label (%d == 1) */
 "%lu favorite" = "%lu favori";
@@ -81,10 +81,10 @@
 "%ld additional rows were removed!" = "%ld lignes supplémentaires ont été supprimées !";
 
 /* Label showing the index of the selected CSV row */
-"%ld of %lu record(s)" = "%1$ld de %2$lu enregistrement(s)";
+"%ld of %lu record(s)" = "%1$ld sur %2$lu enregistrement(s)";
 
 /* Label showing the index of the selected CSV row (csv partially loaded) */
-"%ld of first %lu record(s)" = "%1$ld de(s) premier(s) %2$lu enregistrement(s)";
+"%ld of first %lu record(s)" = "%1$ld des premiers %2$lu enregistrement(s)";
 
 /* Table Content : Remove Row : Result : Too Few : Part 1 : n-x (x!=1) of n selected rows were deleted. */
 "%ld rows were not removed." = "%ld lignes n'ont pas été supprimées.";
@@ -102,10 +102,10 @@
 "%lu of %lu" = "%1$lu de %2$lu";
 
 /* Export folder not writable for some files explanatory text */
-"%lu of the export files could not be created because their target export folder is not writable; please select a new export location and try again." = "%lu des fichiers d'exportation n'ont pas pu être créés car leur dossier d'exportation cible n'est pas accessible en écriture ; veuillez sélectionner un nouvel emplacement d'exportation et réessayez.";
+"%lu of the export files could not be created because their target export folder is not writable; please select a new export location and try again." = "%lu des fichiers d’export n’ont pas pu être créés car le dossier de destination n’est pas accessible en écriture ; veuillez sélectionner un nouvel emplacement d’export et réessayer.";
 
 /* Export folder missing for some files explanatory text */
-"%lu of the export files could not be created because their target export folder no longer exists; please select a new export location and try again." = "%lu des fichiers d'exportation n'ont pas pu être créés car leur dossier d'exportation cible n'existe plus; veuillez sélectionner un nouvel emplacement d'exportation et réessayez.";
+"%lu of the export files could not be created because their target export folder no longer exists; please select a new export location and try again." = "%lu des fichiers d’export n’ont pas pu être créés car le dossier de destination n’existe plus ; veuillez sélectionner un nouvel emplacement d’export et réessayer.";
 
 /* History item title with nothing selected */
 "(no selection)" = "(aucune sélection)";
@@ -114,22 +114,22 @@
 "(not loaded)" = "(non chargé)";
 
 /* Explanation for MySQL server has gone away error */
-"(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)" = "(Cela indique généralement que la connexion a été fermée par le serveur après une inactivité, mais cela peut également se produire en raison d'autres conditions. La connexion a été restaurée ; veuillez réessayer si la requête peut être réexécutée en toute sécurité.)";
+"(This usually indicates that the connection has been closed by the server after inactivity, but can also occur due to other conditions.  The connection has been restored; please try again if the query is safe to re-run.)" = "(Cela indique généralement que la connexion a été fermée par le serveur après une période d’inactivité, mais cela peut aussi se produire pour d’autres raisons. La connexion a été rétablie ; veuillez réessayer si la requête peut être exécutée à nouveau en toute sécurité.)";
 
 /* Custom Query : text appended to the “x row(s) affected” messages. $1 is a time interval */
 ", first row available after %1$@" = ", première ligne disponible après %1$@";
 
 /* Custom Query : text appended to the “x row(s) affected” messages (for update/delete queries). $1 is a time interval */
-", taking %1$@" = ", prend %1$@";
+", taking %1$@" = ", durée %1$@";
 
 /* warning shown in the console when no rows have been affected after writing to the db */
 "/* WARNING: No rows have been affected */\n" = "/* ATTENTION : aucune ligne n'a été affectée */\n";
 
 /* error text when multiple custom query failed */
-"[ERROR in query %ld] %@\n" = "[EURREUR dans la requête %1$ld] %2$@\n";
+"[ERROR in query %ld] %@\n" = "[ERREUR dans la requête %1$ld] %2$@\n";
 
 /* error text when reading of csv file gave errors */
-"[ERROR in row %ld] %@\n" = "[ERREUR sur la ligne %1$ld] %2$@\n";
+"[ERROR in row %ld] %@\n" = "[ERREUR à la ligne %1$ld] %2$@\n";
 
 /* [multiple selection] */
 "[multiple selection]" = "[sélection multiple]";
@@ -144,7 +144,7 @@
 "\n\n(In addition, one or more errors occurred while attempting to create the export files: %lu could not be created. These files will be ignored.)" = "\n\n(De plus, une ou plusieurs erreurs se sont produites lors de la tentative de création des fichiers d'exportation : %lu n'a pas pu être créé. Ces fichiers seront ignorés.)";
 
 /* \n\npress shift for binary search tooltip message */
-"\n\nPress ⇧ for binary search (case-sensitive)." = "\n\nAppuyez sur <unk> pour une recherche binaire (sensible à la casse).";
+"\n\nPress ⇧ for binary search (case-sensitive)." = "\n\nAppuyez sur ⇧ pour une recherche binaire (sensible à la casse).";
 
 /* description of bit */
 "A bit-field type. M specifies the number of bits. If shorter values are inserted, they will be aligned on the least significant bit. See the SET type if you want to explicitly name each bit." = "Un type de champ bits. M spécifie le nombre de bits. Si des valeurs plus courtes sont insérées, elles seront alignées sur le bit le moins significatif. Voir le type SET si vous voulez explicitement nommer chaque bit.";
@@ -187,7 +187,7 @@
 "A file with the same name already exists in the target folder. Replacing it will overwrite its current contents." = "Un fichier avec le même nom existe déjà dans le dossier cible. Remplacer le fichier remplacera son contenu actuel.";
 
 /* description of decimal */
-"A fixed-point, exact decimal value. M is the maxium number of digits, of which D may be after the decimal point. When rounding, 0-4 is always rounded down, 5-9 up (“round towards nearest”)." = "Un point fixé, la valeur décimale exacte. M est le nombre maximal de chiffres, dont D peut être après la virgule. En arrondissement, 0-4 est toujours arrondi vers le bas, 5-9 vers le haut (« rond vers le plus près »).";
+"A fixed-point, exact decimal value. M is the maxium number of digits, of which D may be after the decimal point. When rounding, 0-4 is always rounded down, 5-9 up (“round towards nearest”)." = "Une valeur décimale exacte à virgule fixe. M est le nombre maximal de chiffres, dont D peuvent se trouver après la virgule. Lors de l’arrondi, de 0 à 4 est toujours arrondi à l’inférieur, de 5 à 9 à la hausse (« arrondi au plus proche »).";
 
 /* table structure : indexes : delete index : error 1553 : title
  table structure : indexes : delete index : error 1553, no FK found : title */
@@ -215,7 +215,7 @@
 "A user with the name '%@' already exists" = "Un utilisateur avec le nom '%@' existe déjà";
 
 /* table content : editing : error message description when parsing as hex string failed */
-"A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too." = "Une chaîne hexadécimale valide ne peut contenir que les chiffres 0-9 et les lettres A-F (a-f). Il peut éventuellement commencer par „0x“ et les espaces seront ignorés.\nAlternativement, la syntaxe X'val' est également prise en charge.";
+"A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too." = "Une chaîne hexadécimale valide ne peut contenir que les chiffres de 0 à 9 et les lettres A-F (a-f). Elle peut éventuellement commencer par « 0x » et les espaces seront ignorés.\nLa syntaxe X'val' est également prise en charge.";
 
 /* connection failed due to access denied title */
 "Access denied!" = "Accès refusé !";
@@ -272,139 +272,139 @@
 "An error has occurred and there doesn't seem to be a connection available." = "Une erreur est survenue et il ne semble pas y avoir de connexion disponible.";
 
 /* an error occur while executing a scheme command. if the scheme command was invoked by a bundle command, it could be that the command still runs. you can try to terminate it by pressing ⌘+. or via the activities pane. */
-"An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane." = "Une erreur est survenue lors de l'exécution d'une commande de schéma. Si la commande du schéma était appelée par une commande Bundle, il se peut que la commande soit toujours exécutée. Vous pouvez essayer de le terminer en appuyant sur \"+\" ou via le volet \"Activités\".";
+"An error occur while executing a scheme command. If the scheme command was invoked by a Bundle command, it could be that the command still runs. You can try to terminate it by pressing ⌘+. or via the Activities pane." = "Une erreur est survenue lors de l’exécution d’une commande Scheme. Si la commande Scheme a été invoquée par une commande de Bundle, il est possible que la commande soit toujours en cours d’exécution. Vous pouvez tenter de l’arrêter en appuyant sur ⌘+. ou via le panneau Activités.";
 
 /* error killing query informative message */
-"An error occurred while attempting to kill connection %lld.\n\nMySQL said: %@" = "Une erreur est survenue lors de la tentative de fermeture de la connexion %1$lld.\n\nMySQL a dit: %2$@";
+"An error occurred while attempting to kill connection %lld.\n\nMySQL said: %@" = "Une erreur est survenue lors de la tentative d’arrêt de la connexion %1$lld.\n\nMySQL a dit : %2$@";
 
 /* error killing query informative message */
-"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@" = "Une erreur s'est produite lors de la tentative de tuer la requête associée à la connexion %1$lld.\n\nMySQL a dit: %2$@";
+"An error occurred while attempting to kill the query associated with connection %lld.\n\nMySQL said: %@" = "Une erreur est survenue lors de la tentative d’arrêt de la requête associée à la connexion %1$lld.\n\nMySQL a dit : %2$@";
 
 /* Error shown when unable to show create table syntax */
-"An error occurred while creating table syntax.\n\n: %@" = "Une erreur s'est produite lors de la création de la syntaxe de la table.\n\n: %@";
+"An error occurred while creating table syntax.\n\n: %@" = "Une erreur est survenue lors de la création de la syntaxe de la table.\n\n: %@";
 
 /* rename table error - no temporary name found */
 "An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first." = "Une erreur s'est produite lors du renommage de '%@'. Aucun nom temporaire n'a pu être trouvé. Essayez d'abord de renommer quelque chose d'autre.";
 
 /* rename table error informative message */
-"An error occurred while renaming '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite lors du renommage de '%1$@'.\n\nMySQL a dit: %2$@";
+"An error occurred while renaming '%@'.\n\nMySQL said: %@" = "Une erreur est survenue lors du renommage de « %1$@ ».\n\nMySQL a dit : %2$@";
 
 /* rename error - don't know what type the renamed thing is */
 "An error occurred while renaming. '%@' is of an unknown type." = "Une erreur est survenue lors du renommage. '%@' est d'un type inconnu.";
 
 /* rename precedure/function error - can't delete old procedure */
-"An error occurred while renaming. I couldn't delete '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite lors du renommage. Je n'ai pas pu supprimer '%1$@'.\n\nMySQL a dit: %2$@";
+"An error occurred while renaming. I couldn't delete '%@'.\n\nMySQL said: %@" = "Une erreur est survenue lors du renommage. Je n’ai pas pu supprimer « %1$@ ».\n\nMySQL a dit : %2$@";
 
 /* rename precedure/function error - can't recreate procedure */
-"An error occurred while renaming. I couldn't recreate '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite lors du renommage. Je n'ai pas pu recréer '%1$@'.\n\nMySQL a dit: %2$@";
+"An error occurred while renaming. I couldn't recreate '%@'.\n\nMySQL said: %@" = "Une erreur est survenue lors du renommage. Je n’ai pas pu recréer « %1$@ ».\n\nMySQL a dit : %2$@";
 
 /* rename precedure/function error - can't retrieve syntax */
-"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite lors du renommage. Je n'ai pas pu récupérer la syntaxe pour '%1$@'.\n\nMySQL a dit: %2$@";
+"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\nMySQL said: %@" = "Une erreur est survenue lors du renommage. Je n’ai pas pu récupérer la syntaxe de « %1$@ ».\n\nMySQL a dit : %2$@";
 
 /* rename error - invalid create syntax */
 "An error occurred while renaming. The CREATE syntax of '%@' could not be parsed." = "Une erreur s'est produite lors du renommage. La syntaxe CREATE de '%@' n'a pas pu être analysée.";
 
 /* message of panel when retrieving view information failed */
-"An error occurred while retrieving status data.\n\nMySQL said: %@" = "Une erreur s'est produite lors de la récupération des données de statut.\n\nMySQL a dit: %@";
+"An error occurred while retrieving status data.\n\nMySQL said: %@" = "Une erreur est survenue lors de la récupération des données d’état.\n\nMySQL a dit : %@";
 
 /* message of panel when create syntax cannot be retrieved */
-"An error occurred while retrieving the create syntax for '%@'.\nMySQL said: %@" = "Une erreur s'est produite lors de la récupération de la syntaxe de création pour '%1$@'.\nMySQL a dit: %2$@";
+"An error occurred while retrieving the create syntax for '%@'.\nMySQL said: %@" = "Une erreur est survenue lors de la récupération de la syntaxe de création pour « %1$@ ».\nMySQL a dit : %2$@";
 
 /* add index error informative message */
-"An error occurred while trying to add the index.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant d'ajouter l'index.\n\nMySQL a dit: %@";
+"An error occurred while trying to add the index.\n\nMySQL said: %@" = "Une erreur est survenue lors de la tentative d’ajout de l’index.\n\nMySQL a dit : %@";
 
 /* error adding password to keychain informative message */
-"An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "Une erreur est survenue lors de l'ajout du mot de passe à votre trousse. La réparation de votre trousseau pourrait résoudre ce problème, mais si ce n'est pas le cas, veuillez le signaler à l'équipe de Sequel Ace en fournissant le code d'erreur %i.";
+"An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "Une erreur est survenue lors de l'ajout du mot de passe à votre trousseau. Réparer votre trousseau pourrait résoudre le problème, mais si ce n'est pas le cas, veuillez le signaler à l'équipe Sequel Ace en fournissant le code d'erreur %i.";
 
 /* unable to copy database message informative message */
 "An error occurred while trying to copy the database '%@' to '%@'." = "Une erreur est survenue lors de la copie de la base de données '%1$@' vers '%2$@'.";
 
 /* error deleting index informative message */
-"An error occurred while trying to delete the index.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant de supprimer l'index.\n\nMySQL a dit: %@";
+"An error occurred while trying to delete the index.\n\nMySQL said: %@" = "Une erreur est survenue lors de la suppression de l'index.\n\nMySQL a répondu : %@";
 
 /* table status : row count query failed : error message */
-"An error occurred while trying to determine the number of rows for %@.\nMySQL said: %@ (%lu)" = "Une erreur s'est produite en essayant de déterminer le nombre de lignes pour «%1$@».\nMySQL a dit: %2$@ (%3$lu)";
+"An error occurred while trying to determine the number of rows for %@.\nMySQL said: %@ (%lu)" = "Une erreur est survenue lors de la détermination du nombre de lignes pour « %1$@ ».\nMySQL a répondu : %2$@ (%3$lu)";
 
 /* unable to rename database message informative message */
 "An error occurred while trying to rename the database '%@' to '%@'." = "Une erreur s'est produite en essayant de renommer la base de données '%1$@' en '%2$@'.";
 
 /* error finding keychain item to edit informative message */
-"An error occurred while trying to retrieve the Keychain item you're trying to edit. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "Une erreur est survenue lors de la tentative de récupération de l'élément Trousseau que vous essayez de modifier. La réparation de votre trousseau pourrait résoudre ce problème, mais si ce n'est pas le cas, veuillez le signaler à l'équipe de Sequel Ace en fournissant le code d'erreur %i.";
+"An error occurred while trying to retrieve the Keychain item you're trying to edit. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "Une erreur est survenue lors de la récupération de l'élément du trousseau que vous essayez de modifier. Réparer votre trousseau pourrait résoudre le problème, mais si ce n'est pas le cas, veuillez le signaler à l'équipe Sequel Ace en fournissant le code d'erreur %i.";
 
 /* error updating keychain item informative message */
-"An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "Une erreur est survenue lors de la mise à jour de l'élément Trousseau La réparation de votre trousseau pourrait résoudre ce problème, mais si ce n'est pas le cas, veuillez le signaler à l'équipe de Sequel Ace en fournissant le code d'erreur %i.";
+"An error occurred while trying to update the Keychain item. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "Une erreur est survenue lors de la mise à jour de l'élément du trousseau. Réparer votre trousseau pourrait résoudre le problème, mais si ce n'est pas le cas, veuillez le signaler à l'équipe Sequel Ace en fournissant le code d'erreur %i.";
 
 /* mysql error occurred message */
 "An error occurred" = "Une erreur s'est produite";
 
 /* MySQL table info retrieval error message */
-"An error occurred retrieving table information.  MySQL said: %@" = "Une erreur s'est produite lors de la récupération des informations de la table. MySQL a dit: %@";
+"An error occurred retrieving table information.  MySQL said: %@" = "Une erreur est survenue lors de la récupération des informations de la table. MySQL a répondu : %@";
 
 /* SQL encoding read error */
-"An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed." = "Une erreur s'est produite lors de la lecture du fichier, car il n'a pas pu être lu dans l'encodage sélectionné (%1$@).\n\nSeules les requêtes %2$ld ont été exécutées.";
+"An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed." = "Une erreur est survenue lors de la lecture du fichier, car il n'a pas pu être lu avec l'encodage que vous avez sélectionné (%1$@).\n\nSeules %2$ld requêtes ont été exécutées.";
 
 /* CSV encoding read error */
-"An error occurred when reading the file, as it could not be read using the encoding you selected (%@).\n\nOnly %ld rows were imported." = "Une erreur s'est produite lors de la lecture du fichier, car il n'a pas pu être lu en utilisant l'encodage que vous avez sélectionné (%1$@).\n\nSeules les lignes %2$ld ont été importées.";
+"An error occurred when reading the file, as it could not be read using the encoding you selected (%@).\n\nOnly %ld rows were imported." = "Une erreur s'est produite lors de la lecture du fichier, car il n'a pas pu être lu en utilisant l'encodage que vous avez sélectionné (%1$@).\n\nSeulement %2$ld lignes ont été importées.";
 
 /* SQL read error, including detail from system */
-"An error occurred when reading the file.\n\nOnly %ld queries were executed.\n\n(%@)" = "Une erreur s'est produite lors de la lecture du fichier.\n\nSeules les requêtes %1$ld ont été exécutées.\n\n(%2$@)";
+"An error occurred when reading the file.\n\nOnly %ld queries were executed.\n\n(%@)" = "Une erreur est survenue lors de la lecture du fichier.\n\nSeules %1$ld requêtes ont été exécutées.\n\n(%2$@)";
 
 /* CSV read error, including detail string from system */
-"An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)" = "Une erreur s'est produite lors de la lecture du fichier.\n\nSeulement %1$ld lignes ont été importées.\n\n(%2$@)";
+"An error occurred when reading the file.\n\nOnly %ld rows were imported.\n\n(%@)" = "Une erreur est survenue lors de la lecture du fichier.\n\nSeules %1$ld lignes ont été importées.\n\n(%2$@)";
 
 /* error adding field informative message */
-"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@" = "Une erreur s'est produite en essayant d'ajouter le champ '%1$@' via\n\n%2$@\n\nMySQL a dit: %3$@";
+"An error occurred when trying to add the field '%@' via\n\n%@\n\nMySQL said: %@" = "Une erreur s'est produite en essayant d'ajouter le champ '%1$@' via\n\n%2$@\n\nMySQL a dit : %3$@";
 
 /* error changing field informative message */
-"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@" = "Une erreur s'est produite en essayant de changer le champ '%1$@' via\n\n%2$@\n\nMySQL a dit: %3$@";
+"An error occurred when trying to change the field '%@' via\n\n%@\n\nMySQL said: %@" = "Une erreur s'est produite en essayant de changer le champ '%1$@' via\n\n%2$@\n\nMySQL a dit : %3$@";
 
 /* error changing table collation informative message */
-"An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant de changer le collationnement de la table en '%1$@'.\n\nMySQL a dit: %2$@";
+"An error occurred when trying to change the table collation to '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant de changer le collationnement de la table en '%1$@'.\n\nMySQL a dit : %2$@";
 
 /* error changing table encoding informative message */
-"An error occurred when trying to change the table encoding to '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant de changer l'encodage de la table en '%1$@'.\n\nMySQL a dit: %2$@";
+"An error occurred when trying to change the table encoding to '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant de changer l'encodage de la table en '%1$@'.\n\nMySQL a dit : %2$@";
 
 /* error changing table type informative message */
 "An error occurred when trying to change the table type to '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite lors de la tentative de modification du type de table en '%1$@'.\n\nMySQL a dit : %2$@";
 
 /* error changing table comment informative message */
-"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant de modifier le commentaire de la table à '%1$@'.\n\nMySQL a dit: %2$@";
+"An error occurred when trying to change the table's comment to '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant de modifier le commentaire de la table à '%1$@'.\n\nMySQL a dit : %2$@";
 
 /* an error occurred while analyzing the %@.\n\nMySQL said:%@ */
-"An error occurred while analyzing the %@.\n\nMySQL said:%@" = "Une erreur est survenue lors de l'analyse de la %1$@.\n\nMySQL a dit:%2$@";
+"An error occurred while analyzing the %@.\n\nMySQL said:%@" = "Une erreur est survenue lors de l'analyse de %1$@.\n\nMySQL a répondu :%2$@";
 
 /* an error occurred while fetching the optimized field type.\n\nMySQL said:%@ */
-"An error occurred while fetching the optimized field type.\n\nMySQL said:%@" = "Une erreur s'est produite lors de la récupération du type de champ optimisé.\n\nMySQL a dit:%@";
+"An error occurred while fetching the optimized field type.\n\nMySQL said:%@" = "Une erreur s'est produite lors de la récupération du type de champ optimisé.\n\nMySQL a dit :%@";
 
 /* an error occurred while trying to flush the %@.\n\nMySQL said:%@ */
-"An error occurred while flushing the %@.\n\nMySQL said:%@" = "Une erreur est survenue lors du vidage de la %1$@.\n\nMySQL a dit:%2$@";
+"An error occurred while flushing the %@.\n\nMySQL said:%@" = "Une erreur est survenue lors du vidage de %1$@.\n\nMySQL a répondu :%2$@";
 
 /* sql import error message */
 "An error occurred while importing SQL" = "Une erreur s'est produite lors de l'import SQL";
 
 /* an error occurred while trying to optimze the %@.\n\nMySQL said:%@ */
-"An error occurred while optimzing the %@.\n\nMySQL said:%@" = "Une erreur s'est produite lors de l'optimisation de la %1$@.\n\nMySQL a dit:%2$@";
+"An error occurred while optimzing the %@.\n\nMySQL said:%@" = "Une erreur est survenue lors de l'optimisation de %1$@.\n\nMySQL a répondu :%2$@";
 
 /* an error occurred while performing the checksum on the %@.\n\nMySQL said:%@ */
-"An error occurred while performing the checksum on %@.\n\nMySQL said:%@" = "Une erreur s'est produite lors de l'exécution de la somme de contrôle sur %1$@.\n\nMySQL a dit:%2$@";
+"An error occurred while performing the checksum on %@.\n\nMySQL said:%@" = "Une erreur est survenue lors du calcul de la somme de contrôle de %1$@.\n\nMySQL a répondu :%2$@";
 
 /* an error occurred while trying to repair the %@.\n\nMySQL said:%@ */
-"An error occurred while repairing the %@.\n\nMySQL said:%@" = "Une erreur s'est produite lors de la réparation de la %1$@.\n\nMySQL a dit:%2$@";
+"An error occurred while repairing the %@.\n\nMySQL said:%@" = "Une erreur est survenue lors de la réparation de %1$@.\n\nMySQL a répondu :%2$@";
 
 /* message of panel when retrieving information failed */
-"An error occurred while retrieving information.\nMySQL said: %@" = "Une erreur s'est produite lors de la récupération des informations.\nMySQL a dit: %@";
+"An error occurred while retrieving information.\nMySQL said: %@" = "Une erreur s'est produite lors de la récupération des informations.\nMySQL a dit : %@";
 
 /* error retrieving table information informative message */
-"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@" = "Une erreur s'est produite lors de la récupération des informations de la table '%1$@'. Veuillez réessayer.\n\nMySQL a dit: %2$@";
+"An error occurred while retrieving the information for table '%@'. Please try again.\n\nMySQL said: %@" = "Une erreur s'est produite lors de la récupération des informations de la table '%1$@'. Veuillez réessayer.\n\nMySQL a dit : %2$@";
 
 /* error retrieving table information informative message */
-"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nMySQL said: %@" = "Une erreur s'est produite lors de la récupération des informations de déclenchement pour la table '%1$@'. Veuillez réessayer.\n\nMySQL a dit: %2$@";
+"An error occurred while retrieving the trigger information for table '%@'. Please try again.\n\nMySQL said: %@" = "Une erreur s'est produite lors de la récupération des informations de déclenchement pour la table '%1$@'. Veuillez réessayer.\n\nMySQL a dit : %2$@";
 
 /* error adding new column informative message */
-"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant d'ajouter la nouvelle colonne '%1$@' par\n\n%2$@.\n\nMySQL a dit: %3$@";
+"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant d'ajouter la nouvelle colonne '%1$@' par\n\n%2$@.\n\nMySQL a dit : %3$@";
 
 /* error adding new table informative message */
-"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant d'ajouter la nouvelle table '%1$@' par\n\n%2$@.\n\nMySQL a dit: %3$@";
+"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant d'ajouter la nouvelle table '%1$@' par\n\n%2$@.\n\nMySQL a dit : %3$@";
 
 /* error adding new table informative message */
 "An error occurred while trying to add the new table '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite lors de la tentative d'ajout de la nouvelle table '%1$@'.\n\nMySQL a dit : %2$@";
@@ -413,31 +413,31 @@
 "An error occurred while trying to alter table '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite lors de la tentative de modification de la table '%1$@'.\n\nMySQL a dit : %2$@";
 
 /* an error occurred while trying to check the %@.\n\nMySQL said:%@ */
-"An error occurred while trying to check the %@.\n\nMySQL said:%@" = "Une erreur est survenue lors de la vérification de l' %1$@.\n\nMySQL a dit:%2$@";
+"An error occurred while trying to check the %@.\n\nMySQL said:%@" = "Une erreur est survenue lors de la vérification de l' %1$@.\n\nMySQL a dit :%2$@";
 
 /* error deleting relation informative message */
-"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant de supprimer la relation '%1$@'.\n\nMySQL a dit: %2$@";
+"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant de supprimer la relation '%1$@'.\n\nMySQL a dit : %2$@";
 
 /* unable to get list of users informative message */
-"An error occurred while trying to get the list of users. Please make sure you have the necessary privileges to perform user management, including access to the mysql.user table." = "Une erreur s'est produite en essayant d'obtenir la liste des utilisateurs. Assurez-vous d'avoir les privilèges nécessaires pour effectuer la gestion des utilisateurs, y compris l'accès à la table mysql.user .";
+"An error occurred while trying to get the list of users. Please make sure you have the necessary privileges to perform user management, including access to the mysql.user table." = "Une erreur est survenue lors de la récupération de la liste des utilisateurs. Veuillez vous assurer que vous possédez les privilèges nécessaires pour gérer les utilisateurs, y compris l'accès à la table mysql.user.";
 
 /* error importing table informative message */
-"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@" = "Une erreur s'est produite en essayant d'importer une table via : \n%1$@\n\n\nMySQL a dit: %2$@";
+"An error occurred while trying to import a table via: \n%@\n\n\nMySQL said: %@" = "Une erreur est survenue lors de la tentative d'importation d'une table via : \n%1$@\n\n\nMySQL a répondu : %2$@";
 
 /* error moving field informative message */
-"An error occurred while trying to move the field.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant de déplacer le champ.\n\nMySQL a dit: %@";
+"An error occurred while trying to move the field.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant de déplacer le champ.\n\nMySQL a dit : %@";
 
 /* error resetting auto_increment informative message */
-"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant de réinitialiser AUTO_INCREMENT de la table '%1$@'.\n\nMySQL a dit: %2$@";
+"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@" = "Une erreur est survenue lors de la réinitialisation de AUTO_INCREMENT de la table '%1$@'.\n\nMySQL a répondu : %2$@";
 
 /* error truncating table informative message */
-"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant de tronquer la table '%1$@'.\n\nMySQL a dit: %2$@";
+"An error occurred while trying to truncate the table '%@'.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant de tronquer la table '%1$@'.\n\nMySQL a dit : %2$@";
 
 /* mysql error occurred informative message */
-"An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant d'effectuer l'opération.\n\nMySQL a dit: %@";
+"An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "Une erreur s'est produite en essayant d'effectuer l'opération.\n\nMySQL a dit : %@";
 
 /* mysql resource limits unsupported message */
-"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Les limites de ressources ne sont pas prises en charge pour votre version de MySQL. Toutes les limites de récupération que vous avez spécifiées ont été rejetées et non sauvegardées. MySQL a dit: %@";
+"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Les limites de ressources ne sont pas prises en charge pour votre version de MySQL. Toutes les limites de récupération que vous avez spécifiées ont été rejetées et non sauvegardées. MySQL a dit : %@";
 
 /* Export files creation error explanatory text */
 "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "Une erreur non gérée s'est produite en tentant de créer %lu des fichiers d'exportation. Veuillez vérifier les détails et réessayer.";
@@ -461,7 +461,7 @@
 "Analyze table failed." = "L'analyse de la table a échoué.";
 
 /* change table type informative message */
-"Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone." = "Êtes-vous sûr de vouloir changer le type de cette table en %@?\n\nVeuillez noter que le changement de type d'une table peut entraîner la perte d'une partie ou de la totalité de ses données. Cette action ne peut être annulée.";
+"Are you sure you want to change this table's type to %@?\n\nPlease be aware that changing a table's type has the potential to cause the loss of some or all of its data. This action cannot be undone." = "Êtes-vous sûr de vouloir changer le type de cette table en %@ ?\n\nVeuillez noter que changer le type d'une table peut entraîner la perte totale ou partielle de ses données. Cette action est irréversible.";
 
 /* clear global history list informative message */
 "Are you sure you want to clear the global history list? This action cannot be undone." = "Êtes-vous sûr de vouloir effacer la liste de l'historique global ? Cette action est irréversible.";
@@ -479,7 +479,7 @@
 "Are you sure you want to delete all the rows from this table? This action cannot be undone." = "Êtes-vous sûr de vouloir supprimer toutes les lignes de cette table ? Cette action ne peut pas être annulée.";
 
 /* delete table/view informative message */
-"Are you sure you want to delete the %@ '%@'? This operation cannot be undone." = "Êtes-vous sûr de vouloir supprimer la %1$@ '%2$@'? Cette opération ne peut pas être annulée.";
+"Are you sure you want to delete the %@ '%@'? This operation cannot be undone." = "Êtes-vous sûr de vouloir supprimer la %1$@ '%2$@' ? Cette opération ne peut pas être annulée.";
 
 /* delete database informative message */
 "Are you sure you want to delete the database '%@'? This operation cannot be undone." = "Êtes-vous sûr de vouloir supprimer la base de données '%@' ? Cette opération ne peut pas être annulée.";
@@ -500,28 +500,28 @@
 "Are you sure you want to delete the selected %@? This operation cannot be undone." = "Êtes-vous sûr de vouloir supprimer la sélection %@? Cette opération ne peut pas être annulée.";
 
 /* delete rows informative message */
-"Are you sure you want to delete the selected %ld rows from this table? This action cannot be undone." = "Êtes-vous sûr de vouloir supprimer les lignes %ld sélectionnées de cette table? Cette action ne peut pas être annulée.";
+"Are you sure you want to delete the selected %ld rows from this table? This action cannot be undone." = "Êtes-vous sûr de vouloir supprimer les %ld lignes sélectionnées de cette table ? Cette action est irréversible.";
 
 /* delete selected relation informative message */
 "Are you sure you want to delete the selected relations? This action cannot be undone." = "Êtes-vous sûr de vouloir supprimer les relations sélectionnées ? Cette action ne peut pas être annulée.";
 
 /* delete selected row informative message */
-"Are you sure you want to delete the selected row from this table? This action cannot be undone." = "Êtes-vous sûr de vouloir supprimer la ligne sélectionnée de cette table? Cette action ne peut pas être annulée.";
+"Are you sure you want to delete the selected row from this table? This action cannot be undone." = "Êtes-vous sûr de vouloir supprimer la ligne sélectionnée de cette table ? Cette action est irréversible.";
 
 /* delete selected trigger informative message */
 "Are you sure you want to delete the selected triggers? This action cannot be undone." = "Êtes-vous sûr de vouloir supprimer les déclencheurs sélectionnés ? Cette action ne peut pas être annulée.";
 
 /* kill connection informative message */
-"Are you sure you want to kill connection ID %lld?\n\nPlease be aware that continuing to kill this connection may result in data corruption. Please proceed with caution." = "Êtes-vous sûr de vouloir tuer l'ID de connexion %lld?\n\nVeuillez noter que continuer à tuer cette connexion peut entraîner une corruption des données. S'il vous plaît, procédez avec prudence.";
+"Are you sure you want to kill connection ID %lld?\n\nPlease be aware that continuing to kill this connection may result in data corruption. Please proceed with caution." = "Êtes-vous sûr de vouloir tuer la connexion d'ID %lld ?\n\nVeuillez noter que continuer et tuer cette connexion peut entraîner une corruption des données. Procédez avec prudence.";
 
 /* kill query informative message */
-"Are you sure you want to kill the current query executing on connection ID %lld?\n\nPlease be aware that continuing to kill this query may result in data corruption. Please proceed with caution." = "Êtes-vous sûr de vouloir tuer la requête en cours exécutée sur l'ID de connexion %lld?\n\nVeuillez noter que continuer à tuer cette requête peut entraîner une corruption des données. S'il vous plaît, procédez avec prudence.";
+"Are you sure you want to kill the current query executing on connection ID %lld?\n\nPlease be aware that continuing to kill this query may result in data corruption. Please proceed with caution." = "Êtes-vous sûr de vouloir tuer la requête en cours exécutée sur la connexion d'ID %lld ?\n\nVeuillez noter que continuer et tuer cette requête peut entraîner une corruption des données. Procédez avec prudence.";
 
 /* Bundle Editor : Remove-Bundle: remove dialog message */
-"Are you sure you want to move the selected Bundle to the Trash and remove them respectively?" = "Êtes-vous sûr de vouloir déplacer le lot sélectionné dans la corbeille et les supprimer respectivement?";
+"Are you sure you want to move the selected Bundle to the Trash and remove them respectively?" = "Êtes-vous sûr de vouloir déplacer le lot sélectionné dans la corbeille et les supprimer respectivement ?";
 
 /* continue to print informative message */
-"Are you sure you want to print the current content view of the table '%@'?\n\nIt currently contains %@ rows, which may take a significant amount of time to print." = "Êtes-vous sûr de vouloir imprimer la vue de contenu actuelle de la table '%1$@' ?\n\nIl contient actuellement des rangées %2$@ , ce qui peut prendre beaucoup de temps à imprimer.";
+"Are you sure you want to print the current content view of the table '%@'?\n\nIt currently contains %@ rows, which may take a significant amount of time to print." = "Êtes-vous sûr de vouloir imprimer la vue actuelle du contenu de la table '%1$@' ?\n\nElle contient actuellement %2$@ lignes, ce qui peut prendre un temps considérable à imprimer.";
 
 /* remove all query favorites informative message */
 "Are you sure you want to remove all of your saved query favorites? This action cannot be undone." = "Êtes-vous sûr de vouloir supprimer tous vos favoris de requête enregistrés ? Cette action ne peut pas être annulée.";
@@ -533,7 +533,7 @@
 "Are you sure you want to remove all selected query favorites? This action cannot be undone." = "Êtes-vous sûr de vouloir supprimer tous les favoris de la requête sélectionnée ? Cette action ne peut pas être annulée.";
 
 /* Table Info Section : current value of auto_increment */
-"auto_increment: %@" = "auto_incrément: %@";
+"auto_increment: %@" = "auto_increment : %@";
 
 /* Encoding autodetect menu item */
 "Autodetect" = "Détection automatique";
@@ -542,7 +542,7 @@
 "Background" = "Arrière-plan";
 
 /* backtick quote label for color table (Prefs > Editor) */
-"Backtick Quote" = "Citation en arrière tick";
+"Backtick Quote" = "Guillemet inversé";
 
 /* bash error */
 "BASH Error" = "Erreur BASH";
@@ -560,7 +560,7 @@
 "Bundle Editor" = "Éditeur de lots";
 
 /* bundle error */
-"Bundle Error" = "Erreur de bundle";
+"Bundle Error" = "Erreur du bundle";
 
 /* bundles menu item label */
 "Bundles" = "Bundles";
@@ -575,7 +575,7 @@
 "Bundles Installation Error" = "Erreur d'installation des paquets";
 
 /* bzip2 compression export summary - within a sentence */
-"bzip2 compression" = "Compression bzip2";
+"bzip2 compression" = "compression bzip2";
 
 /* description of geometry */
 "Can store a single spatial value of types POINT, LINESTRING or POLYGON. Spatial support in MySQL is based on the OpenGIS Geometry Model." = "Vous pouvez stocker une seule valeur spatiale de type POINT, LINESTRING ou POLYGON.";
@@ -619,7 +619,7 @@
 "Are you sure you want to quit the app?" = "Êtes-vous certain de vouloir fermer l'application ?";
 
 /* character set client: %@ */
-"character set client: %@" = "jeu de caractères client: %@";
+"character set client: %@" = "jeu de caractères client : %@";
 
 /* CHECK one or more tables - result title */
 "Check %@" = "Vérifier %@";
@@ -652,7 +652,7 @@
 "Checksum %@" = "Somme de contrôle %@";
 
 /* checksum selected items menu item */
-"Checksum Selected Items" = "Eléments sélectionnés de la somme de contrôle";
+"Checksum Selected Items" = "Éléments sélectionnés de la somme de contrôle";
 
 /* checksum table menu item */
 "Checksum Table" = "Table de somme de contrôle";
@@ -682,7 +682,7 @@
 "Clear History?" = "Effacer l'historique ?";
 
 /* tooltip for toolbar item for clear console */
-"Clear the console which shows all MySQL commands performed by Sequel Ace" = "Effacer la console qui affiche toutes les commandes MySQL exécutées par Séquel Ace";
+"Clear the console which shows all MySQL commands performed by Sequel Ace" = "Effacer la console affichant toutes les commandes MySQL exécutées par Sequel Ace";
 
 /* clear the document-based history list tooltip message */
 "Clear the document-based history list" = "Vider la liste de l'historique basée sur le document";
@@ -727,7 +727,7 @@
 "Connected to %@" = "Connecté à %@";
 
 /* message of panel when connection to db failed */
-"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %@" = "Connecté à l'hôte, mais impossible de se connecter à la base de données %1$@.\n\nAssurez-vous que la base de données existe et que vous avez les privilèges nécessaires.\n\nMySQL a dit: %2$@";
+"Connected to host, but unable to connect to database %@.\n\nBe sure that the database exists and that you have the necessary privileges.\n\nMySQL said: %@" = "Connecté à l'hôte, mais impossible de se connecter à la base de données %1$@.\n\nAssurez-vous que la base de données existe et que vous avez les privilèges nécessaires.\n\nMySQL a dit : %2$@";
 
 /* Generic connecting very short status message */
 "Connecting..." = "Connexion en cours...";
@@ -818,46 +818,46 @@
 "Could not select database" = "Impossible de sélectionner la base de données";
 
 /* Alter Database : Query Failed ($1 = mysql error message) */
-"Couldn't alter database.\nMySQL said: %@" = "Impossible de modifier la base de données.\nMySQL a dit: %@";
+"Couldn't alter database.\nMySQL said: %@" = "Impossible de modifier la base de données.\nMySQL a dit : %@";
 
 /* Couldn't copy default themes to Application Support Theme folder!\nError: %@ */
-"Couldn't copy default themes to Application Support Theme folder!\nError: %@" = "Impossible de copier les thèmes par défaut dans le dossier du thème de prise en charge de l'application!\nErreur: %@";
+"Couldn't copy default themes to Application Support Theme folder!\nError: %@" = "Impossible de copier les thèmes par défaut dans le dossier du thème de prise en charge de l'application !\nErreur: %@";
 
 /* message of panel when table cannot be created */
-"Couldn't create '%@'.\nMySQL said: %@" = "Impossible de créer '%1$@'.\nMySQL a dit: %2$@";
+"Couldn't create '%@'.\nMySQL said: %@" = "Impossible de créer '%1$@'.\nMySQL a dit : %2$@";
 
 /* Couldn't create Application Support Bundle folder!\nError: %@ */
-"Couldn't create Application Support Bundle folder!\nError: %@" = "Impossible de créer le dossier Bundle de prise en charge de l'application!\nErreur: %@";
+"Couldn't create Application Support Bundle folder!\nError: %@" = "Impossible de créer le dossier Application Support Bundle !\nErreur : %@";
 
 /* Couldn't create Application Support Theme folder!\nError: %@ */
-"Couldn't create Application Support Theme folder!\nError: %@" = "Impossible de créer le dossier du thème de prise en charge de l'application !\nErreur: %@";
+"Couldn't create Application Support Theme folder!\nError: %@" = "Impossible de créer le dossier du thème de prise en charge de l'application !\nErreur : %@";
 
 /* message of panel when creation of db failed */
-"Couldn't create database.\nMySQL said: %@" = "Impossible de créer la base de données.\nMySQL a dit: %@";
+"Couldn't create database.\nMySQL said: %@" = "Impossible de créer la base de données.\nMySQL a dit : %@";
 
 /* message of panel when an item cannot be deleted */
-"Couldn't delete '%@'.\n\nMySQL said: %@" = "Impossible de supprimer '%1$@'.\n\nMySQL a dit: %2$@";
+"Couldn't delete '%@'.\n\nMySQL said: %@" = "Impossible de supprimer '%1$@'.\n\nMySQL a dit : %2$@";
 
 /* message of panel when an item cannot be deleted including informative message about using force deletion */
-"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@" = "Impossible de supprimer '%1$@'.\n\nLa sélection de l'option 'Forcer la suppression' peut empêcher ce problème, mais peut laisser la base de données dans un état incohérent.\n\nMySQL a dit: %2$@";
+"Couldn't delete '%@'.\n\nSelecting the 'Force delete' option may prevent this issue, but may leave the database in an inconsistent state.\n\nMySQL said: %@" = "Impossible de supprimer '%1$@'.\n\nLa sélection de l'option 'Forcer la suppression' peut empêcher ce problème, mais peut laisser la base de données dans un état incohérent.\n\nMySQL a dit : %2$@";
 
 /* message of panel when field cannot be deleted */
-"Couldn't delete field %@.\nMySQL said: %@" = "Impossible de supprimer le champ %1$@.\nMySQL a dit: %2$@";
+"Couldn't delete field %@.\nMySQL said: %@" = "Impossible de supprimer le champ %1$@.\nMySQL a dit : %2$@";
 
 /* message when deleteing all rows failed */
-"Couldn't delete rows.\n\nMySQL said: %@" = "Impossible de supprimer les lignes.\n\nMySQL a dit: %@";
+"Couldn't delete rows.\n\nMySQL said: %@" = "Impossible de supprimer les lignes.\n\nMySQL a dit : %@";
 
 /* message of panel when deleting db failed */
-"Couldn't delete the database.\nMySQL said: %@" = "Impossible de supprimer la base de données.\nMySQL a dit: %@";
+"Couldn't delete the database.\nMySQL said: %@" = "Impossible de supprimer la base de données.\nMySQL a dit : %@";
 
 /* message of panel when an item cannot be renamed */
-"Couldn't duplicate '%@'.\nMySQL said: %@" = "Impossible de dupliquer '%1$@'.\nMySQL a dit: %2$@";
+"Couldn't duplicate '%@'.\nMySQL said: %@" = "Impossible de dupliquer '%1$@'.\nMySQL a dit : %2$@";
 
 /* message of panel when flushing privs failed */
-"Couldn't flush privileges.\nMySQL said: %@" = "Impossible de vider les privilèges.\nMySQL a dit: %@";
+"Couldn't flush privileges.\nMySQL said: %@" = "Impossible de vider les privilèges.\nMySQL a dit : %@";
 
 /* message of panel when table information cannot be retrieved */
-"Couldn't get create syntax.\nMySQL said: %@" = "Impossible d'obtenir la syntaxe.\nMySQL a dit: %@";
+"Couldn't get create syntax.\nMySQL said: %@" = "Impossible d'obtenir la syntaxe.\nMySQL a dit : %@";
 
 /* Custom Query result editing error - could not identify a corresponding column */
 "Couldn't identify field origin unambiguously. The column '%@' contains data from more than one table." = "Impossible d'identifier l'origine du champ sans ambiguïté. La colonne '%@' contient des données provenant de plus d'une table.";
@@ -872,10 +872,10 @@
 "Couldn't sort column." = "Impossible de trier la colonne.";
 
 /* message of panel when sorting of table failed */
-"Couldn't sort table. MySQL said: %@" = "Impossible de trier la table. MySQL a dit: %@";
+"Couldn't sort table. MySQL said: %@" = "Impossible de trier la table. MySQL a dit : %@";
 
 /* message of panel when error while updating field to db */
-"Couldn't write field.\nMySQL said: %@" = "Impossible d'écrire le champ.\nMySQL a dit: %@";
+"Couldn't write field.\nMySQL said: %@" = "Impossible d'écrire le champ.\nMySQL a dit : %@";
 
 /* create syntax for table comment */
 "Create syntax for" = "Créer une syntaxe pour";
@@ -887,11 +887,11 @@
 "Create syntaxes for selected items" = "Créer des syntaxes pour les éléments sélectionnés";
 
 /* Table Info Section : table create options */
-"create_options: %@" = "create_options: %@";
+"create_options: %@" = "create_options : %@";
 
 /* created: %@
  Table Info Section : time+date table was created at */
-"created: %@" = "créé: %@";
+"created: %@" = "créé : %@";
 
 /* description of polygon */
 "Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\"." = "Crée une surface en combinant un anneau linéaire (c.-à-d. une Chaîne linéaire qui est fermée et simple) comme la frontière extérieure avec zéro ou plus d'anneaux linéaires internes agissant comme \"trous\".";
@@ -912,7 +912,7 @@
 "Current Word" = "Mot actuel";
 
 /* SSH connection : debug header with user-defined ssh binary */
-"Custom SSH binary enabled. Disable in Preferences to rule out incompatibilities!" = "binaire SSH personnalisé activé. Désactivez dans les préférences pour exclure les incompatibilités!";
+"Custom SSH binary enabled. Disable in Preferences to rule out incompatibilities!" = "Binaire SSH personnalisé activé. Désactivez dans les préférences pour exclure les incompatibilités !";
 
 /* customize file name label */
 "Customize Filename (%@)" = "Personnaliser le nom du fichier (%@)";
@@ -925,7 +925,7 @@
 "Data Table" = "Tableau de données";
 
 /* Bundle Editor : Outline View : 'Data Table' item : tooltip */
-"Data Table Scope\ncommands will run on the Content and Query data tables" = "Les commandes de tableau de données\ns'exécuteront sur les tables de données Contenu et Requête";
+"Data Table Scope\ncommands will run on the Content and Query data tables" = "Portée : table de données\nles commandes s’exécuteront sur les tables de données Content et Query";
 
 /* export filename database token
  export header database label
@@ -967,7 +967,7 @@
 "Default Bundles Update" = "Mise à jour des packs par défaut";
 
 /* import : csv field mapping : field default value */
-"Default: %@" = "Par défaut: %@";
+"Default: %@" = "Par défaut : %@";
 
 /* Query snippet default value placeholder */
 "default_value" = "valeur par défaut";
@@ -976,7 +976,7 @@
 "Definer" = "Défini";
 
 /* definer: %@ */
-"definer: %@" = "définir: %@";
+"definer: %@" = "définir : %@";
 
 /* description of enum */
 "Defines a list of members, of which every field can use at most one. Values are sorted by their index number (starting at 0 for the first member)." = "Définit une liste de membres, dont chaque champ peut être utilisé au plus un. Les valeurs sont triées par leur numéro d'index (à partir de 0 pour le premier membre).";
@@ -1009,7 +1009,7 @@
 "Delete group '%@'?" = "Supprimer le groupe '%@ ' ?";
 
 /* delete index message */
-"Delete index '%@'?" = "Supprimer l'index%@'?";
+"Delete index '%@'?" = "Supprimer l'index%@' ?";
 
 /* delete items menu title */
 "Delete Items" = "Supprimer les éléments";
@@ -1069,7 +1069,7 @@
 "Disabled Cipher Suites" = "Suites de chiffrement désactivées";
 
 /* force table deltion button text tooltip */
-"Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards." = "Désactive les vérifications de clés étrangères (FOREIGN_KEY_CHECKS) avant la suppression et les réactive ensuite.";
+"Disables foreign key checks (FOREIGN_KEY_CHECKS) before deletion and re-enables them afterwards." = "Désactive la vérification des clés étrangères (FOREIGN_KEY_CHECKS) avant la suppression et la réactive ensuite.";
 
 /* discard changes button */
 "Discard changes" = "Annuler les modifications";
@@ -1087,19 +1087,19 @@
 "Do you really want to proceed with %@ of data?" = "Voulez-vous vraiment continuer avec %@ de données ?";
 
 /* shutdown server : confirmation dialog : title */
-"Do you really want to shutdown the server?" = "Voulez-vous vraiment éteindre le serveur?";
+"Do you really want to shutdown the server?" = "Voulez-vous vraiment éteindre le serveur ?";
 
 /* dtd identifier label (Navigator) */
 "DTD Identifier" = "Identificateur DTD";
 
 /* sql export dump of table label */
-"Dump of table" = "Dump de la table";
+"Dump of table" = "Vidage de la table";
 
 /* sql export dump of view label */
 "Dump of view" = "Extrait de la vue";
 
 /* text showing that app is writing dump */
-"Dumping..." = "Dump en cours...";
+"Dumping..." = "Vidage en cours...";
 
 /* duplicate object message */
 "Duplicate %@ '%@' to:" = "Dupliquer %1$@ '%2$@' à :";
@@ -1123,13 +1123,13 @@
 "Duplicate View..." = "Dupliquer la vue...";
 
 /* partial copy database support informative message */
-"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "La duplication de la base de données '%@' n'est que partiellement supportée car elle contient des objets autres que les tables (i.e. vues, procédures, fonctions, etc.), qui ne seront pas copiées.\n\nVoulez-vous continuer ?";
+"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "La duplication de la base de données '%@' est seulement partiellement prise en charge car elle contient des objets autres que des tables (par ex. vues, procédures, fonctions, etc.), qui ne seront pas copiés.\n\nSouhaitez-vous continuer ?";
 
 /* edit filter */
 "Edit Filters…" = "Modifier les filtres…";
 
 /* Edit row button */
-"Edit row" = "Editer la ligne";
+"Edit row" = "Éditer la ligne";
 
 /* toolbar item label for switching to the Table Structure tab */
 "Edit Table Structure" = "Modifier la structure de la table";
@@ -1138,13 +1138,13 @@
 "Edit Theme List…" = "Modifier la liste des thèmes…";
 
 /* edit user-defined filter */
-"Edit user-defined Filters…" = "Editer les filtres prédéfinis…";
+"Edit user-defined Filters…" = "Modifier les filtres définis par l’utilisateur…";
 
 /* empty query message */
 "Empty query" = "Requête vide";
 
 /* MySQL search language code - eg in http://search.mysql.com/search?q=select&site=refman-50&lr=lang_en */
-"en" = "fr";
+"en" = "en";
 
 /* encoding label (Navigator) */
 "Encoding" = "Encodage";
@@ -1156,10 +1156,10 @@
 "encoding: %1$@ (%2$@)" = "encodage : %1$@ (%2$@)";
 
 /* Table Info Section : Table Engine */
-"engine: %@" = "moteur: %@";
+"engine: %@" = "moteur : %@";
 
 /* enter connection details label */
-"Enter connection details below, or choose a favorite" = "Entrez les informations de connexion ci-dessous, ou choisissez un favori";
+"Enter connection details below, or choose a favorite" = "Saisissez les détails de connexion ci‑dessous, ou choisissez un favori";
 
 /* SSH key password prompt */
 "Enter your password for the SSH key\n\"%@\"" = "Entrez votre mot de passe pour la clé SSH\n'%@";
@@ -1209,7 +1209,7 @@
 "Error for" = "Erreur pour";
 
 /* error for bash command ($1), $2=message */
-"Error for “%1$@”:\n%2$@" = "Erreur pour «%1$@» :\n%2$@";
+"Error for “%1$@”:\n%2$@" = "Erreur pour « %1$@ » :\n%2$@";
 
 /* error moving field message */
 "Error moving field" = "Erreur lors du déplacement du champ";
@@ -1230,7 +1230,7 @@
 "Error retrieving trigger information" = "Erreur lors de la récupération des informations du déclencheur";
 
 /* error truncating table message */
-"Error truncating table" = "Erreur lors du tronquage de la table";
+"Error truncating table" = "Erreur lors du vidage de la table";
 
 /* error updating keychain item message */
 "Error updating Keychain item" = "Erreur lors de la mise à jour de l'élément Trousseau";
@@ -1276,7 +1276,7 @@
 
 /* Open Files : Bundle : Install-Error : error dialog title
  Open Files : Bundle : UUID : Error dialog title */
-"Error while installing Bundle" = "Erreur lors de l'installation du bundle";
+"Error while installing Bundle" = "Erreur lors de l’installation du bundle";
 
 /* error while installing color theme file */
 "Error while installing color theme file" = "Erreur lors de l'installation du fichier de thème de couleur";
@@ -1302,16 +1302,16 @@
 "Error while repairing selected items" = "Erreur lors de la réparation des éléments sélectionnés";
 
 /* Bundle Editor : Save-Bundle-Error : error dialog title */
-"Error while saving the Bundle." = "Erreur lors de l'enregistrement du bundle.";
+"Error while saving the Bundle." = "Erreur lors de l’enregistrement du bundle.";
 
 /* Bundle Editor : Save-and-Close-Error : error dialog title */
-"Error while saving %@." = "Erreur lors de la sauvegarde de %@.";
+"Error while saving %@." = "Erreur lors de l’enregistrement de %@.";
 
 /* Errors title */
 "Errors" = "Erreurs";
 
 /* Mysql Help Viewer : Help Topic: Example section title */
-"Example:" = "Exemple:";
+"Example:" = "Exemple :";
 
 /* Bundle Editor : BLOB dropdown : 'exclude BLOB' item */
 "exclude BLOB" = "exclure le BLOB";
@@ -1380,17 +1380,17 @@
 "Field is not editable. Couldn't identify field origin unambiguously (%ld matches)." = "Le champ n'est pas éditable. Impossible d'identifier l'origine du champ sans ambiguïté (%ld correspondances).";
 
 /* field is not editable due to no table/database */
-"Field is not editable. Field has no or multiple table or database origin(s)." = "Le champ n'est pas modifiable. Le champ n'a pas de table ou origine de base de données multiple.";
+"Field is not editable. Field has no or multiple table or database origin(s)." = "Le champ n’est pas modifiable. Le champ n’a pas d’origine(s) de table ou de base de données, ou en a plusieurs.";
 
 /* Custom Query result editing error - could not identify original row */
-"Field is not editable. No matching record found.\nReload data, check encoding, or try to add\na primary key field or more fields\nin your SELECT statement for table '%@'\nto identify field origin unambiguously." = "Le champ n'est pas modifiable. Aucun enregistrement correspondant trouvé.\nRecharger les données, vérifier l'encodage, ou essayez d'ajouter\nun champ clé primaire ou plus de champs\ndans votre instruction SELECT pour la table '%@'\npour identifier sans ambiguïté l'origine du champ.";
+"Field is not editable. No matching record found.\nReload data, check encoding, or try to add\na primary key field or more fields\nin your SELECT statement for table '%@'\nto identify field origin unambiguously." = "Le champ n’est pas modifiable. Aucun enregistrement correspondant trouvé.\nRechargez les données, vérifiez l’encodage, ou essayez d’ajouter\nun champ clé primaire ou d’autres champs\nsur votre instruction SELECT pour la table '%@'\nafin d’identifier de façon non ambiguë l’origine du champ.";
 
 /* Table Content result editing error - could not identify original row */
-"Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously." = "Le champ n'est pas modifiable. Aucun enregistrement correspondant trouvé.\nRecharger la table, vérifier l'encodage, ou essayez d'ajouter\nun champ clé primaire ou plus de champs\ndans la déclaration de vue de '%@' pour identifier sans ambiguïté l'origine du champ\n.";
+"Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously." = "Le champ n’est pas modifiable. Aucun enregistrement correspondant trouvé.\nRechargez la table, vérifiez l’encodage, ou essayez d’ajouter\nun champ clé primaire ou d’autres champs\ndans la déclaration de la vue '%@' afin d’identifier\nde façon non ambiguë l’origine du champ.";
 
 /* error while reading data file */
 "File couldn't be read." = "Le fichier n'a pas pu être lu.";
-"File couldn't be read: %@\n\nIt will be deleted." = "Le fichier n'a pas pu être lu: %@\n\nIl sera supprimé.";
+"File couldn't be read: %@\n\nIt will be deleted." = "Le fichier n'a pas pu être lu : %@\n\nIl sera supprimé.";
 
 /* File read error title (Import Dialog) */
 "File read error" = "Erreur de lecture du fichier";
@@ -1467,7 +1467,7 @@
 "General Preferences" = "Préférences Générales";
 
 /* Bundle Editor : Outline View : 'General' item : tooltip */
-"General Scope\ncommands will run application-wide" = "Les commandes générales Scope\nexécuteront l'ensemble de l'application";
+"General Scope\ncommands will run application-wide" = "Portée générale\nles commandes s’exécuteront pour toute l’application";
 
 /* generating print document status message */
 "Generating print document..." = "Génération du document d'impression...";
@@ -1495,7 +1495,7 @@
 "Hide Console" = "Masquer la console";
 
 /* hide navigator */
-"Hide Navigator" = "Hide Navigator";
+"Hide Navigator" = "Masquer l'explorateur";
 
 /* hide tab bar */
 "Hide Tab Bar" = "Masquer la barre d'onglets";
@@ -1508,10 +1508,10 @@
 "Host" = "Hôte";
 
 /* description of double */
-"IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "Valeur à virgule flottante IEEE 754. M est le nombre maximal de chiffres, dont D peut être après la virgule. Note: De nombreux nombres décimaux ne peuvent être approchés que par des valeurs à virgule flottante. Voir DECIMAL si vous avez besoin de résultats exacts.";
+"IEEE 754 double-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "Valeur en virgule flottante double précision IEEE 754. M est le nombre maximal de chiffres, dont D peuvent se trouver après la virgule. Remarque : de nombreux nombres décimaux ne peuvent être représentés que de façon approximative en virgule flottante. Voir DECIMAL si vous avez besoin de résultats exacts.";
 
 /* description of float */
-"IEEE 754 single-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "La valeur à virgule flottante IEEE 754 mono-précision. M est le nombre maximal de chiffres, dont D peut être après la virgule. Note: De nombreux nombres décimaux ne peuvent être approchés que par des valeurs à virgule flottante. Voir DECIMAL si vous avez besoin de résultats exacts.";
+"IEEE 754 single-precision floating-point value. M is the maxium number of digits, of which D may be after the decimal point. Note: Many decimal numbers can only be approximated by floating-point values. See DECIMAL if you require exact results." = "Valeur en virgule flottante simple précision IEEE 754. M est le nombre maximal de chiffres, dont D peuvent se trouver après la virgule. Remarque : de nombreux nombres décimaux ne peuvent être représentés que de façon approximative en virgule flottante. Voir DECIMAL si vous avez besoin de résultats exacts.";
 
 /* ignore button */
 "Ignore" = "Ignorer";
@@ -1538,7 +1538,7 @@
 "Import Anyway" = "Importer quand même";
 
 /* import cancelled message */
-"Import cancelled!\n" = "Importation annulée!\n";
+"Import cancelled!\n" = "Importation annulée !\n";
 
 /* Import Error title */
 "Import Error" = "Erreur d'importation";
@@ -1591,16 +1591,16 @@
 "Input Field" = "Champ de saisie";
 
 /* input field  doesn't support insertion of snippets. */
-"Input Field doesn't support insertion of snippets." = "Le champ d'entrée ne supporte pas l'insertion de snippets.";
+"Input Field doesn't support insertion of snippets." = "Le champ de saisie ne prend pas en charge l'insertion d'extraits.";
 
 /* input field is not editable. */
 "Input Field is not editable." = "Le champ de saisie n'est pas modifiable.";
 
 /* Bundle Editor : Outline View : 'Input Field' item : tooltip */
-"Input Field Scope\ncommands will run on each text input field" = "Les commandes de champ de saisie\nseront exécutées sur chaque champ de saisie de texte";
+"Input Field Scope\ncommands will run on each text input field" = "Portée du champ de saisie\nles commandes s'exécuteront sur chaque champ de saisie de texte";
 
 /* Bundle Editor : Scope=Field : Output dropdown : 'insert as snippet' item */
-"Insert as Snippet" = "Insérer en tant que snippet";
+"Insert as Snippet" = "Insérer comme extrait";
 
 /* Bundle Editor : Scope=Field : Output dropdown : 'insert as text' item */
 "Insert as Text" = "Insérer en tant que texte";
@@ -1609,7 +1609,7 @@
 "Installed Bundles" = "Bundles installés";
 
 /* Open Files : Bundle : Already-Installed : 'Update Bundle' question dialog title */
-"Installing Bundle" = "Installation du bundle";
+"Installing Bundle" = "Installation du Bundle";
 
 /* insufficient details message */
 "Insufficient connection details" = "Pas assez de détails de connexion";
@@ -1639,13 +1639,13 @@
 "Is Deterministic" = "Est déterministe";
 
 /* is nullable label (Navigator) */
-"Is Nullable" = "Est nullable";
+"Is Nullable" = "Peut être nul";
 
 /* is updatable: %@ */
 "is updatable: %@" = "est modifiable : %@";
 
 /* items */
-"items" = "Eléments";
+"items" = "éléments";
 
 /* javascript exception */
 "JavaScript Exception" = "Exception JavaScript";
@@ -1657,16 +1657,16 @@
 "Key" = "Clés";
 
 /* keyword label for color table (Prefs > Editor) */
-"Keyword" = "Keyword";
+"Keyword" = "Mot clé";
 
 /* kill button */
 "Kill" = "Éliminer";
 
 /* kill connection message */
-"Kill connection?" = "Tuer la connexion?";
+"Kill connection?" = "Tuer la connexion ?";
 
 /* kill query message */
-"Kill query?" = "Tuer la requête?";
+"Kill query?" = "Tuer la requête ?";
 
 /* Last Error Message */
 "Last Error Message" = "Dernier message d'erreur";
@@ -1703,23 +1703,23 @@
 
 /* range for blob type
  range for varbinary type */
-"M: %@ to %@ bytes" = "M: %1$@ à %2$@ octets";
+"M: %@ to %@ bytes" = "M : %1$@ à %2$@ octets";
 
 /* range for text type
  range for varchar type */
-"M: %@ to %@ characters" = "M: Caractères %1$@ à %2$@";
+"M: %@ to %@ characters" = "M : %1$@ à %2$@ caractères";
 
 /* range for longtext type */
-"M: %@ to %@ characters (4 GiB)" = "M: %1$@ à %2$@ caractères (4 Go)";
+"M: %@ to %@ characters (4 GiB)" = "M : %1$@ à %2$@ caractères (4 GiB)";
 
 /* range for binary type */
-"M: 0 to 255 bytes" = "M: 0 à 255 octets";
+"M: 0 to 255 bytes" = "M : 0 à 255 octets";
 
 /* range for char type */
-"M: 0 to 255 characters" = "M: 0 à 255 caractères";
+"M: 0 to 255 characters" = "M : 0 à 255 caractères";
 
 /* range for bit type */
-"M: 1 (default) to 64" = "M: 1 (par défaut) à 64";
+"M: 1 (default) to 64" = "M : 1 (par défaut) à 64";
 
 /* connection view : ssl : key file picker : wrong format error description */
 "Make sure the file contains a RSA private key and is using PEM encoding." = "Assurez-vous que le fichier contient une clé privée RSA et utilise l'encodage PEM.";
@@ -1731,19 +1731,19 @@
 "Match Field" = "Champ de correspondance";
 
 /* Shown when user inserts too many arguments (ContentFilterManager) */
-"Maximum number of arguments is 2!" = "Le nombre maximum d'arguments est de 2!";
+"Maximum number of arguments is 2!" = "Le nombre maximal d'arguments est de 2 !";
 
 /* Maximum text length is set to %ld. */
-"Maximum text length is set to %ld." = "La longueur maximale du texte est définie à %ld.";
+"Maximum text length is set to %ld." = "La longueur maximale du texte est réglée sur %ld.";
 
 /* Maximum text length is set to %ld. Inserted text was truncated. */
-"Maximum text length is set to %ld. Inserted text was truncated." = "La longueur maximale du texte est définie à %ld. Le texte ajouté a été tronqué.";
+"Maximum text length is set to %ld. Inserted text was truncated." = "La longueur maximale du texte est réglée sur %ld. Le texte inséré a été tronqué.";
 
 /* Maximum text length is set to %llu. */
-"Maximum text length is set to %llu." = "La longueur maximale du texte est définie à %llu.";
+"Maximum text length is set to %llu." = "La longueur maximale du texte est réglée sur %llu.";
 
 /* Maximum text length is set to %llu. Inserted text was truncated. */
-"Maximum text length is set to %llu. Inserted text was truncated." = "La longueur maximale du texte est définie à %llu. Le texte ajouté a été tronqué.";
+"Maximum text length is set to %llu. Inserted text was truncated." = "La longueur maximale du texte est réglée sur %llu. Le texte inséré a été tronqué.";
 
 /* message column title */
 "Message" = "Message";
@@ -1761,10 +1761,10 @@
 "MySQL connecting..." = "Connexion à MySQL...";
 
 /* mysql error message */
-"MySQL Error" = "MySQL Error";
+"MySQL Error" = "Erreur MySQL";
 
 /* mysql help */
-"MySQL Help" = "MySQL Help";
+"MySQL Help" = "Aide MySQL";
 
 /* MySQL Help for Selection */
 "MySQL Help for Selection" = "Aide MySQL pour la sélection";
@@ -1776,13 +1776,13 @@
 "MySQL Help – Categories" = "Aide MySQL – Catégories";
 
 /* mysql said message */
-"MySQL said:" = "MySQL a dit:";
+"MySQL said:" = "MySQL a dit :";
 
 /* shutdown server : error dialog : message */
-"MySQL said:\n%@" = "MySQL a dit:\n%@";
+"MySQL said:\n%@" = "MySQL a dit :\n%@";
 
 /* message of panel when error while adding row to db */
-"MySQL said:\n\n%@" = "MySQL a dit:\n\n%@";
+"MySQL said:\n\n%@" = "MySQL a dit :\n\n%@";
 
 /* Preferences : Themes : Initial filename for 'Export' */
 "MyTheme" = "Mon thème";
@@ -1886,7 +1886,7 @@
 "Number of arguments: %lu" = "Nombre d'arguments : %lu";
 
 /* numeric label for color table (Prefs > Editor) */
-"Numeric" = "Numeric";
+"Numeric" = "Numérique";
 
 /* Bundle Editor : Copy-Command-Error : OK button
  Bundle Editor : Save-and-Close-Error : OK button
@@ -1901,7 +1901,7 @@
 "OK" = "Ok";
 
 /* Table Content : Remove Row : Result : Too Many : Part 1 : n+1 rows instead of n selected were deleted. */
-"One additional row was removed!" = "Une ligne supplémentaire a été supprimée!";
+"One additional row was removed!" = "Une ligne supplémentaire a été supprimée !";
 
 /* Table Content : Remove Row : Result : Too Few : Part 1 : Only n-1 of n selected rows were deleted. */
 "One row was not removed." = "Une ligne n'a pas été supprimée.";
@@ -1982,7 +1982,7 @@
 "Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel." = "Veuillez entrer le nom d'hôte du tunnel SSH, ou désactiver le tunnel SSH.";
 
 /* Please enter the password */
-"Please enter the password for ‘%@’:" = "Veuillez entrer le mot de passe pour ‘%@’:";
+"Please enter the password for ‘%@’:" = "Veuillez entrer le mot de passe pour ‘%@’ :";
 
 /* print button */
 "Print" = "Imprimer";
@@ -1994,13 +1994,13 @@
 "Privileges" = "Privilèges";
 
 /* procedure */
-"procedure" = "Acte";
+"procedure" = "procédure";
 
 /* header for procedure info pane */
 "PROCEDURE INFORMATION" = "INFORMATIONS DU PROCEDURE";
 
 /* procedures */
-"procedures" = "Actes";
+"procedures" = "procédures";
 
 /* proceed button */
 "Proceed" = "Procéder";
@@ -2018,7 +2018,7 @@
 "Query cancelled." = "Requête annulée.";
 
 /* Query cancel by resetting connection error */
-"Query cancelled.  Please note that to cancel the query the connection had to be reset; transactions and connection variables were reset." = "Requête annulée. Veuillez noter que pour annuler la requête, la connexion a dû être réinitialisée; les transactions et les variables de connexion ont été réinitialisées.";
+"Query cancelled.  Please note that to cancel the query the connection had to be reset; transactions and connection variables were reset." = "Requête annulée. Veuillez noter que pour annuler la requête, la connexion a dû être réinitialisée ; les transactions et les variables de connexion ont été réinitialisées.";
 
 /* query editor preference pane name */
 "Query Editor" = "Éditeur de requête";
@@ -2055,22 +2055,22 @@
 "Range: %@ to %@" = "Plage : %1$@ à %2$@";
 
 /* range for time type */
-"Range: -838:59:59.0 to 838:59:59.0\nF (precision): 0 (1s) to 6 (1µs)" = "Intervalle : -838:59:59.0 à 838:59:59.0\nF (précision) : 0 (1s) à 6 (1μs)";
+"Range: -838:59:59.0 to 838:59:59.0\nF (precision): 0 (1s) to 6 (1µs)" = "Plage : -838:59:59.0 à 838:59:59.0\nF (précision) : 0 (1s) à 6 (1µs)";
 
 /* range for year type */
 "Range: 0000, 1901 to 2155" = "Plage : 0000, 1901 à 2155";
 
 /* range for set type */
-"Range: 1 to 64 members\n1, 2, 3, 4 or 8 bytes storage" = "Plage de stockage : 1 à 64 membres\n1, 2, 3, 4 ou 8 octets";
+"Range: 1 to 64 members\n1, 2, 3, 4 or 8 bytes storage" = "Plage : 1 à 64 membres\n1, 2, 3, 4 ou 8 octets de stockage";
 
 /* range for datetime type */
-"Range: 1000-01-01 00:00:00.0 to 9999-12-31 23:59:59.999999\nF (precision): 0 (1s) to 6 (1µs)" = "Portée : 1000-01-01 00:00:00.0 à 9999-12-31 23:59:59.999999\nF (précision): 0 (1s) à 6 (1μs)";
+"Range: 1000-01-01 00:00:00.0 to 9999-12-31 23:59:59.999999\nF (precision): 0 (1s) to 6 (1µs)" = "Plage : 1000-01-01 00:00:00.0 à 9999-12-31 23:59:59.999999\nF (précision) : 0 (1s) à 6 (1µs)";
 
 /* range for date type */
 "Range: 1000-01-01 to 9999-12-31" = "Plage : 1000-01-01 à 9999-12-31";
 
 /* range for timestamp type */
-"Range: 1970-01-01 00:00:01.0 to 2038-01-19 03:14:07.999999\nF (precision): 0 (1s) to 6 (1µs)" = "Portée : 1970-01-01 00:00:01.0 à 2038-01-19 03:14:07.9999\nF (précision) : 0 (1s) à 6 (1μs)";
+"Range: 1970-01-01 00:00:01.0 to 2038-01-19 03:14:07.999999\nF (precision): 0 (1s) to 6 (1µs)" = "Plage : 1970-01-01 00:00:01.0 à 2038-01-19 03:14:07.999999\nF (précision) : 0 (1s) à 6 (1µs)";
 
 /* text showing that app is reading dump */
 "Reading..." = "Lecture...";
@@ -2085,7 +2085,7 @@
 "Relations" = "Relations avec le client";
 
 /* Relations tab subtitle showing table name */
-"Relations for table: %@" = "Relations pour la table: %@";
+"Relations for table: %@" = "Relations pour la table : %@";
 
 /* reload bundles menu item label */
 "Reload Bundles" = "Recharger les packs";
@@ -2094,7 +2094,7 @@
 "Reloading data..." = "Rechargement des données...";
 
 /* Reloading table task string */
-"Reloading..." = "Reloading...";
+"Reloading..." = "Rechargement...";
 
 /* remote error */
 "Remote Error" = "Erreur distante";
@@ -2161,7 +2161,7 @@
 "Replace Selection" = "Remplacer la sélection";
 
 /* description of year */
-"Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5." = "Représente une valeur d'année de 4 chiffres, stockée en 1 octet. Les valeurs invalides sont converties en 0000 et les valeurs de deux chiffres de 0 à 69 seront converties en années 2000 à 2069, resp. valeurs 70 à 99 années 1970 à 1999.\nLe type YEAR(2) a été supprimé dans MySQL 5.7.5.";
+"Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5." = "Représente une valeur d'année sur 4 chiffres, stockée sur 1 octet. Les valeurs invalides sont converties en 0000 et les valeurs sur deux chiffres de 0 à 69 seront converties en années 2000 à 2069, respectivement les valeurs 70 à 99 en années 1970 à 1999.\nLe type YEAR(2) a été supprimé dans MySQL 5.7.5.";
 
 /* description of multilinestring */
 "Represents a collection of LineStrings." = "Représente une collection de LineStrings.";
@@ -2170,7 +2170,7 @@
 "Represents a collection of objects of any other single- or multi-valued spatial type. The only restriction being, that all objects must share a common coordinate system." = "Représente une collection d'objets de tout autre type spatial à valeur unique ou à valeur multiples. La seule restriction est que tous les objets doivent partager un système commun de coordonnées.";
 
 /* description of multipolygon */
-"Represents a collection of Polygons. The Polygons making up the MultiPolygon must not intersect." = "Représente une collection de Polygons. Les polygones qui composent le multipolygone ne doivent pas se croiser.";
+"Represents a collection of Polygons. The Polygons making up the MultiPolygon must not intersect." = "Représente une collection de polygones. Les polygones composant le MultiPolygon ne doivent pas s'intersecter.";
 
 /* description of multipoint */
 "Represents a set of Points without specifying any kind of relation and/or order between them." = "Représente un ensemble de Points sans spécifier de relation et/ou d'ordre entre eux.";
@@ -2182,7 +2182,7 @@
 "Represents an ordered set of coordinates where each consecutive pair of two points is connected by a straight line." = "Représente un ensemble ordonné de coordonnées où chaque paire consécutive de deux points est connectée par une ligne droite.";
 
 /* required placeholder string */
-"required" = "Obligatoire";
+"required" = "obligatoire";
 
 /* description of smallint */
 "Requires 2 bytes storage space. M is the optional display width and does not affect the possible value range." = "Nécessite 2 octets d'espace de stockage. M est la largeur d'affichage optionnelle et n'affecte pas la plage de valeurs possible.";
@@ -2194,10 +2194,10 @@
 "Requires 4 bytes storage space. M is the optional display width and does not affect the possible value range. INTEGER is an alias to this type." = "Nécessite 4 octets d'espace de stockage. M est la largeur d'affichage optionnelle et n'affecte pas la plage de valeurs possible. INTEGER est un alias de ce type.";
 
 /* description of bigint */
-"Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers." = "Nécessite 8 octets d'espace de stockage. M est la largeur d'affichage optionnelle et n'affecte pas la plage de valeurs possible. Note : Les opérations Arithmetic peuvent échouer pour de grands nombres.";
+"Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers." = "Nécessite 8 octets d'espace de stockage. M est la largeur d'affichage optionnelle et n'affecte pas la plage de valeurs possible. Remarque : les opérations arithmétiques peuvent échouer pour les très grands nombres.";
 
 /* reset auto_increment after deletion of all rows message */
-"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "Réinitialiser AUTO_INCREMENT après la suppression\n(uniquement pour supprimer TOUTES LES ROUILLES DANS LA TABLE) ?";
+"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "Réinitialiser AUTO_INCREMENT après la suppression\n(uniquement pour Supprimer TOUTES LES LIGNES DE LA TABLE) ?";
 
 /* delete selected row button */
 "Delete Selected Row" = "Supprimer la ligne sélectionnée";
@@ -2233,7 +2233,7 @@
 "rows: %@" = "lignes : %@";
 
 /* Table Info Section : number of rows (estimated value) */
-"rows: ~%@" = "lignes: ~%@";
+"rows: ~%@" = "lignes : ~%@";
 
 /* run all button */
 "Run All" = "Exécuter tout";
@@ -2281,7 +2281,7 @@
 "Save As..." = "Enregistrer sous...";
 
 /* Bundle Editor : BLOB dropdown : 'save BLOB as dat file' item */
-"save BLOB as dat file" = "enregistrer BLOB en tant que fichier dat";
+"save BLOB as dat file" = "enregistrer le BLOB en tant que fichier .dat";
 
 /* Bundle Editor : BLOB dropdown : 'save BLOB as image file' item */
 "save BLOB as image file" = "enregistrer BLOB en tant que fichier image";
@@ -2341,13 +2341,13 @@
 "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "La suite Ace n'a pas pu trouver de colonne appartenant à cet index. Peut-être a-t-elle déjà été supprimée ?";
 
 /* Preferences : Network : Custom SSH client : warning dialog message */
-"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace ne prend en charge que et est testé avec les versions par défaut du client OpenSSH incluses avec macOS. L'utilisation de différents clients peut causer des problèmes de connexion, des risques de sécurité ou ne pas fonctionner du tout.\n\nVeuillez être conscient que nous ne pouvons pas fournir de support pour de telles configurations.";
+"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace ne prend en charge et n'est testé qu'avec les versions par défaut du client OpenSSH incluses dans macOS. L'utilisation d'autres clients peut provoquer des problèmes de connexion, des risques de sécurité ou ne pas fonctionner du tout.\n\nVeuillez noter que nous ne pouvons pas fournir de support pour de telles configurations.";
 
 /* sequelace URL scheme command not supported. */
 "sequelace URL scheme command not supported." = "commande de schéma d'URL de suite non prise en charge.";
 
 /* sequelace url Scheme Error */
-"sequelace URL Scheme Error" = "Erreur de schéma d'URL de la suite";
+"sequelace URL Scheme Error" = "Erreur du schéma d’URL de Sequel Ace";
 
 /* Table Structure : Collation dropdown : 'item is the same as the collation of server' marker
  Table Structure : Encoding dropdown : 'item is server default' marker */
@@ -2403,13 +2403,13 @@
 "Show MySQL help for %@" = "Afficher l'aide MySQL pour %@";
 
 /* show navigator */
-"Show Navigator" = "Show Navigator";
+"Show Navigator" = "Afficher le navigateur";
 
 /* show tab bar */
 "Show Tab Bar" = "Afficher la barre d'onglets";
 
 /* tooltip for toolbar item for show console */
-"Show the console which shows all MySQL commands performed by Sequel Ace" = "Afficher la console qui affiche toutes les commandes MySQL exécutées par Séquel Ace";
+"Show the console which shows all MySQL commands performed by Sequel Ace" = "Afficher la console qui affiche toutes les commandes MySQL exécutées par Sequel Ace";
 
 /* Show Toolbar menu item */
 "Show Toolbar" = "Afficher la barre d'outils";
@@ -2424,7 +2424,7 @@
 "Shutdown failed!" = "L'arrêt a échoué !";
 
 /* range of integer types */
-"Signed: %@ to %@\nUnsigned: %@ to %@" = "Signed: %1$@ à %2$@\nNon signée : %3$@ à %4$@";
+"Signed: %@ to %@\nUnsigned: %@ to %@" = "Signé : %1$@ à %2$@\nNon signé : %3$@ à %4$@";
 
 /* Table Info Section : table size on disk */
 "size: %@" = "taille : %@";
@@ -2439,7 +2439,7 @@
 "Beta Build" = "Version bêta";
 
 /* socket connection failed title */
-"Socket connection failed!" = "Échec de la connexion à la socket !";
+"Socket connection failed!" = "Connexion socket échouée !";
 
 /* socket not found title */
 "Socket not found!" = "Socket introuvable !";
@@ -2473,7 +2473,7 @@
 "SSH Connecting…" = "Connexion SSH en cours…";
 
 /* SSH connection failed title */
-"SSH connection failed!" = "Échec de la connexion SSH!";
+"SSH connection failed!" = "Connexion SSH échouée !";
 
 /* SSH disconnected titlebar marker */
 "SSH Disconnected" = "SSH déconnecté";
@@ -2503,7 +2503,7 @@
 "started" = "démarré";
 
 /* status file for sequelace url scheme command couldn't be written error message */
-"Status file for sequelace url scheme command couldn't be written!" = "Le fichier de statut pour la commande de schéma d'url de la suite n'a pas pu être écrit !";
+"Status file for sequelace url scheme command couldn't be written!" = "Le fichier d’état pour la commande de schéma d’URL sequelace n’a pas pu être écrit !";
 
 /* stop button */
 "Stop" = "Arrêter";
@@ -2515,16 +2515,16 @@
 "Stop query" = "Arrêter la requête";
 
 /* description of timestamp */
-"Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply." = "Enregistre une date et une heure de la journée en tant que secondes depuis le début de l'époque UNIX (1970-01-01 00:00:00). Les valeurs affichées/stockées sont affectées par le paramètre @@time_zone de la connexion.\nLa représentation est la même que pour DATETIME. Les valeurs invalides, ainsi que le \"second zéro\", sont converties en 0000-00-00 00:00:00.0. Les secondes fractionnelles ont été ajoutées dans MySQL 5. .4 avec une précision jusqu'à des microsecondes (6), spécifiée par F. Certaines règles supplémentaires peuvent s'appliquer.";
+"Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply." = "Stocke une date et une heure comme nombre de secondes écoulées depuis le début de l’époque UNIX (1970-01-01 00:00:00). Les valeurs affichées/enregistrées sont affectées par le réglage @@time_zone de la connexion.\nLa représentation est la même que pour DATETIME. Les valeurs invalides, ainsi que le « seconde zéro », sont converties en 0000-00-00 00:00:00.0. Les secondes fractionnaires ont été ajoutées dans MySQL 5.6.4 avec une précision jusqu’aux microsecondes (6), spécifiée par F. Certaines règles supplémentaires peuvent s’appliquer.";
 
 /* description of datetime */
-"Stores a date and time of day. The representation is YYYY-MM-DD HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Enregistre une date et une heure de la journée. La représentation est AAAA-MM-JJ HH:MM:SS[. *], je suis en secondes fractionnées. La valeur n'est pas affectée par aucun réglage de fuseau horaire. Les valeurs invalides sont converties en 0000-00-00 00:00:00.0. Les secondes fractionnelles ont été ajoutées en MySQL 5.6.4 avec une précision jusqu'à microsecondes (6), spécifiées par F.";
+"Stores a date and time of day. The representation is YYYY-MM-DD HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Stocke une date et une heure. La représentation est YYYY-MM-DD HH:MM:SS[.I*], I représentant les secondes fractionnaires. La valeur n’est pas affectée par un réglage de fuseau horaire. Les valeurs invalides sont converties en 0000-00-00 00:00:00.0. Les secondes fractionnaires ont été ajoutées dans MySQL 5.6.4 avec une précision jusqu’aux microsecondes (6), spécifiée par F.";
 
 /* description of date */
 "Stores a date without time information. The representation is YYYY-MM-DD. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00." = "Stocke une date sans information d'heure. La représentation est AAAA-MM-JJ. La valeur n'est affectée par aucun paramètre de fuseau horaire. Les valeurs non valides sont converties en 0000-00-00.";
 
 /* description of time */
-"Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Stocke une heure de jour, de durée ou d'intervalle. La représentation est HH:MM:SS[. *], je suis en secondes fractionnées. La valeur n'est pas affectée par aucun réglage de fuseau horaire. Les valeurs invalides sont converties en 00:00:00. Les secondes fractionnées ont été ajoutées en MySQL 5.6.4 avec une précision jusqu'à microsecondes (6), spécifiée par F.";
+"Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Stocke une heure, une durée ou un intervalle de temps. La représentation est HH:MM:SS[.I*], I représentant les secondes fractionnaires. La valeur n’est pas affectée par un réglage de fuseau horaire. Les valeurs invalides sont converties en 00:00:00. Les secondes fractionnaires ont été ajoutées dans MySQL 5.6.4 avec une précision jusqu’aux microsecondes (6), spécifiée par F.";
 
 /* toolbar item label for switching to the Table Structure tab */
 "Structure" = "Structure";
@@ -2593,7 +2593,7 @@
 "Table %lu of %lu (%@): Fetching data..." = "Table %1$lu de %2$lu (%3$@) : récupération des données...";
 
 /* export label showing app is fetching relations data for a specific table */
-"Table %lu of %lu (%@): Fetching relations data..." = "Tableau %1$lu de %2$lu (%3$@): Récupération des données de relations...";
+"Table %lu of %lu (%@): Fetching relations data..." = "Table %1$lu sur %2$lu (%3$@) : récupération des données de relations...";
 
 /* export label showing app if writing data for a specific table */
 "Table %lu of %lu (%@): Writing data..." = "Table %1$lu de %2$lu (%3$@) : Écriture des données...";
@@ -2663,7 +2663,7 @@
 "TABLES" = "TABLES";
 
 /* header for table & views list */
-"TABLES & VIEWS" = "TABLES & Vues";
+"TABLES & VIEWS" = "TABLES & VUES";
 
 /* Connection test very short status message */
 "Testing connection..." = "Test de la connexion...";
@@ -2681,20 +2681,20 @@
 "Text is too long. Maximum text length is set to %llu." = "Le texte est trop long. La longueur maximale du texte est définie à %llu.";
 
 /* Release notes dialog title thanking user for upgrade */
-"Thanks for updating Sequel Ace!" = "Merci d'avoir mis à jour Sequel Ace!";
+"Thanks for updating Sequel Ace!" = "Merci d’avoir mis à jour Sequel Ace !";
 
 /* Open Files : Bundle : Install-Error : Destination path already exists error dialog message */
-"The Bundle ‘%@’ already exists." = "Le bundle ‘%@’ existe déjà.";
+"The Bundle ‘%@’ already exists." = "Le bundle « %@ » existe déjà.";
 
 /* Open Files : Bundle: UUID : UUID-Attribute is missing in bundle's command.plist file */
-"The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles." = "Le bundle ‘%@’ n’a pas d’UUID nécessaire pour identifier les paquets installés.";
+"The Bundle ‘%@’ has no UUID which is necessary to identify installed Bundles." = "Le bundle « %@ » n’a pas d’UUID, nécessaire pour identifier les bundles installés.";
 
-"‘%@’ Bundle contains legacy components" = "Le bundle ‘%@’ contient des composants hérités";
+"‘%@’ Bundle contains legacy components" = "Le bundle « %@ » contient des composants obsolètes";
 
-"In these files:\n\n%@\n\nDo you still want to install the bundle?" = "Dans ces fichiers :\n\n%@\n\nVoulez-vous toujours installer le bundle?";
+"In these files:\n\n%@\n\nDo you still want to install the bundle?" = "Dans ces fichiers :\n\n%@\n\nVoulez-vous quand même installer le bundle ?";
 
 /* message while reading a spf file which matches non-supported formats. */
-"The chosen file %@ contains ‘%@’ data." = "Le fichier choisi «%1$@» contient les données «%2$@».";
+"The chosen file %@ contains ‘%@’ data." = "Le fichier choisi « %1$@ » contient des données « %2$@ ».";
 
 /* the color theme ‘%@’ already exists. */
 "The color theme ‘%@’ already exists." = "Le thème de couleur ‘%@’ existe déjà.";
@@ -2709,13 +2709,13 @@
 "The connection to the server was lost during the import.  The import is only partially complete." = "La connexion au serveur a été perdue pendant l'importation. L'importation n'est que partiellement terminée.";
 
 /* Create syntax permission denied detail */
-"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator." = "La syntaxe de création n'a pas pu être récupérée en raison d'une erreur de permission.\n\nVeuillez vérifier vos permissions utilisateur avec un administrateur.";
+"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator." = "La syntaxe de création n’a pas pu être récupérée en raison d’un problème d’autorisations.\n\nVeuillez vérifier vos autorisations utilisateur avec un administrateur.";
 
 /* CSV file open error */
 "The CSV file you selected could not be found or read." = "Le fichier CSV que vous avez sélectionné n'a pas pu être trouvé ou lu.";
 
 /* Error when CSV appears to have too many columns to import, probably due to line ending mismatch */
-"The CSV was read as containing more than 512 columns, more than the maximum columns permitted for speed reasons by Sequel Ace.\n\nThis usually happens due to errors reading the CSV; please double-check the CSV to be imported and the line endings and escape characters at the bottom of the CSV selection dialog." = "Le CSV a été lu comme contenant plus de 512 colonnes, plus que le maximum autorisé pour des raisons de vitesse par Sequel Ace.\n\nCela se produit généralement à cause d'erreurs de lecture du CSV ; veuillez vérifier le CSV à importer et les extrémités de ligne et les caractères d'échappement en bas de la boîte de dialogue de sélection CSV.";
+"The CSV was read as containing more than 512 columns, more than the maximum columns permitted for speed reasons by Sequel Ace.\n\nThis usually happens due to errors reading the CSV; please double-check the CSV to be imported and the line endings and escape characters at the bottom of the CSV selection dialog." = "Le CSV a été lu comme contenant plus de 512 colonnes, soit plus que le nombre maximal de colonnes autorisé pour des raisons de performances par Sequel Ace.\n\nCela se produit généralement en raison d’erreurs lors de la lecture du CSV ; veuillez vérifier le CSV à importer ainsi que les fins de ligne et les caractères d’échappement dans le bas de la boîte de dialogue de sélection du CSV.";
 
 /* unsaved theme informative message */
 "The current color theme is unsaved. Do you want to proceed without saving it?" = "Le thème de couleur actuel n'est pas enregistré. Voulez-vous continuer sans l'enregistrer ?";
@@ -2724,7 +2724,7 @@
 "The Custom Query \"Run\" and \"Run All\" button positions and their shortcuts have been swapped." = "Les positions des boutons « Exécuter des requêtes personnalisées » et « Exécuter tous » et leurs raccourcis ont été échangés.";
 
 /* the following default bundles were updated:\n%@\nyour modifications were stored as “(user)”. */
-"The following default Bundles were updated:\n%@\nYour modifications were stored as “(user)”." = "Les Bundles par défaut suivants ont été mis à jour :\n%@\nVos modifications ont été enregistrées en tant que « (utilisateur)».";
+"The following default Bundles were updated:\n%@\nYour modifications were stored as “(user)”." = "Les bundles par défaut suivants ont été mis à jour :\n%@\nVos modifications ont été enregistrées sous « (user) ».";
 
 /* favorites export error informative message */
 "The following error occurred during the export process:\n\n%@" = "L'erreur suivante s'est produite lors du processus d'exportation :\n\n%@";
@@ -2733,7 +2733,7 @@
 "The following error occurred during the import process:\n\n%@" = "L'erreur suivante s'est produite pendant le processus d'import :\n\n%@";
 
 /* table structure : indexes : delete index : error 1553 : description */
-"The foreign key relationship '%@' has a dependency on index '%@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone." = "La relation de clé étrangère '%1$@' a une dépendance sur l'index '%2$@'. Cette relation doit être supprimée avant de pouvoir supprimer l'index.\n\nÊtes-vous sûr de vouloir supprimer la relation et l'index ? Cette action ne peut pas être annulée.";
+"The foreign key relationship '%@' has a dependency on index '%@'. This relationship must be removed before the index can be deleted.\n\nAre you sure you want to continue to delete the relationship and the index? This action cannot be undone." = "La relation de clé étrangère '%1$@' dépend de l’index '%2$@'. Cette relation doit être supprimée avant que l’index puisse être effacé.\n\nÊtes-vous sûr de vouloir continuer et supprimer la relation ainsi que l’index ? Cette action est irréversible.";
 
 /* table list change alert message */
 "The list of tables has changed" = "La liste des tables a changé";
@@ -2742,49 +2742,49 @@
 "The name '%@' is already used." = "Le nom '%@' est déjà utilisé.";
 
 /* table list change alert informative message */
-"The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?" = "Le nombre de tables dans cette base de données a changé depuis l'ouverture de la boîte de dialogue d'exportation. Il y a maintenant %lu table(s) supplémentaire(s), probablement ajoutée(s) par une application externe.\n\nComment souhaitez-vous procéder ?";
+"The number of tables in this database has changed since the export dialog was opened. There are now %lu additional table(s), most likely added by an external application.\n\nHow would you like to proceed?" = "Le nombre de tables dans cette base de données a changé depuis l’ouverture de la boîte d’export. Il y a maintenant %lu table(s) supplémentaires, probablement ajoutées par une application externe.\n\nComment souhaitez-vous procéder ?";
 
 /* message of panel when no rows have been affected after writing to the db */
-"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)" = "La ligne n'a pas été écrite dans la base de données MySQL. Vous n'avez probablement rien changé.\nRecharger la table pour être sûr que la ligne existe et utiliser une clé primaire pour votre table.\n(Cette erreur peut être désactivée dans les préférences.)";
+"The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)" = "La ligne n’a pas été écrite dans la base de données MySQL. Vous n’avez probablement rien modifié.\nRechargez la table pour vous assurer que la ligne existe et utilisez une clé primaire pour votre table.\n(Cet avertissement peut être désactivé dans les préférences.)";
 
 /* export : import settings : file version error description ($1 = is version, $2 = list of supported versions); note: the u00A0 is a non-breaking space, do not add more whitespace. */
-"The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "Les paramètres d'exportation sélectionnés ont été enregistrés avec la version%1$ld, mais seuls les paramètres avec les versions suivantes peuvent être importés : %2$@.\n\nSoit enregistrer les paramètres de manière rétrocompatible ou mettre à jour votre version de Sequel Ace.";
+"The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "Les paramètres d’export sélectionnés ont été enregistrés avec la version %1$ld, mais seuls les paramètres avec les versions suivantes peuvent être importés : %2$@.\n\nSoit enregistrez les paramètres de façon rétrocompatible, soit mettez à jour votre version de Sequel Ace.";
 
 /* export : import settings : spf content type error description */
-"The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file." = "Le fichier sélectionné contient des données de type «%1$@», mais le type «%2$@» est nécessaire. Veuillez choisir un autre fichier.";
+"The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file." = "Le fichier sélectionné contient des données de type « %1$@ », mais le type « %2$@ » est requis. Veuillez choisir un autre fichier.";
 
 /* export : import settings : file error description */
-"The selected file is either not a valid SPF file or severely corrupted." = "Le fichier sélectionné n'est pas un fichier SPF valide ou est gravement corrompu.";
+"The selected file is either not a valid SPF file or severely corrupted." = "Le fichier sélectionné n’est pas un fichier SPF valide ou il est gravement corrompu.";
 
 /* error deleting relation informative message */
-"The selected relation couldn't be deleted.\n\nMySQL said: %@" = "La relation sélectionnée n'a pas pu être supprimée.\n\nMySQL a dit: %@";
+"The selected relation couldn't be deleted.\n\nMySQL said: %@" = "La relation sélectionnée n'a pas pu être supprimée.\n\nMySQL a répondu : %@";
 
 /* error deleting trigger informative message */
-"The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "Le déclencheur sélectionné n'a pas pu être supprimé.\n\nMySQL a dit: %@";
+"The selected trigger couldn't be deleted.\n\nMySQL said: %@" = "Le trigger sélectionné n'a pas pu être supprimé.\n\nMySQL a répondu : %@";
 
 /* description of tinyint */
-"The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "Le type d'entier le plus petit requiert un espace de stockage de 1 octet. M est la largeur d'affichage optionnelle et n'affecte pas la plage de valeurs possible.";
+"The smallest integer type, requires 1 byte storage space. M is the optional display width and does not affect the possible value range." = "Le plus petit type entier, nécessite 1 octet de stockage. M est la largeur d'affichage optionnelle et n'affecte pas l'étendue des valeurs possibles.";
 
 /* message of panel when connection to socket failed because optional socket could not be found */
-"The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@" = "Le fichier socket n'a pas pu être trouvé à un endroit commun. Veuillez fournir le bon emplacement de socket.\n\nMySQL a dit: %@";
+"The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@" = "Le fichier socket n'a pas été trouvé dans les emplacements usuels. Veuillez indiquer le bon emplacement du socket.\n\nMySQL a répondu : %@";
 
 /* error creating relation informative message */
-"The specified relation could not be created.\n\nMySQL said: %@" = "La relation spécifiée n'a pas pu être créée.\n\nMySQL a dit: %@";
+"The specified relation could not be created.\n\nMySQL said: %@" = "La relation spécifiée n'a pas pu être créée.\n\nMySQL a répondu : %@";
 
 /* error creating trigger informative message */
-"The specified trigger was unable to be created.\n\nMySQL said: %@" = "Le déclencheur spécifié n'a pas pu être créé.\n\nMySQL a dit: %@";
+"The specified trigger was unable to be created.\n\nMySQL said: %@" = "Le trigger spécifié n'a pas pu être créé.\n\nMySQL a répondu : %@";
 
 /* sql import : charset error alert : detail message */
-"The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!" = "Le fichier SQL utilise l'encodage utf8mb4, mais votre version MySQL ne supporte que le sous-ensemble limité utf8.\n\nVous pouvez continuer l'importation, mais tous les caractères non-BMP dans le fichier SQL (par ex. quelques caractères spéciaux typographiques et scientifiques, des logos archaïques CJK, des emojis) seront perdus de façon irrécupérable!";
+"The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!" = "Le fichier SQL utilise l'encodage utf8mb4, mais votre version de MySQL ne prend en charge que le sous-ensemble utf8 limité.\n\nVous pouvez continuer l'importation, mais tous les caractères non BMP présents dans le fichier SQL (p. ex. certains signes typographiques et scientifiques spéciaux, idéogrammes CJK archaïques, emojis) seront irrémédiablement perdus !";
 
 /* SQL file open error */
 "The SQL file you selected could not be found or read." = "Le fichier SQL que vous avez sélectionné n'a pas pu être trouvé ou lu.";
 
 /* Prompt for SSH password when keychain fetch failed */
-"The SSH password could not be loaded from the keychain; please enter the SSH password for %@:" = "Le mot de passe SSH n'a pas pu être chargé depuis le trousseau; veuillez entrer le mot de passe SSH pour %@:";
+"The SSH password could not be loaded from the keychain; please enter the SSH password for %@:" = "Le mot de passe SSH n'a pas pu être chargé depuis le trousseau ; veuillez saisir le mot de passe SSH pour %@ :";
 
 /* Prompt for SSH password when direct fetch failed */
-"The SSH password could not be loaded; please enter the SSH password for %@:" = "Le mot de passe SSH n'a pas pu être chargé; veuillez entrer le mot de passe SSH pour %@:";
+"The SSH password could not be loaded; please enter the SSH password for %@:" = "Le mot de passe SSH n'a pas pu être chargé ; veuillez saisir le mot de passe SSH pour %@ :";
 
 /* SSH tunnel authentication failed message */
 "The SSH Tunnel could not authenticate with the remote host. Please check your password and ensure you still have access." = "Le tunnel SSH n'a pas pu s'authentifier avec l'hôte distant. Veuillez vérifier votre mot de passe et vous assurer que vous avez toujours accès.";
@@ -2796,19 +2796,19 @@
 "The SSH Tunnel was closed 'by the remote host'. This may indicate a networking issue or a network timeout." = "Le tunnel SSH a été fermé 'par l'hôte distant'. Cela peut indiquer un problème de réseau ou un délai d'attente réseau.";
 
 /* SSH tunnel forwarding port connection refused message */
-"The SSH Tunnel was established successfully, but could not forward data to the remote port as the remote port refused the connection." = "Le tunnel SSH a été établi avec succès, mais n'a pas pu transférer les données vers le port distant car le port distant a refusé la connexion.";
+"The SSH Tunnel was established successfully, but could not forward data to the remote port as the remote port refused the connection." = "Le tunnel SSH a été établi avec succès, mais n'a pas pu transférer de données vers le port distant car ce dernier a refusé la connexion.";
 
 /* SSH tunnel unable to bind to local port message */
-"The SSH Tunnel was unable to bind to the local port. This error may occur if you already have an SSH connection to the same server and are using a 'LocalForward' setting in your SSH configuration.\n\nWould you like to fall back to a standard connection to localhost in order to use the existing tunnel?" = "Le tunnel SSH n'a pas pu être lié au port local. Cette erreur peut se produire si vous avez déjà une connexion SSH vers le même serveur et que vous utilisez un paramètre 'LocalForward' dans votre configuration SSH.\n\nVoulez-vous revenir à une connexion standard à localhost afin d'utiliser le tunnel existant ?";
+"The SSH Tunnel was unable to bind to the local port. This error may occur if you already have an SSH connection to the same server and are using a 'LocalForward' setting in your SSH configuration.\n\nWould you like to fall back to a standard connection to localhost in order to use the existing tunnel?" = "Le tunnel SSH n'a pas pu se lier au port local. Cette erreur peut survenir si vous avez déjà une connexion SSH au même serveur et utilisez une option 'LocalForward' dans votre configuration SSH.\n\nVoulez-vous revenir à une connexion standard sur localhost afin d'utiliser le tunnel existant ?";
 
 /* SSH tunnel failed or timed out message */
-"The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds)." = "Le tunnel SSH n'a pas pu se connecter à l'hôte %1$@, ou la requête a expiré.\n\nAssurez-vous que l'adresse est correcte et que vous avez les privilèges nécessaires, ou essayez d'augmenter le délai de connexion (actuellement %2$ld secondes).";
+"The SSH Tunnel was unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds)." = "Le tunnel SSH n'a pas pu se connecter à l'hôte %1$@, ou la requête a expiré.\n\nVérifiez que l'adresse est correcte et que vous disposez des privilèges nécessaires, ou essayez d'augmenter le délai de connexion (actuellement %2$ld secondes).";
 
 /* message of panel when loading of table failed and presumably due to used filter argument */
-"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@" = "Les données de la table n'ont pas pu être chargées probablement en raison de la clause de filtre utilisée. \n\nMySQL a dit: %@";
+"The table data couldn't be loaded presumably due to used filter clause. \n\nMySQL said: %@" = "Les données de la table n'ont pas pu être chargées, probablement à cause de la clause de filtrage utilisée. \n\nMySQL a répondu : %@";
 
 /* message of panel when loading of table failed */
-"The table data couldn't be loaded.\n\nMySQL said: %@" = "Les données de la table n'ont pas pu être chargées.\n\nMySQL a dit: %@";
+"The table data couldn't be loaded.\n\nMySQL said: %@" = "Les données de la table n'ont pas pu être chargées.\n\nMySQL a répondu : %@";
 
 /* Export folder not writable explanatory text */
 "The target export folder is not writable.  Please select a new export location and try again." = "Le dossier d'exportation cible n'est pas accessible en écriture. Veuillez sélectionner un nouvel emplacement d'exportation et réessayez.";
@@ -2831,16 +2831,16 @@
 "There have been errors while copying table content. Please check the new table." = "Il y a eu des erreurs lors de la copie du contenu de la table. Veuillez vérifier la nouvelle table.";
 
 /* Cannot duplicate a table with triggers to a different database */
-"Cannot duplicate a table with triggers to a different database." = "Impossible de dupliquer une table avec des triggers dans une base de données différente.";
+"Cannot duplicate a table with triggers to a different database." = "Impossible dupliquer une table avec des triggers vers une base de données différente.";
 
 /* text shown when query was successfull */
 "There were no errors." = "Il n'y a pas d'erreurs.";
 
 /* delete field and foreign key informative message */
-"This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone." = "Ce champ fait partie d'une relation de clé étrangère avec la table '%@'. Cette relation doit être supprimée avant que le champ ne puisse être supprimé.\n\nÊtes-vous sûr de vouloir supprimer la relation et le champ ? Cette action ne peut pas être annulée.";
+"This field is part of a foreign key relationship with the table '%@'. This relationship must be removed before the field can be deleted.\n\nAre you sure you want to continue to delete the relationship and the field? This action cannot be undone." = "Ce champ fait partie d'une relation de clé étrangère avec la table '%@'. Cette relation doit être supprimée avant que le champ puisse être supprimé.\n\nÊtes-vous sûr de vouloir continuer et supprimer la relation ainsi que le champ ? Cette action ne peut pas être annulée.";
 
 /* table structure : indexes : delete index : error 1553, no FK found : description */
-"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@" = "Cet index ne peut pas être supprimé, car il est utilisé par une relation de clé étrangère existante.\n\nVeuillez supprimer la relation, avant d'essayer de supprimer cet index.\n\nMySQL a dit: %@";
+"This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@" = "Cet index ne peut pas être supprimé, car il est utilisé par une relation de clé étrangère existante.\n\nVeuillez supprimer la relation avant d'essayer de supprimer cet index.\n\nMySQL a répondu : %@";
 
 /* description of serial */
 "This is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE." = "Ceci est un alias pour BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE.";
@@ -2851,7 +2851,7 @@
 "This is an alias for DECIMAL." = "Ceci est un alias pour DECIMAL.";
 
 /* description of double real */
-"This is an alias for DOUBLE, unless REAL_AS_FLOAT is configured." = "C'est un alias pour DOUBLE, sauf si REAL_AS_FLOAT est configuré.";
+"This is an alias for DOUBLE, unless REAL_AS_FLOAT is configured." = "Ceci est un alias pour DOUBLE, sauf si REAL_AS_FLOAT est configuré.";
 
 /* description of double precision */
 "This is an alias for DOUBLE." = "Ceci est un alias pour DOUBLE.";
@@ -2861,28 +2861,28 @@
 "This is an alias for TINYINT(1)." = "Ceci est un alias pour TINYINT(1).";
 
 /* Table Structure : Collation dropdown : database marker tooltip */
-"This is the default collation of database %@." = "C'est le collationnement par défaut de la base de données %@.";
+"This is the default collation of database %@." = "Il s'agit du classement par défaut de la base de données %@.";
 
 /* Table Structure : Collation dropdown : default marker tooltip */
-"This is the default collation of encoding %@." = "C'est le collationnement par défaut de l'encodage %@.";
+"This is the default collation of encoding %@." = "Ceci est la collation par défaut de l'encodage %@.";
 
 /* Table Structure : Collation dropdown : table marker tooltip */
-"This is the default collation of table %@." = "C'est le collationnement par défaut de la table %@.";
+"This is the default collation of table %@." = "Ceci est la collation par défaut de la table %@.";
 
 /* Table Structure : Collation dropdown : server marker tooltip */
 "This is the default collation of this server." = "C'est le collationnement par défaut de ce serveur.";
 
 /* Table Structure : Encoding dropdown : database marker tooltip */
-"This is the default encoding of database %@." = "C'est l'encodage par défaut de la base de données %@.";
+"This is the default encoding of database %@." = "Ceci est l'encodage par défaut de la base de données %@.";
 
 /* Table Structure : Encoding dropdown : table marker tooltip */
-"This is the default encoding of table %@." = "C'est l'encodage par défaut de la table %@.";
+"This is the default encoding of table %@." = "Ceci est l'encodage par défaut de la table %@.";
 
 /* Table Structure : Encoding dropdown : server marker tooltip */
 "This is the default encoding of this server." = "C'est l'encodage par défaut de ce serveur.";
 
 /* This table currently does not support relations. Only tables that use the InnoDB storage engine support them. */
-"This table currently does not support relations. Only tables that use the InnoDB storage engine support them." = "Cette table ne supporte pas actuellement les relations. Seules les tables qui utilisent le moteur de stockage InnoDB le supportent.";
+"This table currently does not support relations. Only tables that use the InnoDB storage engine support them." = "Cette table ne prend actuellement pas en charge les relations. Seules les tables utilisant le moteur de stockage InnoDB les prennent en charge.";
 
 /* user has no hosts informative message */
 "This user doesn't have any hosts associated with it. It will be deleted unless one is added" = "Cet utilisateur n'a aucun hôte associé. Il sera supprimé à moins qu'il ne soit ajouté";
@@ -2891,7 +2891,7 @@
 "This user doesn't seem to have any associated hosts and will be removed unless a host is added." = "Cet utilisateur ne semble pas avoir d'hôtes associés et sera supprimé à moins qu'un hôte ne soit ajouté.";
 
 /* shutdown server : confirmation dialog : message */
-"This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!" = "Cela attendra que les transactions ouvertes se terminent, puis quittera le démon mysql. Ensuite, ni vous ni personne d'autre ne pouvez vous connecter à cette base de données !\n\nUn accès complet à la gestion du système d'exploitation du serveur est nécessaire pour redémarrer MySQL!";
+"This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!" = "Cela attendra la fin des transactions ouvertes puis quittera le démon mysql. Ensuite, ni vous ni quiconque ne pourra se connecter à cette base de données !\n\nUn accès complet de gestion au système d'exploitation du serveur est requis pour redémarrer MySQL !";
 
 /* export filename time token */
 "Time" = "Date et heure";
@@ -2915,7 +2915,7 @@
 "Truncate table '%@'?" = "Tronquer la table '%@ ' ?";
 
 /* truncate tables menu item */
-"Truncate Tables" = "Tables tronqués";
+"Truncate Tables" = "Tronquer les tables";
 
 /* type label (Navigator) */
 "Type" = "Type de texte";
@@ -2939,16 +2939,16 @@
 "Unable to check table" = "Impossible de vérifier la table";
 
 /* message of panel when connection to host failed due to access denied error */
-"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "Impossible de se connecter à l'hôte %1$@ car l'accès a été refusé.\n\nVérifiez votre nom d'utilisateur et votre mot de passe et assurez-vous que l'accès à partir de votre emplacement actuel est autorisé.\n\nMySQL a dit: %2$@";
+"Unable to connect to host %@ because access was denied.\n\nDouble-check your username and password and ensure that access from your current location is permitted.\n\nMySQL said: %@" = "Impossible de se connecter à l'hôte %1$@ car l'accès a été refusé.\n\nVérifiez votre nom d'utilisateur et votre mot de passe et assurez-vous que l'accès depuis votre emplacement actuel est autorisé.\n\nMySQL a dit : %2$@";
 
 /* message of panel when SSH port forwarding failed */
-"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@" = "Impossible de se connecter à l'hôte %1$@ car la connexion via SSH a été refusée.\n\nVeuillez vous assurer que votre hôte MySQL est configuré pour autoriser les connexions TCP/IP (sans --skip-networking) et est configuré pour autoriser les connexions depuis l'hôte que vous utilisez via le tunnel.\n\nVous pouvez également vérifier que le port est correct et que vous avez les privilèges nécessaires.\n\nVérifier le détail de l'erreur affichera le journal de débogage SSH qui peut fournir plus de détails.\n\nMySQL a dit: %2$@";
+"Unable to connect to host %@ because the port connection via SSH was refused.\n\nPlease ensure that your MySQL host is set up to allow TCP/IP connections (no --skip-networking) and is configured to allow connections from the host you are tunnelling via.\n\nYou may also want to check the port is correct and that you have the necessary privileges.\n\nChecking the error detail will show the SSH debug log which may provide more details.\n\nMySQL said: %@" = "Impossible de se connecter à l'hôte %1$@ car la connexion via le port SSH a été refusée.\n\nVeuillez vous assurer que votre hôte MySQL est configuré pour accepter les connexions TCP/IP (pas de --skip-networking) et qu'il autorise les connexions depuis l'hôte via lequel vous faites le tunnel.\n\nVérifiez également que le port est correct et que vous disposez des privilèges nécessaires.\n\nConsulter le détail de l'erreur affichera le journal de débogage SSH qui peut fournir plus d'informations.\n\nMySQL a dit : %2$@";
 
 /* message of panel when connection to host failed */
-"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\nMySQL said: %@" = "Impossible de se connecter à l'hôte %1$@, ou la requête a expiré.\n\nAssurez-vous que l'adresse est correcte et que vous avez les privilèges nécessaires, ou essayez d'augmenter le délai de connexion (actuellement %2$ld secondes).\n\nMySQL a dit: %3$@";
+"Unable to connect to host %@, or the request timed out.\n\nBe sure that the address is correct and that you have the necessary privileges, or try increasing the connection timeout (currently %ld seconds).\n\nMySQL said: %@" = "Impossible de se connecter à l'hôte %1$@, ou la requête a expiré.\n\nVérifiez que l'adresse est correcte et que vous disposez des privilèges nécessaires, ou essayez d'augmenter le délai de connexion (actuellement %2$ld secondes).\n\nMySQL a dit : %3$@";
 
 /* message of panel when connection to host failed */
-"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@" = "Impossible de se connecter via le socket, ou la requête a expiré.\n\nVérifiez que le chemin du socket est correct et que vous avez les privilèges nécessaires et que le serveur fonctionne.\n\nMySQL a dit: %@";
+"Unable to connect via the socket, or the request timed out.\n\nDouble-check that the socket path is correct and that you have the necessary privileges, and that the server is running.\n\nMySQL said: %@" = "Impossible de se connecter via le socket, ou la requête a expiré.\n\nVérifiez que le chemin du socket est correct, que vous avez les privilèges nécessaires et que le serveur est en cours d'exécution.\n\nMySQL a dit : %@";
 
 /* unable to copy database message */
 "Unable to copy database" = "Impossible de copier la base de données";
@@ -2999,7 +2999,7 @@
 "Unable to repair table" = "Impossible de réparer la table";
 
 /* message of panel when connection to db failed after selecting from popupbutton */
-"Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists." = "Impossible de sélectionner la base de données %@.\nVeuillez vérifier que vous avez les privilèges nécessaires pour afficher la base de données, et que la base de données existe toujours.";
+"Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists." = "Impossible de sélectionner la base de données %@.\nVeuillez vérifier que vous avez les privilèges nécessaires pour afficher la base de données et que celle-ci existe toujours.";
 
 /* Unable to write row error */
 "Unable to write row" = "Impossible d'écrire la ligne";
@@ -3029,10 +3029,10 @@
 "Untitled %ld" = "Sans titre %ld";
 
 /* range for mediumblob type */
-"Up to %@ bytes (16 MiB)" = "Jusqu'à %@ octets (16 MiB)";
+"Up to %@ bytes (16 MiB)" = "Jusqu'à %@ octets (16 Mio)";
 
 /* range for longblob type */
-"Up to %@ bytes (4 GiB)" = "Jusqu'à %@ bytes (4 GiB)";
+"Up to %@ bytes (4 GiB)" = "Jusqu'à %@ octets (4 Gio)";
 
 /* range for mediumtext type */
 "Up to %@ characters (16 MiB)" = "Jusqu\"à %@ caractères (16 Mo)";
@@ -3098,7 +3098,7 @@
 "Version" = "Version";
 
 /* view */
-"view" = "Voir";
+"view" = "vue";
 
 /* Release notes button title */
 "View full release notes" = "Voir toutes les notes de version";
@@ -3113,13 +3113,13 @@
 "View Structure" = "Voir la structure";
 
 /* views */
-"views" = "Vues";
+"views" = "vues";
 
 /* warning */
 "Warning" = "Avertissement";
 
 /* Short important release note for why password prompts may occur */
-"We've changed Sequel Ace's digital signature for GateKeeper compatibility; you'll have to allow access to your passwords again." = "Nous avons changé la signature numérique de Sequel Ace pour la compatibilité GateKeeper; vous devrez autoriser l'accès à vos mots de passe à nouveau.";
+"We've changed Sequel Ace's digital signature for GateKeeper compatibility; you'll have to allow access to your passwords again." = "Nous avons changé la signature numérique de Sequel Ace pour la compatibilité avec GateKeeper ; vous devrez autoriser de nouveau l'accès à vos mots de passe.";
 
 /* Important release notes informational text, single change */
 "We've made a few changes but we thought you should know about one particularly important one:" = "Nous avons fait quelques modifications, mais nous pensions que vous devriez en savoir un particulièrement important :";
@@ -3167,10 +3167,10 @@
 "You cannot delete the last field in a table. Delete the table instead." = "Vous ne pouvez pas supprimer le dernier champ d'une table. Supprimez la table à la place.";
 
 /* SSL connection requested but not established error detail */
-"You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted." = "Vous avez demandé que la connexion soit établie en utilisant SSL, mais MySQL a fait la connexion sans SSL.\n\nCela peut être dû au fait que le serveur ne prend pas en charge les connexions SSL, ou a SSL désactivé ; ou des détails insuffisants ont été fournis pour établir une connexion SSL.\n\nCette connexion n'est pas chiffrée.";
+"You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted." = "Vous avez demandé que la connexion soit établie en SSL, mais MySQL a effectué la connexion sans SSL.\n\nCela peut être dû au fait que le serveur ne prend pas en charge les connexions SSL, que SSL est désactivé, ou que les informations fournies étaient insuffisantes pour établir une connexion SSL.\n\nCette connexion n'est pas chiffrée.";
 
 /* Query Favorites : List : Section Heading : current connection document : tooltip (arg is the name of the spf file) */
-"‘%@’ based favorites" = "Favoris basés sur «%@»";
+"‘%@’ based favorites" = "Favoris basés sur ‘%@’";
 
 /* table column header. Read: 'Showing all content filters for fields of type %@' (ContentFilterManager) */
 "‘%@’ Fields Content Filters" = "Filtres de contenu des champs ‘%@’";
@@ -3182,10 +3182,10 @@
 "%@ Bundle" = "Lot %@";
 
 /* Export file creation error title */
-"%@ could not be created" = "%@ n'a pas pu être créé";
+"%@ could not be created" = "Impossible de créer %@";
 
 /* %@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item. */
-"%@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item." = "%@ n'a pas pu être analysé. Vous pouvez modifier la configuration de la colonne, mais la colonne ne sera pas affichée dans la vue Contenu ; Veuillez signaler ce problème à l'équipe de Sequel Ace à l'aide du menu Aide.";
+"%@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item." = "%@ n'a pas pu être analysé. Vous pouvez modifier la configuration des colonnes mais la colonne ne sera pas affichée dans la vue Contenu ; veuillez signaler ce problème à l'équipe Sequel Ace via le menu Aide.";
 
 /* connection view : ssl : client cert file picker : wrong format error title */
 "%@ is not a valid client certificate file." = "%@ n'est pas un fichier de certificat client valide.";
@@ -3194,28 +3194,28 @@
 "%@ is not a valid private key file." = "%@ n'est pas un fichier de clé privée valide.";
 
 /* text shown when there are App Sandbox Issues */
-"App Sandbox Issue" = "Problème de l'application Sandbox";
+"App Sandbox Issue" = "Problème de bac à sable de l'application";
 
 /* Stale Bookmarks error title */
 "Stale Bookmarks" = "Marque-pages de l'histoire";
 
 /* App Sandbox info link text */
-"App Sandbox Info" = "Infos de l'application Sandbox";
+"App Sandbox Info" = "Infos sur le bac à sable de l'application";
 
 /* error while selecting file title */
 "File Selection Error" = "Erreur de sélection de fichier";
 
 /* error while selecting file message */
-"The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "Le fichier sélectionné n'est pas un fichier valide.\n\nVeuillez réessayer.\n\nClasse : %@";
+"The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "Le fichier sélectionné n'est pas un fichier valide.\n\nVeuillez réessayer.\n\nClasse : %@";
 
 /* known hosts not writable error message */
-"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "Le fichier hosts sélectionné n'est pas accessible en écriture.\n\n%@\n\nVeuillez re-sélectionner le fichier dans les préférences de Sequel Ace et réessayer.";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "Le fichier known_hosts sélectionné n'est pas inscriptible.\n\n%@\n\nVeuillez re-sélectionner le fichier dans les Préférences de Sequel Ace et réessayer.";
 
 /* known hosts is invalid message */
-"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "Le fichier hôte sélectionné est invalide.\n\nVeuillez re-sélectionner le fichier dans les préférences de Sequel Ace et réessayer.";
+"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "Le fichier known_hosts sélectionné est invalide.\n\nVeuillez re-sélectionner le fichier dans les Préférences de Sequel Ace et réessayer.";
 
 /* known hosts contains quote message */
-"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "Le fichier hôte connu sélectionné contient un guillemet (\") dans son chemin de fichier qui n'est pas pris en charge.\n\n%@\n\nVeuillez sélectionner un fichier différent dans les Préférences de Sequel Ace ou renommez le fichier/chemin pour supprimer le guillemet.";
+"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "Le fichier known_hosts sélectionné contient un guillemet (\") dans son chemin, ce qui n'est pas pris en charge.\n\n%@\n\nVeuillez sélectionner un autre fichier dans les Préférences de Sequel Ace ou renommer le fichier/le chemin pour supprimer le guillemet.";
 
 /* SSH Tunnel Debugging menu and window title */
 "SSH Tunnel Debugging Info" = "Infos de débogage du tunnel SSH";
@@ -3227,7 +3227,7 @@
 "You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?" = "Il vous manque des signets sécurisés :\n\n%@\n\nVoulez-vous demander l'accès maintenant ?";
 
 /* known hosts advance menu item title */
-"Use known hosts from ssh config (ADVANCED)" = "Utiliser les hôtes connus de la configuration ssh (AVANCED)";
+"Use known hosts from ssh config (ADVANCED)" = "Utiliser les known_hosts depuis la configuration ssh (AVANCÉ)";
 
 /* The answer, yes */
 "Yes" = "Oui";
@@ -3236,7 +3236,7 @@
 "A reminder of your stale secure bookmarks:<br /><br />%@<br />" = "Un rappel de vos favoris sécurisés obsolètes :<br /><br />%@<br />";
 
 /* Title for Stale Secure Bookmarks help window */
-"Stale Secure Bookmarks" = "Signets Stale Secure";
+"Stale Secure Bookmarks" = "Favoris sécurisés obsolètes";
 
 /* Title for Export Error alert */
 "Export Error" = "Erreur d'exportation";
@@ -3245,22 +3245,22 @@
 "Error while writing to the export file. Could not open file: %@" = "Erreur lors de l'écriture dans le fichier d'exportation. Impossible d'ouvrir le fichier : %@";
 
 /* Message for User window error */
-"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column." = "Resultset de mysql.user ne contient ni la colonne 'Mot de passe' ni 'authentication_string'.";
+"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column." = "L'ensemble de résultats de mysql.user ne contient ni la colonne 'Password' ni la colonne 'authentication_string'.";
 
 /* Title for User window error */
 "User Data Error" = "Erreur de données utilisateur";
 
 /* Title for Stale Bookmark file selection dialog */
-"Please re-select the file '%@' in order to restore Sequel Ace's access." = "Veuillez sélectionner à nouveau le fichier '%@' afin de restaurer l'accès à Sequel Ace.";
+"Please re-select the file '%@' in order to restore Sequel Ace's access." = "Veuillez re-sélectionner le fichier '%@' afin de restaurer l'accès de Sequel Ace.";
 
 /* Title for File Preference file selection dialog */
 "Please choose a file or folder to grant Sequel Ace access to." = "Veuillez choisir un fichier ou un dossier pour accorder l'accès à Sequel Ace.";
 
 /* Title for Network Preference ssh config file selection dialog */
-"Please choose your ssh config files(s)" = "Veuillez choisir le(s) fichier(s) de configuration ssh";
+"Please choose your ssh config files(s)" = "Veuillez choisir vos fichier(s) de configuration ssh";
 
 /* Title for Network Preference ssh known hosts file selection dialog */
-"Please choose your known hosts file" = "Veuillez choisir votre fichier hosts connu";
+"Please choose your known hosts file" = "Veuillez choisir votre fichier known_hosts";
 
 /* Message for field editor JSON segment when JSON is invalid */
 "Invalid JSON" = "JSON invalide";
@@ -3269,7 +3269,7 @@
 "Applying syntax highlighting..." = "Application de la coloration syntaxique...";
 
 /* Error message when a bash task fails to start */
-"Couldn't launch task.\nException reason: %@\n ENV length: %lu" = "Impossible de démarrer la tâche.\nRaison d'exception : %@\n Longueur ENV : %lu";
+"Couldn't launch task.\nException reason: %@\n ENV length: %lu" = "Impossible de lancer la tâche.\nRaison de l'exception : %@\nLongueur de l'ENV : %lu";
 
 /* Error message title when we failed to create new connection view */
 "New Connection Error" = "Nouvelle erreur de connexion";
@@ -3296,7 +3296,7 @@
 "Downloading Sequel Ace - %@" = "Téléchargement de Sequel Ace - %@";
 
 /* downloading new version time remaining estimate text */
-"About %.1f seconds left" = "Il reste environ %.1f secondes";
+"About %.1f seconds left" = "Environ %.1f secondes restantes";
 
 /* downloading new version failure alert title */
 "Download Failed" = "Échec du téléchargement";
@@ -3311,13 +3311,13 @@
 "%@ of %@" = "%@ de %@";
 
 /* Time zone set failed informative message */
-"\n\ntime_zone will be set to SYSTEM." = "\n\ntime_zone sera défini sur SYSTEM.";
+"\n\ntime_zone will be set to SYSTEM." = "\n\nLa variable time_zone sera définie sur SYSTEM.";
 
 /* Menu item title for checking for updates */
 "Check for Updates..." = "Vérifier les mises à jour...";
 
 /* Warning message during connection in case the variable skip-show-database is set to ON */
-"The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "La variable skip-show-database du serveur de base de données est définie à ON. Ainsi, vous ne pourrez pas lister les bases de données si vous n'avez pas le privilège SHOW DATABASES.\n\nCependant, les bases de données sont toujours accessibles directement par les requêtes SQL en fonction de vos privilèges.";
+"The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "La variable skip-show-database du serveur de base de données est définie sur ON. Ainsi, vous ne pourrez pas lister les bases de données à moins de disposer du privilège SHOW DATABASES.\n\nCependant, les bases de données restent accessibles directement via des requêtes SQL selon vos privilèges.";
 
 /* Error alert title when the request to GitHub fails */
 "GitHub Request Failed" = "La requête GitHub a échoué";
@@ -3335,7 +3335,7 @@
 "The current field \"%@\" is a generated column and therefore cannot be edited." = "Le champ actuel \"%@\" est une colonne générée et ne peut donc pas être modifié.";
 
 /* Release note / info modal about change in latest release about column behavior */
-"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "L'utilisation de la colonne \"par défaut\" a changé depuis la dernière version de l'ACE de Sequel :\n\n- Aucune valeur par défaut : Laisser vide.\n- Valeur de chaîne : Utiliser des guillemets simples '' ou doubles \"\" si vous voulez une chaîne vide ou pour envelopper une chaîne\n- Expression : Utiliser des parenthèses (). Sauf pour les colonnes TIMESTAMP et DATETIME où vous pouvez spécifier la fonction CURRENT_TIMESTAMP sans enfermer les parenthèses.";
+"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "L'utilisation de la colonne « default » a changé depuis la dernière version de Sequel ACE :\n\n- Pas de valeur par défaut : laissez vide.\n- Valeur chaîne : utilisez des guillemets simples '' ou doubles \"\" si vous voulez une chaîne vide ou entourer une chaîne.\n- Expression : utilisez des parenthèses (). Sauf pour les colonnes TIMESTAMP et DATETIME où vous pouvez spécifier la fonction CURRENT_TIMESTAMP sans parenthèses.";
 
 /* Menu option to pin a view to the top of the list of tables */
 "Pin View" = "Épingler l'affichage";
@@ -3368,7 +3368,7 @@
 "Copy Table Name" = "Copier le nom du tableau";
 
 /* sequelace URL scheme error: LaunchFavorite alert title (favorite name not found) */
-"LaunchFavorite URL Scheme Error" = "Erreur de schéma d'URL de LaunchFavorite";
+"LaunchFavorite URL Scheme Error" = "Erreur du schéma d’URL LaunchFavorite";
 
 /* sequelace URL scheme error: LaunchFavorite alert description (favorite name not found) */
-"The variable in the ?name= query parameter could not be matched with any of your favorites." = "La variable dans le paramètre de requête ?name= n'a pas pu être associée à aucun de vos favoris.";
+"The variable in the ?name= query parameter could not be matched with any of your favorites." = "La variable du paramètre de requête ?name= n’a pas pu être associée à l’un de vos favoris.";
