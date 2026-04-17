@@ -38,7 +38,7 @@ import AppKit
 
     /// Enables the cancel button with a title and optional callback.
     @objc(enableTaskCancellationWithTitle:callbackObject:callbackFunction:)
-    func enableTaskCancellation(withTitle title: String, callbackObject: AnyObject?, callbackFunction: Selector?)
+    func enableTaskCancellation(withTitle title: String, callbackObject: NSObject?, callbackFunction: Selector?)
 
     /// Disables task cancellation (called automatically on endTask).
     @objc func disableTaskCancellation()

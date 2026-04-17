@@ -30,24 +30,16 @@ extension SPDatabaseDocument: SADatabaseDocumentProviding {}
 //   isWorking -> isWorking
 //   setDatabaseListIsSelectable(_:) -> setDatabaseListIsSelectable:
 //   setTaskDescription(_:) -> setTaskDescription:
-extension SPDatabaseDocument: SATaskManaging {
-    // Explicit forwarding stubs to bridge ObjC method signatures to Swift protocol.
-    // These call through to the ObjC implementations using the exact ObjC selectors.
-
-    public func setTaskProgressToIndeterminate(afterDelay: Bool) {
-        setTaskProgressToIndeterminateAfterDelay(afterDelay)
-    }
-
-    public func enableTaskCancellation(withTitle title: String, callbackObject: AnyObject?, callbackFunction: Selector?) {
-        // Use perform() to dispatch to the ObjC implementation directly,
-        // avoiding infinite recursion with this Swift stub (same selector name).
-        let sel = NSSelectorFromString("enableTaskCancellationWithTitle:callbackObject:callbackFunction:")
-        let impl = method(for: sel)
-        typealias ObjCMethod = @convention(c) (AnyObject, Selector, NSString, AnyObject?, Selector?) -> Void
-        let call = unsafeBitCast(impl, to: ObjCMethod.self)
-        call(self, sel, title as NSString, callbackObject, callbackFunction)
-    }
-}
+// The protocol requirements use @objc(...) to bind each Swift method to the
+// exact existing ObjC selector on SPDatabaseDocument (declared in
+// SPDatabaseDocument.h / implemented in SPDatabaseDocument.m), so conformance
+// is satisfied directly by those ObjC methods — no forwarding stub needed.
+//
+// The previous stubs recursed: a Swift method marked @objc with the same
+// selector as the ObjC method it tried to call ends up pointing at itself
+// in the class method table, so `method(for:)` (or a regular Swift call)
+// dispatches straight back into the stub until the stack overflows.
+extension SPDatabaseDocument: SATaskManaging {}
 
 // MARK: - Save Accessory
 
