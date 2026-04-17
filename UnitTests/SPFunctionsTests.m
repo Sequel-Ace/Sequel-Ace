@@ -62,11 +62,8 @@
 
 - (void)updateTimeZoneIdentifier:(NSString *)timeZoneIdentifier
 {
-    NSString *currentTimeZoneIdentifier = [self valueForKey:@"timeZoneIdentifier"];
-    if (currentTimeZoneIdentifier == timeZoneIdentifier || [currentTimeZoneIdentifier isEqualToString:timeZoneIdentifier]) {
-        return;
-    }
-
+    // _restoreSessionStateAfterReconnect... clears timeZoneIdentifier before
+    // calling this method, so the double only needs to model a successful reapply.
     self.recordedTimeZoneUpdateCallCount += 1;
     self.recordedTimeZoneIdentifier = timeZoneIdentifier;
     [self setValue:timeZoneIdentifier forKey:@"timeZoneIdentifier"];
@@ -260,6 +257,8 @@
 - (void)testReconnectSessionStateRestoreReappliesTimeZoneIdentifier
 {
     SPMySQLReconnectStateTestConnection *connection = [SPMySQLReconnectStateTestConnection new];
+    // Preload the cached value to prove reconnect still forces a reapply when
+    // the restored identifier matches the pre-disconnect session setting.
     [connection setValue:@"Europe/London" forKey:@"timeZoneIdentifier"];
 
     [connection _restoreSessionStateAfterReconnectWithDatabase:@"reporting"

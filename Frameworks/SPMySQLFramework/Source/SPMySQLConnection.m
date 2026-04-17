@@ -1082,7 +1082,8 @@ asm(".desc ___crashreporter_info__, 0x10");
 			databaseToRestore = [database copy];
 		}
         // Keep this per-attempt capture aligned with self.timeZoneIdentifier:
-        // reconnect retries rely on that property surviving the disconnect cycle.
+        // reconnect retries re-capture it from the surviving property value, so
+        // revisit this if disconnect teardown ever clears timeZoneIdentifier.
         if (!timeZoneIdentifierToRestore && [self.timeZoneIdentifier length]) {
             timeZoneIdentifierToRestore = [self.timeZoneIdentifier copy];
         }
@@ -1467,7 +1468,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
     if ([timeZoneIdentifier length]) {
         // Clear the cached timeZoneIdentifier so updateTimeZoneIdentifier:
-        // reapplies the session time zone after reconnect instead of exiting early.
+        // bypasses its equality guard and re-runs SET time_zone after reconnect.
         self.timeZoneIdentifier = nil;
         [self updateTimeZoneIdentifier:timeZoneIdentifier];
     }
