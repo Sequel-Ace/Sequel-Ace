@@ -613,10 +613,10 @@
 "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "該視窗中的修改將會在視窗關閉後遺失，您確定要繼續嗎";
 
 /* quitting app informal alert title */
-"Close the app?" = "Close the app?";
+"Close the app?" = "要關閉應用程式嗎？";
 
 /* quitting app informal alert body */
-"Are you sure you want to quit the app?" = "Are you sure you want to quit the app?";
+"Are you sure you want to quit the app?" = "確定要關閉應用程式嗎？";
 
 /* character set client: %@ */
 "character set client: %@" = "用戶端字元集：%@";
@@ -1123,7 +1123,7 @@
 "Duplicate View..." = "複製檢視表…";
 
 /* partial copy database support informative message */
-"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "只支援複製資料庫「%@」的一部分，因為其中包含了資料表以外的其他內容（例如檢視表、預存程式、函數等），這些內容將不會被複製。\n\n 確定要繼續嗎？";
+"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "複製資料庫 '%@' 只提供部分支援，因為它包含表格以外的物件（例如檢視、程序、函式等），這些物件不會被複製。\n\n是否要繼續？";
 
 /* edit filter */
 "Edit Filters…" = "編輯篩選…";
@@ -1402,7 +1402,7 @@
 "Filter" = "篩選";
 
 /* apply filter label */
-"Apply Filter(s)" = "套用篩選";
+"Apply Filter(s)" = "套用篩選(們)";
 
 /* filter tables menu item */
 "Filter Tables" = "篩選資料表";
