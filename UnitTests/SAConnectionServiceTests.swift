@@ -155,6 +155,15 @@ final class SAConnectionInfoMappingTests: XCTestCase {
         XCTAssertEqual(SAConnectionInfoObjC.resolvedMySQLConnectHost(for: info), "localhost")
     }
 
+    /// Normalizes localhost spellings while still preserving loopback semantics.
+    func testResolvedMySQLConnectHostCanonicalizesLocalhostCasingForSSHTunnelConnections() {
+        let info = SAConnectionInfoObjC()
+        info.type = .sshTunnel
+        info.host = " LocalHost "
+
+        XCTAssertEqual(SAConnectionInfoObjC.resolvedMySQLConnectHost(for: info), "localhost")
+    }
+
     /// Ensures remote SSH target hosts do not leak into the local MySQL connect host.
     func testResolvedMySQLConnectHostUsesLoopbackForCustomHostForSSHTunnelConnections() {
         let info = SAConnectionInfoObjC()
@@ -171,6 +180,24 @@ final class SAConnectionInfoMappingTests: XCTestCase {
         info.host = ""
 
         XCTAssertEqual(SAConnectionInfoObjC.resolvedMySQLConnectHost(for: info), "127.0.0.1")
+    }
+
+    /// Falls back to loopback for blank TCP favorites after trimming user input.
+    func testResolvedMySQLConnectHostDefaultsToLoopbackForTCPIPConnections() {
+        let info = SAConnectionInfoObjC()
+        info.type = .tcpIP
+        info.host = "   "
+
+        XCTAssertEqual(SAConnectionInfoObjC.resolvedMySQLConnectHost(for: info), "127.0.0.1")
+    }
+
+    /// Preserves explicit TCP hosts for non-SSH connections.
+    func testResolvedMySQLConnectHostPreservesCustomHostForTCPIPConnections() {
+        let info = SAConnectionInfoObjC()
+        info.type = .tcpIP
+        info.host = "db.internal"
+
+        XCTAssertEqual(SAConnectionInfoObjC.resolvedMySQLConnectHost(for: info), "db.internal")
     }
 
     /// Leaves socket connections without a TCP host override.
