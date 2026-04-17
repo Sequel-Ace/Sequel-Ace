@@ -4409,20 +4409,17 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			// Also offer a single-cell pasteboard type so a drop onto the
 			// rule-filter input populates that one field with just the
 			// clicked cell's value, rather than the whole row's tab string.
-			// NOTE: -clickedRow / -clickedColumn are only valid during
-			// NSControl action dispatch, not during drag-source callbacks.
-			// During this callback NSApp.currentEvent is the mouseDown that
-			// started the drag, so we resolve the clicked cell via its
-			// location in the table's coordinate space.
+			// The clicked cell is the one captured by -[SPCopyTable mouseDown:]
+			// – -clickedRow / -clickedColumn are only valid during NSControl
+			// action dispatch, and NSApp.currentEvent here is the mouseDragged
+			// event that crossed the drag threshold rather than the original
+			// mouseDown, so it can resolve to a different cell if the pointer
+			// moved before the drag started.
 			NSString *cellValue = nil;
-			NSEvent *currentEvent = [NSApp currentEvent];
-			if (currentEvent) {
-				NSPoint locationInTable = [tableContentView convertPoint:[currentEvent locationInWindow] fromView:nil];
-				NSInteger hitRow = [tableContentView rowAtPoint:locationInTable];
-				NSInteger hitColumn = [tableContentView columnAtPoint:locationInTable];
-				if (hitColumn >= 0 && hitRow >= 0) {
-					cellValue = [tableContentView displayStringForRow:hitRow column:hitColumn];
-				}
+			NSInteger clickedRow = [tableContentView mouseDownRow];
+			NSInteger clickedCol = [tableContentView mouseDownColumn];
+			if (clickedRow >= 0 && clickedCol >= 0) {
+				cellValue = [tableContentView displayStringForRow:clickedRow column:clickedCol];
 			}
 
 			NSString *cellValueType = [SPCellValuePasteboard pasteboardTypeRaw];

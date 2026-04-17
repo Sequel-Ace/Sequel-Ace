@@ -63,7 +63,17 @@ extern NSInteger SPEditMenuCopyAsSQLNoAutoInc;
 
 	NSRange fieldEditorSelectedRange;
 	NSString *tmpBlobFileDirectory;
+
+	// The row/column under the pointer on the most recent mouseDown. Kept so
+	// the drag-source callback can publish a single-cell payload derived from
+	// the exact cell the user pressed on, rather than re-hit-testing the
+	// drag's current event (which may have moved past the drag threshold).
+	NSInteger mouseDownRow;
+	NSInteger mouseDownColumn;
 }
+
+@property (readonly) NSInteger mouseDownRow;
+@property (readonly) NSInteger mouseDownColumn;
 
 @property (readwrite, copy) NSString *tmpBlobFileDirectory;
 

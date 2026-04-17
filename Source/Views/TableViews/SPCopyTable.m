@@ -783,9 +783,20 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 		return nil;
 	}
 
-	// Resolve the on-screen column position to the underlying storage index,
-	// same mapping used by -draggedRowsAsTabString.
+	// Row / column indices get passed in from hit-tests and cached
+	// mouseDown positions, either of which can outlive a reload. Guard
+	// against both a stale row and a reordered column identifier that
+	// resolves outside the storage's column range before calling into
+	// SPDataStorageObjectAtRowAndColumn (which does not bounds-check).
+	if (!tableStorage || (NSUInteger)row >= [tableStorage count]) {
+		return nil;
+	}
+
 	NSUInteger storageIndex = (NSUInteger)[[[columns safeObjectAtIndex:(NSUInteger)visibleColumn] identifier] integerValue];
+	if (storageIndex >= [tableStorage columnCount]) {
+		return nil;
+	}
+
 	id cellData = SPDataStorageObjectAtRowAndColumn(tableStorage, (NSUInteger)row, storageIndex);
 
 	if (!cellData) {
@@ -1650,8 +1661,30 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 {
 	columnDefinitions = nil;
 	prefs = [NSUserDefaults standardUserDefaults];
+	mouseDownRow = -1;
+	mouseDownColumn = -1;
 
     [super awakeFromNib];
+}
+
+@synthesize mouseDownRow;
+@synthesize mouseDownColumn;
+
+/**
+ * Cache the row/column under the pointer at the moment the mouse goes
+ * down. -clickedRow / -clickedColumn are only valid during NSControl
+ * action dispatch and NSApp.currentEvent during a drag-source callback
+ * is the mouseDragged event that crossed the drag threshold (not the
+ * original mouseDown), so we record the click location here and read it
+ * back in -[SPTableContent tableView:writeRowsWithIndexes:toPasteboard:]
+ * when publishing the single-cell pasteboard payload.
+ */
+- (void)mouseDown:(NSEvent *)event
+{
+	NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
+	mouseDownRow = [self rowAtPoint:point];
+	mouseDownColumn = [self columnAtPoint:point];
+	[super mouseDown:event];
 }
 
 @end
