@@ -4406,10 +4406,37 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 		if (tmp && [tmp length])
 		{
-			[pboard declareTypes:@[NSPasteboardTypeTabularText, NSPasteboardTypeString] owner:nil];
+			// Also offer a single-cell pasteboard type so a drop onto the
+			// rule-filter input populates that one field with just the
+			// clicked cell's value, rather than the whole row's tab string.
+			// NOTE: -clickedRow / -clickedColumn are only valid during
+			// NSControl action dispatch, not during drag-source callbacks.
+			// During this callback NSApp.currentEvent is the mouseDown that
+			// started the drag, so we resolve the clicked cell via its
+			// location in the table's coordinate space.
+			NSString *cellValue = nil;
+			NSEvent *currentEvent = [NSApp currentEvent];
+			if (currentEvent) {
+				NSPoint locationInTable = [tableContentView convertPoint:[currentEvent locationInWindow] fromView:nil];
+				NSInteger hitRow = [tableContentView rowAtPoint:locationInTable];
+				NSInteger hitColumn = [tableContentView columnAtPoint:locationInTable];
+				if (hitColumn >= 0 && hitRow >= 0) {
+					cellValue = [tableContentView displayStringForRow:hitRow column:hitColumn];
+				}
+			}
+
+			NSString *cellValueType = [SPCellValuePasteboard pasteboardTypeRaw];
+			NSMutableArray<NSPasteboardType> *types = [NSMutableArray arrayWithObjects:NSPasteboardTypeTabularText, NSPasteboardTypeString, nil];
+			if (cellValue) {
+				[types addObject:cellValueType];
+			}
+			[pboard declareTypes:types owner:nil];
 
 			[pboard setString:tmp forType:NSPasteboardTypeString];
 			[pboard setString:tmp forType:NSPasteboardTypeTabularText];
+			if (cellValue) {
+				[pboard setString:cellValue forType:cellValueType];
+			}
 
 			return YES;
 		}

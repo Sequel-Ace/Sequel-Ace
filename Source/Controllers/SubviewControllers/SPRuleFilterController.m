@@ -584,7 +584,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		case RuleNodeTypeArgument: {
 			//an argument is a textfield
 			ArgNode *node = (ArgNode *)criterion;
-			NSTextField *textField = [[NSTextField alloc] init];
+			// Subclass accepts a cell-value drop from the result grid so a
+			// dragged cell populates this rule's argument with its value.
+			NSTextField *textField = [[SPFilterRuleTextField alloc] init];
 			[[textField cell] setSendsActionOnEndEditing:YES];
 			[[textField cell] setUsesSingleLineMode:YES];
 			[textField setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];

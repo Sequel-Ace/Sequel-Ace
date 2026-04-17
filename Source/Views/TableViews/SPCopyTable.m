@@ -769,6 +769,55 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 	return result;
 }
 
+/**
+ * Return the display string for a single cell, matching the NULL / blob /
+ * geometry formatting used by -draggedRowsAsTabString. Used to write the
+ * clicked cell's value onto the pasteboard during a drag, so drops onto
+ * the rule-filter input populate only that cell's value.
+ */
+- (NSString *)displayStringForRow:(NSInteger)row column:(NSInteger)visibleColumn
+{
+	NSArray *columns = [self tableColumns];
+	NSInteger numColumns = (NSInteger)[columns count];
+	if (row < 0 || visibleColumn < 0 || visibleColumn >= numColumns) {
+		return nil;
+	}
+
+	// Resolve the on-screen column position to the underlying storage index,
+	// same mapping used by -draggedRowsAsTabString.
+	NSUInteger storageIndex = (NSUInteger)[[[columns safeObjectAtIndex:(NSUInteger)visibleColumn] identifier] integerValue];
+	id cellData = SPDataStorageObjectAtRowAndColumn(tableStorage, (NSUInteger)row, storageIndex);
+
+	if (!cellData) {
+		return nil;
+	}
+
+	NSString *nullString = [prefs objectForKey:SPNullValue];
+	BOOL hexBlobs = [prefs boolForKey:SPDisplayBinaryDataAsHex];
+
+	if ([cellData isNSNull]) {
+		return nullString;
+	}
+	if ([cellData isSPNotLoaded]) {
+		return NSLocalizedString(@"(not loaded)", @"value shown for hidden blob and text fields");
+	}
+	if ([cellData isKindOfClass:[NSData class]]) {
+		if (hexBlobs) {
+			return [NSString stringWithFormat:@"0x%@", [cellData dataToHexString]];
+		}
+		NSStringEncoding connectionEncoding = [mySQLConnection stringEncoding];
+		NSString *displayString = [[NSString alloc] initWithData:cellData encoding:connectionEncoding];
+		if (!displayString) {
+			displayString = [[NSString alloc] initWithData:cellData encoding:NSISOLatin1StringEncoding];
+		}
+		return displayString;
+	}
+	if ([cellData isKindOfClass:[SPMySQLGeometryData class]]) {
+		return [cellData wktString];
+	}
+	return [cellData description];
+}
+
 #pragma mark -
 
 /**

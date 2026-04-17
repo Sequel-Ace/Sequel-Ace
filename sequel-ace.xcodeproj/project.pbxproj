@@ -86,6 +86,7 @@
 		17F5B39C1049B96A00FC794F /* SPSQLExporter.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F5B39B1049B96A00FC794F /* SPSQLExporter.m */; };
 		17F90E481210B42700274C98 /* SPExportFile.m in Sources */ = {isa = PBXBuildFile; fileRef = 17F90E471210B42700274C98 /* SPExportFile.m */; };
 		17FDB04C1280778B00DBBBC2 /* SPFontPreviewTextField.m in Sources */ = {isa = PBXBuildFile; fileRef = 17FDB04B1280778B00DBBBC2 /* SPFontPreviewTextField.m */; };
+		DD00DD00DD00DD00DD000001 /* SPFilterRuleTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00DD00DD00DD00DD000002 /* SPFilterRuleTextField.swift */; };
 		1A071B8D254D983700246912 /* SPNSMutableDictionaryAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A071B8C254D983700246912 /* SPNSMutableDictionaryAdditions.m */; };
 		1A0FA3EE258B758B00486D52 /* SPArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = B52460D40F8EF92300171639 /* SPArrayAdditions.m */; };
 		1A11E50425A327F1001CB721 /* SPPanelOptions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A11E50325A327F1001CB721 /* SPPanelOptions.m */; };
@@ -770,6 +771,7 @@
 		17F90E471210B42700274C98 /* SPExportFile.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPExportFile.m; sourceTree = "<group>"; };
 		17FDB04A1280778B00DBBBC2 /* SPFontPreviewTextField.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPFontPreviewTextField.h; sourceTree = "<group>"; };
 		17FDB04B1280778B00DBBBC2 /* SPFontPreviewTextField.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPFontPreviewTextField.m; sourceTree = "<group>"; };
+		DD00DD00DD00DD00DD000002 /* SPFilterRuleTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPFilterRuleTextField.swift; sourceTree = "<group>"; };
 		1A071B8B254D983700246912 /* SPNSMutableDictionaryAdditions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPNSMutableDictionaryAdditions.h; sourceTree = "<group>"; };
 		1A071B8C254D983700246912 /* SPNSMutableDictionaryAdditions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPNSMutableDictionaryAdditions.m; sourceTree = "<group>"; };
 		1A0751DF25EAF37700FFDF6B /* ReportExceptionApplication.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ReportExceptionApplication.m; sourceTree = "<group>"; };
@@ -2194,6 +2196,7 @@
 			children = (
 				50E217B118174246009D3580 /* SPColorSelectorView.h */,
 				50E217B218174246009D3580 /* SPColorSelectorView.m */,
+				DD00DD00DD00DD00DD000002 /* SPFilterRuleTextField.swift */,
 				17FDB04A1280778B00DBBBC2 /* SPFontPreviewTextField.h */,
 				17FDB04B1280778B00DBBBC2 /* SPFontPreviewTextField.m */,
 				58D2A6A516FBDEFF002EB401 /* SPComboPopupButton.h */,
@@ -3082,6 +3085,7 @@
 				172A65110F7BED7A001E861A /* SPConsoleMessage.m in Sources */,
 				6F0EA8ED272F33B700514FF1 /* SPBundleManagerAdditions.swift in Sources */,
 				FD0E72EA2C38DEA1007EF348 /* SATableHeaderView.swift in Sources */,
+				DD00DD00DD00DD00DD000001 /* SPFilterRuleTextField.swift in Sources */,
 				1A24B627258A2E9A00541E88 /* SecureBookmarkData.swift in Sources */,
 				179F15060F7C433C00579954 /* SPEditorTokens.l in Sources */,
 				B5E92F1C0F75B2E800012500 /* SPExportController.m in Sources */,
