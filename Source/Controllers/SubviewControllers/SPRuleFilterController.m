@@ -654,7 +654,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	// to have -setState: accept mixed state we have to -setAllowsMixedState:YES in which case the user, too, can cycle all three states m(
 	if(newState == NSMixedState) {
 		[sender setNextState];
-		newState = [sender state];
+		newState = [(NSButton *)sender state];
 	}
 
 	if(row >= 0 && (newState == NSControlStateValueOn || newState == NSControlStateValueOff)) {

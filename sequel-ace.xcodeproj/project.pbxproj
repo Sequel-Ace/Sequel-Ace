@@ -216,12 +216,19 @@
 		513515D2259354BB001E4533 /* NSImageExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 513515D1259354BB001E4533 /* NSImageExtensions.swift */; };
 		51384AC22903461000FEC501 /* NSDictionaryExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51384AC12903461000FEC501 /* NSDictionaryExtension.swift */; };
 		513C8CE12BBC4132001CCE3A /* OCMock in Frameworks */ = {isa = PBXBuildFile; productRef = 513C8CE02BBC4132001CCE3A /* OCMock */; };
+		5146ADF02F79B16900C4C14A /* SAFavoritesListDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADEF2F79B16900C4C14A /* SAFavoritesListDelegate.swift */; };
+		5146ADF52F79B1A200C4C14A /* SAFavoritesListDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADF42F79B1A200C4C14A /* SAFavoritesListDataSource.swift */; };
+		5146ADF92F79B9EF00C4C14A /* SAConnectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADF82F79B9EF00C4C14A /* SAConnectionService.swift */; };
+		5146ADFC2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADFB2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift */; };
+		5146C7202F7A539E00C4C14A /* SATaskManaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146C71F2F7A539E00C4C14A /* SATaskManaging.swift */; };
+		5146E0482F7A640C00C4C14A /* SAConnectionInfoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146E0472F7A640C00C4C14A /* SAConnectionInfoTests.swift */; };
 		514B40A02F683E3700369718 /* SAAboutWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000001C /* SAAboutWindowController.swift */; };
 		514B40A72F68412000369718 /* License.md in Resources */ = {isa = PBXBuildFile; fileRef = 514B40A62F68412000369718 /* License.md */; };
 		514B40A82F68412000369718 /* Credits.md in Resources */ = {isa = PBXBuildFile; fileRef = 514B40A52F68412000369718 /* Credits.md */; };
 		514DD98925FACF1500EA3B3B /* SPDatabaseDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 514DD98825FACF1500EA3B3B /* SPDatabaseDocument.swift */; };
 		517412302573E10C00EB6935 /* SPPrintUtility.m in Sources */ = {isa = PBXBuildFile; fileRef = 5174122F2573E10C00EB6935 /* SPPrintUtility.m */; };
 		517412382573E8F900EB6935 /* EditorQuickLookTypes.plist in Resources */ = {isa = PBXBuildFile; fileRef = 517412372573E8F900EB6935 /* EditorQuickLookTypes.plist */; };
+		517BFF442F7DA38F00F6D812 /* SAConnectionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 517BFF432F7DA38F00F6D812 /* SAConnectionServiceTests.swift */; };
 		517E4512257A954000ED333B /* ContentFilters.plist in Resources */ = {isa = PBXBuildFile; fileRef = 517E4511257A954000ED333B /* ContentFilters.plist */; };
 		5193502F2567D2FB001272B5 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193502E2567D2FB001272B5 /* CollectionExtension.swift */; };
 		519350302567D2FB001272B5 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193502E2567D2FB001272B5 /* CollectionExtension.swift */; };
@@ -230,6 +237,13 @@
 		51B09FCF2F7677EB003BAFFF /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 51B09FCE2F7677EB003BAFFF /* FirebaseAnalytics */; };
 		51B09FD12F7677EB003BAFFF /* FirebaseAnalyticsCore in Frameworks */ = {isa = PBXBuildFile; productRef = 51B09FD02F7677EB003BAFFF /* FirebaseAnalyticsCore */; };
 		51B09FD32F7677EB003BAFFF /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 51B09FD22F7677EB003BAFFF /* FirebaseCrashlytics */; };
+		51B09FD72F767A3E003BAFFF /* SAConnectionInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B09FD62F767A3E003BAFFF /* SAConnectionInfo.swift */; };
+		51B09FD82F767A3F003BAFFF /* SAConnectionInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B09FD62F767A3E003BAFFF /* SAConnectionInfo.swift */; };
+		51B09FDD2F767A4C003BAFFF /* SAConnectionDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B09FDC2F767A4C003BAFFF /* SAConnectionDelegate.swift */; };
+		51B09FDF2F767A53003BAFFF /* SADatabaseDocumentProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B09FDE2F767A53003BAFFF /* SADatabaseDocumentProviding.swift */; };
+		51B09FE12F767A5E003BAFFF /* SAFavoritesProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B09FE02F767A5E003BAFFF /* SAFavoritesProviding.swift */; };
+		51B09FE72F768E39003BAFFF /* SAConnectionViewCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B09FE62F768E39003BAFFF /* SAConnectionViewCoordinator.swift */; };
+		51B09FEC2F7696C7003BAFFF /* SAConnectionWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B09FEB2F7696C7003BAFFF /* SAConnectionWindowController.swift */; };
 		51BB391C25F82B060048CA69 /* SPAppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BB391B25F82B060048CA69 /* SPAppController.swift */; };
 		51BC14F825BE135500F1CDC9 /* SPWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC14F725BE135500F1CDC9 /* SPWindowController.swift */; };
 		51BC150125BE138700F1CDC9 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 51BC150025BE138700F1CDC9 /* SnapKit */; };
@@ -908,6 +922,12 @@
 		5132930A25F586A900D803AD /* TabManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabManager.swift; sourceTree = "<group>"; };
 		513515D1259354BB001E4533 /* NSImageExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSImageExtensions.swift; sourceTree = "<group>"; };
 		51384AC12903461000FEC501 /* NSDictionaryExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSDictionaryExtension.swift; sourceTree = "<group>"; };
+		5146ADEF2F79B16900C4C14A /* SAFavoritesListDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoritesListDelegate.swift; sourceTree = "<group>"; };
+		5146ADF42F79B1A200C4C14A /* SAFavoritesListDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoritesListDataSource.swift; sourceTree = "<group>"; };
+		5146ADF82F79B9EF00C4C14A /* SAConnectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionService.swift; sourceTree = "<group>"; };
+		5146ADFB2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SPDatabaseDocument+ViewMode.swift"; sourceTree = "<group>"; };
+		5146C71F2F7A539E00C4C14A /* SATaskManaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SATaskManaging.swift; sourceTree = "<group>"; };
+		5146E0472F7A640C00C4C14A /* SAConnectionInfoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionInfoTests.swift; sourceTree = "<group>"; };
 		514B40A12F683E7900369718 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		514B40A52F68412000369718 /* Credits.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = Credits.md; sourceTree = "<group>"; };
 		514B40A62F68412000369718 /* License.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = License.md; sourceTree = "<group>"; };
@@ -918,6 +938,7 @@
 		5174122E2573E10C00EB6935 /* SPPrintUtility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPPrintUtility.h; sourceTree = "<group>"; };
 		5174122F2573E10C00EB6935 /* SPPrintUtility.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPPrintUtility.m; sourceTree = "<group>"; };
 		517412372573E8F900EB6935 /* EditorQuickLookTypes.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = EditorQuickLookTypes.plist; sourceTree = "<group>"; };
+		517BFF432F7DA38F00F6D812 /* SAConnectionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionServiceTests.swift; sourceTree = "<group>"; };
 		517E44C2257A8F2C00ED333B /* AppleScriptObjC.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppleScriptObjC.framework; path = System/Library/Frameworks/AppleScriptObjC.framework; sourceTree = SDKROOT; };
 		517E4511257A954000ED333B /* ContentFilters.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = ContentFilters.plist; path = Plists/ContentFilters.plist; sourceTree = "<group>"; };
 		51905622267DFF1700212442 /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -926,6 +947,12 @@
 		519F2829261A5A1800370B14 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
 		51A709382565B99F001F1D2F /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		51B09FC82F7677AA003BAFFF /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		51B09FD62F767A3E003BAFFF /* SAConnectionInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionInfo.swift; sourceTree = "<group>"; };
+		51B09FDC2F767A4C003BAFFF /* SAConnectionDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionDelegate.swift; sourceTree = "<group>"; };
+		51B09FDE2F767A53003BAFFF /* SADatabaseDocumentProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SADatabaseDocumentProviding.swift; sourceTree = "<group>"; };
+		51B09FE02F767A5E003BAFFF /* SAFavoritesProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoritesProviding.swift; sourceTree = "<group>"; };
+		51B09FE62F768E39003BAFFF /* SAConnectionViewCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionViewCoordinator.swift; sourceTree = "<group>"; };
+		51B09FEB2F7696C7003BAFFF /* SAConnectionWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionWindowController.swift; sourceTree = "<group>"; };
 		51BB391B25F82B060048CA69 /* SPAppController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPAppController.swift; sourceTree = "<group>"; };
 		51BB3DFC25AEF020005AAE44 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51BB3E0425AEF0D7005AAE44 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
@@ -1483,6 +1510,7 @@
 				171156501E8B0F40002E6363 /* Table Relations */,
 				17D38F691279E17D00672B13 /* Table Structure */,
 				17005CB016D6CEA400AF81F4 /* Table Triggers */,
+				5146ADFB2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift */,
 			);
 			name = "Main View Controllers";
 			path = MainViewControllers;
@@ -1689,6 +1717,10 @@
 				5822C9B41000DB2400DCC3D6 /* SPConnectionController.m */,
 				17D38FC3127B0CFC00672B13 /* SPConnectionControllerDelegateProtocol.h */,
 				1798F1801550172A004B0AB8 /* Import & Export */,
+				51B09FE62F768E39003BAFFF /* SAConnectionViewCoordinator.swift */,
+				51B09FEB2F7696C7003BAFFF /* SAConnectionWindowController.swift */,
+				5146ADEF2F79B16900C4C14A /* SAFavoritesListDelegate.swift */,
+				5146ADF42F79B1A200C4C14A /* SAFavoritesListDataSource.swift */,
 			);
 			name = "Connection View";
 			path = ConnectionView;
@@ -1850,6 +1882,7 @@
 				17E641450EF01EB5001BC333 /* Sequel-Ace.pch */,
 				17DC8825126B222D00E9AAEC /* Third Party */,
 				17E641670EF01F19001BC333 /* Views */,
+				51B09FDB2F767A43003BAFFF /* Protocols */,
 			);
 			path = Source;
 			sourceTree = "<group>";
@@ -1908,6 +1941,7 @@
 				BCA6271A1031B9D40047E5D5 /* SPTooltip.h */,
 				BCA6271B1031B9D40047E5D5 /* SPTooltip.m */,
 				1798F192155017FB004B0AB8 /* Tree Nodes */,
+				51B09FD62F767A3E003BAFFF /* SAConnectionInfo.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -2296,6 +2330,7 @@
 				1A11E50325A327F1001CB721 /* SPPanelOptions.m */,
 				4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */,
 				B6E4019A9F1C4A8AA0B3D105 /* SALocalNetworkPermissionChecker.swift */,
+				5146ADF82F79B9EF00C4C14A /* SAConnectionService.swift */,
 			);
 			path = Utility;
 			sourceTree = "<group>";
@@ -2320,6 +2355,8 @@
 				F3A4B8C191E14E7094C9A102 /* RDSIAMAuthenticationTests.swift */,
 				F3A4B8C191E14E7094C9A103 /* AWSDirectoryBookmarkManagerTests.swift */,
 				F4C0BDAE2E9F4D5E8A1B0201 /* SecureBookmarkManagerStub.swift */,
+				5146E0472F7A640C00C4C14A /* SAConnectionInfoTests.swift */,
+				517BFF432F7DA38F00F6D812 /* SAConnectionServiceTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -2340,6 +2377,17 @@
 				9696538724931AE10003321E /* xibLocalizationPostprocessor.entitlements */,
 			);
 			path = Entitlements;
+			sourceTree = "<group>";
+		};
+		51B09FDB2F767A43003BAFFF /* Protocols */ = {
+			isa = PBXGroup;
+			children = (
+				51B09FDC2F767A4C003BAFFF /* SAConnectionDelegate.swift */,
+				51B09FDE2F767A53003BAFFF /* SADatabaseDocumentProviding.swift */,
+				51B09FE02F767A5E003BAFFF /* SAFavoritesProviding.swift */,
+				5146C71F2F7A539E00C4C14A /* SATaskManaging.swift */,
+			);
+			path = Protocols;
 			sourceTree = "<group>";
 		};
 		51F4AFB924B26646006144D5 /* Extensions */ = {
@@ -2908,6 +2956,7 @@
 				505F568F1BCEE485007467DD /* SPFunctions.m in Sources */,
 				FD8099A82C59DDF70084646F /* SAUuidFormatter.swift in Sources */,
 				502D21F81BA50966000D4CE7 /* SPDataAdditions.m in Sources */,
+				517BFF442F7DA38F00F6D812 /* SAConnectionServiceTests.swift in Sources */,
 				1A9498DE2551776D000BC793 /* DateFormatterExtension.swift in Sources */,
 				C812F06F0D4A95968C1B0154 /* SABundleVersionUpdater.swift in Sources */,
 				B6E4019A9F1C4A8AA0B3D102 /* SALocalNetworkPermissionChecker.swift in Sources */,
@@ -2959,12 +3008,14 @@
 				F4C0BDAE2E9F4D5E8A1B0109 /* OSLog.swift in Sources */,
 				F4C0BDAE2E9F4D5E8A1B0110 /* SecureBookmarkManagerStub.swift in Sources */,
 				FD8099A72C59DCFA0084646F /* SAUuidFormatterTests.swift in Sources */,
+				51B09FD82F767A3F003BAFFF /* SAConnectionInfo.swift in Sources */,
 				6CB1977AAE8D7D64B7593E66 /* SPBundleManagerAdditionsTests.swift in Sources */,
 				B6E4019A9F1C4A8AA0B3D101 /* SALocalNetworkPermissionCheckerTests.swift in Sources */,
 				C0F17A1A2B3C4D5E6F708091 /* SPTableContentColumnFilterTests.swift in Sources */,
 				1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */,
 				1AEA768425EF05D500AC4DA6 /* ByteCountFormatterExtension.swift in Sources */,
 				17DB5F441555CA300046834B /* SPMutableArrayAdditions.m in Sources */,
+				5146E0482F7A640C00C4C14A /* SAConnectionInfoTests.swift in Sources */,
 				1717FA401558313A0065C036 /* RegexKitLite.m in Sources */,
 				50D3C35C1A771C4C00B5429C /* SPParserUtilsTest.m in Sources */,
 				1AE6C1CD25B07E9500880D73 /* SPFunctionsTests.m in Sources */,
@@ -3015,6 +3066,7 @@
 				17E641640EF01F15001BC333 /* SPTableInfo.m in Sources */,
 				17E641650EF01F15001BC333 /* SPTablesList.m in Sources */,
 				17E6416C0EF01F37001BC333 /* ImageAndTextCell.m in Sources */,
+				51B09FE12F767A5E003BAFFF /* SAFavoritesProviding.swift in Sources */,
 				17E641750EF01F80001BC333 /* SPKeychain.m in Sources */,
 				17E641830EF01FA8001BC333 /* SPImageView.m in Sources */,
 				17E641840EF01FA8001BC333 /* SPTextView.m in Sources */,
@@ -3036,11 +3088,13 @@
 				B57747D40F7A8974003B34F9 /* SPPreferenceController.m in Sources */,
 				B57747D90F7A8990003B34F9 /* SPWindowAdditions.m in Sources */,
 				B57747DC0F7A89D0003B34F9 /* SPFavoriteTextFieldCell.m in Sources */,
+				5146C7202F7A539E00C4C14A /* SATaskManaging.swift in Sources */,
 				B52460D70F8EF92300171639 /* SPArrayAdditions.m in Sources */,
 				B52460D80F8EF92300171639 /* SPTextViewAdditions.m in Sources */,
 				6F0EA9242734ABE200514FF1 /* SABundleRunner.m in Sources */,
 				296DC8B60F909194002A3258 /* MGTemplateEngine.m in Sources */,
 				1A11E50425A327F1001CB721 /* SPPanelOptions.m in Sources */,
+				51B09FDD2F767A4C003BAFFF /* SAConnectionDelegate.swift in Sources */,
 				296DC8B70F909194002A3258 /* RegexKitLite.m in Sources */,
 				17B548631E81FFA600175D5A /* SPCreateDatabaseInfo.m in Sources */,
 				296DC8B80F909194002A3258 /* ICUTemplateMatcher.m in Sources */,
@@ -3071,6 +3125,7 @@
 				5822C9B51000DB2400DCC3D6 /* SPConnectionController.m in Sources */,
 				BC8C8532100E0A8000D7A129 /* SPTableView.m in Sources */,
 				51BB391C25F82B060048CA69 /* SPAppController.swift in Sources */,
+				5146ADF52F79B1A200C4C14A /* SAFavoritesListDataSource.swift in Sources */,
 				BC9F0881100FCF2C00A80D32 /* SPFieldEditorController.m in Sources */,
 				58D2E229101222670063EF1D /* SPTextAndLinkCell.m in Sources */,
 				1A96E4B72588F34C0055F5F5 /* SecureBookmarkManager.swift in Sources */,
@@ -3116,8 +3171,10 @@
 				5870868410FA3E9C00D58E1C /* SPDataStorage.m in Sources */,
 				29FA88231114619E00D1AF3D /* SPTableTriggers.m in Sources */,
 				BCE0025D11173D2A009DA533 /* SPFieldMapperController.m in Sources */,
+				5146ADFC2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift in Sources */,
 				BC2777A011514B940034DF6A /* SPNavigatorController.m in Sources */,
 				589582151154F8F400EDCC28 /* SPMainThreadTrampoline.m in Sources */,
+				51B09FDF2F767A53003BAFFF /* SADatabaseDocumentProviding.swift in Sources */,
 				BC4DF1981158FB280059FABD /* SPNavigatorOutlineView.m in Sources */,
 				FD2056052C3A7E90008DD271 /* SABaseFormatter.swift in Sources */,
 				514B40A02F683E3700369718 /* SAAboutWindowController.swift in Sources */,
@@ -3132,13 +3189,16 @@
 				51F4AFBF24B26665006144D5 /* NSAlertExtension.swift in Sources */,
 				173C837911AAD2AE00B8B084 /* SPDotExporter.m in Sources */,
 				173C837A11AAD2AE00B8B084 /* SPHTMLExporter.m in Sources */,
+				5146ADF02F79B16900C4C14A /* SAFavoritesListDelegate.swift in Sources */,
 				173C837B11AAD2AE00B8B084 /* SPPDFExporter.m in Sources */,
 				50805B0D1BF2A068005F7A99 /* SPPopUpButtonCell.m in Sources */,
 				1A94988E25516057000BC793 /* DateExtension.swift in Sources */,
 				17A7773411C52D8E001E27B4 /* SPIndexesController.m in Sources */,
 				1ACA0B6625BEBE18002FA618 /* PopupButtonExtensions.swift in Sources */,
 				17F90E481210B42700274C98 /* SPExportFile.m in Sources */,
+				5146ADF92F79B9EF00C4C14A /* SAConnectionService.swift in Sources */,
 				BC85F5D012193B7D00E255B5 /* SPColorAdditions.m in Sources */,
+				51B09FEC2F7696C7003BAFFF /* SAConnectionWindowController.swift in Sources */,
 				1AF5A262250AC401009885DF /* SPBrackets.m in Sources */,
 				BC878A71121A836F00AE5066 /* SPColorWellCell.m in Sources */,
 				BC398A2D121D526200BE3EF4 /* SPCopyTable.m in Sources */,
@@ -3186,6 +3246,7 @@
 				584D899D15162CBE00F24774 /* SPDataBase64EncodingAdditions.m in Sources */,
 				1798F1871550175B004B0AB8 /* SPFavoritesExporter.m in Sources */,
 				1798F1881550175B004B0AB8 /* SPFavoritesImporter.m in Sources */,
+				51B09FE72F768E39003BAFFF /* SAConnectionViewCoordinator.swift in Sources */,
 				1A89556625D6BEED0060CE72 /* GitHubReleaseManager.swift in Sources */,
 				514DD98925FACF1500EA3B3B /* SPDatabaseDocument.swift in Sources */,
 				1798F1951550181B004B0AB8 /* SPGroupNode.m in Sources */,
@@ -3202,6 +3263,7 @@
 				501B1D181728A3DA0017C92E /* SPCharsetCollationHelper.m in Sources */,
 				50E217B318174246009D3580 /* SPColorSelectorView.m in Sources */,
 				50E217B618174280009D3580 /* SPFavoriteColorSupport.m in Sources */,
+				51B09FD72F767A3E003BAFFF /* SAConnectionInfo.swift in Sources */,
 				1A6377D4259B414400B1E96D /* SecureBookmark.swift in Sources */,
 				1A564F74237E2E4958CA593A /* SPPillAttachmentCell.m in Sources */,
 				5132930D25F586A900D803AD /* TabManager.swift in Sources */,

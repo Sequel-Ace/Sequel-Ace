@@ -36,3 +36,20 @@
 #import "SPConstants.h"
 
 #import "SPFileManagerAdditions.h"
+
+// Modernization — expose ObjC types needed by new Swift code
+#import "SPConnectionController.h"
+#import "SPFavoritesController.h"
+#import "SPCompatibility.h"
+#import "SPSplitView.h"
+#import "SPTreeNode.h"
+#import "SPGroupNode.h"
+#import "SPFavoriteNode.h"
+#import "SPFavoriteTextFieldCell.h"
+#import "SPFavoritesOutlineView.h"
+#import "SPFavoriteColorSupport.h"
+#import <SPMySQL/SPMySQLConstants.h>
+#import <SPMySQL/SPMySQLConnectionDelegate.h>
+#import <SPMySQL/SPMySQLConnectionProxy.h>
+#import <SPMySQL/SPMySQLConnection.h>
+#import "SPSSHTunnel.h"

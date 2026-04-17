@@ -292,6 +292,11 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             [newWindowController.databaseDocument connect];
         }
     }
+
+    // Note: standalone connection window (SAConnectionWindowController) is available
+    // programmatically but not yet exposed in the menu to avoid confusion with the
+    // existing "New Connection Window" XIB menu item. Menu item can be added once
+    // the standalone window fully replaces the embedded connection flow.
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {
@@ -518,7 +523,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem {
     SEL action = [menuItem action];
-    if (action == @selector(newWindow:) || action == @selector(openConnectionSheet:)) {
+    if (action == @selector(newWindow:) || action == @selector(openConnectionSheet:) || action == @selector(openStandaloneConnectionWindow:)) {
         return YES;
     }
     if (action == @selector(newTab:)) {
