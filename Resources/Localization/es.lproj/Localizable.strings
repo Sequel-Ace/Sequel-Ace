@@ -174,14 +174,14 @@
 "A character string that can store up to M bytes, but requires less space for shorter values. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "Una cadena de caracteres que puede almacenar hasta bytes M, pero que requiere menos espacio para valores más cortos. El número real de caracteres está limitado aún más por la codificación utilizada. A diferencia de VARCHAR este tipo no cuenta para la longitud máxima de la fila.";
 
 /* description of char */
-"A character string that will require M×w bytes per row, independent of the actual content length. w is the maximum number of bytes a single character can occupy in the given encoding." = "Una cadena de caracteres que requerirá bytes M×w por fila, independientemente de la longitud real del contenido. w es el número máximo de bytes que un solo carácter puede ocupar en la codificación dada.";
+"A character string that will require M×w bytes per row, independent of the actual content length. w is the maximum number of bytes a single character can occupy in the given encoding." = "A character string that will require M×w bytes per row, independent of the actual content length. w is the maximum number of bytes a single character can occupy in the given encoding.";
 
 /* description of longtext
  description of mediumtext */
 "A character string with variable length. The actual number of characters is further limited by the used encoding. Unlike VARCHAR this type does not count towards the maximum row length." = "Una cadena de caracteres con longitud variable. El número real de caracteres está además limitado por la codificación utilizada. A diferencia de VARCHAR este tipo no cuenta para la longitud máxima de fila.";
 
 /* description of json */
-"A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8." = "Un tipo de dato que valida datos JSON en INSERT y los almacena internamente en un formato binario que es ambos, más compacto y rápido de acceder que el JSON en formato texto.\nDisponible desde MySQL 5.7.8.";
+"A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8." = "A data type that validates JSON data on INSERT and internally stores it in a binary format that is both, more compact and faster to access than textual JSON.\nAvailable from MySQL 5.7.8.";
 
 /* Export file already exists explanatory text */
 "A file with the same name already exists in the target folder. Replacing it will overwrite its current contents." = "Un archivo con el mismo nombre ya existe en la carpeta de destino. Reemplazándolos sobreescribirá el contenido actual.";
@@ -215,7 +215,7 @@
 "A user with the name '%@' already exists" = "El usuario con el nombre '%@' ya existe";
 
 /* table content : editing : error message description when parsing as hex string failed */
-"A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too." = "Una cadena hexadecimal válida sólo puede contener los números 0-9 y las letras A-F (a-f). Opcionalmente puede comenzar con „0x“ y los espacios serán ignorados.\nAlternativamente, la sintaxis X'val' también está soportada.";
+"A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too." = "A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too.";
 
 /* connection failed due to access denied title */
 "Access denied!" = "¡Acceso denegado!";
@@ -287,7 +287,7 @@
 "An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first." = "Ocurrió un error mientras se cambiaba el nombre '%@'. No se pudo encontrar ningún nombre temporal. Por favor, intente renombrarlo primero a algo diferente.";
 
 /* rename table error informative message */
-"An error occurred while renaming '%@'.\n\nMySQL said: %@" = "Se ha producido un error al renombrar '%1$@'.\n\nMySQL dijo: %2$@";
+"An error occurred while renaming '%@'.\n\nMySQL said: %@" = "An error occurred while renaming '%1$@'.\n\nMySQL said: %2$@";
 
 /* rename error - don't know what type the renamed thing is */
 "An error occurred while renaming. '%@' is of an unknown type." = "Ocurrió un error mientras se cambiaba el nombre. '%@' es de un tipo desconocido.";
@@ -305,25 +305,25 @@
 "An error occurred while renaming. The CREATE syntax of '%@' could not be parsed." = "Se ha producido un error al renombrar. No se ha podido analizar la sintaxis CREATE de '%@'.";
 
 /* message of panel when retrieving view information failed */
-"An error occurred while retrieving status data.\n\nMySQL said: %@" = "Se ha producido un error al recuperar los datos de estado.\n\nMySQL dijo: %@";
+"An error occurred while retrieving status data.\n\nMySQL said: %@" = "An error occurred while retrieving status data.\n\nMySQL said: %@";
 
 /* message of panel when create syntax cannot be retrieved */
-"An error occurred while retrieving the create syntax for '%@'.\nMySQL said: %@" = "Se ha producido un error al recuperar la sintaxis de creación para '%1$@'.\nMySQL dijo: %2$@";
+"An error occurred while retrieving the create syntax for '%@'.\nMySQL said: %@" = "An error occurred while retrieving the create syntax for '%1$@'.\nMySQL said: %2$@";
 
 /* add index error informative message */
-"An error occurred while trying to add the index.\n\nMySQL said: %@" = "Ocurrió un error mientras se trataba de añadir el índice.\n\nMySQL dijo: %@";
+"An error occurred while trying to add the index.\n\nMySQL said: %@" = "An error occurred while trying to add the index.\n\nMySQL said: %@";
 
 /* error adding password to keychain informative message */
-"An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "Ocurrió un error mientras se trataba de agregar la contraseña a su Llavero. Reparar su Llavero podría resolver esto, pero si no lo hace, por favor repórtelo al equipo de Sequel Ace indicando el código de error %i.";
+"An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i." = "An error occurred while trying to add the password to your Keychain. Repairing your Keychain might resolve this, but if it doesn't please report it to the Sequel Ace team, supplying the error code %i.";
 
 /* unable to copy database message informative message */
 "An error occurred while trying to copy the database '%@' to '%@'." = "Ocurrió un error mientras se trataba de copiar la base de datos '%1$@' a '%2$@'.";
 
 /* error deleting index informative message */
-"An error occurred while trying to delete the index.\n\nMySQL said: %@" = "Ocurrió un error mientras se trataba de eliminar el índice.\n\nMySQL dijo: %@";
+"An error occurred while trying to delete the index.\n\nMySQL said: %@" = "An error occurred while trying to delete the index.\n\nMySQL said: %@";
 
 /* table status : row count query failed : error message */
-"An error occurred while trying to determine the number of rows for %@.\nMySQL said: %@ (%lu)" = "Ocurrió un error mientras se trataba de determinar el número de filas para “%1$@”.\nMySQL dijo: %2$@ (%3$lu)";
+"An error occurred while trying to determine the number of rows for %@.\nMySQL said: %@ (%lu)" = "An error occurred while trying to determine the number of rows for “%1$@”.\nMySQL said: %2$@ (%3$lu)";
 
 /* unable to rename database message informative message */
 "An error occurred while trying to rename the database '%@' to '%@'." = "Ocurrió un error mientras se trataba de renombrar la base de datos '%1$@' a '%2$@'.";
@@ -341,10 +341,10 @@
 "An error occurred retrieving table information.  MySQL said: %@" = "Ha ocurrido un error recuperando la información de tabla.  MySQL dijo: %@";
 
 /* SQL encoding read error */
-"An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed." = "Se ha producido un error al leer el archivo, ya que no se pudo leer en la codificación seleccionada (%1$@).\n\nSólo se han ejecutado %2$ld consultas.";
+"An error occurred when reading the file, as it could not be read in the encoding you selected (%@).\n\nOnly %ld queries were executed." = "An error occurred when reading the file, as it could not be read in the encoding you selected (%1$@).\n\nOnly %2$ld queries were executed.";
 
 /* CSV encoding read error */
-"An error occurred when reading the file, as it could not be read using the encoding you selected (%@).\n\nOnly %ld rows were imported." = "Se ha producido un error al leer el archivo, ya que no se pudo leer usando la codificación seleccionada (%1$@).\n\nSólo se importaron %2$ld filas.";
+"An error occurred when reading the file, as it could not be read using the encoding you selected (%@).\n\nOnly %ld rows were imported." = "An error occurred when reading the file, as it could not be read using the encoding you selected (%1$@).\n\nOnly %2$ld rows were imported.";
 
 /* SQL read error, including detail from system */
 "An error occurred when reading the file.\n\nOnly %ld queries were executed.\n\n(%@)" = "Ha ocurrido un error al leer el archivo.\n\nSolo %1$ld consultas fueron ejecutadas.\n\n(%2$@)";
@@ -894,7 +894,7 @@
 "created: %@" = "creada: %@";
 
 /* description of polygon */
-"Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\"." = "Crea una superficie combinando un LinearRing (ej. un LineString que es cerrado y simple) como el límite exterior con cero o más LinearRings internos actuando como \"agujeros\".";
+"Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\"." = "Creates a surface by combining one LinearRing (ie. a LineString that is closed and simple) as the outside boundary with zero or more inner LinearRings acting as \"holes\".";
 
 /* Creating table task string */
 "Creating %@..." = "Creando %@...";
@@ -1123,7 +1123,7 @@
 "Duplicate View..." = "Duplicar vista...";
 
 /* partial copy database support informative message */
-"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "Duplicar la base de datos '%@' es solo parcialmente soportado, ya que contiene objetos distintos de las tablas (i.e. vistas, procedimientos, funciones, etc.), que no se copiarán.\n\n¿Desea continuar?";
+"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?";
 
 /* edit filter */
 "Edit Filters…" = "Editar filtros…";
@@ -1386,7 +1386,7 @@
 "Field is not editable. No matching record found.\nReload data, check encoding, or try to add\na primary key field or more fields\nin your SELECT statement for table '%@'\nto identify field origin unambiguously." = "El campo no es editable. No se ha encontrado ningún registro coincidente.\nRecargue la tabla, compruebe la codificación, o intente añadir\nun campo clave primaria o más campos\nen el SELECT para la tabla '%@'\npara identificar de forma única el campo origen.";
 
 /* Table Content result editing error - could not identify original row */
-"Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously." = "El campo no es editable. No se ha encontrado ningún registro coincidente.\nRecarga la tabla, comprueba la codificación, o intenta añadir\nun campo clave primaria o más campos\nen la declaración de vista de '%@' para identificar de forma única el origen del campo\n.";
+"Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously." = "Field is not editable. No matching record found.\nReload table, check the encoding, or try to add\na primary key field or more fields\nin the view declaration of '%@' to identify\nfield origin unambiguously.";
 
 /* error while reading data file */
 "File couldn't be read." = "El archivo no se ha podido leer.";
@@ -2049,7 +2049,7 @@
 "Quote" = "Comillas";
 
 /* databsse rename unsupported informative message */
-"Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database." = "Renombrar la base de datos '%@' no es posible porque contiene objetos distintos a tablas (p.ej. vistas, procedimientos, funciones, etc.).\n\nSi desea renombrar una base de datos, por favor utilice 'Duplicar base de datos', mueva manualmente cualquier objeto que no sea una tabla y luego elimine la base de datos antigua.";
+"Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database." = "Renaming the database '%@' is currently unsupported as it contains objects other than tables (i.e. views, procedures, functions, etc.).\n\nIf you would like to rename a database please use the 'Duplicate Database', move any non-table objects manually then drop the old database.";
 
 /* range for serial type */
 "Range: %@ to %@" = "Rango: %1$@ a %2$@";
@@ -2161,16 +2161,16 @@
 "Replace Selection" = "Reemplazar selección";
 
 /* description of year */
-"Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5." = "Representa un valor de año con 4 dígitos, almacenado como 1 byte. Los valores inválidos se convierten a 0000 y los valores de dos dígitos entre 0 y 69 se convierten en los años 2000 y 2069. Los valores entre 70 y 99 se convierten en los años 1970 y 1999.\nEl tipo YEAR(2) fue eliminado en MySQL 5.7.5.";
+"Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5." = "Represents a 4 digit year value, stored as 1 byte. Invalid values are converted to 0000 and two digit values 0 to 69 will be converted to years 2000 to 2069, resp. values 70 to 99 to years 1970 to 1999.\nThe YEAR(2) type was removed in MySQL 5.7.5.";
 
 /* description of multilinestring */
 "Represents a collection of LineStrings." = "Representa una colección de LineStrings.";
 
 /* description of geometrycollection */
-"Represents a collection of objects of any other single- or multi-valued spatial type. The only restriction being, that all objects must share a common coordinate system." = "Representa una colección de objetos de cualquier otro tipo espacial de un solo valor o multivalor. La única restricción es que todos los objetos deben compartir un sistema de coordenadas común.";
+"Represents a collection of objects of any other single- or multi-valued spatial type. The only restriction being, that all objects must share a common coordinate system." = "Represents a collection of objects of any other single- or multi-valued spatial type. The only restriction being, that all objects must share a common coordinate system.";
 
 /* description of multipolygon */
-"Represents a collection of Polygons. The Polygons making up the MultiPolygon must not intersect." = "Representa una colección de Polygons. Los Polygons que componen el MultiPolygon no deben cruzarse.";
+"Represents a collection of Polygons. The Polygons making up the MultiPolygon must not intersect." = "Represents a collection of Polygons. The Polygons making up the MultiPolygon must not intersect.";
 
 /* description of multipoint */
 "Represents a set of Points without specifying any kind of relation and/or order between them." = "Representa un conjunto de Puntos sin especificar ningún tipo de relación y/o orden entre ellos.";
@@ -2197,7 +2197,7 @@
 "Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers." = "Requiere 8 bytes de espacio de almacenamiento. M es el ancho de pantalla opcional y no afecta al rango de valor posible. Nota: Las operaciones aritméticas pueden fallar para grandes números.";
 
 /* reset auto_increment after deletion of all rows message */
-"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "¿Restablecer AUTO_INCREMENT después de la eliminación\n(sólo para eliminar TODAS LA FILAS DE LA TABLA)?";
+"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?";
 
 /* delete selected row button */
 "Delete Selected Row" = "Eliminar fila seleccionada";
@@ -2341,7 +2341,7 @@
 "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace no pudo encontrar ninguna columna perteneciente a este índice. ¿Tal vez ya ha sido eliminado?";
 
 /* Preferences : Network : Custom SSH client : warning dialog message */
-"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace solo soporta y se prueba con las versiones predeterminadas del cliente OpenSSH incluidas con macOS. Usar clientes diferentes puede causar problemas de conexión, riesgos de seguridad o no funcionar.\n\nPor favor tenga en cuenta que no podemos proporcionar soporte para estas configuraciones.";
+"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations.";
 
 /* sequelace URL scheme command not supported. */
 "sequelace URL scheme command not supported." = "Comando de esquema URL de sequelace no soportado.";
@@ -2515,16 +2515,16 @@
 "Stop query" = "Detener consulta";
 
 /* description of timestamp */
-"Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply." = "Guarda una fecha y hora del día como segundos desde el comienzo del epoch UNIX (1970-01-01 00:00:00). Los valores mostrados/almacenados se ven afectados por la configuración de @@time_zone de la conexión.\nLa representación es la misma que para DATETIME. Los valores no válidos, así como \"segundo cero\", se convierten a 0000-00-00 00:00:00:00.0. Los segundos fraccionales se añadieron en MySQL 5. .4 con una precisión de hasta microsegundos (6), especificada por F. Algunas reglas adicionales pueden aplicarse.";
+"Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply." = "Stores a date and time of day as seconds since the beginning of the UNIX epoch (1970-01-01 00:00:00). The values displayed/stored are affected by the connection's @@time_zone setting.\nThe representation is the same as for DATETIME. Invalid values, as well as \"second zero\", are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F. Some additional rules may apply.";
 
 /* description of datetime */
-"Stores a date and time of day. The representation is YYYY-MM-DD HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Guarda una fecha y hora del día. La representación es AAA-MM-DD HH:MM:SS[. *], Siendo segundos fraccionales. El valor no se ve afectado por ningún ajuste de zona horaria. Los valores no válidos se convierten a 0000-00-00 00:00:00.0. Los segundos fraccionales se añadieron en MySQL 5.6.4 con una precisión descendente a microsegundos (6), especificados por F.";
+"Stores a date and time of day. The representation is YYYY-MM-DD HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Stores a date and time of day. The representation is YYYY-MM-DD HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00 00:00:00.0. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F.";
 
 /* description of date */
 "Stores a date without time information. The representation is YYYY-MM-DD. The value is not affected by any time zone setting. Invalid values are converted to 0000-00-00." = "Guarda una fecha sin información de tiempo. La representación es AAA-MM-DD. El valor no se ve afectado por ninguna configuración de zona horaria. Los valores no válidos se convierten a 0000-00-00.";
 
 /* description of time */
-"Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Almacena una hora del día, duración o intervalo de tiempo. La representación es HH:MM:SS[. *], Siendo segundos fraccionales. El valor no se ve afectado por ningún ajuste de zona horaria. Los valores no válidos se convierten a 00:00:00. Los segundos fraccionales se añadieron en MySQL 5.6.4 con una precisión descendente a microsegundos (6), especificados por F.";
+"Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F." = "Stores a time of day, duration or time interval. The representation is HH:MM:SS[.I*], I being fractional seconds. The value is not affected by any time zone setting. Invalid values are converted to 00:00:00. Fractional seconds were added in MySQL 5.6.4 with a precision down to microseconds (6), specified by F.";
 
 /* toolbar item label for switching to the Table Structure tab */
 "Structure" = "Estructura";
@@ -2748,7 +2748,7 @@
 "The row was not written to the MySQL database. You probably haven't changed anything.\nReload the table to be sure that the row exists and use a primary key for your table.\n(This error can be turned off in the preferences.)" = "La fila no fue escrita en la base de datos MySQL. Usted probablemente no ha modificado nada.\nVuelva a cargar la tabla para asegurarse que la fila existe y use la clave primaria de su tabla.\n(Este error se puede deshabilitar en las preferencias.)";
 
 /* export : import settings : file version error description ($1 = is version, $2 = list of supported versions); note: the u00A0 is a non-breaking space, do not add more whitespace. */
-"The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "Las opciones de configuración seleccionadas para exportación fueron almacenadas con la versión %1$ld, pero solo las opciones con las siguientes versiones pueden ser importadas: %2$@\n\nGrabe las opciones de configuración con una versión compatible hacia atrás o actualice su versión de Sequel Ace.";
+"The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace.";
 
 /* export : import settings : spf content type error description */
 "The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file." = "El archivo seleccionado contiene datos de tipo “%1$@”, pero se necesita el tipo “%2$@”. Por favor, elija un archivo diferente.";
@@ -2769,13 +2769,13 @@
 "The socket file could not be found in any common location. Please supply the correct socket location.\n\nMySQL said: %@" = "El socket no se ha podido encontrar en ninguna ubicación. Por favor, proporcione la ubicación correcta del socket.\n\nMySQL dijo: %@";
 
 /* error creating relation informative message */
-"The specified relation could not be created.\n\nMySQL said: %@" = "La relación especificada no pudo ser creada.\n\nMySQL dijo: %@";
+"The specified relation could not be created.\n\nMySQL said: %@" = "The specified relation could not be created.\n\nMySQL said: %@";
 
 /* error creating trigger informative message */
 "The specified trigger was unable to be created.\n\nMySQL said: %@" = "El disparador especificado no ha podido ser creado.\n\nMySQL dijo: %@";
 
 /* sql import : charset error alert : detail message */
-"The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!" = "El fichero SQL usa la codificación utf8mb4, pero su versión de MySQL solo admite un set limitado de codificaciones utf8.\n\nPuede continuar con la importación, ¡pero todos los caracteres no BMP en el fichero SQL (por ejemplo, algunos caracteres tipográficos y caracteres científicos especiales, logogramas CJK arcaicos, emojis) se perderán irremediablemente!";
+"The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!" = "The SQL file uses utf8mb4 encoding, but your MySQL version only supports the limited utf8 subset.\n\nYou can continue the import, but any non-BMP characters in the SQL file (eg. some typographic and scientific special characters, archaic CJK logograms, emojis) will be unrecoverably lost!";
 
 /* SQL file open error */
 "The SQL file you selected could not be found or read." = "El archivo SQL seleccionado no se ha podido encontrar o leer.";
@@ -2843,7 +2843,7 @@
 "This index cannot be deleted, because it is used by an existing foreign key relationship.\n\nPlease remove the relationship, before trying to remove this index.\n\nMySQL said: %@" = "Este índice no puede ser eliminado, porque es usado por una relación de clave foránea existente.\n\nPor favor elimine la relación antes de intentar eliminar este índice.\n\nMySQL dijo: %@";
 
 /* description of serial */
-"This is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE." = "Este es un alias para BIGINT NO SIGNED NULL AUTO_INCREMENT UNIQUE.";
+"This is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE." = "This is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE.";
 
 /* description of dec
  description of fixed
@@ -2891,7 +2891,7 @@
 "This user doesn't seem to have any associated hosts and will be removed unless a host is added." = "Este usuario no parece tener ningún equipo asociado y se eliminará a menos que un equipo sea añadido.";
 
 /* shutdown server : confirmation dialog : message */
-"This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!" = "Esto esperará a que las transacciones abiertas se completen y luego cerrará el proceso de mysql. ¡Después, ni tú ni nadie más podrá conectarse a esta base de datos!\n\n¡Se requiere acceso de gestión completa al sistema operativo del servidor para reiniciar MySQL!";
+"This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!" = "This will wait for open transactions to complete and then quit the mysql daemon. Afterwards neither you nor anyone else can connect to this database!\n\nFull management access to the server's operating system is required to restart MySQL!";
 
 /* export filename time token */
 "Time" = "Hora";
@@ -3185,7 +3185,7 @@
 "%@ could not be created" = "%@ no pudo ser creado";
 
 /* %@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item. */
-"%@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item." = "No se pudo analizar %@. Puede editar la configuración de la columna pero la columna no se mostrará en la vista de contenido; por favor reporte este problema al equipo de Sequel Ace usando el menú Ayuda.";
+"%@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item." = "%@ couldn't be parsed. You can edit the column setup but the column will not be shown in the Content view; please report this issue to the Sequel Ace team using the Help menu item.";
 
 /* connection view : ssl : client cert file picker : wrong format error title */
 "%@ is not a valid client certificate file." = "%@ no es un archivo de certificado de cliente válido.";
@@ -3194,13 +3194,13 @@
 "%@ is not a valid private key file." = "%@ no es un archivo válido de clave privada.";
 
 /* text shown when there are App Sandbox Issues */
-"App Sandbox Issue" = "Problema con App Sandbox";
+"App Sandbox Issue" = "App Sandbox Issue";
 
 /* Stale Bookmarks error title */
 "Stale Bookmarks" = "Marcadores obsoletos";
 
 /* App Sandbox info link text */
-"App Sandbox Info" = "Información de App Sandbox";
+"App Sandbox Info" = "App Sandbox Info";
 
 /* error while selecting file title */
 "File Selection Error" = "Error de selección de archivo";
@@ -3209,13 +3209,13 @@
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "El archivo seleccionado no es un archivo válido.\n\nPor favor inténtelo de nuevo.\n\nClase: %@";
 
 /* known hosts not writable error message */
-"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "No se puede escribir en el archivo hosts seleccionado.\n\n%@\n\nPor favor, vuelva a seleccionar el archivo en las preferencias de Sequel Ace e inténtelo de nuevo.";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
 
 /* known hosts is invalid message */
-"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "El archivo hosts seleccionado no es válido.\n\nPor favor, vuelva a seleccionar el archivo en las preferencias de Sequel Ace e inténtelo de nuevo.";
+"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
 
 /* known hosts contains quote message */
-"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "El archivo hosts seleccionado contiene comillas (\") en la ruta del archivo, y eso no está soportado.\n\n%@\n\nPor favor, seleccione un archivo diferente en las preferencias de Sequel Ace o renombre el archivo/ruta para eliminar las comillas.";
+"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote.";
 
 /* SSH Tunnel Debugging menu and window title */
 "SSH Tunnel Debugging Info" = "Información de depuración del túnel SSH";
@@ -3227,7 +3227,7 @@
 "You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?" = "Le faltan marcadores seguros:\n\n%@\n\n¿Quiere solicitar acceso ahora?";
 
 /* known hosts advance menu item title */
-"Use known hosts from ssh config (ADVANCED)" = "Usar hosts conocidos de la configuración de ssh (AVANZADO)";
+"Use known hosts from ssh config (ADVANCED)" = "Use known hosts from ssh config (ADVANCED)";
 
 /* The answer, yes */
 "Yes" = "Sí";
@@ -3245,16 +3245,16 @@
 "Error while writing to the export file. Could not open file: %@" = "Error al escribir el archivo de exportación. No se pudo abrir el archivo: %@";
 
 /* Message for User window error */
-"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column." = "Los resultados no contienen ni la columna 'Password' ni la columna 'authentication_string'.";
+"Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column." = "Resultset from mysql.user contains neither 'Password' nor 'authentication_string' column.";
 
 /* Title for User window error */
 "User Data Error" = "Error de datos de usuario";
 
 /* Title for Stale Bookmark file selection dialog */
-"Please re-select the file '%@' in order to restore Sequel Ace's access." = "Por favor, vuelva a seleccionar el archivo '%@' para restaurar el acceso de Sequel Ace.";
+"Please re-select the file '%@' in order to restore Sequel Ace's access." = "Please re-select the file '%@' in order to restore Sequel Ace's access.";
 
 /* Title for File Preference file selection dialog */
-"Please choose a file or folder to grant Sequel Ace access to." = "Por favor, elija un archivo o una carpeta a la que conceder acceso a Sequel Ace.";
+"Please choose a file or folder to grant Sequel Ace access to." = "Please choose a file or folder to grant Sequel Ace access to.";
 
 /* Title for Network Preference ssh config file selection dialog */
 "Please choose your ssh config files(s)" = "Por favor, seleccione su(s) archivo(s) de configuración ssh";
@@ -3269,7 +3269,7 @@
 "Applying syntax highlighting..." = "Aplicando resaltado de sintaxis...";
 
 /* Error message when a bash task fails to start */
-"Couldn't launch task.\nException reason: %@\n ENV length: %lu" = "No se pudo iniciar la tarea.\nExcepción: %@\n Longitud ENV: %lu";
+"Couldn't launch task.\nException reason: %@\n ENV length: %lu" = "Couldn't launch task.\nException reason: %@\n ENV length: %lu";
 
 /* Error message title when we failed to create new connection view */
 "New Connection Error" = "Error en la nueva conexión";
@@ -3317,7 +3317,7 @@
 "Check for Updates..." = "Buscar actualizaciones...";
 
 /* Warning message during connection in case the variable skip-show-database is set to ON */
-"The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "La variable skip-show-database del servidor de base de datos está establecida en ON. Por lo tanto, no podrá listar bases de datos a menos que tenga el privilegio de SHOW DATABASES .\n\nSin embargo, las bases de datos todavía son accesibles directamente a través de consultas SQL dependiendo de sus privilegios.";
+"The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges." = "The skip-show-database variable of the database server is set to ON. Thus, you won't be able to list databases unless you have the SHOW DATABASES privilege.\n\nHowever, the databases are still accessible directly through SQL queries depending on your privileges.";
 
 /* Error alert title when the request to GitHub fails */
 "GitHub Request Failed" = "Falló la solicitud de GitHub";
@@ -3332,10 +3332,10 @@
 "Never show this again" = "Nunca volver a mostrar esto";
 
 /* Info alert when editing a generated column */
-"The current field \"%@\" is a generated column and therefore cannot be edited." = "El campo actual \"%@\" es una columna generada y por lo tanto no puede ser editada.";
+"The current field \"%@\" is a generated column and therefore cannot be edited." = "The current field \"%@\" is a generated column and therefore cannot be edited.";
 
 /* Release note / info modal about change in latest release about column behavior */
-"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "El uso de la columna \"por defecto\" ha cambiado desde la última versión de Sequel ACE:\n\n- Sin valor predeterminado: Déjalo en blanco.\n- Valor de cadena: Use comillas simples o dobles \"\" si desea una cadena vacía o envolver una cadena\n- Expresión : Use paréntesis (). Excepto para las columnas TIMESTAMP y DATETIME donde se puede especificar la función CURRENT_TIMESTAMP sin incluir paréntesis.";
+"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.";
 
 /* Menu option to pin a view to the top of the list of tables */
 "Pin View" = "Fijar vista";
@@ -3368,7 +3368,7 @@
 "Copy Table Name" = "Copiar nombre de tabla";
 
 /* sequelace URL scheme error: LaunchFavorite alert title (favorite name not found) */
-"LaunchFavorite URL Scheme Error" = "Error de Esquema de URL de LaunchFavorite";
+"LaunchFavorite URL Scheme Error" = "LaunchFavorite URL Scheme Error";
 
 /* sequelace URL scheme error: LaunchFavorite alert description (favorite name not found) */
-"The variable in the ?name= query parameter could not be matched with any of your favorites." = "La variable en el parámetro de consulta ?name= no coincide con ninguno de sus favoritos.";
+"The variable in the ?name= query parameter could not be matched with any of your favorites." = "The variable in the ?name= query parameter could not be matched with any of your favorites.";
