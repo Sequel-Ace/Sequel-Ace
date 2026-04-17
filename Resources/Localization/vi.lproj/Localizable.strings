@@ -437,7 +437,7 @@
 "An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "An error occurred whilst trying to perform the operation.\n\nMySQL said: %@";
 
 /* mysql resource limits unsupported message */
-"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@";
+"Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "Các Giới hạn Tài nguyên không được hỗ trợ cho phiên bản MySQL của bạn. Bất kỳ Giới hạn Tài nguyên nào bạn đã chỉ định đã bị loại bỏ và không được lưu. MySQL thông báo: %@";
 
 /* Export files creation error explanatory text */
 "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again." = "An unhandled error occurred when attempting to create %lu of the export files.  Please check the details and try again.";
@@ -613,10 +613,10 @@
 "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue";
 
 /* quitting app informal alert title */
-"Close the app?" = "Close the app?";
+"Close the app?" = "Đóng ứng dụng?";
 
 /* quitting app informal alert body */
-"Are you sure you want to quit the app?" = "Are you sure you want to quit the app?";
+"Are you sure you want to quit the app?" = "Bạn có chắc chắn muốn thoát ứng dụng không?";
 
 /* character set client: %@ */
 "character set client: %@" = "character set client: %@";
@@ -1096,7 +1096,7 @@
 "Dump of table" = "Dump of table";
 
 /* sql export dump of view label */
-"Dump of view" = "Dump of view";
+"Dump of view" = "Xuất view";
 
 /* text showing that app is writing dump */
 "Dumping..." = "Dumping...";
@@ -1123,7 +1123,7 @@
 "Duplicate View..." = "Duplicate View...";
 
 /* partial copy database support informative message */
-"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?";
+"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "Việc sao chép cơ sở dữ liệu '%@' chỉ được hỗ trợ một phần vì nó chứa các đối tượng khác ngoài bảng (ví dụ: view, procedure, function, v.v.), những đối tượng này sẽ không được sao chép.\n\nBạn có muốn tiếp tục không?";
 
 /* edit filter */
 "Edit Filters…" = "Edit Filters…";
@@ -1402,7 +1402,7 @@
 "Filter" = "Filter";
 
 /* apply filter label */
-"Apply Filter(s)" = "Apply Filter(s)";
+"Apply Filter(s)" = "Áp dụng Bộ lọc(s)";
 
 /* filter tables menu item */
 "Filter Tables" = "Filter Tables";
@@ -2341,7 +2341,7 @@
 "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?";
 
 /* Preferences : Network : Custom SSH client : warning dialog message */
-"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations.";
+"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "Sequel Ace chỉ hỗ trợ và được kiểm thử với các phiên bản OpenSSH client mặc định đi kèm macOS. Việc sử dụng các client khác có thể gây lỗi kết nối, rủi ro bảo mật hoặc không hoạt động.\n\nXin lưu ý rằng chúng tôi không thể hỗ trợ cho các cấu hình như vậy.";
 
 /* sequelace URL scheme command not supported. */
 "sequelace URL scheme command not supported." = "sequelace URL scheme command not supported.";
@@ -2461,7 +2461,7 @@
 
 
 /* Connection Secured via SSL information text */
-"Connection Secured via SSL" = "Connection Secured via SSL";
+"Connection Secured via SSL" = "Kết nối được bảo mật bằng SSL";
 
 /* SSH connected titlebar marker */
 "SSH Connected" = "SSH Connected";
@@ -3209,13 +3209,13 @@
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@";
 
 /* known hosts not writable error message */
-"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "Tệp known hosts đã chọn không thể ghi.\n\n%@\n\nVui lòng chọn lại tệp trong Preferences của Sequel Ace và thử lại.";
 
 /* known hosts is invalid message */
-"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again.";
+"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "Tệp known hosts đã chọn không hợp lệ.\n\nVui lòng chọn lại tệp trong Preferences của Sequel Ace và thử lại.";
 
 /* known hosts contains quote message */
-"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote.";
+"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "Đường dẫn của tệp known hosts đã chọn chứa dấu ngoặc kép (\"), điều này không được hỗ trợ.\n\n%@\n\nVui lòng chọn tệp khác trong Preferences của Sequel Ace hoặc đổi tên tệp/đường dẫn để loại bỏ dấu ngoặc kép.";
 
 /* SSH Tunnel Debugging menu and window title */
 "SSH Tunnel Debugging Info" = "SSH Tunnel Debugging Info";
@@ -3332,43 +3332,43 @@
 "Never show this again" = "Never show this again";
 
 /* Info alert when editing a generated column */
-"The current field \"%@\" is a generated column and therefore cannot be edited." = "The current field \"%@\" is a generated column and therefore cannot be edited.";
+"The current field \"%@\" is a generated column and therefore cannot be edited." = "Trường hiện tại \"%@\" là một cột được tạo và do đó không thể chỉnh sửa.";
 
 /* Release note / info modal about change in latest release about column behavior */
-"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses.";
+"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "Cách sử dụng cột “default” đã thay đổi kể từ phiên bản Sequel ACE trước: \n\n- Không có giá trị mặc định: Để trống.\n- Giá trị chuỗi: Dùng dấu nháy đơn '' hoặc nháy kép \"\" nếu bạn muốn chuỗi rỗng hoặc để bao chuỗi.\n- Biểu thức: Dùng dấu ngoặc (). Ngoại trừ cột TIMESTAMP và DATETIME, nơi bạn có thể chỉ định hàm CURRENT_TIMESTAMP mà không cần ngoặc.";
 
 /* Menu option to pin a view to the top of the list of tables */
-"Pin View" = "Pin View";
+"Pin View" = "Ghim View";
 
 /* Menu option to pin a table to the top of the list of tables */
-"Pin Table" = "Pin Table";
+"Pin Table" = "Ghim Bảng";
 
 /* Menu option to pin a procedure to the top of the list of tables */
-"Pin Procedure" = "Pin Procedure";
+"Pin Procedure" = "Ghim Procedure";
 
 /* Menu option to pin a function to the top of the list of tables */
-"Pin Function" = "Pin Function";
+"Pin Function" = "Ghim Function";
 
 /* Menu option to unpin a view which is currently pinned at the top of the list of tables */
-"Unpin View" = "Unpin View";
+"Unpin View" = "Bỏ ghim View";
 
 /* Menu option to unpin a table which is currently pinned at the top of the list of tables */
-"Unpin Table" = "Unpin Table";
+"Unpin Table" = "Bỏ ghim Bảng";
 
 /* Menu option to unpin a procedure which is currently pinned at the top of the list of tables */
-"Unpin Procedure" = "Unpin Procedure";
+"Unpin Procedure" = "Bỏ ghim Procedure";
 
 /* Menu option to unpin a function which is currently pinned at the top of the list of tables */
-"Unpin Function" = "Unpin Function";
+"Unpin Function" = "Bỏ ghim Function";
 
 /* header for pinned table list */
-"PINNED" = "PINNED";
+"PINNED" = "ĐƯỢC GHIM";
 
 /* Menu option to copy a table's name with database name in the list of tables */
-"Copy Table Name" = "Copy Table Name";
+"Copy Table Name" = "Sao chép tên bảng";
 
 /* sequelace URL scheme error: LaunchFavorite alert title (favorite name not found) */
-"LaunchFavorite URL Scheme Error" = "LaunchFavorite URL Scheme Error";
+"LaunchFavorite URL Scheme Error" = "Lỗi URL Scheme LaunchFavorite";
 
 /* sequelace URL scheme error: LaunchFavorite alert description (favorite name not found) */
-"The variable in the ?name= query parameter could not be matched with any of your favorites." = "The variable in the ?name= query parameter could not be matched with any of your favorites.";
+"The variable in the ?name= query parameter could not be matched with any of your favorites." = "Biến trong tham số truy vấn ?name= không khớp với bất kỳ favorite nào của bạn.";
