@@ -62,6 +62,37 @@ final class SAConnectionInfoMappingTests: XCTestCase {
         XCTAssertEqual(info.sshPassword, "sshpass")
     }
 
+    func testResolvedMySQLHostPreservesLocalhostForSSHTunnelConnections() {
+        let info = SAConnectionInfoObjC()
+        info.type = .sshTunnel
+        info.host = "localhost"
+
+        XCTAssertEqual(SAConnectionService.resolvedMySQLHost(for: info), "localhost")
+    }
+
+    func testResolvedMySQLHostPreservesCustomHostForSSHTunnelConnections() {
+        let info = SAConnectionInfoObjC()
+        info.type = .sshTunnel
+        info.host = "db.internal"
+
+        XCTAssertEqual(SAConnectionService.resolvedMySQLHost(for: info), "db.internal")
+    }
+
+    func testResolvedMySQLHostDefaultsToLoopbackWhenBlank() {
+        let info = SAConnectionInfoObjC()
+        info.type = .sshTunnel
+        info.host = ""
+
+        XCTAssertEqual(SAConnectionService.resolvedMySQLHost(for: info), "127.0.0.1")
+    }
+
+    func testResolvedMySQLHostReturnsNilForSocketConnections() {
+        let info = SAConnectionInfoObjC()
+        info.type = .socket
+
+        XCTAssertNil(SAConnectionService.resolvedMySQLHost(for: info))
+    }
+
     func testAWSIAMInfoSetup() {
         let info = SAConnectionInfoObjC()
         info.type = .awsIAM
