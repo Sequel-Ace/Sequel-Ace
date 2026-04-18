@@ -1400,7 +1400,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  * Allow a task to be cancelled, enabling the button with a supplied title
  * and optionally supplying a callback object and function.
  */
-- (void) enableTaskCancellationWithTitle:(NSString *)buttonTitle callbackObject:(id)callbackObject callbackFunction:(SEL)callbackFunction
+- (void) enableTaskCancellationWithTitle:(NSString *)buttonTitle callbackObject:(NSObject *)callbackObject callbackFunction:(SEL)callbackFunction
 {
     // Ensure call on the main thread
     if (![NSThread isMainThread]) return [[self onMainThread] enableTaskCancellationWithTitle:buttonTitle callbackObject:callbackObject callbackFunction:callbackFunction];

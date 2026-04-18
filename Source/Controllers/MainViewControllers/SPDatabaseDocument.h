@@ -292,9 +292,9 @@
 - (void)fadeInTaskProgressWindow:(nonnull NSTimer *)theTimer;
 - (void)setTaskDescription:(nonnull NSString *)description;
 - (void)setTaskPercentage:(CGFloat)taskPercentage;
-- (void)setTaskProgressToIndeterminateAfterDelay:(BOOL)afterDelay;
+- (void)setTaskProgressToIndeterminateAfterDelay:(BOOL)afterDelay NS_SWIFT_NAME(setTaskProgressToIndeterminate(afterDelay:));
 - (void)endTask;
-- (void)enableTaskCancellationWithTitle:(nonnull NSString *)buttonTitle callbackObject:(nullable id)callbackObject callbackFunction:(nullable SEL)callbackFunction;
+- (void)enableTaskCancellationWithTitle:(nonnull NSString *)buttonTitle callbackObject:(nullable NSObject *)callbackObject callbackFunction:(nullable SEL)callbackFunction NS_SWIFT_NAME(enableTaskCancellation(withTitle:callbackObject:callbackFunction:));
 - (void)disableTaskCancellation;
 - (IBAction)cancelTask:(id)sender;
 - (BOOL)isWorking;
