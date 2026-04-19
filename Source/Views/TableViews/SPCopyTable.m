@@ -812,6 +812,17 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 	if ([cellData isSPNotLoaded]) {
 		return NSLocalizedString(@"(not loaded)", @"value shown for hidden blob and text fields");
 	}
+	// Honour any SABaseFormatter attached to the column's data cell (e.g.
+	// SAUuidFormatter) so the dropped value matches what the grid shows
+	// – same precedence used by -rowsAsTabStringWithHeaders... before the
+	// raw NSData path.
+	NSFormatter *cellFormatter = [[[columns safeObjectAtIndex:(NSUInteger)visibleColumn] dataCell] formatter];
+	if ([cellFormatter isKindOfClass:[SABaseFormatter class]]) {
+		NSString *formatted = [(SABaseFormatter *)cellFormatter stringForObjectValue:cellData];
+		if (formatted) {
+			return formatted;
+		}
+	}
 	if ([cellData isKindOfClass:[NSData class]]) {
 		if (hexBlobs) {
 			return [NSString stringWithFormat:@"0x%@", [cellData dataToHexString]];
