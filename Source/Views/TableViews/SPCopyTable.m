@@ -769,6 +769,77 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 	return result;
 }
 
+/**
+ * Return the display string for a single cell, matching the NULL / blob /
+ * geometry formatting used by -draggedRowsAsTabString. Used to write the
+ * clicked cell's value onto the pasteboard during a drag, so drops onto
+ * the rule-filter input populate only that cell's value.
+ */
+- (NSString *)displayStringForRow:(NSInteger)row column:(NSInteger)visibleColumn
+{
+	NSArray *columns = [self tableColumns];
+	NSInteger numColumns = (NSInteger)[columns count];
+	if (row < 0 || visibleColumn < 0 || visibleColumn >= numColumns) {
+		return nil;
+	}
+
+	// Row / column indices get passed in from hit-tests and cached
+	// mouseDown positions, either of which can outlive a reload. Guard
+	// against both a stale row and a reordered column identifier that
+	// resolves outside the storage's column range before calling into
+	// SPDataStorageObjectAtRowAndColumn (which does not bounds-check).
+	if (!tableStorage || (NSUInteger)row >= [tableStorage count]) {
+		return nil;
+	}
+
+	NSUInteger storageIndex = (NSUInteger)[[[columns safeObjectAtIndex:(NSUInteger)visibleColumn] identifier] integerValue];
+	if (storageIndex >= [tableStorage columnCount]) {
+		return nil;
+	}
+
+	id cellData = SPDataStorageObjectAtRowAndColumn(tableStorage, (NSUInteger)row, storageIndex);
+
+	if (!cellData) {
+		return nil;
+	}
+
+	NSString *nullString = [prefs objectForKey:SPNullValue];
+	BOOL hexBlobs = [prefs boolForKey:SPDisplayBinaryDataAsHex];
+
+	if ([cellData isNSNull]) {
+		return nullString;
+	}
+	if ([cellData isSPNotLoaded]) {
+		return NSLocalizedString(@"(not loaded)", @"value shown for hidden blob and text fields");
+	}
+	// Honour any SABaseFormatter attached to the column's data cell (e.g.
+	// SAUuidFormatter) so the dropped value matches what the grid shows
+	// – same precedence used by -rowsAsTabStringWithHeaders... before the
+	// raw NSData path.
+	NSFormatter *cellFormatter = [[[columns safeObjectAtIndex:(NSUInteger)visibleColumn] dataCell] formatter];
+	if ([cellFormatter isKindOfClass:[SABaseFormatter class]]) {
+		NSString *formatted = [(SABaseFormatter *)cellFormatter stringForObjectValue:cellData];
+		if (formatted) {
+			return formatted;
+		}
+	}
+	if ([cellData isKindOfClass:[NSData class]]) {
+		if (hexBlobs) {
+			return [NSString stringWithFormat:@"0x%@", [cellData dataToHexString]];
+		}
+		NSStringEncoding connectionEncoding = [mySQLConnection stringEncoding];
+		NSString *displayString = [[NSString alloc] initWithData:cellData encoding:connectionEncoding];
+		if (!displayString) {
+			displayString = [[NSString alloc] initWithData:cellData encoding:NSISOLatin1StringEncoding];
+		}
+		return displayString;
+	}
+	if ([cellData isKindOfClass:[SPMySQLGeometryData class]]) {
+		return [cellData wktString];
+	}
+	return [cellData description];
+}
+
 #pragma mark -
 
 /**
@@ -1601,8 +1672,30 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 {
 	columnDefinitions = nil;
 	prefs = [NSUserDefaults standardUserDefaults];
+	mouseDownRow = -1;
+	mouseDownColumn = -1;
 
     [super awakeFromNib];
+}
+
+@synthesize mouseDownRow;
+@synthesize mouseDownColumn;
+
+/**
+ * Cache the row/column under the pointer at the moment the mouse goes
+ * down. -clickedRow / -clickedColumn are only valid during NSControl
+ * action dispatch and NSApp.currentEvent during a drag-source callback
+ * is the mouseDragged event that crossed the drag threshold (not the
+ * original mouseDown), so we record the click location here and read it
+ * back in -[SPTableContent tableView:writeRowsWithIndexes:toPasteboard:]
+ * when publishing the single-cell pasteboard payload.
+ */
+- (void)mouseDown:(NSEvent *)event
+{
+	NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
+	mouseDownRow = [self rowAtPoint:point];
+	mouseDownColumn = [self columnAtPoint:point];
+	[super mouseDown:event];
 }
 
 @end
