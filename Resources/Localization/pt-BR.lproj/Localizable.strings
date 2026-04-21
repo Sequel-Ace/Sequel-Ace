@@ -613,10 +613,10 @@
 "Changes have been made, which will be lost if this window is closed. Are you sure you want to continue" = "Alterações foram feitas, que serão perdidas se esta janela for fechada. Tem certeza que deseja continuar";
 
 /* quitting app informal alert title */
-"Close the app?" = "Close the app?";
+"Close the app?" = "Fechar o app?";
 
 /* quitting app informal alert body */
-"Are you sure you want to quit the app?" = "Are you sure you want to quit the app?";
+"Are you sure you want to quit the app?" = "Tem certeza de que deseja sair do app?";
 
 /* character set client: %@ */
 "character set client: %@" = "definir o conjunto de caracteres cliente: %@";
@@ -1096,7 +1096,7 @@
 "Dump of table" = "Dump de tabela";
 
 /* sql export dump of view label */
-"Dump of view" = "Dump da vista";
+"Dump of view" = "Dump da view";
 
 /* text showing that app is writing dump */
 "Dumping..." = "Executando o dump...";
@@ -1123,7 +1123,7 @@
 "Duplicate View..." = "Duplicar View...";
 
 /* partial copy database support informative message */
-"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "A duplicação do banco de dados '%@' é apenas parcialmente suportada, já que contém objetos para além de tabelas (ou seja, visualizações, procedimentos, funções, etc.), que não serão copiados.\n\nVocê gostaria de continuar?";
+"Duplicating the database '%@' is only partially supported as it contains objects other than tables (i.e. views, procedures, functions, etc.), which will not be copied.\n\nWould you like to continue?" = "Duplicar o banco de dados '%@' é suportado apenas parcialmente, pois ele contém objetos além de tabelas (por ex.: views, procedures, functions etc.), que não serão copiados.\n\nDeseja continuar?";
 
 /* edit filter */
 "Edit Filters…" = "Editar filtros…";
@@ -2197,7 +2197,7 @@
 "Requires 8 bytes storage space. M is the optional display width and does not affect the possible value range. Note: Arithmetic operations might fail for large numbers." = "Requer espaço de armazenamento de 8 bytes. M é a largura de exibição opcional e não afeta o possível intervalo do valor. Nota: Operações aritméticas podem falhar para números grandes.";
 
 /* reset auto_increment after deletion of all rows message */
-"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "Redefinir AUTO_INCREMENT após a exclusão\n(somente para Delete ALL ROWS IN TABLE)?";
+"Reset AUTO_INCREMENT after deletion\n(only for Delete ALL ROWS IN TABLE)?" = "Redefinir AUTO_INCREMENT após exclusão\n(apenas para Apagar TODAS AS LINHAS DA TABELA)?";
 
 /* delete selected row button */
 "Delete Selected Row" = "Excluir linha selecionada";
@@ -2341,7 +2341,7 @@
 "Sequel Ace could not find any columns belonging to this index. Maybe it has been removed already?" = "Sequel Ace não conseguiu encontrar colunas pertencentes a este índice. Será que já foi removido?";
 
 /* Preferences : Network : Custom SSH client : warning dialog message */
-"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "O Sequel Ace só suporta e é testado com as versões padrão do cliente OpenSSH incluídas no macOS. Usar diferentes clientes pode causar problemas de conexão, riscos de segurança ou nem sequer funcionar.\n\nPor favor, saiba que não podemos fornecer suporte para tais configurações.";
+"Sequel Ace only supports and is tested with the default OpenSSH client versions included with macOS. Using different clients might cause connection issues, security risks or not work at all.\n\nPlease be aware, that we cannot provide support for such configurations." = "O Sequel Ace oferece suporte e foi testado apenas com as versões padrão do cliente OpenSSH incluídas no macOS. Usar clientes diferentes pode causar problemas de conexão, riscos de segurança ou simplesmente não funcionar.\n\nEsteja ciente de que não podemos oferecer suporte para tais configurações.";
 
 /* sequelace URL scheme command not supported. */
 "sequelace URL scheme command not supported." = "comando Sequel Ace não suportado.";
@@ -3209,13 +3209,13 @@
 "The selected file is not a valid file.\n\nPlease try again.\n\nClass: %@" = "O arquivo selecionado não é um arquivo válido.\n\nTente novamente.\n\nClasse: %@";
 
 /* known hosts not writable error message */
-"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "O arquivo de hosts conhecidos selecionado não é gravável.\n\n%@\n\nPor favor, re-selecione o arquivo nas Preferências do Sequel Ace e tente novamente.";
+"The selected known hosts file is not writable.\n\n%@\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "O arquivo known_hosts selecionado não permite escrita.\n\n%@\n\nPor favor, selecione o arquivo novamente nas Preferências do Sequel Ace e tente novamente.";
 
 /* known hosts is invalid message */
-"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "O arquivo de hosts conhecidos selecionado é inválido.\n\nPor favor, re-selecione o arquivo nas Preferências do Sequel Ace e tente novamente.";
+"The selected known hosts file is invalid.\n\nPlease re-select the file in Sequel Ace's Preferences and try again." = "O arquivo known_hosts selecionado é inválido.\n\nPor favor, selecione o arquivo novamente nas Preferências do Sequel Ace e tente novamente.";
 
 /* known hosts contains quote message */
-"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "O arquivo de hosts conhecido selecionado contém uma citação (\") no caminho do arquivo que não é suportado.\n\n%@\n\nSelecione um arquivo diferente nas Preferências do Sequel Ace, ou renomeie o arquivo/caminho para remover a citação.";
+"The selected known hosts file contains a quote (\") in its file path which is not supported.\n\n%@\n\nPlease select a different file in Sequel Ace's Preferences or rename the file/path to remove the quote." = "O arquivo known_hosts selecionado contém uma aspa (\") no caminho, o que não é compatível.\n\n%@\n\nPor favor, selecione outro arquivo nas Preferências do Sequel Ace ou renomeie o arquivo/caminho para remover a aspa.";
 
 /* SSH Tunnel Debugging menu and window title */
 "SSH Tunnel Debugging Info" = "Informações de depuração do túnel SSH";
@@ -3332,10 +3332,10 @@
 "Never show this again" = "Não mostre isso novamente";
 
 /* Info alert when editing a generated column */
-"The current field \"%@\" is a generated column and therefore cannot be edited." = "O campo atual \"%@é uma coluna gerada e, portanto, não pode ser editada.";
+"The current field \"%@\" is a generated column and therefore cannot be edited." = "O campo atual \"%@\" é uma coluna gerada e, portanto, não pode ser editado.";
 
 /* Release note / info modal about change in latest release about column behavior */
-"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "O uso da coluna \"default\" mudou desde a última versão da Sequel ACE:\n\n- Nenhum valor padrão: Deixe-o em branco.\n- Valor de string: use aspas duplas ou '' simples \"\" se você quiser uma sequência de caracteres vazia ou para embrulhar uma sequência de caracteres\n- Expressão: Use parênteses (). Exceto nas colunas TIMESTAMP e DATETIME onde você pode especificar a função CURRENT_TIMESTAMP sem incluir parênteses.";
+"The use of the \"default\" column has changed since the last version of Sequel ACE:\n\n- No default value : Leave it blank.\n- String value : Use single '' or double quotes \"\" if you want an empty string or to wrap a string\n- Expression : Use parentheses (). Except for the TIMESTAMP and DATETIME columns where you can specify the CURRENT_TIMESTAMP function without enclosing parentheses." = "O uso da coluna \"default\" mudou desde a última versão do Sequel ACE:\n\n- Sem valor default: deixe em branco.\n- Valor string: use aspas simples '' ou duplas \"\" se quiser uma string vazia ou para delimitar uma string\n- Expressão: use parênteses (). Exceto para colunas TIMESTAMP e DATETIME, nas quais você pode especificar a função CURRENT_TIMESTAMP sem parênteses.";
 
 /* Menu option to pin a view to the top of the list of tables */
 "Pin View" = "Fixar Vista";
@@ -3371,4 +3371,4 @@
 "LaunchFavorite URL Scheme Error" = "Erro ao iniciar esquema de URL Favorita";
 
 /* sequelace URL scheme error: LaunchFavorite alert description (favorite name not found) */
-"The variable in the ?name= query parameter could not be matched with any of your favorites." = "A variável no parâmetro de consulta ?name= não pode ser combinada com nenhum dos seus favoritos.";
+"The variable in the ?name= query parameter could not be matched with any of your favorites." = "A variável no parâmetro de consulta ?name= não pôde ser associada a nenhum dos seus favoritos.";

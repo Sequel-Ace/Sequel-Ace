@@ -47,6 +47,10 @@
 - (void)_disconnect;
 - (void)_updateConnectionVariables;
 - (void)_restoreConnectionVariables;
+- (void)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
+                                              encoding:(NSString *)encodingName
+                      encodingUsesLatin1Transport:(BOOL)useLatin1Transport
+                                 timeZoneIdentifier:(NSString *)timeZoneIdentifier;
 - (void)_validateThreadSetup;
 + (void)_removeThreadVariables:(NSNotification *)aNotification;
 + (NSArray<NSString *> *)defaultSSLCipherList;
