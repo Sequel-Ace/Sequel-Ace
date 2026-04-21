@@ -71,6 +71,16 @@ final class VaultClientTests: XCTestCase {
         XCTAssertThrowsError(try VaultClient.parseOIDCAuthURL(from: json))
     }
 
+    func testParseOIDCAuthURLRejectsHTTP() {
+        // Vault should only return HTTPS auth URLs; plaintext HTTP must be rejected
+        // to prevent a compromised Vault instance from directing the user to an
+        // HTTP OIDC provider.
+        let json = """
+        { "data": { "auth_url": "http://idp.example.com/oauth2/auth?state=abc" } }
+        """.data(using: .utf8)!
+        XCTAssertThrowsError(try VaultClient.parseOIDCAuthURL(from: json))
+    }
+
     // MARK: - parseToken
 
     func testParseTokenExtractsClientToken() throws {

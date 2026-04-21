@@ -72,8 +72,7 @@ final class VaultClient {
               let dataDict = json["data"] as? [String: Any],
               let urlString = dataDict["auth_url"] as? String,
               let url = URL(string: urlString),
-              let scheme = url.scheme?.lowercased(),
-              scheme == "https" || scheme == "http" else {
+              url.scheme?.lowercased() == "https" else {
             throw VaultClientError.parseError("missing or invalid auth_url in OIDC response")
         }
         return url
