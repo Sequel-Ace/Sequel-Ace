@@ -67,8 +67,8 @@ final class VaultAuthManagerTests: XCTestCase {
         let url2 = VaultClient.buildBaseURL(host: "vault-staging.example.com", port: "443")!
         let credPath = "databases_credentials/creds/readonly"
 
-        let key1 = VaultAuthManager.cacheKey(baseURL: url1, credPath: credPath)
-        let key2 = VaultAuthManager.cacheKey(baseURL: url2, credPath: credPath)
+        let key1 = VaultAuthManager.cacheKey(baseURL: url1, oidcMount: "oidc", credPath: credPath)
+        let key2 = VaultAuthManager.cacheKey(baseURL: url2, oidcMount: "oidc", credPath: credPath)
 
         XCTAssertNotEqual(key1, key2, "Two different Vault servers must produce different cache keys even with the same credPath")
     }
@@ -82,10 +82,10 @@ final class VaultAuthManagerTests: XCTestCase {
 
         VaultAuthManager.setCachedCredentials(username: "prod-user", password: "prod-pass",
                                               leaseDuration: 3600,
-                                              for: VaultAuthManager.cacheKey(baseURL: url1, credPath: credPath))
+                                              for: VaultAuthManager.cacheKey(baseURL: url1, oidcMount: "oidc", credPath: credPath))
 
-        let hit = VaultAuthManager.cachedCredentials(for: VaultAuthManager.cacheKey(baseURL: url1, credPath: credPath))
-        let miss = VaultAuthManager.cachedCredentials(for: VaultAuthManager.cacheKey(baseURL: url2, credPath: credPath))
+        let hit = VaultAuthManager.cachedCredentials(for: VaultAuthManager.cacheKey(baseURL: url1, oidcMount: "oidc", credPath: credPath))
+        let miss = VaultAuthManager.cachedCredentials(for: VaultAuthManager.cacheKey(baseURL: url2, oidcMount: "oidc", credPath: credPath))
 
         XCTAssertEqual(hit?.username, "prod-user")
         XCTAssertNil(miss, "Staging server must not see prod credentials")
