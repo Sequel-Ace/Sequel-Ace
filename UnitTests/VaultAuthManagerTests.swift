@@ -5,11 +5,16 @@ import XCTest
 
 final class VaultAuthManagerTests: XCTestCase {
 
+    // Cache is backed by process-wide static state (credentialCache + cacheLock).
+    // Tests assume serial execution; enable test-plan parallelization with care.
+    override func setUp() {
+        super.setUp()
+        VaultAuthManager.clearCachedCredentials(for: nil)
+    }
+
     // MARK: - Credential cache
 
     func testCredentialCacheReturnsCachedEntryBeforeExpiry() {
-        VaultAuthManager.clearCachedCredentials(for: nil)
-
         let cached = VaultAuthManager.cachedCredentials(for: "databases_credentials/creds/role-a")
         XCTAssertNil(cached, "Cache should be empty initially")
 
@@ -27,7 +32,6 @@ final class VaultAuthManagerTests: XCTestCase {
     }
 
     func testCredentialCacheMissForDifferentPath() {
-        VaultAuthManager.clearCachedCredentials(for: nil)
         VaultAuthManager.setCachedCredentials(
             username: "u1",
             password: "p1",
@@ -39,7 +43,6 @@ final class VaultAuthManagerTests: XCTestCase {
     }
 
     func testClearCachedCredentialsForSpecificPath() {
-        VaultAuthManager.clearCachedCredentials(for: nil)
         VaultAuthManager.setCachedCredentials(username: "u1", password: "p1", leaseDuration: 3600, for: "path/a")
         VaultAuthManager.setCachedCredentials(username: "u2", password: "p2", leaseDuration: 3600, for: "path/b")
 
@@ -50,7 +53,6 @@ final class VaultAuthManagerTests: XCTestCase {
     }
 
     func testClearAllCachedCredentials() {
-        VaultAuthManager.clearCachedCredentials(for: nil)
         VaultAuthManager.setCachedCredentials(username: "u1", password: "p1", leaseDuration: 3600, for: "path/a")
         VaultAuthManager.setCachedCredentials(username: "u2", password: "p2", leaseDuration: 3600, for: "path/b")
 
@@ -74,8 +76,6 @@ final class VaultAuthManagerTests: XCTestCase {
     }
 
     func testCacheDoesNotCrossContaminateBetweenHosts() {
-        VaultAuthManager.clearCachedCredentials(for: nil)
-
         let url1 = VaultClient.buildBaseURL(host: "vault-prod.example.com", port: "443")!
         let url2 = VaultClient.buildBaseURL(host: "vault-staging.example.com", port: "443")!
         let credPath = "databases_credentials/creds/readonly"
@@ -92,7 +92,6 @@ final class VaultAuthManagerTests: XCTestCase {
     }
 
     func testExpiredCacheEntryIsNotReturned() {
-        VaultAuthManager.clearCachedCredentials(for: nil)
         // Set with 0 second lease — expires immediately
         VaultAuthManager.setCachedCredentials(username: "u1", password: "p1", leaseDuration: 0, for: "path/expired")
         // Tiny lease = already expired (margin is 30s, so 0 < 30 means expired)
