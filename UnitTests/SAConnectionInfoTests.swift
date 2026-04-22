@@ -148,4 +148,12 @@ final class SAConnectionInfoTests: XCTestCase {
 
         XCTAssertEqual(SAConnectionInfoObjC.resolvedMySQLConnectHost(for: info), "mysql.internal")
     }
+
+    func testVaultResolvedConnectHostFallsBackToLoopbackWhenBlank() {
+        let info = SAConnectionInfoObjC()
+        info.type = .vault
+        info.host = ""
+
+        XCTAssertEqual(SAConnectionInfoObjC.resolvedMySQLConnectHost(for: info), "127.0.0.1")
+    }
 }
