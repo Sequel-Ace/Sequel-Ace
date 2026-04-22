@@ -95,6 +95,13 @@ final class VaultClient {
         return token
     }
 
+    // MARK: - Helpers
+
+    private static func effectiveMount(_ mount: String) -> String {
+        let trimmed = mount.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "oidc" : trimmed
+    }
+
     // MARK: - Network calls
 
     /// Validate a token. Returns true if valid, false if expired/invalid, throws on network error.
@@ -121,9 +128,7 @@ final class VaultClient {
     ///   - nonce: Client-generated nonce (mirrors vault-plugin-auth-jwt CLIHandler).
     static func oidcAuthURL(baseURL: URL, mount: String, redirectURI: String, role: String?,
                             state: String, nonce: String) throws -> URL {
-        let trimmedMount = mount.trimmingCharacters(in: .whitespacesAndNewlines)
-        let effectiveMount = trimmedMount.isEmpty ? "oidc" : trimmedMount
-        let url = baseURL.appendingPathComponent("v1/auth/\(effectiveMount)/oidc/auth_url")
+        let url = baseURL.appendingPathComponent("v1/auth/\(effectiveMount(mount))/oidc/auth_url")
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 10)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -144,17 +149,17 @@ final class VaultClient {
             throw VaultClientError.parseError("no HTTP response")
         }
         guard httpResponse.statusCode == 200, let data = data else {
-            os_log("oidcAuthURL HTTP error: %d", log: log, type: .error, httpResponse.statusCode)
-            throw VaultClientError.httpError(httpResponse.statusCode, nil)
+            let vaultDetail = parseVaultErrors(from: data)
+            os_log("oidcAuthURL HTTP error: %d%{public}@", log: log, type: .error,
+                   httpResponse.statusCode, vaultDetail.map { " – \($0)" } ?? "")
+            throw VaultClientError.httpError(httpResponse.statusCode, vaultDetail)
         }
         return try parseOIDCAuthURL(from: data)
     }
 
     /// Exchange OIDC callback parameters for a Vault token.
     static func oidcCallback(baseURL: URL, mount: String, state: String, nonce: String, code: String) throws -> String {
-        let trimmedMount = mount.trimmingCharacters(in: .whitespacesAndNewlines)
-        let effectiveMount = trimmedMount.isEmpty ? "oidc" : trimmedMount
-        guard var components = URLComponents(url: baseURL.appendingPathComponent("v1/auth/\(effectiveMount)/oidc/callback"), resolvingAgainstBaseURL: false) else {
+        guard var components = URLComponents(url: baseURL.appendingPathComponent("v1/auth/\(effectiveMount(mount))/oidc/callback"), resolvingAgainstBaseURL: false) else {
             throw VaultClientError.invalidBaseURL
         }
         components.queryItems = [
@@ -175,8 +180,10 @@ final class VaultClient {
             throw VaultClientError.parseError("no HTTP response")
         }
         guard httpResponse.statusCode == 200, let data = data else {
-            os_log("oidcCallback HTTP error: %d", log: log, type: .error, httpResponse.statusCode)
-            throw VaultClientError.httpError(httpResponse.statusCode, nil)
+            let vaultDetail = parseVaultErrors(from: data)
+            os_log("oidcCallback HTTP error: %d%{public}@", log: log, type: .error,
+                   httpResponse.statusCode, vaultDetail.map { " – \($0)" } ?? "")
+            throw VaultClientError.httpError(httpResponse.statusCode, vaultDetail)
         }
         return try parseToken(from: data)
     }
