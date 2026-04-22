@@ -54,6 +54,16 @@ final class VaultClientTests: XCTestCase {
         XCTAssertThrowsError(try VaultClient.parseCredentials(from: json))
     }
 
+    func testParseCredentialsDefaultsLeaseDurationWhenAbsent() throws {
+        // cache-eviction margin (30 s) is applied to leaseDuration, so the
+        // fallback value must be exactly 3600 for the default to be meaningful.
+        let json = """
+        { "data": { "username": "v-user", "password": "s3cr3t" } }
+        """.data(using: .utf8)!
+        let result = try VaultClient.parseCredentials(from: json)
+        XCTAssertEqual(result.leaseDuration, 3600)
+    }
+
     // MARK: - parseOIDCAuthURL
 
     func testParseOIDCAuthURLExtractsURL() throws {
@@ -79,6 +89,25 @@ final class VaultClientTests: XCTestCase {
         { "data": { "auth_url": "http://idp.example.com/oauth2/auth?state=abc" } }
         """.data(using: .utf8)!
         XCTAssertThrowsError(try VaultClient.parseOIDCAuthURL(from: json))
+    }
+
+    func testParseOIDCAuthURLRejectsNonHTTPSSchemes() {
+        // A compromised Vault could return javascript:, file:, or custom schemes
+        // that NSWorkspace.open() would dispatch. The HTTPS-only guard must reject
+        // all of them to prevent open-redirect and code-execution attacks.
+        let hostileURLs = [
+            "javascript:alert(1)",
+            "file:///etc/passwd",
+            "x-myapp://attacker.example.com/steal",
+            "data:text/html,<script>alert(1)</script>",
+        ]
+        for urlString in hostileURLs {
+            let json = "{ \"data\": { \"auth_url\": \"\(urlString)\" } }".data(using: .utf8)!
+            XCTAssertThrowsError(
+                try VaultClient.parseOIDCAuthURL(from: json),
+                "Scheme must be rejected: \(urlString)"
+            )
+        }
     }
 
     // MARK: - parseToken
