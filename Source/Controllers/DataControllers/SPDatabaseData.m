@@ -173,7 +173,8 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 			}
 
 			// Try to retrieve the available collations for the supplied encoding from information_schema
-			[characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", characterSetEncoding]]];
+			NSString *escapedEncoding = [characterSetEncoding stringByReplacingOccurrencesOfString:@"'" withString:@"''" ];
+			[characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", escapedEncoding]]];
 
 			//Special handling to try utf8 if the encoding is utf8mb3 https://github.com/Sequel-Ace/Sequel-Ace/issues/1064
 			if (![characterSetCollations count] && [characterSetEncoding isEqualToString:@"utf8mb3"]) {
