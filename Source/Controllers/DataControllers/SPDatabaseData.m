@@ -534,7 +534,8 @@ copy_return:
 {
 	if (!encoding) return @[];
 
-	NSArray *rows = [self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SHOW COLLATION WHERE `Charset` = '%@'", encoding]];
+	NSString *escapedEncoding = [encoding stringByReplacingOccurrencesOfString:@"'" withString:@"''"];
+	NSArray *rows = [self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SHOW COLLATION WHERE `Charset` = '%@'", escapedEncoding]];
 	return [self _normalizedCollationRowsFromRows:rows];
 }
 
