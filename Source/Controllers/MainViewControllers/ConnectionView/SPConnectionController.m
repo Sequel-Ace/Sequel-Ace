@@ -35,6 +35,7 @@
 #import "ImageAndTextCell.h"
 #import "RegexKitLite.h"
 #import "SPKeychain.h"
+#import <objc/runtime.h>
 #import "SPSSHTunnel.h"
 #import "SPFileHandle.h"
 #import "SPTableTextFieldCell.h"
@@ -1683,9 +1684,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     if (clipboardString && [clipboardString hasPrefix:@"mysql://"]) {
         // Found a connection string in clipboard - offer to import it
 
-        // Parse URL to check for password
+        // Validate URL
         NSURL *url = [NSURL URLWithString:clipboardString];
-        BOOL hasPassword = (url.user && url.password && url.password.length > 0);
+        if (!url) {
+            NSLog(@"Invalid connection string URL: %@", clipboardString);
+            [self showImportFilePanel];
+            return;
+        }
+
+        // Check for password
+        BOOL hasPassword = (url.user.length > 0 && url.password.length > 0);
 
         // Create redacted version for display
         NSString *displayString = clipboardString;
@@ -1700,10 +1708,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         [alert setMessageText:NSLocalizedString(@"Import from Clipboard or File?", @"Import from clipboard or file")];
 
         if (hasPassword) {
-            // Create custom accessory view with show/hide toggle
-            NSView *accessoryView = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 400, 60)];
+            // Create accessory view with checkbox to reveal password
+            NSView *accessoryView = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 400, 80)];
 
-            NSTextField *label = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 35, 400, 20)];
+            NSTextField *label = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 55, 400, 20)];
             [label setStringValue:NSLocalizedString(@"Found connection string in clipboard:", @"Found connection string label")];
             [label setBezeled:NO];
             [label setDrawsBackground:NO];
@@ -1711,7 +1719,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             [label setSelectable:NO];
             [accessoryView addSubview:label];
 
-            NSTextField *urlField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 10, 360, 20)];
+            NSTextField *urlField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 30, 400, 20)];
             [urlField setStringValue:displayString];
             [urlField setBezeled:NO];
             [urlField setDrawsBackground:NO];
@@ -1720,30 +1728,25 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             [urlField setFont:[NSFont systemFontOfSize:11]];
             [accessoryView addSubview:urlField];
 
-            NSButton *eyeButton = [[NSButton alloc] initWithFrame:NSMakeRect(365, 8, 30, 24)];
-            [eyeButton setButtonType:NSButtonTypeMomentaryLight];
-            [eyeButton setBezelStyle:NSBezelStyleRegularSquare];
-            [eyeButton setBordered:YES];
-            [eyeButton setTitle:@"👁"];
-            [eyeButton setToolTip:NSLocalizedString(@"Show/hide password", @"Show/hide password tooltip")];
+            // Use checkbox instead of eye button - simpler and more reliable
+            NSButton *revealCheckbox = [[NSButton alloc] initWithFrame:NSMakeRect(0, 5, 200, 20)];
+            [revealCheckbox setButtonType:NSButtonTypeSwitch];
+            [revealCheckbox setTitle:NSLocalizedString(@"Show password", @"Show password checkbox")];
+            [revealCheckbox setState:NSOffState];
 
-            // Store both strings for toggle
-            __block BOOL isPasswordVisible = NO;
-            [eyeButton setTarget:nil];
-            [eyeButton setAction:@selector(togglePassword:)];
+            // Use target-action with stored context via associated objects
+            static void *kOriginalStringKey = &kOriginalStringKey;
+            static void *kRedactedStringKey = &kRedactedStringKey;
+            static void *kURLFieldKey = &kURLFieldKey;
 
-            // Use a custom action that captures the context
-            eyeButton.target = eyeButton;
-            eyeButton.action = @selector(performClick:);
+            objc_setAssociatedObject(revealCheckbox, kOriginalStringKey, clipboardString, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            objc_setAssociatedObject(revealCheckbox, kRedactedStringKey, displayString, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            objc_setAssociatedObject(revealCheckbox, kURLFieldKey, urlField, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 
-            // Override with a block-based approach
-            [eyeButton setTarget:[NSBlockOperation blockOperationWithBlock:^{
-                isPasswordVisible = !isPasswordVisible;
-                [urlField setStringValue:isPasswordVisible ? clipboardString : displayString];
-            }]];
-            [eyeButton setAction:@selector(main)];
+            [revealCheckbox setTarget:self];
+            [revealCheckbox setAction:@selector(togglePasswordVisibility:)];
 
-            [accessoryView addSubview:eyeButton];
+            [accessoryView addSubview:revealCheckbox];
 
             [alert setAccessoryView:accessoryView];
             [alert setInformativeText:NSLocalizedString(@"\nWould you like to import from clipboard or choose a file?", @"Import prompt")];
@@ -1770,6 +1773,28 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     else {
         // No connection string in clipboard - show file picker
         [self showImportFilePanel];
+    }
+}
+
+/**
+ * Toggles password visibility in the clipboard import alert.
+ */
+- (void)togglePasswordVisibility:(NSButton *)sender
+{
+    static void *kOriginalStringKey = &kOriginalStringKey;
+    static void *kRedactedStringKey = &kRedactedStringKey;
+    static void *kURLFieldKey = &kURLFieldKey;
+
+    NSString *originalString = objc_getAssociatedObject(sender, kOriginalStringKey);
+    NSString *redactedString = objc_getAssociatedObject(sender, kRedactedStringKey);
+    NSTextField *urlField = objc_getAssociatedObject(sender, kURLFieldKey);
+
+    if (sender.state == NSOnState) {
+        // Show password
+        [urlField setStringValue:originalString];
+    } else {
+        // Hide password
+        [urlField setStringValue:redactedString];
     }
 }
 
