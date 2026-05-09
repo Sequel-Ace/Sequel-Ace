@@ -1635,6 +1635,38 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (IBAction)importFavorites:(id)sender
 {
+    // Check if clipboard contains a MySQL connection string
+    NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
+    NSString *clipboardString = [pasteboard stringForType:NSPasteboardTypeString];
+
+    if (clipboardString && [clipboardString hasPrefix:@"mysql://"]) {
+        // Found a connection string in clipboard - offer to import it
+        NSAlert *alert = [[NSAlert alloc] init];
+        [alert setMessageText:NSLocalizedString(@"Import from Clipboard or File?", @"Import from clipboard or file")];
+        [alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Found connection string in clipboard:\n\n%@\n\nWould you like to import from clipboard or choose a file?", @"Import connection string prompt"), clipboardString]];
+        [alert addButtonWithTitle:NSLocalizedString(@"Import from Clipboard", @"Import from clipboard button")];
+        [alert addButtonWithTitle:NSLocalizedString(@"Choose File...", @"Choose file button")];
+        [alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"Cancel button")];
+
+        [alert beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:^(NSModalResponse returnCode) {
+            if (returnCode == NSAlertFirstButtonReturn) {
+                // Import from clipboard
+                [self importFavoritesFromConnectionString:clipboardString];
+            }
+            else if (returnCode == NSAlertSecondButtonReturn) {
+                // Choose file
+                [self showImportFilePanel];
+            }
+        }];
+    }
+    else {
+        // No connection string in clipboard - show file picker
+        [self showImportFilePanel];
+    }
+}
+
+- (void)showImportFilePanel
+{
     NSOpenPanel *openPanel = [NSOpenPanel openPanel];
 
     [openPanel setAllowedFileTypes:@[@"plist"]];
@@ -1647,6 +1679,273 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             [importer setDelegate:(NSObject<SPFavoritesImportProtocol> *)self];
 
             [importer importFavoritesFromFileAtPath:[[openPanel URL] path]];
+        }
+    }];
+}
+
+- (void)importFavoritesFromConnectionString:(NSString *)connectionString
+{
+    NSURL *url = [NSURL URLWithString:connectionString];
+    if (!url) {
+        NSBeep();
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Invalid Connection String", @"Invalid connection string")
+                                     message:NSLocalizedString(@"The connection string is not valid.", @"The connection string is not valid")
+                                    callback:nil];
+        return;
+    }
+
+    NSMutableDictionary *details = [NSMutableDictionary dictionary];
+    BOOL autoConnect = NO;
+    NSArray<NSString *> *invalidParameters = nil;
+    BOOL parsed = SPExtractConnectionDetailsFromMySQLURL(url, details, &autoConnect, &invalidParameters);
+
+    if (!parsed) {
+        NSBeep();
+        if ([invalidParameters count] > 0) {
+            NSArray<NSString *> *validParameters = SPValidMySQLConnectionURLQueryParameters();
+            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Invalid Connection String", @"Invalid connection string")
+                                         message:[NSString stringWithFormat:@"%@:\n\n%@: %@\n\n%@: %@",
+                                                  NSLocalizedString(@"Error parsing connection string", @"Error parsing connection string"),
+                                                  NSLocalizedString(@"Invalid query parameters given", @"Invalid query parameters given"),
+                                                  [invalidParameters componentsJoinedByString:@", "],
+                                                  NSLocalizedString(@"Allowed query parameters are", @"Allowed query parameters are"),
+                                                  [validParameters componentsJoinedByString:@", "]]
+                                        callback:nil];
+        }
+        return;
+    }
+
+    // Create a favorite from the connection details
+    NSMutableDictionary *favorite = [NSMutableDictionary dictionary];
+
+    // Set a default name based on host
+    NSString *host = [details objectForKey:@"host"] ?: @"localhost";
+    NSString *user = [details objectForKey:@"user"] ?: @"";
+    NSString *database = [details objectForKey:@"database"] ?: @"";
+    NSString *favoriteName = [NSString stringWithFormat:@"%@@%@%@",
+                              user.length ? user : @"",
+                              host,
+                              database.length ? [NSString stringWithFormat:@"/%@", database] : @""];
+    [favorite setObject:favoriteName forKey:SPFavoriteNameKey];
+
+    // Map the connection details to favorite keys
+    if ([details objectForKey:@"host"]) [favorite setObject:[details objectForKey:@"host"] forKey:SPFavoriteHostKey];
+    if ([details objectForKey:@"user"]) [favorite setObject:[details objectForKey:@"user"] forKey:SPFavoriteUserKey];
+    if ([details objectForKey:@"database"]) [favorite setObject:[details objectForKey:@"database"] forKey:SPFavoriteDatabaseKey];
+    if ([details objectForKey:@"port"]) [favorite setObject:[[details objectForKey:@"port"] stringValue] forKey:SPFavoritePortKey];
+    if ([details objectForKey:@"socket"]) [favorite setObject:[details objectForKey:@"socket"] forKey:SPFavoriteSocketKey];
+
+    // Map connection type
+    NSString *typeString = [details objectForKey:@"type"];
+    if ([typeString isEqualToString:@"SPSocketConnection"]) {
+        [favorite setObject:@1 forKey:SPFavoriteTypeKey];
+    }
+    else if ([typeString isEqualToString:@"SPSSHTunnelConnection"]) {
+        [favorite setObject:@2 forKey:SPFavoriteTypeKey];
+        if ([details objectForKey:@"ssh_host"]) [favorite setObject:[details objectForKey:@"ssh_host"] forKey:SPFavoriteSSHHostKey];
+        if ([details objectForKey:@"ssh_port"]) [favorite setObject:[details objectForKey:@"ssh_port"] forKey:SPFavoriteSSHPortKey];
+        if ([details objectForKey:@"ssh_user"]) [favorite setObject:[details objectForKey:@"ssh_user"] forKey:SPFavoriteSSHUserKey];
+        if ([details objectForKey:@"ssh_keyLocationEnabled"]) [favorite setObject:[details objectForKey:@"ssh_keyLocationEnabled"] forKey:SPFavoriteSSHKeyLocationEnabledKey];
+        if ([details objectForKey:@"ssh_keyLocation"]) [favorite setObject:[details objectForKey:@"ssh_keyLocation"] forKey:SPFavoriteSSHKeyLocationKey];
+    }
+    else if ([typeString isEqualToString:@"SPAWSIAMConnection"]) {
+        [favorite setObject:@3 forKey:SPFavoriteTypeKey];
+        if ([details objectForKey:@"aws_region"]) [favorite setObject:[details objectForKey:@"aws_region"] forKey:@"awsRegion"];
+        if ([details objectForKey:@"aws_profile"]) [favorite setObject:[details objectForKey:@"aws_profile"] forKey:@"awsProfile"];
+    }
+    else {
+        [favorite setObject:@0 forKey:SPFavoriteTypeKey]; // TCP/IP
+    }
+
+    // Check for duplicates
+    SPTreeNode *duplicateNode = [self findDuplicateFavoriteForHost:host
+                                                              user:user
+                                                          database:database
+                                                              type:typeString];
+
+    if (duplicateNode) {
+        // Found a duplicate - create item and show UI
+        SPDuplicateImportItem *item = [[SPDuplicateImportItem alloc] initWithFavoriteName:favoriteName
+                                                                                      host:host
+                                                                                  favorite:favorite
+                                                                             duplicateNode:duplicateNode];
+
+        NSAlert *alert = [[NSAlert alloc] init];
+        [alert setMessageText:NSLocalizedString(@"Duplicate Connection Found", @"Duplicate connection found")];
+        [alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"A connection with the same details already exists:\n\n%@\n\nChoose an action:", @"Duplicate connection prompt"), favoriteName]];
+
+        // Add custom accessory view
+        NSView *accessoryView = [SPDuplicateImportHelper createAccessoryViewWithDuplicateItems:@[item]];
+        [alert setAccessoryView:accessoryView];
+
+        [alert addButtonWithTitle:NSLocalizedString(@"Import", @"Import button")];
+        [alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"Cancel button")];
+
+        [alert beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:^(NSModalResponse returnCode) {
+            if (returnCode != NSAlertFirstButtonReturn) {
+                // Cancel
+                return;
+            }
+
+            SPTreeNode *selectedNode = nil;
+
+            if (item.action == SPDuplicateActionUpdate) {
+                // Update existing
+                [self updateFavoriteNode:duplicateNode withData:favorite];
+                selectedNode = duplicateNode;
+            }
+            else if (item.action == SPDuplicateActionCreateNew) {
+                // Create new
+                selectedNode = [self->favoritesController addFavoriteNodeWithData:favorite asChildOfNode:nil];
+            }
+            // If Skip - do nothing
+
+            if (selectedNode) {
+                if (self->currentSortItem > SPFavoritesSortUnsorted) {
+                    [self _sortFavorites];
+                }
+                [self _reloadFavoritesViewData];
+
+                NSInteger row = [self->favoritesOutlineView rowForItem:selectedNode];
+                if (row >= 0) {
+                    [self->favoritesOutlineView selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:NO];
+                    [self _scrollToSelectedNode];
+                }
+            }
+        }];
+    }
+    else {
+        // No duplicate - add normally
+        SPTreeNode *newNode = [favoritesController addFavoriteNodeWithData:favorite asChildOfNode:nil];
+
+        if (currentSortItem > SPFavoritesSortUnsorted) {
+            [self _sortFavorites];
+        }
+
+        [self _reloadFavoritesViewData];
+
+        // Select and scroll to the new favorite
+        NSInteger row = [favoritesOutlineView rowForItem:newNode];
+        if (row >= 0) {
+            [favoritesOutlineView selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:NO];
+            [self _scrollToSelectedNode];
+        }
+    }
+}
+
+- (SPTreeNode *)findDuplicateFavoriteForHost:(NSString *)host
+                                         user:(NSString *)user
+                                     database:(NSString *)database
+                                         type:(NSString *)type
+{
+    // Get all favorite leaves
+    NSArray *allFavorites = [favoritesRoot allChildLeafs];
+
+    for (SPTreeNode *node in allFavorites) {
+        if ([node isGroup]) continue;
+
+        NSDictionary *favoriteDict = [[node representedObject] nodeFavorite];
+        if (!favoriteDict) continue;
+
+        // Compare key fields
+        NSString *existingHost = [favoriteDict objectForKey:SPFavoriteHostKey] ?: @"";
+        NSString *existingUser = [favoriteDict objectForKey:SPFavoriteUserKey] ?: @"";
+        NSString *existingDatabase = [favoriteDict objectForKey:SPFavoriteDatabaseKey] ?: @"";
+
+        // Get type string
+        NSInteger existingTypeInt = [[favoriteDict objectForKey:SPFavoriteTypeKey] integerValue];
+        NSString *existingType = @"SPTCPIPConnection";
+        if (existingTypeInt == 1) existingType = @"SPSocketConnection";
+        else if (existingTypeInt == 2) existingType = @"SPSSHTunnelConnection";
+        else if (existingTypeInt == 3) existingType = @"SPAWSIAMConnection";
+
+        // Check if all key fields match
+        if ([existingHost isEqualToString:host] &&
+            [existingUser isEqualToString:user] &&
+            [existingDatabase isEqualToString:database] &&
+            [existingType isEqualToString:type]) {
+            return node;
+        }
+    }
+
+    return nil;
+}
+
+- (void)updateFavoriteNode:(SPTreeNode *)node withData:(NSDictionary *)newData
+{
+    id representedObject = [node representedObject];
+    if (![representedObject respondsToSelector:@selector(nodeFavorite)]) return;
+
+    NSMutableDictionary *favoriteDict = [[representedObject nodeFavorite] mutableCopy];
+    if (!favoriteDict) return;
+
+    // Update all fields from newData (except name - keep the existing name)
+    for (NSString *key in newData) {
+        if (![key isEqualToString:SPFavoriteNameKey]) {
+            [favoriteDict setObject:[newData objectForKey:key] forKey:key];
+        }
+    }
+
+    // Update the node's data
+    if ([representedObject respondsToSelector:@selector(setNodeFavorite:)]) {
+        [representedObject setNodeFavorite:favoriteDict];
+    }
+
+    // Save favorites
+    [favoritesController saveFavorites];
+    [[NSNotificationCenter defaultCenter] postNotificationName:SPConnectionFavoritesChangedNotification object:self];
+}
+
+/**
+ * Copies the connection string of the selected favorite to the clipboard.
+ */
+- (IBAction)copyConnectionString:(id)sender
+{
+    SPTreeNode *node = [self selectedFavoriteNode];
+
+    if (!node || [node isGroup]) {
+        NSBeep();
+        return;
+    }
+
+    // Show dialog with password option
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:NSLocalizedString(@"Copy Connection String", @"Copy connection string")];
+    [alert setInformativeText:NSLocalizedString(@"Would you like to include the password in the connection string?\n\n⚠️ WARNING: Sharing passwords in plaintext (Slack, email, etc.) is a security risk!\n\nOnly include the password if you're sharing through a secure channel.", @"Copy connection string password warning")];
+    [alert addButtonWithTitle:NSLocalizedString(@"Copy Without Password", @"Copy without password button")];
+    [alert addButtonWithTitle:NSLocalizedString(@"Copy With Password", @"Copy with password button")];
+    [alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"Cancel button")];
+    [alert setAlertStyle:NSAlertStyleWarning];
+
+    [alert beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:^(NSModalResponse returnCode) {
+        if (returnCode == NSAlertThirdButtonReturn) {
+            // Cancel
+            return;
+        }
+
+        BOOL includePassword = (returnCode == NSAlertSecondButtonReturn);
+        id nodeObject = [node representedObject];
+        NSString *connectionString = nil;
+
+        if ([nodeObject respondsToSelector:@selector(toConnectionString:)]) {
+            connectionString = [nodeObject toConnectionString:includePassword];
+        }
+
+        if (connectionString && [connectionString length] > 0) {
+            NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
+            [pasteboard clearContents];
+            [pasteboard setString:connectionString forType:NSPasteboardTypeString];
+
+            // Show brief success message
+            NSString *message = includePassword ?
+                NSLocalizedString(@"Connection string with password copied to clipboard", @"Connection string with password copied") :
+                NSLocalizedString(@"Connection string copied to clipboard (password not included)", @"Connection string copied without password");
+
+            // You could add a toast notification here if available
+            SPLog(@"%@", message);
+        } else {
+            NSBeep();
+            NSLog(@"Failed to generate connection string for favorite");
         }
     }];
 }
@@ -3220,6 +3519,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     // import does not depend on a selection
     if(action == @selector(importFavorites:)) return YES;
 
+    // Copy connection string requires a single non-group favorite
+    if (action == @selector(copyConnectionString:)) {
+        return (selectedRows == 1) && (![node isGroup]);
+    }
+
     if (node == quickConnectItem) return NO;
 
     // Remove/rename the selected node
@@ -3261,32 +3565,145 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (void)favoritesImportData:(NSArray *)data
 {
-    SPTreeNode *newNode;
-    NSMutableArray *importedNodes = [NSMutableArray array];
-    NSMutableIndexSet *importedIndexSet = [NSMutableIndexSet indexSet];
+    if ([data count] == 0) return;
 
-    // Add each of the imported favorites to the root node
-    for (NSMutableDictionary *favorite in data)
-    {
-        newNode = [favoritesController addFavoriteNodeWithData:favorite asChildOfNode:nil];
-        [importedNodes addObject:newNode];
+    // Check for duplicates in the imported data
+    NSMutableArray *duplicates = [NSMutableArray array];
+    NSMutableArray *newFavorites = [NSMutableArray array];
+
+    for (NSDictionary *favorite in data) {
+        NSString *host = [favorite objectForKey:SPFavoriteHostKey] ?: @"";
+        NSString *user = [favorite objectForKey:SPFavoriteUserKey] ?: @"";
+        NSString *database = [favorite objectForKey:SPFavoriteDatabaseKey] ?: @"";
+        NSInteger typeInt = [[favorite objectForKey:SPFavoriteTypeKey] integerValue];
+
+        NSString *typeString = @"SPTCPIPConnection";
+        if (typeInt == 1) typeString = @"SPSocketConnection";
+        else if (typeInt == 2) typeString = @"SPSSHTunnelConnection";
+        else if (typeInt == 3) typeString = @"SPAWSIAMConnection";
+
+        SPTreeNode *duplicateNode = [self findDuplicateFavoriteForHost:host
+                                                                  user:user
+                                                              database:database
+                                                                  type:typeString];
+
+        if (duplicateNode) {
+            [duplicates addObject:@{@"favorite": favorite, @"node": duplicateNode}];
+        } else {
+            [newFavorites addObject:favorite];
+        }
     }
 
-    if (currentSortItem > SPFavoritesSortUnsorted) {
-        [self _sortFavorites];
+    // Handle duplicates
+    if ([duplicates count] > 0) {
+        // Create duplicate items for the UI
+        NSMutableArray<SPDuplicateImportItem *> *duplicateItems = [NSMutableArray array];
+
+        for (NSDictionary *dupInfo in duplicates) {
+            NSDictionary *favorite = [dupInfo objectForKey:@"favorite"];
+            SPTreeNode *node = [dupInfo objectForKey:@"node"];
+
+            NSString *favoriteName = [favorite objectForKey:SPFavoriteNameKey] ?: @"Unnamed";
+            NSString *host = [favorite objectForKey:SPFavoriteHostKey] ?: @"";
+
+            SPDuplicateImportItem *item = [[SPDuplicateImportItem alloc] initWithFavoriteName:favoriteName
+                                                                                          host:host
+                                                                                      favorite:favorite
+                                                                                 duplicateNode:node];
+            [duplicateItems addObject:item];
+        }
+
+        NSString *message;
+        if ([duplicates count] == 1) {
+            message = NSLocalizedString(@"1 duplicate connection found. Choose an action for each:", @"1 duplicate found");
+        } else {
+            message = [NSString stringWithFormat:NSLocalizedString(@"%ld duplicate connections found. Choose an action for each:", @"Multiple duplicates found"), (long)[duplicates count]];
+        }
+
+        NSAlert *alert = [[NSAlert alloc] init];
+        [alert setMessageText:NSLocalizedString(@"Duplicate Connections Found", @"Duplicate connections found")];
+        [alert setInformativeText:message];
+
+        // Add custom accessory view
+        NSView *accessoryView = [SPDuplicateImportHelper createAccessoryViewWithDuplicateItems:duplicateItems];
+        [alert setAccessoryView:accessoryView];
+
+        [alert addButtonWithTitle:NSLocalizedString(@"Import", @"Import button")];
+        [alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"Cancel button")];
+
+        [alert beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:^(NSModalResponse returnCode) {
+            if (returnCode != NSAlertFirstButtonReturn) {
+                // Cancel
+                return;
+            }
+
+            NSMutableArray *importedNodes = [NSMutableArray array];
+            NSMutableIndexSet *importedIndexSet = [NSMutableIndexSet indexSet];
+
+            // Process each duplicate based on selected action
+            for (SPDuplicateImportItem *item in duplicateItems) {
+                if (item.action == SPDuplicateActionUpdate) {
+                    // Update existing
+                    [self updateFavoriteNode:item.duplicateNode withData:item.favorite];
+                    [importedNodes addObject:item.duplicateNode];
+                }
+                else if (item.action == SPDuplicateActionCreateNew) {
+                    // Create new
+                    SPTreeNode *newNode = [self->favoritesController addFavoriteNodeWithData:[item.favorite mutableCopy] asChildOfNode:nil];
+                    [importedNodes addObject:newNode];
+                }
+                // If Skip - do nothing
+            }
+
+            // Add new favorites (non-duplicates)
+            for (NSMutableDictionary *favorite in newFavorites) {
+                SPTreeNode *newNode = [self->favoritesController addFavoriteNodeWithData:favorite asChildOfNode:nil];
+                [importedNodes addObject:newNode];
+            }
+
+            if (self->currentSortItem > SPFavoritesSortUnsorted) {
+                [self _sortFavorites];
+            }
+
+            [self _reloadFavoritesViewData];
+
+            // Select the imported nodes and scroll into view
+            for (SPTreeNode *eachNode in importedNodes) {
+                NSInteger row = [self->favoritesOutlineView rowForItem:eachNode];
+                if (row >= 0) {
+                    [importedIndexSet addIndex:row];
+                }
+            }
+
+            [self->favoritesOutlineView selectRowIndexes:importedIndexSet byExtendingSelection:NO];
+            [self _scrollToSelectedNode];
+        }];
     }
+    else {
+        // No duplicates - import all normally
+        NSMutableArray *importedNodes = [NSMutableArray array];
+        NSMutableIndexSet *importedIndexSet = [NSMutableIndexSet indexSet];
 
-    [self _reloadFavoritesViewData];
+        for (NSMutableDictionary *favorite in data) {
+            SPTreeNode *newNode = [favoritesController addFavoriteNodeWithData:favorite asChildOfNode:nil];
+            [importedNodes addObject:newNode];
+        }
 
-    // Select the new nodes and scroll into view
-    for (SPTreeNode *eachNode in importedNodes)
-    {
-        [importedIndexSet addIndex:[favoritesOutlineView rowForItem:eachNode]];
+        if (currentSortItem > SPFavoritesSortUnsorted) {
+            [self _sortFavorites];
+        }
+
+        [self _reloadFavoritesViewData];
+
+        // Select the new nodes and scroll into view
+        for (SPTreeNode *eachNode in importedNodes) {
+            [importedIndexSet addIndex:[favoritesOutlineView rowForItem:eachNode]];
+        }
+
+        [favoritesOutlineView selectRowIndexes:importedIndexSet byExtendingSelection:NO];
+
+        [self _scrollToSelectedNode];
     }
-
-    [favoritesOutlineView selectRowIndexes:importedIndexSet byExtendingSelection:NO];
-
-    [self _scrollToSelectedNode];
 }
 
 /**
