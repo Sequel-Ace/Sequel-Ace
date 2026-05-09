@@ -1888,7 +1888,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     // Generate unique ID for this favorite
     NSNumber *favoriteID = [self _createNewFavoriteID];
-    [favorite setObject:favoriteID forKey:SPFavouriteIDKey];
+    [favorite setObject:favoriteID forKey:SPFavoriteIDKey];
 
     // Save password to keychain if present
     NSString *passwordFromURL = [details objectForKey:@"password"];
