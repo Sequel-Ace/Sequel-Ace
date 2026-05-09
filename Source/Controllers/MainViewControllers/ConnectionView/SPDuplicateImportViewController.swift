@@ -56,7 +56,7 @@ import Cocoa
         let headerStack = NSStackView()
         headerStack.orientation = .horizontal
         headerStack.spacing = 8
-        headerStack.distribution = .fillEqually
+        headerStack.distribution = .fill
 
         let nameHeader = NSTextField(labelWithString: NSLocalizedString("Connection", comment: "Connection header"))
         nameHeader.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
@@ -87,7 +87,7 @@ import Cocoa
             let itemStack = NSStackView()
             itemStack.orientation = .horizontal
             itemStack.spacing = 8
-            itemStack.distribution = .fillEqually
+            itemStack.distribution = .fill
 
             // Connection name label
             let nameLabel = NSTextField(labelWithString: "\(item.favoriteName) (\(item.host))")
@@ -149,7 +149,9 @@ import Cocoa
 
     @objc func actionChanged(_ sender: NSPopUpButton) {
         let index = sender.tag
-        guard index < items.count else { return }
+        guard index < items.count else {
+            return
+        }
 
         items[index].action = SPDuplicateAction(rawValue: sender.indexOfSelectedItem) ?? .update
     }

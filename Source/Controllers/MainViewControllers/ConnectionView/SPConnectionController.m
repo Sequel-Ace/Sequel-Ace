@@ -134,6 +134,47 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 @implementation SPConnectionController
 
+#pragma mark - Connection Type Mapping Helpers
+
+/**
+ * Converts a connection type string to its numeric tag value.
+ * @param typeString The connection type string (e.g., "SPSocketConnection")
+ * @return The corresponding numeric tag (0=TCP/IP, 1=Socket, 2=SSH, 3=AWS IAM)
+ */
++ (NSInteger)favoriteTypeTagForString:(NSString *)typeString
+{
+    if ([typeString isEqualToString:@"SPSocketConnection"]) {
+        return SPSocketConnection;
+    }
+    else if ([typeString isEqualToString:@"SPSSHTunnelConnection"]) {
+        return SPSSHTunnelConnection;
+    }
+    else if ([typeString isEqualToString:@"SPAWSIAMConnection"]) {
+        return SPAWSIAMConnection;
+    }
+    return SPTCPIPConnection; // Default
+}
+
+/**
+ * Converts a connection type tag to its string representation.
+ * @param typeTag The connection type tag (0=TCP/IP, 1=Socket, 2=SSH, 3=AWS IAM)
+ * @return The corresponding type string
+ */
++ (NSString *)stringForFavoriteTypeTag:(NSInteger)typeTag
+{
+    switch (typeTag) {
+        case SPSocketConnection:
+            return @"SPSocketConnection";
+        case SPSSHTunnelConnection:
+            return @"SPSSHTunnelConnection";
+        case SPAWSIAMConnection:
+            return @"SPAWSIAMConnection";
+        case SPTCPIPConnection:
+        default:
+            return @"SPTCPIPConnection";
+    }
+}
+
 @synthesize delegate;
 @synthesize type;
 @synthesize name;
@@ -1641,9 +1682,76 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     if (clipboardString && [clipboardString hasPrefix:@"mysql://"]) {
         // Found a connection string in clipboard - offer to import it
+
+        // Parse URL to check for password
+        NSURL *url = [NSURL URLWithString:clipboardString];
+        BOOL hasPassword = (url.user && url.password && url.password.length > 0);
+
+        // Create redacted version for display
+        NSString *displayString = clipboardString;
+        if (hasPassword) {
+            // Replace password with •••
+            NSString *passwordPattern = [NSString stringWithFormat:@":%@@", url.password];
+            NSString *redactedPattern = @":•••@";
+            displayString = [clipboardString stringByReplacingOccurrencesOfString:passwordPattern withString:redactedPattern];
+        }
+
         NSAlert *alert = [[NSAlert alloc] init];
         [alert setMessageText:NSLocalizedString(@"Import from Clipboard or File?", @"Import from clipboard or file")];
-        [alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Found connection string in clipboard:\n\n%@\n\nWould you like to import from clipboard or choose a file?", @"Import connection string prompt"), clipboardString]];
+
+        if (hasPassword) {
+            // Create custom accessory view with show/hide toggle
+            NSView *accessoryView = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 400, 60)];
+
+            NSTextField *label = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 35, 400, 20)];
+            [label setStringValue:NSLocalizedString(@"Found connection string in clipboard:", @"Found connection string label")];
+            [label setBezeled:NO];
+            [label setDrawsBackground:NO];
+            [label setEditable:NO];
+            [label setSelectable:NO];
+            [accessoryView addSubview:label];
+
+            NSTextField *urlField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 10, 360, 20)];
+            [urlField setStringValue:displayString];
+            [urlField setBezeled:NO];
+            [urlField setDrawsBackground:NO];
+            [urlField setEditable:NO];
+            [urlField setSelectable:YES];
+            [urlField setFont:[NSFont systemFontOfSize:11]];
+            [accessoryView addSubview:urlField];
+
+            NSButton *eyeButton = [[NSButton alloc] initWithFrame:NSMakeRect(365, 8, 30, 24)];
+            [eyeButton setButtonType:NSButtonTypeMomentaryLight];
+            [eyeButton setBezelStyle:NSBezelStyleRegularSquare];
+            [eyeButton setBordered:YES];
+            [eyeButton setTitle:@"👁"];
+            [eyeButton setToolTip:NSLocalizedString(@"Show/hide password", @"Show/hide password tooltip")];
+
+            // Store both strings for toggle
+            __block BOOL isPasswordVisible = NO;
+            [eyeButton setTarget:nil];
+            [eyeButton setAction:@selector(togglePassword:)];
+
+            // Use a custom action that captures the context
+            eyeButton.target = eyeButton;
+            eyeButton.action = @selector(performClick:);
+
+            // Override with a block-based approach
+            [eyeButton setTarget:[NSBlockOperation blockOperationWithBlock:^{
+                isPasswordVisible = !isPasswordVisible;
+                [urlField setStringValue:isPasswordVisible ? clipboardString : displayString];
+            }]];
+            [eyeButton setAction:@selector(main)];
+
+            [accessoryView addSubview:eyeButton];
+
+            [alert setAccessoryView:accessoryView];
+            [alert setInformativeText:NSLocalizedString(@"\nWould you like to import from clipboard or choose a file?", @"Import prompt")];
+        }
+        else {
+            [alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Found connection string in clipboard:\n\n%@\n\nWould you like to import from clipboard or choose a file?", @"Import connection string prompt"), clipboardString]];
+        }
+
         [alert addButtonWithTitle:NSLocalizedString(@"Import from Clipboard", @"Import from clipboard button")];
         [alert addButtonWithTitle:NSLocalizedString(@"Choose File...", @"Choose file button")];
         [alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"Cancel button")];
@@ -1735,26 +1843,34 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     if ([details objectForKey:@"port"]) [favorite setObject:[[details objectForKey:@"port"] stringValue] forKey:SPFavoritePortKey];
     if ([details objectForKey:@"socket"]) [favorite setObject:[details objectForKey:@"socket"] forKey:SPFavoriteSocketKey];
 
-    // Map connection type
+    // Map connection type using centralized helper
     NSString *typeString = [details objectForKey:@"type"];
-    if ([typeString isEqualToString:@"SPSocketConnection"]) {
-        [favorite setObject:@1 forKey:SPFavoriteTypeKey];
-    }
-    else if ([typeString isEqualToString:@"SPSSHTunnelConnection"]) {
-        [favorite setObject:@2 forKey:SPFavoriteTypeKey];
+    NSInteger typeTag = [SPConnectionController favoriteTypeTagForString:typeString];
+    [favorite setObject:@(typeTag) forKey:SPFavoriteTypeKey];
+
+    // Add type-specific parameters
+    if (typeTag == SPSSHTunnelConnection) {
         if ([details objectForKey:@"ssh_host"]) [favorite setObject:[details objectForKey:@"ssh_host"] forKey:SPFavoriteSSHHostKey];
         if ([details objectForKey:@"ssh_port"]) [favorite setObject:[details objectForKey:@"ssh_port"] forKey:SPFavoriteSSHPortKey];
         if ([details objectForKey:@"ssh_user"]) [favorite setObject:[details objectForKey:@"ssh_user"] forKey:SPFavoriteSSHUserKey];
         if ([details objectForKey:@"ssh_keyLocationEnabled"]) [favorite setObject:[details objectForKey:@"ssh_keyLocationEnabled"] forKey:SPFavoriteSSHKeyLocationEnabledKey];
         if ([details objectForKey:@"ssh_keyLocation"]) [favorite setObject:[details objectForKey:@"ssh_keyLocation"] forKey:SPFavoriteSSHKeyLocationKey];
     }
-    else if ([typeString isEqualToString:@"SPAWSIAMConnection"]) {
-        [favorite setObject:@3 forKey:SPFavoriteTypeKey];
+    else if (typeTag == SPAWSIAMConnection) {
         if ([details objectForKey:@"aws_region"]) [favorite setObject:[details objectForKey:@"aws_region"] forKey:@"awsRegion"];
         if ([details objectForKey:@"aws_profile"]) [favorite setObject:[details objectForKey:@"aws_profile"] forKey:@"awsProfile"];
     }
-    else {
-        [favorite setObject:@0 forKey:SPFavoriteTypeKey]; // TCP/IP
+
+    // Generate unique ID for this favorite
+    NSNumber *favoriteID = [self _createNewFavoriteID];
+    [favorite setObject:favoriteID forKey:SPFavouriteIDKey];
+
+    // Save password to keychain if present
+    NSString *passwordFromURL = [details objectForKey:@"password"];
+    if (passwordFromURL && passwordFromURL.length > 0) {
+        [keychain addPassword:passwordFromURL
+                   forName:[NSString stringWithFormat:@"Sequel Ace : %@", favoriteName]
+                   account:[NSString stringWithFormat:@"%@@%@/%@", user, host, database]];
     }
 
     // Check for duplicates
@@ -1812,6 +1928,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                     [self _scrollToSelectedNode];
                 }
             }
+
+            // Clear singleton items to prevent memory leak
+            SPDuplicateActionHandler.shared.items = @[];
         }];
     }
     else {
@@ -1852,12 +1971,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         NSString *existingUser = [favoriteDict objectForKey:SPFavoriteUserKey] ?: @"";
         NSString *existingDatabase = [favoriteDict objectForKey:SPFavoriteDatabaseKey] ?: @"";
 
-        // Get type string
+        // Get type string using centralized helper
         NSInteger existingTypeInt = [[favoriteDict objectForKey:SPFavoriteTypeKey] integerValue];
-        NSString *existingType = @"SPTCPIPConnection";
-        if (existingTypeInt == 1) existingType = @"SPSocketConnection";
-        else if (existingTypeInt == 2) existingType = @"SPSSHTunnelConnection";
-        else if (existingTypeInt == 3) existingType = @"SPAWSIAMConnection";
+        NSString *existingType = [SPConnectionController stringForFavoriteTypeTag:existingTypeInt];
 
         // Check if all key fields match
         if ([existingHost isEqualToString:host] &&
@@ -1879,10 +1995,48 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     NSMutableDictionary *favoriteDict = [[representedObject nodeFavorite] mutableCopy];
     if (!favoriteDict) return;
 
+    // Get old values for keychain update
+    NSString *oldHost = [favoriteDict objectForKey:SPFavoriteHostKey] ?: @"";
+    NSString *oldUser = [favoriteDict objectForKey:SPFavoriteUserKey] ?: @"";
+    NSString *oldDatabase = [favoriteDict objectForKey:SPFavoriteDatabaseKey] ?: @"";
+    NSString *oldName = [favoriteDict objectForKey:SPFavoriteNameKey] ?: @"";
+    NSString *oldAccount = [NSString stringWithFormat:@"%@@%@/%@", oldUser, oldHost, oldDatabase];
+
     // Update all fields from newData (except name - keep the existing name)
     for (NSString *key in newData) {
         if (![key isEqualToString:SPFavoriteNameKey]) {
             [favoriteDict setObject:[newData objectForKey:key] forKey:key];
+        }
+    }
+
+    // Get new values
+    NSString *newHost = [favoriteDict objectForKey:SPFavoriteHostKey] ?: @"";
+    NSString *newUser = [favoriteDict objectForKey:SPFavoriteUserKey] ?: @"";
+    NSString *newDatabase = [favoriteDict objectForKey:SPFavoriteDatabaseKey] ?: @"";
+    NSString *newName = [favoriteDict objectForKey:SPFavoriteNameKey] ?: @"";
+    NSString *newAccount = [NSString stringWithFormat:@"%@@%@/%@", newUser, newHost, newDatabase];
+
+    // Update keychain if host/user/database changed
+    BOOL accountChanged = ![oldAccount isEqualToString:newAccount];
+    NSString *passwordFromNewData = [newData objectForKey:@"password"];
+
+    if (accountChanged || (passwordFromNewData && passwordFromNewData.length > 0)) {
+        // Try to get existing password
+        NSString *existingPassword = [keychain getPasswordForName:[NSString stringWithFormat:@"Sequel Ace : %@", oldName]
+                                                           account:oldAccount];
+
+        // Remove old keychain entry if account changed
+        if (accountChanged && existingPassword) {
+            [keychain deletePasswordForName:[NSString stringWithFormat:@"Sequel Ace : %@", oldName]
+                                    account:oldAccount];
+        }
+
+        // Add/update keychain with new account
+        NSString *passwordToSave = passwordFromNewData ?: existingPassword;
+        if (passwordToSave && passwordToSave.length > 0) {
+            [keychain addPassword:passwordToSave
+                       forName:[NSString stringWithFormat:@"Sequel Ace : %@", newName]
+                       account:newAccount];
         }
     }
 
@@ -3577,10 +3731,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         NSString *database = [favorite objectForKey:SPFavoriteDatabaseKey] ?: @"";
         NSInteger typeInt = [[favorite objectForKey:SPFavoriteTypeKey] integerValue];
 
-        NSString *typeString = @"SPTCPIPConnection";
-        if (typeInt == 1) typeString = @"SPSocketConnection";
-        else if (typeInt == 2) typeString = @"SPSSHTunnelConnection";
-        else if (typeInt == 3) typeString = @"SPAWSIAMConnection";
+        // Use centralized helper for type mapping
+        NSString *typeString = [SPConnectionController stringForFavoriteTypeTag:typeInt];
 
         SPTreeNode *duplicateNode = [self findDuplicateFavoriteForHost:host
                                                                   user:user
@@ -3670,13 +3822,19 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             // Select the imported nodes and scroll into view
             for (SPTreeNode *eachNode in importedNodes) {
                 NSInteger row = [self->favoritesOutlineView rowForItem:eachNode];
-                if (row >= 0) {
-                    [importedIndexSet addIndex:row];
+                // Guard against -1 before adding to index set
+                if (row != -1) {
+                    [importedIndexSet addIndex:(NSUInteger)row];
                 }
             }
 
-            [self->favoritesOutlineView selectRowIndexes:importedIndexSet byExtendingSelection:NO];
-            [self _scrollToSelectedNode];
+            if ([importedIndexSet count] > 0) {
+                [self->favoritesOutlineView selectRowIndexes:importedIndexSet byExtendingSelection:NO];
+                [self _scrollToSelectedNode];
+            }
+
+            // Clear singleton items to prevent memory leak
+            SPDuplicateActionHandler.shared.items = @[];
         }];
     }
     else {
