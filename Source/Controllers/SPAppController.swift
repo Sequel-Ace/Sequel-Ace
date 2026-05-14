@@ -22,6 +22,31 @@ extension SPAppController {
         tabManager.newWindowForTab()
     }
 
+    /// Opens a standalone connection window (decoupled from document lifecycle).
+    /// This is the modernized connection flow — the connection screen exists
+    /// independently, and only creates a document tab on successful connect.
+    /// Tracks open standalone connection windows so they don't get deallocated.
+    private static var standaloneConnectionWindows: [SAConnectionWindowController] = []
+
+    @IBAction func openStandaloneConnectionWindow(_ sender: Any) {
+        let controller = SAConnectionWindowController()
+        controller.showWindow(sender)
+
+        // Retain the controller; remove when its window closes.
+        Self.standaloneConnectionWindows.append(controller)
+        var token: NSObjectProtocol?
+        token = NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification,
+            object: controller.window,
+            queue: .main
+        ) { _ in
+            Self.standaloneConnectionWindows.removeAll { $0 === controller }
+            if let token = token {
+                NotificationCenter.default.removeObserver(token)
+            }
+        }
+    }
+
     @IBAction func export(_ sender: Any) {
         tabManager.activeWindowController?.databaseDocument.exportData()
     }
@@ -205,6 +230,37 @@ extension SPAppController {
 
     @IBAction func showMySQLHelp(_ sender: Any) {
         tabManager.activeWindowController?.databaseDocument.showMySQLHelp()
+    }
+}
+
+// MARK: - Standalone Connection Window Menu Item
+
+extension SPAppController {
+
+    /// Adds a "New Connection Window" menu item to the File menu.
+    /// Called from applicationDidFinishLaunching via ObjC.
+    @objc func installStandaloneConnectionMenuItem() {
+        guard let fileMenu = NSApp.mainMenu?.item(withTitle: "File")?.submenu else {
+            return
+        }
+
+        // Idempotent: don't add if already present
+        if fileMenu.items.contains(where: { $0.action == #selector(openStandaloneConnectionWindow(_:)) }) {
+            return
+        }
+
+        // Insert after "New Tab" (index 1) or at index 2
+        let insertIndex = min(2, fileMenu.items.count)
+
+        let menuItem = NSMenuItem(
+            title: NSLocalizedString("New Connection Window", comment: "Menu item for standalone connection window"),
+            action: #selector(openStandaloneConnectionWindow(_:)),
+            keyEquivalent: "N"  // Cmd+Shift+N
+        )
+        menuItem.keyEquivalentModifierMask = [.command, .shift]
+        menuItem.target = nil // Uses responder chain
+
+        fileMenu.insertItem(menuItem, at: insertIndex)
     }
 }
 

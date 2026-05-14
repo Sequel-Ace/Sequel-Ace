@@ -63,7 +63,17 @@ extern NSInteger SPEditMenuCopyAsSQLNoAutoInc;
 
 	NSRange fieldEditorSelectedRange;
 	NSString *tmpBlobFileDirectory;
+
+	// The row/column under the pointer on the most recent mouseDown. Kept so
+	// the drag-source callback can publish a single-cell payload derived from
+	// the exact cell the user pressed on, rather than re-hit-testing the
+	// drag's current event (which may have moved past the drag threshold).
+	NSInteger mouseDownRow;
+	NSInteger mouseDownColumn;
 }
+
+@property (readonly) NSInteger mouseDownRow;
+@property (readonly) NSInteger mouseDownColumn;
 
 @property (readwrite, copy) NSString *tmpBlobFileDirectory;
 
@@ -88,6 +98,21 @@ extern NSInteger SPEditMenuCopyAsSQLNoAutoInc;
 	@result	 The above described string, or nil if nothing selected
 */
 - (NSString *)draggedRowsAsTabString;
+
+/*!
+	@method	 displayStringForRow:column:
+	@abstract   Returns the display string for a single cell at the given
+	  row and visible-column position, honouring the same NULL / blob /
+	  geometry formatting used for drag-out and copy.
+	@param	 row  Row index in the current result set
+	@param	 visibleColumn  Position of the column as currently shown on
+	  screen (ie after any user reordering); the stored column identifier
+	  is resolved from the table's column ordering, matching how
+	  -draggedRowsAsTabString sources its data.
+	@result  The display string for the cell, or nil when the position is
+	  out of range.
+*/
+- (NSString *)displayStringForRow:(NSInteger)row column:(NSInteger)visibleColumn;
 
 /*!
 	@method	 draggingSourceOperationMaskForLocal:

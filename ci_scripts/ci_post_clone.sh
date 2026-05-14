@@ -1,3 +1,2 @@
-export HOMEBREW_NO_INSTALL_CLEANUP=TRUE
-brew install node
-npm install -g appcenter-cli
+#!/bin/sh
+# No additional dependencies required - Firebase upload-symbols is bundled via SPM
