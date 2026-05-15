@@ -67,7 +67,7 @@ static unsigned short getRandomPort(void);
  */
 - (instancetype)initToHost:(NSString *)theHost port:(NSInteger)thePort login:(NSString *)theLogin tunnellingToPort:(NSInteger)targetPort onHost:(NSString *)targetHost
 {
-	if (!theHost || !targetPort || !targetHost) return nil;
+	if (!theHost) return nil;
 
 	if ((self = [super init])) {
 		
@@ -175,6 +175,11 @@ static unsigned short getRandomPort(void);
 	if (![[NSFileManager defaultManager] fileExistsAtPath:expandedPath]) return NO;
 	identityFilePath = [[NSString alloc] initWithString:expandedPath];
 	return YES;
+}
+
+- (void)setRemoteSocketPath:(NSString *)thePath
+{
+	remoteSocketPath = [[NSString alloc] initWithString:thePath];
 }
 
 /*
@@ -492,7 +497,10 @@ static unsigned short getRandomPort(void);
 		else {
 			[taskArguments addObject:sshHost];
 		}
-		if (useHostFallback) {
+		if ([remoteSocketPath length]) {
+			TA(@"-L", ([NSString stringWithFormat:@"%ld:%@", (long)localPort, remoteSocketPath]));
+		}
+		else if (useHostFallback) {
 			TA(@"-L",([NSString stringWithFormat:@"%ld:127.0.0.1:%ld", (long)localPort, (long)remotePort]));
 			TA(@"-L",([NSString stringWithFormat:@"%ld:%@:%ld", (long)localPortFallback, remoteHost, (long)remotePort]));
 		}

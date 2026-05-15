@@ -80,6 +80,7 @@ struct SAConnectionInfo {
     var sshKeyLocationEnabled: Int = 0
     var sshKeyLocation: String = ""
     var sshPort: String = ""
+    var sshRemoteSocketPath: String = ""
 
     // MARK: Keychain
 
@@ -297,6 +298,11 @@ struct SAConnectionInfo {
     @objc var sshPort: String {
         get { info.sshPort }
         set { info.sshPort = newValue }
+    }
+
+    @objc var sshRemoteSocketPath: String {
+        get { info.sshRemoteSocketPath }
+        set { info.sshRemoteSocketPath = newValue }
     }
 
     // MARK: Keychain

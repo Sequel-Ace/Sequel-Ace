@@ -164,6 +164,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 @synthesize sshKeyLocationEnabled;
 @synthesize sshKeyLocation;
 @synthesize sshPort;
+@synthesize sshRemoteSocketPath;
 @synthesize useCompression;
 @synthesize bookmarks;
 @synthesize allowSplitViewResizing;
@@ -300,7 +301,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     NSFileManager *fileManager = [NSFileManager defaultManager];
 
     // Ensure that host is not empty if this is a TCP/IP, SSH, or AWS IAM connection
-    if (([self type] == SPTCPIPConnection || [self type] == SPSSHTunnelConnection || [self type] == SPAWSIAMConnection) && ![[self host] length]) {
+    // (SSH connections with a remote socket path don't need a MySQL host)
+    BOOL sshUsesRemoteSocket = [self type] == SPSSHTunnelConnection && [[self sshRemoteSocketPath] length];
+    if (([self type] == SPTCPIPConnection || ([self type] == SPSSHTunnelConnection && !sshUsesRemoteSocket) || [self type] == SPAWSIAMConnection) && ![[self host] length]) {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message") message:NSLocalizedString(@"Insufficient details provided to establish a connection. Please enter at least the hostname.", @"insufficient details informative message") callback:nil];
         return;
     }
@@ -1305,6 +1308,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [self setSshKeyLocationEnabled:([fav objectForKey:SPFavoriteSSHKeyLocationEnabledKey] ? [[fav objectForKey:SPFavoriteSSHKeyLocationEnabledKey] intValue] : NSControlStateValueOff)];
     [self setSshKeyLocation:([fav objectForKey:SPFavoriteSSHKeyLocationKey] ? [fav objectForKey:SPFavoriteSSHKeyLocationKey] : @"")];
     [self setSshPort:([fav objectForKey:SPFavoriteSSHPortKey] ? [fav objectForKey:SPFavoriteSSHPortKey] : @"")];
+    [self setSshRemoteSocketPath:([fav objectForKey:SPFavoriteSSHRemoteSocketPathKey] ? [fav objectForKey:SPFavoriteSSHRemoteSocketPathKey] : @"")];
 
     // Check whether the password exists in the keychain, and if so add it; also record the
     // keychain details so we can pass around only those details if the password doesn't change
@@ -1457,6 +1461,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         @(NSControlStateValueOff),
         @"",
         @"",
+        @"",
         favoriteID
     ];
 
@@ -1485,6 +1490,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         SPFavoriteSSHKeyLocationEnabledKey,
         SPFavoriteSSHKeyLocationKey,
         SPFavoriteSSHPortKey,
+        SPFavoriteSSHRemoteSocketPathKey,
         SPFavoriteIDKey
     ];
 
@@ -1757,7 +1763,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     }
 
     // Ensure that host is not empty if this is a TCP/IP, SSH, or AWS IAM connection
-    if (validateDetails && ([self type] == SPTCPIPConnection || [self type] == SPSSHTunnelConnection || [self type] == SPAWSIAMConnection) && ![[self host] length]) {
+    // (SSH connections with a remote socket path don't need a MySQL host)
+    BOOL sshUsesRemoteSocketForSave = [self type] == SPSSHTunnelConnection && [[self sshRemoteSocketPath] length];
+    if (validateDetails && ([self type] == SPTCPIPConnection || ([self type] == SPSSHTunnelConnection && !sshUsesRemoteSocketForSave) || [self type] == SPAWSIAMConnection) && ![[self host] length]) {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message") message:NSLocalizedString(@"Insufficient details provided to establish a connection. Please provide at least a host.", @"insufficient details informative message") callback:nil];
         return;
     }
@@ -1840,6 +1848,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     _setOrRemoveKey(SPFavoriteSSHPortKey, [self sshPort]);
     [theFavorite setObject:[NSNumber numberWithInteger:[self sshKeyLocationEnabled]] forKey:SPFavoriteSSHKeyLocationEnabledKey];
     _setOrRemoveKey(SPFavoriteSSHKeyLocationKey, [self sshKeyLocation]);
+    _setOrRemoveKey(SPFavoriteSSHRemoteSocketPathKey, [self sshRemoteSocketPath]);
 
 
     /*
@@ -2542,6 +2551,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     info.sshKeyLocationEnabled = self.sshKeyLocationEnabled;
     info.sshKeyLocation = self.sshKeyLocation ?: @"";
     info.sshPort = self.sshPort ?: @"";
+    info.sshRemoteSocketPath = self.sshRemoteSocketPath ?: @"";
     info.connectionKeychainID = connectionKeychainID ?: @"";
     info.connectionKeychainItemName = connectionKeychainItemName ?: @"";
     info.connectionKeychainItemAccount = connectionKeychainItemAccount ?: @"";
@@ -3624,6 +3634,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
               context:NULL];
 
     [self addObserver:self
+           forKeyPath:SPFavoriteSSHRemoteSocketPathKey
+              options:(NSKeyValueObservingOptionOld | NSKeyValueObservingOptionNew)
+              context:NULL];
+
+    [self addObserver:self
            forKeyPath:SPFavoriteSSLKeyFileLocationEnabledKey
               options:(NSKeyValueObservingOptionOld | NSKeyValueObservingOptionNew)
               context:NULL];
@@ -3764,6 +3779,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [self removeObserver:self forKeyPath:SPFavoriteSSHPortKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSHKeyLocationEnabledKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSHKeyLocationKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSHRemoteSocketPathKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSLKeyFileLocationEnabledKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSLKeyFileLocationKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSLCertificateFileLocationEnabledKey];
