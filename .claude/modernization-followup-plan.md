@@ -33,11 +33,18 @@ Key deliverables:
 
 SPDatabaseDocument.m at 6,592 lines is the biggest bottleneck. Break it apart:
 
-**A1. Extract database list management (~283 lines)**
-- `setDatabases`, `chooseDatabase:`, `selectDatabase:item:`, `_selectDatabaseAndItem:`
-- Create `SADatabaseListManager` in Swift
-- Owns the database popup, database switching, history integration
-- Files: `Source/Controllers/MainViewControllers/SPDatabaseDocument.m`, new `SADatabaseListManager.swift`
+**A1. Extract database list management (~283 lines)** — 🟡 In progress (A1a done)
+
+A1a — `-setDatabases` (popup rebuild) — ✅ Done
+- New `SADatabaseListManager.configurePopup(_:databases:currentDatabase:addDatabaseSelector:refreshDatabasesSelector:)` rebuilds the choose-database popup (header items, system/user partition, separator, selection)
+- New `SADatabaseListManager.partition(databases:)` + `SADatabasePartition` ObjC bridge class for the system-vs-user split
+- `-[SPDatabaseDocument setDatabases]` now a thin trampoline that calls the manager and stores the partition into the existing `allDatabases` / `allSystemDatabases` ivars (those still have callers outside this method — A1b/A1c will absorb them)
+- System database name literals inlined (mysql, information_schema, performance_schema, sys) so the file compiles into the Unit Tests target without a bridging header (same pattern as SAViewMode)
+- 17 unit tests in `SADatabaseListManagerTests.swift` covering partition (mixed/empty/all-system/all-user/case-sensitivity), popup header items + nil-target invariant, section ordering, separator omission when no system DBs, selection (current/placeholder/empty), and idempotent rebuild
+
+A1b — `-chooseDatabase:` and `-selectDatabase:item:` — pending
+A1c — `-_selectDatabaseAndItem:` (background-thread selection flow) — pending
+- Files: `Source/Controllers/MainViewControllers/SPDatabaseDocument.m`, `SADatabaseListManager.swift`
 
 **A2. Extract task/progress management (~257 lines)**
 - `startTaskWithDescription:`, `endTask`, `setTaskPercentage:`, `enableTaskCancellation:`, progress window fade, cancel button
@@ -123,7 +130,7 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
 
 1. ~~**Phase A3** (wire SAViewMode into view switching) — quick win, already has the enum~~ ✅ Done
 2. ~~**Phase B3** (SAViewMode tests) — validate before and after~~ ✅ Done
-3. **Phase A1** (database list manager) — high value, moderate effort
+3. **Phase A1** (database list manager) — high value, moderate effort — 🟡 A1a done, A1b/A1c pending
 4. **Phase A4** (window title) — quick, easy
 5. **Phase B2** (favorites data source tests) — safety net
 6. **Phase C1** (SwiftUI favorites list) — first visible SwiftUI
