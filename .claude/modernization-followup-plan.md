@@ -42,8 +42,15 @@ A1a — `-setDatabases` (popup rebuild) — ✅ Done
 - System database name literals inlined (mysql, information_schema, performance_schema, sys) so the file compiles into the Unit Tests target without a bridging header (same pattern as SAViewMode)
 - 17 unit tests in `SADatabaseListManagerTests.swift` covering partition (mixed/empty/all-system/all-user/case-sensitivity), popup header items + nil-target invariant, section ordering, separator omission when no system DBs, selection (current/placeholder/empty), and idempotent rebuild
 
-A1b — `-chooseDatabase:` and `-selectDatabase:item:` — pending
-A1c — `-_selectDatabaseAndItem:` (background-thread selection flow) — pending
+A1b — Navigator schema path extraction — ✅ Done (scoped down)
+- `SADatabaseListManager.navigatorSchemaPath(connectionID:selectedDatabaseTitle:)` + `schemaPathDelimiter` constant (U+FFF8, mirroring `SPUniqueSchemaDelimiter` in SPConstants.m)
+- `-[SPDatabaseDocument selectDatabase:item:]` shrinks by 7 lines of NSMutableString juggling
+- 4 new tests for path shape + edge cases
+- Originally planned to extract `-chooseDatabase:` and `-selectDatabase:item:` wholesale, but on inspection both methods need a callback protocol back to the document for tablesList edit-commit checks, task start/end, and thread dispatch — properly belongs in A1c
+
+A1c — `-_selectDatabaseAndItem:` (background-thread selection flow) + callback protocol — pending
+- Also absorbs the remaining `-chooseDatabase:` and `-selectDatabase:item:` document-coupled logic
+- Will let `allDatabases` / `allSystemDatabases` ivars move off SPDatabaseDocument
 - Files: `Source/Controllers/MainViewControllers/SPDatabaseDocument.m`, `SADatabaseListManager.swift`
 
 **A2. Extract task/progress management (~257 lines)**
