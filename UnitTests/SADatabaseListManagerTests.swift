@@ -1,0 +1,238 @@
+//
+//  SADatabaseListManagerTests.swift
+//  Unit Tests
+//
+//  Tests for SADatabaseListManager — Phase A1a extraction of
+//  -[SPDatabaseDocument setDatabases]. Covers the partition logic
+//  (system vs. user split) and the choose-database popup configuration
+//  (header items, section ordering, current selection).
+//
+
+import XCTest
+import AppKit
+
+final class SADatabaseListManagerTests: XCTestCase {
+
+    // MARK: - System database name constants
+
+    /// Locks the SPMySQL*Database wire-format names. The literals live
+    /// in SADatabaseListManager.systemDatabaseNames and must stay in
+    /// sync with the extern constants in SPConstants.m. Renaming a
+    /// system database without updating both fails this test.
+    func testSystemDatabaseNames() {
+        XCTAssertEqual(SADatabaseListManager.systemDatabaseNames,
+                       ["mysql", "information_schema", "performance_schema", "sys"])
+    }
+
+    // MARK: - Partition
+
+    func testPartitionSplitsSystemFromUser() {
+        let result = SADatabaseListManager.partition(
+            databases: ["mysql", "myapp", "information_schema", "analytics", "performance_schema", "sys"]
+        )
+        XCTAssertEqual(result.systemDatabases, ["mysql", "information_schema", "performance_schema", "sys"])
+        XCTAssertEqual(result.userDatabases,   ["myapp", "analytics"])
+    }
+
+    func testPartitionPreservesInputOrderWithinEachBucket() {
+        let result = SADatabaseListManager.partition(
+            databases: ["zeta", "sys", "alpha", "mysql", "beta"]
+        )
+        XCTAssertEqual(result.systemDatabases, ["sys", "mysql"])
+        XCTAssertEqual(result.userDatabases,   ["zeta", "alpha", "beta"])
+    }
+
+    func testPartitionEmpty() {
+        let result = SADatabaseListManager.partition(databases: [])
+        XCTAssertEqual(result.systemDatabases, [])
+        XCTAssertEqual(result.userDatabases,   [])
+    }
+
+    func testPartitionAllSystem() {
+        let result = SADatabaseListManager.partition(
+            databases: ["mysql", "information_schema", "performance_schema", "sys"]
+        )
+        XCTAssertEqual(result.systemDatabases, ["mysql", "information_schema", "performance_schema", "sys"])
+        XCTAssertEqual(result.userDatabases,   [])
+    }
+
+    func testPartitionAllUser() {
+        let result = SADatabaseListManager.partition(
+            databases: ["app1", "app2", "app3"]
+        )
+        XCTAssertEqual(result.systemDatabases, [])
+        XCTAssertEqual(result.userDatabases,   ["app1", "app2", "app3"])
+    }
+
+    /// Case sensitivity matters: MySQL database names on case-sensitive
+    /// filesystems differ between `MySQL` and `mysql`. The partition
+    /// must not treat them as the same.
+    func testPartitionIsCaseSensitive() {
+        let result = SADatabaseListManager.partition(databases: ["MySQL", "MYSQL", "mysql"])
+        XCTAssertEqual(result.systemDatabases, ["mysql"])
+        XCTAssertEqual(result.userDatabases,   ["MySQL", "MYSQL"])
+    }
+
+    // MARK: - Popup configuration
+
+    /// Helper: build a partition expected from a given input.
+    private func makePopup() -> NSPopUpButton {
+        return NSPopUpButton(frame: .zero, pullsDown: false)
+    }
+
+    func testConfigurePopupHeaderItems() {
+        let popup = makePopup()
+        _ = SADatabaseListManager.configurePopup(
+            popup,
+            databases: [],
+            currentDatabase: nil,
+            addDatabaseSelector: #selector(NSObject.description as () -> String),  // dummy
+            refreshDatabasesSelector: #selector(NSObject.description as () -> String)
+        )
+        let items = popup.itemArray
+        XCTAssertEqual(items[0].title, "Choose Database...")
+        XCTAssertTrue(items[1].isSeparatorItem)
+        XCTAssertEqual(items[2].title, "Add Database...")
+        XCTAssertEqual(items[3].title, "Refresh Databases")
+        XCTAssertTrue(items[4].isSeparatorItem)
+    }
+
+    func testConfigurePopupHeaderItemsHaveNilTarget() {
+        // Critical: nil-target means responder-chain dispatch. The
+        // refresh-databases selector (`setDatabases:`) doesn't exist as
+        // a takes-sender method on SPDatabaseDocument; direct dispatch
+        // would crash. Pre-refactor behaviour relied on this.
+        let popup = makePopup()
+        _ = SADatabaseListManager.configurePopup(
+            popup,
+            databases: [],
+            currentDatabase: nil,
+            addDatabaseSelector: #selector(NSObject.description as () -> String),
+            refreshDatabasesSelector: #selector(NSObject.description as () -> String)
+        )
+        XCTAssertNil(popup.itemArray[2].target, "Add Database menu item must have nil target")
+        XCTAssertNil(popup.itemArray[3].target, "Refresh Databases menu item must have nil target")
+    }
+
+    func testConfigurePopupSectionsSystemThenSeparatorThenUser() {
+        let popup = makePopup()
+        _ = SADatabaseListManager.configurePopup(
+            popup,
+            databases: ["myapp", "mysql", "analytics", "sys"],
+            currentDatabase: nil,
+            addDatabaseSelector: #selector(NSObject.description as () -> String),
+            refreshDatabasesSelector: #selector(NSObject.description as () -> String)
+        )
+        // Header (5 items: 2 separators + 3 actions) is followed by:
+        //   - system DBs (mysql, sys)
+        //   - separator
+        //   - user DBs (myapp, analytics)
+        let titles = popup.itemArray.dropFirst(5).map { $0.isSeparatorItem ? "<sep>" : $0.title }
+        XCTAssertEqual(Array(titles), ["mysql", "sys", "<sep>", "myapp", "analytics"])
+    }
+
+    func testConfigurePopupNoSystemDatabasesOmitsTheSeparator() {
+        let popup = makePopup()
+        _ = SADatabaseListManager.configurePopup(
+            popup,
+            databases: ["myapp", "analytics"],
+            currentDatabase: nil,
+            addDatabaseSelector: #selector(NSObject.description as () -> String),
+            refreshDatabasesSelector: #selector(NSObject.description as () -> String)
+        )
+        let titles = popup.itemArray.dropFirst(5).map { $0.isSeparatorItem ? "<sep>" : $0.title }
+        XCTAssertEqual(Array(titles), ["myapp", "analytics"])
+    }
+
+    func testConfigurePopupNoUserDatabasesStillShowsSystemAndSeparator() {
+        let popup = makePopup()
+        _ = SADatabaseListManager.configurePopup(
+            popup,
+            databases: ["mysql"],
+            currentDatabase: nil,
+            addDatabaseSelector: #selector(NSObject.description as () -> String),
+            refreshDatabasesSelector: #selector(NSObject.description as () -> String)
+        )
+        let titles = popup.itemArray.dropFirst(5).map { $0.isSeparatorItem ? "<sep>" : $0.title }
+        // Trailing separator is preserved even with no user dbs after it
+        // — matches pre-refactor behaviour (the loop just didn't fire).
+        XCTAssertEqual(Array(titles), ["mysql", "<sep>"])
+    }
+
+    func testConfigurePopupSelectsCurrentDatabase() {
+        let popup = makePopup()
+        _ = SADatabaseListManager.configurePopup(
+            popup,
+            databases: ["myapp", "analytics"],
+            currentDatabase: "analytics",
+            addDatabaseSelector: #selector(NSObject.description as () -> String),
+            refreshDatabasesSelector: #selector(NSObject.description as () -> String)
+        )
+        XCTAssertEqual(popup.titleOfSelectedItem, "analytics")
+    }
+
+    func testConfigurePopupSelectsPlaceholderWhenNoCurrentDatabase() {
+        let popup = makePopup()
+        _ = SADatabaseListManager.configurePopup(
+            popup,
+            databases: ["myapp"],
+            currentDatabase: nil,
+            addDatabaseSelector: #selector(NSObject.description as () -> String),
+            refreshDatabasesSelector: #selector(NSObject.description as () -> String)
+        )
+        XCTAssertEqual(popup.indexOfSelectedItem, 0)
+        XCTAssertEqual(popup.titleOfSelectedItem, "Choose Database...")
+    }
+
+    func testConfigurePopupSelectsPlaceholderWhenCurrentDatabaseIsEmpty() {
+        let popup = makePopup()
+        _ = SADatabaseListManager.configurePopup(
+            popup,
+            databases: ["myapp"],
+            currentDatabase: "",
+            addDatabaseSelector: #selector(NSObject.description as () -> String),
+            refreshDatabasesSelector: #selector(NSObject.description as () -> String)
+        )
+        XCTAssertEqual(popup.indexOfSelectedItem, 0)
+    }
+
+    func testConfigurePopupReturnsPartition() {
+        let popup = makePopup()
+        let partition = SADatabaseListManager.configurePopup(
+            popup,
+            databases: ["myapp", "mysql", "analytics", "sys"],
+            currentDatabase: nil,
+            addDatabaseSelector: #selector(NSObject.description as () -> String),
+            refreshDatabasesSelector: #selector(NSObject.description as () -> String)
+        )
+        XCTAssertEqual(partition.systemDatabases, ["mysql", "sys"])
+        XCTAssertEqual(partition.userDatabases,   ["myapp", "analytics"])
+    }
+
+    /// Calling configurePopup twice must produce the same result on the
+    /// second call — i.e. the popup is fully rebuilt, not appended to.
+    /// The original setDatabases relied on this (it's called from
+    /// "Refresh Databases" and from -_selectDatabaseAndItem: when the
+    /// list is stale).
+    func testConfigurePopupIsIdempotentAcrossCalls() {
+        let popup = makePopup()
+        _ = SADatabaseListManager.configurePopup(
+            popup,
+            databases: ["myapp", "mysql"],
+            currentDatabase: "mysql",
+            addDatabaseSelector: #selector(NSObject.description as () -> String),
+            refreshDatabasesSelector: #selector(NSObject.description as () -> String)
+        )
+        let firstCount = popup.numberOfItems
+
+        _ = SADatabaseListManager.configurePopup(
+            popup,
+            databases: ["myapp", "mysql"],
+            currentDatabase: "mysql",
+            addDatabaseSelector: #selector(NSObject.description as () -> String),
+            refreshDatabasesSelector: #selector(NSObject.description as () -> String)
+        )
+        XCTAssertEqual(popup.numberOfItems, firstCount)
+        XCTAssertEqual(popup.titleOfSelectedItem, "mysql")
+    }
+}
