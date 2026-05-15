@@ -82,7 +82,13 @@ private let kSPQuickConnectImageWhite = "quick-connect-icon-white.pdf"
     /// Reloads the outline view data and expands the root node.
     @objc func reloadData(in outlineView: NSOutlineView) {
         outlineView.reloadData()
-        outlineView.expandItem(outlineView.item(atRow: 0), expandChildren: false)
+        let rowCount = outlineView.numberOfRows
+        for row in 0..<rowCount {
+            let item = outlineView.item(atRow: row)
+            if outlineView.isExpandable(item) {
+                outlineView.expandItem(item)
+            }
+        }
     }
 
     /// Recursively restores expand/collapse state from stored node preferences.
