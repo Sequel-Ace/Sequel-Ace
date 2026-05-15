@@ -1215,6 +1215,17 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 }
 
 /**
+ * Filters the favorites list by the search field's current text.
+ * An empty query restores the full list.
+ */
+- (void)searchFavorites:(id)sender
+{
+    NSString *query = [sender respondsToSelector:@selector(stringValue)] ? [sender stringValue] : @"";
+    self.favoritesListDataSource.searchQuery = query ?: @"";
+    [self.favoritesListDataSource reloadDataIn:favoritesOutlineView];
+}
+
+/**
  * Sets fields for the chosen favorite.
  */
 - (void)updateFavoriteSelection:(id)sender
@@ -3678,6 +3689,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [favoritesOutlineView setTarget:self];
     [favoritesOutlineView setDoubleAction:@selector(nodeDoubleClicked:)];
 
+    [self setUpFavoritesSearchField];
+
     // Drag types and data source/delegate are handled by favoritesListDataSource via -attachTo:
 
     NSFont *tableFont = [NSUserDefaults getFont];
@@ -3693,6 +3706,70 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                                              selector:@selector(fontChanged:)
                                                  name:@"SPFontChangedNotification"
                                                object:nil];
+}
+
+/**
+ * Configures the favorites search field: sets self as text delegate (so Down arrow can
+ * forward focus into the outline view), and installs a local key-event monitor so that
+ * ⌘F focuses the search field whenever the connection window is key.
+ */
+- (void)setUpFavoritesSearchField
+{
+    favoritesSearchField.delegate = self;
+
+    if (favoritesSearchKeyMonitor) return;
+
+    __weak SPConnectionController *weakSelf = self;
+    favoritesSearchKeyMonitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown
+                                                                     handler:^NSEvent * _Nullable(NSEvent * _Nonnull event) {
+        SPConnectionController *strongSelf = weakSelf;
+        if (!strongSelf) return event;
+        NSSearchField *field = strongSelf->favoritesSearchField;
+        NSView *connView = strongSelf->connectionView;
+        if (!field || !connView) return event;
+
+        BOOL cmdPressed = ([event modifierFlags] & NSEventModifierFlagCommand) != 0;
+        BOOL isCmdF = cmdPressed && [[event charactersIgnoringModifiers] isEqualToString:@"f"];
+        if (!isCmdF) return event;
+
+        NSWindow *window = [connView window];
+        if (!window || [NSApp keyWindow] != window) return event;
+        if ([connView isHiddenOrHasHiddenAncestor]) return event;
+
+        [window makeFirstResponder:field];
+        return nil; // consume
+    }];
+}
+
+#pragma mark - NSTextFieldDelegate (favorites search field)
+
+/**
+ * Handles arrow-down in the search field: moves keyboard focus into the
+ * favorites outline view and selects the first favorite if nothing is selected.
+ */
+- (BOOL)control:(NSControl *)control textView:(NSTextView *)textView doCommandBySelector:(SEL)commandSelector
+{
+    if (control != favoritesSearchField) return NO;
+    if (commandSelector != @selector(moveDown:)) return NO;
+
+    NSWindow *window = [favoritesOutlineView window];
+    if (!window) return NO;
+    [window makeFirstResponder:favoritesOutlineView];
+
+    if ([favoritesOutlineView selectedRow] < 0) {
+        // Row 0 is Quick Connect; pick the first selectable row after it.
+        for (NSInteger row = 1; row < [favoritesOutlineView numberOfRows]; row++) {
+            id item = [favoritesOutlineView itemAtRow:row];
+            if ([favoritesOutlineView.delegate respondsToSelector:@selector(outlineView:shouldSelectItem:)]
+                && ![favoritesOutlineView.delegate outlineView:favoritesOutlineView shouldSelectItem:item]) {
+                continue;
+            }
+            [favoritesOutlineView selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:NO];
+            [favoritesOutlineView scrollRowToVisible:row];
+            break;
+        }
+    }
+    return YES;
 }
 
 /**
@@ -3759,6 +3836,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 - (void)dealloc
 {
+    if (favoritesSearchKeyMonitor) {
+        [NSEvent removeMonitor:favoritesSearchKeyMonitor];
+        favoritesSearchKeyMonitor = nil;
+    }
+
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     [NSObject cancelPreviousPerformRequestsWithTarget:self];
 

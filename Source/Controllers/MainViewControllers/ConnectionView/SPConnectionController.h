@@ -135,6 +135,8 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	IBOutlet NSScrollView *connectionDetailsScrollView;
 	IBOutlet NSTextField *connectionInstructionsTextField;
 	IBOutlet SPFavoritesOutlineView *favoritesOutlineView;
+	IBOutlet NSSearchField *favoritesSearchField;
+	id favoritesSearchKeyMonitor;
 
 
 	IBOutlet NSView *connectionResizeContainer;
@@ -306,6 +308,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 
 - (IBAction)sortFavorites:(id)sender;
 - (IBAction)reverseSortFavorites:(NSMenuItem *)sender;
+- (IBAction)searchFavorites:(id)sender;
 
 -(BOOL)validateCertFile:(NSURL *)url error:(NSError **)outError;
 -(BOOL)validateKeyFile:(NSURL *)url error:(NSError **)outError;
