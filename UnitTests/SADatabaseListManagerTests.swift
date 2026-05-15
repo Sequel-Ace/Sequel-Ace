@@ -209,6 +209,68 @@ final class SADatabaseListManagerTests: XCTestCase {
         XCTAssertEqual(partition.userDatabases,   ["myapp", "analytics"])
     }
 
+    // MARK: - Navigator schema path
+
+    /// Locks the SPNavigatorController separator wire format. Matches
+    /// SPUniqueSchemaDelimiter in SPConstants.m (U+FFF8).
+    func testSchemaPathDelimiter() {
+        XCTAssertEqual(SADatabaseListManager.schemaPathDelimiter, "\u{FFF8}")
+    }
+
+    func testNavigatorSchemaPathWithDatabase() {
+        XCTAssertEqual(
+            SADatabaseListManager.navigatorSchemaPath(
+                connectionID: "conn-42",
+                selectedDatabaseTitle: "analytics"
+            ),
+            "conn-42\u{FFF8}analytics"
+        )
+    }
+
+    /// When no database is selected in the popup, the navigator should
+    /// just see the connection root — no trailing separator. This is
+    /// what the pre-refactor SPMutableString-based code did when
+    /// titleOfSelectedItem was nil or empty.
+    func testNavigatorSchemaPathWithoutDatabase() {
+        XCTAssertEqual(
+            SADatabaseListManager.navigatorSchemaPath(
+                connectionID: "conn-42",
+                selectedDatabaseTitle: nil
+            ),
+            "conn-42"
+        )
+        XCTAssertEqual(
+            SADatabaseListManager.navigatorSchemaPath(
+                connectionID: "conn-42",
+                selectedDatabaseTitle: ""
+            ),
+            "conn-42"
+        )
+    }
+
+    /// Even an empty connectionID stays empty + no separator — defensive
+    /// behaviour because callers (the popup placeholder, connection
+    /// startup) sometimes hand us a stub ID before the connection
+    /// completes.
+    func testNavigatorSchemaPathWithEmptyConnectionID() {
+        XCTAssertEqual(
+            SADatabaseListManager.navigatorSchemaPath(
+                connectionID: "",
+                selectedDatabaseTitle: nil
+            ),
+            ""
+        )
+        XCTAssertEqual(
+            SADatabaseListManager.navigatorSchemaPath(
+                connectionID: "",
+                selectedDatabaseTitle: "analytics"
+            ),
+            "\u{FFF8}analytics"
+        )
+    }
+
+    // MARK: - Popup rebuild idempotency
+
     /// Calling configurePopup twice must produce the same result on the
     /// second call — i.e. the popup is fully rebuilt, not appended to.
     /// The original setDatabases relied on this (it's called from
