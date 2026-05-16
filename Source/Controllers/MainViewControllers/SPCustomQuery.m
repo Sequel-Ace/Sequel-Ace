@@ -288,13 +288,22 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     } else {
         // Selected text may contain multiple statements separated by ';' — EXPLAIN does not
         // support multi-statement input, so split delimiter-aware and reject when >1 non-empty.
+        // Comment-only fragments (e.g. trailing `-- note`) are ignored so `SELECT 1; -- foo`
+        // counts as a single statement.
         SPSQLParser *selectionParser = [[SPSQLParser alloc] initWithString:[[textView string] safeSubstringWithRange:selectedRange]];
         [selectionParser setDelimiterSupport:YES];
         NSArray *selectedStatements = [selectionParser splitStringByCharacter:';'];
         NSMutableArray *nonEmptyStatements = [NSMutableArray array];
+        NSCharacterSet *trimSet = [NSCharacterSet whitespaceAndNewlineCharacterSet];
         for (NSString *part in selectedStatements) {
-            NSString *trimmedPart = [part stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-            if ([trimmedPart length]) [nonEmptyStatements addObject:trimmedPart];
+            NSMutableString *probe = [part mutableCopy];
+            [probe replaceOccurrencesOfRegex:@"--.*?\n" withString:@" "];
+            [probe replaceOccurrencesOfRegex:@"--.*?$" withString:@" "];
+            [probe replaceOccurrencesOfRegex:@"#.*?\n" withString:@" "];
+            [probe replaceOccurrencesOfRegex:@"#.*?$" withString:@" "];
+            [probe replaceOccurrencesOfRegex:@"/\\*(.|\n)*?\\*/" withString:@" "];
+            if (![[probe stringByTrimmingCharactersInSet:trimSet] length]) continue;
+            [nonEmptyStatements addObject:[part stringByTrimmingCharactersInSet:trimSet]];
         }
         if ([nonEmptyStatements count] != 1) {
             NSBeep();
@@ -782,12 +791,14 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 {
     if (![query isKindOfClass:[NSString class]] || ![query length]) return NO;
 
+    // Replace comments with a single space so `SELECT/*c*/1` doesn't collapse to `SELECT1`
+    // and fail the keyword boundary check below.
     NSMutableString *cleaned = [query mutableCopy];
-    [cleaned replaceOccurrencesOfRegex:@"--.*?\n" withString:@""];
-    [cleaned replaceOccurrencesOfRegex:@"--.*?$" withString:@""];
-    [cleaned replaceOccurrencesOfRegex:@"#.*?\n" withString:@""];
-    [cleaned replaceOccurrencesOfRegex:@"#.*?$" withString:@""];
-    [cleaned replaceOccurrencesOfRegex:@"/\\*(.|\n)*?\\*/" withString:@""];
+    [cleaned replaceOccurrencesOfRegex:@"--.*?\n" withString:@" "];
+    [cleaned replaceOccurrencesOfRegex:@"--.*?$" withString:@" "];
+    [cleaned replaceOccurrencesOfRegex:@"#.*?\n" withString:@" "];
+    [cleaned replaceOccurrencesOfRegex:@"#.*?$" withString:@" "];
+    [cleaned replaceOccurrencesOfRegex:@"/\\*(.|\n)*?\\*/" withString:@" "];
 
     NSCharacterSet *trimSet = [NSCharacterSet whitespaceAndNewlineCharacterSet];
     NSString *trimmed = [cleaned stringByTrimmingCharactersInSet:trimSet];
@@ -799,6 +810,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
     NSString *upper = [trimmed uppercaseString];
 
+    // Identifier characters block keyword boundary; anything else (whitespace, punctuation
+    // like `(`, end-of-string) is treated as a valid token end so `SELECT(1)` matches.
+    NSMutableCharacterSet *identifierSet = [NSMutableCharacterSet alphanumericCharacterSet];
+    [identifierSet addCharactersInString:@"_"];
+
     NSArray<NSString *> *prefixes = @[@"SELECT", @"WITH"];
     for (NSString *prefix in prefixes) {
         if (![upper hasPrefix:prefix]) continue;
@@ -807,7 +823,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         if ([upper length] == prefixLen) return YES;
 
         unichar boundary = [upper characterAtIndex:prefixLen];
-        if ([trimSet characterIsMember:boundary]) return YES;
+        if (![identifierSet characterIsMember:boundary]) return YES;
     }
     return NO;
 }
