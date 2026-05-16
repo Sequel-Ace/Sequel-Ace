@@ -206,7 +206,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     reloadingExistingResult = NO;
     [self clearResultViewDetailsToRestore];
-    
+
     [self performQueries:queries withCallback:NULL];
 }
 
@@ -256,8 +256,71 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     reloadingExistingResult = NO;
     [self clearResultViewDetailsToRestore];
-    
+
     [self performQueries:queries withCallback:NULL];
+}
+
+/**
+ * Run EXPLAIN on the current query (or the selected text). Triggered by the Query editor's
+ * "Explain Current Query" menu item / pulldown action. The EXPLAIN output replaces the
+ * Result table just like any other query result.
+ *
+ * Implements upstream issue #2291.
+ */
+- (IBAction)runExplainQueryAction:(id)sender
+{
+    if ([tableDocumentInstance isWorking]) return;
+
+    if ([[NSApp currentEvent] type] == NSEventTypeKeyUp) {
+        return;
+    }
+
+    NSString *queryToExplain = nil;
+    NSRange selectedRange = [textView selectedRange];
+
+    if (selectedRange.length == 0) {
+        if (!currentQueryRange.length || [textView string].length < currentQueryRange.length) {
+            NSBeep();
+            SPLog(@"runExplainQueryAction: no query under caret");
+            return;
+        }
+        queryToExplain = [SPSQLParser normaliseQueryForExecution:[[textView string] safeSubstringWithRange:currentQueryRange]];
+    } else {
+        // Selected text may contain multiple statements separated by ';' — EXPLAIN does not
+        // support multi-statement input, so split delimiter-aware and reject when >1 non-empty.
+        SPSQLParser *selectionParser = [[SPSQLParser alloc] initWithString:[[textView string] safeSubstringWithRange:selectedRange]];
+        [selectionParser setDelimiterSupport:YES];
+        NSArray *selectedStatements = [selectionParser splitStringByCharacter:';'];
+        NSMutableArray *nonEmptyStatements = [NSMutableArray array];
+        for (NSString *part in selectedStatements) {
+            NSString *trimmedPart = [part stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+            if ([trimmedPart length]) [nonEmptyStatements addObject:trimmedPart];
+        }
+        if ([nonEmptyStatements count] != 1) {
+            NSBeep();
+            [errorTextTitle setStringValue:NSLocalizedString(@"Query Status", @"Query Status")];
+            [errorText setString:NSLocalizedString(@"EXPLAIN is only supported for a single SELECT or WITH statement.", @"EXPLAIN unsupported statement message")];
+            return;
+        }
+        queryToExplain = [SPSQLParser normaliseQueryForExecution:[nonEmptyStatements firstObject]];
+    }
+
+    if (![SPCustomQuery isQueryExplainable:queryToExplain]) {
+        NSBeep();
+        [errorTextTitle setStringValue:NSLocalizedString(@"Query Status", @"Query Status")];
+        [errorText setString:NSLocalizedString(@"EXPLAIN is only supported for a single SELECT or WITH statement.", @"EXPLAIN unsupported statement message")];
+        return;
+    }
+
+    isDesc = NO;
+    sortColumn = nil;
+    [sortCount removeAllObjects];
+
+    reloadingExistingResult = NO;
+    [self clearResultViewDetailsToRestore];
+
+    NSString *explainQuery = [NSString stringWithFormat:@"EXPLAIN %@", queryToExplain];
+    [self performQueries:@[explainQuery] withCallback:NULL];
 }
 
 /**
@@ -664,8 +727,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  *  @return BOOL YES if any of the queries contain destructive SQL
  */
 -(BOOL)queriesContainDestructiveSQL:(NSArray *)queries{
-    
-    NSArray *safeCommands = @[@"SHOW", @"SELECT"];
+
+    NSArray *safeCommands = @[@"SHOW", @"SELECT", @"EXPLAIN", @"DESCRIBE", @"DESC"];
     
     BOOL __block retCode = YES;
     
@@ -706,6 +769,47 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     }];
     
     return retCode;
+}
+
+/**
+ * Returns YES when the supplied query is a single SELECT or WITH statement that can be
+ * passed to MySQL's EXPLAIN. Strips comments and leading whitespace, then unwraps a
+ * leading parenthesised group so `(SELECT ...)` passes while `(EXPLAIN ...)` or
+ * `(UPDATE ...)` is rejected. Word-boundary check after the keyword prevents column
+ * names like `SELECTOR_TABLE` or `WITHOUT VALIDATION` from matching.
+ */
++ (BOOL)isQueryExplainable:(NSString *)query
+{
+    if (![query isKindOfClass:[NSString class]] || ![query length]) return NO;
+
+    NSMutableString *cleaned = [query mutableCopy];
+    [cleaned replaceOccurrencesOfRegex:@"--.*?\n" withString:@""];
+    [cleaned replaceOccurrencesOfRegex:@"--.*?$" withString:@""];
+    [cleaned replaceOccurrencesOfRegex:@"#.*?\n" withString:@""];
+    [cleaned replaceOccurrencesOfRegex:@"#.*?$" withString:@""];
+    [cleaned replaceOccurrencesOfRegex:@"/\\*(.|\n)*?\\*/" withString:@""];
+
+    NSCharacterSet *trimSet = [NSCharacterSet whitespaceAndNewlineCharacterSet];
+    NSString *trimmed = [cleaned stringByTrimmingCharactersInSet:trimSet];
+
+    while ([trimmed hasPrefix:@"("]) {
+        trimmed = [[trimmed substringFromIndex:1] stringByTrimmingCharactersInSet:trimSet];
+    }
+    if (![trimmed length]) return NO;
+
+    NSString *upper = [trimmed uppercaseString];
+
+    NSArray<NSString *> *prefixes = @[@"SELECT", @"WITH"];
+    for (NSString *prefix in prefixes) {
+        if (![upper hasPrefix:prefix]) continue;
+
+        NSUInteger prefixLen = [prefix length];
+        if ([upper length] == prefixLen) return YES;
+
+        unichar boundary = [upper characterAtIndex:prefixLen];
+        if ([trimSet characterIsMember:boundary]) return YES;
+    }
+    return NO;
 }
 
 /**
@@ -3425,7 +3529,12 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     else if ( [menuItem tag] >= SP_HISTORY_COPY_MENUITEM_TAG && [menuItem tag] <= SP_HISTORY_CLEAR_MENUITEM_TAG ) {
         return ([queryHistoryButton numberOfItems]-7);
     }
-    
+
+    if ([menuItem action] == @selector(runExplainQueryAction:)) {
+        if ([tableDocumentInstance isWorking]) return NO;
+        return ([[textView string] length] > 0);
+    }
+
     return YES;
 }
 

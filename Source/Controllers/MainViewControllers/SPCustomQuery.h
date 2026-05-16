@@ -175,6 +175,7 @@
 - (IBAction)switchDefaultQueryAction:(id)sender;
 - (IBAction)runAllQueries:(id)sender;
 - (IBAction)runSelectedQueries:(id)sender;
+- (IBAction)runExplainQueryAction:(id)sender;
 - (IBAction)chooseQueryFavorite:(id)sender;
 - (IBAction)chooseQueryHistory:(id)sender;
 - (IBAction)closeSheet:(id)sender;
@@ -194,6 +195,7 @@
 - (NSRange)queryTextRangeForQuery:(NSInteger)anIndex startPosition:(NSUInteger)position;
 - (void) updateStatusInterfaceWithDetails:(NSDictionary *)errorDetails;
 - (BOOL)queriesContainDestructiveSQL:(NSArray *)queries;
++ (BOOL)isQueryExplainable:(NSString *)query;
 
 // Interface setup
 - (void)updateQueryInteractionInterface;
