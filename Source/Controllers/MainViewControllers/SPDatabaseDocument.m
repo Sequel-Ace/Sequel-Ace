@@ -5575,9 +5575,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark -
 #pragma mark Tab view control and delegate methods
 
-//WARNING: Might be called from code in background threads
-- (void)viewStructure {
-
+/**
+ * Shared view-switching path used by viewStructure/Content/Query/Status/Relations/Triggers.
+ * Returns YES if the switch went through, NO if it was cancelled because the current
+ * view had uncommitted edits.
+ *
+ * WARNING: Safe to call from background threads — execution hops to the main queue.
+ */
+- (BOOL)switchToViewMode:(SAViewMode)mode {
+    __block BOOL didSwitch = NO;
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
@@ -5585,104 +5591,51 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             return;
         }
 
-        [self->tableTabView selectTabViewItemAtIndex:0];
-        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableStructure];
+        [self->tableTabView selectTabViewItemAtIndex:[SAViewModeHelper tabIndexFor:mode]];
+        [self.mainToolbar setSelectedItemIdentifier:[SAViewModeHelper toolbarIdentifierFor:mode]];
         [self->spHistoryControllerInstance updateHistoryEntries];
-
-        [self->prefs setInteger:SPStructureViewMode forKey:SPLastViewMode];
-
+        [self->prefs setInteger:[SAViewModeHelper preferencesValueFor:mode] forKey:SPLastViewMode];
+        didSwitch = YES;
     });
+    return didSwitch;
+}
+
+//WARNING: Might be called from code in background threads
+- (void)viewStructure {
+    [self switchToViewMode:SAViewModeStructure];
 }
 
 - (void)viewContent {
-    SPMainQSync(^{
-        // Cancel the selection if currently editing a view and unable to save
-        if (![self couldCommitCurrentViewActions]) {
-            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
-            return;
-        }
-
-        [self->tableTabView selectTabViewItemAtIndex:1];
-        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableContent];
-        [self->spHistoryControllerInstance updateHistoryEntries];
-        [self->prefs setInteger:SPContentViewMode forKey:SPLastViewMode];
-    });
+    [self switchToViewMode:SAViewModeContent];
 }
 
 - (void)viewQuery {
+    if (![self switchToViewMode:SAViewModeQuery]) return;
+
     SPMainQSync(^{
-        // Cancel the selection if currently editing a view and unable to save
-        if (![self couldCommitCurrentViewActions]) {
-            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
-            return;
-        }
-
-        [self->tableTabView selectTabViewItemAtIndex:2];
-        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarCustomQuery];
-        [self->spHistoryControllerInstance updateHistoryEntries];
-
         // Set the focus on the text field
         [[self.parentWindowController window] makeFirstResponder:self->customQueryTextView];
-
-        [self->prefs setInteger:SPQueryEditorViewMode forKey:SPLastViewMode];
     });
-
 }
 
 - (void)viewStatus {
+    if (![self switchToViewMode:SAViewModeStatus]) return;
+
     SPMainQSync(^{
-        // Cancel the selection if currently editing a view and unable to save
-        if (![self couldCommitCurrentViewActions]) {
-            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
-            return;
-        }
-
-        [self->tableTabView selectTabViewItemAtIndex:3];
-        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableInfo];
-        [self->spHistoryControllerInstance updateHistoryEntries];
-
         if ([[self table] length]) {
             [self->extendedTableInfoInstance loadTable:[self table]];
         }
 
         [[self.parentWindowController window] makeFirstResponder:[self->extendedTableInfoInstance valueForKeyPath:@"tableCreateSyntaxTextView"]];
-
-        [self->prefs setInteger:SPTableInfoViewMode forKey:SPLastViewMode];
     });
-
 }
 
 - (void)viewRelations {
-    SPMainQSync(^{
-        // Cancel the selection if currently editing a view and unable to save
-        if (![self couldCommitCurrentViewActions]) {
-            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
-            return;
-        }
-
-        [self->tableTabView selectTabViewItemAtIndex:4];
-        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableRelations];
-        [self->spHistoryControllerInstance updateHistoryEntries];
-
-        [self->prefs setInteger:SPRelationsViewMode forKey:SPLastViewMode];
-    });
-
+    [self switchToViewMode:SAViewModeRelations];
 }
 
 - (void)viewTriggers {
-    SPMainQSync(^{
-        // Cancel the selection if currently editing a view and unable to save
-        if (![self couldCommitCurrentViewActions]) {
-            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
-            return;
-        }
-
-        [self->tableTabView selectTabViewItemAtIndex:5];
-        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableTriggers];
-        [self->spHistoryControllerInstance updateHistoryEntries];
-
-        [self->prefs setInteger:SPTriggersViewMode forKey:SPLastViewMode];
-    });
+    [self switchToViewMode:SAViewModeTriggers];
 }
 
 /**

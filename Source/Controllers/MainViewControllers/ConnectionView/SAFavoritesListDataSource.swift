@@ -45,6 +45,16 @@ private let kSPQuickConnectImageWhite = "quick-connect-icon-white.pdf"
     /// Reference to favorites controller for save operations.
     @objc var favoritesController: SPFavoritesController
 
+    /// Active search query. Setting this rebuilds the visible-node set.
+    /// Empty / whitespace-only query disables the filter (all nodes visible).
+    @objc var searchQuery: String = "" {
+        didSet { rebuildVisibleNodes() }
+    }
+
+    /// Set of nodes currently visible under an active search filter.
+    /// `nil` means no filter active — every node is visible.
+    private var visibleNodes: Set<SPTreeNode>?
+
     // MARK: - Initialization
 
     @objc init(favoritesRoot: SPTreeNode, favoritesController: SPFavoritesController) {
@@ -79,10 +89,85 @@ private let kSPQuickConnectImageWhite = "quick-connect-icon-white.pdf"
         outlineView.setDraggingSourceOperationMask(.move, forLocal: true)
     }
 
-    /// Reloads the outline view data and expands the root node.
+    /// Reloads the outline view and expands every currently-visible top-level item.
+    /// Top-level groups have no disclosure triangle in source-list mode, so they must
+    /// be re-expanded after every reload — otherwise filtering can leave the section
+    /// collapsed when a previously-hidden group reappears.
+    ///
+    /// If a search filter is active, recomputes `visibleNodes` first so that any
+    /// underlying tree changes (rename, add, remove, reorder) made while the query
+    /// stayed unchanged are reflected in the filtered view.
     @objc func reloadData(in outlineView: NSOutlineView) {
+        if visibleNodes != nil {
+            rebuildVisibleNodes()
+        }
         outlineView.reloadData()
-        outlineView.expandItem(outlineView.item(atRow: 0), expandChildren: false)
+        // Snapshot the top-level items BEFORE expanding any of them: each expandItem
+        // call inserts child rows, which would otherwise shift the indexes of the
+        // remaining top-level groups and cause the loop to expand newly-inserted
+        // child rows instead.
+        let topLevelItems = (0..<outlineView.numberOfRows).compactMap { outlineView.item(atRow: $0) }
+        for item in topLevelItems {
+            outlineView.expandItem(item, expandChildren: false)
+        }
+    }
+
+    // MARK: - Filtering
+
+    /// Rebuilds `visibleNodes` based on the current `searchQuery`.
+    /// The query is split into whitespace-separated tokens; a leaf matches when
+    /// EVERY token is found (case-insensitively) in either its name or its host.
+    /// This lets users type e.g. "staging maja" to narrow to "[Staging]Majapahit".
+    private func rebuildVisibleNodes() {
+        let tokens = searchQuery
+            .lowercased()
+            .split(whereSeparator: { $0.isWhitespace })
+            .map(String.init)
+        guard !tokens.isEmpty else {
+            visibleNodes = nil
+            return
+        }
+        var matched: Set<SPTreeNode> = []
+        _ = collectMatchingNodes(in: favoritesRoot, tokens: tokens, into: &matched)
+        visibleNodes = matched
+    }
+
+    /// Walks the tree, marking leaves whose name OR host case-insensitively contain ALL `tokens`,
+    /// plus every ancestor of any matched leaf. Returns whether `node` itself is matched
+    /// (a group is "matched" if any of its descendants matched).
+    @discardableResult
+    private func collectMatchingNodes(in node: SPTreeNode, tokens: [String], into matched: inout Set<SPTreeNode>) -> Bool {
+        if node.isGroup {
+            var anyDescendantMatched = false
+            for child in (node.children ?? []).compactMap({ $0 as? SPTreeNode }) {
+                if collectMatchingNodes(in: child, tokens: tokens, into: &matched) {
+                    anyDescendantMatched = true
+                }
+            }
+            if anyDescendantMatched {
+                matched.insert(node)
+            }
+            return anyDescendantMatched
+        }
+        let fav = (node.representedObject as? SPFavoriteNode)?.nodeFavorite
+        let name = (fav?[SPFavoriteNameKey] as? String ?? "").lowercased()
+        let host = (fav?[SPFavoriteHostKey] as? String ?? "").lowercased()
+        let allTokensMatch = tokens.allSatisfy { token in
+            name.contains(token) || host.contains(token)
+        }
+        if allTokensMatch {
+            matched.insert(node)
+            return true
+        }
+        return false
+    }
+
+    /// Returns the children of `node` that are visible under the current filter.
+    /// When no filter is active, returns all children unchanged.
+    private func filteredChildren(of node: SPTreeNode) -> [SPTreeNode] {
+        let raw = (node.children ?? []).compactMap { $0 as? SPTreeNode }
+        guard let visible = visibleNodes else { return raw }
+        return raw.filter { visible.contains($0) }
     }
 
     /// Recursively restores expand/collapse state from stored node preferences.
@@ -90,13 +175,20 @@ private let kSPQuickConnectImageWhite = "quick-connect-icon-white.pdf"
         guard node.isGroup else { return }
 
         for child in node.children ?? [] {
-            guard child.isGroup else { continue }
-            if let groupObj = child.representedObject as? SPGroupNode, groupObj.nodeIsExpanded {
-                outlineView.expandItem(child)
+            guard let childNode = child as? SPTreeNode, childNode.isGroup else { continue }
+
+            // Top-level groups (parent is the synthetic root) live in the source-list
+            // section and have no disclosure triangle; they must always be expanded
+            // or their children are unreachable. For deeper groups, honor the saved
+            // expand/collapse state.
+            let isTopLevelGroup = childNode.parent?.parent == nil
+            let groupObj = childNode.representedObject as? SPGroupNode
+            if isTopLevelGroup || (groupObj?.nodeIsExpanded ?? false) {
+                outlineView.expandItem(childNode)
             } else {
-                outlineView.collapseItem(child)
+                outlineView.collapseItem(childNode)
             }
-            restoreOutlineViewState(child, in: outlineView)
+            restoreOutlineViewState(childNode, in: outlineView)
         }
     }
 }
@@ -107,12 +199,13 @@ extension SAFavoritesListDataSource: NSOutlineViewDataSource {
 
     func outlineView(_ outlineView: NSOutlineView, numberOfChildrenOfItem item: Any?) -> Int {
         let node = (item as? SPTreeNode) ?? favoritesRoot
+        let count = filteredChildren(of: node).count
 
         // Add 1 at root level for the Quick Connect entry
         if item == nil {
-            return (node.children?.count ?? 0) + 1
+            return count + 1
         }
-        return node.children?.count ?? 0
+        return count
     }
 
     func outlineView(_ outlineView: NSOutlineView, child index: Int, ofItem item: Any?) -> Any {
@@ -127,8 +220,8 @@ extension SAFavoritesListDataSource: NSOutlineViewDataSource {
         }
 
         let node = (item as? SPTreeNode) ?? favoritesRoot
-        guard let children = node.children, adjustedIndex < children.count
-        else { return NSNull() }
+        let children = filteredChildren(of: node)
+        guard adjustedIndex < children.count else { return NSNull() }
         return children[adjustedIndex]
     }
 

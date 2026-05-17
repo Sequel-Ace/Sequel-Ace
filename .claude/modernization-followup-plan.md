@@ -45,10 +45,11 @@ SPDatabaseDocument.m at 6,592 lines is the biggest bottleneck. Break it apart:
 - Move the progress window, indicators, and timer management out of the document
 - Files: `SPDatabaseDocument.m`, new `SATaskController.swift`
 
-**A3. Extract view state switching to use SAViewMode (~188 lines)**
+**A3. Extract view state switching to use SAViewMode (~188 lines)** — ✅ Done
 - `viewStructure`, `viewContent`, `viewQuery`, `viewStatus`, `viewRelations`, `viewTriggers`
-- Replace 6 repetitive methods with a single `switchToView(_ mode: SAViewMode)` that uses the enum
-- `SAViewMode` already exists — just wire it into the document
+- Replaced 6 repetitive method bodies with a shared `-[SPDatabaseDocument switchToViewMode:]` that consults `SAViewMode` for tab index, toolbar identifier, and prefs value
+- Added ObjC accessors on `SAViewModeHelper` (`tabIndexFor:`, `toolbarIdentifierFor:`, `preferencesValueFor:`)
+- View-specific extras (focus change for query, table load + focus for status) stay in the per-mode wrappers
 - Files: `SPDatabaseDocument.m`, `SPDatabaseDocument+ViewMode.swift`
 
 **A4. Extract window title management (~57 lines)**
@@ -68,10 +69,10 @@ SPDatabaseDocument.m at 6,592 lines is the biggest bottleneck. Break it apart:
 - Test drag & drop acceptance/rejection logic
 - Test Quick Connect item injection
 
-**B3. Tests for SAViewMode**
-- Round-trip preferences values
-- Toolbar item factory produces correct identifiers/images
-- All cases covered
+**B3. Tests for SAViewMode** — ✅ Done
+- 16 unit tests in `UnitTests/SAViewModeTests.swift` covering tab indexes, toolbar identifiers (literal match against the SPConstants wire format), preferences round-trip + unknown-value fallback, action selector names, the `SAViewModeHelper` ObjC bridges, and the toolbar item factory configuration
+- `SPDatabaseDocument+ViewMode.swift` had its `SPMainToolbar*` extern references inlined so the file has no ObjC dependency and can be compiled into the Unit Tests target without giving it a bridging header (the inlined strings must stay in sync with `SPConstants.m` — documented in the source)
+- Exhaustive-case guard test that fails if a new `SAViewMode` case is added without updating the suite
 
 ### Phase C: SwiftUI migration starts
 
@@ -120,8 +121,8 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
 
 ## Recommended order
 
-1. **Phase A3** (wire SAViewMode into view switching) — quick win, already has the enum
-2. **Phase B3** (SAViewMode tests) — validate before and after
+1. ~~**Phase A3** (wire SAViewMode into view switching) — quick win, already has the enum~~ ✅ Done
+2. ~~**Phase B3** (SAViewMode tests) — validate before and after~~ ✅ Done
 3. **Phase A1** (database list manager) — high value, moderate effort
 4. **Phase A4** (window title) — quick, easy
 5. **Phase B2** (favorites data source tests) — safety net
