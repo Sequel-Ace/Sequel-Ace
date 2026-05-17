@@ -155,4 +155,19 @@ import AppKit
     @objc static var allToolbarIdentifiers: [String] {
         SAViewMode.allCases.map { $0.toolbarIdentifier.rawValue }
     }
+
+    /// Tab view index for the given mode.
+    @objc static func tabIndex(for mode: SAViewMode) -> Int {
+        return mode.tabIndex
+    }
+
+    /// Toolbar identifier string for the given mode.
+    @objc static func toolbarIdentifier(for mode: SAViewMode) -> String {
+        return mode.toolbarIdentifier.rawValue
+    }
+
+    /// Legacy SPViewMode preferences value for the given mode.
+    @objc static func preferencesValue(for mode: SAViewMode) -> Int {
+        return mode.preferencesValue
+    }
 }

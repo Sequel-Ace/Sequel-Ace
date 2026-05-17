@@ -45,10 +45,11 @@ SPDatabaseDocument.m at 6,592 lines is the biggest bottleneck. Break it apart:
 - Move the progress window, indicators, and timer management out of the document
 - Files: `SPDatabaseDocument.m`, new `SATaskController.swift`
 
-**A3. Extract view state switching to use SAViewMode (~188 lines)**
+**A3. Extract view state switching to use SAViewMode (~188 lines)** — ✅ Done
 - `viewStructure`, `viewContent`, `viewQuery`, `viewStatus`, `viewRelations`, `viewTriggers`
-- Replace 6 repetitive methods with a single `switchToView(_ mode: SAViewMode)` that uses the enum
-- `SAViewMode` already exists — just wire it into the document
+- Replaced 6 repetitive method bodies with a shared `-[SPDatabaseDocument switchToViewMode:]` that consults `SAViewMode` for tab index, toolbar identifier, and prefs value
+- Added ObjC accessors on `SAViewModeHelper` (`tabIndexFor:`, `toolbarIdentifierFor:`, `preferencesValueFor:`)
+- View-specific extras (focus change for query, table load + focus for status) stay in the per-mode wrappers
 - Files: `SPDatabaseDocument.m`, `SPDatabaseDocument+ViewMode.swift`
 
 **A4. Extract window title management (~57 lines)**
@@ -120,7 +121,7 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
 
 ## Recommended order
 
-1. **Phase A3** (wire SAViewMode into view switching) — quick win, already has the enum
+1. ~~**Phase A3** (wire SAViewMode into view switching) — quick win, already has the enum~~ ✅ Done
 2. **Phase B3** (SAViewMode tests) — validate before and after
 3. **Phase A1** (database list manager) — high value, moderate effort
 4. **Phase A4** (window title) — quick, easy
