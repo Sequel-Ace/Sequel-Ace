@@ -596,58 +596,29 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  *
  * This method *MUST* be called from the UI thread!
  */
+- (IBAction)setDatabases:(id)sender {
+    [self setDatabases];
+}
+
 - (void)setDatabases {
     if (!chooseDatabaseButton) {
         return;
     }
 
-    [chooseDatabaseButton removeAllItems];
-
-    [chooseDatabaseButton addItemWithTitle:NSLocalizedString(@"Choose Database...", @"menu item for choose db")];
-    [[chooseDatabaseButton menu] addItem:[NSMenuItem separatorItem]];
-    [[chooseDatabaseButton menu] addItemWithTitle:NSLocalizedString(@"Add Database...", @"menu item to add db") action:@selector(addDatabase:) keyEquivalent:@""];
-    [[chooseDatabaseButton menu] addItemWithTitle:NSLocalizedString(@"Refresh Databases", @"menu item to refresh databases") action:@selector(setDatabases:) keyEquivalent:@""];
-    [[chooseDatabaseButton menu] addItem:[NSMenuItem separatorItem]];
-
-
     NSArray *theDatabaseList = [mySQLConnection databases];
 
-    allDatabases = [[NSMutableArray alloc] initWithCapacity:[theDatabaseList count]];
-    allSystemDatabases = [[NSMutableArray alloc] initWithCapacity:2];
+    SADatabasePartition *partition = [SADatabaseListManager configurePopup:chooseDatabaseButton
+                                                                 databases:theDatabaseList ?: @[]
+                                                           currentDatabase:[self database]
+                                                       addDatabaseSelector:@selector(addDatabase:)
+                                                  refreshDatabasesSelector:@selector(setDatabases:)];
 
-    for (NSString *databaseName in theDatabaseList)
-    {
-        // If the database is either information_schema or mysql then it is classed as a
-        // system database; similarly, performance_schema in 5.5.3+ and sys in 5.7.7+
-        if ([databaseName isEqualToString:SPMySQLDatabase] ||
-            [databaseName isEqualToString:SPMySQLInformationSchemaDatabase] ||
-            [databaseName isEqualToString:SPMySQLPerformanceSchemaDatabase] ||
-            [databaseName isEqualToString:SPMySQLSysDatabase]) {
-            [allSystemDatabases addObject:databaseName];
-        }
-        else {
-            [allDatabases addObject:databaseName];
-        }
-    }
-
-    // Add system databases
-    for (NSString *database in allSystemDatabases)
-    {
-        [chooseDatabaseButton safeAddItemWithTitle:database];
-    }
-
-    // Add a separator between the system and user databases
-    if ([allSystemDatabases count] > 0) {
-        [[chooseDatabaseButton menu] addItem:[NSMenuItem separatorItem]];
-    }
-
-    // Add user databases
-    for (NSString *database in allDatabases)
-    {
-        [chooseDatabaseButton safeAddItemWithTitle:database];
-    }
-
-    (![self database]) ? [chooseDatabaseButton selectItemAtIndex:0] : [chooseDatabaseButton selectItemWithTitle:[self database]];
+    // Persist the partition: other call sites still read these ivars
+    // directly (add/copy/rename enablement in -controlTextDidChange:,
+    // and the delete path in -_removeDatabase). A later step will
+    // absorb those readers into the manager.
+    allSystemDatabases = [partition.systemDatabases mutableCopy];
+    allDatabases = [partition.userDatabases mutableCopy];
 }
 
 /**
