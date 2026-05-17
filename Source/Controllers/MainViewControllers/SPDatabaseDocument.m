@@ -657,15 +657,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // If Navigator runs in syncMode let it follow the selection
     if ([[[SPNavigatorController sharedNavigatorController] onMainThread] syncMode]) {
-        NSMutableString *schemaPath = [NSMutableString string];
-
-        [schemaPath setString:[self connectionID]];
-
-        if([chooseDatabaseButton titleOfSelectedItem] && [[chooseDatabaseButton titleOfSelectedItem] length]) {
-            [schemaPath appendString:SPUniqueSchemaDelimiter];
-            [schemaPath appendString:[chooseDatabaseButton titleOfSelectedItem]];
-        }
-
+        NSString *schemaPath = [SADatabaseListManager navigatorSchemaPathWithConnectionID:[self connectionID]
+                                                                   selectedDatabaseTitle:[chooseDatabaseButton titleOfSelectedItem]];
         [[SPNavigatorController sharedNavigatorController] selectPath:schemaPath];
     }
 

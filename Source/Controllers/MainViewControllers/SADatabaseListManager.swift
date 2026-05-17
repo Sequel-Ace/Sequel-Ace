@@ -24,6 +24,31 @@ import AppKit
 
 @objc final class SADatabaseListManager: NSObject {
 
+    /// Separator placed between connectionID and database name in
+    /// SPNavigatorController schema paths. Matches the value of
+    /// `SPUniqueSchemaDelimiter` in SPConstants.m (U+FFF8). Inlined for
+    /// the same reason as `systemDatabaseNames` — keeps this file free
+    /// of an ObjC bridging-header dependency so the Unit Tests target
+    /// can compile it.
+    @objc static let schemaPathDelimiter: String = "\u{FFF8}"
+
+    /// Build the path that `SPNavigatorController` uses to highlight
+    /// the currently selected database in the schema browser.
+    ///
+    /// Shape: `<connectionID>` if the popup has no selected title or
+    /// it's empty; otherwise `<connectionID><U+FFF8><databaseTitle>`.
+    ///
+    /// Pulled out of -[SPDatabaseDocument selectDatabase:item:] so it
+    /// can be tested without a live NSPopUpButton or
+    /// SPNavigatorController.
+    @objc static func navigatorSchemaPath(connectionID: String,
+                                          selectedDatabaseTitle: String?) -> String {
+        guard let title = selectedDatabaseTitle, !title.isEmpty else {
+            return connectionID
+        }
+        return connectionID + schemaPathDelimiter + title
+    }
+
     /// The four built-in databases that get pulled into a separate
     /// "system" section of the popup.
     ///
