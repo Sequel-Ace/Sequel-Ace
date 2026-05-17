@@ -596,6 +596,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  *
  * This method *MUST* be called from the UI thread!
  */
+- (IBAction)setDatabases:(id)sender {
+    [self setDatabases];
+}
+
 - (void)setDatabases {
     if (!chooseDatabaseButton) {
         return;

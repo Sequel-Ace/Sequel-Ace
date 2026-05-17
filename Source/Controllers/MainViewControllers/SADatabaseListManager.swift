@@ -70,13 +70,11 @@ import AppKit
     /// placeholder at index 0.
     ///
     /// The two header-item actions are added with `target == nil`, so
-    /// they dispatch via the responder chain just like the original
-    /// -[SPDatabaseDocument setDatabases] code did. Keeping nil-target
-    /// is load-bearing: `refreshDatabasesSelector` is `setDatabases:`
-    /// (with a colon, takes-sender) but SPDatabaseDocument only
-    /// implements `-setDatabases` (no colon, no parameter), so direct
-    /// dispatch would crash. The responder chain silently routes (or
-    /// silently drops) the message, matching pre-refactor behavior.
+    /// they dispatch via the responder chain — same as the original
+    /// -[SPDatabaseDocument setDatabases] code. The caller is
+    /// responsible for ensuring the chain reaches a handler that
+    /// implements both selectors (SPDatabaseDocument now provides
+    /// `-addDatabase:` and a `-setDatabases:` takes-sender wrapper).
     ///
     /// Must run on the UI thread (mirrors the original
     /// -[SPDatabaseDocument setDatabases] contract).

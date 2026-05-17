@@ -98,10 +98,11 @@ final class SADatabaseListManagerTests: XCTestCase {
     }
 
     func testConfigurePopupHeaderItemsHaveNilTarget() {
-        // Critical: nil-target means responder-chain dispatch. The
-        // refresh-databases selector (`setDatabases:`) doesn't exist as
-        // a takes-sender method on SPDatabaseDocument; direct dispatch
-        // would crash. Pre-refactor behaviour relied on this.
+        // Nil-target means AppKit dispatches via the responder chain.
+        // SPDatabaseDocument provides -addDatabase: and a -setDatabases:
+        // takes-sender wrapper for that chain to land on; pinning
+        // nil-target here keeps the manager UI-thread/host-class
+        // agnostic and matches the original setDatabases code shape.
         let popup = makePopup()
         _ = SADatabaseListManager.configurePopup(
             popup,
