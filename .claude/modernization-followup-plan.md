@@ -81,10 +81,33 @@ A1c — `-_selectDatabaseAndItem:` (background-thread selection flow) + callback
 - Requires a test MySQL instance (Docker or local) — make it opt-in via env var
 - Test TCP/IP, socket, SSL, database selection, timezone
 
-**B2. Tests for SAFavoritesListDataSource**
-- Mock SPTreeNode tree, verify outline view data source methods return correct values
-- Test drag & drop acceptance/rejection logic
-- Test Quick Connect item injection
+**B2. Tests for SAFavoritesListDataSource** — 🟡 Partial (search matcher done)
+
+B2a — Extract + test the favorites-search matcher — ✅ Done
+- New `SAFavoriteSearchMatcher` (Swift, pure, no AppKit) owns the
+  whitespace tokenize → AND-across-tokens → substring-in-name-or-host
+  rule, lifted out of `SAFavoritesListDataSource.rebuildVisibleNodes` /
+  `collectMatchingNodes` (which now delegate to it). The tree walk
+  itself stays in the data source.
+- 17 unit tests in `UnitTests/SAFavoriteSearchMatcherTests.swift`
+  covering: `isActive` for empty/whitespace/single/multi queries,
+  inactive-matcher-matches-everything, token lowercasing, adjacent-
+  whitespace collapse, mixed whitespace splitting (`\t`, `\n`, space),
+  single-token name/host hits, case-insensitivity on both sides,
+  multi-token AND across mixed name/host fields, single-token miss,
+  empty-name-and-host fail, and substring vs word-boundary semantics.
+- Files: `Source/Controllers/MainViewControllers/ConnectionView/SAFavoriteSearchMatcher.swift`, `SAFavoritesListDataSource.swift`
+
+B2b — Outline-view data-source tests (numberOfChildren, child(at:),
+Quick Connect injection, drag/drop validation, isGroupItem, etc.) —
+pending. Blocked on getting `SPTreeNode`, `SPFavoriteNode`,
+`SPGroupNode`, `SPFavoritesController`, `SPFavoriteTextFieldCell`,
+`SPFavoriteColorSupport`, and the relevant `SPConstants` strings
+visible to the Unit Tests target (none currently are — the test target
+is standalone, no bridging header). Likely needs either an ObjC test
+file that `#imports` the .m files directly (existing pattern in
+`SPDatabaseActionTest.m`) or a small bridging header for the test
+target. Worth its own PR.
 
 **B3. Tests for SAViewMode** — ✅ Done
 - 16 unit tests in `UnitTests/SAViewModeTests.swift` covering tab indexes, toolbar identifiers (literal match against the SPConstants wire format), preferences round-trip + unknown-value fallback, action selector names, the `SAViewModeHelper` ObjC bridges, and the toolbar item factory configuration
@@ -142,7 +165,7 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
 2. ~~**Phase B3** (SAViewMode tests) — validate before and after~~ ✅ Done
 3. **Phase A1** (database list manager) — high value, moderate effort — 🟡 A1a/A1b done, A1c pending
 4. ~~**Phase A4** (window title) — quick, easy~~ ✅ Done
-5. **Phase B2** (favorites data source tests) — safety net
+5. **Phase B2** (favorites data source tests) — 🟡 B2a done (search matcher), B2b pending (needs test-target ObjC plumbing)
 6. **Phase C1** (SwiftUI favorites list) — first visible SwiftUI
 7. **Phase A2** (task controller) — large but impactful
 8. **Phase D1-D3** (SPConnectionController cleanup) — ongoing
