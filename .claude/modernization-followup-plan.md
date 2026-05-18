@@ -100,14 +100,52 @@ B2a — Extract + test the favorites-search matcher — ✅ Done
 
 B2b — Outline-view data-source tests (numberOfChildren, child(at:),
 Quick Connect injection, drag/drop validation, isGroupItem, etc.) —
-pending. Blocked on getting `SPTreeNode`, `SPFavoriteNode`,
-`SPGroupNode`, `SPFavoritesController`, `SPFavoriteTextFieldCell`,
-`SPFavoriteColorSupport`, and the relevant `SPConstants` strings
-visible to the Unit Tests target (none currently are — the test target
-is standalone, no bridging header). Likely needs either an ObjC test
-file that `#imports` the .m files directly (existing pattern in
-`SPDatabaseActionTest.m`) or a small bridging header for the test
-target. Worth its own PR.
+still pending. Test target plumbing for this is non-trivial; see the
+"Test-target ObjC visibility — known sharp edge" section below.
+
+B2c — Tree-walking filter helper (`SAFavoriteSearchTreeWalker`) — ✅ Extracted (no tests yet)
+- The recursive `collectMatchingNodes` walk inside
+  `SAFavoritesListDataSource` moved into its own Swift file. The
+  data source now just calls `SAFavoriteSearchTreeWalker.visibleNodes(in:matcher:)`.
+- Direct tests for the walker are blocked on the same test-target
+  ObjC visibility issue as B2b (needs `SPTreeNode` / `SPFavoriteNode` /
+  `SPGroupNode` constructable from the test target). End-to-end
+  coverage of the per-leaf matching rule still comes from
+  `SAFavoriteSearchMatcherTests` (B2a).
+- Files: `Source/Controllers/MainViewControllers/ConnectionView/SAFavoriteSearchTreeWalker.swift`, `SAFavoritesListDataSource.swift`
+
+#### Test-target ObjC visibility — known sharp edge
+
+Adding `SWIFT_OBJC_BRIDGING_HEADER` to the Unit Tests target so that
+Swift tests can construct `SPTreeNode` / `SPFavoriteNode` /
+`SPGroupNode` is the obvious move, but it interacts badly with the
+auto-generated Swift→ObjC interface header (`sequel-ace-Swift.h`)
+that the test target produces. Specifically:
+
+  - Without a bridging header, the test target's
+    `sequel-ace-Swift.h` happens to be benign and shared `.m` files
+    that get compiled into the test target (e.g.
+    `SPStringAdditions.m`, which does `#import "sequel-ace-Swift.h"`)
+    compile fine.
+  - With a bridging header added, the generated `sequel-ace-Swift.h`
+    starts to emit `@import XCTest;` plus `@interface XxxTests :
+    XCTestCase` for the test-only Swift test classes. The shared `.m`
+    files don't have `XCTest` visible during their ObjC compile, so
+    they fail with "Cannot find interface declaration for
+    'XCTestCase'".
+  - Renaming the test target's Swift→ObjC header to
+    `Unit-Tests-Swift.h` removes the collision but then
+    `sequel-ace-Swift.h` no longer resolves at all from the test
+    target's ObjC compile (the app target's copy isn't on the
+    effective search path during incremental test-only builds).
+
+A real fix likely needs one of: (a) reworking which `.m` files get
+shared with the test target, (b) splitting Swift-bridged ObjC code
+out of those `.m` files, or (c) restructuring the test target with a
+proper TEST_HOST/BUNDLE_LOADER linking against the app rather than
+re-compiling everything standalone. None are small — worth their own
+PR with deliberate scope. Until then, B2b and B2c tests stay in the
+backlog.
 
 **B3. Tests for SAViewMode** — ✅ Done
 - 16 unit tests in `UnitTests/SAViewModeTests.swift` covering tab indexes, toolbar identifiers (literal match against the SPConstants wire format), preferences round-trip + unknown-value fallback, action selector names, the `SAViewModeHelper` ObjC bridges, and the toolbar item factory configuration

@@ -242,6 +242,7 @@
 		5147B0112F8C000400C4C14A /* SAConnectionFormHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0102F8C000400C4C14A /* SAConnectionFormHelpers.swift */; };
 		5147B0122F8C000400C4C14A /* SAConnectionFormHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0102F8C000400C4C14A /* SAConnectionFormHelpers.swift */; };
 		5147B0142F8C000400C4C14A /* SAConnectionFormHelpersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0132F8C000400C4C14A /* SAConnectionFormHelpersTests.swift */; };
+		5147B01A2F8C000600C4C14A /* SAFavoriteSearchTreeWalker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0192F8C000600C4C14A /* SAFavoriteSearchTreeWalker.swift */; };
 		514B40A02F683E3700369718 /* SAAboutWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000001C /* SAAboutWindowController.swift */; };
 		514B40A72F68412000369718 /* License.md in Resources */ = {isa = PBXBuildFile; fileRef = 514B40A62F68412000369718 /* License.md */; };
 		514B40A82F68412000369718 /* Credits.md in Resources */ = {isa = PBXBuildFile; fileRef = 514B40A52F68412000369718 /* Credits.md */; };
@@ -1026,6 +1027,7 @@
 		51CD0BDB258D06D8009E2484 /* BundleHTMLOutput.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = BundleHTMLOutput.xib; sourceTree = "<group>"; };
 		51F41FB625F56A5900594BA5 /* MainWindow.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainWindow.xib; sourceTree = "<group>"; };
 		51F4AFBD24B26665006144D5 /* Sequel-Ace-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Sequel-Ace-Bridging-Header.h"; sourceTree = "<group>"; };
+		5147B0192F8C000600C4C14A /* SAFavoriteSearchTreeWalker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoriteSearchTreeWalker.swift; sourceTree = "<group>"; };
 		51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSAlertExtension.swift; sourceTree = "<group>"; };
 		5806B76211A991EC00813A88 /* SPDocumentController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPDocumentController.h; sourceTree = "<group>"; };
 		5806B76311A991EC00813A88 /* SPDocumentController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPDocumentController.m; sourceTree = "<group>"; };
@@ -1760,6 +1762,7 @@
 				5147B0062F8C000200C4C14A /* SAFavoriteSearchMatcher.swift */,
 				5147B00B2F8C000300C4C14A /* SAConnectionDetailsValidator.swift */,
 				5147B0102F8C000400C4C14A /* SAConnectionFormHelpers.swift */,
+				5147B0192F8C000600C4C14A /* SAFavoriteSearchTreeWalker.swift */,
 			);
 			name = "Connection View";
 			path = ConnectionView;
@@ -3192,6 +3195,7 @@
 				5147B0072F8C000200C4C14A /* SAFavoriteSearchMatcher.swift in Sources */,
 				5147B00C2F8C000300C4C14A /* SAConnectionDetailsValidator.swift in Sources */,
 				5147B0112F8C000400C4C14A /* SAConnectionFormHelpers.swift in Sources */,
+				5147B01A2F8C000600C4C14A /* SAFavoriteSearchTreeWalker.swift in Sources */,
 				BC9F0881100FCF2C00A80D32 /* SPFieldEditorController.m in Sources */,
 				58D2E229101222670063EF1D /* SPTextAndLinkCell.m in Sources */,
 				1A96E4B72588F34C0055F5F5 /* SecureBookmarkManager.swift in Sources */,
