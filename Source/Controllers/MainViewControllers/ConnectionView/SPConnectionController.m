@@ -2305,7 +2305,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (NSNumber *)_createNewFavoriteID
 {
-    return [NSNumber numberWithInteger:[[NSString stringWithFormat:@"%f", [[NSDate date] timeIntervalSince1970]] hash]];
+    return [SAConnectionFormHelpers newFavoriteID];
 }
 
 /**
@@ -2335,9 +2335,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (NSString *)_stripInvalidCharactersFromString:(NSString *)subject
 {
-    NSString *result = [subject stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-
-    return [result stringByReplacingOccurrencesOfString:@"\n" withString:@""];
+    return [SAConnectionFormHelpers stripInvalidCharacters:subject ?: @""];
 }
 
 /**
@@ -2347,19 +2345,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (NSString *)_generateNameForConnection
 {
-    NSString *aName;
-
-    if ([self type] != SPSocketConnection && ![[self host] length]) {
-        return nil;
-    }
-
-    aName = ([self type] == SPSocketConnection) ? @"localhost" : [self host];
-
-    if ([[self database] length]) {
-        aName = [NSString stringWithFormat:@"%@/%@", aName, [self database]];
-    }
-
-    return aName;
+    return [SAConnectionFormHelpers generateNameWithType:(SAConnectionType)[self type]
+                                                    host:[self host] ?: @""
+                                                database:[self database] ?: @""];
 }
 
 

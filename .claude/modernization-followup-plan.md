@@ -146,10 +146,44 @@ target. Worth its own PR.
 - `addFavorite:`, `removeFavorite:`, `duplicateFavorite:`, `addGroup:`, `sortFavorites:`, `importFavorites:`, `exportFavorites:`
 - Move to `SAFavoritesManager` that wraps `SAFavoritesProviding`
 
-**D3. Extract form validation**
-- File existence checks for SSH keys, SSL certificates
-- Connection detail validation before connecting
-- Move to `SAConnectionValidator`
+**D3. Extract form validation** — ✅ Done
+- New `SAConnectionDetailsValidator` (Swift, no AppKit) owns the
+  pre-connection rules previously inline at the top of
+  `-[SPConnectionController initiateConnection:]`: host non-empty
+  (TCP/SSH/AWS), ssh host non-empty (SSH only), SSH key file exists,
+  SSL key/cert/CA files exist (TCP/socket + useSSL only).
+- `SAConnectionValidationFailure` bundles the kind, alert title, and
+  alert message — the controller pattern-matches the kind for per-
+  failure side effects (clearing toggles, resetting paths) and shows
+  the alert. AWS-directory authorization stays inline (needs Security
+  framework bookmark state the validator can't represent).
+- 29 unit tests in `UnitTests/SAConnectionDetailsValidatorTests.swift`
+  cover happy paths for all four connection types, each individual
+  failure trigger, the skip-when-disabled / skip-when-wrong-type
+  cases, failure ordering (host → ssh host → ssh key → ssl key →
+  cert → CA), and `fileExistsExpandingTilde` (real file, missing
+  path, tilde expansion).
+- Files: `Source/Controllers/MainViewControllers/ConnectionView/SAConnectionDetailsValidator.swift`, `SPConnectionController.m`
+
+**Additional connection-form helpers (separate from D3)** — ✅ Done
+- New `SAConnectionFormHelpers` (Swift) consolidates three small pure
+  helpers that were private methods on `SPConnectionController`:
+  - `newFavoriteID()` — hash-of-`%f`-timestamp ID factory used in
+    `addFavorite:`, `duplicateFavorite:`, and import paths. The
+    "stringify-then-hash" shape is pinned by a test so the favorites
+    plist format stays stable on upgrade.
+  - `stripInvalidCharacters(_:)` — trim outer whitespace + strip
+    embedded newlines from user input.
+  - `generateName(type:host:database:)` — auto-name for a connection
+    (socket → "localhost", others require host, optional db suffix).
+- The three controller methods become thin trampolines.
+- 18 unit tests in `UnitTests/SAConnectionFormHelpersTests.swift`
+  pin: ID non-zero + monotonic over time, strip semantics
+  (no-op clean, leading/trailing whitespace + newlines, embedded
+  newlines, embedded whitespace preserved, empty/whitespace-only),
+  and `generateName` for all four connection types (host required
+  for non-socket, socket always "localhost", db appended with `/`).
+- Files: `Source/Controllers/MainViewControllers/ConnectionView/SAConnectionFormHelpers.swift`, `SPConnectionController.m`
 
 ### Phase E: SPTableContent / SPCustomQuery (long-term)
 
