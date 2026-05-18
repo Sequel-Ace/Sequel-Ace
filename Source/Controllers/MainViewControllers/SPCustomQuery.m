@@ -120,6 +120,18 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 @synthesize bracketHighlighter;
 @synthesize sortCount;
 
+// Map new @property declarations (exposed for Swift extensions) to the existing
+// ivars instead of letting clang autosynthesize fresh `_name` ivars that xib
+// outlets wouldn't reach.
+@synthesize tableDocumentInstance = tableDocumentInstance;
+@synthesize textView = textView;
+@synthesize currentQueryRange = currentQueryRange;
+@synthesize sortColumn = sortColumn;
+@synthesize isDesc = isDesc;
+@synthesize reloadingExistingResult = reloadingExistingResult;
+@synthesize errorTextTitle = errorTextTitle;
+@synthesize errorText = errorText;
+
 + (NSAttributedString *)columnHeaderAttributedStringForColumnDefinition:(NSDictionary *)columnDefinition showColumnTypes:(BOOL)showColumnTypes
 {
     if (![columnDefinition isKindOfClass:[NSDictionary class]]) {
@@ -258,78 +270,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     [self clearResultViewDetailsToRestore];
 
     [self performQueries:queries withCallback:NULL];
-}
-
-/**
- * Run EXPLAIN on the current query (or the selected text). Triggered by the Query editor's
- * "Explain Current Query" menu item / pulldown action. The EXPLAIN output replaces the
- * Result table just like any other query result.
- *
- * Implements upstream issue #2291.
- */
-- (IBAction)runExplainQueryAction:(id)sender
-{
-    if ([tableDocumentInstance isWorking]) return;
-
-    if ([[NSApp currentEvent] type] == NSEventTypeKeyUp) {
-        return;
-    }
-
-    NSString *queryToExplain = nil;
-    NSRange selectedRange = [textView selectedRange];
-
-    if (selectedRange.length == 0) {
-        if (!currentQueryRange.length || [textView string].length < currentQueryRange.length) {
-            NSBeep();
-            SPLog(@"runExplainQueryAction: no query under caret");
-            return;
-        }
-        queryToExplain = [SPSQLParser normaliseQueryForExecution:[[textView string] safeSubstringWithRange:currentQueryRange]];
-    } else {
-        // Selected text may contain multiple statements separated by ';' — EXPLAIN does not
-        // support multi-statement input, so split delimiter-aware and reject when >1 non-empty.
-        // Comment-only fragments (e.g. trailing `-- note`) are ignored so `SELECT 1; -- foo`
-        // counts as a single statement.
-        SPSQLParser *selectionParser = [[SPSQLParser alloc] initWithString:[[textView string] safeSubstringWithRange:selectedRange]];
-        [selectionParser setDelimiterSupport:YES];
-        NSArray *selectedStatements = [selectionParser splitStringByCharacter:';'];
-        NSMutableArray *nonEmptyStatements = [NSMutableArray array];
-        NSCharacterSet *trimSet = [NSCharacterSet whitespaceAndNewlineCharacterSet];
-        for (NSString *part in selectedStatements) {
-            NSMutableString *probe = [part mutableCopy];
-            [probe replaceOccurrencesOfRegex:@"--.*?\n" withString:@" "];
-            [probe replaceOccurrencesOfRegex:@"--.*?$" withString:@" "];
-            [probe replaceOccurrencesOfRegex:@"#.*?\n" withString:@" "];
-            [probe replaceOccurrencesOfRegex:@"#.*?$" withString:@" "];
-            [probe replaceOccurrencesOfRegex:@"/\\*(.|\n)*?\\*/" withString:@" "];
-            if (![[probe stringByTrimmingCharactersInSet:trimSet] length]) continue;
-            [nonEmptyStatements addObject:[part stringByTrimmingCharactersInSet:trimSet]];
-        }
-        if ([nonEmptyStatements count] != 1) {
-            NSBeep();
-            [errorTextTitle setStringValue:NSLocalizedString(@"Query Status", @"Query Status")];
-            [errorText setString:NSLocalizedString(@"EXPLAIN is only supported for a single SELECT or WITH statement.", @"EXPLAIN unsupported statement message")];
-            return;
-        }
-        queryToExplain = [SPSQLParser normaliseQueryForExecution:[nonEmptyStatements firstObject]];
-    }
-
-    if (![SPCustomQuery isQueryExplainable:queryToExplain]) {
-        NSBeep();
-        [errorTextTitle setStringValue:NSLocalizedString(@"Query Status", @"Query Status")];
-        [errorText setString:NSLocalizedString(@"EXPLAIN is only supported for a single SELECT or WITH statement.", @"EXPLAIN unsupported statement message")];
-        return;
-    }
-
-    isDesc = NO;
-    sortColumn = nil;
-    [sortCount removeAllObjects];
-
-    reloadingExistingResult = NO;
-    [self clearResultViewDetailsToRestore];
-
-    NSString *explainQuery = [NSString stringWithFormat:@"EXPLAIN %@", queryToExplain];
-    [self performQueries:@[explainQuery] withCallback:NULL];
 }
 
 /**
@@ -778,54 +718,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     }];
     
     return retCode;
-}
-
-/**
- * Returns YES when the supplied query is a single SELECT or WITH statement that can be
- * passed to MySQL's EXPLAIN. Strips comments and leading whitespace, then unwraps a
- * leading parenthesised group so `(SELECT ...)` passes while `(EXPLAIN ...)` or
- * `(UPDATE ...)` is rejected. Word-boundary check after the keyword prevents column
- * names like `SELECTOR_TABLE` or `WITHOUT VALIDATION` from matching.
- */
-+ (BOOL)isQueryExplainable:(NSString *)query
-{
-    if (![query isKindOfClass:[NSString class]] || ![query length]) return NO;
-
-    // Replace comments with a single space so `SELECT/*c*/1` doesn't collapse to `SELECT1`
-    // and fail the keyword boundary check below.
-    NSMutableString *cleaned = [query mutableCopy];
-    [cleaned replaceOccurrencesOfRegex:@"--.*?\n" withString:@" "];
-    [cleaned replaceOccurrencesOfRegex:@"--.*?$" withString:@" "];
-    [cleaned replaceOccurrencesOfRegex:@"#.*?\n" withString:@" "];
-    [cleaned replaceOccurrencesOfRegex:@"#.*?$" withString:@" "];
-    [cleaned replaceOccurrencesOfRegex:@"/\\*(.|\n)*?\\*/" withString:@" "];
-
-    NSCharacterSet *trimSet = [NSCharacterSet whitespaceAndNewlineCharacterSet];
-    NSString *trimmed = [cleaned stringByTrimmingCharactersInSet:trimSet];
-
-    while ([trimmed hasPrefix:@"("]) {
-        trimmed = [[trimmed substringFromIndex:1] stringByTrimmingCharactersInSet:trimSet];
-    }
-    if (![trimmed length]) return NO;
-
-    NSString *upper = [trimmed uppercaseString];
-
-    // Identifier characters block keyword boundary; anything else (whitespace, punctuation
-    // like `(`, end-of-string) is treated as a valid token end so `SELECT(1)` matches.
-    NSMutableCharacterSet *identifierSet = [NSMutableCharacterSet alphanumericCharacterSet];
-    [identifierSet addCharactersInString:@"_"];
-
-    NSArray<NSString *> *prefixes = @[@"SELECT", @"WITH"];
-    for (NSString *prefix in prefixes) {
-        if (![upper hasPrefix:prefix]) continue;
-
-        NSUInteger prefixLen = [prefix length];
-        if ([upper length] == prefixLen) return YES;
-
-        unichar boundary = [upper characterAtIndex:prefixLen];
-        if (![identifierSet characterIsMember:boundary]) return YES;
-    }
-    return NO;
 }
 
 /**
