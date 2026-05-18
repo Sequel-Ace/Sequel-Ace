@@ -297,20 +297,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     isTestingConnection = (sender == testConnectButton);
     self.localNetworkPermissionDeniedForCurrentAttempt = NO;
 
-    // AWS-directory authorization stays inline — it depends on the
-    // Security framework bookmark state, which the pure validator
-    // can't represent.
-    if ([self _isAWSIAMConnection] && ![self isAWSDirectoryAuthorized]) {
-        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"AWS Authorization Required", @"AWS authorization required title")
-                                     message:NSLocalizedString(@"Authorize access to your ~/.aws directory before testing or connecting with an AWS IAM favorite.", @"AWS authorization required message")
-                                    callback:nil];
-        return;
-    }
-
-    // All other pre-connection validation runs through
-    // SAConnectionDetailsValidator. On failure the controller still
-    // owns the alert + per-failure side effects (clearing the matching
-    // enabled toggles / paths) so the user can correct the input.
+    // Pre-connection validation runs through SAConnectionDetailsValidator
+    // FIRST so the user-facing "first error" ordering matches the
+    // pre-refactor behavior (host non-empty beats every later check,
+    // including AWS-directory authorization). On failure the controller
+    // still owns the alert + per-failure side effects (clearing the
+    // matching enabled toggles / paths) so the user can correct the input.
     SAConnectionValidationFailure *failure = [SAConnectionDetailsValidator
         validateWithType:(SAConnectionType)[self type]
                     host:[self host] ?: @""
@@ -347,6 +339,18 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                 break;
         }
         [NSAlert createWarningAlertWithTitle:failure.alertTitle message:failure.alertMessage callback:nil];
+        return;
+    }
+
+    // AWS-directory authorization stays inline — it depends on the
+    // Security framework bookmark state, which the pure validator
+    // can't represent. Ordered AFTER the validator so the
+    // host-missing alert still beats this one for AWS IAM favorites
+    // with an empty host (matches pre-refactor behavior).
+    if ([self _isAWSIAMConnection] && ![self isAWSDirectoryAuthorized]) {
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"AWS Authorization Required", @"AWS authorization required title")
+                                     message:NSLocalizedString(@"Authorize access to your ~/.aws directory before testing or connecting with an AWS IAM favorite.", @"AWS authorization required message")
+                                    callback:nil];
         return;
     }
 
