@@ -3330,6 +3330,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 /**
  * Update the window title.
+ *
+ * The actual string composition lives in SAWindowTitleBuilder (Swift) —
+ * this method gathers the document's current state and forwards the
+ * result to the window controller. The accessory-color update only
+ * applies in the connected branch.
  */
 - (void)updateWindowTitle:(id)sender {
     // Ensure a call on the main thread
@@ -3337,47 +3342,29 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         return [[self onMainThread] updateWindowTitle:sender];
     }
 
-    // Determine name details
-    NSString *pathName = @"";
-    if ([[[self fileURL] path] length] && ![self isUntitled]) {
-        pathName = [NSString stringWithFormat:@"%@ — ", [[[self fileURL] path] lastPathComponent]];
+    SAWindowConnectionState state;
+    if ([connectionController isConnecting]) {
+        state = SAWindowConnectionStateConnecting;
+    } else if (!_isConnected) {
+        state = SAWindowConnectionStateDisconnected;
+    } else {
+        state = SAWindowConnectionStateConnected;
     }
 
-    if ([connectionController isConnecting]) {
-        NSString *title = NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting");
-        [self.parentWindowController updateWindowWithTitle:title tabTitle:title];
-    } else if (!_isConnected) {
-        NSString *title = [NSString stringWithFormat:@"%@%@", pathName, [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey]];
-        [self.parentWindowController updateWindowWithTitle:title tabTitle:title];
-    } else {
-        NSMutableString *windowTitle = [NSMutableString string];
+    SAWindowTitleResult *result = [SAWindowTitleBuilder
+        buildTitleWithConnectionState:state
+                             filePath:[[self fileURL] path]
+                           isUntitled:[self isUntitled]
+                           bundleName:[[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString *)kCFBundleNameKey]
+                       connectionName:[self name]
+                             database:[self database]
+                                table:[self table]
+                         mySQLVersion:mySQLVersion
+             showServerVersionInTitle:[prefs boolForKey:SPDisplayServerVersionInWindowTitle]];
 
-        // Add the path to the window title
-        [windowTitle appendString:pathName];
+    [self.parentWindowController updateWindowWithTitle:result.windowTitle tabTitle:result.tabTitle];
 
-        // Add the MySQL version to the window title if enabled in prefs
-        if ([prefs boolForKey:SPDisplayServerVersionInWindowTitle]) {
-            [windowTitle appendFormat:@"(MySQL %@) ", mySQLVersion];
-        }
-
-        NSMutableString *tabTitle = [NSMutableString string];
-
-        // Add the name to the window
-        [windowTitle appendString:[self name]];
-        [tabTitle appendString:[self name]];
-
-        // If a database is selected, add to the window - and other tabs if host is the same but db different or table is not set
-        if ([self database]) {
-            [windowTitle appendFormat:@"/%@", [self database]];
-            [tabTitle appendFormat:@"/%@", [self database]];
-        }
-
-        // Add the table name if one is selected
-        if ([[self table] length]) {
-            [windowTitle appendFormat:@"/%@", [self table]];
-            [tabTitle appendFormat:@"/%@", [self table]];
-        }
-        [self.parentWindowController updateWindowWithTitle:windowTitle tabTitle:tabTitle];
+    if (state == SAWindowConnectionStateConnected) {
         [self.parentWindowController updateWindowAccessoryWithColor:[[SPFavoriteColorSupport sharedInstance] colorForIndex:[connectionController colorIndex]] isSSL:[self.connectionController isConnectedViaSSL]];
     }
 }
@@ -3707,14 +3694,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
- * The window title for this document.
+ * The window title for this document. Mirrors the disconnected-state
+ * preamble of -updateWindowTitle:; both share SAWindowTitleBuilder.
  */
 - (NSString *)displayName
 {
-    if (!_isConnected) {
-        return [NSString stringWithFormat:@"%@%@", ([[[self fileURL] path] length] && ![self isUntitled]) ? [NSString stringWithFormat:@"%@ — ",[[[self fileURL] path] lastPathComponent]] : @"", [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey]];
-    }
-    return [[[self fileURL] path] lastPathComponent];
+    return [SAWindowTitleBuilder displayNameWithIsConnected:_isConnected
+                                                   filePath:[[self fileURL] path]
+                                                 isUntitled:[self isUntitled]
+                                                 bundleName:[[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString *)kCFBundleNameKey]];
 }
 
 - (NSUndoManager *)undoManager

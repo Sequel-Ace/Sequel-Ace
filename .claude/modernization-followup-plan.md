@@ -66,10 +66,13 @@ A1c — `-_selectDatabaseAndItem:` (background-thread selection flow) + callback
 - View-specific extras (focus change for query, table load + focus for status) stay in the per-mode wrappers
 - Files: `SPDatabaseDocument.m`, `SPDatabaseDocument+ViewMode.swift`
 
-**A4. Extract window title management (~57 lines)**
-- `updateWindowTitle:`, `displayName`
-- Move to SPWindowController (where it logically belongs)
-- Files: `SPDatabaseDocument.m`, `SPWindowController.swift`
+**A4. Extract window title management (~57 lines)** — ✅ Done
+- New `SAWindowTitleBuilder` (Swift, pure, no AppKit) composes both window and tab titles from the document's current state. Three-branch state enum (`connecting`, `disconnected`, `connected`) mirrors the original ObjC code.
+- `displayNameWithIsConnected:…` ObjC bridge replaces the duplicated path-prefix logic in `-[SPDatabaseDocument displayName]`.
+- `-[SPDatabaseDocument updateWindowTitle:]` shrinks from ~50 lines of NSMutableString juggling to ~20 lines of state-gathering and a single forward call into the builder.
+- Accessory color update stays gated on `connected` (unchanged behavior).
+- 15 unit tests in `UnitTests/SAWindowTitleBuilderTests.swift` pin byte-exact output: connecting state, disconnected with/without path prefix, untitled-flag suppression, connected variants (host only, +db, +db+table), server-version preamble (window-only, nil version omitted), file-prefix + version stacking order, empty db/table normalization, and `displayName` parity.
+- Files: `Source/Controllers/Window/SAWindowTitleBuilder.swift`, `SPDatabaseDocument.m`
 
 ### Phase B: Test coverage (foundation for safe refactoring)
 
@@ -137,8 +140,8 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
 
 1. ~~**Phase A3** (wire SAViewMode into view switching) — quick win, already has the enum~~ ✅ Done
 2. ~~**Phase B3** (SAViewMode tests) — validate before and after~~ ✅ Done
-3. **Phase A1** (database list manager) — high value, moderate effort — 🟡 A1a done, A1b/A1c pending
-4. **Phase A4** (window title) — quick, easy
+3. **Phase A1** (database list manager) — high value, moderate effort — 🟡 A1a/A1b done, A1c pending
+4. ~~**Phase A4** (window title) — quick, easy~~ ✅ Done
 5. **Phase B2** (favorites data source tests) — safety net
 6. **Phase C1** (SwiftUI favorites list) — first visible SwiftUI
 7. **Phase A2** (task controller) — large but impactful
