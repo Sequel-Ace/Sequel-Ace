@@ -46,7 +46,11 @@ extension SPCustomQuery {
 
         for prefix in ["SELECT", "WITH"] {
             guard upper.hasPrefix(prefix) else { continue }
-            if upper.count == prefix.count { return true }
+            // Bare `SELECT` / `WITH` with nothing after the keyword is not
+            // valid SQL; reject so the manual Explain path surfaces the
+            // localized unsupported-statement message instead of forwarding
+            // `EXPLAIN SELECT` to the server and getting a syntax error.
+            if upper.count == prefix.count { return false }
             let boundaryIndex = upper.index(upper.startIndex, offsetBy: prefix.count)
             let boundaryScalar = upper.unicodeScalars[boundaryIndex.samePosition(in: upper.unicodeScalars)!]
             if !identifierSet.contains(boundaryScalar) { return true }
