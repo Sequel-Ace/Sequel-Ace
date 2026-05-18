@@ -107,6 +107,7 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 
 - (void)_startEditingConnection;
 - (BOOL)_isAWSIAMConnection;
+- (BOOL)_shouldRequireMySQLHost;
 - (void)_syncAWSIAMAndSSLInterfaceState;
 - (void)_refreshAWSAvailableRegions;
 
@@ -300,10 +301,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     NSFileManager *fileManager = [NSFileManager defaultManager];
 
-    // Ensure that host is not empty if this is a TCP/IP, SSH, or AWS IAM connection
-    // (SSH connections with a remote socket path don't need a MySQL host)
-    BOOL sshUsesRemoteSocket = [self type] == SPSSHTunnelConnection && [[self sshRemoteSocketPath] length];
-    if (([self type] == SPTCPIPConnection || ([self type] == SPSSHTunnelConnection && !sshUsesRemoteSocket) || [self type] == SPAWSIAMConnection) && ![[self host] length]) {
+    // Ensure that host is not empty for connection types that require a MySQL host.
+    if ([self _shouldRequireMySQLHost] && ![[self host] length]) {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message") message:NSLocalizedString(@"Insufficient details provided to establish a connection. Please enter at least the hostname.", @"insufficient details informative message") callback:nil];
         return;
     }
@@ -923,6 +922,15 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 - (BOOL)_isAWSIAMConnection
 {
     return [self type] == SPAWSIAMConnection;
+}
+
+- (BOOL)_shouldRequireMySQLHost
+{
+    if ([self type] == SPSSHTunnelConnection && [[self sshRemoteSocketPath] length]) {
+        return NO;
+    }
+
+    return [self type] == SPTCPIPConnection || [self type] == SPSSHTunnelConnection || [self type] == SPAWSIAMConnection;
 }
 
 - (void)_syncAWSIAMAndSSLInterfaceState
@@ -1773,10 +1781,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         [[connectionView window] endEditingFor:[[connectionView window] firstResponder]];
     }
 
-    // Ensure that host is not empty if this is a TCP/IP, SSH, or AWS IAM connection
-    // (SSH connections with a remote socket path don't need a MySQL host)
-    BOOL sshUsesRemoteSocketForSave = [self type] == SPSSHTunnelConnection && [[self sshRemoteSocketPath] length];
-    if (validateDetails && ([self type] == SPTCPIPConnection || ([self type] == SPSSHTunnelConnection && !sshUsesRemoteSocketForSave) || [self type] == SPAWSIAMConnection) && ![[self host] length]) {
+    // Ensure that host is not empty for connection types that require a MySQL host.
+    if (validateDetails && [self _shouldRequireMySQLHost] && ![[self host] length]) {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message") message:NSLocalizedString(@"Insufficient details provided to establish a connection. Please provide at least a host.", @"insufficient details informative message") callback:nil];
         return;
     }

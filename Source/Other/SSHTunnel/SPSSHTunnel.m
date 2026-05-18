@@ -70,13 +70,14 @@ static unsigned short getRandomPort(void);
 	if (!theHost) return nil;
 
 	if ((self = [super init])) {
+		NSString *safeTargetHost = targetHost ?: @"127.0.0.1";
 		
 		// Store the connection settings as appropriate
 		sshHost = [[NSString alloc] initWithString:theHost];
 		sshLogin = [[NSString alloc] initWithString:(theLogin?theLogin:@"")];
 		sshPort = thePort;
-		useHostFallback = [theHost isEqualToString:targetHost];
-		remoteHost = [[NSString alloc] initWithString:targetHost];
+		useHostFallback = [theHost isEqualToString:safeTargetHost];
+		remoteHost = [safeTargetHost copy];
 		remotePort = targetPort;
 		delegate = nil;
 		stateChangeSelector = nil;
@@ -179,7 +180,7 @@ static unsigned short getRandomPort(void);
 
 - (void)setRemoteSocketPath:(NSString *)thePath
 {
-	remoteSocketPath = [[NSString alloc] initWithString:thePath];
+	remoteSocketPath = [thePath copy];
 }
 
 /*

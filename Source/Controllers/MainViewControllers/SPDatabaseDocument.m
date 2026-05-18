@@ -3810,6 +3810,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 [connection setObject:[NSNumber numberWithInteger:[connectionController sshKeyLocationEnabled]] forKey:@"ssh_keyLocationEnabled"];
                 if ([connectionController sshKeyLocation]) [connection setObject:[connectionController sshKeyLocation] forKey:@"ssh_keyLocation"];
                 if ([connectionController sshPort] && [[connectionController sshPort] length]) [connection setObject:[NSNumber numberWithInteger:[[connectionController sshPort] integerValue]] forKey:@"ssh_port"];
+                if ([connectionController sshRemoteSocketPath] && [[connectionController sshRemoteSocketPath] length]) [connection setObject:[connectionController sshRemoteSocketPath] forKey:@"sshRemoteSocketPath"];
                 break;
             default:
                 connectionType = @"SPTCPIPConnection";
@@ -4030,6 +4031,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([connection objectForKey:@"ssh_keyLocationEnabled"]) [connectionController setSshKeyLocationEnabled:[[connection objectForKey:@"ssh_keyLocationEnabled"] intValue]];
     if ([connection objectForKey:@"ssh_keyLocation"])        [connectionController setSshKeyLocation:[connection objectForKey:@"ssh_keyLocation"]];
     if ([connection objectForKey:@"ssh_port"])               [connectionController setSshPort:[NSString stringWithFormat:@"%ld", (long)[[connection objectForKey:@"ssh_port"] integerValue]]];
+    if ([connection objectForKey:@"sshRemoteSocketPath"])    [connectionController setSshRemoteSocketPath:[connection objectForKey:@"sshRemoteSocketPath"]];
 
     // Set the SSH password - if not in SPF file try to get it via the KeyChain
     if ([connection objectForKey:@"ssh_password"]) {
