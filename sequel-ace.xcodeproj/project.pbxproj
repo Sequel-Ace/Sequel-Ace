@@ -230,6 +230,12 @@
 		5146E0502F7A640C00C4C14A /* SADatabaseListManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146E0512F7A640C00C4C14A /* SADatabaseListManager.swift */; };
 		5146E0522F7A640C00C4C14A /* SADatabaseListManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146E0512F7A640C00C4C14A /* SADatabaseListManager.swift */; };
 		5146E0532F7A640C00C4C14A /* SADatabaseListManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146E0542F7A640C00C4C14A /* SADatabaseListManagerTests.swift */; };
+		5147B0022F8C000100C4C14A /* SAWindowTitleBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0012F8C000100C4C14A /* SAWindowTitleBuilder.swift */; };
+		5147B0032F8C000100C4C14A /* SAWindowTitleBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0012F8C000100C4C14A /* SAWindowTitleBuilder.swift */; };
+		5147B0052F8C000100C4C14A /* SAWindowTitleBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0042F8C000100C4C14A /* SAWindowTitleBuilderTests.swift */; };
+		5147B0072F8C000200C4C14A /* SAFavoriteSearchMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0062F8C000200C4C14A /* SAFavoriteSearchMatcher.swift */; };
+		5147B0082F8C000200C4C14A /* SAFavoriteSearchMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0062F8C000200C4C14A /* SAFavoriteSearchMatcher.swift */; };
+		5147B00A2F8C000200C4C14A /* SAFavoriteSearchMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0092F8C000200C4C14A /* SAFavoriteSearchMatcherTests.swift */; };
 		514B40A02F683E3700369718 /* SAAboutWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000001C /* SAAboutWindowController.swift */; };
 		514B40A72F68412000369718 /* License.md in Resources */ = {isa = PBXBuildFile; fileRef = 514B40A62F68412000369718 /* License.md */; };
 		514B40A82F68412000369718 /* Credits.md in Resources */ = {isa = PBXBuildFile; fileRef = 514B40A52F68412000369718 /* Credits.md */; };
@@ -942,6 +948,10 @@
 		5146E04B2F7A640C00C4C14A /* SAViewModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAViewModeTests.swift; sourceTree = "<group>"; };
 		5146E0512F7A640C00C4C14A /* SADatabaseListManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SADatabaseListManager.swift; sourceTree = "<group>"; };
 		5146E0542F7A640C00C4C14A /* SADatabaseListManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SADatabaseListManagerTests.swift; sourceTree = "<group>"; };
+		5147B0012F8C000100C4C14A /* SAWindowTitleBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAWindowTitleBuilder.swift; sourceTree = "<group>"; };
+		5147B0042F8C000100C4C14A /* SAWindowTitleBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAWindowTitleBuilderTests.swift; sourceTree = "<group>"; };
+		5147B0062F8C000200C4C14A /* SAFavoriteSearchMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoriteSearchMatcher.swift; sourceTree = "<group>"; };
+		5147B0092F8C000200C4C14A /* SAFavoriteSearchMatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoriteSearchMatcherTests.swift; sourceTree = "<group>"; };
 		514B40A12F683E7900369718 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		514B40A52F68412000369718 /* Credits.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = Credits.md; sourceTree = "<group>"; };
 		514B40A62F68412000369718 /* License.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = License.md; sourceTree = "<group>"; };
@@ -1695,6 +1705,7 @@
 			children = (
 				5132930925F586A900D803AD /* NotificationToken.swift */,
 				51BC14F725BE135500F1CDC9 /* SPWindowController.swift */,
+				5147B0012F8C000100C4C14A /* SAWindowTitleBuilder.swift */,
 				5132930A25F586A900D803AD /* TabManager.swift */,
 			);
 			path = Window;
@@ -1736,6 +1747,7 @@
 				51B09FEB2F7696C7003BAFFF /* SAConnectionWindowController.swift */,
 				5146ADEF2F79B16900C4C14A /* SAFavoritesListDelegate.swift */,
 				5146ADF42F79B1A200C4C14A /* SAFavoritesListDataSource.swift */,
+				5147B0062F8C000200C4C14A /* SAFavoriteSearchMatcher.swift */,
 			);
 			name = "Connection View";
 			path = ConnectionView;
@@ -2377,6 +2389,8 @@
 				517BFF432F7DA38F00F6D812 /* SAConnectionServiceTests.swift */,
 				5146E04B2F7A640C00C4C14A /* SAViewModeTests.swift */,
 				5146E0542F7A640C00C4C14A /* SADatabaseListManagerTests.swift */,
+				5147B0042F8C000100C4C14A /* SAWindowTitleBuilderTests.swift */,
+				5147B0092F8C000200C4C14A /* SAFavoriteSearchMatcherTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -3040,6 +3054,10 @@
 				5146ADFD2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift in Sources */,
 				5146E0522F7A640C00C4C14A /* SADatabaseListManager.swift in Sources */,
 				5146E0532F7A640C00C4C14A /* SADatabaseListManagerTests.swift in Sources */,
+				5147B0032F8C000100C4C14A /* SAWindowTitleBuilder.swift in Sources */,
+				5147B0052F8C000100C4C14A /* SAWindowTitleBuilderTests.swift in Sources */,
+				5147B0082F8C000200C4C14A /* SAFavoriteSearchMatcher.swift in Sources */,
+				5147B00A2F8C000200C4C14A /* SAFavoriteSearchMatcherTests.swift in Sources */,
 				1717FA401558313A0065C036 /* RegexKitLite.m in Sources */,
 				50D3C35C1A771C4C00B5429C /* SPParserUtilsTest.m in Sources */,
 				1AE6C1CD25B07E9500880D73 /* SPFunctionsTests.m in Sources */,
@@ -3153,6 +3171,7 @@
 				BC8C8532100E0A8000D7A129 /* SPTableView.m in Sources */,
 				51BB391C25F82B060048CA69 /* SPAppController.swift in Sources */,
 				5146ADF52F79B1A200C4C14A /* SAFavoritesListDataSource.swift in Sources */,
+				5147B0072F8C000200C4C14A /* SAFavoriteSearchMatcher.swift in Sources */,
 				BC9F0881100FCF2C00A80D32 /* SPFieldEditorController.m in Sources */,
 				58D2E229101222670063EF1D /* SPTextAndLinkCell.m in Sources */,
 				1A96E4B72588F34C0055F5F5 /* SecureBookmarkManager.swift in Sources */,
@@ -3200,6 +3219,7 @@
 				BCE0025D11173D2A009DA533 /* SPFieldMapperController.m in Sources */,
 				5146ADFC2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift in Sources */,
 				5146E0502F7A640C00C4C14A /* SADatabaseListManager.swift in Sources */,
+				5147B0022F8C000100C4C14A /* SAWindowTitleBuilder.swift in Sources */,
 				BC2777A011514B940034DF6A /* SPNavigatorController.m in Sources */,
 				589582151154F8F400EDCC28 /* SPMainThreadTrampoline.m in Sources */,
 				51B09FDF2F767A53003BAFFF /* SADatabaseDocumentProviding.swift in Sources */,

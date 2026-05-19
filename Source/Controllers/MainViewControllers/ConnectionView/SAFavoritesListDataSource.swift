@@ -115,20 +115,18 @@ private let kSPQuickConnectImageWhite = "quick-connect-icon-white.pdf"
     // MARK: - Filtering
 
     /// Rebuilds `visibleNodes` based on the current `searchQuery`.
-    /// The query is split into whitespace-separated tokens; a leaf matches when
-    /// EVERY token is found (case-insensitively) in either its name or its host.
-    /// This lets users type e.g. "staging maja" to narrow to "[Staging]Majapahit".
+    /// Matching rule lives in `SAFavoriteSearchMatcher` (see that file
+    /// for semantics + test coverage). Leaves match when every token is
+    /// found in either the favorite's name or host; groups inherit
+    /// visibility from any matching descendant.
     private func rebuildVisibleNodes() {
-        let tokens = searchQuery
-            .lowercased()
-            .split(whereSeparator: { $0.isWhitespace })
-            .map(String.init)
-        guard !tokens.isEmpty else {
+        let matcher = SAFavoriteSearchMatcher(query: searchQuery)
+        guard matcher.isActive else {
             visibleNodes = nil
             return
         }
         var matched: Set<SPTreeNode> = []
-        _ = collectMatchingNodes(in: favoritesRoot, tokens: tokens, into: &matched)
+        _ = collectMatchingNodes(in: favoritesRoot, matcher: matcher, into: &matched)
         visibleNodes = matched
     }
 
@@ -136,11 +134,11 @@ private let kSPQuickConnectImageWhite = "quick-connect-icon-white.pdf"
     /// plus every ancestor of any matched leaf. Returns whether `node` itself is matched
     /// (a group is "matched" if any of its descendants matched).
     @discardableResult
-    private func collectMatchingNodes(in node: SPTreeNode, tokens: [String], into matched: inout Set<SPTreeNode>) -> Bool {
+    private func collectMatchingNodes(in node: SPTreeNode, matcher: SAFavoriteSearchMatcher, into matched: inout Set<SPTreeNode>) -> Bool {
         if node.isGroup {
             var anyDescendantMatched = false
             for child in (node.children ?? []).compactMap({ $0 as? SPTreeNode }) {
-                if collectMatchingNodes(in: child, tokens: tokens, into: &matched) {
+                if collectMatchingNodes(in: child, matcher: matcher, into: &matched) {
                     anyDescendantMatched = true
                 }
             }
@@ -150,12 +148,9 @@ private let kSPQuickConnectImageWhite = "quick-connect-icon-white.pdf"
             return anyDescendantMatched
         }
         let fav = (node.representedObject as? SPFavoriteNode)?.nodeFavorite
-        let name = (fav?[SPFavoriteNameKey] as? String ?? "").lowercased()
-        let host = (fav?[SPFavoriteHostKey] as? String ?? "").lowercased()
-        let allTokensMatch = tokens.allSatisfy { token in
-            name.contains(token) || host.contains(token)
-        }
-        if allTokensMatch {
+        let name = (fav?[SPFavoriteNameKey] as? String ?? "")
+        let host = (fav?[SPFavoriteHostKey] as? String ?? "")
+        if matcher.matches(name: name, host: host) {
             matched.insert(node)
             return true
         }
