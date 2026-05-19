@@ -231,5 +231,9 @@
 	<true/>
 	<key>ShowWarningBeforeDeleteQuery</key>
 	<true/>
+	<key>SPMCPServerEnabled</key>
+	<false/>
+	<key>SPMCPServerPort</key>
+	<integer>8765</integer>
 </dict>
 </plist>

@@ -48,6 +48,7 @@
 #import "SPTextView.h"
 #import "SPFunctions.h"
 #import "SPBundleManager.h"
+#import "SPAppController+MCP.h"
 #import "MGTemplateEngine.h"
 #import "ICUTemplateMatcher.h"
 #import "SPTreeNode.h"
@@ -277,6 +278,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
     [SPBundleManager.shared reloadBundles:self];
     [self _copyDefaultThemes];
+
+    // Start the embedded MCP server if enabled in preferences.
+    [self setupMCPServer];
 
     // If no documents are open, open one
     if (![self frontDocument]) {
@@ -1487,6 +1491,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
 {
+    // Cleanly shut down the MCP server before the app exits.
+    [SPMCPServer.shared stop];
+
     if ([sender keyWindow] != nil && [[NSUserDefaults standardUserDefaults] boolForKey:SPApplicationPromptOnQuit]) {
         BOOL answer = [self dialogOKCancelWithQuestion:NSLocalizedString(@"Close the app?", @"quitting app informal alert title") text:NSLocalizedString(@"Are you sure you want to quit the app?", @"quitting app informal alert body")];
         if (answer == NO) {
