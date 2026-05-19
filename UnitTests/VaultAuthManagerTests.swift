@@ -98,4 +98,20 @@ final class VaultAuthManagerTests: XCTestCase {
         let result = VaultAuthManager.cachedCredentials(for: "path/expired")
         XCTAssertNil(result, "Zero-duration lease should not be returned from cache")
     }
+
+    func testCacheIsInvalidatedWhenTokenChanges() {
+        VaultAuthManager.setCachedCredentials(username: "u1", password: "p1", leaseDuration: 3600, token: "old-token", for: "path/a")
+
+        // Same token — cache hit expected.
+        let hit = VaultAuthManager.cachedCredentials(for: "path/a", matchingToken: "old-token")
+        XCTAssertNotNil(hit, "Cache should hit when the token matches")
+
+        // Different token — entry must be evicted.
+        let miss = VaultAuthManager.cachedCredentials(for: "path/a", matchingToken: "new-token")
+        XCTAssertNil(miss, "Cache must be invalidated when ~/.vault-token changes to a different identity")
+
+        // Entry should now be gone from the cache entirely.
+        let gone = VaultAuthManager.cachedCredentials(for: "path/a")
+        XCTAssertNil(gone, "Evicted entry must not be accessible even without a token check")
+    }
 }

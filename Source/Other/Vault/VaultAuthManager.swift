@@ -45,6 +45,7 @@ import OSLog
         let username: String
         let password: String
         let expiration: Date
+        let token: String  // Vault token that generated these credentials; used to detect identity changes
     }
 
     private static var credentialCache = [String: CacheEntry]()
@@ -66,7 +67,9 @@ import OSLog
         return "\(host):\(port)@\(oidcMount)/\(credPath)"
     }
 
-    static func cachedCredentials(for key: String) -> (username: String, password: String)? {
+    /// Look up cached credentials. Evicts the entry if it has expired or if `matchingToken`
+    /// is provided and differs from the token that generated the entry (identity change).
+    static func cachedCredentials(for key: String, matchingToken: String? = nil) -> (username: String, password: String)? {
         cacheLock.lock()
         defer { cacheLock.unlock() }
         guard let entry = credentialCache[key] else { return nil }
@@ -74,14 +77,18 @@ import OSLog
             credentialCache.removeValue(forKey: key)
             return nil
         }
+        if let current = matchingToken, !entry.token.isEmpty, entry.token != current {
+            credentialCache.removeValue(forKey: key)
+            return nil
+        }
         return (entry.username, entry.password)
     }
 
-    static func setCachedCredentials(username: String, password: String, leaseDuration: TimeInterval, for key: String) {
+    static func setCachedCredentials(username: String, password: String, leaseDuration: TimeInterval, token: String = "", for key: String) {
         cacheLock.lock()
         defer { cacheLock.unlock() }
         let expiration = Date().addingTimeInterval(leaseDuration)
-        credentialCache[key] = CacheEntry(username: username, password: password, expiration: expiration)
+        credentialCache[key] = CacheEntry(username: username, password: password, expiration: expiration, token: token)
     }
 
     static func clearCachedCredentials(for key: String?) {
@@ -143,10 +150,15 @@ import OSLog
         let trimmedMount = oidcMount.trimmingCharacters(in: .whitespacesAndNewlines)
         let effectiveMount = trimmedMount.isEmpty ? "oidc" : trimmedMount
 
+        // Read the token file once here so we can (a) validate the cached entry's identity
+        // and (b) avoid a second disk read later when we confirm the token is still valid.
+        let preReadToken = VaultOIDCHandler.readCachedToken()
+
         let key = cacheKey(baseURL: baseURL, oidcMount: effectiveMount, credPath: effectiveCredPath)
 
-        // Return cached credentials if still valid.
-        if let cached = cachedCredentials(for: key) {
+        // Return cached credentials if still valid under the same Vault identity.
+        // Passing preReadToken evicts the entry when ~/.vault-token has changed.
+        if let cached = cachedCredentials(for: key, matchingToken: preReadToken) {
             username.pointee = cached.username as NSString
             password.pointee = cached.password as NSString
             return true
@@ -161,7 +173,7 @@ import OSLog
             inFlightCondition.wait()
         }
         // Re-check cache after waking — the in-flight thread may have populated it.
-        if let cached = cachedCredentials(for: key) {
+        if let cached = cachedCredentials(for: key, matchingToken: preReadToken) {
             inFlightCondition.unlock()
             username.pointee = cached.username as NSString
             password.pointee = cached.password as NSString
@@ -183,7 +195,7 @@ import OSLog
         // (proceed to OIDC login). Using try? would collapse both cases and trigger a
         // spurious browser login on transient network errors.
         let token: String
-        if let rawToken = VaultOIDCHandler.readCachedToken() {
+        if let rawToken = preReadToken {
             do {
                 let valid = try VaultClient.tokenLookupSelf(baseURL: baseURL, token: rawToken)
                 if valid {
@@ -208,7 +220,7 @@ import OSLog
                         )
                         finishInFlight(); return false
                     }
-                    setCachedCredentials(username: creds.username, password: creds.password, leaseDuration: creds.leaseDuration, for: key)
+                    setCachedCredentials(username: creds.username, password: creds.password, leaseDuration: creds.leaseDuration, token: token, for: key)
                     finishInFlight()
                     username.pointee = creds.username as NSString
                     password.pointee = creds.password as NSString
@@ -271,7 +283,7 @@ import OSLog
             )
             finishInFlight(); return false
         }
-        setCachedCredentials(username: creds.username, password: creds.password, leaseDuration: creds.leaseDuration, for: key)
+        setCachedCredentials(username: creds.username, password: creds.password, leaseDuration: creds.leaseDuration, token: token, for: key)
         finishInFlight()
 
         username.pointee = creds.username as NSString
