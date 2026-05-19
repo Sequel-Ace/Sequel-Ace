@@ -130,7 +130,11 @@ enum VaultOIDCError: Error, LocalizedError {
 
     // MARK: - Token persistence
 
+    /// Override the token file path for testing. When nil the real ~/.vault-token is used.
+    static var tokenFilePathOverride: String?
+
     static func tokenFilePath() -> String {
+        if let override = tokenFilePathOverride { return override }
         let home = NSHomeDirectory()
         return (home as NSString).appendingPathComponent(vaultTokenFileName)
     }

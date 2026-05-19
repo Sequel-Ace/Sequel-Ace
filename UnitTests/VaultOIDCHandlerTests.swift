@@ -7,26 +7,23 @@ final class VaultOIDCHandlerTests: XCTestCase {
 
     // MARK: - Token file isolation
 
-    private var savedTokenData: Data?
-    private var realTokenExistedBeforeTest = false
+    private var tempTokenDir: URL?
 
     override func setUp() {
         super.setUp()
-        // Back up the real ~/.vault-token so tests do not corrupt the developer's
-        // Vault CLI session. The file is restored in tearDown regardless of outcome.
-        let realPath = VaultOIDCHandler.tokenFilePath()
-        realTokenExistedBeforeTest = FileManager.default.fileExists(atPath: realPath)
-        if realTokenExistedBeforeTest {
-            savedTokenData = try? Data(contentsOf: URL(fileURLWithPath: realPath))
-        }
-        try? FileManager.default.removeItem(atPath: realPath)
+        // Point VaultOIDCHandler at a private temp file instead of the real ~/.vault-token
+        // so tests never read, write, or delete the developer's Vault CLI session.
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("VaultOIDCHandlerTests-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        tempTokenDir = dir
+        VaultOIDCHandler.tokenFilePathOverride = dir.appendingPathComponent(".vault-token").path
     }
 
     override func tearDown() {
-        let realPath = VaultOIDCHandler.tokenFilePath()
-        try? FileManager.default.removeItem(atPath: realPath)
-        if realTokenExistedBeforeTest, let data = savedTokenData {
-            try? data.write(to: URL(fileURLWithPath: realPath))
+        VaultOIDCHandler.tokenFilePathOverride = nil
+        if let dir = tempTokenDir {
+            try? FileManager.default.removeItem(at: dir)
         }
         super.tearDown()
     }
