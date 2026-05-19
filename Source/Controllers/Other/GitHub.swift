@@ -159,7 +159,7 @@ final class Asset: Codable {
     let label: JSONNull?
     let uploader: Author
     let contentType: ContentType
-    let state: State
+    let state: GithubState
     let size, downloadCount: Int
     let createdAt, updatedAt: Date
     let browserDownloadURL: String
@@ -176,7 +176,7 @@ final class Asset: Codable {
         case browserDownloadURL = "browser_download_url"
     }
 
-    init(url: String, id: Int, nodeID: String, name: String, label: JSONNull?, uploader: Author, contentType: ContentType, state: State, size: Int, downloadCount: Int, createdAt: Date, updatedAt: Date, browserDownloadURL: String) {
+    init(url: String, id: Int, nodeID: String, name: String, label: JSONNull?, uploader: Author, contentType: ContentType, state: GithubState, size: Int, downloadCount: Int, createdAt: Date, updatedAt: Date, browserDownloadURL: String) {
         self.url = url
         self.id = id
         self.nodeID = nodeID
@@ -220,7 +220,7 @@ extension Asset {
         label: JSONNull?? = nil,
         uploader: Author? = nil,
         contentType: ContentType? = nil,
-        state: State? = nil,
+        state: GithubState? = nil,
         size: Int? = nil,
         downloadCount: Int? = nil,
         createdAt: Date? = nil,
@@ -257,7 +257,7 @@ enum ContentType: String, Codable {
     case applicationZip = "application/zip"
 }
 
-enum State: String, Codable {
+enum GithubState: String, Codable {
     case uploaded = "uploaded"
 }
 

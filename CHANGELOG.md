@@ -1,3 +1,34 @@
+## [5.2.1](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%225.2.1+%28*%29%22&expanded=true)
+
+### Added
+- Add link to documentation website ([7f68b9d7f](https://github.com/Sequel-Ace/Sequel-Ace/commit/7f68b9d7fc4163db1388a1a63f0c93f42665a754))
+- Add screenshot to readme ([83a7aec56](https://github.com/Sequel-Ace/Sequel-Ace/commit/83a7aec56e0b551fd50b071d31968d1c911dfaa5))
+
+### Fixed
+- Fix bundle beep on startup ([b48bc7972](https://github.com/Sequel-Ace/Sequel-Ace/commit/b48bc7972ffc1cc5c9fc7b3f6297994973b255a7), [#2376](https://github.com/Sequel-Ace/Sequel-Ace/pull/2376))
+- fix: check target column type when following FK references ([d7f665e0c](https://github.com/Sequel-Ace/Sequel-Ace/commit/d7f665e0c6d24ef57fb8b625c22bc7512681a40e), [#2365](https://github.com/Sequel-Ace/Sequel-Ace/pull/2365))
+
+### Changed
+- Increment build version ([07ac88f06](https://github.com/Sequel-Ace/Sequel-Ace/commit/07ac88f060630b8183f25f538768f110f4a4739d))
+- Increment app patch version ([f1f3d7378](https://github.com/Sequel-Ace/Sequel-Ace/commit/f1f3d7378df3f9aab38a7ff2f4f2d7d489e100ff))
+- Replace App Center with Firebase Analytics & Crashlytics ([409159141](https://github.com/Sequel-Ace/Sequel-Ace/commit/409159141a994400a6905823d8c25d692fbac232), [#2378](https://github.com/Sequel-Ace/Sequel-Ace/pull/2378))
+- Refresh tables after export so the table list isn't grayed out ([407546521](https://github.com/Sequel-Ace/Sequel-Ace/commit/407546521865f4ad28b6507f2e5185e2ca2df567), [#2371](https://github.com/Sequel-Ace/Sequel-Ace/pull/2371))
+- Clear selected table when removing a table ([9307dd7b4](https://github.com/Sequel-Ace/Sequel-Ace/commit/9307dd7b48c6414d832e75d3f20a2ecfe229b317), [#2369](https://github.com/Sequel-Ace/Sequel-Ace/pull/2369))
+- Replace About panel XIB with SwiftUI implementation ([7fcc60108](https://github.com/Sequel-Ace/Sequel-Ace/commit/7fcc601087501faa6dac478a339c2a10e6165a49), [#2366](https://github.com/Sequel-Ace/Sequel-Ace/pull/2366))
+- Improve TLS defaults and scope reconnect reachability probes ([0f91a7748](https://github.com/Sequel-Ace/Sequel-Ace/commit/0f91a77487319068673844a816a357eca3f15c80), [#2364](https://github.com/Sequel-Ace/Sequel-Ace/pull/2364))
+- Raise row limit cap from 100k to 1M ([cb5aae97d](https://github.com/Sequel-Ace/Sequel-Ace/commit/cb5aae97d702b42c3711301ea394a36b5258375b), [#2359](https://github.com/Sequel-Ace/Sequel-Ace/pull/2359))
+
+### Removed
+- remove SHELL from ssh environment so ProxyCommands work when shell is customized ([47a223fa6](https://github.com/Sequel-Ace/Sequel-Ace/commit/47a223fa65e6e2c1a96aac79d28ce0c20ea9e21c), [#2374](https://github.com/Sequel-Ace/Sequel-Ace/pull/2374))
+
+### Infra
+- Bump addressable from 2.8.8 to 2.9.0 ([97391306d](https://github.com/Sequel-Ace/Sequel-Ace/commit/97391306d6092b1e180e4b7cbad31e9c648db194), [#2380](https://github.com/Sequel-Ace/Sequel-Ace/pull/2380))
+- Bump addressable from 2.8.5 to 2.9.0 in /docs ([b5941c733](https://github.com/Sequel-Ace/Sequel-Ace/commit/b5941c7339f56c449c91c11aaaa20329d0b814cd), [#2377](https://github.com/Sequel-Ace/Sequel-Ace/pull/2377))
+- Bump activesupport from 7.0.7.2 to 7.2.3.1 in /docs ([127cbd4a8](https://github.com/Sequel-Ace/Sequel-Ace/commit/127cbd4a8042deca0f108a672f7840c98690f38f), [#2370](https://github.com/Sequel-Ace/Sequel-Ace/pull/2370))
+- Bump json from 2.18.1 to 2.19.2 ([175ae4674](https://github.com/Sequel-Ace/Sequel-Ace/commit/175ae46749d5c1d72b094e3b4d085a9b0dae15e2), [#2368](https://github.com/Sequel-Ace/Sequel-Ace/pull/2368))
+- Bump json from 2.18.1 to 2.19.2 in /docs ([a35e44014](https://github.com/Sequel-Ace/Sequel-Ace/commit/a35e44014f2409d8a997dade17e893fe8eee8a3c), [#2367](https://github.com/Sequel-Ace/Sequel-Ace/pull/2367))
+- Bump faraday from 1.8.0 to 1.10.5 ([39a4b9eb9](https://github.com/Sequel-Ace/Sequel-Ace/commit/39a4b9eb9508c71cf09bf8d905e4086dac57a282), [#2357](https://github.com/Sequel-Ace/Sequel-Ace/pull/2357))
+
 ## [5.2.0](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%225.2.0+%28*%29%22&expanded=true)
 
 ### Added

@@ -35,8 +35,15 @@
 
 #import <SPMySQL/SPMySQL.h>
 
-@class SPDatabaseDocument, 
-	   SPFavoritesController, 
+@protocol SADatabaseDocumentProviding;
+@protocol SAConnectionDelegate;
+@protocol SAFavoritesListDelegate;
+@class SAConnectionViewCoordinator;
+@class SAFavoritesListDataSource;
+@class SAConnectionService;
+
+@class SPDatabaseDocument,
+	   SPFavoritesController,
 	   SPSSHTunnel,
 	   SPTreeNode,
 	   SPFavoritesOutlineView,
@@ -54,9 +61,9 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
     SPConnectionTimeZoneModeUseFixedTZ
 };
 
-@interface SPConnectionController : NSViewController <SPMySQLConnectionDelegate, NSOpenSavePanelDelegate, SPFavoritesImportProtocol, SPFavoritesExportProtocol, NSSplitViewDelegate>
-{	
-	__weak SPDatabaseDocument *dbDocument;
+@interface SPConnectionController : NSViewController <SPMySQLConnectionDelegate, NSOpenSavePanelDelegate, SPFavoritesImportProtocol, SPFavoritesExportProtocol, NSSplitViewDelegate, SAFavoritesListDelegate>
+{
+	__weak id dbDocument;
 	SPMySQLConnection *mySQLConnection;
 
 	SPKeychain *keychain;
@@ -127,6 +134,8 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	IBOutlet NSScrollView *connectionDetailsScrollView;
 	IBOutlet NSTextField *connectionInstructionsTextField;
 	IBOutlet SPFavoritesOutlineView *favoritesOutlineView;
+	IBOutlet NSSearchField *favoritesSearchField;
+	id favoritesSearchKeyMonitor;
 
 
 	IBOutlet NSView *connectionResizeContainer;
@@ -221,6 +230,10 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 }
 
 @property (readwrite, weak) id <SPConnectionControllerDelegateProtocol> delegate;
+@property (readwrite, weak) id <SAConnectionDelegate> connectionDelegate;
+@property (readwrite, strong) SAConnectionViewCoordinator *viewCoordinator;
+@property (readwrite, strong) SAFavoritesListDataSource *favoritesListDataSource;
+@property (readwrite, strong) SAConnectionService *connectionService;
 @property (readwrite) NSInteger type;
 @property (readwrite, copy) NSString *name;
 @property (readwrite, copy) NSString *host;
@@ -293,6 +306,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 
 - (IBAction)sortFavorites:(id)sender;
 - (IBAction)reverseSortFavorites:(NSMenuItem *)sender;
+- (IBAction)searchFavorites:(id)sender;
 
 -(BOOL)validateCertFile:(NSURL *)url error:(NSError **)outError;
 -(BOOL)validateKeyFile:(NSURL *)url error:(NSError **)outError;
@@ -326,20 +340,14 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 
 #pragma mark - SPConnectionHandler
 
-- (void)initiateMySQLConnection;
-- (void)initiateMySQLConnectionInBackground;
-- (void)initiateSSHTunnelConnection;
-
 - (void)mySQLConnectionEstablished;
-- (void)sshTunnelCallback:(SPSSHTunnel *)theTunnel;
-
 - (void)addConnectionToDocument;
 
 - (void)failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail;
 
 #pragma mark - SPConnectionControllerInitializer
 
-- (instancetype)initWithDocument:(SPDatabaseDocument *)document;
+- (instancetype)initWithDocument:(id<SADatabaseDocumentProviding>)document;
 
 - (void)loadNib;
 - (void)registerForNotifications;

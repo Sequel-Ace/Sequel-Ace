@@ -47,8 +47,18 @@
 - (void)_disconnect;
 - (void)_updateConnectionVariables;
 - (void)_restoreConnectionVariables;
+- (void)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
+                                              encoding:(NSString *)encodingName
+                      encodingUsesLatin1Transport:(BOOL)useLatin1Transport
+                                 timeZoneIdentifier:(NSString *)timeZoneIdentifier;
 - (void)_validateThreadSetup;
 + (void)_removeThreadVariables:(NSNotification *)aNotification;
++ (NSArray<NSString *> *)defaultSSLCipherList;
++ (NSArray<NSString *> *)legacySSLCipherList;
++ (NSString *)_defaultSSLCipherListString;
++ (NSString *)_defaultTLSSuiteListString;
++ (NSArray<NSString *> *)_mergedSSLCipherPreferenceListFromSavedCipherString:(NSString *)savedCipherString disabledMarker:(NSString *)disabledMarker;
++ (NSString *)_reachabilityProbeHostForHost:(NSString *)host useSocket:(BOOL)useSocket hasProxy:(BOOL)hasProxy;
 
 @end
 

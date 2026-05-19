@@ -33,10 +33,17 @@
 #import "SPAppController.h"
 #import "SPPreferenceController.h"
 
+#import <SPMySQL/SPMySQL.h>
 #import "sequel-ace-Swift.h"
 
 static NSString *SPSSLCipherListMarkerItem = @"--";
 static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
+
+@interface SPMySQLConnection (CipherPreferenceMerging)
++ (NSArray<NSString *> *)defaultSSLCipherList;
++ (NSArray<NSString *> *)legacySSLCipherList;
++ (NSArray<NSString *> *)_mergedSSLCipherPreferenceListFromSavedCipherString:(NSString *)savedCipherString disabledMarker:(NSString *)disabledMarker;
+@end
 
 @interface SPNetworkPreferencePane ()
 - (void)updateHiddenFiles;
@@ -643,27 +650,8 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	
 	NSString *userCipherString = [prefs stringForKey:SPSSLCipherListKey];
 	if(userCipherString) {
-		//expand user list
-		NSArray *userCipherList = [userCipherString componentsSeparatedByString:@":"];
-		
-		//compare the users list to the valid list and only copy over valid items
-		for (NSString *userCipher in userCipherList) {
-			if (![supportedCiphers containsObject:userCipher] || [sslCiphers containsObject:userCipher]) {
-				SPLog(@"Unknown ssl cipher in users' list: %@",userCipher);
-				continue;
-			}
-			[sslCiphers addObject:userCipher];
-		}
-		
-		//now we do the reverse and add valid ciphers that are not yet in the users list.
-		//We'll just assume the ones not in the users' list are newer and therefore better and add
-		//them at the top
-		NSUInteger shift = 0;
-		for (NSString *validCipher in supportedCiphers) {
-			if(![sslCiphers containsObject:validCipher]) {
-				[sslCiphers insertObject:validCipher atIndex:shift++];
-			}
-		}
+		// Preserve the disabled marker when merging newly supported ciphers into saved user prefs.
+		[sslCiphers addObjectsFromArray:[SPMySQLConnection _mergedSSLCipherPreferenceListFromSavedCipherString:userCipherString disabledMarker:SPSSLCipherListMarkerItem]];
 	}
 	else {
 		//no user prefs configured, so we'll just go with the defaults
@@ -694,67 +682,10 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
     static NSArray *defaultSSLCipherList;
 
     dispatch_once(&token, ^{
-        //this is the default list as hardcoded in SPMySQLConnection.m
-        //Sadly there is no way to make MySQL give us the list of runtime-supported ciphers.
-        defaultSSLCipherList = @[
-            @"ECDHE-ECDSA-AES256-GCM-SHA384",
-            @"ECDHE-ECDSA-AES128-GCM-SHA256",
-            @"ECDHE-RSA-AES256-GCM-SHA384",
-            @"ECDHE-RSA-AES128-GCM-SHA256",
-            @"DHE-DSS-AES256-GCM-SHA384",
-            @"DHE-DSS-AES128-GCM-SHA256",
-            @"DHE-RSA-AES256-GCM-SHA384",
-            @"DHE-RSA-AES128-GCM-SHA256",
-            @"ECDHE-ECDSA-AES256-SHA384",
-            @"ECDHE-ECDSA-AES128-SHA256",
-            @"ECDHE-RSA-AES256-SHA384",
-            @"ECDHE-RSA-AES128-SHA256",
-            @"DHE-RSA-AES128-SHA256",
-            @"DHE-DSS-AES128-SHA256",
-            @"DHE-RSA-AES256-SHA256",
-            @"DHE-DSS-AES256-SHA256",
-            SPSSLCipherListMarkerItem, //marker. disabled items below here
-            @"AES128-GCM-SHA256",
-            @"AES128-SHA",
-            @"AES128-SHA256",
-            @"AES256-GCM-SHA384",
-            @"AES256-SHA",
-            @"AES256-SHA256",
-            @"CAMELLIA128-SHA",
-            @"CAMELLIA256-SHA",
-            @"DH-DSS-AES128-GCM-SHA256",
-            @"DH-DSS-AES128-SHA",
-            @"DH-DSS-AES128-SHA256",
-            @"DH-DSS-AES256-GCM-SHA384",
-            @"DH-DSS-AES256-SHA",
-            @"DH-DSS-AES256-SHA256",
-            @"DH-RSA-AES128-GCM-SHA256",
-            @"DH-RSA-AES128-SHA",
-            @"DH-RSA-AES128-SHA256",
-            @"DH-RSA-AES256-GCM-SHA384",
-            @"DH-RSA-AES256-SHA",
-            @"DH-RSA-AES256-SHA256",
-            @"DHE-DSS-AES128-SHA",
-            @"DHE-DSS-AES256-SHA",
-            @"DHE-RSA-AES128-SHA",
-            @"DHE-RSA-AES256-SHA",
-            @"ECDH-ECDSA-AES128-GCM-SHA256",
-            @"ECDH-ECDSA-AES128-SHA",
-            @"ECDH-ECDSA-AES128-SHA256",
-            @"ECDH-ECDSA-AES256-GCM-SHA384",
-            @"ECDH-ECDSA-AES256-SHA",
-            @"ECDH-ECDSA-AES256-SHA384",
-            @"ECDH-RSA-AES128-GCM-SHA256",
-            @"ECDH-RSA-AES128-SHA",
-            @"ECDH-RSA-AES128-SHA256",
-            @"ECDH-RSA-AES256-GCM-SHA384",
-            @"ECDH-RSA-AES256-SHA",
-            @"ECDH-RSA-AES256-SHA384",
-            @"ECDHE-ECDSA-AES128-SHA",
-            @"ECDHE-ECDSA-AES256-SHA",
-            @"ECDHE-RSA-AES128-SHA",
-            @"ECDHE-RSA-AES256-SHA",
-        ];
+        NSMutableArray *supportedCiphers = [NSMutableArray arrayWithArray:[SPMySQLConnection defaultSSLCipherList]];
+        [supportedCiphers addObject:SPSSLCipherListMarkerItem];
+        [supportedCiphers addObjectsFromArray:[SPMySQLConnection legacySSLCipherList]];
+        defaultSSLCipherList = [supportedCiphers copy];
 
     });
 

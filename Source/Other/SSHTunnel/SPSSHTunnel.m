@@ -506,6 +506,9 @@ static unsigned short getRandomPort(void);
 		authenticationAppPath = [[NSBundle mainBundle] pathForAuxiliaryExecutable:@"SequelAceTunnelAssistant"];
 		taskEnvironment = [[NSMutableDictionary alloc] initWithDictionary:[[NSProcessInfo processInfo] environment]];
 
+		// use default shell so ProxyJump commands run by ssh stay inside the sandbox
+		[taskEnvironment removeObjectForKey:@"SHELL"];
+
 		[taskEnvironment safeSetObject:authenticationAppPath forKey:@"SSH_ASKPASS"];
 		[taskEnvironment safeSetObject:@":0" forKey:@"DISPLAY"];
 		[taskEnvironment safeSetObject:tunnelConnectionName forKey:@"SP_CONNECTION_NAME"];

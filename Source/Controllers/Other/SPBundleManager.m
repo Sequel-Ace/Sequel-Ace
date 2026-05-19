@@ -493,8 +493,7 @@ static SPBundleManager *sharedManager = nil;
 											SPLog(@"default bundle WAS modified, duplicate, change UUID and rename menu item");
 
 											// Duplicate Bundle, change the UUID and rename the menu label
-											NSString *bundleBaseName = [bundle stringByDeletingPathExtension];
-											NSString *duplicatedBundle = [NSString stringWithFormat:@"%@/%@_%ld.%@", [bundlePaths objectAtIndex:0], bundleBaseName, (long)(random() % 35000), SPUserBundleFileExtensionV2];
+											NSString *duplicatedBundle = [SABundleVersionUpdater uniqueBundleInstallPathInDirectory:[bundlePaths objectAtIndex:0] bundleName:bundle];
 											NSError *anError = nil;
 
 											if(![fileManager copyItemAtPath:installedBundleFolderPath toPath:duplicatedBundle error:&anError]) {
@@ -561,12 +560,10 @@ static SPBundleManager *sharedManager = nil;
 
 									SPLog(@"copy bundle from app bundle");
 
-									BOOL isDir;
-									NSString *newInfoPath = [NSString stringWithFormat:@"%@/%@/%@", [bundlePaths objectAtIndex:0], bundle, SPBundleFileName];
+									NSString *bundleDestinationPath = [bundlePaths objectAtIndex:0];
 									NSString *orgPath = [NSString stringWithFormat:@"%@/%@", [bundlePaths objectAtIndex:1], bundle];
-									NSString *newPath = [NSString stringWithFormat:@"%@/%@", [bundlePaths objectAtIndex:0], bundle];
-									if([fileManager fileExistsAtPath:newPath isDirectory:&isDir] && isDir)
-										newPath = [NSString stringWithFormat:@"%@_%ld", newPath, (long)(random() % 35000)];
+									NSString *newPath = [SABundleVersionUpdater uniqueBundleInstallPathInDirectory:bundleDestinationPath bundleName:bundle];
+									NSString *newInfoPath = [newPath stringByAppendingPathComponent:SPBundleFileName];
 									error = nil;
 									[fileManager copyItemAtPath:orgPath toPath:newPath error:&error];
 									if(error != nil) {

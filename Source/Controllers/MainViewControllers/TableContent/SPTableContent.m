@@ -2422,12 +2422,67 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 			id targetFilterValue = [self->tableValues cellDataAtRow:[theArrowCell getClickedRow] column:dataColumnIndex];
 
-			//when navigating binary relations (eg. raw UUID) do so via a hex-encoded value for charset safety
-			BOOL navigateAsHex = ([targetFilterValue isKindOfClass:[NSData class]] && [[columnDefinition objectForKey:@"typegrouping"] isEqualToString:@"binary"]);
-			if(navigateAsHex) targetFilterValue = [self->mySQLConnection escapeData:(NSData *)targetFilterValue includingQuotes:NO];
-            else if ([targetFilterValue isKindOfClass:[NSData class]] && [[columnDefinition objectForKey:@"collation"] hasSuffix:@"_bin"]) {
-                targetFilterValue = [(NSData *)targetFilterValue stringRepresentationUsingEncoding:[self->mySQLConnection stringEncoding]];
-            }
+			// Determine the referenced (target) column's type to choose the correct filter operator.
+			// We must check the TARGET column type, not the source, because the filter is applied on the target table.
+			NSString *refColumnName = [refDictionary objectForKey:@"column"];
+			NSString *refTableName = [refDictionary objectForKey:@"table"];
+			NSString *refDatabaseName = [refDictionary objectForKey:@"database"];
+			BOOL targetColumnIsBinary = NO;
+
+			NSDictionary *refTableInfo = [self->tableDataInstance informationForTable:refTableName fromDatabase:refDatabaseName];
+			if (refTableInfo) {
+				for (NSDictionary *col in [refTableInfo objectForKey:@"columns"]) {
+					if ([[col objectForKey:@"name"] isEqualToString:refColumnName]) {
+						targetColumnIsBinary = [[col objectForKey:@"typegrouping"] isEqualToString:@"binary"];
+						break;
+					}
+				}
+			}
+
+			// When the target column is binary (eg. raw UUID stored as BINARY(16)),
+			// navigate via hex-encoded value for charset safety
+			BOOL navigateAsHex = NO;
+			if ([targetFilterValue isKindOfClass:[NSData class]]) {
+				if (targetColumnIsBinary) {
+					// Source and target are both binary: hex-encode the raw bytes
+					navigateAsHex = YES;
+					targetFilterValue = [self->mySQLConnection escapeData:(NSData *)targetFilterValue includingQuotes:NO];
+				} else {
+					// Source is binary but target is not (eg. BINARY(16) → CHAR(36) UUID):
+					// Convert 16 raw bytes to dashed UUID string format
+					NSData *rawData = (NSData *)targetFilterValue;
+					if ([rawData length] == 16) {
+						const unsigned char *bytes = [rawData bytes];
+						targetFilterValue = [NSString stringWithFormat:
+							@"%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+							bytes[0], bytes[1], bytes[2], bytes[3],
+							bytes[4], bytes[5],
+							bytes[6], bytes[7],
+							bytes[8], bytes[9],
+							bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]];
+					} else if ([[columnDefinition objectForKey:@"collation"] hasSuffix:@"_bin"]) {
+						// Non-UUID binary collation data: decode to string
+						targetFilterValue = [(NSData *)targetFilterValue stringRepresentationUsingEncoding:[self->mySQLConnection stringEncoding]];
+					}
+				}
+			} else if ([targetFilterValue isKindOfClass:[NSString class]] && targetColumnIsBinary) {
+				// Source is a string but target is binary (eg. CHAR(36) UUID → BINARY(16)):
+				// Strip dashes from UUID and pass the 32 hex digits directly for UNHEX()
+				NSString *strValue = (NSString *)targetFilterValue;
+				NSString *strippedValue = [strValue stringByReplacingOccurrencesOfString:@"-" withString:@""];
+				if ([strippedValue length] == 32) {
+					// Looks like a UUID: pass the 32 hex digits so UNHEX() produces the 16 raw bytes
+					navigateAsHex = YES;
+					targetFilterValue = strippedValue;
+				} else {
+					// Not a UUID; fall back to hex-encoding the raw string bytes
+					navigateAsHex = YES;
+					NSData *stringData = [strValue dataUsingEncoding:NSUTF8StringEncoding];
+					if (stringData) {
+						targetFilterValue = [self->mySQLConnection escapeData:stringData includingQuotes:NO];
+					}
+				}
+			}
 
 			NSString *filterComparison = @"=";
 			if([targetFilterValue isNSNull]) filterComparison = @"IS NULL";
@@ -2438,15 +2493,12 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 																						operator:filterComparison
 																						  values:@[targetFilterValue]];
 
-			NSString *databaseToJumpTo = [refDictionary objectForKey:@"database"];
-			NSString *tableToJumpTo = [refDictionary objectForKey:@"table"];
-
-			if (![databaseToJumpTo isEqualToString:[self->tableDocumentInstance database]]) {
+			if (![refDatabaseName isEqualToString:[self->tableDocumentInstance database]]) {
 				// fk points to a table in another database; switch database, and select the target table
-				[[self->tableDocumentInstance onMainThread] selectDatabase:databaseToJumpTo item:tableToJumpTo];
-			} else if (![tableToJumpTo isEqualToString:self->selectedTable]) {
+				[[self->tableDocumentInstance onMainThread] selectDatabase:refDatabaseName item:refTableName];
+			} else if (![refTableName isEqualToString:self->selectedTable]) {
 				// fk points to another table in the same database: switch to the target table
-				if (![self->tablesListInstance selectItemWithName:tableToJumpTo]) {
+				if (![self->tablesListInstance selectItemWithName:refTableName]) {
 					NSBeep();
 					[self setFiltersToRestore:nil];
 					[self setActiveFilterToRestore:SPTableContentFilterSourceNone];
@@ -3549,11 +3601,23 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	NSRect contentAreaRect = [contentAreaContainer frame];
 	CGFloat availableHeight = contentAreaRect.size.height;
 	NSRect ruleEditorRect = [[[ruleFilterController view] enclosingScrollView] frame];
-    ruleEditorRect.origin.x = 1;
-    ruleEditorRect.origin.y = 1;
+
+	// Space reserved at the bottom of the filter container for the
+	// "Drop a value here, or click to add a filter" zone. The drop box sits
+	// below the rule editor's scroll view, shrinking the scroll view
+	// upward so both fit without overlapping the Apply / Add Filter
+	// buttons pinned to the right.
+	CGFloat dropBoxReserved = showFilterRuleEditor ? [ruleFilterController dropBoxReservedHeight] : 0;
+	// When the rule editor has no rules, collapse its scroll view so
+	// the filter container shrinks to just the drop box – leaving a
+	// tall empty band above the drop box would look abandoned.
+	BOOL ruleEditorHasRows = showFilterRuleEditor && ![ruleFilterController isEmpty];
+	CGFloat ruleEditorTopMargin = ruleEditorHasRows ? 1 : 0;
+	ruleEditorRect.origin.x = 1;
+	ruleEditorRect.origin.y = dropBoxReserved + ruleEditorTopMargin;
 
 	//adjust for the UI elements below the rule editor, but only if the view should not be hidden
-	CGFloat containerRequestedHeight = showFilterRuleEditor ? MAX(requestedHeight, 29) + ruleEditorRect.origin.y : 0;
+	CGFloat containerRequestedHeight = showFilterRuleEditor ? (dropBoxReserved + (ruleEditorHasRows ? MAX(requestedHeight, 29) + ruleEditorTopMargin : 0)) : 0;
 
 	//the rule editor can ask for about one-third of the available space before we have it use it's scrollbar
 	CGFloat topContainerGivenHeight = MAX(MIN(containerRequestedHeight,(availableHeight / 3)), 1);
@@ -3569,20 +3633,48 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	topContainerRect.size.height = topContainerGivenHeight;
 
 	// this one should be inferable from the IB layout IMHO, but the OS gets it wrong
-	ruleEditorRect.size.height = topContainerGivenHeight - ruleEditorRect.origin.y;
+	// Clamp to zero so an unusually small container (e.g. right after
+	// the pane is first being laid out) doesn't produce a negative
+	// scroll-view height.
+	ruleEditorRect.size.height = MAX(topContainerGivenHeight - ruleEditorRect.origin.y, 0);
+
+	// Drop box spans the full width minus the button zone on the right
+	// (Apply Filters / Add Filter both live at x=579 width=111 in the
+	// IB layout). Keeping it short-of-buttons avoids any overlap even
+	// when the rule editor grows to its full allotted height, and the
+	// padding on every side prevents the dashed border from abutting
+	// the rule editor above, the result-grid header below, or the
+	// window edges on the sides.
+	SPRuleFilterDropBox *dropBox = [ruleFilterController dropBoxView];
+	const CGFloat dropBoxLeftPadding = 10;
+	const CGFloat dropBoxRightReserve = 125;
+	const CGFloat dropBoxBottomPadding = 7;
+	const CGFloat dropBoxTopPadding = 5;
+	// Also clamp the drop box height against the container's actual
+	// allocation: if the parent pane is too short to honour the full
+	// reservation, we'd otherwise size the drop box beyond the
+	// container's bounds and render it overflowing.
+	CGFloat dropBoxVisibleHeight = MIN(dropBoxReserved, MAX(topContainerRect.size.height, 0));
+	NSRect dropBoxRect = NSMakeRect(dropBoxLeftPadding,
+	                                dropBoxBottomPadding,
+	                                MAX(topContainerRect.size.width - dropBoxLeftPadding - dropBoxRightReserve, 0),
+	                                MAX(dropBoxVisibleHeight - dropBoxBottomPadding - dropBoxTopPadding, 0));
 
 	if(animate) {
 		[NSAnimationContext beginGrouping];
 		[[tableContentContainer animator] setFrame:bottomContainerRect];
 		[[filterRuleEditorContainer animator] setFrame:topContainerRect];
 		[[[[ruleFilterController view] enclosingScrollView] animator] setFrame:ruleEditorRect];
+		if (dropBox) [[dropBox animator] setFrame:dropBoxRect];
 		[NSAnimationContext endGrouping];
 	}
 	else {
         [tableContentContainer setFrame:bottomContainerRect];
         [filterRuleEditorContainer setFrame:topContainerRect];
         [[[ruleFilterController view] enclosingScrollView] setFrame:ruleEditorRect];
+        if (dropBox) [dropBox setFrame:dropBoxRect];
 	}
+	[dropBox setHidden:!showFilterRuleEditor];
 
 	//disable rubberband scrolling as long as there is nothing to scroll
     NSScrollView *filterControllerScroller = [[ruleFilterController view] enclosingScrollView];
@@ -4354,10 +4446,64 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 		if (tmp && [tmp length])
 		{
-			[pboard declareTypes:@[NSPasteboardTypeTabularText, NSPasteboardTypeString] owner:nil];
+			// Also offer a single-cell pasteboard type so a drop onto the
+			// rule-filter input populates that one field with just the
+			// clicked cell's value, rather than the whole row's tab string.
+			// The clicked cell is the one captured by -[SPCopyTable mouseDown:]
+			// – -clickedRow / -clickedColumn are only valid during NSControl
+			// action dispatch, and NSApp.currentEvent here is the mouseDragged
+			// event that crossed the drag threshold rather than the original
+			// mouseDown, so it can resolve to a different cell if the pointer
+			// moved before the drag started.
+			NSString *cellValue = nil;
+			NSString *cellColumnName = nil;
+			BOOL cellIsNull = NO;
+			NSInteger clickedRow = [tableContentView mouseDownRow];
+			NSInteger clickedCol = [tableContentView mouseDownColumn];
+			if (clickedRow >= 0 && clickedCol >= 0) {
+				cellValue = [tableContentView displayStringForRow:clickedRow column:clickedCol];
+				cellIsNull = [tableContentView isNullAtRow:clickedRow column:clickedCol];
+
+				// Map the visible column back to a column definition (by its
+				// storage index, same mapping SPCopyTable uses) so the drop
+				// target gets the original schema column name the rule
+				// editor looks up against.
+				NSArray *viewColumns = [tableContentView tableColumns];
+				if ((NSUInteger)clickedCol < [viewColumns count]) {
+					NSInteger storageIndex = [[[viewColumns objectAtIndex:(NSUInteger)clickedCol] identifier] integerValue];
+					if (storageIndex >= 0 && (NSUInteger)storageIndex < [dataColumns count]) {
+						cellColumnName = [[dataColumns objectAtIndex:(NSUInteger)storageIndex] objectForKey:@"name"];
+					}
+				}
+			}
+
+			NSString *cellRowType = [SPCellValuePasteboard pasteboardRowTypeRaw];
+			// Only advertise the filter payload if we actually resolved a
+			// real cell: a known column AND either a non-nil display value
+			// or a positively-identified NULL. A nil display value for a
+			// non-NULL cell (stale row after reload, out-of-range storage
+			// index) would otherwise synthesize a spurious `col = ''`
+			// filter on drop.
+			BOOL publishCellPayload = [cellColumnName length] && (cellIsNull || cellValue != nil);
+			NSMutableArray<NSPasteboardType> *types = [NSMutableArray arrayWithObjects:NSPasteboardTypeTabularText, NSPasteboardTypeString, nil];
+			if (publishCellPayload) {
+				[types addObject:cellRowType];
+			}
+			[pboard declareTypes:types owner:nil];
 
 			[pboard setString:tmp forType:NSPasteboardTypeString];
 			[pboard setString:tmp forType:NSPasteboardTypeTabularText];
+			if (publishCellPayload) {
+				// Dropped onto the rule editor, the plist alone is enough to
+				// synthesize a fully-populated filter rule (column + default
+				// operator + value).
+				NSDictionary *rowPayload = @{
+					[SPCellValuePasteboard rowColumnNameKey]: cellColumnName,
+					[SPCellValuePasteboard rowValueKey]: cellValue ?: @"",
+					[SPCellValuePasteboard rowValueKindKey]: cellIsNull ? [SPCellValuePasteboard rowValueKindNull] : [SPCellValuePasteboard rowValueKindString],
+				};
+				[pboard setPropertyList:rowPayload forType:cellRowType];
+			}
 
 			return YES;
 		}
