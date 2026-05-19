@@ -115,46 +115,16 @@ private let kSPQuickConnectImageWhite = "quick-connect-icon-white.pdf"
     // MARK: - Filtering
 
     /// Rebuilds `visibleNodes` based on the current `searchQuery`.
-    /// Matching rule lives in `SAFavoriteSearchMatcher` (see that file
-    /// for semantics + test coverage). Leaves match when every token is
-    /// found in either the favorite's name or host; groups inherit
-    /// visibility from any matching descendant.
+    /// The matching rule and the tree walk live in
+    /// `SAFavoriteSearchMatcher` / `SAFavoriteSearchTreeWalker`
+    /// (see those files for semantics + test coverage).
     private func rebuildVisibleNodes() {
         let matcher = SAFavoriteSearchMatcher(query: searchQuery)
         guard matcher.isActive else {
             visibleNodes = nil
             return
         }
-        var matched: Set<SPTreeNode> = []
-        _ = collectMatchingNodes(in: favoritesRoot, matcher: matcher, into: &matched)
-        visibleNodes = matched
-    }
-
-    /// Walks the tree, marking leaves whose name OR host case-insensitively contain ALL `tokens`,
-    /// plus every ancestor of any matched leaf. Returns whether `node` itself is matched
-    /// (a group is "matched" if any of its descendants matched).
-    @discardableResult
-    private func collectMatchingNodes(in node: SPTreeNode, matcher: SAFavoriteSearchMatcher, into matched: inout Set<SPTreeNode>) -> Bool {
-        if node.isGroup {
-            var anyDescendantMatched = false
-            for child in (node.children ?? []).compactMap({ $0 as? SPTreeNode }) {
-                if collectMatchingNodes(in: child, matcher: matcher, into: &matched) {
-                    anyDescendantMatched = true
-                }
-            }
-            if anyDescendantMatched {
-                matched.insert(node)
-            }
-            return anyDescendantMatched
-        }
-        let fav = (node.representedObject as? SPFavoriteNode)?.nodeFavorite
-        let name = (fav?[SPFavoriteNameKey] as? String ?? "")
-        let host = (fav?[SPFavoriteHostKey] as? String ?? "")
-        if matcher.matches(name: name, host: host) {
-            matched.insert(node)
-            return true
-        }
-        return false
+        visibleNodes = SAFavoriteSearchTreeWalker.visibleNodes(in: favoritesRoot, matcher: matcher)
     }
 
     /// Returns the children of `node` that are visible under the current filter.
