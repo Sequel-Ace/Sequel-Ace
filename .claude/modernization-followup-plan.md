@@ -33,11 +33,25 @@ Key deliverables:
 
 SPDatabaseDocument.m at 6,592 lines is the biggest bottleneck. Break it apart:
 
-**A1. Extract database list management (~283 lines)**
-- `setDatabases`, `chooseDatabase:`, `selectDatabase:item:`, `_selectDatabaseAndItem:`
-- Create `SADatabaseListManager` in Swift
-- Owns the database popup, database switching, history integration
-- Files: `Source/Controllers/MainViewControllers/SPDatabaseDocument.m`, new `SADatabaseListManager.swift`
+**A1. Extract database list management (~283 lines)** — 🟡 In progress (A1a done)
+
+A1a — `-setDatabases` (popup rebuild) — ✅ Done
+- New `SADatabaseListManager.configurePopup(_:databases:currentDatabase:addDatabaseSelector:refreshDatabasesSelector:)` rebuilds the choose-database popup (header items, system/user partition, separator, selection)
+- New `SADatabaseListManager.partition(databases:)` + `SADatabasePartition` ObjC bridge class for the system-vs-user split
+- `-[SPDatabaseDocument setDatabases]` now a thin trampoline that calls the manager and stores the partition into the existing `allDatabases` / `allSystemDatabases` ivars (those still have callers outside this method — A1b/A1c will absorb them)
+- System database name literals inlined (mysql, information_schema, performance_schema, sys) so the file compiles into the Unit Tests target without a bridging header (same pattern as SAViewMode)
+- 17 unit tests in `SADatabaseListManagerTests.swift` covering partition (mixed/empty/all-system/all-user/case-sensitivity), popup header items + nil-target invariant, section ordering, separator omission when no system DBs, selection (current/placeholder/empty), and idempotent rebuild
+
+A1b — Navigator schema path extraction — ✅ Done (scoped down)
+- `SADatabaseListManager.navigatorSchemaPath(connectionID:selectedDatabaseTitle:)` + `schemaPathDelimiter` constant (U+FFF8, mirroring `SPUniqueSchemaDelimiter` in SPConstants.m)
+- `-[SPDatabaseDocument selectDatabase:item:]` shrinks by 7 lines of NSMutableString juggling
+- 4 new tests for path shape + edge cases
+- Originally planned to extract `-chooseDatabase:` and `-selectDatabase:item:` wholesale, but on inspection both methods need a callback protocol back to the document for tablesList edit-commit checks, task start/end, and thread dispatch — properly belongs in A1c
+
+A1c — `-_selectDatabaseAndItem:` (background-thread selection flow) + callback protocol — pending
+- Also absorbs the remaining `-chooseDatabase:` and `-selectDatabase:item:` document-coupled logic
+- Will let `allDatabases` / `allSystemDatabases` ivars move off SPDatabaseDocument
+- Files: `Source/Controllers/MainViewControllers/SPDatabaseDocument.m`, `SADatabaseListManager.swift`
 
 **A2. Extract task/progress management (~257 lines)**
 - `startTaskWithDescription:`, `endTask`, `setTaskPercentage:`, `enableTaskCancellation:`, progress window fade, cancel button
@@ -45,10 +59,11 @@ SPDatabaseDocument.m at 6,592 lines is the biggest bottleneck. Break it apart:
 - Move the progress window, indicators, and timer management out of the document
 - Files: `SPDatabaseDocument.m`, new `SATaskController.swift`
 
-**A3. Extract view state switching to use SAViewMode (~188 lines)**
+**A3. Extract view state switching to use SAViewMode (~188 lines)** — ✅ Done
 - `viewStructure`, `viewContent`, `viewQuery`, `viewStatus`, `viewRelations`, `viewTriggers`
-- Replace 6 repetitive methods with a single `switchToView(_ mode: SAViewMode)` that uses the enum
-- `SAViewMode` already exists — just wire it into the document
+- Replaced 6 repetitive method bodies with a shared `-[SPDatabaseDocument switchToViewMode:]` that consults `SAViewMode` for tab index, toolbar identifier, and prefs value
+- Added ObjC accessors on `SAViewModeHelper` (`tabIndexFor:`, `toolbarIdentifierFor:`, `preferencesValueFor:`)
+- View-specific extras (focus change for query, table load + focus for status) stay in the per-mode wrappers
 - Files: `SPDatabaseDocument.m`, `SPDatabaseDocument+ViewMode.swift`
 
 **A4. Extract window title management (~57 lines)**
@@ -68,10 +83,10 @@ SPDatabaseDocument.m at 6,592 lines is the biggest bottleneck. Break it apart:
 - Test drag & drop acceptance/rejection logic
 - Test Quick Connect item injection
 
-**B3. Tests for SAViewMode**
-- Round-trip preferences values
-- Toolbar item factory produces correct identifiers/images
-- All cases covered
+**B3. Tests for SAViewMode** — ✅ Done
+- 16 unit tests in `UnitTests/SAViewModeTests.swift` covering tab indexes, toolbar identifiers (literal match against the SPConstants wire format), preferences round-trip + unknown-value fallback, action selector names, the `SAViewModeHelper` ObjC bridges, and the toolbar item factory configuration
+- `SPDatabaseDocument+ViewMode.swift` had its `SPMainToolbar*` extern references inlined so the file has no ObjC dependency and can be compiled into the Unit Tests target without giving it a bridging header (the inlined strings must stay in sync with `SPConstants.m` — documented in the source)
+- Exhaustive-case guard test that fails if a new `SAViewMode` case is added without updating the suite
 
 ### Phase C: SwiftUI migration starts
 
@@ -120,9 +135,9 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
 
 ## Recommended order
 
-1. **Phase A3** (wire SAViewMode into view switching) — quick win, already has the enum
-2. **Phase B3** (SAViewMode tests) — validate before and after
-3. **Phase A1** (database list manager) — high value, moderate effort
+1. ~~**Phase A3** (wire SAViewMode into view switching) — quick win, already has the enum~~ ✅ Done
+2. ~~**Phase B3** (SAViewMode tests) — validate before and after~~ ✅ Done
+3. **Phase A1** (database list manager) — high value, moderate effort — 🟡 A1a done, A1b/A1c pending
 4. **Phase A4** (window title) — quick, easy
 5. **Phase B2** (favorites data source tests) — safety net
 6. **Phase C1** (SwiftUI favorites list) — first visible SwiftUI

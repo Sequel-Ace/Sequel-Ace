@@ -223,8 +223,13 @@
 		5146ADF52F79B1A200C4C14A /* SAFavoritesListDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADF42F79B1A200C4C14A /* SAFavoritesListDataSource.swift */; };
 		5146ADF92F79B9EF00C4C14A /* SAConnectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADF82F79B9EF00C4C14A /* SAConnectionService.swift */; };
 		5146ADFC2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADFB2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift */; };
+		5146ADFD2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146ADFB2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift */; };
 		5146C7202F7A539E00C4C14A /* SATaskManaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146C71F2F7A539E00C4C14A /* SATaskManaging.swift */; };
 		5146E0482F7A640C00C4C14A /* SAConnectionInfoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146E0472F7A640C00C4C14A /* SAConnectionInfoTests.swift */; };
+		5146E04A2F7A640C00C4C14A /* SAViewModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146E04B2F7A640C00C4C14A /* SAViewModeTests.swift */; };
+		5146E0502F7A640C00C4C14A /* SADatabaseListManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146E0512F7A640C00C4C14A /* SADatabaseListManager.swift */; };
+		5146E0522F7A640C00C4C14A /* SADatabaseListManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146E0512F7A640C00C4C14A /* SADatabaseListManager.swift */; };
+		5146E0532F7A640C00C4C14A /* SADatabaseListManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5146E0542F7A640C00C4C14A /* SADatabaseListManagerTests.swift */; };
 		514B40A02F683E3700369718 /* SAAboutWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000001C /* SAAboutWindowController.swift */; };
 		514B40A72F68412000369718 /* License.md in Resources */ = {isa = PBXBuildFile; fileRef = 514B40A62F68412000369718 /* License.md */; };
 		514B40A82F68412000369718 /* Credits.md in Resources */ = {isa = PBXBuildFile; fileRef = 514B40A52F68412000369718 /* Credits.md */; };
@@ -934,6 +939,9 @@
 		5146ADFB2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SPDatabaseDocument+ViewMode.swift"; sourceTree = "<group>"; };
 		5146C71F2F7A539E00C4C14A /* SATaskManaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SATaskManaging.swift; sourceTree = "<group>"; };
 		5146E0472F7A640C00C4C14A /* SAConnectionInfoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionInfoTests.swift; sourceTree = "<group>"; };
+		5146E04B2F7A640C00C4C14A /* SAViewModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAViewModeTests.swift; sourceTree = "<group>"; };
+		5146E0512F7A640C00C4C14A /* SADatabaseListManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SADatabaseListManager.swift; sourceTree = "<group>"; };
+		5146E0542F7A640C00C4C14A /* SADatabaseListManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SADatabaseListManagerTests.swift; sourceTree = "<group>"; };
 		514B40A12F683E7900369718 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		514B40A52F68412000369718 /* Credits.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = Credits.md; sourceTree = "<group>"; };
 		514B40A62F68412000369718 /* License.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = License.md; sourceTree = "<group>"; };
@@ -1517,6 +1525,7 @@
 				17D38F691279E17D00672B13 /* Table Structure */,
 				17005CB016D6CEA400AF81F4 /* Table Triggers */,
 				5146ADFB2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift */,
+				5146E0512F7A640C00C4C14A /* SADatabaseListManager.swift */,
 			);
 			name = "Main View Controllers";
 			path = MainViewControllers;
@@ -2366,6 +2375,8 @@
 				F4C0BDAE2E9F4D5E8A1B0201 /* SecureBookmarkManagerStub.swift */,
 				5146E0472F7A640C00C4C14A /* SAConnectionInfoTests.swift */,
 				517BFF432F7DA38F00F6D812 /* SAConnectionServiceTests.swift */,
+				5146E04B2F7A640C00C4C14A /* SAViewModeTests.swift */,
+				5146E0542F7A640C00C4C14A /* SADatabaseListManagerTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -3025,6 +3036,10 @@
 				1AEA768425EF05D500AC4DA6 /* ByteCountFormatterExtension.swift in Sources */,
 				17DB5F441555CA300046834B /* SPMutableArrayAdditions.m in Sources */,
 				5146E0482F7A640C00C4C14A /* SAConnectionInfoTests.swift in Sources */,
+				5146E04A2F7A640C00C4C14A /* SAViewModeTests.swift in Sources */,
+				5146ADFD2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift in Sources */,
+				5146E0522F7A640C00C4C14A /* SADatabaseListManager.swift in Sources */,
+				5146E0532F7A640C00C4C14A /* SADatabaseListManagerTests.swift in Sources */,
 				1717FA401558313A0065C036 /* RegexKitLite.m in Sources */,
 				50D3C35C1A771C4C00B5429C /* SPParserUtilsTest.m in Sources */,
 				1AE6C1CD25B07E9500880D73 /* SPFunctionsTests.m in Sources */,
@@ -3184,6 +3199,7 @@
 				29FA88231114619E00D1AF3D /* SPTableTriggers.m in Sources */,
 				BCE0025D11173D2A009DA533 /* SPFieldMapperController.m in Sources */,
 				5146ADFC2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift in Sources */,
+				5146E0502F7A640C00C4C14A /* SADatabaseListManager.swift in Sources */,
 				BC2777A011514B940034DF6A /* SPNavigatorController.m in Sources */,
 				589582151154F8F400EDCC28 /* SPMainThreadTrampoline.m in Sources */,
 				51B09FDF2F767A53003BAFFF /* SADatabaseDocumentProviding.swift in Sources */,

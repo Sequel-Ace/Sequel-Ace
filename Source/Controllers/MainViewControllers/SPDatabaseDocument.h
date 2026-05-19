@@ -459,6 +459,7 @@
 - (void)refreshTables;
 - (void)flushPrivileges;
 - (void)setDatabases;
+- (IBAction)setDatabases:(id)sender;
 - (void)showUserManager;
 - (void)chooseEncoding:(id)sender;
 - (void)openDatabaseInNewTab;

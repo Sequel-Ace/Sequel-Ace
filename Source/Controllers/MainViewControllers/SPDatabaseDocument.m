@@ -596,58 +596,29 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  *
  * This method *MUST* be called from the UI thread!
  */
+- (IBAction)setDatabases:(id)sender {
+    [self setDatabases];
+}
+
 - (void)setDatabases {
     if (!chooseDatabaseButton) {
         return;
     }
 
-    [chooseDatabaseButton removeAllItems];
-
-    [chooseDatabaseButton addItemWithTitle:NSLocalizedString(@"Choose Database...", @"menu item for choose db")];
-    [[chooseDatabaseButton menu] addItem:[NSMenuItem separatorItem]];
-    [[chooseDatabaseButton menu] addItemWithTitle:NSLocalizedString(@"Add Database...", @"menu item to add db") action:@selector(addDatabase:) keyEquivalent:@""];
-    [[chooseDatabaseButton menu] addItemWithTitle:NSLocalizedString(@"Refresh Databases", @"menu item to refresh databases") action:@selector(setDatabases:) keyEquivalent:@""];
-    [[chooseDatabaseButton menu] addItem:[NSMenuItem separatorItem]];
-
-
     NSArray *theDatabaseList = [mySQLConnection databases];
 
-    allDatabases = [[NSMutableArray alloc] initWithCapacity:[theDatabaseList count]];
-    allSystemDatabases = [[NSMutableArray alloc] initWithCapacity:2];
+    SADatabasePartition *partition = [SADatabaseListManager configurePopup:chooseDatabaseButton
+                                                                 databases:theDatabaseList ?: @[]
+                                                           currentDatabase:[self database]
+                                                       addDatabaseSelector:@selector(addDatabase:)
+                                                  refreshDatabasesSelector:@selector(setDatabases:)];
 
-    for (NSString *databaseName in theDatabaseList)
-    {
-        // If the database is either information_schema or mysql then it is classed as a
-        // system database; similarly, performance_schema in 5.5.3+ and sys in 5.7.7+
-        if ([databaseName isEqualToString:SPMySQLDatabase] ||
-            [databaseName isEqualToString:SPMySQLInformationSchemaDatabase] ||
-            [databaseName isEqualToString:SPMySQLPerformanceSchemaDatabase] ||
-            [databaseName isEqualToString:SPMySQLSysDatabase]) {
-            [allSystemDatabases addObject:databaseName];
-        }
-        else {
-            [allDatabases addObject:databaseName];
-        }
-    }
-
-    // Add system databases
-    for (NSString *database in allSystemDatabases)
-    {
-        [chooseDatabaseButton safeAddItemWithTitle:database];
-    }
-
-    // Add a separator between the system and user databases
-    if ([allSystemDatabases count] > 0) {
-        [[chooseDatabaseButton menu] addItem:[NSMenuItem separatorItem]];
-    }
-
-    // Add user databases
-    for (NSString *database in allDatabases)
-    {
-        [chooseDatabaseButton safeAddItemWithTitle:database];
-    }
-
-    (![self database]) ? [chooseDatabaseButton selectItemAtIndex:0] : [chooseDatabaseButton selectItemWithTitle:[self database]];
+    // Persist the partition: other call sites still read these ivars
+    // directly (add/copy/rename enablement in -controlTextDidChange:,
+    // and the delete path in -_removeDatabase). A later step will
+    // absorb those readers into the manager.
+    allSystemDatabases = [partition.systemDatabases mutableCopy];
+    allDatabases = [partition.userDatabases mutableCopy];
 }
 
 /**
@@ -686,15 +657,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // If Navigator runs in syncMode let it follow the selection
     if ([[[SPNavigatorController sharedNavigatorController] onMainThread] syncMode]) {
-        NSMutableString *schemaPath = [NSMutableString string];
-
-        [schemaPath setString:[self connectionID]];
-
-        if([chooseDatabaseButton titleOfSelectedItem] && [[chooseDatabaseButton titleOfSelectedItem] length]) {
-            [schemaPath appendString:SPUniqueSchemaDelimiter];
-            [schemaPath appendString:[chooseDatabaseButton titleOfSelectedItem]];
-        }
-
+        NSString *schemaPath = [SADatabaseListManager navigatorSchemaPathWithConnectionID:[self connectionID]
+                                                                   selectedDatabaseTitle:[chooseDatabaseButton titleOfSelectedItem]];
         [[SPNavigatorController sharedNavigatorController] selectPath:schemaPath];
     }
 
@@ -5555,9 +5519,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark -
 #pragma mark Tab view control and delegate methods
 
-//WARNING: Might be called from code in background threads
-- (void)viewStructure {
-
+/**
+ * Shared view-switching path used by viewStructure/Content/Query/Status/Relations/Triggers.
+ * Returns YES if the switch went through, NO if it was cancelled because the current
+ * view had uncommitted edits.
+ *
+ * WARNING: Safe to call from background threads — execution hops to the main queue.
+ */
+- (BOOL)switchToViewMode:(SAViewMode)mode {
+    __block BOOL didSwitch = NO;
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
@@ -5565,104 +5535,51 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             return;
         }
 
-        [self->tableTabView selectTabViewItemAtIndex:0];
-        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableStructure];
+        [self->tableTabView selectTabViewItemAtIndex:[SAViewModeHelper tabIndexFor:mode]];
+        [self.mainToolbar setSelectedItemIdentifier:[SAViewModeHelper toolbarIdentifierFor:mode]];
         [self->spHistoryControllerInstance updateHistoryEntries];
-
-        [self->prefs setInteger:SPStructureViewMode forKey:SPLastViewMode];
-
+        [self->prefs setInteger:[SAViewModeHelper preferencesValueFor:mode] forKey:SPLastViewMode];
+        didSwitch = YES;
     });
+    return didSwitch;
+}
+
+//WARNING: Might be called from code in background threads
+- (void)viewStructure {
+    [self switchToViewMode:SAViewModeStructure];
 }
 
 - (void)viewContent {
-    SPMainQSync(^{
-        // Cancel the selection if currently editing a view and unable to save
-        if (![self couldCommitCurrentViewActions]) {
-            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
-            return;
-        }
-
-        [self->tableTabView selectTabViewItemAtIndex:1];
-        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableContent];
-        [self->spHistoryControllerInstance updateHistoryEntries];
-        [self->prefs setInteger:SPContentViewMode forKey:SPLastViewMode];
-    });
+    [self switchToViewMode:SAViewModeContent];
 }
 
 - (void)viewQuery {
+    if (![self switchToViewMode:SAViewModeQuery]) return;
+
     SPMainQSync(^{
-        // Cancel the selection if currently editing a view and unable to save
-        if (![self couldCommitCurrentViewActions]) {
-            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
-            return;
-        }
-
-        [self->tableTabView selectTabViewItemAtIndex:2];
-        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarCustomQuery];
-        [self->spHistoryControllerInstance updateHistoryEntries];
-
         // Set the focus on the text field
         [[self.parentWindowController window] makeFirstResponder:self->customQueryTextView];
-
-        [self->prefs setInteger:SPQueryEditorViewMode forKey:SPLastViewMode];
     });
-
 }
 
 - (void)viewStatus {
+    if (![self switchToViewMode:SAViewModeStatus]) return;
+
     SPMainQSync(^{
-        // Cancel the selection if currently editing a view and unable to save
-        if (![self couldCommitCurrentViewActions]) {
-            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
-            return;
-        }
-
-        [self->tableTabView selectTabViewItemAtIndex:3];
-        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableInfo];
-        [self->spHistoryControllerInstance updateHistoryEntries];
-
         if ([[self table] length]) {
             [self->extendedTableInfoInstance loadTable:[self table]];
         }
 
         [[self.parentWindowController window] makeFirstResponder:[self->extendedTableInfoInstance valueForKeyPath:@"tableCreateSyntaxTextView"]];
-
-        [self->prefs setInteger:SPTableInfoViewMode forKey:SPLastViewMode];
     });
-
 }
 
 - (void)viewRelations {
-    SPMainQSync(^{
-        // Cancel the selection if currently editing a view and unable to save
-        if (![self couldCommitCurrentViewActions]) {
-            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
-            return;
-        }
-
-        [self->tableTabView selectTabViewItemAtIndex:4];
-        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableRelations];
-        [self->spHistoryControllerInstance updateHistoryEntries];
-
-        [self->prefs setInteger:SPRelationsViewMode forKey:SPLastViewMode];
-    });
-
+    [self switchToViewMode:SAViewModeRelations];
 }
 
 - (void)viewTriggers {
-    SPMainQSync(^{
-        // Cancel the selection if currently editing a view and unable to save
-        if (![self couldCommitCurrentViewActions]) {
-            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
-            return;
-        }
-
-        [self->tableTabView selectTabViewItemAtIndex:5];
-        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableTriggers];
-        [self->spHistoryControllerInstance updateHistoryEntries];
-
-        [self->prefs setInteger:SPTriggersViewMode forKey:SPLastViewMode];
-    });
+    [self switchToViewMode:SAViewModeTriggers];
 }
 
 /**
