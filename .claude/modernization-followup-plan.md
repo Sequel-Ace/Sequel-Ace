@@ -178,11 +178,35 @@ backlog.
 
 ### Phase C: SwiftUI migration starts
 
-**C1. SwiftUI FavoritesListView**
-- Wrap the existing `SAFavoritesListDataSource` in an `NSViewRepresentable` first
-- Then iterate toward a pure SwiftUI `List` with `OutlineGroup`
-- This is the first visible SwiftUI in the app
-- Files: new `SAFavoritesListView.swift`
+**C1. SwiftUI FavoritesListView** — 🟡 In progress (NSViewRepresentable wrap done)
+
+C1a — `NSViewRepresentable` wrap — ✅ Done
+- New `SAFavoritesListView` (Swift, SwiftUI) wraps an
+  `SPFavoritesOutlineView` driven by the existing
+  `SAFavoritesListDataSource` inside an `NSScrollView`. It applies the
+  same column / font / row-height / source-list config that
+  `-[SPConnectionController setUpFavoritesOutlineView]` applies, and
+  keeps the data source's `searchQuery` / `delegate` in sync across
+  `updateNSView`.
+- The delegate is captured as a `() -> SAFavoritesListDelegate?`
+  closure over a `weak` local rather than a stored property, since
+  `NSViewRepresentable` is a value type that SwiftUI keeps alive for
+  the view's lifetime (avoids a retain cycle once C3 hosts it inside
+  its owner).
+- A `Coordinator` (NSObject) holds the data source + outline view
+  across SwiftUI view-value churn and forwards the cell-based
+  double-click to the delegate (mirrors
+  `-[SPConnectionController nodeDoubleClicked:]`: ignore Quick
+  Connect, edit groups, connect on leaf).
+- App-target only (wired into pbxproj by hand, mirroring
+  `SAFavoritesListDataSource.swift`); not yet hosted anywhere —
+  Phase C3 (standalone connection window) is the intended host.
+- No tests: the wrapper is AppKit plumbing that needs a live
+  `NSOutlineView`; the filtering / data-source logic it drives is
+  already covered by `SAFavoriteSearchMatcherTests`.
+- Files: new `Source/Controllers/MainViewControllers/ConnectionView/SAFavoritesListView.swift`
+
+C1b — iterate toward a pure SwiftUI `List` / `OutlineGroup` — pending
 
 **C2. SwiftUI ConnectionFormView**
 - The 55 IBOutlets in ConnectionView.xib are the target
@@ -262,7 +286,7 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
 3. ~~**Phase A1** (database list manager) — high value, moderate effort~~ ✅ Done
 4. ~~**Phase A4** (window title) — quick, easy~~ ✅ Done
 5. **Phase B2** (favorites data source tests) — 🟡 B2a done (search matcher), B2b pending (needs test-target ObjC plumbing)
-6. **Phase C1** (SwiftUI favorites list) — first visible SwiftUI
+6. **Phase C1** (SwiftUI favorites list) — first visible SwiftUI — 🟡 C1a done (NSViewRepresentable wrap), C1b pending (pure SwiftUI list)
 7. **Phase A2** (task controller) — large but impactful
 8. **Phase D1-D3** (SPConnectionController cleanup) — ongoing
 9. **Phase C2-C3** (SwiftUI connection form) — bigger effort
