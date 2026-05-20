@@ -138,6 +138,10 @@ extension SPCustomQuery {
         performQueries(["EXPLAIN \(query)"], withCallback: nil)
     }
 
+    /// Surface the localized "EXPLAIN is only supported for a single SELECT
+    /// or WITH statement" message via the Query Status controls and emit a
+    /// system beep, used as the failure path when the input is not
+    /// EXPLAIN-eligible (non-SELECT/WITH or multi-statement selection).
     private func reportUnsupportedExplain() {
         NSSound.beep()
         errorTextTitle?.stringValue = NSLocalizedString("Query Status", comment: "Query Status")
