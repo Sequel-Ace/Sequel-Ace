@@ -3719,6 +3719,9 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     [queryInfoPaneSplitView setCollapsibleSubviewIndex:1];
     [queryInfoPaneSplitView setCollapsibleSubviewCollapsed:YES animate:NO];
     
+    // Give the editor a small vertical inset so text is not flush against the top and bottom edges (#2236)
+    [textView setTextContainerInset:NSMakeSize(0.0f, 2.0f)];
+
     // Set the structure and index view's vertical gridlines if required
     [customQueryView setGridStyleMask:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
     
