@@ -60,11 +60,13 @@ extension SPCustomQuery {
 
     /// Replace every MySQL comment with a single space. Comments are replaced
     /// (not removed) so adjacent tokens stay separated, e.g. `SELECT/*c*/1`
-    /// becomes `SELECT 1` rather than `SELECT1`.
+    /// becomes `SELECT 1` rather than `SELECT1`. The `--` form follows MySQL's
+    /// rule that the second dash must be followed by whitespace/control to
+    /// count as a comment, so `SELECT--1` (double negation) is left intact.
     private static func stripSQLComments(_ source: String) -> String {
         var result = source
         let opts: NSString.CompareOptions = [.regularExpression]
-        result = result.replacingOccurrences(of: "--[^\n]*", with: " ", options: opts)
+        result = result.replacingOccurrences(of: "--[\\s][^\n]*", with: " ", options: opts)
         result = result.replacingOccurrences(of: "#[^\n]*", with: " ", options: opts)
         result = result.replacingOccurrences(of: "/\\*(.|\n)*?\\*/", with: " ", options: opts)
         return result
