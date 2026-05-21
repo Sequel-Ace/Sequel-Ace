@@ -60,7 +60,7 @@ struct SAFavoritesListView: NSViewRepresentable {
         let dataSource = SAFavoritesListDataSource(favoritesRoot: favoritesRoot,
                                                    favoritesController: favoritesController)
         dataSource.delegate = delegateProvider()
-        return Coordinator(dataSource: dataSource, delegateProvider: delegateProvider)
+        return Coordinator(dataSource: dataSource)
     }
 
     func makeNSView(context: Context) -> NSScrollView {
@@ -139,12 +139,9 @@ struct SAFavoritesListView: NSViewRepresentable {
     final class Coordinator: NSObject {
         let dataSource: SAFavoritesListDataSource
         weak var outlineView: SPFavoritesOutlineView?
-        private let delegateProvider: () -> SAFavoritesListDelegate?
 
-        init(dataSource: SAFavoritesListDataSource,
-             delegateProvider: @escaping () -> SAFavoritesListDelegate?) {
+        init(dataSource: SAFavoritesListDataSource) {
             self.dataSource = dataSource
-            self.delegateProvider = delegateProvider
         }
 
         @objc func nodeDoubleClicked(_ sender: Any?) {
@@ -161,7 +158,12 @@ struct SAFavoritesListView: NSViewRepresentable {
                     outlineView.editColumn(0, row: row, with: nil, select: true)
                 }
             } else {
-                delegateProvider()?.favoritesListNodeDoubleClicked(node)
+                // Route through the data source's delegate rather than a
+                // separately-captured closure: `updateNSView` refreshes
+                // `dataSource.delegate` when SwiftUI recreates the view
+                // with a new owner, so selection and double-click always
+                // target the same (current) delegate.
+                dataSource.delegate?.favoritesListNodeDoubleClicked(node)
             }
         }
     }
