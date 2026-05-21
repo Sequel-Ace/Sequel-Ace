@@ -35,27 +35,33 @@ extension SAFavoriteItem {
         }
 
         let topLevel = (root.children ?? []).compactMap { $0 as? SPTreeNode }
-        for (index, node) in topLevel.enumerated() {
-            items.append(build(node, path: "\(index)"))
+        for node in topLevel {
+            items.append(build(node))
         }
         return items
     }
 
-    /// Recursively convert one `SPTreeNode`. `path` is the dotted
-    /// index-path from the root, used as a stable fallback id for
-    /// groups (which have no persistent identifier) and for favorites
-    /// missing an ID.
-    private static func build(_ node: SPTreeNode, path: String) -> SAFavoriteItem {
+    /// Recursively convert one `SPTreeNode`.
+    ///
+    /// Identity comes from the underlying `SPTreeNode` instance, not a
+    /// positional index path: the favorites tree owns persistent
+    /// `SPTreeNode` objects for the lifetime of the session, so the
+    /// address is stable across model rebuilds *and* unique per node —
+    /// reordering, inserting, or removing siblings doesn't change a
+    /// surviving node's id, so SwiftUI `List(selection:)` keeps the
+    /// right row selected. (Favorites still prefer their persistent
+    /// `favoriteID`, which is nicer for resolving a selection back to
+    /// the favorite dictionary; the node-address id is the fallback.)
+    private static func build(_ node: SPTreeNode) -> SAFavoriteItem {
+        let nodeAddress = UInt(bitPattern: Unmanaged.passUnretained(node).toOpaque())
+
         if node.isGroup {
             let group = node.representedObject as? SPGroupNode
             let children = (node.children ?? [])
                 .compactMap { $0 as? SPTreeNode }
-                .enumerated()
-                .map { offset, child in
-                    build(child, path: "\(path).\(offset)")
-                }
+                .map { build($0) }
             return SAFavoriteItem(
-                id: "grp:\(path)",
+                id: "grp:\(nodeAddress)",
                 kind: .group,
                 name: group?.nodeName ?? "",
                 children: children
@@ -69,7 +75,7 @@ extension SAFavoriteItem {
         let colorIndex = favorite?[SPFavoriteColorIndexKey] as? Int
 
         return SAFavoriteItem(
-            id: favoriteID.map { "fav:\($0)" } ?? "fav:\(path)",
+            id: favoriteID.map { "fav:\($0)" } ?? "node:\(nodeAddress)",
             kind: .favorite,
             name: name,
             host: host,

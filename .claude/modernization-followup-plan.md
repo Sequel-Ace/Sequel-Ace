@@ -211,8 +211,12 @@ C1b — pure SwiftUI `List` / `OutlineGroup` — ✅ Done (display/search/select
   tree of `.quickConnect` / `.group` / `.favorite` nodes. Pure — no
   AppKit / project ObjC types — so it compiles into the Unit Tests
   target (same constraint as `SAFavoriteSearchMatcher`). Carries a
-  stable `id` (kind-prefixed) plus the real `favoriteID` so a
-  selection resolves back to the underlying favorite.
+  stable `id` plus the real `favoriteID` so a selection resolves back
+  to the underlying favorite. Ids come from the persistent
+  `SPTreeNode` instance address (favorites prefer their `favoriteID`),
+  so identity is stable + unique across sibling reorder/insert/remove
+  — index-path ids would shift and clear SwiftUI's selection (Codex,
+  PR #2416).
 - `SAFavoriteItem.filtered(using:)` + `[SAFavoriteItem].filtered(query:)`
   reuse `SAFavoriteSearchMatcher` and reproduce the AppKit walker
   semantics exactly: Quick Connect always kept, favorites matched on
