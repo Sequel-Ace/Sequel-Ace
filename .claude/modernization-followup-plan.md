@@ -33,7 +33,7 @@ Key deliverables:
 
 SPDatabaseDocument.m at 6,592 lines is the biggest bottleneck. Break it apart:
 
-**A1. Extract database list management (~283 lines)** — 🟡 In progress (A1a done)
+**A1. Extract database list management (~283 lines)** — ✅ Done
 
 A1a — `-setDatabases` (popup rebuild) — ✅ Done
 - New `SADatabaseListManager.configurePopup(_:databases:currentDatabase:addDatabaseSelector:refreshDatabasesSelector:)` rebuilds the choose-database popup (header items, system/user partition, separator, selection)
@@ -48,9 +48,33 @@ A1b — Navigator schema path extraction — ✅ Done (scoped down)
 - 4 new tests for path shape + edge cases
 - Originally planned to extract `-chooseDatabase:` and `-selectDatabase:item:` wholesale, but on inspection both methods need a callback protocol back to the document for tablesList edit-commit checks, task start/end, and thread dispatch — properly belongs in A1c
 
-A1c — `-_selectDatabaseAndItem:` (background-thread selection flow) + callback protocol — pending
-- Also absorbs the remaining `-chooseDatabase:` and `-selectDatabase:item:` document-coupled logic
-- Will let `allDatabases` / `allSystemDatabases` ivars move off SPDatabaseDocument
+A1c — `-_selectDatabaseAndItem:` (background-thread selection flow) + callback protocol — ✅ Done (scoped down)
+- New `SADatabaseSelectionDelegate` (Swift `@objc protocol`) exposes
+  the ~23 hooks the background-thread flow needs (selection ivars,
+  history-state read/write, `mySQLConnection` bridge,
+  `chooseDatabaseButton`, popup rebuild, task end, tables-list focus
+  ops, alert, bundle-trigger fan-out). The manager file stays free of
+  project-specific ObjC types so it still compiles into the Unit
+  Tests target without a bridging header.
+- `SADatabaseListManager.performSelection(database:item:delegate:)`
+  owns the orchestration (popup-rebuild-and-retry, focus restore,
+  history-state restore). The `@autoreleasepool` stays in the document
+  trampoline so the Swift body can use clean early returns.
+- `-[SPDatabaseDocument _selectDatabaseAndItem:]` shrinks from ~100
+  lines to a single forwarding call. The conformance + 22 short
+  bridge methods live alongside it under a `SADatabaseSelectionDelegate`
+  pragma section.
+- `-chooseDatabase:` and `-selectDatabase:item:` stay on the document:
+  they're already small, reference `_isWorkingLevel` /
+  `databaseListIsSelectable` ivars, and a clean carve would have
+  doubled the protocol surface for thin wins. Out-of-scope for A1c.
+- `allDatabases` / `allSystemDatabases` ivars also stay on the document
+  for now — they have callers in the add/copy/rename enablement
+  (`controlTextDidChange:`) and the delete path that aren't touched by
+  A1c. Moving them is its own task.
+- No new tests — the carved-out method is pure orchestration that
+  would need a heavy fake delegate to exercise. Existing
+  `SADatabaseListManagerTests` (21 tests) still pass.
 - Files: `Source/Controllers/MainViewControllers/SPDatabaseDocument.m`, `SADatabaseListManager.swift`
 
 **A2. Extract task/progress management (~257 lines)**
@@ -235,7 +259,7 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
 
 1. ~~**Phase A3** (wire SAViewMode into view switching) — quick win, already has the enum~~ ✅ Done
 2. ~~**Phase B3** (SAViewMode tests) — validate before and after~~ ✅ Done
-3. **Phase A1** (database list manager) — high value, moderate effort — 🟡 A1a/A1b done, A1c pending
+3. ~~**Phase A1** (database list manager) — high value, moderate effort~~ ✅ Done
 4. ~~**Phase A4** (window title) — quick, easy~~ ✅ Done
 5. **Phase B2** (favorites data source tests) — 🟡 B2a done (search matcher), B2b pending (needs test-target ObjC plumbing)
 6. **Phase C1** (SwiftUI favorites list) — first visible SwiftUI
