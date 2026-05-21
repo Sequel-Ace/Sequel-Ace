@@ -3156,7 +3156,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     // If a 'name' field was edited, and is now of zero length, trigger a replacement
     // with a standard suggestion
-    if (((field == standardNameField) || (field == awsIAMNameField) || (field == socketNameField) || (field == sshNameField)) && [self selectedFavoriteNode]) {
+    if (((field == standardNameField) || (field == awsIAMNameField) || (field == socketNameField) || (field == sshNameField) || (field == vaultNameField)) && [self selectedFavoriteNode]) {
         if (![[self _stripInvalidCharactersFromString:[field stringValue]] length]) {
             [self controlTextDidEndEditing:notification];
         }
@@ -3184,7 +3184,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     // Handle updates to the 'name' field of the selected favourite.  The favourite name should
     // have leading or trailing spaces removed at the end of editing, and if it's left empty,
     // should have a default name set.
-    if (((field == standardNameField) || (field == awsIAMNameField) || (field == socketNameField) || (field == sshNameField)) && [self selectedFavoriteNode]) {
+    if (((field == standardNameField) || (field == awsIAMNameField) || (field == socketNameField) || (field == sshNameField) || (field == vaultNameField)) && [self selectedFavoriteNode]) {
 
         NSString *favoriteName = [self _stripInvalidCharactersFromString:[field stringValue]];
 
