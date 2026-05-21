@@ -669,7 +669,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 /**
  *  Method that checks if an array of SQL queries contain any destructive SQL
- * Basically, defaults to YES, unless all of the queries start with SHOW or SELECT
+ * Basically, defaults to YES, unless all queries are safe to run without the
+ * destructive SQL confirmation.
  *
  *  @param queries   NSArray - Array of SQL queries
  *
@@ -677,8 +678,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 -(BOOL)queriesContainDestructiveSQL:(NSArray *)queries{
 
-    NSArray *safeCommands = @[@"SHOW", @"SELECT", @"EXPLAIN", @"DESCRIBE", @"DESC"];
-    
     BOOL __block retCode = YES;
     
     [queries enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop){
@@ -687,24 +686,14 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         
         if([obj isKindOfClass:[NSString class]] && [(NSString *)obj length]){
             
-            NSMutableString *query = [obj mutableCopy];
-            
-            // remove comments
-            [query replaceOccurrencesOfRegex:@"--.*?\n" withString:@""];
-            [query replaceOccurrencesOfRegex:@"--.*?$" withString:@""];
-            [query replaceOccurrencesOfRegex:@"/\\*(.|\n)*?\\*/" withString:@""];
-            
             // trim leading and trailing spaces and new lines
-            [query setString:[query trimWhitespacesAndNewlines]];
+            NSString *query = [(NSString *)obj trimWhitespacesAndNewlines];
             
             SPLog(@"query: [%@]", query);
             
-            for (NSString *safeCommand in safeCommands){
-                if([query hasPrefixWithPrefix:safeCommand caseSensitive:NO] == YES){
-                    SPLog(@"Safe command: [%@], breaking", safeCommand);
-                    retCode = NO;
-                    break;
-                }
+            if ([SPCustomQuery isQuerySafeWithoutDestructiveWarning:query] == YES) {
+                SPLog(@"Query is safe to run without destructive warning");
+                retCode = NO;
             }
             
         } // End isKindOfClass
@@ -3437,8 +3426,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     else if ( [menuItem tag] >= SP_HISTORY_COPY_MENUITEM_TAG && [menuItem tag] <= SP_HISTORY_CLEAR_MENUITEM_TAG ) {
         return ([queryHistoryButton numberOfItems]-7);
     }
-
-    if ([menuItem action] == @selector(runExplainQueryAction:)) {
+    else if ([menuItem action] == @selector(runExplainQueryAction:)) {
         if ([tableDocumentInstance isWorking]) return NO;
         return ([[textView string] length] > 0);
     }

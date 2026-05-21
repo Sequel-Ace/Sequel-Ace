@@ -3,7 +3,7 @@
 //  Sequel Ace
 //
 //  Swift extension implementing the "Explain Current Query" action and the
-//  SELECT/WITH classifier used by the destructive-SQL safe list and the menu
+//  SQL classifiers used by the destructive-SQL safe gate and the menu
 //  validation in SPCustomQuery.m. Implements upstream issue #2291.
 //
 
@@ -22,54 +22,13 @@ extension SPCustomQuery {
     /// or `SELECT/*c*/1` do.
     @objc(isQueryExplainable:)
     public static func isQueryExplainable(_ query: String?) -> Bool {
-        guard let query = query, !query.isEmpty else { return false }
-
-        // Replace comments with a single space so `SELECT/*c*/1` doesn't
-        // collapse to `SELECT1` and fail the keyword boundary check below.
-        let stripped = Self.stripSQLComments(query)
-        var trimmed = stripped.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        // Unwrap leading parentheses so `(SELECT ...)` passes while
-        // `(EXPLAIN ...)` / `(UPDATE ...)` is rejected.
-        while trimmed.hasPrefix("(") {
-            trimmed = String(trimmed.dropFirst()).trimmingCharacters(in: .whitespacesAndNewlines)
-        }
-        guard !trimmed.isEmpty else { return false }
-
-        let upper = trimmed.uppercased()
-
-        // Identifier characters block keyword boundary; anything else
-        // (whitespace, punctuation like `(`, end-of-string) is treated as a
-        // valid token end so `SELECT(1)` matches.
-        var identifierSet = CharacterSet.alphanumerics
-        identifierSet.insert(charactersIn: "_")
-
-        for prefix in ["SELECT", "WITH"] {
-            guard upper.hasPrefix(prefix) else { continue }
-            // Bare `SELECT` / `WITH` with nothing after the keyword is not
-            // valid SQL; reject so the manual Explain path surfaces the
-            // localized unsupported-statement message instead of forwarding
-            // `EXPLAIN SELECT` to the server and getting a syntax error.
-            if upper.count == prefix.count { return false }
-            let boundaryIndex = upper.index(upper.startIndex, offsetBy: prefix.count)
-            let boundaryScalar = upper.unicodeScalars[boundaryIndex.samePosition(in: upper.unicodeScalars)!]
-            if !identifierSet.contains(boundaryScalar) { return true }
-        }
-        return false
+        return SPCustomQuerySQLClassifier.isQueryExplainable(query)
     }
 
-    /// Replace every MySQL comment with a single space. Comments are replaced
-    /// (not removed) so adjacent tokens stay separated, e.g. `SELECT/*c*/1`
-    /// becomes `SELECT 1` rather than `SELECT1`. The `--` form follows MySQL's
-    /// rule that the second dash must be followed by whitespace/control to
-    /// count as a comment, so `SELECT--1` (double negation) is left intact.
-    private static func stripSQLComments(_ source: String) -> String {
-        var result = source
-        let opts: NSString.CompareOptions = [.regularExpression]
-        result = result.replacingOccurrences(of: "--[\\s][^\n]*", with: " ", options: opts)
-        result = result.replacingOccurrences(of: "#[^\n]*", with: " ", options: opts)
-        result = result.replacingOccurrences(of: "/\\*(.|\n)*?\\*/", with: " ", options: opts)
-        return result
+    /// Returns `true` when the destructive-SQL warning may be skipped for this query.
+    @objc(isQuerySafeWithoutDestructiveWarning:)
+    public static func isQuerySafeWithoutDestructiveWarning(_ query: String?) -> Bool {
+        return SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(query)
     }
 
     // MARK: - IBAction
@@ -81,7 +40,10 @@ extension SPCustomQuery {
     @IBAction
     @objc(runExplainQueryAction:)
     public func runExplainQueryAction(_ sender: Any?) {
+        // Prevent multiple runs by holding the keys down
         if tableDocumentInstance?.isWorking() == true { return }
+
+        // Fixes bug in key equivalents (mirrors -runAllQueries: guard).
         if NSApp.currentEvent?.type == .keyUp { return }
 
         guard let editor = textView else {
@@ -115,7 +77,7 @@ extension SPCustomQuery {
 
             var nonEmpty: [String] = []
             for part in parts {
-                let probe = Self.stripSQLComments(part)
+                let probe = SPCustomQuerySQLClassifier.stripSQLComments(part)
                 if probe.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { continue }
                 nonEmpty.append(part.trimmingCharacters(in: .whitespacesAndNewlines))
             }
@@ -148,8 +110,8 @@ extension SPCustomQuery {
         NSSound.beep()
         errorTextTitle?.stringValue = NSLocalizedString("Query Status", comment: "Query Status")
         let message = NSLocalizedString("EXPLAIN is only supported for a single SELECT or WITH statement.", comment: "EXPLAIN unsupported statement message")
-        if let target = errorText as? NSObject {
-            target.setValue(message, forKey: "string")
-        }
+        // errorText is wired in DBView.xib as an NSTextView (NSText subclass);
+        // mirrors the [errorText setString:...] pattern used throughout SPCustomQuery.m.
+        (errorText as? NSText)?.string = message
     }
 }
