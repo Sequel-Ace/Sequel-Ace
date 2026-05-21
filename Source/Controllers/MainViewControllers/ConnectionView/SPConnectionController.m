@@ -298,15 +298,56 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     isTestingConnection = (sender == testConnectButton);
     self.localNetworkPermissionDeniedForCurrentAttempt = NO;
 
-    NSFileManager *fileManager = [NSFileManager defaultManager];
+    // Pre-connection validation runs through SAConnectionDetailsValidator
+    // FIRST so the user-facing "first error" ordering matches the
+    // pre-refactor behavior (host non-empty beats every later check,
+    // including AWS-directory authorization). On failure the controller
+    // still owns the alert + per-failure side effects (clearing the
+    // matching enabled toggles / paths) so the user can correct the input.
+    SAConnectionValidationFailure *failure = [SAConnectionDetailsValidator
+        validateWithType:(SAConnectionType)[self type]
+                    host:[self host] ?: @""
+                 sshHost:[self sshHost] ?: @""
+                  useSSL:[self useSSL]
+   sshKeyLocationEnabled:(sshKeyLocationEnabled != NSControlStateValueOff)
+         sshKeyLocation:sshKeyLocation
+sslKeyFileLocationEnabled:(sslKeyFileLocationEnabled != NSControlStateValueOff)
+     sslKeyFileLocation:sslKeyFileLocation
+sslCertificateFileLocationEnabled:(sslCertificateFileLocationEnabled != NSControlStateValueOff)
+sslCertificateFileLocation:sslCertificateFileLocation
+sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValueOff)
+  sslCACertFileLocation:sslCACertFileLocation];
 
-    // Ensure that host is not empty if this is a TCP/IP, SSH, or AWS IAM connection
-    if (([self type] == SPTCPIPConnection || [self type] == SPSSHTunnelConnection ||
-         [self type] == SPAWSIAMConnection || [self type] == SPVaultConnection) && ![[self host] length]) {
-        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message") message:NSLocalizedString(@"Insufficient details provided to establish a connection. Please enter at least the hostname.", @"insufficient details informative message") callback:nil];
+    if (failure) {
+        switch (failure.kind) {
+            case SAConnectionValidationFailureKindSshKeyFileMissing:
+                [self setSshKeyLocationEnabled:NSControlStateValueOff];
+                break;
+            case SAConnectionValidationFailureKindSslKeyFileMissing:
+                [self setSslKeyFileLocationEnabled:NSControlStateValueOff];
+                [self setSslKeyFileLocation:nil];
+                break;
+            case SAConnectionValidationFailureKindSslCertificateFileMissing:
+                [self setSslCertificateFileLocationEnabled:NSControlStateValueOff];
+                [self setSslCertificateFileLocation:nil];
+                break;
+            case SAConnectionValidationFailureKindSslCACertFileMissing:
+                [self setSslCACertFileLocationEnabled:NSControlStateValueOff];
+                [self setSslCACertFileLocation:nil];
+                break;
+            case SAConnectionValidationFailureKindHostMissing:
+            case SAConnectionValidationFailureKindSshHostMissing:
+                break;
+        }
+        [NSAlert createWarningAlertWithTitle:failure.alertTitle message:failure.alertMessage callback:nil];
         return;
     }
 
+    // AWS-directory authorization stays inline — it depends on the
+    // Security framework bookmark state, which the pure validator
+    // can't represent. Ordered AFTER the validator so the
+    // host-missing alert still beats this one for AWS IAM favorites
+    // with an empty host (matches pre-refactor behavior).
     if ([self _isAWSIAMConnection] && ![self isAWSDirectoryAuthorized]) {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"AWS Authorization Required", @"AWS authorization required title")
                                      message:NSLocalizedString(@"Authorize access to your ~/.aws directory before testing or connecting with an AWS IAM favorite.", @"AWS authorization required message")
@@ -327,54 +368,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         return;
     }
 
-    // If SSH is enabled, ensure that the SSH host is not nil
-    if ([self type] == SPSSHTunnelConnection && ![[self sshHost] length]) {
-        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message") message:NSLocalizedString(@"Insufficient details provided to establish a connection. Please enter the hostname for the SSH Tunnel, or disable the SSH Tunnel.", @"insufficient SSH tunnel details informative message") callback:nil];
-        return;
-    }
-
-    // If an SSH key has been provided, verify it exists
-    if ([self type] == SPSSHTunnelConnection && sshKeyLocationEnabled && sshKeyLocation) {
-        if (![fileManager fileExistsAtPath:[sshKeyLocation stringByExpandingTildeInPath]]) {
-            [self setSshKeyLocationEnabled:NSControlStateValueOff];
-            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"SSH Key not found", @"SSH key check error") message:NSLocalizedString(@"A SSH key location was specified, but no file was found in the specified location.  Please re-select the key and try again.", @"SSH key not found message") callback:nil];
-            return;
-        }
-    }
-
-    // If SSL keys have been supplied, verify they exist
-    if (([self type] == SPTCPIPConnection || [self type] == SPSocketConnection) && [self useSSL]) {
-
-        if (sslKeyFileLocationEnabled && sslKeyFileLocation &&
-            ![fileManager fileExistsAtPath:[sslKeyFileLocation stringByExpandingTildeInPath]])
-        {
-            [self setSslKeyFileLocationEnabled:NSControlStateValueOff];
-            [self setSslKeyFileLocation:nil];
-
-            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"SSL Key File not found", @"SSL key file check error") message:NSLocalizedString(@"A SSL key file location was specified, but no file was found in the specified location.  Please re-select the key file and try again.", @"SSL key file not found message") callback:nil];
-            return;
-        }
-
-        if (sslCertificateFileLocationEnabled && sslCertificateFileLocation &&
-            ![fileManager fileExistsAtPath:[sslCertificateFileLocation stringByExpandingTildeInPath]])
-        {
-            [self setSslCertificateFileLocationEnabled:NSControlStateValueOff];
-            [self setSslCertificateFileLocation:nil];
-
-            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"SSL Certificate File not found", @"SSL certificate file check error") message:NSLocalizedString(@"A SSL certificate location was specified, but no file was found in the specified location.  Please re-select the certificate and try again.", @"SSL certificate file not found message") callback:nil];
-            return;
-        }
-
-        if (sslCACertFileLocationEnabled && sslCACertFileLocation &&
-            ![fileManager fileExistsAtPath:[sslCACertFileLocation stringByExpandingTildeInPath]])
-        {
-            [self setSslCACertFileLocationEnabled:NSControlStateValueOff];
-            [self setSslCACertFileLocation:nil];
-
-            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"SSL Certificate Authority File not found", @"SSL certificate authority file check error") message:NSLocalizedString(@"A SSL Certificate Authority certificate location was specified, but no file was found in the specified location.  Please re-select the Certificate Authority certificate and try again.", @"SSL CA certificate file not found message") callback:nil];
-            return;
-        }
-    }
 
     // Basic details have validated - start the connection process animating
     isConnecting = YES;
@@ -2463,7 +2456,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (NSNumber *)_createNewFavoriteID
 {
-    return [NSNumber numberWithInteger:[[NSString stringWithFormat:@"%f", [[NSDate date] timeIntervalSince1970]] hash]];
+    return [SAConnectionFormHelpers newFavoriteID];
 }
 
 /**
@@ -2493,9 +2486,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (NSString *)_stripInvalidCharactersFromString:(NSString *)subject
 {
-    NSString *result = [subject stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-
-    return [result stringByReplacingOccurrencesOfString:@"\n" withString:@""];
+    return [SAConnectionFormHelpers stripInvalidCharacters:subject ?: @""];
 }
 
 /**
@@ -2505,25 +2496,15 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (NSString *)_generateNameForConnection
 {
-    NSString *aName;
-
     if ([self type] == SPVaultConnection) {
         NSString *credPath = [[self vaultCredentialsPath] lastPathComponent];
         NSString *vHost = [[self vaultHost] length] ? [self vaultHost] : @"vault";
         return [credPath length] ? [NSString stringWithFormat:@"%@/%@", vHost, credPath] : vHost;
     }
 
-    if ([self type] != SPSocketConnection && ![[self host] length]) {
-        return nil;
-    }
-
-    aName = ([self type] == SPSocketConnection) ? @"localhost" : [self host];
-
-    if ([[self database] length]) {
-        aName = [NSString stringWithFormat:@"%@/%@", aName, [self database]];
-    }
-
-    return aName;
+    return [SAConnectionFormHelpers generateNameWithType:(SAConnectionType)[self type]
+                                                    host:[self host] ?: @""
+                                                database:[self database] ?: @""];
 }
 
 
