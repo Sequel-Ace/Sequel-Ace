@@ -309,6 +309,21 @@ import AppKit
                     delegate.presentUnableToSelectDatabaseAlert(name: database)
                 }
 
+                // Restore the popup's visible selection to the database
+                // we're still on: the switch failed, so we never advanced
+                // `currentSelectedDatabase`, but the popup is currently
+                // showing the un-selectable target the user clicked.
+                // Snap it back so the UI stays consistent with the live
+                // connection. (The original ObjC left the popup on the
+                // failed entry — see PR #2414 review.)
+                mainSync {
+                    if let current = delegate.currentSelectedDatabase, !current.isEmpty {
+                        delegate.chooseDatabaseButton.selectItem(withTitle: current)
+                    } else {
+                        delegate.chooseDatabaseButton.selectItem(at: 0)
+                    }
+                }
+
                 if !historyStateChanging {
                     delegate.historyStateIsModifying = false
                     delegate.updateHistoryEntries()
