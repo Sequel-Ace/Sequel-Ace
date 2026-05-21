@@ -206,7 +206,39 @@ C1a — `NSViewRepresentable` wrap — ✅ Done
   already covered by `SAFavoriteSearchMatcherTests`.
 - Files: new `Source/Controllers/MainViewControllers/ConnectionView/SAFavoritesListView.swift`
 
-C1b — iterate toward a pure SwiftUI `List` / `OutlineGroup` — pending
+C1b — pure SwiftUI `List` / `OutlineGroup` — ✅ Done (display/search/select; reorder+rename deferred)
+- New `SAFavoriteItem` (Swift value model, Identifiable/Hashable) is a
+  tree of `.quickConnect` / `.group` / `.favorite` nodes. Pure — no
+  AppKit / project ObjC types — so it compiles into the Unit Tests
+  target (same constraint as `SAFavoriteSearchMatcher`). Carries a
+  stable `id` (kind-prefixed) plus the real `favoriteID` so a
+  selection resolves back to the underlying favorite.
+- `SAFavoriteItem.filtered(using:)` + `[SAFavoriteItem].filtered(query:)`
+  reuse `SAFavoriteSearchMatcher` and reproduce the AppKit walker
+  semantics exactly: Quick Connect always kept, favorites matched on
+  name+host, groups kept only when a descendant favorite matches
+  (group name itself not matched), empty groups pruned under an active
+  query. Plus `flattened()` / `first(byID:)` lookups.
+- `SAFavoriteItem+Tree.swift` (app-target only) builds the model from
+  the live `SPTreeNode` tree via the `SPFavorite*Key` constants —
+  isolated here so the model file stays test-eligible. (Builder itself
+  is untested: constructing `SPTreeNode` from the test target hits the
+  B2b sharp edge.)
+- `SAFavoritesList` (SwiftUI) renders `List(selection:)` +
+  `OutlineGroup(children:)` with `.sidebar` style, per-row icons
+  (quick-connect / folder / database-small) and color-tinted favorite
+  labels via `SPFavoriteColorSupport`, live search filtering, and
+  double-click-to-connect on leaves (mirrors `-nodeDoubleClicked:`).
+- 13 unit tests in `UnitTests/SAFavoriteItemTests.swift` covering
+  flatten/lookup, inactive-query passthrough, name/host matching,
+  group keep/prune rules, group-name-not-matched, quick-connect
+  survival, and multi-token AND.
+- Still deferred before this can replace the C1a wrap: drag & drop
+  reordering, inline rename, and expand/collapse persistence (all
+  still in the AppKit data source). Nothing hosts this view yet
+  (Phase C3).
+- Files: new `SAFavoriteItem.swift`, `SAFavoriteItem+Tree.swift`,
+  `SAFavoritesList.swift`, `UnitTests/SAFavoriteItemTests.swift`
 
 **C2. SwiftUI ConnectionFormView**
 - The 55 IBOutlets in ConnectionView.xib are the target
@@ -286,7 +318,7 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
 3. ~~**Phase A1** (database list manager) — high value, moderate effort~~ ✅ Done
 4. ~~**Phase A4** (window title) — quick, easy~~ ✅ Done
 5. **Phase B2** (favorites data source tests) — 🟡 B2a done (search matcher), B2b pending (needs test-target ObjC plumbing)
-6. **Phase C1** (SwiftUI favorites list) — first visible SwiftUI — 🟡 C1a done (NSViewRepresentable wrap), C1b pending (pure SwiftUI list)
+6. **Phase C1** (SwiftUI favorites list) — first visible SwiftUI — 🟡 C1a + C1b done (wrap + pure SwiftUI list); reorder/rename/persistence + hosting (C3) still pending before it replaces the AppKit list
 7. **Phase A2** (task controller) — large but impactful
 8. **Phase D1-D3** (SPConnectionController cleanup) — ongoing
 9. **Phase C2-C3** (SwiftUI connection form) — bigger effort
