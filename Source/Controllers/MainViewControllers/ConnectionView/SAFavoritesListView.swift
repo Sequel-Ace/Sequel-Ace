@@ -124,11 +124,34 @@ struct SAFavoritesListView: NSViewRepresentable {
         // new closure capturing a different owner.
         dataSource.delegate = delegateProvider()
 
+        // Reconcile the backing tree: the data source was built once in
+        // makeCoordinator() from the then-current values, but the host
+        // can hand us a different `favoritesRoot` / `favoritesController`
+        // later — e.g. `-[SPFavoritesController reloadFavoritesWithSave:]`
+        // assigns a brand-new tree root. Re-point and reload so the
+        // outline never renders a stale tree.
+        if dataSource.favoritesController !== favoritesController {
+            dataSource.favoritesController = favoritesController
+        }
+        let rootChanged = dataSource.favoritesRoot !== favoritesRoot
+        if rootChanged {
+            dataSource.favoritesRoot = favoritesRoot
+        }
+
         // Re-filter only when the query actually changed — setting
         // `searchQuery` rebuilds the visible-node set on every assign.
-        if dataSource.searchQuery != searchQuery {
+        let queryChanged = dataSource.searchQuery != searchQuery
+        if queryChanged {
             dataSource.searchQuery = searchQuery
+        }
+
+        if rootChanged || queryChanged {
             dataSource.reloadData(in: outlineView)
+        }
+        // A fresh tree needs its saved expand/collapse state restored,
+        // same as the initial load in makeNSView.
+        if rootChanged {
+            dataSource.restoreOutlineViewState(favoritesRoot, in: outlineView)
         }
     }
 
@@ -152,8 +175,11 @@ struct SAFavoritesListView: NSViewRepresentable {
             if node === dataSource.quickConnectItem { return }
 
             if node.isGroup {
-                // Begin editing the group name (matches the controller).
-                let row = outlineView.selectedRow
+                // Begin editing the group name. Use the row of the node
+                // we resolved via `itemForDoubleAction` rather than
+                // `selectedRow`, so the edit always targets the
+                // double-clicked group even if the selection diverges.
+                let row = outlineView.row(forItem: node)
                 if row >= 0 {
                     outlineView.editColumn(0, row: row, with: nil, select: true)
                 }
