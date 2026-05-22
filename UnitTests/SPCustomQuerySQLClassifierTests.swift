@@ -10,6 +10,11 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
     func testExplainableAcceptsOnlySelectAndWith() {
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQueryExplainable("SELECT * FROM t"))
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQueryExplainable("(WITH cte AS (SELECT 1) SELECT * FROM cte)"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQueryExplainable("WITH RECURSIVE cte AS (SELECT 1 AS n UNION ALL SELECT n + 1 FROM cte WHERE n < 10) SELECT * FROM cte"))
+        // Lowercase / mixed-case keywords must still classify as explainable
+        // because the classifier uppercases the trimmed prefix before matching.
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQueryExplainable("select * from t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQueryExplainable("(with cte as (select 1) select * from cte)"))
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQueryExplainable("EXPLAIN SELECT * FROM t"))
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQueryExplainable("UPDATE t SET c = 1"))
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQueryExplainable("SELECTOR_TABLE"))
@@ -20,6 +25,8 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN FORMAT=JSON UPDATE t SET c = 1"))
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("DESCRIBE t"))
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("DESC t"))
+        // Lowercase keyword variants must use the same safe-without-warning rule.
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("explain select * from t"))
     }
 
     func testExplainAnalyzeReadOnlyStatementsAreSafe() {
@@ -35,6 +42,8 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE UPDATE t SET c = c + 1"))
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN ANALYZE FORMAT=TREE DELETE FROM t WHERE id = 1"))
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN FORMAT=TREE ANALYZE UPDATE t SET c = 1"))
+        // Lowercase EXPLAIN ANALYZE on a mutating statement must still warn.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("explain analyze delete from t where id = 1"))
     }
 
     func testExplainAliasesUseTheSameAnalyzeSafetyRule() {
@@ -94,5 +103,17 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(
             "EXPLAIN ANALYZE EXTENDED WITH c AS (SELECT 1) UPDATE t SET c = 1"
         ))
+    }
+
+    func testEmptyAndIrregularWhitespaceInputs() {
+        // Empty / whitespace-only inputs are never explainable and never safe.
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQueryExplainable(""))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQueryExplainable("   "))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(""))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("   "))
+        // Multiple spaces and tabs between keywords must tokenize identically
+        // to a single space (sqlTokens splits on any whitespace scalar).
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN    SELECT  *  FROM  t"))
+        XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN\t\tSELECT * FROM t"))
     }
 }
