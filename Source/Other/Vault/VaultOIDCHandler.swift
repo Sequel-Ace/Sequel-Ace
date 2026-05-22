@@ -41,6 +41,19 @@ enum VaultOIDCError: Error, LocalizedError {
     private static let log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "VaultOIDC")
     private static let callbackTimeoutSeconds: TimeInterval = 120
     private static let vaultTokenFileName = ".vault-token"
+
+    // MARK: - Cancellation
+
+    private static let loginLock = NSLock()
+    private static var activeLoginSemaphore: DispatchSemaphore?
+
+    /// Signal the active OIDC browser-wait semaphore so login() returns immediately
+    /// with a .cancelled error. Safe to call from any thread at any time.
+    static func cancelActiveLogin() {
+        loginLock.lock()
+        defer { loginLock.unlock() }
+        activeLoginSemaphore?.signal()
+    }
     /// Fixed callback port matching vault-plugin-auth-jwt CLIHandler default (8250).
     /// Cognito / other OIDC providers only whitelist specific redirect URIs, so
     /// a random port would fail with redirect_mismatch.
@@ -82,9 +95,20 @@ enum VaultOIDCError: Error, LocalizedError {
             NSWorkspace.shared.open(authURL)
         }
 
-        // 5. Wait for callback (with timeout)
+        // 5. Wait for callback (with timeout).
+        // Register the semaphore so cancelActiveLogin() can interrupt the wait.
+        loginLock.lock()
+        activeLoginSemaphore = callbackSemaphore
+        loginLock.unlock()
+        defer {
+            loginLock.lock()
+            activeLoginSemaphore = nil
+            loginLock.unlock()
+        }
+
         let result = callbackSemaphore.wait(timeout: .now() + callbackTimeoutSeconds)
         if result == .timedOut { throw VaultOIDCError.callbackTimeout }
+        // A nil callbackParams means either timeout or cancellation via cancelActiveLogin().
         guard let params = callbackParams else { throw VaultOIDCError.cancelled }
 
         guard let callbackState = params["state"], let code = params["code"] else {

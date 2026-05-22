@@ -610,6 +610,10 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
     cancellingConnection = YES;
 
+    // Abort any in-progress Vault OIDC browser login so the background thread
+    // unblocks immediately rather than waiting up to 120 s for a callback.
+    [VaultOIDCHandler cancelActiveLogin];
+
     // Cancel via connection service (handles both MySQL and SSH tunnel)
     [self.connectionService cancel];
 
