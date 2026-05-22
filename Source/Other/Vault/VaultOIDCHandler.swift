@@ -394,9 +394,10 @@ enum VaultOIDCError: Error, LocalizedError {
         // Buffer chunks until we have at least the first line (terminated by \r\n).
         // A single receive() call may return only a partial chunk if the OS splits
         // the stream, which would cause parseQueryParams to silently miss state/code.
-        connection.receive(minimumIncompleteLength: 1, maximumLength: 4096) { data, _, _, _ in
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 4096) { data, _, isComplete, error in
             var accumulated = buffer
-            if let data = data { accumulated.append(data) }
+            let receivedData = data ?? Data()
+            if !receivedData.isEmpty { accumulated.append(receivedData) }
 
             // Check whether the first line is complete yet.
             let crlf = Data([0x0D, 0x0A]) // \r\n
@@ -404,6 +405,8 @@ enum VaultOIDCError: Error, LocalizedError {
                 let firstLineData = accumulated[accumulated.startIndex..<range.lowerBound]
                 let firstLine = String(data: firstLineData, encoding: .utf8) ?? ""
                 completion(firstLine)
+            } else if isComplete || error != nil || receivedData.isEmpty {
+                completion("") // Closed / failed / no-progress connection.
             } else if accumulated.count < 8192 {
                 // First line not yet complete — read more (cap at 8 KB to prevent abuse).
                 receiveHTTPRequest(on: connection, buffer: accumulated, completion: completion)
