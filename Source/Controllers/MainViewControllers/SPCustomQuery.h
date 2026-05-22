@@ -169,6 +169,17 @@
 @property BOOL textViewWasChanged;
 @property (strong) SPBracketHighlighter *bracketHighlighter;
 
+// Exposed for Swift extensions (see SPCustomQuery+Explain.swift)
+@property (readonly, weak) SPDatabaseDocument *tableDocumentInstance;
+@property (readonly, strong) SPTextView *textView;
+@property (readonly) NSRange currentQueryRange;
+@property (readwrite, strong) NSTableColumn *sortColumn;
+@property (readwrite, assign) BOOL isDesc;
+@property (readwrite, assign) BOOL reloadingExistingResult;
+@property (readonly, strong) NSTextField *errorTextTitle;
+@property (readonly, strong) id errorText;
+@property (readonly, strong) NSMutableDictionary<NSNumber*,NSNumber*> *sortCount;
+
 // IBAction methods
 - (IBAction)runPrimaryQueryAction:(id)sender;
 - (IBAction)runSecondaryQueryAction:(id)sender;
