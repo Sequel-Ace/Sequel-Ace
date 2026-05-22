@@ -3793,7 +3793,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         if([connectionController port] && [[connectionController port] length]) [connection setObject:[NSNumber numberWithInteger:[[connectionController port] integerValue]] forKey:@"port"];
         if([[self database] length])                                            [connection setObject:[self database] forKey:@"database"];
 
-        if (includePasswords) {
+        if (includePasswords && [connectionController type] != SPVaultConnection) {
             NSString *pw = [connectionController keychainPassword];
             if (!pw) pw = [connectionController password];
             if (pw) [connection setObject:pw forKey:@"password"];
