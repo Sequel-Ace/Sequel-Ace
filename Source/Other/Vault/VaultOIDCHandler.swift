@@ -298,6 +298,12 @@ enum VaultOIDCError: Error, LocalizedError {
 
         // 7. Persist in the user's Keychain for this Vault server + OIDC mount and
         //    keep an in-process copy so the token is never forwarded elsewhere.
+        //
+        // Note: if the caller cancels after this point (between the token exchange
+        // and credential generation), the token is already in the Keychain. It is
+        // NOT revoked — Vault's TTL handles expiry. The token will be reused on
+        // the next connect attempt for this Vault server and OIDC mount, avoiding
+        // a redundant browser login.
         saveToken(token, for: baseURL, mount: mount)
         storeToken(token, for: baseURL, mount: mount)
 
