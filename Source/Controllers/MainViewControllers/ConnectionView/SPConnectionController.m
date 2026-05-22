@@ -1854,6 +1854,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     [awsIAMTimeZoneField selectItemAtIndex:sender.indexOfSelectedItem];
     [sshTimeZoneField selectItemAtIndex:sender.indexOfSelectedItem];
     [socketTimeZoneField selectItemAtIndex:sender.indexOfSelectedItem];
+    [vaultTimeZoneField selectItemAtIndex:sender.indexOfSelectedItem];
 
     [self _startEditingConnection];
 }
