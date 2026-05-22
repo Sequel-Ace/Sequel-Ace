@@ -69,7 +69,10 @@ enum VaultOIDCError: Error, LocalizedError {
     @objc(clearPreparedActiveLoginWithIdentifier:)
     static func clearPreparedActiveLogin(identifier: String) {
         loginLock.lock()
-        if activeLogins[identifier]?.semaphore == nil {
+        // Only remove entries that were prepared but never cancelled. A cancel-before-prepare
+        // entry (semaphore: nil, cancelled: true) written by cancelActiveLogin must survive
+        // so that login(), if it starts late, can observe the cancellation on entry.
+        if let state = activeLogins[identifier], state.semaphore == nil, !state.cancelled {
             activeLogins.removeValue(forKey: identifier)
         }
         loginLock.unlock()
