@@ -54,6 +54,31 @@ enum VaultOIDCError: Error, LocalizedError {
         defer { loginLock.unlock() }
         activeLoginSemaphore?.signal()
     }
+
+    // MARK: - Per-host token scoping
+
+    // Tokens stored in this map were obtained in the current process for a specific
+    // Vault server. Always prefer these over ~/.vault-token to avoid forwarding a
+    // token minted for host A to host B during tokenLookupSelf.
+    private static let hostTokenLock = NSLock()
+    private static var tokenByHost: [String: String] = [:]
+
+    /// Best available token for `baseURL`. Checks the in-session per-host map first;
+    /// falls back to ~/.vault-token so tokens created by the Vault CLI are reused.
+    static func cachedToken(for baseURL: URL) -> String? {
+        hostTokenLock.lock()
+        let hostToken = tokenByHost[baseURL.absoluteString]
+        hostTokenLock.unlock()
+        if let t = hostToken { return t }
+        return readCachedToken()
+    }
+
+    private static func storeToken(_ token: String, for baseURL: URL) {
+        hostTokenLock.lock()
+        defer { hostTokenLock.unlock() }
+        tokenByHost[baseURL.absoluteString] = token
+    }
+
     /// Fixed callback port matching vault-plugin-auth-jwt CLIHandler default (8250).
     /// Cognito / other OIDC providers only whitelist specific redirect URIs, so
     /// a random port would fail with redirect_mismatch.
@@ -143,8 +168,11 @@ enum VaultOIDCError: Error, LocalizedError {
             throw VaultOIDCError.vaultError(error)
         }
 
-        // 7. Persist to ~/.vault-token (mode 0600, shared with vault CLI)
+        // 7. Persist to ~/.vault-token (mode 0600, shared with vault CLI) and
+        //    record in the per-host map so subsequent connects to this host use
+        //    this token without risking forwarding it to a different host.
         saveToken(token)
+        storeToken(token, for: baseURL)
 
         // 8. Bring the app back to the foreground now that the browser auth is done.
         DispatchQueue.main.async { NSApp.activate(ignoringOtherApps: true) }

@@ -117,7 +117,7 @@ import OSLog
     /// MUST be called from a background thread — performs synchronous network I/O.
     static func isAuthorized(baseURL: URL) -> Bool {
         assert(!Thread.isMainThread, "isAuthorized must not be called on the main thread")
-        guard let token = VaultOIDCHandler.readCachedToken() else { return false }
+        guard let token = VaultOIDCHandler.cachedToken(for: baseURL) else { return false }
         return (try? VaultClient.tokenLookupSelf(baseURL: baseURL, token: token)) == true
     }
 
@@ -150,9 +150,9 @@ import OSLog
         let trimmedMount = oidcMount.trimmingCharacters(in: .whitespacesAndNewlines)
         let effectiveMount = trimmedMount.isEmpty ? "oidc" : trimmedMount
 
-        // Read the token file once here so we can (a) validate the cached entry's identity
-        // and (b) avoid a second disk read later when we confirm the token is still valid.
-        let preReadToken = VaultOIDCHandler.readCachedToken()
+        // Read the best available token for this host: in-session per-host map takes
+        // priority over ~/.vault-token so we never forward a token to the wrong server.
+        let preReadToken = VaultOIDCHandler.cachedToken(for: baseURL)
 
         let key = cacheKey(baseURL: baseURL, oidcMount: effectiveMount, credPath: effectiveCredPath)
 
@@ -173,9 +173,9 @@ import OSLog
             inFlightCondition.wait()
         }
         // Re-check cache after waking — the in-flight thread may have populated it.
-        // Re-read the token: the in-flight thread may have obtained a new one via OIDC,
-        // so the pre-wait preReadToken could be stale and would evict the fresh entry.
-        let postWaitToken = VaultOIDCHandler.readCachedToken()
+        // Re-fetch the token: the in-flight thread may have obtained a new one via OIDC,
+        // so preReadToken could be stale and would evict the fresh entry.
+        let postWaitToken = VaultOIDCHandler.cachedToken(for: baseURL)
         if let cached = cachedCredentials(for: key, matchingToken: postWaitToken) {
             inFlightCondition.unlock()
             username.pointee = cached.username as NSString
