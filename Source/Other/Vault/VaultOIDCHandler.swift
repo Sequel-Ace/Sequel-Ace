@@ -46,28 +46,52 @@ enum VaultOIDCError: Error, LocalizedError {
     // MARK: - Cancellation
 
     private static let loginLock = NSLock()
+    private static var activeLoginPrepared = false
     private static var activeLoginSemaphore: DispatchSemaphore?
     private static var activeLoginCancelled = false
+
+    /// Mark that a Vault connection is about to start OIDC work. This lets a
+    /// very early UI cancel be recorded before login() has a semaphore to signal.
+    static func prepareActiveLogin() {
+        loginLock.lock()
+        activeLoginPrepared = true
+        activeLoginSemaphore = nil
+        activeLoginCancelled = false
+        loginLock.unlock()
+    }
+
+    /// Clear a prepared login when credential generation exits before login()
+    /// registers its semaphore, such as cache hits or early validation failure.
+    static func clearPreparedActiveLogin() {
+        loginLock.lock()
+        if activeLoginSemaphore == nil {
+            activeLoginPrepared = false
+            activeLoginCancelled = false
+        }
+        loginLock.unlock()
+    }
 
     /// Signal the active OIDC browser-wait semaphore so login() returns immediately
     /// with a .cancelled error. Safe to call from any thread at any time.
     static func cancelActiveLogin() {
         loginLock.lock()
         defer { loginLock.unlock() }
-        if activeLoginSemaphore != nil { activeLoginCancelled = true }
+        if activeLoginPrepared || activeLoginSemaphore != nil { activeLoginCancelled = true }
         activeLoginSemaphore?.signal()
     }
 
     @nonobjc private static func registerActiveLogin(semaphore: DispatchSemaphore) {
         loginLock.lock()
+        if !activeLoginPrepared { activeLoginCancelled = false }
+        activeLoginPrepared = true
         activeLoginSemaphore = semaphore
-        activeLoginCancelled = false
         loginLock.unlock()
     }
 
     @nonobjc private static func clearActiveLogin(semaphore: DispatchSemaphore) {
         loginLock.lock()
         if activeLoginSemaphore === semaphore {
+            activeLoginPrepared = false
             activeLoginSemaphore = nil
             activeLoginCancelled = false
         }
@@ -168,6 +192,7 @@ enum VaultOIDCError: Error, LocalizedError {
         defer { listener.cancel() }
         registerActiveLogin(semaphore: callbackSemaphore)
         defer { clearActiveLogin(semaphore: callbackSemaphore) }
+        guard !isActiveLoginCancelled() else { throw VaultOIDCError.cancelled }
 
         let redirectURI = "http://localhost:\(callbackPort.rawValue)/oidc/callback"
 

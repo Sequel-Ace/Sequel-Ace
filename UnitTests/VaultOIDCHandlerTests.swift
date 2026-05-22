@@ -35,6 +35,20 @@ final class VaultOIDCHandlerTests: XCTestCase {
         XCTAssertEqual(semaphore.wait(timeout: .now()), .success)
     }
 
+    func testCancelActiveLoginRecordsCancellationBeforeSemaphoreRegistration() {
+        let semaphore = DispatchSemaphore(value: 0)
+        VaultOIDCHandler.prepareActiveLogin()
+        defer { VaultOIDCHandler.clearActiveLoginForTesting(semaphore: semaphore) }
+
+        VaultOIDCHandler.cancelActiveLogin()
+        XCTAssertTrue(VaultOIDCHandler.isActiveLoginCancelledForTesting())
+
+        VaultOIDCHandler.registerActiveLoginForTesting(semaphore: semaphore)
+
+        XCTAssertTrue(VaultOIDCHandler.isActiveLoginCancelledForTesting())
+        XCTAssertEqual(semaphore.wait(timeout: .now()), .timedOut)
+    }
+
     func testParseQueryParamsExtractsStateAndCode() {
         let requestLine = "GET /oidc/callback?state=abc123&code=xyz HTTP/1.1"
         let params = VaultOIDCHandler.parseQueryParams(from: requestLine)

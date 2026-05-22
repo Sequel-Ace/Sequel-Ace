@@ -536,10 +536,16 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         NSString *credMount = [[self vaultOIDCMount] length] ? [self vaultOIDCMount] : @"oidc";
         NSString *credPath  = [self vaultCredentialsPath];
 
+        [VaultOIDCHandler prepareActiveLogin];
         dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
             NSError *vaultError = nil;
             NSString *outUsername = nil;
             NSString *outPassword = nil;
+
+            if (cancellingConnection) {
+                [VaultOIDCHandler clearPreparedActiveLogin];
+                return;
+            }
 
             BOOL success = [VaultAuthManager generateCredentialsWithHost:credHost
                                                                     port:credPort
@@ -548,6 +554,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                                                                username:&outUsername
                                                                password:&outPassword
                                                                   error:&vaultError];
+            [VaultOIDCHandler clearPreparedActiveLogin];
 
             // User may cancel while the OIDC browser is open; bail without showing an error.
             if (cancellingConnection) {
