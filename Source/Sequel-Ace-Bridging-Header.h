@@ -28,6 +28,10 @@
 //
 
 #import "SPAppController.h"
+#import "SPCustomQuery.h"
+#import "SPTextView.h"
+#import "SPSQLParser.h"
+#import "SPStringAdditions.h"
 #import "SPDatabaseDocument.h"
 #import "SPProcessListController.h"
 #import "SPBundleManager.h"
