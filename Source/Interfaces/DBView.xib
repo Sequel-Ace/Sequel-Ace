@@ -1638,6 +1638,13 @@ Gw
                                                                                                                     <action selector="switchDefaultQueryAction:" target="134" id="8333"/>
                                                                                                                 </connections>
                                                                                                             </menuItem>
+                                                                                                            <menuItem isSeparatorItem="YES" id="AE2-29-1S0"/>
+                                                                                                            <menuItem title="Explain Current Query" keyEquivalent="e" id="AE2-29-1E0">
+                                                                                                                <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
+                                                                                                                <connections>
+                                                                                                                    <action selector="runExplainQueryAction:" target="134" id="AE2-29-1A0"/>
+                                                                                                                </connections>
+                                                                                                            </menuItem>
                                                                                                         </items>
                                                                                                     </menu>
                                                                                                 </popUpButtonCell>
