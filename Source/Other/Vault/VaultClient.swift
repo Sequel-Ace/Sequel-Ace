@@ -102,6 +102,28 @@ final class VaultClient {
         return trimmed.isEmpty ? "oidc" : trimmed
     }
 
+    static func oidcAuthURLRequestBody(redirectURI: String, role: String?, state: String, nonce: String) -> [String: Any] {
+        var body: [String: Any] = [
+            "redirect_uri": redirectURI,
+            "state": state,
+            "client_nonce": nonce,
+        ]
+        if let role = role, !role.isEmpty { body["role"] = role }
+        return body
+    }
+
+    static func oidcCallbackURL(baseURL: URL, mount: String, state: String, nonce: String, code: String) -> URL? {
+        guard var components = URLComponents(url: baseURL.appendingPathComponent("v1/auth/\(effectiveMount(mount))/oidc/callback"), resolvingAgainstBaseURL: false) else {
+            return nil
+        }
+        components.queryItems = [
+            URLQueryItem(name: "state", value: state),
+            URLQueryItem(name: "client_nonce", value: nonce),
+            URLQueryItem(name: "code", value: code)
+        ]
+        return components.url
+    }
+
     // MARK: - Network calls
 
     /// Validate a token. Returns true if valid, false if expired/invalid, throws on network error.
@@ -132,12 +154,7 @@ final class VaultClient {
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 10)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        var body: [String: Any] = [
-            "redirect_uri": redirectURI,
-            "state": state,
-            "nonce": nonce,
-        ]
-        if let role = role, !role.isEmpty { body["role"] = role }
+        let body = oidcAuthURLRequestBody(redirectURI: redirectURI, role: role, state: state, nonce: nonce)
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
         let (data, response, error) = synchronousDataTask(with: request)
@@ -159,15 +176,7 @@ final class VaultClient {
 
     /// Exchange OIDC callback parameters for a Vault token.
     static func oidcCallback(baseURL: URL, mount: String, state: String, nonce: String, code: String) throws -> String {
-        guard var components = URLComponents(url: baseURL.appendingPathComponent("v1/auth/\(effectiveMount(mount))/oidc/callback"), resolvingAgainstBaseURL: false) else {
-            throw VaultClientError.invalidBaseURL
-        }
-        components.queryItems = [
-            URLQueryItem(name: "state", value: state),
-            URLQueryItem(name: "nonce", value: nonce),
-            URLQueryItem(name: "code", value: code)
-        ]
-        guard let url = components.url else { throw VaultClientError.invalidBaseURL }
+        guard let url = oidcCallbackURL(baseURL: baseURL, mount: mount, state: state, nonce: nonce, code: code) else { throw VaultClientError.invalidBaseURL }
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
         request.httpMethod = "GET"
 

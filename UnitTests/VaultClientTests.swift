@@ -110,6 +110,40 @@ final class VaultClientTests: XCTestCase {
         }
     }
 
+    func testOIDCAuthURLRequestBodyUsesClientNonce() {
+        let body = VaultClient.oidcAuthURLRequestBody(
+            redirectURI: "http://localhost:8250/oidc/callback",
+            role: "reader",
+            state: "state-123",
+            nonce: "nonce-123"
+        )
+
+        XCTAssertEqual(body["redirect_uri"] as? String, "http://localhost:8250/oidc/callback")
+        XCTAssertEqual(body["role"] as? String, "reader")
+        XCTAssertEqual(body["state"] as? String, "state-123")
+        XCTAssertEqual(body["client_nonce"] as? String, "nonce-123")
+        XCTAssertNil(body["nonce"], "Vault expects client_nonce, not nonce")
+    }
+
+    func testOIDCCallbackURLUsesClientNonce() throws {
+        let baseURL = try XCTUnwrap(VaultClient.buildBaseURL(host: "vault.example.com", port: "8200"))
+        let url = try XCTUnwrap(VaultClient.oidcCallbackURL(
+            baseURL: baseURL,
+            mount: "oidc",
+            state: "state-123",
+            nonce: "nonce-123",
+            code: "code-123"
+        ))
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        let items = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name, $0.value) })
+
+        XCTAssertEqual(components.path, "/v1/auth/oidc/oidc/callback")
+        XCTAssertEqual(items["state"] ?? nil, "state-123")
+        XCTAssertEqual(items["client_nonce"] ?? nil, "nonce-123")
+        XCTAssertEqual(items["code"] ?? nil, "code-123")
+        XCTAssertNil(items["nonce"] ?? nil, "Vault expects client_nonce, not nonce")
+    }
+
     // MARK: - parseToken
 
     func testParseTokenExtractsClientToken() throws {
