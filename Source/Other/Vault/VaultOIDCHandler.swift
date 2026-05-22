@@ -194,11 +194,13 @@ enum VaultOIDCError: Error, LocalizedError {
     // MARK: - Callback listener
 
     private static func startCallbackListener(onCallback: @escaping ([String: String]) -> Void) throws -> NWListener {
-        // No requiredLocalEndpoint — binding to ::1 only would reject browsers that
-        // reach localhost via IPv4 (127.0.0.1). Without it the OS accepts on whichever
-        // loopback family the browser uses. The path guard below and Vault's server-side
-        // state validation are the real security controls.
+        // Restrict to the loopback interface so the callback port is not reachable
+        // from the network. requiredInterfaceType = .loopback accepts connections
+        // from both 127.0.0.1 (IPv4) and ::1 (IPv6) without restricting to one
+        // address family, which is important because macOS browsers may resolve
+        // "localhost" to either family depending on system configuration.
         let parameters = NWParameters.tcp
+        parameters.requiredInterfaceType = .loopback
         let listener = try NWListener(using: parameters, on: callbackPort)
 
         let readySemaphore = DispatchSemaphore(value: 0)
