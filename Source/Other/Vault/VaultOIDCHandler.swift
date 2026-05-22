@@ -85,15 +85,21 @@ enum VaultOIDCError: Error, LocalizedError {
     /// with a .cancelled error. Safe to call from any thread at any time.
     @objc(cancelActiveLoginWithIdentifier:)
     static func cancelActiveLogin(identifier: String) {
+        // Extract the semaphore under the lock, then signal after releasing it.
+        // Signalling while holding loginLock would block the woken login() thread
+        // (which calls clearActiveLogin → acquires loginLock) until this function
+        // returns — not a deadlock, but unnecessarily delays the cancel path.
+        var semaphoreToSignal: DispatchSemaphore?
         loginLock.lock()
         if var state = activeLogins[identifier] {
             state.cancelled = true
             activeLogins[identifier] = state
-            state.semaphore?.signal()
+            semaphoreToSignal = state.semaphore
         } else {
             activeLogins[identifier] = ActiveLogin(semaphore: nil, cancelled: true)
         }
         loginLock.unlock()
+        semaphoreToSignal?.signal()
     }
 
     static func cancelActiveLogin() {
