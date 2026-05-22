@@ -54,6 +54,11 @@ import OSLog
     // Per-key in-flight coalescing: if two threads simultaneously miss the cache for
     // the same key, the second waits for the first to finish and then reads from cache
     // rather than launching a duplicate OIDC flow and creating extra Vault leases.
+    //
+    // Lock ordering: inFlightCondition is always acquired BEFORE VaultOIDCHandler.loginLock.
+    // The 100ms wait loop checks isActiveLoginCancelled (which acquires loginLock) while
+    // inFlightCondition is held. The reverse order — loginLock then inFlightCondition —
+    // never occurs, so there is no deadlock risk. Do not violate this ordering.
     private static var inFlightKeys = Set<String>()
     private static let inFlightCondition = NSCondition()
 
