@@ -8,6 +8,7 @@
 
 #import <XCTest/XCTest.h>
 #import "SPFunctions.h"
+#import "SPConstants.h"
 
 @interface SPURLAdditionsTests : XCTestCase
 

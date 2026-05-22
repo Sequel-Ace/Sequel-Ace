@@ -313,7 +313,10 @@ BOOL SPExtractConnectionDetailsFromMySQLURL(NSURL *url, NSMutableDictionary *det
 				// by SPDatabaseDocument -setState:fromFile: and normalize the
 				// value to an NSNumber so downstream -intValue is well defined
 				// for the usual truthy strings ("1", "true", "yes", "Y").
-				[details setObject:@([decodedValue boolValue]) forKey:SPFavoriteEnableClearTextPluginKey];
+				// Hardcoded to match SPFavoriteEnableClearTextPluginKey; the
+				// symbolic constant lives in SPConstants.m which is not linked
+				// into the minimal SequelAceTunnelAssistant target.
+				[details setObject:@([decodedValue boolValue]) forKey:@"enableClearTextPlugin"];
 				continue;
 			}
 
