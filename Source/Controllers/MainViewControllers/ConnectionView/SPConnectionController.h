@@ -76,6 +76,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	BOOL isConnecting;
 	BOOL isEditingConnection;
 	BOOL isTestingConnection;
+	NSUInteger connectionAttemptID;
 	
 	// Standard details
 	NSInteger previousType;

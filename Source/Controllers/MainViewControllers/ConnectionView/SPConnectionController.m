@@ -377,6 +377,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     // Basic details have validated - start the connection process animating
     isConnecting = YES;
     cancellingConnection = NO;
+    connectionAttemptID++;
     errorShowing = NO;
 
     // Disable the favorites outline view to prevent further connections attempts
@@ -535,6 +536,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         NSString *credPort  = [[self vaultPort] length] ? [self vaultPort] : @"443";
         NSString *credMount = [[self vaultOIDCMount] length] ? [self vaultOIDCMount] : @"oidc";
         NSString *credPath  = [self vaultCredentialsPath];
+        NSUInteger vaultConnectionAttemptID = connectionAttemptID;
 
         [VaultOIDCHandler prepareActiveLogin];
         dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
@@ -542,7 +544,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             NSString *outUsername = nil;
             NSString *outPassword = nil;
 
-            if (cancellingConnection) {
+            SPConnectionController *strongSelf = weakSelf;
+            if (!strongSelf || strongSelf->cancellingConnection || strongSelf->connectionAttemptID != vaultConnectionAttemptID) {
                 [VaultOIDCHandler clearPreparedActiveLogin];
                 return;
             }
@@ -557,7 +560,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             [VaultOIDCHandler clearPreparedActiveLogin];
 
             // User may cancel while the OIDC browser is open; bail without showing an error.
-            if (cancellingConnection) {
+            strongSelf = weakSelf;
+            if (!strongSelf || strongSelf->cancellingConnection || strongSelf->connectionAttemptID != vaultConnectionAttemptID) {
                 [VaultAuthManager clearCachedCredentialsForHost:credHost
                                                            port:credPort
                                                      oidcMount:credMount
@@ -568,7 +572,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             if (!success || ![outUsername length] || ![outPassword length]) {
                 dispatch_async(dispatch_get_main_queue(), ^{
                     SPConnectionController *strongSelf = weakSelf;
-                    if (!strongSelf) return;
+                    if (!strongSelf || strongSelf->connectionAttemptID != vaultConnectionAttemptID) return;
                     [strongSelf failConnectionWithTitle:NSLocalizedString(@"Vault Authentication Failed", @"Vault auth failed title")
                                           errorMessage:vaultError ? vaultError.localizedDescription : NSLocalizedString(@"Vault returned empty credentials.", @"Vault auth empty creds error")
                                                 detail:nil];
@@ -582,7 +586,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                 SPConnectionController *strongSelf = weakSelf;
                 if (!strongSelf) return;
                 // Second cancel check: user may have hit Cancel while we were on the background queue.
-                if (strongSelf->cancellingConnection) {
+                if (strongSelf->cancellingConnection || strongSelf->connectionAttemptID != vaultConnectionAttemptID) {
                     [VaultAuthManager clearCachedCredentialsForHost:credHost
                                                                port:credPort
                                                          oidcMount:credMount
@@ -621,6 +625,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     [progressIndicatorText display];
 
     cancellingConnection = YES;
+    connectionAttemptID++;
 
     // Abort any in-progress Vault OIDC browser login so the background thread
     // unblocks immediately rather than waiting up to 120 s for a callback.
@@ -2595,6 +2600,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         if (dbDocument == document) {
 
             cancellingConnection = YES;
+            connectionAttemptID++;
             dbDocument = nil;
 
             if (mySQLConnection) {
