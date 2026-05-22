@@ -3412,6 +3412,9 @@
 /* Vault connect-time validation: credentials path field is empty */
 "A Vault credentials path is required to connect." = "A Vault credentials path is required to connect.";
 
+/* Vault connect-time validation: DB host field is empty */
+"A database host is required to connect." = "A database host is required to connect.";
+
 /* Vault connection: error sheet title when credential generation fails */
 "Vault Authentication Failed" = "Vault Authentication Failed";
 

@@ -367,7 +367,12 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                                     callback:nil];
         return;
     }
-
+    if ([self _isVaultConnection] && ![[self host] length]) {
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message")
+                                     message:NSLocalizedString(@"A database host is required to connect.", @"vault db host required connect message")
+                                    callback:nil];
+        return;
+    }
 
     // Basic details have validated - start the connection process animating
     isConnecting = YES;
