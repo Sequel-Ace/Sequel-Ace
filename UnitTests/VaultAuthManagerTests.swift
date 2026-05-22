@@ -108,7 +108,7 @@ final class VaultAuthManagerTests: XCTestCase {
 
         // Different token — entry must be evicted.
         let miss = VaultAuthManager.cachedCredentials(for: "path/a", matchingToken: "new-token")
-        XCTAssertNil(miss, "Cache must be invalidated when ~/.vault-token changes to a different identity")
+        XCTAssertNil(miss, "Cache must be invalidated when the Vault token changes to a different identity")
 
         // Entry should now be gone from the cache entirely.
         let gone = VaultAuthManager.cachedCredentials(for: "path/a")

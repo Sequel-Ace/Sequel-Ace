@@ -150,14 +150,14 @@ import OSLog
         let trimmedMount = oidcMount.trimmingCharacters(in: .whitespacesAndNewlines)
         let effectiveMount = trimmedMount.isEmpty ? "oidc" : trimmedMount
 
-        // Read the best available token for this host: in-session per-host map takes
-        // priority over ~/.vault-token so we never forward a token to the wrong server.
+        // Read the best available token for this host: in-session per-host map first,
+        // then the Keychain item scoped to this Vault address.
         let preReadToken = VaultOIDCHandler.cachedToken(for: baseURL)
 
         let key = cacheKey(baseURL: baseURL, oidcMount: effectiveMount, credPath: effectiveCredPath)
 
         // Return cached credentials if still valid under the same Vault identity.
-        // Passing preReadToken evicts the entry when ~/.vault-token has changed.
+        // Passing preReadToken evicts the entry when the known token changes.
         if let cached = cachedCredentials(for: key, matchingToken: preReadToken) {
             username.pointee = cached.username as NSString
             password.pointee = cached.password as NSString

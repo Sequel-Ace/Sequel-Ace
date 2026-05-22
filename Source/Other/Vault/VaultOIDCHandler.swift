@@ -5,13 +5,14 @@
 //  Handles the browser-based OIDC login flow. Binds a local HTTP server on
 //  a random port, opens the Vault OIDC auth URL in the system browser, waits
 //  for the callback, exchanges the code for a Vault token, and persists it
-//  to ~/.vault-token (mode 0600).
+//  in the user's Keychain scoped to the Vault server URL.
 //
 
 import Foundation
 import Network
 import AppKit
 import OSLog
+import Security
 
 enum VaultOIDCError: Error, LocalizedError {
     case cancelled
@@ -40,7 +41,7 @@ enum VaultOIDCError: Error, LocalizedError {
 
     private static let log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "VaultOIDC")
     private static let callbackTimeoutSeconds: TimeInterval = 120
-    private static let vaultTokenFileName = ".vault-token"
+    private static let keychainService = "Sequel Ace Vault Token"
 
     // MARK: - Cancellation
 
@@ -58,25 +59,53 @@ enum VaultOIDCError: Error, LocalizedError {
     // MARK: - Per-host token scoping
 
     // Tokens stored in this map were obtained in the current process for a specific
-    // Vault server. Always prefer these over ~/.vault-token to avoid forwarding a
-    // token minted for host A to host B during tokenLookupSelf.
+    // Vault server. The Keychain fallback is keyed by the same Vault server URL.
     private static let hostTokenLock = NSLock()
     private static var tokenByHost: [String: String] = [:]
+    private static let persistedTokenLock = NSLock()
+    private static var persistedTokenByHostForTesting: [String: String]?
 
-    /// Best available token for `baseURL`. Checks the in-session per-host map first;
-    /// falls back to ~/.vault-token so tokens created by the Vault CLI are reused.
+    /// Best available token for `baseURL`. Checks the in-session per-host map first,
+    /// then reuses a Keychain token stored for the exact same Vault server URL.
     static func cachedToken(for baseURL: URL) -> String? {
         hostTokenLock.lock()
         let hostToken = tokenByHost[baseURL.absoluteString]
         hostTokenLock.unlock()
         if let t = hostToken { return t }
-        return readCachedToken()
+
+        guard let token = readPersistedToken(for: baseURL) else { return nil }
+        storeToken(token, for: baseURL)
+        return token
     }
 
     private static func storeToken(_ token: String, for baseURL: URL) {
         hostTokenLock.lock()
         defer { hostTokenLock.unlock() }
         tokenByHost[baseURL.absoluteString] = token
+    }
+
+    static func clearCachedTokensForTesting() {
+        hostTokenLock.lock()
+        tokenByHost.removeAll()
+        hostTokenLock.unlock()
+    }
+
+    static func useInMemoryTokenStoreForTesting() {
+        persistedTokenLock.lock()
+        persistedTokenByHostForTesting = [:]
+        persistedTokenLock.unlock()
+    }
+
+    static func clearInMemoryTokenStoreForTesting() {
+        persistedTokenLock.lock()
+        persistedTokenByHostForTesting?.removeAll()
+        persistedTokenLock.unlock()
+    }
+
+    static func disableInMemoryTokenStoreForTesting() {
+        persistedTokenLock.lock()
+        persistedTokenByHostForTesting = nil
+        persistedTokenLock.unlock()
     }
 
     /// Fixed callback port matching vault-plugin-auth-jwt CLIHandler default (8250).
@@ -168,10 +197,9 @@ enum VaultOIDCError: Error, LocalizedError {
             throw VaultOIDCError.vaultError(error)
         }
 
-        // 7. Persist to ~/.vault-token (mode 0600, shared with vault CLI) and
-        //    record in the per-host map so subsequent connects to this host use
-        //    this token without risking forwarding it to a different host.
-        saveToken(token)
+        // 7. Persist in the user's Keychain for this Vault server and keep an
+        //    in-process per-host copy so the token is never forwarded elsewhere.
+        saveToken(token, for: baseURL)
         storeToken(token, for: baseURL)
 
         // 8. Bring the app back to the foreground now that the browser auth is done.
@@ -182,52 +210,97 @@ enum VaultOIDCError: Error, LocalizedError {
 
     // MARK: - Token persistence
 
-    /// Override the token file path for testing. When nil the real ~/.vault-token is used.
-    static var tokenFilePathOverride: String?
+    static func saveToken(_ token: String, for baseURL: URL) {
+        let account = keychainAccount(for: baseURL)
 
-    static func tokenFilePath() -> String {
-        if let override = tokenFilePathOverride { return override }
-        let home = NSHomeDirectory()
-        return (home as NSString).appendingPathComponent(vaultTokenFileName)
-    }
-
-    static func saveToken(_ token: String) {
-        let path = tokenFilePath()
-        // ~/.vault-token is the conventional location shared with the Vault CLI.
-        // We use this instead of the Keychain so tokens are interoperable with the
-        // Vault CLI without extra setup.
-        // Open with O_CREAT so mode 0600 is applied at creation time by the kernel —
-        // avoids the race window that exists when writing and then calling setAttributes.
-        let fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0o600)
-        guard fd >= 0 else {
-            os_log("Failed to open ~/.vault-token for writing: errno=%d", log: log, type: .error, Darwin.errno)
+        persistedTokenLock.lock()
+        if persistedTokenByHostForTesting != nil {
+            persistedTokenByHostForTesting?[account] = token
+            persistedTokenLock.unlock()
             return
         }
-        defer { close(fd) }
-        // Enforce 0600 even if the file already existed — O_CREAT mode only applies at creation time.
-        if fchmod(fd, 0o600) != 0 {
-            os_log("Failed to set ~/.vault-token permissions: errno=%d", log: log, type: .error, Darwin.errno)
+        persistedTokenLock.unlock()
+
+        let tokenData = Data(token.utf8)
+        let baseQuery = keychainQuery(account: account)
+        let updateStatus = SecItemUpdate(baseQuery as CFDictionary, [
+            kSecValueData as String: tokenData
+        ] as CFDictionary)
+
+        if updateStatus == errSecSuccess { return }
+        guard updateStatus == errSecItemNotFound else {
+            os_log("Failed to update Vault token in Keychain: status=%d", log: log, type: .error, updateStatus)
+            return
         }
-        let data = Data(token.utf8)
-        guard !data.isEmpty else { return }
-        var totalWritten = 0
-        data.withUnsafeBytes { buffer in
-            while totalWritten < buffer.count {
-                let n = write(fd, buffer.baseAddress!.advanced(by: totalWritten), buffer.count - totalWritten)
-                if n <= 0 {
-                    os_log("Failed to write ~/.vault-token: errno=%d", log: log, type: .error, Darwin.errno)
-                    return
-                }
-                totalWritten += n
-            }
+
+        var addQuery = baseQuery
+        addQuery[kSecValueData as String] = tokenData
+        addQuery[kSecAttrLabel as String] = "Sequel Ace Vault Token"
+        addQuery[kSecAttrDescription as String] = "Vault token for \(account)"
+        let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
+        if addStatus != errSecSuccess {
+            os_log("Failed to save Vault token in Keychain: status=%d", log: log, type: .error, addStatus)
         }
     }
 
-    static func readCachedToken() -> String? {
-        let path = tokenFilePath()
-        guard let data = try? String(contentsOfFile: path, encoding: .utf8) else { return nil }
-        let token = data.trimmingCharacters(in: .whitespacesAndNewlines)
-        return token.isEmpty ? nil : token
+    private static func readPersistedToken(for baseURL: URL) -> String? {
+        let account = keychainAccount(for: baseURL)
+
+        persistedTokenLock.lock()
+        if let persistedTokenByHostForTesting {
+            let token = persistedTokenByHostForTesting[account]
+            persistedTokenLock.unlock()
+            return token
+        }
+        persistedTokenLock.unlock()
+
+        var query = keychainQuery(account: account)
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+
+        var result: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        guard status == errSecSuccess else {
+            if status != errSecItemNotFound {
+                os_log("Failed to read Vault token from Keychain: status=%d", log: log, type: .error, status)
+            }
+            return nil
+        }
+        guard let data = result as? Data,
+              let token = String(data: data, encoding: .utf8),
+              !token.isEmpty else {
+            return nil
+        }
+        return token
+    }
+
+    private static func keychainAccount(for baseURL: URL) -> String {
+        baseURL.absoluteString
+    }
+
+    private static func keychainQuery(account: String) -> [String: Any] {
+        [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: keychainService,
+            kSecAttrAccount as String: account
+        ]
+    }
+
+    static func keychainTokenExistsForTesting(baseURL: URL) -> Bool {
+        let account = keychainAccount(for: baseURL)
+        persistedTokenLock.lock()
+        if let persistedTokenByHostForTesting {
+            let exists = persistedTokenByHostForTesting[account] != nil
+            persistedTokenLock.unlock()
+            return exists
+        }
+        persistedTokenLock.unlock()
+
+        var query = keychainQuery(account: account)
+        query[kSecReturnAttributes as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        var result: CFTypeRef?
+        return SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess
     }
 
     // MARK: - ObjC bridge

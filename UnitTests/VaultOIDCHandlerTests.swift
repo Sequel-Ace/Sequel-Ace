@@ -5,26 +5,18 @@ import XCTest
 
 final class VaultOIDCHandlerTests: XCTestCase {
 
-    // MARK: - Token file isolation
-
-    private var tempTokenDir: URL?
+    // MARK: - Token store isolation
 
     override func setUp() {
         super.setUp()
-        // Point VaultOIDCHandler at a private temp file instead of the real ~/.vault-token
-        // so tests never read, write, or delete the developer's Vault CLI session.
-        let dir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("VaultOIDCHandlerTests-\(UUID().uuidString)")
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        tempTokenDir = dir
-        VaultOIDCHandler.tokenFilePathOverride = dir.appendingPathComponent(".vault-token").path
+        VaultOIDCHandler.clearCachedTokensForTesting()
+        VaultOIDCHandler.useInMemoryTokenStoreForTesting()
     }
 
     override func tearDown() {
-        VaultOIDCHandler.tokenFilePathOverride = nil
-        if let dir = tempTokenDir {
-            try? FileManager.default.removeItem(at: dir)
-        }
+        VaultOIDCHandler.clearCachedTokensForTesting()
+        VaultOIDCHandler.clearInMemoryTokenStoreForTesting()
+        VaultOIDCHandler.disableInMemoryTokenStoreForTesting()
         super.tearDown()
     }
 
@@ -87,43 +79,41 @@ final class VaultOIDCHandlerTests: XCTestCase {
         XCTAssertEqual(tokens.count, 50, "Tokens should be unique across invocations")
     }
 
-    // MARK: - saveToken / readCachedToken roundtrip
+    // MARK: - host-scoped token persistence
 
-    func testSaveAndReadRoundtrip() {
+    func testSaveAndReadRoundtripForVaultAddress() {
+        let baseURL = VaultClient.buildBaseURL(host: "vault-prod.example.com", port: "443")!
         let testToken = "test-hvs-\(UUID().uuidString)"
-        VaultOIDCHandler.saveToken(testToken)
-        let result = VaultOIDCHandler.readCachedToken()
-        XCTAssertEqual(result, testToken)
+
+        VaultOIDCHandler.saveToken(testToken, for: baseURL)
+        VaultOIDCHandler.clearCachedTokensForTesting()
+
+        XCTAssertEqual(VaultOIDCHandler.cachedToken(for: baseURL), testToken)
     }
 
-    func testReadCachedTokenReturnsNilWhenFileAbsent() {
-        try? FileManager.default.removeItem(atPath: VaultOIDCHandler.tokenFilePath())
-        XCTAssertNil(VaultOIDCHandler.readCachedToken())
+    func testCachedTokenReturnsNilWhenNoTokenExistsForVaultAddress() {
+        let baseURL = VaultClient.buildBaseURL(host: "vault-prod.example.com", port: "443")!
+
+        XCTAssertNil(VaultOIDCHandler.cachedToken(for: baseURL))
     }
 
-    func testReadCachedTokenTrimsWhitespace() {
-        let path = VaultOIDCHandler.tokenFilePath()
-        try? "  hvs.abc123\n".write(toFile: path, atomically: true, encoding: .utf8)
-        XCTAssertEqual(VaultOIDCHandler.readCachedToken(), "hvs.abc123")
+    func testCachedTokenRejectsPersistedTokenForDifferentVaultAddress() {
+        let prodURL = VaultClient.buildBaseURL(host: "vault-prod.example.com", port: "443")!
+        let stagingURL = VaultClient.buildBaseURL(host: "vault-staging.example.com", port: "443")!
+
+        VaultOIDCHandler.saveToken("prod-token", for: prodURL)
+        VaultOIDCHandler.clearCachedTokensForTesting()
+
+        XCTAssertNil(VaultOIDCHandler.cachedToken(for: stagingURL))
     }
 
-    func testTokenFileHasMode0600() throws {
-        VaultOIDCHandler.saveToken("test-token")
-        let attrs = try FileManager.default.attributesOfItem(atPath: VaultOIDCHandler.tokenFilePath())
-        let perms = attrs[.posixPermissions] as? Int
-        XCTAssertEqual(perms, 0o600, "~/.vault-token must be mode 0600")
-    }
+    func testCachedTokenUsesInSessionTokenBeforePersistedToken() {
+        let baseURL = VaultClient.buildBaseURL(host: "vault-prod.example.com", port: "443")!
 
-    // MARK: - tokenFilePath
+        VaultOIDCHandler.saveToken("persisted-token", for: baseURL)
+        XCTAssertEqual(VaultOIDCHandler.cachedToken(for: baseURL), "persisted-token")
+        VaultOIDCHandler.saveToken("new-persisted-token", for: baseURL)
 
-    func testTokenFilePathIsInHomeDirectory() {
-        // Temporarily clear the test override to exercise the real production path.
-        let savedOverride = VaultOIDCHandler.tokenFilePathOverride
-        VaultOIDCHandler.tokenFilePathOverride = nil
-        let path = VaultOIDCHandler.tokenFilePath()
-        VaultOIDCHandler.tokenFilePathOverride = savedOverride
-
-        XCTAssertTrue(path.hasPrefix(NSHomeDirectory()))
-        XCTAssertTrue(path.hasSuffix(".vault-token"))
+        XCTAssertEqual(VaultOIDCHandler.cachedToken(for: baseURL), "persisted-token")
     }
 }

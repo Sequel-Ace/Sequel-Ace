@@ -586,7 +586,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                 [strongSelf.connectionService connectWith:info
                                              preferences:preferences
                                                 password:capturedPassword
-                                             sshPassword:nil
+                                             sshPassword:@""
                                             parentWindow:[strongSelf->dbDocument parentWindowControllerWindow]
                                               completion:connectCompletion];
             });
