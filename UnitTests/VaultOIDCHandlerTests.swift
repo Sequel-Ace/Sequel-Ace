@@ -117,7 +117,12 @@ final class VaultOIDCHandlerTests: XCTestCase {
     // MARK: - tokenFilePath
 
     func testTokenFilePathIsInHomeDirectory() {
+        // Temporarily clear the test override to exercise the real production path.
+        let savedOverride = VaultOIDCHandler.tokenFilePathOverride
+        VaultOIDCHandler.tokenFilePathOverride = nil
         let path = VaultOIDCHandler.tokenFilePath()
+        VaultOIDCHandler.tokenFilePathOverride = savedOverride
+
         XCTAssertTrue(path.hasPrefix(NSHomeDirectory()))
         XCTAssertTrue(path.hasSuffix(".vault-token"))
     }
