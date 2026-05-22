@@ -55,8 +55,9 @@ enum VaultOIDCError: Error, LocalizedError {
     static func prepareActiveLogin() {
         loginLock.lock()
         activeLoginPrepared = true
-        activeLoginSemaphore = nil
-        activeLoginCancelled = false
+        if activeLoginSemaphore == nil {
+            activeLoginCancelled = false
+        }
         loginLock.unlock()
     }
 
