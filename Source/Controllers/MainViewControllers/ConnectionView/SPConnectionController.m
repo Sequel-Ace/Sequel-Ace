@@ -1480,16 +1480,23 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         }
     }
 
-    // And the same for the SSH password
-    connectionSSHKeychainItemName = !fav ? nil : [keychain nameForSSHForFavoriteName:[fav objectForKey:SPFavoriteNameKey] id:[fav objectForKey:SPFavoriteIDKey]];
-    connectionSSHKeychainItemAccount = !fav ? nil : [keychain accountForSSHUser:[fav objectForKey:SPFavoriteSSHUserKey] sshHost:[fav objectForKey:SPFavoriteSSHHostKey]];
-
-    if(fav) {
-        [self setSshPassword:[keychain getPasswordForName:connectionSSHKeychainItemName account:connectionSSHKeychainItemAccount]];
-    }
-
-    if (!fav || ![[self sshPassword] length]) {
+    // And the same for the SSH password. Vault connections do not use SSH
+    // tunnels, so do not hydrate stale SSH keychain entries from old favorites.
+    if ([self type] == SPVaultConnection) {
+        connectionSSHKeychainItemName = nil;
+        connectionSSHKeychainItemAccount = nil;
         [self setSshPassword:nil];
+    } else {
+        connectionSSHKeychainItemName = !fav ? nil : [keychain nameForSSHForFavoriteName:[fav objectForKey:SPFavoriteNameKey] id:[fav objectForKey:SPFavoriteIDKey]];
+        connectionSSHKeychainItemAccount = !fav ? nil : [keychain accountForSSHUser:[fav objectForKey:SPFavoriteSSHUserKey] sshHost:[fav objectForKey:SPFavoriteSSHHostKey]];
+
+        if(fav) {
+            [self setSshPassword:[keychain getPasswordForName:connectionSSHKeychainItemName account:connectionSSHKeychainItemAccount]];
+        }
+
+        if (!fav || ![[self sshPassword] length]) {
+            [self setSshPassword:nil];
+        }
     }
 
     [prefs setInteger:[[fav objectForKey:SPFavoriteIDKey] integerValue] forKey:SPLastFavoriteID];
@@ -2018,12 +2025,21 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     [theFavorite setObject:[NSNumber numberWithInteger:[self sslCACertFileLocationEnabled]] forKey:SPFavoriteSSLCACertFileLocationEnabledKey];
     _setOrRemoveKey(SPFavoriteSSLCACertFileLocationKey, [self sslCACertFileLocation]);
 
-    // SSH details
-    _setOrRemoveKey(SPFavoriteSSHHostKey, [self sshHost]);
-    _setOrRemoveKey(SPFavoriteSSHUserKey, [self sshUser]);
-    _setOrRemoveKey(SPFavoriteSSHPortKey, [self sshPort]);
-    [theFavorite setObject:[NSNumber numberWithInteger:[self sshKeyLocationEnabled]] forKey:SPFavoriteSSHKeyLocationEnabledKey];
-    _setOrRemoveKey(SPFavoriteSSHKeyLocationKey, [self sshKeyLocation]);
+    // SSH details. Vault credentials are generated directly from Vault and
+    // cannot be combined with an SSH tunnel; remove stale SSH favorite fields.
+    if ([self type] == SPVaultConnection) {
+        [theFavorite removeObjectForKey:SPFavoriteSSHHostKey];
+        [theFavorite removeObjectForKey:SPFavoriteSSHUserKey];
+        [theFavorite removeObjectForKey:SPFavoriteSSHPortKey];
+        [theFavorite removeObjectForKey:SPFavoriteSSHKeyLocationEnabledKey];
+        [theFavorite removeObjectForKey:SPFavoriteSSHKeyLocationKey];
+    } else {
+        _setOrRemoveKey(SPFavoriteSSHHostKey, [self sshHost]);
+        _setOrRemoveKey(SPFavoriteSSHUserKey, [self sshUser]);
+        _setOrRemoveKey(SPFavoriteSSHPortKey, [self sshPort]);
+        [theFavorite setObject:[NSNumber numberWithInteger:[self sshKeyLocationEnabled]] forKey:SPFavoriteSSHKeyLocationEnabledKey];
+        _setOrRemoveKey(SPFavoriteSSHKeyLocationKey, [self sshKeyLocation]);
+    }
 
 
     /*
@@ -2083,41 +2099,50 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     /*
      * Password handling for the SSH connection
      */
-    NSString *theSSHPassword = [self sshPassword];
-    if (mySQLConnection && connectionSSHKeychainItemName) {
-        theSSHPassword = [keychain getPasswordForName:connectionSSHKeychainItemName account:connectionSSHKeychainItemAccount];
-    }
-
-    // If creating a new favourite, always add the password if it's set
-    if (createNewFavorite && [theSSHPassword length]) {
-        [keychain addPassword:theSSHPassword
-                      forName:[keychain nameForSSHForFavoriteName:[theFavorite objectForKey:SPFavoriteNameKey] id:[theFavorite objectForKey:SPFavoriteIDKey]]
-                      account:[keychain accountForSSHUser:[self sshUser] sshHost:[self sshHost]]];
-    }
-
-    // If not creating a new favourite...
-    if (!createNewFavorite) {
-
-        // Get the old keychain name and account strings
-        oldKeychainName = [keychain nameForSSHForFavoriteName:[currentFavorite objectForKey:SPFavoriteNameKey] id:[currentFavorite objectForKey:SPFavoriteIDKey]];
-        oldKeychainAccount = [keychain accountForSSHUser:[currentFavorite objectForKey:SPFavoriteSSHUserKey] sshHost:[currentFavorite objectForKey:SPFavoriteSSHHostKey]];
-
-        // If there's no new password, remove the old item from the keychain
-        if (![theSSHPassword length]) {
+    if ([self type] == SPVaultConnection) {
+        // Remove any SSH password left behind when converting an SSH favorite to Vault.
+        if (!createNewFavorite) {
+            oldKeychainName = [keychain nameForSSHForFavoriteName:[currentFavorite objectForKey:SPFavoriteNameKey] id:[currentFavorite objectForKey:SPFavoriteIDKey]];
+            oldKeychainAccount = [keychain accountForSSHUser:[currentFavorite objectForKey:SPFavoriteSSHUserKey] sshHost:[currentFavorite objectForKey:SPFavoriteSSHHostKey]];
             [keychain deletePasswordForName:oldKeychainName account:oldKeychainAccount];
+        }
+    } else {
+        NSString *theSSHPassword = [self sshPassword];
+        if (mySQLConnection && connectionSSHKeychainItemName) {
+            theSSHPassword = [keychain getPasswordForName:connectionSSHKeychainItemName account:connectionSSHKeychainItemAccount];
+        }
 
-        // Otherwise, set up the new keychain name and account strings and create or edit the item
-        } else {
-            newKeychainName = [keychain nameForSSHForFavoriteName:[theFavorite objectForKey:SPFavoriteNameKey] id:[theFavorite objectForKey:SPFavoriteIDKey]];
-            newKeychainAccount = [keychain accountForSSHUser:[self sshUser] sshHost:[self sshHost]];
-            if ([keychain passwordExistsForName:oldKeychainName account:oldKeychainAccount]) {
-                [keychain updateItemWithName:oldKeychainName account:oldKeychainAccount toName:newKeychainName account:newKeychainAccount password:theSSHPassword];
+        // If creating a new favourite, always add the password if it's set
+        if (createNewFavorite && [theSSHPassword length]) {
+            [keychain addPassword:theSSHPassword
+                          forName:[keychain nameForSSHForFavoriteName:[theFavorite objectForKey:SPFavoriteNameKey] id:[theFavorite objectForKey:SPFavoriteIDKey]]
+                          account:[keychain accountForSSHUser:[self sshUser] sshHost:[self sshHost]]];
+        }
+
+        // If not creating a new favourite...
+        if (!createNewFavorite) {
+
+            // Get the old keychain name and account strings
+            oldKeychainName = [keychain nameForSSHForFavoriteName:[currentFavorite objectForKey:SPFavoriteNameKey] id:[currentFavorite objectForKey:SPFavoriteIDKey]];
+            oldKeychainAccount = [keychain accountForSSHUser:[currentFavorite objectForKey:SPFavoriteSSHUserKey] sshHost:[currentFavorite objectForKey:SPFavoriteSSHHostKey]];
+
+            // If there's no new password, remove the old item from the keychain
+            if (![theSSHPassword length]) {
+                [keychain deletePasswordForName:oldKeychainName account:oldKeychainAccount];
+
+            // Otherwise, set up the new keychain name and account strings and create or edit the item
             } else {
-                [keychain addPassword:theSSHPassword forName:newKeychainName account:newKeychainAccount];
+                newKeychainName = [keychain nameForSSHForFavoriteName:[theFavorite objectForKey:SPFavoriteNameKey] id:[theFavorite objectForKey:SPFavoriteIDKey]];
+                newKeychainAccount = [keychain accountForSSHUser:[self sshUser] sshHost:[self sshHost]];
+                if ([keychain passwordExistsForName:oldKeychainName account:oldKeychainAccount]) {
+                    [keychain updateItemWithName:oldKeychainName account:oldKeychainAccount toName:newKeychainName account:newKeychainAccount password:theSSHPassword];
+                } else {
+                    [keychain addPassword:theSSHPassword forName:newKeychainName account:newKeychainAccount];
+                }
             }
         }
+        theSSHPassword = nil;
     }
-    theSSHPassword = nil;
 
     /*
      * Saving the connection
