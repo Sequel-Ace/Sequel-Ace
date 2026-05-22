@@ -173,7 +173,10 @@ import OSLog
             inFlightCondition.wait()
         }
         // Re-check cache after waking — the in-flight thread may have populated it.
-        if let cached = cachedCredentials(for: key, matchingToken: preReadToken) {
+        // Re-read the token: the in-flight thread may have obtained a new one via OIDC,
+        // so the pre-wait preReadToken could be stale and would evict the fresh entry.
+        let postWaitToken = VaultOIDCHandler.readCachedToken()
+        if let cached = cachedCredentials(for: key, matchingToken: postWaitToken) {
             inFlightCondition.unlock()
             username.pointee = cached.username as NSString
             password.pointee = cached.password as NSString
