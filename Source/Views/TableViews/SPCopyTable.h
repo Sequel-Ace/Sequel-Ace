@@ -115,6 +115,15 @@ extern NSInteger SPEditMenuCopyAsSQLNoAutoInc;
 - (NSString *)displayStringForRow:(NSInteger)row column:(NSInteger)visibleColumn;
 
 /*!
+	@method  isNullAtRow:column:
+	@abstract   YES when the raw storage cell at the given position is SQL NULL.
+	@discussion Used alongside -displayStringForRow:column: when publishing a
+	  dragged cell's payload so the drop target can distinguish a genuine
+	  NULL from a user's custom "NULL" placeholder string.
+*/
+- (BOOL)isNullAtRow:(NSInteger)row column:(NSInteger)visibleColumn;
+
+/*!
 	@method	 draggingSourceOperationMaskForLocal:
 	@discussion Allows for dragging out of the table to other applications
 	@param	  isLocal who cares

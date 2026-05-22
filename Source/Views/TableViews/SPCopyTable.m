@@ -840,6 +840,20 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 	return [cellData description];
 }
 
+- (BOOL)isNullAtRow:(NSInteger)row column:(NSInteger)visibleColumn
+{
+	NSArray *columns = [self tableColumns];
+	NSInteger numColumns = (NSInteger)[columns count];
+	if (row < 0 || visibleColumn < 0 || visibleColumn >= numColumns) return NO;
+	if (!tableStorage || (NSUInteger)row >= [tableStorage count]) return NO;
+
+	NSUInteger storageIndex = (NSUInteger)[[[columns safeObjectAtIndex:(NSUInteger)visibleColumn] identifier] integerValue];
+	if (storageIndex >= [tableStorage columnCount]) return NO;
+
+	id cellData = SPDataStorageObjectAtRowAndColumn(tableStorage, (NSUInteger)row, storageIndex);
+	return (cellData != nil) && [cellData isNSNull];
+}
+
 #pragma mark -
 
 /**

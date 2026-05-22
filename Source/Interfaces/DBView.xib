@@ -1015,7 +1015,7 @@
                                                                             <rect key="frame" x="0.0" y="0.0" width="576" height="29"/>
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
-                                                                                <ruleEditor nestingMode="compound" canRemoveAllRows="YES" rowHeight="29" id="FF9-z2-9od">
+                                                                                <ruleEditor nestingMode="compound" canRemoveAllRows="YES" rowHeight="29" id="FF9-z2-9od" customClass="SPFilterRuleEditor" customModule="Sequel_Ace" customModuleProvider="target">
                                                                                     <rect key="frame" x="0.0" y="0.0" width="576" height="29"/>
                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" flexibleMaxY="YES"/>
                                                                                     <connections>

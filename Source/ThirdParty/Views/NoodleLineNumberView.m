@@ -213,6 +213,8 @@ typedef NSRange (*RangeOfLineIMP)(id object, SEL selector, NSRange range);
 	
 	if ([view isKindOfClass:[NSTextView class]])
 	{
+		// Account for the textContainerInset the drawing path adds, so a gutter click maps to the line drawn there (#2236)
+		location -= [(NSTextView *)view textContainerInset].height;
 
 		nullRange = NSMakeRange(NSNotFound, 0);
 		count = [lines count];

@@ -8,80 +8,51 @@
 
 import Cocoa
 
-/// Holder for the custom pasteboard-type identifier used to transfer a
-/// single result-grid cell value onto a filter-rule input. Exists as an
-/// `@objc` class so the raw identifier string can be referenced from
-/// Objective-C (the drag source) and Swift (the drop target) without
-/// duplicating the constant.
+/// Holder for the pasteboard-type identifiers used to transfer a
+/// result-grid cell onto the Content-tab filter. Exposed as an `@objc`
+/// class so the string constants can be referenced from both the
+/// Objective-C drag source (`SPTableContent`) and the Swift drop
+/// targets (`SPFilterRuleEditor`, `SPRuleFilterDropBox`) without
+/// duplicating them.
 @objc public class SPCellValuePasteboard: NSObject {
-    /// Reverse-DNS identifier of the custom pasteboard type.
-    @objc public static let pasteboardTypeRaw: String = "com.sequel-ace.cell-value"
+    /// Reverse-DNS identifier of the cell-as-row pasteboard type. The
+    /// payload is a property-list dictionary carrying enough context
+    /// for a drop target to synthesize a full filter rule – column,
+    /// value, and value-kind marker (see the `row*` keys below).
+    @objc public static let pasteboardRowTypeRaw: String = "com.sequel-ace.cell-row"
+
+    /// Key for the column name inside the `pasteboardRowTypeRaw` plist.
+    @objc public static let rowColumnNameKey: String = "columnName"
+
+    /// Key for the display value inside the `pasteboardRowTypeRaw` plist.
+    @objc public static let rowValueKey: String = "value"
+
+    /// Key for the kind-of-value marker inside the `pasteboardRowTypeRaw`
+    /// plist. Used so a drop target can map a NULL cell to an `IS NULL`
+    /// operator instead of inserting the literal string "NULL".
+    @objc public static let rowValueKindKey: String = "valueKind"
+
+    /// Marker value written under `rowValueKindKey` for SQL NULL cells.
+    @objc public static let rowValueKindNull: String = "NULL"
+
+    /// Marker value written under `rowValueKindKey` for ordinary string cells.
+    @objc public static let rowValueKindString: String = "string"
 }
 
-/// `NSTextField` subclass used for the argument input of a filter rule
-/// row in the Content tab's rule-editor filter. Accepts drops of a
-/// single cell value dragged out of the result table and populates its
-/// own string.
+/// `NSTextField` subclass used for the argument input of a rule row.
 ///
-/// Why: the result-grid drag source also writes the whole row as a SQL
-/// `INSERT` statement / tab-separated values for drops onto Terminal, a
-/// text editor, etc. We don't want those long strings to land in the
-/// filter field. Registering for our custom type lets us accept only
-/// the clicked cell's value.
+/// The subclass currently has no per-field behaviour – drag-and-drop is
+/// handled at the rule-editor level by `SPFilterRuleEditor` so dropping
+/// a cell replaces the whole rule rather than just the argument value.
+/// The type is kept as a seam for future per-field customisation
+/// without having to re-plumb `SPRuleFilterController`'s text-field
+/// instantiation.
 @objc public class SPFilterRuleTextField: NSTextField {
-    private static let cellValueType = NSPasteboard.PasteboardType(SPCellValuePasteboard.pasteboardTypeRaw)
-
-    /// Programmatic initializer used by the rule-editor controller that
-    /// allocates these fields at runtime. Registers for the custom
-    /// pasteboard type so drops route through the view's drag handlers.
     override public init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
-        registerForDraggedTypes([Self.cellValueType])
     }
 
-    /// Nib-loading initializer. Retained for parity with
-    /// `NSTextField`'s designated initializer surface – the rule editor
-    /// currently instantiates this class programmatically.
     public required init?(coder: NSCoder) {
         super.init(coder: coder)
-        registerForDraggedTypes([Self.cellValueType])
-    }
-
-    /// Accept the drag only when the custom cell-value type is on the
-    /// pasteboard; otherwise the user sees the default no-drop cursor
-    /// and any unrelated string/URL payload falls through to AppKit.
-    override public func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        guard sender.draggingPasteboard.availableType(from: [Self.cellValueType]) != nil else {
-            return []
-        }
-        return .copy
-    }
-
-    /// Keep the drag feedback consistent while the pointer hovers; the
-    /// decision is re-evaluated on every movement in case AppKit adjusts
-    /// pasteboard contents during the session.
-    override public func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
-        guard sender.draggingPasteboard.availableType(from: [Self.cellValueType]) != nil else {
-            return []
-        }
-        return .copy
-    }
-
-    /// Gate the real drop on the custom type being present so
-    /// `performDragOperation(_:)` doesn't run for accidental text drags.
-    override public func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        return sender.draggingPasteboard.availableType(from: [Self.cellValueType]) != nil
-    }
-
-    /// Read the custom payload and assign it to `stringValue`. The filter
-    /// is not auto-applied; the user hits Return (or clicks Apply
-    /// Filters) to run the query, matching the flow of typing a value
-    /// into the field directly.
-    override public func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        guard let value = sender.draggingPasteboard.string(forType: Self.cellValueType) else {
-            return false
-        }
-        self.stringValue = value
-        return true
     }
 }
