@@ -1428,15 +1428,21 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
     // Check whether the password exists in the keychain, and if so add it; also record the
     // keychain details so we can pass around only those details if the password doesn't change
-    connectionKeychainItemName = !fav ? nil : [keychain nameForFavoriteName:[fav objectForKey:SPFavoriteNameKey] id:[fav objectForKey:SPFavoriteIDKey]];
-    connectionKeychainItemAccount = !fav ? nil : [keychain accountForUser:[fav objectForKey:SPFavoriteUserKey] host:(([self type] == SPSocketConnection) ? @"localhost" : [fav objectForKey:SPFavoriteHostKey]) database:[fav objectForKey:SPFavoriteDatabaseKey]];
-
-    if(fav) {
-        [self setPassword:[keychain getPasswordForName:connectionKeychainItemName account:connectionKeychainItemAccount]];
-    }
-
-    if (!fav || ![[self password] length]) {
+    if ([self type] == SPVaultConnection) {
+        connectionKeychainItemName = nil;
+        connectionKeychainItemAccount = nil;
         [self setPassword:nil];
+    } else {
+        connectionKeychainItemName = !fav ? nil : [keychain nameForFavoriteName:[fav objectForKey:SPFavoriteNameKey] id:[fav objectForKey:SPFavoriteIDKey]];
+        connectionKeychainItemAccount = !fav ? nil : [keychain accountForUser:[fav objectForKey:SPFavoriteUserKey] host:(([self type] == SPSocketConnection) ? @"localhost" : [fav objectForKey:SPFavoriteHostKey]) database:[fav objectForKey:SPFavoriteDatabaseKey]];
+
+        if(fav) {
+            [self setPassword:[keychain getPasswordForName:connectionKeychainItemName account:connectionKeychainItemAccount]];
+        }
+
+        if (!fav || ![[self password] length]) {
+            [self setPassword:nil];
+        }
     }
 
     [self _syncAWSIAMAndSSLInterfaceState];
@@ -2004,43 +2010,52 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     NSString *oldHostnameForPassword = ([[currentFavorite objectForKey:SPFavoriteTypeKey] integerValue] == SPSocketConnection) ? @"localhost" : [currentFavorite objectForKey:SPFavoriteHostKey];
     NSString *newHostnameForPassword = ([self type] == SPSocketConnection) ? @"localhost" : [self host];
 
-    // Grab the password for this connection
-    // Add the password to keychain as appropriate
-    NSString *sqlPassword = [self password];
-    if (![sqlPassword length] && mySQLConnection && connectionKeychainItemName) {
-        sqlPassword = [keychain getPasswordForName:connectionKeychainItemName account:connectionKeychainItemAccount];
-    }
-
-    // If creating a new favourite, always add the password to the keychain if it's set
-    if (createNewFavorite && [sqlPassword length]) {
-        [keychain addPassword:sqlPassword
-                      forName:[keychain nameForFavoriteName:[theFavorite objectForKey:SPFavoriteNameKey] id:[theFavorite objectForKey:SPFavoriteIDKey]]
-                      account:[keychain accountForUser:[self user] host:newHostnameForPassword database:[self database]]];
-    }
-
-    // If not creating a new favourite...
-    if (!createNewFavorite) {
-
-        // Get the old keychain name and account strings
-        oldKeychainName = [keychain nameForFavoriteName:[currentFavorite objectForKey:SPFavoriteNameKey] id:[currentFavorite objectForKey:SPFavoriteIDKey]];
-        oldKeychainAccount = [keychain accountForUser:[currentFavorite objectForKey:SPFavoriteUserKey] host:oldHostnameForPassword database:[currentFavorite objectForKey:SPFavoriteDatabaseKey]];
-
-        // If there's no new password, remove the old item from the keychain
-        if (![sqlPassword length]) {
+    if ([self type] == SPVaultConnection) {
+        // Vault credentials are generated at connect time; remove any static SQL password from the previous favorite type.
+        if (!createNewFavorite) {
+            oldKeychainName = [keychain nameForFavoriteName:[currentFavorite objectForKey:SPFavoriteNameKey] id:[currentFavorite objectForKey:SPFavoriteIDKey]];
+            oldKeychainAccount = [keychain accountForUser:[currentFavorite objectForKey:SPFavoriteUserKey] host:oldHostnameForPassword database:[currentFavorite objectForKey:SPFavoriteDatabaseKey]];
             [keychain deletePasswordForName:oldKeychainName account:oldKeychainAccount];
+        }
+    } else {
+        // Grab the password for this connection
+        // Add the password to keychain as appropriate
+        NSString *sqlPassword = [self password];
+        if (![sqlPassword length] && mySQLConnection && connectionKeychainItemName) {
+            sqlPassword = [keychain getPasswordForName:connectionKeychainItemName account:connectionKeychainItemAccount];
+        }
 
-        // Otherwise, set up the new keychain name and account strings and create or edit the item
-        } else {
-            newKeychainName = [keychain nameForFavoriteName:[theFavorite objectForKey:SPFavoriteNameKey] id:[theFavorite objectForKey:SPFavoriteIDKey]];
-            newKeychainAccount = [keychain accountForUser:[self user] host:newHostnameForPassword database:[self database]];
-            if ([keychain passwordExistsForName:oldKeychainName account:oldKeychainAccount]) {
-                [keychain updateItemWithName:oldKeychainName account:oldKeychainAccount toName:newKeychainName account:newKeychainAccount password:sqlPassword];
+        // If creating a new favourite, always add the password to the keychain if it's set
+        if (createNewFavorite && [sqlPassword length]) {
+            [keychain addPassword:sqlPassword
+                          forName:[keychain nameForFavoriteName:[theFavorite objectForKey:SPFavoriteNameKey] id:[theFavorite objectForKey:SPFavoriteIDKey]]
+                          account:[keychain accountForUser:[self user] host:newHostnameForPassword database:[self database]]];
+        }
+
+        // If not creating a new favourite...
+        if (!createNewFavorite) {
+
+            // Get the old keychain name and account strings
+            oldKeychainName = [keychain nameForFavoriteName:[currentFavorite objectForKey:SPFavoriteNameKey] id:[currentFavorite objectForKey:SPFavoriteIDKey]];
+            oldKeychainAccount = [keychain accountForUser:[currentFavorite objectForKey:SPFavoriteUserKey] host:oldHostnameForPassword database:[currentFavorite objectForKey:SPFavoriteDatabaseKey]];
+
+            // If there's no new password, remove the old item from the keychain
+            if (![sqlPassword length]) {
+                [keychain deletePasswordForName:oldKeychainName account:oldKeychainAccount];
+
+            // Otherwise, set up the new keychain name and account strings and create or edit the item
             } else {
-                [keychain addPassword:sqlPassword forName:newKeychainName account:newKeychainAccount];
+                newKeychainName = [keychain nameForFavoriteName:[theFavorite objectForKey:SPFavoriteNameKey] id:[theFavorite objectForKey:SPFavoriteIDKey]];
+                newKeychainAccount = [keychain accountForUser:[self user] host:newHostnameForPassword database:[self database]];
+                if ([keychain passwordExistsForName:oldKeychainName account:oldKeychainAccount]) {
+                    [keychain updateItemWithName:oldKeychainName account:oldKeychainAccount toName:newKeychainName account:newKeychainAccount password:sqlPassword];
+                } else {
+                    [keychain addPassword:sqlPassword forName:newKeychainName account:newKeychainAccount];
+                }
             }
         }
+        sqlPassword = nil;
     }
-    sqlPassword = nil;
 
     /*
      * Password handling for the SSH connection
