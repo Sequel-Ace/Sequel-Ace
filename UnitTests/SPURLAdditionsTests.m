@@ -8,6 +8,7 @@
 
 #import <XCTest/XCTest.h>
 #import "SPFunctions.h"
+#import "SPConstants.h"
 
 @interface SPURLAdditionsTests : XCTestCase
 
@@ -295,6 +296,52 @@
 	XCTAssertTrue(parsed);
 	XCTAssertEqual(invalidParameters.count, 0);
 	XCTAssertEqualObjects(details[@"type"], @"SPTCPIPConnection");
+}
+
+- (void)testMySQLURLParserAcceptsEnableCleartextPluginTrue
+{
+	NSURL *url = [NSURL URLWithString:@"mysql://db_user@db.example.com/my_database?enable_cleartext_plugin=1"];
+	NSMutableDictionary *details = [NSMutableDictionary dictionary];
+	BOOL autoConnect = NO;
+	NSArray<NSString *> *invalidParameters = nil;
+
+	BOOL parsed = SPExtractConnectionDetailsFromMySQLURL(url, details, &autoConnect, &invalidParameters);
+
+	XCTAssertTrue(parsed);
+	XCTAssertEqual(invalidParameters.count, 0);
+	// Stored under the favorite plist key so -setState:fromFile: applies it.
+	XCTAssertEqualObjects(details[SPFavoriteEnableClearTextPluginKey], @YES);
+	// Raw URL-style key must not leak through.
+	XCTAssertNil(details[@"enable_cleartext_plugin"]);
+}
+
+- (void)testMySQLURLParserAcceptsEnableCleartextPluginFalse
+{
+	NSURL *url = [NSURL URLWithString:@"mysql://db_user@db.example.com/my_database?enable_cleartext_plugin=0"];
+	NSMutableDictionary *details = [NSMutableDictionary dictionary];
+	BOOL autoConnect = NO;
+	NSArray<NSString *> *invalidParameters = nil;
+
+	BOOL parsed = SPExtractConnectionDetailsFromMySQLURL(url, details, &autoConnect, &invalidParameters);
+
+	XCTAssertTrue(parsed);
+	XCTAssertEqual(invalidParameters.count, 0);
+	XCTAssertEqualObjects(details[SPFavoriteEnableClearTextPluginKey], @NO);
+}
+
+- (void)testMySQLURLParserAcceptsEnableCleartextPluginTruthyString
+{
+	// NSString -boolValue is YES for "1"-"9", "Y", "y", "T", "t".
+	NSURL *url = [NSURL URLWithString:@"mysql://db_user@db.example.com/my_database?enable_cleartext_plugin=true"];
+	NSMutableDictionary *details = [NSMutableDictionary dictionary];
+	BOOL autoConnect = NO;
+	NSArray<NSString *> *invalidParameters = nil;
+
+	BOOL parsed = SPExtractConnectionDetailsFromMySQLURL(url, details, &autoConnect, &invalidParameters);
+
+	XCTAssertTrue(parsed);
+	XCTAssertEqual(invalidParameters.count, 0);
+	XCTAssertEqualObjects(details[SPFavoriteEnableClearTextPluginKey], @YES);
 }
 
 // 0.15 s
