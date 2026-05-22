@@ -5,7 +5,7 @@
 //  Handles the browser-based OIDC login flow. Binds a local HTTP server on
 //  a random port, opens the Vault OIDC auth URL in the system browser, waits
 //  for the callback, exchanges the code for a Vault token, and persists it
-//  in the user's Keychain scoped to the Vault server URL.
+//  in the user's Keychain scoped to the Vault server URL and OIDC mount.
 //
 
 import Foundation
@@ -56,55 +56,57 @@ enum VaultOIDCError: Error, LocalizedError {
         activeLoginSemaphore?.signal()
     }
 
-    // MARK: - Per-host token scoping
+    // MARK: - Per-mount token scoping
 
     // Tokens stored in this map were obtained in the current process for a specific
-    // Vault server. The Keychain fallback is keyed by the same Vault server URL.
+    // Vault server and OIDC mount. The Keychain fallback is keyed by the same scope.
     private static let hostTokenLock = NSLock()
-    private static var tokenByHost: [String: String] = [:]
+    private static var tokenByScope: [String: String] = [:]
     private static let persistedTokenLock = NSLock()
-    private static var persistedTokenByHostForTesting: [String: String]?
+    private static var persistedTokenByScopeForTesting: [String: String]?
 
-    /// Best available token for `baseURL`. Checks the in-session per-host map first,
-    /// then reuses a Keychain token stored for the exact same Vault server URL.
-    static func cachedToken(for baseURL: URL) -> String? {
+    /// Best available token for `baseURL` and `mount`. Checks the in-session map first,
+    /// then reuses a Keychain token stored for the exact same Vault server URL and OIDC mount.
+    static func cachedToken(for baseURL: URL, mount: String) -> String? {
+        let scopeKey = tokenScopeKey(baseURL: baseURL, mount: mount)
         hostTokenLock.lock()
-        let hostToken = tokenByHost[baseURL.absoluteString]
+        let hostToken = tokenByScope[scopeKey]
         hostTokenLock.unlock()
         if let t = hostToken { return t }
 
-        guard let token = readPersistedToken(for: baseURL) else { return nil }
-        storeToken(token, for: baseURL)
+        guard let token = readPersistedToken(for: baseURL, mount: mount) else { return nil }
+        storeToken(token, for: baseURL, mount: mount)
         return token
     }
 
-    private static func storeToken(_ token: String, for baseURL: URL) {
+    private static func storeToken(_ token: String, for baseURL: URL, mount: String) {
+        let scopeKey = tokenScopeKey(baseURL: baseURL, mount: mount)
         hostTokenLock.lock()
         defer { hostTokenLock.unlock() }
-        tokenByHost[baseURL.absoluteString] = token
+        tokenByScope[scopeKey] = token
     }
 
     static func clearCachedTokensForTesting() {
         hostTokenLock.lock()
-        tokenByHost.removeAll()
+        tokenByScope.removeAll()
         hostTokenLock.unlock()
     }
 
     static func useInMemoryTokenStoreForTesting() {
         persistedTokenLock.lock()
-        persistedTokenByHostForTesting = [:]
+        persistedTokenByScopeForTesting = [:]
         persistedTokenLock.unlock()
     }
 
     static func clearInMemoryTokenStoreForTesting() {
         persistedTokenLock.lock()
-        persistedTokenByHostForTesting?.removeAll()
+        persistedTokenByScopeForTesting?.removeAll()
         persistedTokenLock.unlock()
     }
 
     static func disableInMemoryTokenStoreForTesting() {
         persistedTokenLock.lock()
-        persistedTokenByHostForTesting = nil
+        persistedTokenByScopeForTesting = nil
         persistedTokenLock.unlock()
     }
 
@@ -197,10 +199,10 @@ enum VaultOIDCError: Error, LocalizedError {
             throw VaultOIDCError.vaultError(error)
         }
 
-        // 7. Persist in the user's Keychain for this Vault server and keep an
-        //    in-process per-host copy so the token is never forwarded elsewhere.
-        saveToken(token, for: baseURL)
-        storeToken(token, for: baseURL)
+        // 7. Persist in the user's Keychain for this Vault server + OIDC mount and
+        //    keep an in-process copy so the token is never forwarded elsewhere.
+        saveToken(token, for: baseURL, mount: mount)
+        storeToken(token, for: baseURL, mount: mount)
 
         // 8. Bring the app back to the foreground now that the browser auth is done.
         DispatchQueue.main.async { NSApp.activate(ignoringOtherApps: true) }
@@ -210,12 +212,12 @@ enum VaultOIDCError: Error, LocalizedError {
 
     // MARK: - Token persistence
 
-    static func saveToken(_ token: String, for baseURL: URL) {
-        let account = keychainAccount(for: baseURL)
+    static func saveToken(_ token: String, for baseURL: URL, mount: String) {
+        let account = keychainAccount(for: baseURL, mount: mount)
 
         persistedTokenLock.lock()
-        if persistedTokenByHostForTesting != nil {
-            persistedTokenByHostForTesting?[account] = token
+        if persistedTokenByScopeForTesting != nil {
+            persistedTokenByScopeForTesting?[account] = token
             persistedTokenLock.unlock()
             return
         }
@@ -243,12 +245,12 @@ enum VaultOIDCError: Error, LocalizedError {
         }
     }
 
-    private static func readPersistedToken(for baseURL: URL) -> String? {
-        let account = keychainAccount(for: baseURL)
+    private static func readPersistedToken(for baseURL: URL, mount: String) -> String? {
+        let account = keychainAccount(for: baseURL, mount: mount)
 
         persistedTokenLock.lock()
-        if let persistedTokenByHostForTesting {
-            let token = persistedTokenByHostForTesting[account]
+        if let persistedTokenByScopeForTesting {
+            let token = persistedTokenByScopeForTesting[account]
             persistedTokenLock.unlock()
             return token
         }
@@ -274,8 +276,17 @@ enum VaultOIDCError: Error, LocalizedError {
         return token
     }
 
-    private static func keychainAccount(for baseURL: URL) -> String {
-        baseURL.absoluteString
+    private static func keychainAccount(for baseURL: URL, mount: String) -> String {
+        tokenScopeKey(baseURL: baseURL, mount: mount)
+    }
+
+    private static func tokenScopeKey(baseURL: URL, mount: String) -> String {
+        "\(baseURL.absoluteString)|oidc_mount=\(normalizedMount(mount))"
+    }
+
+    private static func normalizedMount(_ mount: String) -> String {
+        let trimmedMount = mount.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedMount.isEmpty ? "oidc" : trimmedMount
     }
 
     private static func keychainQuery(account: String) -> [String: Any] {
@@ -286,11 +297,11 @@ enum VaultOIDCError: Error, LocalizedError {
         ]
     }
 
-    static func keychainTokenExistsForTesting(baseURL: URL) -> Bool {
-        let account = keychainAccount(for: baseURL)
+    static func keychainTokenExistsForTesting(baseURL: URL, mount: String) -> Bool {
+        let account = keychainAccount(for: baseURL, mount: mount)
         persistedTokenLock.lock()
-        if let persistedTokenByHostForTesting {
-            let exists = persistedTokenByHostForTesting[account] != nil
+        if let persistedTokenByScopeForTesting {
+            let exists = persistedTokenByScopeForTesting[account] != nil
             persistedTokenLock.unlock()
             return exists
         }

@@ -113,11 +113,11 @@ import OSLog
 
     // MARK: - Token helpers
 
-    /// Check whether there is a valid cached Vault token for the given Vault server.
+    /// Check whether there is a valid cached Vault token for the given Vault server and OIDC mount.
     /// MUST be called from a background thread — performs synchronous network I/O.
-    static func isAuthorized(baseURL: URL) -> Bool {
+    static func isAuthorized(baseURL: URL, mount: String) -> Bool {
         assert(!Thread.isMainThread, "isAuthorized must not be called on the main thread")
-        guard let token = VaultOIDCHandler.cachedToken(for: baseURL) else { return false }
+        guard let token = VaultOIDCHandler.cachedToken(for: baseURL, mount: mount) else { return false }
         return (try? VaultClient.tokenLookupSelf(baseURL: baseURL, token: token)) == true
     }
 
@@ -150,11 +150,11 @@ import OSLog
         let trimmedMount = oidcMount.trimmingCharacters(in: .whitespacesAndNewlines)
         let effectiveMount = trimmedMount.isEmpty ? "oidc" : trimmedMount
 
-        // Read the best available token for this host: in-session per-host map first,
-        // then the Keychain item scoped to this Vault address.
-        let preReadToken = VaultOIDCHandler.cachedToken(for: baseURL)
-
         let key = cacheKey(baseURL: baseURL, oidcMount: effectiveMount, credPath: effectiveCredPath)
+
+        // Read the best available token for this Vault server + OIDC mount: in-session map first,
+        // then the Keychain item scoped to this Vault address and mount.
+        let preReadToken = VaultOIDCHandler.cachedToken(for: baseURL, mount: effectiveMount)
 
         // Return cached credentials if still valid under the same Vault identity.
         // Passing preReadToken evicts the entry when the known token changes.
@@ -175,7 +175,7 @@ import OSLog
         // Re-check cache after waking — the in-flight thread may have populated it.
         // Re-fetch the token: the in-flight thread may have obtained a new one via OIDC,
         // so preReadToken could be stale and would evict the fresh entry.
-        let postWaitToken = VaultOIDCHandler.cachedToken(for: baseURL)
+        let postWaitToken = VaultOIDCHandler.cachedToken(for: baseURL, mount: effectiveMount)
         if let cached = cachedCredentials(for: key, matchingToken: postWaitToken) {
             inFlightCondition.unlock()
             username.pointee = cached.username as NSString
@@ -294,12 +294,23 @@ import OSLog
         return true
     }
 
-    /// Check whether there is a valid cached Vault token for the given host.
+    /// Check whether there is a valid cached Vault token for the default OIDC mount on the given host.
     /// MUST be called from a background thread — performs synchronous network I/O.
     @objc(isAuthorizedWithHost:port:)
     static func isAuthorized(host: String, port: String) -> Bool {
         assert(!Thread.isMainThread, "isAuthorized must not be called on the main thread")
         guard let baseURL = VaultClient.buildBaseURL(host: host, port: port) else { return false }
-        return isAuthorized(baseURL: baseURL)
+        return isAuthorized(baseURL: baseURL, mount: "oidc")
+    }
+
+    /// Check whether there is a valid cached Vault token for the given host and OIDC mount.
+    /// MUST be called from a background thread — performs synchronous network I/O.
+    @objc(isAuthorizedWithHost:port:oidcMount:)
+    static func isAuthorized(host: String, port: String, oidcMount: String) -> Bool {
+        assert(!Thread.isMainThread, "isAuthorized must not be called on the main thread")
+        guard let baseURL = VaultClient.buildBaseURL(host: host, port: port) else { return false }
+        let trimmedMount = oidcMount.trimmingCharacters(in: .whitespacesAndNewlines)
+        let effectiveMount = trimmedMount.isEmpty ? "oidc" : trimmedMount
+        return isAuthorized(baseURL: baseURL, mount: effectiveMount)
     }
 }

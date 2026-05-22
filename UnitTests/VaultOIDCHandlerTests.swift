@@ -79,41 +79,70 @@ final class VaultOIDCHandlerTests: XCTestCase {
         XCTAssertEqual(tokens.count, 50, "Tokens should be unique across invocations")
     }
 
-    // MARK: - host-scoped token persistence
+    // MARK: - mount-scoped token persistence
 
     func testSaveAndReadRoundtripForVaultAddress() {
         let baseURL = VaultClient.buildBaseURL(host: "vault-prod.example.com", port: "443")!
         let testToken = "test-hvs-\(UUID().uuidString)"
 
-        VaultOIDCHandler.saveToken(testToken, for: baseURL)
+        VaultOIDCHandler.saveToken(testToken, for: baseURL, mount: "oidc")
         VaultOIDCHandler.clearCachedTokensForTesting()
 
-        XCTAssertEqual(VaultOIDCHandler.cachedToken(for: baseURL), testToken)
+        XCTAssertEqual(VaultOIDCHandler.cachedToken(for: baseURL, mount: "oidc"), testToken)
     }
 
     func testCachedTokenReturnsNilWhenNoTokenExistsForVaultAddress() {
         let baseURL = VaultClient.buildBaseURL(host: "vault-prod.example.com", port: "443")!
 
-        XCTAssertNil(VaultOIDCHandler.cachedToken(for: baseURL))
+        XCTAssertNil(VaultOIDCHandler.cachedToken(for: baseURL, mount: "oidc"))
     }
 
     func testCachedTokenRejectsPersistedTokenForDifferentVaultAddress() {
         let prodURL = VaultClient.buildBaseURL(host: "vault-prod.example.com", port: "443")!
         let stagingURL = VaultClient.buildBaseURL(host: "vault-staging.example.com", port: "443")!
 
-        VaultOIDCHandler.saveToken("prod-token", for: prodURL)
+        VaultOIDCHandler.saveToken("prod-token", for: prodURL, mount: "oidc")
         VaultOIDCHandler.clearCachedTokensForTesting()
 
-        XCTAssertNil(VaultOIDCHandler.cachedToken(for: stagingURL))
+        XCTAssertNil(VaultOIDCHandler.cachedToken(for: stagingURL, mount: "oidc"))
+    }
+
+    func testCachedTokenRejectsPersistedTokenForDifferentOIDCMount() {
+        let baseURL = VaultClient.buildBaseURL(host: "vault-prod.example.com", port: "443")!
+
+        VaultOIDCHandler.saveToken("default-token", for: baseURL, mount: "oidc")
+        VaultOIDCHandler.clearCachedTokensForTesting()
+
+        XCTAssertNil(VaultOIDCHandler.cachedToken(for: baseURL, mount: "okta"))
+    }
+
+    func testCachedTokenStoresDifferentTokensForDifferentOIDCMounts() {
+        let baseURL = VaultClient.buildBaseURL(host: "vault-prod.example.com", port: "443")!
+
+        VaultOIDCHandler.saveToken("default-token", for: baseURL, mount: "oidc")
+        VaultOIDCHandler.saveToken("okta-token", for: baseURL, mount: "okta")
+        VaultOIDCHandler.clearCachedTokensForTesting()
+
+        XCTAssertEqual(VaultOIDCHandler.cachedToken(for: baseURL, mount: "oidc"), "default-token")
+        XCTAssertEqual(VaultOIDCHandler.cachedToken(for: baseURL, mount: "okta"), "okta-token")
     }
 
     func testCachedTokenUsesInSessionTokenBeforePersistedToken() {
         let baseURL = VaultClient.buildBaseURL(host: "vault-prod.example.com", port: "443")!
 
-        VaultOIDCHandler.saveToken("persisted-token", for: baseURL)
-        XCTAssertEqual(VaultOIDCHandler.cachedToken(for: baseURL), "persisted-token")
-        VaultOIDCHandler.saveToken("new-persisted-token", for: baseURL)
+        VaultOIDCHandler.saveToken("persisted-token", for: baseURL, mount: "oidc")
+        XCTAssertEqual(VaultOIDCHandler.cachedToken(for: baseURL, mount: "oidc"), "persisted-token")
+        VaultOIDCHandler.saveToken("new-persisted-token", for: baseURL, mount: "oidc")
 
-        XCTAssertEqual(VaultOIDCHandler.cachedToken(for: baseURL), "persisted-token")
+        XCTAssertEqual(VaultOIDCHandler.cachedToken(for: baseURL, mount: "oidc"), "persisted-token")
+    }
+
+    func testEmptyMountUsesDefaultOIDCScope() {
+        let baseURL = VaultClient.buildBaseURL(host: "vault-prod.example.com", port: "443")!
+
+        VaultOIDCHandler.saveToken("default-token", for: baseURL, mount: "oidc")
+        VaultOIDCHandler.clearCachedTokensForTesting()
+
+        XCTAssertEqual(VaultOIDCHandler.cachedToken(for: baseURL, mount: "  "), "default-token")
     }
 }
