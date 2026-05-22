@@ -5381,7 +5381,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                                 callback:nil];
 }
 
-- (BOOL)selectTablesListItemNamed:(NSString *)name
+- (BOOL)selectTablesListItemWithNamed:(NSString *)name
 {
     return [tablesListInstance selectItemWithName:name];
 }
