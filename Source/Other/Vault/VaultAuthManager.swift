@@ -289,8 +289,9 @@ import OSLog
                 }
                 // Token is present but invalid/expired — fall through to OIDC login below.
             } catch {
-                // Network error talking to Vault — surface this rather than falling through to login.
-                os_log("Vault tokenLookupSelf network error: %{public}@", log: log, type: .error, error.localizedDescription)
+                // Network or service error (including 429/5xx) — surface this rather than
+                // falling through to OIDC login, which would open a spurious browser window.
+                os_log("Vault tokenLookupSelf error: %{public}@", log: log, type: .error, error.localizedDescription)
                 errorPointer?.pointee = NSError(
                     domain: errorDomain,
                     code: VaultAuthError.loginFailed.rawValue,

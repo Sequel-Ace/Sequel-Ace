@@ -126,14 +126,19 @@ final class VaultClient {
 
     // MARK: - Network calls
 
-    /// Validate a token. Returns true if valid, false if expired/invalid, throws on network error.
+    /// Validate a token.
+    /// - Returns: `true` if the token is valid, `false` if it is expired or invalid (HTTP 400/403).
+    /// - Throws: `VaultClientError` on network failures or non-authentication HTTP errors
+    ///   (e.g. 429 rate limit, 5xx service error). Callers must surface these rather than
+    ///   falling through to OIDC login, otherwise a transient Vault outage triggers a
+    ///   spurious browser window.
     static func tokenLookupSelf(baseURL: URL, token: String) throws -> Bool {
         let url = baseURL.appendingPathComponent("v1/auth/token/lookup-self")
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 10)
         request.httpMethod = "GET"
         request.setValue(token, forHTTPHeaderField: "X-Vault-Token")
 
-        let (_, response, error) = synchronousDataTask(with: request)
+        let (data, response, error) = synchronousDataTask(with: request)
         if let error = error {
             os_log("tokenLookupSelf network error: %{public}@", log: log, type: .error, error.localizedDescription)
             throw VaultClientError.networkError(error)
@@ -141,7 +146,17 @@ final class VaultClient {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw VaultClientError.parseError("no HTTP response")
         }
-        return httpResponse.statusCode == 200
+        let status = httpResponse.statusCode
+        if status == 200 { return true }
+        // 400 Bad Request or 403 Forbidden: token is missing, expired, or has no
+        // lookup-self permission. Signal the caller to re-authenticate via OIDC.
+        if status == 400 || status == 403 { return false }
+        // Any other status (429 rate limit, 5xx service error, etc.) is a Vault
+        // service problem — throw so the caller surfaces it rather than opening a browser.
+        let vaultDetail = parseVaultErrors(from: data)
+        os_log("tokenLookupSelf HTTP error: %d%{public}@", log: log, type: .error,
+               status, vaultDetail.map { " – \($0)" } ?? "")
+        throw VaultClientError.httpError(status, vaultDetail)
     }
 
     /// Fetch the OIDC authorization URL from Vault.
