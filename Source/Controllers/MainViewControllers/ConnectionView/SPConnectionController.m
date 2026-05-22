@@ -537,8 +537,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         NSString *credMount = [[self vaultOIDCMount] length] ? [self vaultOIDCMount] : @"oidc";
         NSString *credPath  = [self vaultCredentialsPath];
         NSUInteger vaultConnectionAttemptID = connectionAttemptID;
+        NSString *vaultLoginIdentifierForAttempt = [VaultOIDCHandler prepareActiveLogin];
+        vaultLoginIdentifier = vaultLoginIdentifierForAttempt;
 
-        [VaultOIDCHandler prepareActiveLogin];
         dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
             NSError *vaultError = nil;
             NSString *outUsername = nil;
@@ -546,7 +547,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
             SPConnectionController *strongSelf = weakSelf;
             if (!strongSelf || strongSelf->cancellingConnection || strongSelf->connectionAttemptID != vaultConnectionAttemptID) {
-                [VaultOIDCHandler clearPreparedActiveLogin];
+                [VaultOIDCHandler clearPreparedActiveLoginWithIdentifier:vaultLoginIdentifierForAttempt];
                 return;
             }
 
@@ -554,10 +555,11 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                                                                     port:credPort
                                                               oidcMount:credMount
                                                                credPath:credPath
+                                                        loginIdentifier:vaultLoginIdentifierForAttempt
                                                                username:&outUsername
                                                                password:&outPassword
                                                                   error:&vaultError];
-            [VaultOIDCHandler clearPreparedActiveLogin];
+            [VaultOIDCHandler clearPreparedActiveLoginWithIdentifier:vaultLoginIdentifierForAttempt];
 
             // User may cancel while the OIDC browser is open; bail without showing an error.
             strongSelf = weakSelf;
@@ -573,6 +575,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                 dispatch_async(dispatch_get_main_queue(), ^{
                     SPConnectionController *strongSelf = weakSelf;
                     if (!strongSelf || strongSelf->connectionAttemptID != vaultConnectionAttemptID) return;
+                    if ([strongSelf->vaultLoginIdentifier isEqualToString:vaultLoginIdentifierForAttempt]) {
+                        strongSelf->vaultLoginIdentifier = nil;
+                    }
                     [strongSelf failConnectionWithTitle:NSLocalizedString(@"Vault Authentication Failed", @"Vault auth failed title")
                                           errorMessage:vaultError ? vaultError.localizedDescription : NSLocalizedString(@"Vault returned empty credentials.", @"Vault auth empty creds error")
                                                 detail:nil];
@@ -592,6 +597,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                                                          oidcMount:credMount
                                                            credPath:credPath];
                     return;
+                }
+                if ([strongSelf->vaultLoginIdentifier isEqualToString:vaultLoginIdentifierForAttempt]) {
+                    strongSelf->vaultLoginIdentifier = nil;
                 }
                 info.user = capturedUsername;
                 [strongSelf.connectionService connectWith:info
@@ -629,7 +637,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
     // Abort any in-progress Vault OIDC browser login so the background thread
     // unblocks immediately rather than waiting up to 120 s for a callback.
-    [VaultOIDCHandler cancelActiveLogin];
+    if ([vaultLoginIdentifier length]) {
+        [VaultOIDCHandler cancelActiveLoginWithIdentifier:vaultLoginIdentifier];
+    }
 
     // Cancel via connection service (handles both MySQL and SSH tunnel)
     [self.connectionService cancel];
@@ -2609,7 +2619,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             }
 
             if ([self _isVaultConnection]) {
-                [VaultOIDCHandler cancelActiveLogin];
+                if ([vaultLoginIdentifier length]) {
+                    [VaultOIDCHandler cancelActiveLoginWithIdentifier:vaultLoginIdentifier];
+                }
                 [VaultAuthManager clearCachedCredentialsForHost:[self vaultHost] ?: @""
                                                            port:[self vaultPort] ?: @""
                                                       oidcMount:[self vaultOIDCMount] ?: @""

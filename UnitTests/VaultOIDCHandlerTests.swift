@@ -24,41 +24,50 @@ final class VaultOIDCHandlerTests: XCTestCase {
 
     func testCancelActiveLoginRecordsCancellationAndSignalsSemaphore() {
         let semaphore = DispatchSemaphore(value: 0)
-        VaultOIDCHandler.registerActiveLoginForTesting(semaphore: semaphore)
-        defer { VaultOIDCHandler.clearActiveLoginForTesting(semaphore: semaphore) }
+        let identifier = VaultOIDCHandler.prepareActiveLogin()
+        VaultOIDCHandler.registerActiveLoginForTesting(semaphore: semaphore, identifier: identifier)
+        defer { VaultOIDCHandler.clearActiveLoginForTesting(semaphore: semaphore, identifier: identifier) }
 
-        XCTAssertFalse(VaultOIDCHandler.isActiveLoginCancelledForTesting())
+        XCTAssertFalse(VaultOIDCHandler.isActiveLoginCancelledForTesting(identifier: identifier))
 
-        VaultOIDCHandler.cancelActiveLogin()
+        VaultOIDCHandler.cancelActiveLogin(identifier: identifier)
 
-        XCTAssertTrue(VaultOIDCHandler.isActiveLoginCancelledForTesting())
+        XCTAssertTrue(VaultOIDCHandler.isActiveLoginCancelledForTesting(identifier: identifier))
         XCTAssertEqual(semaphore.wait(timeout: .now()), .success)
     }
 
     func testCancelActiveLoginRecordsCancellationBeforeSemaphoreRegistration() {
         let semaphore = DispatchSemaphore(value: 0)
-        VaultOIDCHandler.prepareActiveLogin()
-        defer { VaultOIDCHandler.clearActiveLoginForTesting(semaphore: semaphore) }
+        let identifier = VaultOIDCHandler.prepareActiveLogin()
+        defer { VaultOIDCHandler.clearActiveLoginForTesting(semaphore: semaphore, identifier: identifier) }
 
-        VaultOIDCHandler.cancelActiveLogin()
-        XCTAssertTrue(VaultOIDCHandler.isActiveLoginCancelledForTesting())
+        VaultOIDCHandler.cancelActiveLogin(identifier: identifier)
+        XCTAssertTrue(VaultOIDCHandler.isActiveLoginCancelledForTesting(identifier: identifier))
 
-        VaultOIDCHandler.registerActiveLoginForTesting(semaphore: semaphore)
+        VaultOIDCHandler.registerActiveLoginForTesting(semaphore: semaphore, identifier: identifier)
 
-        XCTAssertTrue(VaultOIDCHandler.isActiveLoginCancelledForTesting())
+        XCTAssertTrue(VaultOIDCHandler.isActiveLoginCancelledForTesting(identifier: identifier))
         XCTAssertEqual(semaphore.wait(timeout: .now()), .timedOut)
     }
 
-    func testPrepareActiveLoginPreservesExistingActiveSemaphore() {
-        let semaphore = DispatchSemaphore(value: 0)
-        VaultOIDCHandler.registerActiveLoginForTesting(semaphore: semaphore)
-        defer { VaultOIDCHandler.clearActiveLoginForTesting(semaphore: semaphore) }
+    func testCancelActiveLoginOnlySignalsMatchingIdentifier() {
+        let firstSemaphore = DispatchSemaphore(value: 0)
+        let secondSemaphore = DispatchSemaphore(value: 0)
+        let firstIdentifier = VaultOIDCHandler.prepareActiveLogin()
+        let secondIdentifier = VaultOIDCHandler.prepareActiveLogin()
+        VaultOIDCHandler.registerActiveLoginForTesting(semaphore: firstSemaphore, identifier: firstIdentifier)
+        VaultOIDCHandler.registerActiveLoginForTesting(semaphore: secondSemaphore, identifier: secondIdentifier)
+        defer {
+            VaultOIDCHandler.clearActiveLoginForTesting(semaphore: firstSemaphore, identifier: firstIdentifier)
+            VaultOIDCHandler.clearActiveLoginForTesting(semaphore: secondSemaphore, identifier: secondIdentifier)
+        }
 
-        VaultOIDCHandler.prepareActiveLogin()
-        VaultOIDCHandler.cancelActiveLogin()
+        VaultOIDCHandler.cancelActiveLogin(identifier: secondIdentifier)
 
-        XCTAssertTrue(VaultOIDCHandler.isActiveLoginCancelledForTesting())
-        XCTAssertEqual(semaphore.wait(timeout: .now()), .success)
+        XCTAssertFalse(VaultOIDCHandler.isActiveLoginCancelledForTesting(identifier: firstIdentifier))
+        XCTAssertTrue(VaultOIDCHandler.isActiveLoginCancelledForTesting(identifier: secondIdentifier))
+        XCTAssertEqual(firstSemaphore.wait(timeout: .now()), .timedOut)
+        XCTAssertEqual(secondSemaphore.wait(timeout: .now()), .success)
     }
 
     func testParseQueryParamsExtractsStateAndCode() {

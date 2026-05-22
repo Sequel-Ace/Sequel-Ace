@@ -112,6 +112,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	NSString *vaultPort;
 	NSString *vaultOIDCMount;
 	NSString *vaultCredentialsPath;
+	NSString *vaultLoginIdentifier;
 
 	// SSL details
 	NSInteger useSSL;

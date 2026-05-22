@@ -135,6 +135,23 @@ import OSLog
         password: AutoreleasingUnsafeMutablePointer<NSString?>,
         error errorPointer: NSErrorPointer
     ) -> Bool {
+        generateCredentials(host: host, port: port, oidcMount: oidcMount, credPath: credPath, loginIdentifier: "",
+                            username: username, password: password, error: errorPointer)
+    }
+
+    /// Generate ephemeral DB credentials using Vault, with cancellation scoped to
+    /// the caller's OIDC login attempt.
+    @objc(generateCredentialsWithHost:port:oidcMount:credPath:loginIdentifier:username:password:error:)
+    static func generateCredentials(
+        host: String,
+        port: String,
+        oidcMount: String,
+        credPath: String,
+        loginIdentifier: String,
+        username: AutoreleasingUnsafeMutablePointer<NSString?>,
+        password: AutoreleasingUnsafeMutablePointer<NSString?>,
+        error errorPointer: NSErrorPointer
+    ) -> Bool {
         assert(!Thread.isMainThread, "generateCredentials must not be called on the main thread")
         let effectiveCredPath = credPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let baseURL = VaultClient.buildBaseURL(host: host, port: port),
@@ -151,6 +168,21 @@ import OSLog
         let effectiveMount = trimmedMount.isEmpty ? "oidc" : trimmedMount
 
         let key = cacheKey(baseURL: baseURL, oidcMount: effectiveMount, credPath: effectiveCredPath)
+        let activeLoginIdentifier = loginIdentifier.isEmpty ? nil : loginIdentifier
+
+        func failCancelled() -> Bool {
+            errorPointer?.pointee = NSError(
+                domain: errorDomain,
+                code: VaultAuthError.loginCancelled.rawValue,
+                userInfo: [NSLocalizedDescriptionKey: VaultAuthError.loginCancelled.localizedDescription ?? ""]
+            )
+            return false
+        }
+
+        if let activeLoginIdentifier,
+           VaultOIDCHandler.isActiveLoginCancelled(identifier: activeLoginIdentifier) {
+            return failCancelled()
+        }
 
         // Read the best available token for this Vault server + OIDC mount: in-session map first,
         // then the Keychain item scoped to this Vault address and mount.
@@ -170,7 +202,17 @@ import OSLog
         // duplicate flow that creates extra Vault leases and races the callback listener.
         inFlightCondition.lock()
         while inFlightKeys.contains(key) {
-            inFlightCondition.wait()
+            if let activeLoginIdentifier,
+               VaultOIDCHandler.isActiveLoginCancelled(identifier: activeLoginIdentifier) {
+                inFlightCondition.unlock()
+                return failCancelled()
+            }
+            inFlightCondition.wait(until: Date().addingTimeInterval(0.1))
+        }
+        if let activeLoginIdentifier,
+           VaultOIDCHandler.isActiveLoginCancelled(identifier: activeLoginIdentifier) {
+            inFlightCondition.unlock()
+            return failCancelled()
         }
         // Re-check cache after waking — the in-flight thread may have populated it.
         // Re-fetch the token: the in-flight thread may have obtained a new one via OIDC,
@@ -193,6 +235,12 @@ import OSLog
             inFlightCondition.unlock()
         }
 
+        if let activeLoginIdentifier,
+           VaultOIDCHandler.isActiveLoginCancelled(identifier: activeLoginIdentifier) {
+            finishInFlight()
+            return failCancelled()
+        }
+
         // Ensure we have a valid Vault token.
         // Distinguish network failures (propagate as errors) from invalid/expired tokens
         // (proceed to OIDC login). Using try? would collapse both cases and trigger a
@@ -203,6 +251,11 @@ import OSLog
                 let valid = try VaultClient.tokenLookupSelf(baseURL: baseURL, token: rawToken)
                 if valid {
                     token = rawToken
+                    if let activeLoginIdentifier,
+                       VaultOIDCHandler.isActiveLoginCancelled(identifier: activeLoginIdentifier) {
+                        finishInFlight()
+                        return failCancelled()
+                    }
                     // Token is valid — skip OIDC and go straight to credential generation.
                     let creds: VaultCredentials
                     do {
@@ -244,7 +297,12 @@ import OSLog
 
         // Run OIDC flow — no cached token or token was invalid/expired.
         do {
-            token = try VaultOIDCHandler.login(baseURL: baseURL, mount: effectiveMount)
+            if let activeLoginIdentifier,
+               VaultOIDCHandler.isActiveLoginCancelled(identifier: activeLoginIdentifier) {
+                finishInFlight()
+                return failCancelled()
+            }
+            token = try VaultOIDCHandler.login(baseURL: baseURL, mount: effectiveMount, identifier: activeLoginIdentifier)
         } catch let oidcError as VaultOIDCError {
             let isCancel = (oidcError == .cancelled)
             let authError: VaultAuthError = isCancel ? .loginCancelled : .loginFailed
@@ -266,6 +324,11 @@ import OSLog
         }
 
         // Generate credentials from Vault.
+        if let activeLoginIdentifier,
+           VaultOIDCHandler.isActiveLoginCancelled(identifier: activeLoginIdentifier) {
+            finishInFlight()
+            return failCancelled()
+        }
         let creds: VaultCredentials
         do {
             creds = try VaultClient.generateCredentials(baseURL: baseURL, credPath: effectiveCredPath, token: token)
