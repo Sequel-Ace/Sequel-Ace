@@ -148,8 +148,8 @@ If your team manages database credentials through **HashiCorp Vault**, Sequel Ac
 
 When you connect, Sequel Ace:
 
-1. Checks for a valid cached Vault token — first an in-session token for this Vault server, then `~/.vault-token` (shared with the Vault CLI)
-2. If no valid token is found, opens a browser tab for OIDC login; after successful login the token is saved to `~/.vault-token`
+1. Checks for a valid cached Vault token — first an in-session token for this Vault server, then the macOS Keychain item scoped to the Vault base URL
+2. If no valid token is found, opens a browser tab for OIDC login; after successful login the token is saved to the user's Keychain for that Vault server
 3. Requests ephemeral database credentials from Vault at your configured credentials path
 4. Caches the credentials for their Vault lease duration (with a 30-second safety margin)
 5. Connects to MySQL using the ephemeral username and password
@@ -160,7 +160,7 @@ Clicking **Cancel** during the OIDC browser wait immediately aborts the login at
 
 ##### Vault CLI Interop
 
-The Vault token is stored at `~/.vault-token` (mode `0600`), which is the same location used by the `vault` CLI. If you have already run `vault login` in a terminal, Sequel Ace will reuse that session for the matching Vault server without opening a browser.
+Sequel Ace does not read from or write to `~/.vault-token`. Vault CLI sessions and Sequel Ace sessions are independent. Tokens created by Sequel Ace are stored in the user's macOS Keychain and scoped to the configured Vault base URL.
 
 ##### Credential Caching
 
