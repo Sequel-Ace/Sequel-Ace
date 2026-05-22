@@ -99,6 +99,25 @@ final class VaultAuthManagerTests: XCTestCase {
         XCTAssertNil(result, "Zero-duration lease should not be returned from cache")
     }
 
+    func testCacheRoundTripThroughCompositeKey() {
+        let baseURL = VaultClient.buildBaseURL(host: "vault.example.com", port: "8200")!
+        let mount = "oidc"
+        let credPath = "database/creds/readonly"
+        let key = VaultAuthManager.cacheKey(baseURL: baseURL, oidcMount: mount, credPath: credPath)
+
+        VaultAuthManager.setCachedCredentials(username: "db-user", password: "db-pass",
+                                              leaseDuration: 3600, for: key)
+
+        let hit = VaultAuthManager.cachedCredentials(for: key)
+        XCTAssertEqual(hit?.username, "db-user")
+        XCTAssertEqual(hit?.password, "db-pass")
+
+        // A key built with different inputs must not collide.
+        let otherKey = VaultAuthManager.cacheKey(baseURL: baseURL, oidcMount: mount, credPath: "database/creds/admin")
+        XCTAssertNil(VaultAuthManager.cachedCredentials(for: otherKey),
+                     "Different credPath must not hit the same cache entry")
+    }
+
     func testCacheIsInvalidatedWhenTokenChanges() {
         VaultAuthManager.setCachedCredentials(username: "u1", password: "p1", leaseDuration: 3600, token: "old-token", for: "path/a")
 
