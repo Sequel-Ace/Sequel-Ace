@@ -47,13 +47,51 @@ enum VaultOIDCError: Error, LocalizedError {
 
     private static let loginLock = NSLock()
     private static var activeLoginSemaphore: DispatchSemaphore?
+    private static var activeLoginCancelled = false
 
     /// Signal the active OIDC browser-wait semaphore so login() returns immediately
     /// with a .cancelled error. Safe to call from any thread at any time.
     static func cancelActiveLogin() {
         loginLock.lock()
         defer { loginLock.unlock() }
+        if activeLoginSemaphore != nil { activeLoginCancelled = true }
         activeLoginSemaphore?.signal()
+    }
+
+    @nonobjc private static func registerActiveLogin(semaphore: DispatchSemaphore) {
+        loginLock.lock()
+        activeLoginSemaphore = semaphore
+        activeLoginCancelled = false
+        loginLock.unlock()
+    }
+
+    @nonobjc private static func clearActiveLogin(semaphore: DispatchSemaphore) {
+        loginLock.lock()
+        if activeLoginSemaphore === semaphore {
+            activeLoginSemaphore = nil
+            activeLoginCancelled = false
+        }
+        loginLock.unlock()
+    }
+
+    static func isActiveLoginCancelledForTesting() -> Bool {
+        loginLock.lock()
+        defer { loginLock.unlock() }
+        return activeLoginCancelled
+    }
+
+    @nonobjc static func registerActiveLoginForTesting(semaphore: DispatchSemaphore) {
+        registerActiveLogin(semaphore: semaphore)
+    }
+
+    @nonobjc static func clearActiveLoginForTesting(semaphore: DispatchSemaphore) {
+        clearActiveLogin(semaphore: semaphore)
+    }
+
+    private static func isActiveLoginCancelled() -> Bool {
+        loginLock.lock()
+        defer { loginLock.unlock() }
+        return activeLoginCancelled
     }
 
     // MARK: - Per-mount token scoping
@@ -128,6 +166,8 @@ enum VaultOIDCError: Error, LocalizedError {
             callbackSemaphore.signal()
         })
         defer { listener.cancel() }
+        registerActiveLogin(semaphore: callbackSemaphore)
+        defer { clearActiveLogin(semaphore: callbackSemaphore) }
 
         let redirectURI = "http://localhost:\(callbackPort.rawValue)/oidc/callback"
 
@@ -146,21 +186,18 @@ enum VaultOIDCError: Error, LocalizedError {
             throw VaultOIDCError.vaultError(error)
         }
 
+        guard !isActiveLoginCancelled() else { throw VaultOIDCError.cancelled }
+
         // 4. Open the browser
         DispatchQueue.main.async {
-            NSWorkspace.shared.open(authURL)
+            if !isActiveLoginCancelled() {
+                NSWorkspace.shared.open(authURL)
+            }
         }
 
         // 5. Wait for callback (with timeout).
-        // Register the semaphore so cancelActiveLogin() can interrupt the wait.
-        loginLock.lock()
-        activeLoginSemaphore = callbackSemaphore
-        loginLock.unlock()
-        defer {
-            loginLock.lock()
-            activeLoginSemaphore = nil
-            loginLock.unlock()
-        }
+        // The semaphore was registered before the blocking auth_url request so
+        // cancelActiveLogin() can interrupt either the browser wait or the setup phase.
 
         let result = callbackSemaphore.wait(timeout: .now() + callbackTimeoutSeconds)
         if result == .timedOut { throw VaultOIDCError.callbackTimeout }
