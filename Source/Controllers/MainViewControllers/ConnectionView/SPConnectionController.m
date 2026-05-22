@@ -2604,10 +2604,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
             if ([self _isVaultConnection]) {
                 [VaultOIDCHandler cancelActiveLogin];
-                [VaultAuthManager clearCachedCredentialsForHost:[self vaultHost]
+                [VaultAuthManager clearCachedCredentialsForHost:[self vaultHost] ?: @""
                                                            port:[self vaultPort] ?: @""
                                                       oidcMount:[self vaultOIDCMount] ?: @""
-                                                       credPath:[self vaultCredentialsPath]];
+                                                       credPath:[self vaultCredentialsPath] ?: @""];
             }
 
             if (sshTunnel) {
