@@ -18,28 +18,7 @@
 		if (cancelled) return;
 
 		if (decision == SPMySQLConnectionLostReconnect) {
-			dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
-				BOOL reconnected = [handler reconnectConnectionForGate];
-
-				dispatch_async(dispatch_get_main_queue(), ^{
-					if (reconnected) {
-						[handler setBackgroundConnectionLostForGate:NO];
-						if (action) action();
-					} else {
-						BOOL failureShown = [handler presentReconnectFailureAllowingRetryForGate:^(BOOL retry) {
-							if (retry) {
-								[self runAction:action forHandler:handler];
-							} else {
-								[handler closeAndDisconnectForGate];
-							}
-						}];
-
-						if (!failureShown) {
-							[handler closeAndDisconnectForGate];
-						}
-					}
-				});
-			});
+			[self _attemptReconnectForAction:action handler:handler];
 		} else if (decision == SPMySQLConnectionLostDisconnect) {
 			[handler closeAndDisconnectForGate];
 		}
@@ -48,6 +27,33 @@
 	if (!sheetShown) {
 		[handler closeAndDisconnectForGate];
 	}
+}
+
++ (void)_attemptReconnectForAction:(void (^ _Nullable)(void))action handler:(id<SAMultiTabConnectionLostGateHandler>)handler
+{
+	dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+		BOOL reconnected = [handler reconnectConnectionForGate];
+
+		dispatch_async(dispatch_get_main_queue(), ^{
+			if (reconnected) {
+				[handler setBackgroundConnectionLostForGate:NO];
+				if (action) action();
+				return;
+			}
+
+			BOOL failureShown = [handler presentReconnectFailureAllowingRetryForGate:^(BOOL retry) {
+				if (retry) {
+					[self _attemptReconnectForAction:action handler:handler];
+				} else {
+					[handler closeAndDisconnectForGate];
+				}
+			}];
+
+			if (!failureShown) {
+				[handler closeAndDisconnectForGate];
+			}
+		});
+	});
 }
 
 @end

@@ -17,6 +17,7 @@
 @property (nonatomic) NSUInteger reconnectCount;
 @property (nonatomic) NSUInteger reconnectFailurePresentationCount;
 @property (nonatomic) NSUInteger closeAndDisconnectCount;
+@property (nonatomic, strong) NSMutableArray<NSNumber *> *queuedReconnectResults;
 @property (nonatomic, strong) XCTestExpectation *reconnectExpectation;
 @property (nonatomic, strong) XCTestExpectation *reconnectFailureExpectation;
 @property (nonatomic, copy) void (^capturedCompletion)(SPMySQLConnectionLostDecision decision, BOOL cancelled);
@@ -57,6 +58,11 @@
 {
 	self.reconnectCount++;
 	[self.reconnectExpectation fulfill];
+	if ([self.queuedReconnectResults count]) {
+		BOOL nextResult = [[self.queuedReconnectResults firstObject] boolValue];
+		[self.queuedReconnectResults removeObjectAtIndex:0];
+		return nextResult;
+	}
 	return self.reconnectResult;
 }
 
@@ -225,27 +231,60 @@
 	XCTAssertTrue(handler.backgroundConnectionLost);
 }
 
-- (void)testReconnectFailureRetryReentersGate
+- (void)testReconnectFailureRetryReconnectsDirectlyAndRunsAction
 {
 	SATestConnectionLostGateHandler *handler = [[SATestConnectionLostGateHandler alloc] init];
 	handler.backgroundConnectionLost = YES;
-	handler.reconnectResult = NO;
+	handler.queuedReconnectResults = [@[@NO, @YES] mutableCopy];
 	handler.reconnectExpectation = [self expectationWithDescription:@"reconnect invoked"];
 	handler.reconnectFailureExpectation = [self expectationWithDescription:@"reconnect failure presented"];
-	__block NSUInteger actionCount = 0;
+	XCTestExpectation *actionExpectation = [self expectationWithDescription:@"action invoked"];
 
 	[SAMultiTabConnectionLostGate runAction:^{
-		actionCount++;
+		[actionExpectation fulfill];
 	} forHandler:handler];
 	handler.capturedCompletion(SPMySQLConnectionLostReconnect, NO);
 
-	[self waitForExpectationsWithTimeout:1 handler:nil];
+	[self waitForExpectations:@[handler.reconnectExpectation, handler.reconnectFailureExpectation] timeout:1];
 	handler.sheetShown = NO;
+	handler.reconnectExpectation = [self expectationWithDescription:@"retry reconnect invoked"];
+	handler.reconnectFailureExpectation = nil;
 	handler.capturedReconnectFailureCompletion(YES);
 
-	XCTAssertTrue(handler.sheetShown);
-	XCTAssertEqual(actionCount, 0U);
+	[self waitForExpectations:@[handler.reconnectExpectation, actionExpectation] timeout:1];
+
+	XCTAssertFalse(handler.sheetShown);
+	XCTAssertEqual(handler.reconnectCount, 2U);
 	XCTAssertEqual(handler.closeAndDisconnectCount, 0U);
+	XCTAssertFalse(handler.backgroundConnectionLost);
+}
+
+- (void)testReconnectFailureRetryDoesNotShowInitialSheet
+{
+	SATestConnectionLostGateHandler *handler = [[SATestConnectionLostGateHandler alloc] init];
+	handler.backgroundConnectionLost = YES;
+	handler.queuedReconnectResults = [@[@NO, @YES] mutableCopy];
+	handler.reconnectExpectation = [self expectationWithDescription:@"reconnect invoked"];
+	handler.reconnectFailureExpectation = [self expectationWithDescription:@"reconnect failure presented"];
+	XCTestExpectation *actionExpectation = [self expectationWithDescription:@"action invoked"];
+
+	[SAMultiTabConnectionLostGate runAction:^{
+		[actionExpectation fulfill];
+	} forHandler:handler];
+	handler.capturedCompletion(SPMySQLConnectionLostReconnect, NO);
+
+	[self waitForExpectations:@[handler.reconnectExpectation, handler.reconnectFailureExpectation] timeout:1];
+	handler.sheetShown = NO;
+	handler.reconnectExpectation = [self expectationWithDescription:@"retry reconnect invoked"];
+	handler.reconnectFailureExpectation = nil;
+	handler.capturedReconnectFailureCompletion(YES);
+
+	[self waitForExpectations:@[handler.reconnectExpectation, actionExpectation] timeout:1];
+
+	XCTAssertFalse(handler.sheetShown);
+	XCTAssertEqual(handler.reconnectCount, 2U);
+	XCTAssertEqual(handler.closeAndDisconnectCount, 0U);
+	XCTAssertFalse(handler.backgroundConnectionLost);
 }
 
 - (void)testReconnectFailureDisconnectCloses
