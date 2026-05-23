@@ -1077,6 +1077,27 @@
 /* description for disconnected notification */
 "Disconnected from %@" = "Disconnected from %@";
 
+/* connection lost alert title */
+"Connection Lost" = "Connection Lost";
+
+/* connection lost alert message */
+"This tab's connection to the database was lost. Reconnect to continue?" = "This tab's connection to the database was lost. Reconnect to continue?";
+
+/* connection lost reconnect button */
+"Reconnect" = "Reconnect";
+
+/* connection lost disconnect button */
+"Disconnect" = "Disconnect";
+
+/* connection lost reconnect failure alert title */
+"Reconnect Failed" = "Reconnect Failed";
+
+/* connection lost reconnect failure alert message */
+"Sequel Ace could not reconnect this tab's database connection." = "Sequel Ace could not reconnect this tab's database connection.";
+
+/* connection lost retry button */
+"Retry" = "Retry";
+
 /* do update operator tooltip */
 "Do UPDATE where field contents match" = "Do UPDATE where field contents match";
 
