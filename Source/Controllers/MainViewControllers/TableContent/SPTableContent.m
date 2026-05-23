@@ -1506,6 +1506,19 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 }
 
+- (void)applyCellFilterForColumn:(NSString *)columnName operator:(NSString *)operatorName values:(NSArray *)values isNull:(BOOL)isNull
+{
+	NSDictionary *newFilter = [SPRuleFilterController makeSerializedFilterForColumn:columnName
+																		   operator:operatorName
+																			 values:(isNull ? @[] : (values ?: @[]))];
+	NSDictionary *mergedFilter = [SACellFilterMerge mergedFilterWithCurrentFilter:[ruleFilterController serializedFilter] newFilter:newFilter];
+
+	[ruleFilterController restoreSerializedFilters:mergedFilter];
+	activeFilter = SPTableContentFilterSourceRuleFilter;
+	[self setRuleEditorVisible:YES animate:YES];
+	[self performSelectorOnMainThread:@selector(filterTable:) withObject:ruleFilterController waitUntilDone:NO];
+}
+
 #pragma mark -
 #pragma mark Pagination
 
