@@ -202,6 +202,29 @@
 	XCTAssertTrue(handler.backgroundConnectionLost);
 }
 
+- (void)testReconnectFailureClosesWhenFailureSheetCannotBePresented
+{
+	SATestConnectionLostGateHandler *handler = [[SATestConnectionLostGateHandler alloc] init];
+	handler.backgroundConnectionLost = YES;
+	handler.reconnectResult = NO;
+	handler.reconnectFailurePresentationResult = NO;
+	handler.reconnectExpectation = [self expectationWithDescription:@"reconnect invoked"];
+	handler.reconnectFailureExpectation = [self expectationWithDescription:@"reconnect failure presentation attempted"];
+	__block NSUInteger actionCount = 0;
+
+	[SAMultiTabConnectionLostGate runAction:^{
+		actionCount++;
+	} forHandler:handler];
+	handler.capturedCompletion(SPMySQLConnectionLostReconnect, NO);
+
+	[self waitForExpectationsWithTimeout:1 handler:nil];
+	XCTAssertEqual(handler.reconnectCount, 1U);
+	XCTAssertEqual(handler.reconnectFailurePresentationCount, 1U);
+	XCTAssertEqual(actionCount, 0U);
+	XCTAssertEqual(handler.closeAndDisconnectCount, 1U);
+	XCTAssertTrue(handler.backgroundConnectionLost);
+}
+
 - (void)testReconnectFailureRetryReentersGate
 {
 	SATestConnectionLostGateHandler *handler = [[SATestConnectionLostGateHandler alloc] init];
