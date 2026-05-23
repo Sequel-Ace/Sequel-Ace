@@ -10,6 +10,7 @@
 @interface SATestConnectionLostGateHandler : NSObject <SAMultiTabConnectionLostGateHandler>
 @property (nonatomic) BOOL backgroundConnectionLost;
 @property (nonatomic) BOOL sheetShown;
+@property (nonatomic) BOOL sheetPresentationResult;
 @property (nonatomic) BOOL lastAllowCancel;
 @property (nonatomic) BOOL reconnectResult;
 @property (nonatomic) NSUInteger reconnectCount;
@@ -20,6 +21,14 @@
 @end
 
 @implementation SATestConnectionLostGateHandler
+
+- (instancetype)init
+{
+	if ((self = [super init])) {
+		_sheetPresentationResult = YES;
+	}
+	return self;
+}
 
 - (BOOL)backgroundConnectionLostForGate
 {
@@ -36,7 +45,7 @@
 	self.sheetShown = YES;
 	self.lastAllowCancel = allowCancel;
 	self.capturedCompletion = completion;
-	return YES;
+	return self.sheetPresentationResult;
 }
 
 - (BOOL)reconnectConnectionForGate
@@ -119,6 +128,23 @@
 	XCTAssertTrue(handler.lastAllowCancel);
 	XCTAssertEqual(actionCount, 0U);
 	XCTAssertNotNil(handler.capturedCompletion);
+}
+
+- (void)testGateClosesWithoutRunningActionWhenSheetCannotBePresented
+{
+	SATestConnectionLostGateHandler *handler = [[SATestConnectionLostGateHandler alloc] init];
+	handler.backgroundConnectionLost = YES;
+	handler.sheetPresentationResult = NO;
+	__block NSUInteger actionCount = 0;
+
+	[SAMultiTabConnectionLostGate runAction:^{
+		actionCount++;
+	} forHandler:handler];
+
+	XCTAssertTrue(handler.sheetShown);
+	XCTAssertEqual(actionCount, 0U);
+	XCTAssertEqual(handler.closeAndDisconnectCount, 1U);
+	XCTAssertTrue(handler.backgroundConnectionLost);
 }
 
 - (void)testReconnectCompletionClearsFlagAndRunsAction

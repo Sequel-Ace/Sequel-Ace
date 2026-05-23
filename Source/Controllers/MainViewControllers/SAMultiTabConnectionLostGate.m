@@ -14,7 +14,7 @@
 		return;
 	}
 
-	[handler showConnectionLostSheetAllowingCancelForGate:YES completion:^(SPMySQLConnectionLostDecision decision, BOOL cancelled) {
+	BOOL sheetShown = [handler showConnectionLostSheetAllowingCancelForGate:YES completion:^(SPMySQLConnectionLostDecision decision, BOOL cancelled) {
 		if (cancelled) return;
 
 		if (decision == SPMySQLConnectionLostReconnect) {
@@ -32,6 +32,10 @@
 			[handler closeAndDisconnectForGate];
 		}
 	}];
+
+	if (!sheetShown) {
+		[handler closeAndDisconnectForGate];
+	}
 }
 
 @end
