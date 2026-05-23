@@ -25,6 +25,18 @@
 					if (reconnected) {
 						[handler setBackgroundConnectionLostForGate:NO];
 						if (action) action();
+					} else {
+						BOOL failureShown = [handler presentReconnectFailureAllowingRetryForGate:^(BOOL retry) {
+							if (retry) {
+								[self runAction:action forHandler:handler];
+							} else {
+								[handler closeAndDisconnectForGate];
+							}
+						}];
+
+						if (!failureShown) {
+							[handler closeAndDisconnectForGate];
+						}
 					}
 				});
 			});

@@ -14,6 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setBackgroundConnectionLostForGate:(BOOL)lost;
 - (BOOL)showConnectionLostSheetAllowingCancelForGate:(BOOL)allowCancel completion:(void (^)(SPMySQLConnectionLostDecision decision, BOOL cancelled))completion;
 - (BOOL)reconnectConnectionForGate;
+- (BOOL)presentReconnectFailureAllowingRetryForGate:(void (^)(BOOL retry))completion;
 - (void)closeAndDisconnectForGate;
 
 @end

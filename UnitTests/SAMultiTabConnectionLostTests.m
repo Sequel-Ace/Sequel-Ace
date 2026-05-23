@@ -11,12 +11,16 @@
 @property (nonatomic) BOOL backgroundConnectionLost;
 @property (nonatomic) BOOL sheetShown;
 @property (nonatomic) BOOL sheetPresentationResult;
+@property (nonatomic) BOOL reconnectFailurePresentationResult;
 @property (nonatomic) BOOL lastAllowCancel;
 @property (nonatomic) BOOL reconnectResult;
 @property (nonatomic) NSUInteger reconnectCount;
+@property (nonatomic) NSUInteger reconnectFailurePresentationCount;
 @property (nonatomic) NSUInteger closeAndDisconnectCount;
 @property (nonatomic, strong) XCTestExpectation *reconnectExpectation;
+@property (nonatomic, strong) XCTestExpectation *reconnectFailureExpectation;
 @property (nonatomic, copy) void (^capturedCompletion)(SPMySQLConnectionLostDecision decision, BOOL cancelled);
+@property (nonatomic, copy) void (^capturedReconnectFailureCompletion)(BOOL retry);
 - (void)observeBackgroundLossNotification:(NSNotification *)notification;
 @end
 
@@ -26,6 +30,7 @@
 {
 	if ((self = [super init])) {
 		_sheetPresentationResult = YES;
+		_reconnectFailurePresentationResult = YES;
 	}
 	return self;
 }
@@ -53,6 +58,14 @@
 	self.reconnectCount++;
 	[self.reconnectExpectation fulfill];
 	return self.reconnectResult;
+}
+
+- (BOOL)presentReconnectFailureAllowingRetryForGate:(void (^)(BOOL retry))completion
+{
+	self.reconnectFailurePresentationCount++;
+	self.capturedReconnectFailureCompletion = completion;
+	[self.reconnectFailureExpectation fulfill];
+	return self.reconnectFailurePresentationResult;
 }
 
 - (void)closeAndDisconnectForGate
@@ -164,6 +177,74 @@
 	XCTAssertEqual(handler.reconnectCount, 1U);
 	XCTAssertFalse(handler.backgroundConnectionLost);
 	XCTAssertEqual(handler.closeAndDisconnectCount, 0U);
+}
+
+- (void)testReconnectFailurePresentsFailureHandlingWithoutRunningAction
+{
+	SATestConnectionLostGateHandler *handler = [[SATestConnectionLostGateHandler alloc] init];
+	handler.backgroundConnectionLost = YES;
+	handler.reconnectResult = NO;
+	handler.reconnectExpectation = [self expectationWithDescription:@"reconnect invoked"];
+	handler.reconnectFailureExpectation = [self expectationWithDescription:@"reconnect failure presented"];
+	__block NSUInteger actionCount = 0;
+
+	[SAMultiTabConnectionLostGate runAction:^{
+		actionCount++;
+	} forHandler:handler];
+	handler.capturedCompletion(SPMySQLConnectionLostReconnect, NO);
+
+	[self waitForExpectationsWithTimeout:1 handler:nil];
+	XCTAssertEqual(handler.reconnectCount, 1U);
+	XCTAssertEqual(handler.reconnectFailurePresentationCount, 1U);
+	XCTAssertNotNil(handler.capturedReconnectFailureCompletion);
+	XCTAssertEqual(actionCount, 0U);
+	XCTAssertEqual(handler.closeAndDisconnectCount, 0U);
+	XCTAssertTrue(handler.backgroundConnectionLost);
+}
+
+- (void)testReconnectFailureRetryReentersGate
+{
+	SATestConnectionLostGateHandler *handler = [[SATestConnectionLostGateHandler alloc] init];
+	handler.backgroundConnectionLost = YES;
+	handler.reconnectResult = NO;
+	handler.reconnectExpectation = [self expectationWithDescription:@"reconnect invoked"];
+	handler.reconnectFailureExpectation = [self expectationWithDescription:@"reconnect failure presented"];
+	__block NSUInteger actionCount = 0;
+
+	[SAMultiTabConnectionLostGate runAction:^{
+		actionCount++;
+	} forHandler:handler];
+	handler.capturedCompletion(SPMySQLConnectionLostReconnect, NO);
+
+	[self waitForExpectationsWithTimeout:1 handler:nil];
+	handler.sheetShown = NO;
+	handler.capturedReconnectFailureCompletion(YES);
+
+	XCTAssertTrue(handler.sheetShown);
+	XCTAssertEqual(actionCount, 0U);
+	XCTAssertEqual(handler.closeAndDisconnectCount, 0U);
+}
+
+- (void)testReconnectFailureDisconnectCloses
+{
+	SATestConnectionLostGateHandler *handler = [[SATestConnectionLostGateHandler alloc] init];
+	handler.backgroundConnectionLost = YES;
+	handler.reconnectResult = NO;
+	handler.reconnectExpectation = [self expectationWithDescription:@"reconnect invoked"];
+	handler.reconnectFailureExpectation = [self expectationWithDescription:@"reconnect failure presented"];
+	__block NSUInteger actionCount = 0;
+
+	[SAMultiTabConnectionLostGate runAction:^{
+		actionCount++;
+	} forHandler:handler];
+	handler.capturedCompletion(SPMySQLConnectionLostReconnect, NO);
+
+	[self waitForExpectationsWithTimeout:1 handler:nil];
+	handler.capturedReconnectFailureCompletion(NO);
+
+	XCTAssertEqual(actionCount, 0U);
+	XCTAssertEqual(handler.closeAndDisconnectCount, 1U);
+	XCTAssertTrue(handler.backgroundConnectionLost);
 }
 
 - (void)testDisconnectCompletionClosesWithoutRunningAction

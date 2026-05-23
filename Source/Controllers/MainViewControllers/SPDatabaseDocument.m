@@ -136,6 +136,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (NSString *)keychainPasswordForSSHConnection:(SPMySQLConnection *)connection;
 - (void)_mysqlConnectionLostInBackground:(NSNotification *)notification;
 - (BOOL)_showConnectionLostSheetAllowingCancel:(BOOL)allowCancel completion:(void (^)(SPMySQLConnectionLostDecision decision, BOOL cancelled))completion;
+- (BOOL)_showReconnectFailureSheetWithCompletion:(void (^)(BOOL retry))completion;
 
 @end
 
@@ -6118,6 +6119,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     return [mySQLConnection reconnect];
 }
 
+- (BOOL)presentReconnectFailureAllowingRetryForGate:(void (^)(BOOL retry))completion
+{
+    return [self _showReconnectFailureSheetWithCompletion:completion];
+}
+
 - (void)closeAndDisconnectForGate
 {
     [self closeAndDisconnect];
@@ -6160,6 +6166,32 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             : SPMySQLConnectionLostDisconnect;
 
         if (completion) completion(decision, NO);
+    }];
+
+    return YES;
+}
+
+- (BOOL)_showReconnectFailureSheetWithCompletion:(void (^)(BOOL retry))completion
+{
+    NSWindow *parentWindow = [self.parentWindowController window];
+
+    if (!parentWindow || ![parentWindow isVisible] || appIsTerminating) {
+        return NO;
+    }
+
+    if ([parentWindow isMiniaturized]) {
+        [parentWindow deminiaturize:self];
+    }
+    [[self parentWindowControllerWindow] orderWindow:NSWindowAbove relativeTo:0];
+
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:NSLocalizedString(@"Reconnect Failed", @"connection lost reconnect failure alert title")];
+    [alert setInformativeText:NSLocalizedString(@"Sequel Ace could not reconnect this tab's database connection.", @"connection lost reconnect failure alert message")];
+    [alert addButtonWithTitle:NSLocalizedString(@"Retry", @"connection lost retry button")];
+    [alert addButtonWithTitle:NSLocalizedString(@"Disconnect", @"connection lost disconnect button")];
+
+    [alert beginSheetModalForWindow:parentWindow completionHandler:^(NSModalResponse returnCode) {
+        if (completion) completion(returnCode == NSAlertFirstButtonReturn);
     }];
 
     return YES;
