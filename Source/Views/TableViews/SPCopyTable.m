@@ -100,7 +100,8 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 	if(visibleColumn < 0 || visibleColumn >= (NSInteger)[[self tableColumns] count]) return NSNotFound;
 
 	NSTableColumn *tableColumn = [[self tableColumns] objectAtIndex:visibleColumn];
-	return [[tableColumn identifier] integerValue];
+	NSNumber *storageColumn = [SACellFilterColumnIdentifier storageIndexFromIdentifier:[tableColumn identifier]];
+	return storageColumn ? [storageColumn integerValue] : NSNotFound;
 }
 
 - (void)_appendCellFilterMenuToMenu:(NSMenu *)menu forEvent:(NSEvent *)event
