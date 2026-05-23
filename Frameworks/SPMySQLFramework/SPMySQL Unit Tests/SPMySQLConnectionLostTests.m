@@ -293,6 +293,42 @@
 	XCTAssertEqual(reconnectCount, 1U);
 }
 
+- (void)testConcurrentReconnectRequestsShareSingleSilentAttempt
+{
+	SPMySQLConnection *connection = [[SPMySQLConnection alloc] init];
+	[connection _setStateForTesting:SPMySQLConnectionLostInBackground];
+	__weak SPMySQLConnection *weakConnection = connection;
+
+	dispatch_group_t reconnectGroup = dispatch_group_create();
+	dispatch_semaphore_t firstAttemptStarted = dispatch_semaphore_create(0);
+	dispatch_semaphore_t releaseFirstAttempt = dispatch_semaphore_create(0);
+	__block NSUInteger reconnectCount = 0;
+	__block BOOL firstResult = NO;
+	__block BOOL secondResult = NO;
+	[connection _setSilentReconnectAttemptForTesting:^BOOL{
+		reconnectCount++;
+		dispatch_semaphore_signal(firstAttemptStarted);
+		dispatch_semaphore_wait(releaseFirstAttempt, DISPATCH_TIME_FOREVER);
+		[weakConnection _setStateForTesting:SPMySQLConnected];
+		return YES;
+	}];
+
+	dispatch_group_async(reconnectGroup, dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+		firstResult = [connection _reconnectAllowingRetries:YES];
+	});
+	dispatch_semaphore_wait(firstAttemptStarted, DISPATCH_TIME_FOREVER);
+	dispatch_group_async(reconnectGroup, dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+		secondResult = [connection _reconnectAllowingRetries:YES];
+	});
+	dispatch_semaphore_signal(releaseFirstAttempt);
+
+	long waitResult = dispatch_group_wait(reconnectGroup, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)));
+	XCTAssertEqual(waitResult, 0L);
+	XCTAssertTrue(firstResult);
+	XCTAssertTrue(secondResult);
+	XCTAssertEqual(reconnectCount, 1U);
+}
+
 - (void)testSilentReconnectRecapturesRestoreSnapshotAfterFailure
 {
 	SPMySQLConnectionRestoreSnapshotTestConnection *connection = [[SPMySQLConnectionRestoreSnapshotTestConnection alloc] init];

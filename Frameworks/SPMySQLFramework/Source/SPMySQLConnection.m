@@ -1077,7 +1077,15 @@ asm(".desc ___crashreporter_info__, 0x10");
 		// Check whether a reconnection attempt is already being made - if so, wait
 		// and return the status of that reconnection attempt.  This improves threaded
 		// use of the connection by preventing reconnect races.
-		if (reconnectingThread && !pthread_equal(reconnectingThread, pthread_self())) {
+		BOOL shouldWaitForReconnect = NO;
+		@synchronized (self) {
+			shouldWaitForReconnect = (reconnectingThread && !pthread_equal(reconnectingThread, pthread_self()));
+			if (!reconnectingThread) {
+				reconnectingThread = pthread_self();
+			}
+		}
+
+		if (shouldWaitForReconnect) {
 
 			// Loop in a panel runloop mode until the reconnection has processed; if an iteration
 			// takes less than the requested 0.1s, sleep instead.
@@ -1096,11 +1104,22 @@ asm(".desc ___crashreporter_info__, 0x10");
 			if (!(state == SPMySQLConnectionLostInBackground && canRetry)) {
 				return (state == SPMySQLConnected);
 			}
+
+			@synchronized (self) {
+				if (!reconnectingThread) {
+					reconnectingThread = pthread_self();
+				}
+			}
 		}
 
 		if ([[NSThread currentThread] isCancelled]) {
             SPLog(@"NSThread currentThread] isCancelled, returning");
 
+			@synchronized (self) {
+				if (reconnectingThread && pthread_equal(reconnectingThread, pthread_self())) {
+					reconnectingThread = NULL;
+				}
+			}
 			return NO;
 		}
 
@@ -1135,14 +1154,22 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 					// By default attempt a reconnect
 				default:
-					reconnectingThread = NULL;
+					@synchronized (self) {
+						if (reconnectingThread && pthread_equal(reconnectingThread, pthread_self())) {
+							reconnectingThread = NULL;
+						}
+					}
                     SPLog(@"_reconnectAllowingRetries By default attempt a reconnect");
 					reconnectSucceeded = [self _reconnectAllowingRetries:YES dispatchOnMainThread:dispatchOnMainThread];
 			}
 		}
 	}
 
-	reconnectingThread = NULL;
+	@synchronized (self) {
+		if (reconnectingThread && pthread_equal(reconnectingThread, pthread_self())) {
+			reconnectingThread = NULL;
+		}
+	}
 	return reconnectSucceeded;
 }
 
