@@ -86,7 +86,7 @@
 	NSConditionLock *connectionLock;
 
 	// Currently selected database
-	NSString *database, *databaseToRestore;
+	NSString *database;
 
 	// Delegate connection lost decisions
 	NSUInteger reconnectionRetryAttempts;
@@ -106,9 +106,9 @@
 
 	// Encoding details - and also a record of any previous encoding to allow
 	// switching back and forth
-	NSString *encoding, *encodingToRestore;
+	NSString *encoding;
 	NSStringEncoding stringEncoding;
-	BOOL encodingUsesLatin1Transport, encodingUsesLatin1TransportToRestore;
+	BOOL encodingUsesLatin1Transport;
 	NSString *previousEncoding;
 	BOOL previousEncodingUsesLatin1Transport;
 

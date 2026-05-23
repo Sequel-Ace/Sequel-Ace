@@ -77,6 +77,37 @@
 
 @end
 
+@interface SPMySQLConnectionRestoreSnapshotTestConnection : SPMySQLConnection
+@property (nonatomic) BOOL nextConnectResult;
+@property (nonatomic, copy) NSString *restoredDatabase;
+@property (nonatomic, copy) NSString *restoredEncoding;
+@property (nonatomic) BOOL restoredLatin1Transport;
+@end
+
+@implementation SPMySQLConnectionRestoreSnapshotTestConnection
+
+- (BOOL)_connect
+{
+	[self _setStateForTesting:self.nextConnectResult ? SPMySQLConnected : SPMySQLDisconnected];
+	return self.nextConnectResult;
+}
+
+- (void)_disconnect
+{
+}
+
+- (void)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
+                                              encoding:(NSString *)encodingName
+                      encodingUsesLatin1Transport:(BOOL)useLatin1Transport
+                                 timeZoneIdentifier:(NSString *)timeZoneIdentifier
+{
+	self.restoredDatabase = databaseName;
+	self.restoredEncoding = encodingName;
+	self.restoredLatin1Transport = useLatin1Transport;
+}
+
+@end
+
 @interface SPMySQLConnectionLostTestProxy : NSObject <SPMySQLConnectionProxy>
 @property (nonatomic) SPMySQLConnectionProxyState state;
 @property (nonatomic) NSUInteger connectCount;
@@ -223,6 +254,27 @@
 
 	[self waitForExpectationsWithTimeout:1 handler:nil];
 	XCTAssertEqual(reconnectCount, 1U);
+}
+
+- (void)testSilentReconnectRecapturesRestoreSnapshotAfterFailure
+{
+	SPMySQLConnectionRestoreSnapshotTestConnection *connection = [[SPMySQLConnectionRestoreSnapshotTestConnection alloc] init];
+	connection.database = @"first";
+	[connection setValue:@"utf8mb4" forKey:@"encoding"];
+	[connection setValue:@NO forKey:@"encodingUsesLatin1Transport"];
+	connection.nextConnectResult = NO;
+
+	XCTAssertFalse([connection _silentReconnectAttempt]);
+
+	connection.database = @"second";
+	[connection setValue:@"latin1" forKey:@"encoding"];
+	[connection setValue:@NO forKey:@"encodingUsesLatin1Transport"];
+	connection.nextConnectResult = YES;
+
+	XCTAssertTrue([connection _silentReconnectAttempt]);
+	XCTAssertEqualObjects(connection.restoredDatabase, @"second");
+	XCTAssertEqualObjects(connection.restoredEncoding, @"latin1");
+	XCTAssertFalse(connection.restoredLatin1Transport);
 }
 
 - (void)testKeepAlivePingFailurePostsBackgroundNotificationWithoutDelegateDecision

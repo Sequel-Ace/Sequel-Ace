@@ -351,7 +351,6 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 
 		// Start with no selected database
 		database = nil;
-		databaseToRestore = nil;
 
 		// Set a timeout of 30 seconds, with keepalive on and acting every sixty seconds
 		timeout = 30;
@@ -367,8 +366,6 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
         encoding = @"utf8mb4";
 		stringEncoding = NSUTF8StringEncoding;
 		encodingUsesLatin1Transport = NO;
-		encodingToRestore = nil;
-		encodingUsesLatin1TransportToRestore = NO;
 		previousEncoding = nil;
 		previousEncodingUsesLatin1Transport = NO;
 
@@ -1157,6 +1154,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 #endif
 
 	BOOL reconnectSucceeded = NO;
+	NSString *databaseToRestoreForAttempt = [database copy];
+	NSString *encodingToRestoreForAttempt = [encoding copy];
+	BOOL encodingUsesLatin1TransportToRestoreForAttempt = encodingUsesLatin1Transport;
 	NSString *timeZoneIdentifierToRestore = nil;
 
 	reconnectingThread = pthread_self();
@@ -1164,11 +1164,6 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// Store certain details about the connection, so that if the reconnection is successful
 	// they can be restored.  This has to be treated separately from _restoreConnectionDetails
 	// as a full connection reinitialises certain values from the server.
-	if (!encodingToRestore) {
-		encodingToRestore = [encoding copy];
-		encodingUsesLatin1TransportToRestore = encodingUsesLatin1Transport;
-		databaseToRestore = [database copy];
-	}
 	// Keep this per-attempt capture aligned with self.timeZoneIdentifier:
 	// reconnect retries re-capture it from the surviving property value, so
 	// revisit this if disconnect teardown ever clears timeZoneIdentifier.
@@ -1281,14 +1276,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// If the reconnection succeeded, restore the connection state as appropriate
 	if (state == SPMySQLConnected && ![[NSThread currentThread] isCancelled]) {
 		reconnectSucceeded = YES;
-		[self _restoreSessionStateAfterReconnectWithDatabase:databaseToRestore
-		                                            encoding:encodingToRestore
-		                        encodingUsesLatin1Transport:encodingUsesLatin1TransportToRestore
+		[self _restoreSessionStateAfterReconnectWithDatabase:databaseToRestoreForAttempt
+		                                            encoding:encodingToRestoreForAttempt
+		                        encodingUsesLatin1Transport:encodingUsesLatin1TransportToRestoreForAttempt
 		                              timeZoneIdentifier:timeZoneIdentifierToRestore];
-		// When the connection is restored successfully, reset the relevant variables to prepare for the next time
-		databaseToRestore = nil;
-		encodingToRestore = nil;
-		encodingUsesLatin1TransportToRestore = NO;
 	}
 
 	return reconnectSucceeded;
