@@ -67,6 +67,7 @@
 	BOOL connectedWithSSL;
 	BOOL userTriggeredDisconnect;
 	pthread_t reconnectingThread;
+	dispatch_queue_t _reconnectQueue;
 	uint64_t initialConnectTime;
 	unsigned long mysqlConnectionThreadId;
 

@@ -50,6 +50,8 @@ static void *mySQLThreadFlag;
 
 NSString * const SPMySQLConnectionLostInBackgroundNotification = @"SPMySQLConnectionLostInBackgroundNotification";
 
+static void *SPMySQLReconnectQueueKey = &SPMySQLReconnectQueueKey;
+
 static BOOL SPHostIsLoopbackIPv4Address(NSString *normalizedHost)
 {
 	struct in_addr ipv4Address;
@@ -331,6 +333,8 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		state = SPMySQLDisconnected;
 		userTriggeredDisconnect = NO;
 		reconnectingThread = NULL;
+		_reconnectQueue = dispatch_queue_create("com.sequel-ace.spmysql.reconnect", DISPATCH_QUEUE_SERIAL);
+		dispatch_queue_set_specific(_reconnectQueue, SPMySQLReconnectQueueKey, SPMySQLReconnectQueueKey, NULL);
 		mysqlConnectionThreadId = 0;
 		initialConnectTime = 0;
 
@@ -426,6 +430,10 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 - (void) dealloc
 {
 	userTriggeredDisconnect = YES;
+
+	if (_reconnectQueue && dispatch_get_specific(SPMySQLReconnectQueueKey) != SPMySQLReconnectQueueKey) {
+		dispatch_sync(_reconnectQueue, ^{});
+	}
 
 	// Unset the delegate
 	[self setDelegate:nil];
@@ -1039,6 +1047,13 @@ asm(".desc ___crashreporter_info__, 0x10");
 
     SPLog(@"_reconnectAllowingRetries");
 	if (userTriggeredDisconnect) return NO;
+	if ([NSThread isMainThread]) {
+		dispatch_async(_reconnectQueue, ^{
+			(void)[self _reconnectAllowingRetries:canRetry];
+		});
+		return NO;
+	}
+
 	BOOL reconnectSucceeded = NO;
     NSString *timeZoneIdentifierToRestore = nil;
 
