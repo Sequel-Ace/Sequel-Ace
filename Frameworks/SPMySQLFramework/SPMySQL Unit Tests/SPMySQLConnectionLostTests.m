@@ -177,6 +177,26 @@
 	XCTAssertEqual(reconnectCount, 1U);
 }
 
+- (void)testPublicReconnectOnWorkerThreadReturnsReconnectResult
+{
+	SPMySQLConnection *connection = [[SPMySQLConnection alloc] init];
+	XCTestExpectation *reconnectExpectation = [self expectationWithDescription:@"public reconnect"];
+	__block NSUInteger reconnectCount = 0;
+	[connection _setReconnectAttemptForTesting:^BOOL(BOOL canRetry) {
+		reconnectCount++;
+		XCTAssertTrue(canRetry);
+		return YES;
+	}];
+
+	dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+		XCTAssertTrue([connection reconnect]);
+		[reconnectExpectation fulfill];
+	});
+
+	[self waitForExpectationsWithTimeout:1 handler:nil];
+	XCTAssertEqual(reconnectCount, 1U);
+}
+
 - (void)testKeepAlivePingFailurePostsBackgroundNotificationWithoutDelegateDecision
 {
 	SPMySQLConnection *connection = [[SPMySQLConnection alloc] init];

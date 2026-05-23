@@ -492,7 +492,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 {
     SPLog(@"reconnect");
 	userTriggeredDisconnect = NO;
-	return [self _reconnectAllowingRetries:YES];
+	return [self _reconnectAllowingRetries:YES dispatchOnMainThread:NO];
 }
 
 /**
@@ -1049,10 +1049,15 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry
 {
+	return [self _reconnectAllowingRetries:canRetry dispatchOnMainThread:YES];
+}
+
+- (BOOL)_reconnectAllowingRetries:(BOOL)canRetry dispatchOnMainThread:(BOOL)dispatchOnMainThread
+{
 
     SPLog(@"_reconnectAllowingRetries");
 	if (userTriggeredDisconnect) return NO;
-	if ([NSThread isMainThread]) {
+	if (dispatchOnMainThread && [NSThread isMainThread]) {
 		dispatch_async(_reconnectQueue, ^{
 			(void)[self _reconnectAllowingRetries:canRetry];
 		});
@@ -1131,7 +1136,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 				default:
 					reconnectingThread = NULL;
                     SPLog(@"_reconnectAllowingRetries By default attempt a reconnect");
-					reconnectSucceeded = [self _reconnectAllowingRetries:YES];
+					reconnectSucceeded = [self _reconnectAllowingRetries:YES dispatchOnMainThread:dispatchOnMainThread];
 			}
 		}
 	}
