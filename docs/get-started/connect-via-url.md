@@ -51,6 +51,7 @@ These query parameters are currently supported:
 - `socket`
 - `aws_profile`
 - `aws_region`
+- `enable_cleartext_plugin` (set to `1` to allow MySQL's cleartext authentication plugin, required by PAM, LDAP, and some IAM-style authenticators; `0` or omission keeps it disabled)
 
 `type` explicitly sets the connection mode (`tcpip`, `socket`, `ssh`, or `aws_iam`) and takes precedence over inferred mode.
 
@@ -87,6 +88,9 @@ open 'mysql://db_user@mydb.cluster-abcdefghijkl.us-east-1.rds.amazonaws.com:3306
 
 # AWS IAM connection (type inferred from AWS parameters)
 open 'mysql://db_user@mydb.cluster-abcdefghijkl.us-east-1.rds.amazonaws.com:3306/my_database?aws_profile=default'
+
+# Enable MySQL's cleartext authentication plugin (e.g. for PAM/LDAP)
+open 'mysql://db_user:db_password@db.example.com:3306/my_database?enable_cleartext_plugin=1'
 ```
 
 If any unsupported query parameter is included, Sequel Ace shows an error and does not process that URL.
@@ -99,6 +103,7 @@ If any unsupported query parameter is included, Sequel Ace shows an error and do
 - For socket URLs, use the `socket` query parameter for the Unix socket path. Socket files must be inside Sequel Ace's container path due to macOS sandboxing.
 - AWS IAM URLs require Sequel Ace to already have sandbox access to your `~/.aws` directory. Grant access from the **AWS IAM** tab first.
 - If you use `ssh_keyLocation`, Sequel Ace must already have sandbox access to that key path. Grant access in **Sequel Ace → Preferences → Files** (add the key file or its containing folder).
+- `enable_cleartext_plugin=1` lets the MySQL client transmit the password unobscured to plugins that require it (typically PAM or LDAP back-ends). Only enable it on TLS-encrypted or SSH-tunneled connections.
 
 #### Related History
 

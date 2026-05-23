@@ -97,7 +97,7 @@ static NSString *SPNewDatabaseCopyContent = @"SPNewDatabaseCopyContent";
 
 static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
-@interface SPDatabaseDocument ()
+@interface SPDatabaseDocument () <SADatabaseSelectionDelegate>
 
 // Privately redeclare as read/write to get the synthesized setter
 @property (readwrite, assign) BOOL allowSplitViewResizing;
@@ -596,58 +596,29 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  *
  * This method *MUST* be called from the UI thread!
  */
+- (IBAction)setDatabases:(id)sender {
+    [self setDatabases];
+}
+
 - (void)setDatabases {
     if (!chooseDatabaseButton) {
         return;
     }
 
-    [chooseDatabaseButton removeAllItems];
-
-    [chooseDatabaseButton addItemWithTitle:NSLocalizedString(@"Choose Database...", @"menu item for choose db")];
-    [[chooseDatabaseButton menu] addItem:[NSMenuItem separatorItem]];
-    [[chooseDatabaseButton menu] addItemWithTitle:NSLocalizedString(@"Add Database...", @"menu item to add db") action:@selector(addDatabase:) keyEquivalent:@""];
-    [[chooseDatabaseButton menu] addItemWithTitle:NSLocalizedString(@"Refresh Databases", @"menu item to refresh databases") action:@selector(setDatabases:) keyEquivalent:@""];
-    [[chooseDatabaseButton menu] addItem:[NSMenuItem separatorItem]];
-
-
     NSArray *theDatabaseList = [mySQLConnection databases];
 
-    allDatabases = [[NSMutableArray alloc] initWithCapacity:[theDatabaseList count]];
-    allSystemDatabases = [[NSMutableArray alloc] initWithCapacity:2];
+    SADatabasePartition *partition = [SADatabaseListManager configurePopup:chooseDatabaseButton
+                                                                 databases:theDatabaseList ?: @[]
+                                                           currentDatabase:[self database]
+                                                       addDatabaseSelector:@selector(addDatabase:)
+                                                  refreshDatabasesSelector:@selector(setDatabases:)];
 
-    for (NSString *databaseName in theDatabaseList)
-    {
-        // If the database is either information_schema or mysql then it is classed as a
-        // system database; similarly, performance_schema in 5.5.3+ and sys in 5.7.7+
-        if ([databaseName isEqualToString:SPMySQLDatabase] ||
-            [databaseName isEqualToString:SPMySQLInformationSchemaDatabase] ||
-            [databaseName isEqualToString:SPMySQLPerformanceSchemaDatabase] ||
-            [databaseName isEqualToString:SPMySQLSysDatabase]) {
-            [allSystemDatabases addObject:databaseName];
-        }
-        else {
-            [allDatabases addObject:databaseName];
-        }
-    }
-
-    // Add system databases
-    for (NSString *database in allSystemDatabases)
-    {
-        [chooseDatabaseButton safeAddItemWithTitle:database];
-    }
-
-    // Add a separator between the system and user databases
-    if ([allSystemDatabases count] > 0) {
-        [[chooseDatabaseButton menu] addItem:[NSMenuItem separatorItem]];
-    }
-
-    // Add user databases
-    for (NSString *database in allDatabases)
-    {
-        [chooseDatabaseButton safeAddItemWithTitle:database];
-    }
-
-    (![self database]) ? [chooseDatabaseButton selectItemAtIndex:0] : [chooseDatabaseButton selectItemWithTitle:[self database]];
+    // Persist the partition: other call sites still read these ivars
+    // directly (add/copy/rename enablement in -controlTextDidChange:,
+    // and the delete path in -_removeDatabase). A later step will
+    // absorb those readers into the manager.
+    allSystemDatabases = [partition.systemDatabases mutableCopy];
+    allDatabases = [partition.userDatabases mutableCopy];
 }
 
 /**
@@ -686,15 +657,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // If Navigator runs in syncMode let it follow the selection
     if ([[[SPNavigatorController sharedNavigatorController] onMainThread] syncMode]) {
-        NSMutableString *schemaPath = [NSMutableString string];
-
-        [schemaPath setString:[self connectionID]];
-
-        if([chooseDatabaseButton titleOfSelectedItem] && [[chooseDatabaseButton titleOfSelectedItem] length]) {
-            [schemaPath appendString:SPUniqueSchemaDelimiter];
-            [schemaPath appendString:[chooseDatabaseButton titleOfSelectedItem]];
-        }
-
+        NSString *schemaPath = [SADatabaseListManager navigatorSchemaPathWithConnectionID:[self connectionID]
+                                                                   selectedDatabaseTitle:[chooseDatabaseButton titleOfSelectedItem]];
         [[SPNavigatorController sharedNavigatorController] selectPath:schemaPath];
     }
 
@@ -3366,6 +3330,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 /**
  * Update the window title.
+ *
+ * The actual string composition lives in SAWindowTitleBuilder (Swift) —
+ * this method gathers the document's current state and forwards the
+ * result to the window controller. The accessory-color update only
+ * applies in the connected branch.
  */
 - (void)updateWindowTitle:(id)sender {
     // Ensure a call on the main thread
@@ -3373,47 +3342,29 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         return [[self onMainThread] updateWindowTitle:sender];
     }
 
-    // Determine name details
-    NSString *pathName = @"";
-    if ([[[self fileURL] path] length] && ![self isUntitled]) {
-        pathName = [NSString stringWithFormat:@"%@ — ", [[[self fileURL] path] lastPathComponent]];
+    SAWindowConnectionState state;
+    if ([connectionController isConnecting]) {
+        state = SAWindowConnectionStateConnecting;
+    } else if (!_isConnected) {
+        state = SAWindowConnectionStateDisconnected;
+    } else {
+        state = SAWindowConnectionStateConnected;
     }
 
-    if ([connectionController isConnecting]) {
-        NSString *title = NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting");
-        [self.parentWindowController updateWindowWithTitle:title tabTitle:title];
-    } else if (!_isConnected) {
-        NSString *title = [NSString stringWithFormat:@"%@%@", pathName, [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey]];
-        [self.parentWindowController updateWindowWithTitle:title tabTitle:title];
-    } else {
-        NSMutableString *windowTitle = [NSMutableString string];
+    SAWindowTitleResult *result = [SAWindowTitleBuilder
+        buildTitleWithConnectionState:state
+                             filePath:[[self fileURL] path]
+                           isUntitled:[self isUntitled]
+                           bundleName:[[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString *)kCFBundleNameKey]
+                       connectionName:[self name]
+                             database:[self database]
+                                table:[self table]
+                         mySQLVersion:mySQLVersion
+             showServerVersionInTitle:[prefs boolForKey:SPDisplayServerVersionInWindowTitle]];
 
-        // Add the path to the window title
-        [windowTitle appendString:pathName];
+    [self.parentWindowController updateWindowWithTitle:result.windowTitle tabTitle:result.tabTitle];
 
-        // Add the MySQL version to the window title if enabled in prefs
-        if ([prefs boolForKey:SPDisplayServerVersionInWindowTitle]) {
-            [windowTitle appendFormat:@"(MySQL %@) ", mySQLVersion];
-        }
-
-        NSMutableString *tabTitle = [NSMutableString string];
-
-        // Add the name to the window
-        [windowTitle appendString:[self name]];
-        [tabTitle appendString:[self name]];
-
-        // If a database is selected, add to the window - and other tabs if host is the same but db different or table is not set
-        if ([self database]) {
-            [windowTitle appendFormat:@"/%@", [self database]];
-            [tabTitle appendFormat:@"/%@", [self database]];
-        }
-
-        // Add the table name if one is selected
-        if ([[self table] length]) {
-            [windowTitle appendFormat:@"/%@", [self table]];
-            [tabTitle appendFormat:@"/%@", [self table]];
-        }
-        [self.parentWindowController updateWindowWithTitle:windowTitle tabTitle:tabTitle];
+    if (state == SAWindowConnectionStateConnected) {
         [self.parentWindowController updateWindowAccessoryWithColor:[[SPFavoriteColorSupport sharedInstance] colorForIndex:[connectionController colorIndex]] isSSL:[self.connectionController isConnectedViaSSL]];
     }
 }
@@ -3743,14 +3694,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
- * The window title for this document.
+ * The window title for this document. Mirrors the disconnected-state
+ * preamble of -updateWindowTitle:; both share SAWindowTitleBuilder.
  */
 - (NSString *)displayName
 {
-    if (!_isConnected) {
-        return [NSString stringWithFormat:@"%@%@", ([[[self fileURL] path] length] && ![self isUntitled]) ? [NSString stringWithFormat:@"%@ — ",[[[self fileURL] path] lastPathComponent]] : @"", [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey]];
-    }
-    return [[[self fileURL] path] lastPathComponent];
+    return [SAWindowTitleBuilder displayNameWithIsConnected:_isConnected
+                                                   filePath:[[self fileURL] path]
+                                                 isUntitled:[self isUntitled]
+                                                 bundleName:[[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString *)kCFBundleNameKey]];
 }
 
 - (NSUndoManager *)undoManager
@@ -5298,111 +5250,137 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 /**
  * Select the specified database and, optionally, table.
+ *
+ * Trampoline into SADatabaseListManager. The orchestration
+ * (history-state save, popup-rebuild-and-retry, focus restoration)
+ * lives in Swift via `SADatabaseSelectionDelegate`; the delegate
+ * implementation is in the SADatabaseSelectionDelegate section below.
  */
 - (void)_selectDatabaseAndItem:(NSDictionary *)selectionDetails
 {
     @autoreleasepool {
-        NSString *targetDatabaseName = [selectionDetails objectForKey:@"database"];
-        NSString *targetItemName = [selectionDetails objectForKey:@"item"];
-
-        // Save existing scroll position and details, and ensure no duplicate entries are created as table list changes
-        BOOL historyStateChanging = [spHistoryControllerInstance modifyingState];
-
-        if (!historyStateChanging) {
-            [spHistoryControllerInstance updateHistoryEntries];
-            [spHistoryControllerInstance setModifyingState:YES];
-        }
-
-        if (![targetDatabaseName isEqualToString:selectedDatabase]) {
-            NSInteger targetDatabaseIndex = [[chooseDatabaseButton onMainThread] indexOfItemWithTitle:targetDatabaseName];
-            BOOL didSelectDatabase = [mySQLConnection selectDatabase:targetDatabaseName];
-
-            // Refresh database metadata and retry once when the list is stale or the initial selection failed.
-            if ((targetDatabaseIndex == NSNotFound || !didSelectDatabase) && [mySQLConnection isConnected]) {
-                SPMainQSync(^{
-                    [self setDatabases];
-                });
-
-                targetDatabaseIndex = [[chooseDatabaseButton onMainThread] indexOfItemWithTitle:targetDatabaseName];
-
-                if (!didSelectDatabase) {
-                    didSelectDatabase = [mySQLConnection selectDatabase:targetDatabaseName];
-                }
-            }
-
-            // Abort only if the database still can't be selected after refreshing and retrying.
-            if (!didSelectDatabase) {
-                // End the task first to ensure the database dropdown can be reselected
-                [self endTask];
-
-                if ([mySQLConnection isConnected]) {
-                    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists.", @"message of panel when connection to db failed after selecting from popupbutton"), targetDatabaseName] callback:nil];
-                }
-
-                if (!historyStateChanging) {
-                    [spHistoryControllerInstance setModifyingState:NO];
-                    [spHistoryControllerInstance updateHistoryEntries];
-                }
-
-                return;
-            }
-
-            if (targetDatabaseIndex == NSNotFound) {
-                SPMainQSync(^{
-                    [self->chooseDatabaseButton safeAddItemWithTitle:targetDatabaseName];
-                });
-                targetDatabaseIndex = [[chooseDatabaseButton onMainThread] indexOfItemWithTitle:targetDatabaseName];
-            }
-
-            if (targetDatabaseIndex != NSNotFound) {
-                [[chooseDatabaseButton onMainThread] selectItemWithTitle:targetDatabaseName];
-            } else {
-                [[chooseDatabaseButton onMainThread] selectItemAtIndex:0];
-            }
-
-            selectedDatabase = [[NSString alloc] initWithString:targetDatabaseName];
-            selectedTableName = nil;
-
-            [databaseDataInstance resetAllData];
-
-            // Update the stored database encoding, used for views, "default" table encodings, and to allow
-            // or disallow use of the "View using encoding" menu
-            [self detectDatabaseEncoding];
-
-            // Set the connection of SPTablesList to reload tables in db
-            [tablesListInstance setConnection:mySQLConnection];
-
-            // Update the window title
-            [self updateWindowTitle:self];
-        }
-
-        SPMainQSync(^{
-            BOOL focusOnFilter = YES;
-            if (targetItemName) focusOnFilter = NO;
-
-            // If a the table has changed, update the selection
-            if (![targetItemName isEqualToString:[self table]] && targetItemName) {
-                focusOnFilter = ![self->tablesListInstance selectItemWithName:targetItemName];
-            }
-
-            // Ensure the window focus is on the table list or the filter as appropriate
-            [self->tablesListInstance setTableListSelectability:YES];
-            if (focusOnFilter) {
-                [self->tablesListInstance makeTableListFilterHaveFocus];
-            } else {
-                [self->tablesListInstance makeTableListHaveFocus];
-            }
-            [self->tablesListInstance setTableListSelectability:NO];
-        });
-
-        if (!historyStateChanging) {
-            [spHistoryControllerInstance setModifyingState:NO];
-            [spHistoryControllerInstance updateHistoryEntries];
-        }
-
-        [self endTask];
-        [self _processDatabaseChangedBundleTriggerActions];
+        [SADatabaseListManager performSelectionWithDatabase:[selectionDetails objectForKey:@"database"]
+                                                       item:[selectionDetails objectForKey:@"item"]
+                                                   delegate:self];
     }
+}
+
+#pragma mark - SADatabaseSelectionDelegate
+
+- (NSString *)currentSelectedDatabase
+{
+    return selectedDatabase;
+}
+
+- (void)setCurrentSelectedDatabase:(NSString *)value
+{
+    // Match original semantics: -_selectDatabaseAndItem: built a fresh
+    // immutable copy via [[NSString alloc] initWithString:…] when it
+    // assigned to the ivar. -copy on an NSString returns self for the
+    // already-immutable case, but stays correct for any mutable input.
+    selectedDatabase = [value copy];
+}
+
+- (NSString *)currentSelectedTable
+{
+    return selectedTableName;
+}
+
+- (void)setCurrentSelectedTable:(NSString *)value
+{
+    selectedTableName = [value copy];
+}
+
+- (BOOL)historyStateIsModifying
+{
+    return [spHistoryControllerInstance modifyingState];
+}
+
+- (void)setHistoryStateIsModifying:(BOOL)value
+{
+    [spHistoryControllerInstance setModifyingState:value];
+}
+
+- (BOOL)isDatabaseConnected
+{
+    return [mySQLConnection isConnected];
+}
+
+- (NSString *)currentTableName
+{
+    return [self table];
+}
+
+- (NSPopUpButton *)chooseDatabaseButton
+{
+    return chooseDatabaseButton;
+}
+
+- (BOOL)selectMySQLDatabase:(NSString *)name
+{
+    return [mySQLConnection selectDatabase:name];
+}
+
+- (void)updateHistoryEntries
+{
+    [spHistoryControllerInstance updateHistoryEntries];
+}
+
+- (void)rebuildDatabasesPopup
+{
+    [self setDatabases];
+}
+
+- (void)endLoadingTask
+{
+    [self endTask];
+}
+
+- (void)resetDatabaseData
+{
+    [databaseDataInstance resetAllData];
+}
+
+- (void)reattachTablesListConnection
+{
+    [tablesListInstance setConnection:mySQLConnection];
+}
+
+- (void)refreshWindowTitle
+{
+    [self updateWindowTitle:self];
+}
+
+- (void)presentUnableToSelectDatabaseAlertWithName:(NSString *)name
+{
+    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error")
+                                 message:[NSString stringWithFormat:NSLocalizedString(@"Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists.", @"message of panel when connection to db failed after selecting from popupbutton"), name]
+                                callback:nil];
+}
+
+- (BOOL)selectTablesListItemNamed:(NSString *)name
+{
+    return [tablesListInstance selectItemWithName:name];
+}
+
+- (void)setTableListSelectability:(BOOL)flag
+{
+    [tablesListInstance setTableListSelectability:flag];
+}
+
+- (void)focusTableListFilter
+{
+    [tablesListInstance makeTableListFilterHaveFocus];
+}
+
+- (void)focusTableList
+{
+    [tablesListInstance makeTableListHaveFocus];
+}
+
+- (void)processDatabaseChangedBundleTriggers
+{
+    [self _processDatabaseChangedBundleTriggerActions];
 }
 
 - (void)_processDatabaseChangedBundleTriggerActions
@@ -5553,9 +5531,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark -
 #pragma mark Tab view control and delegate methods
 
-//WARNING: Might be called from code in background threads
-- (void)viewStructure {
-
+/**
+ * Shared view-switching path used by viewStructure/Content/Query/Status/Relations/Triggers.
+ * Returns YES if the switch went through, NO if it was cancelled because the current
+ * view had uncommitted edits.
+ *
+ * WARNING: Safe to call from background threads — execution hops to the main queue.
+ */
+- (BOOL)switchToViewMode:(SAViewMode)mode {
+    __block BOOL didSwitch = NO;
     SPMainQSync(^{
         // Cancel the selection if currently editing a view and unable to save
         if (![self couldCommitCurrentViewActions]) {
@@ -5563,104 +5547,51 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             return;
         }
 
-        [self->tableTabView selectTabViewItemAtIndex:0];
-        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableStructure];
+        [self->tableTabView selectTabViewItemAtIndex:[SAViewModeHelper tabIndexFor:mode]];
+        [self.mainToolbar setSelectedItemIdentifier:[SAViewModeHelper toolbarIdentifierFor:mode]];
         [self->spHistoryControllerInstance updateHistoryEntries];
-
-        [self->prefs setInteger:SPStructureViewMode forKey:SPLastViewMode];
-
+        [self->prefs setInteger:[SAViewModeHelper preferencesValueFor:mode] forKey:SPLastViewMode];
+        didSwitch = YES;
     });
+    return didSwitch;
+}
+
+//WARNING: Might be called from code in background threads
+- (void)viewStructure {
+    [self switchToViewMode:SAViewModeStructure];
 }
 
 - (void)viewContent {
-    SPMainQSync(^{
-        // Cancel the selection if currently editing a view and unable to save
-        if (![self couldCommitCurrentViewActions]) {
-            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
-            return;
-        }
-
-        [self->tableTabView selectTabViewItemAtIndex:1];
-        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableContent];
-        [self->spHistoryControllerInstance updateHistoryEntries];
-        [self->prefs setInteger:SPContentViewMode forKey:SPLastViewMode];
-    });
+    [self switchToViewMode:SAViewModeContent];
 }
 
 - (void)viewQuery {
+    if (![self switchToViewMode:SAViewModeQuery]) return;
+
     SPMainQSync(^{
-        // Cancel the selection if currently editing a view and unable to save
-        if (![self couldCommitCurrentViewActions]) {
-            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
-            return;
-        }
-
-        [self->tableTabView selectTabViewItemAtIndex:2];
-        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarCustomQuery];
-        [self->spHistoryControllerInstance updateHistoryEntries];
-
         // Set the focus on the text field
         [[self.parentWindowController window] makeFirstResponder:self->customQueryTextView];
-
-        [self->prefs setInteger:SPQueryEditorViewMode forKey:SPLastViewMode];
     });
-
 }
 
 - (void)viewStatus {
+    if (![self switchToViewMode:SAViewModeStatus]) return;
+
     SPMainQSync(^{
-        // Cancel the selection if currently editing a view and unable to save
-        if (![self couldCommitCurrentViewActions]) {
-            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
-            return;
-        }
-
-        [self->tableTabView selectTabViewItemAtIndex:3];
-        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableInfo];
-        [self->spHistoryControllerInstance updateHistoryEntries];
-
         if ([[self table] length]) {
             [self->extendedTableInfoInstance loadTable:[self table]];
         }
 
         [[self.parentWindowController window] makeFirstResponder:[self->extendedTableInfoInstance valueForKeyPath:@"tableCreateSyntaxTextView"]];
-
-        [self->prefs setInteger:SPTableInfoViewMode forKey:SPLastViewMode];
     });
-
 }
 
 - (void)viewRelations {
-    SPMainQSync(^{
-        // Cancel the selection if currently editing a view and unable to save
-        if (![self couldCommitCurrentViewActions]) {
-            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
-            return;
-        }
-
-        [self->tableTabView selectTabViewItemAtIndex:4];
-        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableRelations];
-        [self->spHistoryControllerInstance updateHistoryEntries];
-
-        [self->prefs setInteger:SPRelationsViewMode forKey:SPLastViewMode];
-    });
-
+    [self switchToViewMode:SAViewModeRelations];
 }
 
 - (void)viewTriggers {
-    SPMainQSync(^{
-        // Cancel the selection if currently editing a view and unable to save
-        if (![self couldCommitCurrentViewActions]) {
-            [self.mainToolbar setSelectedItemIdentifier:*SPViewModeToMainToolbarMap[[self->prefs integerForKey:SPLastViewMode]]];
-            return;
-        }
-
-        [self->tableTabView selectTabViewItemAtIndex:5];
-        [self.mainToolbar setSelectedItemIdentifier:SPMainToolbarTableTriggers];
-        [self->spHistoryControllerInstance updateHistoryEntries];
-
-        [self->prefs setInteger:SPTriggersViewMode forKey:SPLastViewMode];
-    });
+    [self switchToViewMode:SAViewModeTriggers];
 }
 
 /**

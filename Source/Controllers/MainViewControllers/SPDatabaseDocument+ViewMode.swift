@@ -24,14 +24,22 @@ import AppKit
     var tabIndex: Int { rawValue }
 
     /// The toolbar item identifier for this mode.
+    ///
+    /// Strings are inlined (not read from `SPMainToolbar*` in
+    /// SPConstants.m) so this file has no ObjC dependency and can be
+    /// compiled into the Unit Tests target without a bridging header.
+    /// They MUST stay in sync with the corresponding extern constants
+    /// in SPConstants.m — the values are also persisted in toolbar
+    /// state, so changing one without the other breaks restoration
+    /// across launches.
     var toolbarIdentifier: NSToolbarItem.Identifier {
         switch self {
-        case .structure:  return NSToolbarItem.Identifier(SPMainToolbarTableStructure)
-        case .content:    return NSToolbarItem.Identifier(SPMainToolbarTableContent)
-        case .query:      return NSToolbarItem.Identifier(SPMainToolbarCustomQuery)
-        case .status:     return NSToolbarItem.Identifier(SPMainToolbarTableInfo)
-        case .relations:  return NSToolbarItem.Identifier(SPMainToolbarTableRelations)
-        case .triggers:   return NSToolbarItem.Identifier(SPMainToolbarTableTriggers)
+        case .structure:  return NSToolbarItem.Identifier("SwitchToTableStructureToolbarItemIdentifier")
+        case .content:    return NSToolbarItem.Identifier("SwitchToTableContentToolbarItemIdentifier")
+        case .query:      return NSToolbarItem.Identifier("SwitchToRunQueryToolbarItemIdentifier")
+        case .status:     return NSToolbarItem.Identifier("SwitchToTableInfoToolbarItemIdentifier")
+        case .relations:  return NSToolbarItem.Identifier("SwitchToTableRelationsToolbarItemIdentifier")
+        case .triggers:   return NSToolbarItem.Identifier("SwitchToTableTriggersToolbarItemIdentifier")
         }
     }
 
@@ -154,5 +162,20 @@ import AppKit
     /// Returns all view mode toolbar identifiers as an array of strings.
     @objc static var allToolbarIdentifiers: [String] {
         SAViewMode.allCases.map { $0.toolbarIdentifier.rawValue }
+    }
+
+    /// Tab view index for the given mode.
+    @objc static func tabIndex(for mode: SAViewMode) -> Int {
+        return mode.tabIndex
+    }
+
+    /// Toolbar identifier string for the given mode.
+    @objc static func toolbarIdentifier(for mode: SAViewMode) -> String {
+        return mode.toolbarIdentifier.rawValue
+    }
+
+    /// Legacy SPViewMode preferences value for the given mode.
+    @objc static func preferencesValue(for mode: SAViewMode) -> Int {
+        return mode.preferencesValue
     }
 }
