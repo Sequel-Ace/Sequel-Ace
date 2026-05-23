@@ -50,6 +50,17 @@ final class VaultOIDCHandlerTests: XCTestCase {
         XCTAssertEqual(semaphore.wait(timeout: .now()), .timedOut)
     }
 
+    func testClearPreparedActiveLoginRemovesCancelledPreparedLogin() {
+        let identifier = VaultOIDCHandler.prepareActiveLogin()
+
+        VaultOIDCHandler.cancelActiveLogin(identifier: identifier)
+        XCTAssertTrue(VaultOIDCHandler.isActiveLoginCancelledForTesting(identifier: identifier))
+
+        VaultOIDCHandler.clearPreparedActiveLogin(identifier: identifier)
+
+        XCTAssertFalse(VaultOIDCHandler.isActiveLoginCancelledForTesting(identifier: identifier))
+    }
+
     func testCancelActiveLoginOnlySignalsMatchingIdentifier() {
         let firstSemaphore = DispatchSemaphore(value: 0)
         let secondSemaphore = DispatchSemaphore(value: 0)
