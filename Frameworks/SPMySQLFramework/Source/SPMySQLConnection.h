@@ -76,6 +76,11 @@
 	SPMySQLConnectionProxyState previousProxyState;
 	BOOL proxyStateChangeNotificationsIgnored;
 
+#if DEBUG || SPMYSQL_FOR_UNIT_TESTING
+	BOOL (^reconnectAttemptForTesting)(BOOL canRetry);
+	BOOL (^silentReconnectAttemptForTesting)(void);
+#endif
+
 	// Connection lock to prevent non-thread-safe query misuse
 	NSConditionLock *connectionLock;
 

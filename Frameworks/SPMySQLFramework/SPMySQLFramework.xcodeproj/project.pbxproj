@@ -17,6 +17,7 @@
 		507FF1E51BC0D82300104523 /* DataConversion_Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 507FF1811BC0C64100104523 /* DataConversion_Tests.m */; };
 		507FF23B1BC0E8CA00104523 /* SPMySQL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8DC2EF5B0486A6940098B216 /* SPMySQL.framework */; };
 		507FF23D1BC157B500104523 /* SPMySQLStringAdditions_Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 507FF23C1BC157B500104523 /* SPMySQLStringAdditions_Tests.m */; };
+		55ECDDB8FC1D39B782BF6139 /* SPMySQLConnectionLostTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E307CD5A95A82BE1828D95CF /* SPMySQLConnectionLostTests.m */; };
 		580A331E14D75CF7000D6933 /* SPMySQLGeometryData.h in Headers */ = {isa = PBXBuildFile; fileRef = 580A331C14D75CF7000D6933 /* SPMySQLGeometryData.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		580A331F14D75CF7000D6933 /* SPMySQLGeometryData.m in Sources */ = {isa = PBXBuildFile; fileRef = 580A331D14D75CF7000D6933 /* SPMySQLGeometryData.m */; };
 		583C734A17A489CC0056B284 /* SPMySQLStreamingResultStoreDelegate.h in Headers */ = {isa = PBXBuildFile; fileRef = 583C734917A489CC0056B284 /* SPMySQLStreamingResultStoreDelegate.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -224,6 +225,7 @@
 		9615D84B2D5EDF530095F55A /* typelib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = typelib.h; sourceTree = "<group>"; };
 		96A5DDB22D63C89A0079105E /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
 		D2F7E79907B2D74100F64583 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
+		E307CD5A95A82BE1828D95CF /* SPMySQLConnectionLostTests.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = SPMySQLConnectionLostTests.m; sourceTree = "<group>"; };
 		FD4211942918779400941BFE /* SPMySQLGeometryDataTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPMySQLGeometryDataTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -262,7 +264,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		0867D691FE84028FC02AAC07 /* SPMySQLFramework */ = {
+		0867D691FE84028FC02AAC07 = {
 			isa = PBXGroup;
 			children = (
 				177916A01E88733000EE3043 /* LICENSE */,
@@ -348,6 +350,7 @@
 				507FF1811BC0C64100104523 /* DataConversion_Tests.m */,
 				507FF23C1BC157B500104523 /* SPMySQLStringAdditions_Tests.m */,
 				FD4211942918779400941BFE /* SPMySQLGeometryDataTests.m */,
+				E307CD5A95A82BE1828D95CF /* SPMySQLConnectionLostTests.m */,
 			);
 			name = "Unit Tests";
 			path = "SPMySQL Unit Tests";
@@ -641,7 +644,7 @@
 				en,
 				Base,
 			);
-			mainGroup = 0867D691FE84028FC02AAC07 /* SPMySQLFramework */;
+			mainGroup = 0867D691FE84028FC02AAC07;
 			productRefGroup = 034768DFFF38A50411DB9C8B /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -717,6 +720,7 @@
 				507FF23D1BC157B500104523 /* SPMySQLStringAdditions_Tests.m in Sources */,
 				FD4211952918779400941BFE /* SPMySQLGeometryDataTests.m in Sources */,
 				507FF1E51BC0D82300104523 /* DataConversion_Tests.m in Sources */,
+				55ECDDB8FC1D39B782BF6139 /* SPMySQLConnectionLostTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

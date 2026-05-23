@@ -83,6 +83,7 @@
 #import "SPHelpViewerController.h"
 #import "SPPrintUtility.h"
 #import "SPBundleManager.h"
+#import "SAMultiTabConnectionLostGate.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -97,7 +98,7 @@ static NSString *SPNewDatabaseCopyContent = @"SPNewDatabaseCopyContent";
 
 static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
-@interface SPDatabaseDocument () <SADatabaseSelectionDelegate>
+@interface SPDatabaseDocument () <SADatabaseSelectionDelegate, SAMultiTabConnectionLostGateHandler>
 
 // Privately redeclare as read/write to get the synthesized setter
 @property (readwrite, assign) BOOL allowSplitViewResizing;
@@ -6094,29 +6095,32 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (void)checkForBackgroundConnectionLossThenRun:(void (^ _Nullable)(void))action
 {
-    if (!self.backgroundConnectionLost) {
-        if (action) action();
-        return;
-    }
+    [SAMultiTabConnectionLostGate runAction:action forHandler:self];
+}
 
-    [self _showConnectionLostSheetAllowingCancel:YES completion:^(SPMySQLConnectionLostDecision decision, BOOL cancelled) {
-        if (cancelled) return;
+- (BOOL)backgroundConnectionLostForGate
+{
+    return self.backgroundConnectionLost;
+}
 
-        if (decision == SPMySQLConnectionLostReconnect) {
-            dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
-                BOOL reconnected = [self->mySQLConnection reconnect];
+- (void)setBackgroundConnectionLostForGate:(BOOL)lost
+{
+    self.backgroundConnectionLost = lost;
+}
 
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    if (reconnected) {
-                        self.backgroundConnectionLost = NO;
-                        if (action) action();
-                    }
-                });
-            });
-        } else if (decision == SPMySQLConnectionLostDisconnect) {
-            [self closeAndDisconnect];
-        }
-    }];
+- (BOOL)showConnectionLostSheetAllowingCancelForGate:(BOOL)allowCancel completion:(void (^)(SPMySQLConnectionLostDecision decision, BOOL cancelled))completion
+{
+    return [self _showConnectionLostSheetAllowingCancel:allowCancel completion:completion];
+}
+
+- (BOOL)reconnectConnectionForGate
+{
+    return [mySQLConnection reconnect];
+}
+
+- (void)closeAndDisconnectForGate
+{
+    [self closeAndDisconnect];
 }
 
 - (BOOL)_showConnectionLostSheetAllowingCancel:(BOOL)allowCancel completion:(void (^)(SPMySQLConnectionLostDecision decision, BOOL cancelled))completion

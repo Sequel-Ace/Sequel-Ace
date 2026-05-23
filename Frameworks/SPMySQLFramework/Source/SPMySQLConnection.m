@@ -1059,6 +1059,12 @@ asm(".desc ___crashreporter_info__, 0x10");
 		return NO;
 	}
 
+#if DEBUG || SPMYSQL_FOR_UNIT_TESTING
+	if (reconnectAttemptForTesting) {
+		return reconnectAttemptForTesting(canRetry);
+	}
+#endif
+
 	BOOL reconnectSucceeded = NO;
 
 	@autoreleasepool {
@@ -1136,6 +1142,12 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 - (BOOL)_silentReconnectAttempt
 {
+#if DEBUG || SPMYSQL_FOR_UNIT_TESTING
+	if (silentReconnectAttemptForTesting) {
+		return silentReconnectAttemptForTesting();
+	}
+#endif
+
 	BOOL reconnectSucceeded = NO;
 	NSString *timeZoneIdentifierToRestore = nil;
 
@@ -1273,6 +1285,65 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	return reconnectSucceeded;
 }
+
+#if DEBUG || SPMYSQL_FOR_UNIT_TESTING
+- (void)_setStateForTesting:(SPMySQLConnectionState)testState
+{
+	state = testState;
+}
+
+- (SPMySQLConnectionState)_stateForTesting
+{
+	return state;
+}
+
+- (void)_setLastConnectionUsedTimeForTesting:(uint64_t)testTime
+{
+	lastConnectionUsedTime = testTime;
+}
+
+- (void)_setLastConnectionUsedTimeForTestingWithSecondsAgo:(NSTimeInterval)secondsAgo
+{
+	lastConnectionUsedTime = _monotonicTime() - (uint64_t)(secondsAgo * 1000000000);
+}
+
+- (void)_setKeepAlivePingFailuresForTesting:(NSUInteger)failures
+{
+	keepAlivePingFailures = failures;
+}
+
+- (void)_setKeepAliveLastPingBlockedForTesting:(BOOL)blocked
+{
+	keepAliveLastPingBlocked = blocked;
+}
+
+- (void)_setProxyStateChangeNotificationsIgnoredForTesting:(BOOL)ignored
+{
+	proxyStateChangeNotificationsIgnored = ignored;
+}
+
+- (BOOL)_proxyStateChangeNotificationsIgnoredForTesting
+{
+	return proxyStateChangeNotificationsIgnored;
+}
+
+- (void)_setReconnectAttemptForTesting:(BOOL (^)(BOOL canRetry))block
+{
+	reconnectAttemptForTesting = [block copy];
+}
+
+- (void)_setSilentReconnectAttemptForTesting:(BOOL (^)(void))block
+{
+	silentReconnectAttemptForTesting = [block copy];
+}
+
+- (void)_drainReconnectQueueForTesting
+{
+	if (_reconnectQueue && dispatch_get_specific(SPMySQLReconnectQueueKey) != SPMySQLReconnectQueueKey) {
+		dispatch_sync(_reconnectQueue, ^{});
+	}
+}
+#endif
 
 - (void)_postLostInBackgroundNotification
 {

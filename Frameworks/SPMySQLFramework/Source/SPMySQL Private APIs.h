@@ -61,6 +61,20 @@
 + (NSArray<NSString *> *)_mergedSSLCipherPreferenceListFromSavedCipherString:(NSString *)savedCipherString disabledMarker:(NSString *)disabledMarker;
 + (NSString *)_reachabilityProbeHostForHost:(NSString *)host useSocket:(BOOL)useSocket hasProxy:(BOOL)hasProxy;
 
+#if DEBUG || SPMYSQL_FOR_UNIT_TESTING
+- (void)_setStateForTesting:(SPMySQLConnectionState)testState;
+- (SPMySQLConnectionState)_stateForTesting;
+- (void)_setLastConnectionUsedTimeForTesting:(uint64_t)testTime;
+- (void)_setLastConnectionUsedTimeForTestingWithSecondsAgo:(NSTimeInterval)secondsAgo;
+- (void)_setKeepAlivePingFailuresForTesting:(NSUInteger)failures;
+- (void)_setKeepAliveLastPingBlockedForTesting:(BOOL)blocked;
+- (void)_setProxyStateChangeNotificationsIgnoredForTesting:(BOOL)ignored;
+- (BOOL)_proxyStateChangeNotificationsIgnoredForTesting;
+- (void)_setReconnectAttemptForTesting:(BOOL (^)(BOOL canRetry))block;
+- (void)_setSilentReconnectAttemptForTesting:(BOOL (^)(void))block;
+- (void)_drainReconnectQueueForTesting;
+#endif
+
 @end
 
 @interface SPMySQLConnection (Delegate_and_Proxy_Private_API)
