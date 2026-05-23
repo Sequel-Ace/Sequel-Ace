@@ -45,7 +45,10 @@ import Foundation
             return false
         }
 
-        guard let values = filter["filterValues"] as? [Any] else {
+        guard let column = filter["column"] as? String,
+              column.isEmpty,
+              let values = filter["filterValues"] as? [Any],
+              !values.isEmpty else {
             return false
         }
 

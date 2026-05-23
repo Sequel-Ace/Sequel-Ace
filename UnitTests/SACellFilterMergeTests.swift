@@ -28,10 +28,21 @@ final class SACellFilterMergeTests: XCTestCase {
     }
 
     func testUntouchedStarterExpressionUsesNewFilter() {
-        let starter = filter(column: "id", comparison: "=", values: [""])
+        let starter = filter(column: "", comparison: "=", values: [""])
         let newFilter = filter(column: "name", comparison: "=", values: ["Alice"])
 
         XCTAssertEqual(filterDictionary(SACellFilterMerge.mergedFilter(currentFilter: starter, newFilter: newFilter)), filterDictionary(newFilter))
+    }
+
+    func testExistingZeroArgumentNullRuleIsPreserved() {
+        let existing = filter(column: "deleted_at", comparison: "IS NULL", values: [])
+        let newFilter = filter(column: "name", comparison: "=", values: ["Alice"])
+
+        let merged = SACellFilterMerge.mergedFilter(currentFilter: existing, newFilter: newFilter)
+
+        XCTAssertEqual(merged["filterClass"] as? String, "groupNode")
+        XCTAssertEqual(merged["isConjunction"] as? Bool, true)
+        XCTAssertEqual(filterChildren(from: merged), [filterDictionary(existing), filterDictionary(newFilter)])
     }
 
     func testRealExpressionWrapsInAndGroup() {
