@@ -1215,6 +1215,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 		SPLog(@"NSThread currentThread] isCancelled, returning");
 
 		[self _unlockConnection];
+		if (proxy) proxyStateChangeNotificationsIgnored = NO;
 		reconnectingThread = NULL;
 		return NO;
 	}

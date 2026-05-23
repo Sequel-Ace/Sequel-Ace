@@ -108,6 +108,23 @@
 
 @end
 
+@interface SPMySQLConnectionCancelledReconnectTestConnection : SPMySQLConnection
+@end
+
+@implementation SPMySQLConnectionCancelledReconnectTestConnection
+
+- (void)_disconnect
+{
+}
+
+- (BOOL)_waitForNetworkConnectionWithTimeout:(double)timeoutSeconds
+{
+	[[NSThread currentThread] cancel];
+	return NO;
+}
+
+@end
+
 @interface SPMySQLConnectionLostTestProxy : NSObject <SPMySQLConnectionProxy>
 @property (nonatomic) SPMySQLConnectionProxyState state;
 @property (nonatomic) NSUInteger connectCount;
@@ -327,6 +344,23 @@
 	XCTAssertTrue(firstResult);
 	XCTAssertTrue(secondResult);
 	XCTAssertEqual(reconnectCount, 1U);
+}
+
+- (void)testCancelledSilentReconnectRestoresProxyNotificationFlag
+{
+	SPMySQLConnectionCancelledReconnectTestConnection *connection = [[SPMySQLConnectionCancelledReconnectTestConnection alloc] init];
+	SPMySQLConnectionLostTestProxy *proxy = [[SPMySQLConnectionLostTestProxy alloc] init];
+	[connection setProxy:proxy];
+
+	XCTestExpectation *reconnectExpectation = [self expectationWithDescription:@"cancelled silent reconnect"];
+	NSThread *reconnectThread = [[NSThread alloc] initWithBlock:^{
+		XCTAssertFalse([connection _silentReconnectAttempt]);
+		[reconnectExpectation fulfill];
+	}];
+	[reconnectThread start];
+
+	[self waitForExpectations:@[reconnectExpectation] timeout:1];
+	XCTAssertFalse([connection _proxyStateChangeNotificationsIgnoredForTesting]);
 }
 
 - (void)testSilentReconnectRecapturesRestoreSnapshotAfterFailure
