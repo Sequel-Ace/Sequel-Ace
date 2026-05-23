@@ -78,6 +78,8 @@
 		CF0000132F8C000600C4C14A /* SACellFilterMenuBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000142F8C000600C4C14A /* SACellFilterMenuBuilderTests.swift */; };
 		CF0000012F8C000600C4C14A /* SACellFilterOperatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000022F8C000600C4C14A /* SACellFilterOperatorTests.swift */; };
 		CF0000062F8C000600C4C14A /* SACellFilterOperatorRoundTripTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000072F8C000600C4C14A /* SACellFilterOperatorRoundTripTests.swift */; };
+		CF0000152F8C000600C4C14A /* SACellFilterOperatorRoundTripControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CF0000162F8C000600C4C14A /* SACellFilterOperatorRoundTripControllerTests.m */; };
+		CF0000212F8C000600C4C14A /* SACellFilterRuleControllerStubs.m in Sources */ = {isa = PBXBuildFile; fileRef = CF0000222F8C000600C4C14A /* SACellFilterRuleControllerStubs.m */; };
 		CF0000082F8C000600C4C14A /* ContentFilters.plist in Resources */ = {isa = PBXBuildFile; fileRef = 517E4511257A954000ED333B /* ContentFilters.plist */; };
 		CF0000092F8C000600C4C14A /* SACellFilterMergeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF00000A2F8C000600C4C14A /* SACellFilterMergeTests.swift */; };
 		17E641570EF01EF6001BC333 /* SPAppController.m in Sources */ = {isa = PBXBuildFile; fileRef = 17E6414B0EF01EF6001BC333 /* SPAppController.m */; };
@@ -105,6 +107,9 @@
 		DD00DD00DD00DD00DD000001 /* SPFilterRuleTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00DD00DD00DD00DD000002 /* SPFilterRuleTextField.swift */; };
 		DD00DD00DD00DD00DD000003 /* SPFilterRuleEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00DD00DD00DD00DD000004 /* SPFilterRuleEditor.swift */; };
 		DD00DD00DD00DD00DD000005 /* SPRuleFilterDropBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00DD00DD00DD00DD000006 /* SPRuleFilterDropBox.swift */; };
+		CF0000182F8C000600C4C14A /* SPFilterRuleTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00DD00DD00DD00DD000002 /* SPFilterRuleTextField.swift */; };
+		CF0000192F8C000600C4C14A /* SPRuleFilterDropBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00DD00DD00DD00DD000006 /* SPRuleFilterDropBox.swift */; };
+		CF0000202F8C000600C4C14A /* SPFilterRuleEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00DD00DD00DD00DD000004 /* SPFilterRuleEditor.swift */; };
 		1A071B8D254D983700246912 /* SPNSMutableDictionaryAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A071B8C254D983700246912 /* SPNSMutableDictionaryAdditions.m */; };
 		1A0FA3EE258B758B00486D52 /* SPArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = B52460D40F8EF92300171639 /* SPArrayAdditions.m */; };
 		1A11E50425A327F1001CB721 /* SPPanelOptions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1A11E50325A327F1001CB721 /* SPPanelOptions.m */; };
@@ -211,6 +216,7 @@
 		503CDBB21ACDC204004F8A2F /* Quartz.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 503CDBB11ACDC204004F8A2F /* Quartz.framework */; };
 		505F568F1BCEE485007467DD /* SPFunctions.m in Sources */ = {isa = PBXBuildFile; fileRef = 507FF1111BBCC57600104523 /* SPFunctions.m */; };
 		506CE9311A311C6C0039F736 /* SPRuleFilterController.m in Sources */ = {isa = PBXBuildFile; fileRef = 506CE9301A311C6C0039F736 /* SPRuleFilterController.m */; };
+		CF0000172F8C000600C4C14A /* SPRuleFilterController.m in Sources */ = {isa = PBXBuildFile; fileRef = 506CE9301A311C6C0039F736 /* SPRuleFilterController.m */; };
 		507FF1121BBCC57600104523 /* SPFunctions.m in Sources */ = {isa = PBXBuildFile; fileRef = 507FF1111BBCC57600104523 /* SPFunctions.m */; };
 		507FF1621BBF0D5000104523 /* SPTableCopyTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 112730551180788A000737FD /* SPTableCopyTest.m */; };
 		50805B0D1BF2A068005F7A99 /* SPPopUpButtonCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 50805B0C1BF2A068005F7A99 /* SPPopUpButtonCell.m */; };
@@ -1217,6 +1223,8 @@
 		CF0000112F8C000600C4C14A /* SACellFilterMenuBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterMenuBuilder.swift; sourceTree = "<group>"; };
 		CF0000022F8C000600C4C14A /* SACellFilterOperatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterOperatorTests.swift; sourceTree = "<group>"; };
 		CF0000072F8C000600C4C14A /* SACellFilterOperatorRoundTripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterOperatorRoundTripTests.swift; sourceTree = "<group>"; };
+		CF0000162F8C000600C4C14A /* SACellFilterOperatorRoundTripControllerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SACellFilterOperatorRoundTripControllerTests.m; sourceTree = "<group>"; };
+		CF0000222F8C000600C4C14A /* SACellFilterRuleControllerStubs.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SACellFilterRuleControllerStubs.m; sourceTree = "<group>"; };
 		CF00000A2F8C000600C4C14A /* SACellFilterMergeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterMergeTests.swift; sourceTree = "<group>"; };
 		CF0000142F8C000600C4C14A /* SACellFilterMenuBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterMenuBuilderTests.swift; sourceTree = "<group>"; };
 		B51D6B9D114C310C0074704E /* toolbar-switch-to-table-triggers.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "toolbar-switch-to-table-triggers.png"; sourceTree = "<group>"; };
@@ -2447,6 +2455,8 @@
 				C0F17A1A2B3C4D5E6F708092 /* SPTableContentColumnFilterTests.swift */,
 				CF0000022F8C000600C4C14A /* SACellFilterOperatorTests.swift */,
 				CF0000072F8C000600C4C14A /* SACellFilterOperatorRoundTripTests.swift */,
+				CF0000162F8C000600C4C14A /* SACellFilterOperatorRoundTripControllerTests.m */,
+				CF0000222F8C000600C4C14A /* SACellFilterRuleControllerStubs.m */,
 				CF00000A2F8C000600C4C14A /* SACellFilterMergeTests.swift */,
 				CF0000142F8C000600C4C14A /* SACellFilterMenuBuilderTests.swift */,
 				AEA35A884E0C42E4A2AF12F0 /* SPCustomQuerySQLClassifierTests.swift */,
@@ -3152,8 +3162,14 @@
 				CF0000122F8C000600C4C14A /* SACellFilterMenuBuilder.swift in Sources */,
 				CF0000012F8C000600C4C14A /* SACellFilterOperatorTests.swift in Sources */,
 				CF0000062F8C000600C4C14A /* SACellFilterOperatorRoundTripTests.swift in Sources */,
+				CF0000152F8C000600C4C14A /* SACellFilterOperatorRoundTripControllerTests.m in Sources */,
+				CF0000212F8C000600C4C14A /* SACellFilterRuleControllerStubs.m in Sources */,
 				CF0000092F8C000600C4C14A /* SACellFilterMergeTests.swift in Sources */,
 				CF0000132F8C000600C4C14A /* SACellFilterMenuBuilderTests.swift in Sources */,
+				CF0000182F8C000600C4C14A /* SPFilterRuleTextField.swift in Sources */,
+				CF0000202F8C000600C4C14A /* SPFilterRuleEditor.swift in Sources */,
+				CF0000192F8C000600C4C14A /* SPRuleFilterDropBox.swift in Sources */,
+				CF0000172F8C000600C4C14A /* SPRuleFilterController.m in Sources */,
 				5147B0032F8C000100C4C14A /* SAWindowTitleBuilder.swift in Sources */,
 				5147B0052F8C000100C4C14A /* SAWindowTitleBuilderTests.swift in Sources */,
 				5147B0082F8C000200C4C14A /* SAFavoriteSearchMatcher.swift in Sources */,

@@ -290,10 +290,21 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		numberOfDefaultFilters = [[NSMutableDictionary alloc] init];
 
 		NSError *readError = nil;
-		NSString *filePath = [NSBundle pathForResource:@"ContentFilters.plist" ofType:nil inDirectory:[[NSBundle mainBundle] bundlePath]];
-		NSData *defaultFilterData = [NSData dataWithContentsOfFile:filePath
-		                                                   options:NSMappedRead
-		                                                     error:&readError];
+		NSString *filePath = [[NSBundle mainBundle] pathForResource:@"ContentFilters" ofType:@"plist"];
+		if (!filePath) {
+			filePath = [[NSBundle bundleForClass:[self class]] pathForResource:@"ContentFilters" ofType:@"plist"];
+		}
+		NSData *defaultFilterData = nil;
+		if(filePath) {
+			defaultFilterData = [NSData dataWithContentsOfFile:filePath
+			                                           options:NSMappedRead
+			                                             error:&readError];
+		}
+		else {
+			readError = [NSError errorWithDomain:NSCocoaErrorDomain
+			                                code:NSFileNoSuchFileError
+			                            userInfo:@{NSFilePathErrorKey: @"ContentFilters.plist"}];
+		}
 
 		if(defaultFilterData && !readError) {
 			NSDictionary *defaultFilterDict = [NSPropertyListSerialization propertyListWithData:defaultFilterData

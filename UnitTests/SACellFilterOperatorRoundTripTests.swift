@@ -10,7 +10,7 @@ import XCTest
 
 final class SACellFilterOperatorRoundTripTests: XCTestCase {
 
-    func testAllAdvertisedOperatorsRoundTripAgainstContentFiltersPlist() throws {
+    func testAllAdvertisedOperatorsExistInContentFiltersPlist() throws {
         let contentFilters = try loadContentFilters()
 
         for pair in SACellFilterOperator.allAdvertisedPairs() {
@@ -21,11 +21,6 @@ final class SACellFilterOperatorRoundTripTests: XCTestCase {
             XCTAssertNotNil(definition, "\(pair.op.serializedName) missing from ContentFilters.plist for typegrouping \(pair.typeGrouping)")
             XCTAssertEqual(definition?["MenuLabel"] as? String, pair.op.serializedName)
             XCTAssertEqual(definition?["NumberOfArguments"] as? Int, pair.op.valueCount)
-
-            let leaf = serializedFilter(column: "\(pair.typeGrouping)_column", operatorName: pair.op.serializedName, values: values(for: pair.op))
-            let restored = serializeRestoredFilter(leaf, filterDefinition: definition)
-
-            XCTAssertEqual(restored["filterComparison"] as? String, pair.op.serializedName, "\(pair.op.serializedName) failed to round-trip for typegrouping \(pair.typeGrouping)")
         }
     }
 
@@ -56,23 +51,4 @@ final class SACellFilterOperatorRoundTripTests: XCTestCase {
         }
     }
 
-    private func values(for op: SACellFilterOperator) -> [String] {
-        return Array(repeating: "sample", count: op.valueCount)
-    }
-
-    private func serializedFilter(column: String, operatorName: String, values: [String]) -> [String: Any] {
-        return [
-            "filterClass": "expressionNode",
-            "column": column,
-            "filterComparison": operatorName,
-            "filterValues": values,
-            "enabled": true,
-        ]
-    }
-
-    private func serializeRestoredFilter(_ filter: [String: Any], filterDefinition: [String: Any]?) -> [String: Any] {
-        var restored = filter
-        restored["filterType"] = filterDefinition?["filterType"]
-        return restored
-    }
 }
