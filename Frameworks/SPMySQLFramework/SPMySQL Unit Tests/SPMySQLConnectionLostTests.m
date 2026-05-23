@@ -49,6 +49,34 @@
 
 @end
 
+@interface SPMySQLConnectionLostDelayedDelegate : NSObject <SPMySQLConnectionDelegate>
+@property (nonatomic) NSUInteger asyncDecisionCount;
+@property (nonatomic) NSTimeInterval firstCompletionDelay;
+@property (nonatomic) SPMySQLConnectionLostDecision firstDecision;
+@property (nonatomic) SPMySQLConnectionLostDecision laterDecision;
+@property (nonatomic, strong) XCTestExpectation *lateCompletionExpectation;
+@end
+
+@implementation SPMySQLConnectionLostDelayedDelegate
+
+- (void)connectionLost:(id)connection completion:(void (^)(SPMySQLConnectionLostDecision decision))completion
+{
+	self.asyncDecisionCount++;
+	NSUInteger decisionNumber = self.asyncDecisionCount;
+
+	if (decisionNumber == 1) {
+		dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(self.firstCompletionDelay * NSEC_PER_SEC)), dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+			completion(self.firstDecision);
+			[self.lateCompletionExpectation fulfill];
+		});
+		return;
+	}
+
+	completion(self.laterDecision);
+}
+
+@end
+
 @interface SPMySQLConnectionLostTestProxy : NSObject <SPMySQLConnectionProxy>
 @property (nonatomic) SPMySQLConnectionProxyState state;
 @property (nonatomic) NSUInteger connectCount;
@@ -247,6 +275,38 @@
 
 	XCTAssertEqual(decision, SPMySQLConnectionLostDisconnect);
 	XCTAssertEqual(delegate.syncDecisionCount, 0U);
+}
+
+- (void)testAsyncDelegateLateCompletionDoesNotPolluteNextDecision
+{
+	SPMySQLConnection *connection = [[SPMySQLConnection alloc] init];
+	SPMySQLConnectionLostDelayedDelegate *delegate = [[SPMySQLConnectionLostDelayedDelegate alloc] init];
+	delegate.firstCompletionDelay = 0.15;
+	delegate.firstDecision = SPMySQLConnectionLostReconnect;
+	delegate.laterDecision = SPMySQLConnectionLostDisconnect;
+	delegate.lateCompletionExpectation = [self expectationWithDescription:@"late completion"];
+	[connection setDelegate:delegate];
+	[connection _setDelegateDecisionTimeoutForTesting:0.05];
+
+	XCTestExpectation *firstDecisionExpectation = [self expectationWithDescription:@"first decision"];
+	dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+		SPMySQLConnectionLostDecision decision = [connection _delegateDecisionForLostConnection];
+		XCTAssertEqual(decision, SPMySQLConnectionLostDisconnect);
+		[firstDecisionExpectation fulfill];
+	});
+
+	[self waitForExpectations:@[firstDecisionExpectation] timeout:1];
+	[connection _setDelegateDecisionTimeoutForTesting:1];
+
+	XCTestExpectation *secondDecisionExpectation = [self expectationWithDescription:@"second decision"];
+	dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+		SPMySQLConnectionLostDecision decision = [connection _delegateDecisionForLostConnection];
+		XCTAssertEqual(decision, SPMySQLConnectionLostDisconnect);
+		[secondDecisionExpectation fulfill];
+	});
+
+	[self waitForExpectations:@[secondDecisionExpectation, delegate.lateCompletionExpectation] timeout:1];
+	XCTAssertEqual(delegate.asyncDecisionCount, 2U);
 }
 
 - (void)testDelegateDecisionSourceHasNoLegacyMainThreadDoWhileWaitBlock

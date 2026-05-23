@@ -169,22 +169,36 @@
 
 	if (delegateSupportsConnectionLostAsync) {
 		dispatch_semaphore_t decisionSemaphore = dispatch_semaphore_create(0);
+		__block SPMySQLConnectionLostDecision asyncDecision = SPMySQLConnectionLostDisconnect;
+		__block BOOL decisionExpired = NO;
 
 		[delegate connectionLost:self completion:^(SPMySQLConnectionLostDecision decision) {
 			[self->delegateDecisionLock lock];
-			self->lastDelegateDecisionForLostConnection = decision;
+			if (!decisionExpired) {
+				asyncDecision = decision;
+				self->lastDelegateDecisionForLostConnection = decision;
+			}
 			[self->delegateDecisionLock unlock];
 
 			dispatch_semaphore_signal(decisionSemaphore);
 		}];
 
-		if (dispatch_semaphore_wait(decisionSemaphore, dispatch_time(DISPATCH_TIME_NOW, 60 * NSEC_PER_SEC)) != 0) {
+#if DEBUG || SPMYSQL_FOR_UNIT_TESTING
+		NSTimeInterval timeoutInterval = delegateDecisionTimeoutForTesting;
+#else
+		NSTimeInterval timeoutInterval = 60;
+#endif
+
+		if (dispatch_semaphore_wait(decisionSemaphore, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(timeoutInterval * NSEC_PER_SEC))) != 0) {
 			SPLog(@"Timed out waiting for async connectionLost:completion: delegate decision; defaulting to disconnect");
+			[delegateDecisionLock lock];
+			decisionExpired = YES;
+			[delegateDecisionLock unlock];
 			return SPMySQLConnectionLostDisconnect;
 		}
 
 		[delegateDecisionLock lock];
-		theDecision = lastDelegateDecisionForLostConnection;
+		theDecision = asyncDecision;
 		[delegateDecisionLock unlock];
 		return theDecision;
 	}

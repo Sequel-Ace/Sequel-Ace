@@ -77,8 +77,9 @@
 	BOOL proxyStateChangeNotificationsIgnored;
 
 #if DEBUG || SPMYSQL_FOR_UNIT_TESTING
-	BOOL (^reconnectAttemptForTesting)(BOOL canRetry);
-	BOOL (^silentReconnectAttemptForTesting)(void);
+		BOOL (^reconnectAttemptForTesting)(BOOL canRetry);
+		BOOL (^silentReconnectAttemptForTesting)(void);
+		NSTimeInterval delegateDecisionTimeoutForTesting;
 #endif
 
 	// Connection lock to prevent non-thread-safe query misuse

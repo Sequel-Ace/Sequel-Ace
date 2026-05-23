@@ -382,6 +382,9 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		reconnectionRetryAttempts = 0;
 		lastDelegateDecisionForLostConnection = SPMySQLConnectionLostDisconnect;
 		delegateDecisionLock = [[NSLock alloc] init];
+#if DEBUG || SPMYSQL_FOR_UNIT_TESTING
+		delegateDecisionTimeoutForTesting = 60;
+#endif
 
 		// Set up the connection lock
 		connectionLock = [[NSConditionLock alloc] initWithCondition:SPMySQLConnectionIdle];
@@ -1347,6 +1350,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 	if (_reconnectQueue && dispatch_get_specific(SPMySQLReconnectQueueKey) != SPMySQLReconnectQueueKey) {
 		dispatch_sync(_reconnectQueue, ^{});
 	}
+}
+
+- (void)_setDelegateDecisionTimeoutForTesting:(NSTimeInterval)timeoutInterval
+{
+	delegateDecisionTimeoutForTesting = timeoutInterval;
 }
 #endif
 

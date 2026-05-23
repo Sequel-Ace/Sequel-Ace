@@ -74,6 +74,7 @@
 - (void)_setReconnectAttemptForTesting:(BOOL (^)(BOOL canRetry))block;
 - (void)_setSilentReconnectAttemptForTesting:(BOOL (^)(void))block;
 - (void)_drainReconnectQueueForTesting;
+- (void)_setDelegateDecisionTimeoutForTesting:(NSTimeInterval)timeoutInterval;
 #endif
 
 @end
