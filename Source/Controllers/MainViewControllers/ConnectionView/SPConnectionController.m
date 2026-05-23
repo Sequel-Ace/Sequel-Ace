@@ -1829,6 +1829,28 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     [keychain addPassword:password forName:keychainName account:keychainAccount];
 }
 
+/**
+ * Helper method to save SSH password to keychain for a favorite.
+ * Uses consistent keychain naming format via SPKeychain helper methods.
+ */
+- (void)saveSSHPassword:(NSString *)sshPassword forFavorite:(NSDictionary *)favorite
+{
+    if (!sshPassword || sshPassword.length == 0) {
+        return;
+    }
+
+    NSString *favoriteName = [favorite objectForKey:SPFavoriteNameKey] ?: @"";
+    NSNumber *favoriteID = [favorite objectForKey:SPFavoriteIDKey] ?: @(-1);
+    NSString *sshUser = [favorite objectForKey:SPFavoriteSSHUserKey] ?: @"";
+    NSString *sshHost = [favorite objectForKey:SPFavoriteSSHHostKey] ?: @"";
+
+    // Use keychain helper methods for consistent SSH password format
+    NSString *keychainName = [keychain nameForSSHForFavoriteName:favoriteName id:[NSString stringWithFormat:@"%@", favoriteID]];
+    NSString *keychainAccount = [keychain accountForSSHUser:sshUser sshHost:sshHost];
+
+    [keychain addPassword:sshPassword forName:keychainName account:keychainAccount];
+}
+
 - (void)showImportFilePanel
 {
     NSOpenPanel *openPanel = [NSOpenPanel openPanel];
@@ -1932,8 +1954,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     NSNumber *favoriteID = [self _createNewFavoriteID];
     [favorite setObject:favoriteID forKey:SPFavoriteIDKey];
 
-    // Store password for later (will be saved to keychain after user confirms action)
+    // Store passwords for later (will be saved to keychain after user confirms action)
     NSString *passwordFromURL = [details objectForKey:@"password"];
+    NSString *sshPasswordFromURL = [details objectForKey:@"ssh_password"];
 
     // Check for duplicates (including mode-specific fields for accurate matching)
     SPTreeNode *duplicateNode = [self findDuplicateFavoriteForHost:host
@@ -1970,14 +1993,15 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
             if (item.action == SPDuplicateActionUpdate) {
                 // Update existing
-                [self updateFavoriteNode:duplicateNode withData:favorite password:passwordFromURL];
+                [self updateFavoriteNode:duplicateNode withData:favorite password:passwordFromURL sshPassword:sshPasswordFromURL];
                 selectedNode = duplicateNode;
             }
             else if (item.action == SPDuplicateActionCreateNew) {
                 // Create new
                 selectedNode = [self->favoritesController addFavoriteNodeWithData:favorite asChildOfNode:nil];
-                // Save password to keychain for new favorite
+                // Save passwords to keychain for new favorite
                 [self savePassword:passwordFromURL forFavorite:favorite];
+                [self saveSSHPassword:sshPasswordFromURL forFavorite:favorite];
             }
             // If Skip - do nothing
 
@@ -2002,8 +2026,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         // No duplicate - add normally
         SPTreeNode *newNode = [favoritesController addFavoriteNodeWithData:favorite asChildOfNode:nil];
 
-        // Save password to keychain
+        // Save passwords to keychain
         [self savePassword:passwordFromURL forFavorite:favorite];
+        [self saveSSHPassword:sshPasswordFromURL forFavorite:favorite];
 
         if (currentSortItem > SPFavoritesSortUnsorted) {
             [self _sortFavorites];
@@ -2113,6 +2138,11 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
 - (void)updateFavoriteNode:(SPTreeNode *)node withData:(NSDictionary *)newData password:(NSString *)password
 {
+    [self updateFavoriteNode:node withData:newData password:password sshPassword:nil];
+}
+
+- (void)updateFavoriteNode:(SPTreeNode *)node withData:(NSDictionary *)newData password:(NSString *)password sshPassword:(NSString *)sshPassword
+{
     id representedObject = [node representedObject];
     if (![representedObject respondsToSelector:@selector(nodeFavorite)]) return;
 
@@ -2179,6 +2209,43 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         } else if (accountChanged && existingPassword) {
             // No password to save but account changed - delete old entry
             [keychain deletePasswordForName:oldKeychainName account:oldKeychainAccount];
+        }
+    }
+
+    // Update SSH password if this is an SSH connection
+    if (newTypeTag == SPSSHTunnelConnection) {
+        NSString *oldSSHUser = [favoriteDict objectForKey:SPFavoriteSSHUserKey] ?: @"";
+        NSString *oldSSHHost = [favoriteDict objectForKey:SPFavoriteSSHHostKey] ?: @"";
+        NSString *newSSHUser = [favoriteDict objectForKey:SPFavoriteSSHUserKey] ?: @"";
+        NSString *newSSHHost = [favoriteDict objectForKey:SPFavoriteSSHHostKey] ?: @"";
+
+        NSString *oldSSHKeychainName = [keychain nameForSSHForFavoriteName:oldName id:[NSString stringWithFormat:@"%@", favoriteID]];
+        NSString *oldSSHKeychainAccount = [keychain accountForSSHUser:oldSSHUser sshHost:oldSSHHost];
+        NSString *newSSHKeychainName = [keychain nameForSSHForFavoriteName:newName id:[NSString stringWithFormat:@"%@", favoriteID]];
+        NSString *newSSHKeychainAccount = [keychain accountForSSHUser:newSSHUser sshHost:newSSHHost];
+
+        BOOL sshAccountChanged = ![oldSSHKeychainAccount isEqualToString:newSSHKeychainAccount];
+        BOOL hasNewSSHPassword = (sshPassword && sshPassword.length > 0);
+
+        if (sshAccountChanged || hasNewSSHPassword) {
+            NSString *existingSSHPassword = [keychain getPasswordForName:oldSSHKeychainName account:oldSSHKeychainAccount];
+            NSString *sshPasswordToSave = hasNewSSHPassword ? sshPassword : existingSSHPassword;
+
+            if (sshPasswordToSave && sshPasswordToSave.length > 0) {
+                if ([keychain passwordExistsForName:oldSSHKeychainName account:oldSSHKeychainAccount]) {
+                    [keychain updateItemWithName:oldSSHKeychainName
+                                         account:oldSSHKeychainAccount
+                                          toName:newSSHKeychainName
+                                         account:newSSHKeychainAccount
+                                        password:sshPasswordToSave];
+                } else {
+                    [keychain addPassword:sshPasswordToSave
+                                  forName:newSSHKeychainName
+                                  account:newSSHKeychainAccount];
+                }
+            } else if (sshAccountChanged && existingSSHPassword) {
+                [keychain deletePasswordForName:oldSSHKeychainName account:oldSSHKeychainAccount];
+            }
         }
     }
 
