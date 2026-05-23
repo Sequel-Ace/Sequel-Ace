@@ -12,6 +12,7 @@
 @property (nonatomic) NSUInteger asyncDecisionCount;
 @property (nonatomic) NSUInteger syncDecisionCount;
 @property (nonatomic) NSUInteger backgroundDecisionCount;
+@property (nonatomic) NSUInteger restoredAfterLossCount;
 @end
 
 @implementation SPMySQLConnectionLostTestDelegate
@@ -31,6 +32,11 @@
 - (void)connectionLostInBackground:(id)connection
 {
 	self.backgroundDecisionCount++;
+}
+
+- (void)connectionRestoredAfterLoss:(id)connection
+{
+	self.restoredAfterLossCount++;
 }
 
 @end
@@ -344,6 +350,37 @@
 	XCTAssertTrue(firstResult);
 	XCTAssertTrue(secondResult);
 	XCTAssertEqual(reconnectCount, 1U);
+}
+
+- (void)testDelegateDrivenReconnectSuccessNotifiesDelegateAfterRestoration
+{
+	SPMySQLConnection *connection = [[SPMySQLConnection alloc] init];
+	SPMySQLConnectionLostTestDelegate *delegate = [[SPMySQLConnectionLostTestDelegate alloc] init];
+	[connection setDelegate:delegate];
+	__weak SPMySQLConnection *weakConnection = connection;
+	__block NSUInteger reconnectCount = 0;
+	[connection _setSilentReconnectAttemptForTesting:^BOOL{
+		reconnectCount++;
+		if (reconnectCount == 2) {
+			[weakConnection _setStateForTesting:SPMySQLConnected];
+			return YES;
+		}
+		[weakConnection _setStateForTesting:SPMySQLDisconnected];
+		return NO;
+	}];
+
+	XCTestExpectation *reconnectExpectation = [self expectationWithDescription:@"delegate reconnect completed"];
+	__block BOOL reconnectResult = NO;
+	dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+		reconnectResult = [connection _reconnectAllowingRetries:YES];
+		[reconnectExpectation fulfill];
+	});
+
+	[self waitForExpectations:@[reconnectExpectation] timeout:1];
+	XCTAssertTrue(reconnectResult);
+	XCTAssertEqual(delegate.asyncDecisionCount, 1U);
+	XCTAssertEqual(delegate.restoredAfterLossCount, 1U);
+	XCTAssertEqual(reconnectCount, 2U);
 }
 
 - (void)testCancelledSilentReconnectRestoresProxyNotificationFlag

@@ -38,6 +38,7 @@
 	BOOL delegateSupportsConnectionLost;
 	BOOL delegateSupportsConnectionLostAsync;
 	BOOL delegateSupportsConnectionLostBackground;
+	BOOL delegateSupportsConnectionRestoredAfterLoss;
 	BOOL delegateQueryLogging; // Defaults to YES if protocol implemented
 
 	// Basic connection details

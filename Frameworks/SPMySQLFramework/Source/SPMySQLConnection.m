@@ -374,6 +374,9 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 		delegate = nil;
 		delegateSupportsWillQueryString = NO;
 		delegateSupportsConnectionLost = NO;
+		delegateSupportsConnectionLostAsync = NO;
+		delegateSupportsConnectionLostBackground = NO;
+		delegateSupportsConnectionRestoredAfterLoss = NO;
 		delegateQueryLogging = YES;
 
 		// Delegate disconnection decisions
@@ -1072,6 +1075,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 #endif
 
 	BOOL reconnectSucceeded = NO;
+	BOOL delegateReconnectDecisionRequested = NO;
 
 	@autoreleasepool {
 		// Check whether a reconnection attempt is already being made - if so, wait
@@ -1135,6 +1139,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 			// If the delegate supports the decision process, ask it how to proceed
 			if (delegateSupportsConnectionLostAsync || delegateSupportsConnectionLost) {
 				connectionLostDecision = [self _delegateDecisionForLostConnection];
+				delegateReconnectDecisionRequested = (connectionLostDecision == SPMySQLConnectionLostReconnect);
 			}
 				// Otherwise default to reconnect, but only a set number of times to prevent a runaway loop
 			else {
@@ -1169,6 +1174,9 @@ asm(".desc ___crashreporter_info__, 0x10");
 		if (reconnectingThread && pthread_equal(reconnectingThread, pthread_self())) {
 			reconnectingThread = NULL;
 		}
+	}
+	if (reconnectSucceeded && delegateReconnectDecisionRequested && delegateSupportsConnectionRestoredAfterLoss) {
+		[delegate connectionRestoredAfterLoss:self];
 	}
 	return reconnectSucceeded;
 }

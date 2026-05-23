@@ -6087,6 +6087,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     self.backgroundConnectionLost = YES;
 }
 
+- (void)connectionRestoredAfterLoss:(id)connection
+{
+    if (connection != mySQLConnection) return;
+
+    self.backgroundConnectionLost = NO;
+}
+
 - (void)_mysqlConnectionLostInBackground:(NSNotification *)notification
 {
     if ([notification object] != mySQLConnection) return;

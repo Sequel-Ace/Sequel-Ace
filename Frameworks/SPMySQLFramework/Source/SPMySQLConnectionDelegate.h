@@ -114,6 +114,14 @@
 - (void)connectionLost:(id)connection completion:(void (^)(SPMySQLConnectionLostDecision decision))completion;
 
 /**
+ * Notifies the delegate that a previously lost connection has been restored
+ * after the lost-connection decision flow completed with a reconnect.
+ *
+ * @param connection The connection instance which restored the connection
+ */
+- (void)connectionRestoredAfterLoss:(id)connection;
+
+/**
  * Notifies the delegate that a background-only connection loss was detected.
  * This callback is informational and must not request a reconnect decision.
  *

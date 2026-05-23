@@ -49,6 +49,7 @@
 	delegateSupportsConnectionLost = [delegate respondsToSelector:@selector(connectionLost:)];
 	delegateSupportsConnectionLostAsync = [delegate respondsToSelector:@selector(connectionLost:completion:)];
 	delegateSupportsConnectionLostBackground = [delegate respondsToSelector:@selector(connectionLostInBackground:)];
+	delegateSupportsConnectionRestoredAfterLoss = [delegate respondsToSelector:@selector(connectionRestoredAfterLoss:)];
 }
 
 /**
