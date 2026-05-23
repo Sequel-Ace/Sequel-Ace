@@ -57,7 +57,15 @@ import AppKit
             return []
         }
 
-        let operators = SACellFilterOperator.operators(for: typeGrouping, cellIsNull: isNull)
+        // Treat an empty-string cell value the same as a NULL cell for menu purposes:
+        // SPRuleFilterController's starter detection collapses any expression whose
+        // filterValues are all empty strings into a placeholder (see SerIsUntouchedStarterRule
+        // at SPRuleFilterController.m:1814-1829), so a value-bearing operator with `[""]`
+        // cannot be persisted via the rule editor. Restrict the menu to NULL operators
+        // for empty strings so the cell-filter feature never produces non-persistent rules.
+        let effectiveIsNull = isNull || (value?.isEmpty ?? false)
+
+        let operators = SACellFilterOperator.operators(for: typeGrouping, cellIsNull: effectiveIsNull)
         guard !operators.isEmpty else {
             return []
         }
@@ -68,7 +76,7 @@ import AppKit
                 columnName: columnName,
                 operatorName: op.serializedName,
                 values: op.valueCount == 0 ? [] : [value ?? ""],
-                isNull: isNull
+                isNull: effectiveIsNull
             )
         }
     }

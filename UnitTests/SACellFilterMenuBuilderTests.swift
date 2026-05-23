@@ -40,6 +40,31 @@ final class SACellFilterMenuBuilderTests: XCTestCase {
         XCTAssertEqual(menu.items.map(\.title), ["=", "≠", "LIKE", "NOT LIKE", "contains", "does not contain"])
     }
 
+    func testEmptyStringValueOnlyShowsNullOperators() throws {
+        // An empty-string cell value cannot be persisted as a value-bearing rule because
+        // SPRuleFilterController's starter detection treats filterValues=[""] as a
+        // disposable placeholder. Cell-filter therefore restricts the menu to NULL
+        // operators for empty strings, matching the NULL-cell handling.
+        let menu = try XCTUnwrap(SACellFilterMenuBuilder.filterMenu(
+            column: ["name": "payload", "typegrouping": "string"],
+            value: "",
+            isNull: false
+        ))
+
+        XCTAssertEqual(menu.items.map(\.title), ["IS NULL", "IS NOT NULL"])
+    }
+
+    func testEmptyStringValueOnNumberColumnOnlyShowsNullOperators() throws {
+        // Same reasoning as the string case — applies across all type groupings.
+        let menu = try XCTUnwrap(SACellFilterMenuBuilder.filterMenu(
+            column: ["name": "qty", "typegrouping": "integer"],
+            value: "",
+            isNull: false
+        ))
+
+        XCTAssertEqual(menu.items.map(\.title), ["IS NULL", "IS NOT NULL"])
+    }
+
     func testBinaryAndBlobNonNullValuesReturnNoMenu() {
         XCTAssertNil(SACellFilterMenuBuilder.filterMenu(
             column: ["name": "payload", "typegrouping": "binary"],
