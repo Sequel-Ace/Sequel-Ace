@@ -71,6 +71,7 @@ typedef struct {
 	// If we've had too many ping failures, don't keep trying
 	if (keepAlivePingFailures >= 3) {
 		state = SPMySQLConnectionLostInBackground;
+		[self _postLostInBackgroundNotification];
 		return;
 	}
 
@@ -102,19 +103,10 @@ typedef struct {
 
 		[keepAliveThread setName:[NSString stringWithFormat:@"SPMySQL connection keepalive monitor thread (id=%p)", self]];
 
-		// If the maximum number of ping failures has been reached, determine whether to reconnect.
+		// If the maximum number of ping failures has been reached, record the background loss.
 		if (keepAliveLastPingBlocked || keepAlivePingFailures >= 3) {
-
-			// If the connection has been used within the last fifteen minutes,
-			// attempt a single reconnection in the background
-			if (_timeIntervalSinceMonotonicTime(lastConnectionUsedTime) < 60 * 15) {
-				[self _reconnectAfterBackgroundConnectionLoss];
-			}
-			// Otherwise set the state to connection lost for automatic reconnect on
-			// next use.
-			else {
-				state = SPMySQLConnectionLostInBackground;
-			}
+			state = SPMySQLConnectionLostInBackground;
+			[self _postLostInBackgroundNotification];
 
 			// Return as no further ping action required this cycle.
 			goto end_cleanup;
