@@ -126,8 +126,26 @@ extension SPFavoriteNode {
         // User and password
         if let user = favoriteDict[SPFavoriteUserKey] as? String, !user.isEmpty {
             components.user = user
-            // Note: passwords are stored in keychain, not in favorites dict
-            // We don't include them in the connection string by default for security
+
+            // Fetch password from keychain if requested
+            if includePassword {
+                let keychain = SPKeychain()
+                let favoriteID = favoriteDict[SPFavoriteIDKey] as? NSNumber ?? NSNumber(value: -1)
+                let favoriteName = favoriteDict[SPFavoriteNameKey] as? String ?? ""
+                let host = favoriteDict[SPFavoriteHostKey] as? String ?? ""
+                let database = favoriteDict[SPFavoriteDatabaseKey] as? String ?? ""
+                let typeTag = favoriteDict[SPFavoriteTypeKey] as? Int ?? 0
+
+                // Normalize host for keychain lookup (socket connections use "localhost")
+                let hostForKeychain = (typeTag == 1) ? "localhost" : host
+
+                let keychainName = keychain.nameForFavoriteName(favoriteName, id: "\(favoriteID)")
+                let keychainAccount = keychain.accountForUser(user, host: hostForKeychain, database: database)
+
+                if let password = keychain.getPassword(forName: keychainName, account: keychainAccount), !password.isEmpty {
+                    components.password = password
+                }
+            }
         }
 
         // Host

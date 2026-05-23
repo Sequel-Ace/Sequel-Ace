@@ -1681,7 +1681,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
     NSString *clipboardString = [pasteboard stringForType:NSPasteboardTypeString];
 
-    if (clipboardString && [clipboardString hasPrefix:@"mysql://"]) {
+    if (clipboardString && [[clipboardString lowercaseString] hasPrefix:@"mysql://"]) {
         // Found a connection string in clipboard - offer to import it
 
         // Validate URL
@@ -1692,16 +1692,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             return;
         }
 
-        // Check for password
-        BOOL hasPassword = (url.user.length > 0 && url.password.length > 0);
+        // Use NSURLComponents for proper password handling (handles percent-encoding)
+        NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
+        BOOL hasPassword = (components.user.length > 0 && components.password.length > 0);
 
         // Create redacted version for display
         NSString *displayString = clipboardString;
         if (hasPassword) {
-            // Replace password with •••
-            NSString *passwordPattern = [NSString stringWithFormat:@":%@@", url.password];
-            NSString *redactedPattern = @":•••@";
-            displayString = [clipboardString stringByReplacingOccurrencesOfString:passwordPattern withString:redactedPattern];
+            // Use NSURLComponents to properly redact password (handles percent-encoded passwords)
+            components.password = @"•••";
+            displayString = components.string ?: clipboardString;
         }
 
         NSAlert *alert = [[NSAlert alloc] init];
@@ -1752,7 +1752,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             [alert setInformativeText:NSLocalizedString(@"\nWould you like to import from clipboard or choose a file?", @"Import prompt")];
         }
         else {
-            [alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Found connection string in clipboard:\n\n%@\n\nWould you like to import from clipboard or choose a file?", @"Import connection string prompt"), clipboardString]];
+            // Use redacted string even when no password to avoid exposing any sensitive data
+            [alert setInformativeText:[NSString stringWithFormat:NSLocalizedString(@"Found connection string in clipboard:\n\n%@\n\nWould you like to import from clipboard or choose a file?", @"Import connection string prompt"), displayString]];
         }
 
         [alert addButtonWithTitle:NSLocalizedString(@"Import from Clipboard", @"Import from clipboard button")];
@@ -1796,6 +1797,32 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         // Hide password
         [urlField setStringValue:redactedString];
     }
+}
+
+/**
+ * Saves a password to the keychain for a favorite using proper keychain helper methods.
+ */
+- (void)savePassword:(NSString *)password forFavorite:(NSDictionary *)favorite
+{
+    if (!password || password.length == 0) {
+        return;
+    }
+
+    NSString *favoriteName = [favorite objectForKey:SPFavoriteNameKey] ?: @"";
+    NSNumber *favoriteID = [favorite objectForKey:SPFavoriteIDKey] ?: @(-1);
+    NSString *user = [favorite objectForKey:SPFavoriteUserKey] ?: @"";
+    NSString *host = [favorite objectForKey:SPFavoriteHostKey] ?: @"";
+    NSString *database = [favorite objectForKey:SPFavoriteDatabaseKey] ?: @"";
+    NSInteger typeTag = [[favorite objectForKey:SPFavoriteTypeKey] integerValue];
+
+    // Normalize host for keychain (socket connections use "localhost")
+    NSString *hostForKeychain = (typeTag == SPSocketConnection) ? @"localhost" : host;
+
+    // Use keychain helper methods for consistent format
+    NSString *keychainName = [keychain nameForFavoriteName:favoriteName id:[NSString stringWithFormat:@"%@", favoriteID]];
+    NSString *keychainAccount = [keychain accountForUser:user host:hostForKeychain database:database];
+
+    [keychain addPassword:password forName:keychainName account:keychainAccount];
 }
 
 - (void)showImportFilePanel
@@ -1890,13 +1917,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     NSNumber *favoriteID = [self _createNewFavoriteID];
     [favorite setObject:favoriteID forKey:SPFavoriteIDKey];
 
-    // Save password to keychain if present
+    // Store password for later (will be saved to keychain after user confirms action)
     NSString *passwordFromURL = [details objectForKey:@"password"];
-    if (passwordFromURL && passwordFromURL.length > 0) {
-        [keychain addPassword:passwordFromURL
-                   forName:[NSString stringWithFormat:@"Sequel Ace : %@", favoriteName]
-                   account:[NSString stringWithFormat:@"%@@%@/%@", user, host, database]];
-    }
 
     // Check for duplicates
     SPTreeNode *duplicateNode = [self findDuplicateFavoriteForHost:host
@@ -1932,12 +1954,14 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
             if (item.action == SPDuplicateActionUpdate) {
                 // Update existing
-                [self updateFavoriteNode:duplicateNode withData:favorite];
+                [self updateFavoriteNode:duplicateNode withData:favorite password:passwordFromURL];
                 selectedNode = duplicateNode;
             }
             else if (item.action == SPDuplicateActionCreateNew) {
                 // Create new
                 selectedNode = [self->favoritesController addFavoriteNodeWithData:favorite asChildOfNode:nil];
+                // Save password to keychain for new favorite
+                [self savePassword:passwordFromURL forFavorite:favorite];
             }
             // If Skip - do nothing
 
@@ -1961,6 +1985,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     else {
         // No duplicate - add normally
         SPTreeNode *newNode = [favoritesController addFavoriteNodeWithData:favorite asChildOfNode:nil];
+
+        // Save password to keychain
+        [self savePassword:passwordFromURL forFavorite:favorite];
 
         if (currentSortItem > SPFavoritesSortUnsorted) {
             [self _sortFavorites];
@@ -2012,7 +2039,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     return nil;
 }
 
-- (void)updateFavoriteNode:(SPTreeNode *)node withData:(NSDictionary *)newData
+- (void)updateFavoriteNode:(SPTreeNode *)node withData:(NSDictionary *)newData password:(NSString *)password
 {
     id representedObject = [node representedObject];
     if (![representedObject respondsToSelector:@selector(nodeFavorite)]) return;
@@ -2025,7 +2052,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     NSString *oldUser = [favoriteDict objectForKey:SPFavoriteUserKey] ?: @"";
     NSString *oldDatabase = [favoriteDict objectForKey:SPFavoriteDatabaseKey] ?: @"";
     NSString *oldName = [favoriteDict objectForKey:SPFavoriteNameKey] ?: @"";
-    NSString *oldAccount = [NSString stringWithFormat:@"%@@%@/%@", oldUser, oldHost, oldDatabase];
+    NSNumber *favoriteID = [favoriteDict objectForKey:SPFavoriteIDKey] ?: @(-1);
+    NSInteger oldTypeTag = [[favoriteDict objectForKey:SPFavoriteTypeKey] integerValue];
 
     // Update all fields from newData (except name - keep the existing name)
     for (NSString *key in newData) {
@@ -2039,29 +2067,46 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     NSString *newUser = [favoriteDict objectForKey:SPFavoriteUserKey] ?: @"";
     NSString *newDatabase = [favoriteDict objectForKey:SPFavoriteDatabaseKey] ?: @"";
     NSString *newName = [favoriteDict objectForKey:SPFavoriteNameKey] ?: @"";
-    NSString *newAccount = [NSString stringWithFormat:@"%@@%@/%@", newUser, newHost, newDatabase];
+    NSInteger newTypeTag = [[favoriteDict objectForKey:SPFavoriteTypeKey] integerValue];
 
-    // Update keychain if host/user/database changed
-    BOOL accountChanged = ![oldAccount isEqualToString:newAccount];
-    NSString *passwordFromNewData = [newData objectForKey:@"password"];
+    // Normalize host for keychain (socket connections use "localhost")
+    NSString *oldHostForKeychain = (oldTypeTag == SPSocketConnection) ? @"localhost" : oldHost;
+    NSString *newHostForKeychain = (newTypeTag == SPSocketConnection) ? @"localhost" : newHost;
 
-    if (accountChanged || (passwordFromNewData && passwordFromNewData.length > 0)) {
+    // Use keychain helper methods for consistent format
+    NSString *oldKeychainName = [keychain nameForFavoriteName:oldName id:[NSString stringWithFormat:@"%@", favoriteID]];
+    NSString *oldKeychainAccount = [keychain accountForUser:oldUser host:oldHostForKeychain database:oldDatabase];
+    NSString *newKeychainName = [keychain nameForFavoriteName:newName id:[NSString stringWithFormat:@"%@", favoriteID]];
+    NSString *newKeychainAccount = [keychain accountForUser:newUser host:newHostForKeychain database:newDatabase];
+
+    // Update keychain if account changed or new password provided
+    BOOL accountChanged = ![oldKeychainAccount isEqualToString:newKeychainAccount];
+    BOOL hasNewPassword = (password && password.length > 0);
+
+    if (accountChanged || hasNewPassword) {
         // Try to get existing password
-        NSString *existingPassword = [keychain getPasswordForName:[NSString stringWithFormat:@"Sequel Ace : %@", oldName]
-                                                           account:oldAccount];
+        NSString *existingPassword = [keychain getPasswordForName:oldKeychainName account:oldKeychainAccount];
 
-        // Remove old keychain entry if account changed
-        if (accountChanged && existingPassword) {
-            [keychain deletePasswordForName:[NSString stringWithFormat:@"Sequel Ace : %@", oldName]
-                                    account:oldAccount];
-        }
+        // Determine which password to save
+        NSString *passwordToSave = hasNewPassword ? password : existingPassword;
 
-        // Add/update keychain with new account
-        NSString *passwordToSave = passwordFromNewData ?: existingPassword;
         if (passwordToSave && passwordToSave.length > 0) {
-            [keychain addPassword:passwordToSave
-                       forName:[NSString stringWithFormat:@"Sequel Ace : %@", newName]
-                       account:newAccount];
+            if ([keychain passwordExistsForName:oldKeychainName account:oldKeychainAccount]) {
+                // Update existing keychain entry
+                [keychain updateItemWithName:oldKeychainName
+                                     account:oldKeychainAccount
+                                      toName:newKeychainName
+                                     account:newKeychainAccount
+                                    password:passwordToSave];
+            } else {
+                // Create new keychain entry
+                [keychain addPassword:passwordToSave
+                              forName:newKeychainName
+                              account:newKeychainAccount];
+            }
+        } else if (accountChanged && existingPassword) {
+            // No password to save but account changed - delete old entry
+            [keychain deletePasswordForName:oldKeychainName account:oldKeychainAccount];
         }
     }
 
@@ -3820,8 +3865,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             // Process each duplicate based on selected action
             for (SPDuplicateImportItem *item in duplicateItems) {
                 if (item.action == SPDuplicateActionUpdate) {
-                    // Update existing
-                    [self updateFavoriteNode:item.duplicateNode withData:item.favorite];
+                    // Update existing (no password from plist imports)
+                    [self updateFavoriteNode:item.duplicateNode withData:item.favorite password:nil];
                     [importedNodes addObject:item.duplicateNode];
                 }
                 else if (item.action == SPDuplicateActionCreateNew) {
