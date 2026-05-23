@@ -48,6 +48,8 @@
 static pthread_key_t mySQLThreadInitFlagKey;
 static void *mySQLThreadFlag;
 
+NSString * const SPMySQLConnectionLostInBackgroundNotification = @"SPMySQLConnectionLostInBackgroundNotification";
+
 static BOOL SPHostIsLoopbackIPv4Address(NSString *normalizedHost)
 {
 	struct in_addr ipv4Address;

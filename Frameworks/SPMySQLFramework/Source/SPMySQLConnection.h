@@ -36,6 +36,8 @@
     __weak NSObject <SPMySQLConnectionDelegate> *delegate;
 	BOOL delegateSupportsWillQueryString;
 	BOOL delegateSupportsConnectionLost;
+	BOOL delegateSupportsConnectionLostAsync;
+	BOOL delegateSupportsConnectionLostBackground;
 	BOOL delegateQueryLogging; // Defaults to YES if protocol implemented
 
 	// Basic connection details

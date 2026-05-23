@@ -50,6 +50,10 @@ typedef enum {
 	SPMySQLConnectionLostReconnect  = 1
 } SPMySQLConnectionLostDecision;
 
+// Posted with the SPMySQLConnection instance as the object when a background-only
+// connection loss is detected without asking the delegate for a reconnect decision.
+extern NSString * const SPMySQLConnectionLostInBackgroundNotification;
+
 // Result set row types
 typedef enum {
 	SPMySQLResultRowAsDefault    = 0,

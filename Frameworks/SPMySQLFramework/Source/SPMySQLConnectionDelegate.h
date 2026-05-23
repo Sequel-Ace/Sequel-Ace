@@ -95,12 +95,30 @@
 
 /**
  * Notifies the delegate that the connection has been temporarily lost,
- * and asks the delegate for guidance on how to proceed.  If the delegate
- * does not implement this method, reconnections will automatically be
- * attempted - up to a small limit of attempts.
+ * and asks the delegate for guidance on how to proceed. This synchronous
+ * callback is deprecated and is only used as a worker-thread fallback.
  *
  * @param connection The connection instance that requires a decision on how to proceed
  */
-- (SPMySQLConnectionLostDecision)connectionLost:(id)connection;
+- (SPMySQLConnectionLostDecision)connectionLost:(id)connection
+	DEPRECATED_MSG_ATTRIBUTE("Use connectionLost:completion: instead. Old API is no longer called from the main thread.");
+
+/**
+ * Notifies the delegate that the connection has been temporarily lost and asks
+ * asynchronously for guidance on how to proceed. The completion may be called
+ * from any thread.
+ *
+ * @param connection The connection instance that requires a decision on how to proceed
+ * @param completion The completion block to call with the selected decision
+ */
+- (void)connectionLost:(id)connection completion:(void (^)(SPMySQLConnectionLostDecision decision))completion;
+
+/**
+ * Notifies the delegate that a background-only connection loss was detected.
+ * This callback is informational and must not request a reconnect decision.
+ *
+ * @param connection The connection instance which lost the connection in the background
+ */
+- (void)connectionLostInBackground:(id)connection;
 
 @end

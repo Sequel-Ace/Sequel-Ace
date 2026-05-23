@@ -47,6 +47,8 @@
 	// Cache whether the delegate implements certain delegate methods
 	delegateSupportsWillQueryString = [delegate respondsToSelector:@selector(willQueryString:connection:)];
 	delegateSupportsConnectionLost = [delegate respondsToSelector:@selector(connectionLost:)];
+	delegateSupportsConnectionLostAsync = [delegate respondsToSelector:@selector(connectionLost:completion:)];
+	delegateSupportsConnectionLostBackground = [delegate respondsToSelector:@selector(connectionLostInBackground:)];
 }
 
 /**
