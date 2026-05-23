@@ -90,6 +90,53 @@ final class SACellFilterMergeTests: XCTestCase {
         XCTAssertEqual(filterChildren(from: merged), [filterDictionary(existing), filterDictionary(newFilter)])
     }
 
+    func testHalfTouchedSingleExpressionIsTreatedAsPlaceholder() {
+        // User picked a column in the rule editor but never filled in a value.
+        // Serialized as `Host = ""`. Merging a real cell filter must REPLACE
+        // (not AND-append) so the result is not the impossible `Host="" AND Host="localhost"`.
+        let halfTouched = filter(column: "Host", comparison: "=", values: [""])
+        let newFilter = filter(column: "Host", comparison: "=", values: ["localhost"])
+
+        let merged = SACellFilterMerge.mergedFilter(currentFilter: halfTouched, newFilter: newFilter)
+
+        XCTAssertEqual(merged as NSDictionary, newFilter as NSDictionary)
+    }
+
+    func testAndGroupStripsHalfTouchedChildrenWhenMerging() {
+        let halfTouched = filter(column: "Host", comparison: "=", values: [""])
+        let real = filter(column: "id", comparison: "=", values: ["42"])
+        let newFilter = filter(column: "Host", comparison: "=", values: ["localhost"])
+        let existing: [String: Any] = [
+            "filterClass": "groupNode",
+            "isConjunction": true,
+            "children": [halfTouched, real],
+        ]
+
+        let merged = SACellFilterMerge.mergedFilter(currentFilter: existing, newFilter: newFilter)
+
+        XCTAssertEqual(merged["filterClass"] as? String, "groupNode")
+        XCTAssertEqual(merged["isConjunction"] as? Bool, true)
+        // halfTouched stripped; real kept; newFilter appended → [real, newFilter]
+        XCTAssertEqual(filterChildren(from: merged), [filterDictionary(real), filterDictionary(newFilter)])
+    }
+
+    func testAndGroupOfOnlyPlaceholdersCollapsesToNewFilter() {
+        // All existing rules are unfilled placeholders → strip them all,
+        // leaving only the new cell filter as a single leaf (not a group).
+        let placeholder1 = filter(column: "Host", comparison: "=", values: [""])
+        let placeholder2 = filter(column: "User", comparison: "=", values: [""])
+        let newFilter = filter(column: "Host", comparison: "=", values: ["localhost"])
+        let existing: [String: Any] = [
+            "filterClass": "groupNode",
+            "isConjunction": true,
+            "children": [placeholder1, placeholder2],
+        ]
+
+        let merged = SACellFilterMerge.mergedFilter(currentFilter: existing, newFilter: newFilter)
+
+        XCTAssertEqual(merged as NSDictionary, newFilter as NSDictionary)
+    }
+
     private func filter(column: String, comparison: String, values: [String]) -> [String: AnyHashable] {
         return [
             "filterClass": "expressionNode",

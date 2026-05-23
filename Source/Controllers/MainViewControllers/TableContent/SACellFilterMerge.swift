@@ -15,9 +15,14 @@ import Foundation
             return newFilter
         }
 
-        if isConjunctionGroup(filter: currentFilter), var children = currentFilter["children"] as? [[String: Any]] {
-            children.append(newFilter)
-            return andGroup(children: children)
+        if isConjunctionGroup(filter: currentFilter), let children = currentFilter["children"] as? [[String: Any]] {
+            // Strip placeholder children (empty starter or value-empty half-touched rows) before appending
+            var realChildren = children.filter { !isEmpty(filter: $0) && !isUntouchedStarter(filter: $0) }
+            realChildren.append(newFilter)
+            if realChildren.count == 1 {
+                return realChildren[0]
+            }
+            return andGroup(children: realChildren)
         }
 
         return andGroup(children: [currentFilter, newFilter])
@@ -40,15 +45,21 @@ import Foundation
         return true
     }
 
+    /// A "starter" or "half-touched placeholder" row that the user added to the rule editor
+    /// but never filled in. Two shapes are recognized:
+    ///   - Original starter: empty column + empty filterValues entries.
+    ///   - Half-touched: column was picked but every filterValues entry is still an empty string.
+    /// In both cases the row contributes nothing to the query and should be stripped during merge
+    /// so that AND-appending a new cell filter does not produce an impossible WHERE clause.
+    ///
+    /// Zero-argument real operators (IS NULL / IS NOT NULL) serialize with `filterValues: []`
+    /// (count == 0) so the `!values.isEmpty` guard keeps them out of the placeholder bucket.
     public static func isUntouchedStarter(filter: [String: Any]?) -> Bool {
         guard let filter, filter["filterClass"] as? String == "expressionNode" else {
             return false
         }
 
-        guard let column = filter["column"] as? String,
-              column.isEmpty,
-              let values = filter["filterValues"] as? [Any],
-              !values.isEmpty else {
+        guard let values = filter["filterValues"] as? [Any], !values.isEmpty else {
             return false
         }
 
