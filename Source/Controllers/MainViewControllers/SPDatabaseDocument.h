@@ -180,6 +180,7 @@
 	NSMenu *selectEncodingMenu;
 	BOOL _supportsEncoding;
 	BOOL _isConnected;
+	BOOL backgroundConnectionLost;
 	NSInteger _isWorkingLevel;
 	BOOL _mainNibLoaded;
 	BOOL databaseListIsSelectable;
@@ -277,6 +278,7 @@
 // Connection callback and methods
 - (void)setConnection:(SPMySQLConnection *)theConnection;
 - (SPMySQLConnection *)getConnection;
+- (void)checkForBackgroundConnectionLossThenRun:(void (^ _Nullable)(void))action;
 
 // Database methods
 - (IBAction)chooseDatabase:(id)sender;

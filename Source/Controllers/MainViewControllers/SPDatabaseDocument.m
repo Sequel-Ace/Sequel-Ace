@@ -108,6 +108,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @property (nonatomic, strong) NSImage *textAndCommandMacwindowImage API_AVAILABLE(macos(11.0));
 @property (nonatomic, weak, readwrite) SPWindowController *parentWindowController;
 @property (assign) BOOL appIsTerminating;
+@property (atomic, assign) BOOL backgroundConnectionLost;
 
 @property (readwrite, nonatomic, strong) NSToolbar *mainToolbar;
 
@@ -132,6 +133,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (NSString *)keychainPasswordForConnection:(SPMySQLConnection *)connection;
 - (NSString *)keychainPasswordForSSHConnection:(SPMySQLConnection *)connection;
+- (void)_mysqlConnectionLostInBackground:(NSNotification *)notification;
+- (BOOL)_showConnectionLostSheetAllowingCancel:(BOOL)allowCancel completion:(void (^)(SPMySQLConnectionLostDecision decision, BOOL cancelled))completion;
 
 @end
 
@@ -156,6 +159,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @synthesize textAndCommandMacwindowImage;
 @synthesize appIsTerminating;
 @synthesize multipleLineEditingButton;
+@synthesize backgroundConnectionLost;
 
 #pragma mark -
 
@@ -170,6 +174,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         _mainNibLoaded = NO;
         _isConnected = NO;
+        backgroundConnectionLost = NO;
         _isWorkingLevel = 0;
         _isSavedInBundle = NO;
         _supportsEncoding = NO;
@@ -409,7 +414,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     }
 
     _isConnected = YES;
+    self.backgroundConnectionLost = NO;
     mySQLConnection = theConnection;
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:SPMySQLConnectionLostInBackgroundNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(_mysqlConnectionLostInBackground:)
+                                                 name:SPMySQLConnectionLostInBackgroundNotification
+                                               object:mySQLConnection];
 
     // Now that we have a connection, determine what functionality the database supports.
     // Note that this must be done before anything else as it's used by nearly all of the main controllers.
@@ -6047,40 +6058,103 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 /**
  * Invoked when the connection fails and the framework needs to know how to proceed.
  */
-- (SPMySQLConnectionLostDecision)connectionLost:(id)connection
+- (void)connectionLost:(id)connection completion:(void (^)(SPMySQLConnectionLostDecision decision))completion
 {
-
     SPLog(@"connectionLost");
 
-    SPMySQLConnectionLostDecision connectionErrorCode = SPMySQLConnectionLostDisconnect;
-
-    // Only display the reconnect dialog if the window is visible
-    // and we are not terminating
-    if ([self.parentWindowController window] && [[self.parentWindowController window] isVisible] && appIsTerminating == NO) {
-
-        SPLog(@"not terminating, parentWindow isVisible, showing connectionErrorDialog");
-        // Ensure the window isn't miniaturized
-        if ([[self.parentWindowController window] isMiniaturized]) {
-            [[self.parentWindowController window] deminiaturize:self];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (![self _showConnectionLostSheetAllowingCancel:NO completion:^(SPMySQLConnectionLostDecision decision, BOOL cancelled) {
+            if (decision == SPMySQLConnectionLostDisconnect) {
+                [self closeAndDisconnect];
+            }
+            if (completion) completion(decision);
+        }]) {
+            if (completion) completion(SPMySQLConnectionLostDisconnect);
         }
-        [[self parentWindowControllerWindow] orderWindow:NSWindowAbove relativeTo:0];
+    });
+}
 
-        // Display the connection error dialog and wait for the return code
-        [[self.parentWindowController window] beginSheet:connectionErrorDialog completionHandler:nil];
-        connectionErrorCode = (SPMySQLConnectionLostDecision)[NSApp runModalForWindow:connectionErrorDialog];
+- (void)connectionLostInBackground:(id)connection
+{
+    if (connection != mySQLConnection) return;
 
-        [NSApp endSheet:connectionErrorDialog];
-        [connectionErrorDialog orderOut:nil];
+    self.backgroundConnectionLost = YES;
+}
 
-        queryStartDate = [[NSDate alloc] init];
+- (void)_mysqlConnectionLostInBackground:(NSNotification *)notification
+{
+    if ([notification object] != mySQLConnection) return;
 
-        // If 'disconnect' was selected, trigger a window close.
-        if (connectionErrorCode == SPMySQLConnectionLostDisconnect) {
-            [self performSelectorOnMainThread:@selector(closeAndDisconnect) withObject:nil waitUntilDone:YES];
-        }
+    self.backgroundConnectionLost = YES;
+}
+
+- (void)checkForBackgroundConnectionLossThenRun:(void (^ _Nullable)(void))action
+{
+    if (!self.backgroundConnectionLost) {
+        if (action) action();
+        return;
     }
 
-    return connectionErrorCode;
+    [self _showConnectionLostSheetAllowingCancel:YES completion:^(SPMySQLConnectionLostDecision decision, BOOL cancelled) {
+        if (cancelled) return;
+
+        if (decision == SPMySQLConnectionLostReconnect) {
+            dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+                BOOL reconnected = [self->mySQLConnection reconnect];
+
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    if (reconnected) {
+                        self.backgroundConnectionLost = NO;
+                        if (action) action();
+                    }
+                });
+            });
+        } else if (decision == SPMySQLConnectionLostDisconnect) {
+            [self closeAndDisconnect];
+        }
+    }];
+}
+
+- (BOOL)_showConnectionLostSheetAllowingCancel:(BOOL)allowCancel completion:(void (^)(SPMySQLConnectionLostDecision decision, BOOL cancelled))completion
+{
+    NSWindow *parentWindow = [self.parentWindowController window];
+
+    // Only display the reconnect dialog if the window is visible and we are not terminating.
+    if (!parentWindow || ![parentWindow isVisible] || appIsTerminating) {
+        return NO;
+    }
+
+    SPLog(@"not terminating, parentWindow isVisible, showing connectionErrorDialog");
+    if ([parentWindow isMiniaturized]) {
+        [parentWindow deminiaturize:self];
+    }
+    [[self parentWindowControllerWindow] orderWindow:NSWindowAbove relativeTo:0];
+
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:NSLocalizedString(@"Connection Lost", @"connection lost alert title")];
+    [alert setInformativeText:NSLocalizedString(@"This tab's connection to the database was lost. Reconnect to continue?", @"connection lost alert message")];
+    [alert addButtonWithTitle:NSLocalizedString(@"Reconnect", @"connection lost reconnect button")];
+    [alert addButtonWithTitle:NSLocalizedString(@"Disconnect", @"connection lost disconnect button")];
+    if (allowCancel) {
+        [alert addButtonWithTitle:NSLocalizedString(@"Cancel", @"connection lost cancel button")];
+    }
+
+    [alert beginSheetModalForWindow:parentWindow completionHandler:^(NSModalResponse returnCode) {
+        self->queryStartDate = [[NSDate alloc] init];
+
+        if (allowCancel && returnCode == NSAlertThirdButtonReturn) {
+            if (completion) completion(SPMySQLConnectionLostDisconnect, YES);
+            return;
+        }
+
+        SPMySQLConnectionLostDecision decision = (returnCode == NSAlertFirstButtonReturn)
+            ? SPMySQLConnectionLostReconnect
+            : SPMySQLConnectionLostDisconnect;
+
+        if (completion) completion(decision, NO);
+    }];
+
+    return YES;
 }
 
 /**
