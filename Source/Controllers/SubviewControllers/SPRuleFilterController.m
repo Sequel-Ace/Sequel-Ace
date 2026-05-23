@@ -1817,10 +1817,16 @@ static BOOL SerIsUntouchedStarterRule(NSDictionary *dict)
 	if (![SerFilterClassExpression isEqual:[dict objectForKey:SerFilterClass]]) return NO;
 	NSArray *values = [dict objectForKey:SerFilterExprValues];
 	if (![values isKindOfClass:[NSArray class]]) return NO;
-	// A row counts as "untouched starter" only if every argument is an
-	// empty NSString. Anything else (NSData, NSNull, NSNumber, or a
-	// non-empty string) is real data the user or a restore path put
-	// there – merging, not replacing, is the correct behavior.
+	// A row counts as "untouched starter" only if at least one argument
+	// is present AND every argument is an empty NSString. Zero-argument
+	// operators such as IS NULL / IS NOT NULL serialize with an empty
+	// values array (count == 0); without the count guard they would be
+	// misclassified as starter and replaced on the next append/drop,
+	// silently dropping the user's NULL filter.
+	// Anything else (NSData, NSNull, NSNumber, or a non-empty string)
+	// is real data the user or a restore path put there – merging, not
+	// replacing, is the correct behavior.
+	if ([values count] == 0) return NO;
 	for (id v in values) {
 		if (![v isKindOfClass:[NSString class]]) return NO;
 		if ([(NSString *)v length]) return NO;
