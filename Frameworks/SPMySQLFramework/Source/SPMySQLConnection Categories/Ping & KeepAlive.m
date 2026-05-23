@@ -70,7 +70,7 @@ typedef struct {
 
 	// If we've had too many ping failures, don't keep trying
 	if (keepAlivePingFailures >= 3) {
-		state = SPMySQLConnectionLostInBackground;
+		[self _setConnectionState:SPMySQLConnectionLostInBackground];
 		[self _postLostInBackgroundNotification];
 		return;
 	}
@@ -105,7 +105,7 @@ typedef struct {
 
 		// If the maximum number of ping failures has been reached, record the background loss.
 		if (keepAliveLastPingBlocked || keepAlivePingFailures >= 3) {
-			state = SPMySQLConnectionLostInBackground;
+			[self _setConnectionState:SPMySQLConnectionLostInBackground];
 			[self _postLostInBackgroundNotification];
 
 			// Return as no further ping action required this cycle.

@@ -65,6 +65,7 @@
 	struct MYSQL *mySQLConnection;
 	SPMySQLConnectionState state;
 	BOOL connectedWithSSL;
+	BOOL lostInBackgroundNotificationPosted;
 	BOOL userTriggeredDisconnect;
 	pthread_t reconnectingThread;
 	dispatch_queue_t _reconnectQueue;

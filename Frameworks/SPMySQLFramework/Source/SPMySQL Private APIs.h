@@ -41,6 +41,7 @@
 
 - (BOOL)_connect;
 - (MYSQL *)_makeRawMySQLConnectionWithEncoding:(NSString *)encodingName isMasterConnection:(BOOL)isMaster;
+- (void)_setConnectionState:(SPMySQLConnectionState)newState;
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry;
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry dispatchOnMainThread:(BOOL)dispatchOnMainThread;
 - (BOOL)_silentReconnectAttempt;

@@ -195,6 +195,43 @@
 	XCTAssertEqual(delegate.syncDecisionCount, 0U);
 }
 
+- (void)testCheckConnectionIfNecessaryOnMainThreadCoalescesBackgroundLossNotification
+{
+	SPMySQLConnection *connection = [[SPMySQLConnection alloc] init];
+	SPMySQLConnectionLostTestDelegate *delegate = [[SPMySQLConnectionLostTestDelegate alloc] init];
+	[connection setDelegate:delegate];
+	[connection _setStateForTesting:SPMySQLConnectionLostInBackground];
+	__block NSUInteger notificationCount = 0;
+	id token = [[NSNotificationCenter defaultCenter] addObserverForName:SPMySQLConnectionLostInBackgroundNotification object:connection queue:nil usingBlock:^(NSNotification *note) {
+		notificationCount++;
+	}];
+
+	XCTAssertFalse([connection checkConnectionIfNecessary]);
+	XCTAssertFalse([connection checkConnectionIfNecessary]);
+
+	[[NSNotificationCenter defaultCenter] removeObserver:token];
+	XCTAssertEqual(notificationCount, 1U);
+	XCTAssertEqual(delegate.backgroundDecisionCount, 1U);
+}
+
+- (void)testBackgroundLossNotificationCoalescingResetsAfterStateLeavesLost
+{
+	SPMySQLConnection *connection = [[SPMySQLConnection alloc] init];
+	[connection _setStateForTesting:SPMySQLConnectionLostInBackground];
+	__block NSUInteger notificationCount = 0;
+	id token = [[NSNotificationCenter defaultCenter] addObserverForName:SPMySQLConnectionLostInBackgroundNotification object:connection queue:nil usingBlock:^(NSNotification *note) {
+		notificationCount++;
+	}];
+
+	XCTAssertFalse([connection checkConnectionIfNecessary]);
+	[connection _setStateForTesting:SPMySQLConnected];
+	[connection _setStateForTesting:SPMySQLConnectionLostInBackground];
+	XCTAssertFalse([connection checkConnectionIfNecessary]);
+
+	[[NSNotificationCenter defaultCenter] removeObserver:token];
+	XCTAssertEqual(notificationCount, 2U);
+}
+
 - (void)testCheckConnectionIfNecessaryOnWorkerThreadRunsReconnectPathForBackgroundLoss
 {
 	SPMySQLConnection *connection = [[SPMySQLConnection alloc] init];

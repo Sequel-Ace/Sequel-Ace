@@ -331,6 +331,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	if ((self = [super init])) {
 		mySQLConnection = NULL;
 		state = SPMySQLDisconnected;
+		lostInBackgroundNotificationPosted = NO;
 		userTriggeredDisconnect = NO;
 		reconnectingThread = NULL;
 		_reconnectQueue = dispatch_queue_create("com.sequel-ace.spmysql.reconnect", DISPATCH_QUEUE_SERIAL);
@@ -766,7 +767,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 		[NSException raise:NSInternalInconsistencyException format:@"Attempted to connect a connection that is not disconnected (SPMySQLConnectionState=%d).", state];
 		return NO;
 	}
-	state = SPMySQLConnecting;
+	[self _setConnectionState:SPMySQLConnecting];
 
 	if (userTriggeredDisconnect) {
 		return NO;
@@ -783,7 +784,7 @@ asm(".desc ___crashreporter_info__, 0x10");
         SPLog(@"!mySQLConnection, unlock");
 
 		[self _unlockConnection];
-		state = SPMySQLDisconnected;
+		[self _setConnectionState:SPMySQLDisconnected];
 		return NO;
 	}
 
@@ -796,7 +797,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	}
 
 	// Successfully connected - record connected state and reset tracking variables
-	state = SPMySQLConnected;
+	[self _setConnectionState:SPMySQLConnected];
 
 	@synchronized (self) {
 		initialConnectTime = _monotonicTime();
@@ -1288,7 +1289,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 #if DEBUG || SPMYSQL_FOR_UNIT_TESTING
 - (void)_setStateForTesting:(SPMySQLConnectionState)testState
 {
-	state = testState;
+	[self _setConnectionState:testState];
 }
 
 - (SPMySQLConnectionState)_stateForTesting
@@ -1351,11 +1352,23 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 - (void)_postLostInBackgroundNotification
 {
+	if (lostInBackgroundNotificationPosted) return;
+
+	lostInBackgroundNotificationPosted = YES;
 	[[NSNotificationCenter defaultCenter] postNotificationName:SPMySQLConnectionLostInBackgroundNotification object:self];
 
 	if (delegateSupportsConnectionLostBackground) {
 		[delegate connectionLostInBackground:self];
 	}
+}
+
+- (void)_setConnectionState:(SPMySQLConnectionState)newState
+{
+	if (state == SPMySQLConnectionLostInBackground && newState != SPMySQLConnectionLostInBackground) {
+		lostInBackgroundNotificationPosted = NO;
+	}
+
+	state = newState;
 }
 
 /**
@@ -1419,7 +1432,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	// If state is connection lost, set state directly to disconnected.
 	if (state == SPMySQLConnectionLostInBackground) {
-		state = SPMySQLDisconnected;
+		[self _setConnectionState:SPMySQLDisconnected];
 	}
 
 	// Only continue if a connection is active
@@ -1430,7 +1443,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// If a query is active, cancel it
 	[self cancelCurrentQuery];
 
-	state = SPMySQLDisconnecting;
+	[self _setConnectionState:SPMySQLDisconnecting];
 
 	// Allow any pings or cancelled queries  to complete, inside a time limit of ten seconds
 	uint64_t disconnectStartTime_t = _monotonicTime();
@@ -1455,7 +1468,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	}
 	mySQLConnection = NULL;
 	serverVersionNumber = 0;
-	state = SPMySQLDisconnected;
+	[self _setConnectionState:SPMySQLDisconnected];
 	[self _unlockConnection];
 
 	// If using a connection proxy, disconnect that too

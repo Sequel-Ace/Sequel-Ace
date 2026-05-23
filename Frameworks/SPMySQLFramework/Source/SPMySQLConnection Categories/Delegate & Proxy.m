@@ -129,7 +129,7 @@
 		// Otherwise set the state to connection lost for automatic reconnect on next use
 		} else {
             SPLog(@"Otherwise set the state to connection lost for automatic reconnect on next use");
-			state = SPMySQLConnectionLostInBackground;
+			[self _setConnectionState:SPMySQLConnectionLostInBackground];
 			proxyStateChangeNotificationsIgnored = NO;
 			[self _postLostInBackgroundNotification];
 		}
@@ -148,7 +148,7 @@
 		proxyStateChangeNotificationsIgnored = NO;
 
 		if (!reconnectSucceeded) {
-			state = SPMySQLConnectionLostInBackground;
+			[self _setConnectionState:SPMySQLConnectionLostInBackground];
 			[self _postLostInBackgroundNotification];
 		}
 	}
