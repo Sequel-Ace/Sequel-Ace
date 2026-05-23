@@ -6229,6 +6229,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)closeAndDisconnect {
 
+    BOOL wasConnected = _isConnected;
     _isConnected = NO;
 
     [self.parentWindowControllerWindow orderOut:self];
@@ -6254,7 +6255,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                                                    object:nil];
     }
 
-    if (_isConnected) {
+    if (wasConnected) {
         [self closeConnection];
     } else {
         [connectionController cancelConnection:self];
