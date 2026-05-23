@@ -1102,7 +1102,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 			SPMySQLConnectionLostDecision connectionLostDecision = SPMySQLConnectionLostReconnect;
 
 			// If the delegate supports the decision process, ask it how to proceed
-			if (delegateSupportsConnectionLost) {
+			if (delegateSupportsConnectionLostAsync || delegateSupportsConnectionLost) {
 				connectionLostDecision = [self _delegateDecisionForLostConnection];
 			}
 				// Otherwise default to reconnect, but only a set number of times to prevent a runaway loop

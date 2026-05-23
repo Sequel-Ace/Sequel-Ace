@@ -155,45 +155,48 @@
 }
 
 /**
- * Ask the delegate for the connection lost decision.  This can be called from
- * any thread, and will call itself on the main thread if necessary, updating a global
- * variable which is then returned on the child thread.
+ * Ask the delegate for the connection lost decision. This must be called from
+ * a worker thread; main-thread callers default to disconnect to avoid blocking UI.
  */
 - (SPMySQLConnectionLostDecision)_delegateDecisionForLostConnection
 {
 	SPMySQLConnectionLostDecision theDecision = SPMySQLConnectionLostDisconnect;
 
-	// If on the main thread, ask the delegate directly.
 	if ([NSThread isMainThread]) {
+		SPLog(@"Suppressing connectionLost: delegate decision on main thread; defaulting to disconnect");
+		return SPMySQLConnectionLostDisconnect;
+	}
+
+	if (delegateSupportsConnectionLostAsync) {
+		dispatch_semaphore_t decisionSemaphore = dispatch_semaphore_create(0);
+
+		[delegate connectionLost:self completion:^(SPMySQLConnectionLostDecision decision) {
+			[self->delegateDecisionLock lock];
+			self->lastDelegateDecisionForLostConnection = decision;
+			[self->delegateDecisionLock unlock];
+
+			dispatch_semaphore_signal(decisionSemaphore);
+		}];
+
+		if (dispatch_semaphore_wait(decisionSemaphore, dispatch_time(DISPATCH_TIME_NOW, 60 * NSEC_PER_SEC)) != 0) {
+			SPLog(@"Timed out waiting for async connectionLost:completion: delegate decision; defaulting to disconnect");
+			return SPMySQLConnectionLostDisconnect;
+		}
+
+		[delegateDecisionLock lock];
+		theDecision = lastDelegateDecisionForLostConnection;
+		[delegateDecisionLock unlock];
+		return theDecision;
+	}
+
+	if (delegateSupportsConnectionLost) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 		[delegateDecisionLock lock];
 		lastDelegateDecisionForLostConnection = [delegate connectionLost:self];
 		theDecision = lastDelegateDecisionForLostConnection;
 		[delegateDecisionLock unlock];
-
-	// Otherwise call ourself on the main thread, waiting until the reply is received.
-	} else {
-
-		// First check whether the application is in a modal state; if so, wait
-        do {
-            NSWindow __block *modalWindow = nil;
-            
-            dispatch_sync(dispatch_get_main_queue(), ^{
-                modalWindow = [NSApp modalWindow];
-            });
-
-            if(modalWindow == nil){
-                break;
-            }
-            else{
-                usleep(100000);
-            }
-
-        } while(0);
-
-		[self performSelectorOnMainThread:@selector(_delegateDecisionForLostConnection) withObject:nil waitUntilDone:YES];
-		[delegateDecisionLock lock];
-		theDecision = lastDelegateDecisionForLostConnection;
-		[delegateDecisionLock unlock];
+#pragma clang diagnostic pop
 	}
 
 	return theDecision;
