@@ -16,6 +16,7 @@
 - (void)restoreSerializedFilters:(NSDictionary *)serialized;
 - (NSDictionary *)serializedFilter;
 - (void)setColumns:(NSArray *)dataColumns;
+- (BOOL)appendFilterForColumn:(NSString *)columnName value:(NSString *)value isNull:(BOOL)isNull;
 @end
 
 @interface SACellFilterOperatorRoundTripControllerTests : XCTestCase
@@ -92,6 +93,36 @@
 		[values addObject:[NSString stringWithFormat:@"sample%ld", (long)i]];
 	}
 	return values;
+}
+
+// Regression for the SerIsUntouchedStarterRule zero-value guard.
+// Before the fix, an existing zero-argument rule such as IS NULL was
+// classified as an untouched starter and replaced on the next
+// -appendFilterForColumn:value:isNull: call (cell drop / drag/drop), silently
+// dropping the user's NULL filter. After the fix the existing IS NULL must be
+// preserved as one branch of an AND-group when a new rule is appended.
+- (void)testExistingIsNullRuleIsPreservedWhenAppendingNewFilter
+{
+	NSString *columnName = @"deleted_at";
+	id controller = [self ruleFilterControllerForTypeGrouping:@"date" columnName:columnName];
+
+	NSDictionary *isNullLeaf = [self serializedFilterForColumn:columnName operator:@"IS NULL" values:@[]];
+	((void (*)(id, SEL, NSDictionary *))objc_msgSend)(controller, @selector(restoreSerializedFilters:), isNullLeaf);
+
+	NSDictionary *restored = ((NSDictionary *(*)(id, SEL))objc_msgSend)(controller, @selector(serializedFilter));
+	XCTAssertEqualObjects(restored[@"filterComparison"], @"IS NULL", @"IS NULL leaf must restore as itself before any append");
+
+	BOOL appended = ((BOOL (*)(id, SEL, NSString *, NSString *, BOOL))objc_msgSend)(
+		controller, @selector(appendFilterForColumn:value:isNull:), columnName, @"2026-05-23", NO);
+	XCTAssertTrue(appended, @"append must succeed for a real column/value");
+
+	NSDictionary *merged = ((NSDictionary *(*)(id, SEL))objc_msgSend)(controller, @selector(serializedFilter));
+	XCTAssertEqualObjects(merged[@"filterClass"], @"groupNode", @"existing IS NULL + new append must produce an AND group");
+	XCTAssertEqualObjects(merged[@"isConjunction"], @YES);
+
+	NSArray<NSDictionary *> *children = merged[@"children"];
+	XCTAssertEqual([children count], 2u, @"AND group must contain both the IS NULL rule and the new appended rule");
+	XCTAssertEqualObjects(children[0][@"filterComparison"], @"IS NULL", @"original IS NULL must remain as a child, not be replaced");
 }
 
 @end
