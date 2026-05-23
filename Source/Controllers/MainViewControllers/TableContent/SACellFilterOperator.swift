@@ -52,7 +52,7 @@ import Foundation
     }
 
     private static let numberTypeGroupings: Set<String> = ["bit", "integer", "float"]
-    private static let stringTypeGroupings: Set<String> = ["string", "binary", "textdata", "blobdata", "enum"]
+    private static let stringTypeGroupings: Set<String> = ["string", "textdata", "enum"]
 
     private static let supportedTypeGroupings = [
         "bit",
@@ -60,8 +60,8 @@ import Foundation
         "float",
         "date",
         "string",
-        "binary",
         "textdata",
+        "binary",
         "blobdata",
         "enum",
         "geometry",

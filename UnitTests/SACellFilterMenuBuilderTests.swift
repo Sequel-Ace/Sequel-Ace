@@ -40,6 +40,29 @@ final class SACellFilterMenuBuilderTests: XCTestCase {
         XCTAssertEqual(menu.items.map(\.title), ["=", "≠", "LIKE", "NOT LIKE", "contains", "does not contain"])
     }
 
+    func testBinaryAndBlobNonNullValuesReturnNoMenu() {
+        XCTAssertNil(SACellFilterMenuBuilder.filterMenu(
+            column: ["name": "payload", "typegrouping": "binary"],
+            value: "0xdeadbeef",
+            isNull: false
+        ))
+        XCTAssertNil(SACellFilterMenuBuilder.filterMenu(
+            column: ["name": "payload", "typegrouping": "blobdata"],
+            value: "0xdeadbeef",
+            isNull: false
+        ))
+    }
+
+    func testBinaryNullValueOnlyShowsNullOperators() throws {
+        let menu = try XCTUnwrap(SACellFilterMenuBuilder.filterMenu(
+            column: ["name": "payload", "typegrouping": "binary"],
+            value: "NULL",
+            isNull: true
+        ))
+
+        XCTAssertEqual(menu.items.map(\.title), ["IS NULL", "IS NOT NULL"])
+    }
+
     func testDescriptorsCarryFilterPayload() throws {
         let descriptors = SACellFilterMenuBuilder.menuItemDescriptors(
             columnName: "payload",

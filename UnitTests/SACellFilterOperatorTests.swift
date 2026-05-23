@@ -35,10 +35,13 @@ final class SACellFilterOperatorTests: XCTestCase {
         let expected = ["=", "≠", "LIKE", "NOT LIKE", "contains", "does not contain", "IS NULL", "IS NOT NULL"]
 
         XCTAssertEqual(serializedNames(for: "string"), expected)
-        XCTAssertEqual(serializedNames(for: "binary"), expected)
         XCTAssertEqual(serializedNames(for: "textdata"), expected)
-        XCTAssertEqual(serializedNames(for: "blobdata"), expected)
         XCTAssertEqual(serializedNames(for: "enum"), expected)
+    }
+
+    func testBinaryAndBlobOnlyAdvertiseNullOperators() {
+        XCTAssertEqual(serializedNames(for: "binary"), ["IS NULL", "IS NOT NULL"])
+        XCTAssertEqual(serializedNames(for: "blobdata"), ["IS NULL", "IS NOT NULL"])
     }
 
     func testGeometryOnlyAdvertisesNullOperators() {
@@ -52,6 +55,8 @@ final class SACellFilterOperatorTests: XCTestCase {
 
     func testNonNullCellHidesNullOnlyOperators() {
         XCTAssertEqual(SACellFilterOperator.operators(for: "geometry", cellIsNull: false).map(\.serializedName), [])
+        XCTAssertEqual(SACellFilterOperator.operators(for: "binary", cellIsNull: false).map(\.serializedName), [])
+        XCTAssertEqual(SACellFilterOperator.operators(for: "blobdata", cellIsNull: false).map(\.serializedName), [])
         XCTAssertEqual(SACellFilterOperator.operators(for: "date", cellIsNull: false).map(\.serializedName), [
             "=",
             "≠",
@@ -64,7 +69,7 @@ final class SACellFilterOperatorTests: XCTestCase {
 
     func testAdvertisedPairsCoverEveryCatalogEntry() {
         let pairs = SACellFilterOperator.allAdvertisedPairs()
-        XCTAssertEqual(pairs.count, 74)
+        XCTAssertEqual(pairs.count, 62)
         XCTAssertFalse(pairs.contains { $0.typeGrouping.isEmpty })
         XCTAssertFalse(pairs.contains { $0.typeGrouping == "unknown_type_group" })
     }
