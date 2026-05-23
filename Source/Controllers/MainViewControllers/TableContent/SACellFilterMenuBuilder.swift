@@ -57,13 +57,15 @@ import AppKit
             return []
         }
 
-        // Treat an empty-string cell value the same as a NULL cell for menu purposes:
+        // Treat an empty-string OR nil cell value the same as a NULL cell for menu purposes:
         // SPRuleFilterController's starter detection collapses any expression whose
         // filterValues are all empty strings into a placeholder (see SerIsUntouchedStarterRule
         // at SPRuleFilterController.m:1814-1829), so a value-bearing operator with `[""]`
         // cannot be persisted via the rule editor. Restrict the menu to NULL operators
-        // for empty strings so the cell-filter feature never produces non-persistent rules.
-        let effectiveIsNull = isNull || (value?.isEmpty ?? false)
+        // for these cases so the cell-filter feature never produces non-persistent rules.
+        // `SPCopyTable.displayStringForRow` may return nil for stale or out-of-range
+        // cells (see SPCopyTable.h:112-115), which would otherwise fall through here.
+        let effectiveIsNull = isNull || value == nil || value?.isEmpty == true
 
         let operators = SACellFilterOperator.operators(for: typeGrouping, cellIsNull: effectiveIsNull)
         guard !operators.isEmpty else {

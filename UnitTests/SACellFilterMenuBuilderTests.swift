@@ -115,4 +115,36 @@ final class SACellFilterMenuBuilderTests: XCTestCase {
         XCTAssertEqual(descriptors.map(\.values), [[], []])
         XCTAssertEqual(descriptors.map(\.isNull), [true, true])
     }
+
+    func testEmptyStringDescriptorsAreMarkedAsNullPayload() throws {
+        // Empty-string cells must produce zero-argument NULL descriptors so the
+        // downstream applyCellFilter path serializes filterValues:[] (not [""]).
+        let descriptors = SACellFilterMenuBuilder.menuItemDescriptors(
+            columnName: "payload",
+            typeGrouping: "string",
+            value: "",
+            isNull: false
+        )
+
+        XCTAssertEqual(descriptors.map(\.title), ["IS NULL", "IS NOT NULL"])
+        XCTAssertEqual(descriptors.map(\.values), [[], []])
+        XCTAssertEqual(descriptors.map(\.isNull), [true, true])
+    }
+
+    func testNilNonNullValueProducesNullDescriptorsNotEmptyValueRules() throws {
+        // SPCopyTable.displayStringForRow may return nil for stale / out-of-range
+        // cells (see SPCopyTable.h:112-115). The menu builder must NOT fall through
+        // to value operators with `[""]`; it must route to NULL operators with
+        // filterValues:[] like the empty-string case.
+        let descriptors = SACellFilterMenuBuilder.menuItemDescriptors(
+            columnName: "payload",
+            typeGrouping: "string",
+            value: nil,
+            isNull: false
+        )
+
+        XCTAssertEqual(descriptors.map(\.title), ["IS NULL", "IS NOT NULL"])
+        XCTAssertEqual(descriptors.map(\.values), [[], []])
+        XCTAssertEqual(descriptors.map(\.isNull), [true, true])
+    }
 }
