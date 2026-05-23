@@ -42,7 +42,7 @@
 - (BOOL)_connect;
 - (MYSQL *)_makeRawMySQLConnectionWithEncoding:(NSString *)encodingName isMasterConnection:(BOOL)isMaster;
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry;
-- (BOOL)_reconnectAfterBackgroundConnectionLoss;
+- (BOOL)_silentReconnectAttempt;
 - (void)_postLostInBackgroundNotification;
 - (BOOL)_waitForNetworkConnectionWithTimeout:(double)timeoutSeconds;
 - (void)_disconnect;
@@ -66,6 +66,7 @@
 @interface SPMySQLConnection (Delegate_and_Proxy_Private_API)
 
 - (void)_proxyStateChange:(NSObject <SPMySQLConnectionProxy> *)aProxy;
+- (void)_silentReconnectForProxyLoss;
 - (SPMySQLConnectionLostDecision)_delegateDecisionForLostConnection;
 
 @end

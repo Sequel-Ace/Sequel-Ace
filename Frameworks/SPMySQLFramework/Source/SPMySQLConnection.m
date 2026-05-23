@@ -1060,7 +1060,6 @@ asm(".desc ___crashreporter_info__, 0x10");
 	}
 
 	BOOL reconnectSucceeded = NO;
-    NSString *timeZoneIdentifierToRestore = nil;
 
 	@autoreleasepool {
 		// Check whether a reconnection attempt is already being made - if so, wait
@@ -1093,140 +1092,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 			return NO;
 		}
 
-		reconnectingThread = pthread_self();
+		reconnectSucceeded = [self _silentReconnectAttempt];
 
-		// Store certain details about the connection, so that if the reconnection is successful
-		// they can be restored.  This has to be treated separately from _restoreConnectionDetails
-		// as a full connection reinitialises certain values from the server.
-		if (!encodingToRestore) {
-			encodingToRestore = [encoding copy];
-			encodingUsesLatin1TransportToRestore = encodingUsesLatin1Transport;
-			databaseToRestore = [database copy];
-		}
-        // Keep this per-attempt capture aligned with self.timeZoneIdentifier:
-        // reconnect retries re-capture it from the surviving property value, so
-        // revisit this if disconnect teardown ever clears timeZoneIdentifier.
-        if (!timeZoneIdentifierToRestore && [self.timeZoneIdentifier length]) {
-            timeZoneIdentifierToRestore = [self.timeZoneIdentifier copy];
-        }
-
-		// If there is a connection proxy, temporarily disassociate the state change action
-		if (proxy) proxyStateChangeNotificationsIgnored = YES;
-
-		// Close the connection if it's active
-		[self _disconnect];
-
-		// Lock the connection while waiting for network and proxy
-		[self _lockConnection];
-
-		// If no network is present, wait for a short time for one to become available
-		[self _waitForNetworkConnectionWithTimeout:10];
-
-		if ([[NSThread currentThread] isCancelled]) {
-            SPLog(@"NSThread currentThread] isCancelled, returning");
-
-			[self _unlockConnection];
-			reconnectingThread = NULL;
-			return NO;
-		}
-
-		// If there is a proxy, attempt to reconnect it in blocking fashion
-		if (proxy) {
-
-            SPLog(@"we have a proxy");
-
-			uint64_t loopIterationStart_t, proxyWaitStart_t;
-
-			// If the proxy is not yet idle after requesting a disconnect, wait for a short time
-			// to allow it to disconnect.
-			if ([proxy state] != SPMySQLProxyIdle) {
-
-                SPLog(@"proxy not idle, waiting");
-
-				proxyWaitStart_t = _monotonicTime();
-				while ([proxy state] != SPMySQLProxyIdle) {
-					loopIterationStart_t = _monotonicTime();
-
-					// If the connection timeout has passed, break out of the loop
-					if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > timeout) break;
-
-					// Allow events to process for 0.25s, sleeping to completion on early return
-					[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.25]];
-					if (_timeIntervalSinceMonotonicTime(loopIterationStart_t) < 0.25) {
-						usleep(250000 - (useconds_t)(1000000 * _timeIntervalSinceMonotonicTime(loopIterationStart_t)));
-					}
-				}
-			}
-
-			// Request that the proxy re-establishes its connection
-            SPLog(@"Request that the proxy re-establishes its connection, calling proxy connect");
-
-			[proxy connect];
-
-			// Wait while the proxy connects
-			proxyWaitStart_t = _monotonicTime();
-			while (1) {
-				loopIterationStart_t = _monotonicTime();
-
-                SPLog(@"Wait while the proxy connects");
-
-				// If the proxy has connected, record the new local port and break out of the loop
-				if ([proxy state] == SPMySQLProxyConnected) {
-                    SPLog(@"SPMySQLProxyConnected. port: %lu",(unsigned long)[proxy localPort] );
-
-					port = [proxy localPort];
-					break;
-				}
-
-				// If the proxy connection attempt time has exceeded the timeout, break of of the loop.
-				if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > (timeout + 1)) {
-                    SPLog(@"proxy connection attempt time has exceeded the timeout, break of of the loop, calling proxy disconnect");
-					[proxy disconnect];
-					break;
-				}
-
-				// Process events for a short time, allowing dialogs to be shown but waiting for
-				// the proxy. Capture how long this interface action took, standardising the
-				// overall time.
-				[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.25]];
-				if (_timeIntervalSinceMonotonicTime(loopIterationStart_t) < 0.25) {
-					usleep((useconds_t)(250000 - (1000000 * _timeIntervalSinceMonotonicTime(loopIterationStart_t))));
-				}
-
-				// Extend the connection timeout by any interface time
-				if ([proxy state] == SPMySQLProxyWaitingForAuth) {
-					proxyWaitStart_t += _monotonicTime() - loopIterationStart_t;
-				}
-			}
-
-			// Having in theory performed the proxy connect, update state
-			previousProxyState = [proxy state];
-			proxyStateChangeNotificationsIgnored = NO;
-		}
-
-		// Unlock the connection
-		[self _unlockConnection];
-
-		// If not using a proxy, or if the proxy successfully connected, trigger a connection
-		if (!proxy || [proxy state] == SPMySQLProxyConnected) {
-			[self _connect];
-		}
-
-		// If the reconnection succeeded, restore the connection state as appropriate
-		if (state == SPMySQLConnected && ![[NSThread currentThread] isCancelled]) {
-			reconnectSucceeded = YES;
-            [self _restoreSessionStateAfterReconnectWithDatabase:databaseToRestore
-                                                        encoding:encodingToRestore
-                                    encodingUsesLatin1Transport:encodingUsesLatin1TransportToRestore
-                                               timeZoneIdentifier:timeZoneIdentifierToRestore];
-            // When the connection is restored successfully, reset the relevant variables to prepare for the next time
-            databaseToRestore = nil;
-            encodingToRestore = nil;
-            encodingUsesLatin1TransportToRestore = NO;
-		}
-			// If the connection failed and the connection is permitted to retry,
-			// then retry the reconnection.
-		else if (canRetry && ![[NSThread currentThread] isCancelled]) {
+		// If the connection failed and the connection is permitted to retry,
+		// then retry the reconnection.
+		if (!reconnectSucceeded && canRetry && ![[NSThread currentThread] isCancelled]) {
 
 			// Default to attempting another reconnect
 			SPMySQLConnectionLostDecision connectionLostDecision = SPMySQLConnectionLostReconnect;
@@ -1264,17 +1134,144 @@ asm(".desc ___crashreporter_info__, 0x10");
 	return reconnectSucceeded;
 }
 
-/**
- * Trigger a single reconnection attempt after losing network in the background,
- * setting the state appropriately for connection on next use if this fails.
- */
-- (BOOL)_reconnectAfterBackgroundConnectionLoss
+- (BOOL)_silentReconnectAttempt
 {
-	if (![self _reconnectAllowingRetries:NO]) {
-		state = SPMySQLConnectionLostInBackground;
+	BOOL reconnectSucceeded = NO;
+	NSString *timeZoneIdentifierToRestore = nil;
+
+	reconnectingThread = pthread_self();
+
+	// Store certain details about the connection, so that if the reconnection is successful
+	// they can be restored.  This has to be treated separately from _restoreConnectionDetails
+	// as a full connection reinitialises certain values from the server.
+	if (!encodingToRestore) {
+		encodingToRestore = [encoding copy];
+		encodingUsesLatin1TransportToRestore = encodingUsesLatin1Transport;
+		databaseToRestore = [database copy];
+	}
+	// Keep this per-attempt capture aligned with self.timeZoneIdentifier:
+	// reconnect retries re-capture it from the surviving property value, so
+	// revisit this if disconnect teardown ever clears timeZoneIdentifier.
+	if (!timeZoneIdentifierToRestore && [self.timeZoneIdentifier length]) {
+		timeZoneIdentifierToRestore = [self.timeZoneIdentifier copy];
 	}
 
-	return (state == SPMySQLConnected);
+	// If there is a connection proxy, temporarily disassociate the state change action
+	if (proxy) proxyStateChangeNotificationsIgnored = YES;
+
+	// Close the connection if it's active
+	[self _disconnect];
+
+	// Lock the connection while waiting for network and proxy
+	[self _lockConnection];
+
+	// If no network is present, wait for a short time for one to become available
+	[self _waitForNetworkConnectionWithTimeout:10];
+
+	if ([[NSThread currentThread] isCancelled]) {
+		SPLog(@"NSThread currentThread] isCancelled, returning");
+
+		[self _unlockConnection];
+		reconnectingThread = NULL;
+		return NO;
+	}
+
+	// If there is a proxy, attempt to reconnect it in blocking fashion
+	if (proxy) {
+
+		SPLog(@"we have a proxy");
+
+		uint64_t loopIterationStart_t, proxyWaitStart_t;
+
+		// If the proxy is not yet idle after requesting a disconnect, wait for a short time
+		// to allow it to disconnect.
+		if ([proxy state] != SPMySQLProxyIdle) {
+
+			SPLog(@"proxy not idle, waiting");
+
+			proxyWaitStart_t = _monotonicTime();
+			while ([proxy state] != SPMySQLProxyIdle) {
+				loopIterationStart_t = _monotonicTime();
+
+				// If the connection timeout has passed, break out of the loop
+				if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > timeout) break;
+
+				// Allow events to process for 0.25s, sleeping to completion on early return
+				[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.25]];
+				if (_timeIntervalSinceMonotonicTime(loopIterationStart_t) < 0.25) {
+					usleep(250000 - (useconds_t)(1000000 * _timeIntervalSinceMonotonicTime(loopIterationStart_t)));
+				}
+			}
+		}
+
+		// Request that the proxy re-establishes its connection
+		SPLog(@"Request that the proxy re-establishes its connection, calling proxy connect");
+
+		[proxy connect];
+
+		// Wait while the proxy connects
+		proxyWaitStart_t = _monotonicTime();
+		while (1) {
+			loopIterationStart_t = _monotonicTime();
+
+			SPLog(@"Wait while the proxy connects");
+
+			// If the proxy has connected, record the new local port and break out of the loop
+			if ([proxy state] == SPMySQLProxyConnected) {
+				SPLog(@"SPMySQLProxyConnected. port: %lu",(unsigned long)[proxy localPort] );
+
+				port = [proxy localPort];
+				break;
+			}
+
+			// If the proxy connection attempt time has exceeded the timeout, break of of the loop.
+			if (_timeIntervalSinceMonotonicTime(proxyWaitStart_t) > (timeout + 1)) {
+				SPLog(@"proxy connection attempt time has exceeded the timeout, break of of the loop, calling proxy disconnect");
+				[proxy disconnect];
+				break;
+			}
+
+			// Process events for a short time, allowing dialogs to be shown but waiting for
+			// the proxy. Capture how long this interface action took, standardising the
+			// overall time.
+			[[NSRunLoop currentRunLoop] runMode:NSModalPanelRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.25]];
+			if (_timeIntervalSinceMonotonicTime(loopIterationStart_t) < 0.25) {
+				usleep((useconds_t)(250000 - (1000000 * _timeIntervalSinceMonotonicTime(loopIterationStart_t))));
+			}
+
+			// Extend the connection timeout by any interface time
+			if ([proxy state] == SPMySQLProxyWaitingForAuth) {
+				proxyWaitStart_t += _monotonicTime() - loopIterationStart_t;
+			}
+		}
+
+		// Having in theory performed the proxy connect, update state
+		previousProxyState = [proxy state];
+		proxyStateChangeNotificationsIgnored = NO;
+	}
+
+	// Unlock the connection
+	[self _unlockConnection];
+
+	// If not using a proxy, or if the proxy successfully connected, trigger a connection
+	if (!proxy || [proxy state] == SPMySQLProxyConnected) {
+		[self _connect];
+	}
+
+	// If the reconnection succeeded, restore the connection state as appropriate
+	if (state == SPMySQLConnected && ![[NSThread currentThread] isCancelled]) {
+		reconnectSucceeded = YES;
+		[self _restoreSessionStateAfterReconnectWithDatabase:databaseToRestore
+		                                            encoding:encodingToRestore
+		                        encodingUsesLatin1Transport:encodingUsesLatin1TransportToRestore
+		                              timeZoneIdentifier:timeZoneIdentifierToRestore];
+		// When the connection is restored successfully, reset the relevant variables to prepare for the next time
+		databaseToRestore = nil;
+		encodingToRestore = nil;
+		encodingUsesLatin1TransportToRestore = NO;
+	}
+
+	return reconnectSucceeded;
 }
 
 - (void)_postLostInBackgroundNotification

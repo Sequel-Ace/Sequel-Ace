@@ -119,31 +119,39 @@
 		// Clear the state change selector on the proxy until a connection is re-established
 		proxyStateChangeNotificationsIgnored = YES;
 
-		// Trigger a reconnect depending on connection usage recently.  If the connection has
-		// actively been used in the last couple of minutes, trigger a full reconnection attempt.
-		if (_timeIntervalSinceMonotonicTime(lastConnectionUsedTime) < 60 * 2) {
-            SPLog(@"If the connection has actively been used in the last couple of minutes, trigger a full reconnection attempt");
-            SPLog(@"create new reconnectionThread");
-			reconnectionThread = [[NSThread alloc] initWithTarget:self selector:@selector(_reconnectAllowingRetries:) object:@YES];
-			[reconnectionThread setName:@"SPMySQL reconnection thread (full)"];
-			[reconnectionThread start];
-
-		// If used within the last fifteen minutes, trigger a background/single reconnection attempt
-		} else if (_timeIntervalSinceMonotonicTime(lastConnectionUsedTime) < 60 * 15) {
-            SPLog(@"If used within the last fifteen minutes, trigger a background/single reconnection attempt");
-			reconnectionThread = [[NSThread alloc] initWithTarget:self selector:@selector(_reconnectAfterBackgroundConnectionLoss) object:nil];
-			[reconnectionThread setName:@"SPMySQL reconnection thread (limited)"];
+		// If used within the last fifteen minutes, trigger a silent single reconnect attempt.
+		if (_timeIntervalSinceMonotonicTime(lastConnectionUsedTime) < 60 * 15) {
+            SPLog(@"If used within the last fifteen minutes, trigger a silent background reconnection attempt");
+			reconnectionThread = [[NSThread alloc] initWithTarget:self selector:@selector(_silentReconnectForProxyLoss) object:nil];
+			[reconnectionThread setName:@"SPMySQL silent proxy reconnect"];
 			[reconnectionThread start];
 
 		// Otherwise set the state to connection lost for automatic reconnect on next use
 		} else {
             SPLog(@"Otherwise set the state to connection lost for automatic reconnect on next use");
 			state = SPMySQLConnectionLostInBackground;
+			proxyStateChangeNotificationsIgnored = NO;
+			[self _postLostInBackgroundNotification];
 		}
 	}
 
 	// Update the state record
 	previousProxyState = newState;
+}
+
+- (void)_silentReconnectForProxyLoss
+{
+	@autoreleasepool {
+		BOOL reconnectSucceeded = [self _silentReconnectAttempt];
+
+		reconnectingThread = NULL;
+		proxyStateChangeNotificationsIgnored = NO;
+
+		if (!reconnectSucceeded) {
+			state = SPMySQLConnectionLostInBackground;
+			[self _postLostInBackgroundNotification];
+		}
+	}
 }
 
 /**
