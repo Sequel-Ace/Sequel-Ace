@@ -515,10 +515,9 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
  */
 - (BOOL)isConnected
 {
-	// If the connection has been allowed to drop in the background, restore it if posslbe
 	if (state == SPMySQLConnectionLostInBackground) {
-        SPLog(@"SPMySQLConnectionLostInBackground, reconnecting");
-		[self _reconnectAllowingRetries:YES];
+        SPLog(@"SPMySQLConnectionLostInBackground, returning NO");
+		return NO;
 	}
 
 	return (state == SPMySQLConnected || state == SPMySQLDisconnecting);
@@ -607,7 +606,13 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 	// If the connection has been dropped in the background, trigger a
 	// reconnect and return the success state here
 	if (state == SPMySQLConnectionLostInBackground) {
-        SPLog(@"SPMySQLConnectionLostInBackground, calling _reconnectAllowingRetries");
+		if ([NSThread isMainThread]) {
+	        SPLog(@"SPMySQLConnectionLostInBackground on main thread, posting notification");
+			[self _postLostInBackgroundNotification];
+			return NO;
+		}
+
+        SPLog(@"SPMySQLConnectionLostInBackground on worker thread, calling _reconnectAllowingRetries");
 		return [self _reconnectAllowingRetries:YES];
 	}
 	
@@ -1270,6 +1275,15 @@ asm(".desc ___crashreporter_info__, 0x10");
 	}
 
 	return (state == SPMySQLConnected);
+}
+
+- (void)_postLostInBackgroundNotification
+{
+	[[NSNotificationCenter defaultCenter] postNotificationName:SPMySQLConnectionLostInBackgroundNotification object:self];
+
+	if (delegateSupportsConnectionLostBackground) {
+		[delegate connectionLostInBackground:self];
+	}
 }
 
 /**

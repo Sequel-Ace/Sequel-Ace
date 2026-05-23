@@ -43,6 +43,7 @@
 - (MYSQL *)_makeRawMySQLConnectionWithEncoding:(NSString *)encodingName isMasterConnection:(BOOL)isMaster;
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry;
 - (BOOL)_reconnectAfterBackgroundConnectionLoss;
+- (void)_postLostInBackgroundNotification;
 - (BOOL)_waitForNetworkConnectionWithTimeout:(double)timeoutSeconds;
 - (void)_disconnect;
 - (void)_updateConnectionVariables;
