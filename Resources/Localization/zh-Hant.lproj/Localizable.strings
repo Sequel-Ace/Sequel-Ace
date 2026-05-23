@@ -1325,6 +1325,12 @@
 /* execution stopped message */
 "Execution stopped!\n" = "已中斷執行！\n";
 
+/* menu item to run EXPLAIN on the current query (issue #2291) */
+"Explain Current Query" = "Explain Current Query";
+
+/* status text when the user runs EXPLAIN against a non-SELECT/WITH or multi-statement query */
+"EXPLAIN is only supported for a single SELECT or WITH statement." = "EXPLAIN is only supported for a single SELECT or WITH statement.";
+
 /* export selected favorites menu item */
 "Export Selected..." = "匯出所選項目…";
 
