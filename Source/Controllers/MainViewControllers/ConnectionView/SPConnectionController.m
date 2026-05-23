@@ -135,6 +135,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 @implementation SPConnectionController
 
+// Associated object keys for password visibility toggle (shared between methods)
+static void *kOriginalStringKey = &kOriginalStringKey;
+static void *kRedactedStringKey = &kRedactedStringKey;
+static void *kURLFieldKey = &kURLFieldKey;
+
 #pragma mark - Connection Type Mapping Helpers
 
 /**
@@ -1681,11 +1686,14 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
  */
 - (IBAction)importFavorites:(id)sender
 {
-    // Check if clipboard contains a MySQL connection string
+    // Check user preference for automatic clipboard checking
+    BOOL autoCheckClipboard = [[NSUserDefaults standardUserDefaults] boolForKey:SPAutoCheckClipboardForConnectionStrings];
+
+    // Check if clipboard contains a MySQL connection string (if preference enabled)
     NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
     NSString *clipboardString = [pasteboard stringForType:NSPasteboardTypeString];
 
-    if (clipboardString && [[clipboardString lowercaseString] hasPrefix:@"mysql://"]) {
+    if (autoCheckClipboard && clipboardString && [[clipboardString lowercaseString] hasPrefix:@"mysql://"]) {
         // Found a connection string in clipboard - offer to import it
 
         // Validate URL
@@ -1739,10 +1747,6 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             [revealCheckbox setState:NSOffState];
 
             // Use target-action with stored context via associated objects
-            static void *kOriginalStringKey = &kOriginalStringKey;
-            static void *kRedactedStringKey = &kRedactedStringKey;
-            static void *kURLFieldKey = &kURLFieldKey;
-
             objc_setAssociatedObject(revealCheckbox, kOriginalStringKey, clipboardString, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             objc_setAssociatedObject(revealCheckbox, kRedactedStringKey, displayString, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             objc_setAssociatedObject(revealCheckbox, kURLFieldKey, urlField, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -1786,10 +1790,6 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
  */
 - (void)togglePasswordVisibility:(NSButton *)sender
 {
-    static void *kOriginalStringKey = &kOriginalStringKey;
-    static void *kRedactedStringKey = &kRedactedStringKey;
-    static void *kURLFieldKey = &kURLFieldKey;
-
     NSString *originalString = objc_getAssociatedObject(sender, kOriginalStringKey);
     NSString *redactedString = objc_getAssociatedObject(sender, kRedactedStringKey);
     NSTextField *urlField = objc_getAssociatedObject(sender, kURLFieldKey);
@@ -2059,9 +2059,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     NSNumber *favoriteID = [favoriteDict objectForKey:SPFavoriteIDKey] ?: @(-1);
     NSInteger oldTypeTag = [[favoriteDict objectForKey:SPFavoriteTypeKey] integerValue];
 
-    // Update all fields from newData (except name - keep the existing name)
+    // Update all fields from newData (except name and ID - keep existing name and ID)
     for (NSString *key in newData) {
-        if (![key isEqualToString:SPFavoriteNameKey]) {
+        if (![key isEqualToString:SPFavoriteNameKey] && ![key isEqualToString:SPFavoriteIDKey]) {
             [favoriteDict setObject:[newData objectForKey:key] forKey:key];
         }
     }

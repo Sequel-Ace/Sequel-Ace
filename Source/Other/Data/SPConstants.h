@@ -421,6 +421,7 @@ extern NSString *SPCSVImportFirstLineIsHeader;
 extern NSString *SPCSVFieldImportMappingAlignment;
 extern NSString *SPImportClipboardTempFileNamePrefix;
 extern NSString *SPLastExportSettings;
+extern NSString *SPAutoCheckClipboardForConnectionStrings;
 
 // Export filename tokens
 extern NSString *SPFileNameDatabaseTokenName;
