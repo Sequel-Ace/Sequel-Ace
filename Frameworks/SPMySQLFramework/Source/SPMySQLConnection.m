@@ -1458,9 +1458,23 @@ asm(".desc ___crashreporter_info__, 0x10");
 {
     SPLog(@"_disconnect");
 
+	void (^disconnectProxy)(void) = ^{
+		NSObject <SPMySQLConnectionProxy> *proxyToDisconnect = self->proxy;
+		if (!proxyToDisconnect) return;
+
+		if ([NSThread isMainThread]) {
+			[proxyToDisconnect disconnect];
+		} else {
+			dispatch_async(dispatch_get_main_queue(), ^{
+				[proxyToDisconnect disconnect];
+			});
+		}
+	};
+
 	// If state is connection lost, set state directly to disconnected.
 	if (state == SPMySQLConnectionLostInBackground) {
 		[self _setConnectionState:SPMySQLDisconnected];
+		disconnectProxy();
 	}
 
 	// Only continue if a connection is active
@@ -1500,9 +1514,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	[self _unlockConnection];
 
 	// If using a connection proxy, disconnect that too
-	if (proxy) {
-		[proxy performSelectorOnMainThread:@selector(disconnect) withObject:nil waitUntilDone:YES];
-	}
+	disconnectProxy();
 }
 
 /**

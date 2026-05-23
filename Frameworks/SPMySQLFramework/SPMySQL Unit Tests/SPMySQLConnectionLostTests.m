@@ -481,6 +481,32 @@
 	XCTAssertFalse([source containsString:@"performSelectorOnMainThread:@selector(_delegateDecisionForLostConnection)"]);
 }
 
+- (void)testDisconnectFromBackgroundLostStateStillDisconnectsProxy
+{
+	SPMySQLConnection *connection = [[SPMySQLConnection alloc] init];
+	SPMySQLConnectionLostTestProxy *proxy = [[SPMySQLConnectionLostTestProxy alloc] init];
+	[connection setProxy:proxy];
+	[connection _setStateForTesting:SPMySQLConnectionLostInBackground];
+
+	[connection _disconnect];
+
+	XCTAssertEqual([connection _stateForTesting], SPMySQLDisconnected);
+	XCTAssertEqual(proxy.disconnectCount, 1U);
+}
+
+- (void)testDisconnectSourceHasNoBlockingProxyMainThreadSelector
+{
+	NSString *testFilePath = [NSString stringWithUTF8String:__FILE__];
+	NSString *sourceRoot = [testFilePath stringByDeletingLastPathComponent];
+	sourceRoot = [sourceRoot stringByDeletingLastPathComponent];
+	NSString *sourcePath = [sourceRoot stringByAppendingPathComponent:@"Source/SPMySQLConnection.m"];
+	NSString *source = [NSString stringWithContentsOfFile:sourcePath encoding:NSUTF8StringEncoding error:nil];
+
+	XCTAssertNotNil(source);
+	XCTAssertFalse([source containsString:@"performSelectorOnMainThread:@selector(disconnect)"]);
+	XCTAssertFalse([source containsString:@"waitUntilDone:YES"]);
+}
+
 - (void)testProxyIdleWithinTwoMinutesSilentReconnectSuccessDoesNotNotifyOrAskDelegate
 {
 	SPMySQLConnection *connection = [[SPMySQLConnection alloc] init];
