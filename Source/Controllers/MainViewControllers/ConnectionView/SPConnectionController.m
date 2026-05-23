@@ -1920,6 +1920,14 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         if ([details objectForKey:@"aws_profile"]) [favorite setObject:[details objectForKey:@"aws_profile"] forKey:@"awsProfile"];
     }
 
+    // Add cleartext plugin flag if present (for LDAP/cleartext auth)
+    if ([details objectForKey:@"enable_cleartext_plugin"]) {
+        NSString *clearTextValue = [details objectForKey:@"enable_cleartext_plugin"];
+        BOOL enableClearText = ([clearTextValue isEqualToString:@"1"] ||
+                                [[clearTextValue lowercaseString] isEqualToString:@"true"]);
+        [favorite setObject:@(enableClearText) forKey:SPFavoriteEnableClearTextPluginKey];
+    }
+
     // Generate unique ID for this favorite
     NSNumber *favoriteID = [self _createNewFavoriteID];
     [favorite setObject:favoriteID forKey:SPFavoriteIDKey];

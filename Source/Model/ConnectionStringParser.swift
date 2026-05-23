@@ -31,7 +31,7 @@ import Foundation
         "type", "socket",
         "ssh_host", "ssh_port", "ssh_user", "ssh_password", "ssh_keyLocationEnabled", "ssh_keyLocation",
         "aws_region", "aws_profile",
-        "autoConnect"
+        "autoConnect", "enable_cleartext_plugin"
     ]
 
     /// Parses a mysql:// URL into connection details
@@ -120,6 +120,9 @@ import Foundation
 
                 case "aws_profile":
                     details["aws_profile"] = value
+
+                case "enable_cleartext_plugin":
+                    details["enable_cleartext_plugin"] = value
 
                 default:
                     break
