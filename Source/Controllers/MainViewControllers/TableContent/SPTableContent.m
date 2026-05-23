@@ -1508,6 +1508,13 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 - (void)applyCellFilterForColumn:(NSString *)columnName operator:(NSString *)operatorName values:(NSArray *)values isNull:(BOOL)isNull
 {
+	if (![NSThread isMainThread]) {
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[self applyCellFilterForColumn:columnName operator:operatorName values:values isNull:isNull];
+		});
+		return;
+	}
+
 	NSDictionary *newFilter = [SPRuleFilterController makeSerializedFilterForColumn:columnName
 																		   operator:operatorName
 																			 values:(isNull ? @[] : (values ?: @[]))];
