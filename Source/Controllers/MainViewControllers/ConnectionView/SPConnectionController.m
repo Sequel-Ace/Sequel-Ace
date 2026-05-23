@@ -1849,7 +1849,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
 - (void)importFavoritesFromConnectionString:(NSString *)connectionString
 {
-    NSURL *url = [NSURL URLWithString:connectionString];
+    // Validate connection string using Swift helper
+    NSURL *url = [ConnectionStringParser validateConnectionString:connectionString];
     if (!url) {
         NSBeep();
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Invalid Connection String", @"Invalid connection string")
@@ -1858,15 +1859,17 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         return;
     }
 
-    NSMutableDictionary *details = [NSMutableDictionary dictionary];
-    BOOL autoConnect = NO;
-    NSArray<NSString *> *invalidParameters = nil;
-    BOOL parsed = SPExtractConnectionDetailsFromMySQLURL(url, details, &autoConnect, &invalidParameters);
+    // Parse connection string using Swift helper
+    ConnectionStringParseResult *result = [ConnectionStringParser parse:url];
+    NSMutableDictionary *details = [result.details mutableCopy];
+    BOOL autoConnect = result.autoConnect;
+    NSArray<NSString *> *invalidParameters = result.invalidParameters;
+    BOOL parsed = result.success;
 
     if (!parsed) {
         NSBeep();
         if ([invalidParameters count] > 0) {
-            NSArray<NSString *> *validParameters = SPValidMySQLConnectionURLQueryParameters();
+            NSArray<NSString *> *validParameters = [ConnectionStringParser validQueryParameters];
             [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Invalid Connection String", @"Invalid connection string")
                                          message:[NSString stringWithFormat:@"%@:\n\n%@: %@\n\n%@: %@",
                                                   NSLocalizedString(@"Error parsing connection string", @"Error parsing connection string"),
