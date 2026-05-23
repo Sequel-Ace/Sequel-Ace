@@ -338,7 +338,9 @@ static SPTriggerEventTag TagForEvent(NSString *mysql);
  */
 - (IBAction)refreshTriggers:(id)sender
 {
-	[self _refreshTriggerDataForcingCacheRefresh:YES];
+	[tableDocumentInstance checkForBackgroundConnectionLossThenRun:^{
+		[self _refreshTriggerDataForcingCacheRefresh:YES];
+	}];
 }
 
 #pragma mark -

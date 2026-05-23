@@ -183,6 +183,13 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 - (IBAction)runAllQueries:(id)sender
 {
+    [tableDocumentInstance checkForBackgroundConnectionLossThenRun:^{
+        [self _runAllQueriesAfterConnectionCheck:sender];
+    }];
+}
+
+- (void)_runAllQueriesAfterConnectionCheck:(id)sender
+{
     SPSQLParser *queryParser;
     NSArray		*queries;
     
@@ -227,6 +234,13 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  * at a single point within the text view), or run the selected text (if a text range is selected).
  */
 - (IBAction)runSelectedQueries:(id)sender
+{
+    [tableDocumentInstance checkForBackgroundConnectionLossThenRun:^{
+        [self _runSelectedQueriesAfterConnectionCheck:sender];
+    }];
+}
+
+- (void)_runSelectedQueriesAfterConnectionCheck:(id)sender
 {
     NSArray *queries;
     NSRange selectedRange = [textView selectedRange];

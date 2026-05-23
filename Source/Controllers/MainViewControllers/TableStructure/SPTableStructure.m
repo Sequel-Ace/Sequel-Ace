@@ -1836,6 +1836,13 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
  */
 - (IBAction)reloadTable:(id)sender
 {
+	[tableDocumentInstance checkForBackgroundConnectionLossThenRun:^{
+		[self _reloadTableAfterConnectionCheck:sender];
+	}];
+}
+
+- (void)_reloadTableAfterConnectionCheck:(id)sender
+{
 	// Check whether a save of the current row is required
 	if (![[self onMainThread] saveRowOnDeselect]) return;
 

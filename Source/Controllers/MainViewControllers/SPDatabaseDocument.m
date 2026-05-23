@@ -907,7 +907,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  * Refreshes the tables list by calling SPTablesList's updateTables.
  */
 - (void)refreshTables {
-    [tablesListInstance updateTables:self];
+    [self checkForBackgroundConnectionLossThenRun:^{
+        [self->tablesListInstance updateTables:self];
+    }];
 }
 
 /**
@@ -2280,8 +2282,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  * Passes query to tablesListInstance
  */
 - (void)doPerformQueryService:(NSString *)query {
-    [self viewQuery];
-    [customQueryInstance doPerformQueryService:query];
+    [self checkForBackgroundConnectionLossThenRun:^{
+        [self viewQuery];
+        [self->customQueryInstance doPerformQueryService:query];
+    }];
 }
 
 /**

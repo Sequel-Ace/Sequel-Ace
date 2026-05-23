@@ -102,11 +102,13 @@ static NSString *SPMySQLCommentField          = @"Comment";
  */
 - (IBAction)reloadTable:(id)sender
 {
-	// Reset the table data's cache
-	[tableDataInstance resetAllData];
+	[tableDocumentInstance checkForBackgroundConnectionLossThenRun:^{
+		// Reset the table data's cache
+		[self->tableDataInstance resetAllData];
 
-	// Load the new table info
-	[self loadTable:selectedTable];
+		// Load the new table info
+		[self loadTable:self->selectedTable];
+	}];
 }
 
 /**

@@ -1253,6 +1253,13 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
  */
 - (IBAction)reloadTable:(id)sender
 {
+	[tableDocumentInstance checkForBackgroundConnectionLossThenRun:^{
+		[self _reloadTableAfterConnectionCheck:sender];
+	}];
+}
+
+- (void)_reloadTableAfterConnectionCheck:(id)sender
+{
 	[tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Reloading data...", @"Reloading data task description")];
 
 	if ([NSThread isMainThread]) {

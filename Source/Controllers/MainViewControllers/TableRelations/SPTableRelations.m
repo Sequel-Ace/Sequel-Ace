@@ -325,7 +325,9 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
  */
 - (IBAction)refreshRelations:(id)sender
 {
-	[self _refreshRelationDataForcingCacheRefresh:YES];
+	[tableDocumentInstance checkForBackgroundConnectionLossThenRun:^{
+		[self _refreshRelationDataForcingCacheRefresh:YES];
+	}];
 }
 
 /**
