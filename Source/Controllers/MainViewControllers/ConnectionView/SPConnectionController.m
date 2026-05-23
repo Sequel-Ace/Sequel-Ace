@@ -1935,11 +1935,12 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     // Store password for later (will be saved to keychain after user confirms action)
     NSString *passwordFromURL = [details objectForKey:@"password"];
 
-    // Check for duplicates
+    // Check for duplicates (including mode-specific fields for accurate matching)
     SPTreeNode *duplicateNode = [self findDuplicateFavoriteForHost:host
                                                               user:user
                                                           database:database
-                                                              type:typeString];
+                                                              type:typeString
+                                                modeSpecificFields:details];
 
     if (duplicateNode) {
         // Found a duplicate - create item and show UI
@@ -2024,6 +2025,15 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                                      database:(NSString *)database
                                          type:(NSString *)type
 {
+    return [self findDuplicateFavoriteForHost:host user:user database:database type:type modeSpecificFields:nil];
+}
+
+- (SPTreeNode *)findDuplicateFavoriteForHost:(NSString *)host
+                                         user:(NSString *)user
+                                     database:(NSString *)database
+                                         type:(NSString *)type
+                              modeSpecificFields:(NSDictionary *)modeFields
+{
     // Get all favorite leaves
     NSArray *allFavorites = [favoritesRoot allChildLeafs];
 
@@ -2042,13 +2052,60 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         NSInteger existingTypeInt = [[favoriteDict objectForKey:SPFavoriteTypeKey] integerValue];
         NSString *existingType = [SPConnectionController stringForFavoriteTypeTag:existingTypeInt];
 
-        // Check if all key fields match
-        if ([existingHost isEqualToString:host] &&
-            [existingUser isEqualToString:user] &&
-            [existingDatabase isEqualToString:database] &&
-            [existingType isEqualToString:type]) {
-            return node;
+        // Check if basic fields match
+        if (![existingHost isEqualToString:host] ||
+            ![existingUser isEqualToString:user] ||
+            ![existingDatabase isEqualToString:database] ||
+            ![existingType isEqualToString:type]) {
+            continue;
         }
+
+        // If mode-specific fields were provided, compare them too
+        if (modeFields) {
+            NSInteger typeTag = [SPConnectionController favoriteTypeTagForString:type];
+
+            if (typeTag == SPSSHTunnelConnection) {
+                // Compare SSH-specific fields
+                NSString *existingSSHHost = [favoriteDict objectForKey:SPFavoriteSSHHostKey] ?: @"";
+                NSString *existingSSHUser = [favoriteDict objectForKey:SPFavoriteSSHUserKey] ?: @"";
+                NSString *existingSSHPort = [favoriteDict objectForKey:SPFavoriteSSHPortKey] ?: @"";
+
+                NSString *newSSHHost = [modeFields objectForKey:@"ssh_host"] ?: @"";
+                NSString *newSSHUser = [modeFields objectForKey:@"ssh_user"] ?: @"";
+                NSString *newSSHPort = [modeFields objectForKey:@"ssh_port"] ?: @"";
+
+                if (![existingSSHHost isEqualToString:newSSHHost] ||
+                    ![existingSSHUser isEqualToString:newSSHUser] ||
+                    ![existingSSHPort isEqualToString:newSSHPort]) {
+                    continue;
+                }
+            }
+            else if (typeTag == SPSocketConnection) {
+                // Compare socket path
+                NSString *existingSocket = [favoriteDict objectForKey:SPFavoriteSocketKey] ?: @"";
+                NSString *newSocket = [modeFields objectForKey:@"socket"] ?: @"";
+
+                if (![existingSocket isEqualToString:newSocket]) {
+                    continue;
+                }
+            }
+            else if (typeTag == SPAWSIAMConnection) {
+                // Compare AWS-specific fields
+                NSString *existingRegion = [favoriteDict objectForKey:@"awsRegion"] ?: @"";
+                NSString *existingProfile = [favoriteDict objectForKey:@"awsProfile"] ?: @"";
+
+                NSString *newRegion = [modeFields objectForKey:@"aws_region"] ?: @"";
+                NSString *newProfile = [modeFields objectForKey:@"aws_profile"] ?: @"";
+
+                if (![existingRegion isEqualToString:newRegion] ||
+                    ![existingProfile isEqualToString:newProfile]) {
+                    continue;
+                }
+            }
+        }
+
+        // All fields match - this is a duplicate
+        return node;
     }
 
     return nil;
@@ -3810,7 +3867,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         SPTreeNode *duplicateNode = [self findDuplicateFavoriteForHost:host
                                                                   user:user
                                                               database:database
-                                                                  type:typeString];
+                                                                  type:typeString
+                                                    modeSpecificFields:favorite];
 
         if (duplicateNode) {
             [duplicates addObject:@{@"favorite": favorite, @"node": duplicateNode}];
