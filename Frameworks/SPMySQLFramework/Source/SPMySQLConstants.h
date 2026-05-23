@@ -28,6 +28,8 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
+#import <Foundation/Foundation.h>
+
 // Connection state
 typedef enum {
 	SPMySQLDisconnected               = 0,
