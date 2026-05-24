@@ -798,8 +798,11 @@
 		@"async connectionLost:completion: must NOT be invoked from main thread — that would block the UI");
 	XCTAssertEqual(delegate.syncDecisionCount, 0U,
 		@"deprecated sync connectionLost: must NOT be invoked from main thread either");
-	// userTriggeredDisconnect should be set as a side effect of the default Disconnect path.
-	// This documents the contract: silent fail on main → forced disconnect.
+	// The default Disconnect side effect must actually be applied — distinguishes
+	// "default disconnect happened" from "method returned without doing anything".
+	XCTAssertTrue([connection userTriggeredDisconnect],
+		@"silent fail on main → forced disconnect must set userTriggeredDisconnect, "
+		@"otherwise the contract is silently a no-op.");
 }
 
 @end

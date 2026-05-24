@@ -145,7 +145,13 @@
 	@autoreleasepool {
 		BOOL reconnectSucceeded = [self _silentReconnectAttempt];
 
-		reconnectingThread = NULL;
+		// Release the reconnect ownership claim under the same lock that the
+		// waiter loop in `_reconnectAllowingRetries:` polls — an unsynchronized
+		// write here leaves the waiter without a happens-before edge and can
+		// trap it observing stale ownership indefinitely.
+		@synchronized (self) {
+			reconnectingThread = NULL;
+		}
 		proxyStateChangeNotificationsIgnored = NO;
 
 		if (!reconnectSucceeded) {

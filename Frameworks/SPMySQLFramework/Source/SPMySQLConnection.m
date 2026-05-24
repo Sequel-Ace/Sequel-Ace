@@ -1125,7 +1125,16 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 			// Loop in a panel runloop mode until the reconnection has processed; if an iteration
 			// takes less than the requested 0.1s, sleep instead.
-			while (reconnectingThread) {
+			// Re-check `reconnectingThread` under the same lock that protects all
+			// writes (the claim/release in this method and in `_silentReconnectAttempt`)
+			// so the waiter cannot observe stale ownership and spin forever.
+			while (1) {
+				BOOL reconnectInFlight = NO;
+				@synchronized (self) {
+					reconnectInFlight = (reconnectingThread != NULL);
+				}
+				if (!reconnectInFlight) break;
+
                 SPLog(@"a reconnection attempt is already being made, waiting");
 
 				uint64_t loopIterationStart_t = _monotonicTime();
@@ -1244,7 +1253,14 @@ asm(".desc ___crashreporter_info__, 0x10");
 	BOOL encodingUsesLatin1TransportToRestoreForAttempt = encodingUsesLatin1Transport;
 	NSString *timeZoneIdentifierToRestore = nil;
 
-	reconnectingThread = pthread_self();
+	// All writes to `reconnectingThread` must go through `@synchronized (self)`
+	// — the waiter loop in `_reconnectAllowingRetries:` polls this variable to
+	// detect an in-flight reconnect attempt and decide when to stop spinning.
+	// An unsynchronized write here lets the waiter observe stale ownership and
+	// spin indefinitely.
+	@synchronized (self) {
+		reconnectingThread = pthread_self();
+	}
 
 	// Store certain details about the connection, so that if the reconnection is successful
 	// they can be restored.  This has to be treated separately from _restoreConnectionDetails
@@ -1273,7 +1289,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 		[self _unlockConnection];
 		if (proxy) proxyStateChangeNotificationsIgnored = NO;
-		reconnectingThread = NULL;
+		// Pair with the synchronized claim above so the waiter observes the
+		// release without spinning on stale ownership.
+		@synchronized (self) {
+			reconnectingThread = NULL;
+		}
 		return NO;
 	}
 
@@ -1437,9 +1457,23 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 - (void)_postLostInBackgroundNotification
 {
-	if (lostInBackgroundNotificationPosted) return;
+	// Check-and-set the coalescing flag atomically. Multiple background sources
+	// (keepalive ping, SSH proxy state change) can race into this method, and
+	// `_setConnectionState:` can concurrently clear the flag on a worker-thread
+	// reconnect path. Without the lock, two callers could both observe NO and
+	// both post; or a clear could land between the check and the set and we'd
+	// miss the next legitimate post.
+	// Notification + delegate dispatch happen OUTSIDE the lock so observers
+	// that take other locks cannot deadlock against us.
+	BOOL shouldPost = NO;
+	@synchronized (self) {
+		if (!lostInBackgroundNotificationPosted) {
+			lostInBackgroundNotificationPosted = YES;
+			shouldPost = YES;
+		}
+	}
+	if (!shouldPost) return;
 
-	lostInBackgroundNotificationPosted = YES;
 	[[NSNotificationCenter defaultCenter] postNotificationName:SPMySQLConnectionLostInBackgroundNotification object:self];
 
 	if (delegateSupportsConnectionLostBackground) {
@@ -1449,11 +1483,17 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 - (void)_setConnectionState:(SPMySQLConnectionState)newState
 {
-	if (state == SPMySQLConnectionLostInBackground && newState != SPMySQLConnectionLostInBackground) {
-		lostInBackgroundNotificationPosted = NO;
-	}
+	// Mutate `state` and the coalescing flag under one lock so an interleaving
+	// `_postLostInBackgroundNotification` cannot see the flag cleared with
+	// state still reading as LostInBackground (or vice versa). Same lock as
+	// `_postLostInBackgroundNotification`.
+	@synchronized (self) {
+		if (state == SPMySQLConnectionLostInBackground && newState != SPMySQLConnectionLostInBackground) {
+			lostInBackgroundNotificationPosted = NO;
+		}
 
-	state = newState;
+		state = newState;
+	}
 }
 
 /**
