@@ -71,10 +71,20 @@ import Foundation
     public static func operators(for typeGrouping: String?, cellIsNull: Bool) -> [SACellFilterOperator] {
         let operators = operators(for: typeGrouping)
         if cellIsNull {
+            // NULL cell: only the zero-argument NULL operators make sense.
             return operators.filter { $0.valueCount == 0 }
         }
 
-        return operators.filter { $0.valueCount > 0 }
+        // Non-NULL cell: keep value operators AND zero-argument NULL operators.
+        // Dropping NULL operators here would make the Filter submenu disappear
+        // entirely for type groupings whose catalog is NULL-only
+        // (binary / blobdata / geometry) — even though `IS NOT NULL` is a
+        // valid and useful filter on a non-NULL cell of those types. For
+        // value-bearing types (string / number / date) the user also gets
+        // `IS NULL` / `IS NOT NULL` alongside the value operators, letting
+        // them pivot to "find other rows where this column is empty/non-empty"
+        // from the same context menu without re-clicking the rule editor.
+        return operators
     }
 
     /// Enumerates every advertised `(typeGrouping, operator)` pair for tests.

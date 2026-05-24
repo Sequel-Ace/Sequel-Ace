@@ -32,7 +32,7 @@ final class SACellFilterMenuBuilderTests: XCTestCase {
         XCTAssertEqual(menu.items.map(\.title), ["IS NULL", "IS NOT NULL"])
     }
 
-    /// Verifies non-empty string cells expose the advertised string operators.
+    /// Verifies non-empty string cells expose the advertised string operators plus NULL operators.
     func testStringValueMenuUsesAdvertisedOperators() throws {
         let menu = try XCTUnwrap(SACellFilterMenuBuilder.filterMenu(
             column: ["name": "payload", "typegrouping": "string"],
@@ -40,7 +40,10 @@ final class SACellFilterMenuBuilderTests: XCTestCase {
             isNull: false
         ))
 
-        XCTAssertEqual(menu.items.map(\.title), ["=", "≠", "LIKE", "NOT LIKE", "contains", "does not contain"])
+        // Non-NULL cells keep IS NULL / IS NOT NULL alongside value operators so
+        // the user can pivot to "find other rows where this column is empty" from
+        // the same context menu without re-opening the rule editor.
+        XCTAssertEqual(menu.items.map(\.title), ["=", "≠", "LIKE", "NOT LIKE", "contains", "does not contain", "IS NULL", "IS NOT NULL"])
     }
 
     /// Verifies empty string cells are limited to NULL operators to avoid placeholder filters.
@@ -70,18 +73,37 @@ final class SACellFilterMenuBuilderTests: XCTestCase {
         XCTAssertEqual(menu.items.map(\.title), ["IS NULL", "IS NOT NULL"])
     }
 
-    /// Verifies non-NULL binary and blob values do not produce unsupported value menus.
-    func testBinaryAndBlobNonNullValuesReturnNoMenu() {
-        XCTAssertNil(SACellFilterMenuBuilder.filterMenu(
+    /// Verifies non-NULL binary and blob values still expose NULL operators (the
+    /// only operators their catalog advertises) instead of returning no menu at all.
+    func testBinaryAndBlobNonNullValuesShowNullOperators() throws {
+        // The catalog for binary / blobdata / geometry is NULL-only on purpose
+        // (hex/empty value handling for `=` is unsafe). Before this fix, the
+        // menu was empty for non-NULL cells of these types, hiding the still-
+        // valid IS NULL / IS NOT NULL filter. Now they remain available so the
+        // feature is usable on these columns.
+        let binaryMenu = try XCTUnwrap(SACellFilterMenuBuilder.filterMenu(
             column: ["name": "payload", "typegrouping": "binary"],
             value: "0xdeadbeef",
             isNull: false
         ))
-        XCTAssertNil(SACellFilterMenuBuilder.filterMenu(
+        XCTAssertEqual(binaryMenu.items.map(\.title), ["IS NULL", "IS NOT NULL"])
+
+        let blobMenu = try XCTUnwrap(SACellFilterMenuBuilder.filterMenu(
             column: ["name": "payload", "typegrouping": "blobdata"],
             value: "0xdeadbeef",
             isNull: false
         ))
+        XCTAssertEqual(blobMenu.items.map(\.title), ["IS NULL", "IS NOT NULL"])
+    }
+
+    /// Verifies non-NULL geometry cells also expose IS NULL / IS NOT NULL.
+    func testGeometryNonNullValueShowsNullOperators() throws {
+        let menu = try XCTUnwrap(SACellFilterMenuBuilder.filterMenu(
+            column: ["name": "shape", "typegrouping": "geometry"],
+            value: "POINT(1 1)",
+            isNull: false
+        ))
+        XCTAssertEqual(menu.items.map(\.title), ["IS NULL", "IS NOT NULL"])
     }
 
     /// Verifies NULL binary values still expose NULL-safe menu items.

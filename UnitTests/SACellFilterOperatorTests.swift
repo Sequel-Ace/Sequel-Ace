@@ -60,11 +60,15 @@ final class SACellFilterOperatorTests: XCTestCase {
         XCTAssertEqual(SACellFilterOperator.operators(for: "integer", cellIsNull: true).map(\.serializedName), ["IS NULL", "IS NOT NULL"])
     }
 
-    /// Verifies non-NULL cells hide NULL-only operators while keeping value comparisons.
-    func testNonNullCellHidesNullOnlyOperators() {
-        XCTAssertEqual(SACellFilterOperator.operators(for: "geometry", cellIsNull: false).map(\.serializedName), [])
-        XCTAssertEqual(SACellFilterOperator.operators(for: "binary", cellIsNull: false).map(\.serializedName), [])
-        XCTAssertEqual(SACellFilterOperator.operators(for: "blobdata", cellIsNull: false).map(\.serializedName), [])
+    /// Verifies non-NULL cells expose value comparisons AND keep NULL operators available.
+    func testNonNullCellKeepsNullOperatorsAlongsideValueOperators() {
+        // NULL-only catalogs (geometry / binary / blobdata): non-NULL cells still
+        // expose IS NULL / IS NOT NULL so the Filter submenu remains usable.
+        XCTAssertEqual(SACellFilterOperator.operators(for: "geometry", cellIsNull: false).map(\.serializedName), ["IS NULL", "IS NOT NULL"])
+        XCTAssertEqual(SACellFilterOperator.operators(for: "binary", cellIsNull: false).map(\.serializedName), ["IS NULL", "IS NOT NULL"])
+        XCTAssertEqual(SACellFilterOperator.operators(for: "blobdata", cellIsNull: false).map(\.serializedName), ["IS NULL", "IS NOT NULL"])
+        // Value-bearing catalogs (date / string / number) get value comparisons
+        // first followed by IS NULL / IS NOT NULL.
         XCTAssertEqual(SACellFilterOperator.operators(for: "date", cellIsNull: false).map(\.serializedName), [
             "=",
             "≠",
@@ -72,6 +76,8 @@ final class SACellFilterOperatorTests: XCTestCase {
             "is before",
             "is after or equal to",
             "is before or equal to",
+            "IS NULL",
+            "IS NOT NULL",
         ])
     }
 
