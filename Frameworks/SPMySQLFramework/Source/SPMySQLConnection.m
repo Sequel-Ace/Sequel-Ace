@@ -1053,7 +1053,15 @@ asm(".desc ___crashreporter_info__, 0x10");
  */
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry
 {
-	return [self _reconnectAllowingRetries:canRetry dispatchOnMainThread:YES];
+	// Default to synchronous semantics (dispatchOnMainThread:NO) so existing
+	// in-tree callers — cancelCurrentQuery, _pingConnectionUsingLoopDelay,
+	// checkConnectionIfNecessary (worker path), Max Packet Size renegotiation —
+	// keep getting a reconnect that actually completes before returning. They
+	// follow the pattern `_unlockConnection → reconnect → _lockConnection` and
+	// depend on the reset being done before the next line runs. The two-argument
+	// form remains available for callers that explicitly want main-thread
+	// fast-return semantics (none exist in-tree today).
+	return [self _reconnectAllowingRetries:canRetry dispatchOnMainThread:NO];
 }
 
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry dispatchOnMainThread:(BOOL)dispatchOnMainThread
@@ -1076,6 +1084,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 
 	BOOL reconnectSucceeded = NO;
 	BOOL delegateReconnectDecisionRequested = NO;
+	BOOL wasLostInBackground = NO;
 
 	@autoreleasepool {
 		// Check whether a reconnection attempt is already being made - if so, wait
@@ -1127,6 +1136,14 @@ asm(".desc ___crashreporter_info__, 0x10");
 			return NO;
 		}
 
+		// Capture whether we are recovering from a background-loss state BEFORE
+		// the silent attempt resets it. App-layer observers (e.g.
+		// SPDatabaseDocument.backgroundConnectionLost) need a restoration
+		// callback even when the silent worker-thread reconnect succeeds on
+		// its own (without ever asking the delegate for a decision), otherwise
+		// the lost-state flag stays set and the next user action shows an
+		// unnecessary reconnect/disconnect sheet.
+		wasLostInBackground = (state == SPMySQLConnectionLostInBackground);
 		reconnectSucceeded = [self _silentReconnectAttempt];
 
 		// If the connection failed and the connection is permitted to retry,
@@ -1175,7 +1192,16 @@ asm(".desc ___crashreporter_info__, 0x10");
 			reconnectingThread = NULL;
 		}
 	}
-	if (reconnectSucceeded && delegateReconnectDecisionRequested && delegateSupportsConnectionRestoredAfterLoss) {
+	// Fire the restoration callback when EITHER:
+	// (a) the delegate was asked for a decision and chose Reconnect (existing),
+	// (b) the silent worker-thread attempt recovered from a prior
+	//     SPMySQLConnectionLostInBackground state (no delegate was asked).
+	// Case (b) is needed so observers like SPDatabaseDocument can clear their
+	// own backgroundConnectionLost flag instead of waiting for a delegate path
+	// that silent recovery never triggers.
+	if (reconnectSucceeded
+	    && (delegateReconnectDecisionRequested || wasLostInBackground)
+	    && delegateSupportsConnectionRestoredAfterLoss) {
 		[delegate connectionRestoredAfterLoss:self];
 	}
 	return reconnectSucceeded;

@@ -279,7 +279,36 @@
 	XCTAssertEqual(reconnectCount, 1U);
 }
 
-- (void)testReconnectAllowingRetriesOnMainThreadFastReturnsAndDispatchesPrivateQueue
+// Regression for Codex review on PR #2419:
+// "This branch now returns immediately on the main thread after queueing reconnect
+//  work, but existing synchronous callers (not updated in this commit) still depend
+//  on -_reconnectAllowingRetries: completing before they continue."
+//
+// The 1-arg `_reconnectAllowingRetries:` wrapper used by cancelCurrentQuery,
+// checkConnectionIfNecessary, etc. must run the reconnect SYNCHRONOUSLY even on
+// the main thread; the unlock → reconnect → lock pattern depends on it.
+// Callers that explicitly want the main-thread fast-return behavior must use the
+// 2-arg form with `dispatchOnMainThread:YES`.
+- (void)testLegacyOneArgReconnectIsSynchronousOnMainThread
+{
+	SPMySQLConnection *connection = [[SPMySQLConnection alloc] init];
+	__block NSUInteger reconnectCount = 0;
+	[connection _setReconnectAttemptForTesting:^BOOL(BOOL canRetry) {
+		reconnectCount++;
+		return YES;
+	}];
+
+	XCTAssertTrue([NSThread isMainThread], @"test runs on the main thread");
+	BOOL result = [connection _reconnectAllowingRetries:YES];
+
+	XCTAssertEqual(reconnectCount, 1U,
+		@"1-arg _reconnectAllowingRetries: must run the reconnect synchronously on main thread.");
+	XCTAssertTrue(result, @"sync reconnect should return the real outcome, not an early NO");
+}
+
+// Companion test: callers that explicitly want main-thread fast-return semantics
+// can still get them via the 2-arg form.
+- (void)testTwoArgReconnectWithDispatchOnMainThreadYesQueuesAndFastReturns
 {
 	SPMySQLConnection *connection = [[SPMySQLConnection alloc] init];
 	XCTestExpectation *queuedReconnectExpectation = [self expectationWithDescription:@"queued reconnect"];
@@ -290,7 +319,7 @@
 		return YES;
 	}];
 
-	XCTAssertFalse([connection _reconnectAllowingRetries:YES]);
+	XCTAssertFalse([connection _reconnectAllowingRetries:YES dispatchOnMainThread:YES]);
 	[self waitForExpectationsWithTimeout:1 handler:nil];
 	[connection _drainReconnectQueueForTesting];
 	XCTAssertEqual(reconnectCount, 1U);
@@ -633,6 +662,41 @@
 	XCTAssertEqual(silentReconnectCount, 0U);
 	XCTAssertEqual([connection _stateForTesting], SPMySQLConnectionLostInBackground);
 	XCTAssertFalse([connection _proxyStateChangeNotificationsIgnoredForTesting]);
+}
+
+// Regression for Codex review on PR #2419 P2:
+// "Restoration callbacks are gated on `delegateReconnectDecisionRequested`, so
+//  successful silent reconnects (worker-thread recovery from
+//  SPMySQLConnectionLostInBackground) do not emit `connectionRestoredAfterLoss:`."
+//
+// Silent worker-thread recovery from Lost-in-Background MUST notify the delegate
+// so SPDatabaseDocument can clear its backgroundConnectionLost flag.
+- (void)testSilentReconnectFromLostInBackgroundFiresRestorationCallback
+{
+	SPMySQLConnection *connection = [[SPMySQLConnection alloc] init];
+	SPMySQLConnectionLostTestDelegate *delegate = [[SPMySQLConnectionLostTestDelegate alloc] init];
+	[connection setDelegate:delegate];
+
+	// Set up the lost-in-background state that worker-thread silent reconnect handles.
+	[connection _setStateForTesting:SPMySQLConnectionLostInBackground];
+
+	[connection _setSilentReconnectAttemptForTesting:^BOOL{
+		return YES;
+	}];
+
+	// Run on a worker thread so the main-thread fast-return guard does not apply.
+	XCTestExpectation *done = [self expectationWithDescription:@"silent recovery"];
+	__block BOOL succeeded = NO;
+	dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+		succeeded = [connection _reconnectAllowingRetries:YES];
+		[done fulfill];
+	});
+	[self waitForExpectationsWithTimeout:5 handler:nil];
+
+	XCTAssertTrue(succeeded);
+	XCTAssertEqual(delegate.restoredAfterLossCount, 1U,
+		@"Silent worker-thread recovery from Lost-in-Background must fire connectionRestoredAfterLoss: "
+		@"so app-layer observers can clear their backgroundConnectionLost flag.");
 }
 
 @end
