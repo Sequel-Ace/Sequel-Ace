@@ -109,6 +109,7 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 - (BOOL)_isAWSIAMConnection;
 - (void)_syncAWSIAMAndSSLInterfaceState;
 - (void)_refreshAWSAvailableRegions;
+- (BOOL)_isVaultConnection;
 
 static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, void *key);
 
@@ -354,9 +355,29 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         return;
     }
 
+    if ([self _isVaultConnection] && ![[self vaultHost] length]) {
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message")
+                                     message:NSLocalizedString(@"A Vault host is required to connect.", @"vault host required connect message")
+                                    callback:nil];
+        return;
+    }
+    if ([self _isVaultConnection] && ![[self vaultCredentialsPath] length]) {
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message")
+                                     message:NSLocalizedString(@"A Vault credentials path is required to connect.", @"vault creds path required connect message")
+                                    callback:nil];
+        return;
+    }
+    if ([self _isVaultConnection] && ![[self host] length]) {
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message")
+                                     message:NSLocalizedString(@"A database host is required to connect.", @"vault db host required connect message")
+                                    callback:nil];
+        return;
+    }
+
     // Basic details have validated - start the connection process animating
     isConnecting = YES;
     cancellingConnection = NO;
+    connectionAttemptID++;
     errorShowing = NO;
 
     // Disable the favorites outline view to prevent further connections attempts
@@ -434,14 +455,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     [connectButton setEnabled:YES];
     [connectButton display];
 
-    // Connect via service (async — completion called on main thread)
+    // Shared completion handler — used by both the Vault and non-Vault paths.
     __weak __kindof SPConnectionController *weakSelf = self;
-    [self.connectionService connectWith:info
-                            preferences:preferences
-                               password:resolvedPassword
-                            sshPassword:resolvedSSHPassword
-                           parentWindow:[dbDocument parentWindowControllerWindow]
-                             completion:^(SAConnectionResult *result) {
+    void (^connectCompletion)(SAConnectionResult *) = ^(SAConnectionResult *result) {
         SPConnectionController *strongSelf = weakSelf;
         if (!strongSelf) return;
 
@@ -510,7 +526,100 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         // Success — store connection and delegate to existing handler
         strongSelf->mySQLConnection = result.connection;
         [strongSelf mySQLConnectionEstablished];
-    }];
+    };
+
+    // Vault: fetch ephemeral credentials on a background thread so that a
+    // browser-based OIDC flow (up to 120 s) does not block the main thread.
+    // The service call is then dispatched back to the main thread.
+    if ([self _isVaultConnection]) {
+        NSString *credHost = [[self vaultHost] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        NSString *credPort  = [[self vaultPort] length] ? [self vaultPort] : @"443";
+        NSString *credMount = [[self vaultOIDCMount] length] ? [self vaultOIDCMount] : @"oidc";
+        NSString *credPath  = [self vaultCredentialsPath];
+        NSUInteger vaultConnectionAttemptID = connectionAttemptID;
+        NSString *vaultLoginIdentifierForAttempt = [VaultOIDCHandler prepareActiveLogin];
+        vaultLoginIdentifier = vaultLoginIdentifierForAttempt;
+
+        dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+            NSError *vaultError = nil;
+            NSString *outUsername = nil;
+            NSString *outPassword = nil;
+
+            SPConnectionController *strongSelf = weakSelf;
+            if (!strongSelf || strongSelf->cancellingConnection || strongSelf->connectionAttemptID != vaultConnectionAttemptID) {
+                [VaultOIDCHandler clearPreparedActiveLoginWithIdentifier:vaultLoginIdentifierForAttempt];
+                return;
+            }
+
+            BOOL success = [VaultAuthManager generateCredentialsWithHost:credHost
+                                                                    port:credPort
+                                                              oidcMount:credMount
+                                                               credPath:credPath
+                                                        loginIdentifier:vaultLoginIdentifierForAttempt
+                                                               username:&outUsername
+                                                               password:&outPassword
+                                                                  error:&vaultError];
+            [VaultOIDCHandler clearPreparedActiveLoginWithIdentifier:vaultLoginIdentifierForAttempt];
+
+            // User may cancel while the OIDC browser is open; bail without showing an error.
+            strongSelf = weakSelf;
+            if (!strongSelf || strongSelf->cancellingConnection || strongSelf->connectionAttemptID != vaultConnectionAttemptID) {
+                [VaultAuthManager clearCachedCredentialsForHost:credHost
+                                                           port:credPort
+                                                     oidcMount:credMount
+                                                       credPath:credPath];
+                return;
+            }
+
+            if (!success || ![outUsername length] || ![outPassword length]) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    SPConnectionController *strongSelf = weakSelf;
+                    if (!strongSelf || strongSelf->connectionAttemptID != vaultConnectionAttemptID) return;
+                    if ([strongSelf->vaultLoginIdentifier isEqualToString:vaultLoginIdentifierForAttempt]) {
+                        strongSelf->vaultLoginIdentifier = nil;
+                    }
+                    [strongSelf failConnectionWithTitle:NSLocalizedString(@"Vault Authentication Failed", @"Vault auth failed title")
+                                          errorMessage:vaultError ? vaultError.localizedDescription : NSLocalizedString(@"Vault returned empty credentials.", @"Vault auth empty creds error")
+                                                detail:nil];
+                });
+                return;
+            }
+
+            NSString *capturedUsername = outUsername;
+            NSString *capturedPassword = outPassword;
+            dispatch_async(dispatch_get_main_queue(), ^{
+                SPConnectionController *strongSelf = weakSelf;
+                if (!strongSelf) return;
+                // Second cancel check: user may have hit Cancel while we were on the background queue.
+                if (strongSelf->cancellingConnection || strongSelf->connectionAttemptID != vaultConnectionAttemptID) {
+                    [VaultAuthManager clearCachedCredentialsForHost:credHost
+                                                               port:credPort
+                                                         oidcMount:credMount
+                                                           credPath:credPath];
+                    return;
+                }
+                if ([strongSelf->vaultLoginIdentifier isEqualToString:vaultLoginIdentifierForAttempt]) {
+                    strongSelf->vaultLoginIdentifier = nil;
+                }
+                info.user = capturedUsername;
+                [strongSelf.connectionService connectWith:info
+                                             preferences:preferences
+                                                password:capturedPassword
+                                             sshPassword:@""
+                                            parentWindow:[strongSelf->dbDocument parentWindowControllerWindow]
+                                              completion:connectCompletion];
+            });
+        });
+        return;
+    }
+
+    // Non-Vault: connect via service directly (async — completion on main thread)
+    [self.connectionService connectWith:info
+                            preferences:preferences
+                               password:resolvedPassword
+                            sshPassword:resolvedSSHPassword
+                           parentWindow:[dbDocument parentWindowControllerWindow]
+                             completion:connectCompletion];
 }
 
 /**
@@ -524,6 +633,13 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     [progressIndicatorText display];
 
     cancellingConnection = YES;
+    connectionAttemptID++;
+
+    // Abort any in-progress Vault OIDC browser login so the background thread
+    // unblocks immediately rather than waiting up to 120 s for a callback.
+    if ([vaultLoginIdentifier length]) {
+        [VaultOIDCHandler cancelActiveLoginWithIdentifier:vaultLoginIdentifier];
+    }
 
     // Cancel via connection service (handles both MySQL and SSH tunnel)
     [self.connectionService cancel];
@@ -596,7 +712,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         accessoryView = sshKeyLocationHelp;
     }
     // SSL key file location:
-    else if (sender == standardSSLKeyFileButton || sender == socketSSLKeyFileButton || sender == sslOverSSHKeyFileButton) {
+    else if (sender == standardSSLKeyFileButton || sender == socketSSLKeyFileButton || sender == sslOverSSHKeyFileButton || sender == vaultSSLKeyFileButton) {
         if ([sender state] == NSControlStateValueOff) {
             [self setSslKeyFileLocation:nil];
             return;
@@ -605,7 +721,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         accessoryView = sslKeyFileLocationHelp;
     }
     // SSL certificate file location:
-    else if (sender == standardSSLCertificateButton || sender == socketSSLCertificateButton || sender == sslOverSSHCertificateButton) {
+    else if (sender == standardSSLCertificateButton || sender == socketSSLCertificateButton || sender == sslOverSSHCertificateButton || sender == vaultSSLCertificateButton) {
         if ([sender state] == NSControlStateValueOff) {
             [self setSslCertificateFileLocation:nil];
             return;
@@ -614,7 +730,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         accessoryView = sslCertificateLocationHelp;
     }
     // SSL CA certificate file location:
-    else if (sender == standardSSLCACertButton || sender == socketSSLCACertButton || sender == sslOverSSHCACertButton) {
+    else if (sender == standardSSLCACertButton || sender == socketSSLCACertButton || sender == sslOverSSHCACertButton || sender == vaultSSLCACertButton) {
         if ([sender state] == NSControlStateValueOff) {
             [self setSslCACertFileLocation:nil];
             return;
@@ -699,7 +815,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             [self setSshKeyLocation:selectedFilePath];
         }
         // SSL key file selection
-        else if (sender == self->standardSSLKeyFileButton || sender == self->socketSSLKeyFileButton || sender == self->sslOverSSHKeyFileButton) {
+        else if (sender == self->standardSSLKeyFileButton || sender == self->socketSSLKeyFileButton || sender == self->sslOverSSHKeyFileButton || sender == self->vaultSSLKeyFileButton) {
             if (returnCode == NSModalResponseCancel) {
                 [self setSslKeyFileLocationEnabled:NSControlStateValueOff];
                 [self setSslKeyFileLocation:nil];
@@ -715,7 +831,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             [self setSslKeyFileLocation:selectedFilePath];
         }
         // SSL certificate file selection
-        else if (sender == self->standardSSLCertificateButton || sender == self->socketSSLCertificateButton || sender == self->sslOverSSHCertificateButton) {
+        else if (sender == self->standardSSLCertificateButton || sender == self->socketSSLCertificateButton || sender == self->sslOverSSHCertificateButton || sender == self->vaultSSLCertificateButton) {
             if (returnCode == NSModalResponseCancel) {
                 [self setSslCertificateFileLocationEnabled:NSControlStateValueOff];
                 [self setSslCertificateFileLocation:nil];
@@ -731,7 +847,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             [self setSslCertificateFileLocation:selectedFilePath];
         }
         // SSL CA certificate file selection
-        else if (sender == self->standardSSLCACertButton || sender == self->socketSSLCACertButton || sender == self->sslOverSSHCACertButton) {
+        else if (sender == self->standardSSLCACertButton || sender == self->socketSSLCACertButton || sender == self->sslOverSSHCACertButton || sender == self->vaultSSLCACertButton) {
             if (returnCode == NSModalResponseCancel) {
                 [self setSslCACertFileLocationEnabled:NSControlStateValueOff];
                 [self setSslCACertFileLocation:nil];
@@ -913,6 +1029,11 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 - (BOOL)_isAWSIAMConnection
 {
     return [self type] == SPAWSIAMConnection;
+}
+
+- (BOOL)_isVaultConnection
+{
+    return [self type] == SPVaultConnection;
 }
 
 - (void)_syncAWSIAMAndSSLInterfaceState
@@ -1145,6 +1266,11 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             // Use a smaller footer area to keep its vertical density aligned with the other tabs.
             additionalFormHeight = 29;
             break;
+        case SPVaultConnection:
+            targetResizeRect = [vaultConnectionFormContainer frame];
+            additionalFormHeight = 49;
+            if ([self useSSL]) additionalFormHeight += [vaultConnectionSSLDetailsContainer frame].size.height;
+            break;
         case SPSocketConnection:
             targetResizeRect = [socketConnectionFormContainer frame];
             if ([self useSSL]) additionalFormHeight += [socketConnectionSSLDetailsContainer frame].size.height;
@@ -1256,6 +1382,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         case SPConnectionTimeZoneModeUseSystemTZ: {
             [standardTimeZoneField selectItemWithTag:SPUseSystemTimeZoneTag];
             [awsIAMTimeZoneField selectItemWithTag:SPUseSystemTimeZoneTag];
+            [vaultTimeZoneField selectItemWithTag:SPUseSystemTimeZoneTag];
             [socketTimeZoneField selectItemWithTag:SPUseSystemTimeZoneTag];
             [sshTimeZoneField selectItemWithTag:SPUseSystemTimeZoneTag];
             [self setTimeZoneMode:SPConnectionTimeZoneModeUseSystemTZ];
@@ -1266,6 +1393,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             NSString *tzIdentifier = [fav objectForKey:SPFavoriteTimeZoneIdentifierKey];
             [standardTimeZoneField selectItemWithTitle:tzIdentifier];
             [awsIAMTimeZoneField selectItemWithTitle:tzIdentifier];
+            [vaultTimeZoneField selectItemWithTitle:tzIdentifier];
             [socketTimeZoneField selectItemWithTitle:tzIdentifier];
             [sshTimeZoneField selectItemWithTitle:tzIdentifier];
             [self setTimeZoneMode:SPConnectionTimeZoneModeUseFixedTZ];
@@ -1275,6 +1403,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         default: {
             [standardTimeZoneField selectItemWithTag:SPUseServerTimeZoneTag];
             [awsIAMTimeZoneField selectItemWithTag:SPUseServerTimeZoneTag];
+            [vaultTimeZoneField selectItemWithTag:SPUseServerTimeZoneTag];
             [socketTimeZoneField selectItemWithTag:SPUseServerTimeZoneTag];
             [sshTimeZoneField selectItemWithTag:SPUseServerTimeZoneTag];
             [self setTimeZoneMode:SPConnectionTimeZoneModeUseServerTZ];
@@ -1294,6 +1423,15 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     [self setAwsRegion:([fav objectForKey:SPFavoriteAWSRegionKey] ? [fav objectForKey:SPFavoriteAWSRegionKey] : @"")];
     [self setAwsProfile:([fav objectForKey:SPFavoriteAWSProfileKey] ? [fav objectForKey:SPFavoriteAWSProfileKey] : @"default")];
 
+    // Vault Authentication
+    [self setVaultHost:([fav objectForKey:SPFavoriteVaultHostKey] ? [fav objectForKey:SPFavoriteVaultHostKey] : @"")];
+    // nil is intentional here — the KVO binding shows NSNullPlaceholder ("443"/"oidc")
+    // when the property is nil. The runtime fallback to "443"/"oidc" is applied at
+    // connect time. Other Vault properties use @"" because they have no placeholder.
+    [self setVaultPort:[fav objectForKey:SPFavoriteVaultPortKey]];
+    [self setVaultOIDCMount:[fav objectForKey:SPFavoriteVaultOIDCMountKey]];
+    [self setVaultCredentialsPath:([fav objectForKey:SPFavoriteVaultCredentialsPathKey] ? [fav objectForKey:SPFavoriteVaultCredentialsPathKey] : @"")];
+
     // SSL details
     [self setUseSSL:([fav objectForKey:SPFavoriteUseSSLKey] ? [[fav objectForKey:SPFavoriteUseSSLKey] intValue] : NSControlStateValueOff)];
     [self setSslKeyFileLocationEnabled:([fav objectForKey:SPFavoriteSSLKeyFileLocationEnabledKey] ? [[fav objectForKey:SPFavoriteSSLKeyFileLocationEnabledKey] intValue] : NSControlStateValueOff)];
@@ -1312,15 +1450,21 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
     // Check whether the password exists in the keychain, and if so add it; also record the
     // keychain details so we can pass around only those details if the password doesn't change
-    connectionKeychainItemName = !fav ? nil : [keychain nameForFavoriteName:[fav objectForKey:SPFavoriteNameKey] id:[fav objectForKey:SPFavoriteIDKey]];
-    connectionKeychainItemAccount = !fav ? nil : [keychain accountForUser:[fav objectForKey:SPFavoriteUserKey] host:(([self type] == SPSocketConnection) ? @"localhost" : [fav objectForKey:SPFavoriteHostKey]) database:[fav objectForKey:SPFavoriteDatabaseKey]];
-
-    if(fav) {
-        [self setPassword:[keychain getPasswordForName:connectionKeychainItemName account:connectionKeychainItemAccount]];
-    }
-
-    if (!fav || ![[self password] length]) {
+    if ([self type] == SPVaultConnection) {
+        connectionKeychainItemName = nil;
+        connectionKeychainItemAccount = nil;
         [self setPassword:nil];
+    } else {
+        connectionKeychainItemName = !fav ? nil : [keychain nameForFavoriteName:[fav objectForKey:SPFavoriteNameKey] id:[fav objectForKey:SPFavoriteIDKey]];
+        connectionKeychainItemAccount = !fav ? nil : [keychain accountForUser:[fav objectForKey:SPFavoriteUserKey] host:(([self type] == SPSocketConnection) ? @"localhost" : [fav objectForKey:SPFavoriteHostKey]) database:[fav objectForKey:SPFavoriteDatabaseKey]];
+
+        if(fav) {
+            [self setPassword:[keychain getPasswordForName:connectionKeychainItemName account:connectionKeychainItemAccount]];
+        }
+
+        if (!fav || ![[self password] length]) {
+            [self setPassword:nil];
+        }
     }
 
     [self _syncAWSIAMAndSSLInterfaceState];
@@ -1336,16 +1480,23 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         }
     }
 
-    // And the same for the SSH password
-    connectionSSHKeychainItemName = !fav ? nil : [keychain nameForSSHForFavoriteName:[fav objectForKey:SPFavoriteNameKey] id:[fav objectForKey:SPFavoriteIDKey]];
-    connectionSSHKeychainItemAccount = !fav ? nil : [keychain accountForSSHUser:[fav objectForKey:SPFavoriteSSHUserKey] sshHost:[fav objectForKey:SPFavoriteSSHHostKey]];
-
-    if(fav) {
-        [self setSshPassword:[keychain getPasswordForName:connectionSSHKeychainItemName account:connectionSSHKeychainItemAccount]];
-    }
-
-    if (!fav || ![[self sshPassword] length]) {
+    // And the same for the SSH password. Vault connections do not use SSH
+    // tunnels, so do not hydrate stale SSH keychain entries from old favorites.
+    if ([self type] == SPVaultConnection) {
+        connectionSSHKeychainItemName = nil;
+        connectionSSHKeychainItemAccount = nil;
         [self setSshPassword:nil];
+    } else {
+        connectionSSHKeychainItemName = !fav ? nil : [keychain nameForSSHForFavoriteName:[fav objectForKey:SPFavoriteNameKey] id:[fav objectForKey:SPFavoriteIDKey]];
+        connectionSSHKeychainItemAccount = !fav ? nil : [keychain accountForSSHUser:[fav objectForKey:SPFavoriteSSHUserKey] sshHost:[fav objectForKey:SPFavoriteSSHHostKey]];
+
+        if(fav) {
+            [self setSshPassword:[keychain getPasswordForName:connectionSSHKeychainItemName account:connectionSSHKeychainItemAccount]];
+        }
+
+        if (!fav || ![[self sshPassword] length]) {
+            [self setSshPassword:nil];
+        }
     }
 
     [prefs setInteger:[[fav objectForKey:SPFavoriteIDKey] integerValue] forKey:SPLastFavoriteID];
@@ -1368,6 +1519,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         }
         case SPAWSIAMConnection:
             [favoritesOutlineView setNextKeyView:awsIAMNameField];
+            break;
+        case SPVaultConnection:
+            [favoritesOutlineView setNextKeyView:vaultNameField];
             break;
         case SPSocketConnection:
             [favoritesOutlineView setNextKeyView:(![[socketPasswordField stringValue] length]) ? socketPasswordField : socketNameField];
@@ -1461,6 +1615,10 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         @(NSControlStateValueOff),
         @"",
         @"",
+        @"",
+        @"",
+        @"",
+        @"",
         favoriteID
     ];
 
@@ -1489,6 +1647,10 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         SPFavoriteSSHKeyLocationEnabledKey,
         SPFavoriteSSHKeyLocationKey,
         SPFavoriteSSHPortKey,
+        SPFavoriteVaultHostKey,
+        SPFavoriteVaultPortKey,
+        SPFavoriteVaultOIDCMountKey,
+        SPFavoriteVaultCredentialsPathKey,
         SPFavoriteIDKey
     ];
 
@@ -1714,6 +1876,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     [awsIAMTimeZoneField selectItemAtIndex:sender.indexOfSelectedItem];
     [sshTimeZoneField selectItemAtIndex:sender.indexOfSelectedItem];
     [socketTimeZoneField selectItemAtIndex:sender.indexOfSelectedItem];
+    [vaultTimeZoneField selectItemAtIndex:sender.indexOfSelectedItem];
 
     [self _startEditingConnection];
 }
@@ -1769,6 +1932,25 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     if (validateDetails && [self _isAWSIAMConnection] && ![self isAWSDirectoryAuthorized]) {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"AWS Authorization Required", @"AWS authorization required title")
                                      message:NSLocalizedString(@"Authorize access to your ~/.aws directory before saving an AWS IAM favorite.", @"AWS authorization required save message")
+                                    callback:nil];
+        return;
+    }
+
+    if (validateDetails && [self type] == SPVaultConnection && ![[self host] length]) {
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message")
+                                     message:NSLocalizedString(@"Please provide a database host to save a Vault favorite.", @"vault db host required save message")
+                                    callback:nil];
+        return;
+    }
+    if (validateDetails && [self type] == SPVaultConnection && ![[self vaultHost] length]) {
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message")
+                                     message:NSLocalizedString(@"A Vault host is required to save a Vault favorite.", @"vault host required save message")
+                                    callback:nil];
+        return;
+    }
+    if (validateDetails && [self type] == SPVaultConnection && ![[self vaultCredentialsPath] length]) {
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message")
+                                     message:NSLocalizedString(@"A Vault credentials path is required to save a Vault favorite.", @"vault creds path required save message")
                                     callback:nil];
         return;
     }
@@ -1829,6 +2011,11 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     [theFavorite setObject:[NSNumber numberWithInteger:awsIAMEnabled] forKey:SPFavoriteUseAWSIAMAuthKey];
     _setOrRemoveKey(SPFavoriteAWSRegionKey, [self awsRegion]);
     _setOrRemoveKey(SPFavoriteAWSProfileKey, [self awsProfile]);
+    // Vault Authentication
+    _setOrRemoveKey(SPFavoriteVaultHostKey, [self vaultHost]);
+    _setOrRemoveKey(SPFavoriteVaultPortKey, [self vaultPort]);
+    _setOrRemoveKey(SPFavoriteVaultOIDCMountKey, [self vaultOIDCMount]);
+    _setOrRemoveKey(SPFavoriteVaultCredentialsPathKey, [self vaultCredentialsPath]);
     // SSL details
     [theFavorite setObject:[NSNumber numberWithInteger:[self useSSL]] forKey:SPFavoriteUseSSLKey];
     [theFavorite setObject:[NSNumber numberWithInteger:[self sslKeyFileLocationEnabled]] forKey:SPFavoriteSSLKeyFileLocationEnabledKey];
@@ -1838,12 +2025,21 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     [theFavorite setObject:[NSNumber numberWithInteger:[self sslCACertFileLocationEnabled]] forKey:SPFavoriteSSLCACertFileLocationEnabledKey];
     _setOrRemoveKey(SPFavoriteSSLCACertFileLocationKey, [self sslCACertFileLocation]);
 
-    // SSH details
-    _setOrRemoveKey(SPFavoriteSSHHostKey, [self sshHost]);
-    _setOrRemoveKey(SPFavoriteSSHUserKey, [self sshUser]);
-    _setOrRemoveKey(SPFavoriteSSHPortKey, [self sshPort]);
-    [theFavorite setObject:[NSNumber numberWithInteger:[self sshKeyLocationEnabled]] forKey:SPFavoriteSSHKeyLocationEnabledKey];
-    _setOrRemoveKey(SPFavoriteSSHKeyLocationKey, [self sshKeyLocation]);
+    // SSH details. Vault credentials are generated directly from Vault and
+    // cannot be combined with an SSH tunnel; remove stale SSH favorite fields.
+    if ([self type] == SPVaultConnection) {
+        [theFavorite removeObjectForKey:SPFavoriteSSHHostKey];
+        [theFavorite removeObjectForKey:SPFavoriteSSHUserKey];
+        [theFavorite removeObjectForKey:SPFavoriteSSHPortKey];
+        [theFavorite removeObjectForKey:SPFavoriteSSHKeyLocationEnabledKey];
+        [theFavorite removeObjectForKey:SPFavoriteSSHKeyLocationKey];
+    } else {
+        _setOrRemoveKey(SPFavoriteSSHHostKey, [self sshHost]);
+        _setOrRemoveKey(SPFavoriteSSHUserKey, [self sshUser]);
+        _setOrRemoveKey(SPFavoriteSSHPortKey, [self sshPort]);
+        [theFavorite setObject:[NSNumber numberWithInteger:[self sshKeyLocationEnabled]] forKey:SPFavoriteSSHKeyLocationEnabledKey];
+        _setOrRemoveKey(SPFavoriteSSHKeyLocationKey, [self sshKeyLocation]);
+    }
 
 
     /*
@@ -1853,82 +2049,100 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     NSString *oldHostnameForPassword = ([[currentFavorite objectForKey:SPFavoriteTypeKey] integerValue] == SPSocketConnection) ? @"localhost" : [currentFavorite objectForKey:SPFavoriteHostKey];
     NSString *newHostnameForPassword = ([self type] == SPSocketConnection) ? @"localhost" : [self host];
 
-    // Grab the password for this connection
-    // Add the password to keychain as appropriate
-    NSString *sqlPassword = [self password];
-    if (![sqlPassword length] && mySQLConnection && connectionKeychainItemName) {
-        sqlPassword = [keychain getPasswordForName:connectionKeychainItemName account:connectionKeychainItemAccount];
-    }
-
-    // If creating a new favourite, always add the password to the keychain if it's set
-    if (createNewFavorite && [sqlPassword length]) {
-        [keychain addPassword:sqlPassword
-                      forName:[keychain nameForFavoriteName:[theFavorite objectForKey:SPFavoriteNameKey] id:[theFavorite objectForKey:SPFavoriteIDKey]]
-                      account:[keychain accountForUser:[self user] host:newHostnameForPassword database:[self database]]];
-    }
-
-    // If not creating a new favourite...
-    if (!createNewFavorite) {
-
-        // Get the old keychain name and account strings
-        oldKeychainName = [keychain nameForFavoriteName:[currentFavorite objectForKey:SPFavoriteNameKey] id:[currentFavorite objectForKey:SPFavoriteIDKey]];
-        oldKeychainAccount = [keychain accountForUser:[currentFavorite objectForKey:SPFavoriteUserKey] host:oldHostnameForPassword database:[currentFavorite objectForKey:SPFavoriteDatabaseKey]];
-
-        // If there's no new password, remove the old item from the keychain
-        if (![sqlPassword length]) {
+    if ([self type] == SPVaultConnection) {
+        // Vault credentials are generated at connect time; remove any static SQL password from the previous favorite type.
+        if (!createNewFavorite) {
+            oldKeychainName = [keychain nameForFavoriteName:[currentFavorite objectForKey:SPFavoriteNameKey] id:[currentFavorite objectForKey:SPFavoriteIDKey]];
+            oldKeychainAccount = [keychain accountForUser:[currentFavorite objectForKey:SPFavoriteUserKey] host:oldHostnameForPassword database:[currentFavorite objectForKey:SPFavoriteDatabaseKey]];
             [keychain deletePasswordForName:oldKeychainName account:oldKeychainAccount];
+        }
+    } else {
+        // Grab the password for this connection
+        // Add the password to keychain as appropriate
+        NSString *sqlPassword = [self password];
+        if (![sqlPassword length] && mySQLConnection && connectionKeychainItemName) {
+            sqlPassword = [keychain getPasswordForName:connectionKeychainItemName account:connectionKeychainItemAccount];
+        }
 
-        // Otherwise, set up the new keychain name and account strings and create or edit the item
-        } else {
-            newKeychainName = [keychain nameForFavoriteName:[theFavorite objectForKey:SPFavoriteNameKey] id:[theFavorite objectForKey:SPFavoriteIDKey]];
-            newKeychainAccount = [keychain accountForUser:[self user] host:newHostnameForPassword database:[self database]];
-            if ([keychain passwordExistsForName:oldKeychainName account:oldKeychainAccount]) {
-                [keychain updateItemWithName:oldKeychainName account:oldKeychainAccount toName:newKeychainName account:newKeychainAccount password:sqlPassword];
+        // If creating a new favourite, always add the password to the keychain if it's set
+        if (createNewFavorite && [sqlPassword length]) {
+            [keychain addPassword:sqlPassword
+                          forName:[keychain nameForFavoriteName:[theFavorite objectForKey:SPFavoriteNameKey] id:[theFavorite objectForKey:SPFavoriteIDKey]]
+                          account:[keychain accountForUser:[self user] host:newHostnameForPassword database:[self database]]];
+        }
+
+        // If not creating a new favourite...
+        if (!createNewFavorite) {
+
+            // Get the old keychain name and account strings
+            oldKeychainName = [keychain nameForFavoriteName:[currentFavorite objectForKey:SPFavoriteNameKey] id:[currentFavorite objectForKey:SPFavoriteIDKey]];
+            oldKeychainAccount = [keychain accountForUser:[currentFavorite objectForKey:SPFavoriteUserKey] host:oldHostnameForPassword database:[currentFavorite objectForKey:SPFavoriteDatabaseKey]];
+
+            // If there's no new password, remove the old item from the keychain
+            if (![sqlPassword length]) {
+                [keychain deletePasswordForName:oldKeychainName account:oldKeychainAccount];
+
+            // Otherwise, set up the new keychain name and account strings and create or edit the item
             } else {
-                [keychain addPassword:sqlPassword forName:newKeychainName account:newKeychainAccount];
+                newKeychainName = [keychain nameForFavoriteName:[theFavorite objectForKey:SPFavoriteNameKey] id:[theFavorite objectForKey:SPFavoriteIDKey]];
+                newKeychainAccount = [keychain accountForUser:[self user] host:newHostnameForPassword database:[self database]];
+                if ([keychain passwordExistsForName:oldKeychainName account:oldKeychainAccount]) {
+                    [keychain updateItemWithName:oldKeychainName account:oldKeychainAccount toName:newKeychainName account:newKeychainAccount password:sqlPassword];
+                } else {
+                    [keychain addPassword:sqlPassword forName:newKeychainName account:newKeychainAccount];
+                }
             }
         }
+        sqlPassword = nil;
     }
-    sqlPassword = nil;
 
     /*
      * Password handling for the SSH connection
      */
-    NSString *theSSHPassword = [self sshPassword];
-    if (mySQLConnection && connectionSSHKeychainItemName) {
-        theSSHPassword = [keychain getPasswordForName:connectionSSHKeychainItemName account:connectionSSHKeychainItemAccount];
-    }
-
-    // If creating a new favourite, always add the password if it's set
-    if (createNewFavorite && [theSSHPassword length]) {
-        [keychain addPassword:theSSHPassword
-                      forName:[keychain nameForSSHForFavoriteName:[theFavorite objectForKey:SPFavoriteNameKey] id:[theFavorite objectForKey:SPFavoriteIDKey]]
-                      account:[keychain accountForSSHUser:[self sshUser] sshHost:[self sshHost]]];
-    }
-
-    // If not creating a new favourite...
-    if (!createNewFavorite) {
-
-        // Get the old keychain name and account strings
-        oldKeychainName = [keychain nameForSSHForFavoriteName:[currentFavorite objectForKey:SPFavoriteNameKey] id:[currentFavorite objectForKey:SPFavoriteIDKey]];
-        oldKeychainAccount = [keychain accountForSSHUser:[currentFavorite objectForKey:SPFavoriteSSHUserKey] sshHost:[currentFavorite objectForKey:SPFavoriteSSHHostKey]];
-
-        // If there's no new password, remove the old item from the keychain
-        if (![theSSHPassword length]) {
+    if ([self type] == SPVaultConnection) {
+        // Remove any SSH password left behind when converting an SSH favorite to Vault.
+        if (!createNewFavorite) {
+            oldKeychainName = [keychain nameForSSHForFavoriteName:[currentFavorite objectForKey:SPFavoriteNameKey] id:[currentFavorite objectForKey:SPFavoriteIDKey]];
+            oldKeychainAccount = [keychain accountForSSHUser:[currentFavorite objectForKey:SPFavoriteSSHUserKey] sshHost:[currentFavorite objectForKey:SPFavoriteSSHHostKey]];
             [keychain deletePasswordForName:oldKeychainName account:oldKeychainAccount];
+        }
+    } else {
+        NSString *theSSHPassword = [self sshPassword];
+        if (mySQLConnection && connectionSSHKeychainItemName) {
+            theSSHPassword = [keychain getPasswordForName:connectionSSHKeychainItemName account:connectionSSHKeychainItemAccount];
+        }
 
-        // Otherwise, set up the new keychain name and account strings and create or edit the item
-        } else {
-            newKeychainName = [keychain nameForSSHForFavoriteName:[theFavorite objectForKey:SPFavoriteNameKey] id:[theFavorite objectForKey:SPFavoriteIDKey]];
-            newKeychainAccount = [keychain accountForSSHUser:[self sshUser] sshHost:[self sshHost]];
-            if ([keychain passwordExistsForName:oldKeychainName account:oldKeychainAccount]) {
-                [keychain updateItemWithName:oldKeychainName account:oldKeychainAccount toName:newKeychainName account:newKeychainAccount password:theSSHPassword];
+        // If creating a new favourite, always add the password if it's set
+        if (createNewFavorite && [theSSHPassword length]) {
+            [keychain addPassword:theSSHPassword
+                          forName:[keychain nameForSSHForFavoriteName:[theFavorite objectForKey:SPFavoriteNameKey] id:[theFavorite objectForKey:SPFavoriteIDKey]]
+                          account:[keychain accountForSSHUser:[self sshUser] sshHost:[self sshHost]]];
+        }
+
+        // If not creating a new favourite...
+        if (!createNewFavorite) {
+
+            // Get the old keychain name and account strings
+            oldKeychainName = [keychain nameForSSHForFavoriteName:[currentFavorite objectForKey:SPFavoriteNameKey] id:[currentFavorite objectForKey:SPFavoriteIDKey]];
+            oldKeychainAccount = [keychain accountForSSHUser:[currentFavorite objectForKey:SPFavoriteSSHUserKey] sshHost:[currentFavorite objectForKey:SPFavoriteSSHHostKey]];
+
+            // If there's no new password, remove the old item from the keychain
+            if (![theSSHPassword length]) {
+                [keychain deletePasswordForName:oldKeychainName account:oldKeychainAccount];
+
+            // Otherwise, set up the new keychain name and account strings and create or edit the item
             } else {
-                [keychain addPassword:theSSHPassword forName:newKeychainName account:newKeychainAccount];
+                newKeychainName = [keychain nameForSSHForFavoriteName:[theFavorite objectForKey:SPFavoriteNameKey] id:[theFavorite objectForKey:SPFavoriteIDKey]];
+                newKeychainAccount = [keychain accountForSSHUser:[self sshUser] sshHost:[self sshHost]];
+                if ([keychain passwordExistsForName:oldKeychainName account:oldKeychainAccount]) {
+                    [keychain updateItemWithName:oldKeychainName account:oldKeychainAccount toName:newKeychainName account:newKeychainAccount password:theSSHPassword];
+                } else {
+                    [keychain addPassword:theSSHPassword forName:newKeychainName account:newKeychainAccount];
+                }
             }
         }
+        theSSHPassword = nil;
     }
-    theSSHPassword = nil;
 
     /*
      * Saving the connection
@@ -2154,6 +2368,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                 [[dbDocument parentWindowControllerWindow] makeFirstResponder:awsIAMNameField];
             }
             break;
+        case SPVaultConnection:
+            if (vaultNameField) {
+                [[dbDocument parentWindowControllerWindow] makeFirstResponder:vaultNameField];
+            }
+            break;
         case SPSocketConnection:
             if (![[socketPasswordField stringValue] length]) {
                 [[dbDocument parentWindowControllerWindow] makeFirstResponder:socketPasswordField];
@@ -2349,6 +2568,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (NSString *)_generateNameForConnection
 {
+    if ([self type] == SPVaultConnection) {
+        NSString *credPath = [[self vaultCredentialsPath] lastPathComponent];
+        NSString *vHost = [[self vaultHost] length] ? [self vaultHost] : @"vault";
+        return [credPath length] ? [NSString stringWithFormat:@"%@/%@", vHost, credPath] : vHost;
+    }
+
     return [SAConnectionFormHelpers generateNameWithType:(SAConnectionType)[self type]
                                                     host:[self host] ?: @""
                                                 database:[self database] ?: @""];
@@ -2410,11 +2635,22 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         if (dbDocument == document) {
 
             cancellingConnection = YES;
+            connectionAttemptID++;
             dbDocument = nil;
 
             if (mySQLConnection) {
                 [mySQLConnection setDelegate:nil];
                 [NSThread detachNewThreadWithName:SPCtxt(@"SPConnectionController close background disconnect", dbDocument) target:mySQLConnection selector:@selector(disconnect) object:nil];
+            }
+
+            if ([self _isVaultConnection]) {
+                if ([vaultLoginIdentifier length]) {
+                    [VaultOIDCHandler cancelActiveLoginWithIdentifier:vaultLoginIdentifier];
+                }
+                [VaultAuthManager clearCachedCredentialsForHost:[self vaultHost] ?: @""
+                                                           port:[self vaultPort] ?: @""
+                                                      oidcMount:[self vaultOIDCMount] ?: @""
+                                                       credPath:[self vaultCredentialsPath] ?: @""];
             }
 
             if (sshTunnel) {
@@ -2423,8 +2659,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         }
     }
 }
-
-
 /**
  * Called on the main thread once the MySQL connection is established on the background thread. Either the
  * connection was cancelled or it was successful.
@@ -2463,7 +2697,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     // If SSL was enabled (manually or implicitly via IAM), check it was established correctly
     BOOL requiresSSL = (useSSL || [self _isAWSIAMConnection]);
-    if (requiresSSL && ([self type] == SPTCPIPConnection || [self type] == SPSocketConnection || [self type] == SPAWSIAMConnection)) {
+    if (requiresSSL && ([self type] == SPTCPIPConnection || [self type] == SPSocketConnection || [self type] == SPAWSIAMConnection || [self type] == SPVaultConnection)) {
         if (![mySQLConnection isConnectedViaSSL]) {
             [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"SSL connection not established", @"SSL requested but not used title") message:NSLocalizedString(@"You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted.", @"SSL connection requested but not established error detail") callback:nil];
         }
@@ -2546,6 +2780,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     info.useAWSIAMAuth = self.useAWSIAMAuth;
     info.awsRegion = self.awsRegion ?: @"";
     info.awsProfile = self.awsProfile ?: @"";
+    info.vaultHost = self.vaultHost ?: @"";
+    info.vaultPort = self.vaultPort ?: @"";
+    info.vaultOIDCMount = self.vaultOIDCMount ?: @"";
+    info.vaultCredentialsPath = self.vaultCredentialsPath ?: @"";
     return info;
 }
 
@@ -2994,7 +3232,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     // If a 'name' field was edited, and is now of zero length, trigger a replacement
     // with a standard suggestion
-    if (((field == standardNameField) || (field == awsIAMNameField) || (field == socketNameField) || (field == sshNameField)) && [self selectedFavoriteNode]) {
+    if (((field == standardNameField) || (field == awsIAMNameField) || (field == socketNameField) || (field == sshNameField) || (field == vaultNameField)) && [self selectedFavoriteNode]) {
         if (![[self _stripInvalidCharactersFromString:[field stringValue]] length]) {
             [self controlTextDidEndEditing:notification];
         }
@@ -3002,7 +3240,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     [self _startEditingConnection];
 
-    if (favoriteNameFieldWasAutogenerated && (field != standardNameField && field != awsIAMNameField && field != socketNameField && field != sshNameField)) {
+    if (favoriteNameFieldWasAutogenerated && (field != standardNameField && field != awsIAMNameField && field != socketNameField && field != sshNameField && field != vaultNameField)) {
         [self setName:[self _generateNameForConnection]];
     }
 
@@ -3022,7 +3260,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     // Handle updates to the 'name' field of the selected favourite.  The favourite name should
     // have leading or trailing spaces removed at the end of editing, and if it's left empty,
     // should have a default name set.
-    if (((field == standardNameField) || (field == awsIAMNameField) || (field == socketNameField) || (field == sshNameField)) && [self selectedFavoriteNode]) {
+    if (((field == standardNameField) || (field == awsIAMNameField) || (field == socketNameField) || (field == sshNameField) || (field == vaultNameField)) && [self selectedFavoriteNode]) {
 
         NSString *favoriteName = [self _stripInvalidCharactersFromString:[field stringValue]];
 
@@ -3348,6 +3586,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         [standardColorField bind:@"selectedTag" toObject:self withKeyPath:@"colorIndex" options:nil];
         [awsIAMColorField setColorList:colorList];
         [awsIAMColorField bind:@"selectedTag" toObject:self withKeyPath:@"colorIndex" options:nil];
+        [vaultColorField setColorList:colorList];
+        [vaultColorField bind:@"selectedTag" toObject:self withKeyPath:@"colorIndex" options:nil];
         [socketColorField setColorList:colorList];
         [socketColorField   bind:@"selectedTag" toObject:self withKeyPath:@"colorIndex" options:nil];
 
@@ -3355,11 +3595,13 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         // Cannot bulk set items on macOS < 10.14, must removeAllItems and addItem https://github.com/Sequel-Ace/Sequel-Ace/issues/403
         [standardTimeZoneField.menu removeAllItems];
         [awsIAMTimeZoneField.menu removeAllItems];
+        [vaultTimeZoneField.menu removeAllItems];
         [sshTimeZoneField.menu removeAllItems];
         [socketTimeZoneField.menu removeAllItems];
         for (NSMenuItem *menuItem in [self generateTimeZoneMenuItems]) {
             [standardTimeZoneField.menu addItem:[menuItem copy]];
             [awsIAMTimeZoneField.menu addItem:[menuItem copy]];
+            [vaultTimeZoneField.menu addItem:[menuItem copy]];
             [sshTimeZoneField.menu addItem:[menuItem copy]];
             [socketTimeZoneField.menu addItem:[menuItem copy]];
         }

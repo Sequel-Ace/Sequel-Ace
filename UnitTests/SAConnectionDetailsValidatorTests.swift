@@ -78,6 +78,12 @@ final class SAConnectionDetailsValidatorTests: XCTestCase {
         XCTAssertNil(validate(type: .awsIAM, host: "db.example.com"))
     }
 
+    func testValidVaultConnectionPasses() {
+        // Vault-specific fields are checked by SPConnectionController; the
+        // shared validator still covers MySQL SSL file checks for Vault.
+        XCTAssertNil(validate(type: .vault, host: "db.example.com"))
+    }
+
     // MARK: - hostMissing
 
     func testTCPIPRequiresHost() {
@@ -93,6 +99,10 @@ final class SAConnectionDetailsValidatorTests: XCTestCase {
     func testAWSIAMRequiresHost() {
         let failure = validate(type: .awsIAM, host: "")
         XCTAssertEqual(failure?.kind, .hostMissing)
+    }
+
+    func testVaultHostIsCheckedByController() {
+        XCTAssertNil(validate(type: .vault, host: ""))
     }
 
     // MARK: - sshHostMissing
@@ -221,6 +231,17 @@ final class SAConnectionDetailsValidatorTests: XCTestCase {
         let failure = validate(
             type: .socket,
             host: "",
+            useSSL: true,
+            sslKeyFileLocationEnabled: true,
+            sslKeyFileLocation: missingFilePath
+        )
+        XCTAssertEqual(failure?.kind, .sslKeyFileMissing)
+    }
+
+    func testSSLChecksApplyToVaultWhenUseSSLOn() {
+        let failure = validate(
+            type: .vault,
+            host: "db.example.com",
             useSSL: true,
             sslKeyFileLocationEnabled: true,
             sslKeyFileLocation: missingFilePath

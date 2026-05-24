@@ -122,6 +122,60 @@ Socket
 For non-standard MySQL installs (e.g - MAMP) manually set the path. Read more about connecting via sockets to [MAMP, XAMPP and other MySQL server setups](mamp-xampp.html).
 
 
+#### Vault (OIDC) Authentication
+
+If your team manages database credentials through **HashiCorp Vault**, Sequel Ace can log in via Vault's OIDC browser flow and use the resulting ephemeral credentials to connect to MySQL. This avoids storing database passwords anywhere on your machine.
+
+##### Vault Prerequisites
+
+1. A HashiCorp Vault server reachable from your Mac (HTTPS, port 443 by default)
+2. Vault's [JWT/OIDC auth method](https://developer.hashicorp.com/vault/docs/auth/jwt) enabled and configured (the mount is usually `oidc`)
+3. A Vault role authorised to generate database credentials (e.g., `database/creds/my-role`)
+4. Port **8250** available on `localhost` during login (Vault's OIDC redirect URI; released immediately after)
+
+##### Vault Setup
+
+1. Select **Vault** as the connection type
+2. Enter your MySQL server address as the **Host** (e.g., `db.internal.example.com`)
+3. Enter the **Vault Host** — the hostname of your Vault server (e.g., `vault.example.com`)
+4. Set **Vault Port** if your Vault server is not on the default HTTPS port `443`
+5. Set **OIDC Mount** if the JWT/OIDC method is not mounted at the default `oidc` path
+6. Enter the **Credentials Path** — the Vault secret path that issues database credentials (e.g., `database/creds/readonly`)
+7. Enter your MySQL **Database** if you want it selected automatically after connecting
+8. Click **Connect** — your default browser opens the Vault OIDC login page
+
+##### How Vault Authentication Works
+
+When you connect, Sequel Ace:
+
+1. Checks for a valid cached Vault token — first an in-session token for this Vault server and OIDC mount, then the macOS Keychain item scoped to the Vault base URL plus OIDC mount
+2. If no valid token is found, opens a browser tab for OIDC login; after successful login the token is saved to the user's Keychain for that Vault server and OIDC mount
+3. Requests ephemeral database credentials from Vault at your configured credentials path
+4. Caches the credentials for their Vault lease duration (with a 30-second safety margin)
+5. Connects to MySQL using the ephemeral username and password
+
+Cached credentials are reused for subsequent connections within their lease window. When the lease expires, Sequel Ace automatically fetches fresh credentials (and re-runs the OIDC flow if the Vault token has also expired).
+
+Clicking **Cancel** during the OIDC browser wait immediately aborts the login attempt.
+
+##### Vault CLI Interop
+
+Sequel Ace does not read from or write to `~/.vault-token`. Vault CLI sessions and Sequel Ace sessions are independent. Tokens created by Sequel Ace are stored in the user's macOS Keychain and scoped to the configured Vault base URL plus OIDC mount.
+
+##### Credential Caching
+
+Sequel Ace caches the generated credentials in memory for the duration of the Vault lease. The cache is scoped to the combination of Vault server, OIDC mount, and credentials path, so different favorites pointing to different roles each maintain their own cache independently.
+
+##### Network Requirements
+
+Sequel Ace needs to reach:
+
+- Your **Vault server** (HTTPS, configured port) to exchange the OIDC code and request credentials
+- Your **MySQL server** (TCP, configured port) to establish the database connection
+- Port **8250** must be free on `localhost` while the OIDC browser flow is in progress; it is released immediately after the callback
+
+> **Note:** Vault connections always use the credentials provided by Vault; you cannot combine them with a static password or SSH tunnel.
+
 #### AWS IAM Authentication
 
 If you're connecting to an **Amazon RDS** or **Aurora** MySQL database, you can use **AWS IAM Authentication** instead of a password. This uses your AWS credentials to generate a short-lived authentication token, providing enhanced security and easier credential management.
