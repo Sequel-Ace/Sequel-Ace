@@ -114,6 +114,38 @@
 
 @end
 
+// Test connection that exercises the real `_silentReconnectAttempt` path,
+// driving the production `_disconnect` → `_connect` state transition that
+// `wasLostInBackground` capture must survive.
+@interface SPMySQLConnectionSilentRecoveryTestConnection : SPMySQLConnection
+@property (nonatomic) BOOL nextConnectResult;
+@end
+
+@implementation SPMySQLConnectionSilentRecoveryTestConnection
+
+- (BOOL)_connect
+{
+	[self _setStateForTesting:self.nextConnectResult ? SPMySQLConnected : SPMySQLDisconnected];
+	return self.nextConnectResult;
+}
+
+- (void)_disconnect
+{
+	// Mirrors production: _disconnect resets a LostInBackground state to Disconnected
+	// before the subsequent _connect tries to come back up. The fix must capture
+	// `wasLostInBackground` BEFORE this transition wipes the marker.
+	[self _setStateForTesting:SPMySQLDisconnected];
+}
+
+- (void)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
+                                              encoding:(NSString *)encodingName
+                      encodingUsesLatin1Transport:(BOOL)useLatin1Transport
+                                 timeZoneIdentifier:(NSString *)timeZoneIdentifier
+{
+}
+
+@end
+
 @interface SPMySQLConnectionCancelledReconnectTestConnection : SPMySQLConnection
 @end
 
@@ -697,6 +729,77 @@
 	XCTAssertEqual(delegate.restoredAfterLossCount, 1U,
 		@"Silent worker-thread recovery from Lost-in-Background must fire connectionRestoredAfterLoss: "
 		@"so app-layer observers can clear their backgroundConnectionLost flag.");
+}
+
+// Stronger regression for Codex round-3 review:
+// The hook-based test above only validates the OUTER boolean gate (it bypasses
+// `_silentReconnectAttempt` entirely via the test seam). The production path
+// mutates `state` through `_disconnect` → `_connect`, so this stronger test
+// drives the REAL `_silentReconnectAttempt` through a subclass that performs
+// the actual state transition. If a future refactor moves the `wasLostInBackground`
+// capture after `_silentReconnectAttempt`, this test catches it; the hook-based
+// test would not.
+- (void)testSilentReconnectFromLostInBackgroundFiresRestorationCallbackThroughRealStateTransitions
+{
+	SPMySQLConnectionSilentRecoveryTestConnection *connection = [[SPMySQLConnectionSilentRecoveryTestConnection alloc] init];
+	connection.nextConnectResult = YES;
+	SPMySQLConnectionLostTestDelegate *delegate = [[SPMySQLConnectionLostTestDelegate alloc] init];
+	[connection setDelegate:delegate];
+
+	// LostInBackground is what triggers the wasLostInBackground capture; the
+	// real `_silentReconnectAttempt` will then call `_disconnect` which RESETS
+	// state to Disconnected before `_connect` brings it back to Connected.
+	// The fix must capture wasLostInBackground BEFORE that reset wipes it.
+	[connection _setStateForTesting:SPMySQLConnectionLostInBackground];
+
+	XCTestExpectation *done = [self expectationWithDescription:@"real silent recovery"];
+	__block BOOL succeeded = NO;
+	dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+		succeeded = [connection _reconnectAllowingRetries:YES];
+		[done fulfill];
+	});
+	[self waitForExpectationsWithTimeout:5 handler:nil];
+
+	XCTAssertTrue(succeeded, @"silent reconnect through real state transition should succeed");
+	XCTAssertEqual([connection _stateForTesting], SPMySQLConnected,
+		@"Final state must be Connected after silent recovery through real _disconnect → _connect");
+	XCTAssertEqual(delegate.restoredAfterLossCount, 1U,
+		@"`wasLostInBackground` capture must survive the real `_disconnect` reset inside `_silentReconnectAttempt` "
+		@"and fire `connectionRestoredAfterLoss:` exactly once.");
+}
+
+// Documents the main-thread contract from #2419 PR docstring:
+// when the legacy 1-arg wrapper runs on the main thread AND the silent reconnect
+// attempt fails, the retry/decision branch is forced to default Disconnect rather
+// than blocking the main thread on a delegate sheet. This is the intentional
+// trade-off chosen so #1945's anti-blocking design is preserved. Callers that
+// need an interactive reconnect prompt MUST run on a worker thread.
+- (void)testMainThreadReconnectFailureDefaultsToDisconnectWithoutPrompt
+{
+	SPMySQLConnection *connection = [[SPMySQLConnection alloc] init];
+	SPMySQLConnectionLostTestDelegate *delegate = [[SPMySQLConnectionLostTestDelegate alloc] init];
+	[connection setDelegate:delegate];
+
+	// Silent attempt fails; main thread must NOT pop the async delegate sheet
+	// (would re-introduce the #1945 app-wide modal freeze) and instead falls
+	// through to default Disconnect via _delegateDecisionForLostConnection.
+	__block NSUInteger silentAttemptCount = 0;
+	[connection _setSilentReconnectAttemptForTesting:^BOOL{
+		silentAttemptCount++;
+		return NO;
+	}];
+
+	XCTAssertTrue([NSThread isMainThread]);
+	BOOL result = [connection _reconnectAllowingRetries:YES];
+
+	XCTAssertEqual(silentAttemptCount, 1U, @"silent attempt should run once");
+	XCTAssertFalse(result, @"failed reconnect should return NO");
+	XCTAssertEqual(delegate.asyncDecisionCount, 0U,
+		@"async connectionLost:completion: must NOT be invoked from main thread — that would block the UI");
+	XCTAssertEqual(delegate.syncDecisionCount, 0U,
+		@"deprecated sync connectionLost: must NOT be invoked from main thread either");
+	// userTriggeredDisconnect should be set as a side effect of the default Disconnect path.
+	// This documents the contract: silent fail on main → forced disconnect.
 }
 
 @end

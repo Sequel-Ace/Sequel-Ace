@@ -1050,17 +1050,40 @@ asm(".desc ___crashreporter_info__, 0x10");
  *
  * WARNING: This method may exit early returning NO if the current thread is cancelled!
  *          You MUST check the isCancelled flag before using the result!
+ *
+ * MAIN-THREAD CONTRACT (documented trade-off from #1945 / #2419):
+ *   This wrapper runs synchronously on whatever thread invokes it, INCLUDING the
+ *   main thread, so legacy callers (cancelCurrentQuery, checkConnectionIfNecessary,
+ *   _pingConnectionUsingLoopDelay, Max Packet Size renegotiation) keep their
+ *   `_unlockConnection → reconnect → _lockConnection` sequence intact.
+ *
+ *   However, the broader #1945 design forbids blocking the main thread to ask the
+ *   delegate for a Reconnect/Disconnect decision (that would re-introduce the
+ *   app-wide modal freeze this PR removed). So when this wrapper runs on the
+ *   main thread AND the initial silent reconnect attempt fails, the retry/decision
+ *   branch routes through `_delegateDecisionForLostConnection`, which on the main
+ *   thread is hard-coded to default `SPMySQLConnectionLostDisconnect` (see
+ *   `Delegate & Proxy.m`) — i.e. a failed main-thread reconnect is forced to a
+ *   disconnect rather than prompting the user via a sheet.
+ *
+ *   This is an intentional trade-off:
+ *     - Silent reconnect SUCCESS on main thread → normal recovery, no prompt needed.
+ *     - Silent reconnect FAILURE on main thread → forced disconnect (no prompt).
+ *     - Silent reconnect FAILURE on worker thread → async delegate sheet shown
+ *       on the owning tab's window via `connectionLost:completion:`.
+ *
+ *   Callers that need an interactive reconnect prompt MUST run on a worker
+ *   thread. The application-layer gate `SPDatabaseDocument
+ *   checkForBackgroundConnectionLossThenRun:` already dispatches reconnect work
+ *   to a global queue before calling the public `-reconnect`, so explicit
+ *   user-intent paths get the full delegate experience.
+ *
+ *   Covered by `testLegacyOneArgReconnectIsSynchronousOnMainThread`,
+ *   `testMainThreadReconnectFailureDefaultsToDisconnectWithoutPrompt`, and
+ *   `testSilentReconnectFromLostInBackgroundFiresRestorationCallbackThroughRealStateTransitions`.
  */
 - (BOOL)_reconnectAllowingRetries:(BOOL)canRetry
 {
-	// Default to synchronous semantics (dispatchOnMainThread:NO) so existing
-	// in-tree callers — cancelCurrentQuery, _pingConnectionUsingLoopDelay,
-	// checkConnectionIfNecessary (worker path), Max Packet Size renegotiation —
-	// keep getting a reconnect that actually completes before returning. They
-	// follow the pattern `_unlockConnection → reconnect → _lockConnection` and
-	// depend on the reset being done before the next line runs. The two-argument
-	// form remains available for callers that explicitly want main-thread
-	// fast-return semantics (none exist in-tree today).
 	return [self _reconnectAllowingRetries:canRetry dispatchOnMainThread:NO];
 }
 
