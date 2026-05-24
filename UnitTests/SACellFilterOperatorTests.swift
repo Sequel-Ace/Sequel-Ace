@@ -77,7 +77,7 @@ final class SACellFilterOperatorTests: XCTestCase {
             "is after or equal to",
             "is before or equal to",
             "IS NULL",
-            "IS NOT NULL",
+            "IS NOT NULL"
         ])
     }
 
