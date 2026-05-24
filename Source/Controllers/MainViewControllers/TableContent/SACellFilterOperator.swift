@@ -8,12 +8,32 @@
 
 import Foundation
 
+/// One operator advertised by the cell-filter context menu.
+///
+/// The serialized name must match `ContentFilters.plist` exactly because the
+/// descriptor is later restored through `SPRuleFilterController`.
 @objcMembers public final class SACellFilterOperator: NSObject {
+    /// Menu title shown in the "Filter by Selected Value" submenu.
     public let menuTitle: String
+
+    /// Operator name stored in the serialized rule-filter dictionary.
     public let serializedName: String
+
+    /// Number of argument values this operator expects.
+    ///
+    /// `IS NULL` and `IS NOT NULL` use zero; value-bearing operators use one.
     public let valueCount: Int
+
+    /// Type groupings for which this operator is valid.
     public let typeGroupings: Set<String>
 
+    /// Creates an operator catalog entry.
+    ///
+    /// - Parameters:
+    ///   - menuTitle: Visible menu title.
+    ///   - serializedName: Rule-filter operator name.
+    ///   - valueCount: Number of argument values the operator requires.
+    ///   - typeGroupings: Supported Sequel Ace column type groupings.
     public init(menuTitle: String, serializedName: String, valueCount: Int, typeGroupings: Set<String>) {
         self.menuTitle = menuTitle
         self.serializedName = serializedName
@@ -22,6 +42,13 @@ import Foundation
         super.init()
     }
 
+    /// Returns all operators supported for a type grouping.
+    ///
+    /// Unknown, nil, or empty type groupings intentionally return no operators
+    /// so the context menu does not offer a filter it cannot restore.
+    ///
+    /// - Parameter typeGrouping: Type grouping from the table-content column definition.
+    /// - Returns: Catalog entries valid for that grouping.
     @objc(operatorsForTypeGrouping:)
     public static func operators(for typeGrouping: String?) -> [SACellFilterOperator] {
         guard let typeGrouping, typeGrouping.isNotEmpty else {
@@ -31,6 +58,15 @@ import Foundation
         return catalog.filter { $0.typeGroupings.contains(typeGrouping) }
     }
 
+    /// Returns operators appropriate for the selected cell value.
+    ///
+    /// NULL cells can only use zero-argument NULL operators. Non-NULL cells use
+    /// value-bearing operators so the selected value can become the rule argument.
+    ///
+    /// - Parameters:
+    ///   - typeGrouping: Type grouping from the table-content column definition.
+    ///   - cellIsNull: Whether the selected raw cell value is SQL NULL.
+    /// - Returns: Operators suitable for the current value state.
     @objc(operatorsForTypeGrouping:cellIsNull:)
     public static func operators(for typeGrouping: String?, cellIsNull: Bool) -> [SACellFilterOperator] {
         let operators = operators(for: typeGrouping)
@@ -41,6 +77,13 @@ import Foundation
         return operators.filter { $0.valueCount > 0 }
     }
 
+    /// Enumerates every advertised `(typeGrouping, operator)` pair for tests.
+    ///
+    /// Round-trip tests use this to verify each advertised operator exists in
+    /// `ContentFilters.plist` and survives restore/serialize through the real
+    /// rule-filter controller.
+    ///
+    /// - Returns: All supported type/operator combinations.
     public static func allAdvertisedPairs() -> [SACellFilterOperatorPair] {
         var pairs: [SACellFilterOperatorPair] = []
         for typeGrouping in supportedTypeGroupings {
@@ -96,7 +139,11 @@ import Foundation
     ] + nullOperators
 }
 
+/// Test-only pairing of a type grouping with one advertised operator.
 public struct SACellFilterOperatorPair {
+    /// Type grouping used to select a rule-filter operator list.
     public let typeGrouping: String
+
+    /// Operator advertised for the type grouping.
     public let op: SACellFilterOperator
 }
