@@ -10,12 +10,14 @@ import XCTest
 
 final class SACellFilterOperatorTests: XCTestCase {
 
+    /// Verifies missing, empty, and unknown type groupings return no filter operators.
     func testUnknownAndMissingTypeGroupingReturnNoOperators() {
         XCTAssertTrue(SACellFilterOperator.operators(for: nil).isEmpty)
         XCTAssertTrue(SACellFilterOperator.operators(for: "unknown_type_group").isEmpty)
         XCTAssertTrue(SACellFilterOperator.operators(for: "").isEmpty)
     }
 
+    /// Verifies numeric type groupings expose the exact serialized operator names.
     func testNumberFamilyOperatorsUseExactSerializedNames() {
         let expected = ["=", "≠", ">", "<", "≥", "≤", "IS NULL", "IS NOT NULL"]
 
@@ -24,6 +26,7 @@ final class SACellFilterOperatorTests: XCTestCase {
         XCTAssertEqual(serializedNames(for: "float"), expected)
     }
 
+    /// Verifies date type groupings expose the exact date comparison labels.
     func testDateOperatorsUseExactSerializedNames() {
         XCTAssertEqual(
             serializedNames(for: "date"),
@@ -31,6 +34,7 @@ final class SACellFilterOperatorTests: XCTestCase {
         )
     }
 
+    /// Verifies string-like type groupings expose equality, pattern, contains, and NULL operators.
     func testStringFamilyOperatorsUseExactSerializedNames() {
         let expected = ["=", "≠", "LIKE", "NOT LIKE", "contains", "does not contain", "IS NULL", "IS NOT NULL"]
 
@@ -39,20 +43,24 @@ final class SACellFilterOperatorTests: XCTestCase {
         XCTAssertEqual(serializedNames(for: "enum"), expected)
     }
 
+    /// Verifies binary and blob columns only advertise NULL-safe operators.
     func testBinaryAndBlobOnlyAdvertiseNullOperators() {
         XCTAssertEqual(serializedNames(for: "binary"), ["IS NULL", "IS NOT NULL"])
         XCTAssertEqual(serializedNames(for: "blobdata"), ["IS NULL", "IS NOT NULL"])
     }
 
+    /// Verifies geometry columns only advertise NULL-safe operators.
     func testGeometryOnlyAdvertisesNullOperators() {
         XCTAssertEqual(serializedNames(for: "geometry"), ["IS NULL", "IS NOT NULL"])
     }
 
+    /// Verifies NULL cells suppress value-bearing operators for any type grouping.
     func testNullCellOnlyShowsNullOperators() {
         XCTAssertEqual(SACellFilterOperator.operators(for: "string", cellIsNull: true).map(\.serializedName), ["IS NULL", "IS NOT NULL"])
         XCTAssertEqual(SACellFilterOperator.operators(for: "integer", cellIsNull: true).map(\.serializedName), ["IS NULL", "IS NOT NULL"])
     }
 
+    /// Verifies non-NULL cells hide NULL-only operators while keeping value comparisons.
     func testNonNullCellHidesNullOnlyOperators() {
         XCTAssertEqual(SACellFilterOperator.operators(for: "geometry", cellIsNull: false).map(\.serializedName), [])
         XCTAssertEqual(SACellFilterOperator.operators(for: "binary", cellIsNull: false).map(\.serializedName), [])
@@ -67,6 +75,7 @@ final class SACellFilterOperatorTests: XCTestCase {
         ])
     }
 
+    /// Verifies advertised operator pairs cover only concrete catalog entries.
     func testAdvertisedPairsCoverEveryCatalogEntry() {
         let pairs = SACellFilterOperator.allAdvertisedPairs()
         XCTAssertEqual(pairs.count, 62)

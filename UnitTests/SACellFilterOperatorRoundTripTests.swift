@@ -10,6 +10,7 @@ import XCTest
 
 final class SACellFilterOperatorRoundTripTests: XCTestCase {
 
+    /// Verifies every advertised operator has a matching ContentFilters.plist definition.
     func testAllAdvertisedOperatorsExistInContentFiltersPlist() throws {
         let contentFilters = try loadContentFilters()
 

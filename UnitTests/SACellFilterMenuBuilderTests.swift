@@ -10,6 +10,7 @@ import XCTest
 
 final class SACellFilterMenuBuilderTests: XCTestCase {
 
+    /// Verifies unknown type groupings do not produce a cell-filter menu.
     func testUnknownTypeGroupingReturnsNoMenu() {
         let menu = SACellFilterMenuBuilder.filterMenu(
             column: ["name": "payload", "typegrouping": "unknown_type_group"],
@@ -20,6 +21,7 @@ final class SACellFilterMenuBuilderTests: XCTestCase {
         XCTAssertNil(menu)
     }
 
+    /// Verifies NULL cell values only expose NULL and NOT NULL menu items.
     func testNullValueOnlyShowsNullOperators() throws {
         let menu = try XCTUnwrap(SACellFilterMenuBuilder.filterMenu(
             column: ["name": "payload", "typegrouping": "string"],
@@ -30,6 +32,7 @@ final class SACellFilterMenuBuilderTests: XCTestCase {
         XCTAssertEqual(menu.items.map(\.title), ["IS NULL", "IS NOT NULL"])
     }
 
+    /// Verifies non-empty string cells expose the advertised string operators.
     func testStringValueMenuUsesAdvertisedOperators() throws {
         let menu = try XCTUnwrap(SACellFilterMenuBuilder.filterMenu(
             column: ["name": "payload", "typegrouping": "string"],
@@ -40,6 +43,7 @@ final class SACellFilterMenuBuilderTests: XCTestCase {
         XCTAssertEqual(menu.items.map(\.title), ["=", "≠", "LIKE", "NOT LIKE", "contains", "does not contain"])
     }
 
+    /// Verifies empty string cells are limited to NULL operators to avoid placeholder filters.
     func testEmptyStringValueOnlyShowsNullOperators() throws {
         // An empty-string cell value cannot be persisted as a value-bearing rule because
         // SPRuleFilterController's starter detection treats filterValues=[""] as a
@@ -54,6 +58,7 @@ final class SACellFilterMenuBuilderTests: XCTestCase {
         XCTAssertEqual(menu.items.map(\.title), ["IS NULL", "IS NOT NULL"])
     }
 
+    /// Verifies empty numeric cells are also limited to NULL operators.
     func testEmptyStringValueOnNumberColumnOnlyShowsNullOperators() throws {
         // Same reasoning as the string case — applies across all type groupings.
         let menu = try XCTUnwrap(SACellFilterMenuBuilder.filterMenu(
@@ -65,6 +70,7 @@ final class SACellFilterMenuBuilderTests: XCTestCase {
         XCTAssertEqual(menu.items.map(\.title), ["IS NULL", "IS NOT NULL"])
     }
 
+    /// Verifies non-NULL binary and blob values do not produce unsupported value menus.
     func testBinaryAndBlobNonNullValuesReturnNoMenu() {
         XCTAssertNil(SACellFilterMenuBuilder.filterMenu(
             column: ["name": "payload", "typegrouping": "binary"],
@@ -78,6 +84,7 @@ final class SACellFilterMenuBuilderTests: XCTestCase {
         ))
     }
 
+    /// Verifies NULL binary values still expose NULL-safe menu items.
     func testBinaryNullValueOnlyShowsNullOperators() throws {
         let menu = try XCTUnwrap(SACellFilterMenuBuilder.filterMenu(
             column: ["name": "payload", "typegrouping": "binary"],
@@ -88,6 +95,7 @@ final class SACellFilterMenuBuilderTests: XCTestCase {
         XCTAssertEqual(menu.items.map(\.title), ["IS NULL", "IS NOT NULL"])
     }
 
+    /// Verifies non-NULL descriptors carry the selected column, operator, and value.
     func testDescriptorsCarryFilterPayload() throws {
         let descriptors = SACellFilterMenuBuilder.menuItemDescriptors(
             columnName: "payload",
@@ -104,6 +112,7 @@ final class SACellFilterMenuBuilderTests: XCTestCase {
         XCTAssertFalse(first.isNull)
     }
 
+    /// Verifies NULL descriptors do not carry the selected display value.
     func testNullDescriptorsDoNotCarrySelectedValue() throws {
         let descriptors = SACellFilterMenuBuilder.menuItemDescriptors(
             columnName: "payload",
@@ -116,6 +125,7 @@ final class SACellFilterMenuBuilderTests: XCTestCase {
         XCTAssertEqual(descriptors.map(\.isNull), [true, true])
     }
 
+    /// Verifies empty string descriptors serialize as zero-argument NULL payloads.
     func testEmptyStringDescriptorsAreMarkedAsNullPayload() throws {
         // Empty-string cells must produce zero-argument NULL descriptors so the
         // downstream applyCellFilter path serializes filterValues:[] (not [""]).
@@ -131,6 +141,7 @@ final class SACellFilterMenuBuilderTests: XCTestCase {
         XCTAssertEqual(descriptors.map(\.isNull), [true, true])
     }
 
+    /// Verifies nil non-NULL values route to NULL descriptors instead of empty value rules.
     func testNilNonNullValueProducesNullDescriptorsNotEmptyValueRules() throws {
         // SPCopyTable.displayStringForRow may return nil for stale / out-of-range
         // cells (see SPCopyTable.h:112-115). The menu builder must NOT fall through

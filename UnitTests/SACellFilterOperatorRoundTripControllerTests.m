@@ -24,6 +24,9 @@
 
 @implementation SACellFilterOperatorRoundTripControllerTests
 
+/**
+ * Verifies every advertised operator round-trips through SPRuleFilterController without changing its serialized leaf.
+ */
 - (void)testAllAdvertisedOperatorsRestoreAndSerializeThroughRuleFilterController
 {
 	NSArray<NSString *> *typeGroupings = @[
@@ -95,14 +98,13 @@
 	return values;
 }
 
-// Regression for the SerIsUntouchedStarterRule zero-value guard.
-// Before the fix, an existing zero-argument rule such as IS NULL was
-// classified as an untouched starter and replaced on the next
-// -appendFilterForColumn:value:isNull: call (cell drop / drag/drop), silently
-// dropping the user's NULL filter. After the fix the existing IS NULL must be
-// preserved as one branch of an AND-group when a new rule is appended.
+/**
+ * Verifies appending a filter preserves an existing IS NULL rule as an AND-group child.
+ */
 - (void)testExistingIsNullRuleIsPreservedWhenAppendingNewFilter
 {
+	// Regression for the SerIsUntouchedStarterRule zero-value guard: before the
+	// fix, this append path replaced the user's existing zero-argument NULL rule.
 	NSString *columnName = @"deleted_at";
 	id controller = [self ruleFilterControllerForTypeGrouping:@"date" columnName:columnName];
 
