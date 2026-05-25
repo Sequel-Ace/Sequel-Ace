@@ -52,6 +52,14 @@ NSString * const SPMySQLConnectionLostInBackgroundNotification = @"SPMySQLConnec
 
 static void *SPMySQLReconnectQueueKey = &SPMySQLReconnectQueueKey;
 
+// Per-thread recursion depth for `_reconnectAllowingRetries:dispatchOnMainThread:`.
+// The method releases `reconnectingThread` before recursing into itself for a
+// delegate-driven retry, so an instance-wide counter could misclassify an
+// unrelated overlapping recovery as an inner frame. A thread-local counter
+// only counts true self-recursion, so each thread's outermost call is
+// independently identified and emits `connectionRestoredAfterLoss:` once.
+static __thread NSUInteger SPMySQLReconnectFrameDepthTLS = 0;
+
 static BOOL SPHostIsLoopbackIPv4Address(NSString *normalizedHost)
 {
 	struct in_addr ipv4Address;
@@ -1108,6 +1116,7 @@ asm(".desc ___crashreporter_info__, 0x10");
 	BOOL reconnectSucceeded = NO;
 	BOOL delegateReconnectDecisionRequested = NO;
 	BOOL wasLostInBackground = NO;
+	BOOL isOuterReconnectFrame = NO;
 
 	@autoreleasepool {
 		// Check whether a reconnection attempt is already being made - if so, wait
@@ -1176,52 +1185,72 @@ asm(".desc ___crashreporter_info__, 0x10");
 		// the lost-state flag stays set and the next user action shows an
 		// unnecessary reconnect/disconnect sheet.
 		wasLostInBackground = (state == SPMySQLConnectionLostInBackground);
-		reconnectSucceeded = [self _silentReconnectAttempt];
 
-		// If the connection failed and the connection is permitted to retry,
-		// then retry the reconnection.
-		if (!reconnectSucceeded && canRetry && ![[NSThread currentThread] isCancelled]) {
+		// Thread-local recursion depth ensures the restoration callback fires
+		// exactly once per overall recovery on a given thread, even when a
+		// delegate-driven retry recurses into this method. Two unrelated
+		// recoveries on different threads each see depth 1 and stay independent
+		// because TLS storage is per-thread.
+		SPMySQLReconnectFrameDepthTLS++;
+		isOuterReconnectFrame = (SPMySQLReconnectFrameDepthTLS == 1);
 
-			// Default to attempting another reconnect
-			SPMySQLConnectionLostDecision connectionLostDecision = SPMySQLConnectionLostReconnect;
+		// `@try/@finally` guarantees the TLS depth decrement and
+		// `reconnectingThread` release run on every exit path including any
+		// Objective-C exception propagating out of `_silentReconnectAttempt`
+		// or the delegate decision callback. The restoration callback itself
+		// is fired AFTER the finally block so the cleanup runs first.
+		@try {
+			reconnectSucceeded = [self _silentReconnectAttempt];
 
-			// If the delegate supports the decision process, ask it how to proceed
-			if (delegateSupportsConnectionLostAsync || delegateSupportsConnectionLost) {
-				connectionLostDecision = [self _delegateDecisionForLostConnection];
-				delegateReconnectDecisionRequested = (connectionLostDecision == SPMySQLConnectionLostReconnect);
-			}
-				// Otherwise default to reconnect, but only a set number of times to prevent a runaway loop
-			else {
-				if (reconnectionRetryAttempts < 5) {
-					connectionLostDecision = SPMySQLConnectionLostReconnect;
-				} else {
-					connectionLostDecision = SPMySQLConnectionLostDisconnect;
+			// If the connection failed and the connection is permitted to retry,
+			// then retry the reconnection.
+			if (!reconnectSucceeded && canRetry && ![[NSThread currentThread] isCancelled]) {
+
+				// Default to attempting another reconnect
+				SPMySQLConnectionLostDecision connectionLostDecision = SPMySQLConnectionLostReconnect;
+
+				// If the delegate supports the decision process, ask it how to proceed
+				if (delegateSupportsConnectionLostAsync || delegateSupportsConnectionLost) {
+					connectionLostDecision = [self _delegateDecisionForLostConnection];
+					delegateReconnectDecisionRequested = (connectionLostDecision == SPMySQLConnectionLostReconnect);
 				}
-				reconnectionRetryAttempts++;
-			}
-
-			switch (connectionLostDecision) {
-				case SPMySQLConnectionLostDisconnect:
-					[self _updateLastErrorMessage:NSLocalizedString(@"User triggered disconnection", @"User triggered disconnection")];
-					userTriggeredDisconnect = YES;
-					break;
-
-					// By default attempt a reconnect
-				default:
-					@synchronized (self) {
-						if (reconnectingThread && pthread_equal(reconnectingThread, pthread_self())) {
-							reconnectingThread = NULL;
-						}
+					// Otherwise default to reconnect, but only a set number of times to prevent a runaway loop
+				else {
+					if (reconnectionRetryAttempts < 5) {
+						connectionLostDecision = SPMySQLConnectionLostReconnect;
+					} else {
+						connectionLostDecision = SPMySQLConnectionLostDisconnect;
 					}
-                    SPLog(@"_reconnectAllowingRetries By default attempt a reconnect");
-					reconnectSucceeded = [self _reconnectAllowingRetries:YES dispatchOnMainThread:dispatchOnMainThread];
+					reconnectionRetryAttempts++;
+				}
+
+				switch (connectionLostDecision) {
+					case SPMySQLConnectionLostDisconnect:
+						[self _updateLastErrorMessage:NSLocalizedString(@"User triggered disconnection", @"User triggered disconnection")];
+						userTriggeredDisconnect = YES;
+						break;
+
+						// By default attempt a reconnect
+					default:
+						@synchronized (self) {
+							if (reconnectingThread && pthread_equal(reconnectingThread, pthread_self())) {
+								reconnectingThread = NULL;
+							}
+						}
+	                    SPLog(@"_reconnectAllowingRetries By default attempt a reconnect");
+						reconnectSucceeded = [self _reconnectAllowingRetries:YES dispatchOnMainThread:dispatchOnMainThread];
+				}
 			}
 		}
-	}
-
-	@synchronized (self) {
-		if (reconnectingThread && pthread_equal(reconnectingThread, pthread_self())) {
-			reconnectingThread = NULL;
+		@finally {
+			@synchronized (self) {
+				if (reconnectingThread && pthread_equal(reconnectingThread, pthread_self())) {
+					reconnectingThread = NULL;
+				}
+			}
+			if (SPMySQLReconnectFrameDepthTLS > 0) {
+				SPMySQLReconnectFrameDepthTLS--;
+			}
 		}
 	}
 	// Fire the restoration callback when EITHER:
@@ -1231,7 +1260,10 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// Case (b) is needed so observers like SPDatabaseDocument can clear their
 	// own backgroundConnectionLost flag instead of waiting for a delegate path
 	// that silent recovery never triggers.
-	if (reconnectSucceeded
+	// Restricted to the outermost frame so a recursive delegate-driven retry
+	// emits the callback once for the whole recovery rather than once per depth.
+	if (isOuterReconnectFrame
+	    && reconnectSucceeded
 	    && (delegateReconnectDecisionRequested || wasLostInBackground)
 	    && delegateSupportsConnectionRestoredAfterLoss) {
 		[delegate connectionRestoredAfterLoss:self];

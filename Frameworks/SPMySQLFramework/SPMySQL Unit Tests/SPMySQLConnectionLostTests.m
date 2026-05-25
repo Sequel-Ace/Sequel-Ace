@@ -311,7 +311,7 @@
 	XCTAssertEqual(reconnectCount, 1U);
 }
 
-// Regression for Codex review on PR #2419:
+// Regression for PR #2419 review:
 // "This branch now returns immediately on the main thread after queueing reconnect
 //  work, but existing synchronous callers (not updated in this commit) still depend
 //  on -_reconnectAllowingRetries: completing before they continue."
@@ -696,7 +696,7 @@
 	XCTAssertFalse([connection _proxyStateChangeNotificationsIgnoredForTesting]);
 }
 
-// Regression for Codex review on PR #2419 P2:
+// Regression for PR #2419 review (P2):
 // "Restoration callbacks are gated on `delegateReconnectDecisionRequested`, so
 //  successful silent reconnects (worker-thread recovery from
 //  SPMySQLConnectionLostInBackground) do not emit `connectionRestoredAfterLoss:`."
@@ -731,7 +731,7 @@
 		@"so app-layer observers can clear their backgroundConnectionLost flag.");
 }
 
-// Stronger regression for Codex round-3 review:
+// Stronger regression for PR #2419 round-3 review:
 // The hook-based test above only validates the OUTER boolean gate (it bypasses
 // `_silentReconnectAttempt` entirely via the test seam). The production path
 // mutates `state` through `_disconnect` → `_connect`, so this stronger test
