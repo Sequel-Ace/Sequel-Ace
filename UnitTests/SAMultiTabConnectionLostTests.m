@@ -14,6 +14,14 @@
 @property (nonatomic) BOOL reconnectFailurePresentationResult;
 @property (nonatomic) BOOL lastAllowCancel;
 @property (nonatomic) BOOL reconnectResult;
+@property (nonatomic) BOOL userChoseDisconnect;
+// Models SPDatabaseDocument's real behavior: its `connectionLost:completion:`
+// path calls `closeAndDisconnect` itself on a user Disconnect click before
+// the worker-thread `-reconnect` returns. Setting this to YES makes the fake
+// handler increment `closeAndDisconnectCount` from inside
+// `reconnectConnectionForGate`, so tests can assert the gate does NOT close
+// a second time on the same user choice.
+@property (nonatomic) BOOL handlerClosesInsideReconnect;
 @property (nonatomic) NSUInteger reconnectCount;
 @property (nonatomic) NSUInteger reconnectFailurePresentationCount;
 @property (nonatomic) NSUInteger closeAndDisconnectCount;
@@ -57,6 +65,11 @@
 - (BOOL)reconnectConnectionForGate
 {
 	self.reconnectCount++;
+	if (self.handlerClosesInsideReconnect) {
+		// Mirror SPDatabaseDocument's connectionLost:completion: closing the
+		// document itself on a user-clicked Disconnect before -reconnect returns.
+		[self closeAndDisconnectForGate];
+	}
 	[self.reconnectExpectation fulfill];
 	if ([self.queuedReconnectResults count]) {
 		BOOL nextResult = [[self.queuedReconnectResults firstObject] boolValue];
@@ -64,6 +77,11 @@
 		return nextResult;
 	}
 	return self.reconnectResult;
+}
+
+- (BOOL)connectionGateUserChoseDisconnect
+{
+	return self.userChoseDisconnect;
 }
 
 - (BOOL)presentReconnectFailureAllowingRetryForGate:(void (^)(BOOL retry))completion
@@ -339,6 +357,45 @@
 	XCTAssertEqual(actionCount, 0U);
 	XCTAssertEqual(handler.closeAndDisconnectCount, 0U);
 	XCTAssertTrue(handler.backgroundConnectionLost);
+}
+
+// When the underlying `-reconnect` already ran the framework's async lost-
+// connection sheet and the user picked Disconnect, SPDatabaseDocument's
+// `connectionLost:completion:` already calls `-closeAndDisconnect` for that
+// click. `-reconnect` then returns NO and `connectionGateUserChoseDisconnect`
+// reports YES via the sheet-level flag. The gate MUST:
+//   (1) skip the second Retry/Disconnect failure sheet, AND
+//   (2) NOT call `closeAndDisconnectForGate` a second time —
+// otherwise `-closeAndDisconnect` runs twice (non-idempotent: window close is
+// re-scheduled, query history is re-persisted, the `wasConnected` branch
+// flips, observers are removed again).
+- (void)testReconnectFailureWithUserChosenDisconnectDoesNotDoubleClose
+{
+	__block NSUInteger actionCount = 0;
+	SATestConnectionLostGateHandler *handler = [[SATestConnectionLostGateHandler alloc] init];
+	handler.backgroundConnectionLost = YES;
+	handler.reconnectResult = NO;                 // reconnect fails
+	handler.userChoseDisconnect = YES;            // user picked Disconnect inside the framework sheet
+	handler.handlerClosesInsideReconnect = YES;   // mirrors SPDatabaseDocument's first close
+	handler.reconnectExpectation = [self expectationWithDescription:@"reconnect attempted"];
+
+	[SAMultiTabConnectionLostGate runAction:^{
+		actionCount++;
+	} forHandler:handler];
+	handler.capturedCompletion(SPMySQLConnectionLostReconnect, NO);
+	[self waitForExpectationsWithTimeout:1 handler:nil];
+
+	// Wait one main-queue turn so the failure-path branch can run on main.
+	XCTestExpectation *mainTurn = [self expectationWithDescription:@"main turn"];
+	dispatch_async(dispatch_get_main_queue(), ^{ [mainTurn fulfill]; });
+	[self waitForExpectations:@[mainTurn] timeout:1];
+
+	XCTAssertEqual(handler.reconnectCount, 1U, @"only one reconnect attempt should have run");
+	XCTAssertEqual(handler.reconnectFailurePresentationCount, 0U,
+		@"Retry/Disconnect failure sheet must NOT appear once user already chose Disconnect");
+	XCTAssertEqual(handler.closeAndDisconnectCount, 1U,
+		@"close must run exactly once (from SPDatabaseDocument's own delegate path), not twice");
+	XCTAssertEqual(actionCount, 0U, @"original action must not run");
 }
 
 @end

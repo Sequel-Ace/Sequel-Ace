@@ -41,6 +41,20 @@
 				return;
 			}
 
+			// Honor a Disconnect already chosen by the user inside the framework's
+			// async lost-connection sheet (which the underlying `-reconnect` ran
+			// on the worker thread). The handler's own delegate path
+			// (`-connectionLost:completion:`) already closes the document on the
+			// user's Disconnect click, so do NOT call `closeAndDisconnectForGate`
+			// here — that would invoke `-closeAndDisconnect` a second time, which
+			// is non-idempotent (window close is rescheduled, query history is
+			// re-persisted, and the `wasConnected` branch flips). Showing another
+			// Retry/Disconnect prompt would also contradict the user's choice
+			// and even let them "retry" past it.
+			if ([handler connectionGateUserChoseDisconnect]) {
+				return;
+			}
+
 			BOOL failureShown = [handler presentReconnectFailureAllowingRetryForGate:^(BOOL retry) {
 				if (retry) {
 					[self _attemptReconnectForAction:action handler:handler];

@@ -110,6 +110,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @property (nonatomic, weak, readwrite) SPWindowController *parentWindowController;
 @property (assign) BOOL appIsTerminating;
 @property (atomic, assign) BOOL backgroundConnectionLost;
+// YES iff the user explicitly clicked the Disconnect button in the most
+// recently shown framework lost-connection sheet. Set from main thread inside
+// the sheet completion handler, reset from the multi-tab gate worker thread
+// at the start of every fresh `reconnectConnectionForGate` attempt. Atomic
+// so both read and write are torn-free; the narrow scope is "since the last
+// reconnect attempt started, did the user pick Disconnect in the framework's
+// sheet that just appeared?".
+@property (atomic, assign) BOOL userExplicitlyChoseDisconnectInLostSheet;
 
 @property (readwrite, nonatomic, strong) NSToolbar *mainToolbar;
 
@@ -6123,7 +6131,22 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (BOOL)reconnectConnectionForGate
 {
+    // Reset the sheet-level signal so it can only become YES via this attempt's
+    // own sheet completion. Without this reset, a leftover YES from a previous
+    // recovery would let the gate skip the failure sheet on an unrelated retry.
+    self.userExplicitlyChoseDisconnectInLostSheet = NO;
     return [mySQLConnection reconnect];
+}
+
+- (BOOL)connectionGateUserChoseDisconnect
+{
+    // Read the sheet-level signal that is only set when the user actually
+    // clicked the Disconnect button in the framework's lost-connection sheet.
+    // Non-user defaults (timeout, no-window fallback, main-thread suppression,
+    // retry exhaustion) all map to SPMySQLConnectionLostDisconnect inside the
+    // framework but never touch this flag, so the gate now distinguishes a
+    // real user choice from those silent defaults.
+    return self.userExplicitlyChoseDisconnectInLostSheet;
 }
 
 - (BOOL)presentReconnectFailureAllowingRetryForGate:(void (^)(BOOL retry))completion
@@ -6171,6 +6194,16 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         SPMySQLConnectionLostDecision decision = (returnCode == NSAlertFirstButtonReturn)
             ? SPMySQLConnectionLostReconnect
             : SPMySQLConnectionLostDisconnect;
+
+        // Record an explicit user-click only when this sheet's Disconnect button
+        // is the actual return code. Non-user defaults that map to Disconnect
+        // (sheet could not be shown, async timeout, main-thread suppression,
+        // retry exhaustion) never reach this completion block and therefore
+        // never set the flag, so the gate's "did the user just click Disconnect"
+        // check stays accurate.
+        if (decision == SPMySQLConnectionLostDisconnect) {
+            self.userExplicitlyChoseDisconnectInLostSheet = YES;
+        }
 
         if (completion) completion(decision, NO);
     }];
