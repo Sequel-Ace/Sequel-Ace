@@ -2470,6 +2470,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                     ([connectionController sshUser] && [[connectionController sshUser] length]) ? [connectionController sshUser] : @"anonymous",
                     [connectionController sshHost] ? [connectionController sshHost] : @"",
                     ([[connectionController sshPort] length]) ? [connectionController sshPort] : @"22"];
+        case SPVaultConnection:
+            return [NSString stringWithFormat:@"%@@%@%@&Vault:%@:%@:%@/%@",
+                    ([connectionController user] && [[connectionController user] length]) ? [connectionController user] : @"anonymous",
+                    [connectionController host] ? [connectionController host] : @"",
+                    port,
+                    [connectionController vaultHost] ? [connectionController vaultHost] : @"",
+                    ([[connectionController vaultPort] length]) ? [connectionController vaultPort] : @"443",
+                    [connectionController vaultOIDCMount] ? [connectionController vaultOIDCMount] : @"",
+                    [connectionController vaultCredentialsPath] ? [connectionController vaultCredentialsPath] : @""];
     }
 
     return @"_";
@@ -3788,6 +3797,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 if ([connectionController sshKeyLocation]) [connection setObject:[connectionController sshKeyLocation] forKey:@"ssh_keyLocation"];
                 if ([connectionController sshPort] && [[connectionController sshPort] length]) [connection setObject:[NSNumber numberWithInteger:[[connectionController sshPort] integerValue]] forKey:@"ssh_port"];
                 break;
+            case SPVaultConnection:
+                connectionType = @"SPVaultConnection";
+                if ([[connectionController vaultHost] length]) [connection setObject:[connectionController vaultHost] forKey:@"vault_host"];
+                if ([[connectionController vaultPort] length]) [connection setObject:[connectionController vaultPort] forKey:@"vault_port"];
+                if ([[connectionController vaultOIDCMount] length]) [connection setObject:[connectionController vaultOIDCMount] forKey:@"vault_oidc_mount"];
+                if ([[connectionController vaultCredentialsPath] length]) [connection setObject:[connectionController vaultCredentialsPath] forKey:@"vault_credentials_path"];
+                break;
             default:
                 connectionType = @"SPTCPIPConnection";
         }
@@ -3802,7 +3818,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         if([connectionController port] && [[connectionController port] length]) [connection setObject:[NSNumber numberWithInteger:[[connectionController port] integerValue]] forKey:@"port"];
         if([[self database] length])                                            [connection setObject:[self database] forKey:@"database"];
 
-        if (includePasswords) {
+        if (includePasswords && [connectionController type] != SPVaultConnection) {
             NSString *pw = [connectionController keychainPassword];
             if (!pw) pw = [connectionController password];
             if (pw) [connection setObject:pw forKey:@"password"];
@@ -3950,6 +3966,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         else if ([typeString isEqualToString:@"SPAWSIAMConnection"])    connectionType = SPAWSIAMConnection;
         else if ([typeString isEqualToString:@"SPSocketConnection"])    connectionType = SPSocketConnection;
         else if ([typeString isEqualToString:@"SPSSHTunnelConnection"]) connectionType = SPSSHTunnelConnection;
+        else if ([typeString isEqualToString:@"SPVaultConnection"])     connectionType = SPVaultConnection;
         else                                                            connectionType = SPTCPIPConnection;
 
         [connectionController setType:connectionType];
@@ -4007,6 +4024,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([connection objectForKey:@"ssh_keyLocationEnabled"]) [connectionController setSshKeyLocationEnabled:[[connection objectForKey:@"ssh_keyLocationEnabled"] intValue]];
     if ([connection objectForKey:@"ssh_keyLocation"])        [connectionController setSshKeyLocation:[connection objectForKey:@"ssh_keyLocation"]];
     if ([connection objectForKey:@"ssh_port"])               [connectionController setSshPort:[NSString stringWithFormat:@"%ld", (long)[[connection objectForKey:@"ssh_port"] integerValue]]];
+
+    // Set Vault details if available
+    if ([connection objectForKey:@"vault_host"])             [connectionController setVaultHost:[connection objectForKey:@"vault_host"]];
+    if ([connection objectForKey:@"vault_port"])             [connectionController setVaultPort:[connection objectForKey:@"vault_port"]];
+    if ([connection objectForKey:@"vault_oidc_mount"])       [connectionController setVaultOIDCMount:[connection objectForKey:@"vault_oidc_mount"]];
+    if ([connection objectForKey:@"vault_credentials_path"]) [connectionController setVaultCredentialsPath:[connection objectForKey:@"vault_credentials_path"]];
 
     // Set the SSH password - if not in SPF file try to get it via the KeyChain
     if ([connection objectForKey:@"ssh_password"]) {
@@ -5383,7 +5406,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                                 callback:nil];
 }
 
-- (BOOL)selectTablesListItemNamed:(NSString *)name
+- (BOOL)selectTablesListItemWithNamed:(NSString *)name
 {
     return [tablesListInstance selectItemWithName:name];
 }

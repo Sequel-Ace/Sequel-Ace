@@ -2720,8 +2720,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 					fieldValue = [NSString stringWithFormat:@"b'%@'", ((![desc length] || [desc isEqualToString:@"0"]) ? @"0" : desc)];
 				} else if ([fieldTypeGroup isEqualToString:@"date"] && [desc isEqualToString:@"NOW()"]) {
 					fieldValue = @"NOW()";
-				} else if ([fieldTypeGroup isEqualToString:@"string"] && [[rowObject description] isEqualToString:@"UUID()"]) {
-					fieldValue = @"UUID()";
+				} else if ([fieldTypeGroup isEqualToString:@"string"] && ([desc isEqualToString:@"UUID()"] || [desc isEqualToString:@"UUID_v4()"])) {
+					fieldValue = desc;
 				} else {
 					fieldValue = [mySQLConnection escapeAndQuoteString:desc];
 				}

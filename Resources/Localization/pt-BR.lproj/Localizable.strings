@@ -3378,3 +3378,57 @@
 
 /* sequelace URL scheme error: LaunchFavorite alert description (favorite name not found) */
 "The variable in the ?name= query parameter could not be matched with any of your favorites." = "A variável no parâmetro de consulta ?name= não pôde ser associada a nenhum dos seus favoritos.";
+
+/* Vault connection: invalid host or port supplied */
+"Invalid Vault host or port." = "Invalid Vault host or port.";
+
+/* Vault connection: HTTP error from Vault API (%d = HTTP status code) */
+"Vault returned HTTP %d." = "Vault returned HTTP %d.";
+
+/* Vault connection: response body could not be parsed (%@ = detail) */
+"Vault response parse error: %@" = "Vault response parse error: %@";
+
+/* Vault OIDC login: user cancelled the browser flow */
+"Vault login was cancelled." = "Vault login was cancelled.";
+
+/* Vault OIDC login: could not open a local callback port */
+"Could not bind a local port for the Vault OIDC callback." = "Could not bind a local port for the Vault OIDC callback.";
+
+/* Vault OIDC login: browser callback did not arrive within the timeout */
+"Vault OIDC login timed out. Please try again." = "Vault OIDC login timed out. Please try again.";
+
+/* Vault OIDC login: callback query string was malformed (%@ = detail) */
+"Unexpected Vault OIDC callback: %@" = "Unexpected Vault OIDC callback: %@";
+
+/* Vault auth manager: Vault host or credentials path not configured */
+"Vault host or credentials path is missing." = "Vault host or credentials path is missing.";
+
+/* Vault auth manager: OIDC login flow failed */
+"Vault OIDC login failed." = "Vault OIDC login failed.";
+
+/* Vault auth manager: credentials endpoint returned an error */
+"Failed to generate credentials from Vault." = "Failed to generate credentials from Vault.";
+
+/* Vault auth manager: credentials endpoint returned empty username/password */
+"Vault returned empty credentials." = "Vault returned empty credentials.";
+
+/* Vault connect-time validation: Vault host field is empty */
+"A Vault host is required to connect." = "A Vault host is required to connect.";
+
+/* Vault connect-time validation: credentials path field is empty */
+"A Vault credentials path is required to connect." = "A Vault credentials path is required to connect.";
+
+/* Vault connect-time validation: DB host field is empty */
+"A database host is required to connect." = "A database host is required to connect.";
+
+/* Vault connection: error sheet title when credential generation fails */
+"Vault Authentication Failed" = "Vault Authentication Failed";
+
+/* Vault save-favorite validation: DB host field is empty */
+"Please provide a database host to save a Vault favorite." = "Please provide a database host to save a Vault favorite.";
+
+/* Vault save-favorite validation: Vault host field is empty */
+"A Vault host is required to save a Vault favorite." = "A Vault host is required to save a Vault favorite.";
+
+/* Vault save-favorite validation: credentials path field is empty */
+"A Vault credentials path is required to save a Vault favorite." = "A Vault credentials path is required to save a Vault favorite.";
