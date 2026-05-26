@@ -195,6 +195,7 @@
 	[SAMultiTabConnectionLostGate runAction:^{
 		[actionExpectation fulfill];
 	} forHandler:handler];
+	XCTAssertNotNil(handler.capturedCompletion);
 	handler.capturedCompletion(SPMySQLConnectionLostReconnect, NO);
 
 	[self waitForExpectationsWithTimeout:1 handler:nil];
@@ -215,6 +216,7 @@
 	[SAMultiTabConnectionLostGate runAction:^{
 		actionCount++;
 	} forHandler:handler];
+	XCTAssertNotNil(handler.capturedCompletion);
 	handler.capturedCompletion(SPMySQLConnectionLostReconnect, NO);
 
 	[self waitForExpectationsWithTimeout:1 handler:nil];
@@ -239,6 +241,7 @@
 	[SAMultiTabConnectionLostGate runAction:^{
 		actionCount++;
 	} forHandler:handler];
+	XCTAssertNotNil(handler.capturedCompletion);
 	handler.capturedCompletion(SPMySQLConnectionLostReconnect, NO);
 
 	[self waitForExpectationsWithTimeout:1 handler:nil];
@@ -261,15 +264,25 @@
 	[SAMultiTabConnectionLostGate runAction:^{
 		[actionExpectation fulfill];
 	} forHandler:handler];
+	XCTAssertNotNil(handler.capturedCompletion);
 	handler.capturedCompletion(SPMySQLConnectionLostReconnect, NO);
 
 	[self waitForExpectations:@[handler.reconnectExpectation, handler.reconnectFailureExpectation] timeout:1];
 	handler.sheetShown = NO;
 	handler.reconnectExpectation = [self expectationWithDescription:@"retry reconnect invoked"];
 	handler.reconnectFailureExpectation = nil;
+	XCTAssertNotNil(handler.capturedReconnectFailureCompletion);
 	handler.capturedReconnectFailureCompletion(YES);
 
 	[self waitForExpectations:@[handler.reconnectExpectation, actionExpectation] timeout:1];
+
+	// Drain one main-queue turn so any pending sheet-presentation dispatch on
+	// the gate's re-entry path settles before asserting it did NOT happen.
+	// Without this, a stale dispatch_async could land after the assertion runs
+	// and produce a flaky XCTAssertFalse on `handler.sheetShown`.
+	XCTestExpectation *settleTurn = [self expectationWithDescription:@"main-queue turn settled"];
+	dispatch_async(dispatch_get_main_queue(), ^{ [settleTurn fulfill]; });
+	[self waitForExpectations:@[settleTurn] timeout:1];
 
 	XCTAssertFalse(handler.sheetShown);
 	XCTAssertEqual(handler.reconnectCount, 2U);
@@ -289,15 +302,23 @@
 	[SAMultiTabConnectionLostGate runAction:^{
 		[actionExpectation fulfill];
 	} forHandler:handler];
+	XCTAssertNotNil(handler.capturedCompletion);
 	handler.capturedCompletion(SPMySQLConnectionLostReconnect, NO);
 
 	[self waitForExpectations:@[handler.reconnectExpectation, handler.reconnectFailureExpectation] timeout:1];
 	handler.sheetShown = NO;
 	handler.reconnectExpectation = [self expectationWithDescription:@"retry reconnect invoked"];
 	handler.reconnectFailureExpectation = nil;
+	XCTAssertNotNil(handler.capturedReconnectFailureCompletion);
 	handler.capturedReconnectFailureCompletion(YES);
 
 	[self waitForExpectations:@[handler.reconnectExpectation, actionExpectation] timeout:1];
+
+	// Drain one main-queue turn so any pending sheet-presentation dispatch on
+	// the gate's re-entry path settles before asserting it did NOT happen.
+	XCTestExpectation *settleTurn = [self expectationWithDescription:@"main-queue turn settled"];
+	dispatch_async(dispatch_get_main_queue(), ^{ [settleTurn fulfill]; });
+	[self waitForExpectations:@[settleTurn] timeout:1];
 
 	XCTAssertFalse(handler.sheetShown);
 	XCTAssertEqual(handler.reconnectCount, 2U);
@@ -317,9 +338,11 @@
 	[SAMultiTabConnectionLostGate runAction:^{
 		actionCount++;
 	} forHandler:handler];
+	XCTAssertNotNil(handler.capturedCompletion);
 	handler.capturedCompletion(SPMySQLConnectionLostReconnect, NO);
 
 	[self waitForExpectationsWithTimeout:1 handler:nil];
+	XCTAssertNotNil(handler.capturedReconnectFailureCompletion);
 	handler.capturedReconnectFailureCompletion(NO);
 
 	XCTAssertEqual(actionCount, 0U);
@@ -336,6 +359,7 @@
 	[SAMultiTabConnectionLostGate runAction:^{
 		actionCount++;
 	} forHandler:handler];
+	XCTAssertNotNil(handler.capturedCompletion);
 	handler.capturedCompletion(SPMySQLConnectionLostDisconnect, NO);
 
 	XCTAssertEqual(handler.closeAndDisconnectCount, 1U);
@@ -352,6 +376,7 @@
 	[SAMultiTabConnectionLostGate runAction:^{
 		actionCount++;
 	} forHandler:handler];
+	XCTAssertNotNil(handler.capturedCompletion);
 	handler.capturedCompletion(SPMySQLConnectionLostDisconnect, YES);
 
 	XCTAssertEqual(actionCount, 0U);
@@ -382,6 +407,7 @@
 	[SAMultiTabConnectionLostGate runAction:^{
 		actionCount++;
 	} forHandler:handler];
+	XCTAssertNotNil(handler.capturedCompletion);
 	handler.capturedCompletion(SPMySQLConnectionLostReconnect, NO);
 	[self waitForExpectationsWithTimeout:1 handler:nil];
 

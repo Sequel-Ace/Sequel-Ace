@@ -575,7 +575,18 @@
 	NSString *source = [NSString stringWithContentsOfFile:sourcePath encoding:NSUTF8StringEncoding error:nil];
 
 	XCTAssertNotNil(source);
-	XCTAssertFalse([source containsString:@"while (0)"]);
+	// Reject the legacy do-while wait block ONLY when it appears in the
+	// same neighborhood as `_delegateDecisionForLostConnection` — a bare
+	// `while (0)` elsewhere in the file (e.g. a future `do { ... } while (0)`
+	// macro pattern unrelated to reconnect) must not fail this test.
+	NSRange methodRange = [source rangeOfString:@"_delegateDecisionForLostConnection"];
+	XCTAssertNotEqual(methodRange.location, (NSUInteger)NSNotFound,
+		@"_delegateDecisionForLostConnection symbol must exist in Delegate & Proxy.m");
+	NSUInteger windowStart = (methodRange.location > 1000) ? methodRange.location - 1000 : 0;
+	NSUInteger windowLength = MIN((NSUInteger)2000, [source length] - windowStart);
+	NSString *neighborhood = [source substringWithRange:NSMakeRange(windowStart, windowLength)];
+	XCTAssertFalse([neighborhood containsString:@"while (0)"],
+		@"legacy do-while wait block must not surround _delegateDecisionForLostConnection");
 	XCTAssertFalse([source containsString:@"performSelectorOnMainThread:@selector(_delegateDecisionForLostConnection)"]);
 }
 
