@@ -144,10 +144,10 @@ extension SPFavoriteNode {
                 // Normalize host for keychain lookup (socket connections use "localhost")
                 let hostForKeychain = (typeTag == 1) ? "localhost" : host
 
-                let keychainName = keychain.nameForFavoriteName(favoriteName, id: "\(favoriteID)")
-                let keychainAccount = keychain.accountForUser(user, host: hostForKeychain, database: database)
+                let keychainName = keychain.name(forFavoriteName: favoriteName, id: "\(favoriteID)")
+                let keychainAccount = keychain.account(forUser: user, host: hostForKeychain, database: database)
 
-                if let password = keychain.getPassword(forName: keychainName, account: keychainAccount), !password.isEmpty {
+                if let password = keychain.getPasswordForName(keychainName, account: keychainAccount), !password.isEmpty {
                     components.password = password
                 }
             }

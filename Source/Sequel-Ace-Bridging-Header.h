@@ -53,6 +53,7 @@
 #import "SPFavoriteTextFieldCell.h"
 #import "SPFavoritesOutlineView.h"
 #import "SPFavoriteColorSupport.h"
+#import "SPKeychain.h"
 #import <SPMySQL/SPMySQLConstants.h>
 #import <SPMySQL/SPMySQLConnectionDelegate.h>
 #import <SPMySQL/SPMySQLConnectionProxy.h>

@@ -2450,10 +2450,15 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
         BOOL includePassword = (returnCode == NSAlertSecondButtonReturn);
         id nodeObject = [node representedObject];
+        NSLog(@"DEBUG: nodeObject class: %@", [nodeObject class]);
+        NSLog(@"DEBUG: respondsToSelector: %d", [nodeObject respondsToSelector:@selector(toConnectionString:)]);
         NSString *connectionString = nil;
 
         if ([nodeObject respondsToSelector:@selector(toConnectionString:)]) {
             connectionString = [nodeObject toConnectionString:includePassword];
+            NSLog(@"DEBUG: connectionString: %@", connectionString);
+        } else {
+            NSLog(@"DEBUG: nodeObject does not respond to toConnectionString:");
         }
 
         if (connectionString && [connectionString length] > 0) {
