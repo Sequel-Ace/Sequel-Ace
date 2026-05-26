@@ -76,6 +76,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	BOOL isConnecting;
 	BOOL isEditingConnection;
 	BOOL isTestingConnection;
+	NSUInteger connectionAttemptID;
 	
 	// Standard details
 	NSInteger previousType;
@@ -105,6 +106,13 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	NSString *awsRegion;
 	NSString *awsProfile;
 	NSArray<NSString *> *awsAvailableRegionValues;
+
+	// Vault Authentication
+	NSString *vaultHost;
+	NSString *vaultPort;
+	NSString *vaultOIDCMount;
+	NSString *vaultCredentialsPath;
+	NSString *vaultLoginIdentifier;
 
 	// SSL details
 	NSInteger useSSL;
@@ -164,6 +172,23 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	IBOutlet NSSecureTextField *awsIAMPasswordField;
 	IBOutlet SPColorSelectorView *awsIAMColorField;
 	IBOutlet NSPopUpButton *awsIAMTimeZoneField;
+
+	// Vault Authentication UI
+	IBOutlet NSView            *vaultConnectionFormContainer;
+	IBOutlet NSView            *vaultConnectionSSLDetailsContainer;
+	IBOutlet NSTextField       *vaultNameField;
+	IBOutlet NSTextField       *vaultSQLHostField;
+	IBOutlet NSTextField       *vaultSQLPortField;
+	IBOutlet NSTextField       *vaultDatabaseField;
+	IBOutlet NSTextField       *vaultHostField;
+	IBOutlet NSTextField       *vaultPortField;
+	IBOutlet NSTextField       *vaultOIDCMountField;
+	IBOutlet NSTextField       *vaultCredentialsPathField;
+	IBOutlet NSPopUpButton     *vaultTimeZoneField;
+	IBOutlet SPColorSelectorView *vaultColorField;
+	IBOutlet NSButton          *vaultSSLKeyFileButton;
+	IBOutlet NSButton          *vaultSSLCertificateButton;
+	IBOutlet NSButton          *vaultSSLCACertButton;
 
 	IBOutlet NSTextField *standardNameField;
 	IBOutlet NSTextField *sshNameField;
@@ -250,6 +275,11 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 @property (readwrite) NSInteger useAWSIAMAuth;
 @property (readwrite, copy) NSString *awsRegion;
 @property (readwrite, copy) NSString *awsProfile;
+// Vault Authentication
+@property (readwrite, copy) NSString *vaultHost;
+@property (readwrite, copy) NSString *vaultPort;
+@property (readwrite, copy) NSString *vaultOIDCMount;
+@property (readwrite, copy) NSString *vaultCredentialsPath;
 @property (readwrite) NSInteger useSSL;
 @property (readwrite) NSInteger colorIndex;
 @property (readwrite) NSInteger sslKeyFileLocationEnabled;

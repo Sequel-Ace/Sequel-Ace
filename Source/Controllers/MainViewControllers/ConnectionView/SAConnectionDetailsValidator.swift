@@ -112,10 +112,10 @@ import Foundation
             )
         }
 
-        // 4-6. SSL file checks — only run for TCP/IP and socket connections that
-        //      have SSL turned on. The order matches the original code so that
+        // 4-6. SSL file checks — run for connection types whose MySQL leg can use
+        //      the shared SSL file fields. The order matches the original code so that
         //      a multi-issue form produces the same first-error UX.
-        if (type == .tcpIP || type == .socket) && useSSL {
+        if (type == .tcpIP || type == .socket || type == .vault) && useSSL {
             if sslKeyFileLocationEnabled, let path = sslKeyFileLocation,
                !fileExistsExpandingTilde(path) {
                 return SAConnectionValidationFailure(

@@ -43,6 +43,10 @@ See [Connecting to MAMP or XAMPP](mamp-xampp.html "Connecting to MAMP or XAMPP")
 
 On the server, configure MySQL by editing /etc/my.cnf and comment or remove `skip-networking` from the `[mysqld]` section. Then, restart MySQL Server.
 
+**How do I connect using HashiCorp Vault ephemeral credentials?**
+
+See [What type of connection do I have?](connection-types.html#vault-oidc-authentication) for the full Vault setup, prerequisites, and how the OIDC browser flow and credential caching work.
+
 **How do I connect to AWS RDS/Aurora with IAM authentication and tunnels (including SSM)?**
 
 See [What type of connection do I have?](connection-types.html#aws-iam-authentication) for the full AWS IAM setup, sandbox permission details, and external tunnel options (SSH/SSM/custom port forwarding).

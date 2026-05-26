@@ -33,6 +33,7 @@
 #import "SPSQLParser.h"
 #import "SPStringAdditions.h"
 #import "SPDatabaseDocument.h"
+#import "SPTableContent.h"
 #import "SPProcessListController.h"
 #import "SPBundleManager.h"
 #import "SPWindow.h"

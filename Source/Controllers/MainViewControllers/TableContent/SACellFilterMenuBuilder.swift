@@ -1,0 +1,143 @@
+//
+//  SACellFilterMenuBuilder.swift
+//  Sequel Ace
+//
+//  Created by Sequel-Ace contributors on 2026.05.23.
+//  Copyright © 2026 Sequel-Ace. All rights reserved.
+//
+
+import AppKit
+
+/// Description of one item in the "Filter by Selected Value" submenu.
+///
+/// The descriptor is deliberately UI-light: Objective-C code in `SPCopyTable`
+/// uses it both to build the visible `NSMenuItem` and to create the
+/// `SACellFilterAction` that applies the selected rule.
+@objcMembers public final class SACellFilterMenuItemDescriptor: NSObject {
+
+    /// Menu title displayed to the user.
+    public let title: String
+
+    /// Schema column name passed to `SPRuleFilterController`.
+    public let columnName: String
+
+    /// Serialized operator name that matches an entry in `ContentFilters.plist`.
+    public let operatorName: String
+
+    /// Operator argument payload captured from the clicked cell.
+    ///
+    /// Empty for zero-argument NULL operators.
+    public let values: [String]
+
+    /// Whether the descriptor should serialize through the SQL NULL path.
+    public let isNull: Bool
+
+    /// Creates a descriptor for one menu item and its apply action.
+    ///
+    /// - Parameters:
+    ///   - title: Visible menu title.
+    ///   - columnName: Schema column name to filter.
+    ///   - operatorName: Serialized operator name for the rule-filter controller.
+    ///   - values: Operator argument values.
+    ///   - isNull: Whether this descriptor represents a SQL NULL comparison.
+    public init(title: String, columnName: String, operatorName: String, values: [String], isNull: Bool) {
+        self.title = title
+        self.columnName = columnName
+        self.operatorName = operatorName
+        self.values = values
+        self.isNull = isNull
+    }
+}
+
+/// Builds the filter submenu and its serializable item descriptors.
+///
+/// This class keeps the type/operator matrix in Swift while exposing an
+/// Objective-C-friendly API for `SPCopyTable.m`.
+@objcMembers public final class SACellFilterMenuBuilder: NSObject {
+
+    /// Builds a display-only submenu for a table cell.
+    ///
+    /// Used by tests and by callers that only need menu titles. The actual
+    /// context-menu hook uses `menuItemDescriptors(...)` so each item can carry
+    /// the payload needed by `SACellFilterAction`.
+    ///
+    /// - Parameters:
+    ///   - column: Column definition dictionary containing `name` and `typegrouping`.
+    ///   - value: Display string for the clicked cell.
+    ///   - isNull: Whether the raw clicked cell is SQL NULL.
+    /// - Returns: A menu populated with supported operators, or `nil` when none apply.
+    public static func filterMenu(column: [String: Any], value: String?, isNull: Bool) -> NSMenu? {
+        let descriptors = menuItemDescriptors(column: column, value: value, isNull: isNull)
+        guard !descriptors.isEmpty else {
+            return nil
+        }
+
+        let menu = NSMenu()
+        for descriptor in descriptors {
+            menu.addItem(NSMenuItem(title: descriptor.title, action: nil, keyEquivalent: ""))
+        }
+
+        return menu
+    }
+
+    /// Builds item descriptors from a table-content column definition.
+    ///
+    /// - Parameters:
+    ///   - column: Column definition dictionary containing `name` and `typegrouping`.
+    ///   - value: Display string for the clicked cell.
+    ///   - isNull: Whether the raw clicked cell is SQL NULL.
+    /// - Returns: Descriptors for every operator the selected column/value can use.
+    public static func menuItemDescriptors(column: [String: Any], value: String?, isNull: Bool) -> [SACellFilterMenuItemDescriptor] {
+        guard let columnName = column["name"] as? String,
+              let typeGrouping = column["typegrouping"] as? String else {
+            return []
+        }
+
+        return menuItemDescriptors(columnName: columnName, typeGrouping: typeGrouping, value: value, isNull: isNull)
+    }
+
+    /// Builds item descriptors from normalized column metadata.
+    ///
+    /// Empty-string and nil display values are routed to NULL operators because
+    /// value-bearing empty-string rules serialize with `filterValues: [""]`,
+    /// the same shape the rule editor uses for half-touched placeholder rows.
+    ///
+    /// - Parameters:
+    ///   - columnName: Schema column name to filter.
+    ///   - typeGrouping: Sequel Ace type grouping from `SPTableDataColumnDefinition`.
+    ///   - value: Display string for the clicked cell.
+    ///   - isNull: Whether the raw clicked cell is SQL NULL.
+    /// - Returns: Descriptors for every supported operator, or an empty array.
+    @objc(menuItemDescriptorsWithColumnName:typeGrouping:value:isNull:)
+    public static func menuItemDescriptors(columnName: String?, typeGrouping: String?, value: String?, isNull: Bool) -> [SACellFilterMenuItemDescriptor] {
+        guard let columnName,
+              let typeGrouping else {
+            return []
+        }
+
+        // Treat an empty-string OR nil cell value the same as a NULL cell for menu purposes:
+        // SPRuleFilterController's starter detection collapses any expression whose
+        // filterValues are all empty strings into a placeholder (see SerIsUntouchedStarterRule
+        // at SPRuleFilterController.m:1814-1829), so a value-bearing operator with `[""]`
+        // cannot be persisted via the rule editor. Restrict the menu to NULL operators
+        // for these cases so the cell-filter feature never produces non-persistent rules.
+        // `SPCopyTable.displayStringForRow` may return nil for stale or out-of-range
+        // cells (see SPCopyTable.h:112-115), which would otherwise fall through here.
+        let effectiveIsNull = isNull || value == nil || value?.isEmpty == true
+
+        let operators = SACellFilterOperator.operators(for: typeGrouping, cellIsNull: effectiveIsNull)
+        guard !operators.isEmpty else {
+            return []
+        }
+
+        return operators.map { op in
+            SACellFilterMenuItemDescriptor(
+                title: op.menuTitle,
+                columnName: columnName,
+                operatorName: op.serializedName,
+                values: op.valueCount == 0 ? [] : [value ?? ""],
+                isNull: effectiveIsNull
+            )
+        }
+    }
+}
