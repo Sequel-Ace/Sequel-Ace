@@ -93,6 +93,11 @@ final class SAConnectionDetailsValidatorTests: XCTestCase {
         XCTAssertEqual(failure?.kind, .hostMissing)
     }
 
+    func testTCPIPRequiresNonWhitespaceHost() {
+        let failure = validate(type: .tcpIP, host: "   \n\t")
+        XCTAssertEqual(failure?.kind, .hostMissing)
+    }
+
     func testSSHTunnelRequiresHost() {
         let failure = validate(type: .sshTunnel, host: "", sshHost: "bastion.example.com")
         XCTAssertEqual(failure?.kind, .hostMissing)
@@ -130,6 +135,11 @@ final class SAConnectionDetailsValidatorTests: XCTestCase {
 
     func testSSHTunnelRequiresSSHHost() {
         let failure = validate(type: .sshTunnel, host: "db.example.com", sshHost: "")
+        XCTAssertEqual(failure?.kind, .sshHostMissing)
+    }
+
+    func testSSHTunnelRequiresNonWhitespaceSSHHost() {
+        let failure = validate(type: .sshTunnel, host: "db.example.com", sshHost: "   \n\t")
         XCTAssertEqual(failure?.kind, .sshHostMissing)
     }
 
