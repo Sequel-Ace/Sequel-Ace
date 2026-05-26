@@ -46,29 +46,38 @@ import Foundation
         var autoConnect = false
         var invalidParameters: [String] = []
 
-        // Parse basic connection info
+        // Parse basic connection info (with percent-decoding)
         if let host = url.host, !host.isEmpty {
-            details["host"] = host
+            let decodedHost = host.removingPercentEncoding ?? host
+            details["host"] = decodedHost
+        } else {
+            // Default to localhost if no host specified
+            details["host"] = "127.0.0.1"
         }
 
         if let user = url.user, !user.isEmpty {
-            details["user"] = user
+            let decodedUser = user.removingPercentEncoding ?? user
+            details["user"] = decodedUser
         }
 
         if let password = url.password, !password.isEmpty {
-            details["password"] = password
+            let decodedPassword = password.removingPercentEncoding ?? password
+            details["password"] = decodedPassword
+            // Auto-connect when password is present in URL
+            autoConnect = true
         }
 
         if let port = url.port {
             details["port"] = "\(port)"
         }
 
-        // Parse database from path
-        let path = url.path
-        if path.hasPrefix("/") && path.count > 1 {
-            let database = String(path.dropFirst())
-            if !database.isEmpty {
-                details["database"] = database
+        // Parse database from path (with percent-decoding)
+        let pathComponents = url.pathComponents
+        if pathComponents.count > 1 {  // first object is "/"
+            let database = pathComponents[1]
+            let decodedDatabase = database.removingPercentEncoding ?? database
+            if !decodedDatabase.isEmpty {
+                details["database"] = decodedDatabase
             }
         }
 
@@ -122,7 +131,9 @@ import Foundation
                     details["aws_profile"] = value
 
                 case "enable_cleartext_plugin":
-                    details["enable_cleartext_plugin"] = value
+                    // Map URL-style snake_case to the favorite plist key and normalize to NSNumber
+                    let boolValue = (value.lowercased() == "true" || value == "1" || value.lowercased() == "yes" || value.lowercased() == "y")
+                    details["enableClearTextPlugin"] = NSNumber(value: boolValue)
 
                 default:
                     break
@@ -130,9 +141,22 @@ import Foundation
             }
         }
 
-        // Set default connection type if not specified
+        // Set default connection type if not specified, based on query parameter hints
         if details["type"] == nil {
-            details["type"] = "SPTCPIPConnection"
+            let hasAWSIAMIndicators = (details["aws_profile"] as? String)?.isEmpty == false ||
+                                     (details["aws_region"] as? String)?.isEmpty == false
+            let hasSocketIndicators = (details["socket"] as? String)?.isEmpty == false
+            let hasSSHIndicators = (details["ssh_host"] as? String)?.isEmpty == false
+
+            if hasAWSIAMIndicators {
+                details["type"] = "SPAWSIAMConnection"
+            } else if hasSocketIndicators {
+                details["type"] = "SPSocketConnection"
+            } else if hasSSHIndicators {
+                details["type"] = "SPSSHTunnelConnection"
+            } else {
+                details["type"] = "SPTCPIPConnection"
+            }
         }
 
         let success = invalidParameters.isEmpty

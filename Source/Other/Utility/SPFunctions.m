@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPFunctions.h"
+#import "Sequel_Ace-Swift.h"  // For ConnectionStringParser
 #import <Security/SecRandom.h>
 #import <objc/runtime.h>
 #import <arpa/inet.h>
@@ -282,115 +283,25 @@ BOOL SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(NSString *errorMessage, NS
 
 BOOL SPExtractConnectionDetailsFromMySQLURL(NSURL *url, NSMutableDictionary *details, BOOL *autoConnect, NSArray<NSString *> **invalidParameters)
 {
+	// This function is now a thin wrapper around ConnectionStringParser (Swift)
+	// to consolidate parsing logic and avoid drift between import and URL handling.
 	if (autoConnect) *autoConnect = NO;
 	if (invalidParameters) *invalidParameters = @[];
 
 	if (!url || ![[url scheme] isEqualToString:@"mysql"] || !details) return NO;
 
-	NSString *requestedType = nil;
-	NSSet<NSString *> *validParameterSet = [NSSet setWithArray:SPValidMySQLConnectionURLQueryParameters()];
-	NSMutableArray<NSString *> *invalid = [NSMutableArray array];
+	// Use the consolidated Swift parser
+	ConnectionStringParseResult *result = [ConnectionStringParser parse:url];
 
-	if ([url query]) {
-		NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
-		for (NSURLQueryItem *queryItem in [components queryItems]) {
-			if (![queryItem.name length]) continue;
-
-			if (![validParameterSet containsObject:queryItem.name]) {
-				[invalid addObject:queryItem.name];
-				continue;
-			}
-
-			NSString *decodedValue = queryItem.value ?: @"";
-
-			if ([queryItem.name isEqualToString:@"type"]) {
-				requestedType = [[decodedValue lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-				continue;
-			}
-
-			if ([queryItem.name isEqualToString:@"enable_cleartext_plugin"]) {
-				// Map URL-style snake_case to the favorite plist key consumed
-				// by SPDatabaseDocument -setState:fromFile: and normalize the
-				// value to an NSNumber so downstream -intValue is well defined
-				// for the usual truthy strings ("1", "true", "yes", "Y").
-				// Hardcoded to match SPFavoriteEnableClearTextPluginKey; the
-				// symbolic constant lives in SPConstants.m which is not linked
-				// into the minimal SequelAceTunnelAssistant target.
-				[details setObject:@([decodedValue boolValue]) forKey:@"enableClearTextPlugin"];
-				continue;
-			}
-
-			[details setObject:decodedValue forKey:queryItem.name];
-		}
-	}
-
-	if ([requestedType length] && ![SPValidMySQLConnectionURLTypes() containsObject:requestedType]) {
-		[invalid addObject:@"type"];
-	}
-
-	if ([invalid count] > 0) {
-		if (invalidParameters) *invalidParameters = [invalid copy];
+	if (!result.success) {
+		if (invalidParameters) *invalidParameters = result.invalidParameters;
 		return NO;
 	}
 
-	BOOL hasAWSIAMIndicators = ([[details objectForKey:@"aws_profile"] length]
-								|| [[details objectForKey:@"aws_region"] length]
-								|| [requestedType isEqualToString:@"aws_iam"]);
-	BOOL hasSocketIndicators = ([[details objectForKey:@"socket"] length]
-								|| [requestedType isEqualToString:@"socket"]);
+	// Copy parsed details to the output dictionary
+	[details addEntriesFromDictionary:result.details];
 
-	if ([requestedType isEqualToString:@"socket"]) {
-		[details setObject:@"SPSocketConnection" forKey:@"type"];
-	}
-	else if ([requestedType isEqualToString:@"ssh"]) {
-		[details setObject:@"SPSSHTunnelConnection" forKey:@"type"];
-	}
-	else if ([requestedType isEqualToString:@"tcpip"]) {
-		[details setObject:@"SPTCPIPConnection" forKey:@"type"];
-	}
-	else if (hasAWSIAMIndicators) {
-		[details setObject:@"SPAWSIAMConnection" forKey:@"type"];
-	}
-	else if (hasSocketIndicators) {
-		[details setObject:@"SPSocketConnection" forKey:@"type"];
-	}
-	else if ([details objectForKey:@"ssh_host"]) {
-		[details setObject:@"SPSSHTunnelConnection" forKey:@"type"];
-	}
-	else {
-		[details setObject:@"SPTCPIPConnection" forKey:@"type"];
-	}
-
-	if ([url port]) {
-		[details setObject:[url port] forKey:@"port"];
-	}
-
-	if ([url user]) {
-		NSString *decodedUser = [[url user] stringByRemovingPercentEncoding];
-		[details setObject:(decodedUser ?: [url user]) forKey:@"user"];
-	}
-
-	if ([url password]) {
-		NSString *decodedPassword = [[url password] stringByRemovingPercentEncoding];
-		[details setObject:(decodedPassword ?: [url password]) forKey:@"password"];
-		if (autoConnect) *autoConnect = YES;
-	}
-
-	if ([[url host] length]) {
-		NSString *decodedHost = [[url host] stringByRemovingPercentEncoding];
-		[details setObject:(decodedHost ?: [url host]) forKey:@"host"];
-	}
-	else {
-		[details setObject:@"127.0.0.1" forKey:@"host"];
-	}
-
-	NSArray *pathComponents = [url pathComponents];
-	if ([pathComponents count] > 1) { // first object is "/"
-		NSString *database = [pathComponents objectAtIndex:1];
-		NSString *decodedDatabase = [database stringByRemovingPercentEncoding];
-		if (decodedDatabase) database = decodedDatabase;
-		if ([database length]) [details setObject:database forKey:@"database"];
-	}
+	if (autoConnect) *autoConnect = result.autoConnect;
 
 	return YES;
 }
