@@ -111,7 +111,7 @@ import Foundation
     @objc weak var mySQLDelegate: (any SPMySQLConnectionDelegate)?
 
     /// Lock protecting all mutable state accessed across threads:
-    /// activeTunnel, activeConnection, sshTunnelCompletion, _cancelled.
+    /// activeTunnel, activeConnection, sshTunnelCompletion, activeAttemptID, _cancelled.
     private let stateLock = NSLock()
 
     /// Active SSH tunnel, kept alive for the duration of the connection.
@@ -140,6 +140,62 @@ import Foundation
         set { stateLock.lock(); _cancelled = newValue; stateLock.unlock() }
     }
     private var _cancelled = false
+    private var activeAttemptID: UInt64 = 0
+
+    private func startAttempt() -> UInt64 {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        activeAttemptID &+= 1
+        _cancelled = false
+        return activeAttemptID
+    }
+
+    private func cancelAttempt() {
+        stateLock.lock()
+        activeAttemptID &+= 1
+        _cancelled = true
+        _sshTunnelCompletion = nil
+        stateLock.unlock()
+    }
+
+    private func isCurrentAttempt(_ attemptID: UInt64) -> Bool {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return activeAttemptID == attemptID && !_cancelled
+    }
+
+    private func setActiveConnection(_ connection: SPMySQLConnection?, for attemptID: UInt64) {
+        stateLock.lock()
+        if activeAttemptID == attemptID && !_cancelled {
+            _activeConnection = connection
+        }
+        stateLock.unlock()
+    }
+
+    private func setActiveTunnel(_ tunnel: SPSSHTunnel?, for attemptID: UInt64) {
+        stateLock.lock()
+        if activeAttemptID == attemptID && !_cancelled {
+            _activeTunnel = tunnel
+        }
+        stateLock.unlock()
+    }
+
+    private func setSSHTunnelCompletion(_ completion: ((SPSSHTunnel?, String?) -> Void)?, for attemptID: UInt64) {
+        stateLock.lock()
+        if activeAttemptID == attemptID && !_cancelled {
+            _sshTunnelCompletion = completion
+        }
+        stateLock.unlock()
+    }
+
+    private func clearActiveState(for attemptID: UInt64) {
+        stateLock.lock()
+        if activeAttemptID == attemptID && !_cancelled {
+            _activeConnection = nil
+            _activeTunnel = nil
+        }
+        stateLock.unlock()
+    }
 
     // MARK: - Public API
 
@@ -153,22 +209,22 @@ import Foundation
         parentWindow: NSWindow?,
         completion: @escaping (SAConnectionResult) -> Void
     ) {
-        cancelled = false
+        let attemptID = startAttempt()
 
-        // Wrap completion to suppress delivery after cancel
+        // Wrap completion to suppress delivery after cancel or a newer attempt.
         let safeCompletion: (SAConnectionResult) -> Void = { [weak self] result in
-            guard self?.cancelled != true
+            guard self?.isCurrentAttempt(attemptID) == true
             else { return }
             completion(result)
         }
 
         if info.type == .sshTunnel {
-            establishSSHTunnel(info: info, sshPassword: sshPassword, parentWindow: parentWindow) { [weak self] (tunnel: SPSSHTunnel?, error: String?) in
-                guard let self = self, !self.cancelled
+            establishSSHTunnel(info: info, sshPassword: sshPassword, parentWindow: parentWindow, attemptID: attemptID) { [weak self] (tunnel: SPSSHTunnel?, error: String?) in
+                guard let self = self, self.isCurrentAttempt(attemptID)
                 else { return }
                 if let tunnel = tunnel {
-                    self.activeTunnel = tunnel
-                    self.connectMySQL(info: info, preferences: preferences, password: password, tunnel: tunnel, completion: safeCompletion)
+                    self.setActiveTunnel(tunnel, for: attemptID)
+                    self.connectMySQL(info: info, preferences: preferences, password: password, tunnel: tunnel, attemptID: attemptID, completion: safeCompletion)
                 } else if error == nil {
                     // User cancelled the SSH password prompt — restore UI silently
                     let result = SAConnectionResult(
@@ -186,14 +242,13 @@ import Foundation
                 }
             }
         } else {
-            connectMySQL(info: info, preferences: preferences, password: password, tunnel: nil, completion: safeCompletion)
+            connectMySQL(info: info, preferences: preferences, password: password, tunnel: nil, attemptID: attemptID, completion: safeCompletion)
         }
     }
 
     /// Cancels an in-progress connection attempt.
     @objc func cancel() {
-        cancelled = true
-        sshTunnelCompletion = nil
+        cancelAttempt()
 
         if let conn = activeConnection {
             conn.setDelegate(nil)
@@ -214,6 +269,7 @@ import Foundation
         preferences: SAConnectionPreferences,
         password: String,
         tunnel: SPSSHTunnel?,
+        attemptID: UInt64,
         completion: @escaping (SAConnectionResult) -> Void
     ) {
         Thread.detachNewThread { [weak self] in
@@ -221,7 +277,8 @@ import Foundation
             else { return }
 
             let conn = SPMySQLConnection()
-            self.activeConnection = conn
+            guard self.isCurrentAttempt(attemptID) else { return }
+            self.setActiveConnection(conn, for: attemptID)
 
             conn.username = info.user
 
@@ -238,7 +295,7 @@ import Foundation
                     conn.setProxy(tunnel)
                 }
 
-            case .tcpIP, .awsIAM:
+            case .tcpIP, .awsIAM, .vault:
                 conn.useSocket = false
                 conn.host = SAConnectionInfoObjC.resolvedMySQLConnectHost(for: info) ?? "127.0.0.1"
                 conn.port = UInt(info.port) ?? 3306
@@ -286,6 +343,11 @@ import Foundation
             conn.keepAliveInterval = CGFloat(preferences.keepAliveInterval)
 
             conn.connect()
+            guard self.isCurrentAttempt(attemptID) else {
+                conn.setDelegate(nil)
+                conn.disconnect()
+                return
+            }
 
             // SSH tunnel fallback: if connection failed through tunnel,
             // wait briefly for SSH debug output, then retry with fallback port
@@ -295,6 +357,11 @@ import Foundation
                    tunnel.localPortFallback() > 0 {
                     conn.port = UInt(tunnel.localPortFallback())
                     conn.connect()
+                    guard self.isCurrentAttempt(attemptID) else {
+                        conn.setDelegate(nil)
+                        conn.disconnect()
+                        return
+                    }
                     if !conn.isConnected() {
                         Thread.sleep(forTimeInterval: 0.1)
                     }
@@ -302,6 +369,12 @@ import Foundation
             }
 
             if !conn.isConnected() {
+                guard self.isCurrentAttempt(attemptID) else {
+                    conn.setDelegate(nil)
+                    conn.disconnect()
+                    tunnel?.disconnect()
+                    return
+                }
                 let errorString = conn.lastErrorMessage() ?? ""
                 let errorID = conn.lastErrorID()
 
@@ -321,8 +394,7 @@ import Foundation
 
                 // Clean up: disconnect tunnel so it doesn't leak ports
                 tunnel?.disconnect()
-                self.activeConnection = nil
-                self.activeTunnel = nil
+                self.clearActiveState(for: attemptID)
 
                 DispatchQueue.main.async { completion(result) }
                 return
@@ -330,6 +402,12 @@ import Foundation
 
             // Database selection
             if !info.database.isEmpty && !conn.selectDatabase(info.database) {
+                guard self.isCurrentAttempt(attemptID) else {
+                    conn.setDelegate(nil)
+                    conn.disconnect()
+                    tunnel?.disconnect()
+                    return
+                }
                 let dbError = conn.lastErrorMessage() ?? ""
                 let result = SAConnectionResult(
                     connection: conn, sshTunnel: tunnel,
@@ -353,6 +431,13 @@ import Foundation
                 break
             }
 
+            guard self.isCurrentAttempt(attemptID) else {
+                conn.setDelegate(nil)
+                conn.disconnect()
+                tunnel?.disconnect()
+                return
+            }
+
             let result = SAConnectionResult(connection: conn, sshTunnel: tunnel)
             DispatchQueue.main.async { completion(result) }
         }
@@ -364,6 +449,7 @@ import Foundation
         info: SAConnectionInfoObjC,
         sshPassword: String,
         parentWindow: NSWindow?,
+        attemptID: UInt64,
         completion: @escaping (SPSSHTunnel?, String?) -> Void
     ) {
         let sshPort = Int(info.sshPort) ?? 22
@@ -407,12 +493,14 @@ import Foundation
         tunnel.setConnectionStateChange(#selector(sshTunnelStateChanged(_:)),
                                        delegate: self)
 
-        self.activeTunnel = tunnel
-        self.sshTunnelCompletion = completion
+        setActiveTunnel(tunnel, for: attemptID)
+        setSSHTunnelCompletion(completion, for: attemptID)
         tunnel.connect()
     }
 
     @objc private func sshTunnelStateChanged(_ tunnel: SPSSHTunnel) {
+        guard activeTunnel === tunnel else { return }
+
         // User cancelled the SSH password dialog — silently abort
         if tunnel.passwordPromptCancelled {
             let completion = sshTunnelCompletion

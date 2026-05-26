@@ -45,6 +45,7 @@ NSArray<NSString *> *SPValidMySQLConnectionURLQueryParameters(void)
 	         @"socket",
 	         @"aws_profile",
 	         @"aws_region",
+	         @"enable_cleartext_plugin",
 	         @"type"];
 }
 
@@ -304,6 +305,18 @@ BOOL SPExtractConnectionDetailsFromMySQLURL(NSURL *url, NSMutableDictionary *det
 
 			if ([queryItem.name isEqualToString:@"type"]) {
 				requestedType = [[decodedValue lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+				continue;
+			}
+
+			if ([queryItem.name isEqualToString:@"enable_cleartext_plugin"]) {
+				// Map URL-style snake_case to the favorite plist key consumed
+				// by SPDatabaseDocument -setState:fromFile: and normalize the
+				// value to an NSNumber so downstream -intValue is well defined
+				// for the usual truthy strings ("1", "true", "yes", "Y").
+				// Hardcoded to match SPFavoriteEnableClearTextPluginKey; the
+				// symbolic constant lives in SPConstants.m which is not linked
+				// into the minimal SequelAceTunnelAssistant target.
+				[details setObject:@([decodedValue boolValue]) forKey:@"enableClearTextPlugin"];
 				continue;
 			}
 

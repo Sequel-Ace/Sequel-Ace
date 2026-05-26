@@ -97,7 +97,7 @@ static NSString *SPNewDatabaseCopyContent = @"SPNewDatabaseCopyContent";
 
 static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
-@interface SPDatabaseDocument ()
+@interface SPDatabaseDocument () <SADatabaseSelectionDelegate>
 
 // Privately redeclare as read/write to get the synthesized setter
 @property (readwrite, assign) BOOL allowSplitViewResizing;
@@ -2445,6 +2445,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                     ([connectionController sshUser] && [[connectionController sshUser] length]) ? [connectionController sshUser] : @"anonymous",
                     [connectionController sshHost] ? [connectionController sshHost] : @"",
                     ([[connectionController sshPort] length]) ? [connectionController sshPort] : @"22"];
+        case SPVaultConnection:
+            return [NSString stringWithFormat:@"%@@%@%@&Vault:%@:%@:%@/%@",
+                    ([connectionController user] && [[connectionController user] length]) ? [connectionController user] : @"anonymous",
+                    [connectionController host] ? [connectionController host] : @"",
+                    port,
+                    [connectionController vaultHost] ? [connectionController vaultHost] : @"",
+                    ([[connectionController vaultPort] length]) ? [connectionController vaultPort] : @"443",
+                    [connectionController vaultOIDCMount] ? [connectionController vaultOIDCMount] : @"",
+                    [connectionController vaultCredentialsPath] ? [connectionController vaultCredentialsPath] : @""];
     }
 
     return @"_";
@@ -3330,6 +3339,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 /**
  * Update the window title.
+ *
+ * The actual string composition lives in SAWindowTitleBuilder (Swift) —
+ * this method gathers the document's current state and forwards the
+ * result to the window controller. The accessory-color update only
+ * applies in the connected branch.
  */
 - (void)updateWindowTitle:(id)sender {
     // Ensure a call on the main thread
@@ -3337,47 +3351,29 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         return [[self onMainThread] updateWindowTitle:sender];
     }
 
-    // Determine name details
-    NSString *pathName = @"";
-    if ([[[self fileURL] path] length] && ![self isUntitled]) {
-        pathName = [NSString stringWithFormat:@"%@ — ", [[[self fileURL] path] lastPathComponent]];
+    SAWindowConnectionState state;
+    if ([connectionController isConnecting]) {
+        state = SAWindowConnectionStateConnecting;
+    } else if (!_isConnected) {
+        state = SAWindowConnectionStateDisconnected;
+    } else {
+        state = SAWindowConnectionStateConnected;
     }
 
-    if ([connectionController isConnecting]) {
-        NSString *title = NSLocalizedString(@"Connecting…", @"window title string indicating that sp is connecting");
-        [self.parentWindowController updateWindowWithTitle:title tabTitle:title];
-    } else if (!_isConnected) {
-        NSString *title = [NSString stringWithFormat:@"%@%@", pathName, [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey]];
-        [self.parentWindowController updateWindowWithTitle:title tabTitle:title];
-    } else {
-        NSMutableString *windowTitle = [NSMutableString string];
+    SAWindowTitleResult *result = [SAWindowTitleBuilder
+        buildTitleWithConnectionState:state
+                             filePath:[[self fileURL] path]
+                           isUntitled:[self isUntitled]
+                           bundleName:[[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString *)kCFBundleNameKey]
+                       connectionName:[self name]
+                             database:[self database]
+                                table:[self table]
+                         mySQLVersion:mySQLVersion
+             showServerVersionInTitle:[prefs boolForKey:SPDisplayServerVersionInWindowTitle]];
 
-        // Add the path to the window title
-        [windowTitle appendString:pathName];
+    [self.parentWindowController updateWindowWithTitle:result.windowTitle tabTitle:result.tabTitle];
 
-        // Add the MySQL version to the window title if enabled in prefs
-        if ([prefs boolForKey:SPDisplayServerVersionInWindowTitle]) {
-            [windowTitle appendFormat:@"(MySQL %@) ", mySQLVersion];
-        }
-
-        NSMutableString *tabTitle = [NSMutableString string];
-
-        // Add the name to the window
-        [windowTitle appendString:[self name]];
-        [tabTitle appendString:[self name]];
-
-        // If a database is selected, add to the window - and other tabs if host is the same but db different or table is not set
-        if ([self database]) {
-            [windowTitle appendFormat:@"/%@", [self database]];
-            [tabTitle appendFormat:@"/%@", [self database]];
-        }
-
-        // Add the table name if one is selected
-        if ([[self table] length]) {
-            [windowTitle appendFormat:@"/%@", [self table]];
-            [tabTitle appendFormat:@"/%@", [self table]];
-        }
-        [self.parentWindowController updateWindowWithTitle:windowTitle tabTitle:tabTitle];
+    if (state == SAWindowConnectionStateConnected) {
         [self.parentWindowController updateWindowAccessoryWithColor:[[SPFavoriteColorSupport sharedInstance] colorForIndex:[connectionController colorIndex]] isSSL:[self.connectionController isConnectedViaSSL]];
     }
 }
@@ -3707,14 +3703,15 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
- * The window title for this document.
+ * The window title for this document. Mirrors the disconnected-state
+ * preamble of -updateWindowTitle:; both share SAWindowTitleBuilder.
  */
 - (NSString *)displayName
 {
-    if (!_isConnected) {
-        return [NSString stringWithFormat:@"%@%@", ([[[self fileURL] path] length] && ![self isUntitled]) ? [NSString stringWithFormat:@"%@ — ",[[[self fileURL] path] lastPathComponent]] : @"", [[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString*)kCFBundleNameKey]];
-    }
-    return [[[self fileURL] path] lastPathComponent];
+    return [SAWindowTitleBuilder displayNameWithIsConnected:_isConnected
+                                                   filePath:[[self fileURL] path]
+                                                 isUntitled:[self isUntitled]
+                                                 bundleName:[[[NSBundle mainBundle] infoDictionary] objectForKey:(NSString *)kCFBundleNameKey]];
 }
 
 - (NSUndoManager *)undoManager
@@ -3776,6 +3773,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 if ([connectionController sshPort] && [[connectionController sshPort] length]) [connection setObject:[NSNumber numberWithInteger:[[connectionController sshPort] integerValue]] forKey:@"ssh_port"];
                 if ([connectionController sshRemoteSocketPath] && [[connectionController sshRemoteSocketPath] length]) [connection setObject:[connectionController sshRemoteSocketPath] forKey:@"sshRemoteSocketPath"];
                 break;
+            case SPVaultConnection:
+                connectionType = @"SPVaultConnection";
+                if ([[connectionController vaultHost] length]) [connection setObject:[connectionController vaultHost] forKey:@"vault_host"];
+                if ([[connectionController vaultPort] length]) [connection setObject:[connectionController vaultPort] forKey:@"vault_port"];
+                if ([[connectionController vaultOIDCMount] length]) [connection setObject:[connectionController vaultOIDCMount] forKey:@"vault_oidc_mount"];
+                if ([[connectionController vaultCredentialsPath] length]) [connection setObject:[connectionController vaultCredentialsPath] forKey:@"vault_credentials_path"];
+                break;
             default:
                 connectionType = @"SPTCPIPConnection";
         }
@@ -3790,7 +3794,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         if([connectionController port] && [[connectionController port] length]) [connection setObject:[NSNumber numberWithInteger:[[connectionController port] integerValue]] forKey:@"port"];
         if([[self database] length])                                            [connection setObject:[self database] forKey:@"database"];
 
-        if (includePasswords) {
+        if (includePasswords && [connectionController type] != SPVaultConnection) {
             NSString *pw = [connectionController keychainPassword];
             if (!pw) pw = [connectionController password];
             if (pw) [connection setObject:pw forKey:@"password"];
@@ -3938,6 +3942,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         else if ([typeString isEqualToString:@"SPAWSIAMConnection"])    connectionType = SPAWSIAMConnection;
         else if ([typeString isEqualToString:@"SPSocketConnection"])    connectionType = SPSocketConnection;
         else if ([typeString isEqualToString:@"SPSSHTunnelConnection"]) connectionType = SPSSHTunnelConnection;
+        else if ([typeString isEqualToString:@"SPVaultConnection"])     connectionType = SPVaultConnection;
         else                                                            connectionType = SPTCPIPConnection;
 
         [connectionController setType:connectionType];
@@ -3996,6 +4001,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([connection objectForKey:@"ssh_keyLocation"])        [connectionController setSshKeyLocation:[connection objectForKey:@"ssh_keyLocation"]];
     if ([connection objectForKey:@"ssh_port"])               [connectionController setSshPort:[NSString stringWithFormat:@"%ld", (long)[[connection objectForKey:@"ssh_port"] integerValue]]];
     if ([connection objectForKey:@"sshRemoteSocketPath"])    [connectionController setSshRemoteSocketPath:[connection objectForKey:@"sshRemoteSocketPath"]];
+
+    // Set Vault details if available
+    if ([connection objectForKey:@"vault_host"])             [connectionController setVaultHost:[connection objectForKey:@"vault_host"]];
+    if ([connection objectForKey:@"vault_port"])             [connectionController setVaultPort:[connection objectForKey:@"vault_port"]];
+    if ([connection objectForKey:@"vault_oidc_mount"])       [connectionController setVaultOIDCMount:[connection objectForKey:@"vault_oidc_mount"]];
+    if ([connection objectForKey:@"vault_credentials_path"]) [connectionController setVaultCredentialsPath:[connection objectForKey:@"vault_credentials_path"]];
 
     // Set the SSH password - if not in SPF file try to get it via the KeyChain
     if ([connection objectForKey:@"ssh_password"]) {
@@ -5264,111 +5275,137 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 /**
  * Select the specified database and, optionally, table.
+ *
+ * Trampoline into SADatabaseListManager. The orchestration
+ * (history-state save, popup-rebuild-and-retry, focus restoration)
+ * lives in Swift via `SADatabaseSelectionDelegate`; the delegate
+ * implementation is in the SADatabaseSelectionDelegate section below.
  */
 - (void)_selectDatabaseAndItem:(NSDictionary *)selectionDetails
 {
     @autoreleasepool {
-        NSString *targetDatabaseName = [selectionDetails objectForKey:@"database"];
-        NSString *targetItemName = [selectionDetails objectForKey:@"item"];
-
-        // Save existing scroll position and details, and ensure no duplicate entries are created as table list changes
-        BOOL historyStateChanging = [spHistoryControllerInstance modifyingState];
-
-        if (!historyStateChanging) {
-            [spHistoryControllerInstance updateHistoryEntries];
-            [spHistoryControllerInstance setModifyingState:YES];
-        }
-
-        if (![targetDatabaseName isEqualToString:selectedDatabase]) {
-            NSInteger targetDatabaseIndex = [[chooseDatabaseButton onMainThread] indexOfItemWithTitle:targetDatabaseName];
-            BOOL didSelectDatabase = [mySQLConnection selectDatabase:targetDatabaseName];
-
-            // Refresh database metadata and retry once when the list is stale or the initial selection failed.
-            if ((targetDatabaseIndex == NSNotFound || !didSelectDatabase) && [mySQLConnection isConnected]) {
-                SPMainQSync(^{
-                    [self setDatabases];
-                });
-
-                targetDatabaseIndex = [[chooseDatabaseButton onMainThread] indexOfItemWithTitle:targetDatabaseName];
-
-                if (!didSelectDatabase) {
-                    didSelectDatabase = [mySQLConnection selectDatabase:targetDatabaseName];
-                }
-            }
-
-            // Abort only if the database still can't be selected after refreshing and retrying.
-            if (!didSelectDatabase) {
-                // End the task first to ensure the database dropdown can be reselected
-                [self endTask];
-
-                if ([mySQLConnection isConnected]) {
-                    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists.", @"message of panel when connection to db failed after selecting from popupbutton"), targetDatabaseName] callback:nil];
-                }
-
-                if (!historyStateChanging) {
-                    [spHistoryControllerInstance setModifyingState:NO];
-                    [spHistoryControllerInstance updateHistoryEntries];
-                }
-
-                return;
-            }
-
-            if (targetDatabaseIndex == NSNotFound) {
-                SPMainQSync(^{
-                    [self->chooseDatabaseButton safeAddItemWithTitle:targetDatabaseName];
-                });
-                targetDatabaseIndex = [[chooseDatabaseButton onMainThread] indexOfItemWithTitle:targetDatabaseName];
-            }
-
-            if (targetDatabaseIndex != NSNotFound) {
-                [[chooseDatabaseButton onMainThread] selectItemWithTitle:targetDatabaseName];
-            } else {
-                [[chooseDatabaseButton onMainThread] selectItemAtIndex:0];
-            }
-
-            selectedDatabase = [[NSString alloc] initWithString:targetDatabaseName];
-            selectedTableName = nil;
-
-            [databaseDataInstance resetAllData];
-
-            // Update the stored database encoding, used for views, "default" table encodings, and to allow
-            // or disallow use of the "View using encoding" menu
-            [self detectDatabaseEncoding];
-
-            // Set the connection of SPTablesList to reload tables in db
-            [tablesListInstance setConnection:mySQLConnection];
-
-            // Update the window title
-            [self updateWindowTitle:self];
-        }
-
-        SPMainQSync(^{
-            BOOL focusOnFilter = YES;
-            if (targetItemName) focusOnFilter = NO;
-
-            // If a the table has changed, update the selection
-            if (![targetItemName isEqualToString:[self table]] && targetItemName) {
-                focusOnFilter = ![self->tablesListInstance selectItemWithName:targetItemName];
-            }
-
-            // Ensure the window focus is on the table list or the filter as appropriate
-            [self->tablesListInstance setTableListSelectability:YES];
-            if (focusOnFilter) {
-                [self->tablesListInstance makeTableListFilterHaveFocus];
-            } else {
-                [self->tablesListInstance makeTableListHaveFocus];
-            }
-            [self->tablesListInstance setTableListSelectability:NO];
-        });
-
-        if (!historyStateChanging) {
-            [spHistoryControllerInstance setModifyingState:NO];
-            [spHistoryControllerInstance updateHistoryEntries];
-        }
-
-        [self endTask];
-        [self _processDatabaseChangedBundleTriggerActions];
+        [SADatabaseListManager performSelectionWithDatabase:[selectionDetails objectForKey:@"database"]
+                                                       item:[selectionDetails objectForKey:@"item"]
+                                                   delegate:self];
     }
+}
+
+#pragma mark - SADatabaseSelectionDelegate
+
+- (NSString *)currentSelectedDatabase
+{
+    return selectedDatabase;
+}
+
+- (void)setCurrentSelectedDatabase:(NSString *)value
+{
+    // Match original semantics: -_selectDatabaseAndItem: built a fresh
+    // immutable copy via [[NSString alloc] initWithString:…] when it
+    // assigned to the ivar. -copy on an NSString returns self for the
+    // already-immutable case, but stays correct for any mutable input.
+    selectedDatabase = [value copy];
+}
+
+- (NSString *)currentSelectedTable
+{
+    return selectedTableName;
+}
+
+- (void)setCurrentSelectedTable:(NSString *)value
+{
+    selectedTableName = [value copy];
+}
+
+- (BOOL)historyStateIsModifying
+{
+    return [spHistoryControllerInstance modifyingState];
+}
+
+- (void)setHistoryStateIsModifying:(BOOL)value
+{
+    [spHistoryControllerInstance setModifyingState:value];
+}
+
+- (BOOL)isDatabaseConnected
+{
+    return [mySQLConnection isConnected];
+}
+
+- (NSString *)currentTableName
+{
+    return [self table];
+}
+
+- (NSPopUpButton *)chooseDatabaseButton
+{
+    return chooseDatabaseButton;
+}
+
+- (BOOL)selectMySQLDatabase:(NSString *)name
+{
+    return [mySQLConnection selectDatabase:name];
+}
+
+- (void)updateHistoryEntries
+{
+    [spHistoryControllerInstance updateHistoryEntries];
+}
+
+- (void)rebuildDatabasesPopup
+{
+    [self setDatabases];
+}
+
+- (void)endLoadingTask
+{
+    [self endTask];
+}
+
+- (void)resetDatabaseData
+{
+    [databaseDataInstance resetAllData];
+}
+
+- (void)reattachTablesListConnection
+{
+    [tablesListInstance setConnection:mySQLConnection];
+}
+
+- (void)refreshWindowTitle
+{
+    [self updateWindowTitle:self];
+}
+
+- (void)presentUnableToSelectDatabaseAlertWithName:(NSString *)name
+{
+    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error")
+                                 message:[NSString stringWithFormat:NSLocalizedString(@"Unable to select database %@.\nPlease check you have the necessary privileges to view the database, and that the database still exists.", @"message of panel when connection to db failed after selecting from popupbutton"), name]
+                                callback:nil];
+}
+
+- (BOOL)selectTablesListItemWithNamed:(NSString *)name
+{
+    return [tablesListInstance selectItemWithName:name];
+}
+
+- (void)setTableListSelectability:(BOOL)flag
+{
+    [tablesListInstance setTableListSelectability:flag];
+}
+
+- (void)focusTableListFilter
+{
+    [tablesListInstance makeTableListFilterHaveFocus];
+}
+
+- (void)focusTableList
+{
+    [tablesListInstance makeTableListHaveFocus];
+}
+
+- (void)processDatabaseChangedBundleTriggers
+{
+    [self _processDatabaseChangedBundleTriggerActions];
 }
 
 - (void)_processDatabaseChangedBundleTriggerActions

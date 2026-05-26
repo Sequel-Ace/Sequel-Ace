@@ -207,4 +207,24 @@ final class SAConnectionInfoMappingTests: XCTestCase {
 
         XCTAssertNil(SAConnectionInfoObjC.resolvedMySQLConnectHost(for: info))
     }
+
+    func testVaultInfoSetup() {
+        let info = SAConnectionInfoObjC()
+        info.type = .vault
+        info.host = "mysql.internal"
+        info.port = "3306"
+        info.vaultHost = "vault.example.com"
+        info.vaultPort = "443"
+        info.vaultOIDCMount = "oidc"
+        info.vaultCredentialsPath = "databases_credentials/creds/my-role"
+
+        XCTAssertEqual(info.type, .vault)
+        XCTAssertEqual(info.host, "mysql.internal")
+        XCTAssertEqual(info.vaultHost, "vault.example.com")
+        XCTAssertEqual(info.vaultPort, "443")
+        XCTAssertEqual(info.vaultOIDCMount, "oidc")
+        XCTAssertEqual(info.vaultCredentialsPath, "databases_credentials/creds/my-role")
+        // Vault uses the DB host directly (TCP-identical) — not the Vault host
+        XCTAssertEqual(SAConnectionInfoObjC.resolvedMySQLConnectHost(for: info), "mysql.internal")
+    }
 }

@@ -16,6 +16,7 @@ import Foundation
     case socket = 1
     case sshTunnel = 2
     case awsIAM = 3
+    case vault = 4
 }
 
 // MARK: - Time Zone Mode
@@ -61,6 +62,13 @@ struct SAConnectionInfo {
     var useAWSIAMAuth: Int = 0
     var awsRegion: String = ""
     var awsProfile: String = ""
+
+    // MARK: Vault Authentication
+
+    var vaultHost: String = ""
+    var vaultPort: String = ""
+    var vaultOIDCMount: String = ""
+    var vaultCredentialsPath: String = ""
 
     // MARK: SSL
 
@@ -130,7 +138,7 @@ struct SAConnectionInfo {
             }
             return "127.0.0.1"
 
-        case .tcpIP, .awsIAM:
+        case .tcpIP, .awsIAM, .vault:
             return fallbackHost
 
         @unknown default:
@@ -229,6 +237,28 @@ struct SAConnectionInfo {
     @objc var awsProfile: String {
         get { info.awsProfile }
         set { info.awsProfile = newValue }
+    }
+
+    // MARK: Vault
+
+    @objc var vaultHost: String {
+        get { info.vaultHost }
+        set { info.vaultHost = newValue }
+    }
+
+    @objc var vaultPort: String {
+        get { info.vaultPort }
+        set { info.vaultPort = newValue }
+    }
+
+    @objc var vaultOIDCMount: String {
+        get { info.vaultOIDCMount }
+        set { info.vaultOIDCMount = newValue }
+    }
+
+    @objc var vaultCredentialsPath: String {
+        get { info.vaultCredentialsPath }
+        set { info.vaultCredentialsPath = newValue }
     }
 
     // MARK: SSL
