@@ -77,7 +77,8 @@ import Foundation
     ) -> SAConnectionValidationFailure? {
         // 1. Host required for TCP/IP, SSH tunnel, and AWS IAM
         //    connections — socket connections use a local socket path.
-        let sshTunnelUsesRemoteSocket = type == .sshTunnel && !sshRemoteSocketPath.isEmpty
+        let trimmedRemoteSocketPath = sshRemoteSocketPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        let sshTunnelUsesRemoteSocket = type == .sshTunnel && !trimmedRemoteSocketPath.isEmpty
         if (type == .tcpIP || (type == .sshTunnel && !sshTunnelUsesRemoteSocket) || type == .awsIAM) && host.isEmpty {
             return SAConnectionValidationFailure(
                 kind: .hostMissing,

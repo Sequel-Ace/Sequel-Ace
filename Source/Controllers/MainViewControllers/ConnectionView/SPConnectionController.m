@@ -1036,7 +1036,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
 - (BOOL)_shouldRequireMySQLHost
 {
-    if ([self type] == SPSSHTunnelConnection && [[self sshRemoteSocketPath] length]) {
+    NSString *trimmedRemoteSocketPath = [[self sshRemoteSocketPath] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if ([self type] == SPSSHTunnelConnection && [trimmedRemoteSocketPath length]) {
         return NO;
     }
 

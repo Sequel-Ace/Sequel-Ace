@@ -107,6 +107,16 @@ final class SAConnectionDetailsValidatorTests: XCTestCase {
         ))
     }
 
+    func testSSHTunnelWithWhitespaceOnlyRemoteSocketRequiresHost() {
+        let failure = validate(
+            type: .sshTunnel,
+            host: "",
+            sshHost: "bastion.example.com",
+            sshRemoteSocketPath: "   \n\t"
+        )
+        XCTAssertEqual(failure?.kind, .hostMissing)
+    }
+
     func testAWSIAMRequiresHost() {
         let failure = validate(type: .awsIAM, host: "")
         XCTAssertEqual(failure?.kind, .hostMissing)
