@@ -1873,9 +1873,13 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         // Create redacted version for display
         NSString *displayString = clipboardString;
         if (hasPassword) {
-            // Use NSURLComponents to properly redact password (handles percent-encoded passwords)
-            components.password = @"•••";
-            displayString = components.string ?: clipboardString;
+            // Replace password with bullets in the URL string
+            // Format: mysql://user:password@host -> mysql://user:•••@host
+            NSString *passwordToReplace = [components.password stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLPasswordAllowedCharacterSet]];
+            if (passwordToReplace && passwordToReplace.length > 0) {
+                displayString = [clipboardString stringByReplacingOccurrencesOfString:[NSString stringWithFormat:@":%@@", passwordToReplace]
+                                                                            withString:@":•••@"];
+            }
         }
 
         NSAlert *alert = [[NSAlert alloc] init];

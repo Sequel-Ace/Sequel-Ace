@@ -320,10 +320,10 @@ Gw
             <point key="canvasLocation" x="-364" y="159"/>
         </window>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="17" userLabel="General">
-            <rect key="frame" x="0.0" y="0.0" width="636" height="502"/>
+            <rect key="frame" x="0.0" y="0.0" width="636" height="522"/>
             <subviews>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="XRZ-IQ-R00">
-                    <rect key="frame" x="180" y="465" width="436" height="22"/>
+                    <rect key="frame" x="180" y="485" width="436" height="22"/>
                     <buttonCell key="cell" type="check" title="Prompt for confirmation before quitting" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="pLU-wO-HXa">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -336,19 +336,19 @@ Gw
                     </connections>
                 </button>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="FJw-vU-VgL">
-                    <rect key="frame" x="180" y="453" width="436" height="5"/>
+                    <rect key="frame" x="180" y="473" width="436" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="o4y-7V-ZEP"/>
                     </constraints>
                 </box>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="1420">
-                    <rect key="frame" x="180" y="381" width="436" height="5"/>
+                    <rect key="frame" x="180" y="401" width="436" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="jHx-SA-a0F"/>
                     </constraints>
                 </box>
                 <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1419">
-                    <rect key="frame" x="18" y="353" width="154" height="20"/>
+                    <rect key="frame" x="18" y="373" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="150" id="8zj-eb-GHj"/>
                         <constraint firstAttribute="height" constant="20" id="GHh-gf-gj6"/>
@@ -360,7 +360,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1418">
-                    <rect key="frame" x="180" y="352" width="436" height="22"/>
+                    <rect key="frame" x="180" y="372" width="436" height="22"/>
                     <popUpButtonCell key="cell" type="push" title="Last Used" bezelStyle="rounded" alignment="left" lineBreakMode="clipping" state="on" borderStyle="borderAndBezel" inset="2" arrowPosition="arrowAtCenter" preferredEdge="maxY" selectedItem="1449" id="1422">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="message"/>
@@ -399,19 +399,19 @@ Gw
                     </connections>
                 </popUpButton>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="582">
-                    <rect key="frame" x="180" y="299" width="436" height="5"/>
+                    <rect key="frame" x="180" y="319" width="436" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="epJ-gi-vWC"/>
                     </constraints>
                 </box>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="581">
-                    <rect key="frame" x="180" y="340" width="436" height="5"/>
+                    <rect key="frame" x="180" y="360" width="436" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="Lfj-js-9td"/>
                     </constraints>
                 </box>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="947">
-                    <rect key="frame" x="180" y="246" width="436" height="22"/>
+                    <rect key="frame" x="180" y="266" width="436" height="22"/>
                     <buttonCell key="cell" type="check" title="Display comments in tables list" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="948">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -424,7 +424,7 @@ Gw
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="hMm-gH-Xw4">
-                    <rect key="frame" x="180" y="222" width="436" height="22"/>
+                    <rect key="frame" x="180" y="242" width="436" height="22"/>
                     <buttonCell key="cell" type="check" title="Save query history individually" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="3B6-Jd-2pW">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -437,7 +437,7 @@ Gw
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="957">
-                    <rect key="frame" x="180" y="270" width="436" height="22"/>
+                    <rect key="frame" x="180" y="290" width="436" height="22"/>
                     <buttonCell key="cell" type="check" title="Display vertical grid lines" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="958">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -450,7 +450,7 @@ Gw
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="bHb-uY-JgS">
-                    <rect key="frame" x="180" y="199" width="436" height="22"/>
+                    <rect key="frame" x="180" y="219" width="436" height="22"/>
                     <buttonCell key="cell" type="check" title="Display column types in content and query views" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="Z7f-0u-a0e">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -463,7 +463,7 @@ Gw
                     </connections>
                 </button>
                 <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="577">
-                    <rect key="frame" x="18" y="312" width="154" height="20"/>
+                    <rect key="frame" x="18" y="332" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="20" id="2fJ-uV-yWE"/>
                         <constraint firstAttribute="width" constant="150" id="H3R-fZ-7pu"/>
@@ -475,7 +475,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="1465">
-                    <rect key="frame" x="18" y="271" width="154" height="20"/>
+                    <rect key="frame" x="18" y="291" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="150" id="Pth-OX-OBR"/>
                         <constraint firstAttribute="height" constant="20" id="jzh-o6-wrC"/>
@@ -487,7 +487,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="569">
-                    <rect key="frame" x="180" y="424" width="436" height="22"/>
+                    <rect key="frame" x="180" y="444" width="436" height="22"/>
                     <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" inset="2" autoenablesItems="NO" id="570">
                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="message"/>
@@ -502,7 +502,7 @@ Gw
                     </connections>
                 </popUpButton>
                 <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="568">
-                    <rect key="frame" x="18" y="425" width="154" height="20"/>
+                    <rect key="frame" x="18" y="445" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="150" id="iwU-u3-PUC"/>
                         <constraint firstAttribute="height" constant="20" id="y3H-yc-8cM"/>
@@ -514,7 +514,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="567">
-                    <rect key="frame" x="180" y="393" width="436" height="22"/>
+                    <rect key="frame" x="180" y="413" width="436" height="22"/>
                     <buttonCell key="cell" type="check" title="Connect to default on startup" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="576">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -527,7 +527,7 @@ Gw
                     </connections>
                 </button>
                 <popUpButton verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="24" userLabel="Default Encoding Dropdown">
-                    <rect key="frame" x="180" y="311" width="436" height="22"/>
+                    <rect key="frame" x="180" y="331" width="436" height="22"/>
                     <popUpButtonCell key="cell" type="push" title="Autodetect" bezelStyle="rounded" alignment="left" lineBreakMode="clipping" state="on" borderStyle="borderAndBezel" inset="2" arrowPosition="arrowAtCenter" preferredEdge="maxY" selectedItem="50" id="25">
                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                         <font key="font" metaFont="message"/>
@@ -590,13 +590,13 @@ Gw
                     </connections>
                 </popUpButton>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="784">
-                    <rect key="frame" x="180" y="189" width="436" height="5"/>
+                    <rect key="frame" x="180" y="209" width="436" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="vus-7q-stB"/>
                     </constraints>
                 </box>
                 <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="790">
-                    <rect key="frame" x="494" y="167" width="124" height="14"/>
+                    <rect key="frame" x="494" y="187" width="124" height="14"/>
                     <constraints>
                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="120" id="nGd-yZ-I7g"/>
                     </constraints>
@@ -607,7 +607,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <textField toolTip="Enter the maximum number of entries to remember in the Custom Query query history, from 0 to 99" focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="787">
-                    <rect key="frame" x="180" y="163" width="311" height="22"/>
+                    <rect key="frame" x="180" y="183" width="311" height="22"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="22" id="1Oz-rT-AdX"/>
                     </constraints>
@@ -627,7 +627,7 @@ Gw
                     </connections>
                 </textField>
                 <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="785">
-                    <rect key="frame" x="18" y="163" width="154" height="20"/>
+                    <rect key="frame" x="18" y="183" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="150" id="iNE-8S-1ug"/>
                         <constraint firstAttribute="height" constant="20" id="m9i-Kw-gLk"/>
@@ -639,7 +639,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <box boxType="custom" borderType="none" cornerRadius="4" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="7J9-Yp-qMZ">
-                    <rect key="frame" x="0.0" y="114" width="636" height="41"/>
+                    <rect key="frame" x="0.0" y="134" width="636" height="41"/>
                     <view key="contentView" id="8QO-1r-5jB">
                         <rect key="frame" x="0.0" y="0.0" width="636" height="41"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -720,7 +720,7 @@ Gw
                     </view>
                 </box>
                 <box boxType="custom" borderType="none" cornerRadius="4" title="Box" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="F3U-SQ-W2d">
-                    <rect key="frame" x="0.0" y="83" width="636" height="31"/>
+                    <rect key="frame" x="0.0" y="103" width="636" height="31"/>
                     <view key="contentView" id="typ-rs-Tmp">
                         <rect key="frame" x="0.0" y="0.0" width="636" height="31"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -785,7 +785,7 @@ Gw
                     </view>
                 </box>
                 <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="gcQ-a7-Kqd">
-                    <rect key="frame" x="18" y="42" width="154" height="20"/>
+                    <rect key="frame" x="18" y="62" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="150" id="UXx-vH-pTm"/>
                         <constraint firstAttribute="height" constant="20" id="cZz-2P-Xzw"/>
@@ -797,7 +797,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="2aR-JM-Lbr">
-                    <rect key="frame" x="180" y="41" width="436" height="22"/>
+                    <rect key="frame" x="180" y="61" width="436" height="22"/>
                     <buttonCell key="cell" type="check" title="Share anonymized usage analytics with developers" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="mZ1-oa-LuT">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -810,13 +810,13 @@ Gw
                     </connections>
                 </button>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="XAX-zM-z61">
-                    <rect key="frame" x="180" y="70" width="436" height="5"/>
+                    <rect key="frame" x="180" y="90" width="436" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="GuS-Im-MmS"/>
                     </constraints>
                 </box>
                 <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="NBD-nG-VYi">
-                    <rect key="frame" x="18" y="466" width="154" height="20"/>
+                    <rect key="frame" x="18" y="486" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="150" id="I93-gu-1Cg"/>
                         <constraint firstAttribute="height" constant="20" id="Iqw-5P-eDM"/>
@@ -827,9 +827,8 @@ Gw
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
-                <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="KJh-ax-qjk">
-                    <rect key="frame" x="180" y="20" width="438" height="16"/>
-                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                <button verticalHuggingPriority="750" ambiguous="YES" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="KJh-ax-qjk">
+                    <rect key="frame" x="180" y="40" width="438" height="16"/>
                     <buttonCell key="cell" type="check" title="Automatically check clipboard for connection strings when importing" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="Snz-sQ-xrG">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -842,7 +841,7 @@ Gw
                     </connections>
                 </button>
                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="KA1-k6-SRR">
-                    <rect key="frame" x="52" y="20" width="120" height="16"/>
+                    <rect key="frame" x="52" y="40" width="120" height="16"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" lineBreakMode="clipping" title="Connection Strings" id="fG3-Zq-buL">
                         <font key="font" metaFont="system"/>
@@ -892,6 +891,7 @@ Gw
                 <constraint firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="F3U-SQ-W2d" secondAttribute="bottom" constant="70" id="PYb-fK-u5u"/>
                 <constraint firstItem="577" firstAttribute="leading" secondItem="17" secondAttribute="leading" constant="20" id="QFi-wi-jse"/>
                 <constraint firstItem="FJw-vU-VgL" firstAttribute="leading" secondItem="569" secondAttribute="leading" id="Quq-iv-5iD"/>
+                <constraint firstAttribute="bottom" secondItem="KJh-ax-qjk" secondAttribute="bottom" constant="60" id="T4k-gQ-ZDC"/>
                 <constraint firstItem="7J9-Yp-qMZ" firstAttribute="top" secondItem="787" secondAttribute="bottom" constant="8" id="VDV-pe-DL0"/>
                 <constraint firstItem="784" firstAttribute="leading" secondItem="569" secondAttribute="leading" id="VOf-4w-xgO"/>
                 <constraint firstItem="bHb-uY-JgS" firstAttribute="leading" secondItem="784" secondAttribute="leading" id="W4N-5b-uqF"/>
@@ -928,7 +928,7 @@ Gw
                 <constraint firstItem="XAX-zM-z61" firstAttribute="top" secondItem="yhD-8W-lrG" secondAttribute="bottom" constant="9" id="yri-Jh-GCb"/>
                 <constraint firstItem="1419" firstAttribute="leading" secondItem="17" secondAttribute="leading" constant="20" id="zZB-QF-61w"/>
             </constraints>
-            <point key="canvasLocation" x="-4" y="1088"/>
+            <point key="canvasLocation" x="-4" y="1098"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="512" userLabel="Tables">
             <rect key="frame" x="0.0" y="0.0" width="549" height="359"/>
@@ -2690,6 +2690,15 @@ Warning: If Sequel Ace and the server do not have at least one cipher suite in c
             </constraints>
             <point key="canvasLocation" x="751" y="1549"/>
         </customView>
+        <box title="Box" id="ae3-C9-5LD">
+            <rect key="frame" x="0.0" y="0.0" width="177" height="31"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+            <view key="contentView" id="hxi-t9-p6e">
+                <rect key="frame" x="0.0" y="0.0" width="177" height="19"/>
+                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            </view>
+            <point key="canvasLocation" x="-137" y="1460"/>
+        </box>
     </objects>
     <resources>
         <image name="NSAddTemplate" width="18" height="17"/>
