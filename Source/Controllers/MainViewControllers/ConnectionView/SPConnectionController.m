@@ -2087,7 +2087,15 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     if ([details objectForKey:@"host"]) [favorite setObject:[details objectForKey:@"host"] forKey:SPFavoriteHostKey];
     if ([details objectForKey:@"user"]) [favorite setObject:[details objectForKey:@"user"] forKey:SPFavoriteUserKey];
     if ([details objectForKey:@"database"]) [favorite setObject:[details objectForKey:@"database"] forKey:SPFavoriteDatabaseKey];
-    if ([details objectForKey:@"port"]) [favorite setObject:[[details objectForKey:@"port"] stringValue] forKey:SPFavoritePortKey];
+    // Handle port - can be NSString (from parser) or NSNumber (from other sources)
+    if ([details objectForKey:@"port"]) {
+        id portValue = [details objectForKey:@"port"];
+        if ([portValue isKindOfClass:[NSNumber class]]) {
+            [favorite setObject:[portValue stringValue] forKey:SPFavoritePortKey];
+        } else if ([portValue isKindOfClass:[NSString class]]) {
+            [favorite setObject:portValue forKey:SPFavoritePortKey];
+        }
+    }
     if ([details objectForKey:@"socket"]) [favorite setObject:[details objectForKey:@"socket"] forKey:SPFavoriteSocketKey];
 
     // Map connection type using centralized helper
@@ -2109,10 +2117,16 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     }
 
     // Add cleartext plugin flag if present (for LDAP/cleartext auth)
-    if ([details objectForKey:@"enable_cleartext_plugin"]) {
-        NSString *clearTextValue = [details objectForKey:@"enable_cleartext_plugin"];
-        BOOL enableClearText = ([clearTextValue isEqualToString:@"1"] ||
-                                [[clearTextValue lowercaseString] isEqualToString:@"true"]);
+    // Check normalized key first (from ConnectionStringParser), then raw key for compatibility
+    id clearTextValue = [details objectForKey:@"enableClearTextPlugin"] ?: [details objectForKey:@"enable_cleartext_plugin"];
+    if (clearTextValue) {
+        BOOL enableClearText = NO;
+        if ([clearTextValue isKindOfClass:[NSNumber class]]) {
+            enableClearText = [clearTextValue boolValue];
+        } else if ([clearTextValue isKindOfClass:[NSString class]]) {
+            enableClearText = ([clearTextValue isEqualToString:@"1"] ||
+                              [[clearTextValue lowercaseString] isEqualToString:@"true"]);
+        }
         [favorite setObject:@(enableClearText) forKey:SPFavoriteEnableClearTextPluginKey];
     }
 
@@ -2460,9 +2474,6 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
         if ([nodeObject respondsToSelector:@selector(toConnectionString:)]) {
             connectionString = [nodeObject toConnectionString:includePassword];
-            NSLog(@"DEBUG: connectionString: %@", connectionString);
-        } else {
-            NSLog(@"DEBUG: nodeObject does not respond to toConnectionString:");
         }
 
         if (connectionString && [connectionString length] > 0) {
@@ -4300,12 +4311,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         // Select the new nodes and scroll into view
         for (SPTreeNode *eachNode in importedNodes) {
-            [importedIndexSet addIndex:[favoritesOutlineView rowForItem:eachNode]];
+            NSInteger row = [favoritesOutlineView rowForItem:eachNode];
+            if (row != -1) {
+                [importedIndexSet addIndex:(NSUInteger)row];
+            }
         }
 
-        [favoritesOutlineView selectRowIndexes:importedIndexSet byExtendingSelection:NO];
-
-        [self _scrollToSelectedNode];
+        if ([importedIndexSet count] > 0) {
+            [favoritesOutlineView selectRowIndexes:importedIndexSet byExtendingSelection:NO];
+            [self _scrollToSelectedNode];
+        }
     }
 }
 

@@ -101,7 +101,11 @@ import Foundation
                     autoConnect = (value.lowercased() == "true" || value == "1")
 
                 case "type":
-                    details["type"] = connectionTypeString(from: value)
+                    if let typeString = connectionTypeString(from: value) {
+                        details["type"] = typeString
+                    } else {
+                        invalidParameters.append(key)
+                    }
 
                 case "socket":
                     details["socket"] = value
@@ -164,7 +168,8 @@ import Foundation
     }
 
     /// Converts a connection type URL parameter to the internal string representation
-    private static func connectionTypeString(from urlParam: String) -> String {
+    /// Returns nil if the type is not recognized
+    private static func connectionTypeString(from urlParam: String) -> String? {
         switch urlParam.lowercased() {
         case "socket":
             return "SPSocketConnection"
@@ -175,7 +180,7 @@ import Foundation
         case "tcpip", "tcp":
             return "SPTCPIPConnection"
         default:
-            return "SPTCPIPConnection"
+            return nil
         }
     }
 
