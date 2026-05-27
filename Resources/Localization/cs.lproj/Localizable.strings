@@ -3435,3 +3435,6 @@ příkazy budou spuštěny pro každé textové vstupní pole";
 
 /* Vault save-favorite validation: credentials path field is empty */
 "A Vault credentials path is required to save a Vault favorite." = "A Vault credentials path is required to save a Vault favorite.";
+
+/* Cell context menu filter submenu title */
+"Filter by Selected Value" = "Filter by Selected Value";
