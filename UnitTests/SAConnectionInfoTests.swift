@@ -101,6 +101,7 @@ final class SAConnectionInfoTests: XCTestCase {
         XCTAssertEqual(SAConnectionType.socket.rawValue, 1)
         XCTAssertEqual(SAConnectionType.sshTunnel.rawValue, 2)
         XCTAssertEqual(SAConnectionType.awsIAM.rawValue, 3)
+        XCTAssertEqual(SAConnectionType.vault.rawValue, 4)
     }
 
     func testTimeZoneProperties() {
@@ -123,5 +124,36 @@ final class SAConnectionInfoTests: XCTestCase {
         XCTAssertEqual(info.useAWSIAMAuth, 1)
         XCTAssertEqual(info.awsRegion, "us-east-1")
         XCTAssertEqual(info.awsProfile, "production")
+    }
+
+    func testVaultProperties() {
+        let info = SAConnectionInfoObjC()
+        info.type = .vault
+        info.vaultHost = "vault.example.com"
+        info.vaultPort = "443"
+        info.vaultOIDCMount = "oidc"
+        info.vaultCredentialsPath = "databases_credentials/creds/my-role"
+
+        XCTAssertEqual(info.type, .vault)
+        XCTAssertEqual(info.vaultHost, "vault.example.com")
+        XCTAssertEqual(info.vaultPort, "443")
+        XCTAssertEqual(info.vaultOIDCMount, "oidc")
+        XCTAssertEqual(info.vaultCredentialsPath, "databases_credentials/creds/my-role")
+    }
+
+    func testVaultResolvedConnectHost() {
+        let info = SAConnectionInfoObjC()
+        info.type = .vault
+        info.host = "mysql.internal"
+
+        XCTAssertEqual(SAConnectionInfoObjC.resolvedMySQLConnectHost(for: info), "mysql.internal")
+    }
+
+    func testVaultResolvedConnectHostFallsBackToLoopbackWhenBlank() {
+        let info = SAConnectionInfoObjC()
+        info.type = .vault
+        info.host = ""
+
+        XCTAssertEqual(SAConnectionInfoObjC.resolvedMySQLConnectHost(for: info), "127.0.0.1")
     }
 }
