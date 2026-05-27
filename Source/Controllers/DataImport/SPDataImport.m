@@ -889,12 +889,20 @@
 			{
 #warning This EOL detection logic will break for multibyte encodings (like UTF16)!
 				NSInteger segmentEndPosition;
-				BOOL atLineEnding = !allDataRead;
+				BOOL atLineEnding = NO;
 
-				if (allDataRead) {
+				if (allDataRead && dataBufferPosition >= dataBufferLength) {
 					segmentEndPosition = dataBufferLength;
+					while (segmentEndPosition > dataBufferLastQueryEndPosition
+							&& (csvDataBufferBytes[segmentEndPosition - 1] == 0x0A
+								|| csvDataBufferBytes[segmentEndPosition - 1] == 0x0D))
+					{
+						segmentEndPosition--;
+						atLineEnding = YES;
+					}
 				} else {
 					segmentEndPosition = dataBufferPosition;
+					atLineEnding = YES;
 					// Keep reading through any other line endings
 					while (dataBufferPosition + 1 < dataBufferLength
 							&& (csvDataBufferBytes[dataBufferPosition+1] == 0x0A
