@@ -790,7 +790,7 @@ Gw
                         <constraint firstAttribute="width" constant="150" id="UXx-vH-pTm"/>
                         <constraint firstAttribute="height" constant="20" id="cZz-2P-Xzw"/>
                     </constraints>
-                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Analytics" id="6mk-ml-lFe">
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Analytics:" id="6mk-ml-lFe">
                         <font key="font" metaFont="system"/>
                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -827,28 +827,31 @@ Gw
                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
-                <button verticalHuggingPriority="750" ambiguous="YES" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="KJh-ax-qjk">
-                    <rect key="frame" x="180" y="20" width="438" height="16"/>
+                <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="KA1-k6-SRR">
+                    <rect key="frame" x="18" y="21" width="154" height="20"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="20" id="KA1-h-cst"/>
+                        <constraint firstAttribute="width" constant="150" id="KA1-w-cst"/>
+                    </constraints>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Connection Strings:" id="fG3-Zq-buL">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="KJh-ax-qjk">
+                    <rect key="frame" x="180" y="20" width="456" height="22"/>
                     <buttonCell key="cell" type="check" title="Automatically check clipboard for connection strings when importing" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="Snz-sQ-xrG">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
-                        <connections>
-                            <binding destination="117" name="value" keyPath="values.AutoCheckClipboardForConnectionStrings" id="KJ5-PE-GNI"/>
-                        </connections>
                     </buttonCell>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="22" id="KJh-h-cst"/>
+                    </constraints>
                     <connections>
-                        <binding destination="117" name="value" keyPath="values.AutoCheckClipboardForConnectionStrings" id="3gb-iR-dxu"/>
+                        <binding destination="117" name="value" keyPath="values.AutoCheckClipboardForConnectionStrings" id="KJ5-PE-GNI"/>
                     </connections>
                 </button>
-                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="KA1-k6-SRR">
-                    <rect key="frame" x="52" y="20" width="120" height="16"/>
-                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <textFieldCell key="cell" lineBreakMode="clipping" title="Connection Strings" id="fG3-Zq-buL">
-                        <font key="font" metaFont="system"/>
-                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                    </textFieldCell>
-                </textField>
             </subviews>
             <constraints>
                 <constraint firstAttribute="trailing" secondItem="569" secondAttribute="trailing" constant="20" id="07m-Wu-Wdm"/>
@@ -878,6 +881,10 @@ Gw
                 <constraint firstItem="F3U-SQ-W2d" firstAttribute="leading" secondItem="17" secondAttribute="leading" id="Im0-9V-68O"/>
                 <constraint firstItem="784" firstAttribute="trailing" secondItem="569" secondAttribute="trailing" id="JVt-FZ-AWU"/>
                 <constraint firstItem="785" firstAttribute="leading" secondItem="17" secondAttribute="leading" constant="20" id="JuX-m1-yDO"/>
+                <constraint firstItem="KA1-k6-SRR" firstAttribute="centerY" secondItem="KJh-ax-qjk" secondAttribute="centerY" id="KA1-cy-cst"/>
+                <constraint firstItem="KA1-k6-SRR" firstAttribute="leading" secondItem="17" secondAttribute="leading" constant="20" id="KA1-ld-cst"/>
+                <constraint firstItem="KJh-ax-qjk" firstAttribute="leading" secondItem="569" secondAttribute="leading" id="KJh-ld-cst"/>
+                <constraint firstItem="KJh-ax-qjk" firstAttribute="trailing" secondItem="569" secondAttribute="trailing" id="KJh-tr-cst"/>
                 <constraint firstItem="947" firstAttribute="leading" secondItem="569" secondAttribute="leading" id="KeG-OR-BDE"/>
                 <constraint firstItem="XAX-zM-z61" firstAttribute="leading" secondItem="784" secondAttribute="leading" id="LGi-Au-NT4"/>
                 <constraint firstItem="hMm-gH-Xw4" firstAttribute="top" secondItem="947" secondAttribute="bottom" constant="2" id="Liq-UM-y1F"/>
@@ -892,7 +899,7 @@ Gw
                 <constraint firstItem="577" firstAttribute="leading" secondItem="17" secondAttribute="leading" constant="20" id="QFi-wi-jse"/>
                 <constraint firstItem="FJw-vU-VgL" firstAttribute="leading" secondItem="569" secondAttribute="leading" id="Quq-iv-5iD"/>
                 <constraint firstAttribute="height" constant="502" id="SqM-0P-Y3b"/>
-                <constraint firstAttribute="bottom" secondItem="KJh-ax-qjk" secondAttribute="bottom" constant="60" id="T4k-gQ-ZDC"/>
+                <constraint firstAttribute="bottom" secondItem="KJh-ax-qjk" secondAttribute="bottom" constant="20" id="T4k-gQ-ZDC"/>
                 <constraint firstItem="7J9-Yp-qMZ" firstAttribute="top" secondItem="787" secondAttribute="bottom" constant="8" id="VDV-pe-DL0"/>
                 <constraint firstItem="784" firstAttribute="leading" secondItem="569" secondAttribute="leading" id="VOf-4w-xgO"/>
                 <constraint firstItem="bHb-uY-JgS" firstAttribute="leading" secondItem="784" secondAttribute="leading" id="W4N-5b-uqF"/>
