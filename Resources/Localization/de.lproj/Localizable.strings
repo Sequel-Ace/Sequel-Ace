@@ -1326,10 +1326,10 @@
 "Execution stopped!\n" = "Ausführung angehalten!\n";
 
 /* menu item to run EXPLAIN on the current query (issue #2291) */
-"Explain Current Query" = "Explain Current Query";
+"Explain Current Query" = "Aktuelle Abfrage erklären";
 
 /* status text when the user runs EXPLAIN against a non-SELECT/WITH or multi-statement query */
-"EXPLAIN is only supported for a single SELECT or WITH statement." = "EXPLAIN is only supported for a single SELECT or WITH statement.";
+"EXPLAIN is only supported for a single SELECT or WITH statement." = "EXPLAIN wird nur für ein einzelnes SELECT- oder WITH-Statement unterstützt.";
 
 /* export selected favorites menu item */
 "Export Selected..." = "Ausgewählte exportieren …";
@@ -1408,7 +1408,7 @@
 "Filter" = "Filtern";
 
 /* apply filter label */
-"Apply Filter(s)" = "Filter(s) anwenden";
+"Apply Filter(s)" = "Filter anwenden";
 
 /* filter tables menu item */
 "Filter Tables" = "Tabellen filtern";
@@ -1655,7 +1655,7 @@ Befehle werden anwendungsweit ausgeführt";
 "items" = "Items";
 
 /* javascript exception */
-"JavaScript Exception" = "JavaScript Exception";
+"JavaScript Exception" = "JavaScript Ausnahme";
 
 /* javascript parsing error */
 "JavaScript Parsing Error" = "JavaScript Parse-Fehler";
@@ -2016,7 +2016,7 @@ Befehle werden anwendungsweit ausgeführt";
 "PROCS & FUNCS" = "PROZ. & FUNKT.";
 
 /* toolbar item label for switching to the Run Query tab */
-"Query" = "Abfrage";
+"Query" = "Query";
 
 /* query background label for color table (Prefs > Editor) */
 "Query Background" = "Query Hintergrund";
@@ -2362,7 +2362,7 @@ Befehle werden anwendungsweit ausgeführt";
 
 /* Add Database : Charset dropdown : default item ($1 = charset name)
  Add Database : Collation dropdown : default item ($1 = collation name) */
-"Server Default (%@)" = "Server Default (%@)";
+"Server Default (%@)" = "Server Standard (%@)";
 
 /* server processes window title (var = hostname) */
 "Server Processes on %@" = "Server Prozesse auf %@";
@@ -3351,7 +3351,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Pin Table" = "Tabelle anpinnen";
 
 /* Menu option to pin a procedure to the top of the list of tables */
-"Pin Procedure" = "Pin Prozedur";
+"Pin Procedure" = "Prozedur anpinnen";
 
 /* Menu option to pin a function to the top of the list of tables */
 "Pin Function" = "Funktion anpinnen";
@@ -3381,58 +3381,58 @@ Befehle werden anwendungsweit ausgeführt";
 "The variable in the ?name= query parameter could not be matched with any of your favorites." = "Die Variable im ?name=-Abfrageparameter konnte keinem Ihrer Favoriten zugeordnet werden.";
 
 /* Vault connection: invalid host or port supplied */
-"Invalid Vault host or port." = "Invalid Vault host or port.";
+"Invalid Vault host or port." = "Ungültiger Vault-Host oder -Port.";
 
 /* Vault connection: HTTP error from Vault API (%d = HTTP status code) */
-"Vault returned HTTP %d." = "Vault returned HTTP %d.";
+"Vault returned HTTP %d." = "Vault hat HTTP %d zurückgegeben.";
 
 /* Vault connection: response body could not be parsed (%@ = detail) */
-"Vault response parse error: %@" = "Vault response parse error: %@";
+"Vault response parse error: %@" = "Vault-Antwort konnte nicht geparst werden: %@";
 
 /* Vault OIDC login: user cancelled the browser flow */
-"Vault login was cancelled." = "Vault login was cancelled.";
+"Vault login was cancelled." = "Vault-Anmeldung wurde abgebrochen.";
 
 /* Vault OIDC login: could not open a local callback port */
-"Could not bind a local port for the Vault OIDC callback." = "Could not bind a local port for the Vault OIDC callback.";
+"Could not bind a local port for the Vault OIDC callback." = "Für den Vault-OIDC-Callback konnte kein lokaler Port gebunden werden.";
 
 /* Vault OIDC login: browser callback did not arrive within the timeout */
-"Vault OIDC login timed out. Please try again." = "Vault OIDC login timed out. Please try again.";
+"Vault OIDC login timed out. Please try again." = "Vault-OIDC-Anmeldung ist abgelaufen. Bitte erneut versuchen.";
 
 /* Vault OIDC login: callback query string was malformed (%@ = detail) */
-"Unexpected Vault OIDC callback: %@" = "Unexpected Vault OIDC callback: %@";
+"Unexpected Vault OIDC callback: %@" = "Unerwarteter Vault-OIDC-Callback: %@";
 
 /* Vault auth manager: Vault host or credentials path not configured */
-"Vault host or credentials path is missing." = "Vault host or credentials path is missing.";
+"Vault host or credentials path is missing." = "Vault-Host oder Pfad zu den Zugangsdaten fehlt.";
 
 /* Vault auth manager: OIDC login flow failed */
-"Vault OIDC login failed." = "Vault OIDC login failed.";
+"Vault OIDC login failed." = "Vault-OIDC-Anmeldung fehlgeschlagen.";
 
 /* Vault auth manager: credentials endpoint returned an error */
-"Failed to generate credentials from Vault." = "Failed to generate credentials from Vault.";
+"Failed to generate credentials from Vault." = "Zugangsdaten konnten nicht aus Vault erzeugt werden.";
 
 /* Vault auth manager: credentials endpoint returned empty username/password */
-"Vault returned empty credentials." = "Vault returned empty credentials.";
+"Vault returned empty credentials." = "Vault hat leere Zugangsdaten zurückgegeben.";
 
 /* Vault connect-time validation: Vault host field is empty */
-"A Vault host is required to connect." = "A Vault host is required to connect.";
+"A Vault host is required to connect." = "Zum Verbinden ist ein Vault-Host erforderlich.";
 
 /* Vault connect-time validation: credentials path field is empty */
-"A Vault credentials path is required to connect." = "A Vault credentials path is required to connect.";
+"A Vault credentials path is required to connect." = "Zum Verbinden ist ein Vault-Pfad für Zugangsdaten erforderlich.";
 
 /* Vault connect-time validation: DB host field is empty */
-"A database host is required to connect." = "A database host is required to connect.";
+"A database host is required to connect." = "Zum Verbinden ist ein Datenbank-Host erforderlich.";
 
 /* Vault connection: error sheet title when credential generation fails */
-"Vault Authentication Failed" = "Vault Authentication Failed";
+"Vault Authentication Failed" = "Vault-Authentifizierung fehlgeschlagen";
 
 /* Vault save-favorite validation: DB host field is empty */
-"Please provide a database host to save a Vault favorite." = "Please provide a database host to save a Vault favorite.";
+"Please provide a database host to save a Vault favorite." = "Bitte geben Sie einen Datenbank-Host an, um einen Vault-Favoriten zu speichern.";
 
 /* Vault save-favorite validation: Vault host field is empty */
-"A Vault host is required to save a Vault favorite." = "A Vault host is required to save a Vault favorite.";
+"A Vault host is required to save a Vault favorite." = "Zum Speichern eines Vault-Favoriten ist ein Vault-Host erforderlich.";
 
 /* Vault save-favorite validation: credentials path field is empty */
-"A Vault credentials path is required to save a Vault favorite." = "A Vault credentials path is required to save a Vault favorite.";
+"A Vault credentials path is required to save a Vault favorite." = "Zum Speichern eines Vault-Favoriten ist ein Vault-Pfad für Zugangsdaten erforderlich.";
 
 /* Cell context menu filter submenu title */
-"Filter by Selected Value" = "Filter by Selected Value";
+"Filter by Selected Value" = "Nach ausgewähltem Wert filtern";
