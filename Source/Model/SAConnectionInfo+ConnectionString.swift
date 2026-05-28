@@ -190,6 +190,22 @@ extension SPFavoriteNode {
             if let sshUser = favoriteDict[SPFavoriteSSHUserKey] as? String, !sshUser.isEmpty {
                 queryItems.append(URLQueryItem(name: "ssh_user", value: sshUser))
             }
+
+            // Fetch SSH password from keychain if requested
+            if includePassword, let sshUser = favoriteDict[SPFavoriteSSHUserKey] as? String, !sshUser.isEmpty,
+               let sshHost = favoriteDict[SPFavoriteSSHHostKey] as? String, !sshHost.isEmpty {
+                let keychain = SPKeychain()
+                let favoriteID = favoriteDict[SPFavoriteIDKey] as? NSNumber ?? NSNumber(value: -1)
+                let favoriteName = favoriteDict[SPFavoriteNameKey] as? String ?? ""
+
+                let keychainName = keychain.nameForSSH(forFavoriteName: favoriteName, id: "\(favoriteID)")
+                let keychainAccount = keychain.account(forSSHUser: sshUser, sshHost: sshHost)
+
+                if let sshPassword = keychain.getPasswordForName(keychainName, account: keychainAccount), !sshPassword.isEmpty {
+                    queryItems.append(URLQueryItem(name: "ssh_password", value: sshPassword))
+                }
+            }
+
             // Note: SSH key paths are excluded by default as they are local to the machine
             // If needed, use toConnectionString(includePassword:includeSSHKeyPath:) with includeSSHKeyPath: true
         }

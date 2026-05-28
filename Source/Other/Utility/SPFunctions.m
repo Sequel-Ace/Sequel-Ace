@@ -29,7 +29,6 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPFunctions.h"
-#import "Sequel_Ace-Swift.h"  // For ConnectionStringParser
 #import <Security/SecRandom.h>
 #import <objc/runtime.h>
 #import <arpa/inet.h>
@@ -283,25 +282,113 @@ BOOL SPSSHNoRouteToHostLikelyLocalNetworkPrivacyIssue(NSString *errorMessage, NS
 
 BOOL SPExtractConnectionDetailsFromMySQLURL(NSURL *url, NSMutableDictionary *details, BOOL *autoConnect, NSArray<NSString *> **invalidParameters)
 {
-	// This function is now a thin wrapper around ConnectionStringParser (Swift)
-	// to consolidate parsing logic and avoid drift between import and URL handling.
 	if (autoConnect) *autoConnect = NO;
 	if (invalidParameters) *invalidParameters = @[];
 
 	if (!url || ![[url scheme] isEqualToString:@"mysql"] || !details) return NO;
 
-	// Use the consolidated Swift parser
-	ConnectionStringParseResult *result = [ConnectionStringParser parse:url];
+	NSString *requestedType = nil;
+	NSSet<NSString *> *validParameterSet = [NSSet setWithArray:SPValidMySQLConnectionURLQueryParameters()];
+	NSMutableArray<NSString *> *invalid = [NSMutableArray array];
 
-	if (!result.success) {
-		if (invalidParameters) *invalidParameters = result.invalidParameters;
+	if ([url query]) {
+		NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
+		for (NSURLQueryItem *queryItem in [components queryItems]) {
+			if (![queryItem.name length]) continue;
+
+			if (![validParameterSet containsObject:queryItem.name]) {
+				[invalid addObject:queryItem.name];
+				continue;
+			}
+
+			NSString *decodedValue = queryItem.value ?: @"";
+
+			if ([queryItem.name isEqualToString:@"type"]) {
+				requestedType = [[decodedValue lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+				continue;
+			}
+
+			// Normalize enable_cleartext_plugin to enableClearTextPlugin with NSNumber value
+			if ([queryItem.name isEqualToString:@"enable_cleartext_plugin"]) {
+				BOOL enableClearText = ([decodedValue isEqualToString:@"1"] ||
+										[[decodedValue lowercaseString] isEqualToString:@"true"] ||
+										[[decodedValue lowercaseString] isEqualToString:@"yes"] ||
+										[[decodedValue lowercaseString] isEqualToString:@"y"]);
+				[details setObject:@(enableClearText) forKey:@"enableClearTextPlugin"];
+				continue;
+			}
+
+			[details setObject:decodedValue forKey:queryItem.name];
+		}
+	}
+
+	if ([requestedType length] && ![SPValidMySQLConnectionURLTypes() containsObject:requestedType]) {
+		[invalid addObject:@"type"];
+	}
+
+	if ([invalid count] > 0) {
+		if (invalidParameters) *invalidParameters = [invalid copy];
 		return NO;
 	}
 
-	// Copy parsed details to the output dictionary
-	[details addEntriesFromDictionary:result.details];
+	BOOL hasAWSIAMIndicators = ([[details objectForKey:@"aws_profile"] length]
+								|| [[details objectForKey:@"aws_region"] length]
+								|| [requestedType isEqualToString:@"aws_iam"]);
+	BOOL hasSocketIndicators = ([[details objectForKey:@"socket"] length]
+								|| [requestedType isEqualToString:@"socket"]);
 
-	if (autoConnect) *autoConnect = result.autoConnect;
+	if ([requestedType isEqualToString:@"socket"]) {
+		[details setObject:@"SPSocketConnection" forKey:@"type"];
+	}
+	else if ([requestedType isEqualToString:@"ssh"]) {
+		[details setObject:@"SPSSHTunnelConnection" forKey:@"type"];
+	}
+	else if ([requestedType isEqualToString:@"tcpip"]) {
+		[details setObject:@"SPTCPIPConnection" forKey:@"type"];
+	}
+	else if (hasAWSIAMIndicators) {
+		[details setObject:@"SPAWSIAMConnection" forKey:@"type"];
+	}
+	else if (hasSocketIndicators) {
+		[details setObject:@"SPSocketConnection" forKey:@"type"];
+	}
+	else if ([details objectForKey:@"ssh_host"]) {
+		[details setObject:@"SPSSHTunnelConnection" forKey:@"type"];
+	}
+	else {
+		[details setObject:@"SPTCPIPConnection" forKey:@"type"];
+	}
+
+	if ([url port]) {
+		[details setObject:[url port] forKey:@"port"];
+	}
+
+	if ([url user]) {
+		NSString *decodedUser = [[url user] stringByRemovingPercentEncoding];
+		[details setObject:(decodedUser ?: [url user]) forKey:@"user"];
+	}
+
+	if ([url password]) {
+		NSString *decodedPassword = [[url password] stringByRemovingPercentEncoding];
+		[details setObject:(decodedPassword ?: [url password]) forKey:@"password"];
+		if (autoConnect) *autoConnect = YES;
+	}
+
+	if ([[url host] length]) {
+		NSString *decodedHost = [[url host] stringByRemovingPercentEncoding];
+		[details setObject:(decodedHost ?: [url host]) forKey:@"host"];
+	}
+	else {
+		[details setObject:@"127.0.0.1" forKey:@"host"];
+	}
+
+	NSArray *pathComponents = [url pathComponents];
+	if ([pathComponents count] > 1) { // first object is "/"
+		NSString *database = [pathComponents objectAtIndex:1];
+		NSString *decodedDatabase = [database stringByRemovingPercentEncoding];
+		if (decodedDatabase) database = decodedDatabase;
+		if ([database length]) [details setObject:database forKey:@"database"];
+	}
 
 	return YES;
 }

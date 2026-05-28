@@ -2275,9 +2275,10 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                 NSString *existingSSHUser = [favoriteDict objectForKey:SPFavoriteSSHUserKey] ?: @"";
                 NSString *existingSSHPort = [favoriteDict objectForKey:SPFavoriteSSHPortKey] ?: @"";
 
-                NSString *newSSHHost = [modeFields objectForKey:@"ssh_host"] ?: @"";
-                NSString *newSSHUser = [modeFields objectForKey:@"ssh_user"] ?: @"";
-                NSString *newSSHPort = [modeFields objectForKey:@"ssh_port"] ?: @"";
+                // Check both URL keys (from connection string) and favorite keys (from plist import)
+                NSString *newSSHHost = [modeFields objectForKey:@"ssh_host"] ?: [modeFields objectForKey:SPFavoriteSSHHostKey] ?: @"";
+                NSString *newSSHUser = [modeFields objectForKey:@"ssh_user"] ?: [modeFields objectForKey:SPFavoriteSSHUserKey] ?: @"";
+                NSString *newSSHPort = [modeFields objectForKey:@"ssh_port"] ?: [modeFields objectForKey:SPFavoriteSSHPortKey] ?: @"";
 
                 if (![existingSSHHost isEqualToString:newSSHHost] ||
                     ![existingSSHUser isEqualToString:newSSHUser] ||
@@ -2288,7 +2289,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             else if (typeTag == SPSocketConnection) {
                 // Compare socket path
                 NSString *existingSocket = [favoriteDict objectForKey:SPFavoriteSocketKey] ?: @"";
-                NSString *newSocket = [modeFields objectForKey:@"socket"] ?: @"";
+                // Check both URL key (from connection string) and favorite key (from plist import)
+                NSString *newSocket = [modeFields objectForKey:@"socket"] ?: [modeFields objectForKey:SPFavoriteSocketKey] ?: @"";
 
                 if (![existingSocket isEqualToString:newSocket]) {
                     continue;
@@ -2299,8 +2301,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                 NSString *existingRegion = [favoriteDict objectForKey:@"awsRegion"] ?: @"";
                 NSString *existingProfile = [favoriteDict objectForKey:@"awsProfile"] ?: @"";
 
-                NSString *newRegion = [modeFields objectForKey:@"aws_region"] ?: @"";
-                NSString *newProfile = [modeFields objectForKey:@"aws_profile"] ?: @"";
+                // Check both URL keys (from connection string) and favorite keys (from plist import)
+                NSString *newRegion = [modeFields objectForKey:@"aws_region"] ?: [modeFields objectForKey:@"awsRegion"] ?: @"";
+                NSString *newProfile = [modeFields objectForKey:@"aws_profile"] ?: [modeFields objectForKey:@"awsProfile"] ?: @"";
 
                 if (![existingRegion isEqualToString:newRegion] ||
                     ![existingProfile isEqualToString:newProfile]) {
