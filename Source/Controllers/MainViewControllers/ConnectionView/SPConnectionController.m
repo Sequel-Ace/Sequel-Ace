@@ -2139,9 +2139,11 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     NSString *sshPasswordFromURL = [details objectForKey:@"ssh_password"];
 
     // Check for duplicates (including mode-specific fields for accurate matching)
+    NSString *port = [favorite objectForKey:SPFavoritePortKey] ?: @"";
     SPTreeNode *duplicateNode = [self findDuplicateFavoriteForHost:host
                                                               user:user
                                                           database:database
+                                                              port:port
                                                               type:typeString
                                                 modeSpecificFields:details];
 
@@ -2228,14 +2230,16 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 - (SPTreeNode *)findDuplicateFavoriteForHost:(NSString *)host
                                          user:(NSString *)user
                                      database:(NSString *)database
+                                         port:(NSString *)port
                                          type:(NSString *)type
 {
-    return [self findDuplicateFavoriteForHost:host user:user database:database type:type modeSpecificFields:nil];
+    return [self findDuplicateFavoriteForHost:host user:user database:database port:port type:type modeSpecificFields:nil];
 }
 
 - (SPTreeNode *)findDuplicateFavoriteForHost:(NSString *)host
                                          user:(NSString *)user
                                      database:(NSString *)database
+                                         port:(NSString *)port
                                          type:(NSString *)type
                               modeSpecificFields:(NSDictionary *)modeFields
 {
@@ -2252,6 +2256,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         NSString *existingHost = [favoriteDict objectForKey:SPFavoriteHostKey] ?: @"";
         NSString *existingUser = [favoriteDict objectForKey:SPFavoriteUserKey] ?: @"";
         NSString *existingDatabase = [favoriteDict objectForKey:SPFavoriteDatabaseKey] ?: @"";
+        NSString *existingPort = [favoriteDict objectForKey:SPFavoritePortKey] ?: @"";
 
         // Get type string using centralized helper
         NSInteger existingTypeInt = [[favoriteDict objectForKey:SPFavoriteTypeKey] integerValue];
@@ -2261,6 +2266,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         if (![existingHost isEqualToString:host] ||
             ![existingUser isEqualToString:user] ||
             ![existingDatabase isEqualToString:database] ||
+            ![existingPort isEqualToString:port] ||
             ![existingType isEqualToString:type]) {
             continue;
         }
@@ -4187,6 +4193,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         NSString *host = [favorite objectForKey:SPFavoriteHostKey] ?: @"";
         NSString *user = [favorite objectForKey:SPFavoriteUserKey] ?: @"";
         NSString *database = [favorite objectForKey:SPFavoriteDatabaseKey] ?: @"";
+        NSString *port = [favorite objectForKey:SPFavoritePortKey] ?: @"";
         NSInteger typeInt = [[favorite objectForKey:SPFavoriteTypeKey] integerValue];
 
         // Use centralized helper for type mapping
@@ -4195,6 +4202,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         SPTreeNode *duplicateNode = [self findDuplicateFavoriteForHost:host
                                                                   user:user
                                                               database:database
+                                                                  port:port
                                                                   type:typeString
                                                     modeSpecificFields:favorite];
 
