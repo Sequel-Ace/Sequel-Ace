@@ -41,6 +41,14 @@ extension SPDatabaseDocument: SADatabaseDocumentProviding {}
 // dispatches straight back into the stub until the stack overflows.
 extension SPDatabaseDocument: SATaskManaging {}
 
+// MARK: - SATaskControllerDelegate
+
+// SPDatabaseDocument hosts the SATaskController extracted in Phase A2.
+// `taskParentWindow` and `taskControllerDidRequestCancellation` are
+// implemented in SPDatabaseDocument.m (they reach into the live MySQL
+// connection and the parent window controller).
+extension SPDatabaseDocument: SATaskControllerDelegate {}
+
 // MARK: - Save Accessory
 
 extension SPDatabaseDocument {
