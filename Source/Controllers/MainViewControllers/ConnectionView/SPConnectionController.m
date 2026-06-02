@@ -182,6 +182,29 @@ static void *kURLFieldKey = &kURLFieldKey;
     }
 }
 
++ (NSString *)normalizedPortForDuplicateComparison:(id)port type:(NSString *)type
+{
+    NSInteger typeTag = [SPConnectionController favoriteTypeTagForString:type];
+    NSString *portString = @"";
+
+    if ([port isKindOfClass:[NSNumber class]]) {
+        portString = [(NSNumber *)port stringValue];
+    }
+    else if ([port isKindOfClass:[NSString class]]) {
+        portString = [(NSString *)port stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    }
+
+    if (typeTag == SPSocketConnection) {
+        return portString;
+    }
+
+    if (portString.length == 0) {
+        return @"3306";
+    }
+
+    return portString;
+}
+
 @synthesize delegate;
 @synthesize type;
 @synthesize name;
@@ -1868,7 +1891,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
         // Use NSURLComponents for proper password handling (handles percent-encoding)
         NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
-        BOOL hasPassword = (components.user.length > 0 && components.password.length > 0);
+        BOOL hasPassword = (components.password != nil);
 
         // Create redacted version for display by rebuilding URL from components
         NSString *displayString = clipboardString;
@@ -1877,7 +1900,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             // Format: mysql://user:password@host -> mysql://user:•••@host
             NSURLComponents *redactedComponents = [components copy];
             redactedComponents.password = @"•••";
-            displayString = [redactedComponents string] ?: clipboardString;
+            NSString *redactedString = [redactedComponents string];
+            displayString = redactedString ?: NSLocalizedString(@"mysql://[connection string with password hidden]", @"Redacted connection string fallback");
         }
 
         NSAlert *alert = [[NSAlert alloc] init];
@@ -2166,6 +2190,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         [alert beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:^(NSModalResponse returnCode) {
             if (returnCode != NSAlertFirstButtonReturn) {
                 // Cancel
+                SPDuplicateActionHandler.shared.items = @[];
                 return;
             }
 
@@ -2259,12 +2284,14 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         // Get type string using centralized helper
         NSInteger existingTypeInt = [[favoriteDict objectForKey:SPFavoriteTypeKey] integerValue];
         NSString *existingType = [SPConnectionController stringForFavoriteTypeTag:existingTypeInt];
+        NSString *normalizedExistingPort = [SPConnectionController normalizedPortForDuplicateComparison:existingPort type:existingType];
+        NSString *normalizedNewPort = [SPConnectionController normalizedPortForDuplicateComparison:port type:type];
 
         // Check if basic fields match
         if (![existingHost isEqualToString:host] ||
             ![existingUser isEqualToString:user] ||
             ![existingDatabase isEqualToString:database] ||
-            ![existingPort isEqualToString:port] ||
+            ![normalizedExistingPort isEqualToString:normalizedNewPort] ||
             ![existingType isEqualToString:type]) {
             continue;
         }
@@ -2475,8 +2502,6 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
         BOOL includePassword = (returnCode == NSAlertSecondButtonReturn);
         id nodeObject = [node representedObject];
-        NSLog(@"DEBUG: nodeObject class: %@", [nodeObject class]);
-        NSLog(@"DEBUG: respondsToSelector: %d", [nodeObject respondsToSelector:@selector(toConnectionString:)]);
         NSString *connectionString = nil;
 
         if ([nodeObject respondsToSelector:@selector(toConnectionString:)]) {
@@ -4251,6 +4276,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         [alert beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:^(NSModalResponse returnCode) {
             if (returnCode != NSAlertFirstButtonReturn) {
                 // Cancel
+                SPDuplicateActionHandler.shared.items = @[];
                 return;
             }
 
@@ -4266,7 +4292,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                 }
                 else if (item.action == SPDuplicateActionCreateNew) {
                     // Create new
-                    SPTreeNode *newNode = [self->favoritesController addFavoriteNodeWithData:[item.favorite mutableCopy] asChildOfNode:nil];
+                    NSMutableDictionary *favoriteCopy = [item.favorite mutableCopy];
+                    [favoriteCopy setObject:[self _createNewFavoriteID] forKey:SPFavoriteIDKey];
+                    SPTreeNode *newNode = [self->favoritesController addFavoriteNodeWithData:favoriteCopy asChildOfNode:nil];
                     [importedNodes addObject:newNode];
                 }
                 // If Skip - do nothing
@@ -4274,7 +4302,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
             // Add new favorites (non-duplicates)
             for (NSMutableDictionary *favorite in newFavorites) {
-                SPTreeNode *newNode = [self->favoritesController addFavoriteNodeWithData:favorite asChildOfNode:nil];
+                NSMutableDictionary *favoriteCopy = [favorite mutableCopy];
+                [favoriteCopy setObject:[self _createNewFavoriteID] forKey:SPFavoriteIDKey];
+                SPTreeNode *newNode = [self->favoritesController addFavoriteNodeWithData:favoriteCopy asChildOfNode:nil];
                 [importedNodes addObject:newNode];
             }
 
@@ -4308,7 +4338,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         NSMutableIndexSet *importedIndexSet = [NSMutableIndexSet indexSet];
 
         for (NSMutableDictionary *favorite in data) {
-            SPTreeNode *newNode = [favoritesController addFavoriteNodeWithData:favorite asChildOfNode:nil];
+            NSMutableDictionary *favoriteCopy = [favorite mutableCopy];
+            [favoriteCopy setObject:[self _createNewFavoriteID] forKey:SPFavoriteIDKey];
+            SPTreeNode *newNode = [favoritesController addFavoriteNodeWithData:favoriteCopy asChildOfNode:nil];
             [importedNodes addObject:newNode];
         }
 

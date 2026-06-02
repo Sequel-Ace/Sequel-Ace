@@ -149,7 +149,7 @@ import Cocoa
 
     @objc func actionChanged(_ sender: NSPopUpButton) {
         let index = sender.tag
-        guard index < items.count else {
+        guard index >= 0 && index < items.count else {
             return
         }
 

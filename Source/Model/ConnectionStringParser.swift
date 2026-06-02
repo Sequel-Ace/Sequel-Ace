@@ -60,7 +60,7 @@ import Foundation
             details["user"] = decodedUser
         }
 
-        if let password = url.password, !password.isEmpty {
+        if let password = url.password {
             let decodedPassword = password.removingPercentEncoding ?? password
             details["password"] = decodedPassword
             // Auto-connect when password is present in URL
