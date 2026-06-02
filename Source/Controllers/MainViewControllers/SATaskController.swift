@@ -52,7 +52,23 @@ import AppKit
 
     // MARK: - Progress UI state
 
-    private var taskProgressWindow: NSWindow!
+    /// The borderless child window that hosts the progress layer. Created
+    /// lazily (on first use, after the nib has loaded its outlets) so the
+    /// property is a plain non-optional rather than an implicitly unwrapped one.
+    private lazy var taskProgressWindow: NSWindow = {
+        let window = NSWindow(contentRect: taskProgressLayer.bounds,
+                              styleMask: .borderless,
+                              backing: .buffered,
+                              defer: false)
+        window.isReleasedWhenClosed = false
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.alphaValue = 0.0
+        // Retains the layer (and its subviews / outlets) for the controller's lifetime.
+        window.contentView = taskProgressLayer
+        return window
+    }()
+
     private var taskDisplayIsIndeterminate = true
     private var taskProgressValue: CGFloat = 0
     private var taskDisplayLastValue: CGFloat = 0
@@ -74,27 +90,22 @@ import AppKit
         super.init()
 
         var topLevelObjects: NSArray?
-        Bundle.main.loadNibNamed("ProgressIndicatorLayer", owner: self, topLevelObjects: &topLevelObjects)
+        guard Bundle.main.loadNibNamed("ProgressIndicatorLayer", owner: self, topLevelObjects: &topLevelObjects),
+              taskProgressLayer != nil,
+              taskProgressIndicator != nil else {
+            // The nib ships in the app bundle; a failure here means a broken
+            // build, so fail loudly rather than limping on with nil outlets.
+            fatalError("SATaskController: failed to load ProgressIndicatorLayer.xib or connect its outlets")
+        }
 
-        // Set up the progress indicator child window and layer - change indicator color and size
+        // Set up the progress indicator - change indicator color and shadow.
+        // (The child window itself is created lazily; see `taskProgressWindow`.)
         taskProgressIndicator.setForeColor(.white)
         let progressIndicatorShadow = NSShadow()
         progressIndicatorShadow.shadowOffset = NSSize(width: 1.0, height: -1.0)
         progressIndicatorShadow.shadowBlurRadius = 1.0
         progressIndicatorShadow.shadowColor = NSColor(calibratedWhite: 0.0, alpha: 0.75)
         taskProgressIndicator.shadow = progressIndicatorShadow
-
-        let window = NSWindow(contentRect: taskProgressLayer.bounds,
-                              styleMask: .borderless,
-                              backing: .buffered,
-                              defer: false)
-        window.isReleasedWhenClosed = false
-        window.isOpaque = false
-        window.backgroundColor = .clear
-        window.alphaValue = 0.0
-        // Retains the layer (and its subviews / outlets) for the controller's lifetime.
-        window.contentView = taskProgressLayer
-        taskProgressWindow = window
     }
 
     // MARK: - Task lifecycle (driven by SPDatabaseDocument)
@@ -186,12 +197,13 @@ import AppKit
         taskProgressValue = taskPercentage
         if taskProgressValue >= taskDisplayLastValue + taskProgressValueDisplayInterval
             || taskProgressValue <= taskDisplayLastValue - taskProgressValueDisplayInterval {
+            let value = Double(taskProgressValue)
             if Thread.isMainThread {
-                taskProgressIndicator.setDoubleValue(Double(taskProgressValue))
+                taskProgressIndicator.setDoubleValue(value)
             } else {
-                taskProgressIndicator.performSelector(onMainThread: #selector(YRKSpinningProgressIndicator.setNumberValue(_:)),
-                                                      with: NSNumber(value: Double(taskProgressValue)),
-                                                      waitUntilDone: false)
+                DispatchQueue.main.async { [weak self] in
+                    self?.taskProgressIndicator.setDoubleValue(value)
+                }
             }
             taskDisplayLastValue = taskProgressValue
         }
@@ -213,7 +225,13 @@ import AppKit
 
     @objc private func makeProgressIndeterminate() {
         if taskDisplayIsIndeterminate { return }
-        NSObject.cancelPreviousPerformRequests(withTarget: taskProgressIndicator as Any)
+        // Cancel any delayed switch scheduled by setTaskProgressToIndeterminate(afterDelay:).
+        // (The original ObjC cancelled against the indicator, but the delayed
+        // perform is scheduled on self — so it never actually cancelled. Target
+        // self + the matching selector so the pending call is really dropped.)
+        NSObject.cancelPreviousPerformRequests(withTarget: self,
+                                               selector: #selector(makeProgressIndeterminate),
+                                               object: nil)
         taskDisplayIsIndeterminate = true
         taskProgressIndicator.setIndeterminate(true)
         taskProgressIndicator.startAnimation(self)
@@ -235,6 +253,11 @@ import AppKit
     /// Allow a task to be cancelled, enabling the button with a supplied title
     /// and optionally supplying a callback object and function.
     /// The caller (document) guarantees a task is active before calling.
+    ///
+    /// - Important: `callbackFunction` must be a selector that takes no
+    ///   arguments and returns void (e.g. `@objc func myCallback()`). It is
+    ///   invoked via `perform(_:)` from `cancelTask(_:)`; a selector with
+    ///   parameters or a return value is undefined behaviour.
     @objc(enableTaskCancellationWithTitle:callbackObject:callbackFunction:)
     func enableTaskCancellation(withTitle buttonTitle: String, callbackObject: NSObject?, callbackFunction: Selector?) {
         if let callbackObject = callbackObject, let callbackFunction = callbackFunction {
@@ -269,8 +292,12 @@ import AppKit
         // connection where available, for speed - no connection overhead).
         delegate?.taskControllerDidRequestCancellation()
 
+        // The callback selector is documented (on enableTaskCancellation) to be
+        // a no-argument, void-returning method; guard against a non-responding
+        // object rather than crashing.
         if let callbackObject = taskCancellationCallbackObject,
-           let callbackSelector = taskCancellationCallbackSelector {
+           let callbackSelector = taskCancellationCallbackSelector,
+           callbackObject.responds(to: callbackSelector) {
             callbackObject.perform(callbackSelector)
         }
     }
