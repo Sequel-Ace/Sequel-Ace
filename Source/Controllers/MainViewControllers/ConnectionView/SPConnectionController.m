@@ -131,6 +131,23 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 - (void)_processFavoritesDataChange:(NSNotification *)aNotification;
 - (void)scrollViewFrameChanged:(NSNotification *)aNotification;
+- (NSString *)redactedConnectionStringForDisplayFromComponents:(NSURLComponents *)components fallback:(NSString *)fallback;
+- (void)setUpPasswordRevealButtons;
+- (void)addPasswordRevealButtonForField:(NSSecureTextField *)field keyPath:(NSString *)keyPath;
+- (void)toggleConnectionPasswordVisibility:(NSButton *)sender;
+
+@end
+
+@interface SPPasswordRevealButton : NSButton
+@end
+
+@implementation SPPasswordRevealButton
+
+- (void)resetCursorRects
+{
+    [super resetCursorRects];
+    [self addCursorRect:self.bounds cursor:[NSCursor pointingHandCursor]];
+}
 
 @end
 
@@ -140,6 +157,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 static void *kOriginalStringKey = &kOriginalStringKey;
 static void *kRedactedStringKey = &kRedactedStringKey;
 static void *kURLFieldKey = &kURLFieldKey;
+static void *kPasswordFieldKey = &kPasswordFieldKey;
+static void *kPlainPasswordFieldKey = &kPlainPasswordFieldKey;
+static void *kRevealPasswordImageKey = &kRevealPasswordImageKey;
+static void *kHidePasswordImageKey = &kHidePasswordImageKey;
 
 #pragma mark - Connection Type Mapping Helpers
 
@@ -1863,6 +1884,39 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     return [self _selectNode:quickConnectItem];
 }
 
+- (NSString *)redactedConnectionStringForDisplayFromComponents:(NSURLComponents *)components fallback:(NSString *)fallback
+{
+    NSURLComponents *displayComponents = [components copy];
+    displayComponents.user = nil;
+    displayComponents.password = nil;
+
+    NSMutableString *displayString = [NSMutableString string];
+
+    if (components.scheme.length) {
+        [displayString appendFormat:@"%@://", components.scheme];
+    }
+
+    if (components.user != nil || components.password != nil) {
+        if (components.percentEncodedUser.length) {
+            [displayString appendString:components.percentEncodedUser];
+        }
+        [displayString appendString:@":•••@"];
+    }
+
+    NSString *urlWithoutUserInfo = [displayComponents string];
+    if (urlWithoutUserInfo.length) {
+        NSString *schemePrefix = components.scheme.length ? [NSString stringWithFormat:@"%@://", components.scheme] : nil;
+        if (schemePrefix && [urlWithoutUserInfo hasPrefix:schemePrefix]) {
+            [displayString appendString:[urlWithoutUserInfo substringFromIndex:schemePrefix.length]];
+        }
+        else {
+            [displayString appendString:urlWithoutUserInfo];
+        }
+    }
+
+    return displayString.length ? displayString : fallback;
+}
+
 #pragma mark -
 #pragma mark Import/export favorites
 
@@ -1896,12 +1950,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         // Create redacted version for display by rebuilding URL from components
         NSString *displayString = clipboardString;
         if (hasPassword) {
-            // Rebuild URL with password replaced by bullets
-            // Format: mysql://user:password@host -> mysql://user:•••@host
-            NSURLComponents *redactedComponents = [components copy];
-            redactedComponents.password = @"•••";
-            NSString *redactedString = [redactedComponents string];
-            displayString = redactedString ?: NSLocalizedString(@"mysql://[connection string with password hidden]", @"Redacted connection string fallback");
+            displayString = [self redactedConnectionStringForDisplayFromComponents:components
+                                                                          fallback:NSLocalizedString(@"mysql://[connection string with password hidden]", @"Redacted connection string fallback")];
         }
 
         NSAlert *alert = [[NSAlert alloc] init];
@@ -4454,6 +4504,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         [connectionDetailsScrollView setPostsFrameChangedNotifications:YES];
         [[connectionDetailsScrollView contentView] setPostsFrameChangedNotifications:YES];
+        [self setUpPasswordRevealButtons];
 
         [self registerForNotifications];
 
@@ -4537,6 +4588,120 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 - (void)_forceInitialResize {
     [self resizeTabViewToConnectionType:[self type] animating:NO];
+}
+
+- (void)setUpPasswordRevealButtons
+{
+    [self addPasswordRevealButtonForField:standardPasswordField keyPath:@"password"];
+    [self addPasswordRevealButtonForField:socketPasswordField keyPath:@"password"];
+    [self addPasswordRevealButtonForField:sshPasswordField keyPath:@"password"];
+    [self addPasswordRevealButtonForField:sshSSHPasswordField keyPath:@"sshPassword"];
+}
+
+- (void)addPasswordRevealButtonForField:(NSSecureTextField *)field keyPath:(NSString *)keyPath
+{
+    if (!field || !field.superview) {
+        return;
+    }
+
+    NSRect fieldFrame = field.frame;
+    CGFloat buttonSize = 18.f;
+
+    NSTextField *plainField = [[NSTextField alloc] initWithFrame:fieldFrame];
+    plainField.hidden = YES;
+    plainField.autoresizingMask = field.autoresizingMask;
+    plainField.toolTip = field.toolTip;
+    plainField.font = field.font;
+    plainField.delegate = field.delegate;
+    plainField.editable = field.editable;
+    plainField.selectable = field.selectable;
+    plainField.enabled = field.enabled;
+    plainField.bezelStyle = field.bezelStyle;
+    plainField.drawsBackground = field.drawsBackground;
+    plainField.lineBreakMode = field.lineBreakMode;
+    plainField.usesSingleLineMode = field.cell.usesSingleLineMode;
+    [plainField bind:@"value" toObject:self withKeyPath:keyPath options:@{NSContinuouslyUpdatesValueBindingOption: @YES}];
+    [field.superview addSubview:plainField positioned:NSWindowAbove relativeTo:field];
+
+    NSButton *button = [[SPPasswordRevealButton alloc] initWithFrame:NSMakeRect(NSMaxX(fieldFrame) - buttonSize - 6.f,
+                                                                                fieldFrame.origin.y + floor((fieldFrame.size.height - buttonSize) / 2.f),
+                                                                                buttonSize,
+                                                                                buttonSize)];
+    button.buttonType = NSButtonTypeToggle;
+    button.bezelStyle = NSBezelStyleTexturedRounded;
+    button.bordered = NO;
+    button.autoresizingMask = NSViewMinXMargin;
+    button.imagePosition = NSImageOnly;
+    button.imageScaling = NSImageScaleProportionallyDown;
+    button.toolTip = NSLocalizedString(@"Show password", @"Show password tooltip");
+
+    NSImage *image = nil;
+    NSImage *alternateImage = nil;
+    if ([NSImage respondsToSelector:@selector(imageWithSystemSymbolName:accessibilityDescription:)]) {
+        image = [NSImage imageWithSystemSymbolName:@"eye" accessibilityDescription:NSLocalizedString(@"Show password", @"Show password tooltip")];
+        alternateImage = [NSImage imageWithSystemSymbolName:@"eye.slash" accessibilityDescription:NSLocalizedString(@"Hide password", @"Hide password tooltip")];
+    }
+
+    if (image) {
+        image.template = YES;
+        if (alternateImage) {
+            alternateImage.template = YES;
+        }
+        button.image = image;
+    }
+    else {
+        button.title = NSLocalizedString(@"Show", @"Fallback password reveal button title");
+    }
+
+    objc_setAssociatedObject(button, kPasswordFieldKey, field, OBJC_ASSOCIATION_ASSIGN);
+    objc_setAssociatedObject(button, kPlainPasswordFieldKey, plainField, OBJC_ASSOCIATION_ASSIGN);
+    objc_setAssociatedObject(button, kRevealPasswordImageKey, image, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(button, kHidePasswordImageKey, alternateImage, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    button.target = self;
+    button.action = @selector(toggleConnectionPasswordVisibility:);
+
+    [field.superview addSubview:button positioned:NSWindowAbove relativeTo:plainField];
+}
+
+- (void)toggleConnectionPasswordVisibility:(NSButton *)sender
+{
+    NSSecureTextField *secureField = objc_getAssociatedObject(sender, kPasswordFieldKey);
+    NSTextField *plainField = objc_getAssociatedObject(sender, kPlainPasswordFieldKey);
+
+    if (!secureField || !plainField) {
+        return;
+    }
+
+    BOOL shouldReveal = (sender.state == NSOnState);
+    plainField.stringValue = secureField.stringValue ?: @"";
+    secureField.hidden = shouldReveal;
+    plainField.hidden = !shouldReveal;
+
+    NSImage *revealImage = objc_getAssociatedObject(sender, kRevealPasswordImageKey);
+    NSImage *hideImage = objc_getAssociatedObject(sender, kHidePasswordImageKey);
+
+    if (revealImage && hideImage) {
+        sender.image = shouldReveal ? hideImage : revealImage;
+    }
+    else {
+        sender.title = shouldReveal ?
+            NSLocalizedString(@"Hide", @"Fallback password hide button title") :
+            NSLocalizedString(@"Show", @"Fallback password reveal button title");
+    }
+
+    sender.toolTip = shouldReveal ?
+        NSLocalizedString(@"Hide password", @"Hide password tooltip") :
+        NSLocalizedString(@"Show password", @"Show password tooltip");
+
+    [sender.superview addSubview:sender positioned:NSWindowAbove relativeTo:nil];
+
+    if (shouldReveal && [[secureField window] firstResponder] == secureField) {
+        [[secureField window] makeFirstResponder:plainField];
+    }
+    else if (!shouldReveal && [[plainField window] firstResponder] == plainField) {
+        secureField.stringValue = plainField.stringValue ?: @"";
+        [[plainField window] makeFirstResponder:secureField];
+    }
 }
 
 - (void)_refreshBookmarks{
