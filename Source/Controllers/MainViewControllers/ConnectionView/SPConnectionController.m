@@ -1870,16 +1870,14 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
         BOOL hasPassword = (components.user.length > 0 && components.password.length > 0);
 
-        // Create redacted version for display
+        // Create redacted version for display by rebuilding URL from components
         NSString *displayString = clipboardString;
         if (hasPassword) {
-            // Replace password with bullets in the URL string
+            // Rebuild URL with password replaced by bullets
             // Format: mysql://user:password@host -> mysql://user:•••@host
-            NSString *passwordToReplace = [components.password stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLPasswordAllowedCharacterSet]];
-            if (passwordToReplace && passwordToReplace.length > 0) {
-                displayString = [clipboardString stringByReplacingOccurrencesOfString:[NSString stringWithFormat:@":%@@", passwordToReplace]
-                                                                            withString:@":•••@"];
-            }
+            NSURLComponents *redactedComponents = [components copy];
+            redactedComponents.password = @"•••";
+            displayString = [redactedComponents string] ?: clipboardString;
         }
 
         NSAlert *alert = [[NSAlert alloc] init];
