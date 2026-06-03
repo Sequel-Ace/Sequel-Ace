@@ -132,6 +132,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 - (void)_processFavoritesDataChange:(NSNotification *)aNotification;
 - (void)scrollViewFrameChanged:(NSNotification *)aNotification;
 - (NSString *)redactedConnectionStringForDisplayFromComponents:(NSURLComponents *)components fallback:(NSString *)fallback;
+- (NSMutableDictionary *)favoriteImportDictionaryByAssigningNewIDs:(NSDictionary *)item;
+- (void)collectFavoriteImportLeavesFromItems:(NSArray *)items intoArray:(NSMutableArray *)favorites;
+- (NSArray *)favoriteImportItemsByApplyingDuplicateActionsToItems:(NSArray *)items duplicateItems:(NSArray<SPDuplicateImportItem *> *)duplicateItems;
 - (void)setUpPasswordRevealButtons;
 - (void)addPasswordRevealButtonForField:(NSSecureTextField *)field keyPath:(NSString *)keyPath;
 - (void)toggleConnectionPasswordVisibility:(NSButton *)sender;
@@ -4258,11 +4261,18 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 {
     if ([data count] == 0) return;
 
-    // Check for duplicates in the imported data
-    NSMutableArray *duplicates = [NSMutableArray array];
-    NSMutableArray *newFavorites = [NSMutableArray array];
+    NSMutableArray *preparedImportData = [NSMutableArray arrayWithCapacity:[data count]];
+    for (NSDictionary *item in data) {
+        [preparedImportData addObject:[self favoriteImportDictionaryByAssigningNewIDs:item]];
+    }
 
-    for (NSDictionary *favorite in data) {
+    NSMutableArray *importFavorites = [NSMutableArray array];
+    [self collectFavoriteImportLeavesFromItems:preparedImportData intoArray:importFavorites];
+
+    // Check for duplicates in imported favorites, including favorites nested in groups.
+    NSMutableArray *duplicates = [NSMutableArray array];
+
+    for (NSDictionary *favorite in importFavorites) {
         NSString *host = [favorite objectForKey:SPFavoriteHostKey] ?: @"";
         NSString *user = [favorite objectForKey:SPFavoriteUserKey] ?: @"";
         NSString *database = [favorite objectForKey:SPFavoriteDatabaseKey] ?: @"";
@@ -4281,8 +4291,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         if (duplicateNode) {
             [duplicates addObject:@{@"favorite": favorite, @"node": duplicateNode}];
-        } else {
-            [newFavorites addObject:favorite];
         }
     }
 
@@ -4350,11 +4358,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                 // If Skip - do nothing
             }
 
-            // Add new favorites (non-duplicates)
-            for (NSMutableDictionary *favorite in newFavorites) {
-                NSMutableDictionary *favoriteCopy = [favorite mutableCopy];
-                [favoriteCopy setObject:[self _createNewFavoriteID] forKey:SPFavoriteIDKey];
-                SPTreeNode *newNode = [self->favoritesController addFavoriteNodeWithData:favoriteCopy asChildOfNode:nil];
+            NSArray *itemsToImport = [self favoriteImportItemsByApplyingDuplicateActionsToItems:preparedImportData duplicateItems:duplicateItems];
+
+            // Add remaining imported items. This preserves imported groups while removing skipped or updated duplicate leaves.
+            for (NSMutableDictionary *favorite in itemsToImport) {
+                SPTreeNode *newNode = [self->favoritesController addFavoriteNodeWithData:favorite asChildOfNode:nil];
                 [importedNodes addObject:newNode];
             }
 
@@ -4387,10 +4395,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         NSMutableArray *importedNodes = [NSMutableArray array];
         NSMutableIndexSet *importedIndexSet = [NSMutableIndexSet indexSet];
 
-        for (NSMutableDictionary *favorite in data) {
-            NSMutableDictionary *favoriteCopy = [favorite mutableCopy];
-            [favoriteCopy setObject:[self _createNewFavoriteID] forKey:SPFavoriteIDKey];
-            SPTreeNode *newNode = [favoritesController addFavoriteNodeWithData:favoriteCopy asChildOfNode:nil];
+        for (NSMutableDictionary *favorite in preparedImportData) {
+            SPTreeNode *newNode = [favoritesController addFavoriteNodeWithData:favorite asChildOfNode:nil];
             [importedNodes addObject:newNode];
         }
 
@@ -4413,6 +4419,72 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             [self _scrollToSelectedNode];
         }
     }
+}
+
+- (NSMutableDictionary *)favoriteImportDictionaryByAssigningNewIDs:(NSDictionary *)item
+{
+    NSMutableDictionary *mutableItem = [item mutableCopy];
+    NSArray *children = [item objectForKey:SPFavoriteChildrenKey];
+
+    if (children) {
+        NSMutableArray *preparedChildren = [NSMutableArray arrayWithCapacity:[children count]];
+        for (NSDictionary *child in children) {
+            [preparedChildren addObject:[self favoriteImportDictionaryByAssigningNewIDs:child]];
+        }
+        [mutableItem setObject:preparedChildren forKey:SPFavoriteChildrenKey];
+    }
+    else {
+        [mutableItem setObject:[self _createNewFavoriteID] forKey:SPFavoriteIDKey];
+    }
+
+    return mutableItem;
+}
+
+- (void)collectFavoriteImportLeavesFromItems:(NSArray *)items intoArray:(NSMutableArray *)favorites
+{
+    for (NSDictionary *item in items) {
+        NSArray *children = [item objectForKey:SPFavoriteChildrenKey];
+
+        if (children) {
+            [self collectFavoriteImportLeavesFromItems:children intoArray:favorites];
+        }
+        else {
+            [favorites addObject:item];
+        }
+    }
+}
+
+- (NSArray *)favoriteImportItemsByApplyingDuplicateActionsToItems:(NSArray *)items duplicateItems:(NSArray<SPDuplicateImportItem *> *)duplicateItems
+{
+    NSMutableArray *filteredItems = [NSMutableArray array];
+
+    for (NSMutableDictionary *item in items) {
+        NSArray *children = [item objectForKey:SPFavoriteChildrenKey];
+
+        if (children) {
+            NSArray *filteredChildren = [self favoriteImportItemsByApplyingDuplicateActionsToItems:children duplicateItems:duplicateItems];
+            if ([filteredChildren count] > 0 || [children count] == 0) {
+                NSMutableDictionary *groupCopy = [item mutableCopy];
+                [groupCopy setObject:filteredChildren forKey:SPFavoriteChildrenKey];
+                [filteredItems addObject:groupCopy];
+            }
+            continue;
+        }
+
+        BOOL shouldImport = YES;
+        for (SPDuplicateImportItem *duplicateItem in duplicateItems) {
+            if (duplicateItem.favorite == item) {
+                shouldImport = (duplicateItem.action == SPDuplicateActionCreateNew);
+                break;
+            }
+        }
+
+        if (shouldImport) {
+            [filteredItems addObject:item];
+        }
+    }
+
+    return filteredItems;
 }
 
 /**
