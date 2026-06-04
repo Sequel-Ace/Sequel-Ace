@@ -223,16 +223,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         spfDocData = [[NSMutableDictionary alloc] init];
         runningActivitiesArray = [[NSMutableArray alloc] init];
 
-        taskProgressWindow = nil;
-        taskDisplayIsIndeterminate = YES;
-        taskDisplayLastValue = 0;
-        taskProgressValue = 0;
-        taskProgressValueDisplayInterval = 1;
-        taskDrawTimer = nil;
-        taskFadeInStartDate = nil;
-        taskCanBeCancelled = NO;
-        taskCancellationCallbackObject = nil;
-        taskCancellationCallbackSelector = NULL;
+        // The task progress UI (window, indicators, timers, cancel button)
+        // lives in SATaskController; we keep the working-level counter and
+        // the surrounding orchestration (notifications, toolbar validation,
+        // database-list selectability) here on the document.
+        taskController = [[SATaskController alloc] init];
+        taskController.delegate = self;
+
         alterDatabaseCharsetHelper = nil; //init in awakeFromNib
         addDatabaseCharsetHelper = nil;
 
@@ -314,23 +311,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     NSNib *nibLoader = [[NSNib alloc] initWithNibNamed:@"ConnectionErrorDialog" bundle:[NSBundle mainBundle]];
     [nibLoader instantiateWithOwner:self topLevelObjects:&connectionDialogTopLevelObjects];
 
-    NSArray *progressIndicatorLayerTopLevelObjects = nil;
-    nibLoader = [[NSNib alloc] initWithNibNamed:@"ProgressIndicatorLayer" bundle:[NSBundle mainBundle]];
-    [nibLoader instantiateWithOwner:self topLevelObjects:&progressIndicatorLayerTopLevelObjects];
-
-    // Set up the progress indicator child window and layer - change indicator color and size
-    [taskProgressIndicator setForeColor:[NSColor whiteColor]];
-    NSShadow *progressIndicatorShadow = [[NSShadow alloc] init];
-    [progressIndicatorShadow setShadowOffset:NSMakeSize(1.0f, -1.0f)];
-    [progressIndicatorShadow setShadowBlurRadius:1.0f];
-    [progressIndicatorShadow setShadowColor:[NSColor colorWithCalibratedWhite:0.0f alpha:0.75f]];
-    [taskProgressIndicator setShadow:progressIndicatorShadow];
-    taskProgressWindow = [[NSWindow alloc] initWithContentRect:[taskProgressLayer bounds] styleMask:NSWindowStyleMaskBorderless backing:NSBackingStoreBuffered defer:NO];
-    [taskProgressWindow setReleasedWhenClosed:NO];
-    [taskProgressWindow setOpaque:NO];
-    [taskProgressWindow setBackgroundColor:[NSColor clearColor]];
-    [taskProgressWindow setAlphaValue:0.0f];
-    [taskProgressWindow setContentView:taskProgressLayer];
+    // The task progress window, indicator and layer are loaded and configured
+    // by SATaskController (created in -initWithWindowController:).
 
     alterDatabaseCharsetHelper = [[SPCharsetCollationHelper alloc] initWithCharsetButton:databaseAlterEncodingButton CollationButton:databaseAlterCollationButton];
     addDatabaseCharsetHelper   = [[SPCharsetCollationHelper alloc] initWithCharsetButton:databaseEncodingButton CollationButton:databaseCollationButton];
@@ -340,7 +322,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [self.parentWindowControllerWindow setRepresentedURL:(spfFileURL && [spfFileURL isFileURL] ? spfFileURL : nil)];
 
     // Add the progress window to this window
-    [self centerTaskWindow];
+    [taskController centerInParentWindow];
 
     // If not connected, update the favorite selection
     if (!_isConnected) {
@@ -1108,6 +1090,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark -
 #pragma mark Task progress and notification methods
 
+// The task *progress UI* (the borderless window, indicator, description /
+// duration labels, cancel button and the fade-in / query-time timers) lives
+// in SATaskController. The methods below keep the document-wide working-level
+// bookkeeping (`_isWorkingLevel`, task start/end notifications, toolbar
+// validation, database-list selectability) and drive the controller for the
+// presentation.
+
 /**
  * Start a document-wide task, providing a short task description for
  * display to the user.  This sets the document into working mode,
@@ -1127,101 +1116,28 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Set the task text. If a nil string was supplied, a generic query notification is occurring -
     // if a task is not already active, use default text.
     if (!description) {
-        if (!_isWorkingLevel) [self setTaskDescription:NSLocalizedString(@"Working...", @"Generic working description")];
+        if (!_isWorkingLevel) [taskController setTaskDescription:NSLocalizedString(@"Working...", @"Generic working description")];
 
         // Otherwise display the supplied string
     } else {
-        [self setTaskDescription:description];
+        [taskController setTaskDescription:description];
     }
 
     // Increment the task level
     _isWorkingLevel++;
 
-    // Reset the progress indicator if necessary
-    if (_isWorkingLevel == 1 || !taskDisplayIsIndeterminate) {
-        taskDisplayIsIndeterminate = YES;
-        [taskProgressIndicator setIndeterminate:YES];
-        [taskProgressIndicator startAnimation:self];
-        taskDisplayLastValue = 0;
-    }
+    BOOL isFirstLevel = (_isWorkingLevel == 1);
+
+    // Reset the progress indicator (and, on the first level, prepare the
+    // cancel button + schedule the appearance/query-time timers).
+    [taskController beginTaskIsFirstLevel:isFirstLevel];
 
     // If the working level just moved to start a task, set up the interface
-    if (_isWorkingLevel == 1) {
-        [taskCancelButton setHidden:YES];
-
+    if (isFirstLevel) {
         // Set flags and prevent further UI interaction in this window
         databaseListIsSelectable = NO;
         [[NSNotificationCenter defaultCenter] postNotificationName:SPDocumentTaskStartNotification object:self];
         [self.mainToolbar validateVisibleItems];
-
-        SPLog(@"Schedule appearance of the task window in the near future, using a frame timer");
-
-        // Schedule appearance of the task window in the near future, using a frame timer.
-        taskFadeInStartDate = [[NSDate alloc] init];
-        queryStartDate = [[NSDate alloc] init];
-        taskDrawTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 / 30.0 target:self selector:@selector(fadeInTaskProgressWindow:) userInfo:nil repeats:YES];
-        queryExecutionTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(showQueryExecutionTime) userInfo:nil repeats:YES];
-
-    }
-}
-
-/**
- * Show query execution time on progress window.
- */
--(void)showQueryExecutionTime{
-
-    double timeSinceQueryStarted = [[NSDate date] timeIntervalSinceDate:queryStartDate];
-
-    NSString *queryRunningTime = [NSDateComponentsFormatter.hourMinSecFormatter stringFromTimeInterval:timeSinceQueryStarted];
-
-    SPLog(@"showQueryExecutionTime: %@", queryRunningTime);
-
-    NSShadow *textShadow = [[NSShadow alloc] init];
-    [textShadow setShadowColor:[NSColor colorWithCalibratedWhite:0.0f alpha:0.75f]];
-    [textShadow setShadowOffset:NSMakeSize(1.0f, -1.0f)];
-    [textShadow setShadowBlurRadius:3.0f];
-
-    NSMutableDictionary *attributes = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
-                                       [NSFont boldSystemFontOfSize:13.0f], NSFontAttributeName,
-                                       textShadow, NSShadowAttributeName,
-                                       nil];
-    NSAttributedString *queryRunningTimeString = [[NSAttributedString alloc] initWithString:queryRunningTime attributes:attributes];
-
-    [taskDurationTime setAttributedStringValue:queryRunningTimeString];
-
-}
-
-/**
- * Show the task progress window, after a small delay to minimise flicker.
- */
-- (void) fadeInTaskProgressWindow:(NSTimer *)theTimer
-{
-    SPLog(@"fadeInTaskProgressWindow");
-
-    double timeSinceFadeInStart = [[NSDate date] timeIntervalSinceDate:taskFadeInStartDate];
-
-    // Keep the window hidden for the first ~0.5 secs
-    if (timeSinceFadeInStart < 0.5) return;
-
-    if ([taskProgressWindow parentWindow] == nil) {
-        [self.parentWindowControllerWindow addChildWindow:taskProgressWindow ordered:NSWindowAbove];
-    }
-
-    CGFloat alphaValue = [taskProgressWindow alphaValue];
-
-    // If the task progress window is still hidden, center it before revealing it
-    if (alphaValue == 0) [self centerTaskWindow];
-
-    SPLog(@"Fade in the task window over 0.6 seconds");
-
-    // Fade in the task window over 0.6 seconds
-    alphaValue = (float)(timeSinceFadeInStart - 0.5) / 0.6f;
-    if (alphaValue > 1.0f) alphaValue = 1.0f;
-    [taskProgressWindow setAlphaValue:alphaValue];
-
-    // If the window has been fully faded in, clean up the timer.
-    if (alphaValue == 1.0) {
-        [taskDrawTimer invalidate];
     }
 }
 
@@ -1230,18 +1146,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void) setTaskDescription:(NSString *)description
 {
-    NSShadow *textShadow = [[NSShadow alloc] init];
-    [textShadow setShadowColor:[NSColor colorWithCalibratedWhite:0.0f alpha:0.75f]];
-    [textShadow setShadowOffset:NSMakeSize(1.0f, -1.0f)];
-    [textShadow setShadowBlurRadius:3.0f];
-
-    NSMutableDictionary *attributes = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
-                                       [NSFont boldSystemFontOfSize:13.0f], NSFontAttributeName,
-                                       textShadow, NSShadowAttributeName,
-                                       nil];
-    NSAttributedString *string = [[NSAttributedString alloc] initWithString:description attributes:attributes];
-
-    [taskDescriptionText setAttributedStringValue:string];
+    [taskController setTaskDescription:(description ?: @"")];
 }
 
 /**
@@ -1251,31 +1156,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void) setTaskPercentage:(CGFloat)taskPercentage
 {
-
-    SPLog(@"setTaskPercentage = %f", taskPercentage);
-
-    // If the task display is currently indeterminate, set it to determinate on the main thread.
-    if (taskDisplayIsIndeterminate) {
-        if (![NSThread isMainThread]) return [[self onMainThread] setTaskPercentage:taskPercentage];
-
-        taskDisplayIsIndeterminate = NO;
-        [taskProgressIndicator stopAnimation:self];
-        [taskProgressIndicator setDoubleValue:0.5];
-    }
-
-    // Check the supplied progress.  Compare it to the display interval - how often
-    // the interface is updated - and update the interface if the value has changed enough.
-    taskProgressValue = taskPercentage;
-    if (taskProgressValue >= taskDisplayLastValue + taskProgressValueDisplayInterval
-        || taskProgressValue <= taskDisplayLastValue - taskProgressValueDisplayInterval)
-    {
-        if ([NSThread isMainThread]) {
-            [taskProgressIndicator setDoubleValue:taskProgressValue];
-        } else {
-            [taskProgressIndicator performSelectorOnMainThread:@selector(setNumberValue:) withObject:[NSNumber numberWithDouble:taskProgressValue] waitUntilDone:NO];
-        }
-        taskDisplayLastValue = taskProgressValue;
-    }
+    [taskController setTaskPercentage:taskPercentage];
 }
 
 /**
@@ -1287,19 +1168,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void) setTaskProgressToIndeterminateAfterDelay:(BOOL)afterDelay
 {
-    SPLog(@"setTaskProgressToIndeterminateAfterDelay");
-
-    if (afterDelay) {
-        [self performSelector:@selector(setTaskProgressToIndeterminateAfterDelay:) withObject:nil afterDelay:0.5];
-        return;
-    }
-
-    if (taskDisplayIsIndeterminate) return;
-    [NSObject cancelPreviousPerformRequestsWithTarget:taskProgressIndicator];
-    taskDisplayIsIndeterminate = YES;
-    [taskProgressIndicator setIndeterminate:YES];
-    [taskProgressIndicator startAnimation:self];
-    taskDisplayLastValue = 0;
+    [taskController setTaskProgressToIndeterminateAfterDelay:afterDelay];
 }
 
 /**
@@ -1312,13 +1181,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Ensure a call on the main thread
     if (![NSThread isMainThread]) return [[self onMainThread] endTask];
 
-    SPLog(@"_isWorkingLevel = %li", (long)_isWorkingLevel);
-
     // Decrement the working level
     _isWorkingLevel--;
     assert(_isWorkingLevel >= 0);
-
-    SPLog(@"_isWorkingLevel = %li", (long)_isWorkingLevel);
 
     // Ensure cancellation interface is reset
     [self disableTaskCancellation];
@@ -1328,29 +1193,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
         SPLog(@"!_isWorkingLevel, all tasks have ended");
 
-        // Cancel the draw timer if it exists
-        if (taskDrawTimer) {
-            SPLog(@"Cancel the draw timer if it exists");
-            [taskDrawTimer invalidate];
-        }
-
-        if (queryExecutionTimer) {
-            queryStartDate = [[NSDate alloc] init];
-            SPLog(@"self showQueryExecutionTime");
-            [self showQueryExecutionTime];
-            SPLog(@"queryExecutionTimer invalidate");
-            [queryExecutionTimer invalidate];
-        }
-
-        // Hide the task interface and reset to indeterminate
-        if (taskDisplayIsIndeterminate){
-            SPLog(@"taskDisplayIsIndeterminate,stopAnimation ");
-            [taskProgressIndicator stopAnimation:self];
-        }
-        [taskProgressWindow setAlphaValue:0.0f];
-        [taskProgressWindow orderOut:self];
-        taskDisplayIsIndeterminate = YES;
-        [taskProgressIndicator setIndeterminate:YES];
+        // Hide the task interface, stop the timers and reset to indeterminate
+        [taskController endTaskDisplay];
 
         // Re-enable window interface
         databaseListIsSelectable = YES;
@@ -1372,19 +1216,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // If no task is active, return
     if (!_isWorkingLevel) return;
 
-    if (callbackObject && callbackFunction) {
-        taskCancellationCallbackObject = callbackObject;
-        taskCancellationCallbackSelector = callbackFunction;
-    }
-    taskCanBeCancelled = YES;
-
-    NSMutableAttributedString *colorTitle = [[NSMutableAttributedString alloc]
-                                             initWithString:buttonTitle
-                                             attributes:@{NSForegroundColorAttributeName: [NSColor whiteColor]}
-                                             ];
-    [taskCancelButton setAttributedTitle:colorTitle];
-    [taskCancelButton setEnabled:YES];
-    [taskCancelButton setHidden:NO];
+    [taskController enableTaskCancellationWithTitle:buttonTitle callbackObject:callbackObject callbackFunction:callbackFunction];
 }
 
 /**
@@ -1398,32 +1230,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // If no task is active, return
     if (!_isWorkingLevel) return;
 
-    taskCanBeCancelled = NO;
-    taskCancellationCallbackObject = nil;
-    taskCancellationCallbackSelector = NULL;
-    [taskCancelButton setHidden:YES];
-}
-
-/**
- * Action sent by the cancel button when it's active.
- */
-- (IBAction)cancelTask:(id)sender {
-    if (!taskCanBeCancelled) return;
-
-    [taskCancelButton setEnabled:NO];
-
-    // See whether there is an active database structure task and whether it can be used
-    // to cancel the query, for speed (no connection overhead!)
-    if (databaseStructureRetrieval && [databaseStructureRetrieval connection]) {
-        [mySQLConnection setLastQueryWasCancelled:YES];
-        [[databaseStructureRetrieval connection] killQueryOnThreadID:[mySQLConnection mysqlConnectionThreadId]];
-    } else {
-        [mySQLConnection cancelCurrentQuery];
-    }
-
-    if (taskCancellationCallbackObject && taskCancellationCallbackSelector) {
-        [taskCancellationCallbackObject performSelector:taskCancellationCallbackSelector];
-    }
+    [taskController disableTaskCancellation];
 }
 
 /**
@@ -1444,30 +1251,30 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
- * Reposition the task window within the main window.
- */
-- (void)centerTaskWindow
-{
-    NSPoint newBottomLeftPoint;
-    NSRect mainWindowRect = [[self.parentWindowController window] frame];
-    NSRect taskWindowRect = [taskProgressWindow frame];
-
-    newBottomLeftPoint.x = roundf(mainWindowRect.origin.x + mainWindowRect.size.width/2 - taskWindowRect.size.width/2);
-    newBottomLeftPoint.y = roundf(mainWindowRect.origin.y + mainWindowRect.size.height/2 - taskWindowRect.size.height/2);
-
-    [taskProgressWindow setFrameOrigin:newBottomLeftPoint];
-}
-
-/**
  * Support pausing and restarting the task progress indicator.
  * Only works while the indicator is in indeterminate mode.
  */
 - (void)setTaskIndicatorShouldAnimate:(BOOL)shouldAnimate
 {
-    if (shouldAnimate) {
-        [[taskProgressIndicator onMainThread] startAnimation:self];
+    [taskController setTaskIndicatorShouldAnimate:shouldAnimate];
+}
+
+#pragma mark - SATaskControllerDelegate
+
+- (NSWindow *)taskParentWindow
+{
+    return self.parentWindowControllerWindow;
+}
+
+- (void)taskControllerDidRequestCancellation
+{
+    // See whether there is an active database structure task and whether it can be used
+    // to cancel the query, for speed (no connection overhead!)
+    if (databaseStructureRetrieval && [databaseStructureRetrieval connection]) {
+        [mySQLConnection setLastQueryWasCancelled:YES];
+        [[databaseStructureRetrieval connection] killQueryOnThreadID:[mySQLConnection mysqlConnectionThreadId]];
     } else {
-        [[taskProgressIndicator onMainThread] stopAnimation:self];
+        [mySQLConnection cancelCurrentQuery];
     }
 }
 
@@ -6095,7 +5902,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [NSApp endSheet:connectionErrorDialog];
         [connectionErrorDialog orderOut:nil];
 
-        queryStartDate = [[NSDate alloc] init];
+        [taskController resetQueryTimer];
 
         // If 'disconnect' was selected, trigger a window close.
         if (connectionErrorCode == SPMySQLConnectionLostDisconnect) {
@@ -6519,20 +6326,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             [[NSNotificationCenter defaultCenter] removeObserver:self];
             [NSObject cancelPreviousPerformRequestsWithTarget:self];
 
-            [taskProgressWindow close];
+            // Close the task progress window and invalidate its timers.
+            [taskController shutDown];
 
             if (processListController) [processListController close];
 
             // #2924: The connection controller doesn't retain its delegate (us), but it may outlive us (e.g. when running a bg thread)
             [connectionController setDelegate:nil];
             [printWebView setFrameLoadDelegate:nil];
-
-            if (taskDrawTimer) {
-                [taskDrawTimer invalidate];
-            }
-            if (queryExecutionTimer) {
-                [queryExecutionTimer invalidate];
-            }
         }
     }
 }

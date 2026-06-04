@@ -374,6 +374,7 @@
 		58FEF16D0F23D66600518E8E /* SPSQLParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 58FEF16C0F23D66600518E8E /* SPSQLParser.m */; };
 		58FEF57E0F3B4E9700518E8E /* SPTableData.m in Sources */ = {isa = PBXBuildFile; fileRef = 58FEF57D0F3B4E9700518E8E /* SPTableData.m */; };
 		5AF0C1000000000000000002 /* SAFavoritesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF0C1000000000000000001 /* SAFavoritesListView.swift */; };
+		5AF0C3000000000000000002 /* SATaskController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF0C3000000000000000001 /* SATaskController.swift */; };
 		5AF0C2000000000000000002 /* SAFavoriteItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF0C2000000000000000001 /* SAFavoriteItem.swift */; };
 		5AF0C2000000000000000003 /* SAFavoriteItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF0C2000000000000000001 /* SAFavoriteItem.swift */; };
 		5AF0C2000000000000000012 /* SAFavoriteItem+Tree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF0C2000000000000000011 /* SAFavoriteItem+Tree.swift */; };
@@ -1172,6 +1173,7 @@
 		58FEF57C0F3B4E9700518E8E /* SPTableData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTableData.h; sourceTree = "<group>"; };
 		58FEF57D0F3B4E9700518E8E /* SPTableData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTableData.m; sourceTree = "<group>"; };
 		5AF0C1000000000000000001 /* SAFavoritesListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoritesListView.swift; sourceTree = "<group>"; };
+		5AF0C3000000000000000001 /* SATaskController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SATaskController.swift; sourceTree = "<group>"; };
 		5AF0C2000000000000000001 /* SAFavoriteItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoriteItem.swift; sourceTree = "<group>"; };
 		5AF0C2000000000000000011 /* SAFavoriteItem+Tree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SAFavoriteItem+Tree.swift"; sourceTree = "<group>"; };
 		5AF0C2000000000000000021 /* SAFavoritesList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoritesList.swift; sourceTree = "<group>"; };
@@ -1627,6 +1629,7 @@
 				17005CB016D6CEA400AF81F4 /* Table Triggers */,
 				5146ADFB2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift */,
 				5146E0512F7A640C00C4C14A /* SADatabaseListManager.swift */,
+				5AF0C3000000000000000001 /* SATaskController.swift */,
 			);
 			name = "Main View Controllers";
 			path = MainViewControllers;
@@ -3392,6 +3395,7 @@
 				BCE0025D11173D2A009DA533 /* SPFieldMapperController.m in Sources */,
 				5146ADFC2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift in Sources */,
 				5146E0502F7A640C00C4C14A /* SADatabaseListManager.swift in Sources */,
+				5AF0C3000000000000000002 /* SATaskController.swift in Sources */,
 				5147B0022F8C000100C4C14A /* SAWindowTitleBuilder.swift in Sources */,
 				BC2777A011514B940034DF6A /* SPNavigatorController.m in Sources */,
 				589582151154F8F400EDCC28 /* SPMainThreadTrampoline.m in Sources */,
