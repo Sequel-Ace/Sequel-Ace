@@ -6,7 +6,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="SPDatabaseDocument">
+        <customObject id="-2" userLabel="File's Owner" customClass="SATaskController">
             <connections>
                 <outlet property="taskCancelButton" destination="45" id="VCO-R0-XTG"/>
                 <outlet property="taskDescriptionText" destination="15" id="33"/>

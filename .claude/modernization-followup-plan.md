@@ -77,11 +77,46 @@ A1c — `-_selectDatabaseAndItem:` (background-thread selection flow) + callback
   `SADatabaseListManagerTests` (21 tests) still pass.
 - Files: `Source/Controllers/MainViewControllers/SPDatabaseDocument.m`, `SADatabaseListManager.swift`
 
-**A2. Extract task/progress management (~257 lines)**
-- `startTaskWithDescription:`, `endTask`, `setTaskPercentage:`, `enableTaskCancellation:`, progress window fade, cancel button
-- Already has `SATaskManaging` protocol — create `SATaskController` that implements it
-- Move the progress window, indicators, and timer management out of the document
-- Files: `SPDatabaseDocument.m`, new `SATaskController.swift`
+**A2. Extract task/progress management (~257 lines)** — ✅ Done (scoped to the progress UI)
+- New `SATaskController` (Swift, app-target only) owns the task *progress
+  UI*: the borderless progress window (created + configured in its init
+  from `ProgressIndicatorLayer.xib`, now File's-Owner = `SATaskController`),
+  the `YRKSpinningProgressIndicator`, the description / query-duration
+  labels, the cancel button, and the fade-in / query-execution-time
+  timers. It also owns the determinate/indeterminate display state, the
+  percentage-throttling, and the cancellation callback state.
+- `SATaskControllerDelegate` (Swift `@objc protocol`, defined alongside the
+  controller) exposes the two hooks the controller can't own:
+  `taskParentWindow()` (parent window to centre over / parent the panel to)
+  and `taskControllerDidRequestCancellation()` (kills the running query via
+  the database-structure connection where available). Both implemented in
+  `SPDatabaseDocument.m`; conformance declared in `SPDatabaseDocument.swift`.
+  The delegate requirements are *methods* (not a property) so the existing
+  ObjC method `-taskParentWindow` satisfies the @objc protocol — a `{ get }`
+  property requirement would import the ObjC getter as a method and fail to
+  conform.
+- The document keeps the working-level counter (`_isWorkingLevel`) and the
+  document-wide orchestration around it (`SPDocumentTaskStart/EndNotification`,
+  toolbar `validateVisibleItems`, `databaseListIsSelectable`,
+  `chooseDatabaseButton` enablement). `_isWorkingLevel` gates behaviour in
+  ~8 unrelated document methods, so it stays on the document; only the
+  progress *UI* moved. `SPDatabaseDocument`'s `SATaskManaging` methods are
+  now thin trampolines: they manage that document-wide state and forward
+  the presentation to `taskController` (`beginTaskIsFirstLevel:`,
+  `endTaskDisplay`, `setTaskPercentage:`, `enableTaskCancellation…`, etc.).
+  `cancelTask:` / `centerTaskWindow` / `fadeInTaskProgressWindow:` /
+  `showQueryExecutionTime` moved entirely to the controller; the document's
+  12 task ivars + 5 task IBOutlets are gone.
+- No unit tests: the controller is AppKit/nib/timer plumbing that needs a
+  live `NSWindow` + nib load + `YRKSpinningProgressIndicator` to exercise;
+  the only branchy logic (percentage throttling) is trivial. Same rationale
+  as A1c. Verified by a clean app build + the existing suite (522 pass; the
+  one pre-existing `PreferenceDefaults.plist` bundle failure is unrelated).
+- Files: `Source/Controllers/MainViewControllers/SATaskController.swift`,
+  `SPDatabaseDocument.{h,m,swift}`, `Source/Protocols` (none — delegate
+  lives with the controller), `Source/Sequel-Ace-Bridging-Header.h`
+  (imports `YRKSpinningProgressIndicator.h` for Swift), and
+  `Source/Interfaces/ProgressIndicatorLayer.xib` (File's Owner class).
 
 **A3. Extract view state switching to use SAViewMode (~188 lines)** — ✅ Done
 - `viewStructure`, `viewContent`, `viewQuery`, `viewStatus`, `viewRelations`, `viewTriggers`
@@ -323,7 +358,7 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
 4. ~~**Phase A4** (window title) — quick, easy~~ ✅ Done
 5. **Phase B2** (favorites data source tests) — 🟡 B2a done (search matcher), B2b pending (needs test-target ObjC plumbing)
 6. **Phase C1** (SwiftUI favorites list) — first visible SwiftUI — 🟡 C1a + C1b done (wrap + pure SwiftUI list); reorder/rename/persistence + hosting (C3) still pending before it replaces the AppKit list
-7. **Phase A2** (task controller) — large but impactful
+7. ~~**Phase A2** (task controller) — large but impactful~~ ✅ Done (progress UI extracted; working-level counter stays on the document)
 8. **Phase D1-D3** (SPConnectionController cleanup) — ongoing
 9. **Phase C2-C3** (SwiftUI connection form) — bigger effort
 10. **Phase E** (table content/custom query) — long-term
