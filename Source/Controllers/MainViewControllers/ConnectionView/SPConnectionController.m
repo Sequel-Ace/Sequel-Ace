@@ -4348,14 +4348,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                     [self updateFavoriteNode:item.duplicateNode withData:item.favorite password:nil];
                     [importedNodes addObject:item.duplicateNode];
                 }
-                else if (item.action == SPDuplicateActionCreateNew) {
-                    // Create new
-                    NSMutableDictionary *favoriteCopy = [item.favorite mutableCopy];
-                    [favoriteCopy setObject:[self _createNewFavoriteID] forKey:SPFavoriteIDKey];
-                    SPTreeNode *newNode = [self->favoritesController addFavoriteNodeWithData:favoriteCopy asChildOfNode:nil];
-                    [importedNodes addObject:newNode];
-                }
-                // If Skip - do nothing
+                // Create New entries stay in itemsToImport so grouped imports keep their structure.
+                // If Skip - the duplicate leaf is filtered out below.
             }
 
             NSArray *itemsToImport = [self favoriteImportItemsByApplyingDuplicateActionsToItems:preparedImportData duplicateItems:duplicateItems];
