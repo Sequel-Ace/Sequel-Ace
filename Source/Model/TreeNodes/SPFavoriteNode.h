@@ -52,3 +52,8 @@
 + (SPFavoriteNode *)favoriteNodeWithDictionary:(NSMutableDictionary *)dictionary;
 
 @end
+
+// Swift extension methods (implemented in SAConnectionInfo+ConnectionString.swift)
+@interface SPFavoriteNode (ConnectionString)
+- (NSString * _Nullable)toConnectionString:(BOOL)includePassword;
+@end
