@@ -364,6 +364,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 // Import/export favorites
 - (IBAction)importFavorites:(id)sender;
 - (IBAction)exportFavorites:(id)sender;
+- (IBAction)copyConnectionString:(id)sender;
 
 // Accessors
 - (SPFavoritesOutlineView *)favoritesOutlineView;
