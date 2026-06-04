@@ -131,6 +131,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 - (void)_processFavoritesDataChange:(NSNotification *)aNotification;
 - (void)scrollViewFrameChanged:(NSNotification *)aNotification;
+- (BOOL)connectionStringComponentsContainDisplaySecrets:(NSURLComponents *)components;
 - (NSString *)redactedConnectionStringForDisplayFromComponents:(NSURLComponents *)components fallback:(NSString *)fallback;
 - (NSMutableDictionary *)favoriteImportDictionaryByAssigningNewIDs:(NSDictionary *)item;
 - (void)collectFavoriteImportLeavesFromItems:(NSArray *)items intoArray:(NSMutableArray *)favorites;
@@ -1887,11 +1888,41 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     return [self _selectNode:quickConnectItem];
 }
 
+- (BOOL)connectionStringComponentsContainDisplaySecrets:(NSURLComponents *)components
+{
+    if (components.password != nil) {
+        return YES;
+    }
+
+    for (NSURLQueryItem *item in components.queryItems ?: @[]) {
+        NSString *lowercaseName = [item.name lowercaseString];
+        if ([lowercaseName isEqualToString:@"ssh_password"] || [lowercaseName isEqualToString:@"password"]) {
+            return YES;
+        }
+    }
+
+    return NO;
+}
+
 - (NSString *)redactedConnectionStringForDisplayFromComponents:(NSURLComponents *)components fallback:(NSString *)fallback
 {
     NSURLComponents *displayComponents = [components copy];
     displayComponents.user = nil;
     displayComponents.password = nil;
+
+    if (displayComponents.queryItems.count > 0) {
+        NSMutableArray<NSURLQueryItem *> *redactedQueryItems = [NSMutableArray arrayWithCapacity:displayComponents.queryItems.count];
+        for (NSURLQueryItem *item in displayComponents.queryItems) {
+            NSString *lowercaseName = [item.name lowercaseString];
+            if ([lowercaseName isEqualToString:@"ssh_password"] || [lowercaseName isEqualToString:@"password"]) {
+                [redactedQueryItems addObject:[NSURLQueryItem queryItemWithName:item.name value:@"•••"]];
+            }
+            else {
+                [redactedQueryItems addObject:item];
+            }
+        }
+        displayComponents.queryItems = redactedQueryItems;
+    }
 
     NSMutableString *displayString = [NSMutableString string];
 
@@ -1909,8 +1940,12 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     NSString *urlWithoutUserInfo = [displayComponents string];
     if (urlWithoutUserInfo.length) {
         NSString *schemePrefix = components.scheme.length ? [NSString stringWithFormat:@"%@://", components.scheme] : nil;
+        NSString *schemeSeparator = components.scheme.length ? [NSString stringWithFormat:@"%@:", components.scheme] : nil;
         if (schemePrefix && [urlWithoutUserInfo hasPrefix:schemePrefix]) {
             [displayString appendString:[urlWithoutUserInfo substringFromIndex:schemePrefix.length]];
+        }
+        else if (schemeSeparator && [urlWithoutUserInfo hasPrefix:schemeSeparator]) {
+            [displayString appendString:[urlWithoutUserInfo substringFromIndex:schemeSeparator.length]];
         }
         else {
             [displayString appendString:urlWithoutUserInfo];
@@ -1941,14 +1976,14 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         // Validate URL
         NSURL *url = [NSURL URLWithString:clipboardString];
         if (!url) {
-            NSLog(@"Invalid connection string URL: %@", clipboardString);
+            NSLog(@"Invalid connection string URL in clipboard");
             [self showImportFilePanel];
             return;
         }
 
         // Use NSURLComponents for proper password handling (handles percent-encoding)
         NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
-        BOOL hasPassword = (components.password != nil);
+        BOOL hasPassword = [self connectionStringComponentsContainDisplaySecrets:components];
 
         // Create redacted version for display by rebuilding URL from components
         NSString *displayString = clipboardString;
@@ -2423,6 +2458,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     NSString *oldName = [favoriteDict objectForKey:SPFavoriteNameKey] ?: @"";
     NSNumber *favoriteID = [favoriteDict objectForKey:SPFavoriteIDKey] ?: @(-1);
     NSInteger oldTypeTag = [[favoriteDict objectForKey:SPFavoriteTypeKey] integerValue];
+    NSString *oldSSHUser = [favoriteDict objectForKey:SPFavoriteSSHUserKey] ?: @"";
+    NSString *oldSSHHost = [favoriteDict objectForKey:SPFavoriteSSHHostKey] ?: @"";
 
     // Update all fields from newData (except name and ID - keep existing name and ID)
     for (NSString *key in newData) {
@@ -2481,8 +2518,6 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
     // Update SSH password if this is an SSH connection
     if (newTypeTag == SPSSHTunnelConnection) {
-        NSString *oldSSHUser = [favoriteDict objectForKey:SPFavoriteSSHUserKey] ?: @"";
-        NSString *oldSSHHost = [favoriteDict objectForKey:SPFavoriteSSHHostKey] ?: @"";
         NSString *newSSHUser = [favoriteDict objectForKey:SPFavoriteSSHUserKey] ?: @"";
         NSString *newSSHHost = [favoriteDict objectForKey:SPFavoriteSSHHostKey] ?: @"";
 
