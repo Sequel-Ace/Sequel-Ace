@@ -3578,6 +3578,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 [connection setObject:[NSNumber numberWithInteger:[connectionController sshKeyLocationEnabled]] forKey:@"ssh_keyLocationEnabled"];
                 if ([connectionController sshKeyLocation]) [connection setObject:[connectionController sshKeyLocation] forKey:@"ssh_keyLocation"];
                 if ([connectionController sshPort] && [[connectionController sshPort] length]) [connection setObject:[NSNumber numberWithInteger:[[connectionController sshPort] integerValue]] forKey:@"ssh_port"];
+                if ([connectionController sshRemoteSocketPath] && [[connectionController sshRemoteSocketPath] length]) [connection setObject:[connectionController sshRemoteSocketPath] forKey:@"sshRemoteSocketPath"];
                 break;
             case SPVaultConnection:
                 connectionType = @"SPVaultConnection";
@@ -3806,6 +3807,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([connection objectForKey:@"ssh_keyLocationEnabled"]) [connectionController setSshKeyLocationEnabled:[[connection objectForKey:@"ssh_keyLocationEnabled"] intValue]];
     if ([connection objectForKey:@"ssh_keyLocation"])        [connectionController setSshKeyLocation:[connection objectForKey:@"ssh_keyLocation"]];
     if ([connection objectForKey:@"ssh_port"])               [connectionController setSshPort:[NSString stringWithFormat:@"%ld", (long)[[connection objectForKey:@"ssh_port"] integerValue]]];
+    if ([connection objectForKey:@"sshRemoteSocketPath"])    [connectionController setSshRemoteSocketPath:[connection objectForKey:@"sshRemoteSocketPath"]];
 
     // Set Vault details if available
     if ([connection objectForKey:@"vault_host"])             [connectionController setVaultHost:[connection objectForKey:@"vault_host"]];

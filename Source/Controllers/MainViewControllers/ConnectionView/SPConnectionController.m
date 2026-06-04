@@ -108,6 +108,7 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 
 - (void)_startEditingConnection;
 - (BOOL)_isAWSIAMConnection;
+- (BOOL)_shouldRequireMySQLHost;
 - (void)_syncAWSIAMAndSSLInterfaceState;
 - (void)_refreshAWSAvailableRegions;
 - (BOOL)_isVaultConnection;
@@ -260,6 +261,7 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
 @synthesize sshKeyLocationEnabled;
 @synthesize sshKeyLocation;
 @synthesize sshPort;
+@synthesize sshRemoteSocketPath;
 @synthesize useCompression;
 @synthesize bookmarks;
 @synthesize allowSplitViewResizing;
@@ -403,6 +405,7 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
         validateWithType:(SAConnectionType)[self type]
                     host:[self host] ?: @""
                  sshHost:[self sshHost] ?: @""
+     sshRemoteSocketPath:[self sshRemoteSocketPath] ?: @""
                   useSSL:[self useSSL]
    sshKeyLocationEnabled:(sshKeyLocationEnabled != NSControlStateValueOff)
          sshKeyLocation:sshKeyLocation
@@ -1126,6 +1129,16 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     return [self type] == SPAWSIAMConnection;
 }
 
+- (BOOL)_shouldRequireMySQLHost
+{
+    NSString *trimmedRemoteSocketPath = [[self sshRemoteSocketPath] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if ([self type] == SPSSHTunnelConnection && [trimmedRemoteSocketPath length]) {
+        return NO;
+    }
+
+    return [self type] == SPTCPIPConnection || [self type] == SPSSHTunnelConnection || [self type] == SPAWSIAMConnection;
+}
+
 - (BOOL)_isVaultConnection
 {
     return [self type] == SPVaultConnection;
@@ -1542,6 +1555,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     [self setSshKeyLocationEnabled:([fav objectForKey:SPFavoriteSSHKeyLocationEnabledKey] ? [[fav objectForKey:SPFavoriteSSHKeyLocationEnabledKey] intValue] : NSControlStateValueOff)];
     [self setSshKeyLocation:([fav objectForKey:SPFavoriteSSHKeyLocationKey] ? [fav objectForKey:SPFavoriteSSHKeyLocationKey] : @"")];
     [self setSshPort:([fav objectForKey:SPFavoriteSSHPortKey] ? [fav objectForKey:SPFavoriteSSHPortKey] : @"")];
+    [self setSshRemoteSocketPath:([fav objectForKey:SPFavoriteSSHRemoteSocketPathKey] ? [fav objectForKey:SPFavoriteSSHRemoteSocketPathKey] : @"")];
 
     // Check whether the password exists in the keychain, and if so add it; also record the
     // keychain details so we can pass around only those details if the password doesn't change
@@ -1714,6 +1728,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         @"",
         @"",
         @"",
+        @"",
         favoriteID
     ];
 
@@ -1742,6 +1757,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         SPFavoriteSSHKeyLocationEnabledKey,
         SPFavoriteSSHKeyLocationKey,
         SPFavoriteSSHPortKey,
+        SPFavoriteSSHRemoteSocketPathKey,
         SPFavoriteVaultHostKey,
         SPFavoriteVaultPortKey,
         SPFavoriteVaultOIDCMountKey,
@@ -2721,8 +2737,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         [[connectionView window] endEditingFor:[[connectionView window] firstResponder]];
     }
 
-    // Ensure that host is not empty if this is a TCP/IP, SSH, or AWS IAM connection
-    if (validateDetails && ([self type] == SPTCPIPConnection || [self type] == SPSSHTunnelConnection || [self type] == SPAWSIAMConnection) && ![[self host] length]) {
+    // Ensure that host is not empty for connection types that require a MySQL host.
+    if (validateDetails && [self _shouldRequireMySQLHost] && ![[self host] length]) {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message") message:NSLocalizedString(@"Insufficient details provided to establish a connection. Please provide at least a host.", @"insufficient details informative message") callback:nil];
         return;
     }
@@ -2831,12 +2847,14 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         [theFavorite removeObjectForKey:SPFavoriteSSHPortKey];
         [theFavorite removeObjectForKey:SPFavoriteSSHKeyLocationEnabledKey];
         [theFavorite removeObjectForKey:SPFavoriteSSHKeyLocationKey];
+        [theFavorite removeObjectForKey:SPFavoriteSSHRemoteSocketPathKey];
     } else {
         _setOrRemoveKey(SPFavoriteSSHHostKey, [self sshHost]);
         _setOrRemoveKey(SPFavoriteSSHUserKey, [self sshUser]);
         _setOrRemoveKey(SPFavoriteSSHPortKey, [self sshPort]);
         [theFavorite setObject:[NSNumber numberWithInteger:[self sshKeyLocationEnabled]] forKey:SPFavoriteSSHKeyLocationEnabledKey];
         _setOrRemoveKey(SPFavoriteSSHKeyLocationKey, [self sshKeyLocation]);
+        _setOrRemoveKey(SPFavoriteSSHRemoteSocketPathKey, [self sshRemoteSocketPath]);
     }
 
 
@@ -3566,6 +3584,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     info.sshKeyLocationEnabled = self.sshKeyLocationEnabled;
     info.sshKeyLocation = self.sshKeyLocation ?: @"";
     info.sshPort = self.sshPort ?: @"";
+    info.sshRemoteSocketPath = self.sshRemoteSocketPath ?: @"";
     info.connectionKeychainID = connectionKeychainID ?: @"";
     info.connectionKeychainItemName = connectionKeychainItemName ?: @"";
     info.connectionKeychainItemAccount = connectionKeychainItemAccount ?: @"";
@@ -4970,6 +4989,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
               context:NULL];
 
     [self addObserver:self
+           forKeyPath:SPFavoriteSSHRemoteSocketPathKey
+              options:(NSKeyValueObservingOptionOld | NSKeyValueObservingOptionNew)
+              context:NULL];
+
+    [self addObserver:self
            forKeyPath:SPFavoriteSSLKeyFileLocationEnabledKey
               options:(NSKeyValueObservingOptionOld | NSKeyValueObservingOptionNew)
               context:NULL];
@@ -5181,6 +5205,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [self removeObserver:self forKeyPath:SPFavoriteSSHPortKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSHKeyLocationEnabledKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSHKeyLocationKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSHRemoteSocketPathKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSLKeyFileLocationEnabledKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSLKeyFileLocationKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSLCertificateFileLocationEnabledKey];
