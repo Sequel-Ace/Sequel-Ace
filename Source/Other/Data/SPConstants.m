@@ -233,6 +233,7 @@ NSString *SPCSVImportLineTerminator              = @"CSVImportLineTerminator";
 NSString *SPCSVFieldImportMappingAlignment       = @"CSVFieldImportMappingAlignment";
 NSString *SPImportClipboardTempFileNamePrefix    = @"~/tmp/_SP_ClipBoard_Import_File_";
 NSString *SPLastExportSettings                   = @"LastExportSettings";
+NSString *SPAutoCheckClipboardForConnectionStrings = @"AutoCheckClipboardForConnectionStrings";
 NSString *SASecureBookmarks                      = @"SPSecureBookmarks"; // MUST be SPSecureBookmarks for var name SASecureBookmarks
 NSString *SPStaleSecureBookmarks                 = @"SPStaleSecureBookmarks";
 NSString *SPKnownHostsBookmarks                  = @"SPKnownHostsBookmarks";

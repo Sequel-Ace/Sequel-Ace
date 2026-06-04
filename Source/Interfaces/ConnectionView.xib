@@ -188,6 +188,12 @@
                                                     </connections>
                                                 </menuItem>
                                                 <menuItem isSeparatorItem="YES" id="5885"/>
+                                                <menuItem title="Copy Connection String" id="9001">
+                                                    <modifierMask key="keyEquivalentModifierMask"/>
+                                                    <connections>
+                                                        <action selector="copyConnectionString:" target="-2" id="9002"/>
+                                                    </connections>
+                                                </menuItem>
                                                 <menuItem title="Duplicate" id="5886">
                                                     <modifierMask key="keyEquivalentModifierMask"/>
                                                     <connections>
@@ -3553,6 +3559,12 @@ DQ
                     </connections>
                 </menuItem>
                 <menuItem isSeparatorItem="YES" id="5791"/>
+                <menuItem title="Copy Connection String" id="9003">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                    <connections>
+                        <action selector="copyConnectionString:" target="-2" id="9004"/>
+                    </connections>
+                </menuItem>
                 <menuItem title="Duplicate" id="5789">
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <connections>
