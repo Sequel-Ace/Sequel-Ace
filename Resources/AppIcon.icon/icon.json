@@ -42,7 +42,7 @@
     {
       "layers" : [
         {
-          "glass" : false,
+          "glass" : true,
           "image-name" : "database-and-ace-transparent-cropped.png",
           "name" : "database-and-ace-transparent-cropped",
           "position" : {
