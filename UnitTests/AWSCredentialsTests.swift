@@ -173,6 +173,99 @@ final class AWSCredentialsTests: XCTestCase {
         }
     }
 
+    // MARK: - SSO and Login Profiles
+
+    func testProfileLoadsSSOSessionFormatAndResolvesSessionSection() throws {
+        let configContents = """
+        [sso-session my-org]
+        sso_start_url = https://my-org.awsapps.com/start
+        sso_region = eu-west-1
+        sso_registration_scopes = sso:account:access
+
+        [profile dev]
+        sso_session = my-org
+        sso_account_id = 123456789012
+        sso_role_name = DeveloperAccess
+        region = eu-west-1
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: "", config: configContents) { _, _ in
+            let credentials = try AWSCredentials(profile: "dev")
+
+            XCTAssertTrue(credentials.isSSOProfile)
+            XCTAssertFalse(credentials.isLoginProfile)
+            XCTAssertFalse(credentials.isValid)
+            XCTAssertEqual(credentials.ssoSession, "my-org")
+            XCTAssertEqual(credentials.ssoStartURL, "https://my-org.awsapps.com/start")
+            XCTAssertEqual(credentials.ssoRegion, "eu-west-1")
+            XCTAssertEqual(credentials.ssoAccountID, "123456789012")
+            XCTAssertEqual(credentials.ssoRoleName, "DeveloperAccess")
+        }
+    }
+
+    func testProfileLoadsLegacySSOFormat() throws {
+        let configContents = """
+        [profile legacy]
+        sso_start_url = https://my-org.awsapps.com/start
+        sso_region = us-east-1
+        sso_account_id = 123456789012
+        sso_role_name = ReadOnly
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: "", config: configContents) { _, _ in
+            let credentials = try AWSCredentials(profile: "legacy")
+
+            XCTAssertTrue(credentials.isSSOProfile)
+            XCTAssertNil(credentials.ssoSession)
+            XCTAssertEqual(credentials.ssoStartURL, "https://my-org.awsapps.com/start")
+            XCTAssertEqual(credentials.ssoRegion, "us-east-1")
+        }
+    }
+
+    func testProfileLoadsLoginSession() throws {
+        let configContents = """
+        [default]
+        login_session = arn:aws:iam::123456789012:user/dev
+        region = eu-west-1
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: "", config: configContents) { _, _ in
+            let credentials = try AWSCredentials(profile: nil)
+
+            XCTAssertTrue(credentials.isLoginProfile)
+            XCTAssertFalse(credentials.isSSOProfile)
+            XCTAssertFalse(credentials.isValid)
+            XCTAssertEqual(credentials.loginSession, "arn:aws:iam::123456789012:user/dev")
+            XCTAssertEqual(credentials.region, "eu-west-1")
+        }
+    }
+
+    func testProfileNamesExcludeSSOSessionSectionsAndStripProfilePrefix() {
+        let configContents = """
+        [default]
+        [sso-session my-org]
+        sso_start_url = https://my-org.awsapps.com/start
+        [profile dev]
+        sso_session = my-org
+        """
+
+        let names = AWSCredentials.profileNames(inFileContents: configContents, isConfigFile: true)
+
+        XCTAssertEqual(names, ["default", "dev"])
+        XCTAssertFalse(names.contains("sso-session my-org"))
+    }
+
+    func testProfileNamesInCredentialsFileKeepRawSectionNames() {
+        let credentialsContents = """
+        [default]
+        [work]
+        """
+
+        let names = AWSCredentials.profileNames(inFileContents: credentialsContents, isConfigFile: false)
+
+        XCTAssertEqual(names, ["default", "work"])
+    }
+
     // MARK: - Obj-C Compatibility
 
     func testCredentialsFactoryMethodSetsNSErrorOnFailure() throws {
