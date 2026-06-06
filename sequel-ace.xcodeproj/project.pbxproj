@@ -484,6 +484,7 @@
 		C3A2875D9BB7411F87F05EA1 /* SPCustomQuerySQLClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEA35A884E0C42E4A2AF12EF /* SPCustomQuerySQLClassifier.swift */; };
 		C3A2875D9BB7411F87F05EA2 /* SPCustomQuerySQLClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEA35A884E0C42E4A2AF12EF /* SPCustomQuerySQLClassifier.swift */; };
 		C3A2875D9BB7411F87F05EA3 /* SPCustomQuerySQLClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEA35A884E0C42E4A2AF12F0 /* SPCustomQuerySQLClassifierTests.swift */; };
+		C6404F3DC014E87AD7B90665 /* AWSSSOClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2035823E1E286AF53ED22D6 /* AWSSSOClient.swift */; };
 		C812F06F0D4A95968C1B0154 /* SABundleVersionUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */; };
 		C9AD7C781676138000234EEE /* database-small@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = C9AD7C771676138000234EEE /* database-small@2x.png */; };
 		C9AD7C7B1676158C00234EEE /* toolbar-switch-to-sql.png in Resources */ = {isa = PBXBuildFile; fileRef = C9AD7C791676158C00234EEE /* toolbar-switch-to-sql.png */; };
@@ -539,6 +540,7 @@
 		F4C0BDAE2E9F4D5E8A1B0106 /* AWSDirectoryBookmarkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9B006 /* AWSDirectoryBookmarkManager.swift */; };
 		F4C0BDAE2E9F4D5E8A1B0109 /* OSLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD785E325B749760007E153 /* OSLog.swift */; };
 		F4C0BDAE2E9F4D5E8A1B0110 /* SecureBookmarkManagerStub.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4C0BDAE2E9F4D5E8A1B0201 /* SecureBookmarkManagerStub.swift */; };
+		F7B728AE07EFA3024425D2D8 /* AWSSSOClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2035823E1E286AF53ED22D6 /* AWSSSOClient.swift */; };
 		FA1B2C3D4E5F6A7B8C9D0E11 /* VaultClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E01 /* VaultClient.swift */; };
 		FA1B2C3D4E5F6A7B8C9D0E12 /* VaultClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E01 /* VaultClient.swift */; };
 		FA1B2C3D4E5F6A7B8C9D0E13 /* VaultClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E02 /* VaultClientTests.swift */; };
@@ -1338,6 +1340,7 @@
 		CF0000222F8C000600C4C14A /* SACellFilterRuleControllerStubs.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SACellFilterRuleControllerStubs.m; sourceTree = "<group>"; };
 		CF0000242F8C000600C4C14A /* SACellFilterColumnIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterColumnIdentifier.swift; sourceTree = "<group>"; };
 		CF0000272F8C000600C4C14A /* SACellFilterColumnIdentifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterColumnIdentifierTests.swift; sourceTree = "<group>"; };
+		D2035823E1E286AF53ED22D6 /* AWSSSOClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AWSSSOClient.swift; sourceTree = "<group>"; };
 		D35577F42728C6CF002B3989 /* SPWindowTabAccessory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPWindowTabAccessory.swift; sourceTree = "<group>"; };
 		DD00DD00DD00DD00DD000002 /* SPFilterRuleTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPFilterRuleTextField.swift; sourceTree = "<group>"; };
 		DD00DD00DD00DD00DD000004 /* SPFilterRuleEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPFilterRuleEditor.swift; sourceTree = "<group>"; };
@@ -2714,6 +2717,7 @@
 				F3A4B8C191E14E7094C9B005 /* AWSIAMAuthManager.swift */,
 				F3A4B8C191E14E7094C9B006 /* AWSDirectoryBookmarkManager.swift */,
 				86F96B90C4B9949FF764ECCF /* AWSLoginCredentialsProvider.swift */,
+				D2035823E1E286AF53ED22D6 /* AWSSSOClient.swift */,
 			);
 			path = AWS;
 			sourceTree = "<group>";
@@ -3227,6 +3231,7 @@
 				1A9A40D525875EC9009F0E71 /* NSMutableArray-MultipleSort.m in Sources */,
 				8AEACED018AABDD8CBB42877 /* TableSortHelperTests.swift in Sources */,
 				B88639D396277B961CA63066 /* AWSLoginCredentialsProvider.swift in Sources */,
+				F7B728AE07EFA3024425D2D8 /* AWSSSOClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3507,6 +3512,7 @@
 				1C7055887A73B6C4D4C13D51 /* SPDuplicateImportViewController.swift in Sources */,
 				EB9FF92F188F0B4AA444A892 /* SAConnectionInfo+ConnectionString.swift in Sources */,
 				FB25E5A09AFFCBF262EC619B /* AWSLoginCredentialsProvider.swift in Sources */,
+				C6404F3DC014E87AD7B90665 /* AWSSSOClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -843,6 +843,128 @@ final class AWSLoginCredentialsProviderTests: XCTestCase {
     }
 }
 
+final class AWSSSOClientTests: XCTestCase {
+
+    func testCacheFileNameIsSHA1OfKey() {
+        XCTAssertEqual(
+            AWSSSOClient.cacheFileName(forKey: "my-org"),
+            "063b06ca21ff862fb6d05839b8f962c8f1afdec6.json"
+        )
+        XCTAssertEqual(
+            AWSSSOClient.cacheFileName(forKey: "https://my-org.awsapps.com/start"),
+            "acff06c7037450e5a3fddcacb0a34e921da42d68.json"
+        )
+    }
+
+    func testTokenCacheKeyPrefersSessionOverStartURL() throws {
+        let configContents = """
+        [sso-session my-org]
+        sso_start_url = https://my-org.awsapps.com/start
+        sso_region = eu-west-1
+
+        [profile dev]
+        sso_session = my-org
+        sso_account_id = 123456789012
+        sso_role_name = DeveloperAccess
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: "", config: configContents) { _, _ in
+            let credentials = try AWSCredentials(profile: "dev")
+            XCTAssertEqual(AWSSSOClient.tokenCacheKey(for: credentials), "my-org")
+        }
+    }
+
+    func testTokenCacheKeyFallsBackToStartURLForLegacyProfile() throws {
+        let configContents = """
+        [profile legacy]
+        sso_start_url = https://my-org.awsapps.com/start
+        sso_region = us-east-1
+        sso_account_id = 123456789012
+        sso_role_name = ReadOnly
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: "", config: configContents) { _, _ in
+            let credentials = try AWSCredentials(profile: "legacy")
+            XCTAssertEqual(AWSSSOClient.tokenCacheKey(for: credentials), "https://my-org.awsapps.com/start")
+        }
+    }
+
+    func testParseAccessTokenReturnsTokenAndRegion() throws {
+        let json = """
+        {
+          "startUrl": "https://my-org.awsapps.com/start",
+          "region": "eu-west-1",
+          "accessToken": "example-access-token",
+          "expiresAt": "2999-01-01T00:00:00Z"
+        }
+        """
+
+        let token = try AWSSSOClient.parseAccessToken(fromJSON: Data(json.utf8), now: Date())
+
+        XCTAssertEqual(token.accessToken, "example-access-token")
+        XCTAssertEqual(token.region, "eu-west-1")
+    }
+
+    func testParseAccessTokenThrowsWhenExpired() {
+        let json = """
+        { "accessToken": "example", "expiresAt": "2000-01-01T00:00:00Z" }
+        """
+
+        assertThrowsError(
+            AWSSSOClientError.tokenExpired,
+            from: try AWSSSOClient.parseAccessToken(fromJSON: Data(json.utf8), now: Date())
+        )
+    }
+
+    func testParseAccessTokenThrowsWhenTokenMissing() {
+        let json = """
+        { "region": "eu-west-1", "expiresAt": "2999-01-01T00:00:00Z" }
+        """
+
+        assertThrowsError(
+            AWSSSOClientError.invalidResponse,
+            from: try AWSSSOClient.parseAccessToken(fromJSON: Data(json.utf8), now: Date())
+        )
+    }
+
+    func testPortalHostUsesStandardPartition() {
+        XCTAssertEqual(AWSSSOClient.portalHost(forRegion: "eu-west-1"), "portal.sso.eu-west-1.amazonaws.com")
+    }
+
+    func testPortalHostUsesChinaPartition() {
+        XCTAssertEqual(AWSSSOClient.portalHost(forRegion: "cn-north-1"), "portal.sso.cn-north-1.amazonaws.com.cn")
+    }
+
+    func testParseRoleCredentialsReturnsTemporaryCredentials() throws {
+        let json = """
+        {
+          "roleCredentials": {
+            "accessKeyId": "ASIAEXAMPLE0000000000",
+            "secretAccessKey": "exampleSecretKey",
+            "sessionToken": "exampleSessionToken",
+            "expiration": 4102444800000
+          }
+        }
+        """
+
+        let credentials = try AWSSSOClient.parseRoleCredentials(fromJSON: Data(json.utf8))
+
+        XCTAssertEqual(credentials.accessKeyId, "ASIAEXAMPLE0000000000")
+        XCTAssertEqual(credentials.secretAccessKey, "exampleSecretKey")
+        XCTAssertEqual(credentials.sessionToken, "exampleSessionToken")
+        XCTAssertEqual(credentials.expiration, Date(timeIntervalSince1970: 4102444800))
+    }
+
+    func testParseRoleCredentialsThrowsWhenMissing() {
+        let json = "{ \"roleCredentials\": { \"secretAccessKey\": \"x\" } }"
+
+        assertThrowsError(
+            AWSSSOClientError.invalidResponse,
+            from: try AWSSSOClient.parseRoleCredentials(fromJSON: Data(json.utf8))
+        )
+    }
+}
+
 private enum AWSTestEnvironment {
 
     private static let lock = NSLock()
