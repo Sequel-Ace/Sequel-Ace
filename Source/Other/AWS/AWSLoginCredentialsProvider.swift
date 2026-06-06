@@ -127,6 +127,7 @@ import OSLog
 
     // MARK: - File Reading
 
+    /// Read a file under the AWS directory, using security-scoped access when authorized.
     private static func readFileContents(at path: String) -> String? {
         let bookmarkManager = AWSDirectoryBookmarkManager.shared
 
@@ -143,6 +144,7 @@ import OSLog
 
     // MARK: - Helpers
 
+    /// Parse an ISO-8601 timestamp, accepting both fractional and whole-second forms.
     private static func parseISO8601Date(_ value: String?) -> Date? {
         guard let value, !value.isEmpty else { return nil }
 
@@ -156,6 +158,7 @@ import OSLog
         return formatter.date(from: value)
     }
 
+    /// Lowercase hex SHA-256 of the string.
     private static func sha256Hex(_ string: String) -> String {
         let data = Data(string.utf8)
         var digest = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))

@@ -73,6 +73,8 @@ import OSLog
 
     // MARK: - Resolution (Async)
 
+    /// Resolve temporary credentials for an IAM Identity Center profile by reading the cached
+    /// bearer token and exchanging it via the SSO Portal `GetRoleCredentials` API.
     static func resolveCredentials(for profileCredentials: AWSCredentials) async throws -> AWSCredentials {
         guard profileCredentials.isSSOProfile,
               let accountID = profileCredentials.ssoAccountID, !accountID.isEmpty,
@@ -107,6 +109,7 @@ import OSLog
 
     // MARK: - Token Cache
 
+    /// Directory holding the tokens cached by `aws sso login`.
     static var tokenCacheDirectory: String {
         AWSDirectoryBookmarkManager.shared.awsDirectoryBasePath + "/sso/cache"
     }
@@ -144,6 +147,7 @@ import OSLog
 
     // MARK: - Portal Endpoint
 
+    /// SSO Portal host for a region, using the China partition suffix where applicable.
     static func portalHost(forRegion region: String) -> String {
         let normalizedRegion = region.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let suffix = normalizedRegion.hasPrefix("cn-") ? "amazonaws.com.cn" : defaultDNSSuffix
@@ -152,6 +156,7 @@ import OSLog
 
     // MARK: - GetRoleCredentials
 
+    /// Call the SSO Portal `GetRoleCredentials` endpoint and return the temporary credentials.
     private static func fetchRoleCredentials(
         accountID: String,
         roleName: String,
@@ -284,6 +289,7 @@ import OSLog
         }
     }
 
+    /// Wrap an `AWSSSOClientError` as an `NSError` for Objective-C callers.
     private static func nsError(for error: AWSSSOClientError) -> NSError {
         NSError(
             domain: "AWSSSOClientErrorDomain",
@@ -294,6 +300,7 @@ import OSLog
 
     // MARK: - File Reading
 
+    /// Read a file under the AWS directory, using security-scoped access when authorized.
     private static func readFileContents(at path: String) -> String? {
         let bookmarkManager = AWSDirectoryBookmarkManager.shared
 
@@ -310,6 +317,7 @@ import OSLog
 
     // MARK: - Helpers
 
+    /// The SSO region to use, preferring the profile's value and falling back to the cached token's.
     private static func resolvedRegion(for profileCredentials: AWSCredentials, tokenRegion: String?) -> String {
         if let ssoRegion = profileCredentials.ssoRegion, !ssoRegion.isEmpty {
             return ssoRegion.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -317,6 +325,7 @@ import OSLog
         return (tokenRegion ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 
+    /// Convert an epoch-milliseconds value (number or string) into a `Date`.
     private static func expirationDate(fromMilliseconds value: Any?) -> Date? {
         let milliseconds: Double
         switch value {
@@ -333,6 +342,7 @@ import OSLog
         return Date(timeIntervalSince1970: milliseconds / 1000)
     }
 
+    /// Parse an ISO-8601 timestamp, accepting both fractional and whole-second forms.
     private static func parseISO8601Date(_ value: String?) -> Date? {
         guard let value, !value.isEmpty else { return nil }
 
@@ -346,6 +356,7 @@ import OSLog
         return formatter.date(from: value)
     }
 
+    /// Lowercase hex SHA-1 of the string.
     private static func sha1Hex(_ string: String) -> String {
         let data = Data(string.utf8)
         var digest = [UInt8](repeating: 0, count: Int(CC_SHA1_DIGEST_LENGTH))
