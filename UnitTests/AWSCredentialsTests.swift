@@ -729,6 +729,120 @@ final class AWSIAMAuthManagerTests: XCTestCase {
     }
 }
 
+final class AWSLoginCredentialsProviderTests: XCTestCase {
+
+    func testCacheFileNameIsSHA256OfLoginSession() {
+        let loginSession = "arn:aws:iam::184343387869:user/holger"
+
+        XCTAssertEqual(
+            AWSLoginCredentialsProvider.cacheFileName(forLoginSession: loginSession),
+            "ae55f86d5ac80ede8793dc541f44e1bbf3998886b34d98b02c0e541fc2ba452e.json"
+        )
+    }
+
+    func testParseCachedCredentialsReturnsTemporaryCredentials() throws {
+        let json = """
+        {
+          "accessToken": {
+            "accessKeyId": "ASIAEXAMPLE0000000000",
+            "secretAccessKey": "exampleSecretKey",
+            "sessionToken": "exampleSessionToken",
+            "expiresAt": "2999-01-01T00:00:00Z"
+          }
+        }
+        """
+
+        let credentials = try AWSLoginCredentialsProvider.parseCachedCredentials(
+            fromJSON: Data(json.utf8),
+            now: Date()
+        )
+
+        XCTAssertEqual(credentials.accessKeyId, "ASIAEXAMPLE0000000000")
+        XCTAssertEqual(credentials.secretAccessKey, "exampleSecretKey")
+        XCTAssertEqual(credentials.sessionToken, "exampleSessionToken")
+        XCTAssertTrue(credentials.isValid)
+    }
+
+    func testParseCachedCredentialsThrowsWhenExpired() {
+        let json = """
+        {
+          "accessToken": {
+            "accessKeyId": "ASIAEXAMPLE0000000000",
+            "secretAccessKey": "exampleSecretKey",
+            "expiresAt": "2000-01-01T00:00:00Z"
+          }
+        }
+        """
+
+        assertThrowsError(
+            AWSLoginAuthError.sessionExpired,
+            from: try AWSLoginCredentialsProvider.parseCachedCredentials(fromJSON: Data(json.utf8), now: Date())
+        )
+    }
+
+    func testParseCachedCredentialsThrowsWhenAccessKeyMissing() {
+        let json = """
+        {
+          "accessToken": {
+            "secretAccessKey": "exampleSecretKey",
+            "expiresAt": "2999-01-01T00:00:00Z"
+          }
+        }
+        """
+
+        assertThrowsError(
+            AWSLoginAuthError.invalidCacheContents,
+            from: try AWSLoginCredentialsProvider.parseCachedCredentials(fromJSON: Data(json.utf8), now: Date())
+        )
+    }
+
+    func testParseCachedCredentialsThrowsForMalformedJSON() {
+        assertThrowsError(
+            AWSLoginAuthError.invalidCacheContents,
+            from: try AWSLoginCredentialsProvider.parseCachedCredentials(fromJSON: Data("not valid json".utf8), now: Date())
+        )
+    }
+
+    func testResolveCredentialsReadsCacheFileForProfile() throws {
+        let loginSession = "arn:aws:iam::123456789012:user/dev"
+        let configContents = """
+        [default]
+        login_session = \(loginSession)
+        region = eu-west-1
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: "", config: configContents) { _, _ in
+            let profile = try AWSCredentials(profile: nil)
+
+            let cacheDir = FileManager.default.temporaryDirectory
+                .appendingPathComponent("SequelAce-LoginCache-\(UUID().uuidString)", isDirectory: true)
+            try FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: cacheDir) }
+
+            let fileName = AWSLoginCredentialsProvider.cacheFileName(forLoginSession: loginSession)
+            let json = """
+            {
+              "accessToken": {
+                "accessKeyId": "ASIAEXAMPLE0000000000",
+                "secretAccessKey": "exampleSecretKey",
+                "sessionToken": "exampleSessionToken",
+                "expiresAt": "2999-01-01T00:00:00Z"
+              }
+            }
+            """
+            try json.write(to: cacheDir.appendingPathComponent(fileName), atomically: true, encoding: .utf8)
+
+            setenv("AWS_LOGIN_CACHE_DIRECTORY", cacheDir.path, 1)
+            defer { unsetenv("AWS_LOGIN_CACHE_DIRECTORY") }
+
+            let resolved = try AWSLoginCredentialsProvider.resolveCredentials(for: profile)
+
+            XCTAssertEqual(resolved.accessKeyId, "ASIAEXAMPLE0000000000")
+            XCTAssertEqual(resolved.sessionToken, "exampleSessionToken")
+        }
+    }
+}
+
 private enum AWSTestEnvironment {
 
     private static let lock = NSLock()
