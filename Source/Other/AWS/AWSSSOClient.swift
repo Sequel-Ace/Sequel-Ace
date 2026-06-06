@@ -225,17 +225,13 @@ import OSLog
         )
     }
 
-    // MARK: - Synchronous Wrapper (Obj-C)
+    // MARK: - Synchronous Wrapper
 
-    /// Synchronous version for Objective-C callers - runs async code on a background queue.
+    /// Synchronous version that runs the async resolution on a background queue.
     ///
     /// - Warning: This method blocks the calling thread using a semaphore.
     ///   **Do not call from the main thread** as it may cause UI freezes or deadlocks.
-    @objc(resolveCredentialsForProfile:error:)
-    static func resolveCredentialsObjC(
-        for profileCredentials: AWSCredentials,
-        error errorPointer: NSErrorPointer
-    ) -> AWSCredentials? {
+    static func resolveCredentialsSynchronously(for profileCredentials: AWSCredentials) throws -> AWSCredentials {
         if Thread.isMainThread {
             os_log(.error, log: log, "AWSSSOClient.resolveCredentials called from main thread - this may cause UI freezes.")
             assertionFailure("AWSSSOClient.resolveCredentials should not be called from the main thread")
@@ -256,23 +252,36 @@ import OSLog
             }
         }
 
-        let waitResult = semaphore.wait(timeout: .now() + requestTimeout + 5)
-
-        if waitResult == .timedOut {
-            errorPointer?.pointee = nsError(for: .requestTimeout)
-            return nil
+        if semaphore.wait(timeout: .now() + requestTimeout + 5) == .timedOut {
+            throw AWSSSOClientError.requestTimeout
         }
 
         if let asyncError = asyncError {
-            if let ssoError = asyncError as? AWSSSOClientError {
-                errorPointer?.pointee = nsError(for: ssoError)
-            } else {
-                errorPointer?.pointee = asyncError as NSError
-            }
-            return nil
+            throw asyncError
+        }
+
+        guard let result = result else {
+            throw AWSSSOClientError.invalidResponse
         }
 
         return result
+    }
+
+    /// Objective-C compatible method that returns nil on error
+    @objc(resolveCredentialsForProfile:error:)
+    static func resolveCredentialsObjC(
+        for profileCredentials: AWSCredentials,
+        error errorPointer: NSErrorPointer
+    ) -> AWSCredentials? {
+        do {
+            return try resolveCredentialsSynchronously(for: profileCredentials)
+        } catch let ssoError as AWSSSOClientError {
+            errorPointer?.pointee = nsError(for: ssoError)
+            return nil
+        } catch let otherError {
+            errorPointer?.pointee = otherError as NSError
+            return nil
+        }
     }
 
     private static func nsError(for error: AWSSSOClientError) -> NSError {
