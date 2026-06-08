@@ -2598,6 +2598,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             if (error != nil) {
                 NSAlert *errorAlert = [NSAlert alertWithError:error];
                 [errorAlert runModal];
+            } else {
+                // Remember this tab's file so Cmd-S writes back here
+                [self setSqlFileURL:[NSURL fileURLWithPath:fileName]];
+                [self setSqlFileEncoding:[[encodingPopUp selectedItem] tag]];
             }
             [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL:[NSURL fileURLWithPath:fileName]];
 
