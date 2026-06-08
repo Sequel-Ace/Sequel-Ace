@@ -3442,8 +3442,8 @@
 /* AWS console sign-in (aws login) error: no cached session on disk */
 "No cached AWS console sign-in session was found. Run `aws login` and try again." = "No cached AWS console sign-in session was found. Run `aws login` and try again.";
 
-/* AWS console sign-in (aws login) error: cached session has expired */
-"The AWS console sign-in session has expired. Run `aws login` and try again." = "The AWS console sign-in session has expired. Run `aws login` and try again.";
+/* AWS console sign-in (aws login) error: cached credentials have expired */
+"The cached AWS console sign-in credentials have expired. They refresh about every 15 minutes. Run `aws login` and reconnect." = "The cached AWS console sign-in credentials have expired. They refresh about every 15 minutes. Run `aws login` and reconnect.";
 
 /* AWS console sign-in (aws login) error: cached session file could not be parsed */
 "The cached AWS console sign-in session could not be read" = "The cached AWS console sign-in session could not be read";
@@ -3455,7 +3455,7 @@
 "No cached AWS SSO session was found. Run `aws sso login` and try again." = "No cached AWS SSO session was found. Run `aws sso login` and try again.";
 
 /* AWS IAM Identity Center (aws sso login) error: cached token has expired */
-"The AWS SSO session has expired. Run `aws sso login` and try again." = "The AWS SSO session has expired. Run `aws sso login` and try again.";
+"The cached AWS SSO token has expired. Run `aws sso login` and reconnect." = "The cached AWS SSO token has expired. Run `aws sso login` and reconnect.";
 
 /* AWS IAM Identity Center (aws sso login) error: network request failed */
 "Network request to AWS IAM Identity Center failed" = "Network request to AWS IAM Identity Center failed";
