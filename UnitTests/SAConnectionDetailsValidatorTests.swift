@@ -21,6 +21,7 @@ final class SAConnectionDetailsValidatorTests: XCTestCase {
         type: SAConnectionType = .tcpIP,
         host: String = "db.example.com",
         sshHost: String = "",
+        sshRemoteSocketPath: String = "",
         useSSL: Bool = false,
         sshKeyLocationEnabled: Bool = false,
         sshKeyLocation: String? = nil,
@@ -35,6 +36,7 @@ final class SAConnectionDetailsValidatorTests: XCTestCase {
             type: type,
             host: host,
             sshHost: sshHost,
+            sshRemoteSocketPath: sshRemoteSocketPath,
             useSSL: useSSL,
             sshKeyLocationEnabled: sshKeyLocationEnabled,
             sshKeyLocation: sshKeyLocation,
@@ -91,8 +93,32 @@ final class SAConnectionDetailsValidatorTests: XCTestCase {
         XCTAssertEqual(failure?.kind, .hostMissing)
     }
 
+    func testTCPIPRequiresNonWhitespaceHost() {
+        let failure = validate(type: .tcpIP, host: "   \n\t")
+        XCTAssertEqual(failure?.kind, .hostMissing)
+    }
+
     func testSSHTunnelRequiresHost() {
         let failure = validate(type: .sshTunnel, host: "", sshHost: "bastion.example.com")
+        XCTAssertEqual(failure?.kind, .hostMissing)
+    }
+
+    func testSSHTunnelWithRemoteSocketAcceptsEmptyHost() {
+        XCTAssertNil(validate(
+            type: .sshTunnel,
+            host: "",
+            sshHost: "bastion.example.com",
+            sshRemoteSocketPath: "/var/run/mysqld/mysqld.sock"
+        ))
+    }
+
+    func testSSHTunnelWithWhitespaceOnlyRemoteSocketRequiresHost() {
+        let failure = validate(
+            type: .sshTunnel,
+            host: "",
+            sshHost: "bastion.example.com",
+            sshRemoteSocketPath: "   \n\t"
+        )
         XCTAssertEqual(failure?.kind, .hostMissing)
     }
 
@@ -109,6 +135,11 @@ final class SAConnectionDetailsValidatorTests: XCTestCase {
 
     func testSSHTunnelRequiresSSHHost() {
         let failure = validate(type: .sshTunnel, host: "db.example.com", sshHost: "")
+        XCTAssertEqual(failure?.kind, .sshHostMissing)
+    }
+
+    func testSSHTunnelRequiresNonWhitespaceSSHHost() {
+        let failure = validate(type: .sshTunnel, host: "db.example.com", sshHost: "   \n\t")
         XCTAssertEqual(failure?.kind, .sshHostMissing)
     }
 

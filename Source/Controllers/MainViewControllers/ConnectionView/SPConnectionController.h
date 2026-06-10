@@ -130,6 +130,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	NSInteger sshKeyLocationEnabled;
 	NSString *sshKeyLocation;
 	NSString *sshPort;
+	NSString *sshRemoteSocketPath;
 
 	NSString *connectionKeychainID;
 	NSString *connectionKeychainItemName;
@@ -294,6 +295,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 @property (readwrite) NSInteger sshKeyLocationEnabled;
 @property (readwrite, copy) NSString *sshKeyLocation;
 @property (readwrite, copy) NSString *sshPort;
+@property (readwrite, copy) NSString *sshRemoteSocketPath;
 @property (readwrite, copy) NSString *socketHelpWindowUUID;
 @property (readwrite, copy) NSString *connectionKeychainID;
 @property (readwrite, copy) NSString *connectionKeychainItemName;
@@ -364,6 +366,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 // Import/export favorites
 - (IBAction)importFavorites:(id)sender;
 - (IBAction)exportFavorites:(id)sender;
+- (IBAction)copyConnectionString:(id)sender;
 
 // Accessors
 - (SPFavoritesOutlineView *)favoritesOutlineView;

@@ -422,6 +422,7 @@ extern NSString *SPCSVImportFirstLineIsHeader;
 extern NSString *SPCSVFieldImportMappingAlignment;
 extern NSString *SPImportClipboardTempFileNamePrefix;
 extern NSString *SPLastExportSettings;
+extern NSString *SPAutoCheckClipboardForConnectionStrings;
 
 // Export filename tokens
 extern NSString *SPFileNameDatabaseTokenName;
@@ -537,6 +538,7 @@ extern NSString *SPFavoriteSSHPortKey;
 extern NSString *SPFavoriteSSHUserKey;
 extern NSString *SPFavoriteSSHKeyLocationEnabledKey;
 extern NSString *SPFavoriteSSHKeyLocationKey;
+extern NSString *SPFavoriteSSHRemoteSocketPathKey;
 extern NSString *SPFavoriteAllowDataLocalInfileKey;
 extern NSString *SPFavoriteEnableClearTextPluginKey;
 extern NSString *SPFavoriteUseSSLKey;
