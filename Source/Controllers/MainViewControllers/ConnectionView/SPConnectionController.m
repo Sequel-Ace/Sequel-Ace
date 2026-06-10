@@ -1538,9 +1538,11 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     // nil is intentional here — the KVO binding shows NSNullPlaceholder ("443"/"oidc")
     // when the property is nil. The runtime fallback to "443"/"oidc" is applied at
     // connect time. These two stay as raw dictionary reads because the decoded
-    // info cannot represent the nil-vs-empty distinction the placeholder needs.
-    [self setVaultPort:[fav objectForKey:SPFavoriteVaultPortKey]];
-    [self setVaultOIDCMount:[fav objectForKey:SPFavoriteVaultOIDCMountKey]];
+    // info cannot represent the nil-vs-empty distinction the placeholder needs;
+    // rawFavoriteString: coerces NSNumber/NSNull from imported favorites so the
+    // properties are always NSString or nil.
+    [self setVaultPort:[SAConnectionInfoObjC rawFavoriteString:[fav objectForKey:SPFavoriteVaultPortKey]]];
+    [self setVaultOIDCMount:[SAConnectionInfoObjC rawFavoriteString:[fav objectForKey:SPFavoriteVaultOIDCMountKey]]];
     [self setVaultCredentialsPath:[details vaultCredentialsPath]];
 
     // SSL details
