@@ -294,10 +294,35 @@ C1b — pure SwiftUI `List` / `OutlineGroup` — ✅ Done (display/search/select
 
 ### Phase D: SPConnectionController further cleanup
 
-**D1. Replace `updateFavoriteSelection:` with structured data flow**
-- This 170+ line method reads the selected favorite and populates 50+ form fields
-- Replace with: `SAConnectionInfoObjC` ↔ form field binding
-- When a favorite is selected, create `SAConnectionInfoObjC` from the favorite dict, then populate fields from the info object
+**D1. Replace `updateFavoriteSelection:` with structured data flow** — ✅ Done
+- New `SAConnectionInfo+Favorite.swift` (Swift, pure Foundation, compiles
+  into BOTH targets): `SAConnectionInfo.fromFavoriteDictionary(_:)` +
+  `SAConnectionInfoObjC.info(fromFavoriteDictionary:)` own the defaulting
+  rules previously inline in `-updateFavoriteSelection:` (missing name →
+  `""`, colorIndex → `-1`, useCompression → `YES`, awsProfile →
+  `"default"`, tz-identifier only in fixed mode, `useAWSIAMAuth` derived
+  from type, unknown type/tz-mode → tcpIP/server). Favorite keys are
+  inlined string literals (documented sync-with-SPConstants.m caveat, same
+  pattern as SAViewMode) so the file stays test-eligible. Value readers
+  mirror ObjC `-integerValue`/`-boolValue` leniency (NSNumber or numeric
+  NSString).
+- `-updateFavoriteSelection:` now decodes once and populates the form from
+  the typed info; ~70 lines of `?:`-defaulting gone. Keychain lookups and
+  the per-type time-zone popup updates stay in the controller (side
+  effects / AppKit).
+- Deliberately NOT decoded: passwords/keychain items (keychain side
+  effects), and `vaultPort`/`vaultOIDCMount` — those two stay as raw
+  `objectForKey:` reads in the controller because nil (key absent) drives
+  the form's NSNullPlaceholder ("443"/"oidc") and the info's non-optional
+  strings can't represent the nil-vs-empty distinction.
+- 20 unit tests in `UnitTests/SAConnectionInfoFavoriteTests.swift` pin:
+  nil/empty-dict defaults, every section's decode (standard/SSL/SSH/
+  AWS/Vault), all 5 type raw values + unknown fallback, tz-mode matrix
+  (identifier cleared outside fixed mode), AWS toggle derivation (stored
+  toggle never overrides), numeric-string leniency, NSNumber→String port,
+  passwords-never-decoded, and the ObjC bridge.
+- Files: `Source/Model/SAConnectionInfo+Favorite.swift`,
+  `UnitTests/SAConnectionInfoFavoriteTests.swift`, `SPConnectionController.m`
 
 **D2. Extract favorites management actions**
 - `addFavorite:`, `removeFavorite:`, `duplicateFavorite:`, `addGroup:`, `sortFavorites:`, `importFavorites:`, `exportFavorites:`
@@ -359,6 +384,6 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
 5. **Phase B2** (favorites data source tests) — 🟡 B2a done (search matcher), B2b pending (needs test-target ObjC plumbing)
 6. **Phase C1** (SwiftUI favorites list) — first visible SwiftUI — 🟡 C1a + C1b done (wrap + pure SwiftUI list); reorder/rename/persistence + hosting (C3) still pending before it replaces the AppKit list
 7. ~~**Phase A2** (task controller) — large but impactful~~ ✅ Done (progress UI extracted; working-level counter stays on the document)
-8. **Phase D1-D3** (SPConnectionController cleanup) — ongoing
+8. **Phase D1-D3** (SPConnectionController cleanup) — 🟡 D1 + D3 done; D2 (favorites actions → SAFavoritesManager) pending — note the file grew to ~5,250 lines after the connection-string import PR (#2398), so D2 should wait for that area to settle / be rebased onto it deliberately
 9. **Phase C2-C3** (SwiftUI connection form) — bigger effort
 10. **Phase E** (table content/custom query) — long-term
