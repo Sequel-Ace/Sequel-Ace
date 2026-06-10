@@ -171,4 +171,18 @@ extension SAConnectionInfoObjC {
     class func info(fromFavoriteDictionary favorite: NSDictionary?) -> SAConnectionInfoObjC {
         SAConnectionInfoObjC(info: .fromFavoriteDictionary(favorite as? [AnyHashable: Any]))
     }
+
+    /// Coerces a raw favorite-dictionary value to a string while preserving
+    /// the nil-vs-empty distinction that `fromFavoriteDictionary` cannot
+    /// represent. Used for vaultPort / vaultOIDCMount, where nil (key
+    /// absent) drives the form's NSNullPlaceholder but a stored value —
+    /// even an NSNumber from an imported favorite — must arrive as a
+    /// string (the controller later sends -length to these properties).
+    @objc(rawFavoriteString:)
+    class func rawFavoriteString(_ value: Any?) -> String? {
+        guard let value = value, !(value is NSNull) else { return nil }
+        if let string = value as? String { return string }
+        if let number = value as? NSNumber { return number.stringValue }
+        return nil
+    }
 }

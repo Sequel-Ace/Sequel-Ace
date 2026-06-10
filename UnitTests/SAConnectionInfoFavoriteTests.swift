@@ -65,7 +65,7 @@ final class SAConnectionInfoFavoriteTests: XCTestCase {
     func testPasswordAndKeychainFieldsAreNeverDecoded() {
         // Passwords come from the keychain, not the favorites plist.
         let info = SAConnectionInfo.fromFavoriteDictionary([
-            "password": "secret", "sshPassword": "tunnel-secret",
+            "password": "secret", "sshPassword": "tunnel-secret"
         ])
 
         XCTAssertEqual(info.password, "")
@@ -86,7 +86,7 @@ final class SAConnectionInfoFavoriteTests: XCTestCase {
             "colorIndex": NSNumber(value: 3),
             "port": "3307",
             "database": "shop",
-            "useCompression": NSNumber(value: false),
+            "useCompression": NSNumber(value: false)
         ])
 
         XCTAssertEqual(info.type, .tcpIP)
@@ -121,7 +121,7 @@ final class SAConnectionInfoFavoriteTests: XCTestCase {
             "type": "2",
             "colorIndex": "5",
             "useSSL": "1",
-            "useCompression": "0",
+            "useCompression": "0"
         ])
 
         XCTAssertEqual(info.type, .sshTunnel)
@@ -141,7 +141,7 @@ final class SAConnectionInfoFavoriteTests: XCTestCase {
     func testServerTimeZoneModeClearsIdentifier() {
         let info = SAConnectionInfo.fromFavoriteDictionary([
             "timeZoneMode": NSNumber(value: 0),
-            "timeZone": "Europe/Prague",
+            "timeZone": "Europe/Prague"
         ])
 
         XCTAssertEqual(info.timeZoneMode, .useServerTZ)
@@ -151,7 +151,7 @@ final class SAConnectionInfoFavoriteTests: XCTestCase {
     func testSystemTimeZoneModeClearsIdentifier() {
         let info = SAConnectionInfo.fromFavoriteDictionary([
             "timeZoneMode": NSNumber(value: 1),
-            "timeZone": "Europe/Prague",
+            "timeZone": "Europe/Prague"
         ])
 
         XCTAssertEqual(info.timeZoneMode, .useSystemTZ)
@@ -161,7 +161,7 @@ final class SAConnectionInfoFavoriteTests: XCTestCase {
     func testFixedTimeZoneModeCarriesIdentifier() {
         let info = SAConnectionInfo.fromFavoriteDictionary([
             "timeZoneMode": NSNumber(value: 2),
-            "timeZone": "Europe/Prague",
+            "timeZone": "Europe/Prague"
         ])
 
         XCTAssertEqual(info.timeZoneMode, .useFixedTZ)
@@ -191,7 +191,7 @@ final class SAConnectionInfoFavoriteTests: XCTestCase {
 
     func testAWSDetailsDecodeWithProfileDefault() {
         let explicit = SAConnectionInfo.fromFavoriteDictionary([
-            "type": 3, "awsRegion": "eu-central-1", "awsProfile": "staging",
+            "type": 3, "awsRegion": "eu-central-1", "awsProfile": "staging"
         ])
         XCTAssertEqual(explicit.awsRegion, "eu-central-1")
         XCTAssertEqual(explicit.awsProfile, "staging")
@@ -207,7 +207,7 @@ final class SAConnectionInfoFavoriteTests: XCTestCase {
         let info = SAConnectionInfo.fromFavoriteDictionary([
             "type": 4,
             "vaultHost": "vault.internal",
-            "vaultCredentialsPath": "database/creds/app",
+            "vaultCredentialsPath": "database/creds/app"
         ])
 
         XCTAssertEqual(info.type, .vault)
@@ -230,7 +230,7 @@ final class SAConnectionInfoFavoriteTests: XCTestCase {
             "sslCertificateFileLocationEnabled": NSNumber(value: 1),
             "sslCertificateFileLocation": "/keys/client-cert.pem",
             "sslCACertFileLocationEnabled": NSNumber(value: 1),
-            "sslCACertFileLocation": "/keys/ca.pem",
+            "sslCACertFileLocation": "/keys/ca.pem"
         ])
 
         XCTAssertEqual(info.useSSL, 1)
@@ -250,7 +250,7 @@ final class SAConnectionInfoFavoriteTests: XCTestCase {
             "sshKeyLocationEnabled": NSNumber(value: 1),
             "sshKeyLocation": "~/.ssh/id_ed25519",
             "sshPort": "2222",
-            "sshRemoteSocketPath": "/var/run/mysqld/mysqld.sock",
+            "sshRemoteSocketPath": "/var/run/mysqld/mysqld.sock"
         ])
 
         XCTAssertEqual(info.type, .sshTunnel)
@@ -268,7 +268,7 @@ final class SAConnectionInfoFavoriteTests: XCTestCase {
         let bridged = SAConnectionInfoObjC.info(fromFavoriteDictionary: [
             "type": NSNumber(value: 3),
             "name": "IAM box",
-            "colorIndex": NSNumber(value: 2),
+            "colorIndex": NSNumber(value: 2)
         ] as NSDictionary)
 
         XCTAssertEqual(bridged.type, .awsIAM)
@@ -286,5 +286,27 @@ final class SAConnectionInfoFavoriteTests: XCTestCase {
         XCTAssertEqual(bridged.colorIndex, -1)
         XCTAssertTrue(bridged.useCompression)
         XCTAssertEqual(bridged.awsProfile, "default")
+    }
+
+    // MARK: - Raw favorite string coercion (vaultPort / vaultOIDCMount)
+
+    func testRawFavoriteStringPassesStringsThroughPreservingEmpty() {
+        XCTAssertEqual(SAConnectionInfoObjC.rawFavoriteString("8200"), "8200")
+        // Stored-empty stays empty — distinct from nil for the placeholder.
+        XCTAssertEqual(SAConnectionInfoObjC.rawFavoriteString(""), "")
+    }
+
+    func testRawFavoriteStringCoercesNumbersFromImportedFavorites() {
+        XCTAssertEqual(SAConnectionInfoObjC.rawFavoriteString(NSNumber(value: 8200)), "8200")
+    }
+
+    func testRawFavoriteStringMapsMissingAndNullToNil() {
+        XCTAssertNil(SAConnectionInfoObjC.rawFavoriteString(nil))
+        XCTAssertNil(SAConnectionInfoObjC.rawFavoriteString(NSNull()))
+    }
+
+    func testRawFavoriteStringRejectsNonScalarValues() {
+        XCTAssertNil(SAConnectionInfoObjC.rawFavoriteString(["nested": "dict"]))
+        XCTAssertNil(SAConnectionInfoObjC.rawFavoriteString([1, 2, 3]))
     }
 }
