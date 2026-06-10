@@ -33,8 +33,10 @@ import Foundation
 // MARK: - Favorite dictionary keys (inlined; keep in sync with SPConstants.m)
 
 private enum FavoriteKey {
+    static let id = "id"
     static let type = "type"
     static let name = "name"
+    static let useAWSIAMAuth = "useAWSIAMAuth"
     static let host = "host"
     static let socket = "socket"
     static let user = "user"
@@ -49,6 +51,9 @@ private enum FavoriteKey {
     static let awsRegion = "awsRegion"
     static let awsProfile = "awsProfile"
     static let vaultHost = "vaultHost"
+    // Not decoded (see header) but written by the new-favorite template.
+    static let vaultPort = "vaultPort"
+    static let vaultOIDCMount = "vaultOIDCMount"
     static let vaultCredentialsPath = "vaultCredentialsPath"
     static let useSSL = "useSSL"
     static let sslKeyFileLocationEnabled = "sslKeyFileLocationEnabled"
@@ -170,5 +175,73 @@ extension SAConnectionInfoObjC {
     @objc(infoFromFavoriteDictionary:)
     class func info(fromFavoriteDictionary favorite: NSDictionary?) -> SAConnectionInfoObjC {
         SAConnectionInfoObjC(info: .fromFavoriteDictionary(favorite as? [AnyHashable: Any]))
+    }
+}
+
+// MARK: - Favorite dictionary templates (Phase D2)
+
+extension SAConnectionInfoObjC {
+
+    /// The plist dictionary for a brand-new favorite, as previously built
+    /// inline in -[SPConnectionController addFavorite:]. The key set and
+    /// values are part of the favorites wire format — note the historical
+    /// quirks preserved deliberately:
+    /// - no `useCompression` key (the decoder defaults it to true),
+    /// - no SSL key/cert/CA *path* keys (only the enabled flags),
+    /// - vaultPort / vaultOIDCMount stored as "" (not absent).
+    @objc(defaultNewFavoriteDictionaryWithID:)
+    class func defaultNewFavoriteDictionary(withID favoriteID: NSNumber) -> NSMutableDictionary {
+        let off = NSNumber(value: 0)
+        let favorite: [String: Any] = [
+            FavoriteKey.name: NSLocalizedString("New Favorite", comment: "new favorite name"),
+            FavoriteKey.type: NSNumber(value: 0),
+            FavoriteKey.host: "",
+            FavoriteKey.socket: "",
+            FavoriteKey.user: "",
+            FavoriteKey.colorIndex: NSNumber(value: -1),
+            FavoriteKey.port: "",
+            FavoriteKey.timeZoneMode: NSNumber(value: 0),
+            FavoriteKey.timeZoneIdentifier: "",
+            FavoriteKey.allowDataLocalInfile: off,
+            FavoriteKey.enableClearTextPlugin: off,
+            FavoriteKey.useAWSIAMAuth: off,
+            FavoriteKey.awsRegion: "",
+            FavoriteKey.awsProfile: "default",
+            FavoriteKey.useSSL: off,
+            FavoriteKey.sslKeyFileLocationEnabled: off,
+            FavoriteKey.sslCertificateFileLocationEnabled: off,
+            FavoriteKey.sslCACertFileLocationEnabled: off,
+            FavoriteKey.database: "",
+            FavoriteKey.sshHost: "",
+            FavoriteKey.sshUser: "",
+            FavoriteKey.sshKeyLocationEnabled: off,
+            FavoriteKey.sshKeyLocation: "",
+            FavoriteKey.sshPort: "",
+            FavoriteKey.sshRemoteSocketPath: "",
+            FavoriteKey.vaultHost: "",
+            FavoriteKey.vaultPort: "",
+            FavoriteKey.vaultOIDCMount: "",
+            FavoriteKey.vaultCredentialsPath: "",
+            FavoriteKey.id: favoriteID,
+        ]
+        return NSMutableDictionary(dictionary: favorite)
+    }
+
+    /// A duplicate of an existing favorite dictionary: same values, a fresh
+    /// unique ID, and the name suffixed for clarity ("<name> Copy", as
+    /// previously built inline in -[SPConnectionController duplicateFavorite:]).
+    /// The source dictionary is not modified.
+    @objc(duplicatedFavoriteDictionaryFromFavorite:withID:)
+    class func duplicatedFavoriteDictionary(fromFavorite favorite: NSDictionary?, withID favoriteID: NSNumber) -> NSMutableDictionary {
+        let duplicate = favorite.map(NSMutableDictionary.init(dictionary:)) ?? NSMutableDictionary()
+        duplicate[FavoriteKey.id] = favoriteID
+
+        let name = stringValue(favorite?[FavoriteKey.name], default: "")
+        duplicate[FavoriteKey.name] = String(
+            format: NSLocalizedString("%@ Copy", comment: "Initial favourite name after duplicating a previous favourite"),
+            name
+        )
+
+        return duplicate
     }
 }

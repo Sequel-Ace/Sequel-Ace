@@ -287,4 +287,94 @@ final class SAConnectionInfoFavoriteTests: XCTestCase {
         XCTAssertTrue(bridged.useCompression)
         XCTAssertEqual(bridged.awsProfile, "default")
     }
+
+    // MARK: - New-favorite template (Phase D2)
+
+    func testDefaultNewFavoriteTemplateMatchesHistoricalKeySet() {
+        let template = SAConnectionInfoObjC.defaultNewFavoriteDictionary(withID: NSNumber(value: 12345))
+
+        // Exactly the 30 keys -[SPConnectionController addFavorite:] used to write.
+        let expectedKeys: Set<String> = [
+            "name", "type", "host", "socket", "user", "colorIndex", "port",
+            "timeZoneMode", "timeZone", "allowDataLocalInfile",
+            "enableClearTextPlugin", "useAWSIAMAuth", "awsRegion", "awsProfile",
+            "useSSL", "sslKeyFileLocationEnabled",
+            "sslCertificateFileLocationEnabled", "sslCACertFileLocationEnabled",
+            "database", "sshHost", "sshUser", "sshKeyLocationEnabled",
+            "sshKeyLocation", "sshPort", "sshRemoteSocketPath",
+            "vaultHost", "vaultPort", "vaultOIDCMount", "vaultCredentialsPath",
+            "id",
+        ]
+        XCTAssertEqual(Set(template.allKeys.compactMap { $0 as? String }), expectedKeys)
+
+        // Historical quirks stay: no useCompression key, no SSL path keys.
+        XCTAssertNil(template["useCompression"])
+        XCTAssertNil(template["sslKeyFileLocation"])
+        XCTAssertNil(template["sslCertificateFileLocation"])
+        XCTAssertNil(template["sslCACertFileLocation"])
+    }
+
+    func testDefaultNewFavoriteTemplateValues() {
+        let template = SAConnectionInfoObjC.defaultNewFavoriteDictionary(withID: NSNumber(value: 777))
+
+        XCTAssertEqual(template["name"] as? String, "New Favorite")
+        XCTAssertEqual((template["type"] as? NSNumber)?.intValue, 0)
+        XCTAssertEqual((template["colorIndex"] as? NSNumber)?.intValue, -1)
+        XCTAssertEqual((template["timeZoneMode"] as? NSNumber)?.intValue, 0)
+        XCTAssertEqual((template["useSSL"] as? NSNumber)?.intValue, 0)
+        XCTAssertEqual(template["awsProfile"] as? String, "default")
+        XCTAssertEqual(template["host"] as? String, "")
+        XCTAssertEqual(template["vaultPort"] as? String, "")
+        XCTAssertEqual(template["vaultOIDCMount"] as? String, "")
+        XCTAssertEqual((template["id"] as? NSNumber)?.intValue, 777)
+    }
+
+    func testDefaultNewFavoriteTemplateRoundTripsThroughDecoder() {
+        // Decoding the template must equal decoding "no favorite" except for
+        // the name — the template is the encode-side twin of the decoder.
+        let template = SAConnectionInfoObjC.defaultNewFavoriteDictionary(withID: NSNumber(value: 1))
+        let decoded = SAConnectionInfo.fromFavoriteDictionary(template as? [AnyHashable: Any])
+        let blank = SAConnectionInfo.fromFavoriteDictionary(nil)
+
+        XCTAssertEqual(decoded.name, "New Favorite")
+        XCTAssertEqual(decoded.type, blank.type)
+        XCTAssertEqual(decoded.colorIndex, blank.colorIndex)
+        XCTAssertEqual(decoded.useCompression, blank.useCompression)
+        XCTAssertEqual(decoded.timeZoneMode, blank.timeZoneMode)
+        XCTAssertEqual(decoded.timeZoneIdentifier, blank.timeZoneIdentifier)
+        XCTAssertEqual(decoded.awsProfile, blank.awsProfile)
+        XCTAssertEqual(decoded.useSSL, blank.useSSL)
+        XCTAssertEqual(decoded.useAWSIAMAuth, blank.useAWSIAMAuth)
+    }
+
+    // MARK: - Favorite duplication (Phase D2)
+
+    func testDuplicatedFavoriteGetsNewIDAndCopySuffix() {
+        let original: NSDictionary = [
+            "id": NSNumber(value: 100),
+            "name": "Prod",
+            "host": "db.example.com",
+            "type": NSNumber(value: 2),
+        ]
+
+        let duplicate = SAConnectionInfoObjC.duplicatedFavoriteDictionary(fromFavorite: original, withID: NSNumber(value: 200))
+
+        XCTAssertEqual((duplicate["id"] as? NSNumber)?.intValue, 200)
+        XCTAssertEqual(duplicate["name"] as? String, "Prod Copy")
+        // Everything else carries over untouched.
+        XCTAssertEqual(duplicate["host"] as? String, "db.example.com")
+        XCTAssertEqual((duplicate["type"] as? NSNumber)?.intValue, 2)
+        // And the source is not mutated.
+        XCTAssertEqual((original["id"] as? NSNumber)?.intValue, 100)
+        XCTAssertEqual(original["name"] as? String, "Prod")
+    }
+
+    func testDuplicatedFavoriteFromNilYieldsMinimalDictionary() {
+        // Defensive path: -selectedFavorite returns nil for group selections.
+        let duplicate = SAConnectionInfoObjC.duplicatedFavoriteDictionary(fromFavorite: nil, withID: NSNumber(value: 5))
+
+        XCTAssertEqual((duplicate["id"] as? NSNumber)?.intValue, 5)
+        XCTAssertEqual(duplicate["name"] as? String, " Copy")
+        XCTAssertEqual(duplicate.count, 2)
+    }
 }
