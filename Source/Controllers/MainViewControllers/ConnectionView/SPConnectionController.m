@@ -1704,74 +1704,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 {
     NSNumber *favoriteID = [self _createNewFavoriteID];
 
-    NSArray *objects = @[
-        NSLocalizedString(@"New Favorite", @"new favorite name"),
-        @0,
-        @"",
-        @"",
-        @"",
-        @(-1),
-        @"",
-        @0,
-        @"",
-        @(NSControlStateValueOff),
-        @(NSControlStateValueOff),
-        @(NSControlStateValueOff),
-        @"",
-        @"default",
-        @(NSControlStateValueOff),
-        @(NSControlStateValueOff),
-        @(NSControlStateValueOff),
-        @(NSControlStateValueOff),
-        @"",
-        @"",
-        @"",
-        @(NSControlStateValueOff),
-        @"",
-        @"",
-        @"",
-        @"",
-        @"",
-        @"",
-        @"",
-        favoriteID
-    ];
-
-    NSArray *keys = @[
-        SPFavoriteNameKey,
-        SPFavoriteTypeKey,
-        SPFavoriteHostKey,
-        SPFavoriteSocketKey,
-        SPFavoriteUserKey,
-        SPFavoriteColorIndexKey,
-        SPFavoritePortKey,
-        SPFavoriteTimeZoneModeKey,
-        SPFavoriteTimeZoneIdentifierKey,
-        SPFavoriteAllowDataLocalInfileKey,
-        SPFavoriteEnableClearTextPluginKey,
-        SPFavoriteUseAWSIAMAuthKey,
-        SPFavoriteAWSRegionKey,
-        SPFavoriteAWSProfileKey,
-        SPFavoriteUseSSLKey,
-        SPFavoriteSSLKeyFileLocationEnabledKey,
-        SPFavoriteSSLCertificateFileLocationEnabledKey,
-        SPFavoriteSSLCACertFileLocationEnabledKey,
-        SPFavoriteDatabaseKey,
-        SPFavoriteSSHHostKey,
-        SPFavoriteSSHUserKey,
-        SPFavoriteSSHKeyLocationEnabledKey,
-        SPFavoriteSSHKeyLocationKey,
-        SPFavoriteSSHPortKey,
-        SPFavoriteSSHRemoteSocketPathKey,
-        SPFavoriteVaultHostKey,
-        SPFavoriteVaultPortKey,
-        SPFavoriteVaultOIDCMountKey,
-        SPFavoriteVaultCredentialsPathKey,
-        SPFavoriteIDKey
-    ];
-
-    // Create default favorite
-    NSMutableDictionary *favorite = [NSMutableDictionary dictionaryWithObjects:objects forKeys:keys];
+    // Create default favorite (template + wire-format quirks live in
+    // SAConnectionInfo+Favorite.swift, pinned by SAConnectionInfoFavoriteTests)
+    NSMutableDictionary *favorite = [SAConnectionInfoObjC defaultNewFavoriteDictionaryWithID:favoriteID];
 
     SPTreeNode *selectedNode = [self selectedFavoriteNode];
 
@@ -1828,24 +1763,19 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 {
     if ([favoritesOutlineView numberOfSelectedRows] == 1) {
 
-        BOOL suppressWarning = NO;
         SPTreeNode *node = [self selectedFavoriteNode];
 
-        NSString *message = @"";
-        NSString *informativeMessage = @"";
+        // The favorite/group/empty-group wording (and whether to ask at all)
+        // lives in SAFavoriteDeletionPrompt, pinned by unit tests.
+        NSString *nodeDisplayName = [node isGroup]
+            ? [[node representedObject] nodeName]
+            : [[[node representedObject] nodeFavorite] objectForKey:SPFavoriteNameKey];
+        SAFavoriteDeletionPrompt *prompt = [SAFavoriteDeletionPrompt promptForGroup:[node isGroup]
+                                                                               name:nodeDisplayName
+                                                                         childCount:[[node childNodes] count]];
 
-        if (![node isGroup]) {
-            message = [NSString stringWithFormat:NSLocalizedString(@"Delete favorite '%@'?", @"delete database message"), [[[node representedObject] nodeFavorite] objectForKey:SPFavoriteNameKey]];
-            informativeMessage = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to delete the favorite '%@'? This operation cannot be undone.", @"delete database informative message"), [[[node representedObject] nodeFavorite] objectForKey:SPFavoriteNameKey]];
-        } else if ([[node childNodes] count] > 0) {
-            message = [NSString stringWithFormat:NSLocalizedString(@"Delete group '%@'?", @"delete database message"), [[node representedObject] nodeName]];
-            informativeMessage = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to delete the group '%@'? All groups and favorites within this group will also be deleted. This operation cannot be undone.", @"delete database informative message"), [[node representedObject] nodeName]];
-        } else {
-            suppressWarning = YES;
-        }
-
-        if (!suppressWarning) {
-            [NSAlert createDefaultAlertWithTitle:message message:informativeMessage primaryButtonTitle:NSLocalizedString(@"Delete", @"delete button") primaryButtonHandler:^{
+        if (prompt.needsConfirmation) {
+            [NSAlert createDefaultAlertWithTitle:prompt.title message:prompt.informativeText primaryButtonTitle:NSLocalizedString(@"Delete", @"delete button") primaryButtonHandler:^{
                 [self _removeNode:[self selectedFavoriteNode]];
             } cancelButtonHandler:nil];
         } else {
@@ -1861,15 +1791,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 {
     if ([favoritesOutlineView numberOfSelectedRows] == 1) {
 
-        NSMutableDictionary *favorite = [NSMutableDictionary dictionaryWithDictionary:[self selectedFavorite]];
-
+        // Fresh unique ID + "<name> Copy" (rules in SAConnectionInfo+Favorite.swift)
         NSNumber *favoriteID = [self _createNewFavoriteID];
-
-        // Update the unique ID
-        [favorite setObject:favoriteID forKey:SPFavoriteIDKey];
-
-        // Alter the name for clarity
-        [favorite setObject:[NSString stringWithFormat:NSLocalizedString(@"%@ Copy", @"Initial favourite name after duplicating a previous favourite"), [favorite objectForKey:SPFavoriteNameKey]] forKey:SPFavoriteNameKey];
+        NSMutableDictionary *favorite = [SAConnectionInfoObjC duplicatedFavoriteDictionaryFromFavorite:[self selectedFavorite] withID:favoriteID];
 
         SPTreeNode *selectedNode = [self selectedFavoriteNode];
 

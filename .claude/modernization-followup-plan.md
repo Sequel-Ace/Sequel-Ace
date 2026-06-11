@@ -324,9 +324,45 @@ C1b — pure SwiftUI `List` / `OutlineGroup` — ✅ Done (display/search/select
 - Files: `Source/Model/SAConnectionInfo+Favorite.swift`,
   `UnitTests/SAConnectionInfoFavoriteTests.swift`, `SPConnectionController.m`
 
-**D2. Extract favorites management actions**
-- `addFavorite:`, `removeFavorite:`, `duplicateFavorite:`, `addGroup:`, `sortFavorites:`, `importFavorites:`, `exportFavorites:`
-- Move to `SAFavoritesManager` that wraps `SAFavoritesProviding`
+**D2. Extract favorites management actions** — ✅ Done (scoped to the pure cores)
+- The full "SAFavoritesManager wrapping SAFavoritesProviding" vision was
+  too big for one behaviour-preserving PR — the actions are sheet/panel/
+  outline-view orchestration. Extracted the pure cores instead:
+- `SAConnectionInfo+Favorite.swift` gains the encode-side counterparts of
+  the D1 decoder (same private `FavoriteKey` literals):
+  - `defaultNewFavoriteDictionary(withID:)` — the 30-key new-favorite
+    template previously built inline as parallel objects/keys arrays in
+    `-addFavorite:`. Historical wire-format quirks preserved and pinned:
+    no `useCompression` key, no SSL *path* keys (only enabled flags),
+    vaultPort/vaultOIDCMount stored as `""` (not absent).
+  - `duplicatedFavoriteDictionary(fromFavorite:withID:)` — fresh ID +
+    localized "<name> Copy", source dict untouched; nil-tolerant (a group
+    selection makes `-selectedFavorite` return nil).
+- New `SAFavoriteDeletionPrompt` (Swift, pure Foundation, ConnectionView)
+  owns the three-way delete-confirmation rule from `-removeNode:`:
+  favorite → confirm w/ favorite wording, group w/ children → confirm w/
+  group wording, empty group → delete with no alert.
+- The three controller actions are now thin: `-addFavorite:` lost its ~70
+  template lines, `-duplicateFavorite:` its ID/name mutation,
+  `-removeNode:` its message composition.
+- 11 new unit tests: 6 in `SAConnectionInfoFavoriteTests` (template key
+  set + values + decoder round-trip ≈ blank-form equivalence; duplicate
+  ID/suffix/no-mutation + nil source) and 5 in
+  `SAFavoriteDeletionPromptTests` (three-way rule, childCount ignored for
+  favorites, nil name).
+- Import/export (`importFavorites:`/`exportFavorites:`) and `sortFavorites:`
+  stay — heavy UI flows, and the import path was just rewritten by the
+  connection-string PR (#2398). Revisit once that settles.
+- ⚠️ Tooling note: hand-editing project.pbxproj while Xcode has the project
+  open is an edit war — Xcode clobbers on-disk changes with its in-memory
+  model when it saves (lost several Unit-Tests build entries twice). New
+  files should be added via the Xcode MCP `XcodeWrite` (registers them in
+  Xcode's live model with real IDs); extra target memberships can be
+  added on disk immediately after an Xcode save, then committed promptly.
+- Files: `Source/Model/SAConnectionInfo+Favorite.swift`,
+  `Source/Controllers/MainViewControllers/ConnectionView/SAFavoriteDeletionPrompt.swift`,
+  `UnitTests/SAConnectionInfoFavoriteTests.swift`,
+  `UnitTests/SAFavoriteDeletionPromptTests.swift`, `SPConnectionController.m`
 
 **D3. Extract form validation** — ✅ Done
 - New `SAConnectionDetailsValidator` (Swift, no AppKit) owns the
@@ -384,6 +420,6 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
 5. **Phase B2** (favorites data source tests) — 🟡 B2a done (search matcher), B2b pending (needs test-target ObjC plumbing)
 6. **Phase C1** (SwiftUI favorites list) — first visible SwiftUI — 🟡 C1a + C1b done (wrap + pure SwiftUI list); reorder/rename/persistence + hosting (C3) still pending before it replaces the AppKit list
 7. ~~**Phase A2** (task controller) — large but impactful~~ ✅ Done (progress UI extracted; working-level counter stays on the document)
-8. **Phase D1-D3** (SPConnectionController cleanup) — 🟡 D1 + D3 done; D2 (favorites actions → SAFavoritesManager) pending — note the file grew to ~5,250 lines after the connection-string import PR (#2398), so D2 should wait for that area to settle / be rebased onto it deliberately
+8. ~~**Phase D1-D3** (SPConnectionController cleanup)~~ ✅ Done (D1 + D2 scoped-down + D3; import/export extraction deferred until the #2398 import area settles)
 9. **Phase C2-C3** (SwiftUI connection form) — bigger effort
 10. **Phase E** (table content/custom query) — long-term
