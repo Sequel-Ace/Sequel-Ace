@@ -210,14 +210,16 @@ import Security
             throw AWSIAMAuthError.credentialsNotFound
         }
 
-        // Console sign-in (`aws login`) profiles resolve cached temporary credentials
-        if baseCredentials.isLoginProfile {
-            return try resolveLoginCredentials(baseCredentials, profileName: profileName)
-        }
-
-        // IAM Identity Center (`aws sso login`) profiles exchange the cached token for credentials
+        // IAM Identity Center (`aws sso login`) profiles exchange the cached token for credentials.
+        // Identity Center outranks static keys in the AWS credential precedence.
         if baseCredentials.isSSOProfile {
             return try resolveSSOCredentials(baseCredentials, profileName: profileName)
+        }
+
+        // Console sign-in (`aws login`) profiles resolve cached temporary credentials.
+        // Static keys and role assumption outrank console sign-in, matching the AWS CLI.
+        if baseCredentials.isLoginProfile && !baseCredentials.isValid && !baseCredentials.requiresRoleAssumption {
+            return try resolveLoginCredentials(baseCredentials, profileName: profileName)
         }
 
         // Check if role assumption is needed (FIX: Handle roles without MFA)

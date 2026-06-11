@@ -683,6 +683,60 @@ final class AWSIAMAuthManagerTests: XCTestCase {
         }
     }
 
+    func testGenerateAuthTokenPrefersStaticKeysOverConsoleSignIn() throws {
+        let loginSession = "arn:aws:iam::123456789012:user/dev"
+        let credentialsContents = """
+        [default]
+        aws_access_key_id = AKIASTATIC00000000000
+        aws_secret_access_key = staticSecret
+        """
+        let configContents = """
+        [default]
+        login_session = \(loginSession)
+        region = eu-west-1
+        """
+
+        try AWSTestEnvironment.withTemporaryAWSFiles(credentials: credentialsContents, config: configContents) { _, _ in
+            let cacheDir = FileManager.default.temporaryDirectory
+                .appendingPathComponent("SequelAce-LoginCache-\(UUID().uuidString)", isDirectory: true)
+            try FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: cacheDir) }
+
+            let fileName = AWSLoginCredentialsProvider.cacheFileName(forLoginSession: loginSession)
+            let json = """
+            {
+              "accessToken": {
+                "accessKeyId": "ASIALOGIN000000000000",
+                "secretAccessKey": "loginSecret",
+                "sessionToken": "loginSessionToken",
+                "expiresAt": "2999-01-01T00:00:00Z"
+              }
+            }
+            """
+            try json.write(to: cacheDir.appendingPathComponent(fileName), atomically: true, encoding: .utf8)
+
+            setenv("AWS_LOGIN_CACHE_DIRECTORY", cacheDir.path, 1)
+            defer {
+                unsetenv("AWS_LOGIN_CACHE_DIRECTORY")
+                AWSIAMAuthManager.clearCachedCredentials(for: nil)
+            }
+
+            let token = try AWSIAMAuthManager.generateAuthToken(
+                hostname: "mydb.123456789012.eu-west-1.rds.amazonaws.com",
+                port: 3306,
+                username: "db_admin",
+                region: nil,
+                profile: nil,
+                accessKey: nil,
+                secretKey: nil,
+                parentWindow: nil
+            )
+
+            XCTAssertTrue(token.contains("X-Amz-Credential=AKIASTATIC00000000000"))
+            XCTAssertFalse(token.contains("ASIALOGIN000000000000"))
+        }
+    }
+
     func testRegionsFromIPRangesResponseFiltersAndSortsRegions() throws {
         let response = """
         {
