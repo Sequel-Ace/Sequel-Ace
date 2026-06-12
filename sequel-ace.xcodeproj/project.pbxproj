@@ -301,7 +301,6 @@
 		51CD0BF5258D06D8009E2484 /* QueryFavoriteManager.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BD7258D06D8009E2484 /* QueryFavoriteManager.xib */; };
 		51CD0BF6258D06D8009E2484 /* ConnectionView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BD8258D06D8009E2484 /* ConnectionView.xib */; };
 		51CD0BF8258D06D8009E2484 /* DatabaseProcessList.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BDA258D06D8009E2484 /* DatabaseProcessList.xib */; };
-		51CD0BF9258D06D8009E2484 /* BundleHTMLOutput.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BDB258D06D8009E2484 /* BundleHTMLOutput.xib */; };
 		51D9527625AE2B5300574BEB /* FMDB in Frameworks */ = {isa = PBXBuildFile; productRef = 51D9527525AE2B5300574BEB /* FMDB */; };
 		51DCBEF0257134190098E303 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 38C613721C8977E600B3B6EF /* libz.tbd */; };
 		51EF3E712FDC2A6500EFFF09 /* SABundleJSBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E702FDC2A6500EFFF09 /* SABundleJSBridge.swift */; };
@@ -479,7 +478,6 @@
 		BC5750D512A6233900911BA2 /* SPActivityTextFieldCell.m in Sources */ = {isa = PBXBuildFile; fileRef = BC5750D312A6233900911BA2 /* SPActivityTextFieldCell.m */; };
 		BC675A141072039C00C5ACD4 /* SPContentFilterManager.m in Sources */ = {isa = PBXBuildFile; fileRef = BC675A131072039C00C5ACD4 /* SPContentFilterManager.m */; };
 		BC68BFC7128D4EAE004907D9 /* SPBundleEditorController.m in Sources */ = {isa = PBXBuildFile; fileRef = BC68BFC6128D4EAE004907D9 /* SPBundleEditorController.m */; };
-		BC77C5E4129AA69E009AD832 /* SPBundleHTMLOutputController.m in Sources */ = {isa = PBXBuildFile; fileRef = BC77C5E3129AA69E009AD832 /* SPBundleHTMLOutputController.m */; };
 		BC85F5D012193B7D00E255B5 /* SPColorAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = BC85F5CF12193B7D00E255B5 /* SPColorAdditions.m */; };
 		BC878A71121A836F00AE5066 /* SPColorWellCell.m in Sources */ = {isa = PBXBuildFile; fileRef = BC878A70121A836F00AE5066 /* SPColorWellCell.m */; };
 		BC8C8532100E0A8000D7A129 /* SPTableView.m in Sources */ = {isa = PBXBuildFile; fileRef = BC8C8531100E0A8000D7A129 /* SPTableView.m */; };
@@ -1080,7 +1078,6 @@
 		51CD0BD7258D06D8009E2484 /* QueryFavoriteManager.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = QueryFavoriteManager.xib; sourceTree = "<group>"; };
 		51CD0BD8258D06D8009E2484 /* ConnectionView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ConnectionView.xib; sourceTree = "<group>"; };
 		51CD0BDA258D06D8009E2484 /* DatabaseProcessList.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DatabaseProcessList.xib; sourceTree = "<group>"; };
-		51CD0BDB258D06D8009E2484 /* BundleHTMLOutput.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = BundleHTMLOutput.xib; sourceTree = "<group>"; };
 		51EF3E702FDC2A6500EFFF09 /* SABundleJSBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SABundleJSBridge.swift; sourceTree = "<group>"; };
 		51EF3E752FDC2A9800EFFF09 /* SAWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAWebView.swift; sourceTree = "<group>"; };
 		51EF3E772FDC2AB700EFFF09 /* SABundleJSBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SABundleJSBridgeTests.swift; sourceTree = "<group>"; };
@@ -1313,8 +1310,6 @@
 		BC675A131072039C00C5ACD4 /* SPContentFilterManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPContentFilterManager.m; sourceTree = "<group>"; };
 		BC68BFC5128D4EAE004907D9 /* SPBundleEditorController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPBundleEditorController.h; sourceTree = "<group>"; };
 		BC68BFC6128D4EAE004907D9 /* SPBundleEditorController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPBundleEditorController.m; sourceTree = "<group>"; };
-		BC77C5E2129AA69E009AD832 /* SPBundleHTMLOutputController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPBundleHTMLOutputController.h; sourceTree = "<group>"; };
-		BC77C5E3129AA69E009AD832 /* SPBundleHTMLOutputController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPBundleHTMLOutputController.m; sourceTree = "<group>"; };
 		BC85F5CE12193B7D00E255B5 /* SPColorAdditions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPColorAdditions.h; sourceTree = "<group>"; };
 		BC85F5CF12193B7D00E255B5 /* SPColorAdditions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPColorAdditions.m; sourceTree = "<group>"; };
 		BC878A6F121A836F00AE5066 /* SPColorWellCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPColorWellCell.h; sourceTree = "<group>"; };
@@ -1557,8 +1552,6 @@
 				176E14D015570FE300FAF326 /* SPBundleCommandRunner.m */,
 				6F0EA9222734ABE200514FF1 /* SABundleRunner.h */,
 				6F0EA9232734ABE200514FF1 /* SABundleRunner.m */,
-				BC77C5E2129AA69E009AD832 /* SPBundleHTMLOutputController.h */,
-				BC77C5E3129AA69E009AD832 /* SPBundleHTMLOutputController.m */,
 				51EF3E702FDC2A6500EFFF09 /* SABundleJSBridge.swift */,
 				51EF3E7A2FDC2E5800EFFF09 /* SABundleHTMLOutputWindowController.swift */,
 				51EF3E7C2FDC2E6300EFFF09 /* SABundleHTMLOutputView.swift */,
@@ -2270,7 +2263,6 @@
 			children = (
 				51F41FB625F56A5900594BA5 /* MainWindow.xib */,
 				51CD0BD2258D06D8009E2484 /* BundleEditor.xib */,
-				51CD0BDB258D06D8009E2484 /* BundleHTMLOutput.xib */,
 				51CD0BCD258D06D8009E2484 /* ConnectionErrorDialog.xib */,
 				51CD0BD8258D06D8009E2484 /* ConnectionView.xib */,
 				51CD0BCB258D06D8009E2484 /* Console.xib */,
@@ -2985,7 +2977,6 @@
 				8831EFC9224016E000D10172 /* button_edit_mode_selectedTemplate.pdf in Resources */,
 				17E641FC0EF02088001BC333 /* sequel-pro.scriptSuite in Resources */,
 				17E641FD0EF02088001BC333 /* sequel-pro.scriptTerminology in Resources */,
-				51CD0BF9258D06D8009E2484 /* BundleHTMLOutput.xib in Resources */,
 				51CD0BDC258D06D8009E2484 /* PrintAccessory.xib in Resources */,
 				51CD0BEC258D06D8009E2484 /* ProgressIndicatorLayer.xib in Resources */,
 				B5E2C5FA0F2353B5007446E0 /* table-property.png in Resources */,
@@ -3494,7 +3485,6 @@
 				BC68BFC7128D4EAE004907D9 /* SPBundleEditorController.m in Sources */,
 				BC1944D01297291800A236CD /* SPBundleCommandTextView.m in Sources */,
 				1AF0DA7F259F5D8C00961974 /* SPPointerArrayAdditions.m in Sources */,
-				BC77C5E4129AA69E009AD832 /* SPBundleHTMLOutputController.m in Sources */,
 				BC5750D512A6233900911BA2 /* SPActivityTextFieldCell.m in Sources */,
 				BC0ED3DA12A9196C00088461 /* SPChooseMenuItemDialog.m in Sources */,
 				51BC150625BE13C400F1CDC9 /* NSViewExtension.swift in Sources */,
