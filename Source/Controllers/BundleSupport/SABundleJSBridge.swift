@@ -50,15 +50,19 @@ final class SABundleJSBridge {
         (function() {
             'use strict';
             if (window.system) { return; }
+            // Capture the native implementations at document start, before page scripts
+            // run — an override of window.prompt by page JS must not hijack the bridge.
+            var nativePrompt = window.prompt.bind(window);
+            var nativeMessageHandler = window.webkit.messageHandlers.\(messageHandlerName);
             function normalized(value) {
                 return (value === undefined || value === null) ? null : String(value);
             }
             function syncCall(fn, args) {
-                var result = window.prompt('\(promptSentinel)', JSON.stringify({ fn: fn, args: args }));
+                var result = nativePrompt('\(promptSentinel)', JSON.stringify({ fn: fn, args: args }));
                 return result === null ? '' : result;
             }
             function asyncCall(fn, args) {
-                window.webkit.messageHandlers.\(messageHandlerName).postMessage({ fn: fn, args: args });
+                nativeMessageHandler.postMessage({ fn: fn, args: args });
             }
             window.system = {
                 run: function(call) {

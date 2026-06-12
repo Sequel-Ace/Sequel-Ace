@@ -253,11 +253,17 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
             (NSApp.delegate as? SPAppController)?.handleEvent(with: url)
         }
 
-        // Legacy opened a sibling output window for requested new windows. We load the
-        // request in a new controller and return nil (so JS window.open() gets no handle,
-        // but link-targeted and scripted windows still open).
-        model.onCreateWebView = { configuration, request in
-            guard let url = request.url else { return nil }
+        // Legacy opened a sibling output window for requested new windows. We cancel
+        // WebKit's window (return nil) and load the request in a fresh sibling
+        // controller instead. The WebKit-supplied configuration is deliberately NOT
+        // used: it shares the opener's user content controller, which would cross-wire
+        // the child's window.system handler to the opener's window. Because no web view
+        // is returned, the two windows have no script connection and don't need to
+        // share a web process. Trade-off: JS window.open() gets no handle back.
+        model.onCreateWebView = { _, request in
+            guard let url = request.url else {
+                return nil
+            }
             let controller = SABundleHTMLOutputWindowController()
             controller.displayURLString(url.absoluteString, withOptions: nil)
             SPBundleManager.shared().addHTMLOutputController(controller)
@@ -372,10 +378,13 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
     }
 
     @objc func printDocument(_ sender: Any?) {
-        guard let webView = model.webView, let window = window else { return }
+        guard let webView = model.webView, let window = window,
+              let printInfo = NSPrintInfo.shared.copy() as? NSPrintInfo else {
+            return
+        }
 
-        // Margin and pagination setup ported from SPPrintUtility.
-        let printInfo = NSPrintInfo.shared
+        // Margin and pagination setup ported from SPPrintUtility — applied to a copy
+        // so the shared print info isn't mutated for the rest of the app.
 
         let paperSize = printInfo.paperSize
         let printableRect = printInfo.imageablePageBounds
