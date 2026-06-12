@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPConnectionController.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPDatabaseDocument.h"
 #import "SPAppController.h"
 #import "SPPreferenceController.h"
@@ -2076,7 +2077,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 {
     NSOpenPanel *openPanel = [NSOpenPanel openPanel];
 
-    [openPanel setAllowedFileTypes:@[@"plist"]];
+    [openPanel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:@"plist"]]];
 
     [openPanel beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:^(NSInteger returnCode)
     {

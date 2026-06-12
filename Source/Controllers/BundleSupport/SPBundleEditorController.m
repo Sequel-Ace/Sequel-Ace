@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPBundleEditorController.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPBundleCommandRunner.h"
 #import "SPOutlineView.h"
 #import "SPBundleCommandTextView.h"
@@ -769,7 +770,7 @@
 {
 	NSSavePanel *panel = [NSSavePanel savePanel];
 
-	[panel setAllowedFileTypes:@[SPUserBundleFileExtensionV2, SPUserBundleFileExtension]];
+	[panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPUserBundleFileExtensionV2], [UTType typeWithFilenameExtension:SPUserBundleFileExtension]]];
 	
 	[panel setExtensionHidden:NO];
 	[panel setAllowsOtherFileTypes:NO];
