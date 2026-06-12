@@ -213,8 +213,8 @@
 		50EA926A1AB246B8008D3C4F /* SPDatabaseActionTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 50EA92691AB246B8008D3C4F /* SPDatabaseActionTest.m */; };
 		50F530521ABCF66B002F2C1A /* resetTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 50F530511ABCF66B002F2C1A /* resetTemplate.pdf */; };
 		510247F62FD9F2CE00586DEA /* SAFavoriteDeletionPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 510247F52FD9F2CE00586DEA /* SAFavoriteDeletionPrompt.swift */; };
-		510247F92FD9F2DD00586DEA /* SAFavoriteDeletionPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 510247F52FD9F2CE00586DEA /* SAFavoriteDeletionPrompt.swift */; };
 		510247F82FD9F2DC00586DEA /* SAFavoriteDeletionPromptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 510247F72FD9F2DC00586DEA /* SAFavoriteDeletionPromptTests.swift */; };
+		510247F92FD9F2DD00586DEA /* SAFavoriteDeletionPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 510247F52FD9F2CE00586DEA /* SAFavoriteDeletionPrompt.swift */; };
 		5132930C25F586A900D803AD /* NotificationToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132930925F586A900D803AD /* NotificationToken.swift */; };
 		5132930D25F586A900D803AD /* TabManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132930A25F586A900D803AD /* TabManager.swift */; };
 		513515D2259354BB001E4533 /* NSImageExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 513515D1259354BB001E4533 /* NSImageExtensions.swift */; };
@@ -304,6 +304,10 @@
 		51CD0BF9258D06D8009E2484 /* BundleHTMLOutput.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BDB258D06D8009E2484 /* BundleHTMLOutput.xib */; };
 		51D9527625AE2B5300574BEB /* FMDB in Frameworks */ = {isa = PBXBuildFile; productRef = 51D9527525AE2B5300574BEB /* FMDB */; };
 		51DCBEF0257134190098E303 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 38C613721C8977E600B3B6EF /* libz.tbd */; };
+		51EF3E712FDC2A6500EFFF09 /* SABundleJSBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E702FDC2A6500EFFF09 /* SABundleJSBridge.swift */; };
+		51EF3E762FDC2A9800EFFF09 /* SAWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E752FDC2A9800EFFF09 /* SAWebView.swift */; };
+		51EF3E782FDC2AB700EFFF09 /* SABundleJSBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E772FDC2AB700EFFF09 /* SABundleJSBridgeTests.swift */; };
+		51EF3E792FDC2C8400EFFF09 /* SABundleJSBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E702FDC2A6500EFFF09 /* SABundleJSBridge.swift */; };
 		51F41FBA25F56A5900594BA5 /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51F41FB625F56A5900594BA5 /* MainWindow.xib */; };
 		51F4AFBF24B26665006144D5 /* NSAlertExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */; };
 		5806B76411A991EC00813A88 /* SPDocumentController.m in Sources */ = {isa = PBXBuildFile; fileRef = 5806B76311A991EC00813A88 /* SPDocumentController.m */; };
@@ -1075,6 +1079,9 @@
 		51CD0BD8258D06D8009E2484 /* ConnectionView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ConnectionView.xib; sourceTree = "<group>"; };
 		51CD0BDA258D06D8009E2484 /* DatabaseProcessList.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DatabaseProcessList.xib; sourceTree = "<group>"; };
 		51CD0BDB258D06D8009E2484 /* BundleHTMLOutput.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = BundleHTMLOutput.xib; sourceTree = "<group>"; };
+		51EF3E702FDC2A6500EFFF09 /* SABundleJSBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SABundleJSBridge.swift; sourceTree = "<group>"; };
+		51EF3E752FDC2A9800EFFF09 /* SAWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAWebView.swift; sourceTree = "<group>"; };
+		51EF3E772FDC2AB700EFFF09 /* SABundleJSBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SABundleJSBridgeTests.swift; sourceTree = "<group>"; };
 		51F41FB625F56A5900594BA5 /* MainWindow.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainWindow.xib; sourceTree = "<group>"; };
 		51F4AFBD24B26665006144D5 /* Sequel-Ace-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Sequel-Ace-Bridging-Header.h"; sourceTree = "<group>"; };
 		51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSAlertExtension.swift; sourceTree = "<group>"; };
@@ -1548,6 +1555,7 @@
 				6F0EA9232734ABE200514FF1 /* SABundleRunner.m */,
 				BC77C5E2129AA69E009AD832 /* SPBundleHTMLOutputController.h */,
 				BC77C5E3129AA69E009AD832 /* SPBundleHTMLOutputController.m */,
+				51EF3E702FDC2A6500EFFF09 /* SABundleJSBridge.swift */,
 			);
 			name = "Bundle Support";
 			path = BundleSupport;
@@ -2110,6 +2118,7 @@
 				17DC8827126B32F300E9AAEC /* Table Views */,
 				17DF51241163C68600E3F396 /* Outline Views */,
 				17DC8828126B332F00E9AAEC /* Accessory Views */,
+				51EF3E752FDC2A9800EFFF09 /* SAWebView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -2524,6 +2533,7 @@
 				5147B00E2F8C000300C4C14A /* SAConnectionDetailsValidatorTests.swift */,
 				5147B0132F8C000400C4C14A /* SAConnectionFormHelpersTests.swift */,
 				510247F72FD9F2DC00586DEA /* SAFavoriteDeletionPromptTests.swift */,
+				51EF3E772FDC2AB700EFFF09 /* SABundleJSBridgeTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -3213,6 +3223,7 @@
 				CF0000122F8C000600C4C14A /* SACellFilterMenuBuilder.swift in Sources */,
 				CF0000252F8C000600C4C14A /* SACellFilterColumnIdentifier.swift in Sources */,
 				CF0000012F8C000600C4C14A /* SACellFilterOperatorTests.swift in Sources */,
+				51EF3E792FDC2C8400EFFF09 /* SABundleJSBridge.swift in Sources */,
 				CF0000262F8C000600C4C14A /* SACellFilterColumnIdentifierTests.swift in Sources */,
 				CF0000062F8C000600C4C14A /* SACellFilterOperatorRoundTripTests.swift in Sources */,
 				CF0000152F8C000600C4C14A /* SACellFilterOperatorRoundTripControllerTests.m in Sources */,
@@ -3230,6 +3241,7 @@
 				510247F92FD9F2DD00586DEA /* SAFavoriteDeletionPrompt.swift in Sources */,
 				510247F82FD9F2DC00586DEA /* SAFavoriteDeletionPromptTests.swift in Sources */,
 				5AF0C2000000000000000003 /* SAFavoriteItem.swift in Sources */,
+				51EF3E782FDC2AB700EFFF09 /* SABundleJSBridgeTests.swift in Sources */,
 				5AF0C2000000000000000032 /* SAFavoriteItemTests.swift in Sources */,
 				5147B00D2F8C000300C4C14A /* SAConnectionDetailsValidator.swift in Sources */,
 				5147B00F2F8C000300C4C14A /* SAConnectionDetailsValidatorTests.swift in Sources */,
@@ -3450,6 +3462,7 @@
 				17A20AC6124F9B110095CEFB /* SPServerSupport.m in Sources */,
 				BC2898F3125F4488001B50E1 /* SPGeometryDataView.m in Sources */,
 				17D38F701279E23A00672B13 /* SPTableFieldValidation.m in Sources */,
+				51EF3E762FDC2A9800EFFF09 /* SAWebView.swift in Sources */,
 				17D390C8127B65AF00672B13 /* SPGeneralPreferencePane.m in Sources */,
 				1A9D83A425514E740024B563 /* DateComponentsFormatterExtension.swift in Sources */,
 				17D390CB127B6BF800672B13 /* SPPreferencesUpgrade.m in Sources */,
@@ -3490,6 +3503,7 @@
 				1798F1871550175B004B0AB8 /* SPFavoritesExporter.m in Sources */,
 				510247F62FD9F2CE00586DEA /* SAFavoriteDeletionPrompt.swift in Sources */,
 				1798F1881550175B004B0AB8 /* SPFavoritesImporter.m in Sources */,
+				51EF3E712FDC2A6500EFFF09 /* SABundleJSBridge.swift in Sources */,
 				51B09FE72F768E39003BAFFF /* SAConnectionViewCoordinator.swift in Sources */,
 				1A89556625D6BEED0060CE72 /* GitHubReleaseManager.swift in Sources */,
 				514DD98925FACF1500EA3B3B /* SPDatabaseDocument.swift in Sources */,
