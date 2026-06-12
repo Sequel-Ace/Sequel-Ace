@@ -104,6 +104,9 @@
 - (void) setNullReplacementString:(NSString *)nullString;
 - (void) setEscapeStringsAreMatchedStrictly:(BOOL)strictMatching;
 
+/* Accessors for configured separators */
+- (NSString *)lineTerminatorString;
+
 /* Init and internal update methods */
 - (void) _initialiseCSVParserDefaults;
 - (void) _moveParserPastSkippableCharacters;
