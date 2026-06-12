@@ -1501,10 +1501,8 @@
 	if(![self saveBundle:bundleDict atPath:draggedFilePath]) return NO;
 
 	// Write data to the pasteboard
-	NSArray *fileList = [NSArray arrayWithObjects:draggedFilePath, nil];
-	// NSPasteboard *pboard = [NSPasteboard pasteboardWithName:NSDragPboard];
-	[pboard declareTypes:@[NSFilenamesPboardType] owner:nil];
-	[pboard setPropertyList:fileList forType:NSFilenamesPboardType];
+	[pboard clearContents];
+	[pboard writeObjects:@[[NSURL fileURLWithPath:draggedFilePath]]];
 
 	// Start the drag operation
 	dragImage = [[NSWorkspace sharedWorkspace] iconForFile:draggedFilePath];
