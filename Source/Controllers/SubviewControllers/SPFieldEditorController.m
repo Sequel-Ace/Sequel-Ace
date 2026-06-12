@@ -34,7 +34,9 @@
 #import "SPGeometryDataView.h"
 #import "SPCopyTable.h"
 #import "SPWindow.h"
+#include <errno.h>
 #include <objc/objc-runtime.h>
+#include <stdlib.h>
 #import "SPCustomQuery.h"
 #import "SPTableContent.h"
 #import "SPJSONFormatter.h"
@@ -122,6 +124,7 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 - (void)buildPHPSerializedEditorSheetIfNeeded;
 - (BOOL)populatePHPSerializedEditorFromCurrentTextShowingError:(BOOL)showError;
 - (BOOL)commitPHPSerializedSelectedValueShowingError:(BOOL)showError;
+- (BOOL)phpSerializedStringIsFloat:(NSString *)string;
 
 @end
 
@@ -268,6 +271,9 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 @property(nonatomic) NSUInteger position;
 @property(nonatomic, copy) NSString *errorMessage;
 
+- (BOOL)unsignedIntegerValue:(NSUInteger *)value fromString:(NSString *)string;
+- (BOOL)stringIsPHPFloat:(NSString *)string;
+
 @end
 
 @implementation SAPHPSerializedParser
@@ -336,7 +342,8 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 
 - (NSString *)readBytesAsString:(NSUInteger)byteLength
 {
-	if (self.position + byteLength > [self.data length]) {
+	NSUInteger dataLength = [self.data length];
+	if (self.position > dataLength || byteLength > dataLength - self.position) {
 		self.errorMessage = NSLocalizedString(@"String length exceeds available serialized data.", @"PHP serialized editor string length error");
 		return nil;
 	}
@@ -395,7 +402,7 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 
 	if (typeByte == 'd') {
 		NSString *raw = [self readUntilByte:';'];
-		if (![raw length]) {
+		if (![self stringIsPHPFloat:raw]) {
 			self.errorMessage = NSLocalizedString(@"Invalid PHP float value.", @"PHP serialized editor invalid float error");
 			return nil;
 		}
@@ -406,9 +413,10 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 
 	if (typeByte == 's') {
 		NSString *lengthString = [self readUntilByte:':'];
-		if (![self stringIsUnsignedInteger:lengthString]) return nil;
+		NSUInteger byteLength = 0;
+		if (![self unsignedIntegerValue:&byteLength fromString:lengthString]) return nil;
 		if (![self consumeByte:'"']) return nil;
-		NSString *string = [self readBytesAsString:(NSUInteger)[lengthString longLongValue]];
+		NSString *string = [self readBytesAsString:byteLength];
 		if (!string) return nil;
 		if (![self consumeByte:'"'] || ![self consumeByte:';']) return nil;
 
@@ -419,11 +427,11 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 
 	if (typeByte == 'a') {
 		NSString *countString = [self readUntilByte:':'];
-		if (![self stringIsUnsignedInteger:countString]) return nil;
+		NSUInteger count = 0;
+		if (![self unsignedIntegerValue:&count fromString:countString]) return nil;
 		if (![self consumeByte:'{']) return nil;
 
 		SAPHPSerializedValue *arrayValue = [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeArray];
-		NSUInteger count = (NSUInteger)[countString longLongValue];
 		for (NSUInteger i = 0; i < count; i++) {
 			SAPHPSerializedValue *keyValue = [self parseValue];
 			if (!keyValue) return nil;
@@ -447,18 +455,19 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 
 	if (typeByte == 'O') {
 		NSString *classLengthString = [self readUntilByte:':'];
-		if (![self stringIsUnsignedInteger:classLengthString]) return nil;
+		NSUInteger classByteLength = 0;
+		if (![self unsignedIntegerValue:&classByteLength fromString:classLengthString]) return nil;
 		if (![self consumeByte:'"']) return nil;
-		NSString *className = [self readBytesAsString:(NSUInteger)[classLengthString longLongValue]];
+		NSString *className = [self readBytesAsString:classByteLength];
 		if (!className) return nil;
 		if (![self consumeByte:'"'] || ![self consumeByte:':']) return nil;
 		NSString *countString = [self readUntilByte:':'];
-		if (![self stringIsUnsignedInteger:countString]) return nil;
+		NSUInteger count = 0;
+		if (![self unsignedIntegerValue:&count fromString:countString]) return nil;
 		if (![self consumeByte:'{']) return nil;
 
 		SAPHPSerializedValue *objectValue = [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeObject];
 		objectValue.className = className;
-		NSUInteger count = (NSUInteger)[countString longLongValue];
 		for (NSUInteger i = 0; i < count; i++) {
 			SAPHPSerializedValue *keyValue = [self parseValue];
 			if (!keyValue) return nil;
@@ -482,15 +491,17 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 
 	if (typeByte == 'C') {
 		NSString *classLengthString = [self readUntilByte:':'];
-		if (![self stringIsUnsignedInteger:classLengthString]) return nil;
+		NSUInteger classByteLength = 0;
+		if (![self unsignedIntegerValue:&classByteLength fromString:classLengthString]) return nil;
 		if (![self consumeByte:'"']) return nil;
-		NSString *className = [self readBytesAsString:(NSUInteger)[classLengthString longLongValue]];
+		NSString *className = [self readBytesAsString:classByteLength];
 		if (!className) return nil;
 		if (![self consumeByte:'"'] || ![self consumeByte:':']) return nil;
 		NSString *payloadLengthString = [self readUntilByte:':'];
-		if (![self stringIsUnsignedInteger:payloadLengthString]) return nil;
+		NSUInteger payloadByteLength = 0;
+		if (![self unsignedIntegerValue:&payloadByteLength fromString:payloadLengthString]) return nil;
 		if (![self consumeByte:'{']) return nil;
-		NSString *payload = [self readBytesAsString:(NSUInteger)[payloadLengthString longLongValue]];
+		NSString *payload = [self readBytesAsString:payloadByteLength];
 		if (!payload) return nil;
 		if (![self consumeByte:'}']) return nil;
 
@@ -502,7 +513,7 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 
 	if (typeByte == 'r' || typeByte == 'R') {
 		NSString *reference = [self readUntilByte:';'];
-		if (![self stringIsUnsignedInteger:reference]) return nil;
+		if (![self unsignedIntegerValue:NULL fromString:reference]) return nil;
 		SAPHPSerializedValue *referenceValue = [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeReference];
 		referenceValue.referenceType = [NSString stringWithFormat:@"%c", typeByte];
 		referenceValue.scalarValue = reference;
@@ -521,7 +532,7 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 	return [scanner scanInteger:&value] && [scanner isAtEnd];
 }
 
-- (BOOL)stringIsUnsignedInteger:(NSString *)string
+- (BOOL)unsignedIntegerValue:(NSUInteger *)value fromString:(NSString *)string
 {
 	if (![string length]) return NO;
 	for (NSUInteger i = 0; i < [string length]; i++) {
@@ -531,7 +542,32 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 			return NO;
 		}
 	}
+
+	errno = 0;
+	char *end = NULL;
+	unsigned long long parsedValue = strtoull([string UTF8String], &end, 10);
+	if (errno == ERANGE || !end || *end != '\0' || parsedValue > NSUIntegerMax) {
+		self.errorMessage = NSLocalizedString(@"Serialized length or count is too large.", @"PHP serialized editor count overflow error");
+		return NO;
+	}
+
+	if (value) *value = (NSUInteger)parsedValue;
 	return YES;
+}
+
+- (BOOL)stringIsPHPFloat:(NSString *)string
+{
+	if (![string length]) return NO;
+
+	NSString *uppercaseValue = [string uppercaseString];
+	if ([uppercaseValue isEqualToString:@"INF"] || [uppercaseValue isEqualToString:@"-INF"] || [uppercaseValue isEqualToString:@"NAN"]) {
+		return YES;
+	}
+
+	NSScanner *scanner = [NSScanner scannerWithString:string];
+	[scanner setCharactersToBeSkipped:nil];
+	double doubleValue = 0;
+	return [scanner scanDouble:&doubleValue] && [scanner isAtEnd];
 }
 
 @end
@@ -2204,12 +2240,17 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 		entry.value.scalarValue = rawValue;
 	}
 	else if ([selectedType isEqualToString:NSLocalizedString(@"Float", @"PHP serialized editor float type")]) {
-		if (![rawValue length]) {
+		NSString *trimmedValue = [rawValue stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+		if (![trimmedValue length]) {
 			if (showError) [SPTooltip showWithObject:NSLocalizedString(@"Float values cannot be empty.", @"PHP serialized editor float validation error")];
 			return NO;
 		}
+		if (![self phpSerializedStringIsFloat:trimmedValue]) {
+			if (showError) [SPTooltip showWithObject:NSLocalizedString(@"Float values must be a valid number, INF, -INF, or NAN.", @"PHP serialized editor float validation error")];
+			return NO;
+		}
 		entry.value.type = SAPHPSerializedValueTypeDouble;
-		entry.value.scalarValue = rawValue;
+		entry.value.scalarValue = trimmedValue;
 	}
 	else if ([selectedType isEqualToString:NSLocalizedString(@"Boolean", @"PHP serialized editor boolean type")]) {
 		NSString *normalized = [[rawValue stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] lowercaseString];
@@ -2309,6 +2350,21 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 	NSScanner *scanner = [NSScanner scannerWithString:string];
 	NSInteger value = 0;
 	return [scanner scanInteger:&value] && [scanner isAtEnd];
+}
+
+- (BOOL)phpSerializedStringIsFloat:(NSString *)string
+{
+	if (![string length]) return NO;
+
+	NSString *uppercaseValue = [string uppercaseString];
+	if ([uppercaseValue isEqualToString:@"INF"] || [uppercaseValue isEqualToString:@"-INF"] || [uppercaseValue isEqualToString:@"NAN"]) {
+		return YES;
+	}
+
+	NSScanner *scanner = [NSScanner scannerWithString:string];
+	[scanner setCharactersToBeSkipped:nil];
+	double doubleValue = 0;
+	return [scanner scanDouble:&doubleValue] && [scanner isAtEnd];
 }
 
 - (NSInteger)outlineView:(NSOutlineView *)outlineView numberOfChildrenOfItem:(id)item
