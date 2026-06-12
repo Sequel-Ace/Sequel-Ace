@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPEditorPreferencePane.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPPreferenceController.h"
 #import "SPColorWellCell.h"
 #import "SPCategoryAdditions.h"
@@ -137,7 +138,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 {
 	NSSavePanel *panel = [NSSavePanel savePanel];
 	
-	[panel setAllowedFileTypes:@[SPColorThemeFileExtension]];
+	[panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPColorThemeFileExtension]]];
 	
 	[panel setExtensionHidden:NO];
 	[panel setAllowsOtherFileTypes:NO];
@@ -163,7 +164,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	[panel setDelegate:self];
 	[panel setCanChooseDirectories:NO];
 	[panel setAllowsMultipleSelection:NO];
-	[panel setAllowedFileTypes:@[SPColorThemeFileExtension, @"tmTheme"]];
+	[panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPColorThemeFileExtension], [UTType typeWithFilenameExtension:@"tmTheme"]]];
 
 	[panel beginSheetModalForWindow:[[self view] window] completionHandler:^(NSInteger returnCode)
 	{
