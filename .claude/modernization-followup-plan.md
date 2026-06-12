@@ -288,10 +288,13 @@ C2a — TCP/IP form + observable model — ✅ Done
   `SAConnectionInfo` so SwiftUI binds straight into it
   (`$model.info.host`). It funnels the earlier extractions:
   `validate()` → `SAConnectionDetailsValidator` (D3), `effectiveName` →
-  `SAConnectionFormHelpers.generateName` (user name wins, whitespace
-  ignored), `canAttemptConnection` gate (socket always, others need a
-  non-blank host), and ObjC bridging via `init(objc:)` / `apply(to:)`
-  (value-copy semantics — edits don't leak back until applied).
+  `SAConnectionFormHelpers.generateName` (user-entered name wins,
+  whitespace-only names ignored), `canAttemptConnection` gate (socket:
+  always; SSH tunnel: non-blank host OR remote socket path, mirroring
+  the validator; TCP/AWS/Vault: non-blank host — Codex P2 caught the
+  original gate blocking valid remote-socket tunnels), and ObjC
+  bridging via `init(objc:)` / `apply(to:)` (value-copy semantics —
+  edits don't leak back until applied).
 - New `SAConnectionFormView` (SwiftUI, app-target only) renders the
   XIB's TCP/IP tab fields (Name w/ auto-generated-name placeholder,
   Host, Username, Password as SecureField, Database, Port w/ "3306"

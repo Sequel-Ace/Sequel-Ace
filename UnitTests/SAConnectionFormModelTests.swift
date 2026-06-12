@@ -122,6 +122,52 @@ final class SAConnectionFormModelTests: XCTestCase {
         XCTAssertTrue(model.canAttemptConnection)
     }
 
+    func testCanAttemptConnectionRequiresHostForAWSAndVault() {
+        for type in [SAConnectionType.awsIAM, .vault] {
+            let model = SAConnectionFormModel()
+            model.info.type = type
+            XCTAssertFalse(model.canAttemptConnection, "\(type) without host")
+
+            model.info.host = "db.example.com"
+            XCTAssertTrue(model.canAttemptConnection, "\(type) with host")
+        }
+    }
+
+    func testCanAttemptConnectionForSSHTunnelAcceptsHostOrRemoteSocket() {
+        let model = SAConnectionFormModel()
+        model.info.type = .sshTunnel
+
+        // Neither host nor remote socket: gated.
+        XCTAssertFalse(model.canAttemptConnection)
+
+        // MySQL host alone is enough.
+        model.info.host = "db.example.com"
+        XCTAssertTrue(model.canAttemptConnection)
+
+        // A remote socket path alone is enough too — the validator skips
+        // the host requirement for socket-targeting tunnels and
+        // SAConnectionService connects through the socket.
+        model.info.host = ""
+        model.info.sshRemoteSocketPath = "/var/run/mysqld/mysqld.sock"
+        XCTAssertTrue(model.canAttemptConnection)
+
+        // Whitespace-only values don't count.
+        model.info.sshRemoteSocketPath = "   "
+        XCTAssertFalse(model.canAttemptConnection)
+    }
+
+    func testGateAgreesWithValidatorForRemoteSocketTunnel() {
+        // The P2 regression this pins: a remote-socket SSH favorite must
+        // be submittable — the gate may never be stricter than validate().
+        let model = SAConnectionFormModel()
+        model.info.type = .sshTunnel
+        model.info.sshHost = "bastion.example.com"
+        model.info.sshRemoteSocketPath = "/var/run/mysqld/mysqld.sock"
+
+        XCTAssertTrue(model.canAttemptConnection)
+        XCTAssertNil(model.validate())
+    }
+
     // MARK: - Validation wiring (full rules pinned by D3's own tests)
 
     func testValidateFailsWithHostMissingForEmptyTCPIPHost() {

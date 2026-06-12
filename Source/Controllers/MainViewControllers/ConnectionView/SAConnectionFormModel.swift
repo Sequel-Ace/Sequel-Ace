@@ -60,12 +60,20 @@ final class SAConnectionFormModel: ObservableObject {
 
     /// True when the form has the minimum input to attempt a connection
     /// (used to enable the Connect button before full validation runs).
+    /// Mirrors the host rule in SAConnectionDetailsValidator: an SSH
+    /// tunnel that targets a remote socket path doesn't need a MySQL
+    /// host (SAConnectionService connects through the socket instead).
     var canAttemptConnection: Bool {
+        let hasHost = !info.host.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         switch info.type {
         case .socket:
             return true
-        case .tcpIP, .sshTunnel, .awsIAM, .vault:
-            return !info.host.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .sshTunnel:
+            let hasRemoteSocket = !info.sshRemoteSocketPath
+                .trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            return hasHost || hasRemoteSocket
+        case .tcpIP, .awsIAM, .vault:
+            return hasHost
         }
     }
 
