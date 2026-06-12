@@ -3582,6 +3582,9 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	if ( [[pboard types] containsObject:NSPasteboardTypeFileURL] ) {
 		NSArray *files = [pboard readObjectsForClasses:@[[NSURL class]] options:@{NSPasteboardURLReadingFileURLsOnlyKey: @YES}];
 
+		if([files count] == 0)
+			return [super performDragOperation:sender];
+
 		// Only one file path is allowed
 		if([files count] > 1) {
 			NSLog(@"%@", NSLocalizedString(@"Only one dragged item allowed.",@"Only one dragged item allowed."));
