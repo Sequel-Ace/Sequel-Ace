@@ -38,7 +38,6 @@
 #import "SPDataStorage.h"
 #import "SPTextAndLinkCell.h"
 #import "SPTooltip.h"
-#import "SPBundleHTMLOutputController.h"
 #import "SPGeometryDataView.h"
 #import "SPBundleEditorController.h"
 #import "SPAppController.h"
@@ -1735,11 +1734,11 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
     }
 
     else if([action isEqualToString:SPBundleOutputActionShowAsHTML]) {
-        Class htmlWindow = [SPBundleHTMLOutputController class];
+        Class htmlWindow = [SABundleHTMLOutputWindowController class];
         NSString *cmdUUID = [cmdData objectForKey:SPBundleFileUUIDKey];
         for (NSWindow *win in [NSApp windows]) {
             if ([win.delegate isKindOfClass:htmlWindow]) {
-                SPBundleHTMLOutputController *htmlDelegate = (SPBundleHTMLOutputController *)win.delegate;
+                SABundleHTMLOutputWindowController *htmlDelegate = (SABundleHTMLOutputWindowController *)win.delegate;
                 if ([htmlDelegate.windowUUID isEqualToString:cmdUUID]) {
                     [htmlDelegate displayHTMLContent:output withOptions:nil];
                     return;
@@ -1747,7 +1746,7 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
             }
         }
         
-        SPBundleHTMLOutputController *bundleController = [[SPBundleHTMLOutputController alloc] init];
+        SABundleHTMLOutputWindowController *bundleController = [[SABundleHTMLOutputWindowController alloc] init];
         [bundleController setWindowUUID:cmdUUID];
         [bundleController displayHTMLContent:output withOptions:nil];
         [SPBundleManager.shared addHTMLOutputController:bundleController];

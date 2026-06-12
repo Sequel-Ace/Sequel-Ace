@@ -37,7 +37,6 @@
 #import "SPTablesList.h"
 #import "SPNavigatorController.h"
 #import "RegexKitLite.h"
-#import "SPBundleHTMLOutputController.h"
 #import "SPAppController.h"
 #import "SPDatabaseStructure.h"
 #import "SPBundleCommandRunner.h"

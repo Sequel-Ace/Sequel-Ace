@@ -71,7 +71,6 @@
 #import "SPFunctions.h"
 #import "SPCreateDatabaseInfo.h"
 #import "SPAppController.h"
-#import "SPBundleHTMLOutputController.h"
 #import "SPTableTriggers.h"
 #import "SPTableStructure.h"
 #import "SPPrintAccessory.h"
@@ -5245,7 +5244,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
             for (id win in [NSApp windows])
             {
-                if([[[[win delegate] class] description] isEqualToString:@"SPBundleHTMLOutputController"]) {
+                if([[[[win delegate] class] description] isEqualToString:@"SABundleHTMLOutputWindowController"]) {
                     if([[[win delegate] windowUUID] isEqualToString:uuid]) {
                         correspondingWindowFound = YES;
                         break;
@@ -5795,7 +5794,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 BOOL correspondingWindowFound = NO;
                 NSString *uuid = [data objectAtIndex:2];
                 for(id win in [NSApp windows]) {
-                    if([[[[win delegate] class] description] isEqualToString:@"SPBundleHTMLOutputController"]) {
+                    if([[[[win delegate] class] description] isEqualToString:@"SABundleHTMLOutputWindowController"]) {
                         if([[[win delegate] windowUUID] isEqualToString:uuid]) {
                             correspondingWindowFound = YES;
                             break;

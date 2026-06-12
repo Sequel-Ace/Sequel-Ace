@@ -308,6 +308,8 @@
 		51EF3E762FDC2A9800EFFF09 /* SAWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E752FDC2A9800EFFF09 /* SAWebView.swift */; };
 		51EF3E782FDC2AB700EFFF09 /* SABundleJSBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E772FDC2AB700EFFF09 /* SABundleJSBridgeTests.swift */; };
 		51EF3E792FDC2C8400EFFF09 /* SABundleJSBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E702FDC2A6500EFFF09 /* SABundleJSBridge.swift */; };
+		51EF3E7B2FDC2E5800EFFF09 /* SABundleHTMLOutputWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E7A2FDC2E5800EFFF09 /* SABundleHTMLOutputWindowController.swift */; };
+		51EF3E7D2FDC2E6300EFFF09 /* SABundleHTMLOutputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E7C2FDC2E6300EFFF09 /* SABundleHTMLOutputView.swift */; };
 		51F41FBA25F56A5900594BA5 /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51F41FB625F56A5900594BA5 /* MainWindow.xib */; };
 		51F4AFBF24B26665006144D5 /* NSAlertExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */; };
 		5806B76411A991EC00813A88 /* SPDocumentController.m in Sources */ = {isa = PBXBuildFile; fileRef = 5806B76311A991EC00813A88 /* SPDocumentController.m */; };
@@ -1082,6 +1084,8 @@
 		51EF3E702FDC2A6500EFFF09 /* SABundleJSBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SABundleJSBridge.swift; sourceTree = "<group>"; };
 		51EF3E752FDC2A9800EFFF09 /* SAWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAWebView.swift; sourceTree = "<group>"; };
 		51EF3E772FDC2AB700EFFF09 /* SABundleJSBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SABundleJSBridgeTests.swift; sourceTree = "<group>"; };
+		51EF3E7A2FDC2E5800EFFF09 /* SABundleHTMLOutputWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SABundleHTMLOutputWindowController.swift; sourceTree = "<group>"; };
+		51EF3E7C2FDC2E6300EFFF09 /* SABundleHTMLOutputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SABundleHTMLOutputView.swift; sourceTree = "<group>"; };
 		51F41FB625F56A5900594BA5 /* MainWindow.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainWindow.xib; sourceTree = "<group>"; };
 		51F4AFBD24B26665006144D5 /* Sequel-Ace-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Sequel-Ace-Bridging-Header.h"; sourceTree = "<group>"; };
 		51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSAlertExtension.swift; sourceTree = "<group>"; };
@@ -1556,6 +1560,8 @@
 				BC77C5E2129AA69E009AD832 /* SPBundleHTMLOutputController.h */,
 				BC77C5E3129AA69E009AD832 /* SPBundleHTMLOutputController.m */,
 				51EF3E702FDC2A6500EFFF09 /* SABundleJSBridge.swift */,
+				51EF3E7A2FDC2E5800EFFF09 /* SABundleHTMLOutputWindowController.swift */,
+				51EF3E7C2FDC2E6300EFFF09 /* SABundleHTMLOutputView.swift */,
 			);
 			name = "Bundle Support";
 			path = BundleSupport;
@@ -3465,6 +3471,7 @@
 				51EF3E762FDC2A9800EFFF09 /* SAWebView.swift in Sources */,
 				17D390C8127B65AF00672B13 /* SPGeneralPreferencePane.m in Sources */,
 				1A9D83A425514E740024B563 /* DateComponentsFormatterExtension.swift in Sources */,
+				51EF3E7B2FDC2E5800EFFF09 /* SABundleHTMLOutputWindowController.swift in Sources */,
 				17D390CB127B6BF800672B13 /* SPPreferencesUpgrade.m in Sources */,
 				51C8597C24C8A31400A8C7C4 /* StringExtension.swift in Sources */,
 				1785E9F7127D8C7500F468C8 /* SPPreferencePane.m in Sources */,
@@ -3514,6 +3521,7 @@
 				17D5B49E1553059F00EF3BB3 /* SPViewCopy.m in Sources */,
 				176E14D115570FE300FAF326 /* SPBundleCommandRunner.m in Sources */,
 				58DF9F3315AB26C2003B4330 /* SPDateAdditions.m in Sources */,
+				51EF3E7D2FDC2E6300EFFF09 /* SABundleHTMLOutputView.swift in Sources */,
 				58DF9F7315AB8509003B4330 /* SPSplitView.m in Sources */,
 				5843E247162B555B00EAA6D1 /* SPThreadAdditions.m in Sources */,
 				58D2A6A716FBDEFF002EB401 /* SPComboPopupButton.m in Sources */,
