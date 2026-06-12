@@ -213,8 +213,8 @@
 		50EA926A1AB246B8008D3C4F /* SPDatabaseActionTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 50EA92691AB246B8008D3C4F /* SPDatabaseActionTest.m */; };
 		50F530521ABCF66B002F2C1A /* resetTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 50F530511ABCF66B002F2C1A /* resetTemplate.pdf */; };
 		510247F62FD9F2CE00586DEA /* SAFavoriteDeletionPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 510247F52FD9F2CE00586DEA /* SAFavoriteDeletionPrompt.swift */; };
-		510247F92FD9F2DD00586DEA /* SAFavoriteDeletionPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 510247F52FD9F2CE00586DEA /* SAFavoriteDeletionPrompt.swift */; };
 		510247F82FD9F2DC00586DEA /* SAFavoriteDeletionPromptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 510247F72FD9F2DC00586DEA /* SAFavoriteDeletionPromptTests.swift */; };
+		510247F92FD9F2DD00586DEA /* SAFavoriteDeletionPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 510247F52FD9F2CE00586DEA /* SAFavoriteDeletionPrompt.swift */; };
 		5132930C25F586A900D803AD /* NotificationToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132930925F586A900D803AD /* NotificationToken.swift */; };
 		5132930D25F586A900D803AD /* TabManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132930A25F586A900D803AD /* TabManager.swift */; };
 		513515D2259354BB001E4533 /* NSImageExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 513515D1259354BB001E4533 /* NSImageExtensions.swift */; };
@@ -304,6 +304,10 @@
 		51CD0BF9258D06D8009E2484 /* BundleHTMLOutput.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BDB258D06D8009E2484 /* BundleHTMLOutput.xib */; };
 		51D9527625AE2B5300574BEB /* FMDB in Frameworks */ = {isa = PBXBuildFile; productRef = 51D9527525AE2B5300574BEB /* FMDB */; };
 		51DCBEF0257134190098E303 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 38C613721C8977E600B3B6EF /* libz.tbd */; };
+		51EF3E642FDC24EE00EFFF09 /* SAConnectionFormModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E632FDC24EE00EFFF09 /* SAConnectionFormModel.swift */; };
+		51EF3E652FDC24EF00EFFF09 /* SAConnectionFormModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E632FDC24EE00EFFF09 /* SAConnectionFormModel.swift */; };
+		51EF3E692FDC250300EFFF09 /* SAConnectionFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E682FDC250300EFFF09 /* SAConnectionFormView.swift */; };
+		51EF3E6B2FDC251800EFFF09 /* SAConnectionFormModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E6A2FDC251800EFFF09 /* SAConnectionFormModelTests.swift */; };
 		51F41FBA25F56A5900594BA5 /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51F41FB625F56A5900594BA5 /* MainWindow.xib */; };
 		51F4AFBF24B26665006144D5 /* NSAlertExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */; };
 		5806B76411A991EC00813A88 /* SPDocumentController.m in Sources */ = {isa = PBXBuildFile; fileRef = 5806B76311A991EC00813A88 /* SPDocumentController.m */; };
@@ -1075,6 +1079,9 @@
 		51CD0BD8258D06D8009E2484 /* ConnectionView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ConnectionView.xib; sourceTree = "<group>"; };
 		51CD0BDA258D06D8009E2484 /* DatabaseProcessList.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DatabaseProcessList.xib; sourceTree = "<group>"; };
 		51CD0BDB258D06D8009E2484 /* BundleHTMLOutput.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = BundleHTMLOutput.xib; sourceTree = "<group>"; };
+		51EF3E632FDC24EE00EFFF09 /* SAConnectionFormModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionFormModel.swift; sourceTree = "<group>"; };
+		51EF3E682FDC250300EFFF09 /* SAConnectionFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionFormView.swift; sourceTree = "<group>"; };
+		51EF3E6A2FDC251800EFFF09 /* SAConnectionFormModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionFormModelTests.swift; sourceTree = "<group>"; };
 		51F41FB625F56A5900594BA5 /* MainWindow.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainWindow.xib; sourceTree = "<group>"; };
 		51F4AFBD24B26665006144D5 /* Sequel-Ace-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Sequel-Ace-Bridging-Header.h"; sourceTree = "<group>"; };
 		51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSAlertExtension.swift; sourceTree = "<group>"; };
@@ -1861,6 +1868,8 @@
 				5147B0192F8C000600C4C14A /* SAFavoriteSearchTreeWalker.swift */,
 				AAA7A8F76494CE39908140FA /* SPDuplicateImportViewController.swift */,
 				510247F52FD9F2CE00586DEA /* SAFavoriteDeletionPrompt.swift */,
+				51EF3E632FDC24EE00EFFF09 /* SAConnectionFormModel.swift */,
+				51EF3E682FDC250300EFFF09 /* SAConnectionFormView.swift */,
 			);
 			name = "Connection View";
 			path = ConnectionView;
@@ -2524,6 +2533,7 @@
 				5147B00E2F8C000300C4C14A /* SAConnectionDetailsValidatorTests.swift */,
 				5147B0132F8C000400C4C14A /* SAConnectionFormHelpersTests.swift */,
 				510247F72FD9F2DC00586DEA /* SAFavoriteDeletionPromptTests.swift */,
+				51EF3E6A2FDC251800EFFF09 /* SAConnectionFormModelTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -3187,6 +3197,8 @@
 				F4C0BDAE2E9F4D5E8A1B0102 /* RDSIAMAuthentication.swift in Sources */,
 				F4C0BDAE2E9F4D5E8A1B0103 /* AWSSTSClient.swift in Sources */,
 				F4C0BDAE2E9F4D5E8A1B0104 /* AWSMFATokenDialog.swift in Sources */,
+				51EF3E652FDC24EF00EFFF09 /* SAConnectionFormModel.swift in Sources */,
+				51EF3E6B2FDC251800EFFF09 /* SAConnectionFormModelTests.swift in Sources */,
 				F4C0BDAE2E9F4D5E8A1B0105 /* AWSIAMAuthManager.swift in Sources */,
 				F4C0BDAE2E9F4D5E8A1B0106 /* AWSDirectoryBookmarkManager.swift in Sources */,
 				F4C0BDAE2E9F4D5E8A1B0109 /* OSLog.swift in Sources */,
@@ -3339,10 +3351,12 @@
 				F3A4B8C191E14E7094C9B012 /* RDSIAMAuthentication.swift in Sources */,
 				F3A4B8C191E14E7094C9B013 /* AWSSTSClient.swift in Sources */,
 				F3A4B8C191E14E7094C9B014 /* AWSMFATokenDialog.swift in Sources */,
+				51EF3E692FDC250300EFFF09 /* SAConnectionFormView.swift in Sources */,
 				F3A4B8C191E14E7094C9B015 /* AWSIAMAuthManager.swift in Sources */,
 				F3A4B8C191E14E7094C9B016 /* AWSDirectoryBookmarkManager.swift in Sources */,
 				FA1B2C3D4E5F6A7B8C9D0E11 /* VaultClient.swift in Sources */,
 				FA1B2C3D4E5F6A7B8C9D0E14 /* VaultOIDCHandler.swift in Sources */,
+				51EF3E642FDC24EE00EFFF09 /* SAConnectionFormModel.swift in Sources */,
 				FA1B2C3D4E5F6A7B8C9D0E15 /* VaultAuthManager.swift in Sources */,
 				387BBBA80FBCB6CB00B31746 /* SPTableRelations.m in Sources */,
 				1740FABB0FC4372F00CF3699 /* SPDatabaseData.m in Sources */,
