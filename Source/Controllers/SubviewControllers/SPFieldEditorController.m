@@ -50,6 +50,492 @@ typedef enum {
 	JsonSegment,
 } FieldEditorSegment;
 
+typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
+	SAPHPSerializedValueTypeNull = 0,
+	SAPHPSerializedValueTypeBoolean,
+	SAPHPSerializedValueTypeInteger,
+	SAPHPSerializedValueTypeDouble,
+	SAPHPSerializedValueTypeString,
+	SAPHPSerializedValueTypeArray,
+	SAPHPSerializedValueTypeObject,
+	SAPHPSerializedValueTypeCustomSerialized,
+	SAPHPSerializedValueTypeReference,
+};
+
+@class SAPHPSerializedValue;
+
+@interface SAPHPSerializedEntry : NSObject
+
+@property(nonatomic, strong) id key;
+@property(nonatomic) BOOL keyIsInteger;
+@property(nonatomic, strong) SAPHPSerializedValue *value;
+@property(nonatomic, weak) SAPHPSerializedEntry *parent;
+
+@end
+
+@interface SAPHPSerializedValue : NSObject
+
+@property(nonatomic) SAPHPSerializedValueType type;
+@property(nonatomic, copy) NSString *scalarValue;
+@property(nonatomic, copy) NSString *className;
+@property(nonatomic, copy) NSString *referenceType;
+@property(nonatomic, strong) NSMutableArray<SAPHPSerializedEntry *> *children;
+
++ (instancetype)valueWithType:(SAPHPSerializedValueType)type;
+- (BOOL)isContainer;
+- (BOOL)isScalarEditable;
+- (NSString *)typeLabel;
+- (NSString *)displayValue;
+- (NSString *)serializedString;
+
+@end
+
+@interface SAPHPSerializedParser : NSObject
+
++ (SAPHPSerializedValue *)parseString:(NSString *)input error:(NSString **)errorMessage;
+
+@end
+
+@interface SPFieldEditorController () <NSOutlineViewDataSource, NSOutlineViewDelegate>
+
+@property(nonatomic, strong) NSMenuItem *phpSerializedEditorMenuItem;
+@property(nonatomic, strong) NSPanel *phpSerializedEditorSheet;
+@property(nonatomic, strong) NSOutlineView *phpSerializedOutlineView;
+@property(nonatomic, strong) NSTextView *phpSerializedValueTextView;
+@property(nonatomic, strong) NSPopUpButton *phpSerializedTypePopup;
+@property(nonatomic, strong) NSTextField *phpSerializedSelectionLabel;
+@property(nonatomic, strong) NSButton *phpSerializedUpdateButton;
+@property(nonatomic, strong) NSButton *phpSerializedAddButton;
+@property(nonatomic, strong) NSButton *phpSerializedDeleteButton;
+@property(nonatomic, strong) SAPHPSerializedEntry *phpSerializedRootEntry;
+@property(nonatomic, weak) SAPHPSerializedEntry *phpSerializedSelectedEntry;
+@property(nonatomic) BOOL phpSerializedEditorAutomaticallyOpened;
+
+- (void)refreshPHPSerializedEditorAvailability;
+- (void)openPHPSerializedEditorIfCurrentTextIsStructured;
+- (IBAction)openPHPSerializedEditor:(id)sender;
+- (IBAction)applyPHPSerializedEditor:(id)sender;
+- (IBAction)cancelPHPSerializedEditor:(id)sender;
+- (IBAction)updatePHPSerializedSelectedValue:(id)sender;
+- (IBAction)addPHPSerializedChild:(id)sender;
+- (IBAction)deletePHPSerializedEntry:(id)sender;
+- (void)buildPHPSerializedEditorSheetIfNeeded;
+- (BOOL)populatePHPSerializedEditorFromCurrentTextShowingError:(BOOL)showError;
+- (BOOL)commitPHPSerializedSelectedValueShowingError:(BOOL)showError;
+
+@end
+
+@implementation SAPHPSerializedEntry
+@end
+
+@implementation SAPHPSerializedValue
+
++ (instancetype)valueWithType:(SAPHPSerializedValueType)type
+{
+	SAPHPSerializedValue *value = [[SAPHPSerializedValue alloc] init];
+	value.type = type;
+	value.scalarValue = @"";
+	value.children = [[NSMutableArray alloc] init];
+	return value;
+}
+
+- (BOOL)isContainer
+{
+	return self.type == SAPHPSerializedValueTypeArray || self.type == SAPHPSerializedValueTypeObject;
+}
+
+- (BOOL)isScalarEditable
+{
+	return self.type == SAPHPSerializedValueTypeNull
+		|| self.type == SAPHPSerializedValueTypeBoolean
+		|| self.type == SAPHPSerializedValueTypeInteger
+		|| self.type == SAPHPSerializedValueTypeDouble
+		|| self.type == SAPHPSerializedValueTypeString;
+}
+
+- (NSString *)typeLabel
+{
+	switch (self.type) {
+		case SAPHPSerializedValueTypeNull:
+			return @"null";
+		case SAPHPSerializedValueTypeBoolean:
+			return @"bool";
+		case SAPHPSerializedValueTypeInteger:
+			return @"int";
+		case SAPHPSerializedValueTypeDouble:
+			return @"float";
+		case SAPHPSerializedValueTypeString:
+			return @"string";
+		case SAPHPSerializedValueTypeArray:
+			return [NSString stringWithFormat:@"array (%lu)", (unsigned long)[self.children count]];
+		case SAPHPSerializedValueTypeObject:
+			return [NSString stringWithFormat:@"object %@ (%lu)", (self.className)?:@"", (unsigned long)[self.children count]];
+		case SAPHPSerializedValueTypeCustomSerialized:
+			return [NSString stringWithFormat:@"custom %@", (self.className)?:@""];
+		case SAPHPSerializedValueTypeReference:
+			return [NSString stringWithFormat:@"%@ reference", (self.referenceType)?:@"r"];
+	}
+	return @"";
+}
+
+- (NSString *)displayValue
+{
+	switch (self.type) {
+		case SAPHPSerializedValueTypeNull:
+			return @"NULL";
+		case SAPHPSerializedValueTypeBoolean:
+			return [self.scalarValue isEqualToString:@"1"] ? @"true" : @"false";
+		case SAPHPSerializedValueTypeInteger:
+		case SAPHPSerializedValueTypeDouble:
+		case SAPHPSerializedValueTypeString:
+			return (self.scalarValue)?:@"";
+		case SAPHPSerializedValueTypeCustomSerialized:
+			return (self.scalarValue)?:@"";
+		case SAPHPSerializedValueTypeReference:
+			return (self.scalarValue)?:@"";
+		case SAPHPSerializedValueTypeArray:
+		case SAPHPSerializedValueTypeObject:
+			return @"";
+	}
+	return @"";
+}
+
+- (NSString *)serializedStringForKey:(SAPHPSerializedEntry *)entry
+{
+	if (entry.keyIsInteger) {
+		return [NSString stringWithFormat:@"i:%@;", [entry.key description]];
+	}
+
+	NSString *key = ([entry.key isKindOfClass:[NSString class]]) ? entry.key : [[entry.key description] copy];
+	NSData *keyData = [key dataUsingEncoding:NSUTF8StringEncoding];
+	return [NSString stringWithFormat:@"s:%lu:\"%@\";", (unsigned long)[keyData length], key];
+}
+
+- (NSString *)serializedString
+{
+	switch (self.type) {
+		case SAPHPSerializedValueTypeNull:
+			return @"N;";
+		case SAPHPSerializedValueTypeBoolean:
+			return [NSString stringWithFormat:@"b:%@;", [self.scalarValue isEqualToString:@"1"] ? @"1" : @"0"];
+		case SAPHPSerializedValueTypeInteger:
+			return [NSString stringWithFormat:@"i:%@;", (self.scalarValue.length) ? self.scalarValue : @"0"];
+		case SAPHPSerializedValueTypeDouble:
+			return [NSString stringWithFormat:@"d:%@;", (self.scalarValue.length) ? self.scalarValue : @"0"];
+		case SAPHPSerializedValueTypeString: {
+			NSString *string = (self.scalarValue)?:@"";
+			NSData *stringData = [string dataUsingEncoding:NSUTF8StringEncoding];
+			return [NSString stringWithFormat:@"s:%lu:\"%@\";", (unsigned long)[stringData length], string];
+		}
+		case SAPHPSerializedValueTypeArray: {
+			NSMutableString *output = [NSMutableString stringWithFormat:@"a:%lu:{", (unsigned long)[self.children count]];
+			for (SAPHPSerializedEntry *entry in self.children) {
+				[output appendString:[self serializedStringForKey:entry]];
+				[output appendString:[entry.value serializedString]];
+			}
+			[output appendString:@"}"];
+			return output;
+		}
+		case SAPHPSerializedValueTypeObject: {
+			NSString *className = (self.className)?:@"stdClass";
+			NSData *classData = [className dataUsingEncoding:NSUTF8StringEncoding];
+			NSMutableString *output = [NSMutableString stringWithFormat:@"O:%lu:\"%@\":%lu:{", (unsigned long)[classData length], className, (unsigned long)[self.children count]];
+			for (SAPHPSerializedEntry *entry in self.children) {
+				[output appendString:[self serializedStringForKey:entry]];
+				[output appendString:[entry.value serializedString]];
+			}
+			[output appendString:@"}"];
+			return output;
+		}
+		case SAPHPSerializedValueTypeCustomSerialized: {
+			NSString *className = (self.className)?:@"";
+			NSString *payload = (self.scalarValue)?:@"";
+			NSData *classData = [className dataUsingEncoding:NSUTF8StringEncoding];
+			NSData *payloadData = [payload dataUsingEncoding:NSUTF8StringEncoding];
+			return [NSString stringWithFormat:@"C:%lu:\"%@\":%lu:{%@}", (unsigned long)[classData length], className, (unsigned long)[payloadData length], payload];
+		}
+		case SAPHPSerializedValueTypeReference:
+			return [NSString stringWithFormat:@"%@:%@;", (self.referenceType)?:@"r", (self.scalarValue.length) ? self.scalarValue : @"1"];
+	}
+	return @"N;";
+}
+
+@end
+
+@interface SAPHPSerializedParser ()
+
+@property(nonatomic, strong) NSData *data;
+@property(nonatomic) NSUInteger position;
+@property(nonatomic, copy) NSString *errorMessage;
+
+@end
+
+@implementation SAPHPSerializedParser
+
++ (SAPHPSerializedValue *)parseString:(NSString *)input error:(NSString **)errorMessage
+{
+	NSString *trimmedInput = [(input)?:@"" stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+	if (![trimmedInput length]) {
+		if (errorMessage) *errorMessage = NSLocalizedString(@"No serialized data was provided.", @"PHP serialized editor empty input error");
+		return nil;
+	}
+
+	SAPHPSerializedParser *parser = [[SAPHPSerializedParser alloc] init];
+	parser.data = [trimmedInput dataUsingEncoding:NSUTF8StringEncoding];
+	parser.position = 0;
+
+	SAPHPSerializedValue *value = [parser parseValue];
+	if (!value) {
+		if (errorMessage) *errorMessage = parser.errorMessage ?: NSLocalizedString(@"Unable to parse PHP serialized data.", @"PHP serialized editor parse error");
+		return nil;
+	}
+
+	if (parser.position != [parser.data length]) {
+		if (errorMessage) *errorMessage = NSLocalizedString(@"Unexpected trailing characters after serialized value.", @"PHP serialized editor trailing input error");
+		return nil;
+	}
+
+	return value;
+}
+
+- (unsigned char)currentByte
+{
+	if (self.position >= [self.data length]) return 0;
+	const unsigned char *bytes = [self.data bytes];
+	return bytes[self.position];
+}
+
+- (BOOL)consumeByte:(unsigned char)byte
+{
+	if ([self currentByte] != byte) {
+		self.errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Expected '%c'.", @"PHP serialized editor expected byte error"), byte];
+		return NO;
+	}
+	self.position++;
+	return YES;
+}
+
+- (NSString *)readUntilByte:(unsigned char)delimiter
+{
+	const unsigned char *bytes = [self.data bytes];
+	NSUInteger start = self.position;
+	NSUInteger length = [self.data length];
+	while (self.position < length && bytes[self.position] != delimiter) {
+		self.position++;
+	}
+
+	if (self.position >= length) {
+		self.errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Expected delimiter '%c'.", @"PHP serialized editor expected delimiter error"), delimiter];
+		return nil;
+	}
+
+	NSData *subdata = [self.data subdataWithRange:NSMakeRange(start, self.position - start)];
+	self.position++;
+	return [[NSString alloc] initWithData:subdata encoding:NSASCIIStringEncoding];
+}
+
+- (NSString *)readBytesAsString:(NSUInteger)byteLength
+{
+	if (self.position + byteLength > [self.data length]) {
+		self.errorMessage = NSLocalizedString(@"String length exceeds available serialized data.", @"PHP serialized editor string length error");
+		return nil;
+	}
+
+	NSData *subdata = [self.data subdataWithRange:NSMakeRange(self.position, byteLength)];
+	self.position += byteLength;
+
+	NSString *string = [[NSString alloc] initWithData:subdata encoding:NSUTF8StringEncoding];
+	if (!string) {
+		string = [[NSString alloc] initWithData:subdata encoding:NSISOLatin1StringEncoding];
+	}
+	if (!string) {
+		self.errorMessage = NSLocalizedString(@"Serialized string could not be decoded as text.", @"PHP serialized editor string decoding error");
+	}
+	return string;
+}
+
+- (SAPHPSerializedValue *)parseValue
+{
+	if (self.position >= [self.data length]) {
+		self.errorMessage = NSLocalizedString(@"Unexpected end of serialized data.", @"PHP serialized editor end of input error");
+		return nil;
+	}
+
+	unsigned char typeByte = [self currentByte];
+	self.position++;
+
+	if (typeByte == 'N') {
+		if (![self consumeByte:';']) return nil;
+		return [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeNull];
+	}
+
+	if (![self consumeByte:':']) return nil;
+
+	if (typeByte == 'b') {
+		NSString *raw = [self readUntilByte:';'];
+		if (![raw isEqualToString:@"0"] && ![raw isEqualToString:@"1"]) {
+			self.errorMessage = NSLocalizedString(@"Invalid PHP boolean value.", @"PHP serialized editor invalid boolean error");
+			return nil;
+		}
+		SAPHPSerializedValue *value = [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeBoolean];
+		value.scalarValue = raw;
+		return value;
+	}
+
+	if (typeByte == 'i') {
+		NSString *raw = [self readUntilByte:';'];
+		if (![self stringIsInteger:raw]) {
+			self.errorMessage = NSLocalizedString(@"Invalid PHP integer value.", @"PHP serialized editor invalid integer error");
+			return nil;
+		}
+		SAPHPSerializedValue *value = [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeInteger];
+		value.scalarValue = raw;
+		return value;
+	}
+
+	if (typeByte == 'd') {
+		NSString *raw = [self readUntilByte:';'];
+		if (![raw length]) {
+			self.errorMessage = NSLocalizedString(@"Invalid PHP float value.", @"PHP serialized editor invalid float error");
+			return nil;
+		}
+		SAPHPSerializedValue *value = [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeDouble];
+		value.scalarValue = raw;
+		return value;
+	}
+
+	if (typeByte == 's') {
+		NSString *lengthString = [self readUntilByte:':'];
+		if (![self stringIsUnsignedInteger:lengthString]) return nil;
+		if (![self consumeByte:'"']) return nil;
+		NSString *string = [self readBytesAsString:(NSUInteger)[lengthString longLongValue]];
+		if (!string) return nil;
+		if (![self consumeByte:'"'] || ![self consumeByte:';']) return nil;
+
+		SAPHPSerializedValue *value = [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeString];
+		value.scalarValue = string;
+		return value;
+	}
+
+	if (typeByte == 'a') {
+		NSString *countString = [self readUntilByte:':'];
+		if (![self stringIsUnsignedInteger:countString]) return nil;
+		if (![self consumeByte:'{']) return nil;
+
+		SAPHPSerializedValue *arrayValue = [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeArray];
+		NSUInteger count = (NSUInteger)[countString longLongValue];
+		for (NSUInteger i = 0; i < count; i++) {
+			SAPHPSerializedValue *keyValue = [self parseValue];
+			if (!keyValue) return nil;
+			if (keyValue.type != SAPHPSerializedValueTypeInteger && keyValue.type != SAPHPSerializedValueTypeString) {
+				self.errorMessage = NSLocalizedString(@"PHP array keys must be integers or strings.", @"PHP serialized editor invalid key error");
+				return nil;
+			}
+			SAPHPSerializedValue *childValue = [self parseValue];
+			if (!childValue) return nil;
+
+			SAPHPSerializedEntry *entry = [[SAPHPSerializedEntry alloc] init];
+			entry.keyIsInteger = keyValue.type == SAPHPSerializedValueTypeInteger;
+			entry.key = keyValue.scalarValue;
+			entry.value = childValue;
+			[arrayValue.children addObject:entry];
+		}
+
+		if (![self consumeByte:'}']) return nil;
+		return arrayValue;
+	}
+
+	if (typeByte == 'O') {
+		NSString *classLengthString = [self readUntilByte:':'];
+		if (![self stringIsUnsignedInteger:classLengthString]) return nil;
+		if (![self consumeByte:'"']) return nil;
+		NSString *className = [self readBytesAsString:(NSUInteger)[classLengthString longLongValue]];
+		if (!className) return nil;
+		if (![self consumeByte:'"'] || ![self consumeByte:':']) return nil;
+		NSString *countString = [self readUntilByte:':'];
+		if (![self stringIsUnsignedInteger:countString]) return nil;
+		if (![self consumeByte:'{']) return nil;
+
+		SAPHPSerializedValue *objectValue = [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeObject];
+		objectValue.className = className;
+		NSUInteger count = (NSUInteger)[countString longLongValue];
+		for (NSUInteger i = 0; i < count; i++) {
+			SAPHPSerializedValue *keyValue = [self parseValue];
+			if (!keyValue) return nil;
+			if (keyValue.type != SAPHPSerializedValueTypeInteger && keyValue.type != SAPHPSerializedValueTypeString) {
+				self.errorMessage = NSLocalizedString(@"PHP object property names must be integers or strings.", @"PHP serialized editor invalid property error");
+				return nil;
+			}
+			SAPHPSerializedValue *childValue = [self parseValue];
+			if (!childValue) return nil;
+
+			SAPHPSerializedEntry *entry = [[SAPHPSerializedEntry alloc] init];
+			entry.keyIsInteger = keyValue.type == SAPHPSerializedValueTypeInteger;
+			entry.key = keyValue.scalarValue;
+			entry.value = childValue;
+			[objectValue.children addObject:entry];
+		}
+
+		if (![self consumeByte:'}']) return nil;
+		return objectValue;
+	}
+
+	if (typeByte == 'C') {
+		NSString *classLengthString = [self readUntilByte:':'];
+		if (![self stringIsUnsignedInteger:classLengthString]) return nil;
+		if (![self consumeByte:'"']) return nil;
+		NSString *className = [self readBytesAsString:(NSUInteger)[classLengthString longLongValue]];
+		if (!className) return nil;
+		if (![self consumeByte:'"'] || ![self consumeByte:':']) return nil;
+		NSString *payloadLengthString = [self readUntilByte:':'];
+		if (![self stringIsUnsignedInteger:payloadLengthString]) return nil;
+		if (![self consumeByte:'{']) return nil;
+		NSString *payload = [self readBytesAsString:(NSUInteger)[payloadLengthString longLongValue]];
+		if (!payload) return nil;
+		if (![self consumeByte:'}']) return nil;
+
+		SAPHPSerializedValue *customValue = [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeCustomSerialized];
+		customValue.className = className;
+		customValue.scalarValue = payload;
+		return customValue;
+	}
+
+	if (typeByte == 'r' || typeByte == 'R') {
+		NSString *reference = [self readUntilByte:';'];
+		if (![self stringIsUnsignedInteger:reference]) return nil;
+		SAPHPSerializedValue *referenceValue = [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeReference];
+		referenceValue.referenceType = [NSString stringWithFormat:@"%c", typeByte];
+		referenceValue.scalarValue = reference;
+		return referenceValue;
+	}
+
+	self.errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unsupported PHP serialized type '%c'.", @"PHP serialized editor unsupported type error"), typeByte];
+	return nil;
+}
+
+- (BOOL)stringIsInteger:(NSString *)string
+{
+	if (![string length]) return NO;
+	NSScanner *scanner = [NSScanner scannerWithString:string];
+	NSInteger value = 0;
+	return [scanner scanInteger:&value] && [scanner isAtEnd];
+}
+
+- (BOOL)stringIsUnsignedInteger:(NSString *)string
+{
+	if (![string length]) return NO;
+	for (NSUInteger i = 0; i < [string length]; i++) {
+		unichar c = [string characterAtIndex:i];
+		if (c < '0' || c > '9') {
+			self.errorMessage = NSLocalizedString(@"Invalid serialized length or count.", @"PHP serialized editor invalid count error");
+			return NO;
+		}
+	}
+	return YES;
+}
+
+@end
+
 @implementation SPFieldEditorController
 
 @synthesize editedFieldInfo;
@@ -176,6 +662,14 @@ typedef enum {
 			}
 		}
 
+		[menu addItem:[NSMenuItem separatorItem]];
+		self.phpSerializedEditorMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Edit PHP Serialized Data as Tree", @"PHP serialized data editor menu item")
+																	 action:@selector(openPHPSerializedEditor:)
+															  keyEquivalent:@""];
+		[self.phpSerializedEditorMenuItem setTarget:self];
+		[self.phpSerializedEditorMenuItem setEnabled:NO];
+		[menu addItem:self.phpSerializedEditorMenuItem];
+
 		qlTypes = @{SPQuickLookTypes : qlTypesItems};
 
 		fieldType = @"";
@@ -227,6 +721,10 @@ typedef enum {
 	_isEditable     = isEditable;
 	contextInfo     = theContextInfo;
 	callerInstance  = sender;
+	self.phpSerializedRootEntry = nil;
+	self.phpSerializedSelectedEntry = nil;
+	self.phpSerializedEditorAutomaticallyOpened = NO;
+	[self refreshPHPSerializedEditorAvailability];
 	_isGeometry     = ([[fieldType uppercaseString] isEqualToString:@"GEOMETRY"]) ? YES : NO;
 	_isJSON         = ([[fieldType uppercaseString] isEqualToString:SPMySQLJsonType]);
 	NSString *label = [self buildLabelForField:fieldName];
@@ -416,6 +914,8 @@ typedef enum {
 
 			// Set focus
 			[usedSheet makeFirstResponder:image == nil || _isGeometry ? editTextView : editImage];
+			[self refreshPHPSerializedEditorAvailability];
+			[self performSelector:@selector(openPHPSerializedEditorIfCurrentTextIsStructured) withObject:nil afterDelay:0.15];
 		}
 
 		editSheetWillBeInitialized = NO;
@@ -1351,6 +1851,7 @@ typedef enum {
 
 		// set edit data to text
 		sheetEditData = [NSString stringWithString:[editTextView string]];
+		[self refreshPHPSerializedEditorAvailability];
 	}
 }
 
@@ -1403,6 +1904,456 @@ typedef enum {
 
 	[self performSelector:@selector(setAllowedUndo) withObject:nil afterDelay:0.09];
 
+}
+
+#pragma mark -
+#pragma mark PHP Serialized Editor
+
+- (NSString *)currentPHPSerializedText
+{
+	return ([[editTextView string] length]) ? [editTextView string] : @"";
+}
+
+- (BOOL)populatePHPSerializedEditorFromCurrentTextShowingError:(BOOL)showError
+{
+	NSString *errorMessage = nil;
+	SAPHPSerializedValue *rootValue = [SAPHPSerializedParser parseString:[self currentPHPSerializedText] error:&errorMessage];
+
+	if (!rootValue) {
+		if (showError) {
+			[SPTooltip showWithObject:errorMessage ?: NSLocalizedString(@"The current field does not contain valid PHP serialized data.", @"PHP serialized editor invalid tooltip")];
+		}
+		return NO;
+	}
+
+	SAPHPSerializedEntry *rootEntry = [[SAPHPSerializedEntry alloc] init];
+	rootEntry.key = @"root";
+	rootEntry.keyIsInteger = NO;
+	rootEntry.value = rootValue;
+
+	[self assignPHPSerializedParentForEntry:rootEntry];
+	self.phpSerializedRootEntry = rootEntry;
+	self.phpSerializedSelectedEntry = rootEntry;
+	return YES;
+}
+
+- (void)assignPHPSerializedParentForEntry:(SAPHPSerializedEntry *)entry
+{
+	for (SAPHPSerializedEntry *child in entry.value.children) {
+		child.parent = entry;
+		[self assignPHPSerializedParentForEntry:child];
+	}
+}
+
+- (void)refreshPHPSerializedEditorAvailability
+{
+	NSString *errorMessage = nil;
+	SAPHPSerializedValue *value = [SAPHPSerializedParser parseString:[self currentPHPSerializedText] error:&errorMessage];
+	[self.phpSerializedEditorMenuItem setEnabled:(value != nil && _isEditable && !_isJSON && !_isGeometry)];
+}
+
+- (void)openPHPSerializedEditorIfCurrentTextIsStructured
+{
+	if (self.phpSerializedEditorAutomaticallyOpened || ![self.phpSerializedEditorMenuItem isEnabled]) return;
+
+	NSString *errorMessage = nil;
+	SAPHPSerializedValue *value = [SAPHPSerializedParser parseString:[self currentPHPSerializedText] error:&errorMessage];
+	if (![value isContainer] && value.type != SAPHPSerializedValueTypeCustomSerialized) return;
+
+	self.phpSerializedEditorAutomaticallyOpened = YES;
+	[self openPHPSerializedEditor:self];
+}
+
+- (IBAction)openPHPSerializedEditor:(id)sender
+{
+	if (![self populatePHPSerializedEditorFromCurrentTextShowingError:YES]) return;
+
+	[self buildPHPSerializedEditorSheetIfNeeded];
+	[self.phpSerializedOutlineView reloadData];
+	[self.phpSerializedOutlineView expandItem:self.phpSerializedRootEntry expandChildren:YES];
+	[self.phpSerializedOutlineView selectRowIndexes:[NSIndexSet indexSetWithIndex:0] byExtendingSelection:NO];
+	[self updatePHPSerializedInspectorForEntry:self.phpSerializedRootEntry];
+
+	if ([self.phpSerializedEditorSheet isSheet]) return;
+
+	[editSheet beginSheet:self.phpSerializedEditorSheet completionHandler:nil];
+}
+
+- (void)buildPHPSerializedEditorSheetIfNeeded
+{
+	if (self.phpSerializedEditorSheet) return;
+
+	NSPanel *panel = [[NSPanel alloc] initWithContentRect:NSMakeRect(0, 0, 820, 520)
+												styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskResizable
+												  backing:NSBackingStoreBuffered
+													defer:NO];
+	[panel setTitle:NSLocalizedString(@"PHP Serialized Data", @"PHP serialized editor sheet title")];
+	[panel setMinSize:NSMakeSize(650, 420)];
+	self.phpSerializedEditorSheet = panel;
+
+	NSView *contentView = [panel contentView];
+
+	NSScrollView *outlineScrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+	[outlineScrollView setTranslatesAutoresizingMaskIntoConstraints:NO];
+	[outlineScrollView setHasVerticalScroller:YES];
+	[outlineScrollView setHasHorizontalScroller:YES];
+	[outlineScrollView setBorderType:NSBezelBorder];
+
+	NSOutlineView *outlineView = [[NSOutlineView alloc] initWithFrame:NSZeroRect];
+	NSTableColumn *keyColumn = [[NSTableColumn alloc] initWithIdentifier:@"key"];
+	[keyColumn setTitle:NSLocalizedString(@"Key", @"PHP serialized editor key column")];
+	[keyColumn setWidth:170];
+	NSTableColumn *typeColumn = [[NSTableColumn alloc] initWithIdentifier:@"type"];
+	[typeColumn setTitle:NSLocalizedString(@"Type", @"PHP serialized editor type column")];
+	[typeColumn setWidth:130];
+	NSTableColumn *valueColumn = [[NSTableColumn alloc] initWithIdentifier:@"value"];
+	[valueColumn setTitle:NSLocalizedString(@"Value", @"PHP serialized editor value column")];
+	[valueColumn setWidth:260];
+
+	[outlineView addTableColumn:keyColumn];
+	[outlineView addTableColumn:typeColumn];
+	[outlineView addTableColumn:valueColumn];
+	[outlineView setOutlineTableColumn:keyColumn];
+	[outlineView setDelegate:self];
+	[outlineView setDataSource:self];
+	[outlineView setUsesAlternatingRowBackgroundColors:YES];
+	[outlineView setAllowsColumnResizing:YES];
+	[outlineView setAllowsMultipleSelection:NO];
+	[outlineScrollView setDocumentView:outlineView];
+	self.phpSerializedOutlineView = outlineView;
+
+	NSView *inspectorView = [[NSView alloc] initWithFrame:NSZeroRect];
+	[inspectorView setTranslatesAutoresizingMaskIntoConstraints:NO];
+
+	NSTextField *selectionLabel = [NSTextField wrappingLabelWithString:@""];
+	[selectionLabel setTranslatesAutoresizingMaskIntoConstraints:NO];
+	self.phpSerializedSelectionLabel = selectionLabel;
+
+	NSPopUpButton *typePopup = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:NO];
+	[typePopup setTranslatesAutoresizingMaskIntoConstraints:NO];
+	[typePopup addItemsWithTitles:@[
+		NSLocalizedString(@"String", @"PHP serialized editor string type"),
+		NSLocalizedString(@"Integer", @"PHP serialized editor integer type"),
+		NSLocalizedString(@"Float", @"PHP serialized editor float type"),
+		NSLocalizedString(@"Boolean", @"PHP serialized editor boolean type"),
+		NSLocalizedString(@"Null", @"PHP serialized editor null type")
+	]];
+	self.phpSerializedTypePopup = typePopup;
+
+	NSScrollView *valueScrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+	[valueScrollView setTranslatesAutoresizingMaskIntoConstraints:NO];
+	[valueScrollView setHasVerticalScroller:YES];
+	[valueScrollView setBorderType:NSBezelBorder];
+
+	NSTextView *valueTextView = [[NSTextView alloc] initWithFrame:NSZeroRect];
+	[valueTextView setRichText:NO];
+	[valueTextView setUsesFindBar:YES];
+	[valueTextView setAutomaticDashSubstitutionEnabled:NO];
+	[valueTextView setAutomaticQuoteSubstitutionEnabled:NO];
+	[valueTextView setFont:[self selectFont]];
+	[valueScrollView setDocumentView:valueTextView];
+	self.phpSerializedValueTextView = valueTextView;
+
+	NSButton *updateButton = [NSButton buttonWithTitle:NSLocalizedString(@"Update Selected", @"PHP serialized editor update selected button")
+											   target:self
+											   action:@selector(updatePHPSerializedSelectedValue:)];
+	[updateButton setTranslatesAutoresizingMaskIntoConstraints:NO];
+	self.phpSerializedUpdateButton = updateButton;
+
+	NSButton *addButton = [NSButton buttonWithTitle:NSLocalizedString(@"Add Child", @"PHP serialized editor add child button")
+											target:self
+											action:@selector(addPHPSerializedChild:)];
+	[addButton setTranslatesAutoresizingMaskIntoConstraints:NO];
+	self.phpSerializedAddButton = addButton;
+
+	NSButton *deleteButton = [NSButton buttonWithTitle:NSLocalizedString(@"Delete", @"PHP serialized editor delete button")
+											   target:self
+											   action:@selector(deletePHPSerializedEntry:)];
+	[deleteButton setTranslatesAutoresizingMaskIntoConstraints:NO];
+	self.phpSerializedDeleteButton = deleteButton;
+
+	NSButton *cancelButton = [NSButton buttonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")
+											   target:self
+											   action:@selector(cancelPHPSerializedEditor:)];
+	[cancelButton setTranslatesAutoresizingMaskIntoConstraints:NO];
+
+	NSButton *applyButton = [NSButton buttonWithTitle:NSLocalizedString(@"Apply to Field", @"PHP serialized editor apply button")
+											  target:self
+											  action:@selector(applyPHPSerializedEditor:)];
+	[applyButton setTranslatesAutoresizingMaskIntoConstraints:NO];
+	[applyButton setKeyEquivalent:@"\r"];
+
+	[contentView addSubview:outlineScrollView];
+	[contentView addSubview:inspectorView];
+	[contentView addSubview:addButton];
+	[contentView addSubview:deleteButton];
+	[contentView addSubview:cancelButton];
+	[contentView addSubview:applyButton];
+
+	[inspectorView addSubview:selectionLabel];
+	[inspectorView addSubview:typePopup];
+	[inspectorView addSubview:valueScrollView];
+	[inspectorView addSubview:updateButton];
+
+	[NSLayoutConstraint activateConstraints:@[
+		[outlineScrollView.leadingAnchor constraintEqualToAnchor:contentView.leadingAnchor constant:14],
+		[outlineScrollView.topAnchor constraintEqualToAnchor:contentView.topAnchor constant:14],
+		[outlineScrollView.bottomAnchor constraintEqualToAnchor:contentView.bottomAnchor constant:-58],
+		[outlineScrollView.widthAnchor constraintEqualToConstant:470],
+
+		[inspectorView.leadingAnchor constraintEqualToAnchor:outlineScrollView.trailingAnchor constant:12],
+		[inspectorView.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor constant:-14],
+		[inspectorView.topAnchor constraintEqualToAnchor:outlineScrollView.topAnchor],
+		[inspectorView.bottomAnchor constraintEqualToAnchor:outlineScrollView.bottomAnchor],
+
+		[selectionLabel.leadingAnchor constraintEqualToAnchor:inspectorView.leadingAnchor],
+		[selectionLabel.trailingAnchor constraintEqualToAnchor:inspectorView.trailingAnchor],
+		[selectionLabel.topAnchor constraintEqualToAnchor:inspectorView.topAnchor],
+
+		[typePopup.leadingAnchor constraintEqualToAnchor:inspectorView.leadingAnchor],
+		[typePopup.topAnchor constraintEqualToAnchor:selectionLabel.bottomAnchor constant:12],
+		[typePopup.widthAnchor constraintEqualToConstant:160],
+
+		[valueScrollView.leadingAnchor constraintEqualToAnchor:inspectorView.leadingAnchor],
+		[valueScrollView.trailingAnchor constraintEqualToAnchor:inspectorView.trailingAnchor],
+		[valueScrollView.topAnchor constraintEqualToAnchor:typePopup.bottomAnchor constant:10],
+		[valueScrollView.bottomAnchor constraintEqualToAnchor:updateButton.topAnchor constant:-10],
+
+		[updateButton.trailingAnchor constraintEqualToAnchor:inspectorView.trailingAnchor],
+		[updateButton.bottomAnchor constraintEqualToAnchor:inspectorView.bottomAnchor],
+
+		[addButton.leadingAnchor constraintEqualToAnchor:outlineScrollView.leadingAnchor],
+		[addButton.bottomAnchor constraintEqualToAnchor:contentView.bottomAnchor constant:-14],
+		[deleteButton.leadingAnchor constraintEqualToAnchor:addButton.trailingAnchor constant:8],
+		[deleteButton.centerYAnchor constraintEqualToAnchor:addButton.centerYAnchor],
+
+		[applyButton.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor constant:-14],
+		[applyButton.bottomAnchor constraintEqualToAnchor:contentView.bottomAnchor constant:-14],
+		[cancelButton.trailingAnchor constraintEqualToAnchor:applyButton.leadingAnchor constant:-8],
+		[cancelButton.centerYAnchor constraintEqualToAnchor:applyButton.centerYAnchor],
+	]];
+}
+
+- (NSString *)keyLabelForPHPSerializedEntry:(SAPHPSerializedEntry *)entry
+{
+	if (entry == self.phpSerializedRootEntry) return @"root";
+	if (entry.keyIsInteger) return [NSString stringWithFormat:@"[%@]", [entry.key description]];
+	return (entry.key)?:@"";
+}
+
+- (void)updatePHPSerializedInspectorForEntry:(SAPHPSerializedEntry *)entry
+{
+	self.phpSerializedSelectedEntry = entry;
+	SAPHPSerializedValue *value = entry.value;
+	[self.phpSerializedSelectionLabel setStringValue:[NSString stringWithFormat:@"%@  %@", [self keyLabelForPHPSerializedEntry:entry], [value typeLabel]]];
+
+	BOOL canEditScalar = [value isScalarEditable];
+	[self.phpSerializedTypePopup setEnabled:canEditScalar && _isEditable];
+	[self.phpSerializedValueTextView setEditable:canEditScalar && _isEditable];
+	[self.phpSerializedUpdateButton setEnabled:canEditScalar && _isEditable];
+	[self.phpSerializedAddButton setEnabled:[value isContainer] && _isEditable];
+	[self.phpSerializedDeleteButton setEnabled:(entry != self.phpSerializedRootEntry && _isEditable)];
+
+	switch (value.type) {
+		case SAPHPSerializedValueTypeString:
+			[self.phpSerializedTypePopup selectItemWithTitle:NSLocalizedString(@"String", @"PHP serialized editor string type")];
+			break;
+		case SAPHPSerializedValueTypeInteger:
+			[self.phpSerializedTypePopup selectItemWithTitle:NSLocalizedString(@"Integer", @"PHP serialized editor integer type")];
+			break;
+		case SAPHPSerializedValueTypeDouble:
+			[self.phpSerializedTypePopup selectItemWithTitle:NSLocalizedString(@"Float", @"PHP serialized editor float type")];
+			break;
+		case SAPHPSerializedValueTypeBoolean:
+			[self.phpSerializedTypePopup selectItemWithTitle:NSLocalizedString(@"Boolean", @"PHP serialized editor boolean type")];
+			break;
+		case SAPHPSerializedValueTypeNull:
+			[self.phpSerializedTypePopup selectItemWithTitle:NSLocalizedString(@"Null", @"PHP serialized editor null type")];
+			break;
+		default:
+			[self.phpSerializedTypePopup selectItemAtIndex:0];
+			break;
+	}
+
+	if (canEditScalar || value.type == SAPHPSerializedValueTypeCustomSerialized || value.type == SAPHPSerializedValueTypeReference) {
+		[self.phpSerializedValueTextView setString:[value displayValue]];
+	}
+	else {
+		[self.phpSerializedValueTextView setString:NSLocalizedString(@"Select a scalar value to edit it. Arrays and objects can be expanded in the tree.", @"PHP serialized editor container inspector text")];
+	}
+}
+
+- (BOOL)commitPHPSerializedSelectedValueShowingError:(BOOL)showError
+{
+	SAPHPSerializedEntry *entry = self.phpSerializedSelectedEntry;
+	if (!entry || ![entry.value isScalarEditable]) return YES;
+
+	NSString *selectedType = [[self.phpSerializedTypePopup selectedItem] title];
+	NSString *rawValue = [self.phpSerializedValueTextView string] ?: @"";
+
+	if ([selectedType isEqualToString:NSLocalizedString(@"String", @"PHP serialized editor string type")]) {
+		entry.value.type = SAPHPSerializedValueTypeString;
+		entry.value.scalarValue = rawValue;
+	}
+	else if ([selectedType isEqualToString:NSLocalizedString(@"Integer", @"PHP serialized editor integer type")]) {
+		if (![self phpSerializedStringIsInteger:rawValue]) {
+			if (showError) [SPTooltip showWithObject:NSLocalizedString(@"Integer values may only contain digits and an optional leading minus sign.", @"PHP serialized editor integer validation error")];
+			return NO;
+		}
+		entry.value.type = SAPHPSerializedValueTypeInteger;
+		entry.value.scalarValue = rawValue;
+	}
+	else if ([selectedType isEqualToString:NSLocalizedString(@"Float", @"PHP serialized editor float type")]) {
+		if (![rawValue length]) {
+			if (showError) [SPTooltip showWithObject:NSLocalizedString(@"Float values cannot be empty.", @"PHP serialized editor float validation error")];
+			return NO;
+		}
+		entry.value.type = SAPHPSerializedValueTypeDouble;
+		entry.value.scalarValue = rawValue;
+	}
+	else if ([selectedType isEqualToString:NSLocalizedString(@"Boolean", @"PHP serialized editor boolean type")]) {
+		NSString *normalized = [[rawValue stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] lowercaseString];
+		if ([normalized isEqualToString:@"1"] || [normalized isEqualToString:@"true"] || [normalized isEqualToString:@"yes"]) {
+			entry.value.scalarValue = @"1";
+		}
+		else if ([normalized isEqualToString:@"0"] || [normalized isEqualToString:@"false"] || [normalized isEqualToString:@"no"] || ![normalized length]) {
+			entry.value.scalarValue = @"0";
+		}
+		else {
+			if (showError) [SPTooltip showWithObject:NSLocalizedString(@"Boolean values must be true/false or 1/0.", @"PHP serialized editor boolean validation error")];
+			return NO;
+		}
+		entry.value.type = SAPHPSerializedValueTypeBoolean;
+	}
+	else {
+		entry.value.type = SAPHPSerializedValueTypeNull;
+		entry.value.scalarValue = @"";
+	}
+
+	return YES;
+}
+
+- (IBAction)updatePHPSerializedSelectedValue:(id)sender
+{
+	if (![self commitPHPSerializedSelectedValueShowingError:YES]) return;
+	[self.phpSerializedOutlineView reloadData];
+	[self updatePHPSerializedInspectorForEntry:self.phpSerializedSelectedEntry];
+}
+
+- (IBAction)addPHPSerializedChild:(id)sender
+{
+	SAPHPSerializedEntry *selectedEntry = self.phpSerializedSelectedEntry;
+	if (![selectedEntry.value isContainer]) return;
+
+	SAPHPSerializedEntry *newEntry = [[SAPHPSerializedEntry alloc] init];
+	newEntry.parent = selectedEntry;
+	newEntry.value = [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeString];
+	newEntry.value.scalarValue = @"";
+
+	if (selectedEntry.value.type == SAPHPSerializedValueTypeArray) {
+		newEntry.keyIsInteger = YES;
+		newEntry.key = @([selectedEntry.value.children count]);
+	}
+	else {
+		newEntry.keyIsInteger = NO;
+		newEntry.key = @"new_property";
+	}
+
+	[selectedEntry.value.children addObject:newEntry];
+	[self.phpSerializedOutlineView reloadData];
+	[self.phpSerializedOutlineView expandItem:selectedEntry];
+	NSInteger row = [self.phpSerializedOutlineView rowForItem:newEntry];
+	if (row >= 0) {
+		[self.phpSerializedOutlineView selectRowIndexes:[NSIndexSet indexSetWithIndex:(NSUInteger)row] byExtendingSelection:NO];
+	}
+}
+
+- (IBAction)deletePHPSerializedEntry:(id)sender
+{
+	SAPHPSerializedEntry *selectedEntry = self.phpSerializedSelectedEntry;
+	if (!selectedEntry || selectedEntry == self.phpSerializedRootEntry || !selectedEntry.parent) return;
+
+	SAPHPSerializedEntry *parent = selectedEntry.parent;
+	[parent.value.children removeObject:selectedEntry];
+	self.phpSerializedSelectedEntry = parent;
+	[self.phpSerializedOutlineView reloadData];
+	NSInteger parentRow = [self.phpSerializedOutlineView rowForItem:parent];
+	if (parentRow >= 0) {
+		[self.phpSerializedOutlineView selectRowIndexes:[NSIndexSet indexSetWithIndex:(NSUInteger)parentRow] byExtendingSelection:NO];
+	}
+}
+
+- (IBAction)applyPHPSerializedEditor:(id)sender
+{
+	if (![self commitPHPSerializedSelectedValueShowingError:YES]) return;
+
+	NSString *serialized = [self.phpSerializedRootEntry.value serializedString];
+	[editTextView setString:serialized];
+	sheetEditData = serialized;
+	editTextViewWasChanged = YES;
+	[hexTextView setString:@""];
+	[self refreshPHPSerializedEditorAvailability];
+	[editSheet endSheet:self.phpSerializedEditorSheet returnCode:NSModalResponseOK];
+	[self.phpSerializedEditorSheet orderOut:self];
+}
+
+- (IBAction)cancelPHPSerializedEditor:(id)sender
+{
+	[editSheet endSheet:self.phpSerializedEditorSheet returnCode:NSModalResponseCancel];
+	[self.phpSerializedEditorSheet orderOut:self];
+}
+
+- (BOOL)phpSerializedStringIsInteger:(NSString *)string
+{
+	if (![string length]) return NO;
+	NSScanner *scanner = [NSScanner scannerWithString:string];
+	NSInteger value = 0;
+	return [scanner scanInteger:&value] && [scanner isAtEnd];
+}
+
+- (NSInteger)outlineView:(NSOutlineView *)outlineView numberOfChildrenOfItem:(id)item
+{
+	if (outlineView != self.phpSerializedOutlineView) return 0;
+	if (!item) return self.phpSerializedRootEntry ? 1 : 0;
+	SAPHPSerializedEntry *entry = item;
+	return [entry.value.children count];
+}
+
+- (id)outlineView:(NSOutlineView *)outlineView child:(NSInteger)index ofItem:(id)item
+{
+	if (outlineView != self.phpSerializedOutlineView) return nil;
+	if (!item) return self.phpSerializedRootEntry;
+	SAPHPSerializedEntry *entry = item;
+	return [entry.value.children objectAtIndex:(NSUInteger)index];
+}
+
+- (BOOL)outlineView:(NSOutlineView *)outlineView isItemExpandable:(id)item
+{
+	if (outlineView != self.phpSerializedOutlineView) return NO;
+	SAPHPSerializedEntry *entry = item;
+	return [entry.value.children count] > 0;
+}
+
+- (id)outlineView:(NSOutlineView *)outlineView objectValueForTableColumn:(NSTableColumn *)tableColumn byItem:(id)item
+{
+	if (outlineView != self.phpSerializedOutlineView) return @"";
+	SAPHPSerializedEntry *entry = item;
+	NSString *identifier = [tableColumn identifier];
+	if ([identifier isEqualToString:@"key"]) return [self keyLabelForPHPSerializedEntry:entry];
+	if ([identifier isEqualToString:@"type"]) return [entry.value typeLabel];
+	if ([identifier isEqualToString:@"value"]) return [entry.value displayValue];
+	return @"";
+}
+
+- (void)outlineViewSelectionDidChange:(NSNotification *)notification
+{
+	if ([notification object] != self.phpSerializedOutlineView) return;
+
+	NSInteger row = [self.phpSerializedOutlineView selectedRow];
+	SAPHPSerializedEntry *entry = (row >= 0) ? [self.phpSerializedOutlineView itemAtRow:row] : self.phpSerializedRootEntry;
+	if (entry) {
+		[self updatePHPSerializedInspectorForEntry:entry];
+	}
 }
 
 #pragma mark -
