@@ -55,7 +55,6 @@
 #import "SPSplitView.h"
 #import "SPColorSelectorView.h"
 #import "SPFunctions.h"
-#import "SPBundleHTMLOutputController.h"
 #import "SPBundleManager.h"
 // AWS IAM Authentication is now implemented in Swift
 // See: AWSCredentials.swift, RDSIAMAuthentication.swift, AWSSTSClient.swift, AWSMFATokenDialog.swift, AWSIAMAuthManager.swift
@@ -4054,7 +4053,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         // check we don't already have this window open
         BOOL correspondingWindowFound = NO;
         for(id win in [NSApp windows]) {
-            if([[win delegate] isKindOfClass:[SPBundleHTMLOutputController class]]) {
+            if([[win delegate] isKindOfClass:[SABundleHTMLOutputWindowController class]]) {
                 if([[[win delegate] windowUUID] isEqualToString:socketHelpWindowUUID]) {
                     correspondingWindowFound = YES;
                     SPLog(@"correspondingWindowFound: %hhd", correspondingWindowFound);
@@ -4071,7 +4070,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
                 // show socket help
                 self.socketHelpWindowUUID = [NSString stringWithNewUUID];
-                SPBundleHTMLOutputController *bundleController = [[SPBundleHTMLOutputController alloc] init];
+                SABundleHTMLOutputWindowController *bundleController = [[SABundleHTMLOutputWindowController alloc] init];
                 [bundleController setWindowUUID:socketHelpWindowUUID];
 
                 NSDictionary *tmpDic2 = @{@"x" : @225, @"y" : @536, @"w" : @768, @"h" : @425};

@@ -37,7 +37,6 @@
 #import "SPPreferencesUpgrade.h"
 #import "SPBundleEditorController.h"
 #import "SPTooltip.h"
-#import "SPBundleHTMLOutputController.h"
 #import "SPChooseMenuItemDialog.h"
 #import "SPCustomQuery.h"
 #import "SPFavoritesController.h"

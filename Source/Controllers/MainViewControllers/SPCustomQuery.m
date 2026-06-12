@@ -51,7 +51,6 @@
 #import "SPThreadAdditions.h"
 #import "SPConstants.h"
 #import "SPAppController.h"
-#import "SPBundleHTMLOutputController.h"
 #import "SPFunctions.h"
 #import "SPHelpViewerClient.h"
 #import "SPHelpViewerController.h"
@@ -2868,7 +2867,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             BOOL correspondingWindowFound = NO;
             NSString *uuid = [data objectAtIndex:2];
             for (id win in [NSApp windows]) {
-                if ([[[[win delegate] class] description] isEqualToString:@"SPBundleHTMLOutputController"]) {
+                if ([[[[win delegate] class] description] isEqualToString:@"SABundleHTMLOutputWindowController"]) {
                     if ([[[win delegate] windowUUID] isEqualToString:uuid]) {
                         correspondingWindowFound = YES;
                         break;
