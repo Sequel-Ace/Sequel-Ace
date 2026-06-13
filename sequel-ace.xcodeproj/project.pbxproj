@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		1141A389117BBFF200126A28 /* SPTableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1141A388117BBFF200126A28 /* SPTableCopy.m */; };
 		1198F5B31174EDD500670590 /* SPDatabaseCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1198F5B21174EDD500670590 /* SPDatabaseCopy.m */; };
+		11ACD43BE52B0351BBFE518F /* AWSSSOClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABAD424F195B2E207BF7C604 /* AWSSSOClient.swift */; };
 		11B55BFE1189E3B2009EF465 /* SPDatabaseAction.m in Sources */ = {isa = PBXBuildFile; fileRef = 11B55BFD1189E3B2009EF465 /* SPDatabaseAction.m */; };
 		11C211301180EC9A00758039 /* SPDatabaseRename.m in Sources */ = {isa = PBXBuildFile; fileRef = 11C2109D1180E70800758039 /* SPDatabaseRename.m */; };
 		171312CE109D23C700FB465F /* SPTableTextFieldCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 171312CD109D23C700FB465F /* SPTableTextFieldCell.m */; };
@@ -156,6 +157,7 @@
 		1AF5A261250AC401009885DF /* SPBracketHighlighter.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AF5A25E250AC401009885DF /* SPBracketHighlighter.m */; };
 		1AF5A262250AC401009885DF /* SPBrackets.m in Sources */ = {isa = PBXBuildFile; fileRef = 1AF5A25F250AC401009885DF /* SPBrackets.m */; };
 		1C7055887A73B6C4D4C13D51 /* SPDuplicateImportViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA7A8F76494CE39908140FA /* SPDuplicateImportViewController.swift */; };
+		1E4E58D8ABEA1E269DC46FD2 /* AWSSSOClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABAD424F195B2E207BF7C604 /* AWSSSOClient.swift */; };
 		265446DF24A1616900376B48 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 38C613721C8977E600B3B6EF /* libz.tbd */; };
 		296DC89F0F8FD336002A3258 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 296DC89E0F8FD336002A3258 /* WebKit.framework */; };
 		296DC8B60F909194002A3258 /* MGTemplateEngine.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8A70F909194002A3258 /* MGTemplateEngine.m */; };
@@ -213,8 +215,8 @@
 		50EA926A1AB246B8008D3C4F /* SPDatabaseActionTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 50EA92691AB246B8008D3C4F /* SPDatabaseActionTest.m */; };
 		50F530521ABCF66B002F2C1A /* resetTemplate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 50F530511ABCF66B002F2C1A /* resetTemplate.pdf */; };
 		510247F62FD9F2CE00586DEA /* SAFavoriteDeletionPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 510247F52FD9F2CE00586DEA /* SAFavoriteDeletionPrompt.swift */; };
-		510247F92FD9F2DD00586DEA /* SAFavoriteDeletionPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 510247F52FD9F2CE00586DEA /* SAFavoriteDeletionPrompt.swift */; };
 		510247F82FD9F2DC00586DEA /* SAFavoriteDeletionPromptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 510247F72FD9F2DC00586DEA /* SAFavoriteDeletionPromptTests.swift */; };
+		510247F92FD9F2DD00586DEA /* SAFavoriteDeletionPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 510247F52FD9F2CE00586DEA /* SAFavoriteDeletionPrompt.swift */; };
 		5132930C25F586A900D803AD /* NotificationToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132930925F586A900D803AD /* NotificationToken.swift */; };
 		5132930D25F586A900D803AD /* TabManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5132930A25F586A900D803AD /* TabManager.swift */; };
 		513515D2259354BB001E4533 /* NSImageExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 513515D1259354BB001E4533 /* NSImageExtensions.swift */; };
@@ -423,6 +425,7 @@
 		9651262324926F1200E65B53 /* QueryKit.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 17E5955314F304000054EE08 /* QueryKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		9651262424926F1600E65B53 /* SPMySQL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 584D876815140D3500F24774 /* SPMySQL.framework */; };
 		9651262524926F1600E65B53 /* SPMySQL.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 584D876815140D3500F24774 /* SPMySQL.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		96557E151CF87F3F4EA29A47 /* AWSLoginCredentialsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB06F6EE917719170B0804B /* AWSLoginCredentialsProvider.swift */; };
 		967D875B24B67B4300BAE934 /* SPAutosizingTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 967D875A24B67B4300BAE934 /* SPAutosizingTextView.swift */; };
 		969178A524A5640D0012ED42 /* Default Bundles in Copy Default Themes and Default Bundles */ = {isa = PBXBuildFile; fileRef = 969178A324A5640D0012ED42 /* Default Bundles */; };
 		969178A624A5640D0012ED42 /* Default Themes in Copy Default Themes and Default Bundles */ = {isa = PBXBuildFile; fileRef = 969178A424A5640D0012ED42 /* Default Themes */; };
@@ -527,6 +530,7 @@
 		DD00DD00DD00DD00DD000003 /* SPFilterRuleEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00DD00DD00DD00DD000004 /* SPFilterRuleEditor.swift */; };
 		DD00DD00DD00DD00DD000005 /* SPRuleFilterDropBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00DD00DD00DD00DD000006 /* SPRuleFilterDropBox.swift */; };
 		EB9FF92F188F0B4AA444A892 /* SAConnectionInfo+ConnectionString.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54146A7693E8D862D06856BF /* SAConnectionInfo+ConnectionString.swift */; };
+		ED3C9DE94BCF6D3F17DACBCA /* AWSLoginCredentialsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB06F6EE917719170B0804B /* AWSLoginCredentialsProvider.swift */; };
 		F3A4B8C191E14E7094C9A111 /* AWSCredentialsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9A101 /* AWSCredentialsTests.swift */; };
 		F3A4B8C191E14E7094C9A112 /* RDSIAMAuthenticationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9A102 /* RDSIAMAuthenticationTests.swift */; };
 		F3A4B8C191E14E7094C9A113 /* AWSDirectoryBookmarkManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4B8C191E14E7094C9A103 /* AWSDirectoryBookmarkManagerTests.swift */; };
@@ -949,6 +953,7 @@
 		4D90B79B101E0CF200D116A1 /* SPUserManager.xcdatamodel */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = wrapper.xcdatamodel; path = SPUserManager.xcdatamodel; sourceTree = "<group>"; };
 		4D90B79C101E0CF200D116A1 /* SPUserMO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPUserMO.h; sourceTree = "<group>"; };
 		4D90B79D101E0CF200D116A1 /* SPUserMO.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPUserMO.m; sourceTree = "<group>"; };
+		4FB06F6EE917719170B0804B /* AWSLoginCredentialsProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AWSLoginCredentialsProvider.swift; sourceTree = "<group>"; };
 		500C1F901BFB5F9F0095DC7F /* SPPrivilegesMO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPPrivilegesMO.h; sourceTree = "<group>"; };
 		500C1F911BFB5F9F0095DC7F /* SPPrivilegesMO.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPPrivilegesMO.m; sourceTree = "<group>"; };
 		500DA4B51BEFF877000773FE /* SPComboBoxCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPComboBoxCell.h; sourceTree = "<group>"; };
@@ -1242,6 +1247,7 @@
 		AA000001000000000000001A /* SAAboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAAboutView.swift; sourceTree = "<group>"; };
 		AA000001000000000000001C /* SAAboutWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAAboutWindowController.swift; sourceTree = "<group>"; };
 		AAA7A8F76494CE39908140FA /* SPDuplicateImportViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SPDuplicateImportViewController.swift; sourceTree = "<group>"; };
+		ABAD424F195B2E207BF7C604 /* AWSSSOClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AWSSSOClient.swift; sourceTree = "<group>"; };
 		AEA35A884E0C42E4A2AF12EE /* SPCustomQuery+Explain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SPCustomQuery+Explain.swift"; sourceTree = "<group>"; };
 		AEA35A884E0C42E4A2AF12EF /* SPCustomQuerySQLClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPCustomQuerySQLClassifier.swift; sourceTree = "<group>"; };
 		AEA35A884E0C42E4A2AF12F0 /* SPCustomQuerySQLClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPCustomQuerySQLClassifierTests.swift; sourceTree = "<group>"; };
@@ -2419,7 +2425,7 @@
 			path = MGTemplateEngine;
 			sourceTree = "<group>";
 		};
-		2A37F4AAFDCFA73011CA2CEA /* sequel-pro */ = {
+		2A37F4AAFDCFA73011CA2CEA = {
 			isa = PBXGroup;
 			children = (
 				518E02F227B91FBC007973E3 /* Entitlements */,
@@ -2724,6 +2730,8 @@
 				F3A4B8C191E14E7094C9B004 /* AWSMFATokenDialog.swift */,
 				F3A4B8C191E14E7094C9B005 /* AWSIAMAuthManager.swift */,
 				F3A4B8C191E14E7094C9B006 /* AWSDirectoryBookmarkManager.swift */,
+				4FB06F6EE917719170B0804B /* AWSLoginCredentialsProvider.swift */,
+				ABAD424F195B2E207BF7C604 /* AWSSSOClient.swift */,
 			);
 			path = AWS;
 			sourceTree = "<group>";
@@ -2875,7 +2883,7 @@
 				cs,
 				eo,
 			);
-			mainGroup = 2A37F4AAFDCFA73011CA2CEA /* sequel-pro */;
+			mainGroup = 2A37F4AAFDCFA73011CA2CEA;
 			packageReferences = (
 				51D9527425AE2B5300574BEB /* XCRemoteSwiftPackageReference "fmdb" */,
 				51BC14FF25BE138700F1CDC9 /* XCRemoteSwiftPackageReference "SnapKit" */,
@@ -3240,6 +3248,8 @@
 				1AE6C1CD25B07E9500880D73 /* SPFunctionsTests.m in Sources */,
 				1A9A40D525875EC9009F0E71 /* NSMutableArray-MultipleSort.m in Sources */,
 				8AEACED018AABDD8CBB42877 /* TableSortHelperTests.swift in Sources */,
+				96557E151CF87F3F4EA29A47 /* AWSLoginCredentialsProvider.swift in Sources */,
+				11ACD43BE52B0351BBFE518F /* AWSSSOClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3521,6 +3531,8 @@
 				1C7055887A73B6C4D4C13D51 /* SPDuplicateImportViewController.swift in Sources */,
 				EB9FF92F188F0B4AA444A892 /* SAConnectionInfo+ConnectionString.swift in Sources */,
 				5AF0C4000000000000000002 /* SAConnectionInfo+Favorite.swift in Sources */,
+				ED3C9DE94BCF6D3F17DACBCA /* AWSLoginCredentialsProvider.swift in Sources */,
+				1E4E58D8ABEA1E269DC46FD2 /* AWSSSOClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
