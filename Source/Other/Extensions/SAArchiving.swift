@@ -27,12 +27,14 @@ import Foundation
     // MARK: - Writing (keyed, secure)
 
     /// Archives a colour using `NSKeyedArchiver` with secure coding.
-    @objc static func archivedData(forColor color: NSColor) -> Data? {
+    @objc(archivedDataForColor:)
+    static func archivedData(forColor color: NSColor) -> Data? {
         return try? NSKeyedArchiver.archivedData(withRootObject: color, requiringSecureCoding: true)
     }
 
     /// Archives a font using `NSKeyedArchiver` with secure coding.
-    @objc static func archivedData(forFont font: NSFont) -> Data? {
+    @objc(archivedDataForFont:)
+    static func archivedData(forFont font: NSFont) -> Data? {
         return try? NSKeyedArchiver.archivedData(withRootObject: font, requiringSecureCoding: true)
     }
 
@@ -40,13 +42,15 @@ import Foundation
 
     /// Decodes a colour written by either the modern keyed archiver or the legacy
     /// `NSArchiver`. Returns `nil` for missing, empty, or undecodable data.
-    @objc static func color(from data: Data?) -> NSColor? {
+    @objc(colorFromData:)
+    static func color(from data: Data?) -> NSColor? {
         return unarchive(data, as: NSColor.self)
     }
 
     /// Decodes a font written by either the modern keyed archiver or the legacy
     /// `NSArchiver`. Returns `nil` for missing, empty, or undecodable data.
-    @objc static func font(from data: Data?) -> NSFont? {
+    @objc(fontFromData:)
+    static func font(from data: Data?) -> NSFont? {
         return unarchive(data, as: NSFont.self)
     }
 
