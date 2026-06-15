@@ -458,7 +458,7 @@ typedef enum {
 	// 1. The font specifically chosen for the editor sheet textView (FieldEditorSheetFont, right-click in the textView, and choose "Font > Show Fonts" to do that);
 	// 2. The font used for the table view (SPGlobalFontSettings, per the "MySQL Content Font" preference option);
 	if ([prefs objectForKey:SPFieldEditorSheetFont]) {
-		textEditorFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPFieldEditorSheetFont]];
+		textEditorFont = [SAArchiving fontFromData:[prefs dataForKey:SPFieldEditorSheetFont]];
 	} else if ([prefs objectForKey:SPGlobalFontSettings]) {
 		textEditorFont = [NSUserDefaults getFont];
 	}
