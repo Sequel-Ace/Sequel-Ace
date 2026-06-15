@@ -40,6 +40,8 @@
 #import "SPTextView.h"
 #import "SPDatabaseStructure.h"
 
+#import "sequel-ace-Swift.h"
+
 #pragma mark -
 #pragma mark attribute definition 
 
@@ -128,7 +130,7 @@ static NSString * const SPAutoCompletePlaceholderVal  = @"placholder";
 		prefs = [NSUserDefaults standardUserDefaults];
     startedIntercepting = NO;
 
-		tableFont = [NSUnarchiver unarchiveObjectWithData:[[NSUserDefaults standardUserDefaults] dataForKey:SPCustomQueryEditorFont]];
+		tableFont = [SAArchiving fontFromData:[[NSUserDefaults standardUserDefaults] dataForKey:SPCustomQueryEditorFont]];
 		[self setupInterface];
 
 		syncArrowImages = [[NSArray alloc] initWithObjects:[NSImage imageNamed:@"sync_arrows_01"],
