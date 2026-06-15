@@ -109,10 +109,20 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 	[[filterTableView window] makeFirstResponder:filterTableView];
 }
 
+// The filter-table dictionary is snapshotted to NSData purely to live in the
+// in-memory navigation history (SPTableHistoryEntry); it is never persisted to
+// disk or defaults, so there is no legacy NSArchiver data to stay compatible
+// with. Keyed archiving replaces the deprecated NSArchiver/NSUnarchiver. The
+// reader's allowed-class set includes the mutable collection classes so the
+// nested filter arrays remain mutable for later in-place edits.
 - (void)setFilterTableData:(NSData*)arcData
 {
 	if(!arcData) return;
-	NSDictionary *filterData = [NSUnarchiver unarchiveObjectWithData:arcData];
+	NSSet *allowedClasses = [NSSet setWithObjects:
+		[NSMutableDictionary class], [NSDictionary class],
+		[NSMutableArray class], [NSArray class],
+		[NSString class], [NSNumber class], nil];
+	NSDictionary *filterData = [NSKeyedUnarchiver unarchivedObjectOfClasses:allowedClasses fromData:arcData error:nil];
 	[filterTableData removeAllObjects];
 	[filterTableData addEntriesFromDictionary:filterData];
 	[[self window] makeKeyAndOrderFront:nil];
@@ -125,7 +135,7 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 
 	[filterTableView deselectAll:nil];
 
-	return [NSArchiver archivedDataWithRootObject:filterTableData];
+	return [NSKeyedArchiver archivedDataWithRootObject:filterTableData requiringSecureCoding:NO error:nil];
 }
 
 - (NSString *)tableFilterString
