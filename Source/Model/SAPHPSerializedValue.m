@@ -10,6 +10,8 @@
 #include <errno.h>
 #include <stdlib.h>
 
+static const NSUInteger SAPHPSerializedParserMaximumDepth = 512;
+
 static BOOL SAIntegerValueFromPHPSerializedString(NSString *string, NSInteger *value)
 {
 	if (![SAPHPSerializedValue isValidPHPIntegerString:string]) return NO;
@@ -73,6 +75,7 @@ static BOOL SAIntegerValueFromPHPSerializedString(NSString *string, NSInteger *v
 	}
 
 	NSScanner *scanner = [NSScanner scannerWithString:string];
+	[scanner setLocale:[NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"]];
 	[scanner setCharactersToBeSkipped:nil];
 	double doubleValue = 0;
 	return [scanner scanDouble:&doubleValue] && [scanner isAtEnd];
@@ -262,8 +265,10 @@ static BOOL SAIntegerValueFromPHPSerializedString(NSString *string, NSInteger *v
 
 @property(nonatomic, strong) NSData *data;
 @property(nonatomic) NSUInteger position;
+@property(nonatomic) NSUInteger recursionDepth;
 @property(nonatomic, copy) NSString *errorMessage;
 
+- (SAPHPSerializedValue *)parseValueAtCurrentDepth;
 - (BOOL)unsignedIntegerValue:(NSUInteger *)value fromString:(NSString *)string;
 
 @end
@@ -354,6 +359,19 @@ static BOOL SAIntegerValueFromPHPSerializedString(NSString *string, NSInteger *v
 }
 
 - (SAPHPSerializedValue *)parseValue
+{
+	if (self.recursionDepth >= SAPHPSerializedParserMaximumDepth) {
+		self.errorMessage = NSLocalizedString(@"PHP serialized data exceeds the maximum supported nesting depth.", @"PHP serialized editor maximum nesting depth error");
+		return nil;
+	}
+
+	self.recursionDepth++;
+	SAPHPSerializedValue *value = [self parseValueAtCurrentDepth];
+	self.recursionDepth--;
+	return value;
+}
+
+- (SAPHPSerializedValue *)parseValueAtCurrentDepth
 {
 	if (self.position >= [self.data length]) {
 		self.errorMessage = NSLocalizedString(@"Unexpected end of serialized data.", @"PHP serialized editor end of input error");

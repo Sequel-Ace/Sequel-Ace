@@ -59,6 +59,27 @@
 	XCTAssertNotNil(errorMessage);
 }
 
+- (void)testFloatValidationUsesPHPDotDecimalFormat
+{
+	XCTAssertTrue([SAPHPSerializedValue isValidPHPFloatString:@"12.34"]);
+	XCTAssertFalse([SAPHPSerializedValue isValidPHPFloatString:@"12,34"]);
+}
+
+- (void)testRejectsExcessiveNestingDepth
+{
+	NSMutableString *serialized = [NSMutableString stringWithString:@"s:3:\"end\";"];
+	for (NSUInteger i = 0; i < 600; i++) {
+		[serialized insertString:@"a:1:{i:0;" atIndex:0];
+		[serialized appendString:@"}"];
+	}
+
+	NSString *errorMessage = nil;
+	SAPHPSerializedValue *value = [SAPHPSerializedParser parseString:serialized error:&errorMessage];
+
+	XCTAssertNil(value);
+	XCTAssertNotNil(errorMessage);
+}
+
 - (void)testIntegerEditsAreTrimmedBeforeSerialization
 {
 	SAPHPSerializedValue *value = [SAPHPSerializedParser parseString:@"i:1;" error:nil];
