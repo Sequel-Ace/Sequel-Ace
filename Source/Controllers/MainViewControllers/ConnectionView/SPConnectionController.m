@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPConnectionController.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPDatabaseDocument.h"
 #import "SPAppController.h"
 #import "SPPreferenceController.h"
@@ -1964,7 +1965,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             NSButton *revealCheckbox = [[NSButton alloc] initWithFrame:NSMakeRect(0, 5, 200, 20)];
             [revealCheckbox setButtonType:NSButtonTypeSwitch];
             [revealCheckbox setTitle:NSLocalizedString(@"Show password", @"Show password checkbox")];
-            [revealCheckbox setState:NSOffState];
+            [revealCheckbox setState:NSControlStateValueOff];
 
             // Use target-action with stored context via associated objects
             objc_setAssociatedObject(revealCheckbox, kOriginalStringKey, clipboardString, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -2014,7 +2015,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     NSString *redactedString = objc_getAssociatedObject(sender, kRedactedStringKey);
     NSTextField *urlField = objc_getAssociatedObject(sender, kURLFieldKey);
 
-    if (sender.state == NSOnState) {
+    if (sender.state == NSControlStateValueOn) {
         // Show password
         [urlField setStringValue:originalString];
     } else {
@@ -2075,7 +2076,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 {
     NSOpenPanel *openPanel = [NSOpenPanel openPanel];
 
-    [openPanel setAllowedFileTypes:@[@"plist"]];
+    [openPanel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:@"plist"]]];
 
     [openPanel beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:^(NSInteger returnCode)
     {
@@ -4723,7 +4724,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         return;
     }
 
-    BOOL shouldReveal = (sender.state == NSOnState);
+    BOOL shouldReveal = (sender.state == NSControlStateValueOn);
     plainField.stringValue = secureField.stringValue ?: @"";
     secureField.hidden = shouldReveal;
     plainField.hidden = !shouldReveal;

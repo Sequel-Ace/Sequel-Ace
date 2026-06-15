@@ -30,6 +30,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPCustomQuery.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPSQLParser.h"
 #import "SPDataCellFormatter.h"
 #import "SPDatabaseDocument.h"
@@ -565,7 +566,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 {
     NSSavePanel *panel = [NSSavePanel savePanel];
     
-    [panel setAllowedFileTypes:@[SPFileExtensionSQL]];
+    [panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionSQL]]];
     
     [panel setExtensionHidden:NO];
     [panel setAllowsOtherFileTypes:YES];

@@ -30,6 +30,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPDatabaseDocument.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPConnectionController.h"
 #import "SPTablesList.h"
 #import "SPDatabaseStructure.h"
@@ -1920,7 +1921,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 {
     NSSavePanel *panel = [NSSavePanel savePanel];
 
-    [panel setAllowedFileTypes:@[SPFileExtensionSQL]];
+    [panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionSQL]]];
 
     [panel setExtensionHidden:NO];
     [panel setAllowsOtherFileTypes:YES];
@@ -2477,7 +2478,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                                                         includeDefaultEntry:NO
                                                               encodingPopUp:&encodingPopUp]];
 
-        [panel setAllowedFileTypes:@[SPFileExtensionSQL]];
+        [panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionSQL]]];
 
         if (![prefs stringForKey:@"lastSqlFileName"]) {
             [prefs setObject:@"" forKey:@"lastSqlFileName"];
@@ -2504,7 +2505,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
 
         // Save current session (open connection windows as SPF file)
-        [panel setAllowedFileTypes:@[SPFileExtensionDefault]];
+        [panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionDefault]]];
 
         [self prepareSaveAccessoryViewWithPanel:panel];
 
@@ -2526,7 +2527,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     else if (sender == nil || [sender tag] == SPMainMenuFileSaveSession) {
 
         // Save current session (open connection windows as SPFS file)
-        [panel setAllowedFileTypes:@[SPBundleFileExtension]];
+        [panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPBundleFileExtension]]];
 
         [self prepareSaveAccessoryViewWithPanel:panel];
 
