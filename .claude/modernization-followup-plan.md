@@ -279,11 +279,43 @@ C1b — pure SwiftUI `List` / `OutlineGroup` — ✅ Done (display/search/select
 - Files: new `SAFavoriteItem.swift`, `SAFavoriteItem+Tree.swift`,
   `SAFavoritesList.swift`, `UnitTests/SAFavoriteItemTests.swift`
 
-**C2. SwiftUI ConnectionFormView**
-- The 55 IBOutlets in ConnectionView.xib are the target
-- Start with a SwiftUI form for TCP/IP connection type only
-- Bind to SAConnectionInfoObjC
-- Files: new `SAConnectionFormView.swift`
+**C2. SwiftUI ConnectionFormView** — 🟡 TCP/IP form + model done; other types + SSL + hosting pending
+- The 55 IBOutlets in ConnectionView.xib are the eventual target.
+
+C2a — TCP/IP form + observable model — ✅ Done
+- New `SAConnectionFormModel` (Swift, ObservableObject, pure
+  Foundation+Combine, BOTH targets) wraps the value-type
+  `SAConnectionInfo` so SwiftUI binds straight into it
+  (`$model.info.host`). It funnels the earlier extractions:
+  `validate()` → `SAConnectionDetailsValidator` (D3), `effectiveName` →
+  `SAConnectionFormHelpers.generateName` (user-entered name wins,
+  whitespace-only names ignored), `canAttemptConnection` gate (socket:
+  always; SSH tunnel: non-blank host OR remote socket path, mirroring
+  the validator; TCP/AWS/Vault: non-blank host — Codex P2 caught the
+  original gate blocking valid remote-socket tunnels), and ObjC
+  bridging via `init(objc:)` / `apply(to:)` (value-copy semantics —
+  edits don't leak back until applied).
+- New `SAConnectionFormView` (SwiftUI, app-target only) renders the
+  XIB's TCP/IP tab fields (Name w/ auto-generated-name placeholder,
+  Host, Username, Password as SecureField, Database, Port w/ "3306"
+  placeholder) + a Connect button (default action, gated) that runs
+  D3 validation and surfaces the failure's alertTitle/alertMessage
+  via `.alert`; on success calls the `onConnect` closure (C3 will pass
+  SAConnectionService there). `formStyle(.grouped)` applied via an
+  availability-gated modifier (macOS 13+; target is 12.0). Like C1b,
+  nothing hosts the view yet — C3 is the host.
+- 14 unit tests in `UnitTests/SAConnectionFormModelTests.swift`:
+  defaults, ObjC round-trip both ways, value-copy isolation,
+  effectiveName matrix (name wins / host / host+db / empty / whitespace
+  name), connect gate (TCP/IP host required incl. whitespace-only,
+  socket always true), validation wiring (hostMissing + pass), and
+  objectWillChange publishing on field mutation.
+- Files were added via Xcode MCP `XcodeWrite` (real Xcode IDs); only
+  the model's second (Unit Tests) membership was a manual pbxproj edit.
+- Remaining C2 scope: socket/SSH/AWS/Vault type switching, SSL options,
+  color index, time-zone picker, favorites save/auto-name parity.
+- Files: `Source/Controllers/MainViewControllers/ConnectionView/SAConnectionFormModel.swift`,
+  `SAConnectionFormView.swift`, `UnitTests/SAConnectionFormModelTests.swift`
 
 **C3. Wire SwiftUI into SAConnectionWindowController + expose in menu**
 - The standalone connection window is the ideal host for SwiftUI views
