@@ -34,7 +34,6 @@
 #import "SPGeometryDataView.h"
 #import "SPCopyTable.h"
 #import "SPWindow.h"
-#include <errno.h>
 #include <objc/objc-runtime.h>
 #include <stdlib.h>
 #import "SPCustomQuery.h"
@@ -42,6 +41,7 @@
 #import "SPJSONFormatter.h"
 #import <SPMySQL/SPMySQL.h>
 #import "SPFunctions.h"
+#import "SAPHPSerializedValue.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -51,52 +51,6 @@ typedef enum {
 	HexSegment,
 	JsonSegment,
 } FieldEditorSegment;
-
-typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
-	SAPHPSerializedValueTypeNull = 0,
-	SAPHPSerializedValueTypeBoolean,
-	SAPHPSerializedValueTypeInteger,
-	SAPHPSerializedValueTypeDouble,
-	SAPHPSerializedValueTypeString,
-	SAPHPSerializedValueTypeArray,
-	SAPHPSerializedValueTypeObject,
-	SAPHPSerializedValueTypeCustomSerialized,
-	SAPHPSerializedValueTypeReference,
-};
-
-@class SAPHPSerializedValue;
-
-@interface SAPHPSerializedEntry : NSObject
-
-@property(nonatomic, strong) id key;
-@property(nonatomic) BOOL keyIsInteger;
-@property(nonatomic, strong) SAPHPSerializedValue *value;
-@property(nonatomic, weak) SAPHPSerializedEntry *parent;
-
-@end
-
-@interface SAPHPSerializedValue : NSObject
-
-@property(nonatomic) SAPHPSerializedValueType type;
-@property(nonatomic, copy) NSString *scalarValue;
-@property(nonatomic, copy) NSString *className;
-@property(nonatomic, copy) NSString *referenceType;
-@property(nonatomic, strong) NSMutableArray<SAPHPSerializedEntry *> *children;
-
-+ (instancetype)valueWithType:(SAPHPSerializedValueType)type;
-- (BOOL)isContainer;
-- (BOOL)isScalarEditable;
-- (NSString *)typeLabel;
-- (NSString *)displayValue;
-- (NSString *)serializedString;
-
-@end
-
-@interface SAPHPSerializedParser : NSObject
-
-+ (SAPHPSerializedValue *)parseString:(NSString *)input error:(NSString **)errorMessage;
-
-@end
 
 @interface SPFieldEditorController () <NSOutlineViewDataSource, NSOutlineViewDelegate>
 
@@ -124,451 +78,6 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 - (void)buildPHPSerializedEditorSheetIfNeeded;
 - (BOOL)populatePHPSerializedEditorFromCurrentTextShowingError:(BOOL)showError;
 - (BOOL)commitPHPSerializedSelectedValueShowingError:(BOOL)showError;
-- (BOOL)phpSerializedStringIsFloat:(NSString *)string;
-
-@end
-
-@implementation SAPHPSerializedEntry
-@end
-
-@implementation SAPHPSerializedValue
-
-+ (instancetype)valueWithType:(SAPHPSerializedValueType)type
-{
-	SAPHPSerializedValue *value = [[SAPHPSerializedValue alloc] init];
-	value.type = type;
-	value.scalarValue = @"";
-	value.children = [[NSMutableArray alloc] init];
-	return value;
-}
-
-- (BOOL)isContainer
-{
-	return self.type == SAPHPSerializedValueTypeArray || self.type == SAPHPSerializedValueTypeObject;
-}
-
-- (BOOL)isScalarEditable
-{
-	return self.type == SAPHPSerializedValueTypeNull
-		|| self.type == SAPHPSerializedValueTypeBoolean
-		|| self.type == SAPHPSerializedValueTypeInteger
-		|| self.type == SAPHPSerializedValueTypeDouble
-		|| self.type == SAPHPSerializedValueTypeString;
-}
-
-- (NSString *)typeLabel
-{
-	switch (self.type) {
-		case SAPHPSerializedValueTypeNull:
-			return @"null";
-		case SAPHPSerializedValueTypeBoolean:
-			return @"bool";
-		case SAPHPSerializedValueTypeInteger:
-			return @"int";
-		case SAPHPSerializedValueTypeDouble:
-			return @"float";
-		case SAPHPSerializedValueTypeString:
-			return @"string";
-		case SAPHPSerializedValueTypeArray:
-			return [NSString stringWithFormat:@"array (%lu)", (unsigned long)[self.children count]];
-		case SAPHPSerializedValueTypeObject:
-			return [NSString stringWithFormat:@"object %@ (%lu)", (self.className)?:@"", (unsigned long)[self.children count]];
-		case SAPHPSerializedValueTypeCustomSerialized:
-			return [NSString stringWithFormat:@"custom %@", (self.className)?:@""];
-		case SAPHPSerializedValueTypeReference:
-			return [NSString stringWithFormat:@"%@ reference", (self.referenceType)?:@"r"];
-	}
-	return @"";
-}
-
-- (NSString *)displayValue
-{
-	switch (self.type) {
-		case SAPHPSerializedValueTypeNull:
-			return @"NULL";
-		case SAPHPSerializedValueTypeBoolean:
-			return [self.scalarValue isEqualToString:@"1"] ? @"true" : @"false";
-		case SAPHPSerializedValueTypeInteger:
-		case SAPHPSerializedValueTypeDouble:
-		case SAPHPSerializedValueTypeString:
-			return (self.scalarValue)?:@"";
-		case SAPHPSerializedValueTypeCustomSerialized:
-			return (self.scalarValue)?:@"";
-		case SAPHPSerializedValueTypeReference:
-			return (self.scalarValue)?:@"";
-		case SAPHPSerializedValueTypeArray:
-		case SAPHPSerializedValueTypeObject:
-			return @"";
-	}
-	return @"";
-}
-
-- (NSString *)serializedStringForKey:(SAPHPSerializedEntry *)entry
-{
-	if (entry.keyIsInteger) {
-		return [NSString stringWithFormat:@"i:%@;", [entry.key description]];
-	}
-
-	NSString *key = ([entry.key isKindOfClass:[NSString class]]) ? entry.key : [[entry.key description] copy];
-	NSData *keyData = [key dataUsingEncoding:NSUTF8StringEncoding];
-	return [NSString stringWithFormat:@"s:%lu:\"%@\";", (unsigned long)[keyData length], key];
-}
-
-- (NSString *)serializedString
-{
-	switch (self.type) {
-		case SAPHPSerializedValueTypeNull:
-			return @"N;";
-		case SAPHPSerializedValueTypeBoolean:
-			return [NSString stringWithFormat:@"b:%@;", [self.scalarValue isEqualToString:@"1"] ? @"1" : @"0"];
-		case SAPHPSerializedValueTypeInteger:
-			return [NSString stringWithFormat:@"i:%@;", (self.scalarValue.length) ? self.scalarValue : @"0"];
-		case SAPHPSerializedValueTypeDouble:
-			return [NSString stringWithFormat:@"d:%@;", (self.scalarValue.length) ? self.scalarValue : @"0"];
-		case SAPHPSerializedValueTypeString: {
-			NSString *string = (self.scalarValue)?:@"";
-			NSData *stringData = [string dataUsingEncoding:NSUTF8StringEncoding];
-			return [NSString stringWithFormat:@"s:%lu:\"%@\";", (unsigned long)[stringData length], string];
-		}
-		case SAPHPSerializedValueTypeArray: {
-			NSMutableString *output = [NSMutableString stringWithFormat:@"a:%lu:{", (unsigned long)[self.children count]];
-			for (SAPHPSerializedEntry *entry in self.children) {
-				[output appendString:[self serializedStringForKey:entry]];
-				[output appendString:[entry.value serializedString]];
-			}
-			[output appendString:@"}"];
-			return output;
-		}
-		case SAPHPSerializedValueTypeObject: {
-			NSString *className = (self.className)?:@"stdClass";
-			NSData *classData = [className dataUsingEncoding:NSUTF8StringEncoding];
-			NSMutableString *output = [NSMutableString stringWithFormat:@"O:%lu:\"%@\":%lu:{", (unsigned long)[classData length], className, (unsigned long)[self.children count]];
-			for (SAPHPSerializedEntry *entry in self.children) {
-				[output appendString:[self serializedStringForKey:entry]];
-				[output appendString:[entry.value serializedString]];
-			}
-			[output appendString:@"}"];
-			return output;
-		}
-		case SAPHPSerializedValueTypeCustomSerialized: {
-			NSString *className = (self.className)?:@"";
-			NSString *payload = (self.scalarValue)?:@"";
-			NSData *classData = [className dataUsingEncoding:NSUTF8StringEncoding];
-			NSData *payloadData = [payload dataUsingEncoding:NSUTF8StringEncoding];
-			return [NSString stringWithFormat:@"C:%lu:\"%@\":%lu:{%@}", (unsigned long)[classData length], className, (unsigned long)[payloadData length], payload];
-		}
-		case SAPHPSerializedValueTypeReference:
-			return [NSString stringWithFormat:@"%@:%@;", (self.referenceType)?:@"r", (self.scalarValue.length) ? self.scalarValue : @"1"];
-	}
-	return @"N;";
-}
-
-@end
-
-@interface SAPHPSerializedParser ()
-
-@property(nonatomic, strong) NSData *data;
-@property(nonatomic) NSUInteger position;
-@property(nonatomic, copy) NSString *errorMessage;
-
-- (BOOL)unsignedIntegerValue:(NSUInteger *)value fromString:(NSString *)string;
-- (BOOL)stringIsPHPFloat:(NSString *)string;
-
-@end
-
-@implementation SAPHPSerializedParser
-
-+ (SAPHPSerializedValue *)parseString:(NSString *)input error:(NSString **)errorMessage
-{
-	NSString *trimmedInput = [(input)?:@"" stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-	if (![trimmedInput length]) {
-		if (errorMessage) *errorMessage = NSLocalizedString(@"No serialized data was provided.", @"PHP serialized editor empty input error");
-		return nil;
-	}
-
-	SAPHPSerializedParser *parser = [[SAPHPSerializedParser alloc] init];
-	parser.data = [trimmedInput dataUsingEncoding:NSUTF8StringEncoding];
-	parser.position = 0;
-
-	SAPHPSerializedValue *value = [parser parseValue];
-	if (!value) {
-		if (errorMessage) *errorMessage = parser.errorMessage ?: NSLocalizedString(@"Unable to parse PHP serialized data.", @"PHP serialized editor parse error");
-		return nil;
-	}
-
-	if (parser.position != [parser.data length]) {
-		if (errorMessage) *errorMessage = NSLocalizedString(@"Unexpected trailing characters after serialized value.", @"PHP serialized editor trailing input error");
-		return nil;
-	}
-
-	return value;
-}
-
-- (unsigned char)currentByte
-{
-	if (self.position >= [self.data length]) return 0;
-	const unsigned char *bytes = [self.data bytes];
-	return bytes[self.position];
-}
-
-- (BOOL)consumeByte:(unsigned char)byte
-{
-	if ([self currentByte] != byte) {
-		self.errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Expected '%c'.", @"PHP serialized editor expected byte error"), byte];
-		return NO;
-	}
-	self.position++;
-	return YES;
-}
-
-- (NSString *)readUntilByte:(unsigned char)delimiter
-{
-	const unsigned char *bytes = [self.data bytes];
-	NSUInteger start = self.position;
-	NSUInteger length = [self.data length];
-	while (self.position < length && bytes[self.position] != delimiter) {
-		self.position++;
-	}
-
-	if (self.position >= length) {
-		self.errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Expected delimiter '%c'.", @"PHP serialized editor expected delimiter error"), delimiter];
-		return nil;
-	}
-
-	NSData *subdata = [self.data subdataWithRange:NSMakeRange(start, self.position - start)];
-	self.position++;
-	return [[NSString alloc] initWithData:subdata encoding:NSASCIIStringEncoding];
-}
-
-- (NSString *)readBytesAsString:(NSUInteger)byteLength
-{
-	NSUInteger dataLength = [self.data length];
-	if (self.position > dataLength || byteLength > dataLength - self.position) {
-		self.errorMessage = NSLocalizedString(@"String length exceeds available serialized data.", @"PHP serialized editor string length error");
-		return nil;
-	}
-
-	NSData *subdata = [self.data subdataWithRange:NSMakeRange(self.position, byteLength)];
-	self.position += byteLength;
-
-	NSString *string = [[NSString alloc] initWithData:subdata encoding:NSUTF8StringEncoding];
-	if (!string) {
-		string = [[NSString alloc] initWithData:subdata encoding:NSISOLatin1StringEncoding];
-	}
-	if (!string) {
-		self.errorMessage = NSLocalizedString(@"Serialized string could not be decoded as text.", @"PHP serialized editor string decoding error");
-	}
-	return string;
-}
-
-- (SAPHPSerializedValue *)parseValue
-{
-	if (self.position >= [self.data length]) {
-		self.errorMessage = NSLocalizedString(@"Unexpected end of serialized data.", @"PHP serialized editor end of input error");
-		return nil;
-	}
-
-	unsigned char typeByte = [self currentByte];
-	self.position++;
-
-	if (typeByte == 'N') {
-		if (![self consumeByte:';']) return nil;
-		return [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeNull];
-	}
-
-	if (![self consumeByte:':']) return nil;
-
-	if (typeByte == 'b') {
-		NSString *raw = [self readUntilByte:';'];
-		if (![raw isEqualToString:@"0"] && ![raw isEqualToString:@"1"]) {
-			self.errorMessage = NSLocalizedString(@"Invalid PHP boolean value.", @"PHP serialized editor invalid boolean error");
-			return nil;
-		}
-		SAPHPSerializedValue *value = [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeBoolean];
-		value.scalarValue = raw;
-		return value;
-	}
-
-	if (typeByte == 'i') {
-		NSString *raw = [self readUntilByte:';'];
-		if (![self stringIsInteger:raw]) {
-			self.errorMessage = NSLocalizedString(@"Invalid PHP integer value.", @"PHP serialized editor invalid integer error");
-			return nil;
-		}
-		SAPHPSerializedValue *value = [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeInteger];
-		value.scalarValue = raw;
-		return value;
-	}
-
-	if (typeByte == 'd') {
-		NSString *raw = [self readUntilByte:';'];
-		if (![self stringIsPHPFloat:raw]) {
-			self.errorMessage = NSLocalizedString(@"Invalid PHP float value.", @"PHP serialized editor invalid float error");
-			return nil;
-		}
-		SAPHPSerializedValue *value = [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeDouble];
-		value.scalarValue = raw;
-		return value;
-	}
-
-	if (typeByte == 's') {
-		NSString *lengthString = [self readUntilByte:':'];
-		NSUInteger byteLength = 0;
-		if (![self unsignedIntegerValue:&byteLength fromString:lengthString]) return nil;
-		if (![self consumeByte:'"']) return nil;
-		NSString *string = [self readBytesAsString:byteLength];
-		if (!string) return nil;
-		if (![self consumeByte:'"'] || ![self consumeByte:';']) return nil;
-
-		SAPHPSerializedValue *value = [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeString];
-		value.scalarValue = string;
-		return value;
-	}
-
-	if (typeByte == 'a') {
-		NSString *countString = [self readUntilByte:':'];
-		NSUInteger count = 0;
-		if (![self unsignedIntegerValue:&count fromString:countString]) return nil;
-		if (![self consumeByte:'{']) return nil;
-
-		SAPHPSerializedValue *arrayValue = [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeArray];
-		for (NSUInteger i = 0; i < count; i++) {
-			SAPHPSerializedValue *keyValue = [self parseValue];
-			if (!keyValue) return nil;
-			if (keyValue.type != SAPHPSerializedValueTypeInteger && keyValue.type != SAPHPSerializedValueTypeString) {
-				self.errorMessage = NSLocalizedString(@"PHP array keys must be integers or strings.", @"PHP serialized editor invalid key error");
-				return nil;
-			}
-			SAPHPSerializedValue *childValue = [self parseValue];
-			if (!childValue) return nil;
-
-			SAPHPSerializedEntry *entry = [[SAPHPSerializedEntry alloc] init];
-			entry.keyIsInteger = keyValue.type == SAPHPSerializedValueTypeInteger;
-			entry.key = keyValue.scalarValue;
-			entry.value = childValue;
-			[arrayValue.children addObject:entry];
-		}
-
-		if (![self consumeByte:'}']) return nil;
-		return arrayValue;
-	}
-
-	if (typeByte == 'O') {
-		NSString *classLengthString = [self readUntilByte:':'];
-		NSUInteger classByteLength = 0;
-		if (![self unsignedIntegerValue:&classByteLength fromString:classLengthString]) return nil;
-		if (![self consumeByte:'"']) return nil;
-		NSString *className = [self readBytesAsString:classByteLength];
-		if (!className) return nil;
-		if (![self consumeByte:'"'] || ![self consumeByte:':']) return nil;
-		NSString *countString = [self readUntilByte:':'];
-		NSUInteger count = 0;
-		if (![self unsignedIntegerValue:&count fromString:countString]) return nil;
-		if (![self consumeByte:'{']) return nil;
-
-		SAPHPSerializedValue *objectValue = [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeObject];
-		objectValue.className = className;
-		for (NSUInteger i = 0; i < count; i++) {
-			SAPHPSerializedValue *keyValue = [self parseValue];
-			if (!keyValue) return nil;
-			if (keyValue.type != SAPHPSerializedValueTypeInteger && keyValue.type != SAPHPSerializedValueTypeString) {
-				self.errorMessage = NSLocalizedString(@"PHP object property names must be integers or strings.", @"PHP serialized editor invalid property error");
-				return nil;
-			}
-			SAPHPSerializedValue *childValue = [self parseValue];
-			if (!childValue) return nil;
-
-			SAPHPSerializedEntry *entry = [[SAPHPSerializedEntry alloc] init];
-			entry.keyIsInteger = keyValue.type == SAPHPSerializedValueTypeInteger;
-			entry.key = keyValue.scalarValue;
-			entry.value = childValue;
-			[objectValue.children addObject:entry];
-		}
-
-		if (![self consumeByte:'}']) return nil;
-		return objectValue;
-	}
-
-	if (typeByte == 'C') {
-		NSString *classLengthString = [self readUntilByte:':'];
-		NSUInteger classByteLength = 0;
-		if (![self unsignedIntegerValue:&classByteLength fromString:classLengthString]) return nil;
-		if (![self consumeByte:'"']) return nil;
-		NSString *className = [self readBytesAsString:classByteLength];
-		if (!className) return nil;
-		if (![self consumeByte:'"'] || ![self consumeByte:':']) return nil;
-		NSString *payloadLengthString = [self readUntilByte:':'];
-		NSUInteger payloadByteLength = 0;
-		if (![self unsignedIntegerValue:&payloadByteLength fromString:payloadLengthString]) return nil;
-		if (![self consumeByte:'{']) return nil;
-		NSString *payload = [self readBytesAsString:payloadByteLength];
-		if (!payload) return nil;
-		if (![self consumeByte:'}']) return nil;
-
-		SAPHPSerializedValue *customValue = [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeCustomSerialized];
-		customValue.className = className;
-		customValue.scalarValue = payload;
-		return customValue;
-	}
-
-	if (typeByte == 'r' || typeByte == 'R') {
-		NSString *reference = [self readUntilByte:';'];
-		if (![self unsignedIntegerValue:NULL fromString:reference]) return nil;
-		SAPHPSerializedValue *referenceValue = [SAPHPSerializedValue valueWithType:SAPHPSerializedValueTypeReference];
-		referenceValue.referenceType = [NSString stringWithFormat:@"%c", typeByte];
-		referenceValue.scalarValue = reference;
-		return referenceValue;
-	}
-
-	self.errorMessage = [NSString stringWithFormat:NSLocalizedString(@"Unsupported PHP serialized type '%c'.", @"PHP serialized editor unsupported type error"), typeByte];
-	return nil;
-}
-
-- (BOOL)stringIsInteger:(NSString *)string
-{
-	if (![string length]) return NO;
-	NSScanner *scanner = [NSScanner scannerWithString:string];
-	NSInteger value = 0;
-	return [scanner scanInteger:&value] && [scanner isAtEnd];
-}
-
-- (BOOL)unsignedIntegerValue:(NSUInteger *)value fromString:(NSString *)string
-{
-	if (![string length]) return NO;
-	for (NSUInteger i = 0; i < [string length]; i++) {
-		unichar c = [string characterAtIndex:i];
-		if (c < '0' || c > '9') {
-			self.errorMessage = NSLocalizedString(@"Invalid serialized length or count.", @"PHP serialized editor invalid count error");
-			return NO;
-		}
-	}
-
-	errno = 0;
-	char *end = NULL;
-	unsigned long long parsedValue = strtoull([string UTF8String], &end, 10);
-	if (errno == ERANGE || !end || *end != '\0' || parsedValue > NSUIntegerMax) {
-		self.errorMessage = NSLocalizedString(@"Serialized length or count is too large.", @"PHP serialized editor count overflow error");
-		return NO;
-	}
-
-	if (value) *value = (NSUInteger)parsedValue;
-	return YES;
-}
-
-- (BOOL)stringIsPHPFloat:(NSString *)string
-{
-	if (![string length]) return NO;
-
-	NSString *uppercaseValue = [string uppercaseString];
-	if ([uppercaseValue isEqualToString:@"INF"] || [uppercaseValue isEqualToString:@"-INF"] || [uppercaseValue isEqualToString:@"NAN"]) {
-		return YES;
-	}
-
-	NSScanner *scanner = [NSScanner scannerWithString:string];
-	[scanner setCharactersToBeSkipped:nil];
-	double doubleValue = 0;
-	return [scanner scanDouble:&doubleValue] && [scanner isAtEnd];
-}
 
 @end
 
@@ -2072,6 +1581,7 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 		NSLocalizedString(@"Integer", @"PHP serialized editor integer type"),
 		NSLocalizedString(@"Float", @"PHP serialized editor float type"),
 		NSLocalizedString(@"Boolean", @"PHP serialized editor boolean type"),
+		NSLocalizedString(@"Array", @"PHP serialized editor array type"),
 		NSLocalizedString(@"Null", @"PHP serialized editor null type")
 	]];
 	self.phpSerializedTypePopup = typePopup;
@@ -2203,6 +1713,9 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 		case SAPHPSerializedValueTypeBoolean:
 			[self.phpSerializedTypePopup selectItemWithTitle:NSLocalizedString(@"Boolean", @"PHP serialized editor boolean type")];
 			break;
+		case SAPHPSerializedValueTypeArray:
+			[self.phpSerializedTypePopup selectItemWithTitle:NSLocalizedString(@"Array", @"PHP serialized editor array type")];
+			break;
 		case SAPHPSerializedValueTypeNull:
 			[self.phpSerializedTypePopup selectItemWithTitle:NSLocalizedString(@"Null", @"PHP serialized editor null type")];
 			break;
@@ -2232,12 +1745,13 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 		entry.value.scalarValue = rawValue;
 	}
 	else if ([selectedType isEqualToString:NSLocalizedString(@"Integer", @"PHP serialized editor integer type")]) {
-		if (![self phpSerializedStringIsInteger:rawValue]) {
+		NSString *trimmedValue = [SAPHPSerializedValue normalizedIntegerStringFromEditedString:rawValue];
+		if (!trimmedValue) {
 			if (showError) [SPTooltip showWithObject:NSLocalizedString(@"Integer values may only contain digits and an optional leading minus sign.", @"PHP serialized editor integer validation error")];
 			return NO;
 		}
 		entry.value.type = SAPHPSerializedValueTypeInteger;
-		entry.value.scalarValue = rawValue;
+		entry.value.scalarValue = trimmedValue;
 	}
 	else if ([selectedType isEqualToString:NSLocalizedString(@"Float", @"PHP serialized editor float type")]) {
 		NSString *trimmedValue = [rawValue stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
@@ -2245,7 +1759,7 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 			if (showError) [SPTooltip showWithObject:NSLocalizedString(@"Float values cannot be empty.", @"PHP serialized editor float validation error")];
 			return NO;
 		}
-		if (![self phpSerializedStringIsFloat:trimmedValue]) {
+		if (![SAPHPSerializedValue isValidPHPFloatString:trimmedValue]) {
 			if (showError) [SPTooltip showWithObject:NSLocalizedString(@"Float values must be a valid number, INF, -INF, or NAN.", @"PHP serialized editor float validation error")];
 			return NO;
 		}
@@ -2265,6 +1779,13 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 			return NO;
 		}
 		entry.value.type = SAPHPSerializedValueTypeBoolean;
+	}
+	else if ([selectedType isEqualToString:NSLocalizedString(@"Array", @"PHP serialized editor array type")]) {
+		entry.value.type = SAPHPSerializedValueTypeArray;
+		entry.value.scalarValue = @"";
+		entry.value.className = nil;
+		entry.value.referenceType = nil;
+		[entry.value.children removeAllObjects];
 	}
 	else {
 		entry.value.type = SAPHPSerializedValueTypeNull;
@@ -2293,11 +1814,11 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 
 	if (selectedEntry.value.type == SAPHPSerializedValueTypeArray) {
 		newEntry.keyIsInteger = YES;
-		newEntry.key = @([selectedEntry.value.children count]);
+		newEntry.key = [selectedEntry.value nextAvailableArrayKey];
 	}
 	else {
 		newEntry.keyIsInteger = NO;
-		newEntry.key = @"new_property";
+		newEntry.key = [selectedEntry.value uniqueObjectPropertyName];
 	}
 
 	[selectedEntry.value.children addObject:newEntry];
@@ -2342,29 +1863,6 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 {
 	[editSheet endSheet:self.phpSerializedEditorSheet returnCode:NSModalResponseCancel];
 	[self.phpSerializedEditorSheet orderOut:self];
-}
-
-- (BOOL)phpSerializedStringIsInteger:(NSString *)string
-{
-	if (![string length]) return NO;
-	NSScanner *scanner = [NSScanner scannerWithString:string];
-	NSInteger value = 0;
-	return [scanner scanInteger:&value] && [scanner isAtEnd];
-}
-
-- (BOOL)phpSerializedStringIsFloat:(NSString *)string
-{
-	if (![string length]) return NO;
-
-	NSString *uppercaseValue = [string uppercaseString];
-	if ([uppercaseValue isEqualToString:@"INF"] || [uppercaseValue isEqualToString:@"-INF"] || [uppercaseValue isEqualToString:@"NAN"]) {
-		return YES;
-	}
-
-	NSScanner *scanner = [NSScanner scannerWithString:string];
-	[scanner setCharactersToBeSkipped:nil];
-	double doubleValue = 0;
-	return [scanner scanDouble:&doubleValue] && [scanner isAtEnd];
 }
 
 - (NSInteger)outlineView:(NSOutlineView *)outlineView numberOfChildrenOfItem:(id)item
