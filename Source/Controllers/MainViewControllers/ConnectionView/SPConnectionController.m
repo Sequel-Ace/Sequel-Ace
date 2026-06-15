@@ -4073,6 +4073,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                 SABundleHTMLOutputWindowController *bundleController = [[SABundleHTMLOutputWindowController alloc] init];
                 [bundleController setWindowUUID:socketHelpWindowUUID];
 
+                // Remember that the socket help has been shown once the user closes its window.
+                bundleController.windowWillCloseHandler = ^{
+                    [[NSUserDefaults standardUserDefaults] setBool:YES forKey:SPConnectionShownSocketHelp];
+                };
+
                 NSDictionary *tmpDic2 = @{@"x" : @225, @"y" : @536, @"w" : @768, @"h" : @425};
                 NSDictionary *tmpDict = @{SPConnectionShownSocketHelp : @YES, @"frame" : tmpDic2};
 
@@ -4098,8 +4103,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                 if(error == nil){
                     [SPBundleManager.shared addHTMLOutputController:bundleController];
                 }
-                // set straight away, or wait for them to close the window?
-                //[prefs setBool:YES forKey:SPConnectionShownSocketHelp];
             }
         }
     }

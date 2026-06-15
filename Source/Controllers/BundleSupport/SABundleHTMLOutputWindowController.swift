@@ -21,14 +21,19 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
     @objc var docUUID: String = ""
     @objc var suppressExceptionAlerting: Bool = false
 
+    /// Optional hook invoked when the window is about to close. Lets a caller attach
+    /// close-time behavior (e.g. recording that a one-time help window has been shown)
+    /// without this generic controller needing to know the specifics.
+    @objc var windowWillCloseHandler: (() -> Void)?
+
     private let model = SAWebViewModel()
     private let bridge = SABundleJSBridge()
     private var titleSubscription: AnyCancellable?
 
-    // Frame save/restore for the socket-help and stale-bookmarks help windows.
+    // Saves the window's frame when a caller supplies a temporary one, so it can be
+    // restored when the window closes.
     private var restoreFrame = false
     private var origFrame: NSRect = .zero
-    private var windowType: String?
 
     // MARK: - Init
 
@@ -76,33 +81,27 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
     @objc(displayHTMLContent:withOptions:)
     func displayHTMLContent(_ content: String, withOptions displayOptions: [AnyHashable: Any]?) {
         window?.orderFront(nil)
-        applyDisplayOptions(displayOptions, allowStaleBookmarksHelp: true)
+        applyDisplayOptions(displayOptions)
         model.loadHTMLString(content)
     }
 
     @objc(displayURLString:withOptions:)
     func displayURLString(_ urlString: String, withOptions displayOptions: [AnyHashable: Any]?) {
         window?.makeKeyAndOrderFront(nil)
-        applyDisplayOptions(displayOptions, allowStaleBookmarksHelp: false)
+        applyDisplayOptions(displayOptions)
         if let url = URL(string: urlString) {
             model.load(URLRequest(url: url))
         }
     }
 
-    /// Ports the legacy frame handling: the socket-help and stale-bookmarks help
-    /// windows pass a "frame" dictionary and get their original frame restored on close.
-    private func applyDisplayOptions(_ displayOptions: [AnyHashable: Any]?, allowStaleBookmarksHelp: Bool) {
-        guard let options = displayOptions, !options.isEmpty else { return }
-
-        let shownSocketHelp = (options[SPConnectionShownSocketHelp] as? Bool) ?? false
-        let staleBookmarksHelp = allowStaleBookmarksHelp && ((options[SPStaleBookmarksHelp] as? Bool) ?? false)
-        guard shownSocketHelp || staleBookmarksHelp else { return }
-
-        guard let window = window, let frameDict = options["frame"] as? [AnyHashable: Any] else { return }
+    /// Applies an optional temporary window frame. When a caller passes a "frame"
+    /// dictionary, the window resizes to it and restores its previous frame on close.
+    private func applyDisplayOptions(_ displayOptions: [AnyHashable: Any]?) {
+        guard let window = window,
+              let frameDict = displayOptions?["frame"] as? [AnyHashable: Any] else { return }
 
         origFrame = window.frame
         restoreFrame = true
-        windowType = shownSocketHelp ? SPConnectionShownSocketHelp : SPStaleBookmarksHelp
 
         let newFrame = NSRect(
             x: (frameDict["x"] as? NSNumber)?.doubleValue ?? 0,
@@ -120,11 +119,8 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
             window?.setFrame(origFrame, display: true)
             restoreFrame = false
         }
-        if windowType == SPConnectionShownSocketHelp {
-            windowType = nil
-            // Set once they close the window, matching the legacy behavior.
-            UserDefaults.standard.set(true, forKey: SPConnectionShownSocketHelp)
-        }
+
+        windowWillCloseHandler?()
 
         model.loadHTMLString("<html></html>")
         model.webView?.configuration.userContentController
