@@ -53,6 +53,23 @@ final class SAArchivingTests: XCTestCase {
         XCTAssertEqual(decoded.pointSize, font.pointSize, accuracy: 0.001)
     }
 
+    /// Keyed archives written *without* secure coding (e.g. by the older
+    /// `NSKeyedArchiver.archivedData(withRootObject:)` API, as used by the
+    /// previous `UserDefaults.getFont`) must still decode through the helper's
+    /// secure reader. Secure decoding validates the decoded class, not how the
+    /// archive was written.
+    func testReadsNonSecureKeyedArchive() throws {
+        let color = NSColor(calibratedRed: 0.3, green: 0.6, blue: 0.9, alpha: 1.0)
+        let nonSecureKeyed = try NSKeyedArchiver.archivedData(withRootObject: color, requiringSecureCoding: false)
+        let decoded = try XCTUnwrap(SAArchiving.color(from: nonSecureKeyed), "non-secure keyed colour must decode")
+        assertColorsEqual(decoded, color)
+
+        let font = try XCTUnwrap(NSFont(name: "Menlo", size: 13))
+        let nonSecureFont = try NSKeyedArchiver.archivedData(withRootObject: font, requiringSecureCoding: false)
+        let decodedFont = try XCTUnwrap(SAArchiving.font(from: nonSecureFont), "non-secure keyed font must decode")
+        XCTAssertEqual(decodedFont.fontName, font.fontName)
+    }
+
     // MARK: - Defensive: bad input
 
     func testNilDataReturnsNil() {

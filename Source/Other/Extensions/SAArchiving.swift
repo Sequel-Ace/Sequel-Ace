@@ -60,7 +60,11 @@ import Foundation
     where T: NSObject, T: NSCoding {
         guard let data = data, !data.isEmpty else { return nil }
 
-        // Modern keyed + secure path (also reads non-secure keyed archives).
+        // Modern keyed path. Secure decoding only requires that the *decoded*
+        // object is of the expected NSSecureCoding class; it does not require the
+        // archive to have been written with `requiringSecureCoding`. So this also
+        // reads keyed data produced by the older non-secure `NSKeyedArchiver`
+        // convenience API (verified by `testReadsNonSecureKeyedArchive`).
         if let value = try? NSKeyedUnarchiver.unarchivedObject(ofClass: cls, from: data) {
             return value
         }
