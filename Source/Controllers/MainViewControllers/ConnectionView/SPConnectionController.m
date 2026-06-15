@@ -2106,7 +2106,6 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     // Parse connection string using Swift helper
     ConnectionStringParseResult *result = [ConnectionStringParser parse:url];
     NSMutableDictionary *details = [result.details mutableCopy];
-    BOOL autoConnect = result.autoConnect;
     NSArray<NSString *> *invalidParameters = result.invalidParameters;
     BOOL parsed = result.success;
 
