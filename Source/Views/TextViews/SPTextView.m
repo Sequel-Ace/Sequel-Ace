@@ -3576,11 +3576,14 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 {
 	NSPasteboard *pboard = [sender draggingPasteboard];
 
-	if ( [[pboard types] containsObject:NSFilenamesPboardType] && [[pboard types] containsObject:@"CorePasteboardFlavorType 0x54455854"])
+	if ( [[pboard types] containsObject:NSPasteboardTypeFileURL] && [[pboard types] containsObject:@"CorePasteboardFlavorType 0x54455854"])
 		return [super performDragOperation:sender];
 
-	if ( [[pboard types] containsObject:NSFilenamesPboardType] ) {
-		NSArray *files = [pboard propertyListForType:NSFilenamesPboardType];
+	if ( [[pboard types] containsObject:NSPasteboardTypeFileURL] ) {
+		NSArray *files = [pboard readObjectsForClasses:@[[NSURL class]] options:@{NSPasteboardURLReadingFileURLsOnlyKey: @YES}];
+
+		if([files count] == 0)
+			return [super performDragOperation:sender];
 
 		// Only one file path is allowed
 		if([files count] > 1) {
@@ -3588,7 +3591,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 			return YES;
 		}
 
-		NSString *filepath = [[pboard propertyListForType:NSFilenamesPboardType] objectAtIndex:0];
+		NSString *filepath = [(NSURL *)[files objectAtIndex:0] path];
 		// if (([filenamesAttributes fileHFSTypeCode] == 'clpt' && [filenamesAttributes fileHFSCreatorCode] == 'MACS') || [[filename pathExtension] isEqualToString:@"textClipping"] == YES) {
 		//
 		// }

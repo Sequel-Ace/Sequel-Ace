@@ -16,6 +16,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// SwiftUI favorites sidebar built over the value-type
 /// `SAFavoriteItem` model.
@@ -80,7 +81,7 @@ struct SAFavoriteRow: View {
             Image("quick-connect-icon")
                 .renderingMode(.template)
         case .group:
-            Image(nsImage: NSWorkspace.shared.icon(forFileType: NSFileTypeForHFSTypeCode(OSType(kGenericFolderIcon))))
+            Image(nsImage: NSWorkspace.shared.icon(for: .folder))
                 .resizable()
                 .frame(width: 16, height: 16)
         case .favorite:

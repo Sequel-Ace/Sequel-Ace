@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPFieldEditorController.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "RegexKitLite.h"
 #import "SPTooltip.h"
 #import "SPGeometryDataView.h"
@@ -621,7 +622,7 @@ typedef enum {
 	NSSavePanel *panel = [NSSavePanel savePanel];
 
 	if ([editSheetSegmentControl selectedSegment] == ImageSegment && [sheetEditData isKindOfClass:[SPMySQLGeometryData class]]) {
-		[panel setAllowedFileTypes:@[@"pdf"]];
+		[panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:@"pdf"]]];
 		[panel setAllowsOtherFileTypes:NO];
 	}
 	else {
