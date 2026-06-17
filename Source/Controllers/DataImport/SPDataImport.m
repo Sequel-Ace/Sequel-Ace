@@ -741,6 +741,8 @@
 	SPFileHandle *csvFileHandle;
 	NSMutableData *csvDataBuffer;
 	const unsigned char *csvDataBufferBytes;
+	NSData *csvLineTerminatorData;
+	const unsigned char *csvLineTerminatorBytes;
 	NSData *fileChunk;
 	NSString *csvString;
 	SPCSVParser *csvParser;
@@ -760,6 +762,7 @@
 	NSInteger dataBufferLength = 0;
 	NSInteger dataBufferPosition = 0;
 	NSInteger dataBufferLastQueryEndPosition = 0;
+	NSInteger csvLineTerminatorLength = 0;
 	NSUInteger i;
 	BOOL allDataRead = NO;
 	BOOL insertBaseStringHasEntries;
@@ -848,6 +851,10 @@
 		[csvParser setNullReplacementString:[self->prefs objectForKey:SPNullValue]];
 	});
 
+	csvLineTerminatorData = [[csvParser lineTerminatorString] dataUsingEncoding:csvEncoding];
+	csvLineTerminatorBytes = [csvLineTerminatorData bytes];
+	csvLineTerminatorLength = [csvLineTerminatorData length];
+
 	csvDataBuffer = [[NSMutableData alloc] init];
 	while (1) {
 		if (progressCancelled) break;
@@ -879,37 +886,32 @@
 		csvDataBufferBytes = [csvDataBuffer bytes];
 		dataBufferLength = [csvDataBuffer length];
 		for ( ; dataBufferPosition < dataBufferLength || allDataRead; dataBufferPosition++) {
-			if (!allDataRead && csvDataBufferBytes[dataBufferPosition] == 0x0D && dataBufferPosition == dataBufferLength - 1) {
+			BOOL atLineEnding = NO;
+			BOOL atPartialLineEnding = NO;
+			NSInteger segmentEndPosition = dataBufferPosition;
+
+#warning This EOL detection logic will break for multibyte encodings (like UTF16)!
+			if (csvLineTerminatorLength && dataBufferPosition < dataBufferLength) {
+				NSInteger remainingBytes = dataBufferLength - dataBufferPosition;
+				NSInteger bytesToCompare = MIN(remainingBytes, csvLineTerminatorLength);
+
+				if (!memcmp(csvDataBufferBytes + dataBufferPosition, csvLineTerminatorBytes, bytesToCompare)) {
+					if (remainingBytes >= csvLineTerminatorLength) {
+						atLineEnding = YES;
+						segmentEndPosition = dataBufferPosition + csvLineTerminatorLength;
+					} else if (!allDataRead) {
+						atPartialLineEnding = YES;
+					}
+				}
+			}
+
+			if (atPartialLineEnding) {
 				break;
 			}
-			if ((dataBufferPosition < dataBufferLength
-					&& (csvDataBufferBytes[dataBufferPosition] == 0x0A
-						|| csvDataBufferBytes[dataBufferPosition] == 0x0D))
-				|| (allDataRead && dataBufferPosition >= dataBufferLength))
-			{
-#warning This EOL detection logic will break for multibyte encodings (like UTF16)!
-				NSInteger segmentEndPosition;
-				BOOL atLineEnding = NO;
 
-				if (allDataRead && dataBufferPosition >= dataBufferLength) {
+			if (atLineEnding || (allDataRead && dataBufferPosition >= dataBufferLength)) {
+				if (!atLineEnding) {
 					segmentEndPosition = dataBufferLength;
-					while (segmentEndPosition > dataBufferLastQueryEndPosition
-							&& (csvDataBufferBytes[segmentEndPosition - 1] == 0x0A
-								|| csvDataBufferBytes[segmentEndPosition - 1] == 0x0D))
-					{
-						segmentEndPosition--;
-						atLineEnding = YES;
-					}
-				} else {
-					segmentEndPosition = dataBufferPosition;
-					atLineEnding = YES;
-					// Keep reading through any other line endings
-					while (dataBufferPosition + 1 < dataBufferLength
-							&& (csvDataBufferBytes[dataBufferPosition+1] == 0x0A
-								|| csvDataBufferBytes[dataBufferPosition+1] == 0x0D))
-					{
-						dataBufferPosition++;
-					}
 				}
 
 				// Try to generate a NSString with the resulting data
@@ -931,19 +933,16 @@
 					return;
 				}
 
-				if (atLineEnding) {
-					csvString = [csvString stringByAppendingString:[csvParser lineTerminatorString]];
-				}
-
 				// Add the NSString segment to the CSV parser and release it
 				[csvParser appendString:csvString];
 
-				if (allDataRead) {
+				if (allDataRead && !atLineEnding) {
 					dataBufferLastQueryEndPosition = dataBufferLength;
 					break;
 				}
 
-				dataBufferLastQueryEndPosition = dataBufferPosition + 1;
+				dataBufferLastQueryEndPosition = segmentEndPosition;
+				dataBufferPosition = segmentEndPosition - 1;
 			}
 		}
 
@@ -1765,10 +1764,10 @@
 			if ([lineEndingString isEqualToString:@"LF"]) {
 				lineEnding = @"\\n";
 			}
-			else if ([lineEnding isEqualToString:@"CR"]){
+			else if ([lineEndingString isEqualToString:@"CR"]){
 				lineEnding = @"\\r";
 			}
-			else if ([lineEnding isEqualToString:@"CRLF"]) {
+			else if ([lineEndingString isEqualToString:@"CRLF"]) {
 				lineEnding = @"\\r\\n";
 			}
 		}
