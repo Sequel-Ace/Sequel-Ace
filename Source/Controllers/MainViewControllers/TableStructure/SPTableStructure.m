@@ -304,33 +304,14 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 - (BOOL)_isAutoIncrementExtraValue:(id)value
 {
-	if (![value isKindOfClass:[NSString class]]) return NO;
-	
-	NSString *normalized = [[(NSString *)value stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] uppercaseString];
-	return [normalized isEqualToString:@"AUTO_INCREMENT"] || [normalized isEqualToString:@"SERIAL DEFAULT VALUE"];
+	return [SAAutoIncrementRuleSupport isAutoIncrementExtraValue:value];
 }
 
 - (BOOL)_fieldTypeAllowsAutoIncrement:(NSString *)fieldType
 {
 	if (![self _serverUsesMySQL84AutoIncrementRules]) return YES;
 	
-	NSString *type = fieldType ? [[fieldType stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] uppercaseString] : @"";
-	NSRange lengthRange = [type rangeOfString:@"("];
-	if (lengthRange.location != NSNotFound) {
-		type = [type substringToIndex:lengthRange.location];
-	}
-	type = [[[type componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]] firstObject] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-	
-	NSSet *integerTypes = [NSSet setWithObjects:
-		SPMySQLTinyIntType,
-		SPMySQLSmallIntType,
-		SPMySQLMediumIntType,
-		SPMySQLIntType,
-		@"INTEGER",
-		SPMySQLBigIntType,
-		nil];
-	
-	return [integerTypes containsObject:type];
+	return [SAAutoIncrementRuleSupport fieldTypeAllowsAutoIncrement:fieldType];
 }
 
 - (void)_showInvalidAutoIncrementAlertForFieldType:(NSString *)fieldType
