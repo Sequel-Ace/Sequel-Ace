@@ -63,6 +63,7 @@
 - (void)testUserManagerModelSupportsCurrentGlobalGrantTablePrivileges;
 - (void)testUserManagerModelKeepsGlobalOnlyPrivilegesOutOfSchemaPrivileges;
 - (void)testMySQLDynamicPrivilegeGrantNamesKeepUnderscores;
+- (void)testMySQLDynamicPrivAccessFailureHidesDynamicPrivilegeSupport;
 - (void)testMariaDBGlobalPrivAccessFailureKeepsSchemaShowCreateRoutineSupport;
 - (void)testGrantAllShortcutIsDatabaseScoped;
 
@@ -319,6 +320,36 @@
 
 	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"create_user_priv", NO), @"create user");
 	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"set_user_priv", YES), @"set user");
+}
+
+- (void)testMySQLDynamicPrivAccessFailureHidesDynamicPrivilegeSupport
+{
+	NSMutableDictionary *supportedPrivileges = [@{
+		@"allow_nonexistent_definer_priv": @YES,
+		@"binlog_admin_priv": @YES,
+		@"connection_admin_priv": @YES,
+		@"create_role_priv": @YES,
+		@"read_only_admin_priv": @YES,
+		@"replication_slave_admin_priv": @YES,
+		@"select_priv": @YES,
+		@"set_any_definer_priv": @YES
+	} mutableCopy];
+
+	SPUserManagerApplyMySQLDynamicPrivilegeSupportAvailability(supportedPrivileges, YES);
+
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"binlog_admin_priv"], @YES);
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"set_any_definer_priv"], @YES);
+
+	SPUserManagerApplyMySQLDynamicPrivilegeSupportAvailability(supportedPrivileges, NO);
+
+	XCTAssertNil([supportedPrivileges objectForKey:@"allow_nonexistent_definer_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"binlog_admin_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"connection_admin_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"read_only_admin_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"replication_slave_admin_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"set_any_definer_priv"]);
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"create_role_priv"], @YES);
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"select_priv"], @YES);
 }
 
 - (void)testMariaDBGlobalPrivAccessFailureKeepsSchemaShowCreateRoutineSupport

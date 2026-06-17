@@ -221,11 +221,16 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
 - (NSDictionary *)_mySQLDynamicPrivilegeDataByAccount
 {
+	mySQLDynamicPrivilegeDataAvailable = YES;
+
 	if ([connection isMariaDB]) return @{};
 	if (![serverSupport isMySQL8]) return @{};
 
 	SPMySQLResult *globalGrantsResult = [connection queryString:@"SELECT `USER` AS User, `HOST` AS Host, `PRIV` AS Priv FROM mysql.global_grants"];
-	if ([connection queryErrored] || !globalGrantsResult) return @{};
+	if ([connection queryErrored] || !globalGrantsResult) {
+		mySQLDynamicPrivilegeDataAvailable = NO;
+		return @{};
+	}
 
 	[globalGrantsResult setReturnDataAsStrings:YES];
 
@@ -396,6 +401,9 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
 		if ([connection isMariaDB]) {
 			SPUserManagerApplyMariaDBGlobalPrivilegeSupportAvailability([self privsSupportedByServer], mariaDBGlobalPrivilegeAccessDataAvailable);
+		}
+		else if ([serverSupport isMySQL8]) {
+			SPUserManagerApplyMySQLDynamicPrivilegeSupportAvailability([self privsSupportedByServer], mySQLDynamicPrivilegeDataAvailable);
 		}
 	}
 
