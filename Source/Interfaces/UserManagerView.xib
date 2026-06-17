@@ -307,14 +307,14 @@ DQ
                                                             <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                             <subviews>
                                                                 <box autoresizesSubviews="NO" borderType="line" title="Views and Procedures" translatesAutoresizingMaskIntoConstraints="NO" id="452">
-                                                                    <rect key="frame" x="273" y="253" width="348" height="134"/>
+                                                                    <rect key="frame" x="273" y="246" width="348" height="141"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                                                     <view key="contentView" id="kIh-Ff-5kV">
-                                                                        <rect key="frame" x="3" y="3" width="342" height="116"/>
+                                                                        <rect key="frame" x="3" y="3" width="342" height="123"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <subviews>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="473">
-                                                                                <rect key="frame" x="16" y="90" width="259" height="18"/>
+                                                                                <rect key="frame" x="16" y="97" width="259" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Create View" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="474">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -330,7 +330,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="475">
-                                                                                <rect key="frame" x="16" y="72" width="259" height="18"/>
+                                                                                <rect key="frame" x="16" y="78" width="259" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Show View" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="476">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -346,7 +346,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="sCr-rT-001">
-                                                                                <rect key="frame" x="16" y="0" width="259" height="18"/>
+                                                                                <rect key="frame" x="16" y="2" width="259" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Show Create Routine" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="sCr-rT-002">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -367,7 +367,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="477">
-                                                                                <rect key="frame" x="16" y="54" width="259" height="18"/>
+                                                                                <rect key="frame" x="16" y="59" width="259" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Create Routine" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="478">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -383,7 +383,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="479">
-                                                                                <rect key="frame" x="16" y="36" width="259" height="18"/>
+                                                                                <rect key="frame" x="16" y="40" width="259" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Alter Routine" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="480">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -399,7 +399,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="481">
-                                                                                <rect key="frame" x="16" y="18" width="259" height="18"/>
+                                                                                <rect key="frame" x="16" y="21" width="259" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Execute" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="482">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -452,7 +452,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="457">
-                                                                                <rect key="frame" x="16" y="170" width="220" height="18"/>
+                                                                                <rect key="frame" x="16" y="171" width="220" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Insert" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="458">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -468,7 +468,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="459">
-                                                                                <rect key="frame" x="16" y="150" width="220" height="18"/>
+                                                                                <rect key="frame" x="16" y="152" width="220" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Update" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="460">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -484,7 +484,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="461">
-                                                                                <rect key="frame" x="16" y="130" width="220" height="18"/>
+                                                                                <rect key="frame" x="16" y="133" width="220" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Delete" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="462">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -500,7 +500,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="463">
-                                                                                <rect key="frame" x="16" y="110" width="220" height="18"/>
+                                                                                <rect key="frame" x="16" y="114" width="220" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="References" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="464">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -516,7 +516,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="465">
-                                                                                <rect key="frame" x="16" y="90" width="220" height="18"/>
+                                                                                <rect key="frame" x="16" y="95" width="220" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Create" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="466">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -532,7 +532,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="467">
-                                                                                <rect key="frame" x="16" y="70" width="220" height="18"/>
+                                                                                <rect key="frame" x="16" y="76" width="220" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Drop" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="468">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -548,7 +548,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="469">
-                                                                                <rect key="frame" x="16" y="50" width="220" height="18"/>
+                                                                                <rect key="frame" x="16" y="57" width="220" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Alter" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="470">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -564,7 +564,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="471">
-                                                                                <rect key="frame" x="16" y="30" width="220" height="18"/>
+                                                                                <rect key="frame" x="16" y="38" width="220" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Index" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="472">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -580,7 +580,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="719">
-                                                                                <rect key="frame" x="16" y="10" width="220" height="18"/>
+                                                                                <rect key="frame" x="16" y="19" width="220" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Trigger" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="720">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -610,10 +610,10 @@ DQ
                                                                     </connections>
                                                                 </button>
                                                                 <box autoresizesSubviews="NO" borderType="line" title="Administration" translatesAutoresizingMaskIntoConstraints="NO" id="453">
-                                                                    <rect key="frame" x="273" y="3" width="348" height="250"/>
+                                                                    <rect key="frame" x="273" y="0" width="348" height="255"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                                                     <view key="contentView" id="F8k-eh-RHk">
-                                                                        <rect key="frame" x="3" y="3" width="342" height="232"/>
+                                                                        <rect key="frame" x="3" y="3" width="342" height="237"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <subviews>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="487">
@@ -1022,14 +1022,14 @@ DQ
                                                                     </view>
                                                                 </box>
                                                                 <box autoresizesSubviews="NO" borderType="line" title="Replication" translatesAutoresizingMaskIntoConstraints="NO" id="454">
-                                                                    <rect key="frame" x="17" y="59" width="255" height="90"/>
+                                                                    <rect key="frame" x="17" y="49" width="255" height="103"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                                                     <view key="contentView" id="mKr-0m-x8O">
-                                                                        <rect key="frame" x="3" y="3" width="249" height="72"/>
+                                                                        <rect key="frame" x="3" y="3" width="249" height="85"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <subviews>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="483">
-                                                                                <rect key="frame" x="16" y="54" width="221" height="18"/>
+                                                                                <rect key="frame" x="16" y="59" width="221" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Replication Client" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="484">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1045,7 +1045,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="485">
-                                                                                <rect key="frame" x="16" y="36" width="221" height="18"/>
+                                                                                <rect key="frame" x="16" y="40" width="221" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Replication Slave" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="486">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1061,7 +1061,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="rma-GL-bt1">
-                                                                                <rect key="frame" x="16" y="18" width="221" height="18"/>
+                                                                                <rect key="frame" x="16" y="21" width="221" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Replication Master Admin" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="rma-GL-cl1">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1082,7 +1082,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="rsa-GL-bt1">
-                                                                                <rect key="frame" x="16" y="0" width="221" height="18"/>
+                                                                                <rect key="frame" x="16" y="2" width="221" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Replication Slave Admin" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="rsa-GL-cl1">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
