@@ -557,7 +557,17 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
 - (BOOL)_serverUsesMySQL84ForeignKeyRules
 {
-	return ![connection isMariaDB] && [connection serverVersionIsGreaterThanOrEqualTo:8 minorVersion:4 releaseVersion:0];
+	if ([connection isMariaDB] || ![connection serverVersionIsGreaterThanOrEqualTo:8 minorVersion:4 releaseVersion:0]) return NO;
+
+	SPMySQLResult *restrictionResult = [connection queryString:@"SELECT @@session.restrict_fk_on_non_standard_key"];
+	[restrictionResult setReturnDataAsStrings:YES];
+	if ([connection queryErrored]) return YES;
+
+	id restrictionValue = [[restrictionResult getRowAsArray] firstObject];
+	if (!restrictionValue || [restrictionValue isNSNull]) return YES;
+
+	NSString *normalized = [[[restrictionValue description] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] uppercaseString];
+	return !([normalized isEqualToString:@"0"] || [normalized isEqualToString:@"OFF"] || [normalized isEqualToString:@"FALSE"]);
 }
 
 - (NSSet *)_mysql84SingleColumnUniqueReferenceColumnsForTable:(NSString *)table database:(NSString *)database
