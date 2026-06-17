@@ -64,6 +64,7 @@
 - (void)testUserManagerModelKeepsGlobalOnlyPrivilegesOutOfSchemaPrivileges;
 - (void)testMySQLDynamicPrivilegeGrantNamesKeepUnderscores;
 - (void)testMySQLDynamicPrivAccessFailureHidesDynamicPrivilegeSupport;
+- (void)testMySQLDynamicGrantOptionPreservationOnlyAppliesToTrackedDynamicPrivileges;
 - (void)testMariaDBGlobalPrivAccessFailureKeepsSchemaShowCreateRoutineSupport;
 - (void)testGrantAllShortcutIsDatabaseScoped;
 
@@ -350,6 +351,16 @@
 	XCTAssertNil([supportedPrivileges objectForKey:@"set_any_definer_priv"]);
 	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"create_role_priv"], @YES);
 	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"select_priv"], @YES);
+}
+
+- (void)testMySQLDynamicGrantOptionPreservationOnlyAppliesToTrackedDynamicPrivileges
+{
+	NSSet *grantOptionPrivilegeKeys = [NSSet setWithObjects:@"binlog_admin_priv", @"select_priv", nil];
+
+	XCTAssertTrue(SPUserManagerShouldPreserveMySQLDynamicPrivilegeGrantOption(@"binlog_admin_priv", grantOptionPrivilegeKeys));
+	XCTAssertFalse(SPUserManagerShouldPreserveMySQLDynamicPrivilegeGrantOption(@"select_priv", grantOptionPrivilegeKeys));
+	XCTAssertFalse(SPUserManagerShouldPreserveMySQLDynamicPrivilegeGrantOption(@"set_any_definer_priv", grantOptionPrivilegeKeys));
+	XCTAssertFalse(SPUserManagerShouldPreserveMySQLDynamicPrivilegeGrantOption(@"create_role_priv", grantOptionPrivilegeKeys));
 }
 
 - (void)testMariaDBGlobalPrivAccessFailureKeepsSchemaShowCreateRoutineSupport

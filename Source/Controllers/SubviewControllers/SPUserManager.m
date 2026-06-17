@@ -75,6 +75,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 - (void)_initializeMariaDBGlobalPrivsForChild:(SPUserMO *)child accessValue:(NSNumber *)accessValue;
 - (NSDictionary *)_mySQLDynamicPrivilegeDataByAccount;
 - (void)_initializeMySQLDynamicPrivsForChild:(SPUserMO *)child privilegeKeys:(NSSet *)privilegeKeys;
+- (BOOL)_shouldPreserveMySQLDynamicGrantOptionForPrivilege:(NSString *)privilege user:(NSString *)user host:(NSString *)host;
 - (void)contextWillSave:(NSNotification *)notice;
 - (void)_selectFirstChildOfParentNode;
 
@@ -222,11 +223,12 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 - (NSDictionary *)_mySQLDynamicPrivilegeDataByAccount
 {
 	mySQLDynamicPrivilegeDataAvailable = YES;
+	mySQLDynamicPrivilegeGrantOptionsByAccount = @{};
 
 	if ([connection isMariaDB]) return @{};
 	if (![serverSupport isMySQL8]) return @{};
 
-	SPMySQLResult *globalGrantsResult = [connection queryString:@"SELECT `USER` AS User, `HOST` AS Host, `PRIV` AS Priv FROM mysql.global_grants"];
+	SPMySQLResult *globalGrantsResult = [connection queryString:@"SELECT `USER` AS User, `HOST` AS Host, `PRIV` AS Priv, `WITH_GRANT_OPTION` AS GrantOption FROM mysql.global_grants"];
 	if ([connection queryErrored] || !globalGrantsResult) {
 		mySQLDynamicPrivilegeDataAvailable = NO;
 		return @{};
@@ -237,6 +239,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	NSEntityDescription *userEntity = [[[self managedObjectModel] entitiesByName] objectForKey:@"SPUser"];
 	NSSet *modeledPrivilegeKeys = [NSSet setWithArray:[userEntity attributeKeys]];
 	NSMutableDictionary *dynamicPrivilegeData = [NSMutableDictionary dictionary];
+	NSMutableDictionary *dynamicPrivilegeGrantOptions = [NSMutableDictionary dictionary];
 
 	for (NSDictionary *grantRow in globalGrantsResult)
 	{
@@ -254,7 +257,20 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		}
 
 		[privilegeKeys addObject:privilegeKey];
+
+		NSString *grantOptionValue = [grantRow objectForKey:@"GrantOption"];
+		if ([grantOptionValue isKindOfClass:[NSString class]] && [[grantOptionValue uppercaseString] isEqualToString:@"Y"]) {
+			NSMutableSet *grantOptionPrivilegeKeys = [dynamicPrivilegeGrantOptions objectForKey:accountKey];
+			if (!grantOptionPrivilegeKeys) {
+				grantOptionPrivilegeKeys = [NSMutableSet set];
+				[dynamicPrivilegeGrantOptions setObject:grantOptionPrivilegeKeys forKey:accountKey];
+			}
+
+			[grantOptionPrivilegeKeys addObject:privilegeKey];
+		}
 	}
+
+	mySQLDynamicPrivilegeGrantOptionsByAccount = dynamicPrivilegeGrantOptions;
 
 	return dynamicPrivilegeData;
 }
@@ -293,6 +309,18 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	{
 		[child setValue:@YES forKey:privilegeKey];
 	}
+}
+
+- (BOOL)_shouldPreserveMySQLDynamicGrantOptionForPrivilege:(NSString *)privilege user:(NSString *)user host:(NSString *)host
+{
+	if ([connection isMariaDB]) return NO;
+	if (![serverSupport isMySQL8]) return NO;
+
+	NSString *privilegeKey = [self _privilegeKeyForServerPrivilegeName:privilege];
+	NSString *accountKey = [self _accountKeyForUser:user host:host];
+	NSSet *grantOptionPrivilegeKeys = [mySQLDynamicPrivilegeGrantOptionsByAccount objectForKey:accountKey];
+
+	return SPUserManagerShouldPreserveMySQLDynamicPrivilegeGrantOption(privilegeKey, grantOptionPrivilegeKeys);
 }
 
 /** 
@@ -1545,30 +1573,59 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 {
 	if (![thePrivileges count]) return YES;
 
-	NSString *grantStatement;
-
 	// Special case when all items are checked, to allow GRANT OPTION to work
 	NSUInteger supportedPrivilegeCount = [[self _supportedPrivilegeKeysForEntityName:(aDatabase ? @"Privileges" : @"SPUser")] count];
 	if (SPUserManagerShouldUseAllPrivilegesShortcut([thePrivileges count], supportedPrivilegeCount, aDatabase != nil)) {
-		grantStatement = [NSString stringWithFormat:@"GRANT ALL ON %@.* TO %@@%@ WITH GRANT OPTION",
-							aDatabase?[aDatabase backtickQuotedString]:@"*",
-							[aUser tickQuotedString],
-							[aHost tickQuotedString]];
-	} 
-	else {
-		grantStatement = [NSString stringWithFormat:@"GRANT %@ ON %@.* TO %@@%@",
-							[[thePrivileges componentsJoinedByCommas] uppercaseString],
-							aDatabase?[aDatabase backtickQuotedString]:@"*",
-							[aUser tickQuotedString],
-							[aHost tickQuotedString]];
-	}
-	
-	if(![connection isNotMariadb103]){
-		grantStatement = [grantStatement stringByReplacingOccurrencesOfString:@"DELETE VERSIONING ROWS" withString:@"DELETE HISTORY"];
+		NSString *grantStatement = [NSString stringWithFormat:@"GRANT ALL ON %@.* TO %@@%@ WITH GRANT OPTION",
+									aDatabase?[aDatabase backtickQuotedString]:@"*",
+									[aUser tickQuotedString],
+									[aHost tickQuotedString]];
+
+		if(![connection isNotMariadb103]){
+			grantStatement = [grantStatement stringByReplacingOccurrencesOfString:@"DELETE VERSIONING ROWS" withString:@"DELETE HISTORY"];
+		}
+
+		[connection queryString:grantStatement];
+		return [self _checkAndDisplayMySqlErrorForPrivilegeOperation:NSLocalizedString(@"grant", @"grant privilege operation") privileges:thePrivileges onDatabase:aDatabase forUser:aUser host:aHost statement:grantStatement];
 	}
 
-	[connection queryString:grantStatement];
-	return [self _checkAndDisplayMySqlErrorForPrivilegeOperation:NSLocalizedString(@"grant", @"grant privilege operation") privileges:thePrivileges onDatabase:aDatabase forUser:aUser host:aHost statement:grantStatement];
+	NSMutableArray *regularPrivileges = [NSMutableArray array];
+	NSMutableArray *grantOptionPrivileges = [NSMutableArray array];
+	for (NSString *privilege in thePrivileges)
+	{
+		if (!aDatabase && [self _shouldPreserveMySQLDynamicGrantOptionForPrivilege:privilege user:aUser host:aHost]) {
+			[grantOptionPrivileges addObject:privilege];
+		}
+		else {
+			[regularPrivileges addObject:privilege];
+		}
+	}
+
+	NSArray *grantBatches = @[
+		@{@"privileges": regularPrivileges, @"preserveGrantOption": @NO},
+		@{@"privileges": grantOptionPrivileges, @"preserveGrantOption": @YES}
+	];
+	for (NSDictionary *grantBatch in grantBatches)
+	{
+		NSArray *privileges = [grantBatch objectForKey:@"privileges"];
+		if (![privileges count]) continue;
+
+		NSString *grantStatement = [NSString stringWithFormat:@"GRANT %@ ON %@.* TO %@@%@%@",
+									[[privileges componentsJoinedByCommas] uppercaseString],
+									aDatabase?[aDatabase backtickQuotedString]:@"*",
+									[aUser tickQuotedString],
+									[aHost tickQuotedString],
+									[[grantBatch objectForKey:@"preserveGrantOption"] boolValue] ? @" WITH GRANT OPTION" : @""];
+
+		if(![connection isNotMariadb103]){
+			grantStatement = [grantStatement stringByReplacingOccurrencesOfString:@"DELETE VERSIONING ROWS" withString:@"DELETE HISTORY"];
+		}
+
+		[connection queryString:grantStatement];
+		if (![self _checkAndDisplayMySqlErrorForPrivilegeOperation:NSLocalizedString(@"grant", @"grant privilege operation") privileges:privileges onDatabase:aDatabase forUser:aUser host:aHost statement:grantStatement]) return NO;
+	}
+
+	return YES;
 }
 
 /**

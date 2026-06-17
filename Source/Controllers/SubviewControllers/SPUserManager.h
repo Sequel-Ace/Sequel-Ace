@@ -119,6 +119,12 @@ static inline void SPUserManagerApplyMySQLDynamicPrivilegeSupportAvailability(NS
 	}
 }
 
+static inline BOOL SPUserManagerShouldPreserveMySQLDynamicPrivilegeGrantOption(NSString *privilegeKey, NSSet *grantOptionPrivilegeKeys)
+{
+	return [SPUserManagerMySQLDynamicPrivilegeKeysRequiringUnderscoreGrantNames() containsObject:privilegeKey] &&
+		[grantOptionPrivilegeKeys containsObject:privilegeKey];
+}
+
 static inline NSString *SPUserManagerGlobalShowCreateRoutinePrivilegeSupportKey(void)
 {
 	return @"show_create_routine_global_priv";
@@ -209,6 +215,7 @@ static inline void SPUserManagerApplyMariaDBGlobalPrivilegeSupportAvailability(N
 	BOOL isInitializing;
 	BOOL mariaDBGlobalPrivilegeAccessDataAvailable;
 	BOOL mySQLDynamicPrivilegeDataAvailable;
+	NSDictionary *mySQLDynamicPrivilegeGrantOptionsByAccount;
 	NSMutableString *errorsString;
 	
 	// MySQL 5.7.6 removes the "Password" columns and only uses the "plugin" + "authentication_string" columns
