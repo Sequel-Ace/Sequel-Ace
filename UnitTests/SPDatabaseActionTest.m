@@ -59,9 +59,11 @@
 - (void)testMariaDBShowCreateRoutineErrorAddsSpecificExplanation;
 - (void)testMariaDBGrantAllErrorAddsSpecificExplanationWhenShowCreateRoutineIsSupported;
 - (void)testRegularMySQLErrorDoesNotMentionMariaDBShowCreateRoutine;
+- (void)testRevokeGrantOptionFailureMessageUsesGrantOptionContext;
 - (void)testUserManagerModelSupportsCurrentGlobalGrantTablePrivileges;
 - (void)testUserManagerModelKeepsGlobalOnlyPrivilegesOutOfSchemaPrivileges;
 - (void)testMySQLDynamicPrivilegesAreNotTrackedAsUserTablePrivileges;
+- (void)testMariaDBGlobalPrivAccessFailureRemovesUnreliablePrivilegeSupport;
 - (void)testGrantAllComparisonUsesModeledPrivilegeCounts;
 
 @end
@@ -197,6 +199,23 @@
 	XCTAssertFalse([message containsString:@"SHOW CREATE ROUTINE"]);
 }
 
+- (void)testRevokeGrantOptionFailureMessageUsesGrantOptionContext
+{
+	NSString *message = SPUserManagerPrivilegeOperationErrorMessageForServerError(@"You are not allowed to revoke this privilege",
+																				 @[@"grant option"],
+																				 @"revoke",
+																				 @"sample_db",
+																				 @"app_user",
+																				 @"localhost",
+																				 @"REVOKE GRANT OPTION ON `sample_db`.* FROM 'app_user'@'localhost'",
+																				 NO,
+																				 NO);
+
+	XCTAssertTrue([message containsString:@"Could not revoke GRANT OPTION on database \"sample_db\" for app_user@localhost"]);
+	XCTAssertTrue([message containsString:@"You are not allowed to revoke this privilege"]);
+	XCTAssertFalse([message containsString:@"SELECT"]);
+}
+
 - (void)testRevokeFailureMessageIncludesPrivilegeTargetAndServerReason
 {
 	NSString *message = SPUserManagerPrivilegeOperationErrorMessageForServerError(@"You are not allowed to revoke this privilege",
@@ -297,6 +316,27 @@
 	XCTAssertTrue(SPUserManagerShouldTrackPrivilegeKeyInUserTable(@"create_role_priv", NO));
 }
 
+- (void)testMariaDBGlobalPrivAccessFailureRemovesUnreliablePrivilegeSupport
+{
+	NSMutableDictionary *supportedPrivileges = [@{
+		@"select_priv": @YES,
+		@"create_role_priv": @YES,
+		@"binlog_admin_priv": @YES,
+		@"connection_admin_priv": @YES,
+		@"replication_master_admin_priv": @YES,
+		@"show_create_routine_priv": @YES
+	} mutableCopy];
+
+	SPUserManagerRemoveMariaDBPrivilegeKeysRequiringGlobalPrivAccess(supportedPrivileges);
+
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"select_priv"], @YES);
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"create_role_priv"], @YES);
+	XCTAssertNil([supportedPrivileges objectForKey:@"binlog_admin_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"connection_admin_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"replication_master_admin_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"show_create_routine_priv"]);
+}
+
 - (void)testGrantAllComparisonUsesModeledPrivilegeCounts
 {
 	NSError *error = nil;
@@ -307,10 +347,25 @@
 
 	XCTAssertNil(error);
 	XCTAssertNotNil(source);
-	XCTAssertEqual([source rangeOfString:@"[[self privsSupportedByServer] count]"].location, NSNotFound);
-	XCTAssertNotEqual([source rangeOfString:@"_supportedPrivilegeKeysForEntityName:(aDatabase ? @\"Privileges\" : @\"SPUser\")"].location, NSNotFound);
-	XCTAssertEqual([[source componentsSeparatedByString:@"if (aDatabase && supportedPrivilegeCount == [thePrivileges count])"] count] - 1, 2U);
-	XCTAssertEqual([source rangeOfString:@"if (supportedPrivilegeCount == [thePrivileges count])"].location, NSNotFound);
+
+	NSError *regexError = nil;
+	NSRegularExpression *modeledPrivilegeCount = [NSRegularExpression regularExpressionWithPattern:@"supportedPrivilegeCount\\s*=\\s*\\[\\[self\\s+_supportedPrivilegeKeysForEntityName:\\(aDatabase\\s*\\?\\s*@\\\"Privileges\\\"\\s*:\\s*@\\\"SPUser\\\"\\)\\]\\s+count\\]"
+																						   options:0
+																							 error:&regexError];
+	XCTAssertNil(regexError);
+	XCTAssertGreaterThanOrEqual([modeledPrivilegeCount numberOfMatchesInString:source options:0 range:NSMakeRange(0, [source length])], 1U);
+
+	NSRegularExpression *entityScopedComparison = [NSRegularExpression regularExpressionWithPattern:@"if\\s*\\(\\s*aDatabase\\s*&&\\s*supportedPrivilegeCount\\s*==\\s*\\[thePrivileges count\\]\\s*\\)"
+																						   options:0
+																							 error:&regexError];
+	XCTAssertNil(regexError);
+	XCTAssertGreaterThanOrEqual([entityScopedComparison numberOfMatchesInString:source options:0 range:NSMakeRange(0, [source length])], 1U);
+
+	NSRegularExpression *unscopedComparison = [NSRegularExpression regularExpressionWithPattern:@"if\\s*\\(\\s*supportedPrivilegeCount\\s*==\\s*\\[thePrivileges count\\]\\s*\\)"
+																					   options:0
+																						 error:&regexError];
+	XCTAssertNil(regexError);
+	XCTAssertEqual([unscopedComparison numberOfMatchesInString:source options:0 range:NSMakeRange(0, [source length])], 0U);
 }
 
 @end

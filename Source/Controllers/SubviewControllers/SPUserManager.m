@@ -177,11 +177,16 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
 - (NSDictionary *)_mariaDBGlobalPrivilegeAccessDataByAccount
 {
+	mariaDBGlobalPrivilegeAccessDataAvailable = YES;
+
 	if (![connection isMariaDB]) return @{};
 	if (![serverSupport isEqualToOrGreaterThanMajorVersion:10 minor:4 release:0]) return @{};
 
 	SPMySQLResult *globalPrivResult = [connection queryString:@"SELECT User, Host, Priv FROM mysql.global_priv"];
-	if ([connection queryErrored] || !globalPrivResult) return @{};
+	if ([connection queryErrored] || !globalPrivResult) {
+		mariaDBGlobalPrivilegeAccessDataAvailable = NO;
+		return @{};
+	}
 
 	[globalPrivResult setReturnDataAsStrings:YES];
 
@@ -305,8 +310,8 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		// Set up the array of privs supported by this server.
 		[[self privsSupportedByServer] removeAllObjects];
 
-        result = [connection queryString:@"SHOW PRIVILEGES"];
-        [result setReturnDataAsStrings:YES];
+		result = [connection queryString:@"SHOW PRIVILEGES"];
+		[result setReturnDataAsStrings:YES];
 
 		if (result && [result numberOfRows]) {
 			while ((privRow = [result getRowAsArray]))
@@ -338,6 +343,10 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
 				[[self privsSupportedByServer] setValue:@YES forKey:privKey];
 			}
+		}
+
+		if (!mariaDBGlobalPrivilegeAccessDataAvailable) {
+			SPUserManagerRemoveMariaDBPrivilegeKeysRequiringGlobalPrivAccess([self privsSupportedByServer]);
 		}
 	}
 
@@ -1521,7 +1530,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 							[aHost tickQuotedString]];
 
 		[connection queryString:revokeStatement];
-		if(![self _checkAndDisplayMySqlErrorForPrivilegeOperation:NSLocalizedString(@"revoke", @"revoke privilege operation") privileges:thePrivileges onDatabase:aDatabase forUser:aUser host:aHost statement:revokeStatement]) return NO;
+		if(![self _checkAndDisplayMySqlErrorForPrivilegeOperation:NSLocalizedString(@"revoke", @"revoke privilege operation") privileges:@[] onDatabase:aDatabase forUser:aUser host:aHost statement:revokeStatement]) return NO;
 
 		revokeStatement = [NSString stringWithFormat:@"REVOKE GRANT OPTION ON %@.* FROM %@@%@",
 							aDatabase?[aDatabase backtickQuotedString]:@"*",
@@ -1541,7 +1550,8 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	}
 
 	[connection queryString:revokeStatement];
-	return [self _checkAndDisplayMySqlErrorForPrivilegeOperation:NSLocalizedString(@"revoke", @"revoke privilege operation") privileges:thePrivileges onDatabase:aDatabase forUser:aUser host:aHost statement:revokeStatement];
+	NSArray *revokeOperationPrivileges = [revokeStatement rangeOfString:@"REVOKE GRANT OPTION" options:NSCaseInsensitiveSearch].location == NSNotFound ? thePrivileges : @[@"grant option"];
+	return [self _checkAndDisplayMySqlErrorForPrivilegeOperation:NSLocalizedString(@"revoke", @"revoke privilege operation") privileges:revokeOperationPrivileges onDatabase:aDatabase forUser:aUser host:aHost statement:revokeStatement];
 }
 
 /**

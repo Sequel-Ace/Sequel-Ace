@@ -100,6 +100,31 @@ static inline BOOL SPUserManagerShouldTrackPrivilegeKeyInUserTable(NSString *pri
 	return ![mysqlDynamicPrivilegeKeys containsObject:privilegeKey];
 }
 
+static inline NSSet *SPUserManagerMariaDBPrivilegeKeysRequiringGlobalPrivAccess(void)
+{
+	return [NSSet setWithObjects:
+			@"binlog_admin_priv",
+			@"binlog_monitor_priv",
+			@"binlog_replay_priv",
+			@"connection_admin_priv",
+			@"federated_admin_priv",
+			@"read_only_admin_priv",
+			@"replica_monitor_priv",
+			@"replication_master_admin_priv",
+			@"replication_slave_admin_priv",
+			@"set_user_priv",
+			@"show_create_routine_priv",
+			nil];
+}
+
+static inline void SPUserManagerRemoveMariaDBPrivilegeKeysRequiringGlobalPrivAccess(NSMutableDictionary *supportedPrivileges)
+{
+	for (NSString *privilegeKey in SPUserManagerMariaDBPrivilegeKeysRequiringGlobalPrivAccess())
+	{
+		[supportedPrivileges removeObjectForKey:privilegeKey];
+	}
+}
+
 @interface SPUserManager : NSWindowController
 {	
 	NSPersistentStoreCoordinator *persistentStoreCoordinator;
@@ -144,6 +169,7 @@ static inline BOOL SPUserManagerShouldTrackPrivilegeKeyInUserTable(NSString *pri
 
 	BOOL isSaving;
 	BOOL isInitializing;
+	BOOL mariaDBGlobalPrivilegeAccessDataAvailable;
 	NSMutableString *errorsString;
 	
 	// MySQL 5.7.6 removes the "Password" columns and only uses the "plugin" + "authentication_string" columns
