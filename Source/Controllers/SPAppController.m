@@ -30,6 +30,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPAppController.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPDatabaseDocument.h"
 #import "SPPreferenceController.h"
 #import "SPDataImport.h"
@@ -37,7 +38,6 @@
 #import "SPPreferencesUpgrade.h"
 #import "SPBundleEditorController.h"
 #import "SPTooltip.h"
-#import "SPBundleHTMLOutputController.h"
 #import "SPChooseMenuItemDialog.h"
 #import "SPCustomQuery.h"
 #import "SPFavoritesController.h"
@@ -595,7 +595,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     // it will enabled if user selects a *.sql file
     [encodingPopUp setEnabled:NO];
 
-    [panel setAllowedFileTypes:@[SPFileExtensionDefault, SPFileExtensionSQL, SPBundleFileExtension]];
+    [panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionDefault], [UTType typeWithFilenameExtension:SPFileExtensionSQL], [UTType typeWithFilenameExtension:SPBundleFileExtension]]];
 
     // Check if at least one document exists, if so show a sheet
     if ([self.tabManager activeWindowController]) {

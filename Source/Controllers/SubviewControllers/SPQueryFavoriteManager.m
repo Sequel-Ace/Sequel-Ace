@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPQueryFavoriteManager.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "ImageAndTextCell.h"
 #import "SPEncodingPopupAccessory.h"
 #import "SPQueryController.h"
@@ -299,7 +300,7 @@
 {
 	NSSavePanel *panel = [NSSavePanel savePanel];
 	
-	[panel setAllowedFileTypes:@[SPFileExtensionSQL]];
+	[panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionSQL]]];
 	
 	[panel setExtensionHidden:NO];
 	[panel setAllowsOtherFileTypes:YES];
@@ -322,7 +323,7 @@
 {
 	NSSavePanel *panel = [NSSavePanel savePanel];
 	
-	[panel setAllowedFileTypes:@[SPFileExtensionDefault]];
+	[panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionDefault]]];
 	
 	[panel setExtensionHidden:NO];
 	[panel setAllowsOtherFileTypes:NO];
@@ -344,7 +345,7 @@
 	[panel setCanChooseDirectories:NO];
 	[panel setAllowsMultipleSelection:NO];
 
-	[panel setAllowedFileTypes:@[SPFileExtensionDefault, SPFileExtensionSQL]];
+	[panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionDefault], [UTType typeWithFilenameExtension:SPFileExtensionSQL]]];
 
 	[panel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode) {
 		[self importPanelDidEnd:panel returnCode:returnCode contextInfo:NULL];

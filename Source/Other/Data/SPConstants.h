@@ -538,6 +538,7 @@ extern NSString *SPFavoriteSSHPortKey;
 extern NSString *SPFavoriteSSHUserKey;
 extern NSString *SPFavoriteSSHKeyLocationEnabledKey;
 extern NSString *SPFavoriteSSHKeyLocationKey;
+extern NSString *SPFavoriteSSHRemoteSocketPathKey;
 extern NSString *SPFavoriteAllowDataLocalInfileKey;
 extern NSString *SPFavoriteEnableClearTextPluginKey;
 extern NSString *SPFavoriteUseSSLKey;

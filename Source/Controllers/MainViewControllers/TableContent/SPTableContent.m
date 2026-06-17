@@ -48,7 +48,6 @@
 #import "SPGeometryDataView.h"
 #import "SPTextView.h"
 #import "SPAppController.h"
-#import "SPBundleHTMLOutputController.h"
 #import "SPCustomQuery.h"
 #import "SPThreadAdditions.h"
 #import "SPTableFilterParser.h"
@@ -4245,7 +4244,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 			for (id win in [NSApp windows])
 			{
-				if ([[[[win delegate] class] description] isEqualToString:@"SPBundleHTMLOutputController"]) {
+				if ([[[[win delegate] class] description] isEqualToString:@"SABundleHTMLOutputWindowController"]) {
 					if ([[[win delegate] windowUUID] isEqualToString:uuid]) {
 						correspondingWindowFound = YES;
 						break;

@@ -30,6 +30,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPDatabaseDocument.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPConnectionController.h"
 #import "SPTablesList.h"
 #import "SPDatabaseStructure.h"
@@ -71,7 +72,6 @@
 #import "SPFunctions.h"
 #import "SPCreateDatabaseInfo.h"
 #import "SPAppController.h"
-#import "SPBundleHTMLOutputController.h"
 #import "SPTableTriggers.h"
 #import "SPTableStructure.h"
 #import "SPPrintAccessory.h"
@@ -1921,7 +1921,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 {
     NSSavePanel *panel = [NSSavePanel savePanel];
 
-    [panel setAllowedFileTypes:@[SPFileExtensionSQL]];
+    [panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionSQL]]];
 
     [panel setExtensionHidden:NO];
     [panel setAllowsOtherFileTypes:YES];
@@ -2478,7 +2478,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                                                         includeDefaultEntry:NO
                                                               encodingPopUp:&encodingPopUp]];
 
-        [panel setAllowedFileTypes:@[SPFileExtensionSQL]];
+        [panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionSQL]]];
 
         if (![prefs stringForKey:@"lastSqlFileName"]) {
             [prefs setObject:@"" forKey:@"lastSqlFileName"];
@@ -2505,7 +2505,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
 
         // Save current session (open connection windows as SPF file)
-        [panel setAllowedFileTypes:@[SPFileExtensionDefault]];
+        [panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionDefault]]];
 
         [self prepareSaveAccessoryViewWithPanel:panel];
 
@@ -2527,7 +2527,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     else if (sender == nil || [sender tag] == SPMainMenuFileSaveSession) {
 
         // Save current session (open connection windows as SPFS file)
-        [panel setAllowedFileTypes:@[SPBundleFileExtension]];
+        [panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPBundleFileExtension]]];
 
         [self prepareSaveAccessoryViewWithPanel:panel];
 
@@ -2598,6 +2598,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             if (error != nil) {
                 NSAlert *errorAlert = [NSAlert alertWithError:error];
                 [errorAlert runModal];
+            } else {
+                // Remember this tab's file so Cmd-S writes back here
+                [self setSqlFileURL:[NSURL fileURLWithPath:fileName]];
+                [self setSqlFileEncoding:[[encodingPopUp selectedItem] tag]];
             }
             [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL:[NSURL fileURLWithPath:fileName]];
 
@@ -3578,6 +3582,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 [connection setObject:[NSNumber numberWithInteger:[connectionController sshKeyLocationEnabled]] forKey:@"ssh_keyLocationEnabled"];
                 if ([connectionController sshKeyLocation]) [connection setObject:[connectionController sshKeyLocation] forKey:@"ssh_keyLocation"];
                 if ([connectionController sshPort] && [[connectionController sshPort] length]) [connection setObject:[NSNumber numberWithInteger:[[connectionController sshPort] integerValue]] forKey:@"ssh_port"];
+                if ([connectionController sshRemoteSocketPath] && [[connectionController sshRemoteSocketPath] length]) [connection setObject:[connectionController sshRemoteSocketPath] forKey:@"sshRemoteSocketPath"];
                 break;
             case SPVaultConnection:
                 connectionType = @"SPVaultConnection";
@@ -3806,6 +3811,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([connection objectForKey:@"ssh_keyLocationEnabled"]) [connectionController setSshKeyLocationEnabled:[[connection objectForKey:@"ssh_keyLocationEnabled"] intValue]];
     if ([connection objectForKey:@"ssh_keyLocation"])        [connectionController setSshKeyLocation:[connection objectForKey:@"ssh_keyLocation"]];
     if ([connection objectForKey:@"ssh_port"])               [connectionController setSshPort:[NSString stringWithFormat:@"%ld", (long)[[connection objectForKey:@"ssh_port"] integerValue]]];
+    if ([connection objectForKey:@"sshRemoteSocketPath"])    [connectionController setSshRemoteSocketPath:[connection objectForKey:@"sshRemoteSocketPath"]];
 
     // Set Vault details if available
     if ([connection objectForKey:@"vault_host"])             [connectionController setVaultHost:[connection objectForKey:@"vault_host"]];
@@ -5239,7 +5245,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
             for (id win in [NSApp windows])
             {
-                if([[[[win delegate] class] description] isEqualToString:@"SPBundleHTMLOutputController"]) {
+                if([[[[win delegate] class] description] isEqualToString:@"SABundleHTMLOutputWindowController"]) {
                     if([[[win delegate] windowUUID] isEqualToString:uuid]) {
                         correspondingWindowFound = YES;
                         break;
@@ -5789,7 +5795,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 BOOL correspondingWindowFound = NO;
                 NSString *uuid = [data objectAtIndex:2];
                 for(id win in [NSApp windows]) {
-                    if([[[[win delegate] class] description] isEqualToString:@"SPBundleHTMLOutputController"]) {
+                    if([[[[win delegate] class] description] isEqualToString:@"SABundleHTMLOutputWindowController"]) {
                         if([[[win delegate] windowUUID] isEqualToString:uuid]) {
                             correspondingWindowFound = YES;
                             break;

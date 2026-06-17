@@ -1430,11 +1430,34 @@ asm(".desc ___crashreporter_info__, 0x10");
     // Check the information_schema_stats_expiry timeout - if it's not zero, set it to 0
     // Otherwise, stats page will lag behind reality
     // https://github.com/Sequel-Ace/Sequel-Ace/issues/1206
+    // ProxySQL doesn't track this variable, so the SET pins the connection to its current
+    // hostgroup and a later SELECT that should route elsewhere fails with "locked to
+    // hostgroup". Skip it on ProxySQL; the only cost there is a stats page that can lag.
+    // https://github.com/Sequel-Ace/Sequel-Ace/issues/2006
     if ([variables objectForKey:@"information_schema_stats_expiry"]) {
-        if ([[variables objectForKey:@"information_schema_stats_expiry"] integerValue] != 0) {
+        if ([[variables objectForKey:@"information_schema_stats_expiry"] integerValue] != 0 && ![self _serverIsProxySQL]) {
             [self queryString:@"SET information_schema_stats_expiry=0"];
         }
     }
+}
+
+/**
+ * Returns whether the active connection is served by ProxySQL rather than MySQL or MariaDB directly.
+ */
+- (BOOL)_serverIsProxySQL
+{
+	if (state != SPMySQLConnected && state != SPMySQLConnecting) return NO;
+
+	// ProxySQL answers this exact lowercase query itself with "(ProxySQL)", whatever version it
+	// reports in the handshake. Uppercase keywords or SHOW VARIABLES are forwarded to a backend,
+	// so the query has to match byte for byte to read ProxySQL's own version_comment.
+	SPMySQLResult *theResult = [self queryString:@"select @@version_comment limit 1"];
+	if (![theResult numberOfRows]) return NO;
+
+	[theResult setReturnDataAsStrings:YES];
+	NSString *versionComment = [[theResult getRowAsArray] firstObject];
+
+	return [versionComment isKindOfClass:[NSString class]] && [versionComment rangeOfString:@"ProxySQL"].location != NSNotFound;
 }
 
 /**

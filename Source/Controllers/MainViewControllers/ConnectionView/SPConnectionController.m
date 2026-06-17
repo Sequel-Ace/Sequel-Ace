@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPConnectionController.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPDatabaseDocument.h"
 #import "SPAppController.h"
 #import "SPPreferenceController.h"
@@ -55,7 +56,6 @@
 #import "SPSplitView.h"
 #import "SPColorSelectorView.h"
 #import "SPFunctions.h"
-#import "SPBundleHTMLOutputController.h"
 #import "SPBundleManager.h"
 // AWS IAM Authentication is now implemented in Swift
 // See: AWSCredentials.swift, RDSIAMAuthentication.swift, AWSSTSClient.swift, AWSMFATokenDialog.swift, AWSIAMAuthManager.swift
@@ -108,6 +108,7 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 
 - (void)_startEditingConnection;
 - (BOOL)_isAWSIAMConnection;
+- (BOOL)_shouldRequireMySQLHost;
 - (void)_syncAWSIAMAndSSLInterfaceState;
 - (void)_refreshAWSAvailableRegions;
 - (BOOL)_isVaultConnection;
@@ -260,6 +261,7 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
 @synthesize sshKeyLocationEnabled;
 @synthesize sshKeyLocation;
 @synthesize sshPort;
+@synthesize sshRemoteSocketPath;
 @synthesize useCompression;
 @synthesize bookmarks;
 @synthesize allowSplitViewResizing;
@@ -403,6 +405,7 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
         validateWithType:(SAConnectionType)[self type]
                     host:[self host] ?: @""
                  sshHost:[self sshHost] ?: @""
+     sshRemoteSocketPath:[self sshRemoteSocketPath] ?: @""
                   useSSL:[self useSSL]
    sshKeyLocationEnabled:(sshKeyLocationEnabled != NSControlStateValueOff)
          sshKeyLocation:sshKeyLocation
@@ -1126,6 +1129,16 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     return [self type] == SPAWSIAMConnection;
 }
 
+- (BOOL)_shouldRequireMySQLHost
+{
+    NSString *trimmedRemoteSocketPath = [[self sshRemoteSocketPath] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if ([self type] == SPSSHTunnelConnection && [trimmedRemoteSocketPath length]) {
+        return NO;
+    }
+
+    return [self type] == SPTCPIPConnection || [self type] == SPSSHTunnelConnection || [self type] == SPAWSIAMConnection;
+}
+
 - (BOOL)_isVaultConnection
 {
     return [self type] == SPVaultConnection;
@@ -1457,42 +1470,44 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     [connectionResizeContainer setHidden:NO];
     [self _stopEditingConnection];
 
+    // Decode the favorite into typed values. The defaulting rules (missing
+    // name → @"", colorIndex → -1, useCompression → YES, awsProfile →
+    // @"default", …) live in SAConnectionInfo+Favorite.swift and are pinned
+    // by SAConnectionInfoFavoriteTests.
+    SAConnectionInfoObjC *details = [SAConnectionInfoObjC infoFromFavoriteDictionary:fav];
+
     // Set up the type, also storing it in the previous type store to prevent type "changes" triggering actions
-    NSUInteger connectionType = ([fav objectForKey:SPFavoriteTypeKey] ? [[fav objectForKey:SPFavoriteTypeKey] integerValue] : SPTCPIPConnection);
+    NSUInteger connectionType = (NSUInteger)[details type];
     previousType = connectionType;
     [self setType:connectionType];
 
     // Standard details
-    [self setName:([fav objectForKey:SPFavoriteNameKey] ? [fav objectForKey:SPFavoriteNameKey] : @"")];
-    [self setHost:([fav objectForKey:SPFavoriteHostKey] ? [fav objectForKey:SPFavoriteHostKey] : @"")];
-    [self setSocket:([fav objectForKey:SPFavoriteSocketKey] ? [fav objectForKey:SPFavoriteSocketKey] : @"")];
-    [self setUser:([fav objectForKey:SPFavoriteUserKey] ? [fav objectForKey:SPFavoriteUserKey] : @"")];
-    [self setColorIndex:([fav objectForKey:SPFavoriteColorIndexKey]? [[fav objectForKey:SPFavoriteColorIndexKey] integerValue] : -1)];
-    [self setPort:([fav objectForKey:SPFavoritePortKey] ? [fav objectForKey:SPFavoritePortKey] : @"")];
-    [self setDatabase:([fav objectForKey:SPFavoriteDatabaseKey] ? [fav objectForKey:SPFavoriteDatabaseKey] : @"")];
-    [self setUseCompression:([fav objectForKey:SPFavoriteUseCompressionKey] ? [[fav objectForKey:SPFavoriteUseCompressionKey] boolValue] : YES)];
+    [self setName:[details name]];
+    [self setHost:[details host]];
+    [self setSocket:[details socket]];
+    [self setUser:[details user]];
+    [self setColorIndex:[details colorIndex]];
+    [self setPort:[details port]];
+    [self setDatabase:[details database]];
+    [self setUseCompression:[details useCompression]];
 
-    // Time Zone details
-    switch ([fav objectForKey:SPFavoriteTimeZoneModeKey] ? [[fav objectForKey:SPFavoriteTimeZoneModeKey] intValue] : SPConnectionTimeZoneModeUseServerTZ) {
-        case SPConnectionTimeZoneModeUseSystemTZ: {
+    // Time Zone details: sync the per-type popups, then store mode + identifier
+    switch ([details timeZoneMode]) {
+        case SAConnectionTimeZoneModeUseSystemTZ: {
             [standardTimeZoneField selectItemWithTag:SPUseSystemTimeZoneTag];
             [awsIAMTimeZoneField selectItemWithTag:SPUseSystemTimeZoneTag];
             [vaultTimeZoneField selectItemWithTag:SPUseSystemTimeZoneTag];
             [socketTimeZoneField selectItemWithTag:SPUseSystemTimeZoneTag];
             [sshTimeZoneField selectItemWithTag:SPUseSystemTimeZoneTag];
-            [self setTimeZoneMode:SPConnectionTimeZoneModeUseSystemTZ];
-            [self setTimeZoneIdentifier:@""];
             break;
         }
-        case SPConnectionTimeZoneModeUseFixedTZ: {
-            NSString *tzIdentifier = [fav objectForKey:SPFavoriteTimeZoneIdentifierKey];
+        case SAConnectionTimeZoneModeUseFixedTZ: {
+            NSString *tzIdentifier = [details timeZoneIdentifier];
             [standardTimeZoneField selectItemWithTitle:tzIdentifier];
             [awsIAMTimeZoneField selectItemWithTitle:tzIdentifier];
             [vaultTimeZoneField selectItemWithTitle:tzIdentifier];
             [socketTimeZoneField selectItemWithTitle:tzIdentifier];
             [sshTimeZoneField selectItemWithTitle:tzIdentifier];
-            [self setTimeZoneMode:SPConnectionTimeZoneModeUseFixedTZ];
-            [self setTimeZoneIdentifier:tzIdentifier];
             break;
         }
         default: {
@@ -1501,47 +1516,51 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             [vaultTimeZoneField selectItemWithTag:SPUseServerTimeZoneTag];
             [socketTimeZoneField selectItemWithTag:SPUseServerTimeZoneTag];
             [sshTimeZoneField selectItemWithTag:SPUseServerTimeZoneTag];
-            [self setTimeZoneMode:SPConnectionTimeZoneModeUseServerTZ];
-            [self setTimeZoneIdentifier:@""];
             break;
         }
     }
+    [self setTimeZoneMode:(SPConnectionTimeZoneMode)[details timeZoneMode]];
+    [self setTimeZoneIdentifier:[details timeZoneIdentifier]];
 
     //Special prefs
-    [self setAllowDataLocalInfile:([fav objectForKey:SPFavoriteAllowDataLocalInfileKey] ? [[fav objectForKey:SPFavoriteAllowDataLocalInfileKey] intValue] : NSControlStateValueOff)];
+    [self setAllowDataLocalInfile:[details allowDataLocalInfile]];
 
     // Clear text plugin
-    [self setEnableClearTextPlugin:([fav objectForKey:SPFavoriteEnableClearTextPluginKey] ? [[fav objectForKey:SPFavoriteEnableClearTextPluginKey] intValue] : NSControlStateValueOff)];
+    [self setEnableClearTextPlugin:[details enableClearTextPlugin]];
 
     // AWS IAM Authentication (profile-based only - manual credentials not supported)
-    [self setUseAWSIAMAuth:([self type] == SPAWSIAMConnection ? NSControlStateValueOn : NSControlStateValueOff)];
-    [self setAwsRegion:([fav objectForKey:SPFavoriteAWSRegionKey] ? [fav objectForKey:SPFavoriteAWSRegionKey] : @"")];
-    [self setAwsProfile:([fav objectForKey:SPFavoriteAWSProfileKey] ? [fav objectForKey:SPFavoriteAWSProfileKey] : @"default")];
+    [self setUseAWSIAMAuth:[details useAWSIAMAuth]];
+    [self setAwsRegion:[details awsRegion]];
+    [self setAwsProfile:[details awsProfile]];
 
     // Vault Authentication
-    [self setVaultHost:([fav objectForKey:SPFavoriteVaultHostKey] ? [fav objectForKey:SPFavoriteVaultHostKey] : @"")];
+    [self setVaultHost:[details vaultHost]];
     // nil is intentional here — the KVO binding shows NSNullPlaceholder ("443"/"oidc")
     // when the property is nil. The runtime fallback to "443"/"oidc" is applied at
-    // connect time. Other Vault properties use @"" because they have no placeholder.
-    [self setVaultPort:[fav objectForKey:SPFavoriteVaultPortKey]];
-    [self setVaultOIDCMount:[fav objectForKey:SPFavoriteVaultOIDCMountKey]];
-    [self setVaultCredentialsPath:([fav objectForKey:SPFavoriteVaultCredentialsPathKey] ? [fav objectForKey:SPFavoriteVaultCredentialsPathKey] : @"")];
+    // connect time. These two stay as raw dictionary reads because the decoded
+    // info cannot represent the nil-vs-empty distinction the placeholder needs;
+    // rawFavoriteString: coerces NSNumber/NSNull from imported favorites so the
+    // properties are always NSString or nil.
+    [self setVaultPort:[SAConnectionInfoObjC rawFavoriteString:[fav objectForKey:SPFavoriteVaultPortKey]]];
+    [self setVaultOIDCMount:[SAConnectionInfoObjC rawFavoriteString:[fav objectForKey:SPFavoriteVaultOIDCMountKey]]];
+    [self setVaultCredentialsPath:[details vaultCredentialsPath]];
 
     // SSL details
-    [self setUseSSL:([fav objectForKey:SPFavoriteUseSSLKey] ? [[fav objectForKey:SPFavoriteUseSSLKey] intValue] : NSControlStateValueOff)];
-    [self setSslKeyFileLocationEnabled:([fav objectForKey:SPFavoriteSSLKeyFileLocationEnabledKey] ? [[fav objectForKey:SPFavoriteSSLKeyFileLocationEnabledKey] intValue] : NSControlStateValueOff)];
-    [self setSslKeyFileLocation:([fav objectForKey:SPFavoriteSSLKeyFileLocationKey] ? [fav objectForKey:SPFavoriteSSLKeyFileLocationKey] : @"")];
-    [self setSslCertificateFileLocationEnabled:([fav objectForKey:SPFavoriteSSLCertificateFileLocationEnabledKey] ? [[fav objectForKey:SPFavoriteSSLCertificateFileLocationEnabledKey] intValue] : NSControlStateValueOff)];
-    [self setSslCertificateFileLocation:([fav objectForKey:SPFavoriteSSLCertificateFileLocationKey] ? [fav objectForKey:SPFavoriteSSLCertificateFileLocationKey] : @"")];
-    [self setSslCACertFileLocationEnabled:([fav objectForKey:SPFavoriteSSLCACertFileLocationEnabledKey] ? [[fav objectForKey:SPFavoriteSSLCACertFileLocationEnabledKey] intValue] : NSControlStateValueOff)];
-    [self setSslCACertFileLocation:([fav objectForKey:SPFavoriteSSLCACertFileLocationKey] ? [fav objectForKey:SPFavoriteSSLCACertFileLocationKey] : @"")];
+    [self setUseSSL:[details useSSL]];
+    [self setSslKeyFileLocationEnabled:[details sslKeyFileLocationEnabled]];
+    [self setSslKeyFileLocation:[details sslKeyFileLocation]];
+    [self setSslCertificateFileLocationEnabled:[details sslCertificateFileLocationEnabled]];
+    [self setSslCertificateFileLocation:[details sslCertificateFileLocation]];
+    [self setSslCACertFileLocationEnabled:[details sslCACertFileLocationEnabled]];
+    [self setSslCACertFileLocation:[details sslCACertFileLocation]];
 
     // SSH details
-    [self setSshHost:([fav objectForKey:SPFavoriteSSHHostKey] ? [fav objectForKey:SPFavoriteSSHHostKey] : @"")];
-    [self setSshUser:([fav objectForKey:SPFavoriteSSHUserKey] ? [fav objectForKey:SPFavoriteSSHUserKey] : @"")];
-    [self setSshKeyLocationEnabled:([fav objectForKey:SPFavoriteSSHKeyLocationEnabledKey] ? [[fav objectForKey:SPFavoriteSSHKeyLocationEnabledKey] intValue] : NSControlStateValueOff)];
-    [self setSshKeyLocation:([fav objectForKey:SPFavoriteSSHKeyLocationKey] ? [fav objectForKey:SPFavoriteSSHKeyLocationKey] : @"")];
-    [self setSshPort:([fav objectForKey:SPFavoriteSSHPortKey] ? [fav objectForKey:SPFavoriteSSHPortKey] : @"")];
+    [self setSshHost:[details sshHost]];
+    [self setSshUser:[details sshUser]];
+    [self setSshKeyLocationEnabled:[details sshKeyLocationEnabled]];
+    [self setSshKeyLocation:[details sshKeyLocation]];
+    [self setSshPort:[details sshPort]];
+    [self setSshRemoteSocketPath:[details sshRemoteSocketPath]];
 
     // Check whether the password exists in the keychain, and if so add it; also record the
     // keychain details so we can pass around only those details if the password doesn't change
@@ -1685,72 +1704,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 {
     NSNumber *favoriteID = [self _createNewFavoriteID];
 
-    NSArray *objects = @[
-        NSLocalizedString(@"New Favorite", @"new favorite name"),
-        @0,
-        @"",
-        @"",
-        @"",
-        @(-1),
-        @"",
-        @0,
-        @"",
-        @(NSControlStateValueOff),
-        @(NSControlStateValueOff),
-        @(NSControlStateValueOff),
-        @"",
-        @"default",
-        @(NSControlStateValueOff),
-        @(NSControlStateValueOff),
-        @(NSControlStateValueOff),
-        @(NSControlStateValueOff),
-        @"",
-        @"",
-        @"",
-        @(NSControlStateValueOff),
-        @"",
-        @"",
-        @"",
-        @"",
-        @"",
-        @"",
-        favoriteID
-    ];
-
-    NSArray *keys = @[
-        SPFavoriteNameKey,
-        SPFavoriteTypeKey,
-        SPFavoriteHostKey,
-        SPFavoriteSocketKey,
-        SPFavoriteUserKey,
-        SPFavoriteColorIndexKey,
-        SPFavoritePortKey,
-        SPFavoriteTimeZoneModeKey,
-        SPFavoriteTimeZoneIdentifierKey,
-        SPFavoriteAllowDataLocalInfileKey,
-        SPFavoriteEnableClearTextPluginKey,
-        SPFavoriteUseAWSIAMAuthKey,
-        SPFavoriteAWSRegionKey,
-        SPFavoriteAWSProfileKey,
-        SPFavoriteUseSSLKey,
-        SPFavoriteSSLKeyFileLocationEnabledKey,
-        SPFavoriteSSLCertificateFileLocationEnabledKey,
-        SPFavoriteSSLCACertFileLocationEnabledKey,
-        SPFavoriteDatabaseKey,
-        SPFavoriteSSHHostKey,
-        SPFavoriteSSHUserKey,
-        SPFavoriteSSHKeyLocationEnabledKey,
-        SPFavoriteSSHKeyLocationKey,
-        SPFavoriteSSHPortKey,
-        SPFavoriteVaultHostKey,
-        SPFavoriteVaultPortKey,
-        SPFavoriteVaultOIDCMountKey,
-        SPFavoriteVaultCredentialsPathKey,
-        SPFavoriteIDKey
-    ];
-
-    // Create default favorite
-    NSMutableDictionary *favorite = [NSMutableDictionary dictionaryWithObjects:objects forKeys:keys];
+    // Create default favorite (template + wire-format quirks live in
+    // SAConnectionInfo+Favorite.swift, pinned by SAConnectionInfoFavoriteTests)
+    NSMutableDictionary *favorite = [SAConnectionInfoObjC defaultNewFavoriteDictionaryWithID:favoriteID];
 
     SPTreeNode *selectedNode = [self selectedFavoriteNode];
 
@@ -1807,24 +1763,19 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 {
     if ([favoritesOutlineView numberOfSelectedRows] == 1) {
 
-        BOOL suppressWarning = NO;
         SPTreeNode *node = [self selectedFavoriteNode];
 
-        NSString *message = @"";
-        NSString *informativeMessage = @"";
+        // The favorite/group/empty-group wording (and whether to ask at all)
+        // lives in SAFavoriteDeletionPrompt, pinned by unit tests.
+        NSString *nodeDisplayName = [node isGroup]
+            ? [[node representedObject] nodeName]
+            : [[[node representedObject] nodeFavorite] objectForKey:SPFavoriteNameKey];
+        SAFavoriteDeletionPrompt *prompt = [SAFavoriteDeletionPrompt promptForGroup:[node isGroup]
+                                                                               name:nodeDisplayName
+                                                                         childCount:[[node childNodes] count]];
 
-        if (![node isGroup]) {
-            message = [NSString stringWithFormat:NSLocalizedString(@"Delete favorite '%@'?", @"delete database message"), [[[node representedObject] nodeFavorite] objectForKey:SPFavoriteNameKey]];
-            informativeMessage = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to delete the favorite '%@'? This operation cannot be undone.", @"delete database informative message"), [[[node representedObject] nodeFavorite] objectForKey:SPFavoriteNameKey]];
-        } else if ([[node childNodes] count] > 0) {
-            message = [NSString stringWithFormat:NSLocalizedString(@"Delete group '%@'?", @"delete database message"), [[node representedObject] nodeName]];
-            informativeMessage = [NSString stringWithFormat:NSLocalizedString(@"Are you sure you want to delete the group '%@'? All groups and favorites within this group will also be deleted. This operation cannot be undone.", @"delete database informative message"), [[node representedObject] nodeName]];
-        } else {
-            suppressWarning = YES;
-        }
-
-        if (!suppressWarning) {
-            [NSAlert createDefaultAlertWithTitle:message message:informativeMessage primaryButtonTitle:NSLocalizedString(@"Delete", @"delete button") primaryButtonHandler:^{
+        if (prompt.needsConfirmation) {
+            [NSAlert createDefaultAlertWithTitle:prompt.title message:prompt.informativeText primaryButtonTitle:NSLocalizedString(@"Delete", @"delete button") primaryButtonHandler:^{
                 [self _removeNode:[self selectedFavoriteNode]];
             } cancelButtonHandler:nil];
         } else {
@@ -1840,15 +1791,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 {
     if ([favoritesOutlineView numberOfSelectedRows] == 1) {
 
-        NSMutableDictionary *favorite = [NSMutableDictionary dictionaryWithDictionary:[self selectedFavorite]];
-
+        // Fresh unique ID + "<name> Copy" (rules in SAConnectionInfo+Favorite.swift)
         NSNumber *favoriteID = [self _createNewFavoriteID];
-
-        // Update the unique ID
-        [favorite setObject:favoriteID forKey:SPFavoriteIDKey];
-
-        // Alter the name for clarity
-        [favorite setObject:[NSString stringWithFormat:NSLocalizedString(@"%@ Copy", @"Initial favourite name after duplicating a previous favourite"), [favorite objectForKey:SPFavoriteNameKey]] forKey:SPFavoriteNameKey];
+        NSMutableDictionary *favorite = [SAConnectionInfoObjC duplicatedFavoriteDictionaryFromFavorite:[self selectedFavorite] withID:favoriteID];
 
         SPTreeNode *selectedNode = [self selectedFavoriteNode];
 
@@ -2020,7 +1965,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             NSButton *revealCheckbox = [[NSButton alloc] initWithFrame:NSMakeRect(0, 5, 200, 20)];
             [revealCheckbox setButtonType:NSButtonTypeSwitch];
             [revealCheckbox setTitle:NSLocalizedString(@"Show password", @"Show password checkbox")];
-            [revealCheckbox setState:NSOffState];
+            [revealCheckbox setState:NSControlStateValueOff];
 
             // Use target-action with stored context via associated objects
             objc_setAssociatedObject(revealCheckbox, kOriginalStringKey, clipboardString, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -2070,7 +2015,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     NSString *redactedString = objc_getAssociatedObject(sender, kRedactedStringKey);
     NSTextField *urlField = objc_getAssociatedObject(sender, kURLFieldKey);
 
-    if (sender.state == NSOnState) {
+    if (sender.state == NSControlStateValueOn) {
         // Show password
         [urlField setStringValue:originalString];
     } else {
@@ -2131,7 +2076,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 {
     NSOpenPanel *openPanel = [NSOpenPanel openPanel];
 
-    [openPanel setAllowedFileTypes:@[@"plist"]];
+    [openPanel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:@"plist"]]];
 
     [openPanel beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:^(NSInteger returnCode)
     {
@@ -2160,7 +2105,6 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     // Parse connection string using Swift helper
     ConnectionStringParseResult *result = [ConnectionStringParser parse:url];
     NSMutableDictionary *details = [result.details mutableCopy];
-    BOOL autoConnect = result.autoConnect;
     NSArray<NSString *> *invalidParameters = result.invalidParameters;
     BOOL parsed = result.success;
 
@@ -2721,8 +2665,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         [[connectionView window] endEditingFor:[[connectionView window] firstResponder]];
     }
 
-    // Ensure that host is not empty if this is a TCP/IP, SSH, or AWS IAM connection
-    if (validateDetails && ([self type] == SPTCPIPConnection || [self type] == SPSSHTunnelConnection || [self type] == SPAWSIAMConnection) && ![[self host] length]) {
+    // Ensure that host is not empty for connection types that require a MySQL host.
+    if (validateDetails && [self _shouldRequireMySQLHost] && ![[self host] length]) {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message") message:NSLocalizedString(@"Insufficient details provided to establish a connection. Please provide at least a host.", @"insufficient details informative message") callback:nil];
         return;
     }
@@ -2831,12 +2775,14 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         [theFavorite removeObjectForKey:SPFavoriteSSHPortKey];
         [theFavorite removeObjectForKey:SPFavoriteSSHKeyLocationEnabledKey];
         [theFavorite removeObjectForKey:SPFavoriteSSHKeyLocationKey];
+        [theFavorite removeObjectForKey:SPFavoriteSSHRemoteSocketPathKey];
     } else {
         _setOrRemoveKey(SPFavoriteSSHHostKey, [self sshHost]);
         _setOrRemoveKey(SPFavoriteSSHUserKey, [self sshUser]);
         _setOrRemoveKey(SPFavoriteSSHPortKey, [self sshPort]);
         [theFavorite setObject:[NSNumber numberWithInteger:[self sshKeyLocationEnabled]] forKey:SPFavoriteSSHKeyLocationEnabledKey];
         _setOrRemoveKey(SPFavoriteSSHKeyLocationKey, [self sshKeyLocation]);
+        _setOrRemoveKey(SPFavoriteSSHRemoteSocketPathKey, [self sshRemoteSocketPath]);
     }
 
 
@@ -3566,6 +3512,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     info.sshKeyLocationEnabled = self.sshKeyLocationEnabled;
     info.sshKeyLocation = self.sshKeyLocation ?: @"";
     info.sshPort = self.sshPort ?: @"";
+    info.sshRemoteSocketPath = self.sshRemoteSocketPath ?: @"";
     info.connectionKeychainID = connectionKeychainID ?: @"";
     info.connectionKeychainItemName = connectionKeychainItemName ?: @"";
     info.connectionKeychainItemAccount = connectionKeychainItemAccount ?: @"";
@@ -4106,7 +4053,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         // check we don't already have this window open
         BOOL correspondingWindowFound = NO;
         for(id win in [NSApp windows]) {
-            if([[win delegate] isKindOfClass:[SPBundleHTMLOutputController class]]) {
+            if([[win delegate] isKindOfClass:[SABundleHTMLOutputWindowController class]]) {
                 if([[[win delegate] windowUUID] isEqualToString:socketHelpWindowUUID]) {
                     correspondingWindowFound = YES;
                     SPLog(@"correspondingWindowFound: %hhd", correspondingWindowFound);
@@ -4123,8 +4070,13 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
                 // show socket help
                 self.socketHelpWindowUUID = [NSString stringWithNewUUID];
-                SPBundleHTMLOutputController *bundleController = [[SPBundleHTMLOutputController alloc] init];
+                SABundleHTMLOutputWindowController *bundleController = [[SABundleHTMLOutputWindowController alloc] init];
                 [bundleController setWindowUUID:socketHelpWindowUUID];
+
+                // Remember that the socket help has been shown once the user closes its window.
+                bundleController.windowWillCloseHandler = ^{
+                    [[NSUserDefaults standardUserDefaults] setBool:YES forKey:SPConnectionShownSocketHelp];
+                };
 
                 NSDictionary *tmpDic2 = @{@"x" : @225, @"y" : @536, @"w" : @768, @"h" : @425};
                 NSDictionary *tmpDict = @{SPConnectionShownSocketHelp : @YES, @"frame" : tmpDic2};
@@ -4151,8 +4103,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                 if(error == nil){
                     [SPBundleManager.shared addHTMLOutputController:bundleController];
                 }
-                // set straight away, or wait for them to close the window?
-                //[prefs setBool:YES forKey:SPConnectionShownSocketHelp];
             }
         }
     }
@@ -4773,7 +4723,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         return;
     }
 
-    BOOL shouldReveal = (sender.state == NSOnState);
+    BOOL shouldReveal = (sender.state == NSControlStateValueOn);
     plainField.stringValue = secureField.stringValue ?: @"";
     secureField.hidden = shouldReveal;
     plainField.hidden = !shouldReveal;
@@ -4966,6 +4916,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     [self addObserver:self
            forKeyPath:SPFavoriteSSHKeyLocationKey
+              options:(NSKeyValueObservingOptionOld | NSKeyValueObservingOptionNew)
+              context:NULL];
+
+    [self addObserver:self
+           forKeyPath:SPFavoriteSSHRemoteSocketPathKey
               options:(NSKeyValueObservingOptionOld | NSKeyValueObservingOptionNew)
               context:NULL];
 
@@ -5181,6 +5136,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [self removeObserver:self forKeyPath:SPFavoriteSSHPortKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSHKeyLocationEnabledKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSHKeyLocationKey];
+    [self removeObserver:self forKeyPath:SPFavoriteSSHRemoteSocketPathKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSLKeyFileLocationEnabledKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSLKeyFileLocationKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSLCertificateFileLocationEnabledKey];

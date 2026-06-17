@@ -47,6 +47,7 @@
 	NSString *sshHost;
 	NSString *sshLogin;
 	NSString *remoteHost;
+	NSString *remoteSocketPath;
 	NSString *password;
 	NSString *keychainName;
 	NSString *keychainAccount;
@@ -95,6 +96,7 @@
 - (BOOL)setPasswordKeychainName:(NSString *)theName account:(NSString *)theAccount;
 - (BOOL)setPassword:(NSString *)thePassword;
 - (BOOL)setKeyFilePath:(NSString *)thePath;
+- (void)setRemoteSocketPath:(NSString *)thePath;
 - (SPMySQLConnectionProxyState)state;
 - (NSString *)lastError;
 - (NSString *)debugMessages;
