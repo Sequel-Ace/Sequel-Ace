@@ -41,6 +41,7 @@ typedef NS_ENUM(NSInteger, HelpVersionNumber) {
 	MySQLVer57 = 12,
 	MySQLVer80 = 201,
 	MySQLVer84 = 371,
+	MySQLVer97 = 515,
 };
 
 @interface SPHelpViewerClient () <SPHelpViewerDataSource>
@@ -102,15 +103,37 @@ typedef NS_ENUM(NSInteger, HelpVersionNumber) {
 	// 5.6 = https://dev.mysql.com/doc/search/?d=11&p=1&q=SELECT
 	// 8.0 https://dev.mysql.com/doc/search/?d=201&p=1&q=SELECT
 	// 8.4 https://dev.mysql.com/doc/search/?d=371&p=1&q=SELECT
+	// 9.7 https://dev.mysql.com/doc/search/?d=515&p=1&q=SELECT
 	// 5.7 https://dev.mysql.com/doc/search/?d=12&p=1&q=SELECT
+	// MariaDB exact topic links redirect to the current docs: https://mariadb.com/kb/en/select/
 	
 	// OLD: SPMySQLSearchURL = https://dev.mysql.com/doc/refman/%@/%@/%@.html
 	// NEW: SPMySQLSearchURL = https://dev.mysql.com/doc/search/?d=%d&p=1&q=%@
 
+	if ([mySQLConnection isMariaDB]) {
+		NSString *topicSlug = [[searchString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] lowercaseString];
+		topicSlug = [topicSlug stringByReplacingOccurrencesOfRegex:@"\\s+" withString:@"-"];
+		topicSlug = [topicSlug stringByReplacingOccurrencesOfRegex:@"[^a-z0-9_-]" withString:@""];
+		if (![topicSlug length]) topicSlug = @"server";
+		
+		NSString *url = [[NSString stringWithFormat:@"https://mariadb.com/kb/en/%@/", topicSlug] stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet];
+		
+		SPLog("search URL: %@",url);
+		
+		if ([url length]) {
+			[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:url]];
+		}
+		
+		return;
+	}
+
 	// default to 8.0
 	HelpVersionNumber version = MySQLVer80;
 	
-	if (![mySQLConnection isMariaDB] && [mySQLConnection serverVersionIsGreaterThanOrEqualTo:8 minorVersion:4 releaseVersion:0]){
+	if ([mySQLConnection serverVersionIsGreaterThanOrEqualTo:9 minorVersion:0 releaseVersion:0]){
+		version = MySQLVer97;
+	}
+	else if ([mySQLConnection serverVersionIsGreaterThanOrEqualTo:8 minorVersion:4 releaseVersion:0]){
 		version = MySQLVer84;
 	}
 	else if ([mySQLConnection serverVersionIsGreaterThanOrEqualTo:8 minorVersion:0 releaseVersion:0]){
