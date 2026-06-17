@@ -261,10 +261,10 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 - (void)_doChangeToRuleEditorData:(void (^)(void))duringBlock;
 - (IBAction)_checkboxClicked:(id)sender;
 - (void)_updateCheckedStateUpwardsFromCompoundRow:(NSInteger)row;
-- (void)_updateCheckedStateForRow:(NSInteger)row to:(NSCellStateValue)newState;
-- (void)_updateCheckedStateDownwardsFromCompoundRow:(NSInteger)row to:(NSCellStateValue)newState;
-- (NSCellStateValue)_recalculateCheckboxStatesFromRow:(NSInteger)row;
-- (NSCellStateValue)_checkboxStateForRow:(NSInteger)row;
+- (void)_updateCheckedStateForRow:(NSInteger)row to:(NSControlStateValue)newState;
+- (void)_updateCheckedStateDownwardsFromCompoundRow:(NSInteger)row to:(NSControlStateValue)newState;
+- (NSControlStateValue)_recalculateCheckboxStatesFromRow:(NSInteger)row;
+- (NSControlStateValue)_checkboxStateForRow:(NSInteger)row;
 @end
 
 @implementation SPRuleFilterController
@@ -290,10 +290,21 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		numberOfDefaultFilters = [[NSMutableDictionary alloc] init];
 
 		NSError *readError = nil;
-		NSString *filePath = [NSBundle pathForResource:@"ContentFilters.plist" ofType:nil inDirectory:[[NSBundle mainBundle] bundlePath]];
-		NSData *defaultFilterData = [NSData dataWithContentsOfFile:filePath
-		                                                   options:NSMappedRead
-		                                                     error:&readError];
+		NSString *filePath = [[NSBundle mainBundle] pathForResource:@"ContentFilters" ofType:@"plist"];
+		if (!filePath) {
+			filePath = [[NSBundle bundleForClass:[self class]] pathForResource:@"ContentFilters" ofType:@"plist"];
+		}
+		NSData *defaultFilterData = nil;
+		if(filePath) {
+			defaultFilterData = [NSData dataWithContentsOfFile:filePath
+			                                           options:NSMappedRead
+			                                             error:&readError];
+		}
+		else {
+			readError = [NSError errorWithDomain:NSCocoaErrorDomain
+			                                code:NSFileNoSuchFileError
+			                            userInfo:@{NSFilePathErrorKey: @"ContentFilters.plist"}];
+		}
 
 		if(defaultFilterData && !readError) {
 			NSDictionary *defaultFilterDict = [NSPropertyListSerialization propertyListWithData:defaultFilterData
@@ -679,10 +690,10 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 - (IBAction)_checkboxClicked:(id)sender
 {
 	NSInteger row = [filterRuleEditor rowForDisplayValue:sender];
-	NSCellStateValue newState = [(NSButton *)sender state];
+	NSControlStateValue newState = [(NSButton *)sender state];
 
 	// to have -setState: accept mixed state we have to -setAllowsMixedState:YES in which case the user, too, can cycle all three states m(
-	if(newState == NSMixedState) {
+	if(newState == NSControlStateValueMixed) {
 		[sender setNextState];
 		newState = [(NSButton *)sender state];
 	}
@@ -708,7 +719,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
  * @param newState
  *   The new state to set for all children rows
  */
-- (void)_updateCheckedStateDownwardsFromCompoundRow:(NSInteger)row to:(NSCellStateValue)newState
+- (void)_updateCheckedStateDownwardsFromCompoundRow:(NSInteger)row to:(NSControlStateValue)newState
 {
 	NSIndexSet *subrows = [filterRuleEditor subrowIndexesForRow:row];
 	[subrows enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
@@ -729,7 +740,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
  * @param newState
  *   The new checkbox state to set
  */
-- (void)_updateCheckedStateForRow:(NSInteger)row to:(NSCellStateValue)newState
+- (void)_updateCheckedStateForRow:(NSInteger)row to:(NSControlStateValue)newState
 {
 	NSArray *displayValues = [filterRuleEditor displayValuesForRow:row];
 	RuleNode *firstCriterion = [[filterRuleEditor criteriaForRow:row] objectAtIndex:0];
@@ -756,14 +767,14 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	// stop condition for recursion
 	if(row < 0) return;
 
-	__block NSCellStateValue newState = NSControlStateValueOn;
+	__block NSControlStateValue newState = NSControlStateValueOn;
 	__block NSUInteger countOff = 0;
 	NSIndexSet *subrows = [filterRuleEditor subrowIndexesForRow:row];
 	[subrows enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
-		NSCellStateValue subState = [self _checkboxStateForRow:idx];
+		NSControlStateValue subState = [self _checkboxStateForRow:idx];
 		// mixed is easy: if at least one child is mixed, the parent is mixed, too
-		if(subState == NSMixedState) {
-			newState = NSMixedState;
+		if(subState == NSControlStateValueMixed) {
+			newState = NSControlStateValueMixed;
 			*stop = YES;
 			return;
 		}
@@ -773,7 +784,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	}];
 	if(countOff) {
 		// off only happens if all children are off
-		newState = (countOff == [subrows count]) ? NSControlStateValueOff : NSMixedState;
+		newState = (countOff == [subrows count]) ? NSControlStateValueOff : NSControlStateValueMixed;
 	}
 
 	//update ourselves
@@ -794,17 +805,17 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
  *   The resulting state for the given row according to all children (recursive).
  *   This will be:
  *   - `NSControlStateValueOn` if the row either has no children or all children are also checked
- *   - `NSMixedState` if at least one child row is also in mixed state or some (but not all) of the child rows are unchecked
+ *   - `NSControlStateValueMixed` if at least one child row is also in mixed state or some (but not all) of the child rows are unchecked
  *   - `NSControlStateValueOff` if there are child rows and all of them are unchecked
  */
-- (NSCellStateValue)_recalculateCheckboxStatesFromRow:(NSInteger)row
+- (NSControlStateValue)_recalculateCheckboxStatesFromRow:(NSInteger)row
 {
 	NSIndexSet *subrows = [filterRuleEditor subrowIndexesForRow:row];
 
-	__block NSCellStateValue newState = NSControlStateValueOn;
+	__block NSControlStateValue newState = NSControlStateValueOn;
 	__block NSUInteger countOff = 0;
 	[subrows enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
-		NSCellStateValue subState;
+		NSControlStateValue subState;
 		if([filterRuleEditor rowTypeForRow:idx] == NSRuleEditorRowTypeCompound) {
 			subState = [self _recalculateCheckboxStatesFromRow:idx];
 			// if the current row is a compound row, update its state from its children
@@ -813,8 +824,8 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		else {
 			subState = [self _checkboxStateForRow:idx];
 		}
-		if(subState == NSMixedState) {
-			newState = NSMixedState;
+		if(subState == NSControlStateValueMixed) {
+			newState = NSControlStateValueMixed;
 		}
 		else if(subState == NSControlStateValueOff) {
 			countOff++;
@@ -822,7 +833,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	}];
 	if(countOff) {
 		// off only happens if all children are off
-		newState = (countOff == [subrows count]) ? NSControlStateValueOff : NSMixedState;
+		newState = (countOff == [subrows count]) ? NSControlStateValueOff : NSControlStateValueMixed;
 	}
 
 	return newState;
@@ -840,7 +851,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
  *   The checkbox state.
  *   Defaults to `NSControlStateValueOn` if no checkbox is found in the row.
  */
-- (NSCellStateValue)_checkboxStateForRow:(NSInteger)row
+- (NSControlStateValue)_checkboxStateForRow:(NSInteger)row
 {
 	NSArray *displayValues = [filterRuleEditor displayValuesForRow:row];
 	RuleNode *firstCriterion = [[filterRuleEditor criteriaForRow:row] objectAtIndex:0];
@@ -1806,10 +1817,16 @@ static BOOL SerIsUntouchedStarterRule(NSDictionary *dict)
 	if (![SerFilterClassExpression isEqual:[dict objectForKey:SerFilterClass]]) return NO;
 	NSArray *values = [dict objectForKey:SerFilterExprValues];
 	if (![values isKindOfClass:[NSArray class]]) return NO;
-	// A row counts as "untouched starter" only if every argument is an
-	// empty NSString. Anything else (NSData, NSNull, NSNumber, or a
-	// non-empty string) is real data the user or a restore path put
-	// there – merging, not replacing, is the correct behavior.
+	// A row counts as "untouched starter" only if at least one argument
+	// is present AND every argument is an empty NSString. Zero-argument
+	// operators such as IS NULL / IS NOT NULL serialize with an empty
+	// values array (count == 0); without the count guard they would be
+	// misclassified as starter and replaced on the next append/drop,
+	// silently dropping the user's NULL filter.
+	// Anything else (NSData, NSNull, NSNumber, or a non-empty string)
+	// is real data the user or a restore path put there – merging, not
+	// replacing, is the correct behavior.
+	if ([values count] == 0) return NO;
 	for (id v in values) {
 		if (![v isKindOfClass:[NSString class]]) return NO;
 		if ([(NSString *)v length]) return NO;

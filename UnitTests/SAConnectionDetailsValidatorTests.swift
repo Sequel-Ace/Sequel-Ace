@@ -21,6 +21,7 @@ final class SAConnectionDetailsValidatorTests: XCTestCase {
         type: SAConnectionType = .tcpIP,
         host: String = "db.example.com",
         sshHost: String = "",
+        sshRemoteSocketPath: String = "",
         useSSL: Bool = false,
         sshKeyLocationEnabled: Bool = false,
         sshKeyLocation: String? = nil,
@@ -35,6 +36,7 @@ final class SAConnectionDetailsValidatorTests: XCTestCase {
             type: type,
             host: host,
             sshHost: sshHost,
+            sshRemoteSocketPath: sshRemoteSocketPath,
             useSSL: useSSL,
             sshKeyLocationEnabled: sshKeyLocationEnabled,
             sshKeyLocation: sshKeyLocation,
@@ -78,10 +80,21 @@ final class SAConnectionDetailsValidatorTests: XCTestCase {
         XCTAssertNil(validate(type: .awsIAM, host: "db.example.com"))
     }
 
+    func testValidVaultConnectionPasses() {
+        // Vault-specific fields are checked by SPConnectionController; the
+        // shared validator still covers MySQL SSL file checks for Vault.
+        XCTAssertNil(validate(type: .vault, host: "db.example.com"))
+    }
+
     // MARK: - hostMissing
 
     func testTCPIPRequiresHost() {
         let failure = validate(type: .tcpIP, host: "")
+        XCTAssertEqual(failure?.kind, .hostMissing)
+    }
+
+    func testTCPIPRequiresNonWhitespaceHost() {
+        let failure = validate(type: .tcpIP, host: "   \n\t")
         XCTAssertEqual(failure?.kind, .hostMissing)
     }
 
@@ -90,15 +103,43 @@ final class SAConnectionDetailsValidatorTests: XCTestCase {
         XCTAssertEqual(failure?.kind, .hostMissing)
     }
 
+    func testSSHTunnelWithRemoteSocketAcceptsEmptyHost() {
+        XCTAssertNil(validate(
+            type: .sshTunnel,
+            host: "",
+            sshHost: "bastion.example.com",
+            sshRemoteSocketPath: "/var/run/mysqld/mysqld.sock"
+        ))
+    }
+
+    func testSSHTunnelWithWhitespaceOnlyRemoteSocketRequiresHost() {
+        let failure = validate(
+            type: .sshTunnel,
+            host: "",
+            sshHost: "bastion.example.com",
+            sshRemoteSocketPath: "   \n\t"
+        )
+        XCTAssertEqual(failure?.kind, .hostMissing)
+    }
+
     func testAWSIAMRequiresHost() {
         let failure = validate(type: .awsIAM, host: "")
         XCTAssertEqual(failure?.kind, .hostMissing)
+    }
+
+    func testVaultHostIsCheckedByController() {
+        XCTAssertNil(validate(type: .vault, host: ""))
     }
 
     // MARK: - sshHostMissing
 
     func testSSHTunnelRequiresSSHHost() {
         let failure = validate(type: .sshTunnel, host: "db.example.com", sshHost: "")
+        XCTAssertEqual(failure?.kind, .sshHostMissing)
+    }
+
+    func testSSHTunnelRequiresNonWhitespaceSSHHost() {
+        let failure = validate(type: .sshTunnel, host: "db.example.com", sshHost: "   \n\t")
         XCTAssertEqual(failure?.kind, .sshHostMissing)
     }
 
@@ -221,6 +262,17 @@ final class SAConnectionDetailsValidatorTests: XCTestCase {
         let failure = validate(
             type: .socket,
             host: "",
+            useSSL: true,
+            sslKeyFileLocationEnabled: true,
+            sslKeyFileLocation: missingFilePath
+        )
+        XCTAssertEqual(failure?.kind, .sslKeyFileMissing)
+    }
+
+    func testSSLChecksApplyToVaultWhenUseSSLOn() {
+        let failure = validate(
+            type: .vault,
+            host: "db.example.com",
             useSSL: true,
             sslKeyFileLocationEnabled: true,
             sslKeyFileLocation: missingFilePath

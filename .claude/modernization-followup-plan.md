@@ -77,11 +77,46 @@ A1c — `-_selectDatabaseAndItem:` (background-thread selection flow) + callback
   `SADatabaseListManagerTests` (21 tests) still pass.
 - Files: `Source/Controllers/MainViewControllers/SPDatabaseDocument.m`, `SADatabaseListManager.swift`
 
-**A2. Extract task/progress management (~257 lines)**
-- `startTaskWithDescription:`, `endTask`, `setTaskPercentage:`, `enableTaskCancellation:`, progress window fade, cancel button
-- Already has `SATaskManaging` protocol — create `SATaskController` that implements it
-- Move the progress window, indicators, and timer management out of the document
-- Files: `SPDatabaseDocument.m`, new `SATaskController.swift`
+**A2. Extract task/progress management (~257 lines)** — ✅ Done (scoped to the progress UI)
+- New `SATaskController` (Swift, app-target only) owns the task *progress
+  UI*: the borderless progress window (created + configured in its init
+  from `ProgressIndicatorLayer.xib`, now File's-Owner = `SATaskController`),
+  the `YRKSpinningProgressIndicator`, the description / query-duration
+  labels, the cancel button, and the fade-in / query-execution-time
+  timers. It also owns the determinate/indeterminate display state, the
+  percentage-throttling, and the cancellation callback state.
+- `SATaskControllerDelegate` (Swift `@objc protocol`, defined alongside the
+  controller) exposes the two hooks the controller can't own:
+  `taskParentWindow()` (parent window to centre over / parent the panel to)
+  and `taskControllerDidRequestCancellation()` (kills the running query via
+  the database-structure connection where available). Both implemented in
+  `SPDatabaseDocument.m`; conformance declared in `SPDatabaseDocument.swift`.
+  The delegate requirements are *methods* (not a property) so the existing
+  ObjC method `-taskParentWindow` satisfies the @objc protocol — a `{ get }`
+  property requirement would import the ObjC getter as a method and fail to
+  conform.
+- The document keeps the working-level counter (`_isWorkingLevel`) and the
+  document-wide orchestration around it (`SPDocumentTaskStart/EndNotification`,
+  toolbar `validateVisibleItems`, `databaseListIsSelectable`,
+  `chooseDatabaseButton` enablement). `_isWorkingLevel` gates behaviour in
+  ~8 unrelated document methods, so it stays on the document; only the
+  progress *UI* moved. `SPDatabaseDocument`'s `SATaskManaging` methods are
+  now thin trampolines: they manage that document-wide state and forward
+  the presentation to `taskController` (`beginTaskIsFirstLevel:`,
+  `endTaskDisplay`, `setTaskPercentage:`, `enableTaskCancellation…`, etc.).
+  `cancelTask:` / `centerTaskWindow` / `fadeInTaskProgressWindow:` /
+  `showQueryExecutionTime` moved entirely to the controller; the document's
+  12 task ivars + 5 task IBOutlets are gone.
+- No unit tests: the controller is AppKit/nib/timer plumbing that needs a
+  live `NSWindow` + nib load + `YRKSpinningProgressIndicator` to exercise;
+  the only branchy logic (percentage throttling) is trivial. Same rationale
+  as A1c. Verified by a clean app build + the existing suite (522 pass; the
+  one pre-existing `PreferenceDefaults.plist` bundle failure is unrelated).
+- Files: `Source/Controllers/MainViewControllers/SATaskController.swift`,
+  `SPDatabaseDocument.{h,m,swift}`, `Source/Protocols` (none — delegate
+  lives with the controller), `Source/Sequel-Ace-Bridging-Header.h`
+  (imports `YRKSpinningProgressIndicator.h` for Swift), and
+  `Source/Interfaces/ProgressIndicatorLayer.xib` (File's Owner class).
 
 **A3. Extract view state switching to use SAViewMode (~188 lines)** — ✅ Done
 - `viewStructure`, `viewContent`, `viewQuery`, `viewStatus`, `viewRelations`, `viewTriggers`
@@ -178,17 +213,109 @@ backlog.
 
 ### Phase C: SwiftUI migration starts
 
-**C1. SwiftUI FavoritesListView**
-- Wrap the existing `SAFavoritesListDataSource` in an `NSViewRepresentable` first
-- Then iterate toward a pure SwiftUI `List` with `OutlineGroup`
-- This is the first visible SwiftUI in the app
-- Files: new `SAFavoritesListView.swift`
+**C1. SwiftUI FavoritesListView** — 🟡 In progress (NSViewRepresentable wrap done)
 
-**C2. SwiftUI ConnectionFormView**
-- The 55 IBOutlets in ConnectionView.xib are the target
-- Start with a SwiftUI form for TCP/IP connection type only
-- Bind to SAConnectionInfoObjC
-- Files: new `SAConnectionFormView.swift`
+C1a — `NSViewRepresentable` wrap — ✅ Done
+- New `SAFavoritesListView` (Swift, SwiftUI) wraps an
+  `SPFavoritesOutlineView` driven by the existing
+  `SAFavoritesListDataSource` inside an `NSScrollView`. It applies the
+  same column / font / row-height / source-list config that
+  `-[SPConnectionController setUpFavoritesOutlineView]` applies, and
+  keeps the data source's `searchQuery` / `delegate` in sync across
+  `updateNSView`.
+- The delegate is captured as a `() -> SAFavoritesListDelegate?`
+  closure over a `weak` local rather than a stored property, since
+  `NSViewRepresentable` is a value type that SwiftUI keeps alive for
+  the view's lifetime (avoids a retain cycle once C3 hosts it inside
+  its owner).
+- A `Coordinator` (NSObject) holds the data source + outline view
+  across SwiftUI view-value churn and forwards the cell-based
+  double-click to the delegate (mirrors
+  `-[SPConnectionController nodeDoubleClicked:]`: ignore Quick
+  Connect, edit groups, connect on leaf).
+- App-target only (wired into pbxproj by hand, mirroring
+  `SAFavoritesListDataSource.swift`); not yet hosted anywhere —
+  Phase C3 (standalone connection window) is the intended host.
+- No tests: the wrapper is AppKit plumbing that needs a live
+  `NSOutlineView`; the filtering / data-source logic it drives is
+  already covered by `SAFavoriteSearchMatcherTests`.
+- Files: new `Source/Controllers/MainViewControllers/ConnectionView/SAFavoritesListView.swift`
+
+C1b — pure SwiftUI `List` / `OutlineGroup` — ✅ Done (display/search/select; reorder+rename deferred)
+- New `SAFavoriteItem` (Swift value model, Identifiable/Hashable) is a
+  tree of `.quickConnect` / `.group` / `.favorite` nodes. Pure — no
+  AppKit / project ObjC types — so it compiles into the Unit Tests
+  target (same constraint as `SAFavoriteSearchMatcher`). Carries a
+  stable `id` plus the real `favoriteID` so a selection resolves back
+  to the underlying favorite. Ids come from the persistent
+  `SPTreeNode` instance address (favorites prefer their `favoriteID`),
+  so identity is stable + unique across sibling reorder/insert/remove
+  — index-path ids would shift and clear SwiftUI's selection (Codex,
+  PR #2416).
+- `SAFavoriteItem.filtered(using:)` + `[SAFavoriteItem].filtered(query:)`
+  reuse `SAFavoriteSearchMatcher` and reproduce the AppKit walker
+  semantics exactly: Quick Connect always kept, favorites matched on
+  name+host, groups kept only when a descendant favorite matches
+  (group name itself not matched), empty groups pruned under an active
+  query. Plus `flattened()` / `first(byID:)` lookups.
+- `SAFavoriteItem+Tree.swift` (app-target only) builds the model from
+  the live `SPTreeNode` tree via the `SPFavorite*Key` constants —
+  isolated here so the model file stays test-eligible. (Builder itself
+  is untested: constructing `SPTreeNode` from the test target hits the
+  B2b sharp edge.)
+- `SAFavoritesList` (SwiftUI) renders `List(selection:)` +
+  `OutlineGroup(children:)` with `.sidebar` style, per-row icons
+  (quick-connect / folder / database-small) and color-tinted favorite
+  labels via `SPFavoriteColorSupport`, live search filtering, and
+  double-click-to-connect on leaves (mirrors `-nodeDoubleClicked:`).
+- 13 unit tests in `UnitTests/SAFavoriteItemTests.swift` covering
+  flatten/lookup, inactive-query passthrough, name/host matching,
+  group keep/prune rules, group-name-not-matched, quick-connect
+  survival, and multi-token AND.
+- Still deferred before this can replace the C1a wrap: drag & drop
+  reordering, inline rename, and expand/collapse persistence (all
+  still in the AppKit data source). Nothing hosts this view yet
+  (Phase C3).
+- Files: new `SAFavoriteItem.swift`, `SAFavoriteItem+Tree.swift`,
+  `SAFavoritesList.swift`, `UnitTests/SAFavoriteItemTests.swift`
+
+**C2. SwiftUI ConnectionFormView** — 🟡 TCP/IP form + model done; other types + SSL + hosting pending
+- The 55 IBOutlets in ConnectionView.xib are the eventual target.
+
+C2a — TCP/IP form + observable model — ✅ Done
+- New `SAConnectionFormModel` (Swift, ObservableObject, pure
+  Foundation+Combine, BOTH targets) wraps the value-type
+  `SAConnectionInfo` so SwiftUI binds straight into it
+  (`$model.info.host`). It funnels the earlier extractions:
+  `validate()` → `SAConnectionDetailsValidator` (D3), `effectiveName` →
+  `SAConnectionFormHelpers.generateName` (user-entered name wins,
+  whitespace-only names ignored), `canAttemptConnection` gate (socket:
+  always; SSH tunnel: non-blank host OR remote socket path, mirroring
+  the validator; TCP/AWS/Vault: non-blank host — Codex P2 caught the
+  original gate blocking valid remote-socket tunnels), and ObjC
+  bridging via `init(objc:)` / `apply(to:)` (value-copy semantics —
+  edits don't leak back until applied).
+- New `SAConnectionFormView` (SwiftUI, app-target only) renders the
+  XIB's TCP/IP tab fields (Name w/ auto-generated-name placeholder,
+  Host, Username, Password as SecureField, Database, Port w/ "3306"
+  placeholder) + a Connect button (default action, gated) that runs
+  D3 validation and surfaces the failure's alertTitle/alertMessage
+  via `.alert`; on success calls the `onConnect` closure (C3 will pass
+  SAConnectionService there). `formStyle(.grouped)` applied via an
+  availability-gated modifier (macOS 13+; target is 12.0). Like C1b,
+  nothing hosts the view yet — C3 is the host.
+- 14 unit tests in `UnitTests/SAConnectionFormModelTests.swift`:
+  defaults, ObjC round-trip both ways, value-copy isolation,
+  effectiveName matrix (name wins / host / host+db / empty / whitespace
+  name), connect gate (TCP/IP host required incl. whitespace-only,
+  socket always true), validation wiring (hostMissing + pass), and
+  objectWillChange publishing on field mutation.
+- Files were added via Xcode MCP `XcodeWrite` (real Xcode IDs); only
+  the model's second (Unit Tests) membership was a manual pbxproj edit.
+- Remaining C2 scope: socket/SSH/AWS/Vault type switching, SSL options,
+  color index, time-zone picker, favorites save/auto-name parity.
+- Files: `Source/Controllers/MainViewControllers/ConnectionView/SAConnectionFormModel.swift`,
+  `SAConnectionFormView.swift`, `UnitTests/SAConnectionFormModelTests.swift`
 
 **C3. Wire SwiftUI into SAConnectionWindowController + expose in menu**
 - The standalone connection window is the ideal host for SwiftUI views
@@ -199,14 +326,75 @@ backlog.
 
 ### Phase D: SPConnectionController further cleanup
 
-**D1. Replace `updateFavoriteSelection:` with structured data flow**
-- This 170+ line method reads the selected favorite and populates 50+ form fields
-- Replace with: `SAConnectionInfoObjC` ↔ form field binding
-- When a favorite is selected, create `SAConnectionInfoObjC` from the favorite dict, then populate fields from the info object
+**D1. Replace `updateFavoriteSelection:` with structured data flow** — ✅ Done
+- New `SAConnectionInfo+Favorite.swift` (Swift, pure Foundation, compiles
+  into BOTH targets): `SAConnectionInfo.fromFavoriteDictionary(_:)` +
+  `SAConnectionInfoObjC.info(fromFavoriteDictionary:)` own the defaulting
+  rules previously inline in `-updateFavoriteSelection:` (missing name →
+  `""`, colorIndex → `-1`, useCompression → `YES`, awsProfile →
+  `"default"`, tz-identifier only in fixed mode, `useAWSIAMAuth` derived
+  from type, unknown type/tz-mode → tcpIP/server). Favorite keys are
+  inlined string literals (documented sync-with-SPConstants.m caveat, same
+  pattern as SAViewMode) so the file stays test-eligible. Value readers
+  mirror ObjC `-integerValue`/`-boolValue` leniency (NSNumber or numeric
+  NSString).
+- `-updateFavoriteSelection:` now decodes once and populates the form from
+  the typed info; ~70 lines of `?:`-defaulting gone. Keychain lookups and
+  the per-type time-zone popup updates stay in the controller (side
+  effects / AppKit).
+- Deliberately NOT decoded: passwords/keychain items (keychain side
+  effects), and `vaultPort`/`vaultOIDCMount` — those two stay as raw
+  `objectForKey:` reads in the controller because nil (key absent) drives
+  the form's NSNullPlaceholder ("443"/"oidc") and the info's non-optional
+  strings can't represent the nil-vs-empty distinction.
+- 20 unit tests in `UnitTests/SAConnectionInfoFavoriteTests.swift` pin:
+  nil/empty-dict defaults, every section's decode (standard/SSL/SSH/
+  AWS/Vault), all 5 type raw values + unknown fallback, tz-mode matrix
+  (identifier cleared outside fixed mode), AWS toggle derivation (stored
+  toggle never overrides), numeric-string leniency, NSNumber→String port,
+  passwords-never-decoded, and the ObjC bridge.
+- Files: `Source/Model/SAConnectionInfo+Favorite.swift`,
+  `UnitTests/SAConnectionInfoFavoriteTests.swift`, `SPConnectionController.m`
 
-**D2. Extract favorites management actions**
-- `addFavorite:`, `removeFavorite:`, `duplicateFavorite:`, `addGroup:`, `sortFavorites:`, `importFavorites:`, `exportFavorites:`
-- Move to `SAFavoritesManager` that wraps `SAFavoritesProviding`
+**D2. Extract favorites management actions** — ✅ Done (scoped to the pure cores)
+- The full "SAFavoritesManager wrapping SAFavoritesProviding" vision was
+  too big for one behaviour-preserving PR — the actions are sheet/panel/
+  outline-view orchestration. Extracted the pure cores instead:
+- `SAConnectionInfo+Favorite.swift` gains the encode-side counterparts of
+  the D1 decoder (same private `FavoriteKey` literals):
+  - `defaultNewFavoriteDictionary(withID:)` — the 30-key new-favorite
+    template previously built inline as parallel objects/keys arrays in
+    `-addFavorite:`. Historical wire-format quirks preserved and pinned:
+    no `useCompression` key, no SSL *path* keys (only enabled flags),
+    vaultPort/vaultOIDCMount stored as `""` (not absent).
+  - `duplicatedFavoriteDictionary(fromFavorite:withID:)` — fresh ID +
+    localized "<name> Copy", source dict untouched; nil-tolerant (a group
+    selection makes `-selectedFavorite` return nil).
+- New `SAFavoriteDeletionPrompt` (Swift, pure Foundation, ConnectionView)
+  owns the three-way delete-confirmation rule from `-removeNode:`:
+  favorite → confirm w/ favorite wording, group w/ children → confirm w/
+  group wording, empty group → delete with no alert.
+- The three controller actions are now thin: `-addFavorite:` lost its ~70
+  template lines, `-duplicateFavorite:` its ID/name mutation,
+  `-removeNode:` its message composition.
+- 11 new unit tests: 6 in `SAConnectionInfoFavoriteTests` (template key
+  set + values + decoder round-trip ≈ blank-form equivalence; duplicate
+  ID/suffix/no-mutation + nil source) and 5 in
+  `SAFavoriteDeletionPromptTests` (three-way rule, childCount ignored for
+  favorites, nil name).
+- Import/export (`importFavorites:`/`exportFavorites:`) and `sortFavorites:`
+  stay — heavy UI flows, and the import path was just rewritten by the
+  connection-string PR (#2398). Revisit once that settles.
+- ⚠️ Tooling note: hand-editing project.pbxproj while Xcode has the project
+  open is an edit war — Xcode clobbers on-disk changes with its in-memory
+  model when it saves (lost several Unit-Tests build entries twice). New
+  files should be added via the Xcode MCP `XcodeWrite` (registers them in
+  Xcode's live model with real IDs); extra target memberships can be
+  added on disk immediately after an Xcode save, then committed promptly.
+- Files: `Source/Model/SAConnectionInfo+Favorite.swift`,
+  `Source/Controllers/MainViewControllers/ConnectionView/SAFavoriteDeletionPrompt.swift`,
+  `UnitTests/SAConnectionInfoFavoriteTests.swift`,
+  `UnitTests/SAFavoriteDeletionPromptTests.swift`, `SPConnectionController.m`
 
 **D3. Extract form validation** — ✅ Done
 - New `SAConnectionDetailsValidator` (Swift, no AppKit) owns the
@@ -262,8 +450,8 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
 3. ~~**Phase A1** (database list manager) — high value, moderate effort~~ ✅ Done
 4. ~~**Phase A4** (window title) — quick, easy~~ ✅ Done
 5. **Phase B2** (favorites data source tests) — 🟡 B2a done (search matcher), B2b pending (needs test-target ObjC plumbing)
-6. **Phase C1** (SwiftUI favorites list) — first visible SwiftUI
-7. **Phase A2** (task controller) — large but impactful
-8. **Phase D1-D3** (SPConnectionController cleanup) — ongoing
+6. **Phase C1** (SwiftUI favorites list) — first visible SwiftUI — 🟡 C1a + C1b done (wrap + pure SwiftUI list); reorder/rename/persistence + hosting (C3) still pending before it replaces the AppKit list
+7. ~~**Phase A2** (task controller) — large but impactful~~ ✅ Done (progress UI extracted; working-level counter stays on the document)
+8. ~~**Phase D1-D3** (SPConnectionController cleanup)~~ ✅ Done (D1 + D2 scoped-down + D3; import/export extraction deferred until the #2398 import area settles)
 9. **Phase C2-C3** (SwiftUI connection form) — bigger effort
 10. **Phase E** (table content/custom query) — long-term

@@ -164,12 +164,16 @@
 - (BOOL)performDragOperation:(id <NSDraggingInfo>)sender {
 	NSPasteboard *pboard = [sender draggingPasteboard];
 
-	if ([[pboard types] containsObject:NSFilenamesPboardType] && [[pboard types] containsObject:@"CorePasteboardFlavorType 0x54455854"]) {
+	if ([[pboard types] containsObject:NSPasteboardTypeFileURL] && [[pboard types] containsObject:@"CorePasteboardFlavorType 0x54455854"]) {
 		return [super performDragOperation:sender];
 	}
 
-	if ([[pboard types] containsObject:NSFilenamesPboardType]) {
-		NSArray *files = [pboard propertyListForType:NSFilenamesPboardType];
+	if ([[pboard types] containsObject:NSPasteboardTypeFileURL]) {
+		NSArray *files = [pboard readObjectsForClasses:@[[NSURL class]] options:@{NSPasteboardURLReadingFileURLsOnlyKey: @YES}];
+
+		if ([files count] == 0) {
+			return [super performDragOperation:sender];
+		}
 
 		// Only one file path is allowed
 		if ([files count] > 1) {
@@ -177,7 +181,7 @@
 			return YES;
 		}
 
-		NSString *filepath = [[pboard propertyListForType:NSFilenamesPboardType] objectAtIndex:0];
+		NSString *filepath = [(NSURL *)[files objectAtIndex:0] path];
 
 		// Set the new insertion point
 		NSPoint draggingLocation = [sender draggingLocation];

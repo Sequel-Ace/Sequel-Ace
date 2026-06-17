@@ -28,7 +28,13 @@
 //
 
 #import "SPAppController.h"
+#import "SPCustomQuery.h"
+#import "SPTextView.h"
+#import "SPSQLParser.h"
+#import "SPStringAdditions.h"
 #import "SPDatabaseDocument.h"
+#import "YRKSpinningProgressIndicator.h"
+#import "SPTableContent.h"
 #import "SPProcessListController.h"
 #import "SPBundleManager.h"
 #import "SPWindow.h"
@@ -38,6 +44,7 @@
 #import "SPFileManagerAdditions.h"
 
 // Modernization — expose ObjC types needed by new Swift code
+#import "SPBundleCommandRunner.h"
 #import "SPConnectionController.h"
 #import "SPFavoritesController.h"
 #import "SPCompatibility.h"
@@ -48,6 +55,7 @@
 #import "SPFavoriteTextFieldCell.h"
 #import "SPFavoritesOutlineView.h"
 #import "SPFavoriteColorSupport.h"
+#import "SPKeychain.h"
 #import <SPMySQL/SPMySQLConstants.h>
 #import <SPMySQL/SPMySQLConnectionDelegate.h>
 #import <SPMySQL/SPMySQLConnectionProxy.h>

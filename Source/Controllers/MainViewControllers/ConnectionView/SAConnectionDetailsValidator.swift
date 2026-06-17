@@ -64,6 +64,7 @@ import Foundation
         type: SAConnectionType,
         host: String,
         sshHost: String,
+        sshRemoteSocketPath: String,
         useSSL: Bool,
         sshKeyLocationEnabled: Bool,
         sshKeyLocation: String?,
@@ -76,7 +77,11 @@ import Foundation
     ) -> SAConnectionValidationFailure? {
         // 1. Host required for TCP/IP, SSH tunnel, and AWS IAM
         //    connections — socket connections use a local socket path.
-        if (type == .tcpIP || type == .sshTunnel || type == .awsIAM) && host.isEmpty {
+        let trimmedHost = host.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedSSHHost = sshHost.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedRemoteSocketPath = sshRemoteSocketPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        let sshTunnelUsesRemoteSocket = type == .sshTunnel && !trimmedRemoteSocketPath.isEmpty
+        if (type == .tcpIP || (type == .sshTunnel && !sshTunnelUsesRemoteSocket) || type == .awsIAM) && trimmedHost.isEmpty {
             return SAConnectionValidationFailure(
                 kind: .hostMissing,
                 alertTitle: NSLocalizedString("Insufficient connection details",
@@ -88,7 +93,7 @@ import Foundation
         }
 
         // 2. SSH host required for SSH-tunnel connections.
-        if type == .sshTunnel && sshHost.isEmpty {
+        if type == .sshTunnel && trimmedSSHHost.isEmpty {
             return SAConnectionValidationFailure(
                 kind: .sshHostMissing,
                 alertTitle: NSLocalizedString("Insufficient connection details",
@@ -112,10 +117,10 @@ import Foundation
             )
         }
 
-        // 4-6. SSL file checks — only run for TCP/IP and socket connections that
-        //      have SSL turned on. The order matches the original code so that
+        // 4-6. SSL file checks — run for connection types whose MySQL leg can use
+        //      the shared SSL file fields. The order matches the original code so that
         //      a multi-issue form produces the same first-error UX.
-        if (type == .tcpIP || type == .socket) && useSSL {
+        if (type == .tcpIP || type == .socket || type == .vault) && useSSL {
             if sslKeyFileLocationEnabled, let path = sslKeyFileLocation,
                !fileExistsExpandingTilde(path) {
                 return SAConnectionValidationFailure(

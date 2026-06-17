@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPFieldEditorController.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "RegexKitLite.h"
 #import "SPTooltip.h"
 #import "SPGeometryDataView.h"
@@ -519,7 +520,8 @@ typedef enum {
         }
         
         NSError *error = nil;
-        id jsonObject = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingMutableContainers error:&error];
+        // Parsed only to validate the JSON; the result is unused, error drives the branch below
+        [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingMutableContainers error:&error];
         if(error != nil){
           SPLog(@"JSONObjectWithData error : %@", error.localizedDescription);
           [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
@@ -576,7 +578,7 @@ typedef enum {
 	NSSavePanel *panel = [NSSavePanel savePanel];
 
 	if ([editSheetSegmentControl selectedSegment] == ImageSegment && [sheetEditData isKindOfClass:[SPMySQLGeometryData class]]) {
-		[panel setAllowedFileTypes:@[@"pdf"]];
+		[panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:@"pdf"]]];
 		[panel setAllowsOtherFileTypes:NO];
 	}
 	else {

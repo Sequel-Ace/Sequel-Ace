@@ -37,7 +37,6 @@
 #import "SPTablesList.h"
 #import "SPNavigatorController.h"
 #import "RegexKitLite.h"
-#import "SPBundleHTMLOutputController.h"
 #import "SPAppController.h"
 #import "SPDatabaseStructure.h"
 #import "SPBundleCommandRunner.h"
@@ -2044,40 +2043,51 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		}
 
 		// Parse for mirrored snippets
-		while([snip isMatchedByRegex:mirror_re]) {
+		NSUInteger mirrorSearchStart = 0;
+		while(true) {
+			NSRange searchRange = NSMakeRange(mirrorSearchStart, [snip length] - mirrorSearchStart);
+			NSRange snipRange = [snip rangeOfRegex:mirror_re inRange:searchRange];
+			if(snipRange.location == NSNotFound) break;
+
+			NSInteger snipCnt = [[snip substringWithRange:NSMakeRange(snipRange.location + 1, snipRange.length - 1)] intValue];
+
+			// Check for snippet number 19 (to simplify regexp)
+			if(snipCnt>18 || snipCnt<0) {
+				NSLog(@"Only snippets in the range of 0…18 allowed.");
+				[self endSnippetSession];
+				break;
+			}
+
+			// Leave $N untouched when no matching ${N:…} placeholder was defined
+			if(snippetControlArray[snipCnt].location < 0) {
+				mirrorSearchStart = NSMaxRange(snipRange);
+				continue;
+			}
+
 			mirroredCounter++;
 			if(mirroredCounter >= COUNT_OF(snippetMirroredControlArray)) {
 				NSLog(@"Only %lu mirrored snippet placeholders allowed.",COUNT_OF(snippetMirroredControlArray));
 				mirroredCounter--; //go back by one or the code below will do an out-of-bounds array access
 				NSBeep();
 				break;
-			} else {
-
-				NSRange snipRange = [snip rangeOfRegex:mirror_re capture:0L];
-				NSInteger snipCnt = [[snip substringWithRange:[snip rangeOfRegex:mirror_re capture:1L]] intValue];
-
-				// Check for snippet number 19 (to simplify regexp)
-				if(snipCnt>18 || snipCnt<0) {
-					NSLog(@"Only snippets in the range of 0…18 allowed.");
-					[self endSnippetSession];
-					break;
-				}
-
-				[snip replaceCharactersInRange:snipRange withString:@""];
-				[snip flushCachedRegexData];
-
-				// Store found mirrored snippet range
-				snippetMirroredControlArray[mirroredCounter].snippet  = snipCnt;
-				snippetMirroredControlArray[mirroredCounter].location = snipRange.location + targetRange.location;
-				snippetMirroredControlArray[mirroredCounter].length   = 0;
-
-				// Adjust successive snippets
-				for(i=0; i<COUNT_OF(snippetControlArray); i++)
-				if(snippetControlArray[i].location > -1 && snippetControlArray[i].location > snippetMirroredControlArray[mirroredCounter].location)
-					snippetControlArray[i].location -= 1+((snipCnt>9)?2:1);
-
-				[snip flushCachedRegexData];
 			}
+
+			[snip replaceCharactersInRange:snipRange withString:@""];
+			[snip flushCachedRegexData];
+
+			// Store found mirrored snippet range
+			snippetMirroredControlArray[mirroredCounter].snippet  = snipCnt;
+			snippetMirroredControlArray[mirroredCounter].location = snipRange.location + targetRange.location;
+			snippetMirroredControlArray[mirroredCounter].length   = 0;
+
+			// Adjust successive snippets
+			for(i=0; i<COUNT_OF(snippetControlArray); i++)
+			if(snippetControlArray[i].location > -1 && snippetControlArray[i].location > snippetMirroredControlArray[mirroredCounter].location)
+				snippetControlArray[i].location -= 1+((snipCnt>9)?2:1);
+
+			// Resume scanning after the deleted match
+			mirrorSearchStart = snipRange.location;
+			[snip flushCachedRegexData];
 		}
 		// Preset mirrored snippets with according snippet content
 		if(mirroredCounter > -1) {
@@ -3565,11 +3575,14 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 {
 	NSPasteboard *pboard = [sender draggingPasteboard];
 
-	if ( [[pboard types] containsObject:NSFilenamesPboardType] && [[pboard types] containsObject:@"CorePasteboardFlavorType 0x54455854"])
+	if ( [[pboard types] containsObject:NSPasteboardTypeFileURL] && [[pboard types] containsObject:@"CorePasteboardFlavorType 0x54455854"])
 		return [super performDragOperation:sender];
 
-	if ( [[pboard types] containsObject:NSFilenamesPboardType] ) {
-		NSArray *files = [pboard propertyListForType:NSFilenamesPboardType];
+	if ( [[pboard types] containsObject:NSPasteboardTypeFileURL] ) {
+		NSArray *files = [pboard readObjectsForClasses:@[[NSURL class]] options:@{NSPasteboardURLReadingFileURLsOnlyKey: @YES}];
+
+		if([files count] == 0)
+			return [super performDragOperation:sender];
 
 		// Only one file path is allowed
 		if([files count] > 1) {
@@ -3577,7 +3590,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 			return YES;
 		}
 
-		NSString *filepath = [[pboard propertyListForType:NSFilenamesPboardType] objectAtIndex:0];
+		NSString *filepath = [(NSURL *)[files objectAtIndex:0] path];
 		// if (([filenamesAttributes fileHFSTypeCode] == 'clpt' && [filenamesAttributes fileHFSCreatorCode] == 'MACS') || [[filename pathExtension] isEqualToString:@"textClipping"] == YES) {
 		//
 		// }

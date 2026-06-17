@@ -48,7 +48,6 @@
 #import "SPGeometryDataView.h"
 #import "SPTextView.h"
 #import "SPAppController.h"
-#import "SPBundleHTMLOutputController.h"
 #import "SPCustomQuery.h"
 #import "SPThreadAdditions.h"
 #import "SPTableFilterParser.h"
@@ -1506,6 +1505,26 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 }
 
+- (void)applyCellFilterForColumn:(NSString *)columnName operator:(NSString *)operatorName values:(NSArray *)values isNull:(BOOL)isNull
+{
+	if (![NSThread isMainThread]) {
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[self applyCellFilterForColumn:columnName operator:operatorName values:values isNull:isNull];
+		});
+		return;
+	}
+
+	NSDictionary *newFilter = [SPRuleFilterController makeSerializedFilterForColumn:columnName
+																		   operator:operatorName
+																			 values:(isNull ? @[] : (values ?: @[]))];
+	NSDictionary *mergedFilter = [SACellFilterMerge mergedFilterWithCurrentFilter:[ruleFilterController serializedFilter] newFilter:newFilter];
+
+	[ruleFilterController restoreSerializedFilters:mergedFilter];
+	activeFilter = SPTableContentFilterSourceRuleFilter;
+	[self setRuleEditorVisible:YES animate:YES];
+	[self performSelectorOnMainThread:@selector(filterTable:) withObject:ruleFilterController waitUntilDone:NO];
+}
+
 #pragma mark -
 #pragma mark Pagination
 
@@ -2713,8 +2732,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 					fieldValue = [NSString stringWithFormat:@"b'%@'", ((![desc length] || [desc isEqualToString:@"0"]) ? @"0" : desc)];
 				} else if ([fieldTypeGroup isEqualToString:@"date"] && [desc isEqualToString:@"NOW()"]) {
 					fieldValue = @"NOW()";
-				} else if ([fieldTypeGroup isEqualToString:@"string"] && [[rowObject description] isEqualToString:@"UUID()"]) {
-					fieldValue = @"UUID()";
+				} else if ([fieldTypeGroup isEqualToString:@"string"] && ([desc isEqualToString:@"UUID()"] || [desc isEqualToString:@"UUID_v4()"])) {
+					fieldValue = desc;
 				} else {
 					fieldValue = [mySQLConnection escapeAndQuoteString:desc];
 				}
@@ -4225,7 +4244,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 			for (id win in [NSApp windows])
 			{
-				if ([[[[win delegate] class] description] isEqualToString:@"SPBundleHTMLOutputController"]) {
+				if ([[[[win delegate] class] description] isEqualToString:@"SABundleHTMLOutputWindowController"]) {
 					if ([[[win delegate] windowUUID] isEqualToString:uuid]) {
 						correspondingWindowFound = YES;
 						break;
