@@ -67,6 +67,8 @@
 - (void)testNormalizeCollationRows_MapsShowCollationColumns;
 - (void)testSortCollationRows_OrdersByCollationName;
 - (void)testShowCollationForEncoding_EscapesEncodingAndReturnsSortedNormalizedRows;
+- (void)testDatabaseCollationsForEncoding_ShowFallbackRetriesUtf8Alias;
+- (void)testDatabaseCollationsForEncoding_ShowFallbackRetriesUtf8mb3Alias;
 
 @end
 
@@ -342,6 +344,66 @@
 	]));
 	XCTAssertEqualObjects([[collationRows firstObject] objectForKey:@"CHARACTER_SET_NAME"], @"utf8mb4");
 	OCMVerify([databaseDataMock _getDatabaseDataForQuery:@"SHOW COLLATION WHERE `Charset` = 'utf8''mb4'"]);
+
+	[databaseDataMock stopMocking];
+}
+
+- (void)testDatabaseCollationsForEncoding_ShowFallbackRetriesUtf8Alias
+{
+	SPDatabaseData *databaseData = [[SPDatabaseData alloc] init];
+	id databaseDataMock = OCMPartialMock(databaseData);
+
+	NSArray *aliasRows = @[
+		@{
+			@"Collation": @"utf8mb3_general_ci",
+			@"Charset": @"utf8mb3",
+			@"Id": @"33",
+			@"Default": @"Yes",
+			@"Compiled": @"Yes",
+			@"Sortlen": @"1"
+		}
+	];
+
+	OCMStub([databaseDataMock _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = 'utf8' ORDER BY `collation_name` ASC"]).andReturn(@[]);
+	OCMStub([databaseDataMock _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = 'utf8mb3' ORDER BY `collation_name` ASC"]).andReturn(@[]);
+	OCMStub([databaseDataMock _getDatabaseDataForQuery:@"SHOW COLLATION WHERE `Charset` = 'utf8'"]).andReturn(@[]);
+	OCMStub([databaseDataMock _getDatabaseDataForQuery:@"SHOW COLLATION WHERE `Charset` = 'utf8mb3'"]).andReturn(aliasRows);
+
+	NSArray *collationRows = [(SPDatabaseData *)databaseDataMock getDatabaseCollationsForEncoding:@"utf8"];
+
+	XCTAssertEqualObjects([collationRows valueForKey:@"COLLATION_NAME"], (@[@"utf8mb3_general_ci"]));
+	XCTAssertEqualObjects([[collationRows firstObject] objectForKey:@"CHARACTER_SET_NAME"], @"utf8mb3");
+	OCMVerify([databaseDataMock _getDatabaseDataForQuery:@"SHOW COLLATION WHERE `Charset` = 'utf8mb3'"]);
+
+	[databaseDataMock stopMocking];
+}
+
+- (void)testDatabaseCollationsForEncoding_ShowFallbackRetriesUtf8mb3Alias
+{
+	SPDatabaseData *databaseData = [[SPDatabaseData alloc] init];
+	id databaseDataMock = OCMPartialMock(databaseData);
+
+	NSArray *aliasRows = @[
+		@{
+			@"Collation": @"utf8_general_ci",
+			@"Charset": @"utf8",
+			@"Id": @"33",
+			@"Default": @"Yes",
+			@"Compiled": @"Yes",
+			@"Sortlen": @"1"
+		}
+	];
+
+	OCMStub([databaseDataMock _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = 'utf8mb3' ORDER BY `collation_name` ASC"]).andReturn(@[]);
+	OCMStub([databaseDataMock _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = 'utf8' ORDER BY `collation_name` ASC"]).andReturn(@[]);
+	OCMStub([databaseDataMock _getDatabaseDataForQuery:@"SHOW COLLATION WHERE `Charset` = 'utf8mb3'"]).andReturn(@[]);
+	OCMStub([databaseDataMock _getDatabaseDataForQuery:@"SHOW COLLATION WHERE `Charset` = 'utf8'"]).andReturn(aliasRows);
+
+	NSArray *collationRows = [(SPDatabaseData *)databaseDataMock getDatabaseCollationsForEncoding:@"utf8mb3"];
+
+	XCTAssertEqualObjects([collationRows valueForKey:@"COLLATION_NAME"], (@[@"utf8_general_ci"]));
+	XCTAssertEqualObjects([[collationRows firstObject] objectForKey:@"CHARACTER_SET_NAME"], @"utf8");
+	OCMVerify([databaseDataMock _getDatabaseDataForQuery:@"SHOW COLLATION WHERE `Charset` = 'utf8'"]);
 
 	[databaseDataMock stopMocking];
 }

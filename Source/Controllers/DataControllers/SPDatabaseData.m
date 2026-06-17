@@ -49,6 +49,7 @@
 - (NSArray *)_normalizedCollationRowsFromRows:(NSArray *)rows;
 - (NSArray *)_sortedCollationRowsByName:(NSArray *)rows;
 - (NSArray *)_getCollationRowsFromShowCollationForEncoding:(NSString *)encoding;
+- (NSString *)_utf8AliasForEncoding:(NSString *)encoding;
 
 NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, void *context);
 
@@ -179,15 +180,18 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 			[characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", escapedEncoding]]];
 
 			//Special handling to try utf8 if the encoding is utf8mb3 https://github.com/Sequel-Ace/Sequel-Ace/issues/1064
-			if (![characterSetCollations count] && [characterSetEncoding isEqualToString:@"utf8mb3"]) {
-				[characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", @"utf8"]]];
-			} else if (![characterSetCollations count] && [characterSetEncoding isEqualToString:@"utf8"]) {
-				[characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", @"utf8mb3"]]];
+			NSString *utf8AliasEncoding = [self _utf8AliasForEncoding:characterSetEncoding];
+			if (![characterSetCollations count] && utf8AliasEncoding) {
+				NSString *escapedUtf8AliasEncoding = [utf8AliasEncoding stringByReplacingOccurrencesOfString:@"'" withString:@"''"];
+				[characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", escapedUtf8AliasEncoding]]];
 			}
 
 			// Fallback to SHOW COLLATION for older MySQL versions or restricted access
 			if (![characterSetCollations count]) {
 				[characterSetCollations addObjectsFromArray:[self _getCollationRowsFromShowCollationForEncoding:characterSetEncoding]];
+				if (![characterSetCollations count] && utf8AliasEncoding) {
+					[characterSetCollations addObjectsFromArray:[self _getCollationRowsFromShowCollationForEncoding:utf8AliasEncoding]];
+				}
 			}
 
 			// If all sources failed, log once and show a single error alert
@@ -537,6 +541,13 @@ copy_return:
 		NSString *rightName = [rightRow objectForKey:@"COLLATION_NAME"] ?: @"";
 		return [leftName compare:rightName];
 	}];
+}
+
+- (NSString *)_utf8AliasForEncoding:(NSString *)encoding
+{
+	if ([encoding isEqualToString:@"utf8mb3"]) return @"utf8";
+	if ([encoding isEqualToString:@"utf8"]) return @"utf8mb3";
+	return nil;
 }
 
 /**
