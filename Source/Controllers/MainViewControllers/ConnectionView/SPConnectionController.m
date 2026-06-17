@@ -1125,6 +1125,11 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     [self _startEditingConnection];
 }
 
+- (IBAction)requestServerPublicKeyChanged:(id)sender
+{
+    [self _startEditingConnection];
+}
+
 - (BOOL)_isAWSIAMConnection
 {
     return [self type] == SPAWSIAMConnection;

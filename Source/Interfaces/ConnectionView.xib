@@ -615,6 +615,7 @@ DQ
                                                                                                 <font key="font" metaFont="system"/>
                                                                                             </buttonCell>
                                                                                             <connections>
+                                                                                                <action selector="requestServerPublicKeyChanged:" target="-2" id="TCPIP-PUBKEY-ACT"/>
                                                                                                 <binding destination="-2" name="value" keyPath="requestServerPublicKey" id="TCPIP-PUBKEY-BND">
                                                                                                     <dictionary key="options">
                                                                                                         <integer key="NSMultipleValuesPlaceholder" value="0"/>
@@ -1018,6 +1019,7 @@ DQ
                                                                                                 <font key="font" metaFont="system"/>
                                                                                             </buttonCell>
                                                                                             <connections>
+                                                                                                <action selector="requestServerPublicKeyChanged:" target="-2" id="SOCKET-PUBKEY-ACT"/>
                                                                                                 <binding destination="-2" name="value" keyPath="requestServerPublicKey" id="SOCKET-PUBKEY-BND">
                                                                                                     <dictionary key="options">
                                                                                                         <integer key="NSMultipleValuesPlaceholder" value="0"/>
@@ -1578,6 +1580,7 @@ DQ
                                                                                                 <font key="font" metaFont="system"/>
                                                                                             </buttonCell>
                                                                                             <connections>
+                                                                                                <action selector="requestServerPublicKeyChanged:" target="-2" id="SSH-PUBKEY-ACT"/>
                                                                                                 <binding destination="-2" name="value" keyPath="requestServerPublicKey" id="SSH-PUBKEY-BND">
                                                                                                     <dictionary key="options">
                                                                                                         <integer key="NSMultipleValuesPlaceholder" value="0"/>
@@ -2450,6 +2453,7 @@ DQ
                                                                                                 <font key="font" metaFont="system"/>
                                                                                             </buttonCell>
                                                                                             <connections>
+                                                                                                <action selector="requestServerPublicKeyChanged:" target="-2" id="VAULT-PUBKEY-ACT"/>
                                                                                                 <binding destination="-2" name="value" keyPath="requestServerPublicKey" id="VAULT-PUBKEY-BND">
                                                                                                     <dictionary key="options">
                                                                                                         <integer key="NSMultipleValuesPlaceholder" value="0"/>
