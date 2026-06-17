@@ -114,12 +114,24 @@ typedef NS_ENUM(NSInteger, HelpVersionNumber) {
 	NSString *serverVersionString = [[mySQLConnection serverVersionString] lowercaseString];
 	BOOL isMariaDBServer = (serverVersionString && [serverVersionString rangeOfString:@"mariadb"].location != NSNotFound);
 	if (isMariaDBServer) {
-		NSString *topicSlug = [[searchString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] lowercaseString];
+		NSString *trimmedSearchString = [searchString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+		NSString *topicSlug = [trimmedSearchString lowercaseString];
 		topicSlug = [topicSlug stringByReplacingOccurrencesOfRegex:@"\\s+" withString:@"-"];
 		topicSlug = [topicSlug stringByReplacingOccurrencesOfRegex:@"[^a-z0-9_-]" withString:@""];
-		if (![topicSlug length]) topicSlug = @"server";
 		
-		NSString *url = [[NSString stringWithFormat:@"https://mariadb.com/kb/en/%@/", topicSlug] stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet];
+		NSString *url = nil;
+		if ([topicSlug length]) {
+			url = [[NSString stringWithFormat:@"https://mariadb.com/kb/en/%@/", topicSlug] stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet];
+		}
+		else if ([trimmedSearchString length]) {
+			NSMutableCharacterSet *queryAllowedCharacters = [[NSCharacterSet URLQueryAllowedCharacterSet] mutableCopy];
+			[queryAllowedCharacters removeCharactersInString:@"&=+?#"];
+			NSString *encodedSearchString = [trimmedSearchString stringByAddingPercentEncodingWithAllowedCharacters:queryAllowedCharacters];
+			url = [NSString stringWithFormat:@"https://mariadb.com/docs?q=%@", encodedSearchString ?: @""];
+		}
+		else {
+			url = @"https://mariadb.com/kb/en/server/";
+		}
 		
 		SPLog("search URL: %@",url);
 		
