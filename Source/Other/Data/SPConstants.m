@@ -358,6 +358,7 @@ NSString *SPFavoriteSSHKeyLocationKey                    = @"sshKeyLocation";
 NSString *SPFavoriteSSHRemoteSocketPathKey               = @"sshRemoteSocketPath";
 NSString *SPFavoriteAllowDataLocalInfileKey              = @"allowDataLocalInfile";
 NSString *SPFavoriteEnableClearTextPluginKey             = @"enableClearTextPlugin";
+NSString *SPFavoriteRequestServerPublicKeyKey            = @"requestServerPublicKey";
 NSString *SPFavoriteUseSSLKey                            = @"useSSL";
 NSString *SPFavoriteSSLKeyFileLocationEnabledKey         = @"sslKeyFileLocationEnabled";
 NSString *SPFavoriteSSLKeyFileLocationKey                = @"sslKeyFileLocation";

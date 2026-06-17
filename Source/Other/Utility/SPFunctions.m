@@ -46,6 +46,8 @@ NSArray<NSString *> *SPValidMySQLConnectionURLQueryParameters(void)
 	         @"aws_profile",
 	         @"aws_region",
 	         @"enable_cleartext_plugin",
+	         @"get_server_public_key",
+	         @"request_server_public_key",
 	         @"type"];
 }
 
@@ -315,6 +317,16 @@ BOOL SPExtractConnectionDetailsFromMySQLURL(NSURL *url, NSMutableDictionary *det
 										[[decodedValue lowercaseString] isEqualToString:@"yes"] ||
 										[[decodedValue lowercaseString] isEqualToString:@"y"]);
 				[details setObject:@(enableClearText) forKey:@"enableClearTextPlugin"];
+				continue;
+			}
+
+			if ([queryItem.name isEqualToString:@"get_server_public_key"] ||
+				[queryItem.name isEqualToString:@"request_server_public_key"]) {
+				BOOL requestPublicKey = ([decodedValue isEqualToString:@"1"] ||
+										 [[decodedValue lowercaseString] isEqualToString:@"true"] ||
+										 [[decodedValue lowercaseString] isEqualToString:@"yes"] ||
+										 [[decodedValue lowercaseString] isEqualToString:@"y"]);
+				[details setObject:@(requestPublicKey) forKey:@"requestServerPublicKey"];
 				continue;
 			}
 
