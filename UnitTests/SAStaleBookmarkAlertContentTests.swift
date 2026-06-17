@@ -1,0 +1,62 @@
+//
+//  SAStaleBookmarkAlertContentTests.swift
+//  Unit Tests
+//
+//  Covers the bounded launch-time stale bookmark alert content.
+//
+
+import XCTest
+
+final class SAStaleBookmarkAlertContentTests: XCTestCase {
+
+    func testDisplayNamesDecodeFileURLLastPathComponents() {
+        let displayNames = SABookmarkAlertContent.displayNames(forBookmarkPaths: [
+            "file:///Users/tom/Backups/My%20Backup.sql",
+            "file:///Users/tom/Exports/report.csv"
+        ])
+
+        XCTAssertEqual(displayNames, [
+            "My Backup.sql",
+            "report.csv"
+        ])
+    }
+
+    func testDisplayNamesHandlePlainFilePaths() {
+        let displayNames = SABookmarkAlertContent.displayNames(forBookmarkPaths: [
+            "/Users/tom/Backups/nightly.sql"
+        ])
+
+        XCTAssertEqual(displayNames, ["nightly.sql"])
+    }
+
+    func testStaleBookmarksMessageStaysBoundedForLargeLists() {
+        let message = SABookmarkAlertContent.staleBookmarksMessage(count: 200)
+
+        XCTAssertTrue(message.contains("200"))
+        XCTAssertFalse(message.contains("\n"))
+        XCTAssertLessThan(message.count, 180)
+    }
+
+    func testMissingBookmarksMessageUsesSingularForm() {
+        let message = SABookmarkAlertContent.missingBookmarksMessage(count: 1)
+
+        XCTAssertTrue(message.contains("1 missing secure bookmark"))
+        XCTAssertFalse(message.contains("them"))
+    }
+
+    func testScrollableAccessoryUsesCappedScrollViewForLargeLists() throws {
+        let helpView = NSTextField(labelWithString: "Bookmark help")
+        let listItems = (0..<200).map { "backup-\($0).sql" }
+
+        let accessoryView = NSAlert.scrollableListAccessoryView(listItems: listItems, helpView: helpView)
+        let stackView = try XCTUnwrap(accessoryView.subviews.first as? NSStackView)
+        let scrollView = try XCTUnwrap(stackView.arrangedSubviews.first as? NSScrollView)
+        let heightConstraint = try XCTUnwrap(scrollView.constraints.first { $0.firstAttribute == .height })
+
+        XCTAssertTrue(scrollView.hasVerticalScroller)
+        XCTAssertFalse(scrollView.hasHorizontalScroller)
+        XCTAssertLessThanOrEqual(heightConstraint.constant, 220)
+        XCTAssertGreaterThanOrEqual(heightConstraint.constant, 96)
+        XCTAssertLessThanOrEqual(accessoryView.frame.width, 520)
+    }
+}
