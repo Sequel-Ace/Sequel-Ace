@@ -385,7 +385,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             // If no selected range, then make a new range then use it for appending query
             if (!selectedRange.length) {
               selectedRange = NSMakeRange(textView.textStorage.length, 0);
-              NSUInteger caretPosition = selectedRange.location;
             }
           
             [textView insertAsSnippet:selectedFaveQueryStr atRange:selectedRange];
@@ -425,7 +424,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             // If no selected range, then make a new range then use it for appending query
             if (!selectedRange.length) {
               selectedRange = NSMakeRange(textView.textStorage.length, 0);
-              NSUInteger caretPosition = selectedRange.location;
             }
           
             [textView insertAsSnippet:selectedHistoryQueryStr atRange:selectedRange];
