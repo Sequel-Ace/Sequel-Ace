@@ -40,6 +40,7 @@ typedef NS_ENUM(NSInteger, HelpVersionNumber) {
 	MySQLVer56 = 11,
 	MySQLVer57 = 12,
 	MySQLVer80 = 201,
+	MySQLVer84 = 371,
 };
 
 @interface SPHelpViewerClient () <SPHelpViewerDataSource>
@@ -100,6 +101,7 @@ typedef NS_ENUM(NSInteger, HelpVersionNumber) {
 	//Hmmm. 5.5 dev search no longer exists - 5.5. redirects to 8.0
 	// 5.6 = https://dev.mysql.com/doc/search/?d=11&p=1&q=SELECT
 	// 8.0 https://dev.mysql.com/doc/search/?d=201&p=1&q=SELECT
+	// 8.4 https://dev.mysql.com/doc/search/?d=371&p=1&q=SELECT
 	// 5.7 https://dev.mysql.com/doc/search/?d=12&p=1&q=SELECT
 	
 	// OLD: SPMySQLSearchURL = https://dev.mysql.com/doc/refman/%@/%@/%@.html
@@ -108,7 +110,10 @@ typedef NS_ENUM(NSInteger, HelpVersionNumber) {
 	// default to 8.0
 	HelpVersionNumber version = MySQLVer80;
 	
-	if ([mySQLConnection serverVersionIsGreaterThanOrEqualTo:8 minorVersion:0 releaseVersion:0]){
+	if (![mySQLConnection isMariaDB] && [mySQLConnection serverVersionIsGreaterThanOrEqualTo:8 minorVersion:4 releaseVersion:0]){
+		version = MySQLVer84;
+	}
+	else if ([mySQLConnection serverVersionIsGreaterThanOrEqualTo:8 minorVersion:0 releaseVersion:0]){
 		version = MySQLVer80;
 	}
 	else if([mySQLConnection serverVersionIsGreaterThanOrEqualTo:5 minorVersion:7 releaseVersion:0]) {
