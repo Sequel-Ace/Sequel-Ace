@@ -122,6 +122,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 - (void)_showOptimizedFieldTypeFallbackTask:(NSDictionary *)context;
 - (BOOL)_serverUsesMySQL84AutoIncrementRules;
 - (BOOL)_isAutoIncrementExtraValue:(id)value;
+- (BOOL)_isMySQL84AutoIncrementRuleExtraValue:(id)value;
 - (BOOL)_fieldTypeAllowsAutoIncrement:(NSString *)fieldType;
 - (void)_showInvalidAutoIncrementAlertForFieldType:(NSString *)fieldType;
 
@@ -305,6 +306,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 - (BOOL)_isAutoIncrementExtraValue:(id)value
 {
 	return [SAAutoIncrementRuleSupport isAutoIncrementExtraValue:value];
+}
+
+- (BOOL)_isMySQL84AutoIncrementRuleExtraValue:(id)value
+{
+	return [SAAutoIncrementRuleSupport isMySQL84AutoIncrementRuleExtraValue:value];
 }
 
 - (BOOL)_fieldTypeAllowsAutoIncrement:(NSString *)fieldType
@@ -932,7 +938,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	NSDictionary *theRow = [[self activeFieldsSource] safeObjectAtIndex:currentlyEditingRow];
 	
-	if ([self _isAutoIncrementExtraValue:[theRow objectForKey:@"Extra"]] && ![self _fieldTypeAllowsAutoIncrement:[theRow objectForKey:@"type"]]) {
+	if ([self _isMySQL84AutoIncrementRuleExtraValue:[theRow objectForKey:@"Extra"]] && ![self _fieldTypeAllowsAutoIncrement:[theRow objectForKey:@"type"]]) {
 		[self _showInvalidAutoIncrementAlertForFieldType:[theRow objectForKey:@"type"]];
 		return NO;
 	}
@@ -2049,7 +2055,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		for (id item in extraFieldSuggestions)
 		{
 			BOOL isAutoIncrementSuggestion = [self _isAutoIncrementExtraValue:item];
-			BOOL shouldHideAutoIncrement = isAutoIncrementSuggestion && (isCurrentExtraAutoIncrement || ![self _fieldTypeAllowsAutoIncrement:[rowData objectForKey:@"type"]]);
+			BOOL isMySQL84RestrictedSuggestion = [self _isMySQL84AutoIncrementRuleExtraValue:item];
+			BOOL shouldHideAutoIncrement = (isAutoIncrementSuggestion && isCurrentExtraAutoIncrement) || (isMySQL84RestrictedSuggestion && ![self _fieldTypeAllowsAutoIncrement:[rowData objectForKey:@"type"]]);
 			if (!shouldHideAutoIncrement) {
 				[dataCell addItemWithObjectValue:item];
 			}
@@ -2110,7 +2117,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 			isCurrentExtraAutoIncrement = [self _isAutoIncrementExtraValue:anObject];
 
-			if (isCurrentExtraAutoIncrement && ![self _fieldTypeAllowsAutoIncrement:[currentRow objectForKey:@"type"]]) {
+			if ([self _isMySQL84AutoIncrementRuleExtraValue:anObject] && ![self _fieldTypeAllowsAutoIncrement:[currentRow objectForKey:@"type"]]) {
 				isCurrentExtraAutoIncrement = NO;
 				autoIncrementIndex = nil;
 				[self _showInvalidAutoIncrementAlertForFieldType:[currentRow objectForKey:@"type"]];
@@ -2178,7 +2185,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		if (anObject && [(NSString*)anObject length] && ![(NSString*)anObject hasPrefix:@"--"]) {
 			[currentRow setObject:[(NSString*)anObject uppercaseString] forKey:@"type"];
 
-			if ([self _isAutoIncrementExtraValue:[currentRow objectForKey:@"Extra"]] && ![self _fieldTypeAllowsAutoIncrement:[currentRow objectForKey:@"type"]]) {
+			if ([self _isMySQL84AutoIncrementRuleExtraValue:[currentRow objectForKey:@"Extra"]] && ![self _fieldTypeAllowsAutoIncrement:[currentRow objectForKey:@"type"]]) {
 				[currentRow setObject:@"None" forKey:@"Extra"];
 				isCurrentExtraAutoIncrement = NO;
 				autoIncrementIndex = nil;

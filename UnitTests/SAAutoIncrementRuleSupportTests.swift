@@ -1,10 +1,16 @@
 import XCTest
 
 final class SAAutoIncrementRuleSupportTests: XCTestCase {
-    func testRecognizesAutoIncrementExtraValues() {
+    func testRecognizesAutoIncrementExtraValueForIndexPrompt() {
         XCTAssertTrue(SAAutoIncrementRuleSupport.isAutoIncrementExtraValue("AUTO_INCREMENT"))
         XCTAssertTrue(SAAutoIncrementRuleSupport.isAutoIncrementExtraValue(" auto_increment\n"))
-        XCTAssertTrue(SAAutoIncrementRuleSupport.isAutoIncrementExtraValue("serial default value"))
+        XCTAssertFalse(SAAutoIncrementRuleSupport.isAutoIncrementExtraValue("serial default value"))
+    }
+
+    func testRecognizesMySQL84RestrictedAutoIncrementExtraValues() {
+        XCTAssertTrue(SAAutoIncrementRuleSupport.isMySQL84AutoIncrementRuleExtraValue("AUTO_INCREMENT"))
+        XCTAssertTrue(SAAutoIncrementRuleSupport.isMySQL84AutoIncrementRuleExtraValue(" auto_increment\n"))
+        XCTAssertTrue(SAAutoIncrementRuleSupport.isMySQL84AutoIncrementRuleExtraValue("serial default value"))
     }
 
     func testRejectsNonAutoIncrementExtraValues() {
@@ -12,6 +18,10 @@ final class SAAutoIncrementRuleSupportTests: XCTestCase {
         XCTAssertFalse(SAAutoIncrementRuleSupport.isAutoIncrementExtraValue("on update CURRENT_TIMESTAMP"))
         XCTAssertFalse(SAAutoIncrementRuleSupport.isAutoIncrementExtraValue(""))
         XCTAssertFalse(SAAutoIncrementRuleSupport.isAutoIncrementExtraValue(NSNull()))
+        XCTAssertFalse(SAAutoIncrementRuleSupport.isMySQL84AutoIncrementRuleExtraValue("DEFAULT_GENERATED"))
+        XCTAssertFalse(SAAutoIncrementRuleSupport.isMySQL84AutoIncrementRuleExtraValue("on update CURRENT_TIMESTAMP"))
+        XCTAssertFalse(SAAutoIncrementRuleSupport.isMySQL84AutoIncrementRuleExtraValue(""))
+        XCTAssertFalse(SAAutoIncrementRuleSupport.isMySQL84AutoIncrementRuleExtraValue(NSNull()))
     }
 
     func testAllowsIntegerFieldTypes() {

@@ -1,7 +1,8 @@
 import Foundation
 
 @objc final class SAAutoIncrementRuleSupport: NSObject {
-    private static let autoIncrementExtraValues: Set<String> = [
+    private static let autoIncrementExtraValue = "AUTO_INCREMENT"
+    private static let mysql84RestrictedExtraValues: Set<String> = [
         "AUTO_INCREMENT",
         "SERIAL DEFAULT VALUE"
     ]
@@ -18,7 +19,14 @@ import Foundation
     @objc static func isAutoIncrementExtraValue(_ value: Any?) -> Bool {
         guard let value = value as? String else { return false }
 
-        return autoIncrementExtraValues.contains(normalizedExtraValue(value))
+        return normalizedExtraValue(value) == autoIncrementExtraValue
+    }
+
+    @objc(isMySQL84AutoIncrementRuleExtraValue:)
+    static func isMySQL84AutoIncrementRuleExtraValue(_ value: Any?) -> Bool {
+        guard let value = value as? String else { return false }
+
+        return mysql84RestrictedExtraValues.contains(normalizedExtraValue(value))
     }
 
     @objc static func fieldTypeAllowsAutoIncrement(_ fieldType: String?) -> Bool {
