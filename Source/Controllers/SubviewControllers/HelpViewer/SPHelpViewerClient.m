@@ -110,7 +110,10 @@ typedef NS_ENUM(NSInteger, HelpVersionNumber) {
 	// OLD: SPMySQLSearchURL = https://dev.mysql.com/doc/refman/%@/%@/%@.html
 	// NEW: SPMySQLSearchURL = https://dev.mysql.com/doc/search/?d=%d&p=1&q=%@
 
-	if ([mySQLConnection isMariaDB]) {
+	// Use the cached version string here; -isMariaDB reads the raw MYSQL handle and can be unsafe after disconnect.
+	NSString *serverVersionString = [[mySQLConnection serverVersionString] lowercaseString];
+	BOOL isMariaDBServer = (serverVersionString && [serverVersionString rangeOfString:@"mariadb"].location != NSNotFound);
+	if (isMariaDBServer) {
 		NSString *topicSlug = [[searchString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] lowercaseString];
 		topicSlug = [topicSlug stringByReplacingOccurrencesOfRegex:@"\\s+" withString:@"-"];
 		topicSlug = [topicSlug stringByReplacingOccurrencesOfRegex:@"[^a-z0-9_-]" withString:@""];
