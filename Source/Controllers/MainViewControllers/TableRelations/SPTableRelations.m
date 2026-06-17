@@ -52,10 +52,10 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
 - (void)_refreshRelationDataForcingCacheRefresh:(BOOL)clearAllCaches;
 - (void)_updateAvailableTableColumns;
-- (BOOL)_serverUsesMySQL84ForeignKeyRules;
-- (NSSet *)_mysql84SingleColumnUniqueReferenceColumnsForTable:(NSString *)table database:(NSString *)database;
-- (BOOL)_referenceColumnAllowsMySQL84ForeignKey:(NSString *)column table:(NSString *)table database:(NSString *)database;
-- (void)_showInvalidMySQL84ForeignKeyAlertForColumn:(NSString *)column table:(NSString *)table;
+- (BOOL)_serverRequiresStandardForeignKeyReferences;
+- (NSSet *)_singleColumnUniqueReferenceColumnsForTable:(NSString *)table database:(NSString *)database;
+- (BOOL)_referenceColumnAllowsForeignKeyReference:(NSString *)column table:(NSString *)table database:(NSString *)database;
+- (void)_showInvalidForeignKeyReferenceAlertForColumn:(NSString *)column table:(NSString *)table;
 
 @end
 
@@ -152,10 +152,10 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
     NSString *thatTable  = [refTablePopUpButton titleOfSelectedItem];
     NSString *thatColumn = [refColumnPopUpButton titleOfSelectedItem];
 
-	if (![self _referenceColumnAllowsMySQL84ForeignKey:thatColumn table:thatTable database:thatDatabase]) {
+	if (![self _referenceColumnAllowsForeignKeyReference:thatColumn table:thatTable database:thatDatabase]) {
 		[dataProgressIndicator setHidden:YES];
 		[dataProgressIndicator stopAnimation:self];
-		[self _showInvalidMySQL84ForeignKeyAlertForColumn:thatColumn table:thatTable];
+		[self _showInvalidForeignKeyReferenceAlertForColumn:thatColumn table:thatTable];
 		return;
 	}
 
@@ -555,7 +555,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 #pragma mark -
 #pragma mark Private API
 
-- (BOOL)_serverUsesMySQL84ForeignKeyRules
+- (BOOL)_serverRequiresStandardForeignKeyReferences
 {
 	if ([connection isMariaDB] || ![connection serverVersionIsGreaterThanOrEqualTo:8 minorVersion:4 releaseVersion:0]) return NO;
 
@@ -563,13 +563,13 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	[restrictionResult setReturnDataAsStrings:YES];
 
 	id restrictionValue = [connection queryErrored] ? nil : [[restrictionResult getRowAsArray] firstObject];
-	return [SAMySQL84ForeignKeyRuleSupport usesMySQL84ForeignKeyRulesWithMariaDB:[connection isMariaDB]
-														 serverVersionIsAtLeast84:YES
-														 restrictionQueryErrored:[connection queryErrored]
-																 restrictionValue:restrictionValue];
+	return [SAForeignKeyReferenceRuleSupport requiresStandardForeignKeyReferencesWithMariaDB:[connection isMariaDB]
+																	 serverVersionIsAtLeast84:YES
+																	 restrictionQueryErrored:[connection queryErrored]
+																			 restrictionValue:restrictionValue];
 }
 
-- (NSSet *)_mysql84SingleColumnUniqueReferenceColumnsForTable:(NSString *)table database:(NSString *)database
+- (NSSet *)_singleColumnUniqueReferenceColumnsForTable:(NSString *)table database:(NSString *)database
 {
 	if (![table length]) return [NSSet set];
 
@@ -589,21 +589,21 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		[indexRows addObject:indexRow];
 	}
 
-	return [SAMySQL84ForeignKeyRuleSupport singleColumnUniqueReferenceColumns:indexRows];
+	return [SAForeignKeyReferenceRuleSupport singleColumnUniqueReferenceColumns:indexRows];
 }
 
-- (BOOL)_referenceColumnAllowsMySQL84ForeignKey:(NSString *)column table:(NSString *)table database:(NSString *)database
+- (BOOL)_referenceColumnAllowsForeignKeyReference:(NSString *)column table:(NSString *)table database:(NSString *)database
 {
-	if (![self _serverUsesMySQL84ForeignKeyRules]) return YES;
+	if (![self _serverRequiresStandardForeignKeyReferences]) return YES;
 	if (![column length] || ![table length]) return NO;
 
-	return [[self _mysql84SingleColumnUniqueReferenceColumnsForTable:table database:database] containsObject:column];
+	return [[self _singleColumnUniqueReferenceColumnsForTable:table database:database] containsObject:column];
 }
 
-- (void)_showInvalidMySQL84ForeignKeyAlertForColumn:(NSString *)column table:(NSString *)table
+- (void)_showInvalidForeignKeyReferenceAlertForColumn:(NSString *)column table:(NSString *)table
 {
-	[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Referenced column needs a unique key", @"mysql 8.4 invalid relation title")
-								 message:[NSString stringWithFormat:NSLocalizedString(@"MySQL 8.4 and newer require a foreign key to reference a full unique or primary key. Add a single-column unique key to %@.%@ or choose another referenced column.", @"mysql 8.4 invalid relation message"), table ?: @"", column ?: @""]
+	[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Referenced column needs a unique key", @"foreign key reference restriction title")
+								 message:[NSString stringWithFormat:NSLocalizedString(@"MySQL 8.4 and newer require a foreign key to reference a full unique or primary key. Add a single-column unique key to %@.%@ or choose another referenced column.", @"foreign key reference restriction message"), table ?: @"", column ?: @""]
 								callback:nil];
 }
 
@@ -703,7 +703,10 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
     NSDictionary *tableInfo = [tableDataInstance informationForTable:table fromDatabase:database];
 	
 	NSArray *columns = [tableInfo objectForKey:@"columns"];
-	NSSet *mysql84ReferenceColumns = [self _serverUsesMySQL84ForeignKeyRules] ? [self _mysql84SingleColumnUniqueReferenceColumnsForTable:table database:database] : nil;
+	NSSet *standardReferenceColumns = nil;
+	if ([self _serverRequiresStandardForeignKeyReferences]) {
+		standardReferenceColumns = [self _singleColumnUniqueReferenceColumnsForTable:table database:database];
+	}
 	
 	NSMutableArray *validColumns = [NSMutableArray array];
 	
@@ -712,7 +715,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	{
 		NSString *candidateColumnName = [aColumn objectForKey:SPRelationNameKey];
 		if ([[columnInfo objectForKey:@"type"] isEqualToString:[aColumn objectForKey:@"type"]]
-			&& (!mysql84ReferenceColumns || [mysql84ReferenceColumns containsObject:candidateColumnName]))
+			&& (!standardReferenceColumns || [standardReferenceColumns containsObject:candidateColumnName]))
 		{
 			[validColumns addObject:candidateColumnName];
 		}

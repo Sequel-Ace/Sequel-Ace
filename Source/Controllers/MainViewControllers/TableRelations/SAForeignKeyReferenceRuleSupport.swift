@@ -1,12 +1,12 @@
 import Foundation
 
-@objc final class SAMySQL84ForeignKeyRuleSupport: NSObject {
-    @objc(usesMySQL84ForeignKeyRulesWithMariaDB:serverVersionIsAtLeast84:restrictionQueryErrored:restrictionValue:)
-    static func usesMySQL84ForeignKeyRules(isMariaDB: Bool, serverVersionIsAtLeast84: Bool, restrictionQueryErrored: Bool, restrictionValue: Any?) -> Bool {
+@objc final class SAForeignKeyReferenceRuleSupport: NSObject {
+    @objc(requiresStandardForeignKeyReferencesWithMariaDB:serverVersionIsAtLeast84:restrictionQueryErrored:restrictionValue:)
+    static func requiresStandardForeignKeyReferences(isMariaDB: Bool, serverVersionIsAtLeast84: Bool, restrictionQueryErrored: Bool, restrictionValue: Any?) -> Bool {
         guard !isMariaDB, serverVersionIsAtLeast84 else { return false }
         guard !restrictionQueryErrored else { return true }
 
-        return foreignKeyRulesEnabled(forRestrictionValue: restrictionValue)
+        return restrictionEnforcesStandardReferences(restrictionValue)
     }
 
     @objc(singleColumnUniqueReferenceColumns:)
@@ -36,7 +36,7 @@ import Foundation
         return columnNames as NSSet
     }
 
-    static func foreignKeyRulesEnabled(forRestrictionValue restrictionValue: Any?) -> Bool {
+    static func restrictionEnforcesStandardReferences(_ restrictionValue: Any?) -> Bool {
         guard let normalized = stringValue(restrictionValue)?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased(), !normalized.isEmpty else {
             return true
         }
