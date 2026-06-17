@@ -35,14 +35,7 @@
 #import "RegexKitLite.h"
 #import "MGTemplateEngine.h"
 #import "ICUTemplateMatcher.h"
-
-typedef NS_ENUM(NSInteger, HelpVersionNumber) {
-	MySQLVer56 = 11,
-	MySQLVer57 = 12,
-	MySQLVer80 = 201,
-	MySQLVer84 = 371,
-	MySQLVer97 = 515,
-};
+#import "sequel-ace-Swift.h"
 
 @interface SPHelpViewerClient () <SPHelpViewerDataSource>
 
@@ -111,64 +104,16 @@ typedef NS_ENUM(NSInteger, HelpVersionNumber) {
 	// NEW: SPMySQLSearchURL = https://dev.mysql.com/doc/search/?d=%d&p=1&q=%@
 
 	// Use the cached version string here; -isMariaDB reads the raw MYSQL handle and can be unsafe after disconnect.
-	NSString *serverVersionString = [[mySQLConnection serverVersionString] lowercaseString];
-	BOOL isMariaDBServer = (serverVersionString && [serverVersionString rangeOfString:@"mariadb"].location != NSNotFound);
-	if (isMariaDBServer) {
-		NSString *trimmedSearchString = [searchString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-		NSString *topicSlug = [trimmedSearchString lowercaseString];
-		topicSlug = [topicSlug stringByReplacingOccurrencesOfRegex:@"\\s+" withString:@"-"];
-		topicSlug = [topicSlug stringByReplacingOccurrencesOfRegex:@"[^a-z0-9_-]" withString:@""];
-		
-		NSString *url = nil;
-		if ([topicSlug length]) {
-			url = [[NSString stringWithFormat:@"https://mariadb.com/kb/en/%@/", topicSlug] stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet];
-		}
-		else if ([trimmedSearchString length]) {
-			NSMutableCharacterSet *queryAllowedCharacters = [[NSCharacterSet URLQueryAllowedCharacterSet] mutableCopy];
-			[queryAllowedCharacters removeCharactersInString:@"&=+?#"];
-			NSString *encodedSearchString = [trimmedSearchString stringByAddingPercentEncodingWithAllowedCharacters:queryAllowedCharacters];
-			url = [NSString stringWithFormat:@"https://mariadb.com/docs?q=%@", encodedSearchString ?: @""];
-		}
-		else {
-			url = @"https://mariadb.com/kb/en/server/";
-		}
-		
-		SPLog("search URL: %@",url);
-		
-		if ([url length]) {
-			[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:url]];
-		}
-		
-		return;
-	}
-
-	// default to 8.0
-	HelpVersionNumber version = MySQLVer80;
-	
-	if ([mySQLConnection serverVersionIsGreaterThanOrEqualTo:9 minorVersion:0 releaseVersion:0]){
-		version = MySQLVer97;
-	}
-	else if ([mySQLConnection serverVersionIsGreaterThanOrEqualTo:8 minorVersion:4 releaseVersion:0]){
-		version = MySQLVer84;
-	}
-	else if ([mySQLConnection serverVersionIsGreaterThanOrEqualTo:8 minorVersion:0 releaseVersion:0]){
-		version = MySQLVer80;
-	}
-	else if([mySQLConnection serverVersionIsGreaterThanOrEqualTo:5 minorVersion:7 releaseVersion:0]) {
-		version = MySQLVer57;
-	}
-	else if([mySQLConnection serverVersionIsGreaterThanOrEqualTo:5 minorVersion:6 releaseVersion:0]) {
-		version = MySQLVer56;
-	}
-	
-	SPLog(@"ver = %li", (long)version);
-		
-	NSString *url = [[NSString stringWithFormat: SPMySQLSearchURL, version, searchString] stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet];
+	NSURL *url = [SAHelpViewerOnlineURLBuilder onlineHelpURLForTopic:searchString
+	                                             serverVersionString:[mySQLConnection serverVersionString]
+	                                               mysqlMajorVersion:(NSInteger)[mySQLConnection serverMajorVersion]
+	                                               mysqlMinorVersion:(NSInteger)[mySQLConnection serverMinorVersion]
+	                                             mysqlReleaseVersion:(NSInteger)[mySQLConnection serverReleaseVersion]];
 
 	SPLog("search URL: %@",url);
 	
-	if ([url length]) {
-		[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:url]];
+	if (url) {
+		[[NSWorkspace sharedWorkspace] openURL:url];
 	}
 }
 
