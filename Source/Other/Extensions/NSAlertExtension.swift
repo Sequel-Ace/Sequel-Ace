@@ -330,14 +330,27 @@ enum SABookmarkPathNormalizer {
         scrollView.widthAnchor.constraint(equalToConstant: accessoryWidth).isActive = true
         scrollView.heightAnchor.constraint(equalToConstant: desiredListHeight).isActive = true
 
+        let helpFittingSize = helpView.fittingSize
+        let helpWidth = min(accessoryWidth, max(helpView.frame.width, helpFittingSize.width))
+        let helpHeight = max(helpView.frame.height, helpFittingSize.height)
+
         helpView.removeFromSuperview()
         helpView.translatesAutoresizingMaskIntoConstraints = false
         helpView.constraints
-            .filter { $0.identifier == "SABookmarkAlertHelpWidth" }
+            .filter { $0.identifier == "SABookmarkAlertHelpWidth" || $0.identifier == "SABookmarkAlertHelpHeight" }
             .forEach { helpView.removeConstraint($0) }
-        let helpWidthConstraint = helpView.widthAnchor.constraint(lessThanOrEqualToConstant: accessoryWidth)
-        helpWidthConstraint.identifier = "SABookmarkAlertHelpWidth"
-        helpWidthConstraint.isActive = true
+
+        if helpWidth > 0 {
+            let helpWidthConstraint = helpView.widthAnchor.constraint(equalToConstant: helpWidth)
+            helpWidthConstraint.identifier = "SABookmarkAlertHelpWidth"
+            helpWidthConstraint.isActive = true
+        }
+
+        if helpHeight > 0 {
+            let helpHeightConstraint = helpView.heightAnchor.constraint(equalToConstant: helpHeight)
+            helpHeightConstraint.identifier = "SABookmarkAlertHelpHeight"
+            helpHeightConstraint.isActive = true
+        }
 
         let stackView = NSStackView(views: [scrollView, helpView])
         stackView.orientation = .vertical

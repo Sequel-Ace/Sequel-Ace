@@ -73,4 +73,22 @@ final class SAStaleBookmarkAlertContentTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(heightConstraint.constant, 96)
         XCTAssertLessThanOrEqual(accessoryView.frame.width, 520)
     }
+
+    func testScrollableAccessoryPreservesFixedFrameHelpViewHeight() throws {
+        let helpView = NSView(frame: NSRect(x: 0, y: 0, width: 193, height: 24))
+        let helpButton = NSButton(frame: NSRect(x: -2, y: -2, width: 25, height: 25))
+        let helpLabel = NSTextField(labelWithString: "App Sandbox Info")
+        helpLabel.frame = NSRect(x: 23, y: 0, width: 137, height: 21)
+        helpView.addSubview(helpButton)
+        helpView.addSubview(helpLabel)
+
+        let accessoryView = NSAlert.scrollableListAccessoryView(listItems: ["backup.sql"], helpView: helpView)
+        let stackView = try XCTUnwrap(accessoryView.subviews.first as? NSStackView)
+        let stackedHelpView = try XCTUnwrap(stackView.arrangedSubviews.last)
+        let heightConstraint = try XCTUnwrap(stackedHelpView.constraints.first { $0.identifier == "SABookmarkAlertHelpHeight" })
+        let widthConstraint = try XCTUnwrap(stackedHelpView.constraints.first { $0.identifier == "SABookmarkAlertHelpWidth" })
+
+        XCTAssertEqual(heightConstraint.constant, 24)
+        XCTAssertEqual(widthConstraint.constant, 193)
+    }
 }
