@@ -306,7 +306,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 {
 	if (![value isKindOfClass:[NSString class]]) return NO;
 	
-	return [[(NSString *)value stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]].uppercaseString isEqualToString:@"AUTO_INCREMENT"];
+	NSString *normalized = [[(NSString *)value stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] uppercaseString];
+	return [normalized isEqualToString:@"AUTO_INCREMENT"] || [normalized isEqualToString:@"SERIAL DEFAULT VALUE"];
 }
 
 - (BOOL)_fieldTypeAllowsAutoIncrement:(NSString *)fieldType
