@@ -8,6 +8,42 @@
 
 import AppKit
 
+enum SABookmarkPathNormalizer {
+    static func normalizedFilePath(forBookmarkPath bookmarkPath: String) -> String? {
+        guard let filePath = filePath(forBookmarkPath: bookmarkPath) else {
+            return nil
+        }
+
+        return URL(fileURLWithPath: filePath).standardizedFileURL.path
+    }
+
+    static func displayName(forBookmarkPath bookmarkPath: String) -> String {
+        let displayPath = filePath(forBookmarkPath: bookmarkPath) ?? (bookmarkPath.removingPercentEncoding ?? bookmarkPath)
+        let lastPathComponent = (displayPath as NSString).lastPathComponent
+        return lastPathComponent.isEmpty ? displayPath : lastPathComponent
+    }
+
+    private static func filePath(forBookmarkPath bookmarkPath: String) -> String? {
+        let fileSchemePrefix = "file://"
+
+        if bookmarkPath.hasPrefix(fileSchemePrefix) {
+            let encodedPath = String(bookmarkPath.dropFirst(fileSchemePrefix.count))
+            guard encodedPath.hasPrefix("/") else {
+                return nil
+            }
+
+            return encodedPath.removingPercentEncoding ?? encodedPath
+        }
+
+        let decodedBookmarkPath = bookmarkPath.removingPercentEncoding ?? bookmarkPath
+        guard decodedBookmarkPath.hasPrefix("/") else {
+            return nil
+        }
+
+        return decodedBookmarkPath
+    }
+}
+
 @objc final class SABookmarkAlertContent: NSObject {
     @objc static func displayNames(forBookmarkPaths bookmarkPaths: [String]) -> [String] {
         return bookmarkPaths.map { displayName(forBookmarkPath: $0) }
@@ -32,16 +68,7 @@ import AppKit
     }
 
     private static func displayName(forBookmarkPath bookmarkPath: String) -> String {
-        let decodedBookmarkPath = bookmarkPath.removingPercentEncoding ?? bookmarkPath
-
-        if let url = URL(string: decodedBookmarkPath), url.isFileURL {
-            let lastPathComponent = url.lastPathComponent
-            return lastPathComponent.isEmpty ? url.path : lastPathComponent
-        }
-
-        let pathWithoutFileScheme = decodedBookmarkPath.dropPrefix("file://")
-        let lastPathComponent = (pathWithoutFileScheme as NSString).lastPathComponent
-        return lastPathComponent.isEmpty ? pathWithoutFileScheme : lastPathComponent
+        return SABookmarkPathNormalizer.displayName(forBookmarkPath: bookmarkPath)
     }
 }
 

@@ -29,6 +29,20 @@ final class SAStaleBookmarkAlertContentTests: XCTestCase {
         XCTAssertEqual(displayNames, ["nightly.sql"])
     }
 
+    func testDisplayNamesDecodeReservedCharactersAfterExtractingFileURLPath() {
+        let displayNames = SABookmarkAlertContent.displayNames(forBookmarkPaths: [
+            "file:///Users/tom/Backups/foo%23bar%3Fbaz.sql"
+        ])
+
+        XCTAssertEqual(displayNames, ["foo#bar?baz.sql"])
+    }
+
+    func testBookmarkPathNormalizerPreservesEncodedReservedCharacters() {
+        let normalizedPath = SABookmarkPathNormalizer.normalizedFilePath(forBookmarkPath: "file:///tmp/foo%23bar%3Fbaz.sql")
+
+        XCTAssertEqual(normalizedPath, "/tmp/foo#bar?baz.sql")
+    }
+
     func testStaleBookmarksMessageStaysBoundedForLargeLists() {
         let message = SABookmarkAlertContent.staleBookmarksMessage(count: 200)
 

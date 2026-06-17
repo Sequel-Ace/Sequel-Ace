@@ -314,18 +314,7 @@ import OSLog
     }
 
     private func normalizedFilePath(forBookmarkPath bookmarkPath: String) -> String? {
-        let decodedBookmarkPath = bookmarkPath.removingPercentEncoding ?? bookmarkPath
-
-        if let url = URL(string: decodedBookmarkPath), url.isFileURL {
-            return url.standardizedFileURL.path
-        }
-
-        let pathWithoutFileScheme = decodedBookmarkPath.dropPrefix("file://")
-        guard pathWithoutFileScheme.hasPrefix("/") else {
-            return nil
-        }
-
-        return URL(fileURLWithPath: pathWithoutFileScheme).standardizedFileURL.path
+        return SABookmarkPathNormalizer.normalizedFilePath(forBookmarkPath: bookmarkPath)
     }
 
     private func normalizedDirectoryPath(_ path: String) -> String {
