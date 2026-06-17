@@ -35,6 +35,71 @@
 @class SPUserMO;
 @class SPPrivilegesMO;
 
+static inline NSString *SPUserManagerPrivilegeOperationErrorMessageForServerError(NSString *serverError, NSArray *privileges, NSString *operation, NSString *database, NSString *user, NSString *host, NSString *statement, BOOL isMariaDB, BOOL supportsShowCreateRoutine)
+{
+	NSString *operationDescription = [operation length] ? operation : NSLocalizedString(@"change", @"fallback privilege operation description");
+	NSString *scopeDescription = [database length] ? [NSString stringWithFormat:NSLocalizedString(@"database \"%@\"", @"privilege operation database scope"), database] : NSLocalizedString(@"all databases", @"privilege operation all databases scope");
+	NSString *accountDescription = [NSString stringWithFormat:@"%@%@", [user length] ? user : @"", [host length] ? [NSString stringWithFormat:@"@%@", host] : @""];
+	if (![accountDescription length]) {
+		accountDescription = NSLocalizedString(@"the selected account", @"fallback privilege operation account description");
+	}
+
+	NSString *privilegesDescription = nil;
+	if ([privileges count]) {
+		privilegesDescription = [[privileges componentsJoinedByString:@", "] uppercaseString];
+	}
+	else if ([statement length]) {
+		NSString *upperStatement = [statement uppercaseString];
+		if ([upperStatement hasPrefix:@"GRANT ALL "] || [upperStatement hasPrefix:@"REVOKE ALL "]) {
+			privilegesDescription = NSLocalizedString(@"ALL PRIVILEGES", @"all privileges operation description");
+		}
+	}
+	if (![privilegesDescription length]) {
+		privilegesDescription = NSLocalizedString(@"the selected privileges", @"fallback privileges operation description");
+	}
+
+	NSString *message = [NSString stringWithFormat:NSLocalizedString(@"Could not %@ %@ on %@ for %@.\n\nMySQL said: %@", @"privilege operation error message"), operationDescription, privilegesDescription, scopeDescription, accountDescription, serverError];
+
+	if (!isMariaDB || !supportsShowCreateRoutine) {
+		return message;
+	}
+
+	BOOL showCreateRoutineRequested = NO;
+	for (NSString *privilege in privileges)
+	{
+		if ([[privilege uppercaseString] isEqualToString:@"SHOW CREATE ROUTINE"]) {
+			showCreateRoutineRequested = YES;
+			break;
+		}
+	}
+
+	if (!showCreateRoutineRequested && [statement length]) {
+		NSString *upperStatement = [statement uppercaseString];
+		showCreateRoutineRequested = [upperStatement rangeOfString:@"SHOW CREATE ROUTINE"].location != NSNotFound ||
+			[upperStatement hasPrefix:@"GRANT ALL "] ||
+			[upperStatement hasPrefix:@"REVOKE ALL "];
+	}
+
+	if (!showCreateRoutineRequested) {
+		return message;
+	}
+
+	return [message stringByAppendingString:NSLocalizedString(@"\n\nThis MariaDB server supports SHOW CREATE ROUTINE, but the connected account was not allowed to grant or revoke it. This can happen after upgrading MariaDB before the new privilege has been added back to an administrative account. Check SHOW GRANTS FOR CURRENT_USER(), then grant SHOW CREATE ROUTINE WITH GRANT OPTION to the account or repair the server's grant tables.", @"mariadb show create routine grant error explanation")];
+}
+
+static inline BOOL SPUserManagerShouldTrackPrivilegeKeyInUserTable(NSString *privilegeKey, BOOL isMariaDB)
+{
+	if (isMariaDB) return YES;
+
+	NSSet *mysqlDynamicPrivilegeKeys = [NSSet setWithObjects:
+										@"binlog_admin_priv",
+										@"connection_admin_priv",
+										@"replication_slave_admin_priv",
+										nil];
+
+	return ![mysqlDynamicPrivilegeKeys containsObject:privilegeKey];
+}
+
 @interface SPUserManager : NSWindowController
 {	
 	NSPersistentStoreCoordinator *persistentStoreCoordinator;
