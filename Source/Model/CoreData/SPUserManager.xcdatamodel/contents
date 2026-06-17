@@ -27,6 +27,7 @@
         <relationship name="user" optional="YES" minCount="1" maxCount="1" deletionRule="Nullify" destinationEntity="SPUser" inverseName="schema_privileges" inverseEntity="SPUser" indexed="YES" syncable="YES"/>
     </entity>
     <entity name="SPUser" representedClassName="SPUserMO" syncable="YES">
+        <attribute name="allow_nonexistent_definer_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="alter_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="alter_routine_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="authentication_string" optional="YES" attributeType="String" syncable="YES"/>
@@ -76,6 +77,7 @@
         <attribute name="replication_slave_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="replication_slave_admin_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="select_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
+        <attribute name="set_any_definer_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="set_user_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="show_databases_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="show_create_routine_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
@@ -92,6 +94,6 @@
     </entity>
     <elements>
         <element name="Privileges" positionX="412" positionY="90" width="128" height="373"/>
-        <element name="SPUser" positionX="135" positionY="45" width="207" height="705"/>
+        <element name="SPUser" positionX="135" positionY="45" width="207" height="735"/>
     </elements>
 </model>

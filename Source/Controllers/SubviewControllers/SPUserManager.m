@@ -73,6 +73,8 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 - (NSString *)_accountKeyForUser:(NSString *)user host:(NSString *)host;
 - (NSDictionary *)_mariaDBGlobalPrivilegeAccessDataByAccount;
 - (void)_initializeMariaDBGlobalPrivsForChild:(SPUserMO *)child accessValue:(NSNumber *)accessValue;
+- (NSDictionary *)_mySQLDynamicPrivilegeDataByAccount;
+- (void)_initializeMySQLDynamicPrivsForChild:(SPUserMO *)child privilegeKeys:(NSSet *)privilegeKeys;
 - (void)contextWillSave:(NSNotification *)notice;
 - (void)_selectFirstChildOfParentNode;
 
@@ -217,6 +219,41 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	return globalPrivilegeData;
 }
 
+- (NSDictionary *)_mySQLDynamicPrivilegeDataByAccount
+{
+	if ([connection isMariaDB]) return @{};
+	if (![serverSupport isMySQL8]) return @{};
+
+	SPMySQLResult *globalGrantsResult = [connection queryString:@"SELECT `USER` AS User, `HOST` AS Host, `PRIV` AS Priv FROM mysql.global_grants"];
+	if ([connection queryErrored] || !globalGrantsResult) return @{};
+
+	[globalGrantsResult setReturnDataAsStrings:YES];
+
+	NSEntityDescription *userEntity = [[[self managedObjectModel] entitiesByName] objectForKey:@"SPUser"];
+	NSSet *modeledPrivilegeKeys = [NSSet setWithArray:[userEntity attributeKeys]];
+	NSMutableDictionary *dynamicPrivilegeData = [NSMutableDictionary dictionary];
+
+	for (NSDictionary *grantRow in globalGrantsResult)
+	{
+		NSString *privilegeName = [grantRow objectForKey:@"Priv"];
+		if (![privilegeName isKindOfClass:[NSString class]]) continue;
+
+		NSString *privilegeKey = [self _privilegeKeyForServerPrivilegeName:privilegeName];
+		if (![modeledPrivilegeKeys containsObject:privilegeKey]) continue;
+
+		NSString *accountKey = [self _accountKeyForUser:[grantRow objectForKey:@"User"] host:[grantRow objectForKey:@"Host"]];
+		NSMutableSet *privilegeKeys = [dynamicPrivilegeData objectForKey:accountKey];
+		if (!privilegeKeys) {
+			privilegeKeys = [NSMutableSet set];
+			[dynamicPrivilegeData setObject:privilegeKeys forKey:accountKey];
+		}
+
+		[privilegeKeys addObject:privilegeKey];
+	}
+
+	return dynamicPrivilegeData;
+}
+
 - (void)_initializeMariaDBGlobalPrivsForChild:(SPUserMO *)child accessValue:(NSNumber *)accessValue
 {
 	if (!accessValue) return;
@@ -242,6 +279,14 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		if ((access & (1ULL << accessBit)) != 0) {
 			[child setValue:@YES forKey:privilegeKey];
 		}
+	}
+}
+
+- (void)_initializeMySQLDynamicPrivsForChild:(SPUserMO *)child privilegeKeys:(NSSet *)privilegeKeys
+{
+	for (NSString *privilegeKey in privilegeKeys)
+	{
+		[child setValue:@YES forKey:privilegeKey];
 	}
 }
 
@@ -327,7 +372,6 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 				if ([[privilegeName lowercaseString] isEqualToString:@"usage"]) continue;
 
 				NSString *privKey = [self _privilegeKeyForServerPrivilegeName:privilegeName];
-				if (!SPUserManagerShouldTrackPrivilegeKeyInUserTable(privKey, [connection isMariaDB])) continue;
 
 				[[self privsSupportedByServer] setValue:@YES forKey:privKey];
 			}
@@ -391,6 +435,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 	}
 
 	NSDictionary *mariaDBGlobalPrivilegeAccessData = [self _mariaDBGlobalPrivilegeAccessDataByAccount];
+	NSDictionary *mySQLDynamicPrivilegeData = [self _mySQLDynamicPrivilegeDataByAccount];
 
 	// Go through each item that contains a dictionary of key-value pairs
 	// for each user currently in the database.
@@ -443,6 +488,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		[self _initializeChild:child withItem:item];
 		NSString *accountKey = [self _accountKeyForUser:username host:[item objectForKey:@"Host"]];
 		[self _initializeMariaDBGlobalPrivsForChild:child accessValue:[mariaDBGlobalPrivilegeAccessData objectForKey:accountKey]];
+		[self _initializeMySQLDynamicPrivsForChild:child privilegeKeys:[mySQLDynamicPrivilegeData objectForKey:accountKey]];
 		
 		NSMutableSet *children = [parent mutableSetValueForKey:@"children"];
 		[children addObject:child];
@@ -1284,14 +1330,14 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		//ignore anything that we didn't change
 		if (![changedKeys containsObject:key]) continue;
 		
-		NSString *privilege = [key stringByReplacingOccurrencesOfString:@"_priv" withString:@""];
+		NSString *privilege = SPUserManagerGrantNameForPrivilegeKey(key, [connection isMariaDB]);
 		
 		NS_DURING
 			if ([[schemaPriv valueForKey:key] boolValue] == YES) {
-				[grantPrivileges addObject:[privilege replaceUnderscoreWithSpace]];
+				[grantPrivileges addObject:privilege];
 			}
 			else {
-				[revokePrivileges addObject:[privilege replaceUnderscoreWithSpace]];
+				[revokePrivileges addObject:privilege];
 			}
 		NS_HANDLER
 		NS_ENDHANDLER
@@ -1375,16 +1421,16 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 			//ignore anything that we didn't change
 			if (![changedKeys containsObject:key]) continue;
 			
-			NSString *privilege = [key stringByReplacingOccurrencesOfString:@"_priv" withString:@""];
+			NSString *privilege = SPUserManagerGrantNameForPrivilegeKey(key, [connection isMariaDB]);
 			
 			// Check the value of the priv and assign to grant or revoke query as appropriate; do this
 			// in a try/catch check to avoid exceptions for unhandled privs
 			NS_DURING
 				if ([[user valueForKey:key] boolValue] == YES) {
-					[grantPrivileges addObject:[privilege replaceUnderscoreWithSpace]];
+					[grantPrivileges addObject:privilege];
 				} 
 				else {
-					[revokePrivileges addObject:[privilege replaceUnderscoreWithSpace]];
+					[revokePrivileges addObject:privilege];
 				}
 			NS_HANDLER
 			NS_ENDHANDLER

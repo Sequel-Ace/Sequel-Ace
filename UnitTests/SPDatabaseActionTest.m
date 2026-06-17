@@ -62,7 +62,7 @@
 - (void)testRevokeGrantOptionFailureMessageUsesGrantOptionContext;
 - (void)testUserManagerModelSupportsCurrentGlobalGrantTablePrivileges;
 - (void)testUserManagerModelKeepsGlobalOnlyPrivilegesOutOfSchemaPrivileges;
-- (void)testMySQLDynamicPrivilegesAreNotTrackedAsUserTablePrivileges;
+- (void)testMySQLDynamicPrivilegeGrantNamesKeepUnderscores;
 - (void)testMariaDBGlobalPrivAccessFailureKeepsSchemaShowCreateRoutineSupport;
 - (void)testGrantAllShortcutIsDatabaseScoped;
 
@@ -246,6 +246,7 @@
 	NSError *error = nil;
 	NSXMLDocument *modelDocument = [self _userManagerModelDocumentWithError:&error];
 	NSArray *globalPrivilegeKeys = @[
+		@"allow_nonexistent_definer_priv",
 		@"binlog_admin_priv",
 		@"binlog_monitor_priv",
 		@"binlog_replay_priv",
@@ -257,6 +258,7 @@
 		@"replica_monitor_priv",
 		@"replication_master_admin_priv",
 		@"replication_slave_admin_priv",
+		@"set_any_definer_priv",
 		@"set_user_priv",
 		@"show_create_routine_priv"
 	];
@@ -277,6 +279,7 @@
 	NSError *error = nil;
 	NSXMLDocument *modelDocument = [self _userManagerModelDocumentWithError:&error];
 	NSArray *globalOnlyPrivilegeKeys = @[
+		@"allow_nonexistent_definer_priv",
 		@"binlog_admin_priv",
 		@"binlog_monitor_priv",
 		@"binlog_replay_priv",
@@ -288,6 +291,7 @@
 		@"replica_monitor_priv",
 		@"replication_master_admin_priv",
 		@"replication_slave_admin_priv",
+		@"set_any_definer_priv",
 		@"set_user_priv"
 	];
 
@@ -304,16 +308,17 @@
 	}
 }
 
-- (void)testMySQLDynamicPrivilegesAreNotTrackedAsUserTablePrivileges
+- (void)testMySQLDynamicPrivilegeGrantNamesKeepUnderscores
 {
-	XCTAssertFalse(SPUserManagerShouldTrackPrivilegeKeyInUserTable(@"binlog_admin_priv", NO));
-	XCTAssertFalse(SPUserManagerShouldTrackPrivilegeKeyInUserTable(@"connection_admin_priv", NO));
-	XCTAssertFalse(SPUserManagerShouldTrackPrivilegeKeyInUserTable(@"replication_slave_admin_priv", NO));
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"allow_nonexistent_definer_priv", NO), @"allow_nonexistent_definer");
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"binlog_admin_priv", NO), @"binlog_admin");
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"connection_admin_priv", NO), @"connection_admin");
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"read_only_admin_priv", NO), @"read_only_admin");
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"replication_slave_admin_priv", NO), @"replication_slave_admin");
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"set_any_definer_priv", NO), @"set_any_definer");
 
-	XCTAssertTrue(SPUserManagerShouldTrackPrivilegeKeyInUserTable(@"binlog_admin_priv", YES));
-	XCTAssertTrue(SPUserManagerShouldTrackPrivilegeKeyInUserTable(@"connection_admin_priv", YES));
-	XCTAssertTrue(SPUserManagerShouldTrackPrivilegeKeyInUserTable(@"replication_slave_admin_priv", YES));
-	XCTAssertTrue(SPUserManagerShouldTrackPrivilegeKeyInUserTable(@"create_role_priv", NO));
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"create_user_priv", NO), @"create user");
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"set_user_priv", YES), @"set user");
 }
 
 - (void)testMariaDBGlobalPrivAccessFailureKeepsSchemaShowCreateRoutineSupport

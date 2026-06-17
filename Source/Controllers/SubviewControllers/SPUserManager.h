@@ -87,17 +87,26 @@ static inline NSString *SPUserManagerPrivilegeOperationErrorMessageForServerErro
 	return [message stringByAppendingString:NSLocalizedString(@"\n\nThis MariaDB server supports SHOW CREATE ROUTINE, but the connected account was not allowed to grant or revoke it. This can happen after upgrading MariaDB before the new privilege has been added back to an administrative account. Check SHOW GRANTS FOR CURRENT_USER(), then grant SHOW CREATE ROUTINE WITH GRANT OPTION to the account or repair the server's grant tables.", @"mariadb show create routine grant error explanation")];
 }
 
-static inline BOOL SPUserManagerShouldTrackPrivilegeKeyInUserTable(NSString *privilegeKey, BOOL isMariaDB)
+static inline NSSet *SPUserManagerMySQLDynamicPrivilegeKeysRequiringUnderscoreGrantNames(void)
 {
-	if (isMariaDB) return YES;
+	return [NSSet setWithObjects:
+			@"allow_nonexistent_definer_priv",
+			@"binlog_admin_priv",
+			@"connection_admin_priv",
+			@"read_only_admin_priv",
+			@"replication_slave_admin_priv",
+			@"set_any_definer_priv",
+			nil];
+}
 
-	NSSet *mysqlDynamicPrivilegeKeys = [NSSet setWithObjects:
-										@"binlog_admin_priv",
-										@"connection_admin_priv",
-										@"replication_slave_admin_priv",
-										nil];
+static inline NSString *SPUserManagerGrantNameForPrivilegeKey(NSString *privilegeKey, BOOL isMariaDB)
+{
+	NSString *grantName = [privilegeKey stringByReplacingOccurrencesOfString:@"_priv" withString:@""];
+	if (!isMariaDB && [SPUserManagerMySQLDynamicPrivilegeKeysRequiringUnderscoreGrantNames() containsObject:privilegeKey]) {
+		return grantName;
+	}
 
-	return ![mysqlDynamicPrivilegeKeys containsObject:privilegeKey];
+	return [grantName stringByReplacingOccurrencesOfString:@"_" withString:@" "];
 }
 
 static inline NSString *SPUserManagerGlobalShowCreateRoutinePrivilegeSupportKey(void)

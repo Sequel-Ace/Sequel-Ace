@@ -457,6 +457,9 @@
 /* mariadb show create routine grant error explanation */
 "\n\nThis MariaDB server supports SHOW CREATE ROUTINE, but the connected account was not allowed to grant or revoke it. This can happen after upgrading MariaDB before the new privilege has been added back to an administrative account. Check SHOW GRANTS FOR CURRENT_USER(), then grant SHOW CREATE ROUTINE WITH GRANT OPTION to the account or repair the server's grant tables." = "\n\nThis MariaDB server supports SHOW CREATE ROUTINE, but the connected account was not allowed to grant or revoke it. This can happen after upgrading MariaDB before the new privilege has been added back to an administrative account. Check SHOW GRANTS FOR CURRENT_USER(), then grant SHOW CREATE ROUTINE WITH GRANT OPTION to the account or repair the server's grant tables.";
 
+/* allow nonexistent definer privilege checkbox title */
+"Nonexistent Definer" = "Nonexistent Definer";
+
 /* revoke privilege operation */
 "revoke" = "revoke";
 
@@ -495,6 +498,9 @@
 
 /* set user privilege checkbox title */
 "Set User" = "Set User";
+
+/* set any definer privilege checkbox title */
+"Set Any Definer" = "Set Any Definer";
 
 /* show create routine privilege checkbox title */
 "Show Create Routine" = "Show Create Routine";

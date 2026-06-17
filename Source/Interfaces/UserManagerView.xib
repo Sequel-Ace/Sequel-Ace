@@ -776,6 +776,48 @@ DQ
                                                                                     <binding destination="48" name="value" keyPath="selection.grant_option_priv" id="540"/>
                                                                                 </connections>
                                                                             </button>
+                                                                            <button translatesAutoresizingMaskIntoConstraints="NO" id="sad-GL-bt1">
+                                                                                <rect key="frame" x="16" y="21" width="160" height="18"/>
+                                                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                <buttonCell key="cell" type="check" title="Set Any Definer" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="sad-GL-cl1">
+                                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                    <font key="font" metaFont="system"/>
+                                                                                </buttonCell>
+                                                                                <connections>
+                                                                                    <binding destination="648" name="enabled" keyPath="set_any_definer_priv" id="sad-GL-en1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNotNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="648" name="hidden" keyPath="set_any_definer_priv" id="sad-GL-hi1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="48" name="value" keyPath="selection.set_any_definer_priv" id="sad-GL-va1"/>
+                                                                                </connections>
+                                                                            </button>
+                                                                            <button translatesAutoresizingMaskIntoConstraints="NO" id="and-GL-bt1">
+                                                                                <rect key="frame" x="16" y="2" width="160" height="18"/>
+                                                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                <buttonCell key="cell" type="check" title="Nonexistent Definer" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="and-GL-cl1">
+                                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                    <font key="font" metaFont="system"/>
+                                                                                </buttonCell>
+                                                                                <connections>
+                                                                                    <binding destination="648" name="enabled" keyPath="allow_nonexistent_definer_priv" id="and-GL-en1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNotNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="648" name="hidden" keyPath="allow_nonexistent_definer_priv" id="and-GL-hi1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="48" name="value" keyPath="selection.allow_nonexistent_definer_priv" id="and-GL-va1"/>
+                                                                                </connections>
+                                                                            </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="725">
                                                                                 <rect key="frame" x="186" y="211" width="148" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
@@ -1466,6 +1508,7 @@ DQ
                 <string>references_priv</string>
                 <string>alter_priv</string>
                 <string>index_priv</string>
+                <string>allow_nonexistent_definer_priv</string>
                 <string>binlog_admin_priv</string>
                 <string>binlog_monitor_priv</string>
                 <string>binlog_replay_priv</string>
@@ -1486,6 +1529,7 @@ DQ
                 <string>replica_monitor_priv</string>
                 <string>replication_master_admin_priv</string>
                 <string>replication_slave_admin_priv</string>
+                <string>set_any_definer_priv</string>
                 <string>set_user_priv</string>
                 <string>super_priv</string>
                 <string>create_temporary_table_priv</string>
