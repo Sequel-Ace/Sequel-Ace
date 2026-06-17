@@ -120,6 +120,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 - (NSDictionary *)_columnStatsForFieldName:(NSString *)fieldName lengthFunction:(NSString *)lengthFunction;
 - (NSString *)_estimatedOptimizedFieldTypeForField:(NSDictionary *)fieldDefinition failureReason:(NSString **)failureReason;
 - (void)_showOptimizedFieldTypeFallbackTask:(NSDictionary *)context;
+- (BOOL)_serverUsesMySQL84AutoIncrementRules;
+- (BOOL)_isAutoIncrementExtraValue:(id)value;
+- (BOOL)_fieldTypeAllowsAutoIncrement:(NSString *)fieldType;
+- (void)_showInvalidAutoIncrementAlertForFieldType:(NSString *)fieldType;
 
 #pragma mark - SPTableStructureDelegate
 
@@ -291,6 +295,51 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	for (NSTableColumn *col in [indexesTableView tableColumns]) {
 		[[col dataCell] setFont:tableFont];
 	}
+}
+
+- (BOOL)_serverUsesMySQL84AutoIncrementRules
+{
+	return ![mySQLConnection isMariaDB] && [mySQLConnection serverVersionIsGreaterThanOrEqualTo:8 minorVersion:4 releaseVersion:0];
+}
+
+- (BOOL)_isAutoIncrementExtraValue:(id)value
+{
+	if (![value isKindOfClass:[NSString class]]) return NO;
+	
+	return [[(NSString *)value stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]].uppercaseString isEqualToString:@"AUTO_INCREMENT"];
+}
+
+- (BOOL)_fieldTypeAllowsAutoIncrement:(NSString *)fieldType
+{
+	if (![self _serverUsesMySQL84AutoIncrementRules]) return YES;
+	
+	NSString *type = fieldType ? [[fieldType stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] uppercaseString] : @"";
+	NSRange lengthRange = [type rangeOfString:@"("];
+	if (lengthRange.location != NSNotFound) {
+		type = [type substringToIndex:lengthRange.location];
+	}
+	type = [[[type componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]] firstObject] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+	
+	NSSet *integerTypes = [NSSet setWithObjects:
+		SPMySQLTinyIntType,
+		SPMySQLSmallIntType,
+		SPMySQLMediumIntType,
+		SPMySQLIntType,
+		@"INTEGER",
+		SPMySQLBigIntType,
+		nil];
+	
+	return [integerTypes containsObject:type];
+}
+
+- (void)_showInvalidAutoIncrementAlertForFieldType:(NSString *)fieldType
+{
+	NSString *displayType = [[fieldType stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] uppercaseString];
+	if (![displayType length]) displayType = NSLocalizedString(@"selected", @"invalid auto increment fallback field type");
+	
+	[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"AUTO_INCREMENT is unavailable", @"mysql 8.4 invalid auto increment title")
+								 message:[NSString stringWithFormat:NSLocalizedString(@"MySQL 8.4 and newer only support AUTO_INCREMENT on integer columns. The %@ column type cannot use AUTO_INCREMENT on this server.", @"mysql 8.4 invalid auto increment message"), displayType]
+								callback:nil];
 }
 
 #pragma mark -
@@ -900,6 +949,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	NSDictionary *theRow = [[self activeFieldsSource] safeObjectAtIndex:currentlyEditingRow];
+	
+	if ([self _isAutoIncrementExtraValue:[theRow objectForKey:@"Extra"]] && ![self _fieldTypeAllowsAutoIncrement:[theRow objectForKey:@"type"]]) {
+		[self _showInvalidAutoIncrementAlertForFieldType:[theRow objectForKey:@"type"]];
+		return NO;
+	}
 
 	if ([autoIncrementIndex isEqualToString:@"PRIMARY KEY"]) {
 		// If the field isn't set to be unsigned and we're making it the primary key then make it unsigned
@@ -2012,7 +2066,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		// Populate Extra suggestion popup button
 		for (id item in extraFieldSuggestions)
 		{
-			if (!(isCurrentExtraAutoIncrement && [item isEqualToString:@"auto_increment"])) {
+			BOOL isAutoIncrementSuggestion = [self _isAutoIncrementExtraValue:item];
+			BOOL shouldHideAutoIncrement = isAutoIncrementSuggestion && (isCurrentExtraAutoIncrement || ![self _fieldTypeAllowsAutoIncrement:[rowData objectForKey:@"type"]]);
+			if (!shouldHideAutoIncrement) {
 				[dataCell addItemWithObjectValue:item];
 			}
 		}
@@ -2070,7 +2126,15 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	else if ([[aTableColumn identifier] isEqualToString:@"Extra"]) {
 		if (![[currentRow objectForKey:@"Extra"] isEqualToString:anObject]) {
 
-			isCurrentExtraAutoIncrement = [[[anObject stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] uppercaseString] isEqualToString:@"AUTO_INCREMENT"];
+			isCurrentExtraAutoIncrement = [self _isAutoIncrementExtraValue:anObject];
+
+			if (isCurrentExtraAutoIncrement && ![self _fieldTypeAllowsAutoIncrement:[currentRow objectForKey:@"type"]]) {
+				isCurrentExtraAutoIncrement = NO;
+				autoIncrementIndex = nil;
+				[self _showInvalidAutoIncrementAlertForFieldType:[currentRow objectForKey:@"type"]];
+				[tableSourceView reloadData];
+				return;
+			}
 
 			if (isCurrentExtraAutoIncrement) {
 				[currentRow setObject:@0 forKey:@"null"];
@@ -2131,6 +2195,13 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	else if ([[aTableColumn identifier] isEqualToString:@"type"]) {
 		if (anObject && [(NSString*)anObject length] && ![(NSString*)anObject hasPrefix:@"--"]) {
 			[currentRow setObject:[(NSString*)anObject uppercaseString] forKey:@"type"];
+
+			if ([self _isAutoIncrementExtraValue:[currentRow objectForKey:@"Extra"]] && ![self _fieldTypeAllowsAutoIncrement:[currentRow objectForKey:@"type"]]) {
+				[currentRow setObject:@"None" forKey:@"Extra"];
+				isCurrentExtraAutoIncrement = NO;
+				autoIncrementIndex = nil;
+				[self _showInvalidAutoIncrementAlertForFieldType:[currentRow objectForKey:@"type"]];
+			}
 
 			// If type is BLOB or TEXT reset DEFAULT since these field types don't allow a default
 			if ([[currentRow objectForKey:@"type"] hasSuffix:@"TEXT"] ||
