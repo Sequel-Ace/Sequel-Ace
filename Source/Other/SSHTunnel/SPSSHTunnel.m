@@ -966,7 +966,7 @@ static unsigned short getRandomPort(void);
 
 #pragma mark -
 
-unsigned short getRandomPort() {
+unsigned short getRandomPort(void) {
 	int port = 0;
 	int tempSocket;
 	struct sockaddr_in tempSocketAddress;
