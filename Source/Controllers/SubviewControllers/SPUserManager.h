@@ -100,7 +100,17 @@ static inline BOOL SPUserManagerShouldTrackPrivilegeKeyInUserTable(NSString *pri
 	return ![mysqlDynamicPrivilegeKeys containsObject:privilegeKey];
 }
 
-static inline NSSet *SPUserManagerMariaDBPrivilegeKeysRequiringGlobalPrivAccess(void)
+static inline NSString *SPUserManagerGlobalShowCreateRoutinePrivilegeSupportKey(void)
+{
+	return @"show_create_routine_global_priv";
+}
+
+static inline BOOL SPUserManagerShouldUseAllPrivilegesShortcut(NSUInteger privilegeCount, NSUInteger supportedPrivilegeCount, BOOL isDatabaseScoped)
+{
+	return isDatabaseScoped && privilegeCount > 0 && privilegeCount == supportedPrivilegeCount;
+}
+
+static inline NSSet *SPUserManagerMariaDBGlobalOnlyPrivilegeKeysRequiringGlobalPrivAccess(void)
 {
 	return [NSSet setWithObjects:
 			@"binlog_admin_priv",
@@ -113,13 +123,22 @@ static inline NSSet *SPUserManagerMariaDBPrivilegeKeysRequiringGlobalPrivAccess(
 			@"replication_master_admin_priv",
 			@"replication_slave_admin_priv",
 			@"set_user_priv",
-			@"show_create_routine_priv",
 			nil];
 }
 
-static inline void SPUserManagerRemoveMariaDBPrivilegeKeysRequiringGlobalPrivAccess(NSMutableDictionary *supportedPrivileges)
+static inline void SPUserManagerApplyMariaDBGlobalPrivilegeSupportAvailability(NSMutableDictionary *supportedPrivileges, BOOL isAvailable)
 {
-	for (NSString *privilegeKey in SPUserManagerMariaDBPrivilegeKeysRequiringGlobalPrivAccess())
+	NSString *showCreateRoutineGlobalSupportKey = SPUserManagerGlobalShowCreateRoutinePrivilegeSupportKey();
+	if (isAvailable && [[supportedPrivileges objectForKey:@"show_create_routine_priv"] boolValue]) {
+		[supportedPrivileges setObject:@YES forKey:showCreateRoutineGlobalSupportKey];
+	}
+	else {
+		[supportedPrivileges removeObjectForKey:showCreateRoutineGlobalSupportKey];
+	}
+
+	if (isAvailable) return;
+
+	for (NSString *privilegeKey in SPUserManagerMariaDBGlobalOnlyPrivilegeKeysRequiringGlobalPrivAccess())
 	{
 		[supportedPrivileges removeObjectForKey:privilegeKey];
 	}

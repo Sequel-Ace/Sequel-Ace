@@ -63,8 +63,8 @@
 - (void)testUserManagerModelSupportsCurrentGlobalGrantTablePrivileges;
 - (void)testUserManagerModelKeepsGlobalOnlyPrivilegesOutOfSchemaPrivileges;
 - (void)testMySQLDynamicPrivilegesAreNotTrackedAsUserTablePrivileges;
-- (void)testMariaDBGlobalPrivAccessFailureRemovesUnreliablePrivilegeSupport;
-- (void)testGrantAllComparisonUsesModeledPrivilegeCounts;
+- (void)testMariaDBGlobalPrivAccessFailureKeepsSchemaShowCreateRoutineSupport;
+- (void)testGrantAllShortcutIsDatabaseScoped;
 
 @end
 
@@ -316,7 +316,7 @@
 	XCTAssertTrue(SPUserManagerShouldTrackPrivilegeKeyInUserTable(@"create_role_priv", NO));
 }
 
-- (void)testMariaDBGlobalPrivAccessFailureRemovesUnreliablePrivilegeSupport
+- (void)testMariaDBGlobalPrivAccessFailureKeepsSchemaShowCreateRoutineSupport
 {
 	NSMutableDictionary *supportedPrivileges = [@{
 		@"select_priv": @YES,
@@ -327,45 +327,27 @@
 		@"show_create_routine_priv": @YES
 	} mutableCopy];
 
-	SPUserManagerRemoveMariaDBPrivilegeKeysRequiringGlobalPrivAccess(supportedPrivileges);
+	SPUserManagerApplyMariaDBGlobalPrivilegeSupportAvailability(supportedPrivileges, YES);
+
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:SPUserManagerGlobalShowCreateRoutinePrivilegeSupportKey()], @YES);
+
+	SPUserManagerApplyMariaDBGlobalPrivilegeSupportAvailability(supportedPrivileges, NO);
 
 	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"select_priv"], @YES);
 	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"create_role_priv"], @YES);
 	XCTAssertNil([supportedPrivileges objectForKey:@"binlog_admin_priv"]);
 	XCTAssertNil([supportedPrivileges objectForKey:@"connection_admin_priv"]);
 	XCTAssertNil([supportedPrivileges objectForKey:@"replication_master_admin_priv"]);
-	XCTAssertNil([supportedPrivileges objectForKey:@"show_create_routine_priv"]);
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"show_create_routine_priv"], @YES);
+	XCTAssertNil([supportedPrivileges objectForKey:SPUserManagerGlobalShowCreateRoutinePrivilegeSupportKey()]);
 }
 
-- (void)testGrantAllComparisonUsesModeledPrivilegeCounts
+- (void)testGrantAllShortcutIsDatabaseScoped
 {
-	NSError *error = nil;
-	NSString *testFilePath = [NSString stringWithUTF8String:__FILE__];
-	NSString *repositoryRoot = [[testFilePath stringByDeletingLastPathComponent] stringByDeletingLastPathComponent];
-	NSString *sourcePath = [repositoryRoot stringByAppendingPathComponent:@"Source/Controllers/SubviewControllers/SPUserManager.m"];
-	NSString *source = [NSString stringWithContentsOfFile:sourcePath encoding:NSUTF8StringEncoding error:&error];
-
-	XCTAssertNil(error);
-	XCTAssertNotNil(source);
-
-	NSError *regexError = nil;
-	NSRegularExpression *modeledPrivilegeCount = [NSRegularExpression regularExpressionWithPattern:@"supportedPrivilegeCount\\s*=\\s*\\[\\[self\\s+_supportedPrivilegeKeysForEntityName:\\(aDatabase\\s*\\?\\s*@\\\"Privileges\\\"\\s*:\\s*@\\\"SPUser\\\"\\)\\]\\s+count\\]"
-																						   options:0
-																							 error:&regexError];
-	XCTAssertNil(regexError);
-	XCTAssertGreaterThanOrEqual([modeledPrivilegeCount numberOfMatchesInString:source options:0 range:NSMakeRange(0, [source length])], 1U);
-
-	NSRegularExpression *entityScopedComparison = [NSRegularExpression regularExpressionWithPattern:@"if\\s*\\(\\s*aDatabase\\s*&&\\s*supportedPrivilegeCount\\s*==\\s*\\[thePrivileges count\\]\\s*\\)"
-																						   options:0
-																							 error:&regexError];
-	XCTAssertNil(regexError);
-	XCTAssertGreaterThanOrEqual([entityScopedComparison numberOfMatchesInString:source options:0 range:NSMakeRange(0, [source length])], 1U);
-
-	NSRegularExpression *unscopedComparison = [NSRegularExpression regularExpressionWithPattern:@"if\\s*\\(\\s*supportedPrivilegeCount\\s*==\\s*\\[thePrivileges count\\]\\s*\\)"
-																					   options:0
-																						 error:&regexError];
-	XCTAssertNil(regexError);
-	XCTAssertEqual([unscopedComparison numberOfMatchesInString:source options:0 range:NSMakeRange(0, [source length])], 0U);
+	XCTAssertTrue(SPUserManagerShouldUseAllPrivilegesShortcut(3, 3, YES));
+	XCTAssertFalse(SPUserManagerShouldUseAllPrivilegesShortcut(2, 3, YES));
+	XCTAssertFalse(SPUserManagerShouldUseAllPrivilegesShortcut(0, 0, YES));
+	XCTAssertFalse(SPUserManagerShouldUseAllPrivilegesShortcut(3, 3, NO));
 }
 
 @end

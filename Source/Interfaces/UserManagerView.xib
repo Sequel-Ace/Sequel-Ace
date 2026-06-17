@@ -353,12 +353,12 @@ DQ
                                                                                     <font key="font" metaFont="system"/>
                                                                                 </buttonCell>
                                                                                 <connections>
-                                                                                    <binding destination="648" name="enabled" keyPath="show_create_routine_priv" id="sCr-rT-003">
+                                                                                    <binding destination="648" name="enabled" keyPath="show_create_routine_global_priv" id="sCr-rT-003">
                                                                                         <dictionary key="options">
                                                                                             <string key="NSValueTransformerName">NSIsNotNil</string>
                                                                                         </dictionary>
                                                                                     </binding>
-                                                                                    <binding destination="648" name="hidden" keyPath="show_create_routine_priv" id="sCr-rT-005">
+                                                                                    <binding destination="648" name="hidden" keyPath="show_create_routine_global_priv" id="sCr-rT-005">
                                                                                         <dictionary key="options">
                                                                                             <string key="NSValueTransformerName">NSIsNil</string>
                                                                                         </dictionary>

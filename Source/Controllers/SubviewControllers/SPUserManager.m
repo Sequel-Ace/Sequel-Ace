@@ -162,7 +162,12 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
 	for (NSString *key in [entity attributeKeys])
 	{
-		if ([key hasSuffix:@"_priv"] && [[[self privsSupportedByServer] objectForKey:key] boolValue]) {
+		NSString *supportKey = key;
+		if ([entityName isEqualToString:@"SPUser"] && [key isEqualToString:@"show_create_routine_priv"]) {
+			supportKey = SPUserManagerGlobalShowCreateRoutinePrivilegeSupportKey();
+		}
+
+		if ([key hasSuffix:@"_priv"] && [[[self privsSupportedByServer] objectForKey:supportKey] boolValue]) {
 			[supportedPrivilegeKeys addObject:key];
 		}
 	}
@@ -345,8 +350,8 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 			}
 		}
 
-		if (!mariaDBGlobalPrivilegeAccessDataAvailable) {
-			SPUserManagerRemoveMariaDBPrivilegeKeysRequiringGlobalPrivAccess([self privsSupportedByServer]);
+		if ([connection isMariaDB]) {
+			SPUserManagerApplyMariaDBGlobalPrivilegeSupportAvailability([self privsSupportedByServer], mariaDBGlobalPrivilegeAccessDataAvailable);
 		}
 	}
 
@@ -1490,7 +1495,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
 	// Special case when all items are checked, to allow GRANT OPTION to work
 	NSUInteger supportedPrivilegeCount = [[self _supportedPrivilegeKeysForEntityName:(aDatabase ? @"Privileges" : @"SPUser")] count];
-	if (aDatabase && supportedPrivilegeCount == [thePrivileges count]) {
+	if (SPUserManagerShouldUseAllPrivilegesShortcut([thePrivileges count], supportedPrivilegeCount, aDatabase != nil)) {
 		grantStatement = [NSString stringWithFormat:@"GRANT ALL ON %@.* TO %@@%@ WITH GRANT OPTION",
 							aDatabase?[aDatabase backtickQuotedString]:@"*",
 							[aUser tickQuotedString],
@@ -1523,7 +1528,7 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
 	// Special case when all items are checked, to allow GRANT OPTION to work
 	NSUInteger supportedPrivilegeCount = [[self _supportedPrivilegeKeysForEntityName:(aDatabase ? @"Privileges" : @"SPUser")] count];
-	if (aDatabase && supportedPrivilegeCount == [thePrivileges count]) {
+	if (SPUserManagerShouldUseAllPrivilegesShortcut([thePrivileges count], supportedPrivilegeCount, aDatabase != nil)) {
 		revokeStatement = [NSString stringWithFormat:@"REVOKE ALL PRIVILEGES ON %@.* FROM %@@%@",
 							aDatabase?[aDatabase backtickQuotedString]:@"*",
 							[aUser tickQuotedString],
