@@ -2072,6 +2072,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	if (aTableView != tableSourceView) return;
 
     NSMutableDictionary *currentRow = [[self activeFieldsSource] safeObjectAtIndex:rowIndex];
+	BOOL wasEditingRow = isEditingRow;
+	BOOL wasEditingNewRow = isEditingNewRow;
+	NSInteger previousEditingRow = currentlyEditingRow;
+	BOOL wasCurrentExtraAutoIncrement = isCurrentExtraAutoIncrement;
+	NSString *previousAutoIncrementIndex = autoIncrementIndex;
 
 	if (!isEditingRow) {
 		[oldRow setDictionary:currentRow];
@@ -2118,8 +2123,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			isCurrentExtraAutoIncrement = [self _isAutoIncrementExtraValue:anObject];
 
 			if ([self _isMySQL84AutoIncrementRuleExtraValue:anObject] && ![self _fieldTypeAllowsAutoIncrement:[currentRow objectForKey:@"type"]]) {
-				isCurrentExtraAutoIncrement = NO;
-				autoIncrementIndex = nil;
+				isEditingRow = wasEditingRow;
+				isEditingNewRow = wasEditingNewRow;
+				currentlyEditingRow = previousEditingRow;
+				isCurrentExtraAutoIncrement = wasCurrentExtraAutoIncrement;
+				autoIncrementIndex = previousAutoIncrementIndex;
 				[self _showInvalidAutoIncrementAlertForFieldType:[currentRow objectForKey:@"type"]];
 				[tableSourceView reloadData];
 				return;
