@@ -47,6 +47,7 @@
 - (NSArray *)_fallbackCharacterSetEncodings;
 - (void)_showCharacterSetFallbackWarning;
 - (NSArray *)_normalizedCollationRowsFromRows:(NSArray *)rows;
+- (NSArray *)_sortedCollationRowsByName:(NSArray *)rows;
 - (NSArray *)_getCollationRowsFromShowCollationForEncoding:(NSString *)encoding;
 
 NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, void *context);
@@ -138,7 +139,8 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 
 			// Fallback to SHOW COLLATION for older MySQL versions or restricted access
 			if (![collations count]) {
-				[collations addObjectsFromArray:[self _normalizedCollationRowsFromRows:[self _getDatabaseDataForQuery:@"SHOW COLLATION"]]];
+				NSArray *showCollations = [self _normalizedCollationRowsFromRows:[self _getDatabaseDataForQuery:@"SHOW COLLATION"]];
+				[collations addObjectsFromArray:[self _sortedCollationRowsByName:showCollations]];
 			}
 
 			if (![collations count]) {
@@ -185,7 +187,7 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 
 			// Fallback to SHOW COLLATION for older MySQL versions or restricted access
 			if (![characterSetCollations count]) {
-				[characterSetCollations addObjectsFromArray:[self _normalizedCollationRowsFromRows:[self _getCollationRowsFromShowCollationForEncoding:characterSetEncoding]]];
+				[characterSetCollations addObjectsFromArray:[self _getCollationRowsFromShowCollationForEncoding:characterSetEncoding]];
 			}
 
 			// If all sources failed, log once and show a single error alert
@@ -504,8 +506,8 @@ copy_return:
 		if (charsetName) [n setObject:charsetName forKey:@"CHARACTER_SET_NAME"];
 
 		// Id -> ID
-		NSString *id = [row objectForKey:@"Id"] ?: [row objectForKey:@"ID"];
-		if (id) [n setObject:id forKey:@"ID"];
+		NSString *collationId = [row objectForKey:@"Id"] ?: [row objectForKey:@"ID"];
+		if (collationId) [n setObject:collationId forKey:@"ID"];
 
 		// Default -> IS_DEFAULT
 		NSString *isDefault = [row objectForKey:@"Default"] ?: [row objectForKey:@"IS_DEFAULT"];
@@ -520,12 +522,21 @@ copy_return:
 		if (isCompiled) [n setObject:isCompiled forKey:@"IS_COMPILED"];
 
 		// Sortlen -> SORTLEN
-		NSString *sortlen = [row objectForKey:@"Sortlen"] ?: [row objectForKey:@"SORTLEN"];
-		if (sortlen) [n setObject:sortlen forKey:@"SORTLEN"];
+		NSString *sortLength = [row objectForKey:@"Sortlen"] ?: [row objectForKey:@"SORTLEN"];
+		if (sortLength) [n setObject:sortLength forKey:@"SORTLEN"];
 
 		[normalized addObject:n];
 	}
 	return normalized;
+}
+
+- (NSArray *)_sortedCollationRowsByName:(NSArray *)rows
+{
+	return [rows sortedArrayUsingComparator:^NSComparisonResult(NSDictionary *leftRow, NSDictionary *rightRow) {
+		NSString *leftName = [leftRow objectForKey:@"COLLATION_NAME"] ?: @"";
+		NSString *rightName = [rightRow objectForKey:@"COLLATION_NAME"] ?: @"";
+		return [leftName compare:rightName];
+	}];
 }
 
 /**
@@ -537,7 +548,7 @@ copy_return:
 
 	NSString *escapedEncoding = [encoding stringByReplacingOccurrencesOfString:@"'" withString:@"''"];
 	NSArray *rows = [self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SHOW COLLATION WHERE `Charset` = '%@'", escapedEncoding]];
-	return [self _normalizedCollationRowsFromRows:rows];
+	return [self _sortedCollationRowsByName:[self _normalizedCollationRowsFromRows:rows]];
 }
 
 
