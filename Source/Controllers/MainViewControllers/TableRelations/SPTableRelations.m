@@ -561,13 +561,12 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
 	SPMySQLResult *restrictionResult = [connection queryString:@"SELECT @@session.restrict_fk_on_non_standard_key"];
 	[restrictionResult setReturnDataAsStrings:YES];
-	if ([connection queryErrored]) return YES;
 
-	id restrictionValue = [[restrictionResult getRowAsArray] firstObject];
-	if (!restrictionValue || [restrictionValue isNSNull]) return YES;
-
-	NSString *normalized = [[[restrictionValue description] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] uppercaseString];
-	return !([normalized isEqualToString:@"0"] || [normalized isEqualToString:@"OFF"] || [normalized isEqualToString:@"FALSE"]);
+	id restrictionValue = [connection queryErrored] ? nil : [[restrictionResult getRowAsArray] firstObject];
+	return [SAMySQL84ForeignKeyRuleSupport usesMySQL84ForeignKeyRulesWithMariaDB:[connection isMariaDB]
+														 serverVersionIsAtLeast84:YES
+														 restrictionQueryErrored:[connection queryErrored]
+																 restrictionValue:restrictionValue];
 }
 
 - (NSSet *)_mysql84SingleColumnUniqueReferenceColumnsForTable:(NSString *)table database:(NSString *)database
@@ -584,39 +583,13 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
 	if ([connection queryErrored]) return [NSSet set];
 
-	NSMutableDictionary *uniqueIndexRows = [NSMutableDictionary dictionary];
+	NSMutableArray *indexRows = [NSMutableArray array];
 	NSDictionary *indexRow;
 	while ((indexRow = [indexResult getRowAsDictionary])) {
-		if ([[indexRow objectForKey:@"Non_unique"] integerValue] != 0) continue;
-
-		NSString *keyName = [indexRow objectForKey:@"Key_name"];
-		if (![keyName length]) continue;
-
-		NSMutableArray *indexRows = [uniqueIndexRows objectForKey:keyName];
-		if (!indexRows) {
-			indexRows = [NSMutableArray array];
-			[uniqueIndexRows setObject:indexRows forKey:keyName];
-		}
-
 		[indexRows addObject:indexRow];
 	}
 
-	NSMutableSet *columnNames = [NSMutableSet set];
-	for (NSArray *indexRows in [uniqueIndexRows allValues])
-	{
-		if ([indexRows count] != 1) continue;
-
-		NSDictionary *indexRow = [indexRows firstObject];
-		id subPart = [indexRow objectForKey:@"Sub_part"];
-		if (subPart && ![subPart isNSNull] && [[subPart description] length]) continue;
-
-		NSString *columnName = [indexRow objectForKey:@"Column_name"];
-		if ([columnName length]) {
-			[columnNames addObject:columnName];
-		}
-	}
-
-	return columnNames;
+	return [SAMySQL84ForeignKeyRuleSupport singleColumnUniqueReferenceColumns:indexRows];
 }
 
 - (BOOL)_referenceColumnAllowsMySQL84ForeignKey:(NSString *)column table:(NSString *)table database:(NSString *)database

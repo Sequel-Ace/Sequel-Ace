@@ -1781,6 +1781,9 @@
 /* mysql help categories */
 "MySQL Help – Categories" = "MySQL Help – Categories";
 
+/* mysql 8.4 invalid relation message */
+"MySQL 8.4 and newer require a foreign key to reference a full unique or primary key. Add a single-column unique key to %@.%@ or choose another referenced column." = "MySQL 8.4 and newer require a foreign key to reference a full unique or primary key. Add a single-column unique key to %@.%@ or choose another referenced column.";
+
 /* mysql said message */
 "MySQL said:" = "MySQL said:";
 
@@ -2104,6 +2107,9 @@
 
 /* remote error */
 "Remote Error" = "Remote Error";
+
+/* mysql 8.4 invalid relation title */
+"Referenced column needs a unique key" = "Referenced column needs a unique key";
 
 /* Bundle Editor : Remove-Bundle: remove button
  remove button */
