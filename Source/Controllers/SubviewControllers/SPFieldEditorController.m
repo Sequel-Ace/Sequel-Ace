@@ -270,7 +270,7 @@ typedef enum {
 	self.phpSerializedRootEntry = nil;
 	self.phpSerializedSelectedEntry = nil;
 	self.phpSerializedEditorAutomaticallyOpened = NO;
-	[self refreshPHPSerializedEditorAvailability];
+	[self.phpSerializedEditorMenuItem setEnabled:NO];
 	_isGeometry     = ([[fieldType uppercaseString] isEqualToString:@"GEOMETRY"]) ? YES : NO;
 	_isJSON         = ([[fieldType uppercaseString] isEqualToString:SPMySQLJsonType]);
 	NSString *label = [self buildLabelForField:fieldName];
@@ -1695,11 +1695,12 @@ typedef enum {
 	[self.phpSerializedSelectionLabel setStringValue:[NSString stringWithFormat:@"%@  %@", [self keyLabelForPHPSerializedEntry:entry], [value typeLabel]]];
 
 	BOOL canEditScalar = [value isScalarEditable];
+	BOOL canEditStructure = _isEditable && ![self.phpSerializedRootEntry.value containsReference];
 	[self.phpSerializedTypePopup setEnabled:canEditScalar && _isEditable];
 	[self.phpSerializedValueTextView setEditable:canEditScalar && _isEditable];
 	[self.phpSerializedUpdateButton setEnabled:canEditScalar && _isEditable];
-	[self.phpSerializedAddButton setEnabled:[value isContainer] && _isEditable];
-	[self.phpSerializedDeleteButton setEnabled:(entry != self.phpSerializedRootEntry && _isEditable)];
+	[self.phpSerializedAddButton setEnabled:[value isContainer] && canEditStructure];
+	[self.phpSerializedDeleteButton setEnabled:(entry != self.phpSerializedRootEntry && canEditStructure)];
 
 	switch (value.type) {
 		case SAPHPSerializedValueTypeString:
@@ -1782,6 +1783,10 @@ typedef enum {
 		entry.value.type = SAPHPSerializedValueTypeBoolean;
 	}
 	else if ([selectedType isEqualToString:NSLocalizedString(@"Array", @"PHP serialized editor array type")]) {
+		if ([self.phpSerializedRootEntry.value containsReference]) {
+			if (showError) [SPTooltip showWithObject:NSLocalizedString(@"Cannot change serialized structure while PHP references are present.", @"PHP serialized editor reference structure validation error")];
+			return NO;
+		}
 		entry.value.type = SAPHPSerializedValueTypeArray;
 		entry.value.scalarValue = @"";
 		entry.value.className = nil;
@@ -1807,6 +1812,10 @@ typedef enum {
 {
 	SAPHPSerializedEntry *selectedEntry = self.phpSerializedSelectedEntry;
 	if (![selectedEntry.value isContainer]) return;
+	if ([self.phpSerializedRootEntry.value containsReference]) {
+		[SPTooltip showWithObject:NSLocalizedString(@"Cannot add entries while PHP references are present.", @"PHP serialized editor reference add validation error")];
+		return;
+	}
 
 	SAPHPSerializedEntry *newEntry = [[SAPHPSerializedEntry alloc] init];
 	newEntry.parent = selectedEntry;
@@ -1835,6 +1844,10 @@ typedef enum {
 {
 	SAPHPSerializedEntry *selectedEntry = self.phpSerializedSelectedEntry;
 	if (!selectedEntry || selectedEntry == self.phpSerializedRootEntry || !selectedEntry.parent) return;
+	if ([self.phpSerializedRootEntry.value containsReference]) {
+		[SPTooltip showWithObject:NSLocalizedString(@"Cannot delete entries while PHP references are present.", @"PHP serialized editor reference delete validation error")];
+		return;
+	}
 
 	SAPHPSerializedEntry *parent = selectedEntry.parent;
 	[parent.value.children removeObject:selectedEntry];

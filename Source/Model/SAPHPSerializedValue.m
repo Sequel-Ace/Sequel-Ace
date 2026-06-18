@@ -69,10 +69,11 @@ static BOOL SAIntegerValueFromPHPSerializedString(NSString *string, NSInteger *v
 {
 	if (![string length]) return NO;
 
-	NSString *uppercaseValue = [string uppercaseString];
-	if ([uppercaseValue isEqualToString:@"INF"] || [uppercaseValue isEqualToString:@"-INF"] || [uppercaseValue isEqualToString:@"NAN"]) {
+	if ([string isEqualToString:@"INF"] || [string isEqualToString:@"-INF"] || [string isEqualToString:@"NAN"]) {
 		return YES;
 	}
+	NSString *uppercaseValue = [string uppercaseString];
+	if ([uppercaseValue isEqualToString:@"INF"] || [uppercaseValue isEqualToString:@"-INF"] || [uppercaseValue isEqualToString:@"NAN"]) return NO;
 
 	NSScanner *scanner = [NSScanner scannerWithString:string];
 	[scanner setLocale:[NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"]];
@@ -197,6 +198,17 @@ static BOOL SAIntegerValueFromPHPSerializedString(NSString *string, NSInteger *v
 	}
 
 	return [NSString stringWithFormat:@"%@_%@", basePropertyName, [[NSUUID UUID] UUIDString]];
+}
+
+- (BOOL)containsReference
+{
+	if (self.type == SAPHPSerializedValueTypeReference) return YES;
+
+	for (SAPHPSerializedEntry *entry in self.children) {
+		if ([entry.value containsReference]) return YES;
+	}
+
+	return NO;
 }
 
 - (NSString *)serializedStringForKey:(SAPHPSerializedEntry *)entry

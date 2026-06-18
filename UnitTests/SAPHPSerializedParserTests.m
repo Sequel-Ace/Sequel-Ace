@@ -65,6 +65,25 @@
 	XCTAssertFalse([SAPHPSerializedValue isValidPHPFloatString:@"12,34"]);
 }
 
+- (void)testFloatValidationRejectsNoncanonicalSpecialTokens
+{
+	XCTAssertTrue([SAPHPSerializedValue isValidPHPFloatString:@"INF"]);
+	XCTAssertTrue([SAPHPSerializedValue isValidPHPFloatString:@"-INF"]);
+	XCTAssertTrue([SAPHPSerializedValue isValidPHPFloatString:@"NAN"]);
+	XCTAssertFalse([SAPHPSerializedValue isValidPHPFloatString:@"inf"]);
+	XCTAssertFalse([SAPHPSerializedValue isValidPHPFloatString:@"-inf"]);
+	XCTAssertFalse([SAPHPSerializedValue isValidPHPFloatString:@"nan"]);
+}
+
+- (void)testRejectsNoncanonicalSerializedSpecialFloatTokens
+{
+	NSString *errorMessage = nil;
+	SAPHPSerializedValue *value = [SAPHPSerializedParser parseString:@"d:inf;" error:&errorMessage];
+
+	XCTAssertNil(value);
+	XCTAssertNotNil(errorMessage);
+}
+
 - (void)testRejectsExcessiveNestingDepth
 {
 	NSMutableString *serialized = [NSMutableString stringWithString:@"s:3:\"end\";"];
@@ -120,6 +139,17 @@
 	[value.children addObject:entry];
 
 	XCTAssertEqualObjects([value serializedString], @"a:2:{i:0;s:4:\"root\";i:1;a:1:{i:0;s:6:\"nested\";}}");
+}
+
+- (void)testDetectsReferencesRecursively
+{
+	SAPHPSerializedValue *withoutReference = [SAPHPSerializedParser parseString:@"a:1:{i:0;s:5:\"plain\";}" error:nil];
+	SAPHPSerializedValue *withReference = [SAPHPSerializedParser parseString:@"a:2:{i:0;s:5:\"plain\";i:1;R:2;}" error:nil];
+
+	XCTAssertNotNil(withoutReference);
+	XCTAssertNotNil(withReference);
+	XCTAssertFalse([withoutReference containsReference]);
+	XCTAssertTrue([withReference containsReference]);
 }
 
 - (void)testAddingObjectChildUsesUniquePropertyName
