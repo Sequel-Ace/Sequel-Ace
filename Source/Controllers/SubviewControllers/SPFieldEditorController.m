@@ -1913,6 +1913,12 @@ typedef enum {
 	return @"";
 }
 
+- (BOOL)selectionShouldChangeInOutlineView:(NSOutlineView *)outlineView
+{
+	if (outlineView != self.phpSerializedOutlineView) return YES;
+	return [self commitPHPSerializedSelectedValueShowingError:YES];
+}
+
 - (void)outlineViewSelectionDidChange:(NSNotification *)notification
 {
 	if ([notification object] != self.phpSerializedOutlineView) return;
