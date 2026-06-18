@@ -1463,7 +1463,7 @@ typedef enum {
 - (BOOL)populatePHPSerializedEditorFromCurrentTextShowingError:(BOOL)showError
 {
 	NSString *errorMessage = nil;
-	SAPHPSerializedValue *rootValue = [SAPHPSerializedParser parseString:[self currentPHPSerializedText] error:&errorMessage];
+	SAPHPSerializedValue *rootValue = [SAPHPSerializedParser parseString:[self currentPHPSerializedText] encoding:encoding error:&errorMessage];
 
 	if (!rootValue) {
 		if (showError) {
@@ -1494,7 +1494,7 @@ typedef enum {
 - (void)refreshPHPSerializedEditorAvailability
 {
 	NSString *errorMessage = nil;
-	SAPHPSerializedValue *value = [SAPHPSerializedParser parseString:[self currentPHPSerializedText] error:&errorMessage];
+	SAPHPSerializedValue *value = [SAPHPSerializedParser parseString:[self currentPHPSerializedText] encoding:encoding error:&errorMessage];
 	[self.phpSerializedEditorMenuItem setEnabled:(value != nil && _isEditable && !_isJSON && !_isGeometry)];
 }
 
@@ -1503,7 +1503,7 @@ typedef enum {
 	if (self.phpSerializedEditorAutomaticallyOpened || ![self.phpSerializedEditorMenuItem isEnabled]) return;
 
 	NSString *errorMessage = nil;
-	SAPHPSerializedValue *value = [SAPHPSerializedParser parseString:[self currentPHPSerializedText] error:&errorMessage];
+	SAPHPSerializedValue *value = [SAPHPSerializedParser parseString:[self currentPHPSerializedText] encoding:encoding error:&errorMessage];
 	if (![value isContainer] && value.type != SAPHPSerializedValueTypeCustomSerialized) return;
 
 	self.phpSerializedEditorAutomaticallyOpened = YES;

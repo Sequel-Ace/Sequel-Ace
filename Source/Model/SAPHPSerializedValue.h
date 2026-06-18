@@ -56,5 +56,6 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 @interface SAPHPSerializedParser : NSObject
 
 + (SAPHPSerializedValue *)parseString:(NSString *)input error:(NSString **)errorMessage;
++ (SAPHPSerializedValue *)parseString:(NSString *)input encoding:(NSStringEncoding)encoding error:(NSString **)errorMessage;
 
 @end

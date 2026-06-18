@@ -32,6 +32,29 @@
 	XCTAssertEqualObjects([value serializedString], @"s:4:\"éé\";");
 }
 
+- (void)testParsesStringLengthsUsingProvidedEncoding
+{
+	NSString *serialized = @"s:1:\"é\";";
+	NSString *errorMessage = nil;
+	SAPHPSerializedValue *utf8Value = [SAPHPSerializedParser parseString:serialized error:&errorMessage];
+	SAPHPSerializedValue *latin1Value = [SAPHPSerializedParser parseString:serialized encoding:NSISOLatin1StringEncoding error:nil];
+
+	XCTAssertNil(utf8Value);
+	XCTAssertNotNil(errorMessage);
+	XCTAssertNotNil(latin1Value);
+	XCTAssertEqualObjects(latin1Value.scalarValue, @"é");
+	XCTAssertEqualObjects([latin1Value serializedString], serialized);
+}
+
+- (void)testSerializesStringLengthsUsingProvidedEncoding
+{
+	SAPHPSerializedValue *value = [SAPHPSerializedParser parseString:@"s:1:\"é\";" encoding:NSISOLatin1StringEncoding error:nil];
+
+	XCTAssertNotNil(value);
+	value.scalarValue = @"éé";
+	XCTAssertEqualObjects([value serializedString], @"s:2:\"éé\";");
+}
+
 - (void)testRejectsOversizedSerializedLength
 {
 	NSString *errorMessage = nil;

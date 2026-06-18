@@ -30,6 +30,16 @@ static BOOL SAIntegerValueFromPHPSerializedString(NSString *string, NSInteger *v
 @implementation SAPHPSerializedEntry
 @end
 
+@interface SAPHPSerializedValue ()
+
+@property(nonatomic) NSStringEncoding stringEncoding;
+
+- (void)setStringEncodingRecursively:(NSStringEncoding)encoding;
+- (NSString *)serializedStringUsingEncoding:(NSStringEncoding)encoding;
+- (NSString *)serializedStringForKey:(SAPHPSerializedEntry *)entry encoding:(NSStringEncoding)encoding;
+
+@end
+
 @implementation SAPHPSerializedValue
 
 + (instancetype)valueWithType:(SAPHPSerializedValueType)type
@@ -38,6 +48,7 @@ static BOOL SAIntegerValueFromPHPSerializedString(NSString *string, NSInteger *v
 	value.type = type;
 	value.scalarValue = @"";
 	value.children = [[NSMutableArray alloc] init];
+	value.stringEncoding = NSUTF8StringEncoding;
 	return value;
 }
 
@@ -211,18 +222,37 @@ static BOOL SAIntegerValueFromPHPSerializedString(NSString *string, NSInteger *v
 	return NO;
 }
 
-- (NSString *)serializedStringForKey:(SAPHPSerializedEntry *)entry
+- (void)setStringEncodingRecursively:(NSStringEncoding)encoding
+{
+	self.stringEncoding = encoding;
+
+	for (SAPHPSerializedEntry *entry in self.children) {
+		[entry.value setStringEncodingRecursively:encoding];
+	}
+}
+
+- (NSData *)dataForSerializedString:(NSString *)string encoding:(NSStringEncoding)encoding
+{
+	return [string dataUsingEncoding:encoding allowLossyConversion:NO] ?: [string dataUsingEncoding:NSUTF8StringEncoding];
+}
+
+- (NSString *)serializedStringForKey:(SAPHPSerializedEntry *)entry encoding:(NSStringEncoding)encoding
 {
 	if (entry.keyIsInteger) {
 		return [NSString stringWithFormat:@"i:%@;", [entry.key description]];
 	}
 
 	NSString *key = ([entry.key isKindOfClass:[NSString class]]) ? entry.key : [[entry.key description] copy];
-	NSData *keyData = [key dataUsingEncoding:NSUTF8StringEncoding];
+	NSData *keyData = [self dataForSerializedString:key encoding:encoding];
 	return [NSString stringWithFormat:@"s:%lu:\"%@\";", (unsigned long)[keyData length], key];
 }
 
 - (NSString *)serializedString
+{
+	return [self serializedStringUsingEncoding:self.stringEncoding ?: NSUTF8StringEncoding];
+}
+
+- (NSString *)serializedStringUsingEncoding:(NSStringEncoding)encoding
 {
 	switch (self.type) {
 		case SAPHPSerializedValueTypeNull:
@@ -235,25 +265,25 @@ static BOOL SAIntegerValueFromPHPSerializedString(NSString *string, NSInteger *v
 			return [NSString stringWithFormat:@"d:%@;", (self.scalarValue.length) ? self.scalarValue : @"0"];
 		case SAPHPSerializedValueTypeString: {
 			NSString *string = (self.scalarValue)?:@"";
-			NSData *stringData = [string dataUsingEncoding:NSUTF8StringEncoding];
+			NSData *stringData = [self dataForSerializedString:string encoding:encoding];
 			return [NSString stringWithFormat:@"s:%lu:\"%@\";", (unsigned long)[stringData length], string];
 		}
 		case SAPHPSerializedValueTypeArray: {
 			NSMutableString *output = [NSMutableString stringWithFormat:@"a:%lu:{", (unsigned long)[self.children count]];
 			for (SAPHPSerializedEntry *entry in self.children) {
-				[output appendString:[self serializedStringForKey:entry]];
-				[output appendString:[entry.value serializedString]];
+				[output appendString:[self serializedStringForKey:entry encoding:encoding]];
+				[output appendString:[entry.value serializedStringUsingEncoding:encoding]];
 			}
 			[output appendString:@"}"];
 			return output;
 		}
 		case SAPHPSerializedValueTypeObject: {
 			NSString *className = (self.className)?:@"stdClass";
-			NSData *classData = [className dataUsingEncoding:NSUTF8StringEncoding];
+			NSData *classData = [self dataForSerializedString:className encoding:encoding];
 			NSMutableString *output = [NSMutableString stringWithFormat:@"O:%lu:\"%@\":%lu:{", (unsigned long)[classData length], className, (unsigned long)[self.children count]];
 			for (SAPHPSerializedEntry *entry in self.children) {
-				[output appendString:[self serializedStringForKey:entry]];
-				[output appendString:[entry.value serializedString]];
+				[output appendString:[self serializedStringForKey:entry encoding:encoding]];
+				[output appendString:[entry.value serializedStringUsingEncoding:encoding]];
 			}
 			[output appendString:@"}"];
 			return output;
@@ -261,8 +291,8 @@ static BOOL SAIntegerValueFromPHPSerializedString(NSString *string, NSInteger *v
 		case SAPHPSerializedValueTypeCustomSerialized: {
 			NSString *className = (self.className)?:@"";
 			NSString *payload = (self.scalarValue)?:@"";
-			NSData *classData = [className dataUsingEncoding:NSUTF8StringEncoding];
-			NSData *payloadData = [payload dataUsingEncoding:NSUTF8StringEncoding];
+			NSData *classData = [self dataForSerializedString:className encoding:encoding];
+			NSData *payloadData = [self dataForSerializedString:payload encoding:encoding];
 			return [NSString stringWithFormat:@"C:%lu:\"%@\":%lu:{%@}", (unsigned long)[classData length], className, (unsigned long)[payloadData length], payload];
 		}
 		case SAPHPSerializedValueTypeReference:
@@ -278,6 +308,7 @@ static BOOL SAIntegerValueFromPHPSerializedString(NSString *string, NSInteger *v
 @property(nonatomic, strong) NSData *data;
 @property(nonatomic) NSUInteger position;
 @property(nonatomic) NSUInteger recursionDepth;
+@property(nonatomic) NSStringEncoding stringEncoding;
 @property(nonatomic, copy) NSString *errorMessage;
 
 - (SAPHPSerializedValue *)parseValueAtCurrentDepth;
@@ -289,15 +320,27 @@ static BOOL SAIntegerValueFromPHPSerializedString(NSString *string, NSInteger *v
 
 + (SAPHPSerializedValue *)parseString:(NSString *)input error:(NSString **)errorMessage
 {
+	return [self parseString:input encoding:NSUTF8StringEncoding error:errorMessage];
+}
+
++ (SAPHPSerializedValue *)parseString:(NSString *)input encoding:(NSStringEncoding)encoding error:(NSString **)errorMessage
+{
 	NSString *trimmedInput = [(input)?:@"" stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 	if (![trimmedInput length]) {
 		if (errorMessage) *errorMessage = NSLocalizedString(@"No serialized data was provided.", @"PHP serialized editor empty input error");
 		return nil;
 	}
 
+	NSData *inputData = [trimmedInput dataUsingEncoding:encoding allowLossyConversion:NO];
+	if (!inputData) {
+		if (errorMessage) *errorMessage = NSLocalizedString(@"Serialized data cannot be encoded using the field encoding.", @"PHP serialized editor input encoding error");
+		return nil;
+	}
+
 	SAPHPSerializedParser *parser = [[SAPHPSerializedParser alloc] init];
-	parser.data = [trimmedInput dataUsingEncoding:NSUTF8StringEncoding];
+	parser.data = inputData;
 	parser.position = 0;
+	parser.stringEncoding = encoding;
 
 	SAPHPSerializedValue *value = [parser parseValue];
 	if (!value) {
@@ -310,6 +353,7 @@ static BOOL SAIntegerValueFromPHPSerializedString(NSString *string, NSInteger *v
 		return nil;
 	}
 
+	[value setStringEncodingRecursively:encoding];
 	return value;
 }
 
@@ -360,8 +404,11 @@ static BOOL SAIntegerValueFromPHPSerializedString(NSString *string, NSInteger *v
 	NSData *subdata = [self.data subdataWithRange:NSMakeRange(self.position, byteLength)];
 	self.position += byteLength;
 
-	NSString *string = [[NSString alloc] initWithData:subdata encoding:NSUTF8StringEncoding];
-	if (!string) {
+	NSString *string = [[NSString alloc] initWithData:subdata encoding:self.stringEncoding];
+	if (!string && self.stringEncoding != NSUTF8StringEncoding) {
+		string = [[NSString alloc] initWithData:subdata encoding:NSUTF8StringEncoding];
+	}
+	if (!string && self.stringEncoding != NSISOLatin1StringEncoding) {
 		string = [[NSString alloc] initWithData:subdata encoding:NSISOLatin1StringEncoding];
 	}
 	if (!string) {
