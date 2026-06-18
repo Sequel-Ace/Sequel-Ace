@@ -270,6 +270,14 @@ import OSLog
             bookmarkCreationOptions = URLBookmarkCreationWithSecurityScope
         }
 
+        guard url.startAccessingSecurityScopedResource() else {
+            Log.error("Error startAccessingSecurityScopedResource while refreshing secure bookmark for: \(url.absoluteString)")
+            return nil
+        }
+        defer {
+            url.stopAccessingSecurityScopedResource()
+        }
+
         do {
             Log.debug("Attempting to refresh secure bookmark for: \(url.absoluteString)")
             let bookmarkData = try url.bookmarkData(options: bookmarkCreationOptions, includingResourceValuesForKeys: nil, relativeTo: nil)
