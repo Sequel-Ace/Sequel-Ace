@@ -88,6 +88,29 @@ final class SAArchivingTests: XCTestCase {
         XCTAssertNil(SAArchiving.font(from: garbage))
     }
 
+    /// Type-mismatched *keyed* data must return `nil` without crashing — i.e. the
+    /// legacy `NSUnarchiver` fallback must not raise on (valid keyed) input it
+    /// cannot read. This underpins `UserDefaults.getFont()`, which feeds the helper
+    /// a keyed `NSFontDescriptor` archive and relies on `font(from:)` returning nil
+    /// so it can fall through to the descriptor-decoding path.
+    func testKeyedDescriptorArchiveIsNotMisreadAsFont() throws {
+        let descriptor = try XCTUnwrap(NSFont(name: "Menlo", size: 13)).fontDescriptor
+        let keyedDescriptorData = try NSKeyedArchiver.archivedData(withRootObject: descriptor, requiringSecureCoding: true)
+
+        XCTAssertNil(SAArchiving.font(from: keyedDescriptorData), "a descriptor archive is not a font")
+        XCTAssertNil(SAArchiving.color(from: keyedDescriptorData), "a descriptor archive is not a colour")
+
+        // And the descriptor itself is still recoverable via the secure keyed API.
+        let decoded = try NSKeyedUnarchiver.unarchivedObject(ofClass: NSFontDescriptor.self, from: keyedDescriptorData)
+        XCTAssertEqual(decoded?.postscriptName, descriptor.postscriptName)
+    }
+
+    func testKeyedFontArchiveIsNotMisreadAsColor() throws {
+        let font = try XCTUnwrap(NSFont(name: "Courier", size: 11))
+        let keyedFontData = try XCTUnwrap(SAArchiving.archivedData(forFont: font))
+        XCTAssertNil(SAArchiving.color(from: keyedFontData), "a font archive is not a colour")
+    }
+
     // MARK: - Helpers
 
     /// Compares two colours in a common colour space to avoid spurious
