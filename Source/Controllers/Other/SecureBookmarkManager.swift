@@ -341,6 +341,16 @@ import OSLog
         }
     }
 
+    private func hasStaleBookmarkReference(for bookmarkPath: String) -> Bool {
+        guard let normalizedBookmarkPath = normalizedFilePath(forBookmarkPath: bookmarkPath) else {
+            return staleBookmarks.contains(bookmarkPath)
+        }
+
+        return staleBookmarks.contains { staleBookmark in
+            normalizedFilePath(forBookmarkPath: staleBookmark) == normalizedBookmarkPath
+        }
+    }
+
     private func deduplicateStaleBookmarks() {
         var seenBookmarkPaths = Set<String>()
         staleBookmarks = staleBookmarks.filter { bookmarkPath in
@@ -366,12 +376,30 @@ import OSLog
         Log.debug("isForStaleBookmark: \(isForStaleBookmark)")
         Log.debug("isForKnownHostsFile: \(isForKnownHostsFile)")
 
-
         for (index, bookmarkDict) in bookmarks.enumerated() {
             for posibility in possibleMatchingStrings {
-                if bookmarkDict[posibility] != nil {
+                if let existingBookmarkData = bookmarkDict[posibility] {
                     if isForStaleBookmark == false {
                         Log.debug("Existing bookmark for: \(url.absoluteString)")
+                        let hasStaleReference = hasStaleBookmarkReference(for: url.absoluteString) || hasStaleBookmarkReference(for: posibility)
+
+                        if hasStaleReference {
+                            let existingSecureBookmark = SecureBookmark.getDecodedData(encodedData: existingBookmarkData)
+                            guard let refreshedBookmarkData = refreshedEncodedBookmarkData(for: url, storedBookmark: existingSecureBookmark) else {
+                                Log.error("Failed to refresh existing bookmark for: \(url.absoluteString)")
+                                return false
+                            }
+
+                            if bookmarks[safe: index] != nil {
+                                bookmarks[index] = [url.absoluteString: refreshedBookmarkData]
+                            } else {
+                                bookmarks.append([url.absoluteString: refreshedBookmarkData])
+                            }
+
+                            iChangedTheBookmarks = true
+                            prefs.set(bookmarks, forKey: SASecureBookmarks)
+                        }
+
                         if url.startAccessingSecurityScopedResource() {
                             resolvedBookmarks.appendIfNotContains(url)
                         }
