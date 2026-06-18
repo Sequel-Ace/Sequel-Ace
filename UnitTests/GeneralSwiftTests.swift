@@ -8,11 +8,30 @@
 
 import XCTest
 
+private enum PerformanceTestOptIn {
+    static let environmentVariable = "SEQUEL_ACE_RUN_PERFORMANCE_TESTS"
+    static let skipMessage = "Set \(environmentVariable)=1 to run performance measurement tests."
+
+    static var isEnabled: Bool {
+        #if SEQUEL_ACE_RUN_PERFORMANCE_TESTS
+        return true
+        #else
+        guard let value = ProcessInfo.processInfo.environment[environmentVariable]?.lowercased() else {
+            return false
+        }
+
+        return value == "1" || value == "true" || value == "yes"
+        #endif
+    }
+}
+
 // added private so that this class is not in the generated -Swift.h
 private final class GeneralSwiftTests: XCTestCase {
 
     // 0.242s
     func testPerformanceComponents() throws {
+        try XCTSkipUnless(PerformanceTestOptIn.isEnabled, PerformanceTestOptIn.skipMessage)
+
         // This is an example of a performance test case.
 
         let str = "My name is JIMMY"
@@ -28,6 +47,8 @@ private final class GeneralSwiftTests: XCTestCase {
 
     // 0.131s
     func testPerformanceSplit() throws {
+        try XCTSkipUnless(PerformanceTestOptIn.isEnabled, PerformanceTestOptIn.skipMessage)
+
         // This is an example of a performance test case.
 
         let str = "My name is JIMMY"
@@ -43,6 +64,8 @@ private final class GeneralSwiftTests: XCTestCase {
 
     // 0.103s
     func testPerformanceEnumerateSubstrings() throws {
+        try XCTSkipUnless(PerformanceTestOptIn.isEnabled, PerformanceTestOptIn.skipMessage)
+
         // This is an example of a performance test case.
 
         let str = "SELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT COUNT(*) FROM `HKWarningsLog`;"
@@ -68,6 +91,8 @@ private final class GeneralSwiftTests: XCTestCase {
 
     // 0.114 s 
     func testPerformanceSeparatedIntoLines() throws {
+        try XCTSkipUnless(PerformanceTestOptIn.isEnabled, PerformanceTestOptIn.skipMessage)
+
         // This is an example of a performance test case.
 
         let str = "SELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT * FROM `HKWarningsLog` LIMIT 1000;\nSELECT COUNT(*) FROM `HKWarningsLog`;"

@@ -70,7 +70,7 @@ static char GetNextANSIChar(SPJSONTokenizerState *stateInfo);
     //if this token is on a new line indent it
     if(needIndent && idLevel > 0) {
       NSMutableString *indentString = [NSMutableString string];
-      SPLog(@"SPJSONFormatter:indentWidth is %d", indentWidth);
+      SPLog(@"SPJSONFormatter:indentWidth is %ld", (long)indentWidth);
       if (indentWidth < 1) indentWidth = 1;
       if (indentWidth > 32) indentWidth = 32;
 
