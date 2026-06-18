@@ -123,6 +123,7 @@
 
 - (void)testPerformance_withPairedMutableArrays {
 	// this is on main thread
+	SASkipUnlessPerformanceTestsEnabled();
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
 		NSMutableArray *testArray = [NSMutableArray arrayWithObjects:@"o" ,@"n" ,@"m" ,@"l" ,@"k" ,@"j" ,@"i" ,@"h" ,@"g" ,@"f" ,@"e" ,@"d" ,@"c" ,@"b" ,@"a", nil];
@@ -139,6 +140,7 @@
 
 - (void)testPerformance_sortArrayUsingSelector {
 	// this is on main thread
+	SASkipUnlessPerformanceTestsEnabled();
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
 		NSMutableArray *testArray = [NSMutableArray arrayWithObjects:@"o" ,@"n" ,@"m" ,@"l" ,@"k" ,@"j" ,@"i" ,@"h" ,@"g" ,@"f" ,@"e" ,@"d" ,@"c" ,@"b" ,@"a", nil];
@@ -184,6 +186,7 @@
 //0.0271s
 - (void)testPerformanceSafeReplaceObjectAtIndex {
 
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
 
         NSMutableArray *randomArray = [SPTestingUtils randomHistArray];
@@ -202,6 +205,7 @@
 //0.0262s
 - (void)testPerformanceReplaceObjectAtIndex {
 
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         NSMutableArray *randomArray = [SPTestingUtils randomHistArray];
 
@@ -235,6 +239,7 @@
 // 0.0272s
 - (void)testPerformanceRemoveObjectAtIndex {
 
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         NSMutableArray *randomArray = [SPTestingUtils randomHistArray];
 
@@ -249,6 +254,7 @@
 //0.0289s
 - (void)testPerformanceSafeRemoveObjectAtIndex {
 
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         NSMutableArray *randomArray = [SPTestingUtils randomHistArray];
 
@@ -262,6 +268,7 @@
 
 // 0.761 s
 - (void)testPerformanceReverse {
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
 
         NSMutableArray *randomArray = [SPTestingUtils randomHistArray];
