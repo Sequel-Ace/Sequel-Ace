@@ -15,5 +15,5 @@ jobs:
     - name: Build and run tests
       run: ./Scripts/build.sh tests
       env:
-        DEVELOPER_DIR: '/Applications/Xcode_16.2.app/Contents/Developer'
+        DEVELOPER_DIR: '/Applications/Xcode_16.4.app/Contents/Developer'
         TEST_ARCH: arm64
