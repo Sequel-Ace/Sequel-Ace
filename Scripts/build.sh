@@ -21,7 +21,7 @@
 set -e
 
 MODE="$1"
-TEST_ARCH="${TEST_ARCH:-arm64}"
+TEST_ARCH="${TEST_ARCH:-$(uname -m)}"
 
 if ! hash xcpretty 2> /dev/null; then
   echo "xcpretty not installed. Try gem install xcpretty"
