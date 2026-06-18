@@ -13,7 +13,9 @@ import Foundation
         "MEDIUMINT",
         "INT",
         "INTEGER",
-        "BIGINT"
+        "BIGINT",
+        "BOOL",
+        "BOOLEAN"
     ]
 
     @objc static func isAutoIncrementExtraValue(_ value: Any?) -> Bool {

@@ -33,6 +33,11 @@ final class SAAutoIncrementRuleSupportTests: XCTestCase {
         XCTAssertTrue(SAAutoIncrementRuleSupport.fieldTypeAllowsAutoIncrement("BIGINT(20)\nUNSIGNED"))
     }
 
+    func testAllowsIntegerFieldTypeAliases() {
+        XCTAssertTrue(SAAutoIncrementRuleSupport.fieldTypeAllowsAutoIncrement("BOOL"))
+        XCTAssertTrue(SAAutoIncrementRuleSupport.fieldTypeAllowsAutoIncrement(" boolean "))
+    }
+
     func testRejectsNonIntegerFieldTypes() {
         XCTAssertFalse(SAAutoIncrementRuleSupport.fieldTypeAllowsAutoIncrement(nil))
         XCTAssertFalse(SAAutoIncrementRuleSupport.fieldTypeAllowsAutoIncrement(""))
