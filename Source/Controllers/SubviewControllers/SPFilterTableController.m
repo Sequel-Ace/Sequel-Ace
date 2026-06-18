@@ -122,7 +122,12 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 		[NSMutableDictionary class], [NSDictionary class],
 		[NSMutableArray class], [NSArray class],
 		[NSString class], [NSNumber class], nil];
-	NSDictionary *filterData = [NSKeyedUnarchiver unarchivedObjectOfClasses:allowedClasses fromData:arcData error:nil];
+	NSError *error = nil;
+	NSDictionary *filterData = [NSKeyedUnarchiver unarchivedObjectOfClasses:allowedClasses fromData:arcData error:&error];
+	if (!filterData) {
+		SPLog(@"Failed to unarchive filter table data: %@", error);
+		return;
+	}
 	[filterTableData removeAllObjects];
 	[filterTableData addEntriesFromDictionary:filterData];
 	[[self window] makeKeyAndOrderFront:nil];
@@ -135,7 +140,12 @@ static void *FilterTableKVOContext = &FilterTableKVOContext;
 
 	[filterTableView deselectAll:nil];
 
-	return [NSKeyedArchiver archivedDataWithRootObject:filterTableData requiringSecureCoding:NO error:nil];
+	NSError *error = nil;
+	NSData *archivedData = [NSKeyedArchiver archivedDataWithRootObject:filterTableData requiringSecureCoding:NO error:&error];
+	if (!archivedData) {
+		SPLog(@"Failed to archive filter table data: %@", error);
+	}
+	return archivedData;
 }
 
 - (NSString *)tableFilterString
