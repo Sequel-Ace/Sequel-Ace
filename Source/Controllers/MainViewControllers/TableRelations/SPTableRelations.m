@@ -578,16 +578,27 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		tableReference = [NSString stringWithFormat:@"%@.%@", [database backtickQuotedString], [table backtickQuotedString]];
 	}
 
+	BOOL changeEncoding = ![[connection encoding] hasPrefix:@"utf8"];
+	if (changeEncoding) {
+		[connection storeEncodingForRestoration];
+		[connection setEncoding:@"utf8mb4"];
+	}
+
 	SPMySQLResult *indexResult = [connection queryString:[NSString stringWithFormat:@"SHOW INDEX FROM %@", tableReference]];
 	[indexResult setReturnDataAsStrings:YES];
 
-	if ([connection queryErrored]) return [NSSet set];
+	if ([connection queryErrored]) {
+		if (changeEncoding) [connection restoreStoredEncoding];
+		return [NSSet set];
+	}
 
 	NSMutableArray *indexRows = [NSMutableArray array];
 	NSDictionary *indexRow;
 	while ((indexRow = [indexResult getRowAsDictionary])) {
 		[indexRows addObject:indexRow];
 	}
+
+	if (changeEncoding) [connection restoreStoredEncoding];
 
 	return [SAForeignKeyReferenceRuleSupport singleColumnUniqueReferenceColumns:indexRows];
 }
