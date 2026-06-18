@@ -1766,6 +1766,9 @@
 /* MySQL connecting very short status message */
 "MySQL connecting..." = "MySQL connecting...";
 
+/* mysql 8.4 invalid auto increment title */
+"AUTO_INCREMENT is unavailable" = "AUTO_INCREMENT is unavailable";
+
 /* mysql error message */
 "MySQL Error" = "MySQL Error";
 
@@ -1780,6 +1783,9 @@
 
 /* mysql help categories */
 "MySQL Help – Categories" = "MySQL Help – Categories";
+
+/* mysql 8.4 invalid auto increment message */
+"MySQL 8.4 and newer only support AUTO_INCREMENT on integer columns. The %@ column type cannot use AUTO_INCREMENT on this server." = "MySQL 8.4 and newer only support AUTO_INCREMENT on integer columns. The %@ column type cannot use AUTO_INCREMENT on this server.";
 
 /* mysql said message */
 "MySQL said:" = "MySQL said:";
@@ -2327,6 +2333,9 @@
 
 /* selected items */
 "selected items" = "selected items";
+
+/* invalid auto increment fallback field type */
+"selected" = "selected";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as comma-separated' item */
 "Selected Rows (CSV)" = "Selected Rows (CSV)";
