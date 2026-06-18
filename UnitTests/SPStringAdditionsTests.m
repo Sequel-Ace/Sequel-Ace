@@ -939,19 +939,19 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 {
 	{
 		//test against empty string
-		XCTAssertEqualObjects([@"" stringByReplacingCharactersInSet:[NSCharacterSet whitespaceCharacterSet] withString:@"x"], @"", @"replacement on empty string must result in empty string");
+		XCTAssertEqualObjects([@"" sp_stringByReplacingCharactersInSet:[NSCharacterSet whitespaceCharacterSet] withString:@"x"], @"", @"replacement on empty string must result in empty string");
 	}
 	{
 		//test match at begin, middle, end / consecutive matches
-		XCTAssertEqualObjects([@" ab  c " stringByReplacingCharactersInSet:[NSCharacterSet whitespaceCharacterSet] withString:@"_"], @"_ab__c_", @"Testing matches at both end, replacement of consecutive matches");
+		XCTAssertEqualObjects([@" ab  c " sp_stringByReplacingCharactersInSet:[NSCharacterSet whitespaceCharacterSet] withString:@"_"], @"_ab__c_", @"Testing matches at both end, replacement of consecutive matches");
 	}
 	{
 		//test replacement of different characters
-		XCTAssertEqualObjects([@"ab\r\ncd" stringByReplacingCharactersInSet:[NSCharacterSet newlineCharacterSet] withString:@"*"], @"ab**cd", @"Testing replacement of different characters in set");
+		XCTAssertEqualObjects([@"ab\r\ncd" sp_stringByReplacingCharactersInSet:[NSCharacterSet newlineCharacterSet] withString:@"*"], @"ab**cd", @"Testing replacement of different characters in set");
 	}
 	{
 		// nil for replacement char
-		XCTAssertEqualObjects([@"ab\r\ncd" stringByReplacingCharactersInSet:[NSCharacterSet newlineCharacterSet] withString:nil], @"abcd", @"testing replacement with nil");
+		XCTAssertEqualObjects([@"ab\r\ncd" sp_stringByReplacingCharactersInSet:[NSCharacterSet newlineCharacterSet] withString:nil], @"abcd", @"testing replacement with nil");
 	}
 }
 
