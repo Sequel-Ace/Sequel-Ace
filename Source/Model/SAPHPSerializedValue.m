@@ -357,13 +357,13 @@ static BOOL SAIntegerValueFromPHPSerializedString(NSString *string, NSInteger *v
 
 + (SAPHPSerializedValue *)parseString:(NSString *)input encoding:(NSStringEncoding)encoding error:(NSString **)errorMessage
 {
-	NSString *trimmedInput = [(input)?:@"" stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-	if (![trimmedInput length]) {
+	NSString *inputString = (input) ?: @"";
+	if (![inputString length]) {
 		if (errorMessage) *errorMessage = NSLocalizedString(@"No serialized data was provided.", @"PHP serialized editor empty input error");
 		return nil;
 	}
 
-	NSData *inputData = [trimmedInput dataUsingEncoding:encoding allowLossyConversion:NO];
+	NSData *inputData = [inputString dataUsingEncoding:encoding allowLossyConversion:NO];
 	if (!inputData) {
 		if (errorMessage) *errorMessage = NSLocalizedString(@"Serialized data cannot be encoded using the field encoding.", @"PHP serialized editor input encoding error");
 		return nil;

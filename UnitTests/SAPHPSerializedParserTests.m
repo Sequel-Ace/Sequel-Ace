@@ -77,6 +77,24 @@
 	XCTAssertEqual([[value.children firstObject] value].type, SAPHPSerializedValueTypeEnum);
 }
 
+- (void)testRejectsLeadingWhitespaceBeforeSerializedValue
+{
+	NSString *errorMessage = nil;
+	SAPHPSerializedValue *value = [SAPHPSerializedParser parseString:@" a:1:{i:0;s:3:\"yes\";}" error:&errorMessage];
+
+	XCTAssertNil(value);
+	XCTAssertNotNil(errorMessage);
+}
+
+- (void)testRejectsTrailingWhitespaceAfterSerializedValue
+{
+	NSString *errorMessage = nil;
+	SAPHPSerializedValue *value = [SAPHPSerializedParser parseString:@"a:1:{i:0;s:3:\"yes\";} " error:&errorMessage];
+
+	XCTAssertNil(value);
+	XCTAssertNotNil(errorMessage);
+}
+
 - (void)testRejectsOversizedSerializedLength
 {
 	NSString *errorMessage = nil;
