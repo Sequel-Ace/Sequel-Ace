@@ -21,6 +21,7 @@
 set -e
 
 MODE="$1"
+TEST_ARCH="${TEST_ARCH:-$(uname -m)}"
 
 if ! hash xcpretty 2> /dev/null; then
   echo "xcpretty not installed. Try gem install xcpretty"
@@ -29,8 +30,8 @@ if ! hash xcpretty 2> /dev/null; then
 fi
 
 if [ "$MODE" = "tests" ]; then
-  echo "Running Sequel Ace Unit tests"
-  set -o pipefail && xcodebuild test -project sequel-ace.xcodeproj -scheme "Unit Tests" -destination "platform=macOS,arch=x86_64" test CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO | xcpretty -c
+  echo "Running Sequel Ace Unit tests (${TEST_ARCH})"
+  set -o pipefail && xcodebuild test -project sequel-ace.xcodeproj -scheme "Unit Tests" -destination "platform=macOS,arch=${TEST_ARCH}" test CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO | xcpretty -c
   success="1"
 fi
 

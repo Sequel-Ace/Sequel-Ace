@@ -503,7 +503,7 @@ typedef enum {
 	// 1. The font specifically chosen for the editor sheet textView (FieldEditorSheetFont, right-click in the textView, and choose "Font > Show Fonts" to do that);
 	// 2. The font used for the table view (SPGlobalFontSettings, per the "MySQL Content Font" preference option);
 	if ([prefs objectForKey:SPFieldEditorSheetFont]) {
-		textEditorFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPFieldEditorSheetFont]];
+		textEditorFont = [SAArchiving fontFromData:[prefs dataForKey:SPFieldEditorSheetFont]];
 	} else if ([prefs objectForKey:SPGlobalFontSettings]) {
 		textEditorFont = [NSUserDefaults getFont];
 	}
@@ -565,7 +565,8 @@ typedef enum {
         }
         
         NSError *error = nil;
-        id jsonObject = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingMutableContainers error:&error];
+        // Parsed only to validate the JSON; the result is unused, error drives the branch below
+        [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingMutableContainers error:&error];
         if(error != nil){
           SPLog(@"JSONObjectWithData error : %@", error.localizedDescription);
           [jsonTextView setString:NSLocalizedString(@"Invalid JSON",@"Message for field editor JSON segment when JSON is invalid")];
