@@ -16,6 +16,7 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 	SAPHPSerializedValueTypeArray,
 	SAPHPSerializedValueTypeObject,
 	SAPHPSerializedValueTypeCustomSerialized,
+	SAPHPSerializedValueTypeEnum,
 	SAPHPSerializedValueTypeReference,
 };
 
@@ -50,6 +51,7 @@ typedef NS_ENUM(NSInteger, SAPHPSerializedValueType) {
 - (NSString *)uniqueObjectPropertyName;
 - (BOOL)containsReference;
 - (NSString *)serializedString;
+- (NSString *)serializedStringWithError:(NSString **)errorMessage;
 
 @end
 

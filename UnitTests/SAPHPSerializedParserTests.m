@@ -55,6 +55,28 @@
 	XCTAssertEqualObjects([value serializedString], @"s:2:\"éé\";");
 }
 
+- (void)testRejectsUnencodableStringForProvidedEncoding
+{
+	SAPHPSerializedValue *value = [SAPHPSerializedParser parseString:@"s:1:\"é\";" encoding:NSISOLatin1StringEncoding error:nil];
+	NSString *errorMessage = nil;
+
+	XCTAssertNotNil(value);
+	value.scalarValue = @"€";
+	XCTAssertNil([value serializedStringWithError:&errorMessage]);
+	XCTAssertNotNil(errorMessage);
+}
+
+- (void)testParsesAndSerializesPHPEnumCases
+{
+	NSString *serialized = @"a:1:{s:6:\"status\";E:10:\"Suit:Clubs\";}";
+	SAPHPSerializedValue *value = [SAPHPSerializedParser parseString:serialized error:nil];
+
+	XCTAssertNotNil(value);
+	XCTAssertEqualObjects([value serializedString], serialized);
+	XCTAssertEqualObjects([[value.children firstObject] value].scalarValue, @"Suit:Clubs");
+	XCTAssertEqual([[value.children firstObject] value].type, SAPHPSerializedValueTypeEnum);
+}
+
 - (void)testRejectsOversizedSerializedLength
 {
 	NSString *errorMessage = nil;

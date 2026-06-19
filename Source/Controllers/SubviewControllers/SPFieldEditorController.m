@@ -1726,7 +1726,7 @@ typedef enum {
 			break;
 	}
 
-	if (canEditScalar || value.type == SAPHPSerializedValueTypeCustomSerialized || value.type == SAPHPSerializedValueTypeReference) {
+	if (canEditScalar || value.type == SAPHPSerializedValueTypeCustomSerialized || value.type == SAPHPSerializedValueTypeEnum || value.type == SAPHPSerializedValueTypeReference) {
 		[self.phpSerializedValueTextView setString:[value displayValue]];
 	}
 	else {
@@ -1863,7 +1863,12 @@ typedef enum {
 {
 	if (![self commitPHPSerializedSelectedValueShowingError:YES]) return;
 
-	NSString *serialized = [self.phpSerializedRootEntry.value serializedString];
+	NSString *errorMessage = nil;
+	NSString *serialized = [self.phpSerializedRootEntry.value serializedStringWithError:&errorMessage];
+	if (!serialized) {
+		[SPTooltip showWithObject:errorMessage ?: NSLocalizedString(@"Unable to serialize PHP data.", @"PHP serialized editor output error")];
+		return;
+	}
 	[editTextView setString:serialized];
 	sheetEditData = serialized;
 	editTextViewWasChanged = YES;
