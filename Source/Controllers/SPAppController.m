@@ -1493,15 +1493,15 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
 {
-    // Cleanly shut down the MCP server before the app exits.
-    [SPMCPServer.shared stop];
-
     if ([sender keyWindow] != nil && [[NSUserDefaults standardUserDefaults] boolForKey:SPApplicationPromptOnQuit]) {
         BOOL answer = [self dialogOKCancelWithQuestion:NSLocalizedString(@"Close the app?", @"quitting app informal alert title") text:NSLocalizedString(@"Are you sure you want to quit the app?", @"quitting app informal alert body")];
         if (answer == NO) {
             return NSTerminateCancel;
         }
     }
+
+    // Shut down the MCP server before the app exits.
+    [SPMCPServer.shared stop];
 
     BOOL shouldSaveFavorites = NO;
 
