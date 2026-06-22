@@ -216,7 +216,16 @@ private extension SPMCPServer {
             }
         }
 
+        // Reject cross-origin browser requests so a web page cannot reach the
+        // server through the user's browser (DNS-rebinding protection).
+        if let origin = request.headers["origin"], !SPMCPHTTP.isLoopbackOrigin(origin) {
+            sendHTTPResponse(connection: connection, status: 403, body: "Forbidden origin")
+            return
+        }
+
         switch (request.method, request.path) {
+        case ("POST", "/mcp"):
+            handleStreamableHTTP(request: request, connection: connection)
         case ("GET", "/sse"):
             handleSSE(request: request, connection: connection)
         case ("POST", "/message"):
@@ -242,7 +251,6 @@ private extension SPMCPServer {
             "Content-Type: text/event-stream",
             "Cache-Control: no-cache",
             "Connection: keep-alive",
-            "Access-Control-Allow-Origin: *",
             "", ""
         ].joined(separator: "\r\n")
 
@@ -288,6 +296,30 @@ private extension SPMCPServer {
 // MARK: - Message (JSON-RPC) endpoint
 
 private extension SPMCPServer {
+
+    /// Streamable HTTP transport (MCP 2025-03-26): a single POST endpoint that
+    /// returns the JSON-RPC response directly as application/json.
+    func handleStreamableHTTP(request: HTTPRequest, connection: NWConnection) {
+        guard let body = request.body,
+              let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any] else {
+            sendHTTPResponse(connection: connection, status: 400, body: "Invalid JSON body")
+            return
+        }
+
+        let sessionID = request.headers["mcp-session-id"] ?? UUID().uuidString
+
+        dbQueue.async { [weak self] in
+            guard let self else { return }
+            let response = self.dispatch(jsonRPC: json)
+            if response.isEmpty {
+                // Notification: acknowledge with no body.
+                self.sendHTTPResponse(connection: connection, status: 202, body: "", keepAlive: false)
+                return
+            }
+            let data = (try? JSONSerialization.data(withJSONObject: response)) ?? Data()
+            self.sendJSONResponse(connection: connection, jsonData: data, sessionID: sessionID)
+        }
+    }
 
     func handleMessage(request: HTTPRequest, connection: NWConnection) {
         guard let sessionID = request.queryParam("sessionId") else {
@@ -336,7 +368,8 @@ private extension SPMCPServer {
 
         switch method {
         case "initialize":
-            return jsonRPCSuccess(id: id, result: initializeResult())
+            let clientVersion = params?["protocolVersion"] as? String
+            return jsonRPCSuccess(id: id, result: initializeResult(protocolVersion: clientVersion))
 
         case "notifications/initialized":
             // No response required for notifications, but we return an empty result.
@@ -359,9 +392,9 @@ private extension SPMCPServer {
         }
     }
 
-    func initializeResult() -> [String: Any] {
+    func initializeResult(protocolVersion: String? = nil) -> [String: Any] {
         return [
-            "protocolVersion": "2024-11-05",
+            "protocolVersion": protocolVersion ?? "2024-11-05",
             "capabilities": [
                 "tools": ["listChanged": false]
             ],
@@ -425,7 +458,7 @@ private extension SPMCPServer {
             ),
             makeTool(
                 name: "run_query",
-                description: "Execute an SQL statement and return the results as JSON. Read-only queries are strongly recommended; write queries are permitted if the connection allows them.",
+                description: "Execute an SQL statement and return the results as JSON. When read-only mode is enabled in Sequel Ace preferences, only SELECT/SHOW/DESCRIBE/EXPLAIN queries are accepted; otherwise write queries are permitted if the connection allows them.",
                 properties: [
                     "sql": ["type": "string", "description": "SQL statement to execute"]
                 ],
@@ -495,6 +528,7 @@ private extension SPMCPServer {
             guard let sql = arguments["sql"] as? String else {
                 return toolError("Missing required argument: sql")
             }
+            if let rejection = readOnlyRejection(for: sql) { return rejection }
             let result = ds.mcpRunQuery(sql)
             if let err = result["error"] as? String { return toolError(err) }
             return toolResult(text: jsonString(result) ?? "{}")
@@ -503,6 +537,7 @@ private extension SPMCPServer {
             guard let sql = arguments["sql"] as? String else {
                 return toolError("Missing required argument: sql")
             }
+            if let rejection = readOnlyRejection(for: sql) { return rejection }
             let format = arguments["format"] as? String ?? "json"
             let path   = arguments["path"]   as? String ?? defaultExportPath(format: format)
             let result = ds.mcpExportResults(sql, format: format, path: path)
@@ -512,6 +547,16 @@ private extension SPMCPServer {
         default:
             return toolError("Unknown tool: \(name)")
         }
+    }
+
+    /// Returns a tool error when read-only mode is on and `sql` is not a
+    /// non-destructive read, otherwise nil.
+    func readOnlyRejection(for sql: String) -> [String: Any]? {
+        guard UserDefaults.standard.bool(forKey: SPMCPReadOnly) else { return nil }
+        guard SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(sql) else {
+            return toolError("Read-only mode is enabled. Only SELECT, SHOW, DESCRIBE and EXPLAIN queries are allowed. Turn off read-only mode in Sequel Ace Preferences > MCP Server to run write queries.")
+        }
+        return nil
     }
 
     // Builds an MCP tool result from a dict that may contain an "error" key.
@@ -570,7 +615,6 @@ private extension SPMCPServer {
             "Content-Type: text/plain; charset=utf-8",
             "Content-Length: \(bodyData.count)",
             "Connection: \(connValue)",
-            "Access-Control-Allow-Origin: *",
             "", ""
         ].joined(separator: "\r\n")
 
@@ -581,75 +625,23 @@ private extension SPMCPServer {
             if !keepAlive { connection.cancel() }
         })
     }
-}
 
-// MARK: - HTTPRequest parser
+    func sendJSONResponse(connection: NWConnection, jsonData: Data, sessionID: String?) {
+        var lines = [
+            "HTTP/1.1 200 OK",
+            "Content-Type: application/json",
+            "Content-Length: \(jsonData.count)",
+            "Connection: close"
+        ]
+        if let sessionID { lines.append("Mcp-Session-Id: \(sessionID)") }
+        lines.append("")
+        lines.append("")
 
-private struct HTTPRequest {
-    let method:  String
-    let path:    String
-    let headers: [String: String]
-    let body:    Data?
+        var responseData = lines.joined(separator: "\r\n").data(using: .utf8)!
+        responseData.append(jsonData)
 
-    /// Returns a parsed request if `data` contains a complete HTTP/1.1 request,
-    /// or `nil` if more data is needed.
-    init?(data: Data) {
-        guard let headerEnd = data.range(of: Data("\r\n\r\n".utf8)) else {
-            return nil   // Incomplete headers.
-        }
-
-        let headerData = data[data.startIndex..<headerEnd.lowerBound]
-        guard let headerStr = String(data: headerData, encoding: .utf8) else { return nil }
-        let lines = headerStr.components(separatedBy: "\r\n")
-        guard let requestLine = lines.first else { return nil }
-
-        let parts = requestLine.components(separatedBy: " ")
-        guard parts.count >= 2 else { return nil }
-        method = parts[0]
-
-        // Split path and query string.
-        let fullPath = parts[1]
-        path = fullPath.components(separatedBy: "?").first ?? fullPath
-
-        var hdrs = [String: String]()
-        for line in lines.dropFirst() {
-            let kv = line.components(separatedBy: ": ")
-            if kv.count >= 2 {
-                hdrs[kv[0].lowercased()] = kv.dropFirst().joined(separator: ": ")
-            }
-        }
-        headers = hdrs
-
-        // Parse query string from the full path.
-        if fullPath.contains("?") {
-            let qs = fullPath.components(separatedBy: "?").dropFirst().joined(separator: "?")
-            queryString = qs
-        } else {
-            queryString = nil
-        }
-
-        let bodyStart = data.index(headerEnd.upperBound, offsetBy: 0)
-        let expectedLength = Int(hdrs["content-length"] ?? "0") ?? 0
-        let remaining = data.distance(from: bodyStart, to: data.endIndex)
-
-        if expectedLength > 0 {
-            if remaining < expectedLength { return nil }   // Body not fully arrived.
-            body = Data(data[bodyStart..<data.index(bodyStart, offsetBy: expectedLength)])
-        } else {
-            body = nil
-        }
-    }
-
-    private let queryString: String?
-
-    func queryParam(_ key: String) -> String? {
-        guard let qs = queryString else { return nil }
-        for pair in qs.components(separatedBy: "&") {
-            let kv = pair.components(separatedBy: "=")
-            if kv.count == 2, kv[0] == key {
-                return kv[1].removingPercentEncoding
-            }
-        }
-        return nil
+        connection.send(content: responseData, completion: .contentProcessed { _ in
+            connection.cancel()
+        })
     }
 }
