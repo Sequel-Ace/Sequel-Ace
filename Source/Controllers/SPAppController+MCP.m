@@ -257,7 +257,26 @@ static uint16_t sMCPRunningPort = 0;
             }
         }
 
-        result = @{@"columns": [columns copy], @"indexes": [indexes copy]};
+        // Foreign keys
+        NSMutableArray *foreignKeys = [NSMutableArray array];
+        NSString *fkSQL = [NSString stringWithFormat:
+            @"SELECT COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME "
+             "FROM information_schema.KEY_COLUMN_USAGE "
+             "WHERE TABLE_SCHEMA = %@ AND TABLE_NAME = %@ AND REFERENCED_TABLE_NAME IS NOT NULL",
+            [conn escapeAndQuoteString:database], [conn escapeAndQuoteString:table]];
+        SPMySQLResult *fkRes = [conn queryString:fkSQL];
+        if (![conn queryErrored]) {
+            for (NSDictionary *row in fkRes) {
+                NSMutableDictionary *fk = [NSMutableDictionary dictionary];
+                for (NSString *k in @[@"COLUMN_NAME", @"CONSTRAINT_NAME", @"REFERENCED_TABLE_NAME", @"REFERENCED_COLUMN_NAME"]) {
+                    id v = row[k];
+                    if (v && v != [NSNull null]) fk[k] = v;
+                }
+                [foreignKeys addObject:[fk copy]];
+            }
+        }
+
+        result = @{@"columns": [columns copy], @"indexes": [indexes copy], @"foreignKeys": [foreignKeys copy]};
     });
     return result;
 }
