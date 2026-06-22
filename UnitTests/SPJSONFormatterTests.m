@@ -87,6 +87,29 @@
 			XCTAssertEqualObjects([SPJSONFormatter stringByFormattingString:[pair objectAtIndex:0]], [pair objectAtIndex:1], @"%@", [pair objectAtIndex:2]);
 		}
 	}
+	
+	// Test with tabs and indentWidth = 2
+	{
+		NSString *unf = @"{\"a\":{\"b\":1}}";
+		NSString *fmt = @"{\n\t\"a\": {\n\t\t\"b\": 1\n\t}\n}";
+		NSString *res = [SPJSONFormatter stringByFormattingString:unf useSoftIndent:NO indentWidth:2];
+		XCTAssertEqualObjects(res, fmt, @"formatting with tabs and indentWidth=2 should work");
+	}
+	
+	// Test with spaces and indentWidth = 4
+	{
+		NSString *unf = @"{\"a\":{\"b\":1}}";
+		NSString *fmt = @"{\n    \"a\": {\n        \"b\": 1\n    }\n}";
+		NSString *res = [SPJSONFormatter stringByFormattingString:unf useSoftIndent:YES indentWidth:4];
+		XCTAssertEqualObjects(res, fmt, @"formatting with 4 spaces should work");
+	}
+
+	// Test with extreme nesting (> 32)
+	{
+		NSString *unf = @"[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[null]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]";
+		NSString *res = [SPJSONFormatter stringByFormattingString:unf useSoftIndent:YES indentWidth:2];
+		XCTAssertNotNil(res, @"formatting 35 levels of nesting with soft indent should not crash");
+	}
 }
 
 - (void)testUnformatting

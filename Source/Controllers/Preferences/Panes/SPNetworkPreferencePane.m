@@ -398,21 +398,24 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
                 if(secureBookmarkManager.staleBookmarks.count > staleCount){
                     SPLog(@"staleBookmarks.count: %lu > staleCount: %lu", (unsigned long)secureBookmarkManager.staleBookmarks.count, (unsigned long)staleCount);
 
+                    NSMutableArray<NSString *> *missingBookmarkPaths = [[NSMutableArray alloc] initWithCapacity:errorFileNames.count];
+
+                    for(NSString* missingFile in errorFileNames){
+                        [missingBookmarkPaths addObject:[NSString stringWithFormat:@"file://%@", missingFile]];
+                        SPLog(@"fileNames adding missing file: %@", missingFile.lastPathComponent);
+                    }
+
                     // prompt user to recreate secure bookmarks
-                    if(secureBookmarkManager.staleBookmarks.count > 0){
-
-                        NSMutableString *staleBookmarksString = [[NSMutableString alloc] initWithCapacity:secureBookmarkManager.staleBookmarks.count];
-
-                        for(NSString* staleFile in secureBookmarkManager.staleBookmarks){
-                            [staleBookmarksString appendFormat:@"%@\n", staleFile.lastPathComponent];
-                            SPLog(@"fileNames adding stale file: %@", staleFile.lastPathComponent);
-                        }
-
-                        [staleBookmarksString setString:[staleBookmarksString dropSuffixWithSuffix:@"\n"]];
+                    if(missingBookmarkPaths.count > 0){
 
                         NSView *helpView = [self modifyAndReturnBookmarkHelpView];
 
-                        [NSAlert createAccessoryAlertWithTitle:NSLocalizedString(@"App Sandbox Issue", @"App Sandbox Issue") message:[NSString stringWithFormat:NSLocalizedString(@"You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?", @"Would you like to request access now?"), staleBookmarksString] accessoryView:helpView primaryButtonTitle:NSLocalizedString(@"Yes", @"Yes")
+                        [NSAlert createScrollableListAccessoryAlertWithTitle:NSLocalizedString(@"App Sandbox Issue", @"App Sandbox Issue")
+                                                                     message:[SABookmarkAlertContent missingBookmarksMessageWithCount:missingBookmarkPaths.count]
+                                                                   listItems:[SABookmarkAlertContent displayNamesForBookmarkPaths:missingBookmarkPaths]
+                                                               accessoryView:helpView
+                                                          primaryButtonTitle:NSLocalizedString(@"Request Access", @"request access button")
+                                                        secondaryButtonTitle:NSLocalizedString(@"Cancel", @"cancel button")
                                           primaryButtonHandler:^{
                             SPLog(@"request access now");
                             [self->errorFileNames removeAllObjects];
@@ -420,7 +423,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
                             [prefCon showWindow:nil];
                             [prefCon displayPreferencePane:prefCon->fileItem];
 
-                        } cancelButtonHandler:^{
+                        } secondaryButtonHandler:^{
                             SPLog(@"No not now");
                         }];
                     }

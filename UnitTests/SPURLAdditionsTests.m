@@ -9,6 +9,7 @@
 #import <XCTest/XCTest.h>
 #import "SPFunctions.h"
 #import "SPConstants.h"
+#import "SPTestingUtils.h"
 
 @interface SPURLAdditionsTests : XCTestCase
 
@@ -377,6 +378,7 @@
 // 0.15 s
 - (void)testPerformanceSwizzle{
     // This is an example of a performance test case.
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
 
@@ -392,6 +394,7 @@
 // 0.161 s
 - (void)testPerformanceNoSwizzle{
 	// This is an example of a performance test case.
+	SASkipUnlessPerformanceTestsEnabled();
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
 

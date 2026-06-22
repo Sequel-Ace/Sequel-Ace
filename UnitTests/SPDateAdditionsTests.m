@@ -10,6 +10,7 @@
 
 #import <XCTest/XCTest.h>
 #import "SPDateAdditions.h"
+#import "SPTestingUtils.h"
 #import "sequel-ace-Swift.h"
 
 @interface SPDateAdditionsTests : XCTestCase
@@ -28,6 +29,7 @@
 
 - (void)testPerformanceMonotonicTimeInterval {
     // This is an example of a performance test case.
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
 
@@ -47,6 +49,7 @@
 //0.9s - twice as slow as the Obj C static
 - (void)testPerformanceFormatWithFormat {
 	// This is an example of a performance test case.
+	SASkipUnlessPerformanceTestsEnabled();
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
 
@@ -71,6 +74,7 @@
 // 0.5s
 - (void)testPerformanceDescriptionWithCalendarFormat {
 	// This is an example of a performance test case.
+	SASkipUnlessPerformanceTestsEnabled();
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
 

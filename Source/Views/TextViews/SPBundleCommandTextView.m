@@ -54,7 +54,7 @@
 	[prefs addObserver:self forKeyPath:SPCustomQueryEditorTabStopWidth options:NSKeyValueObservingOptionNew context:NULL];
 
 	if([prefs dataForKey:@"BundleEditorFont"]) {
-		NSFont *nf = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:@"BundleEditorFont"]];
+		NSFont *nf = [SAArchiving fontFromData:[prefs dataForKey:@"BundleEditorFont"]];
 		[self setFont:nf];
 	}
 
@@ -363,12 +363,12 @@
 	NSMutableParagraphStyle *paragraphStyle;
 
 	if(tvFont == nil && [prefs dataForKey:@"BundleEditorFont"]) {
-		tvFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:@"BundleEditorFont"]];
+		tvFont = [SAArchiving fontFromData:[prefs dataForKey:@"BundleEditorFont"]];
 	}
 	if(tvFont == nil) {
 		tvFont = [NSUserDefaults getFont];
 		[self setFont:tvFont];
-		[prefs setObject:[NSArchiver archivedDataWithRootObject:tvFont] forKey:@"BundleEditorFont"];
+		[prefs setObject:[SAArchiving archivedDataForFont:tvFont] forKey:@"BundleEditorFont"];
 	}
 
 	BOOL oldEditableStatus = [self isEditable];
@@ -793,7 +793,7 @@
 - (void)saveChangedFontInUserDefaults
 {
 	if([[[[self delegate] class] description] isEqualToString:@"SPBundleEditorController"])
-		[prefs setObject:[NSArchiver archivedDataWithRootObject:[self font]] forKey:@"BundleEditorFont"];
+		[prefs setObject:[SAArchiving archivedDataForFont:[self font]] forKey:@"BundleEditorFont"];
 }
 
 // Action receiver for a font change in the font panel
