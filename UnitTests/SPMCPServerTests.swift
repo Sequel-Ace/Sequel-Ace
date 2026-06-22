@@ -104,6 +104,39 @@ final class SPMCPServerOriginTests: XCTestCase {
     }
 }
 
+final class SPMCPJSONTests: XCTestCase {
+
+    // MySQL can return text columns as NSData; serialising them must not throw.
+    func testDataValuesAreDecodedNotCrashing() {
+        let dict: [String: Any] = [
+            "databases": [Data("shop".utf8), Data("mysql".utf8)],
+            "connection": "abc"
+        ]
+        let out = SPMCPJSON.string(from: dict)
+        XCTAssertNotNil(out)
+        XCTAssertTrue(out!.contains("shop"))
+        XCTAssertTrue(out!.contains("mysql"))
+    }
+
+    func testNonJSONLeavesAreStringifiedNotCrashing() {
+        let dict: [String: Any] = [
+            "date": Date(timeIntervalSince1970: 0),
+            "null": NSNull(),
+            "rows": [["n": NSNumber(value: 3), "blob": Data([0x01, 0x02, 0xff])]]
+        ]
+        // Must produce valid JSON rather than throw on the Date/Data/NSNull values.
+        let out = SPMCPJSON.string(from: dict)
+        XCTAssertNotNil(out)
+        XCTAssertNotNil(try? JSONSerialization.jsonObject(with: Data(out!.utf8)))
+    }
+
+    func testPlainValuesRoundTrip() {
+        let out = SPMCPJSON.string(from: ["a": "x", "n": 1, "arr": [1, 2, 3]])
+        XCTAssertNotNil(out)
+        XCTAssertTrue(out!.contains("\"a\""))
+    }
+}
+
 /// Read-only guard tests. The rejected cases are drawn from common SQL-injection
 /// and WAF-bypass techniques (stacked queries, comment evasion, MySQL executable
 /// /*! */ comments, INTO OUTFILE/DUMPFILE, PREPARE/EXECUTE, EXPLAIN ANALYZE of a

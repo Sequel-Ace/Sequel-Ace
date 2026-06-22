@@ -55,6 +55,47 @@ enum SPMCPReadOnlyGuard {
     }
 }
 
+/// JSON serialisation for tool output. JSONSerialization throws an uncatchable
+/// Objective-C exception on non-JSON values (NSData, NSDate, etc.) that MySQL can
+/// return, so values are sanitised before serialising.
+enum SPMCPJSON {
+
+    /// Serialises `value` to a pretty-printed JSON string, or nil if it cannot be
+    /// represented even after sanitising.
+    static func string(from value: Any?) -> String? {
+        guard let value else { return nil }
+        let safe = sanitize(value)
+        guard JSONSerialization.isValidJSONObject(safe),
+              let data = try? JSONSerialization.data(withJSONObject: safe, options: [.prettyPrinted, .sortedKeys])
+        else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    /// Recursively converts a value into JSON-safe types: dictionaries/arrays are
+    /// walked, Data is decoded as UTF-8 (else base64), Date is ISO-8601, and any
+    /// other non-JSON value falls back to its string description.
+    static func sanitize(_ value: Any) -> Any {
+        switch value {
+        case is NSNull, is String:
+            return value
+        case let dict as [String: Any]:
+            var out = [String: Any](minimumCapacity: dict.count)
+            for (k, v) in dict { out[k] = sanitize(v) }
+            return out
+        case let arr as [Any]:
+            return arr.map { sanitize($0) }
+        case let data as Data:
+            return String(data: data, encoding: .utf8) ?? data.base64EncodedString()
+        case let date as Date:
+            return ISO8601DateFormatter().string(from: date)
+        case let num as NSNumber:
+            return num
+        default:
+            return String(describing: value)
+        }
+    }
+}
+
 struct HTTPRequest {
     let method:  String
     let path:    String

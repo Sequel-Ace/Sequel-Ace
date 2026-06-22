@@ -31,8 +31,24 @@
 #import "SPConstants.h"
 
 #import <SPMySQL/SPMySQL.h>
+#import <objc/runtime.h>
 
 #import "sequel-ace-Swift.h"
+
+// Stable id attached to each open document for its lifetime, so the agent can
+// target a specific tab. (processID is not reliably populated.)
+static const void *kMCPDocIDKey = &kMCPDocIDKey;
+
+static NSString *mcpDocumentID(SPDatabaseDocument *doc)
+{
+    if (!doc) return @"";
+    NSString *docID = objc_getAssociatedObject(doc, kMCPDocIDKey);
+    if (!docID) {
+        docID = [[NSUUID UUID] UUIDString];
+        objc_setAssociatedObject(doc, kMCPDocIDKey, docID, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+    return docID;
+}
 
 static const NSInteger  kMCPDefaultPort   = 8765;
 static const NSUInteger kMCPMaxResultRows = 10000;   // Safety cap for run_query.
@@ -57,6 +73,17 @@ static uint16_t mcpClampedPort(NSUserDefaults *prefs)
 static NSString *mcpQuoteIdentifier(NSString *name)
 {
     return [name stringByReplacingOccurrencesOfString:@"`" withString:@"``"];
+}
+
+// MySQL can return text columns as NSData; decode to a string so values are
+// usable directly (not just at JSON-serialisation time). Non-data values pass through.
+static id mcpDecode(id value)
+{
+    if ([value isKindOfClass:[NSData class]]) {
+        NSString *s = [[NSString alloc] initWithData:value encoding:NSUTF8StringEncoding];
+        return s ?: [value description];
+    }
+    return value;
 }
 
 @implementation SPAppController (MCP)
@@ -144,22 +171,32 @@ static NSString *mcpQuoteIdentifier(NSString *name)
 {
     __block NSDictionary *info = nil;
     void (^resolve)(void) = ^{
+        NSArray *wcs = self.tabManager.windowControllers;
         SPDatabaseDocument *doc = nil;
         if (connID.length) {
-            for (SPWindowController *wc in self.tabManager.windowControllers) {
-                if ([wc.databaseDocument.processID isEqualToString:connID]) {
+            for (SPWindowController *wc in wcs) {
+                if ([mcpDocumentID(wc.databaseDocument) isEqualToString:connID]) {
                     doc = wc.databaseDocument;
                     break;
                 }
             }
         } else {
             doc = [self frontDocument];
+            // frontDocument is nil when the app is not frontmost (it relies on the
+            // active window), so fall back to the first connected tab.
+            if (!(doc && !doc.isProcessing && [doc getConnection].isConnected)) {
+                doc = nil;
+                for (SPWindowController *wc in wcs) {
+                    SPDatabaseDocument *d = wc.databaseDocument;
+                    if (!d.isProcessing && [d getConnection].isConnected) { doc = d; break; }
+                }
+            }
         }
         if (doc && !doc.isProcessing) {
             SPMySQLConnection *c = [doc getConnection];
             if (c && c.isConnected) {
                 info = @{@"conn": c,
-                         @"id":   doc.processID ?: @"",
+                         @"id":   mcpDocumentID(doc),
                          @"database": (doc.database ?: @""),
                          @"host": (doc.host ?: @"")};
             }
@@ -186,11 +223,11 @@ static NSString *mcpQuoteIdentifier(NSString *name)
             SPMySQLConnection *c = doc.isProcessing ? nil : [doc getConnection];
             if (!c || !c.isConnected) continue;
             NSMutableDictionary *info = [NSMutableDictionary dictionary];
-            info[@"id"]       = doc.processID ?: @"";
+            info[@"id"]       = mcpDocumentID(doc);
             info[@"name"]     = doc.displayName ?: (doc.host ?: @"");
             if (doc.host.length)     info[@"host"]     = doc.host;
             if (doc.database.length) info[@"database"] = doc.database;
-            info[@"active"]   = @(doc == front);
+            info[@"active"]   = @(front != nil && doc == front);
             [result addObject:[info copy]];
         }
     };
@@ -213,7 +250,7 @@ static NSString *mcpQuoteIdentifier(NSString *name)
         [res setDefaultRowReturnType:SPMySQLResultRowAsArray];
         NSMutableArray *dbs = [NSMutableArray array];
         for (NSArray *row in res) {
-            if (row.firstObject && row.firstObject != [NSNull null]) [dbs addObject:row.firstObject];
+            if (row.firstObject && row.firstObject != [NSNull null]) [dbs addObject:mcpDecode(row.firstObject)];
         }
         result = @{@"databases": [dbs copy], @"connection": ci[@"id"]};
     });
@@ -237,8 +274,8 @@ static NSString *mcpQuoteIdentifier(NSString *name)
         for (NSArray *row in res) {
             if (row.firstObject && row.firstObject != [NSNull null]) {
                 NSMutableDictionary *entry = [NSMutableDictionary dictionary];
-                entry[@"name"] = row.firstObject;
-                if (row.count > 1 && row[1] != [NSNull null]) entry[@"type"] = row[1];
+                entry[@"name"] = mcpDecode(row.firstObject);
+                if (row.count > 1 && row[1] != [NSNull null]) entry[@"type"] = mcpDecode(row[1]);
                 [tables addObject:[entry copy]];
             }
         }
@@ -266,7 +303,7 @@ static NSString *mcpQuoteIdentifier(NSString *name)
             NSMutableDictionary *col = [NSMutableDictionary dictionary];
             for (NSString *k in @[@"Field", @"Type", @"Null", @"Key", @"Default", @"Extra", @"Comment"]) {
                 id v = row[k];
-                if (v && v != [NSNull null]) col[k] = v;
+                if (v && v != [NSNull null]) col[k] = mcpDecode(v);
             }
             [columns addObject:[col copy]];
         }
@@ -278,7 +315,7 @@ static NSString *mcpQuoteIdentifier(NSString *name)
                 NSMutableDictionary *idx = [NSMutableDictionary dictionary];
                 for (NSString *k in @[@"Key_name", @"Column_name", @"Non_unique", @"Index_type"]) {
                     id v = row[k];
-                    if (v && v != [NSNull null]) idx[k] = v;
+                    if (v && v != [NSNull null]) idx[k] = mcpDecode(v);
                 }
                 [indexes addObject:[idx copy]];
             }
@@ -296,7 +333,7 @@ static NSString *mcpQuoteIdentifier(NSString *name)
                 NSMutableDictionary *fk = [NSMutableDictionary dictionary];
                 for (NSString *k in @[@"COLUMN_NAME", @"CONSTRAINT_NAME", @"REFERENCED_TABLE_NAME", @"REFERENCED_COLUMN_NAME"]) {
                     id v = row[k];
-                    if (v && v != [NSNull null]) fk[k] = v;
+                    if (v && v != [NSNull null]) fk[k] = mcpDecode(v);
                 }
                 [foreignKeys addObject:[fk copy]];
             }
@@ -364,7 +401,7 @@ static NSString *mcpQuoteIdentifier(NSString *name)
             NSMutableDictionary *entry = [NSMutableDictionary dictionary];
             for (NSString *k in row) {
                 id v = row[k];
-                if (v && v != [NSNull null]) entry[k] = v;
+                if (v && v != [NSNull null]) entry[k] = mcpDecode(v);
             }
             [items addObject:[entry copy]];
         }
@@ -524,6 +561,9 @@ static NSString *mcpQuoteIdentifier(NSString *name)
                 safeRow[key] = [NSNull null];
             } else if ([val isKindOfClass:[NSString class]] || [val isKindOfClass:[NSNumber class]]) {
                 safeRow[key] = val;
+            } else if ([val isKindOfClass:[NSData class]]) {
+                NSString *s = [[NSString alloc] initWithData:val encoding:NSUTF8StringEncoding];
+                safeRow[key] = s ?: [val description];
             } else {
                 safeRow[key] = [val description];
             }
@@ -680,7 +720,7 @@ static NSString *mcpQuoteIdentifier(NSString *name)
         NSMutableArray *tables = [NSMutableArray array];
         for (NSDictionary *row in res) {
             NSMutableDictionary *entry = [NSMutableDictionary dictionary];
-            for (NSString *k in row) { id v = row[k]; if (v && v != [NSNull null]) entry[k] = v; }
+            for (NSString *k in row) { id v = row[k]; if (v && v != [NSNull null]) entry[k] = mcpDecode(v); }
             [tables addObject:[entry copy]];
         }
         result = @{@"tables": [tables copy], @"connection": ci[@"id"]};
@@ -701,7 +741,7 @@ static NSString *mcpQuoteIdentifier(NSString *name)
         NSMutableArray *procs = [NSMutableArray array];
         for (NSDictionary *row in res) {
             NSMutableDictionary *entry = [NSMutableDictionary dictionary];
-            for (NSString *k in row) { id v = row[k]; entry[k] = (v == [NSNull null] || !v) ? [NSNull null] : v; }
+            for (NSString *k in row) { id v = row[k]; entry[k] = (v == [NSNull null] || !v) ? [NSNull null] : mcpDecode(v); }
             [procs addObject:[entry copy]];
         }
         result = @{@"processes": [procs copy], @"connection": ci[@"id"]};

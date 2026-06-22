@@ -872,12 +872,7 @@ private extension SPMCPServer {
 
     /// Serialises a JSON value to a pretty-printed, key-sorted string.
     func jsonString(_ value: Any?) -> String? {
-        guard let value else { return nil }
-        guard let data = try? JSONSerialization.data(
-            withJSONObject: value,
-            options: [.prettyPrinted, .sortedKeys]
-        ) else { return nil }
-        return String(data: data, encoding: .utf8)
+        return SPMCPJSON.string(from: value)
     }
 
     /// Returns the default export file path for the given format.
