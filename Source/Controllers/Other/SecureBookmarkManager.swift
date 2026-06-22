@@ -61,13 +61,13 @@ import OSLog
 
         })
 
+        staleBookmarks = prefs.array(forKey: SPStaleSecureBookmarks) as? [String] ?? []
+        knownHostsBookmarks = prefs.array(forKey: SPKnownHostsBookmarks) as? [String] ?? []
+
         guard let secureBookmarks = prefs.array(forKey: SASecureBookmarks) as? [[String: Data]], secureBookmarks.isNotEmpty else {
             Log.error("Could not get secureBookmarks from prefs.")
             return
         }
-
-        staleBookmarks = prefs.array(forKey: SPStaleSecureBookmarks) as? [String] ?? []
-        knownHostsBookmarks = prefs.array(forKey: SPKnownHostsBookmarks) as? [String] ?? []
 
         bookmarks = secureBookmarks
 
@@ -177,6 +177,7 @@ import OSLog
 
         // start afresh
         bookmarks.removeAll()
+        resolvedBookmarks.removeAll()
 
         for bookmarkDict in bmCopy {
             for (key, urlData) in bookmarkDict {
@@ -195,24 +196,17 @@ import OSLog
                     //a bookmark might be "stale" because the app hasn't been used
                     //in many months, macOS has been upgraded, the app was
                     //re-installed, the app's preferences .plist file was deleted, etc.
-                        if bookmarkDataIsStale {
-                            Log.error("The bookmark is outdated and needs to be regenerated: key = \(key)")
-                            staleBookmarks.appendIfNotContains(key)
-                        } else {
-                            if let unavailableVolumeRoot = unavailableMountedVolumeRoot(for: urlForBookmark.path) {
-                                Log.info("Skipping bookmark activation for unavailable mounted volume root: \(unavailableVolumeRoot)")
-                                // Keep the bookmark so it can be reactivated later when the volume is available again.
-                                bookmarks.append([key: urlData])
-                                continue
-                            }
+                    if bookmarkDataIsStale {
+                        Log.error("The bookmark is outdated and needs to be regenerated: key = \(key)")
 
-                            Log.info("Resolved bookmark: \(key)")
-                            let res = urlForBookmark.startAccessingSecurityScopedResource()
-                            if res == true {
-                                Log.info("success: startAccessingSecurityScopedResource for: \(key)")
-                                resolvedBookmarks.appendIfNotContains(urlForBookmark)
-                            bookmarks.append([urlForBookmark.absoluteString: urlData])
+                        if let refreshedData = refreshedEncodedBookmarkData(for: urlForBookmark, storedBookmark: spData),
+                           keepResolvedBookmark(urlForBookmark, originalKey: key, bookmarkData: refreshedData) {
+                            Log.info("Successfully refreshed stale bookmark: \(key)")
                         } else {
+                            staleBookmarks.appendIfNotContains(key)
+                        }
+                    } else {
+                        if keepResolvedBookmark(urlForBookmark, originalKey: key, bookmarkData: urlData) == false {
                             Log.error("ERROR: startAccessingSecurityScopedResource for: \(key)")
                             staleBookmarks.appendIfNotContains(key)
                         }
@@ -223,6 +217,9 @@ import OSLog
                 }
             }
         }
+
+        removeStaleBookmarksCoveredByResolvedDirectoryBookmarks()
+        deduplicateStaleBookmarks()
 
         // reset bookmarks
         iChangedTheBookmarks = true
@@ -244,6 +241,124 @@ import OSLog
         return FileManager.default.fileExists(atPath: volumeRootPath) ? nil : volumeRootPath
     }
 
+    private func keepResolvedBookmark(_ url: URL, originalKey: String, bookmarkData: Data) -> Bool {
+        if let unavailableVolumeRoot = unavailableMountedVolumeRoot(for: url.path) {
+            Log.info("Skipping bookmark activation for unavailable mounted volume root: \(unavailableVolumeRoot)")
+            // Keep the bookmark so it can be reactivated later when the volume is available again.
+            bookmarks.append([originalKey: bookmarkData])
+            removeStaleBookmarkReferences(for: originalKey)
+            removeStaleBookmarkReferences(for: url.absoluteString)
+            return true
+        }
+
+        Log.info("Resolved bookmark: \(originalKey)")
+        if url.startAccessingSecurityScopedResource() {
+            Log.info("success: startAccessingSecurityScopedResource for: \(originalKey)")
+            resolvedBookmarks.appendIfNotContains(url)
+            bookmarks.append([url.absoluteString: bookmarkData])
+            removeStaleBookmarkReferences(for: originalKey)
+            removeStaleBookmarkReferences(for: url.absoluteString)
+            return true
+        }
+
+        return false
+    }
+
+    private func refreshedEncodedBookmarkData(for url: URL, storedBookmark: SecureBookmarkData) -> Data? {
+        var bookmarkCreationOptions = URL.BookmarkCreationOptions(rawValue: UInt(storedBookmark.options))
+        if bookmarkCreationOptions.isEmpty {
+            bookmarkCreationOptions = URLBookmarkCreationWithSecurityScope
+        }
+
+        guard url.startAccessingSecurityScopedResource() else {
+            Log.error("Error startAccessingSecurityScopedResource while refreshing secure bookmark for: \(url.absoluteString)")
+            return nil
+        }
+        defer {
+            url.stopAccessingSecurityScopedResource()
+        }
+
+        do {
+            Log.debug("Attempting to refresh secure bookmark for: \(url.absoluteString)")
+            let bookmarkData = try url.bookmarkData(options: bookmarkCreationOptions, includingResourceValuesForKeys: nil, relativeTo: nil)
+            let refreshedBookmark = SecureBookmark(data: bookmarkData, options: Double(bookmarkCreationOptions.rawValue), url: url)
+
+            guard let encodedData = refreshedBookmark.getEncodedData() else {
+                Log.error("Failed to encode refreshed bookmark for: \(url.absoluteString)")
+                return nil
+            }
+
+            return encodedData
+        } catch {
+            Log.error("Error refreshing secure bookmark for: \(url.absoluteString). Error: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    private func removeStaleBookmarksCoveredByResolvedDirectoryBookmarks() {
+        let resolvedDirectoryPaths = resolvedBookmarks.compactMap { resolvedDirectoryPath(for: $0) }
+        guard resolvedDirectoryPaths.isNotEmpty else {
+            return
+        }
+
+        staleBookmarks.removeAll { staleBookmark in
+            guard let stalePath = normalizedFilePath(forBookmarkPath: staleBookmark) else {
+                return false
+            }
+
+            return resolvedDirectoryPaths.contains { directoryPath in
+                stalePath == directoryPath || stalePath.hasPrefix("\(directoryPath)/")
+            }
+        }
+    }
+
+    private func resolvedDirectoryPath(for url: URL) -> String? {
+        var isDirectory: ObjCBool = false
+        if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue {
+            return normalizedDirectoryPath(url.path)
+        }
+
+        return url.hasDirectoryPath ? normalizedDirectoryPath(url.path) : nil
+    }
+
+    private func normalizedFilePath(forBookmarkPath bookmarkPath: String) -> String? {
+        return SABookmarkPathNormalizer.normalizedFilePath(forBookmarkPath: bookmarkPath)
+    }
+
+    private func normalizedDirectoryPath(_ path: String) -> String {
+        let normalizedPath = URL(fileURLWithPath: path).standardizedFileURL.path
+        return normalizedPath.hasSuffix("/") ? String(normalizedPath.dropLast()) : normalizedPath
+    }
+
+    private func removeStaleBookmarkReferences(for bookmarkPath: String) {
+        guard let normalizedBookmarkPath = normalizedFilePath(forBookmarkPath: bookmarkPath) else {
+            staleBookmarks.removeAll { $0 == bookmarkPath }
+            return
+        }
+
+        staleBookmarks.removeAll { staleBookmark in
+            normalizedFilePath(forBookmarkPath: staleBookmark) == normalizedBookmarkPath
+        }
+    }
+
+    private func hasStaleBookmarkReference(for bookmarkPath: String) -> Bool {
+        guard let normalizedBookmarkPath = normalizedFilePath(forBookmarkPath: bookmarkPath) else {
+            return staleBookmarks.contains(bookmarkPath)
+        }
+
+        return staleBookmarks.contains { staleBookmark in
+            normalizedFilePath(forBookmarkPath: staleBookmark) == normalizedBookmarkPath
+        }
+    }
+
+    private func deduplicateStaleBookmarks() {
+        var seenBookmarkPaths = Set<String>()
+        staleBookmarks = staleBookmarks.filter { bookmarkPath in
+            let comparablePath = normalizedFilePath(forBookmarkPath: bookmarkPath) ?? bookmarkPath
+            return seenBookmarkPaths.insert(comparablePath).inserted
+        }
+    }
+
     /// addBookmark 
     ///  - Parameters:
     ///	 - url: file URL to generate secure bookmark for
@@ -261,12 +376,38 @@ import OSLog
         Log.debug("isForStaleBookmark: \(isForStaleBookmark)")
         Log.debug("isForKnownHostsFile: \(isForKnownHostsFile)")
 
-
         for (index, bookmarkDict) in bookmarks.enumerated() {
             for posibility in possibleMatchingStrings {
-                if bookmarkDict[posibility] != nil {
+                if let existingBookmarkData = bookmarkDict[posibility] {
                     if isForStaleBookmark == false {
                         Log.debug("Existing bookmark for: \(url.absoluteString)")
+                        let hasStaleReference = hasStaleBookmarkReference(for: url.absoluteString) || hasStaleBookmarkReference(for: posibility)
+
+                        if hasStaleReference {
+                            let existingSecureBookmark = SecureBookmark.getDecodedData(encodedData: existingBookmarkData)
+                            guard let refreshedBookmarkData = refreshedEncodedBookmarkData(for: url, storedBookmark: existingSecureBookmark) else {
+                                Log.error("Failed to refresh existing bookmark for: \(url.absoluteString)")
+                                return false
+                            }
+
+                            if bookmarks[safe: index] != nil {
+                                bookmarks[index] = [url.absoluteString: refreshedBookmarkData]
+                            } else {
+                                bookmarks.append([url.absoluteString: refreshedBookmarkData])
+                            }
+
+                            iChangedTheBookmarks = true
+                            prefs.set(bookmarks, forKey: SASecureBookmarks)
+                        }
+
+                        if url.startAccessingSecurityScopedResource() {
+                            resolvedBookmarks.appendIfNotContains(url)
+                        }
+                        removeStaleBookmarkReferences(for: url.absoluteString)
+                        removeStaleBookmarksCoveredByResolvedDirectoryBookmarks()
+                        deduplicateStaleBookmarks()
+                        prefs.set(staleBookmarks, forKey: SPStaleSecureBookmarks)
+
                         if isForKnownHostsFile == true {
                             knownHostsBookmarks.appendIfNotContains(url.absoluteString)
                             Log.debug("Updating UserDefaults for SPKnownHostsBookmarks")
@@ -310,6 +451,10 @@ import OSLog
                 Log.debug("staleBookmarks count = \(staleBookmarks.count)")
             }
 
+            removeStaleBookmarkReferences(for: url.absoluteString)
+            removeStaleBookmarksCoveredByResolvedDirectoryBookmarks()
+            deduplicateStaleBookmarks()
+
             if isForKnownHostsFile == true {
                 Log.debug("Adding KnownHostsFile bookmark for: \(url.absoluteString)")
                 knownHostsBookmarks.appendIfNotContains(url.absoluteString)
@@ -336,7 +481,7 @@ import OSLog
     @objc func bookmarkFor(filename: String) -> URL? {
         Log.debug("filename: \(filename)")
 
-        for bookmarkDict in bookmarks {
+        for (index, bookmarkDict) in bookmarks.enumerated() {
             for (key, urlData) in bookmarkDict {
                 Log.info("Bookmark URL = \(key)")
 
@@ -353,11 +498,33 @@ import OSLog
 
                         if bookmarkDataIsStale {
                             Log.error("The bookmark is outdated and needs to be regenerated: key = \(key)")
+                            if let refreshedData = refreshedEncodedBookmarkData(for: urlForBookmark, storedBookmark: spData) {
+                                if urlForBookmark.startAccessingSecurityScopedResource() {
+                                    resolvedBookmarks.appendIfNotContains(urlForBookmark)
+
+                                    if bookmarks[safe: index] != nil {
+                                        bookmarks[index] = [urlForBookmark.absoluteString: refreshedData]
+                                    } else {
+                                        bookmarks.append([urlForBookmark.absoluteString: refreshedData])
+                                    }
+
+                                    removeStaleBookmarkReferences(for: key)
+                                    removeStaleBookmarkReferences(for: urlForBookmark.absoluteString)
+                                    iChangedTheBookmarks = true
+                                    prefs.set(bookmarks, forKey: SASecureBookmarks)
+                                    prefs.set(staleBookmarks, forKey: SPStaleSecureBookmarks)
+                                    return urlForBookmark
+                                }
+                            }
+
                             staleBookmarks.appendIfNotContains(key)
                             prefs.set(staleBookmarks, forKey: SPStaleSecureBookmarks)
                         } else {
                             if urlForBookmark.startAccessingSecurityScopedResource() {
                                 resolvedBookmarks.appendIfNotContains(urlForBookmark)
+                                removeStaleBookmarkReferences(for: key)
+                                removeStaleBookmarkReferences(for: urlForBookmark.absoluteString)
+                                prefs.set(staleBookmarks, forKey: SPStaleSecureBookmarks)
                                 return urlForBookmark
                             } else {
                                 Log.error("Error startAccessingSecurityScopedResource For: key = \(urlForBookmark.absoluteString).")
