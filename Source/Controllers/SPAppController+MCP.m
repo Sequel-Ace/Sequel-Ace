@@ -652,15 +652,24 @@ static id mcpDecode(id value)
 
     // Confine writes to the configured export folder. An MCP tool path is
     // attacker-influencable (prompt injection), so never write to an arbitrary path.
+    // Resolve symlinks so a link inside the folder cannot redirect writes outside it.
     NSString *base = [[NSUserDefaults standardUserDefaults] stringForKey:SPMCPExportPath];
     if (!base.length) base = NSSearchPathForDirectoriesInDomains(NSDownloadsDirectory, NSUserDomainMask, YES).firstObject ?: NSTemporaryDirectory();
-    NSString *stdBase = [base stringByStandardizingPath];
-    NSString *stdPath = [path stringByStandardizingPath];
-    NSString *baseWithSlash = [stdBase hasSuffix:@"/"] ? stdBase : [stdBase stringByAppendingString:@"/"];
-    if (![stdPath isEqualToString:stdBase] && ![stdPath hasPrefix:baseWithSlash]) {
-        return @{@"error": [NSString stringWithFormat:@"Export path must be inside the configured export folder: %@", stdBase]};
+    NSString *realBase = [[[base stringByStandardizingPath] stringByResolvingSymlinksInPath] stringByStandardizingPath];
+
+    NSString *filename = [path lastPathComponent];
+    if (!filename.length || [filename isEqualToString:@"."] || [filename isEqualToString:@".."]) {
+        return @{@"error": @"Export path must include a filename"};
     }
-    path = stdPath;
+    NSString *parent     = [[path stringByStandardizingPath] stringByDeletingLastPathComponent];
+    NSString *realParent = [[[parent stringByResolvingSymlinksInPath] stringByStandardizingPath] copy];
+    NSString *baseWithSlash = [realBase hasSuffix:@"/"] ? realBase : [realBase stringByAppendingString:@"/"];
+    BOOL inside = [realParent isEqualToString:realBase] ||
+                  [[realParent stringByAppendingString:@"/"] hasPrefix:baseWithSlash];
+    if (!inside) {
+        return @{@"error": [NSString stringWithFormat:@"Export path must be inside the configured export folder: %@", realBase]};
+    }
+    path = [realParent stringByAppendingPathComponent:filename];
 
     NSDictionary *queryResult = [self mcpRunQuery:sql params:nil limit:0 offset:0 connection:connID];
     if (queryResult[@"error"]) return queryResult;

@@ -194,6 +194,10 @@ import Network
 
     // MARK: - Private state
 
+    /// Maximum accepted size of a single HTTP request before the connection is
+    /// rejected with 413, to bound memory use on a never-completing request.
+    static let maxRequestBytes = 16 * 1024 * 1024
+
     private var listener: NWListener?
     private let listenerLock = NSLock()
 
@@ -229,6 +233,13 @@ private extension SPMCPServer {
             }
             var buf = buffer
             if let data { buf.append(data) }
+
+            // Bound the buffer so a client cannot grow memory without end by never
+            // completing a request (no header terminator, or an absurd Content-Length).
+            if buf.count > SPMCPServer.maxRequestBytes {
+                self.sendHTTPResponse(connection: connection, status: 413, body: "Request too large")
+                return
+            }
 
             guard let request = HTTPRequest(data: buf) else {
                 // Need more data
@@ -680,6 +691,14 @@ private extension SPMCPServer {
 
         case "explain_query":
             guard let sql = requireString("sql") else { return toolError("Missing required argument: sql") }
+            // EXPLAIN ANALYZE executes the statement. Block it even when hidden behind
+            // a leading comment or a MySQL executable /*! */ comment, since explain is
+            // allowed in read-only mode.
+            let strippedExplain = SPCustomQuerySQLClassifier.stripSQLComments(sql)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if sql.contains("/*!") || strippedExplain.uppercased().hasPrefix("ANALYZE") {
+                return toolError("EXPLAIN ANALYZE is not allowed; it would execute the statement.")
+            }
             return dictResult(ds.mcpExplainQuery(sql, connection: conn))
 
         case "sample_table":
@@ -913,6 +932,7 @@ private extension SPMCPServer {
         case 400: statusLine = "HTTP/1.1 400 Bad Request"
         case 403: statusLine = "HTTP/1.1 403 Forbidden"
         case 404: statusLine = "HTTP/1.1 404 Not Found"
+        case 413: statusLine = "HTTP/1.1 413 Payload Too Large"
         default:  statusLine = "HTTP/1.1 \(status)"
         }
         let bodyData  = body.data(using: .utf8) ?? Data()
