@@ -62,6 +62,7 @@ Sequel Ace includes a built-in [Model Context Protocol (MCP)](https://modelconte
 2. Click the **MCP Server** tab
 3. Check **Enable MCP Server (localhost only)**
 4. Optionally change the port (default: `8765`)
+5. Leave **Read-only mode** enabled (default) to reject queries that modify data, or uncheck it to allow writes
 
 The server listens only on `127.0.0.1` and is not accessible from other machines.
 
@@ -76,6 +77,9 @@ The server listens only on `127.0.0.1` and is not accessible from other machines
 | `run_query` | Execute SQL and return results as JSON |
 | `export_results` | Run a query and save results to a JSON or CSV file |
 
+The server supports two transports. Prefer the modern **Streamable HTTP**
+endpoint (`/mcp`); the **HTTP+SSE** endpoint (`/sse`) is kept for older clients.
+
 ### Connecting Claude Desktop
 
 Add the following to your `~/Library/Application Support/Claude/claude_desktop_config.json`:
@@ -84,7 +88,7 @@ Add the following to your `~/Library/Application Support/Claude/claude_desktop_c
 {
   "mcpServers": {
     "sequel-ace": {
-      "url": "http://127.0.0.1:8765/sse"
+      "url": "http://127.0.0.1:8765/mcp"
     }
   }
 }
@@ -95,7 +99,7 @@ Then restart Claude Desktop.
 ### Connecting Claude Code
 
 ```sh
-claude mcp add sequel-ace http://127.0.0.1:8765/sse
+claude mcp add --transport http sequel-ace http://127.0.0.1:8765/mcp
 ```
 
 Or add to your project's `.claude/mcp.json`:
@@ -104,7 +108,7 @@ Or add to your project's `.claude/mcp.json`:
 {
   "mcpServers": {
     "sequel-ace": {
-      "url": "http://127.0.0.1:8765/sse"
+      "url": "http://127.0.0.1:8765/mcp"
     }
   }
 }
@@ -122,7 +126,9 @@ Once connected, you can ask your AI agent natural-language questions like:
 ### Security Notes
 
 - The server **only** accepts connections from `127.0.0.1` (localhost). Remote connections are rejected.
-- The server exposes whatever databases and permissions the active Sequel Ace connection has. Use a read-only database user if you want to prevent write operations.
+- Requests carrying a non-loopback `Origin` header are rejected, so a web page cannot reach the server through your browser.
+- **Read-only mode** is on by default and rejects any query that is not a SELECT/SHOW/DESCRIBE/EXPLAIN. For defence in depth, also use a read-only database user.
+- The server exposes whatever databases and permissions the active Sequel Ace connection has.
 - Disable the server in Preferences when not in use.
 
 ---

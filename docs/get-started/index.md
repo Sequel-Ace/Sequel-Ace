@@ -73,5 +73,6 @@ If SSH works in Terminal but fails in Sequel Ace with errors like `ssh_get_authe
 -   [Connect to a Local MySQL Server](local-connection.html)
 -   [Connect to a Remote MySQL Server](remote-connection.html)
 -   [Open a Connection via URL (`mysql://`)](connect-via-url.html)
+-   [MCP Server (AI Agent Integration)](mcp-server.html)
 -   [Connecting to MAMP or XAMPP](mamp-xampp.html)
 -   [Migrating from Sequel Pro](migrating-from-sequel-pro.html)
