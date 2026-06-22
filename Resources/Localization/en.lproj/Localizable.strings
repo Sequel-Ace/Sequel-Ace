@@ -3446,7 +3446,7 @@
 "Port:" = "Port:";
 
 /* MCP pref: port hint */
-"Default: 8765. Any unprivileged port (1024-65535) may be used." = "Default: 8765. Any unprivileged port (1024-65535) may be used.";
+"Default: 8765. Any unprivileged port (1024–65535) may be used." = "Default: 8765. Any unprivileged port (1024–65535) may be used.";
 
 /* MCP pref: export section */
 "Default Export Folder" = "Default Export Folder";
@@ -3455,7 +3455,7 @@
 "Folder:" = "Folder:";
 
 /* MCP pref: choose button */
-"Choose..." = "Choose...";
+"Choose…" = "Choose…";
 
 /* MCP pref: config section */
 "Claude Desktop / Claude Code Config" = "Claude Desktop / Claude Code Config";
@@ -3498,3 +3498,6 @@
 
 /* MCP start error message */
 "The MCP server could not start on port %ld: %@\n\nYou can change the port in Preferences > MCP Server." = "The MCP server could not start on port %ld: %@\n\nYou can change the port in Preferences > MCP Server.";
+
+/* MCP pref: read-only checkbox */
+"Read-only mode (reject queries that modify data)" = "Read-only mode (reject queries that modify data)";
