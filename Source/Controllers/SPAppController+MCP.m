@@ -464,7 +464,9 @@ static id mcpDecode(id value)
         NSString *t = [bound stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
         while ([t hasSuffix:@";"]) t = [[t substringToIndex:t.length - 1] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
         NSString *up = t.uppercaseString;
-        if ([up hasPrefix:@"SELECT"] || [up hasPrefix:@"WITH"] || [up hasPrefix:@"("]) {
+        // Only wrap plain SELECTs. A CTE (WITH ... SELECT) is invalid inside a
+        // derived table, so leave those unpaginated (the caller can add LIMIT).
+        if ([up hasPrefix:@"SELECT"] || [up hasPrefix:@"("]) {
             finalSQL = [NSString stringWithFormat:@"SELECT * FROM (%@) AS _mcp_page LIMIT %ld OFFSET %ld",
                         t, (long)limit, (long)MAX((NSInteger)0, offset)];
         }

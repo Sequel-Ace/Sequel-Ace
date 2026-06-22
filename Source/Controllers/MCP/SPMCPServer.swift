@@ -431,14 +431,15 @@ private extension SPMCPServer {
         let method = json["method"] as? String ?? ""
         let params = json["params"] as? [String: Any]
 
+        // A JSON-RPC request without an `id` is a notification: the server must not
+        // reply at all. Returning an empty dict suppresses the response (the caller
+        // skips empty dicts) rather than sending an invalid id-less response.
+        if id == nil { return [:] }
+
         switch method {
         case "initialize":
             let clientVersion = params?["protocolVersion"] as? String
             return jsonRPCSuccess(id: id, result: initializeResult(protocolVersion: clientVersion))
-
-        case "notifications/initialized":
-            // No response required for notifications, but we return an empty result.
-            return [:]  // Caller will skip empty dicts.
 
         case "tools/list":
             return jsonRPCSuccess(id: id, result: ["tools": toolDefinitions()])
@@ -467,6 +468,9 @@ private extension SPMCPServer {
 
         case "ping":
             return jsonRPCSuccess(id: id, result: [:])
+
+        case let m where m.hasPrefix("notifications/"):
+            return [:]   // a notification carrying an id: still no response
 
         default:
             return jsonRPCError(id: id, code: -32601, message: "Method not found: \(method)")
