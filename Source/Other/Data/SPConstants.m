@@ -339,6 +339,7 @@ NSString *SPPreferenceToolbarMCP                 = @"SPPreferenceToolbarMCP";
 NSString *SPMCPServerEnabled                     = @"SPMCPServerEnabled";
 NSString *SPMCPServerPort                        = @"SPMCPServerPort";
 NSString *SPMCPExportPath                        = @"SPMCPExportPath";
+NSString *SPMCPReadOnly                          = @"SPMCPReadOnly";
 
 // Connection favorite keys
 NSString *SPFavoritesRootKey                             = @"Favorites Root";

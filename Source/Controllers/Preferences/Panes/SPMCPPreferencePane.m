@@ -37,6 +37,7 @@ static const NSInteger kMCPMaxPort         = 65535;
 @interface SPMCPPreferencePane ()
 
 @property (nonatomic, strong) NSButton      *enableCheckbox;
+@property (nonatomic, strong) NSButton      *readOnlyCheckbox;
 @property (nonatomic, strong) NSTextField   *portLabel;
 @property (nonatomic, strong) NSTextField   *portField;
 @property (nonatomic, strong) NSTextField   *statusLabel;
@@ -75,6 +76,16 @@ static const NSInteger kMCPMaxPort         = 65535;
 
     _statusLabel = [self makeSmallLabel:@"" x:x y:y width:maxWidth];
     [root addSubview:_statusLabel];
+    y -= 28;
+
+    _readOnlyCheckbox = [NSButton checkboxWithTitle:NSLocalizedString(@"Read-only mode (reject queries that modify data)",
+                                                                      @"MCP pref: read-only checkbox")
+                                             target:self
+                                             action:@selector(toggleReadOnly:)];
+    _readOnlyCheckbox.frame = NSMakeRect(x, y, maxWidth, 20);
+    _readOnlyCheckbox.state = [prefs boolForKey:SPMCPReadOnly]
+        ? NSControlStateValueOn : NSControlStateValueOff;
+    [root addSubview:_readOnlyCheckbox];
     y -= 30;
 
     // ── Section: Port ──────────────────────────────────────────────────────────
@@ -96,7 +107,7 @@ static const NSInteger kMCPMaxPort         = 65535;
     [root addSubview:_portField];
 
     NSTextField *portHint = [self makeSmallLabel:NSLocalizedString(
-        @"Default: 8765. Any unprivileged port (1024-65535) may be used.",
+        @"Default: 8765. Any unprivileged port (1024–65535) may be used.",
         @"MCP pref: port hint")
                                                x:x + 144 y:y + 2 width:maxWidth - 144];
     [root addSubview:portHint];
@@ -120,7 +131,7 @@ static const NSInteger kMCPMaxPort         = 65535;
     _exportPathField.stringValue = [self currentExportPath];
     [root addSubview:_exportPathField];
 
-    _exportPathButton = [NSButton buttonWithTitle:NSLocalizedString(@"Choose...", @"MCP pref: choose button")
+    _exportPathButton = [NSButton buttonWithTitle:NSLocalizedString(@"Choose…", @"MCP pref: choose button")
                                            target:self
                                            action:@selector(chooseExportPath:)];
     _exportPathButton.frame = NSMakeRect(x + 416, y - 1, 108, 22);
@@ -216,6 +227,12 @@ static const NSInteger kMCPMaxPort         = 65535;
                    dispatch_get_main_queue(), ^{
         [self refreshStatus];
     });
+}
+
+- (IBAction)toggleReadOnly:(id)sender
+{
+    BOOL readOnly = _readOnlyCheckbox.state == NSControlStateValueOn;
+    [prefs setBool:readOnly forKey:SPMCPReadOnly];
 }
 
 - (IBAction)updatePort:(NSTextField *)sender

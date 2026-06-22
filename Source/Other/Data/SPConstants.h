@@ -522,6 +522,7 @@ extern NSString *SPPreferenceToolbarMCP;
 extern NSString *SPMCPServerEnabled;
 extern NSString *SPMCPServerPort;
 extern NSString *SPMCPExportPath;
+extern NSString *SPMCPReadOnly;
 
 // Connection favorite keys
 extern NSString *SPFavoritesRootKey;

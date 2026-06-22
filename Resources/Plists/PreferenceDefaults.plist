@@ -235,5 +235,7 @@
 	<false/>
 	<key>SPMCPServerPort</key>
 	<integer>8765</integer>
+	<key>SPMCPReadOnly</key>
+	<true/>
 </dict>
 </plist>
