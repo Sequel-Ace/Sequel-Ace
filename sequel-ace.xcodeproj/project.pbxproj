@@ -1807,7 +1807,6 @@
 			children = (
 				5132930925F586A900D803AD /* NotificationToken.swift */,
 				51BC14F725BE135500F1CDC9 /* SPWindowController.swift */,
-				CB4D0AEB506704E1B3B2A8C6 /* SPMCPServer.swift */,
 				5147B0012F8C000100C4C14A /* SAWindowTitleBuilder.swift */,
 				5132930A25F586A900D803AD /* TabManager.swift */,
 			);
@@ -2062,10 +2061,19 @@
 				17E6414B0EF01EF6001BC333 /* SPAppController.m */,
 				95E9618D51C0ADA8C40BFA1A /* SPAppController+MCP.m */,
 				51BB391B25F82B060048CA69 /* SPAppController.swift */,
+				CB4D0AEC506704E1B3B2A8C7 /* MCP */,
 				173E70D2107FF687008733C9 /* Subview Controllers */,
 				17D3583C1533766800A654D7 /* Window */,
 			);
 			path = Controllers;
+			sourceTree = "<group>";
+		};
+		CB4D0AEC506704E1B3B2A8C7 /* MCP */ = {
+			isa = PBXGroup;
+			children = (
+				CB4D0AEB506704E1B3B2A8C6 /* SPMCPServer.swift */,
+			);
+			path = MCP;
 			sourceTree = "<group>";
 		};
 		17E6415D0EF01EF9001BC333 /* Model */ = {
