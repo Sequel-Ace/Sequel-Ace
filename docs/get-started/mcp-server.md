@@ -27,12 +27,26 @@ The preference pane shows a live status line and an auto-generated config snippe
 
 | Tool | Description |
 |---|---|
-| `list_connections` | List saved connection favourites (names and hosts only; never passwords) |
-| `list_databases` | List databases on the active connection |
+| `list_connections` | List the connections open in Sequel Ace (id, host, current database, which is active) |
+| `list_databases` | List databases on a connection |
 | `list_tables` | List tables and views in a database |
 | `describe_table` | Return columns, indexes, and foreign keys for a table |
+| `get_table_ddl` | Return the `CREATE TABLE` statement |
+| `list_views`, `list_procedures`, `list_functions`, `list_triggers` | List routines in a database |
+| `get_routine_definition` | Return the `CREATE` statement for a view/procedure/function/trigger/event |
 | `run_query` | Execute SQL and return results as JSON (capped at 10,000 rows) |
+| `explain_query` | Return the `EXPLAIN` plan without executing the statement |
+| `sample_table` | Return up to N rows from a table (default 10, max 1000) |
+| `count_rows` | Exact row count of a table |
 | `export_results` | Run a query and write the results to a JSON or CSV file |
+| `server_info` | Server version and key configuration variables |
+| `table_sizes` | Per-table row estimates and storage sizes |
+| `process_list` | `SHOW FULL PROCESSLIST` |
+
+Every database tool accepts an optional `connection` id (from `list_connections`) to
+target a specific open tab; it defaults to the active tab. Table schemas are also
+exposed as **MCP resources**, and the server provides **argument completion** for
+database, table, and connection names.
 
 #### Transports
 

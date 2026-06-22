@@ -70,12 +70,26 @@ The server listens only on `127.0.0.1` and is not accessible from other machines
 
 | Tool | Description |
 |---|---|
-| `list_connections` | List all saved connection favourites |
-| `list_databases` | List databases on the active connection |
-| `list_tables` | List tables in a given database |
+| `list_connections` | List the connections open in Sequel Ace (id, host, current database, which is active) |
+| `list_databases` | List databases on a connection |
+| `list_tables` | List tables and views in a database |
 | `describe_table` | Show columns, indexes, and foreign keys |
+| `get_table_ddl` | Return the `CREATE TABLE` statement |
+| `list_views` / `list_procedures` / `list_functions` / `list_triggers` | List routines in a database |
+| `get_routine_definition` | Return the `CREATE` statement for a view/procedure/function/trigger/event |
 | `run_query` | Execute SQL and return results as JSON |
+| `explain_query` | Return the `EXPLAIN` plan without executing |
+| `sample_table` | Return up to N rows from a table |
+| `count_rows` | Exact row count of a table |
 | `export_results` | Run a query and save results to a JSON or CSV file |
+| `server_info` | Server version and key configuration variables |
+| `table_sizes` | Per-table row estimates and storage sizes |
+| `process_list` | `SHOW FULL PROCESSLIST` |
+
+Every database tool takes an optional `connection` id (from `list_connections`) to
+target a specific open tab; it defaults to the active tab. The server also exposes
+table schemas as **MCP resources** and provides **argument completion** for database,
+table, and connection names.
 
 The server supports two transports. Prefer the modern **Streamable HTTP**
 endpoint (`/mcp`); the **HTTP+SSE** endpoint (`/sse`) is kept for older clients.
