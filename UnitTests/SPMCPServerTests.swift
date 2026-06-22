@@ -103,3 +103,162 @@ final class SPMCPServerOriginTests: XCTestCase {
         XCTAssertFalse(SPMCPHTTP.isLoopbackOrigin("not a url"))
     }
 }
+
+/// Read-only guard tests. The rejected cases are drawn from common SQL-injection
+/// and WAF-bypass techniques (stacked queries, comment evasion, MySQL executable
+/// /*! */ comments, INTO OUTFILE/DUMPFILE, PREPARE/EXECUTE, EXPLAIN ANALYZE of a
+/// write, etc.) so a rogue agent cannot smuggle a write past read-only mode.
+final class SPMCPReadOnlyGuardTests: XCTestCase {
+
+    private func assertAllowed(_ sqls: [String], _ msg: String) {
+        for sql in sqls { XCTAssertTrue(SPMCPReadOnlyGuard.isReadOnly(sql), "\(msg) should ALLOW: \(sql)") }
+    }
+    private func assertRejected(_ sqls: [String], _ msg: String) {
+        for sql in sqls { XCTAssertFalse(SPMCPReadOnlyGuard.isReadOnly(sql), "\(msg) should REJECT: \(sql)") }
+    }
+
+    // MARK: - Legitimate reads are allowed
+
+    func testReadsAllowed() {
+        assertAllowed([
+            "SELECT * FROM users",
+            "select 1",
+            "   SELECT 1   ",
+            "SELECT 1;",
+            "SELECT 1 ;   ",
+            "\n\t SELECT 1",
+            "SHOW DATABASES",
+            "SHOW FULL TABLES IN `app`",
+            "DESCRIBE users",
+            "DESC users",
+            "EXPLAIN SELECT * FROM t",
+            "EXPLAIN ANALYZE SELECT * FROM t",
+            "EXPLAIN FORMAT=JSON SELECT * FROM t",
+            "(SELECT * FROM t)",
+            "SELECT a FROM t UNION SELECT b FROM u",
+            "/* leading comment */ SELECT 1",
+            "-- a comment\nSELECT 1",
+            "SELECT COUNT(*) FROM t WHERE name = 'Bob'",
+        ], "read")
+    }
+
+    // MARK: - Direct writes / DDL / privileged statements are rejected
+
+    func testWritesAndDDLRejected() {
+        assertRejected([
+            "UPDATE users SET x = 1",
+            "uPdAtE users SET x = 1",
+            "  update users set x = 1",
+            "DELETE FROM users",
+            "INSERT INTO t VALUES (1)",
+            "INSERT INTO t (a) SELECT a FROM u",
+            "REPLACE INTO t VALUES (1)",
+            "DROP TABLE t",
+            "DROP DATABASE d",
+            "TRUNCATE t",
+            "TRUNCATE TABLE t",
+            "ALTER TABLE t ADD c INT",
+            "CREATE TABLE t (id INT)",
+            "CREATE DATABASE d",
+            "CREATE TEMPORARY TABLE t (id INT)",
+            "RENAME TABLE a TO b",
+            "GRANT ALL ON *.* TO u",
+            "REVOKE ALL ON *.* FROM u",
+            "FLUSH PRIVILEGES",
+            "LOCK TABLES t WRITE",
+        ], "write/ddl")
+    }
+
+    func testProceduralAndSessionStatementsRejected() {
+        assertRejected([
+            "CALL some_proc()",
+            "DO SLEEP(1)",
+            "HANDLER t OPEN",
+            "SET @x = 1",
+            "SET GLOBAL general_log = 'ON'",
+            "USE other_db",
+            "PREPARE stmt FROM 'DROP TABLE t'",
+            "EXECUTE stmt",
+            "DEALLOCATE PREPARE stmt",
+            "BEGIN",
+            "START TRANSACTION",
+            "COMMIT",
+            "ROLLBACK",
+            "LOAD DATA INFILE '/x' INTO TABLE t",
+            "INSTALL PLUGIN x SONAME 'x.so'",
+            "KILL 1",
+            "SHUTDOWN",
+        ], "procedural/session")
+    }
+
+    // MARK: - Injection / bypass techniques are rejected
+
+    func testStackedStatementsRejected() {
+        assertRejected([
+            "SELECT 1; DROP TABLE t",
+            "SELECT 1 ; DELETE FROM t",
+            "SELECT 1;\nUPDATE t SET x = 1",
+            "SHOW TABLES; INSERT INTO t VALUES (1)",
+            "SELECT 1;UPDATE t SET x=1;",
+            "SELECT 1; SET @x = 0x44; PREPARE s FROM @x; EXECUTE s",
+        ], "stacked")
+    }
+
+    func testCommentHiddenWritesRejected() {
+        assertRejected([
+            "/* x */ DELETE FROM t",
+            "-- c\nUPDATE t SET x = 1",
+            "# c\nDROP TABLE t",
+            "/* multi\nline */ INSERT INTO t VALUES (1)",
+        ], "comment-hidden")
+    }
+
+    func testMySQLExecutableCommentsRejected() {
+        // MySQL runs the contents of /*! ... */, so they must never slip through.
+        assertRejected([
+            "/*! UPDATE t SET x = 1 */",
+            "/*!50000 DELETE FROM t */",
+            "SELECT 1 /*! ; DROP TABLE t */",
+            "SELECT 1 /*!50000, (SELECT ... ) */",
+            "SEL/*!ECT*/ 1",
+        ], "executable-comment")
+    }
+
+    func testFileWriteRejected() {
+        assertRejected([
+            "SELECT * INTO OUTFILE '/tmp/x' FROM t",
+            "SELECT * INTO DUMPFILE '/tmp/x'",
+            "select a into outfile '/tmp/x' from t",
+            "SELECT load_file('/etc/passwd') INTO OUTFILE '/tmp/x'",
+        ], "file-write")
+    }
+
+    func testExplainAnalyzeWriteRejected() {
+        // EXPLAIN ANALYZE executes its statement in MySQL.
+        assertRejected([
+            "EXPLAIN ANALYZE UPDATE t SET x = 1",
+            "EXPLAIN ANALYZE DELETE FROM t",
+            "EXPLAIN ANALYZE INSERT INTO t VALUES (1)",
+        ], "explain-analyze-write")
+    }
+
+    func testEmptyOrSeparatorOnlyRejected() {
+        assertRejected([
+            "",
+            "   ",
+            ";",
+            ";;",
+            "/* only a comment */",
+            "-- only a comment",
+        ], "empty")
+    }
+
+    // Conservative: a read-only CTE and a semicolon inside a string literal are
+    // rejected rather than risk a parser-based bypass. Documents the trade-off.
+    func testConservativeRejections() {
+        assertRejected([
+            "WITH cte AS (SELECT 1) SELECT * FROM cte",
+            "SELECT 'a;b'",
+        ], "conservative")
+    }
+}

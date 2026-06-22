@@ -20,6 +20,41 @@ enum SPMCPHTTP {
     }
 }
 
+/// Decides whether a statement is safe to run while the MCP server is in
+/// read-only mode. This is a security boundary, not a UI hint, so it is
+/// deliberately conservative: anything it is unsure about is rejected.
+enum SPMCPReadOnlyGuard {
+
+    /// `true` only when `sql` is a single, non-destructive read statement.
+    static func isReadOnly(_ sql: String) -> Bool {
+        // Reject MySQL executable comments (/*! ... */ and /*!12345 ... */): their
+        // contents are run by the server, so a normal comment strip would hide a
+        // write or a statement separator from the checks below.
+        if sql.contains("/*!") { return false }
+
+        // Strip comments first so they cannot hide a statement separator or verb.
+        let stripped = SPCustomQuerySQLClassifier.stripSQLComments(sql)
+
+        var core = stripped.trimmingCharacters(in: .whitespacesAndNewlines)
+        while core.hasSuffix(";") {
+            core = String(core.dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        if core.isEmpty { return false }
+
+        // Reject stacked statements (e.g. `SELECT 1; DROP TABLE x`). A leftover
+        // semicolon means a second statement, so refuse rather than guess.
+        if core.contains(";") { return false }
+
+        // Reject server-side file writes (`SELECT ... INTO OUTFILE/DUMPFILE`).
+        let upper = core.uppercased()
+        if upper.contains("OUTFILE") || upper.contains("DUMPFILE") { return false }
+
+        // Leading keyword must be a known read. isQuerySafeWithoutDestructiveWarning
+        // also rejects `EXPLAIN ANALYZE <write>`, which MySQL would execute.
+        return SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(core)
+    }
+}
+
 struct HTTPRequest {
     let method:  String
     let path:    String
