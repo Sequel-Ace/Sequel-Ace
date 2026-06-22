@@ -42,11 +42,14 @@ The preference pane shows a live status line and an auto-generated config snippe
 | `server_info` | Server version and key configuration variables |
 | `table_sizes` | Per-table row estimates and storage sizes |
 | `process_list` | `SHOW FULL PROCESSLIST` |
+| `kill_query` | Terminate a running query/connection by process id (blocked in read-only mode) |
 
 Every database tool accepts an optional `connection` id (from `list_connections`) to
-target a specific open tab; it defaults to the active tab. Table schemas are also
-exposed as **MCP resources**, and the server provides **argument completion** for
-database, table, and connection names.
+target a specific open tab; it defaults to the active tab. `run_query` also accepts a
+`params` array bound to `?` placeholders (injection-safe) and `limit`/`offset` for
+pagination. Table schemas are exposed as **MCP resources**, reusable **prompt
+templates** are provided (analyze schema, summarize table, optimize query), and the
+server offers **argument completion** for database, table, and connection names.
 
 #### Transports
 

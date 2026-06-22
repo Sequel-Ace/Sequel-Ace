@@ -406,16 +406,95 @@ static NSString *mcpQuoteIdentifier(NSString *name)
 
 #pragma mark - SPMCPDataSource: queries
 
-- (NSDictionary *)mcpRunQuery:(NSString *)sql connection:(NSString *)connID
+- (NSDictionary *)mcpRunQuery:(NSString *)sql params:(NSArray *)params limit:(NSInteger)limit offset:(NSInteger)offset connection:(NSString *)connID
 {
     if (!sql.length) return @{@"error": @"sql argument is required"};
     NSDictionary *ci = [self mcpResolveConnection:connID];
     if (!ci) return [self mcpNoConnectionError];
     SPMySQLConnection *conn = ci[@"conn"];
 
+    // Bind ? placeholders to escaped literals (injection-safe).
+    NSString *bound = sql;
+    if (params.count) {
+        NSString *err = nil;
+        bound = [self mcpBindParams:params intoSQL:sql connection:conn error:&err];
+        if (!bound) return @{@"error": err ?: @"Parameter binding failed"};
+    }
+
+    // Paginate read queries by wrapping them in a derived table.
+    NSString *finalSQL = bound;
+    if (limit > 0) {
+        NSString *t = [bound stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        while ([t hasSuffix:@";"]) t = [[t substringToIndex:t.length - 1] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        NSString *up = t.uppercaseString;
+        if ([up hasPrefix:@"SELECT"] || [up hasPrefix:@"WITH"] || [up hasPrefix:@"("]) {
+            finalSQL = [NSString stringWithFormat:@"SELECT * FROM (%@) AS _mcp_page LIMIT %ld OFFSET %ld",
+                        t, (long)limit, (long)MAX((NSInteger)0, offset)];
+        }
+    }
+
     __block NSDictionary *result;
     dispatch_sync(sMCPDBQueue, ^{
-        result = [self mcpExecuteResultQuery:sql onConnection:conn connectionID:ci[@"id"]];
+        result = [self mcpExecuteResultQuery:finalSQL onConnection:conn connectionID:ci[@"id"]];
+    });
+    return result;
+}
+
+/// Substitutes each unquoted ? in `sql` with the next param as an escaped SQL
+/// literal. Returns nil (with *error) if the placeholder and param counts differ.
+- (NSString *)mcpBindParams:(NSArray *)params intoSQL:(NSString *)sql connection:(SPMySQLConnection *)conn error:(NSString **)error
+{
+    NSMutableString *out = [NSMutableString stringWithCapacity:sql.length];
+    NSUInteger pIndex = 0;
+    unichar quote = 0;
+    for (NSUInteger i = 0; i < sql.length; i++) {
+        unichar c = [sql characterAtIndex:i];
+        if (quote != 0) {
+            [out appendFormat:@"%C", c];
+            if (c == '\\' && quote != '`') {                       // backslash escape in a string literal
+                if (i + 1 < sql.length) { [out appendFormat:@"%C", [sql characterAtIndex:i + 1]]; i++; }
+            } else if (c == quote) {
+                if (i + 1 < sql.length && [sql characterAtIndex:i + 1] == quote) {   // doubled-quote escape
+                    [out appendFormat:@"%C", quote]; i++;
+                } else {
+                    quote = 0;
+                }
+            }
+            continue;
+        }
+        if (c == '\'' || c == '"' || c == '`') { quote = c; [out appendFormat:@"%C", c]; continue; }
+        if (c == '?') {
+            if (pIndex >= params.count) { if (error) *error = @"More ? placeholders than params provided"; return nil; }
+            [out appendString:[self mcpSQLLiteralForValue:params[pIndex] connection:conn]];
+            pIndex++;
+            continue;
+        }
+        [out appendFormat:@"%C", c];
+    }
+    if (pIndex != params.count) { if (error) *error = @"More params than ? placeholders provided"; return nil; }
+    return [out copy];
+}
+
+- (NSString *)mcpSQLLiteralForValue:(id)value connection:(SPMySQLConnection *)conn
+{
+    if (!value || value == [NSNull null]) return @"NULL";
+    if ([value isKindOfClass:[NSNumber class]]) return [value stringValue];
+    return [conn escapeAndQuoteString:[value description]];
+}
+
+- (NSDictionary *)mcpKillProcessID:(NSString *)processID connection:(NSString *)connID
+{
+    long long pid = processID.longLongValue;
+    if (pid <= 0) return @{@"error": @"a positive numeric process id is required"};
+    NSDictionary *ci = [self mcpResolveConnection:connID];
+    if (!ci) return [self mcpNoConnectionError];
+    SPMySQLConnection *conn = ci[@"conn"];
+
+    __block NSDictionary *result;
+    dispatch_sync(sMCPDBQueue, ^{
+        [conn queryString:[NSString stringWithFormat:@"KILL %lld", pid]];
+        if ([conn queryErrored]) { result = @{@"error": [conn lastErrorMessage] ?: @"Could not kill process"}; return; }
+        result = @{@"killed": @(pid), @"connection": ci[@"id"]};
     });
     return result;
 }
@@ -486,7 +565,7 @@ static NSString *mcpQuoteIdentifier(NSString *name)
     return result;
 }
 
-- (NSDictionary *)mcpSampleTable:(NSString *)table inDatabase:(NSString *)database limit:(NSInteger)limit connection:(NSString *)connID
+- (NSDictionary *)mcpSampleTable:(NSString *)table inDatabase:(NSString *)database limit:(NSInteger)limit offset:(NSInteger)offset connection:(NSString *)connID
 {
     if (!table.length || !database.length) return @{@"error": @"Both database and table arguments are required"};
     NSDictionary *ci = [self mcpResolveConnection:connID];
@@ -495,11 +574,12 @@ static NSString *mcpQuoteIdentifier(NSString *name)
     NSInteger n = limit;
     if (n < 1) n = 10;
     if (n > 1000) n = 1000;
+    NSInteger off = MAX((NSInteger)0, offset);
 
     __block NSDictionary *result;
     dispatch_sync(sMCPDBQueue, ^{
-        NSString *sql = [NSString stringWithFormat:@"SELECT * FROM `%@`.`%@` LIMIT %ld",
-                         mcpQuoteIdentifier(database), mcpQuoteIdentifier(table), (long)n];
+        NSString *sql = [NSString stringWithFormat:@"SELECT * FROM `%@`.`%@` LIMIT %ld OFFSET %ld",
+                         mcpQuoteIdentifier(database), mcpQuoteIdentifier(table), (long)n, (long)off];
         result = [self mcpExecuteResultQuery:sql onConnection:conn connectionID:ci[@"id"]];
     });
     return result;
@@ -530,7 +610,7 @@ static NSString *mcpQuoteIdentifier(NSString *name)
 {
     if (!sql.length) return @{@"error": @"sql argument is required"};
 
-    NSDictionary *queryResult = [self mcpRunQuery:sql connection:connID];
+    NSDictionary *queryResult = [self mcpRunQuery:sql params:nil limit:0 offset:0 connection:connID];
     if (queryResult[@"error"]) return queryResult;
 
     NSArray *columns = queryResult[@"columns"] ?: @[];

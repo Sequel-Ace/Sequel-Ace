@@ -55,14 +55,18 @@ import Network
     /// The CREATE statement for a routine.
     func mcpRoutineDefinition(ofType type: String, name: String, inDatabase database: String, connection connID: String) -> [String: Any]
 
-    /// Runs an arbitrary SQL statement.
-    func mcpRunQuery(_ sql: String, connection connID: String) -> [String: Any]
+    /// Runs an arbitrary SQL statement, binding `params` to ? placeholders and
+    /// optionally paginating a read query with limit/offset (limit 0 = no paging).
+    func mcpRunQuery(_ sql: String, params: [Any], limit: Int, offset: Int, connection connID: String) -> [String: Any]
 
     /// Returns the EXPLAIN plan for a query (does not execute it).
     func mcpExplainQuery(_ sql: String, connection connID: String) -> [String: Any]
 
-    /// Returns up to `limit` rows from a table.
-    func mcpSampleTable(_ table: String, inDatabase database: String, limit: Int, connection connID: String) -> [String: Any]
+    /// Returns up to `limit` rows from a table, starting at `offset`.
+    func mcpSampleTable(_ table: String, inDatabase database: String, limit: Int, offset: Int, connection connID: String) -> [String: Any]
+
+    /// Terminates a server-side query/connection by process id.
+    func mcpKillProcessID(_ processID: String, connection connID: String) -> [String: Any]
 
     /// Returns the exact row count of a table.
     func mcpCountRows(inTable table: String, inDatabase database: String, connection connID: String) -> [String: Any]
@@ -208,6 +212,7 @@ import Network
 
 private extension SPMCPServer {
 
+    /// Accepts a new connection and begins reading its first request.
     func accept(connection: NWConnection) {
         connection.start(queue: serverQueue)
         receiveRequest(on: connection, buffer: Data())
@@ -234,6 +239,7 @@ private extension SPMCPServer {
         }
     }
 
+    /// Routes a parsed request to the matching endpoint after loopback and Origin checks.
     func handle(request: HTTPRequest, on connection: NWConnection) {
         // Safety: only accept loopback connections.
         if case let .hostPort(host, _) = connection.endpoint {
@@ -270,6 +276,7 @@ private extension SPMCPServer {
 
 private extension SPMCPServer {
 
+    /// Opens an SSE stream (legacy transport) and advertises the per-session message endpoint.
     func handleSSE(request: HTTPRequest, connection: NWConnection) {
         let sessionID = UUID().uuidString
         let clientID  = UUID()
@@ -304,17 +311,20 @@ private extension SPMCPServer {
         return UInt16(UserDefaults.standard.integer(forKey: SPMCPServerPort))
     }
 
+    /// Sends a named SSE event with a data payload.
     func sendSSEEvent(_ event: String, data: String, to connection: NWConnection, completion: ((NWError?) -> Void)? = nil) {
         let text = "event: \(event)\ndata: \(data)\n\n"
         send(text: text, on: connection, completion: completion)
     }
 
+    /// Sends a JSON-RPC message to a client as an SSE event.
     func sendSSEMessage(_ object: Any, to connection: NWConnection) {
         guard let json = try? JSONSerialization.data(withJSONObject: object),
               let jsonStr = String(data: json, encoding: .utf8) else { return }
         sendSSEEvent("message", data: jsonStr, to: connection)
     }
 
+    /// Writes raw text to a connection, invoking completion when sent.
     func send(text: String, on connection: NWConnection, completion: ((NWError?) -> Void)? = nil) {
         guard let data = text.data(using: .utf8) else { return }
         connection.send(content: data, completion: .contentProcessed { completion?($0) })
@@ -349,6 +359,7 @@ private extension SPMCPServer {
         }
     }
 
+    /// Handles a legacy POST /message: dispatches the body and replies over SSE.
     func handleMessage(request: HTTPRequest, connection: NWConnection) {
         guard let sessionID = request.queryParam("sessionId") else {
             sendHTTPResponse(connection: connection, status: 400, body: "Missing sessionId")
@@ -373,6 +384,7 @@ private extension SPMCPServer {
         }
     }
 
+    /// Delivers a message to the SSE client for the given session id.
     func sendToSSEClient(sessionID: String, message: Any) {
         clientsLock.lock()
         let client = sseClients.values.first { $0.sessionID == sessionID }
@@ -389,6 +401,7 @@ private extension SPMCPServer {
 
 private extension SPMCPServer {
 
+    /// Dispatches one JSON-RPC request to its handler and returns the response.
     func dispatch(jsonRPC json: [String: Any]) -> [String: Any] {
         let id     = json["id"]
         let method = json["method"] as? String ?? ""
@@ -422,6 +435,12 @@ private extension SPMCPServer {
         case "completion/complete":
             return jsonRPCSuccess(id: id, result: ["completion": completion(params: params)])
 
+        case "prompts/list":
+            return jsonRPCSuccess(id: id, result: ["prompts": promptDefinitions()])
+
+        case "prompts/get":
+            return jsonRPCSuccess(id: id, result: promptGet(params: params))
+
         case "ping":
             return jsonRPCSuccess(id: id, result: [:])
 
@@ -430,13 +449,15 @@ private extension SPMCPServer {
         }
     }
 
+    /// Builds the initialize result: protocol version, capabilities, server info and usage instructions.
     func initializeResult(protocolVersion: String? = nil) -> [String: Any] {
         return [
             "protocolVersion": protocolVersion ?? "2024-11-05",
             "capabilities": [
                 "tools": ["listChanged": false],
                 "resources": ["subscribe": false, "listChanged": false],
-                "completions": [:]
+                "completions": [:],
+                "prompts": ["listChanged": false]
             ],
             "serverInfo": [
                 "name": "sequel-ace-mcp",
@@ -451,12 +472,14 @@ private extension SPMCPServer {
         ]
     }
 
+    /// Wraps a result in a JSON-RPC success envelope.
     func jsonRPCSuccess(id: Any?, result: [String: Any]) -> [String: Any] {
         var response: [String: Any] = ["jsonrpc": "2.0", "result": result]
         if let id { response["id"] = id }
         return response
     }
 
+    /// Wraps a code and message in a JSON-RPC error envelope.
     func jsonRPCError(id: Any?, code: Int, message: String) -> [String: Any] {
         var response: [String: Any] = [
             "jsonrpc": "2.0",
@@ -471,6 +494,7 @@ private extension SPMCPServer {
 
 private extension SPMCPServer {
 
+    /// Returns the tool definitions advertised by tools/list.
     func toolDefinitions() -> [[String: Any]] {
         let conn: [String: Any] = ["type": "string", "description": "Optional connection id from list_connections; defaults to the active Sequel Ace tab."]
         let db:   [String: Any] = ["type": "string", "description": "Database name"]
@@ -513,23 +537,34 @@ private extension SPMCPServer {
                         "connection": conn
                      ], required: ["database", "type", "name"]),
             makeTool(name: "run_query",
-                     description: "Execute an SQL statement and return the results as JSON. When read-only mode is enabled in Sequel Ace preferences, only single non-destructive read statements (SELECT/SHOW/DESCRIBE/EXPLAIN) are accepted; otherwise write queries are permitted if the connection allows them.",
-                     properties: ["sql": ["type": "string", "description": "SQL statement to execute"], "connection": conn],
+                     description: "Execute an SQL statement and return the results as JSON. Use ? placeholders with `params` for values (safer than string-building). For read queries you can paginate with `limit`/`offset`. When read-only mode is enabled in Sequel Ace preferences, only single non-destructive read statements (SELECT/SHOW/DESCRIBE/EXPLAIN) are accepted; otherwise write queries are permitted if the connection allows them.",
+                     properties: [
+                        "sql": ["type": "string", "description": "SQL statement; use ? for bound parameters"],
+                        "params": ["type": "array", "description": "Values bound to ? placeholders, in order"],
+                        "limit": ["type": "integer", "description": "Optional row limit for read queries (paginates by wrapping the query)"],
+                        "offset": ["type": "integer", "description": "Optional row offset, used with limit"],
+                        "connection": conn
+                     ],
                      required: ["sql"], readOnly: false),
             makeTool(name: "explain_query",
                      description: "Return the EXPLAIN plan for a query without executing it.",
                      properties: ["sql": ["type": "string", "description": "SQL statement to explain"], "connection": conn],
                      required: ["sql"]),
             makeTool(name: "sample_table",
-                     description: "Return up to `limit` rows from a table (default 10, max 1000).",
+                     description: "Return up to `limit` rows from a table (default 10, max 1000), starting at `offset`.",
                      properties: [
                         "database": db, "table": tbl,
                         "limit": ["type": "integer", "description": "Maximum number of rows (default 10, max 1000)"],
+                        "offset": ["type": "integer", "description": "Row offset to start from (default 0)"],
                         "connection": conn
                      ], required: ["database", "table"]),
             makeTool(name: "count_rows",
                      description: "Return the exact row count of a table.",
                      properties: ["database": db, "table": tbl, "connection": conn], required: ["database", "table"]),
+            makeTool(name: "kill_query",
+                     description: "Terminate a running server-side query or connection by its process id (from process_list). Not allowed in read-only mode.",
+                     properties: ["process_id": ["type": "integer", "description": "Process id to kill"], "connection": conn],
+                     required: ["process_id"], readOnly: false),
             makeTool(name: "export_results",
                      description: "Execute an SQL query and save the results to a file on the local machine.",
                      properties: [
@@ -550,6 +585,7 @@ private extension SPMCPServer {
         ]
     }
 
+    /// Builds one tool definition with its input schema and annotations.
     func makeTool(name: String, description: String, properties: [String: Any], required: [String], readOnly: Bool = true) -> [String: Any] {
         // MCP tool annotations (2025-03-26): all tools are closed-world (they only
         // touch the connected database); reads are non-destructive, run_query and
@@ -576,6 +612,7 @@ private extension SPMCPServer {
 
 private extension SPMCPServer {
 
+    /// Executes a tool call by name and returns its MCP tool result.
     func callTool(name: String, arguments: [String: Any]) -> [String: Any] {
         guard let ds = dataSource else {
             return toolError("No active database connection. Please connect to a database in Sequel Ace first.")
@@ -623,7 +660,10 @@ private extension SPMCPServer {
         case "run_query":
             guard let sql = requireString("sql") else { return toolError("Missing required argument: sql") }
             if let rejection = readOnlyRejection(for: sql) { return rejection }
-            return dictResult(ds.mcpRunQuery(sql, connection: conn))
+            let params = arguments["params"] as? [Any] ?? []
+            let limit  = (arguments["limit"] as? NSNumber)?.intValue ?? 0
+            let offset = (arguments["offset"] as? NSNumber)?.intValue ?? 0
+            return dictResult(ds.mcpRunQuery(sql, params: params, limit: limit, offset: offset, connection: conn))
 
         case "explain_query":
             guard let sql = requireString("sql") else { return toolError("Missing required argument: sql") }
@@ -633,8 +673,16 @@ private extension SPMCPServer {
             guard let db = requireString("database"), let table = requireString("table") else {
                 return toolError("Missing required arguments: database, table")
             }
-            let limit = (arguments["limit"] as? NSNumber)?.intValue ?? 10
-            return dictResult(ds.mcpSampleTable(table, inDatabase: db, limit: limit, connection: conn))
+            let limit  = (arguments["limit"] as? NSNumber)?.intValue ?? 10
+            let offset = (arguments["offset"] as? NSNumber)?.intValue ?? 0
+            return dictResult(ds.mcpSampleTable(table, inDatabase: db, limit: limit, offset: offset, connection: conn))
+
+        case "kill_query":
+            if UserDefaults.standard.bool(forKey: SPMCPReadOnly) {
+                return toolError("Read-only mode is enabled; kill_query is not allowed. Disable read-only mode in Sequel Ace Preferences > MCP Server.")
+            }
+            guard let pid = arguments["process_id"] else { return toolError("Missing required argument: process_id") }
+            return dictResult(ds.mcpKillProcessID("\(pid)", connection: conn))
 
         case "count_rows":
             guard let db = requireString("database"), let table = requireString("table") else {
@@ -742,9 +790,57 @@ private extension SPMCPServer {
         return completionResult(values)
     }
 
+    /// Caps and packages completion values into a completion result.
     private func completionResult(_ values: [String]) -> [String: Any] {
         let capped = Array(values.prefix(100))
         return ["values": capped, "total": capped.count, "hasMore": values.count > capped.count]
+    }
+
+    // MARK: - Prompts
+
+    /// Reusable prompt templates advertised via prompts/list.
+    func promptDefinitions() -> [[String: Any]] {
+        return [
+            ["name": "analyze_schema",
+             "description": "Explore and summarise the structure of a database.",
+             "arguments": [["name": "database", "description": "Database to analyse", "required": true]]],
+            ["name": "summarize_table",
+             "description": "Describe and sample a table, then summarise what it stores.",
+             "arguments": [["name": "database", "description": "Database name", "required": true],
+                           ["name": "table", "description": "Table name", "required": true]]],
+            ["name": "optimize_query",
+             "description": "Analyse a query's plan and suggest optimisations or indexes.",
+             "arguments": [["name": "sql", "description": "SQL query to optimise", "required": true]]]
+        ]
+    }
+
+    /// Builds a prompts/get result: a single user message from the named template.
+    func promptGet(params: [String: Any]?) -> [String: Any] {
+        let name = params?["name"] as? String ?? ""
+        let args = params?["arguments"] as? [String: Any] ?? [:]
+        let database = args["database"] as? String ?? ""
+        let table    = args["table"] as? String ?? ""
+        let sql      = args["sql"] as? String ?? ""
+
+        let text: String
+        switch name {
+        case "analyze_schema":
+            text = "Analyse the `\(database)` database. Use list_tables to enumerate its tables, describe_table on the important ones, and summarise the data model and the key relationships between tables."
+        case "summarize_table":
+            text = "Describe `\(database)`.`\(table)` with describe_table and fetch a few rows with sample_table, then summarise what the table stores, its notable columns, and how it relates to other tables."
+        case "optimize_query":
+            text = "Use explain_query to analyse the plan for this query, then suggest optimisations (rewrites, indexes) with reasoning:\n\n\(sql)"
+        default:
+            text = "Unknown prompt: \(name)"
+        }
+
+        return [
+            "description": "Sequel Ace MCP prompt: \(name)",
+            "messages": [[
+                "role": "user",
+                "content": ["type": "text", "text": text]
+            ]]
+        ]
     }
 
     /// Returns a tool error when read-only mode is on and `sql` is not a
@@ -764,14 +860,17 @@ private extension SPMCPServer {
         return toolResult(text: jsonString(dict) ?? "{}")
     }
 
+    /// Builds a successful tool result containing text content.
     func toolResult(text: String) -> [String: Any] {
         return ["content": [["type": "text", "text": text]], "isError": false]
     }
 
+    /// Builds a tool result flagged as an error.
     func toolError(_ message: String) -> [String: Any] {
         return ["content": [["type": "text", "text": message]], "isError": true]
     }
 
+    /// Serialises a JSON value to a pretty-printed, key-sorted string.
     func jsonString(_ value: Any?) -> String? {
         guard let value else { return nil }
         guard let data = try? JSONSerialization.data(
@@ -781,6 +880,7 @@ private extension SPMCPServer {
         return String(data: data, encoding: .utf8)
     }
 
+    /// Returns the default export file path for the given format.
     func defaultExportPath(format: String) -> String {
         let folder = UserDefaults.standard.string(forKey: SPMCPExportPath)
             ?? NSSearchPathForDirectoriesInDomains(.downloadsDirectory, .userDomainMask, true).first
@@ -796,6 +896,7 @@ private extension SPMCPServer {
 
 private extension SPMCPServer {
 
+    /// Sends a plain-text HTTP response with the given status code.
     func sendHTTPResponse(connection: NWConnection, status: Int, body: String, keepAlive: Bool = false) {
         let statusLine: String
         switch status {
@@ -824,6 +925,7 @@ private extension SPMCPServer {
         })
     }
 
+    /// Sends an application/json response (Streamable HTTP), echoing the session id.
     func sendJSONResponse(connection: NWConnection, jsonData: Data, sessionID: String?) {
         var lines = [
             "HTTP/1.1 200 OK",

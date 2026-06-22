@@ -112,6 +112,7 @@ struct HTTPRequest {
 
     private let queryString: String?
 
+    /// Returns the decoded value of a query-string parameter, or nil.
     func queryParam(_ key: String) -> String? {
         guard let qs = queryString else { return nil }
         for pair in qs.components(separatedBy: "&") {

@@ -85,11 +85,14 @@ The server listens only on `127.0.0.1` and is not accessible from other machines
 | `server_info` | Server version and key configuration variables |
 | `table_sizes` | Per-table row estimates and storage sizes |
 | `process_list` | `SHOW FULL PROCESSLIST` |
+| `kill_query` | Terminate a running query/connection by process id (blocked in read-only mode) |
 
 Every database tool takes an optional `connection` id (from `list_connections`) to
-target a specific open tab; it defaults to the active tab. The server also exposes
-table schemas as **MCP resources** and provides **argument completion** for database,
-table, and connection names.
+target a specific open tab; it defaults to the active tab. `run_query` accepts a
+`params` array bound to `?` placeholders (injection-safe) and `limit`/`offset` for
+pagination. The server also exposes table schemas as **MCP resources**, **prompt
+templates** (analyze schema, summarize table, optimize query), and **argument
+completion** for database, table, and connection names.
 
 The server supports two transports. Prefer the modern **Streamable HTTP**
 endpoint (`/mcp`); the **HTTP+SSE** endpoint (`/sse`) is kept for older clients.
