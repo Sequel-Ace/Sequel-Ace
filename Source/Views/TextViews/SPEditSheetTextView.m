@@ -310,7 +310,7 @@
 - (void)saveChangedFontInUserDefaults
 {
 	if([[[[self delegate] class] description] isEqualToString:@"SPFieldEditorController"])
-		[[NSUserDefaults standardUserDefaults] setObject:[NSArchiver archivedDataWithRootObject:[self font]] forKey:@"FieldEditorSheetFont"];
+		[[NSUserDefaults standardUserDefaults] setObject:[SAArchiving archivedDataForFont:[self font]] forKey:@"FieldEditorSheetFont"];
 }
 
 // Action receiver for a font change in the font panel

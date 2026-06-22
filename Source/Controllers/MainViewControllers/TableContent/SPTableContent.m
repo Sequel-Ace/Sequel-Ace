@@ -4100,7 +4100,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
                 // This is a binary object being edited as a hex string.
                 // Convert the string back to binary.
                 // Error checking is done in -control:textShouldEndEditing:
-                NSData *data = [NSData dataWithHexString:object];
+                NSData *data = [NSData sp_dataWithHexString:object];
                 if (!data) {
                     NSBeep();
                     return;
@@ -4755,7 +4755,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
           }
           // This is a binary object being edited as a hex string.
           // Convert the string back to binary, checking for errors.
-          if (![NSData dataWithHexString: editor.string]) {
+          if (![NSData sp_dataWithHexString: editor.string]) {
               NSString *title = NSLocalizedString(@"Invalid hexadecimal value", @"table content : editing : error message title when parsing as hex string failed");
               NSString *msg  = NSLocalizedString(
                   @"A valid hex string may only contain the numbers 0-9 and letters A-F (a-f). It can optionally begin with „0x“ and spaces will be ignored.\nAlternatively the syntax X'val' is supported, too.",

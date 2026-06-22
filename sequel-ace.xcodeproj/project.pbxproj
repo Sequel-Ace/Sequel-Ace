@@ -105,6 +105,7 @@
 		1A4152F125AF531000B17249 /* GeneralSwiftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4152ED25AF530F00B17249 /* GeneralSwiftTests.swift */; };
 		1A445DAA25BACBE5004E9A77 /* naughty_strings.txt in Resources */ = {isa = PBXBuildFile; fileRef = 1A445DA925BACBE5004E9A77 /* naughty_strings.txt */; };
 		1A4CB03425923C4B00EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
+		0FA952B1549148DF8C1B7E61 /* SAStaleBookmarkAlertContentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5438EBE13DEF4D968F600054 /* SAStaleBookmarkAlertContentTests.swift */; };
 		1A4CB04F2592535300EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
 		1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
 		1A4DC22D25DECEA000DA4FE1 /* ProgressWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4DC22C25DECEA000DA4FE1 /* ProgressWindowController.swift */; };
@@ -245,6 +246,9 @@
 		5147B0112F8C000400C4C14A /* SAConnectionFormHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0102F8C000400C4C14A /* SAConnectionFormHelpers.swift */; };
 		5147B0122F8C000400C4C14A /* SAConnectionFormHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0102F8C000400C4C14A /* SAConnectionFormHelpers.swift */; };
 		5147B0142F8C000400C4C14A /* SAConnectionFormHelpersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0132F8C000400C4C14A /* SAConnectionFormHelpersTests.swift */; };
+		51AA84022FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AA84012FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift */; };
+		51AA84032FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AA84012FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift */; };
+		51AA84052FDE000100C4C14A /* SAAutoIncrementRuleSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AA84042FDE000100C4C14A /* SAAutoIncrementRuleSupportTests.swift */; };
 		51BB84022FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BB84012FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift */; };
 		51BB84032FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BB84012FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift */; };
 		51BB84052FDE000200C4C14A /* SAForeignKeyReferenceRuleSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BB84042FDE000200C4C14A /* SAForeignKeyReferenceRuleSupportTests.swift */; };
@@ -308,6 +312,9 @@
 		51CD0BF8258D06D8009E2484 /* DatabaseProcessList.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BDA258D06D8009E2484 /* DatabaseProcessList.xib */; };
 		51D9527625AE2B5300574BEB /* FMDB in Frameworks */ = {isa = PBXBuildFile; productRef = 51D9527525AE2B5300574BEB /* FMDB */; };
 		51DCBEF0257134190098E303 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 38C613721C8977E600B3B6EF /* libz.tbd */; };
+		51EA02532FDFF02C00DF6A7B /* SAArchivingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EA02522FDFF02C00DF6A7B /* SAArchivingTests.swift */; };
+		51EAE7252FDFEFA300DF6A7B /* SAArchiving.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EAE7242FDFEFA300DF6A7B /* SAArchiving.swift */; };
+		51EAE7262FDFEFA300DF6A7B /* SAArchiving.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EAE7242FDFEFA300DF6A7B /* SAArchiving.swift */; };
 		51EF3E712FDC2A6500EFFF09 /* SABundleJSBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E702FDC2A6500EFFF09 /* SABundleJSBridge.swift */; };
 		51EF3E762FDC2A9800EFFF09 /* SAWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E752FDC2A9800EFFF09 /* SAWebView.swift */; };
 		51EF3E782FDC2AB700EFFF09 /* SABundleJSBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E772FDC2AB700EFFF09 /* SABundleJSBridgeTests.swift */; };
@@ -1022,6 +1029,7 @@
 		5146E0542F7A640C00C4C14A /* SADatabaseListManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SADatabaseListManagerTests.swift; sourceTree = "<group>"; };
 		5147B0012F8C000100C4C14A /* SAWindowTitleBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAWindowTitleBuilder.swift; sourceTree = "<group>"; };
 		5147B0042F8C000100C4C14A /* SAWindowTitleBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAWindowTitleBuilderTests.swift; sourceTree = "<group>"; };
+		5438EBE13DEF4D968F600054 /* SAStaleBookmarkAlertContentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAStaleBookmarkAlertContentTests.swift; sourceTree = "<group>"; };
 		5147B0062F8C000200C4C14A /* SAFavoriteSearchMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoriteSearchMatcher.swift; sourceTree = "<group>"; };
 		5147B0092F8C000200C4C14A /* SAFavoriteSearchMatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoriteSearchMatcherTests.swift; sourceTree = "<group>"; };
 		5147B00B2F8C000300C4C14A /* SAConnectionDetailsValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionDetailsValidator.swift; sourceTree = "<group>"; };
@@ -1029,6 +1037,8 @@
 		5147B0102F8C000400C4C14A /* SAConnectionFormHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionFormHelpers.swift; sourceTree = "<group>"; };
 		5147B0132F8C000400C4C14A /* SAConnectionFormHelpersTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionFormHelpersTests.swift; sourceTree = "<group>"; };
 		5147B0192F8C000600C4C14A /* SAFavoriteSearchTreeWalker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoriteSearchTreeWalker.swift; sourceTree = "<group>"; };
+		51AA84012FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAAutoIncrementRuleSupport.swift; sourceTree = "<group>"; };
+		51AA84042FDE000100C4C14A /* SAAutoIncrementRuleSupportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAAutoIncrementRuleSupportTests.swift; sourceTree = "<group>"; };
 		51BB84012FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAForeignKeyReferenceRuleSupport.swift; sourceTree = "<group>"; };
 		51BB84042FDE000200C4C14A /* SAForeignKeyReferenceRuleSupportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAForeignKeyReferenceRuleSupportTests.swift; sourceTree = "<group>"; };
 		514B40A12F683E7900369718 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -1092,6 +1102,8 @@
 		51CD0BD7258D06D8009E2484 /* QueryFavoriteManager.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = QueryFavoriteManager.xib; sourceTree = "<group>"; };
 		51CD0BD8258D06D8009E2484 /* ConnectionView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ConnectionView.xib; sourceTree = "<group>"; };
 		51CD0BDA258D06D8009E2484 /* DatabaseProcessList.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DatabaseProcessList.xib; sourceTree = "<group>"; };
+		51EA02522FDFF02C00DF6A7B /* SAArchivingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAArchivingTests.swift; sourceTree = "<group>"; };
+		51EAE7242FDFEFA300DF6A7B /* SAArchiving.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAArchiving.swift; sourceTree = "<group>"; };
 		51EF3E702FDC2A6500EFFF09 /* SABundleJSBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SABundleJSBridge.swift; sourceTree = "<group>"; };
 		51EF3E752FDC2A9800EFFF09 /* SAWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAWebView.swift; sourceTree = "<group>"; };
 		51EF3E772FDC2AB700EFFF09 /* SABundleJSBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SABundleJSBridgeTests.swift; sourceTree = "<group>"; };
@@ -1860,6 +1872,7 @@
 				17E641550EF01EF6001BC333 /* SPTableStructure.m */,
 				17D38F6E1279E23A00672B13 /* SPTableFieldValidation.h */,
 				17D38F6F1279E23A00672B13 /* SPTableFieldValidation.m */,
+				51AA84012FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift */,
 				8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */,
 			);
 			name = "Table Structure";
@@ -2447,7 +2460,7 @@
 			path = MGTemplateEngine;
 			sourceTree = "<group>";
 		};
-		2A37F4AAFDCFA73011CA2CEA = {
+		2A37F4AAFDCFA73011CA2CEA /* sequel-pro */ = {
 			isa = PBXGroup;
 			children = (
 				518E02F227B91FBC007973E3 /* Entitlements */,
@@ -2521,6 +2534,7 @@
 				1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */,
 				1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */,
 				1AE6C1CC25B07E9500880D73 /* SPFunctionsTests.m */,
+				51AA84042FDE000100C4C14A /* SAAutoIncrementRuleSupportTests.swift */,
 				51BB84042FDE000200C4C14A /* SAForeignKeyReferenceRuleSupportTests.swift */,
 				8AEACADD4B36D9819ADC93DD /* TableSortHelperTests.swift */,
 				FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */,
@@ -2548,6 +2562,7 @@
 				5146E04B2F7A640C00C4C14A /* SAViewModeTests.swift */,
 				5146E0542F7A640C00C4C14A /* SADatabaseListManagerTests.swift */,
 				5147B0042F8C000100C4C14A /* SAWindowTitleBuilderTests.swift */,
+				5438EBE13DEF4D968F600054 /* SAStaleBookmarkAlertContentTests.swift */,
 				5147B0092F8C000200C4C14A /* SAFavoriteSearchMatcherTests.swift */,
 				5AF0C2000000000000000031 /* SAFavoriteItemTests.swift */,
 				5147B00E2F8C000300C4C14A /* SAConnectionDetailsValidatorTests.swift */,
@@ -2555,6 +2570,7 @@
 				510247F72FD9F2DC00586DEA /* SAFavoriteDeletionPromptTests.swift */,
 				51EF3E772FDC2AB700EFFF09 /* SABundleJSBridgeTests.swift */,
 				51EF3E6A2FDC251800EFFF09 /* SAConnectionFormModelTests.swift */,
+				51EA02522FDFF02C00DF6A7B /* SAArchivingTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -2608,6 +2624,7 @@
 				1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */,
 				51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */,
 				51384AC12903461000FEC501 /* NSDictionaryExtension.swift */,
+				51EAE7242FDFEFA300DF6A7B /* SAArchiving.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -2908,7 +2925,7 @@
 				cs,
 				eo,
 			);
-			mainGroup = 2A37F4AAFDCFA73011CA2CEA;
+			mainGroup = 2A37F4AAFDCFA73011CA2CEA /* sequel-pro */;
 			packageReferences = (
 				51D9527425AE2B5300574BEB /* XCRemoteSwiftPackageReference "fmdb" */,
 				51BC14FF25BE138700F1CDC9 /* XCRemoteSwiftPackageReference "SnapKit" */,
@@ -3172,6 +3189,7 @@
 				B6E4019A9F1C4A8AA0B3D102 /* SALocalNetworkPermissionChecker.swift in Sources */,
 				51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */,
 				1A8B53A52584650700526DED /* SPURLAdditions.m in Sources */,
+				51EAE7262FDFEFA300DF6A7B /* SAArchiving.swift in Sources */,
 				502D21F61BA50710000D4CE7 /* SPDataAdditionsTests.m in Sources */,
 				1A0FA3EE258B758B00486D52 /* SPArrayAdditions.m in Sources */,
 				1A70BC9225EF7EE9004BB992 /* FileManagerExtension.swift in Sources */,
@@ -3179,6 +3197,7 @@
 				503B02D21AE95E010060CAB1 /* SPConstants.m in Sources */,
 				1A4152F125AF531000B17249 /* GeneralSwiftTests.swift in Sources */,
 				503B02D11AE95DD40060CAB1 /* SPTableFilterParser.m in Sources */,
+				51AA84032FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift in Sources */,
 				51BB84032FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift in Sources */,
 				FDCF55E52788278500D30655 /* TableSortHelper.swift in Sources */,
 				519350302567D2FB001272B5 /* CollectionExtension.swift in Sources */,
@@ -3261,6 +3280,7 @@
 				CF0000172F8C000600C4C14A /* SPRuleFilterController.m in Sources */,
 				5147B0032F8C000100C4C14A /* SAWindowTitleBuilder.swift in Sources */,
 				5147B0052F8C000100C4C14A /* SAWindowTitleBuilderTests.swift in Sources */,
+				0FA952B1549148DF8C1B7E61 /* SAStaleBookmarkAlertContentTests.swift in Sources */,
 				5147B0082F8C000200C4C14A /* SAFavoriteSearchMatcher.swift in Sources */,
 				5147B00A2F8C000200C4C14A /* SAFavoriteSearchMatcherTests.swift in Sources */,
 				510247F92FD9F2DD00586DEA /* SAFavoriteDeletionPrompt.swift in Sources */,
@@ -3271,11 +3291,13 @@
 				5147B00D2F8C000300C4C14A /* SAConnectionDetailsValidator.swift in Sources */,
 				5147B00F2F8C000300C4C14A /* SAConnectionDetailsValidatorTests.swift in Sources */,
 				5147B0122F8C000400C4C14A /* SAConnectionFormHelpers.swift in Sources */,
+				51EA02532FDFF02C00DF6A7B /* SAArchivingTests.swift in Sources */,
 				5147B0142F8C000400C4C14A /* SAConnectionFormHelpersTests.swift in Sources */,
 				1717FA401558313A0065C036 /* RegexKitLite.m in Sources */,
 				50D3C35C1A771C4C00B5429C /* SPParserUtilsTest.m in Sources */,
 				1AE6C1CD25B07E9500880D73 /* SPFunctionsTests.m in Sources */,
 				1A9A40D525875EC9009F0E71 /* NSMutableArray-MultipleSort.m in Sources */,
+				51AA84052FDE000100C4C14A /* SAAutoIncrementRuleSupportTests.swift in Sources */,
 				51BB84052FDE000200C4C14A /* SAForeignKeyReferenceRuleSupportTests.swift in Sources */,
 				8AEACED018AABDD8CBB42877 /* TableSortHelperTests.swift in Sources */,
 				96557E151CF87F3F4EA29A47 /* AWSLoginCredentialsProvider.swift in Sources */,
@@ -3324,6 +3346,7 @@
 				17E641590EF01EF6001BC333 /* SPTableContent.m in Sources */,
 				17E6415A0EF01EF6001BC333 /* SPDatabaseDocument.m in Sources */,
 				17E6415B0EF01EF6001BC333 /* SPDataImport.m in Sources */,
+				51EAE7252FDFEFA300DF6A7B /* SAArchiving.swift in Sources */,
 				17E6415C0EF01EF6001BC333 /* SPTableStructure.m in Sources */,
 				1A8B582A25EEE15900DFC54A /* ByteCountFormatterExtension.swift in Sources */,
 				1A071B8D254D983700246912 /* SPNSMutableDictionaryAdditions.m in Sources */,
@@ -3561,6 +3584,7 @@
 				9BE765EBBDFD2F121C13D274 /* SPFillView.m in Sources */,
 				9BE76F2B943AFDBA6EDC52BE /* SPHelpViewerController.m in Sources */,
 				9BE765682376A00C82FB93AA /* SPHelpViewerClient.m in Sources */,
+				51AA84022FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift in Sources */,
 				8AEAC27B5C5B866575ECDB62 /* TableSortHelper.swift in Sources */,
 				44011FFBC7DF57126761313F /* SQLitePinnedTableManager.swift in Sources */,
 				72B694CE0DF16C2D0A54F29C /* ConnectionStringParser.swift in Sources */,
