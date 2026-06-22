@@ -441,7 +441,13 @@ private extension SPMCPServer {
             "serverInfo": [
                 "name": "sequel-ace-mcp",
                 "version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
-            ]
+            ],
+            "instructions": "This server exposes the MySQL/MariaDB connections open in Sequel Ace's tabs. "
+                + "Call list_connections first to see the open connections; each has an id. Every database "
+                + "tool takes an optional `connection` id and otherwise runs against the active tab. Explore "
+                + "schema with list_databases, list_tables and describe_table, read data with run_query or "
+                + "sample_table, and inspect a plan with explain_query. When read-only mode is enabled, only "
+                + "SELECT/SHOW/DESCRIBE/EXPLAIN statements are accepted."
         ]
     }
 
@@ -509,7 +515,7 @@ private extension SPMCPServer {
             makeTool(name: "run_query",
                      description: "Execute an SQL statement and return the results as JSON. When read-only mode is enabled in Sequel Ace preferences, only single non-destructive read statements (SELECT/SHOW/DESCRIBE/EXPLAIN) are accepted; otherwise write queries are permitted if the connection allows them.",
                      properties: ["sql": ["type": "string", "description": "SQL statement to execute"], "connection": conn],
-                     required: ["sql"]),
+                     required: ["sql"], readOnly: false),
             makeTool(name: "explain_query",
                      description: "Return the EXPLAIN plan for a query without executing it.",
                      properties: ["sql": ["type": "string", "description": "SQL statement to explain"], "connection": conn],
@@ -531,7 +537,7 @@ private extension SPMCPServer {
                         "format": ["type": "string", "description": "Output format: 'json' (default) or 'csv'"],
                         "path":   ["type": "string", "description": "Optional absolute file path. Defaults to the export folder in Sequel Ace preferences."],
                         "connection": conn
-                     ], required: ["sql"]),
+                     ], required: ["sql"], readOnly: false),
             makeTool(name: "server_info",
                      description: "Return the server version and key configuration variables for a connection.",
                      properties: ["connection": conn], required: []),
@@ -544,7 +550,10 @@ private extension SPMCPServer {
         ]
     }
 
-    func makeTool(name: String, description: String, properties: [String: Any], required: [String]) -> [String: Any] {
+    func makeTool(name: String, description: String, properties: [String: Any], required: [String], readOnly: Bool = true) -> [String: Any] {
+        // MCP tool annotations (2025-03-26): all tools are closed-world (they only
+        // touch the connected database); reads are non-destructive, run_query and
+        // export_results may modify data.
         return [
             "name": name,
             "description": description,
@@ -552,6 +561,12 @@ private extension SPMCPServer {
                 "type": "object",
                 "properties": properties,
                 "required": required
+            ],
+            "annotations": [
+                "title": name.replacingOccurrences(of: "_", with: " ").capitalized,
+                "readOnlyHint": readOnly,
+                "destructiveHint": !readOnly,
+                "openWorldHint": false
             ]
         ]
     }
