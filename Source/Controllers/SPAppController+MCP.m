@@ -28,23 +28,36 @@
 
 #import "SPAppController+MCP.h"
 #import "SPDatabaseDocument.h"
-#import "SPFavoritesController.h"
-#import "SPTreeNode.h"
-#import "SPFavoriteNode.h"
 #import "SPConstants.h"
 
 #import <SPMySQL/SPMySQL.h>
 
 #import "sequel-ace-Swift.h"
 
-static const NSInteger kMCPDefaultPort   = 8765;
+static const NSInteger  kMCPDefaultPort   = 8765;
 static const NSUInteger kMCPMaxResultRows = 10000;   // Safety cap for run_query.
 
 // Dispatch queue used for all MCP database operations (serial, background).
 static dispatch_queue_t sMCPDBQueue;
 
-// Port the server is currently bound to; 0 when stopped.
-static uint16_t sMCPRunningPort = 0;
+// Last MCP configuration we acted on, so we ignore the frequent
+// NSUserDefaultsDidChangeNotification callbacks that do not touch our keys.
+static BOOL     sMCPDesiredKnown   = NO;
+static BOOL     sMCPDesiredEnabled = NO;
+static uint16_t sMCPDesiredPort    = 0;
+
+static uint16_t mcpClampedPort(NSUserDefaults *prefs)
+{
+    NSInteger port = [prefs integerForKey:SPMCPServerPort];
+    if (port < 1024 || port > 65535) port = kMCPDefaultPort;
+    return (uint16_t)port;
+}
+
+// Escape an identifier (database/table/routine name) for use inside backticks.
+static NSString *mcpQuoteIdentifier(NSString *name)
+{
+    return [name stringByReplacingOccurrencesOfString:@"`" withString:@"``"];
+}
 
 @implementation SPAppController (MCP)
 
@@ -66,7 +79,10 @@ static uint16_t sMCPRunningPort = 0;
                                                object:nil];
 
     NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
-    if ([prefs boolForKey:SPMCPServerEnabled]) {
+    sMCPDesiredKnown   = YES;
+    sMCPDesiredEnabled = [prefs boolForKey:SPMCPServerEnabled];
+    sMCPDesiredPort    = mcpClampedPort(prefs);
+    if (sMCPDesiredEnabled) {
         [self startMCPServerWithPrefs:prefs];
     }
 }
@@ -74,37 +90,37 @@ static uint16_t sMCPRunningPort = 0;
 - (void)mcpDefaultsChanged:(NSNotification *)notification
 {
     NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
-    BOOL shouldRun = [prefs boolForKey:SPMCPServerEnabled];
-    BOOL isRunning = SPMCPServer.shared.isRunning;
+    BOOL shouldRun       = [prefs boolForKey:SPMCPServerEnabled];
+    uint16_t desiredPort = mcpClampedPort(prefs);
 
-    NSInteger desiredPort = [prefs integerForKey:SPMCPServerPort];
-    if (desiredPort < 1024 || desiredPort > 65535) desiredPort = kMCPDefaultPort;
+    // NSUserDefaultsDidChangeNotification fires for any pref change in the app;
+    // only react when the MCP enable flag or port actually changed, otherwise a
+    // failed start would be retried (and re-alert) on every unrelated change.
+    if (sMCPDesiredKnown && shouldRun == sMCPDesiredEnabled && desiredPort == sMCPDesiredPort) {
+        return;
+    }
+    sMCPDesiredKnown   = YES;
+    sMCPDesiredEnabled = shouldRun;
+    sMCPDesiredPort    = desiredPort;
 
-    if (shouldRun && !isRunning) {
+    if (shouldRun) {
+        // startWithPort: stops any existing listener first, so this covers both
+        // a fresh enable and a port change.
         [self startMCPServerWithPrefs:prefs];
-    } else if (!shouldRun && isRunning) {
+    } else if (SPMCPServer.shared.isRunning) {
         [SPMCPServer.shared stop];
-        sMCPRunningPort = 0;
         SPLog(@"MCP server stopped.");
-    } else if (shouldRun && isRunning && (uint16_t)desiredPort != sMCPRunningPort) {
-        // Rebind on the new port.
-        [self startMCPServerWithPrefs:prefs];
     }
 }
 
-#pragma mark - Private: start helper
-
 - (void)startMCPServerWithPrefs:(NSUserDefaults *)prefs
 {
-    NSInteger port = [prefs integerForKey:SPMCPServerPort];
-    if (port < 1024 || port > 65535) port = kMCPDefaultPort;
+    uint16_t port = mcpClampedPort(prefs);
 
-    [SPMCPServer.shared startWithPort:(uint16_t)port completion:^(BOOL success, NSString *errorMsg) {
+    [SPMCPServer.shared startWithPort:port completion:^(BOOL success, NSString *errorMsg) {
         if (success) {
-            sMCPRunningPort = (uint16_t)port;
-            SPLog(@"MCP server started on port %ld", (long)port);
+            SPLog(@"MCP server started on port %u", port);
         } else {
-            sMCPRunningPort = 0;
             SPLog(@"MCP server failed to start: %@", errorMsg ?: @"unknown error");
             NSAlert *alert = [[NSAlert alloc] init];
             alert.alertStyle      = NSAlertStyleWarning;
@@ -119,84 +135,103 @@ static uint16_t sMCPRunningPort = 0;
     }];
 }
 
-#pragma mark - SPMCPDataSource
+#pragma mark - Connection resolution
 
-- (NSArray<NSDictionary<NSString *, NSString *> *> *)mcpListConnections
+// Resolve a connection id (nil/empty -> front document) to its live connection.
+// Returns @{@"conn", @"id", @"database", @"host"} or nil if not connected.
+// Reads document state on the main thread.
+- (NSDictionary *)mcpResolveConnection:(NSString *)connID
 {
-    // Walk the favourites tree and collect leaf (connection) nodes.
-    NSMutableArray *result = [NSMutableArray array];
-    SPTreeNode *root = [SPFavoritesController.sharedFavoritesController favoritesTree];
-    [self appendFavoriteNodes:root toArray:result];
+    __block NSDictionary *info = nil;
+    void (^resolve)(void) = ^{
+        SPDatabaseDocument *doc = nil;
+        if (connID.length) {
+            for (SPWindowController *wc in self.tabManager.windowControllers) {
+                if ([wc.databaseDocument.processID isEqualToString:connID]) {
+                    doc = wc.databaseDocument;
+                    break;
+                }
+            }
+        } else {
+            doc = [self frontDocument];
+        }
+        if (doc && !doc.isProcessing) {
+            SPMySQLConnection *c = [doc getConnection];
+            if (c && c.isConnected) {
+                info = @{@"conn": c,
+                         @"id":   doc.processID ?: @"",
+                         @"database": (doc.database ?: @""),
+                         @"host": (doc.host ?: @"")};
+            }
+        }
+    };
+    if ([NSThread isMainThread]) resolve(); else dispatch_sync(dispatch_get_main_queue(), resolve);
+    return info;
+}
+
+- (NSDictionary *)mcpNoConnectionError
+{
+    return @{@"error": @"No matching database connection. Connect in Sequel Ace, or pass a valid connection id from list_connections."};
+}
+
+#pragma mark - SPMCPDataSource: connections
+
+- (NSArray<NSDictionary *> *)mcpListConnections
+{
+    __block NSMutableArray *result = [NSMutableArray array];
+    void (^collect)(void) = ^{
+        SPDatabaseDocument *front = [self frontDocument];
+        for (SPWindowController *wc in self.tabManager.windowControllers) {
+            SPDatabaseDocument *doc = wc.databaseDocument;
+            SPMySQLConnection *c = doc.isProcessing ? nil : [doc getConnection];
+            if (!c || !c.isConnected) continue;
+            NSMutableDictionary *info = [NSMutableDictionary dictionary];
+            info[@"id"]       = doc.processID ?: @"";
+            info[@"name"]     = doc.displayName ?: (doc.host ?: @"");
+            if (doc.host.length)     info[@"host"]     = doc.host;
+            if (doc.database.length) info[@"database"] = doc.database;
+            info[@"active"]   = @(doc == front);
+            [result addObject:[info copy]];
+        }
+    };
+    if ([NSThread isMainThread]) collect(); else dispatch_sync(dispatch_get_main_queue(), collect);
     return [result copy];
 }
 
-/// Recursive walk of the favourites tree; appends flattened dictionaries for each leaf node.
-- (void)appendFavoriteNodes:(SPTreeNode *)node toArray:(NSMutableArray *)array
-{
-    for (SPTreeNode *child in node.childNodes) {
-        if (child.isGroup) {
-            [self appendFavoriteNodes:child toArray:array];
-        } else {
-            SPFavoriteNode *favNode = (SPFavoriteNode *)child.representedObject;
-            NSDictionary *fav = favNode.nodeFavorite;
-            if (!fav) continue;
+#pragma mark - SPMCPDataSource: schema
 
-            // Include only the keys relevant to an AI agent; omit credentials/passwords.
-            NSMutableDictionary *info = [NSMutableDictionary dictionary];
-            for (NSString *key in @[SPFavoriteNameKey, SPFavoriteHostKey, SPFavoritePortKey,
-                                    SPFavoriteUserKey, SPFavoriteDatabaseKey, SPFavoriteTypeKey]) {
-                id rawVal = fav[key];
-                if (!rawVal || rawVal == [NSNull null]) continue;
-                NSString *val = [rawVal isKindOfClass:[NSString class]] ? rawVal : [rawVal description];
-                if (val.length) info[key] = val;
-            }
-            if (info.count) [array addObject:[info copy]];
-        }
-    }
-}
-
-- (NSDictionary *)mcpListDatabases
+- (NSDictionary *)mcpListDatabasesOnConnection:(NSString *)connID
 {
-    SPMySQLConnection *conn = [self activeMySQLConnection];
-    if (!conn) return @{@"error": @"No active database connection. Please connect in Sequel Ace first."};
+    NSDictionary *ci = [self mcpResolveConnection:connID];
+    if (!ci) return [self mcpNoConnectionError];
+    SPMySQLConnection *conn = ci[@"conn"];
 
     __block NSDictionary *result;
     dispatch_sync(sMCPDBQueue, ^{
         SPMySQLResult *res = [conn queryString:@"SHOW DATABASES"];
-        if ([conn queryErrored]) {
-            result = @{@"error": [conn lastErrorMessage] ?: @"Query error"};
-            return;
-        }
-        // Read rows as arrays for positional access.
+        if ([conn queryErrored]) { result = @{@"error": [conn lastErrorMessage] ?: @"Query error"}; return; }
         [res setDefaultRowReturnType:SPMySQLResultRowAsArray];
         NSMutableArray *dbs = [NSMutableArray array];
         for (NSArray *row in res) {
-            if (row.firstObject && row.firstObject != [NSNull null]) {
-                [dbs addObject:row.firstObject];
-            }
+            if (row.firstObject && row.firstObject != [NSNull null]) [dbs addObject:row.firstObject];
         }
-        result = @{@"databases": [dbs copy]};
+        result = @{@"databases": [dbs copy], @"connection": ci[@"id"]};
     });
     return result;
 }
 
-- (NSDictionary *)mcpListTablesInDatabase:(NSString *)database
+- (NSDictionary *)mcpListTablesInDatabase:(NSString *)database connection:(NSString *)connID
 {
     if (!database.length) return @{@"error": @"database argument is required"};
-
-    SPMySQLConnection *conn = [self activeMySQLConnection];
-    if (!conn) return @{@"error": @"No active database connection. Please connect in Sequel Ace first."};
+    NSDictionary *ci = [self mcpResolveConnection:connID];
+    if (!ci) return [self mcpNoConnectionError];
+    SPMySQLConnection *conn = ci[@"conn"];
 
     __block NSDictionary *result;
     dispatch_sync(sMCPDBQueue, ^{
-        NSString *useSQL = [NSString stringWithFormat:@"SHOW FULL TABLES IN `%@`",
-                            [database stringByReplacingOccurrencesOfString:@"`" withString:@"``"]];
-        SPMySQLResult *res = [conn queryString:useSQL];
-        if ([conn queryErrored]) {
-            result = @{@"error": [conn lastErrorMessage] ?: @"Query error"};
-            return;
-        }
-        // Read rows as arrays for positional access (first column name is dynamic).
+        NSString *sql = [NSString stringWithFormat:@"SHOW FULL TABLES IN `%@`", mcpQuoteIdentifier(database)];
+        SPMySQLResult *res = [conn queryString:sql];
+        if ([conn queryErrored]) { result = @{@"error": [conn lastErrorMessage] ?: @"Query error"}; return; }
         [res setDefaultRowReturnType:SPMySQLResultRowAsArray];
         NSMutableArray *tables = [NSMutableArray array];
         for (NSArray *row in res) {
@@ -207,33 +242,26 @@ static uint16_t sMCPRunningPort = 0;
                 [tables addObject:[entry copy]];
             }
         }
-        result = @{@"tables": [tables copy]};
+        result = @{@"tables": [tables copy], @"connection": ci[@"id"]};
     });
     return result;
 }
 
-- (NSDictionary *)mcpDescribeTable:(NSString *)table inDatabase:(NSString *)database
+- (NSDictionary *)mcpDescribeTable:(NSString *)table inDatabase:(NSString *)database connection:(NSString *)connID
 {
-    if (!table.length || !database.length) {
-        return @{@"error": @"Both database and table arguments are required"};
-    }
-
-    SPMySQLConnection *conn = [self activeMySQLConnection];
-    if (!conn) return @{@"error": @"No active database connection. Please connect in Sequel Ace first."};
+    if (!table.length || !database.length) return @{@"error": @"Both database and table arguments are required"};
+    NSDictionary *ci = [self mcpResolveConnection:connID];
+    if (!ci) return [self mcpNoConnectionError];
+    SPMySQLConnection *conn = ci[@"conn"];
 
     __block NSDictionary *result;
     dispatch_sync(sMCPDBQueue, ^{
-        NSString *qualifiedTable = [NSString stringWithFormat:@"`%@`.`%@`",
-            [database stringByReplacingOccurrencesOfString:@"`" withString:@"``"],
-            [table    stringByReplacingOccurrencesOfString:@"`" withString:@"``"]];
+        NSString *qualified = [NSString stringWithFormat:@"`%@`.`%@`",
+                               mcpQuoteIdentifier(database), mcpQuoteIdentifier(table)];
 
-        // Columns
         NSMutableArray *columns = [NSMutableArray array];
-        SPMySQLResult *colRes = [conn queryString:[NSString stringWithFormat:@"SHOW FULL COLUMNS FROM %@", qualifiedTable]];
-        if ([conn queryErrored]) {
-            result = @{@"error": [conn lastErrorMessage] ?: @"Could not describe table"};
-            return;
-        }
+        SPMySQLResult *colRes = [conn queryString:[NSString stringWithFormat:@"SHOW FULL COLUMNS FROM %@", qualified]];
+        if ([conn queryErrored]) { result = @{@"error": [conn lastErrorMessage] ?: @"Could not describe table"}; return; }
         for (NSDictionary *row in colRes) {
             NSMutableDictionary *col = [NSMutableDictionary dictionary];
             for (NSString *k in @[@"Field", @"Type", @"Null", @"Key", @"Default", @"Extra", @"Comment"]) {
@@ -243,9 +271,8 @@ static uint16_t sMCPRunningPort = 0;
             [columns addObject:[col copy]];
         }
 
-        // Indexes
         NSMutableArray *indexes = [NSMutableArray array];
-        SPMySQLResult *idxRes = [conn queryString:[NSString stringWithFormat:@"SHOW INDEX FROM %@", qualifiedTable]];
+        SPMySQLResult *idxRes = [conn queryString:[NSString stringWithFormat:@"SHOW INDEX FROM %@", qualified]];
         if (![conn queryErrored]) {
             for (NSDictionary *row in idxRes) {
                 NSMutableDictionary *idx = [NSMutableDictionary dictionary];
@@ -257,7 +284,6 @@ static uint16_t sMCPRunningPort = 0;
             }
         }
 
-        // Foreign keys
         NSMutableArray *foreignKeys = [NSMutableArray array];
         NSString *fkSQL = [NSString stringWithFormat:
             @"SELECT COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME "
@@ -276,80 +302,235 @@ static uint16_t sMCPRunningPort = 0;
             }
         }
 
-        result = @{@"columns": [columns copy], @"indexes": [indexes copy], @"foreignKeys": [foreignKeys copy]};
+        result = @{@"columns": [columns copy], @"indexes": [indexes copy],
+                   @"foreignKeys": [foreignKeys copy], @"connection": ci[@"id"]};
     });
     return result;
 }
 
-- (NSDictionary *)mcpRunQuery:(NSString *)sql
+- (NSDictionary *)mcpTableDDL:(NSString *)table inDatabase:(NSString *)database connection:(NSString *)connID
 {
-    if (!sql.length) return @{@"error": @"sql argument is required"};
-
-    SPMySQLConnection *conn = [self activeMySQLConnection];
-    if (!conn) return @{@"error": @"No active database connection. Please connect in Sequel Ace first."};
+    if (!table.length || !database.length) return @{@"error": @"Both database and table arguments are required"};
+    NSDictionary *ci = [self mcpResolveConnection:connID];
+    if (!ci) return [self mcpNoConnectionError];
+    SPMySQLConnection *conn = ci[@"conn"];
 
     __block NSDictionary *result;
     dispatch_sync(sMCPDBQueue, ^{
-        SPMySQLResult *res = [conn queryString:sql];
-
-        if ([conn queryErrored]) {
-            result = @{@"error": [conn lastErrorMessage] ?: @"Query error"};
-            return;
-        }
-
-        // Non-SELECT statements (INSERT, UPDATE, DELETE, …) return nil result.
-        if (!res) {
-            result = @{
-                @"columns": @[],
-                @"rows":    @[],
-                @"rowsAffected": @([conn rowsAffectedByLastQuery])
-            };
-            return;
-        }
-
-        NSArray<NSString *> *fieldNames = [res fieldNames];
-        NSMutableArray *rows = [NSMutableArray array];
-        unsigned long long rowCount = 0;
-
+        NSString *qualified = [NSString stringWithFormat:@"`%@`.`%@`",
+                               mcpQuoteIdentifier(database), mcpQuoteIdentifier(table)];
+        SPMySQLResult *res = [conn queryString:[NSString stringWithFormat:@"SHOW CREATE TABLE %@", qualified]];
+        if ([conn queryErrored] || !res) { result = @{@"error": [conn lastErrorMessage] ?: @"Could not read table DDL"}; return; }
+        NSString *ddl = nil;
         for (NSDictionary *row in res) {
-            if (rowCount >= kMCPMaxResultRows) break;
-            NSMutableDictionary *safeRow = [NSMutableDictionary dictionaryWithCapacity:row.count];
-            for (NSString *key in row) {
-                id val = row[key];
-                // Convert NSNull to nil (omit) and non-JSON-serialisable types to strings.
-                if (val == [NSNull null] || val == nil) {
-                    safeRow[key] = [NSNull null];
-                } else if ([val isKindOfClass:[NSString class]] ||
-                           [val isKindOfClass:[NSNumber class]] ||
-                           [val isKindOfClass:[NSNull class]]) {
-                    safeRow[key] = val;
-                } else {
-                    safeRow[key] = [val description];
-                }
-            }
-            [rows addObject:[safeRow copy]];
-            rowCount++;
+            ddl = row[@"Create Table"] ?: row[@"Create View"];
+            break;
         }
-
-        NSMutableDictionary *r = [NSMutableDictionary dictionary];
-        r[@"columns"] = fieldNames ?: @[];
-        r[@"rows"]    = [rows copy];
-        r[@"rowCount"] = @(rowCount);
-        if (rowCount >= kMCPMaxResultRows) {
-            r[@"truncated"] = @YES;
-            r[@"truncatedAt"] = @(kMCPMaxResultRows);
-        }
-        result = [r copy];
+        result = @{@"ddl": ddl ?: @"", @"connection": ci[@"id"]};
     });
     return result;
 }
 
-- (NSDictionary *)mcpExportResults:(NSString *)sql format:(NSString *)format path:(NSString *)path
+// type: "view" | "procedure" | "function" | "trigger" | "event"
+- (NSDictionary *)mcpListRoutinesOfType:(NSString *)type inDatabase:(NSString *)database connection:(NSString *)connID
+{
+    if (!database.length) return @{@"error": @"database argument is required"};
+    NSDictionary *ci = [self mcpResolveConnection:connID];
+    if (!ci) return [self mcpNoConnectionError];
+    SPMySQLConnection *conn = ci[@"conn"];
+    NSString *t = type.lowercaseString;
+
+    __block NSDictionary *result;
+    dispatch_sync(sMCPDBQueue, ^{
+        NSString *db = [conn escapeAndQuoteString:database];
+        NSString *sql = nil;
+        if ([t isEqualToString:@"view"]) {
+            sql = [NSString stringWithFormat:@"SELECT TABLE_NAME AS name FROM information_schema.VIEWS WHERE TABLE_SCHEMA = %@ ORDER BY TABLE_NAME", db];
+        } else if ([t isEqualToString:@"procedure"] || [t isEqualToString:@"function"]) {
+            sql = [NSString stringWithFormat:@"SELECT ROUTINE_NAME AS name FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = %@ AND ROUTINE_TYPE = '%@' ORDER BY ROUTINE_NAME",
+                   db, [t isEqualToString:@"procedure"] ? @"PROCEDURE" : @"FUNCTION"];
+        } else if ([t isEqualToString:@"trigger"]) {
+            sql = [NSString stringWithFormat:@"SELECT TRIGGER_NAME AS name, EVENT_OBJECT_TABLE AS table_name, EVENT_MANIPULATION AS event, ACTION_TIMING AS timing FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = %@ ORDER BY TRIGGER_NAME", db];
+        } else if ([t isEqualToString:@"event"]) {
+            sql = [NSString stringWithFormat:@"SELECT EVENT_NAME AS name, STATUS AS status FROM information_schema.EVENTS WHERE EVENT_SCHEMA = %@ ORDER BY EVENT_NAME", db];
+        } else {
+            result = @{@"error": @"type must be one of: view, procedure, function, trigger, event"};
+            return;
+        }
+        SPMySQLResult *res = [conn queryString:sql];
+        if ([conn queryErrored]) { result = @{@"error": [conn lastErrorMessage] ?: @"Query error"}; return; }
+        NSMutableArray *items = [NSMutableArray array];
+        for (NSDictionary *row in res) {
+            NSMutableDictionary *entry = [NSMutableDictionary dictionary];
+            for (NSString *k in row) {
+                id v = row[k];
+                if (v && v != [NSNull null]) entry[k] = v;
+            }
+            [items addObject:[entry copy]];
+        }
+        result = @{@"items": [items copy], @"connection": ci[@"id"]};
+    });
+    return result;
+}
+
+- (NSDictionary *)mcpRoutineDefinitionOfType:(NSString *)type name:(NSString *)name inDatabase:(NSString *)database connection:(NSString *)connID
+{
+    if (!type.length || !name.length || !database.length) return @{@"error": @"type, name and database arguments are required"};
+    NSDictionary *ci = [self mcpResolveConnection:connID];
+    if (!ci) return [self mcpNoConnectionError];
+    SPMySQLConnection *conn = ci[@"conn"];
+    NSString *t = type.uppercaseString;
+    NSArray *allowed = @[@"PROCEDURE", @"FUNCTION", @"TRIGGER", @"VIEW", @"EVENT"];
+    if (![allowed containsObject:t]) return @{@"error": @"type must be one of: procedure, function, trigger, view, event"};
+
+    __block NSDictionary *result;
+    dispatch_sync(sMCPDBQueue, ^{
+        NSString *qualified = [NSString stringWithFormat:@"`%@`.`%@`",
+                               mcpQuoteIdentifier(database), mcpQuoteIdentifier(name)];
+        SPMySQLResult *res = [conn queryString:[NSString stringWithFormat:@"SHOW CREATE %@ %@", t, qualified]];
+        if ([conn queryErrored] || !res) { result = @{@"error": [conn lastErrorMessage] ?: @"Could not read definition"}; return; }
+        NSString *def = nil;
+        for (NSDictionary *row in res) {
+            for (NSString *k in row) {
+                if ([k hasPrefix:@"Create "] || [k isEqualToString:@"SQL Original Statement"]) {
+                    id v = row[k];
+                    if (v && v != [NSNull null]) { def = [v description]; break; }
+                }
+            }
+            break;
+        }
+        result = @{@"definition": def ?: @"", @"connection": ci[@"id"]};
+    });
+    return result;
+}
+
+#pragma mark - SPMCPDataSource: queries
+
+- (NSDictionary *)mcpRunQuery:(NSString *)sql connection:(NSString *)connID
+{
+    if (!sql.length) return @{@"error": @"sql argument is required"};
+    NSDictionary *ci = [self mcpResolveConnection:connID];
+    if (!ci) return [self mcpNoConnectionError];
+    SPMySQLConnection *conn = ci[@"conn"];
+
+    __block NSDictionary *result;
+    dispatch_sync(sMCPDBQueue, ^{
+        result = [self mcpExecuteResultQuery:sql onConnection:conn connectionID:ci[@"id"]];
+    });
+    return result;
+}
+
+// Runs a result-returning query and packages rows/columns. Caller holds sMCPDBQueue.
+- (NSDictionary *)mcpExecuteResultQuery:(NSString *)sql onConnection:(SPMySQLConnection *)conn connectionID:(NSString *)connID
+{
+    SPMySQLResult *res = [conn queryString:sql];
+    if ([conn queryErrored]) return @{@"error": [conn lastErrorMessage] ?: @"Query error"};
+
+    // Non-SELECT statements (INSERT, UPDATE, DELETE, ...) return nil result.
+    if (!res) {
+        return @{@"columns": @[], @"rows": @[],
+                 @"rowsAffected": @([conn rowsAffectedByLastQuery]),
+                 @"connection": connID ?: @""};
+    }
+
+    NSArray<NSString *> *fieldNames = [res fieldNames];
+    NSMutableArray *rows = [NSMutableArray array];
+    unsigned long long rowCount = 0;
+    for (NSDictionary *row in res) {
+        if (rowCount >= kMCPMaxResultRows) break;
+        NSMutableDictionary *safeRow = [NSMutableDictionary dictionaryWithCapacity:row.count];
+        for (NSString *key in row) {
+            id val = row[key];
+            if (val == [NSNull null] || val == nil) {
+                safeRow[key] = [NSNull null];
+            } else if ([val isKindOfClass:[NSString class]] || [val isKindOfClass:[NSNumber class]]) {
+                safeRow[key] = val;
+            } else {
+                safeRow[key] = [val description];
+            }
+        }
+        [rows addObject:[safeRow copy]];
+        rowCount++;
+    }
+
+    NSMutableDictionary *r = [NSMutableDictionary dictionary];
+    r[@"columns"]    = fieldNames ?: @[];
+    r[@"rows"]       = [rows copy];
+    r[@"rowCount"]   = @(rowCount);
+    r[@"connection"] = connID ?: @"";
+    if (rowCount >= kMCPMaxResultRows) {
+        r[@"truncated"]   = @YES;
+        r[@"truncatedAt"] = @(kMCPMaxResultRows);
+    }
+    return [r copy];
+}
+
+- (NSDictionary *)mcpExplainQuery:(NSString *)sql connection:(NSString *)connID
+{
+    if (!sql.length) return @{@"error": @"sql argument is required"};
+    NSString *trimmed = [sql stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    // Plain EXPLAIN never executes the statement, but EXPLAIN ANALYZE does, so
+    // refuse a query that already starts with ANALYZE.
+    if ([trimmed.uppercaseString hasPrefix:@"ANALYZE"]) {
+        return @{@"error": @"ANALYZE is not allowed; it would execute the statement"};
+    }
+    NSDictionary *ci = [self mcpResolveConnection:connID];
+    if (!ci) return [self mcpNoConnectionError];
+    SPMySQLConnection *conn = ci[@"conn"];
+
+    __block NSDictionary *result;
+    dispatch_sync(sMCPDBQueue, ^{
+        result = [self mcpExecuteResultQuery:[NSString stringWithFormat:@"EXPLAIN %@", trimmed]
+                                onConnection:conn connectionID:ci[@"id"]];
+    });
+    return result;
+}
+
+- (NSDictionary *)mcpSampleTable:(NSString *)table inDatabase:(NSString *)database limit:(NSInteger)limit connection:(NSString *)connID
+{
+    if (!table.length || !database.length) return @{@"error": @"Both database and table arguments are required"};
+    NSDictionary *ci = [self mcpResolveConnection:connID];
+    if (!ci) return [self mcpNoConnectionError];
+    SPMySQLConnection *conn = ci[@"conn"];
+    NSInteger n = limit;
+    if (n < 1) n = 10;
+    if (n > 1000) n = 1000;
+
+    __block NSDictionary *result;
+    dispatch_sync(sMCPDBQueue, ^{
+        NSString *sql = [NSString stringWithFormat:@"SELECT * FROM `%@`.`%@` LIMIT %ld",
+                         mcpQuoteIdentifier(database), mcpQuoteIdentifier(table), (long)n];
+        result = [self mcpExecuteResultQuery:sql onConnection:conn connectionID:ci[@"id"]];
+    });
+    return result;
+}
+
+- (NSDictionary *)mcpCountRowsInTable:(NSString *)table inDatabase:(NSString *)database connection:(NSString *)connID
+{
+    if (!table.length || !database.length) return @{@"error": @"Both database and table arguments are required"};
+    NSDictionary *ci = [self mcpResolveConnection:connID];
+    if (!ci) return [self mcpNoConnectionError];
+    SPMySQLConnection *conn = ci[@"conn"];
+
+    __block NSDictionary *result;
+    dispatch_sync(sMCPDBQueue, ^{
+        NSString *sql = [NSString stringWithFormat:@"SELECT COUNT(*) AS count FROM `%@`.`%@`",
+                         mcpQuoteIdentifier(database), mcpQuoteIdentifier(table)];
+        SPMySQLResult *res = [conn queryString:sql];
+        if ([conn queryErrored] || !res) { result = @{@"error": [conn lastErrorMessage] ?: @"Query error"}; return; }
+        [res setDefaultRowReturnType:SPMySQLResultRowAsArray];
+        NSString *count = @"0";
+        for (NSArray *row in res) { if (row.firstObject) count = [row.firstObject description]; break; }
+        result = @{@"count": @(count.longLongValue), @"connection": ci[@"id"]};
+    });
+    return result;
+}
+
+- (NSDictionary *)mcpExportResults:(NSString *)sql format:(NSString *)format path:(NSString *)path connection:(NSString *)connID
 {
     if (!sql.length) return @{@"error": @"sql argument is required"};
 
-    // Run the query first.
-    NSDictionary *queryResult = [self mcpRunQuery:sql];
+    NSDictionary *queryResult = [self mcpRunQuery:sql connection:connID];
     if (queryResult[@"error"]) return queryResult;
 
     NSArray *columns = queryResult[@"columns"] ?: @[];
@@ -357,82 +538,114 @@ static uint16_t sMCPRunningPort = 0;
 
     NSError *writeError = nil;
     NSString *content;
-
     if ([format.lowercaseString isEqualToString:@"csv"]) {
         content = [self csvStringFromColumns:columns rows:rows];
     } else {
-        // Default: JSON
-        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:queryResult
-                                                           options:NSJSONWritingPrettyPrinted
-                                                             error:&writeError];
+        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:queryResult options:NSJSONWritingPrettyPrinted error:&writeError];
         if (writeError) return @{@"error": writeError.localizedDescription};
         content = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
     }
 
-    // Ensure the parent directory exists.
     NSString *dir = [path stringByDeletingLastPathComponent];
-    [[NSFileManager defaultManager] createDirectoryAtPath:dir
-                                  withIntermediateDirectories:YES
-                                               attributes:nil
-                                                    error:nil];
+    [[NSFileManager defaultManager] createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:nil];
 
-    BOOL written = [content writeToFile:path
-                             atomically:YES
-                               encoding:NSUTF8StringEncoding
-                                  error:&writeError];
+    BOOL written = [content writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:&writeError];
     if (!written) return @{@"error": writeError.localizedDescription ?: @"Could not write file"};
 
-    return @{
-        @"path":     path,
-        @"rowCount": @(rows.count),
-        @"format":   format ?: @"json"
-    };
+    return @{@"path": path, @"rowCount": @(rows.count), @"format": format ?: @"json", @"connection": connID ?: @""};
 }
 
-#pragma mark - Private helpers
+#pragma mark - SPMCPDataSource: diagnostics
 
-/// Returns the mySQLConnection of the front document, or nil if not connected.
-- (SPMySQLConnection *)activeMySQLConnection
+- (NSDictionary *)mcpServerInfoOnConnection:(NSString *)connID
 {
-    __block SPMySQLConnection *conn = nil;
-    // Must read on main thread as frontDocument accesses UI state.
-    if ([NSThread isMainThread]) {
-        SPDatabaseDocument *doc = [self frontDocument];
-        if (doc && !doc.isProcessing) conn = [doc getConnection];
-    } else {
-        dispatch_sync(dispatch_get_main_queue(), ^{
-            SPDatabaseDocument *doc = [self frontDocument];
-            if (doc && !doc.isProcessing) conn = [doc getConnection];
-        });
-    }
-    return conn;
+    NSDictionary *ci = [self mcpResolveConnection:connID];
+    if (!ci) return [self mcpNoConnectionError];
+    SPMySQLConnection *conn = ci[@"conn"];
+
+    __block NSDictionary *result;
+    dispatch_sync(sMCPDBQueue, ^{
+        NSMutableDictionary *info = [NSMutableDictionary dictionary];
+        SPMySQLResult *res = [conn queryString:
+            @"SHOW VARIABLES WHERE Variable_name IN "
+            @"('version','version_comment','version_compile_os','protocol_version','max_connections','sql_mode','time_zone','character_set_server')"];
+        if (![conn queryErrored]) {
+            [res setDefaultRowReturnType:SPMySQLResultRowAsArray];
+            for (NSArray *row in res) {
+                if (row.count >= 2 && row[0] != [NSNull null]) {
+                    info[[row[0] description]] = (row[1] == [NSNull null]) ? @"" : [row[1] description];
+                }
+            }
+        }
+        result = @{@"variables": [info copy], @"connection": ci[@"id"], @"database": ci[@"database"], @"host": ci[@"host"]};
+    });
+    return result;
 }
 
-/// Build a CSV string from column names and row dictionaries.
+- (NSDictionary *)mcpTableSizesInDatabase:(NSString *)database connection:(NSString *)connID
+{
+    if (!database.length) return @{@"error": @"database argument is required"};
+    NSDictionary *ci = [self mcpResolveConnection:connID];
+    if (!ci) return [self mcpNoConnectionError];
+    SPMySQLConnection *conn = ci[@"conn"];
+
+    __block NSDictionary *result;
+    dispatch_sync(sMCPDBQueue, ^{
+        NSString *sql = [NSString stringWithFormat:
+            @"SELECT TABLE_NAME AS name, TABLE_ROWS AS row_estimate, DATA_LENGTH AS data_bytes, INDEX_LENGTH AS index_bytes "
+             "FROM information_schema.TABLES WHERE TABLE_SCHEMA = %@ ORDER BY (DATA_LENGTH + INDEX_LENGTH) DESC",
+            [conn escapeAndQuoteString:database]];
+        SPMySQLResult *res = [conn queryString:sql];
+        if ([conn queryErrored]) { result = @{@"error": [conn lastErrorMessage] ?: @"Query error"}; return; }
+        NSMutableArray *tables = [NSMutableArray array];
+        for (NSDictionary *row in res) {
+            NSMutableDictionary *entry = [NSMutableDictionary dictionary];
+            for (NSString *k in row) { id v = row[k]; if (v && v != [NSNull null]) entry[k] = v; }
+            [tables addObject:[entry copy]];
+        }
+        result = @{@"tables": [tables copy], @"connection": ci[@"id"]};
+    });
+    return result;
+}
+
+- (NSDictionary *)mcpProcessListOnConnection:(NSString *)connID
+{
+    NSDictionary *ci = [self mcpResolveConnection:connID];
+    if (!ci) return [self mcpNoConnectionError];
+    SPMySQLConnection *conn = ci[@"conn"];
+
+    __block NSDictionary *result;
+    dispatch_sync(sMCPDBQueue, ^{
+        SPMySQLResult *res = [conn queryString:@"SHOW FULL PROCESSLIST"];
+        if ([conn queryErrored] || !res) { result = @{@"error": [conn lastErrorMessage] ?: @"Query error"}; return; }
+        NSMutableArray *procs = [NSMutableArray array];
+        for (NSDictionary *row in res) {
+            NSMutableDictionary *entry = [NSMutableDictionary dictionary];
+            for (NSString *k in row) { id v = row[k]; entry[k] = (v == [NSNull null] || !v) ? [NSNull null] : v; }
+            [procs addObject:[entry copy]];
+        }
+        result = @{@"processes": [procs copy], @"connection": ci[@"id"]};
+    });
+    return result;
+}
+
+#pragma mark - CSV helpers
+
 - (NSString *)csvStringFromColumns:(NSArray<NSString *> *)columns rows:(NSArray<NSDictionary *> *)rows
 {
     NSMutableString *csv = [NSMutableString string];
-
-    // Header row
     NSMutableArray *escapedHeaders = [NSMutableArray arrayWithCapacity:columns.count];
-    for (NSString *col in columns) {
-        [escapedHeaders addObject:[self csvEscape:col]];
-    }
+    for (NSString *col in columns) [escapedHeaders addObject:[self csvEscape:col]];
     [csv appendFormat:@"%@\n", [escapedHeaders componentsJoinedByString:@","]];
 
-    // Data rows
     for (NSDictionary *row in rows) {
         NSMutableArray *vals = [NSMutableArray arrayWithCapacity:columns.count];
         for (NSString *col in columns) {
             id val = row[col];
             NSString *strVal;
-            if (val == nil || val == [NSNull null]) {
-                strVal = @"";
-            } else if ([val isKindOfClass:[NSString class]]) {
-                strVal = val;
-            } else {
-                strVal = [val description];
-            }
+            if (val == nil || val == [NSNull null]) strVal = @"";
+            else if ([val isKindOfClass:[NSString class]]) strVal = val;
+            else strVal = [val description];
             [vals addObject:[self csvEscape:strVal]];
         }
         [csv appendFormat:@"%@\n", [vals componentsJoinedByString:@","]];
@@ -442,7 +655,6 @@ static uint16_t sMCPRunningPort = 0;
 
 - (NSString *)csvEscape:(NSString *)value
 {
-    // Quote fields that contain commas, quotes, or newlines.
     if ([value containsString:@","] || [value containsString:@"\""] ||
         [value containsString:@"\n"] || [value containsString:@"\r"]) {
         NSString *escaped = [value stringByReplacingOccurrencesOfString:@"\"" withString:@"\"\""];

@@ -34,23 +34,50 @@ import Network
 /// Provides database operations to the MCP server. Implemented by SPAppController.
 /// All methods may be called from a background queue.
 @objc public protocol SPMCPDataSource: AnyObject {
-    /// Returns an array of connection-favourite dictionaries (name, host, port, user, database, type).
-    func mcpListConnections() -> [[String: String]]
+    /// Open connections (one per Sequel Ace tab): id, name, host, database, active.
+    func mcpListConnections() -> [[String: Any]]
 
-    /// Returns names of all databases on the active connection, or an error.
-    func mcpListDatabases() -> [String: Any]
+    /// Databases on the given connection (empty id = front tab).
+    func mcpListDatabases(onConnection connID: String) -> [String: Any]
 
-    /// Lists tables in the given database. Returns {"tables": [...]} or {"error": "..."}.
-    func mcpListTables(inDatabase database: String) -> [String: Any]
+    /// Tables and views in a database.
+    func mcpListTables(inDatabase database: String, connection connID: String) -> [String: Any]
 
-    /// Describes a table's columns, indexes and foreign keys. Returns {"columns": [...], "indexes": [...]} or {"error": "..."}.
-    func mcpDescribeTable(_ table: String, inDatabase database: String) -> [String: Any]
+    /// Columns, indexes and foreign keys for a table.
+    func mcpDescribeTable(_ table: String, inDatabase database: String, connection connID: String) -> [String: Any]
 
-    /// Runs an arbitrary SQL statement. Returns {"columns": [...], "rows": [...], "rowsAffected": N} or {"error": "..."}.
-    func mcpRunQuery(_ sql: String) -> [String: Any]
+    /// The CREATE TABLE statement for a table.
+    func mcpTableDDL(_ table: String, inDatabase database: String, connection connID: String) -> [String: Any]
 
-    /// Runs a query and writes results to disk. Returns {"path": "...", "rowCount": N} or {"error": "..."}.
-    func mcpExportResults(_ sql: String, format: String, path: String) -> [String: Any]
+    /// Routines of a type ("view"/"procedure"/"function"/"trigger"/"event") in a database.
+    func mcpListRoutines(ofType type: String, inDatabase database: String, connection connID: String) -> [String: Any]
+
+    /// The CREATE statement for a routine.
+    func mcpRoutineDefinition(ofType type: String, name: String, inDatabase database: String, connection connID: String) -> [String: Any]
+
+    /// Runs an arbitrary SQL statement.
+    func mcpRunQuery(_ sql: String, connection connID: String) -> [String: Any]
+
+    /// Returns the EXPLAIN plan for a query (does not execute it).
+    func mcpExplainQuery(_ sql: String, connection connID: String) -> [String: Any]
+
+    /// Returns up to `limit` rows from a table.
+    func mcpSampleTable(_ table: String, inDatabase database: String, limit: Int, connection connID: String) -> [String: Any]
+
+    /// Returns the exact row count of a table.
+    func mcpCountRows(inTable table: String, inDatabase database: String, connection connID: String) -> [String: Any]
+
+    /// Runs a query and writes results to disk.
+    func mcpExportResults(_ sql: String, format: String, path: String, connection connID: String) -> [String: Any]
+
+    /// Server version and key variables.
+    func mcpServerInfo(onConnection connID: String) -> [String: Any]
+
+    /// Per-table row estimates and storage sizes for a database.
+    func mcpTableSizes(inDatabase database: String, connection connID: String) -> [String: Any]
+
+    /// The server process list (SHOW FULL PROCESSLIST).
+    func mcpProcessList(onConnection connID: String) -> [String: Any]
 }
 
 // MARK: - MCP Server
@@ -90,14 +117,15 @@ import Network
                 return
             }
 
-            // Restrict to loopback only for security.
+            // Restrict to loopback only for security. The port comes from
+            // requiredLocalEndpoint; passing `on:` as well is rejected with EINVAL.
             let params = NWParameters.tcp
             params.requiredLocalEndpoint = NWEndpoint.hostPort(
                 host: NWEndpoint.Host("127.0.0.1"), port: nwPort)
 
             let newListener: NWListener
             do {
-                newListener = try NWListener(using: params, on: nwPort)
+                newListener = try NWListener(using: params)
             } catch {
                 DispatchQueue.main.async { completion(false, error.localizedDescription) }
                 return
@@ -384,6 +412,16 @@ private extension SPMCPServer {
             let callResult = callTool(name: toolName, arguments: arguments)
             return jsonRPCSuccess(id: id, result: callResult)
 
+        case "resources/list":
+            return jsonRPCSuccess(id: id, result: ["resources": resourceList()])
+
+        case "resources/read":
+            let uri = params?["uri"] as? String ?? ""
+            return jsonRPCSuccess(id: id, result: ["contents": resourceRead(uri: uri)])
+
+        case "completion/complete":
+            return jsonRPCSuccess(id: id, result: ["completion": completion(params: params)])
+
         case "ping":
             return jsonRPCSuccess(id: id, result: [:])
 
@@ -396,7 +434,9 @@ private extension SPMCPServer {
         return [
             "protocolVersion": protocolVersion ?? "2024-11-05",
             "capabilities": [
-                "tools": ["listChanged": false]
+                "tools": ["listChanged": false],
+                "resources": ["subscribe": false, "listChanged": false],
+                "completions": [:]
             ],
             "serverInfo": [
                 "name": "sequel-ace-mcp",
@@ -426,54 +466,81 @@ private extension SPMCPServer {
 private extension SPMCPServer {
 
     func toolDefinitions() -> [[String: Any]] {
+        let conn: [String: Any] = ["type": "string", "description": "Optional connection id from list_connections; defaults to the active Sequel Ace tab."]
+        let db:   [String: Any] = ["type": "string", "description": "Database name"]
+        let tbl:  [String: Any] = ["type": "string", "description": "Table name"]
+
         return [
-            makeTool(
-                name: "list_connections",
-                description: "List all saved database connections (favourites) configured in Sequel Ace.",
-                properties: [:],
-                required: []
-            ),
-            makeTool(
-                name: "list_databases",
-                description: "List all databases on the currently active connection.",
-                properties: [:],
-                required: []
-            ),
-            makeTool(
-                name: "list_tables",
-                description: "List all tables (and views) in a specific database.",
-                properties: [
-                    "database": ["type": "string", "description": "Database name"]
-                ],
-                required: ["database"]
-            ),
-            makeTool(
-                name: "describe_table",
-                description: "Return the column definitions, indexes, and foreign keys for a table.",
-                properties: [
-                    "database": ["type": "string", "description": "Database name"],
-                    "table":    ["type": "string", "description": "Table name"]
-                ],
-                required: ["database", "table"]
-            ),
-            makeTool(
-                name: "run_query",
-                description: "Execute an SQL statement and return the results as JSON. When read-only mode is enabled in Sequel Ace preferences, only SELECT/SHOW/DESCRIBE/EXPLAIN queries are accepted; otherwise write queries are permitted if the connection allows them.",
-                properties: [
-                    "sql": ["type": "string", "description": "SQL statement to execute"]
-                ],
-                required: ["sql"]
-            ),
-            makeTool(
-                name: "export_results",
-                description: "Execute an SQL query and save the results to a file on the local machine.",
-                properties: [
-                    "sql":    ["type": "string",  "description": "SQL statement to execute"],
-                    "format": ["type": "string",  "description": "Output format: 'json' (default) or 'csv'"],
-                    "path":   ["type": "string",  "description": "Optional absolute file path. Defaults to the export folder configured in Sequel Ace preferences."]
-                ],
-                required: ["sql"]
-            )
+            makeTool(name: "list_connections",
+                     description: "List the database connections currently open in Sequel Ace (one per tab), with their id, host, current database, and which one is active.",
+                     properties: [:], required: []),
+            makeTool(name: "list_databases",
+                     description: "List all databases on a connection.",
+                     properties: ["connection": conn], required: []),
+            makeTool(name: "list_tables",
+                     description: "List all tables and views in a database.",
+                     properties: ["database": db, "connection": conn], required: ["database"]),
+            makeTool(name: "describe_table",
+                     description: "Return the columns, indexes, and foreign keys for a table.",
+                     properties: ["database": db, "table": tbl, "connection": conn], required: ["database", "table"]),
+            makeTool(name: "get_table_ddl",
+                     description: "Return the CREATE TABLE statement for a table.",
+                     properties: ["database": db, "table": tbl, "connection": conn], required: ["database", "table"]),
+            makeTool(name: "list_views",
+                     description: "List the views in a database.",
+                     properties: ["database": db, "connection": conn], required: ["database"]),
+            makeTool(name: "list_procedures",
+                     description: "List the stored procedures in a database.",
+                     properties: ["database": db, "connection": conn], required: ["database"]),
+            makeTool(name: "list_functions",
+                     description: "List the stored functions in a database.",
+                     properties: ["database": db, "connection": conn], required: ["database"]),
+            makeTool(name: "list_triggers",
+                     description: "List the triggers in a database.",
+                     properties: ["database": db, "connection": conn], required: ["database"]),
+            makeTool(name: "get_routine_definition",
+                     description: "Return the CREATE statement for a view, procedure, function, trigger, or event.",
+                     properties: [
+                        "database": db,
+                        "type": ["type": "string", "description": "One of: view, procedure, function, trigger, event"],
+                        "name": ["type": "string", "description": "Routine name"],
+                        "connection": conn
+                     ], required: ["database", "type", "name"]),
+            makeTool(name: "run_query",
+                     description: "Execute an SQL statement and return the results as JSON. When read-only mode is enabled in Sequel Ace preferences, only single non-destructive read statements (SELECT/SHOW/DESCRIBE/EXPLAIN) are accepted; otherwise write queries are permitted if the connection allows them.",
+                     properties: ["sql": ["type": "string", "description": "SQL statement to execute"], "connection": conn],
+                     required: ["sql"]),
+            makeTool(name: "explain_query",
+                     description: "Return the EXPLAIN plan for a query without executing it.",
+                     properties: ["sql": ["type": "string", "description": "SQL statement to explain"], "connection": conn],
+                     required: ["sql"]),
+            makeTool(name: "sample_table",
+                     description: "Return up to `limit` rows from a table (default 10, max 1000).",
+                     properties: [
+                        "database": db, "table": tbl,
+                        "limit": ["type": "integer", "description": "Maximum number of rows (default 10, max 1000)"],
+                        "connection": conn
+                     ], required: ["database", "table"]),
+            makeTool(name: "count_rows",
+                     description: "Return the exact row count of a table.",
+                     properties: ["database": db, "table": tbl, "connection": conn], required: ["database", "table"]),
+            makeTool(name: "export_results",
+                     description: "Execute an SQL query and save the results to a file on the local machine.",
+                     properties: [
+                        "sql":    ["type": "string", "description": "SQL statement to execute"],
+                        "format": ["type": "string", "description": "Output format: 'json' (default) or 'csv'"],
+                        "path":   ["type": "string", "description": "Optional absolute file path. Defaults to the export folder in Sequel Ace preferences."],
+                        "connection": conn
+                     ], required: ["sql"]),
+            makeTool(name: "server_info",
+                     description: "Return the server version and key configuration variables for a connection.",
+                     properties: ["connection": conn], required: []),
+            makeTool(name: "table_sizes",
+                     description: "Return per-table row estimates and storage sizes for a database.",
+                     properties: ["database": db, "connection": conn], required: ["database"]),
+            makeTool(name: "process_list",
+                     description: "Return the server process list (SHOW FULL PROCESSLIST).",
+                     properties: ["connection": conn], required: [])
         ]
     }
 
@@ -499,71 +566,187 @@ private extension SPMCPServer {
             return toolError("No active database connection. Please connect to a database in Sequel Ace first.")
         }
 
+        let conn = arguments["connection"] as? String ?? ""
+
+        func requireString(_ key: String) -> String? { arguments[key] as? String }
+
         switch name {
         case "list_connections":
-            let conns = ds.mcpListConnections()
-            return toolResult(text: jsonString(conns) ?? "[]")
+            return toolResult(text: jsonString(ds.mcpListConnections()) ?? "[]")
 
         case "list_databases":
-            let result = ds.mcpListDatabases()
-            return toolResultFromDict(result, key: "databases")
+            return dictResult(ds.mcpListDatabases(onConnection: conn))
 
         case "list_tables":
-            guard let db = arguments["database"] as? String else {
-                return toolError("Missing required argument: database")
-            }
-            let result = ds.mcpListTables(inDatabase: db)
-            return toolResultFromDict(result, key: "tables")
+            guard let db = requireString("database") else { return toolError("Missing required argument: database") }
+            return dictResult(ds.mcpListTables(inDatabase: db, connection: conn))
 
         case "describe_table":
-            guard let db    = arguments["database"] as? String,
-                  let table = arguments["table"]    as? String else {
+            guard let db = requireString("database"), let table = requireString("table") else {
                 return toolError("Missing required arguments: database, table")
             }
-            let result = ds.mcpDescribeTable(table, inDatabase: db)
-            if let err = result["error"] as? String { return toolError(err) }
-            return toolResult(text: jsonString(result) ?? "{}")
+            return dictResult(ds.mcpDescribeTable(table, inDatabase: db, connection: conn))
+
+        case "get_table_ddl":
+            guard let db = requireString("database"), let table = requireString("table") else {
+                return toolError("Missing required arguments: database, table")
+            }
+            return dictResult(ds.mcpTableDDL(table, inDatabase: db, connection: conn))
+
+        case "list_views", "list_procedures", "list_functions", "list_triggers":
+            guard let db = requireString("database") else { return toolError("Missing required argument: database") }
+            let type = ["list_views": "view", "list_procedures": "procedure",
+                        "list_functions": "function", "list_triggers": "trigger"][name] ?? "view"
+            return dictResult(ds.mcpListRoutines(ofType: type, inDatabase: db, connection: conn))
+
+        case "get_routine_definition":
+            guard let db = requireString("database"), let type = requireString("type"), let rname = requireString("name") else {
+                return toolError("Missing required arguments: database, type, name")
+            }
+            return dictResult(ds.mcpRoutineDefinition(ofType: type, name: rname, inDatabase: db, connection: conn))
 
         case "run_query":
-            guard let sql = arguments["sql"] as? String else {
-                return toolError("Missing required argument: sql")
-            }
+            guard let sql = requireString("sql") else { return toolError("Missing required argument: sql") }
             if let rejection = readOnlyRejection(for: sql) { return rejection }
-            let result = ds.mcpRunQuery(sql)
-            if let err = result["error"] as? String { return toolError(err) }
-            return toolResult(text: jsonString(result) ?? "{}")
+            return dictResult(ds.mcpRunQuery(sql, connection: conn))
+
+        case "explain_query":
+            guard let sql = requireString("sql") else { return toolError("Missing required argument: sql") }
+            return dictResult(ds.mcpExplainQuery(sql, connection: conn))
+
+        case "sample_table":
+            guard let db = requireString("database"), let table = requireString("table") else {
+                return toolError("Missing required arguments: database, table")
+            }
+            let limit = (arguments["limit"] as? NSNumber)?.intValue ?? 10
+            return dictResult(ds.mcpSampleTable(table, inDatabase: db, limit: limit, connection: conn))
+
+        case "count_rows":
+            guard let db = requireString("database"), let table = requireString("table") else {
+                return toolError("Missing required arguments: database, table")
+            }
+            return dictResult(ds.mcpCountRows(inTable: table, inDatabase: db, connection: conn))
 
         case "export_results":
-            guard let sql = arguments["sql"] as? String else {
-                return toolError("Missing required argument: sql")
-            }
+            guard let sql = requireString("sql") else { return toolError("Missing required argument: sql") }
             if let rejection = readOnlyRejection(for: sql) { return rejection }
-            let format = arguments["format"] as? String ?? "json"
-            let path   = arguments["path"]   as? String ?? defaultExportPath(format: format)
-            let result = ds.mcpExportResults(sql, format: format, path: path)
-            if let err = result["error"] as? String { return toolError(err) }
-            return toolResult(text: jsonString(result) ?? "{}")
+            let format = requireString("format") ?? "json"
+            let path   = requireString("path") ?? defaultExportPath(format: format)
+            return dictResult(ds.mcpExportResults(sql, format: format, path: path, connection: conn))
+
+        case "server_info":
+            return dictResult(ds.mcpServerInfo(onConnection: conn))
+
+        case "table_sizes":
+            guard let db = requireString("database") else { return toolError("Missing required argument: database") }
+            return dictResult(ds.mcpTableSizes(inDatabase: db, connection: conn))
+
+        case "process_list":
+            return dictResult(ds.mcpProcessList(onConnection: conn))
 
         default:
             return toolError("Unknown tool: \(name)")
         }
     }
 
+    // MARK: - Resources
+
+    private func uriEncode(_ s: String) -> String {
+        s.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? s
+    }
+
+    /// Lists the tables of the active connection's current database as MCP resources.
+    func resourceList() -> [[String: Any]] {
+        guard let ds = dataSource else { return [] }
+        let conns = ds.mcpListConnections()
+        guard let active = conns.first(where: { ($0["active"] as? Bool) ?? false }) ?? conns.first else { return [] }
+        let connID = active["id"] as? String ?? ""
+        guard let database = active["database"] as? String, !database.isEmpty else { return [] }
+
+        let result = ds.mcpListTables(inDatabase: database, connection: connID)
+        guard let tables = result["tables"] as? [[String: Any]] else { return [] }
+
+        return tables.compactMap { t in
+            guard let name = t["name"] as? String else { return nil }
+            let uri = "sequelace://\(uriEncode(connID))/\(uriEncode(database))/\(uriEncode(name))"
+            return [
+                "uri": uri,
+                "name": "\(database).\(name)",
+                "description": "Schema (columns, indexes, foreign keys) for \(database).\(name)",
+                "mimeType": "application/json"
+            ]
+        }
+    }
+
+    /// Reads a `sequelace://<connId>/<database>/<table>` resource as the table schema.
+    func resourceRead(uri: String) -> [[String: Any]] {
+        guard let ds = dataSource else { return [] }
+        let trimmed = uri.replacingOccurrences(of: "sequelace://", with: "")
+        let parts = trimmed.components(separatedBy: "/").map { $0.removingPercentEncoding ?? $0 }
+        guard parts.count == 3 else { return [] }
+        let (connID, database, table) = (parts[0], parts[1], parts[2])
+        let schema = ds.mcpDescribeTable(table, inDatabase: database, connection: connID)
+        return [[
+            "uri": uri,
+            "mimeType": "application/json",
+            "text": jsonString(schema) ?? "{}"
+        ]]
+    }
+
+    // MARK: - Argument completion
+
+    func completion(params: [String: Any]?) -> [String: Any] {
+        let argument = params?["argument"] as? [String: Any]
+        let argName  = argument?["name"] as? String ?? ""
+        let typed    = (argument?["value"] as? String ?? "").lowercased()
+        let context  = (params?["context"] as? [String: Any])?["arguments"] as? [String: Any] ?? [:]
+        let connID   = context["connection"] as? String ?? ""
+
+        var values: [String] = []
+        guard let ds = dataSource else { return completionResult([]) }
+
+        switch argName {
+        case "connection":
+            values = ds.mcpListConnections().compactMap { $0["id"] as? String }
+        case "type":
+            values = ["view", "procedure", "function", "trigger", "event"]
+        case "database":
+            if let dbs = ds.mcpListDatabases(onConnection: connID)["databases"] as? [String] { values = dbs }
+        case "table":
+            if let db = context["database"] as? String, !db.isEmpty,
+               let tables = ds.mcpListTables(inDatabase: db, connection: connID)["tables"] as? [[String: Any]] {
+                values = tables.compactMap { $0["name"] as? String }
+            }
+        default:
+            values = []
+        }
+
+        if !typed.isEmpty {
+            values = values.filter { $0.lowercased().hasPrefix(typed) }
+        }
+        return completionResult(values)
+    }
+
+    private func completionResult(_ values: [String]) -> [String: Any] {
+        let capped = Array(values.prefix(100))
+        return ["values": capped, "total": capped.count, "hasMore": values.count > capped.count]
+    }
+
     /// Returns a tool error when read-only mode is on and `sql` is not a
     /// non-destructive read, otherwise nil.
     func readOnlyRejection(for sql: String) -> [String: Any]? {
         guard UserDefaults.standard.bool(forKey: SPMCPReadOnly) else { return nil }
-        guard SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(sql) else {
-            return toolError("Read-only mode is enabled. Only SELECT, SHOW, DESCRIBE and EXPLAIN queries are allowed. Turn off read-only mode in Sequel Ace Preferences > MCP Server to run write queries.")
+        guard SPMCPReadOnlyGuard.isReadOnly(sql) else {
+            return toolError("Read-only mode is enabled. Only single, non-destructive read statements (SELECT, SHOW, DESCRIBE, EXPLAIN) are allowed. Turn off read-only mode in Sequel Ace Preferences > MCP Server to run write queries.")
         }
         return nil
     }
 
-    // Builds an MCP tool result from a dict that may contain an "error" key.
-    func toolResultFromDict(_ dict: [String: Any], key: String) -> [String: Any] {
+    // Builds an MCP tool result from a data-source dict: surfaces an "error" key
+    // as a tool error, otherwise serialises the whole dict as the tool output.
+    func dictResult(_ dict: [String: Any]) -> [String: Any] {
         if let err = dict["error"] as? String { return toolError(err) }
-        let value = dict[key]
-        return toolResult(text: jsonString(value) ?? "[]")
+        return toolResult(text: jsonString(dict) ?? "{}")
     }
 
     func toolResult(text: String) -> [String: Any] {
