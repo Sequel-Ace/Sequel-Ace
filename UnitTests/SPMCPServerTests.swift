@@ -58,6 +58,16 @@ final class SPMCPServerHTTPRequestTests: XCTestCase {
         XCTAssertEqual(req?.headers["mcp-session-id"], "a:b:c")
     }
 
+    func testHeaderWithoutSpaceAfterColonParsed() {
+        // HTTP allows "Name:value" with no space; it must still be parsed so that
+        // Content-Length (body) and Origin (security) are honoured.
+        let body = "{}"
+        let req = request("POST /mcp HTTP/1.1\r\nContent-Length:\(body.utf8.count)\r\nOrigin:http://localhost\r\n\r\n\(body)")
+        XCTAssertEqual(req?.headers["content-length"], "2")
+        XCTAssertEqual(req?.headers["origin"], "http://localhost")
+        XCTAssertEqual(req?.body, Data(body.utf8))
+    }
+
     // MARK: - Body / Content-Length
 
     func testParsesBodyOfDeclaredLength() {

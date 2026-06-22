@@ -298,6 +298,19 @@ private extension SPMCPServer {
             self.sseClients[clientID] = SSEClient(connection: connection, sessionID: sessionID)
             self.clientsLock.unlock()
 
+            // Drop the client when its connection closes, so sseClients does not leak
+            // entries or hand out a stale session.
+            connection.stateUpdateHandler = { [weak self] state in
+                switch state {
+                case .failed, .cancelled:
+                    self?.clientsLock.lock()
+                    self?.sseClients.removeValue(forKey: clientID)
+                    self?.clientsLock.unlock()
+                default:
+                    break
+                }
+            }
+
             // Advertise the message endpoint for this session.
             let msgURL = "http://127.0.0.1:\(self.listeningPort)/message?sessionId=\(sessionID)"
             self.sendSSEEvent("endpoint", data: msgURL, to: connection)

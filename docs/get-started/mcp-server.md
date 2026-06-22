@@ -21,7 +21,7 @@ The server is **disabled by default**, listens only on `127.0.0.1`, and is never
 4. Optionally change the port (default `8765`)
 5. Leave **Read-only mode** enabled (the default) to reject queries that modify data, or uncheck it to allow writes
 
-The preference pane shows a live status line and an auto-generated config snippet you can copy.
+The preference pane shows a live status line and the server endpoint URL with a Copy button.
 
 #### Available tools
 

@@ -124,10 +124,11 @@ struct HTTPRequest {
 
         var hdrs = [String: String]()
         for line in lines.dropFirst() {
-            let kv = line.components(separatedBy: ": ")
-            if kv.count >= 2 {
-                hdrs[kv[0].lowercased()] = kv.dropFirst().joined(separator: ": ")
-            }
+            // Split on the first colon; the space after it is optional in HTTP.
+            guard let colon = line.firstIndex(of: ":") else { continue }
+            let name = line[..<colon].trimmingCharacters(in: .whitespaces).lowercased()
+            let value = line[line.index(after: colon)...].trimmingCharacters(in: .whitespaces)
+            if !name.isEmpty { hdrs[name] = value }
         }
         headers = hdrs
 

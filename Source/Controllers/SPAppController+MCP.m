@@ -650,6 +650,18 @@ static id mcpDecode(id value)
 {
     if (!sql.length) return @{@"error": @"sql argument is required"};
 
+    // Confine writes to the configured export folder. An MCP tool path is
+    // attacker-influencable (prompt injection), so never write to an arbitrary path.
+    NSString *base = [[NSUserDefaults standardUserDefaults] stringForKey:SPMCPExportPath];
+    if (!base.length) base = NSSearchPathForDirectoriesInDomains(NSDownloadsDirectory, NSUserDomainMask, YES).firstObject ?: NSTemporaryDirectory();
+    NSString *stdBase = [base stringByStandardizingPath];
+    NSString *stdPath = [path stringByStandardizingPath];
+    NSString *baseWithSlash = [stdBase hasSuffix:@"/"] ? stdBase : [stdBase stringByAppendingString:@"/"];
+    if (![stdPath isEqualToString:stdBase] && ![stdPath hasPrefix:baseWithSlash]) {
+        return @{@"error": [NSString stringWithFormat:@"Export path must be inside the configured export folder: %@", stdBase]};
+    }
+    path = stdPath;
+
     NSDictionary *queryResult = [self mcpRunQuery:sql params:nil limit:0 offset:0 connection:connID];
     if (queryResult[@"error"]) return queryResult;
 
