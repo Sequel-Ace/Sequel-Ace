@@ -3464,7 +3464,7 @@
 "Add the following to your claude_desktop_config.json or .claude/mcp.json:" = "Add the following to your claude_desktop_config.json or .claude/mcp.json:";
 
 /* MCP pref: claude code hint */
-"For Claude Code, run: claude mcp add sequel-ace http://127.0.0.1:8765/sse" = "For Claude Code, run: claude mcp add sequel-ace http://127.0.0.1:8765/sse";
+"For Claude Code, run: claude mcp add --transport http sequel-ace http://127.0.0.1:8765/mcp" = "For Claude Code, run: claude mcp add --transport http sequel-ace http://127.0.0.1:8765/mcp";
 
 /* MCP preference pane name */
 "MCP Server" = "MCP Server";
@@ -3488,7 +3488,7 @@
 "MCP server is disabled." = "MCP server is disabled.";
 
 /* MCP pref: status running */
-"MCP server is running on http://127.0.0.1:%ld/sse" = "MCP server is running on http://127.0.0.1:%ld/sse";
+"MCP server is running on http://127.0.0.1:%ld/mcp" = "MCP server is running on http://127.0.0.1:%ld/mcp";
 
 /* MCP pref: status stopped */
 "MCP server is not running." = "MCP server is not running.";
@@ -3501,3 +3501,21 @@
 
 /* MCP pref: read-only checkbox */
 "Read-only mode (reject queries that modify data)" = "Read-only mode (reject queries that modify data)";
+
+/* MCP pref: server row label */
+"Server:" = "Server:";
+
+/* MCP pref: export row label */
+"Export folder:" = "Export folder:";
+
+/* MCP pref: config row label */
+"Config:" = "Config:";
+
+/* MCP pref: endpoint row label */
+"Endpoint:" = "Endpoint:";
+
+/* MCP pref: copy endpoint button */
+"Copy" = "Copy";
+
+/* MCP pref: endpoint hint */
+"Add this URL to any MCP-compatible client (Claude, Cursor, Cline, VS Code, and others)." = "Add this URL to any MCP-compatible client (Claude, Cursor, Cline, VS Code, and others).";
