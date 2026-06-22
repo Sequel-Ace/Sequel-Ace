@@ -83,61 +83,81 @@ import Network
 
     /// Start the server on `port`. Completion fires on the main queue.
     @objc public func start(port: UInt16, completion: @escaping (Bool, String?) -> Void) {
-        stop()
-        guard let nwPort = NWEndpoint.Port(rawValue: port) else {
-            DispatchQueue.main.async { completion(false, "Invalid port number") }
-            return
-        }
-
-        // Restrict to loopback only for security.
-        let params = NWParameters.tcp
-        params.requiredLocalEndpoint = NWEndpoint.hostPort(
-            host: NWEndpoint.Host("127.0.0.1"), port: nwPort)
-
-        let newListener: NWListener
-        do {
-            newListener = try NWListener(using: params, on: nwPort)
-        } catch {
-            DispatchQueue.main.async { completion(false, error.localizedDescription) }
-            return
-        }
-
-        newListener.stateUpdateHandler = { [weak self] state in
-            switch state {
-            case .ready:
-                DispatchQueue.main.async { completion(true, nil) }
-            case .failed(let error):
-                DispatchQueue.main.async { completion(false, error.localizedDescription) }
-                self?.stop()
-            default:
-                break
+        // Tear down any existing listener, then bind the new one once the old port is released.
+        stop {
+            guard let nwPort = NWEndpoint.Port(rawValue: port) else {
+                DispatchQueue.main.async { completion(false, "Invalid port number") }
+                return
             }
+
+            // Restrict to loopback only for security.
+            let params = NWParameters.tcp
+            params.requiredLocalEndpoint = NWEndpoint.hostPort(
+                host: NWEndpoint.Host("127.0.0.1"), port: nwPort)
+
+            let newListener: NWListener
+            do {
+                newListener = try NWListener(using: params, on: nwPort)
+            } catch {
+                DispatchQueue.main.async { completion(false, error.localizedDescription) }
+                return
+            }
+
+            newListener.stateUpdateHandler = { [weak self] state in
+                switch state {
+                case .ready:
+                    DispatchQueue.main.async { completion(true, nil) }
+                case .failed(let error):
+                    DispatchQueue.main.async { completion(false, error.localizedDescription) }
+                    self?.stop()
+                default:
+                    break
+                }
+            }
+
+            newListener.newConnectionHandler = { [weak self] conn in
+                self?.accept(connection: conn)
+            }
+
+            self.listenerLock.lock()
+            self.listener = newListener
+            self.listenerLock.unlock()
+
+            newListener.start(queue: self.serverQueue)
         }
-
-        newListener.newConnectionHandler = { [weak self] conn in
-            self?.accept(connection: conn)
-        }
-
-        listenerLock.lock()
-        listener = newListener
-        listenerLock.unlock()
-
-        newListener.start(queue: serverQueue)
     }
 
     /// Stop the server and close all open SSE connections.
     @objc public func stop() {
+        stop(completion: nil)
+    }
+
+    /// Stop the server and close all open SSE connections.
+    /// `completion` fires on the main queue once the listener has fully cancelled.
+    public func stop(completion: (() -> Void)?) {
         listenerLock.lock()
         let l = listener
         listener = nil
         listenerLock.unlock()
-        l?.cancel()
 
         clientsLock.lock()
         let all = sseClients
         sseClients.removeAll()
         clientsLock.unlock()
         for client in all.values { client.connection.cancel() }
+
+        guard let l = l else {
+            DispatchQueue.main.async { completion?() }
+            return
+        }
+
+        // Signal completion once the listener reports .cancelled.
+        l.stateUpdateHandler = { state in
+            if case .cancelled = state {
+                DispatchQueue.main.async { completion?() }
+            }
+        }
+        l.cancel()
     }
 
     // MARK: - Private state
@@ -286,7 +306,10 @@ private extension SPMCPServer {
         dbQueue.async { [weak self] in
             guard let self else { return }
             let response = self.dispatch(jsonRPC: json)
-            self.sendToSSEClient(sessionID: sessionID, message: response)
+            // An empty dict means there is no response to send (e.g. notifications).
+            if !response.isEmpty {
+                self.sendToSSEClient(sessionID: sessionID, message: response)
+            }
         }
     }
 
