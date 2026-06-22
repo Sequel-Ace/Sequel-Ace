@@ -96,7 +96,7 @@ static const NSInteger kMCPMaxPort         = 65535;
     [root addSubview:_portField];
 
     NSTextField *portHint = [self makeSmallLabel:NSLocalizedString(
-        @"Default: 8765. Any unprivileged port (1024–65535) may be used.",
+        @"Default: 8765. Any unprivileged port (1024-65535) may be used.",
         @"MCP pref: port hint")
                                                x:x + 144 y:y + 2 width:maxWidth - 144];
     [root addSubview:portHint];
@@ -120,7 +120,7 @@ static const NSInteger kMCPMaxPort         = 65535;
     _exportPathField.stringValue = [self currentExportPath];
     [root addSubview:_exportPathField];
 
-    _exportPathButton = [NSButton buttonWithTitle:NSLocalizedString(@"Choose…", @"MCP pref: choose button")
+    _exportPathButton = [NSButton buttonWithTitle:NSLocalizedString(@"Choose...", @"MCP pref: choose button")
                                            target:self
                                            action:@selector(chooseExportPath:)];
     _exportPathButton.frame = NSMakeRect(x + 416, y - 1, 108, 22);
@@ -235,10 +235,11 @@ static const NSInteger kMCPMaxPort         = 65535;
     [prefs setInteger:port forKey:SPMCPServerPort];
     [self refreshConfigSample];
 
-    // Restart server with new port if it is running.
+    // Persisting the new port posts NSUserDefaultsDidChangeNotification, which
+    // SPAppController observes and uses to restart the server on the new port if
+    // it is running. We just refresh the status label after it has had time to
+    // rebind.
     if ([prefs boolForKey:SPMCPServerEnabled]) {
-        [prefs setBool:NO  forKey:SPMCPServerEnabled];
-        [prefs setBool:YES forKey:SPMCPServerEnabled];
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)),
                        dispatch_get_main_queue(), ^{
             [self refreshStatus];
@@ -264,7 +265,7 @@ static const NSInteger kMCPMaxPort         = 65535;
     [panel beginSheetModalForWindow:self.view.window completionHandler:^(NSModalResponse result) {
         if (result == NSModalResponseOK) {
             NSString *path = panel.URL.path;
-            [self->prefs setString:path forKey:SPMCPExportPath];
+            [self->prefs setObject:path forKey:SPMCPExportPath];
             self->_exportPathField.stringValue = path;
         }
     }];
