@@ -45,6 +45,7 @@ NSArray<NSString *> *SPValidMySQLConnectionURLQueryParameters(void)
 	         @"socket",
 	         @"aws_profile",
 	         @"aws_region",
+	         @"enable_cleartext_plugin",
 	         @"type"];
 }
 
@@ -304,6 +305,16 @@ BOOL SPExtractConnectionDetailsFromMySQLURL(NSURL *url, NSMutableDictionary *det
 
 			if ([queryItem.name isEqualToString:@"type"]) {
 				requestedType = [[decodedValue lowercaseString] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+				continue;
+			}
+
+			// Normalize enable_cleartext_plugin to enableClearTextPlugin with NSNumber value
+			if ([queryItem.name isEqualToString:@"enable_cleartext_plugin"]) {
+				BOOL enableClearText = ([decodedValue isEqualToString:@"1"] ||
+										[[decodedValue lowercaseString] isEqualToString:@"true"] ||
+										[[decodedValue lowercaseString] isEqualToString:@"yes"] ||
+										[[decodedValue lowercaseString] isEqualToString:@"y"]);
+				[details setObject:@(enableClearText) forKey:@"enableClearTextPlugin"];
 				continue;
 			}
 

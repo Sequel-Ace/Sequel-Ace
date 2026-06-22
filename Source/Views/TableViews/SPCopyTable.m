@@ -64,6 +64,7 @@ static const NSInteger kBlobExclude     = 1;
 static const NSInteger kBlobInclude     = 2;
 static const NSInteger kBlobAsFile      = 3;
 static const NSInteger kBlobAsImageFile = 4;
+static const NSInteger SACellFilterMenuTag = 1945001;
 
 NSString *kColType    = @"TYPE";
 NSString *kColMapping = @"MAPPING";
@@ -79,6 +80,76 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
  */
 @synthesize fieldEditorSelectedRange;
 @synthesize tmpBlobFileDirectory;
+
+- (void)_removeCellFilterMenuItemFromMenu:(NSMenu *)menu
+{
+	NSMenuItem *item = [menu itemWithTag:SACellFilterMenuTag];
+	if(!item) return;
+
+	NSInteger index = [menu indexOfItem:item];
+	if(index > 0 && [[menu itemAtIndex:index - 1] isSeparatorItem]) {
+		[menu removeItemAtIndex:index - 1];
+		index--;
+	}
+
+	[menu removeItem:item];
+}
+
+- (NSInteger)_storageColumnIndexForVisibleColumn:(NSInteger)visibleColumn
+{
+	if(visibleColumn < 0 || visibleColumn >= (NSInteger)[[self tableColumns] count]) return NSNotFound;
+
+	NSTableColumn *tableColumn = [[self tableColumns] objectAtIndex:visibleColumn];
+	NSNumber *storageColumn = [SACellFilterColumnIdentifier storageIndexFromIdentifier:[tableColumn identifier]];
+	return storageColumn ? [storageColumn integerValue] : NSNotFound;
+}
+
+- (void)_appendCellFilterMenuToMenu:(NSMenu *)menu forEvent:(NSEvent *)event
+{
+	if(![[self delegate] isKindOfClass:[SPTableContent class]]) return;
+
+	NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
+	NSInteger row = [self rowAtPoint:point];
+	NSInteger visibleColumn = [self columnAtPoint:point];
+	if(row < 0 || visibleColumn < 0) return;
+
+	NSInteger storageColumn = [self _storageColumnIndexForVisibleColumn:visibleColumn];
+	if(storageColumn == NSNotFound) return;
+
+	NSArray *columnDefinitions = [(id <SPDatabaseContentViewDelegate>)[self delegate] dataColumnDefinitions];
+	if(storageColumn < 0 || storageColumn >= (NSInteger)[columnDefinitions count]) return;
+
+	NSDictionary *columnDefinition = [columnDefinitions objectAtIndex:storageColumn];
+	NSString *columnName = [columnDefinition objectForKey:@"name"];
+	NSString *typeGrouping = [columnDefinition objectForKey:@"typegrouping"];
+	NSArray<SACellFilterMenuItemDescriptor *> *descriptors = [SACellFilterMenuBuilder menuItemDescriptorsWithColumnName:columnName
+		typeGrouping:typeGrouping
+		value:[self displayStringForRow:row column:visibleColumn]
+		isNull:[self isNullAtRow:row column:visibleColumn]];
+
+	if(![descriptors count]) return;
+
+	NSMenu *filterMenu = [[NSMenu alloc] init];
+	SPTableContent *tableContent = (SPTableContent *)[self delegate];
+	for(SACellFilterMenuItemDescriptor *descriptor in descriptors) {
+		SACellFilterAction *action = [[SACellFilterAction alloc] initWithTableContent:tableContent
+			columnName:[descriptor columnName]
+			operatorName:[descriptor operatorName]
+			values:[descriptor values]
+			isNull:[descriptor isNull]];
+		NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:[descriptor title] action:@selector(apply:) keyEquivalent:@""];
+		[item setTarget:action];
+		[item setRepresentedObject:action];
+		[filterMenu addItem:item];
+	}
+
+	[menu addItem:[NSMenuItem separatorItem]];
+
+	NSMenuItem *filterMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Filter by Selected Value", @"Cell context menu filter submenu title") action:nil keyEquivalent:@""];
+	[filterMenuItem setTag:SACellFilterMenuTag];
+	[menu addItem:filterMenuItem];
+	[menu setSubmenu:filterMenu forItem:filterMenuItem];
+}
 
 /**
  * Cell editing in SPCustomQuery or for views in SPTableContent
@@ -840,6 +911,20 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 	return [cellData description];
 }
 
+- (BOOL)isNullAtRow:(NSInteger)row column:(NSInteger)visibleColumn
+{
+	NSArray *columns = [self tableColumns];
+	NSInteger numColumns = (NSInteger)[columns count];
+	if (row < 0 || visibleColumn < 0 || visibleColumn >= numColumns) return NO;
+	if (!tableStorage || (NSUInteger)row >= [tableStorage count]) return NO;
+
+	NSUInteger storageIndex = (NSUInteger)[[[columns safeObjectAtIndex:(NSUInteger)visibleColumn] identifier] integerValue];
+	if (storageIndex >= [tableStorage columnCount]) return NO;
+
+	id cellData = SPDataStorageObjectAtRowAndColumn(tableStorage, (NSUInteger)row, storageIndex);
+	return (cellData != nil) && [cellData isNSNull];
+}
+
 #pragma mark -
 
 /**
@@ -1039,6 +1124,7 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 	NSMenu *menu = [self menu];
 
 	if(![[self delegate] isKindOfClass:[SPCustomQuery class]] && ![[self delegate] isKindOfClass:[SPTableContent class]]) return menu;
+	[self _removeCellFilterMenuItemFromMenu:menu];
 
 	[SPBundleManager.shared reloadBundles:self];
 
@@ -1101,6 +1187,8 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 			}
 		}
 	}
+
+	[self _appendCellFilterMenuToMenu:menu forEvent:event];
 
 	return menu;
 

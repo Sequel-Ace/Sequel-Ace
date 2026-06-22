@@ -906,14 +906,16 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 }
 
 - (void)handleMySQLConnectWithURL:(NSURL *)url {
-    NSMutableDictionary *details = [NSMutableDictionary dictionary];
-    BOOL connect = NO;
-    NSArray<NSString *> *invalidParameters = nil;
-    BOOL parsed = SPExtractConnectionDetailsFromMySQLURL(url, details, &connect, &invalidParameters);
+    // Parse connection string using Swift helper
+    ConnectionStringParseResult *result = [ConnectionStringParser parse:url];
+    NSMutableDictionary *details = [result.details mutableCopy];
+    BOOL connect = result.autoConnect;
+    NSArray<NSString *> *invalidParameters = result.invalidParameters;
+    BOOL parsed = result.success;
 
     if (!parsed) {
         if ([invalidParameters count] > 0) {
-            NSArray<NSString *> *validParameters = SPValidMySQLConnectionURLQueryParameters();
+            NSArray<NSString *> *validParameters = [ConnectionStringParser validQueryParameters];
             NSBeep();
             [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"sequelace URL Scheme Error", @"sequelace url Scheme Error")
                                          message:[NSString stringWithFormat:@"%@:\n\n%@: %@\n\n%@: %@",

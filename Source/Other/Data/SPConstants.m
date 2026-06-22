@@ -233,6 +233,7 @@ NSString *SPCSVImportLineTerminator              = @"CSVImportLineTerminator";
 NSString *SPCSVFieldImportMappingAlignment       = @"CSVFieldImportMappingAlignment";
 NSString *SPImportClipboardTempFileNamePrefix    = @"~/tmp/_SP_ClipBoard_Import_File_";
 NSString *SPLastExportSettings                   = @"LastExportSettings";
+NSString *SPAutoCheckClipboardForConnectionStrings = @"AutoCheckClipboardForConnectionStrings";
 NSString *SASecureBookmarks                      = @"SPSecureBookmarks"; // MUST be SPSecureBookmarks for var name SASecureBookmarks
 NSString *SPStaleSecureBookmarks                 = @"SPStaleSecureBookmarks";
 NSString *SPKnownHostsBookmarks                  = @"SPKnownHostsBookmarks";
@@ -360,6 +361,7 @@ NSString *SPFavoriteSSHPortKey                           = @"sshPort";
 NSString *SPFavoriteSSHUserKey                           = @"sshUser";
 NSString *SPFavoriteSSHKeyLocationEnabledKey             = @"sshKeyLocationEnabled";
 NSString *SPFavoriteSSHKeyLocationKey                    = @"sshKeyLocation";
+NSString *SPFavoriteSSHRemoteSocketPathKey               = @"sshRemoteSocketPath";
 NSString *SPFavoriteAllowDataLocalInfileKey              = @"allowDataLocalInfile";
 NSString *SPFavoriteEnableClearTextPluginKey             = @"enableClearTextPlugin";
 NSString *SPFavoriteUseSSLKey                            = @"useSSL";
@@ -377,6 +379,13 @@ NSString *SPFavoriteAWSRegionKey                         = @"awsRegion";
 NSString *SPFavoriteAWSProfileKey                        = @"awsProfile";
 NSString *SPFavoriteAWSAccessKeyKey                      = @"awsAccessKey";
 NSString *SPFavoriteAWSUseProfileKey                     = @"awsUseProfile";
+
+// Vault Connection
+NSString *SPFavoriteVaultHostKey                         = @"vaultHost";
+NSString *SPFavoriteVaultPortKey                         = @"vaultPort";
+NSString *SPFavoriteVaultOIDCMountKey                    = @"vaultOIDCMount";
+NSString *SPFavoriteVaultCredentialsPathKey              = @"vaultCredentialsPath";
+
 NSString *SPConnectionFavoritesChangedNotification       = @"SPConnectionFavoritesChanged";
 NSString *SPConnectionShownSocketHelp                    = @"SPConnectionShownSocketHelp";
 NSString *SPStaleBookmarksHelp                           = @"SPStaleBookmarksHelp";

@@ -1015,7 +1015,7 @@
                                                                             <rect key="frame" x="0.0" y="0.0" width="576" height="29"/>
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
-                                                                                <ruleEditor nestingMode="compound" canRemoveAllRows="YES" rowHeight="29" id="FF9-z2-9od">
+                                                                                <ruleEditor nestingMode="compound" canRemoveAllRows="YES" rowHeight="29" id="FF9-z2-9od" customClass="SPFilterRuleEditor" customModule="Sequel_Ace" customModuleProvider="target">
                                                                                     <rect key="frame" x="0.0" y="0.0" width="576" height="29"/>
                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" flexibleMaxY="YES"/>
                                                                                     <connections>
@@ -1636,6 +1636,13 @@ Gw
                                                                                                             <menuItem title="Switch Default" id="8321">
                                                                                                                 <connections>
                                                                                                                     <action selector="switchDefaultQueryAction:" target="134" id="8333"/>
+                                                                                                                </connections>
+                                                                                                            </menuItem>
+                                                                                                            <menuItem isSeparatorItem="YES" id="AE2-29-1S0"/>
+                                                                                                            <menuItem title="Explain Current Query" keyEquivalent="e" id="AE2-29-1E0">
+                                                                                                                <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
+                                                                                                                <connections>
+                                                                                                                    <action selector="runExplainQueryAction:" target="134" id="AE2-29-1A0"/>
                                                                                                                 </connections>
                                                                                                             </menuItem>
                                                                                                         </items>

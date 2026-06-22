@@ -32,6 +32,7 @@
 @class SPDatabaseDocument;
 @class SPTablesList;
 @class SPContentFilterManager;
+@class SPRuleFilterDropBox;
 
 NSString * const SPRuleFilterHeightChangedNotification;
 
@@ -62,6 +63,8 @@ NSString * const SPRuleFilterHeightChangedNotification;
 	NSUInteger opNodeCacheVersion;
 	BOOL isDoingChangeCausedOutsideOfRuleEditor;
 	NSInteger previousRowCount;
+
+	SPRuleFilterDropBox *dropBox;
 }
 
 /**
@@ -155,6 +158,72 @@ NSString * const SPRuleFilterHeightChangedNotification;
  * MUST BE CALLED ON THE UI THREAD!
  */
 - (void)addFilterExpression;
+
+/**
+ * Append a fully-populated rule (column, a sensible default operator for
+ * the column's type, and one value) to the current filter set,
+ * preserving any existing rules. The filter is NOT auto-applied; the
+ * user presses Apply Filters (or Return in any argument field) to run.
+ *
+ * Used by the drag-and-drop flow so dropping a cell onto the rule
+ * editor's drop box creates a ready-to-apply rule in one gesture.
+ *
+ * @param columnName Name of the column the value was dragged from. Must
+ *                   match one of the columns the rule editor was
+ *                   configured with via `-setColumns:`.
+ * @param value      Display string for the cell; inserted as the rule's
+ *                   sole argument.
+ * @param isNull     Pass YES to treat the value as SQL NULL – the
+ *                   operator becomes "IS NULL" and @a value is ignored.
+ * @return YES if the rule was appended, NO if the column was unknown or
+ *         no compatible operator could be chosen.
+ *
+ * MUST BE CALLED ON THE UI THREAD!
+ */
+- (BOOL)appendFilterForColumn:(nonnull NSString *)columnName value:(nullable NSString *)value isNull:(BOOL)isNull;
+
+/**
+ * Replace the top-level rule at the given row index with a
+ * fully-populated rule derived from a dropped cell. Semantics mirror
+ * -appendFilterForColumn:value:isNull: but target an existing row
+ * instead of appending. Filtering is not auto-run.
+ *
+ * @param row        0-indexed top-level row in the rule editor. For a
+ *                   tree that's a single expression, the only valid
+ *                   index is 0. For an AND-group tree, the index maps
+ *                   directly to a child of that group.
+ * @return YES if the rule at @a row was replaced, NO if the row was
+ *         out of range, the column was unknown, or no compatible
+ *         operator could be chosen.
+ *
+ * MUST BE CALLED ON THE UI THREAD!
+ */
+- (BOOL)replaceFilterAtRow:(NSInteger)row forColumn:(nonnull NSString *)columnName value:(nullable NSString *)value isNull:(BOOL)isNull;
+
+/**
+ * Thin wrapper around `-addFilterExpression` – used by the drop box's
+ * click-to-add affordance so the filter-controller surface carries the
+ * whole drop-handler protocol and the drop box doesn't have to poke at
+ * controller internals.
+ *
+ * MUST BE CALLED ON THE UI THREAD!
+ */
+- (void)addEmptyFilterRow;
+
+/**
+ * The always-visible "Drop a value here, or click to add a filter" zone placed
+ * below the rule editor. Exposed so the container's layout code can
+ * position it.
+ */
+- (nullable SPRuleFilterDropBox *)dropBoxView;
+
+/**
+ * Space the surrounding container should reserve at its bottom for the
+ * drop box. Currently a fixed constant; exposed as a method so the
+ * containing controller can compute total height without hard-coding
+ * the value.
+ */
+- (CGFloat)dropBoxReservedHeight;
 
 /**
  * Used when the rule editor wants to trigger filtering

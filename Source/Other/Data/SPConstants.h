@@ -58,7 +58,8 @@ typedef NS_ENUM(NSUInteger, SPConnectionType) {
 	SPTCPIPConnection     = 0,
 	SPSocketConnection    = 1,
 	SPSSHTunnelConnection = 2,
-	SPAWSIAMConnection    = 3
+	SPAWSIAMConnection    = 3,
+	SPVaultConnection     = 4
 };
 
 // Export type constants
@@ -421,6 +422,7 @@ extern NSString *SPCSVImportFirstLineIsHeader;
 extern NSString *SPCSVFieldImportMappingAlignment;
 extern NSString *SPImportClipboardTempFileNamePrefix;
 extern NSString *SPLastExportSettings;
+extern NSString *SPAutoCheckClipboardForConnectionStrings;
 
 // Export filename tokens
 extern NSString *SPFileNameDatabaseTokenName;
@@ -542,6 +544,7 @@ extern NSString *SPFavoriteSSHPortKey;
 extern NSString *SPFavoriteSSHUserKey;
 extern NSString *SPFavoriteSSHKeyLocationEnabledKey;
 extern NSString *SPFavoriteSSHKeyLocationKey;
+extern NSString *SPFavoriteSSHRemoteSocketPathKey;
 extern NSString *SPFavoriteAllowDataLocalInfileKey;
 extern NSString *SPFavoriteEnableClearTextPluginKey;
 extern NSString *SPFavoriteUseSSLKey;
@@ -559,6 +562,13 @@ extern NSString *SPFavoriteAWSRegionKey;
 extern NSString *SPFavoriteAWSProfileKey;
 extern NSString *SPFavoriteAWSAccessKeyKey;
 extern NSString *SPFavoriteAWSUseProfileKey;
+
+// Vault Connection
+extern NSString *SPFavoriteVaultHostKey;
+extern NSString *SPFavoriteVaultPortKey;
+extern NSString *SPFavoriteVaultOIDCMountKey;
+extern NSString *SPFavoriteVaultCredentialsPathKey;
+
 extern NSString *SPConnectionFavoritesChangedNotification;
 extern NSString *SPConnectionShownSocketHelp;
 extern NSString *SPStaleBookmarksHelp;

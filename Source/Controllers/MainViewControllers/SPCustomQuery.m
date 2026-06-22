@@ -120,6 +120,18 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 @synthesize bracketHighlighter;
 @synthesize sortCount;
 
+// Map new @property declarations (exposed for Swift extensions) to the existing
+// ivars instead of letting clang autosynthesize fresh `_name` ivars that xib
+// outlets wouldn't reach.
+@synthesize tableDocumentInstance = tableDocumentInstance;
+@synthesize textView = textView;
+@synthesize currentQueryRange = currentQueryRange;
+@synthesize sortColumn = sortColumn;
+@synthesize isDesc = isDesc;
+@synthesize reloadingExistingResult = reloadingExistingResult;
+@synthesize errorTextTitle = errorTextTitle;
+@synthesize errorText = errorText;
+
 + (NSAttributedString *)columnHeaderAttributedStringForColumnDefinition:(NSDictionary *)columnDefinition showColumnTypes:(BOOL)showColumnTypes
 {
     if (![columnDefinition isKindOfClass:[NSDictionary class]]) {
@@ -206,7 +218,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     reloadingExistingResult = NO;
     [self clearResultViewDetailsToRestore];
-    
+
     [self performQueries:queries withCallback:NULL];
 }
 
@@ -256,7 +268,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     
     reloadingExistingResult = NO;
     [self clearResultViewDetailsToRestore];
-    
+
     [self performQueries:queries withCallback:NULL];
 }
 
@@ -657,16 +669,15 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 /**
  *  Method that checks if an array of SQL queries contain any destructive SQL
- * Basically, defaults to YES, unless all of the queries start with SHOW or SELECT
+ * Basically, defaults to YES, unless all queries are safe to run without the
+ * destructive SQL confirmation.
  *
  *  @param queries   NSArray - Array of SQL queries
  *
  *  @return BOOL YES if any of the queries contain destructive SQL
  */
 -(BOOL)queriesContainDestructiveSQL:(NSArray *)queries{
-    
-    NSArray *safeCommands = @[@"SHOW", @"SELECT"];
-    
+
     BOOL __block retCode = YES;
     
     [queries enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop){
@@ -675,24 +686,14 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         
         if([obj isKindOfClass:[NSString class]] && [(NSString *)obj length]){
             
-            NSMutableString *query = [obj mutableCopy];
-            
-            // remove comments
-            [query replaceOccurrencesOfRegex:@"--.*?\n" withString:@""];
-            [query replaceOccurrencesOfRegex:@"--.*?$" withString:@""];
-            [query replaceOccurrencesOfRegex:@"/\\*(.|\n)*?\\*/" withString:@""];
-            
             // trim leading and trailing spaces and new lines
-            [query setString:[query trimWhitespacesAndNewlines]];
+            NSString *query = [(NSString *)obj trimWhitespacesAndNewlines];
             
             SPLog(@"query: [%@]", query);
             
-            for (NSString *safeCommand in safeCommands){
-                if([query hasPrefixWithPrefix:safeCommand caseSensitive:NO] == YES){
-                    SPLog(@"Safe command: [%@], breaking", safeCommand);
-                    retCode = NO;
-                    break;
-                }
+            if ([SPCustomQuery isQuerySafeWithoutDestructiveWarning:query] == YES) {
+                SPLog(@"Query is safe to run without destructive warning");
+                retCode = NO;
             }
             
         } // End isKindOfClass
@@ -3425,7 +3426,11 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     else if ( [menuItem tag] >= SP_HISTORY_COPY_MENUITEM_TAG && [menuItem tag] <= SP_HISTORY_CLEAR_MENUITEM_TAG ) {
         return ([queryHistoryButton numberOfItems]-7);
     }
-    
+    else if ([menuItem action] == @selector(runExplainQueryAction:)) {
+        if ([tableDocumentInstance isWorking]) return NO;
+        return ([[textView string] length] > 0);
+    }
+
     return YES;
 }
 
@@ -3702,6 +3707,9 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     [queryInfoPaneSplitView setCollapsibleSubviewIndex:1];
     [queryInfoPaneSplitView setCollapsibleSubviewCollapsed:YES animate:NO];
     
+    // Give the editor a small vertical inset so text is not flush against the top and bottom edges (#2236)
+    [textView setTextContainerInset:NSMakeSize(0.0f, 2.0f)];
+
     // Set the structure and index view's vertical gridlines if required
     [customQueryView setGridStyleMask:([prefs boolForKey:SPDisplayTableViewVerticalGridlines]) ? NSTableViewSolidVerticalGridLineMask : NSTableViewGridNone];
     
