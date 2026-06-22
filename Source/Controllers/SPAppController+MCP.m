@@ -43,6 +43,9 @@ static const NSUInteger kMCPMaxResultRows = 10000;   // Safety cap for run_query
 // Dispatch queue used for all MCP database operations (serial, background).
 static dispatch_queue_t sMCPDBQueue;
 
+// Port the server is currently bound to; 0 when stopped.
+static uint16_t sMCPRunningPort = 0;
+
 @implementation SPAppController (MCP)
 
 #pragma mark - Lifecycle
@@ -54,7 +57,7 @@ static dispatch_queue_t sMCPDBQueue;
         sMCPDBQueue = dispatch_queue_create("com.sequel-ace.mcp.db", DISPATCH_QUEUE_SERIAL);
     });
 
-    SPMCPServer.shared.dataSource = self;
+    SPMCPServer.shared.dataSource = (id<SPMCPDataSource>)self;
 
     // Observe preference changes to start/stop the server dynamically.
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -74,11 +77,18 @@ static dispatch_queue_t sMCPDBQueue;
     BOOL shouldRun = [prefs boolForKey:SPMCPServerEnabled];
     BOOL isRunning = SPMCPServer.shared.isRunning;
 
+    NSInteger desiredPort = [prefs integerForKey:SPMCPServerPort];
+    if (desiredPort < 1024 || desiredPort > 65535) desiredPort = kMCPDefaultPort;
+
     if (shouldRun && !isRunning) {
         [self startMCPServerWithPrefs:prefs];
     } else if (!shouldRun && isRunning) {
         [SPMCPServer.shared stop];
+        sMCPRunningPort = 0;
         SPLog(@"MCP server stopped.");
+    } else if (shouldRun && isRunning && (uint16_t)desiredPort != sMCPRunningPort) {
+        // Rebind on the new port.
+        [self startMCPServerWithPrefs:prefs];
     }
 }
 
@@ -91,8 +101,10 @@ static dispatch_queue_t sMCPDBQueue;
 
     [SPMCPServer.shared startWithPort:(uint16_t)port completion:^(BOOL success, NSString *errorMsg) {
         if (success) {
+            sMCPRunningPort = (uint16_t)port;
             SPLog(@"MCP server started on port %ld", (long)port);
         } else {
+            sMCPRunningPort = 0;
             SPLog(@"MCP server failed to start: %@", errorMsg ?: @"unknown error");
             NSAlert *alert = [[NSAlert alloc] init];
             alert.alertStyle      = NSAlertStyleWarning;
@@ -133,7 +145,9 @@ static dispatch_queue_t sMCPDBQueue;
             NSMutableDictionary *info = [NSMutableDictionary dictionary];
             for (NSString *key in @[SPFavoriteNameKey, SPFavoriteHostKey, SPFavoritePortKey,
                                     SPFavoriteUserKey, SPFavoriteDatabaseKey, SPFavoriteTypeKey]) {
-                NSString *val = fav[key];
+                id rawVal = fav[key];
+                if (!rawVal || rawVal == [NSNull null]) continue;
+                NSString *val = [rawVal isKindOfClass:[NSString class]] ? rawVal : [rawVal description];
                 if (val.length) info[key] = val;
             }
             if (info.count) [array addObject:[info copy]];
@@ -153,6 +167,8 @@ static dispatch_queue_t sMCPDBQueue;
             result = @{@"error": [conn lastErrorMessage] ?: @"Query error"};
             return;
         }
+        // Read rows as arrays for positional access.
+        [res setDefaultRowReturnType:SPMySQLResultRowAsArray];
         NSMutableArray *dbs = [NSMutableArray array];
         for (NSArray *row in res) {
             if (row.firstObject && row.firstObject != [NSNull null]) {
@@ -180,6 +196,8 @@ static dispatch_queue_t sMCPDBQueue;
             result = @{@"error": [conn lastErrorMessage] ?: @"Query error"};
             return;
         }
+        // Read rows as arrays for positional access (first column name is dynamic).
+        [res setDefaultRowReturnType:SPMySQLResultRowAsArray];
         NSMutableArray *tables = [NSMutableArray array];
         for (NSArray *row in res) {
             if (row.firstObject && row.firstObject != [NSNull null]) {
