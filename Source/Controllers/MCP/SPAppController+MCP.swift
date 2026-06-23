@@ -828,10 +828,18 @@ extension SPAppController: SPMCPDataSource {
     }
 
     private func csvEscape(_ value: String) -> String {
-        if value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r") {
-            let escaped = value.replacingOccurrences(of: "\"", with: "\"\"")
+        var v = value
+        // Guard against CSV/formula injection: spreadsheet apps treat a cell that
+        // starts with = + - @ (or a leading tab/CR) as a formula. Prefix such cells
+        // with a single quote so they are read as literal text. The export data can
+        // be attacker-influenced (prompt injection), so neutralise it here.
+        if let first = v.first, "=+-@\t\r".contains(first) {
+            v = "'" + v
+        }
+        if v.contains(",") || v.contains("\"") || v.contains("\n") || v.contains("\r") {
+            let escaped = v.replacingOccurrences(of: "\"", with: "\"\"")
             return "\"\(escaped)\""
         }
-        return value
+        return v
     }
 }
