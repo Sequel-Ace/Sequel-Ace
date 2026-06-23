@@ -204,8 +204,12 @@ static const NSInteger kMCPMaxPort         = 65535;
 
 - (NSImage *)preferencePaneIcon
 {
-    return [NSImage imageWithSystemSymbolName:@"point.3.connected.trianglepath.dotted"
-                        accessibilityDescription:nil];
+    if (@available(macOS 11.0, *)) {
+        NSImage *icon = [NSImage imageWithSystemSymbolName:@"point.3.connected.trianglepath.dotted"
+                                 accessibilityDescription:nil];
+        if (icon) return icon;
+    }
+    return [NSImage imageNamed:NSImageNameNetwork];
 }
 
 - (NSString *)preferencePaneName

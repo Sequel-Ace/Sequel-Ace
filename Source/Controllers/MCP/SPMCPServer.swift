@@ -86,14 +86,15 @@ import Network
 
 // MARK: - MCP Server
 
-/// SPMCPServer runs a local HTTP+SSE server that implements the Model Context Protocol (MCP).
+/// SPMCPServer runs a local HTTP server implementing the Model Context Protocol (MCP):
+/// tools, resources, prompts and argument completions over JSON-RPC.
 ///
 /// The server listens only on 127.0.0.1, making it inaccessible to remote hosts.
-/// It exposes the following MCP tools to AI agents:
-///   - list_connections, list_databases, list_tables, describe_table, run_query, export_results
 ///
-/// Transport: HTTP with Server-Sent Events (SSE), per the MCP 2024-11-05 specification.
-/// Reference: https://modelcontextprotocol.io/specification/2024-11-05/basic/transports#http-with-sse
+/// Transports: the modern Streamable HTTP transport at POST /mcp (MCP 2025-03-26) and
+/// the legacy HTTP+SSE transport at GET /sse + POST /message (MCP 2024-11-05). The
+/// protocol version is negotiated from `supportedProtocolVersions`.
+/// Reference: https://modelcontextprotocol.io/specification
 @objc public final class SPMCPServer: NSObject {
 
     // MARK: - Singleton
@@ -385,7 +386,7 @@ private extension SPMCPServer {
 
     /// Handles a legacy POST /message: dispatches the body and replies over SSE.
     func handleMessage(request: HTTPRequest, connection: NWConnection) {
-        guard let sessionID = request.queryParam("sessionId") else {
+        guard let sessionID = request.queryParam("sessionId"), !sessionID.isEmpty else {
             sendHTTPResponse(connection: connection, status: 400, body: "Missing sessionId")
             return
         }
@@ -477,10 +478,17 @@ private extension SPMCPServer {
         }
     }
 
+    /// MCP protocol versions this server actually implements.
+    static let supportedProtocolVersions = ["2025-03-26", "2024-11-05"]
+
     /// Builds the initialize result: protocol version, capabilities, server info and usage instructions.
     func initializeResult(protocolVersion: String? = nil) -> [String: Any] {
+        // Only echo a version we support; otherwise advertise our newest supported one.
+        let negotiated = SPMCPServer.supportedProtocolVersions.contains(protocolVersion ?? "")
+            ? protocolVersion!
+            : SPMCPServer.supportedProtocolVersions[0]
         return [
-            "protocolVersion": protocolVersion ?? "2024-11-05",
+            "protocolVersion": negotiated,
             "capabilities": [
                 "tools": ["listChanged": false],
                 "resources": ["subscribe": false, "listChanged": false],
