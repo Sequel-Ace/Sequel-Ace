@@ -258,8 +258,11 @@ static const NSInteger kMCPMaxPort         = 65535;
 - (IBAction)updatePort:(NSTextField *)sender
 {
     NSString *digits = [sender.stringValue stringByReplacingOccurrencesOfString:@" " withString:@""];
+    // Reject non-numeric input (integerValue would silently accept e.g. "8765abc").
+    BOOL allDigits = digits.length > 0 &&
+        [digits rangeOfCharacterFromSet:[[NSCharacterSet decimalDigitCharacterSet] invertedSet]].location == NSNotFound;
     NSInteger port = digits.integerValue;
-    if (port < kMCPMinPort || port > kMCPMaxPort) {
+    if (!allDigits || port < kMCPMinPort || port > kMCPMaxPort) {
         NSAlert *alert = [[NSAlert alloc] init];
         alert.messageText = NSLocalizedString(@"Invalid Port", @"MCP pref: invalid port alert");
         alert.informativeText = [NSString stringWithFormat:
