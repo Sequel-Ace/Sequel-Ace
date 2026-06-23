@@ -102,6 +102,11 @@ final class SPMCPServerOriginTests: XCTestCase {
         XCTAssertTrue(SPMCPHTTP.isLoopbackOrigin("http://[::1]:8765"))
     }
 
+    func testUppercaseLoopbackHostAllowed() {
+        XCTAssertTrue(SPMCPHTTP.isLoopbackOrigin("http://LOCALHOST:8765"))
+        XCTAssertTrue(SPMCPHTTP.isLoopbackOrigin("HTTP://LocalHost"))
+    }
+
     func testRemoteOriginsAreRejected() {
         XCTAssertFalse(SPMCPHTTP.isLoopbackOrigin("http://evil.example"))
         XCTAssertFalse(SPMCPHTTP.isLoopbackOrigin("https://127.0.0.1.evil.example"))

@@ -737,7 +737,8 @@ private extension SPMCPServer {
         case "export_results":
             guard let sql = requireString("sql") else { return toolError("Missing required argument: sql") }
             if let rejection = readOnlyRejection(for: sql) { return rejection }
-            let format = requireString("format") ?? "json"
+            // Normalise format so the chosen extension and the written content agree.
+            let format = (requireString("format") ?? "json").lowercased()
             let path   = requireString("path") ?? defaultExportPath(format: format)
             return dictResult(ds.mcpExportResults(sql, format: format, path: path, connection: conn))
 

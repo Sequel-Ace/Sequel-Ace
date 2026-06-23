@@ -16,6 +16,7 @@ enum SPMCPHTTP {
         if host.hasPrefix("[") && host.hasSuffix("]") {
             host = String(host.dropFirst().dropLast())
         }
+        host = host.lowercased()   // hostnames are case-insensitive
         return host == "127.0.0.1" || host == "localhost" || host == "::1"
     }
 }

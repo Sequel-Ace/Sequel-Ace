@@ -97,7 +97,7 @@ static id mcpDecode(id value)
         sMCPDBQueue = dispatch_queue_create("com.sequel-ace.mcp.db", DISPATCH_QUEUE_SERIAL);
     });
 
-    SPMCPServer.shared.dataSource = (id<SPMCPDataSource>)self;
+    SPMCPServer.shared.dataSource = self;
 
     // Observe preference changes to start/stop the server dynamically.
     [[NSNotificationCenter defaultCenter] addObserver:self

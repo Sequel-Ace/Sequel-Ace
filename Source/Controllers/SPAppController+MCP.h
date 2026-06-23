@@ -28,11 +28,13 @@
 
 #import "SPAppController.h"
 
+@protocol SPMCPDataSource;
+
 /**
  * SPAppController (MCP) adds the MCP server lifecycle management and database
  * data-source implementation to SPAppController.
  */
-@interface SPAppController (MCP)
+@interface SPAppController (MCP) <SPMCPDataSource>
 
 /// Start the MCP server if enabled in preferences. Called from applicationDidFinishLaunching.
 - (void)setupMCPServer;
