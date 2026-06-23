@@ -44,6 +44,7 @@ final class SAConnectionFormModelTests: XCTestCase {
         model.info.host = "db.example.com"
         model.info.database = "shop"
         model.info.password = "secret"
+        model.info.requestServerPublicKey = 1
 
         let objc = SAConnectionInfoObjC()
         model.apply(to: objc)
@@ -51,6 +52,7 @@ final class SAConnectionFormModelTests: XCTestCase {
         XCTAssertEqual(objc.host, "db.example.com")
         XCTAssertEqual(objc.database, "shop")
         XCTAssertEqual(objc.password, "secret")
+        XCTAssertEqual(objc.requestServerPublicKey, 1)
     }
 
     func testEditsDoNotLeakBackIntoSourceWrapper() {
