@@ -13,7 +13,7 @@
 //  (the standalone connection window) is the intended host, where it
 //  will sit next to the SwiftUI favorites list and drive
 //  SAConnectionService directly. The field set and labels mirror the
-//  XIB's TCP/IP tab; SSL options and the other connection types are
+//  XIB's TCP/IP tab; SSL file options and the other connection types are
 //  follow-up scope.
 //
 
@@ -62,6 +62,13 @@ struct SAConnectionFormView: View {
             }
 
             Section {
+                Toggle(isOn: requestServerPublicKeyBinding) {
+                    Text("Get Public Key", comment: "connection view : get server public key checkbox")
+                }
+                .help(NSLocalizedString("Request the server RSA public key for caching_sha2_password over non-SSL connections.", comment: "connection view : get server public key help"))
+            }
+
+            Section {
                 HStack {
                     Spacer()
                     Button {
@@ -104,6 +111,13 @@ struct SAConnectionFormView: View {
             return generated
         }
         return NSLocalizedString("Optional Name", comment: "connection view : name field placeholder")
+    }
+
+    private var requestServerPublicKeyBinding: Binding<Bool> {
+        Binding(
+            get: { model.info.requestServerPublicKey != 0 },
+            set: { model.info.requestServerPublicKey = $0 ? 1 : 0 }
+        )
     }
 
     private func submit() {
