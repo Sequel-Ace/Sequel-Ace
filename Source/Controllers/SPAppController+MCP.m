@@ -422,6 +422,28 @@ static id mcpDecode(id value)
 
     __block NSDictionary *result;
     dispatch_sync(sMCPDBQueue, ^{
+        // SHOW CREATE TRIGGER does not accept a schema-qualified name and uses the
+        // connection's current database. Rather than mutate the shared connection's
+        // default DB, reconstruct the trigger from information_schema (schema-scoped).
+        if ([t isEqualToString:@"TRIGGER"]) {
+            NSString *sql = [NSString stringWithFormat:
+                @"SELECT ACTION_TIMING, EVENT_MANIPULATION, EVENT_OBJECT_TABLE, ACTION_STATEMENT "
+                 "FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = %@ AND TRIGGER_NAME = %@",
+                [conn escapeAndQuoteString:database], [conn escapeAndQuoteString:name]];
+            SPMySQLResult *res = [conn queryString:sql];
+            if ([conn queryErrored] || !res) { result = @{@"error": [conn lastErrorMessage] ?: @"Could not read definition"}; return; }
+            NSDictionary *row = nil;
+            for (NSDictionary *r in res) { row = r; break; }
+            if (!row) { result = @{@"error": @"Trigger not found"}; return; }
+            NSString *def = [NSString stringWithFormat:@"CREATE TRIGGER `%@` %@ %@ ON `%@` FOR EACH ROW %@",
+                             mcpQuoteIdentifier(name),
+                             mcpDecode(row[@"ACTION_TIMING"]), mcpDecode(row[@"EVENT_MANIPULATION"]),
+                             mcpQuoteIdentifier([mcpDecode(row[@"EVENT_OBJECT_TABLE"]) description]),
+                             mcpDecode(row[@"ACTION_STATEMENT"])];
+            result = @{@"definition": def, @"connection": ci[@"id"]};
+            return;
+        }
+
         NSString *qualified = [NSString stringWithFormat:@"`%@`.`%@`",
                                mcpQuoteIdentifier(database), mcpQuoteIdentifier(name)];
         SPMySQLResult *res = [conn queryString:[NSString stringWithFormat:@"SHOW CREATE %@ %@", t, qualified]];
