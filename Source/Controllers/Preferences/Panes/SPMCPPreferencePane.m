@@ -372,14 +372,6 @@ static const NSInteger kMCPMaxPort         = 65535;
     return tf;
 }
 
-- (NSTextField *)makeBoldLabel:(NSString *)text x:(CGFloat)x y:(CGFloat)y width:(CGFloat)w
-{
-    NSTextField *tf = [NSTextField labelWithString:text];
-    tf.frame = NSMakeRect(x, y, w, 18);
-    tf.font  = [NSFont boldSystemFontOfSize:NSFont.systemFontSize];
-    return tf;
-}
-
 - (NSTextField *)makeSmallLabel:(NSString *)text x:(CGFloat)x y:(CGFloat)y width:(CGFloat)w
 {
     NSTextField *tf = [NSTextField wrappingLabelWithString:text];
