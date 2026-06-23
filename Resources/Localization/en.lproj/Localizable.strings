@@ -2465,7 +2465,6 @@
 /* sql data access label (Navigator) */
 "SQL Data Access" = "SQL Data Access";
 
-
 /* Connection Secured via SSL information text */
 "Connection Secured via SSL" = "Connection Secured via SSL";
 
@@ -3439,32 +3438,14 @@
 /* MCP pref: enable checkbox */
 "Enable MCP Server (localhost only)" = "Enable MCP Server (localhost only)";
 
-/* MCP pref: port section */
-"Server Port" = "Server Port";
-
 /* MCP pref: port label */
 "Port:" = "Port:";
 
 /* MCP pref: port hint */
 "Default: 8765. Any unprivileged port (1024–65535) may be used." = "Default: 8765. Any unprivileged port (1024–65535) may be used.";
 
-/* MCP pref: export section */
-"Default Export Folder" = "Default Export Folder";
-
-/* MCP pref: folder label */
-"Folder:" = "Folder:";
-
 /* MCP pref: choose button */
 "Choose…" = "Choose…";
-
-/* MCP pref: config section */
-"Claude Desktop / Claude Code Config" = "Claude Desktop / Claude Code Config";
-
-/* MCP pref: config hint */
-"Add the following to your claude_desktop_config.json or .claude/mcp.json:" = "Add the following to your claude_desktop_config.json or .claude/mcp.json:";
-
-/* MCP pref: claude code hint */
-"For Claude Code, run: claude mcp add --transport http sequel-ace http://127.0.0.1:8765/mcp" = "For Claude Code, run: claude mcp add --transport http sequel-ace http://127.0.0.1:8765/mcp";
 
 /* MCP preference pane name */
 "MCP Server" = "MCP Server";
@@ -3507,9 +3488,6 @@
 
 /* MCP pref: export row label */
 "Export folder:" = "Export folder:";
-
-/* MCP pref: config row label */
-"Config:" = "Config:";
 
 /* MCP pref: endpoint row label */
 "Endpoint:" = "Endpoint:";
