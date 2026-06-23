@@ -673,6 +673,16 @@ static id mcpDecode(id value)
     }
     path = [realParent stringByAppendingPathComponent:filename];
 
+    // Reject an existing symlink or directory at the destination: writeToFile:
+    // follows a symlink and would redirect the write outside the export folder.
+    NSDictionary *destAttrs = [[NSFileManager defaultManager] attributesOfItemAtPath:path error:nil];
+    if (destAttrs) {
+        NSString *type = destAttrs[NSFileType];
+        if ([type isEqualToString:NSFileTypeSymbolicLink] || [type isEqualToString:NSFileTypeDirectory]) {
+            return @{@"error": @"Export destination must not be an existing symlink or directory."};
+        }
+    }
+
     NSDictionary *queryResult = [self mcpRunQuery:sql params:nil limit:0 offset:0 connection:connID];
     if (queryResult[@"error"]) return queryResult;
 
