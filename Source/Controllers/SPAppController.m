@@ -48,7 +48,6 @@
 #import "SPTextView.h"
 #import "SPFunctions.h"
 #import "SPBundleManager.h"
-#import "SPAppController+MCP.h"
 #import "MGTemplateEngine.h"
 #import "ICUTemplateMatcher.h"
 #import "SPTreeNode.h"

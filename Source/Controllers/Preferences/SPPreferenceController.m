@@ -35,7 +35,6 @@
 #import "SPNotificationsPreferencePane.h"
 #import "SPNetworkPreferencePane.h"
 #import "SPFilePreferencePane.h"
-#import "SPMCPPreferencePane.h"
 
 #import "sequel-ace-Swift.h"
 
