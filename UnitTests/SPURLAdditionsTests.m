@@ -345,6 +345,36 @@
 	XCTAssertEqualObjects(details[SPFavoriteEnableClearTextPluginKey], @YES);
 }
 
+- (void)testMySQLURLParserAcceptsGetServerPublicKey
+{
+	NSURL *url = [NSURL URLWithString:@"mysql://db_user@db.example.com/my_database?get_server_public_key=1"];
+	NSMutableDictionary *details = [NSMutableDictionary dictionary];
+	BOOL autoConnect = NO;
+	NSArray<NSString *> *invalidParameters = nil;
+
+	BOOL parsed = SPExtractConnectionDetailsFromMySQLURL(url, details, &autoConnect, &invalidParameters);
+
+	XCTAssertTrue(parsed);
+	XCTAssertEqual(invalidParameters.count, 0);
+	XCTAssertEqualObjects(details[SPFavoriteRequestServerPublicKeyKey], @YES);
+	XCTAssertNil(details[@"get_server_public_key"]);
+}
+
+- (void)testMySQLURLParserAcceptsRequestServerPublicKeyAlias
+{
+	NSURL *url = [NSURL URLWithString:@"mysql://db_user@db.example.com/my_database?request_server_public_key=true"];
+	NSMutableDictionary *details = [NSMutableDictionary dictionary];
+	BOOL autoConnect = NO;
+	NSArray<NSString *> *invalidParameters = nil;
+
+	BOOL parsed = SPExtractConnectionDetailsFromMySQLURL(url, details, &autoConnect, &invalidParameters);
+
+	XCTAssertTrue(parsed);
+	XCTAssertEqual(invalidParameters.count, 0);
+	XCTAssertEqualObjects(details[SPFavoriteRequestServerPublicKeyKey], @YES);
+	XCTAssertNil(details[@"request_server_public_key"]);
+}
+
 // 0.15 s
 - (void)testPerformanceSwizzle{
     // This is an example of a performance test case.
