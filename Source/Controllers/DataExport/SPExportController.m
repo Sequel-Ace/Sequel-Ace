@@ -2713,7 +2713,7 @@ set_input:
 	// if the string came from another app, paste it literal, tokenfield will take care of any conversions
 	NSString *raw = [pboard stringForType:NSPasteboardTypeString];
 	if(raw) {
-		return @[[raw stringByReplacingCharactersInSet:[NSCharacterSet newlineCharacterSet]	withString:@" "]];
+		return @[[raw sp_stringByReplacingCharactersInSet:[NSCharacterSet newlineCharacterSet]	withString:@" "]];
 	}
 
 	return nil;

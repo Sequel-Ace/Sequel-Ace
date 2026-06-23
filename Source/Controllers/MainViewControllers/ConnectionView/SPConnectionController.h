@@ -101,6 +101,9 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	// Clear text plugin
 	NSInteger enableClearTextPlugin;
 
+	// Server public key request for caching_sha2_password over non-TLS connections
+	NSInteger requestServerPublicKey;
+
 	// AWS IAM Authentication (profile-based only)
 	NSInteger useAWSIAMAuth;
 	NSString *awsRegion;
@@ -272,6 +275,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 @property (readwrite, copy) NSString *timeZoneIdentifier;
 @property (readwrite) NSInteger allowDataLocalInfile;
 @property (readwrite) NSInteger enableClearTextPlugin;
+@property (readwrite) NSInteger requestServerPublicKey;
 // AWS IAM Authentication (profile-based only)
 @property (readwrite) NSInteger useAWSIAMAuth;
 @property (readwrite, copy) NSString *awsRegion;
