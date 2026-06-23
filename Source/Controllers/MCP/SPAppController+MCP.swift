@@ -77,7 +77,13 @@ private func mcpQuoteIdentifier(_ name: String) -> String {
 // binding or interpolating it directly yields "Optional('value')" in the SQL.
 // This wrapper pins the result to a plain String.
 private func mcpEscapeQuoted(_ value: String, _ conn: SPMySQLConnection) -> String {
-    return conn.escapeAndQuoteString(value)
+    if let quoted = conn.escapeAndQuoteString(value) { return quoted }
+    // escapeAndQuoteString can return nil (e.g. when the connection is unavailable).
+    // Fall back to basic SQL-literal quoting so we never force-unwrap into a crash.
+    let escaped = value
+        .replacingOccurrences(of: "\\", with: "\\\\")
+        .replacingOccurrences(of: "'", with: "''")
+    return "'\(escaped)'"
 }
 
 // MySQL can return text columns as NSData; decode to a string so values are
@@ -227,7 +233,8 @@ extension SPAppController: SPMCPDataSource {
                 guard let conn = c, conn.isConnected() else { continue }
                 var info: [String: Any] = [:]
                 info["id"] = mcpDocumentID(doc)
-                info["name"] = (doc.displayName() ?? "").isEmpty ? (doc.host() ?? "") : doc.displayName()
+                let displayName = doc.displayName() ?? ""
+                info["name"] = displayName.isEmpty ? (doc.host() ?? "") : displayName
                 if let host = doc.host(), !host.isEmpty { info["host"] = host }
                 if let db = doc.database(), !db.isEmpty { info["database"] = db }
                 info["active"] = (front != nil && doc == front)
@@ -660,7 +667,7 @@ extension SPAppController: SPMCPDataSource {
             guard let basePtr = raw.baseAddress else { return }
             var total = 0
             while total < outData.count {
-                let w = write(fd, basePtr + total, outData.count - total)
+                let w = write(fd, basePtr.advanced(by: total), outData.count - total)
                 if w <= 0 { ok = false; break }
                 total += w
             }
