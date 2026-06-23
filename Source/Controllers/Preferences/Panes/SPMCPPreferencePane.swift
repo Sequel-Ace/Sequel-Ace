@@ -290,11 +290,18 @@ final class SPMCPPreferencePane: SPPreferencePane, SPPreferencePaneProtocol, NST
             panel.directoryURL = URL(fileURLWithPath: current)
         }
 
-        panel.beginSheetModal(for: view.window!) { [weak self] result in
+        let apply: (NSApplication.ModalResponse) -> Void = { [weak self] result in
             if result == .OK, let path = panel.url?.path {
                 self?.defaults.set(path, forKey: SPMCPExportPath)
                 self?.exportPathField.stringValue = path
             }
+        }
+        // Present as a sheet when attached to a window, otherwise fall back to a
+        // modal panel so this never force-unwraps a nil window.
+        if let window = view.window {
+            panel.beginSheetModal(for: window, completionHandler: apply)
+        } else {
+            apply(panel.runModal())
         }
     }
 

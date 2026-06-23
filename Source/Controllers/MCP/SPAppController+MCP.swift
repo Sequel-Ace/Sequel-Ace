@@ -632,6 +632,9 @@ extension SPAppController: SPMCPDataSource {
 
         let queryResult = mcpRunQuery(sql, params: [], limit: 0, offset: 0, connection: connID)
         if queryResult["error"] != nil { return queryResult }
+        // Report the resolved connection id (mcpRunQuery filled it in), so an empty
+        // "active tab" request still returns the specific connection used.
+        let resolvedConn = (queryResult["connection"] as? String) ?? connID
 
         let columns = (queryResult["columns"] as? [String]) ?? []
         let rows = (queryResult["rows"] as? [[String: Any]]) ?? []
@@ -675,7 +678,7 @@ extension SPAppController: SPMCPDataSource {
         close(fd)
         if !ok { return ["error": "Could not write export file"] }
 
-        return ["path": finalPath, "rowCount": rows.count, "format": format.isEmpty ? "json" : format, "connection": connID]
+        return ["path": finalPath, "rowCount": rows.count, "format": format.isEmpty ? "json" : format, "connection": resolvedConn]
     }
 
     // MARK: - SPMCPDataSource: diagnostics
