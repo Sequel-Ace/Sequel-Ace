@@ -281,6 +281,15 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
         ], "file-write")
     }
 
+    func testFileReadRejected() {
+        // LOAD_FILE() is a plain SELECT but reads server-local files.
+        assertRejected([
+            "SELECT LOAD_FILE('/etc/passwd')",
+            "select load_file('/etc/passwd') AS secret",
+            "SELECT a, LOAD_FILE('/etc/hosts') FROM t",
+        ], "file-read")
+    }
+
     func testExplainAnalyzeWriteRejected() {
         // EXPLAIN ANALYZE executes its statement in MySQL.
         assertRejected([

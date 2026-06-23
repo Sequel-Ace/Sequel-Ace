@@ -635,6 +635,10 @@ extension SPAppController: SPMCPDataSource {
         // Report the resolved connection id (mcpRunQuery filled it in), so an empty
         // "active tab" request still returns the specific connection used.
         let resolvedConn = (queryResult["connection"] as? String) ?? connID
+        // The query may have been capped (kMCPMaxResultRows); carry the signal through
+        // so an agent does not treat a partial export as the complete result set.
+        let truncated = queryResult["truncated"] as? Bool ?? false
+        let truncatedAt = queryResult["truncatedAt"]
 
         let columns = (queryResult["columns"] as? [String]) ?? []
         let rows = (queryResult["rows"] as? [[String: Any]]) ?? []
@@ -661,9 +665,17 @@ extension SPAppController: SPMCPDataSource {
         // TOCTOU race where the path is swapped for a symlink after a prior stat check;
         // opening a symlink or directory now fails instead of redirecting the write.
         let outData = content.data(using: .utf8) ?? Data()
-        let fd = open((finalPath as NSString).fileSystemRepresentation, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW, 0o644)
+        // 0600: exported rows can contain sensitive data, so keep them owner-only.
+        let fd = open((finalPath as NSString).fileSystemRepresentation, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW, 0o600)
         if fd < 0 {
             return ["error": "Could not open export file (\(String(cString: strerror(errno))))"]
+        }
+        // Re-apply the mode in case the file already existed (O_CREAT does not change
+        // an existing file's permissions).
+        if fchmod(fd, 0o600) != 0 {
+            let err = String(cString: strerror(errno))
+            close(fd)
+            return ["error": "Could not secure export file permissions (\(err))"]
         }
         var ok = true
         outData.withUnsafeBytes { (raw: UnsafeRawBufferPointer) in
@@ -678,7 +690,13 @@ extension SPAppController: SPMCPDataSource {
         close(fd)
         if !ok { return ["error": "Could not write export file"] }
 
-        return ["path": finalPath, "rowCount": rows.count, "format": format.isEmpty ? "json" : format, "connection": resolvedConn]
+        var response: [String: Any] = ["path": finalPath, "rowCount": rows.count,
+                                       "format": format.isEmpty ? "json" : format, "connection": resolvedConn]
+        if truncated {
+            response["truncated"] = true
+            response["truncatedAt"] = truncatedAt ?? mcpMaxResultRows
+        }
+        return response
     }
 
     // MARK: - SPMCPDataSource: diagnostics

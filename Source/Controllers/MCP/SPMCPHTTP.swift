@@ -46,9 +46,11 @@ enum SPMCPReadOnlyGuard {
         // semicolon means a second statement, so refuse rather than guess.
         if core.contains(";") { return false }
 
-        // Reject server-side file writes (`SELECT ... INTO OUTFILE/DUMPFILE`).
+        // Reject server-side file access: writes (`SELECT ... INTO OUTFILE/DUMPFILE`)
+        // and reads (`SELECT LOAD_FILE('/etc/passwd')`), which are syntactically
+        // SELECTs but touch the server filesystem.
         let upper = core.uppercased()
-        if upper.contains("OUTFILE") || upper.contains("DUMPFILE") { return false }
+        if upper.contains("OUTFILE") || upper.contains("DUMPFILE") || upper.contains("LOAD_FILE") { return false }
 
         // Leading keyword must be a known read. isQuerySafeWithoutDestructiveWarning
         // also rejects `EXPLAIN ANALYZE <write>`, which MySQL would execute.
