@@ -116,6 +116,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 // 5.2 s 
 - (void)testPerformance_stringForByteSize {
 	// this is on main thread
+	SASkipUnlessPerformanceTestsEnabled();
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
 		int const iterations = 100000;
@@ -131,6 +132,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 - (void)testPerformance_stringForByteSizeSwift {
     // this is on main thread
 
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
 
         NSString *tmp = [[NSString alloc] init];
@@ -147,6 +149,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 // obj c static - 0.241s
 - (void)testPerformance_stringForByteSizeObjCStatic {
 	// this is on main thread
+	SASkipUnlessPerformanceTestsEnabled();
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
 		int const iterations = 10000;
@@ -161,6 +164,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 // 0.0383s
 - (void)testPerformance_stringByMatchingRegexSearch {
     // this is on main thread
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
         int const iterations = 1;
@@ -181,6 +185,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 // 0.175s - 4 times slower than regexkit
 - (void)testPerformance_captureGroupForRegex {
     // this is on main thread
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
         int const iterations = 1;
@@ -201,6 +206,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 - (void)testPerformance_RegexSearch {
 	// this is on main thread
+	SASkipUnlessPerformanceTestsEnabled();
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
 		int const iterations = 1;
@@ -222,6 +228,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 - (void)testPerformance_StringWithString {
 	// this is on main thread
+	SASkipUnlessPerformanceTestsEnabled();
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
 		int const iterations = 1000000;
@@ -239,6 +246,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 // this cast method is twice as fast as stringWithString above
 - (void)testPerformance_cast {
 	
+	SASkipUnlessPerformanceTestsEnabled();
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
 		int const iterations = 1000000;
@@ -256,6 +264,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 // this "unsafe" cast method is twice as fast as cast above
 - (void)testPerformance_cast2 {
 	
+	SASkipUnlessPerformanceTestsEnabled();
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
 		int const iterations = 1000000;
@@ -272,6 +281,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 - (void)testnumberLiterals{
 
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         int const iterations = 1000000;
 
@@ -285,6 +295,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 // 0.198s
 - (void)testSafeSubstringWithRangePerf{
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         int const iterations = 1000000;
 
@@ -301,6 +312,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 //0.19s
 - (void)testSubstringWithRangePerf{
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         int const iterations = 1000000;
 
@@ -349,6 +361,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 //0.133 s
 - (void)testPerformanceDateStringFromUnixTimestamp{
     // This is an example of a performance test case.
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
         double epoch = 1641629299;
@@ -369,6 +382,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 //0.273 s
 - (void)testPerformanceDateStringFromUnixTimestamp2{
     // This is an example of a performance test case.
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
         NSString *epochStr = @"1641629299";
@@ -411,6 +425,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 - (void)testPerformanceIsUnixTimeStamp{
 
     // This is an example of a performance test case.
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
 
@@ -434,6 +449,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 - (void)testPerformanceIsUnixTimeStamp2{
 
     // This is an example of a performance test case.
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
 
@@ -463,6 +479,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 // 0.95 s
 - (void)testSHA256Perf{
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         int const iterations = 100000;
 
@@ -556,6 +573,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 // 1.39 s
 - (void)testMutAttrStringSafeDeleteCharactersInRangePerf{
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         int const iterations = 1000000;
 
@@ -577,6 +595,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 //1.34 s
 - (void)testMutAttrStringDeleteCharactersInRangePerf{
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         int const iterations = 1000000;
 
@@ -629,6 +648,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 //0.328 s
 - (void)testSafeDeleteCharactersInRangePerf{
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         int const iterations = 1000000;
         
@@ -647,6 +667,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 //0.33 s
 - (void)testDeleteCharactersInRangePerf{
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         int const iterations = 1000000;
 
@@ -702,6 +723,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 // 0.145 s
 - (void)testContainsPerf{
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         int const iterations = 1000000;
 
@@ -717,6 +739,7 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 
 // 0.13 s
 - (void)testContainsStringPerf{
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         int const iterations = 1000000;
 
@@ -939,19 +962,19 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 {
 	{
 		//test against empty string
-		XCTAssertEqualObjects([@"" stringByReplacingCharactersInSet:[NSCharacterSet whitespaceCharacterSet] withString:@"x"], @"", @"replacement on empty string must result in empty string");
+		XCTAssertEqualObjects([@"" sp_stringByReplacingCharactersInSet:[NSCharacterSet whitespaceCharacterSet] withString:@"x"], @"", @"replacement on empty string must result in empty string");
 	}
 	{
 		//test match at begin, middle, end / consecutive matches
-		XCTAssertEqualObjects([@" ab  c " stringByReplacingCharactersInSet:[NSCharacterSet whitespaceCharacterSet] withString:@"_"], @"_ab__c_", @"Testing matches at both end, replacement of consecutive matches");
+		XCTAssertEqualObjects([@" ab  c " sp_stringByReplacingCharactersInSet:[NSCharacterSet whitespaceCharacterSet] withString:@"_"], @"_ab__c_", @"Testing matches at both end, replacement of consecutive matches");
 	}
 	{
 		//test replacement of different characters
-		XCTAssertEqualObjects([@"ab\r\ncd" stringByReplacingCharactersInSet:[NSCharacterSet newlineCharacterSet] withString:@"*"], @"ab**cd", @"Testing replacement of different characters in set");
+		XCTAssertEqualObjects([@"ab\r\ncd" sp_stringByReplacingCharactersInSet:[NSCharacterSet newlineCharacterSet] withString:@"*"], @"ab**cd", @"Testing replacement of different characters in set");
 	}
 	{
 		// nil for replacement char
-		XCTAssertEqualObjects([@"ab\r\ncd" stringByReplacingCharactersInSet:[NSCharacterSet newlineCharacterSet] withString:nil], @"abcd", @"testing replacement with nil");
+		XCTAssertEqualObjects([@"ab\r\ncd" sp_stringByReplacingCharactersInSet:[NSCharacterSet newlineCharacterSet] withString:nil], @"abcd", @"testing replacement with nil");
 	}
 }
 

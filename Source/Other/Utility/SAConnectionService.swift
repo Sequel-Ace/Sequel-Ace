@@ -307,6 +307,7 @@ import Foundation
             conn.password = password
             conn.allowDataLocalInfile = info.allowDataLocalInfile != 0
             conn.enableClearTextPlugin = info.enableClearTextPlugin != 0
+            conn.requestServerPublicKey = info.requestServerPublicKey != 0
 
             // AWS IAM auth requires cleartext plugin and SSL regardless of saved flags
             if info.type == .awsIAM {
