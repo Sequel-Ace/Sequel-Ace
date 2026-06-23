@@ -1767,6 +1767,9 @@ Befehle werden anwendungsweit ausgeführt";
 /* MySQL connecting very short status message */
 "MySQL connecting..." = "Verbinde MySQL ...";
 
+/* mysql 8.4 invalid auto increment title */
+"AUTO_INCREMENT is unavailable" = "AUTO_INCREMENT is unavailable";
+
 /* mysql error message */
 "MySQL Error" = "MySQL Fehler";
 
@@ -1781,6 +1784,12 @@ Befehle werden anwendungsweit ausgeführt";
 
 /* mysql help categories */
 "MySQL Help – Categories" = "MySQL Hilfe – Kategorien";
+
+/* mysql 8.4 invalid auto increment message */
+"MySQL 8.4 and newer only support AUTO_INCREMENT on integer columns. The %@ column type cannot use AUTO_INCREMENT on this server." = "MySQL 8.4 and newer only support AUTO_INCREMENT on integer columns. The %@ column type cannot use AUTO_INCREMENT on this server.";
+
+/* mysql 8.4 invalid relation message */
+"MySQL 8.4 and newer require a foreign key to reference a full unique or primary key. Add a single-column unique key to %@.%@ or choose another referenced column." = "MySQL 8.4 and newer require a foreign key to reference a full unique or primary key. Add a single-column unique key to %@.%@ or choose another referenced column.";
 
 /* mysql said message */
 "MySQL said:" = "MySQL Ergebnis:";
@@ -2106,6 +2115,9 @@ Befehle werden anwendungsweit ausgeführt";
 /* remote error */
 "Remote Error" = "Remote-Fehler";
 
+/* mysql 8.4 invalid relation title */
+"Referenced column needs a unique key" = "Referenced column needs a unique key";
+
 /* Bundle Editor : Remove-Bundle: remove button
  remove button */
 "Remove" = "Entfernen";
@@ -2328,6 +2340,9 @@ Befehle werden anwendungsweit ausgeführt";
 
 /* selected items */
 "selected items" = "Ausgewählte Items";
+
+/* invalid auto increment fallback field type */
+"selected" = "selected";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as comma-separated' item */
 "Selected Rows (CSV)" = "Ausgewählte Zeilen (CSV)";
@@ -3230,14 +3245,32 @@ Befehle werden anwendungsweit ausgeführt";
 /* Question to user to see if they would like to re-request access */
 "You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?" = "Einige „sichere Lesezeichen“ sind veraltet:\n\n%@\n\nSoll der Zugriff jetzt erneut angefordert werden?";
 
+/* single stale bookmark alert message */
+"Sequel Ace found 1 stale secure bookmark. You can continue launching now, or open Files preferences to refresh or revoke it." = "Sequel Ace found 1 stale secure bookmark. You can continue launching now, or open Files preferences to refresh or revoke it.";
+
+/* multiple stale bookmarks alert message */
+"Sequel Ace found %d stale secure bookmarks. You can continue launching now, or open Files preferences to refresh or revoke them." = "Sequel Ace found %d stale secure bookmarks. You can continue launching now, or open Files preferences to refresh or revoke them.";
+
 /* Question to user to see if they would like to request access to missing bookmarks */
 "You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?" = "Es fehlen sichere Lesezeichen:\n\n%@\n\nSoll der Zugriff jetzt angefordert werden?";
+
+/* single missing bookmark alert message */
+"Sequel Ace found 1 missing secure bookmark. You can request access now, or cancel and update it later in Files preferences." = "Sequel Ace found 1 missing secure bookmark. You can request access now, or cancel and update it later in Files preferences.";
+
+/* multiple missing bookmarks alert message */
+"Sequel Ace found %d missing secure bookmarks. You can request access now, or cancel and update them later in Files preferences." = "Sequel Ace found %d missing secure bookmarks. You can request access now, or cancel and update them later in Files preferences.";
 
 /* known hosts advance menu item title */
 "Use known hosts from ssh config (ADVANCED)" = "Bekannte Hosts aus der SSH Konfiguration verwenden (FORTGESCHRITTEN)";
 
 /* The answer, yes */
 "Yes" = "Ja";
+
+/* open files preferences button */
+"Open Files Preferences" = "Open Files Preferences";
+
+/* request access button */
+"Request Access" = "Request Access";
 
 /* Shown to remind users of their stale bookmarks */
 "A reminder of your stale secure bookmarks:<br /><br />%@<br />" = "Ihre veralteten „sicheren Lesezeichen“:<br /><br />%@<br />";
