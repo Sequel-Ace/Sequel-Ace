@@ -37,7 +37,6 @@
 #import "SPTablesList.h"
 #import "SPNavigatorController.h"
 #import "RegexKitLite.h"
-#import "SPBundleHTMLOutputController.h"
 #import "SPAppController.h"
 #import "SPDatabaseStructure.h"
 #import "SPBundleCommandRunner.h"
@@ -124,7 +123,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
     [super awakeFromNib];
 
 	prefs = [NSUserDefaults standardUserDefaults];
-	[self setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]]];
+	[self setFont:[SAArchiving fontFromData:[prefs dataForKey:SPCustomQueryEditorFont]]];
 
 	// Set self as delegate for the textView's textStorage to enable syntax highlighting,
 	[[self textStorage] setDelegate:self];
@@ -201,7 +200,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 			NSColor *color;
 			BOOL canRetry = YES;
 		retry:
-			if(colorData && (color = [NSUnarchiver unarchiveObjectWithData:colorData])) {
+			if(colorData && (color = [SAArchiving colorFromData:colorData])) {
 				[self performSelector:item->m withObject:color];
 			}
 			else if(canRetry) {
@@ -254,22 +253,22 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
  */
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
 	if ([keyPath isEqualToString:SPCustomQueryEditorBackgroundColor]) {
-		NSColor *backgroundColor = [NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]];
+		NSColor *backgroundColor = [SAArchiving colorFromData:[change objectForKey:NSKeyValueChangeNewKey]];
 		[self setQueryEditorBackgroundColor:backgroundColor];
 		[self setBackgroundColor:backgroundColor];
-		[self _setTextSelectionColor:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorSelectionColor]] onBackgroundColor:backgroundColor];
+		[self _setTextSelectionColor:[SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorSelectionColor]] onBackgroundColor:backgroundColor];
 		[self setNeedsDisplayInRect:[self bounds]];
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorFont]) {
-		[self setFont:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
+		[self setFont:[SAArchiving fontFromData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		[self setNeedsDisplayInRect:[self bounds]];
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorHighlightQueryColor]) {
-		[self setQueryHiliteColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
+		[self setQueryHiliteColor:[SAArchiving colorFromData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		[self setNeedsDisplayInRect:[self bounds]];
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorCaretColor]) {
-		[self setInsertionPointColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
+		[self setInsertionPointColor:[SAArchiving colorFromData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		[self setNeedsDisplayInRect:[self bounds]];
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorSelectionColor]) {
-		[self _setTextSelectionColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]] onBackgroundColor:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]]];
+		[self _setTextSelectionColor:[SAArchiving colorFromData:[change objectForKey:NSKeyValueChangeNewKey]] onBackgroundColor:[SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]]];
 		[self setNeedsDisplayInRect:[self bounds]];
 	} else if ([keyPath isEqualToString:SPCustomQueryHighlightCurrentQuery]) {
 		[self setShouldHiliteQuery:[[change objectForKey:NSKeyValueChangeNewKey] boolValue]];
@@ -279,37 +278,37 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		[self setNeedsDisplayInRect:[self bounds]];
         [self doSyntaxHighlightingWithForceWrapper:keyPath];
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorCommentColor]) {
-		[self setCommentColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
+		[self setCommentColor:[SAArchiving colorFromData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		if ([self isEditable]) {
             [self doSyntaxHighlightingWithForceWrapper:keyPath];
 		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorQuoteColor]) {
-		[self setQuoteColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
+		[self setQuoteColor:[SAArchiving colorFromData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		if ([self isEditable]) {
             [self doSyntaxHighlightingWithForceWrapper:keyPath];
 		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorSQLKeywordColor]) {
-		[self setKeywordColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
+		[self setKeywordColor:[SAArchiving colorFromData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		if ([self isEditable]) {
             [self doSyntaxHighlightingWithForceWrapper:keyPath];
 		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorBacktickColor]) {
-		[self setBacktickColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
+		[self setBacktickColor:[SAArchiving colorFromData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		if ([self isEditable]) {
             [self doSyntaxHighlightingWithForceWrapper:keyPath];
 		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorNumericColor]) {
-		[self setNumericColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
+		[self setNumericColor:[SAArchiving colorFromData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		if ([self isEditable]) {
             [self doSyntaxHighlightingWithForceWrapper:keyPath];
 		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorVariableColor]) {
-		[self setVariableColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
+		[self setVariableColor:[SAArchiving colorFromData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		if ([self isEditable]) {
             [self doSyntaxHighlightingWithForceWrapper:keyPath];
 		}
 	} else if ([keyPath isEqualToString:SPCustomQueryEditorTextColor]) {
-		[self setOtherTextColor:[NSUnarchiver unarchiveObjectWithData:[change objectForKey:NSKeyValueChangeNewKey]]];
+		[self setOtherTextColor:[SAArchiving colorFromData:[change objectForKey:NSKeyValueChangeNewKey]]];
 		[self setTextColor:[self otherTextColor]];
 		if ([self isEditable]) {
             [self doSyntaxHighlightingWithForceWrapper:keyPath];
@@ -2044,40 +2043,51 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		}
 
 		// Parse for mirrored snippets
-		while([snip isMatchedByRegex:mirror_re]) {
+		NSUInteger mirrorSearchStart = 0;
+		while(true) {
+			NSRange searchRange = NSMakeRange(mirrorSearchStart, [snip length] - mirrorSearchStart);
+			NSRange snipRange = [snip rangeOfRegex:mirror_re inRange:searchRange];
+			if(snipRange.location == NSNotFound) break;
+
+			NSInteger snipCnt = [[snip substringWithRange:NSMakeRange(snipRange.location + 1, snipRange.length - 1)] intValue];
+
+			// Check for snippet number 19 (to simplify regexp)
+			if(snipCnt>18 || snipCnt<0) {
+				NSLog(@"Only snippets in the range of 0…18 allowed.");
+				[self endSnippetSession];
+				break;
+			}
+
+			// Leave $N untouched when no matching ${N:…} placeholder was defined
+			if(snippetControlArray[snipCnt].location < 0) {
+				mirrorSearchStart = NSMaxRange(snipRange);
+				continue;
+			}
+
 			mirroredCounter++;
 			if(mirroredCounter >= COUNT_OF(snippetMirroredControlArray)) {
 				NSLog(@"Only %lu mirrored snippet placeholders allowed.",COUNT_OF(snippetMirroredControlArray));
 				mirroredCounter--; //go back by one or the code below will do an out-of-bounds array access
 				NSBeep();
 				break;
-			} else {
-
-				NSRange snipRange = [snip rangeOfRegex:mirror_re capture:0L];
-				NSInteger snipCnt = [[snip substringWithRange:[snip rangeOfRegex:mirror_re capture:1L]] intValue];
-
-				// Check for snippet number 19 (to simplify regexp)
-				if(snipCnt>18 || snipCnt<0) {
-					NSLog(@"Only snippets in the range of 0…18 allowed.");
-					[self endSnippetSession];
-					break;
-				}
-
-				[snip replaceCharactersInRange:snipRange withString:@""];
-				[snip flushCachedRegexData];
-
-				// Store found mirrored snippet range
-				snippetMirroredControlArray[mirroredCounter].snippet  = snipCnt;
-				snippetMirroredControlArray[mirroredCounter].location = snipRange.location + targetRange.location;
-				snippetMirroredControlArray[mirroredCounter].length   = 0;
-
-				// Adjust successive snippets
-				for(i=0; i<COUNT_OF(snippetControlArray); i++)
-				if(snippetControlArray[i].location > -1 && snippetControlArray[i].location > snippetMirroredControlArray[mirroredCounter].location)
-					snippetControlArray[i].location -= 1+((snipCnt>9)?2:1);
-
-				[snip flushCachedRegexData];
 			}
+
+			[snip replaceCharactersInRange:snipRange withString:@""];
+			[snip flushCachedRegexData];
+
+			// Store found mirrored snippet range
+			snippetMirroredControlArray[mirroredCounter].snippet  = snipCnt;
+			snippetMirroredControlArray[mirroredCounter].location = snipRange.location + targetRange.location;
+			snippetMirroredControlArray[mirroredCounter].length   = 0;
+
+			// Adjust successive snippets
+			for(i=0; i<COUNT_OF(snippetControlArray); i++)
+			if(snippetControlArray[i].location > -1 && snippetControlArray[i].location > snippetMirroredControlArray[mirroredCounter].location)
+				snippetControlArray[i].location -= 1+((snipCnt>9)?2:1);
+
+			// Resume scanning after the deleted match
+			mirrorSearchStart = snipRange.location;
+			[snip flushCachedRegexData];
 		}
 		// Preset mirrored snippets with according snippet content
 		if(mirroredCounter > -1) {
@@ -2415,7 +2425,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		if([charactersIgnMod isEqualToString:@"0"]) { // reset font to default
 			BOOL editableStatus = [self isEditable];
 			[self setEditable:YES];
-			[self setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]]];
+			[self setFont:[SAArchiving fontFromData:[prefs dataForKey:SPCustomQueryEditorFont]]];
 			[self setEditable:editableStatus];
 			return;
 		}
@@ -3565,11 +3575,14 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 {
 	NSPasteboard *pboard = [sender draggingPasteboard];
 
-	if ( [[pboard types] containsObject:NSFilenamesPboardType] && [[pboard types] containsObject:@"CorePasteboardFlavorType 0x54455854"])
+	if ( [[pboard types] containsObject:NSPasteboardTypeFileURL] && [[pboard types] containsObject:@"CorePasteboardFlavorType 0x54455854"])
 		return [super performDragOperation:sender];
 
-	if ( [[pboard types] containsObject:NSFilenamesPboardType] ) {
-		NSArray *files = [pboard propertyListForType:NSFilenamesPboardType];
+	if ( [[pboard types] containsObject:NSPasteboardTypeFileURL] ) {
+		NSArray *files = [pboard readObjectsForClasses:@[[NSURL class]] options:@{NSPasteboardURLReadingFileURLsOnlyKey: @YES}];
+
+		if([files count] == 0)
+			return [super performDragOperation:sender];
 
 		// Only one file path is allowed
 		if([files count] > 1) {
@@ -3577,7 +3590,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 			return YES;
 		}
 
-		NSString *filepath = [[pboard propertyListForType:NSFilenamesPboardType] objectAtIndex:0];
+		NSString *filepath = [(NSURL *)[files objectAtIndex:0] path];
 		// if (([filenamesAttributes fileHFSTypeCode] == 'clpt' && [filenamesAttributes fileHFSCreatorCode] == 'MACS') || [[filename pathExtension] isEqualToString:@"textClipping"] == YES) {
 		//
 		// }
@@ -3756,14 +3769,14 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 - (void)changeFont:(id)sender
 {
 	if (prefs && [self font] != nil) {
-		[prefs setObject:[NSArchiver archivedDataWithRootObject:[self font]] forKey:SPCustomQueryEditorFont];
-		NSFont *nf = [[NSFontPanel sharedFontPanel] panelConvertFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]]];
+		[prefs setObject:[SAArchiving archivedDataForFont:[self font]] forKey:SPCustomQueryEditorFont];
+		NSFont *nf = [[NSFontPanel sharedFontPanel] panelConvertFont:[SAArchiving fontFromData:[prefs dataForKey:SPCustomQueryEditorFont]]];
 		BOOL oldEditable = [self isEditable];
 		[self setEditable:YES];
 		[self setFont:nf];
 		[self setEditable:oldEditable];
 		[self setNeedsDisplayInRect:[self bounds]];
-		[prefs setObject:[NSArchiver archivedDataWithRootObject:nf] forKey:SPCustomQueryEditorFont];
+		[prefs setObject:[SAArchiving archivedDataForFont:nf] forKey:SPCustomQueryEditorFont];
 	}
 }
 
@@ -3822,7 +3835,7 @@ NSInteger _alphabeticSort(id string1, id string2, void *reverse)
 		NSColorSpace *rgbColorSpace = [NSColorSpace genericRGBColorSpace];
 
 		newSelectionColor = [newSelectionColor colorUsingColorSpace:rgbColorSpace];
-		NSColor *backgroundColor = [[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]] colorUsingColorSpace:rgbColorSpace];
+		NSColor *backgroundColor = [[SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]] colorUsingColorSpace:rgbColorSpace];
 
 		CGFloat modifiedRedComponent = ([backgroundColor redComponent] * (1.f - [newSelectionColor alphaComponent])) + ([newSelectionColor redComponent] * [newSelectionColor alphaComponent]);
 		CGFloat modifiedGreenComponent = ([backgroundColor greenComponent] * (1.f - [newSelectionColor alphaComponent])) + ([newSelectionColor greenComponent] * [newSelectionColor alphaComponent]);

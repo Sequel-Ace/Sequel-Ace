@@ -11,7 +11,6 @@
 #import "SPFunctions.h"
 #import "SPAppController.h"
 #import "SPTooltip.h"
-#import "SPBundleHTMLOutputController.h"
 #import "SPBundleCommandRunner.h"
 #import "SPChooseMenuItemDialog.h"
 #import "SPTextView.h"
@@ -926,7 +925,7 @@ static SPBundleManager *sharedManager = nil;
 					else if([action isEqualToString:SPBundleOutputActionShowAsHTML]) {
 						BOOL correspondingWindowFound = NO;
 						for(id win in [NSApp windows]) {
-							if([[win delegate] isKindOfClass:[SPBundleHTMLOutputController class]]) {
+							if([[win delegate] isKindOfClass:[SABundleHTMLOutputWindowController class]]) {
 								if([[[win delegate] windowUUID] isEqualToString:[cmdData objectForKey:SPBundleFileUUIDKey]]) {
 									correspondingWindowFound = YES;
 									[[win delegate] setDocUUID:uuid];
@@ -936,7 +935,7 @@ static SPBundleManager *sharedManager = nil;
 							}
 						}
 						if(!correspondingWindowFound) {
-							SPBundleHTMLOutputController *c = [[SPBundleHTMLOutputController alloc] init];
+							SABundleHTMLOutputWindowController *c = [[SABundleHTMLOutputWindowController alloc] init];
 							[c setWindowUUID:[cmdData objectForKey:SPBundleFileUUIDKey]];
 							[c setDocUUID:uuid];
 							[c displayHTMLContent:output withOptions:nil];

@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPExportController.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPTablesList.h"
 #import "SPTableData.h"
 #import "SPTableContent.h"
@@ -2712,7 +2713,7 @@ set_input:
 	// if the string came from another app, paste it literal, tokenfield will take care of any conversions
 	NSString *raw = [pboard stringForType:NSPasteboardTypeString];
 	if(raw) {
-		return @[[raw stringByReplacingCharactersInSet:[NSCharacterSet newlineCharacterSet]	withString:@" "]];
+		return @[[raw sp_stringByReplacingCharactersInSet:[NSCharacterSet newlineCharacterSet]	withString:@" "]];
 	}
 
 	return nil;
@@ -3016,7 +3017,7 @@ set_input:
 	//show open file dialog
 	NSOpenPanel *panel = [NSOpenPanel openPanel];
 
-	[panel setAllowedFileTypes:@[SPFileExtensionDefault]];
+	[panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionDefault]]];
 	[panel setAllowsOtherFileTypes:YES];
 
 	[panel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger result) {
@@ -3071,7 +3072,7 @@ set_input:
 	//show save file dialog
 	NSSavePanel *panel = [NSSavePanel savePanel];
 
-	[panel setAllowedFileTypes:@[SPFileExtensionDefault]];
+	[panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionDefault]]];
 
 	[panel setExtensionHidden:NO];
 	[panel setAllowsOtherFileTypes:NO];

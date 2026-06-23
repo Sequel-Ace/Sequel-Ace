@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPEditorPreferencePane.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPPreferenceController.h"
 #import "SPColorWellCell.h"
 #import "SPCategoryAdditions.h"
@@ -117,7 +118,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
     NSTableColumn *column = [[colorSettingTableView tableColumns] safeObjectAtIndex:1];
 	NSTextFieldCell *textCell = [[NSTextFieldCell alloc] init];
 	
-	[textCell setFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]]];
+	[textCell setFont:[SAArchiving fontFromData:[prefs dataForKey:SPCustomQueryEditorFont]]];
 
 	SPColorWellCell *colorCell = [[SPColorWellCell alloc] init];
 	
@@ -127,7 +128,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	
 	[column setDataCell:colorCell];
 
-	[colorSettingTableView setBackgroundColor:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]]];
+	[colorSettingTableView setBackgroundColor:[SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]]];
 }
 
 #pragma mark -
@@ -137,7 +138,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 {
 	NSSavePanel *panel = [NSSavePanel savePanel];
 	
-	[panel setAllowedFileTypes:@[SPColorThemeFileExtension]];
+	[panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPColorThemeFileExtension]]];
 	
 	[panel setExtensionHidden:NO];
 	[panel setAllowsOtherFileTypes:NO];
@@ -163,7 +164,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	[panel setDelegate:self];
 	[panel setCanChooseDirectories:NO];
 	[panel setAllowsMultipleSelection:NO];
-	[panel setAllowedFileTypes:@[SPColorThemeFileExtension, @"tmTheme"]];
+	[panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPColorThemeFileExtension], [UTType typeWithFilenameExtension:@"tmTheme"]]];
 
 	[panel beginSheetModalForWindow:[[self view] window] completionHandler:^(NSInteger returnCode)
 	{
@@ -285,13 +286,13 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
     
 	[(SPPreferenceController *)[[[self view] window] delegate] setFontChangeTarget:SPPrefFontChangeTargetEditor];
 	
-	[[NSFontPanel sharedFontPanel] setPanelFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]] isMultiple:NO];
+	[[NSFontPanel sharedFontPanel] setPanelFont:[SAArchiving fontFromData:[prefs dataForKey:SPCustomQueryEditorFont]] isMultiple:NO];
 	[[NSFontPanel sharedFontPanel] makeKeyAndOrderFront:self];
 }
 
 - (IBAction)resetSystemFont:(id)sender
 {
-  [prefs setObject:[NSArchiver archivedDataWithRootObject:[NSUserDefaults getSystemFont]] forKey:SPCustomQueryEditorFont];
+  [prefs setObject:[SAArchiving archivedDataForFont:[NSUserDefaults getSystemFont]] forKey:SPCustomQueryEditorFont];
   [self updateDisplayedEditorFontName];
 }
 
@@ -326,7 +327,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 		[prefs setObject:[vendorDefaults objectForKey:key] forKey:key];
 	}
 
-	[colorSettingTableView setBackgroundColor:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]]];
+	[colorSettingTableView setBackgroundColor:[SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]]];
 	[colorSettingTableView reloadData];
 	
 	[self updateDisplayColorThemeName];
@@ -353,7 +354,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
  */
 - (void)updateDisplayedEditorFontName
 {
-  NSFont *font = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]];
+  NSFont *font = [SAArchiving fontFromData:[prefs dataForKey:SPCustomQueryEditorFont]];
   [editorFontName setFont:font];
   [colorSettingTableView reloadData];
 }
@@ -479,7 +480,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	
 	[panel setTarget:self];
 	[panel setAction:@selector(colorChanged:)];
-	[panel setColor:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:[editorColors objectAtIndex:colorRow]]]];
+	[panel setColor:[SAArchiving colorFromData:[prefs dataForKey:[editorColors objectAtIndex:colorRow]]]];
 	
 	[colorSettingTableView deselectAll:nil];
 	
@@ -493,7 +494,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 {
 	if (![[NSColorPanel sharedColorPanel] isVisible]) return;
 	
-	[prefs setObject:[NSArchiver archivedDataWithRootObject:[sender color]] forKey:[editorColors objectAtIndex:colorRow]];
+	[prefs setObject:[SAArchiving archivedDataForColor:[sender color]] forKey:[editorColors objectAtIndex:colorRow]];
 
 	if ([[editorColors objectAtIndex:colorRow] isEqualTo:SPCustomQueryEditorBackgroundColor]) {
 		[colorSettingTableView setBackgroundColor:[sender color]];
@@ -532,7 +533,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 - (id)tableView:(NSTableView *)tableView objectValueForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)rowIndex
 {
 	if (tableView == colorSettingTableView) {
-		return ([[tableColumn identifier] isEqualToString:@"name"]) ? [editorNameForColors objectAtIndex:rowIndex] : [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:[editorColors objectAtIndex:rowIndex]]];
+		return ([[tableColumn identifier] isEqualToString:@"name"]) ? [editorNameForColors objectAtIndex:rowIndex] : [SAArchiving colorFromData:[prefs dataForKey:[editorColors objectAtIndex:rowIndex]]];
 	} 
 	else if (tableView == editThemeListTable) {
 		return [editThemeListItems objectAtIndex:rowIndex];
@@ -602,7 +603,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 		
 		[panel setTarget:self];
 		[panel setAction:@selector(colorChanged:)];
-		[panel setColor:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:[editorColors objectAtIndex:colorRow]]]];
+		[panel setColor:[SAArchiving colorFromData:[prefs dataForKey:[editorColors objectAtIndex:colorRow]]]];
 		[colorSettingTableView deselectAll:nil];
 		[panel makeKeyAndOrderFront:self];
 		
@@ -618,27 +619,27 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 		if ([cell isKindOfClass:[NSTextFieldCell class]]) {
 			[cell setDrawsBackground:YES];
 			
-			NSFont *nf = [NSFont fontWithName:[[[NSFontPanel sharedFontPanel] panelConvertFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]]] fontName] size:13.0f];
+			NSFont *nf = [NSFont fontWithName:[[[NSFontPanel sharedFontPanel] panelConvertFont:[SAArchiving fontFromData:[prefs dataForKey:SPCustomQueryEditorFont]]] fontName] size:13.0f];
 			
 			[cell setFont:nf];
 			
 			switch (index) 
 			{
 				case 1:
-					[cell setTextColor:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorTextColor]]];
-					[cell setBackgroundColor:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]]];
+					[cell setTextColor:[SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorTextColor]]];
+					[cell setBackgroundColor:[SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]]];
 					break;
 				case 9:
-					[cell setTextColor:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorTextColor]]];
-					[cell setBackgroundColor:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorHighlightQueryColor]]];
+					[cell setTextColor:[SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorTextColor]]];
+					[cell setBackgroundColor:[SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorHighlightQueryColor]]];
 					break;
 				case 10:
-					[cell setTextColor:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorTextColor]]];
-					[cell setBackgroundColor:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorSelectionColor]]];
+					[cell setTextColor:[SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorTextColor]]];
+					[cell setBackgroundColor:[SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorSelectionColor]]];
 					break;
 				default:
-					[cell setTextColor:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:[editorColors objectAtIndex:index]]]];
-					[cell setBackgroundColor:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]]];
+					[cell setTextColor:[SAArchiving colorFromData:[prefs dataForKey:[editorColors objectAtIndex:index]]]];
+					[cell setBackgroundColor:[SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]]];
 			}
 		}
 	}
@@ -788,24 +789,24 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	NSMutableDictionary *mainsettings = [NSMutableDictionary dictionary];
 	NSMutableArray *settings = [NSMutableArray array];
 			
-	NSColor *aColor = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]];
+	NSColor *aColor = [SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]];
 	[mainsettings setObject:[aColor rgbHexString] forKey:@"background"];
 	
-	aColor = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorCaretColor]];
+	aColor = [SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorCaretColor]];
 	[mainsettings setObject:[aColor rgbHexString] forKey:@"caret"];
 	
-	aColor = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorTextColor]];
+	aColor = [SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorTextColor]];
 	[mainsettings setObject:[aColor rgbHexString] forKey:@"foreground"];
 	
-	aColor = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorHighlightQueryColor]];
+	aColor = [SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorHighlightQueryColor]];
 	[mainsettings setObject:[aColor rgbHexString] forKey:@"lineHighlight"];
 	
-	aColor = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorSelectionColor]];
+	aColor = [SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorSelectionColor]];
 	[mainsettings setObject:[aColor rgbHexString] forKey:@"selection"];
 	
 	[settings addObject:[NSDictionary dictionaryWithObjectsAndKeys:mainsettings, @"settings", nil]];
 	
-	aColor = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorCommentColor]];
+	aColor = [SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorCommentColor]];
 	[settings addObject:[NSDictionary dictionaryWithObjectsAndKeys:
 						 @"Comment", @"name",
 						 [NSDictionary dictionaryWithObjectsAndKeys:
@@ -815,7 +816,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 						 nil
 						 ]];
 	
-	aColor = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorQuoteColor]];
+	aColor = [SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorQuoteColor]];
 	[settings addObject:[NSDictionary dictionaryWithObjectsAndKeys:
 						 @"String", @"name",
 						 [NSDictionary dictionaryWithObjectsAndKeys:
@@ -825,7 +826,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 						 nil
 						 ]];
 	
-	aColor = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorSQLKeywordColor]];
+	aColor = [SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorSQLKeywordColor]];
 	[settings addObject:[NSDictionary dictionaryWithObjectsAndKeys:
 						 @"Keyword", @"name",
 						 [NSDictionary dictionaryWithObjectsAndKeys:
@@ -835,7 +836,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 						 nil
 						 ]];
 	
-	aColor = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorBacktickColor]];
+	aColor = [SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorBacktickColor]];
 	[settings addObject:[NSDictionary dictionaryWithObjectsAndKeys:
 						 @"User-defined constant", @"name",
 						 [NSDictionary dictionaryWithObjectsAndKeys:
@@ -845,7 +846,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 						 nil
 						 ]];
 	
-	aColor = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorNumericColor]];
+	aColor = [SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorNumericColor]];
 	[settings addObject:[NSDictionary dictionaryWithObjectsAndKeys:
 						 @"Number", @"name",
 						 [NSDictionary dictionaryWithObjectsAndKeys:
@@ -855,7 +856,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 						 nil
 						 ]];
 	
-	aColor = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorVariableColor]];
+	aColor = [SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorVariableColor]];
 	[settings addObject:[NSDictionary dictionaryWithObjectsAndKeys:
 						 @"Variable", @"name",
 						 [NSDictionary dictionaryWithObjectsAndKeys:
@@ -951,7 +952,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 						NSString *rgbHex = [dic objectForKey:key];
 						NSColor *color;
 						if([rgbHex isKindOfClass:NSStringClass] && (color = [NSColor colorWithRGBHexString:rgbHex])) {
-							[prefs setObject:[NSArchiver archivedDataWithRootObject:color] forKey:[mainPairs objectForKey:key]];
+							[prefs setObject:[SAArchiving archivedDataForColor:color] forKey:[mainPairs objectForKey:key]];
 							actuallyLoaded++;
 						}
 						else {
@@ -973,7 +974,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 						NSString *rgbHex = [optSettings objectForKey:@"foreground"];
 						NSColor *color;
 						if([rgbHex isKindOfClass:NSStringClass] && (color = [NSColor colorWithRGBHexString:rgbHex])) {
-							[prefs setObject:[NSArchiver archivedDataWithRootObject:color] forKey:prefName];
+							[prefs setObject:[SAArchiving archivedDataForColor:color] forKey:prefName];
 							actuallyLoaded++;
 						}
 						else {
@@ -995,7 +996,7 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 	}
 
 	if( actuallyLoaded > 0) {
-		[colorSettingTableView setBackgroundColor:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]]];
+		[colorSettingTableView setBackgroundColor:[SAArchiving colorFromData:[prefs dataForKey:SPCustomQueryEditorBackgroundColor]]];
 		[colorSettingTableView reloadData];
 	} else {
 		[NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while reading data file", @"error while reading data file")] message:NSLocalizedString(@"No color theme data found.", @"error that no color theme found") callback:nil];

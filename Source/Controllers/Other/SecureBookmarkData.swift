@@ -10,7 +10,7 @@ import Foundation
 
 final class SecureBookmarkData: NSObject {
     let bookmarkData: Data
-    private let options: Double
+    let options: Double
     private let bookmarkURL: URL
 
     init(data: Data, options: Double, url: URL) {
