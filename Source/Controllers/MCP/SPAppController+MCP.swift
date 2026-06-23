@@ -86,6 +86,36 @@ private func mcpEscapeQuoted(_ value: String, _ conn: SPMySQLConnection) -> Stri
     return "'\(escaped)'"
 }
 
+// Path split into components, dropping the leading "/" element. Inputs are already
+// symlink-resolved and standardized, so there are no "." or ".." elements.
+private func mcpPathComponents(_ path: String) -> [String] {
+    return (path as NSString).pathComponents.filter { $0 != "/" && !$0.isEmpty }
+}
+
+// Open an export file by walking the directory chain from `base` one component at a
+// time with O_NOFOLLOW, so no component (not just the final one) can be swapped for a
+// symlink to redirect the write outside the export folder. Creates intermediate dirs.
+// Returns an open fd (caller closes), or (-1, error).
+private func mcpOpenExportFile(base: String, relativeDirs: [String], filename: String) -> (fd: Int32, error: String?) {
+    var fd = open(base, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+    if fd < 0 { return (-1, "Could not open export folder (\(String(cString: strerror(errno))))") }
+    for dir in relativeDirs {
+        mkdirat(fd, dir, 0o700)   // ignore result; an existing dir (EEXIST) is fine
+        let next = openat(fd, dir, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+        let openErr = errno
+        close(fd)
+        if next < 0 {
+            return (-1, "Could not open export subdirectory '\(dir)' (\(String(cString: strerror(openErr))))")
+        }
+        fd = next
+    }
+    let fileFD = openat(fd, filename, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW | O_CLOEXEC, 0o600)
+    let fileErr = errno
+    close(fd)
+    if fileFD < 0 { return (-1, "Could not open export file (\(String(cString: strerror(fileErr))))") }
+    return (fileFD, nil)
+}
+
 // MySQL can return text columns as NSData; decode to a string so values are
 // usable directly (not just at JSON-serialisation time). Non-data values pass through.
 private func mcpDecode(_ value: Any?) -> Any {
@@ -437,21 +467,24 @@ extension SPAppController: SPMCPDataSource {
             bound = boundSQL
         }
 
-        // Paginate read queries by wrapping them in a derived table.
+        // Cap how many rows the query may return. A positive limit is honoured but
+        // never exceeds mcpMaxResultRows; limit <= 0 ("all rows") falls back to that
+        // cap. We wrap plain SELECTs in a derived table with LIMIT effectiveLimit + 1
+        // so the database stops producing rows at the cap (instead of materialising a
+        // huge result) while still letting us detect that more rows existed.
+        let effectiveLimit = limit > 0 ? min(limit, mcpMaxResultRows) : mcpMaxResultRows
         var finalSQL = bound
-        if limit > 0 {
-            var t = bound.trimmingCharacters(in: .whitespacesAndNewlines)
-            while t.hasSuffix(";") { t = String(t.dropLast()).trimmingCharacters(in: .whitespacesAndNewlines) }
-            let up = t.uppercased()
-            // Only wrap plain SELECTs. A CTE (WITH ... SELECT) is invalid inside a
-            // derived table, so leave those unpaginated (the caller can add LIMIT).
-            if up.hasPrefix("SELECT") || up.hasPrefix("(") {
-                finalSQL = "SELECT * FROM (\(t)) AS _mcp_page LIMIT \(limit) OFFSET \(max(0, offset))"
-            }
+        var t = bound.trimmingCharacters(in: .whitespacesAndNewlines)
+        while t.hasSuffix(";") { t = String(t.dropLast()).trimmingCharacters(in: .whitespacesAndNewlines) }
+        let up = t.uppercased()
+        // A CTE (WITH ... SELECT) is invalid inside a derived table, so it can't be
+        // wrapped; mcpExecuteResultQuery still caps reading at effectiveLimit.
+        if up.hasPrefix("SELECT") || up.hasPrefix("(") {
+            finalSQL = "SELECT * FROM (\(t)) AS _mcp_page LIMIT \(effectiveLimit + 1) OFFSET \(max(0, offset))"
         }
 
         return mcpDBSync {
-            mcpExecuteResultQuery(finalSQL, onConnection: conn, connectionID: ci.id)
+            mcpExecuteResultQuery(finalSQL, onConnection: conn, connectionID: ci.id, maxRows: effectiveLimit)
         }
     }
 
@@ -513,8 +546,12 @@ extension SPAppController: SPMCPDataSource {
         }
     }
 
-    // Runs a result-returning query and packages rows/columns. Caller holds mcpDBQueue.
-    private func mcpExecuteResultQuery(_ sql: String, onConnection conn: SPMySQLConnection, connectionID connID: String) -> [String: Any] {
+    // Runs a result-returning query and packages rows/columns, reading at most
+    // `maxRows`. If a further row exists beyond that, the result is marked truncated.
+    // Callers that can bound the query at the SQL level should also push a
+    // `LIMIT maxRows + 1` so the database does not materialise an unbounded result.
+    // Caller holds mcpDBQueue.
+    private func mcpExecuteResultQuery(_ sql: String, onConnection conn: SPMySQLConnection, connectionID connID: String, maxRows: Int = mcpMaxResultRows) -> [String: Any] {
         let res = conn.queryString(sql)
         if conn.queryErrored() { return ["error": conn.lastErrorMessage() ?? "Query error"] }
 
@@ -527,9 +564,9 @@ extension SPAppController: SPMCPDataSource {
 
         let fieldNames = res.fieldNames() ?? []
         var rows: [[String: Any]] = []
-        var rowCount = 0
+        var truncated = false
         while let row = res.getRowAsDictionary() as? [String: Any] {
-            if rowCount >= mcpMaxResultRows { break }
+            if rows.count >= maxRows { truncated = true; break }   // a further row exists beyond the cap
             var safeRow: [String: Any] = [:]
             for (key, val) in row {
                 if val is NSNull {
@@ -543,17 +580,16 @@ extension SPAppController: SPMCPDataSource {
                 }
             }
             rows.append(safeRow)
-            rowCount += 1
         }
 
         var r: [String: Any] = [:]
         r["columns"] = fieldNames
         r["rows"] = rows
-        r["rowCount"] = rowCount
+        r["rowCount"] = rows.count
         r["connection"] = connID
-        if rowCount >= mcpMaxResultRows {
+        if truncated {
             r["truncated"] = true
-            r["truncatedAt"] = mcpMaxResultRows
+            r["truncatedAt"] = maxRows
         }
         return r
     }
@@ -561,9 +597,12 @@ extension SPAppController: SPMCPDataSource {
     public func mcpExplainQuery(_ sql: String, connection connID: String) -> [String: Any] {
         if sql.isEmpty { return ["error": "sql argument is required"] }
         let trimmed = sql.trimmingCharacters(in: .whitespacesAndNewlines)
-        // Plain EXPLAIN never executes the statement, but EXPLAIN ANALYZE does, so
-        // refuse a query that already starts with ANALYZE.
-        if trimmed.uppercased().hasPrefix("ANALYZE") {
+        // Plain EXPLAIN never executes the statement, but EXPLAIN ANALYZE does. The
+        // dispatcher already blocks this; guard here too (defense in depth) by
+        // stripping comments before checking, so a leading comment or /*! */ cannot
+        // smuggle ANALYZE past the prefix check.
+        let stripped = SPCustomQuerySQLClassifier.stripSQLComments(sql).trimmingCharacters(in: .whitespacesAndNewlines)
+        if sql.contains("/*!") || stripped.uppercased().hasPrefix("ANALYZE") {
             return ["error": "ANALYZE is not allowed; it would execute the statement"]
         }
         guard let ci = mcpResolveConnection(connID) else { return mcpNoConnectionError() }
@@ -607,6 +646,13 @@ extension SPAppController: SPMCPDataSource {
     public func mcpExportResults(_ sql: String, format: String, path: String, connection connID: String) -> [String: Any] {
         if sql.isEmpty { return ["error": "sql argument is required"] }
 
+        // Normalise and validate the format up front so an unsupported value is
+        // rejected rather than silently written as JSON but reported as that value.
+        let exportFormat = format.isEmpty ? "json" : format.lowercased()
+        guard exportFormat == "json" || exportFormat == "csv" else {
+            return ["error": "format must be one of: json, csv"]
+        }
+
         // Confine writes to the configured export folder. An MCP tool path is
         // attacker-influencable (prompt injection), so never write to an arbitrary path.
         // Resolve symlinks so a link inside the folder cannot redirect writes outside it.
@@ -644,7 +690,7 @@ extension SPAppController: SPMCPDataSource {
         let rows = (queryResult["rows"] as? [[String: Any]]) ?? []
 
         let content: String
-        if format.lowercased() == "csv" {
+        if exportFormat == "csv" {
             content = csvString(fromColumns: columns, rows: rows)
         } else {
             guard JSONSerialization.isValidJSONObject(queryResult) else {
@@ -658,18 +704,17 @@ extension SPAppController: SPMCPDataSource {
             }
         }
 
-        let dir = (finalPath as NSString).deletingLastPathComponent
-        try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
-
-        // Open the destination without following symlinks (O_NOFOLLOW). This closes the
-        // TOCTOU race where the path is swapped for a symlink after a prior stat check;
-        // opening a symlink or directory now fails instead of redirecting the write.
+        // Walk the directory chain from the (resolved, confined) export folder with
+        // O_NOFOLLOW at every component, so no parent component can be swapped for a
+        // symlink to redirect the write outside the folder - O_NOFOLLOW on the final
+        // open alone would only guard the last component. realParent is inside realBase
+        // (checked above), so the relative dirs are exactly the components between them.
+        let relativeDirs = Array(mcpPathComponents(realParent).dropFirst(mcpPathComponents(realBase).count))
         let outData = content.data(using: .utf8) ?? Data()
+        let opened = mcpOpenExportFile(base: realBase, relativeDirs: relativeDirs, filename: filename)
+        guard opened.fd >= 0 else { return ["error": opened.error ?? "Could not open export file"] }
+        let fd = opened.fd
         // 0600: exported rows can contain sensitive data, so keep them owner-only.
-        let fd = open((finalPath as NSString).fileSystemRepresentation, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW, 0o600)
-        if fd < 0 {
-            return ["error": "Could not open export file (\(String(cString: strerror(errno))))"]
-        }
         // Re-apply the mode in case the file already existed (O_CREAT does not change
         // an existing file's permissions).
         if fchmod(fd, 0o600) != 0 {
@@ -691,7 +736,7 @@ extension SPAppController: SPMCPDataSource {
         if !ok { return ["error": "Could not write export file"] }
 
         var response: [String: Any] = ["path": finalPath, "rowCount": rows.count,
-                                       "format": format.isEmpty ? "json" : format, "connection": resolvedConn]
+                                       "format": exportFormat, "connection": resolvedConn]
         if truncated {
             response["truncated"] = true
             response["truncatedAt"] = truncatedAt ?? mcpMaxResultRows
