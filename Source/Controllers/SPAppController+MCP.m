@@ -33,6 +33,11 @@
 #import <SPMySQL/SPMySQL.h>
 #import <objc/runtime.h>
 
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+
 #import "sequel-ace-Swift.h"
 
 // Stable id attached to each open document for its lifetime, so the agent can
@@ -695,16 +700,6 @@ static id mcpDecode(id value)
     }
     path = [realParent stringByAppendingPathComponent:filename];
 
-    // Reject an existing symlink or directory at the destination: writeToFile:
-    // follows a symlink and would redirect the write outside the export folder.
-    NSDictionary *destAttrs = [[NSFileManager defaultManager] attributesOfItemAtPath:path error:nil];
-    if (destAttrs) {
-        NSString *type = destAttrs[NSFileType];
-        if ([type isEqualToString:NSFileTypeSymbolicLink] || [type isEqualToString:NSFileTypeDirectory]) {
-            return @{@"error": @"Export destination must not be an existing symlink or directory."};
-        }
-    }
-
     NSDictionary *queryResult = [self mcpRunQuery:sql params:nil limit:0 offset:0 connection:connID];
     if (queryResult[@"error"]) return queryResult;
 
@@ -724,8 +719,24 @@ static id mcpDecode(id value)
     NSString *dir = [path stringByDeletingLastPathComponent];
     [[NSFileManager defaultManager] createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:nil];
 
-    BOOL written = [content writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:&writeError];
-    if (!written) return @{@"error": writeError.localizedDescription ?: @"Could not write file"};
+    // Open the destination without following symlinks (O_NOFOLLOW). This closes the
+    // TOCTOU race where the path is swapped for a symlink after a prior stat check;
+    // opening a symlink or directory now fails instead of redirecting the write.
+    NSData *outData = [content dataUsingEncoding:NSUTF8StringEncoding] ?: [NSData data];
+    int fd = open(path.fileSystemRepresentation, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW, 0644);
+    if (fd < 0) {
+        return @{@"error": [NSString stringWithFormat:@"Could not open export file (%s)", strerror(errno)]};
+    }
+    BOOL ok = YES;
+    size_t total = 0;
+    const char *bytes = outData.bytes;
+    while (total < outData.length) {
+        ssize_t w = write(fd, bytes + total, outData.length - total);
+        if (w <= 0) { ok = NO; break; }
+        total += (size_t)w;
+    }
+    close(fd);
+    if (!ok) return @{@"error": @"Could not write export file"};
 
     return @{@"path": path, @"rowCount": @(rows.count), @"format": format ?: @"json", @"connection": connID ?: @""};
 }
