@@ -56,6 +56,27 @@ enum SPMCPReadOnlyGuard {
         // also rejects `EXPLAIN ANALYZE <write>`, which MySQL would execute.
         return SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(core)
     }
+
+    /// `true` if running `EXPLAIN <sql>` would execute the statement rather than just
+    /// plan it. EXPLAIN ANALYZE runs its target, and the ANALYZE/FORMAT modifiers may
+    /// appear in any order (e.g. `FORMAT=TREE ANALYZE UPDATE ...`), so scan the whole
+    /// modifier region - not just the prefix - for ANALYZE. An executable /*! */
+    /// comment is also treated as unsafe.
+    static func explainWouldExecute(_ sql: String) -> Bool {
+        if sql.contains("/*!") { return true }
+        let stripped = SPCustomQuerySQLClassifier.stripSQLComments(sql)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        // The statement body starts at one of these keywords; ANALYZE/FORMAT before
+        // it are EXPLAIN modifiers.
+        let statementStarters: Set<String> = ["SELECT", "WITH", "INSERT", "UPDATE", "DELETE",
+                                              "REPLACE", "VALUES", "TABLE", "CALL", "DO", "HANDLER"]
+        for raw in stripped.uppercased().split(whereSeparator: { $0 == " " || $0 == "\t" || $0 == "\n" || $0 == "\r" }) {
+            let head = String(raw.split(separator: "=").first ?? raw)   // "FORMAT=TREE" -> "FORMAT"
+            if statementStarters.contains(head) { return false }
+            if head == "ANALYZE" { return true }
+        }
+        return false
+    }
 }
 
 /// JSON serialisation for tool output. JSONSerialization throws an uncatchable

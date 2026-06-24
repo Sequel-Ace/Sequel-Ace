@@ -318,4 +318,30 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
             "SELECT 'a;b'",
         ], "conservative")
     }
+
+    // explainWouldExecute: `EXPLAIN <sql>` only executes when ANALYZE is present, and
+    // ANALYZE can sit behind other EXPLAIN modifiers or a /*! */ comment.
+    func testExplainWouldExecuteDetectsAnalyze() {
+        for sql in [
+            "ANALYZE SELECT 1",
+            "analyze update t set x = 1",
+            "FORMAT=TREE ANALYZE UPDATE t SET x = 1",
+            "FORMAT=JSON ANALYZE SELECT * FROM t",
+            "/*! ANALYZE */ SELECT 1",
+        ] {
+            XCTAssertTrue(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should flag as executing: \(sql)")
+        }
+    }
+
+    func testExplainWouldExecuteAllowsPlainExplain() {
+        for sql in [
+            "SELECT 1",
+            "FORMAT=TREE SELECT 1",
+            "FORMAT=JSON SELECT * FROM t",
+            "SELECT analyze_total FROM t",       // ANALYZE only as part of a column name
+            "SELECT 'ANALYZE' AS label",         // ANALYZE only inside a string literal
+        ] {
+            XCTAssertFalse(SPMCPReadOnlyGuard.explainWouldExecute(sql), "should allow plain explain: \(sql)")
+        }
+    }
 }

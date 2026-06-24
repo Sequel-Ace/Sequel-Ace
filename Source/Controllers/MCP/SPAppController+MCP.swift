@@ -469,18 +469,23 @@ extension SPAppController: SPMCPDataSource {
 
         // Cap how many rows the query may return. A positive limit is honoured but
         // never exceeds mcpMaxResultRows; limit <= 0 ("all rows") falls back to that
-        // cap. We wrap plain SELECTs in a derived table with LIMIT effectiveLimit + 1
-        // so the database stops producing rows at the cap (instead of materialising a
-        // huge result) while still letting us detect that more rows existed.
+        // cap. Append `LIMIT effectiveLimit + 1` to read queries so the database stops
+        // at the cap (instead of materialising a huge result) while still letting us
+        // detect that more rows existed. Appending - rather than wrapping in a derived
+        // table - keeps SELECT * joins with duplicate column names working (a derived
+        // table requires unique column names). Skip if the query already ends with its
+        // own LIMIT clause, and fall back to the read-side cap for anything we don't
+        // append to.
         let effectiveLimit = limit > 0 ? min(limit, mcpMaxResultRows) : mcpMaxResultRows
         var finalSQL = bound
         var t = bound.trimmingCharacters(in: .whitespacesAndNewlines)
         while t.hasSuffix(";") { t = String(t.dropLast()).trimmingCharacters(in: .whitespacesAndNewlines) }
         let up = t.uppercased()
-        // A CTE (WITH ... SELECT) is invalid inside a derived table, so it can't be
-        // wrapped; mcpExecuteResultQuery still caps reading at effectiveLimit.
-        if up.hasPrefix("SELECT") || up.hasPrefix("(") {
-            finalSQL = "SELECT * FROM (\(t)) AS _mcp_page LIMIT \(effectiveLimit + 1) OFFSET \(max(0, offset))"
+        let hasTrailingLimit = t.range(of: "(?i)\\blimit\\s+[0-9]+(\\s*,\\s*[0-9]+|\\s+offset\\s+[0-9]+)?\\s*$",
+                                       options: .regularExpression) != nil
+        if (up.hasPrefix("SELECT") || up.hasPrefix("(") || up.hasPrefix("WITH")) && !hasTrailingLimit {
+            let off = max(0, offset)
+            finalSQL = off > 0 ? "\(t) LIMIT \(effectiveLimit + 1) OFFSET \(off)" : "\(t) LIMIT \(effectiveLimit + 1)"
         }
 
         return mcpDBSync {
@@ -598,11 +603,10 @@ extension SPAppController: SPMCPDataSource {
         if sql.isEmpty { return ["error": "sql argument is required"] }
         let trimmed = sql.trimmingCharacters(in: .whitespacesAndNewlines)
         // Plain EXPLAIN never executes the statement, but EXPLAIN ANALYZE does. The
-        // dispatcher already blocks this; guard here too (defense in depth) by
-        // stripping comments before checking, so a leading comment or /*! */ cannot
-        // smuggle ANALYZE past the prefix check.
-        let stripped = SPCustomQuerySQLClassifier.stripSQLComments(sql).trimmingCharacters(in: .whitespacesAndNewlines)
-        if sql.contains("/*!") || stripped.uppercased().hasPrefix("ANALYZE") {
+        // dispatcher already blocks this; guard here too (defense in depth). ANALYZE
+        // may follow other EXPLAIN modifiers (FORMAT=TREE ANALYZE ...) or hide behind
+        // a /*! */ comment, so scan the whole modifier region rather than the prefix.
+        if SPMCPReadOnlyGuard.explainWouldExecute(sql) {
             return ["error": "ANALYZE is not allowed; it would execute the statement"]
         }
         guard let ci = mcpResolveConnection(connID) else { return mcpNoConnectionError() }

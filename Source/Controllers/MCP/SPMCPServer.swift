@@ -703,12 +703,10 @@ private extension SPMCPServer {
 
         case "explain_query":
             guard let sql = requireString("sql") else { return toolError("Missing required argument: sql") }
-            // EXPLAIN ANALYZE executes the statement. Block it even when hidden behind
-            // a leading comment or a MySQL executable /*! */ comment, since explain is
-            // allowed in read-only mode.
-            let strippedExplain = SPCustomQuerySQLClassifier.stripSQLComments(sql)
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            if sql.contains("/*!") || strippedExplain.uppercased().hasPrefix("ANALYZE") {
+            // EXPLAIN ANALYZE executes the statement, and the ANALYZE modifier may sit
+            // behind other EXPLAIN modifiers (e.g. FORMAT=TREE ANALYZE ...) or a /*! */
+            // comment. Block all of those, since explain is allowed in read-only mode.
+            if SPMCPReadOnlyGuard.explainWouldExecute(sql) {
                 return toolError("EXPLAIN ANALYZE is not allowed; it would execute the statement.")
             }
             return dictResult(ds.mcpExplainQuery(sql, connection: conn))
