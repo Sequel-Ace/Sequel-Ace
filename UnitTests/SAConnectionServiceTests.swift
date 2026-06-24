@@ -141,9 +141,11 @@ final class SAConnectionInfoMappingTests: XCTestCase {
         let info = SAConnectionInfoObjC()
         info.allowDataLocalInfile = 1
         info.enableClearTextPlugin = 1
+        info.requestServerPublicKey = 1
 
         XCTAssertEqual(info.allowDataLocalInfile, 1)
         XCTAssertEqual(info.enableClearTextPlugin, 1)
+        XCTAssertEqual(info.requestServerPublicKey, 1)
     }
 
     /// Ensures localhost-specific grants still work through SSH tunnel forwarding.

@@ -286,6 +286,9 @@
 		51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
 		51C8597C24C8A31400A8C7C4 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
 		51C8598024C8A6D700A8C7C4 /* SPStringAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1789343B0F30C1DD0097539A /* SPStringAdditions.m */; };
+		51CC84012FDE000300C4C14A /* SAHelpViewerOnlineURLBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51CC84002FDE000300C4C14A /* SAHelpViewerOnlineURLBuilder.swift */; };
+		51CC84022FDE000300C4C14A /* SAHelpViewerOnlineURLBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51CC84002FDE000300C4C14A /* SAHelpViewerOnlineURLBuilder.swift */; };
+		51CC84042FDE000300C4C14A /* SAHelpViewerOnlineURLBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51CC84032FDE000300C4C14A /* SAHelpViewerOnlineURLBuilderTests.swift */; };
 		51CD0BDC258D06D8009E2484 /* PrintAccessory.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BBE258D06D7009E2484 /* PrintAccessory.xib */; };
 		51CD0BDD258D06D8009E2484 /* DataMigrationDialog.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BBF258D06D7009E2484 /* DataMigrationDialog.xib */; };
 		51CD0BDE258D06D8009E2484 /* Preferences.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BC0258D06D7009E2484 /* Preferences.xib */; };
@@ -474,6 +477,7 @@
 		B57747DC0F7A89D0003B34F9 /* SPFavoriteTextFieldCell.m in Sources */ = {isa = PBXBuildFile; fileRef = B57747DB0F7A89D0003B34F9 /* SPFavoriteTextFieldCell.m */; };
 		B57748420F7A8B57003B34F9 /* database.png in Resources */ = {isa = PBXBuildFile; fileRef = B577483A0F7A8B57003B34F9 /* database.png */; };
 		B58731280F838C9E00087794 /* PreferenceDefaults.plist in Resources */ = {isa = PBXBuildFile; fileRef = B58731270F838C9E00087794 /* PreferenceDefaults.plist */; };
+		C0D3A0012F8D000100000001 /* PreferenceDefaults.plist in Resources */ = {isa = PBXBuildFile; fileRef = B58731270F838C9E00087794 /* PreferenceDefaults.plist */; };
 		B5E2C5FA0F2353B5007446E0 /* table-property.png in Resources */ = {isa = PBXBuildFile; fileRef = B5E2C5F90F2353B5007446E0 /* table-property.png */; };
 		B5E92F1C0F75B2E800012500 /* SPExportController.m in Sources */ = {isa = PBXBuildFile; fileRef = B5E92F1B0F75B2E800012500 /* SPExportController.m */; };
 		B6E4019A9F1C4A8AA0B3D101 /* SALocalNetworkPermissionCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E4019A9F1C4A8AA0B3D104 /* SALocalNetworkPermissionCheckerTests.swift */; };
@@ -1365,6 +1369,8 @@
 		BCE0025B11173D2A009DA533 /* SPFieldMapperController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPFieldMapperController.h; sourceTree = "<group>"; };
 		BCE0025C11173D2A009DA533 /* SPFieldMapperController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPFieldMapperController.m; sourceTree = "<group>"; };
 		C0F17A1A2B3C4D5E6F708092 /* SPTableContentColumnFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPTableContentColumnFilterTests.swift; sourceTree = "<group>"; };
+		51CC84002FDE000300C4C14A /* SAHelpViewerOnlineURLBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAHelpViewerOnlineURLBuilder.swift; sourceTree = "<group>"; };
+		51CC84032FDE000300C4C14A /* SAHelpViewerOnlineURLBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAHelpViewerOnlineURLBuilderTests.swift; sourceTree = "<group>"; };
 		C57CA10F3F4B37E186CF7EF9 /* ConnectionStringParser.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConnectionStringParser.swift; sourceTree = "<group>"; };
 		C7CAA1A274071383C33F2E4C /* SPBundleManagerAdditionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPBundleManagerAdditionsTests.swift; sourceTree = "<group>"; };
 		C9AD7C771676138000234EEE /* database-small@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "database-small@2x.png"; sourceTree = "<group>"; };
@@ -2347,6 +2353,7 @@
 				9BE76C6E8377959C794385E5 /* SPHelpViewerController.h */,
 				9BE764320CE8E86E8F63647B /* SPHelpViewerClient.m */,
 				9BE761AE45D4F6B9B90E67DE /* SPHelpViewerClient.h */,
+				51CC84002FDE000300C4C14A /* SAHelpViewerOnlineURLBuilder.swift */,
 			);
 			name = "Help Viewer";
 			path = HelpViewer;
@@ -2553,6 +2560,7 @@
 				FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */,
 				C7CAA1A274071383C33F2E4C /* SPBundleManagerAdditionsTests.swift */,
 				B6E4019A9F1C4A8AA0B3D104 /* SALocalNetworkPermissionCheckerTests.swift */,
+				51CC84032FDE000300C4C14A /* SAHelpViewerOnlineURLBuilderTests.swift */,
 				C0F17A1A2B3C4D5E6F708092 /* SPTableContentColumnFilterTests.swift */,
 				CF0000022F8C000600C4C14A /* SACellFilterOperatorTests.swift */,
 				CF0000272F8C000600C4C14A /* SACellFilterColumnIdentifierTests.swift */,
@@ -3027,6 +3035,7 @@
 				1AB068B024A355CC00E2AAC2 /* client-key-lf.pem in Resources */,
 				1AB068B124A355CC00E2AAC2 /* client-key-crlf.pem in Resources */,
 				CF0000082F8C000600C4C14A /* ContentFilters.plist in Resources */,
+				C0D3A0012F8D000100000001 /* PreferenceDefaults.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3224,6 +3233,7 @@
 				51AA84032FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift in Sources */,
 				51BB84032FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift in Sources */,
 				FDCF55E52788278500D30655 /* TableSortHelper.swift in Sources */,
+				51CC84022FDE000300C4C14A /* SAHelpViewerOnlineURLBuilder.swift in Sources */,
 				519350302567D2FB001272B5 /* CollectionExtension.swift in Sources */,
 				1A3FA7962495FC2D00B7291A /* SPMainThreadTrampoline.m in Sources */,
 				51C8598024C8A6D700A8C7C4 /* SPStringAdditions.m in Sources */,
@@ -3273,6 +3283,7 @@
 				51B09FD82F767A3F003BAFFF /* SAConnectionInfo.swift in Sources */,
 				6CB1977AAE8D7D64B7593E66 /* SPBundleManagerAdditionsTests.swift in Sources */,
 				B6E4019A9F1C4A8AA0B3D101 /* SALocalNetworkPermissionCheckerTests.swift in Sources */,
+				51CC84042FDE000300C4C14A /* SAHelpViewerOnlineURLBuilderTests.swift in Sources */,
 				C0F17A1A2B3C4D5E6F708091 /* SPTableContentColumnFilterTests.swift in Sources */,
 				1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */,
 				1AEA768425EF05D500AC4DA6 /* ByteCountFormatterExtension.swift in Sources */,
@@ -3611,6 +3622,7 @@
 				9BE765EBBDFD2F121C13D274 /* SPFillView.m in Sources */,
 				9BE76F2B943AFDBA6EDC52BE /* SPHelpViewerController.m in Sources */,
 				9BE765682376A00C82FB93AA /* SPHelpViewerClient.m in Sources */,
+				51CC84012FDE000300C4C14A /* SAHelpViewerOnlineURLBuilder.swift in Sources */,
 				51AA84022FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift in Sources */,
 				8AEAC27B5C5B866575ECDB62 /* TableSortHelper.swift in Sources */,
 				44011FFBC7DF57126761313F /* SQLitePinnedTableManager.swift in Sources */,

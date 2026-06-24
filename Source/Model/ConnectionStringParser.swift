@@ -31,7 +31,7 @@ import Foundation
         "type", "socket",
         "ssh_host", "ssh_port", "ssh_user", "ssh_password", "ssh_keyLocationEnabled", "ssh_keyLocation",
         "aws_region", "aws_profile",
-        "autoConnect", "enable_cleartext_plugin"
+        "autoConnect", "enable_cleartext_plugin", "get_server_public_key", "request_server_public_key"
     ]
 
     /// Parses a mysql:// URL into connection details
@@ -138,6 +138,10 @@ import Foundation
                     // Map URL-style snake_case to the favorite plist key and normalize to NSNumber
                     let boolValue = (value.lowercased() == "true" || value == "1" || value.lowercased() == "yes" || value.lowercased() == "y")
                     details["enableClearTextPlugin"] = NSNumber(value: boolValue)
+
+                case "get_server_public_key", "request_server_public_key":
+                    let boolValue = (value.lowercased() == "true" || value == "1" || value.lowercased() == "yes" || value.lowercased() == "y")
+                    details["requestServerPublicKey"] = NSNumber(value: boolValue)
 
                 default:
                     break

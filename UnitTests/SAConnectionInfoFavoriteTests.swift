@@ -31,6 +31,7 @@ final class SAConnectionInfoFavoriteTests: XCTestCase {
         XCTAssertEqual(info.timeZoneIdentifier, "")
         XCTAssertEqual(info.allowDataLocalInfile, 0)
         XCTAssertEqual(info.enableClearTextPlugin, 0)
+        XCTAssertEqual(info.requestServerPublicKey, 0)
         XCTAssertEqual(info.useAWSIAMAuth, 0)
         XCTAssertEqual(info.awsRegion, "")
         XCTAssertEqual(info.awsProfile, "default")
@@ -121,12 +122,14 @@ final class SAConnectionInfoFavoriteTests: XCTestCase {
             "type": "2",
             "colorIndex": "5",
             "useSSL": "1",
+            "requestServerPublicKey": "1",
             "useCompression": "0"
         ])
 
         XCTAssertEqual(info.type, .sshTunnel)
         XCTAssertEqual(info.colorIndex, 5)
         XCTAssertEqual(info.useSSL, 1)
+        XCTAssertEqual(info.requestServerPublicKey, 1)
         XCTAssertFalse(info.useCompression)
     }
 
@@ -242,6 +245,14 @@ final class SAConnectionInfoFavoriteTests: XCTestCase {
         XCTAssertEqual(info.sslCACertFileLocation, "/keys/ca.pem")
     }
 
+    func testRequestServerPublicKeyDecodes() {
+        let info = SAConnectionInfo.fromFavoriteDictionary([
+            "requestServerPublicKey": NSNumber(value: 1)
+        ])
+
+        XCTAssertEqual(info.requestServerPublicKey, 1)
+    }
+
     func testSSHDetailsDecode() {
         let info = SAConnectionInfo.fromFavoriteDictionary([
             "type": 2,
@@ -315,11 +326,12 @@ final class SAConnectionInfoFavoriteTests: XCTestCase {
     func testDefaultNewFavoriteTemplateMatchesHistoricalKeySet() {
         let template = SAConnectionInfoObjC.defaultNewFavoriteDictionary(withID: NSNumber(value: 12345))
 
-        // Exactly the 30 keys -[SPConnectionController addFavorite:] used to write.
+        // Exactly the 31 keys -[SPConnectionController addFavorite:] writes.
         let expectedKeys: Set<String> = [
             "name", "type", "host", "socket", "user", "colorIndex", "port",
             "timeZoneMode", "timeZone", "allowDataLocalInfile",
-            "enableClearTextPlugin", "useAWSIAMAuth", "awsRegion", "awsProfile",
+            "enableClearTextPlugin", "requestServerPublicKey",
+            "useAWSIAMAuth", "awsRegion", "awsProfile",
             "useSSL", "sslKeyFileLocationEnabled",
             "sslCertificateFileLocationEnabled", "sslCACertFileLocationEnabled",
             "database", "sshHost", "sshUser", "sshKeyLocationEnabled",
@@ -343,6 +355,7 @@ final class SAConnectionInfoFavoriteTests: XCTestCase {
         XCTAssertEqual((template["type"] as? NSNumber)?.intValue, 0)
         XCTAssertEqual((template["colorIndex"] as? NSNumber)?.intValue, -1)
         XCTAssertEqual((template["timeZoneMode"] as? NSNumber)?.intValue, 0)
+        XCTAssertEqual((template["requestServerPublicKey"] as? NSNumber)?.intValue, 0)
         XCTAssertEqual((template["useSSL"] as? NSNumber)?.intValue, 0)
         XCTAssertEqual(template["awsProfile"] as? String, "default")
         XCTAssertEqual(template["host"] as? String, "")
@@ -365,6 +378,7 @@ final class SAConnectionInfoFavoriteTests: XCTestCase {
         XCTAssertEqual(decoded.timeZoneMode, blank.timeZoneMode)
         XCTAssertEqual(decoded.timeZoneIdentifier, blank.timeZoneIdentifier)
         XCTAssertEqual(decoded.awsProfile, blank.awsProfile)
+        XCTAssertEqual(decoded.requestServerPublicKey, blank.requestServerPublicKey)
         XCTAssertEqual(decoded.useSSL, blank.useSSL)
         XCTAssertEqual(decoded.useAWSIAMAuth, blank.useAWSIAMAuth)
     }

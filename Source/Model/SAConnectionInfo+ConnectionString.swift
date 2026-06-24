@@ -93,6 +93,9 @@ extension SAConnectionInfo {
         if enableClearTextPlugin != 0 {
             queryItems.append(URLQueryItem(name: "enable_cleartext_plugin", value: "1"))
         }
+        if requestServerPublicKey != 0 {
+            queryItems.append(URLQueryItem(name: "get_server_public_key", value: "1"))
+        }
 
         if !queryItems.isEmpty {
             components.queryItems = queryItems
@@ -223,6 +226,10 @@ extension SPFavoriteNode {
         if let enableClearText = favoriteDict[SPFavoriteEnableClearTextPluginKey] as? NSNumber,
            enableClearText.boolValue {
             queryItems.append(URLQueryItem(name: "enable_cleartext_plugin", value: "1"))
+        }
+        if let requestServerPublicKey = favoriteDict[SPFavoriteRequestServerPublicKeyKey] as? NSNumber,
+           requestServerPublicKey.boolValue {
+            queryItems.append(URLQueryItem(name: "get_server_public_key", value: "1"))
         }
 
         if !queryItems.isEmpty {
