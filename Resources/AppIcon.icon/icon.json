@@ -42,10 +42,16 @@
     {
       "layers" : [
         {
-          "blend-mode" : "normal",
           "glass" : true,
-          "image-name" : "sequel-ace-logo.svg",
-          "name" : "sequel-ace-logo"
+          "image-name" : "sequel-ace-logo 2.svg",
+          "name" : "sequel-ace-logo 2",
+          "position" : {
+            "scale" : 1.22,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
         }
       ],
       "shadow" : {
