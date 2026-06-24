@@ -1482,6 +1482,9 @@ Befehle werden anwendungsweit ausgeführt";
 /* export header generation time label */
 "Generation Time" = "Verarbeitungszeit";
 
+/* connection view : get server public key checkbox */
+"Get Public Key" = "Get Public Key";
+
 /* Content Filter Manager : Filter Entry List: 'Global' Header
  Query Favorites : List : Section Heading : global query favorites */
 "Global" = "Global";
@@ -2199,6 +2202,9 @@ Befehle werden anwendungsweit ausgeführt";
 
 /* description of linestring */
 "Represents an ordered set of coordinates where each consecutive pair of two points is connected by a straight line." = "Eine geordnete Sammlung von Koordinaten, wobei aufeinander folgende Punkte durch eine Gerade verbunden werden.";
+
+/* connection view : get server public key help */
+"Request the server RSA public key for caching_sha2_password over non-SSL connections." = "Request the server RSA public key for caching_sha2_password over non-SSL connections.";
 
 /* required placeholder string */
 "required" = "erforderlich";
