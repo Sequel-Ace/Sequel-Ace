@@ -42,16 +42,10 @@
     {
       "layers" : [
         {
+          "blend-mode" : "normal",
           "glass" : true,
-          "image-name" : "database-and-ace-transparent-cropped.png",
-          "name" : "database-and-ace-transparent-cropped",
-          "position" : {
-            "scale" : 1.21,
-            "translation-in-points" : [
-              0,
-              0
-            ]
-          }
+          "image-name" : "sequel-ace-logo.svg",
+          "name" : "sequel-ace-logo"
         }
       ],
       "shadow" : {
