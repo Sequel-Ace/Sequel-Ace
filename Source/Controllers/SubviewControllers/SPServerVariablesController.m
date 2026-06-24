@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPServerVariablesController.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPDatabaseDocument.h"
 #import "SPAppController.h"
 
@@ -128,7 +129,7 @@
 {
 	NSSavePanel *panel = [NSSavePanel savePanel];
 	
-	[panel setAllowedFileTypes:@[@"cnf"]];
+	[panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:@"cnf"]]];
 
 	[panel setExtensionHidden:NO];
 	[panel setAllowsOtherFileTypes:YES];

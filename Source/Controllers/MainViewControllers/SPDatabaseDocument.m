@@ -30,6 +30,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPDatabaseDocument.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPConnectionController.h"
 #import "SPTablesList.h"
 #import "SPDatabaseStructure.h"
@@ -71,7 +72,6 @@
 #import "SPFunctions.h"
 #import "SPCreateDatabaseInfo.h"
 #import "SPAppController.h"
-#import "SPBundleHTMLOutputController.h"
 #import "SPTableTriggers.h"
 #import "SPTableStructure.h"
 #import "SPPrintAccessory.h"
@@ -1921,7 +1921,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 {
     NSSavePanel *panel = [NSSavePanel savePanel];
 
-    [panel setAllowedFileTypes:@[SPFileExtensionSQL]];
+    [panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionSQL]]];
 
     [panel setExtensionHidden:NO];
     [panel setAllowsOtherFileTypes:YES];
@@ -2478,7 +2478,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                                                         includeDefaultEntry:NO
                                                               encodingPopUp:&encodingPopUp]];
 
-        [panel setAllowedFileTypes:@[SPFileExtensionSQL]];
+        [panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionSQL]]];
 
         if (![prefs stringForKey:@"lastSqlFileName"]) {
             [prefs setObject:@"" forKey:@"lastSqlFileName"];
@@ -2505,7 +2505,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         }
 
         // Save current session (open connection windows as SPF file)
-        [panel setAllowedFileTypes:@[SPFileExtensionDefault]];
+        [panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionDefault]]];
 
         [self prepareSaveAccessoryViewWithPanel:panel];
 
@@ -2527,7 +2527,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     else if (sender == nil || [sender tag] == SPMainMenuFileSaveSession) {
 
         // Save current session (open connection windows as SPFS file)
-        [panel setAllowedFileTypes:@[SPBundleFileExtension]];
+        [panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPBundleFileExtension]]];
 
         [self prepareSaveAccessoryViewWithPanel:panel];
 
@@ -3620,6 +3620,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [connection setObject:[NSNumber numberWithInteger:[connectionController useSSL]] forKey:@"useSSL"];
         [connection setObject:[NSNumber numberWithInteger:[connectionController allowDataLocalInfile]] forKey:@"allowDataLocalInfile"];
         [connection setObject:[NSNumber numberWithInteger:[connectionController enableClearTextPlugin]] forKey:@"enableClearTextPlugin"];
+        [connection setObject:[NSNumber numberWithInteger:[connectionController requestServerPublicKey]] forKey:@"requestServerPublicKey"];
         [connection setObject:[NSNumber numberWithInteger:[connectionController sslKeyFileLocationEnabled]] forKey:@"sslKeyFileLocationEnabled"];
         if ([connectionController sslKeyFileLocation]) [connection setObject:[connectionController sslKeyFileLocation] forKey:@"sslKeyFileLocation"];
         [connection setObject:[NSNumber numberWithInteger:[connectionController sslCertificateFileLocationEnabled]] forKey:@"sslCertificateFileLocationEnabled"];
@@ -3776,6 +3777,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // Set Enable cleartext plugin
     if ([connection objectForKey:@"enableClearTextPlugin"])             [connectionController setEnableClearTextPlugin:[[connection objectForKey:@"enableClearTextPlugin"] intValue]];
+    if ([connection objectForKey:@"requestServerPublicKey"])            [connectionController setRequestServerPublicKey:[[connection objectForKey:@"requestServerPublicKey"] intValue]];
 
     // Set SSL details
     if ([connection objectForKey:@"useSSL"])                            [connectionController setUseSSL:[[connection objectForKey:@"useSSL"] intValue]];
@@ -5245,7 +5247,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
             for (id win in [NSApp windows])
             {
-                if([[[[win delegate] class] description] isEqualToString:@"SPBundleHTMLOutputController"]) {
+                if([[[[win delegate] class] description] isEqualToString:@"SABundleHTMLOutputWindowController"]) {
                     if([[[win delegate] windowUUID] isEqualToString:uuid]) {
                         correspondingWindowFound = YES;
                         break;
@@ -5795,7 +5797,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 BOOL correspondingWindowFound = NO;
                 NSString *uuid = [data objectAtIndex:2];
                 for(id win in [NSApp windows]) {
-                    if([[[[win delegate] class] description] isEqualToString:@"SPBundleHTMLOutputController"]) {
+                    if([[[[win delegate] class] description] isEqualToString:@"SABundleHTMLOutputWindowController"]) {
                         if([[[win delegate] windowUUID] isEqualToString:uuid]) {
                             correspondingWindowFound = YES;
                             break;

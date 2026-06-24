@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPQueryController.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPConsoleMessage.h"
 #import "SPAppController.h"
 #import "SPFunctions.h"
@@ -247,7 +248,7 @@ static SPQueryController *sharedQueryController = nil;
 {
 	NSSavePanel *panel = [NSSavePanel savePanel];
 
-	[panel setAllowedFileTypes:@[SPFileExtensionSQL]];
+	[panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionSQL]]];
 
 	[panel setExtensionHidden:NO];
 	[panel setAllowsOtherFileTypes:YES];

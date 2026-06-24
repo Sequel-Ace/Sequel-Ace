@@ -58,8 +58,9 @@
 	}
 
 	// If a filename is available, attempt to read it and pass it to the delegate
-	if ([[[sender draggingPasteboard] propertyListForType:@"NSFilenamesPboardType"] count]) {
-		[delegateForUse processUpdatedImageData:[NSData dataWithContentsOfFile:[[[sender draggingPasteboard] propertyListForType:@"NSFilenamesPboardType"] objectAtIndex:0]]];
+	NSArray *droppedFileURLs = [[sender draggingPasteboard] readObjectsForClasses:@[[NSURL class]] options:@{NSPasteboardURLReadingFileURLsOnlyKey: @YES}];
+	if ([droppedFileURLs count]) {
+		[delegateForUse processUpdatedImageData:[NSData dataWithContentsOfURL:[droppedFileURLs objectAtIndex:0]]];
 		return [super performDragOperation:sender];
 	}
 

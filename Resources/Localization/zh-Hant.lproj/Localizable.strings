@@ -1766,6 +1766,9 @@
 /* MySQL connecting very short status message */
 "MySQL connecting..." = "MySQL 正在連線…";
 
+/* mysql 8.4 invalid auto increment title */
+"AUTO_INCREMENT is unavailable" = "AUTO_INCREMENT is unavailable";
+
 /* mysql error message */
 "MySQL Error" = "MySQL 錯誤";
 
@@ -1780,6 +1783,12 @@
 
 /* mysql help categories */
 "MySQL Help – Categories" = "MySQL 說明 - 說明目錄";
+
+/* mysql 8.4 invalid auto increment message */
+"MySQL 8.4 and newer only support AUTO_INCREMENT on integer columns. The %@ column type cannot use AUTO_INCREMENT on this server." = "MySQL 8.4 and newer only support AUTO_INCREMENT on integer columns. The %@ column type cannot use AUTO_INCREMENT on this server.";
+
+/* mysql 8.4 invalid relation message */
+"MySQL 8.4 and newer require a foreign key to reference a full unique or primary key. Add a single-column unique key to %@.%@ or choose another referenced column." = "MySQL 8.4 and newer require a foreign key to reference a full unique or primary key. Add a single-column unique key to %@.%@ or choose another referenced column.";
 
 /* mysql said message */
 "MySQL said:" = "MySQL 回應：";
@@ -2105,6 +2114,9 @@
 /* remote error */
 "Remote Error" = "遠端端發生錯誤";
 
+/* mysql 8.4 invalid relation title */
+"Referenced column needs a unique key" = "Referenced column needs a unique key";
+
 /* Bundle Editor : Remove-Bundle: remove button
  remove button */
 "Remove" = "移除";
@@ -2327,6 +2339,9 @@
 
 /* selected items */
 "selected items" = "所選項目";
+
+/* invalid auto increment fallback field type */
+"selected" = "selected";
 
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as comma-separated' item */
 "Selected Rows (CSV)" = "所選資料列（CSV）";
@@ -3229,14 +3244,32 @@
 /* Question to user to see if they would like to re-request access */
 "You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?" = "您有以下舊版書籤：\n\n%@\n\n是否重新請求存取？";
 
+/* single stale bookmark alert message */
+"Sequel Ace found 1 stale secure bookmark. You can continue launching now, or open Files preferences to refresh or revoke it." = "Sequel Ace found 1 stale secure bookmark. You can continue launching now, or open Files preferences to refresh or revoke it.";
+
+/* multiple stale bookmarks alert message */
+"Sequel Ace found %d stale secure bookmarks. You can continue launching now, or open Files preferences to refresh or revoke them." = "Sequel Ace found %d stale secure bookmarks. You can continue launching now, or open Files preferences to refresh or revoke them.";
+
 /* Question to user to see if they would like to request access to missing bookmarks */
 "You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?" = "您有以下遺失的安全書簽：\n\n%@\n\n是否現在重新請求存取權？";
+
+/* single missing bookmark alert message */
+"Sequel Ace found 1 missing secure bookmark. You can request access now, or cancel and update it later in Files preferences." = "Sequel Ace found 1 missing secure bookmark. You can request access now, or cancel and update it later in Files preferences.";
+
+/* multiple missing bookmarks alert message */
+"Sequel Ace found %d missing secure bookmarks. You can request access now, or cancel and update them later in Files preferences." = "Sequel Ace found %d missing secure bookmarks. You can request access now, or cancel and update them later in Files preferences.";
 
 /* known hosts advance menu item title */
 "Use known hosts from ssh config (ADVANCED)" = "使用 SSH 設定檔的 known hosts (進階)";
 
 /* The answer, yes */
 "Yes" = "是";
+
+/* open files preferences button */
+"Open Files Preferences" = "Open Files Preferences";
+
+/* request access button */
+"Request Access" = "Request Access";
 
 /* Shown to remind users of their stale bookmarks */
 "A reminder of your stale secure bookmarks:<br /><br />%@<br />" = "有關舊版安全書籤的提醒：<br /><br />%@<br />";
@@ -3435,3 +3468,36 @@
 
 /* Cell context menu filter submenu title */
 "Filter by Selected Value" = "Filter by Selected Value";
+
+/* AWS console sign-in (aws login) error: profile is missing login_session configuration */
+"The profile is not configured for AWS console sign-in" = "The profile is not configured for AWS console sign-in";
+
+/* AWS console sign-in (aws login) error: no cached session on disk */
+"No cached AWS console sign-in session was found. Run `aws login` and try again." = "No cached AWS console sign-in session was found. Run `aws login` and try again.";
+
+/* AWS console sign-in (aws login) error: cached credentials have expired */
+"The cached AWS console sign-in credentials have expired. They refresh about every 15 minutes. Run `aws login` and reconnect." = "The cached AWS console sign-in credentials have expired. They refresh about every 15 minutes. Run `aws login` and reconnect.";
+
+/* AWS console sign-in (aws login) error: cached session file could not be parsed */
+"The cached AWS console sign-in session could not be read" = "The cached AWS console sign-in session could not be read";
+
+/* AWS IAM Identity Center (aws sso login) error: profile is missing SSO configuration */
+"The profile is not configured for AWS IAM Identity Center" = "The profile is not configured for AWS IAM Identity Center";
+
+/* AWS IAM Identity Center (aws sso login) error: no cached token on disk */
+"No cached AWS SSO session was found. Run `aws sso login` and try again." = "No cached AWS SSO session was found. Run `aws sso login` and try again.";
+
+/* AWS IAM Identity Center (aws sso login) error: cached token has expired */
+"The cached AWS SSO token has expired. Run `aws sso login` and reconnect." = "The cached AWS SSO token has expired. Run `aws sso login` and reconnect.";
+
+/* AWS IAM Identity Center (aws sso login) error: network request failed */
+"Network request to AWS IAM Identity Center failed" = "Network request to AWS IAM Identity Center failed";
+
+/* AWS IAM Identity Center (aws sso login) error: response could not be parsed */
+"Invalid response from AWS IAM Identity Center" = "Invalid response from AWS IAM Identity Center";
+
+/* AWS IAM Identity Center (aws sso login) error: portal denied the request */
+"Access denied by AWS IAM Identity Center" = "Access denied by AWS IAM Identity Center";
+
+/* AWS IAM Identity Center (aws sso login) error: portal request timed out */
+"AWS IAM Identity Center request timed out" = "AWS IAM Identity Center request timed out";

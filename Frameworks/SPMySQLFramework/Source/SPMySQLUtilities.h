@@ -33,7 +33,7 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-function"
 
-static uint64_t _monotonicTime()
+static uint64_t _monotonicTime(void)
 {
     return clock_gettime_nsec_np(CLOCK_MONOTONIC);
 }

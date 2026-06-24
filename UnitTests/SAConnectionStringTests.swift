@@ -118,6 +118,25 @@ final class SAConnectionStringTests: XCTestCase {
         XCTAssertTrue(connectionString.contains("aws_profile=production"))
     }
 
+    func testConnectionStringIncludesServerPublicKeyRequest() throws {
+        var info = SAConnectionInfo()
+        info.type = .tcpIP
+        info.host = "127.0.0.1"
+        info.requestServerPublicKey = 1
+
+        let connectionString = try XCTUnwrap(info.toConnectionString(includePassword: false))
+
+        XCTAssertTrue(connectionString.contains("get_server_public_key=1"))
+    }
+
+    func testConnectionStringParsesServerPublicKeyRequest() throws {
+        let url = try XCTUnwrap(URL(string: "mysql://root@127.0.0.1:13306?get_server_public_key=1"))
+        let result = ConnectionStringParser.parse(url)
+
+        XCTAssertTrue(result.success)
+        XCTAssertEqual((result.details["requestServerPublicKey"] as? NSNumber)?.boolValue, true)
+    }
+
     func testEmptyHostDefaultsToLocalhost() throws {
         var info = SAConnectionInfo()
         info.type = .tcpIP

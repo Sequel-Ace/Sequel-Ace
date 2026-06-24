@@ -30,6 +30,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPAppController.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPDatabaseDocument.h"
 #import "SPPreferenceController.h"
 #import "SPDataImport.h"
@@ -37,7 +38,6 @@
 #import "SPPreferencesUpgrade.h"
 #import "SPBundleEditorController.h"
 #import "SPTooltip.h"
-#import "SPBundleHTMLOutputController.h"
 #import "SPChooseMenuItemDialog.h"
 #import "SPCustomQuery.h"
 #import "SPFavoritesController.h"
@@ -218,22 +218,25 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
         SPLog(@"We have stale bookmarks");
 
-        NSMutableString *staleBookmarksString = [[NSMutableString alloc] initWithCapacity:secureBookmarkManager.staleBookmarks.count];
+        NSMutableArray<NSString *> *staleBookmarkPaths = [[NSMutableArray alloc] initWithCapacity:secureBookmarkManager.staleBookmarks.count];
 
         for(NSString* staleFile in secureBookmarkManager.staleBookmarks){
-            [staleBookmarksString appendFormat:@"%@\n", staleFile.lastPathComponent];
+            [staleBookmarkPaths addObject:staleFile];
             SPLog(@"fileNames adding stale file: %@", staleFile.lastPathComponent);
         }
 
-        [staleBookmarksString setString:[staleBookmarksString dropSuffixWithSuffix:@"\n"]];
-
-        [NSAlert createAccessoryAlertWithTitle:NSLocalizedString(@"App Sandbox Issue", @"App Sandbox Issue") message:[NSString stringWithFormat:NSLocalizedString(@"You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?", @"Would you like to re-request access now?"), staleBookmarksString] accessoryView:_staleBookmarkHelpView primaryButtonTitle:NSLocalizedString(@"Yes", @"Yes")
+        [NSAlert createScrollableListAccessoryAlertWithTitle:NSLocalizedString(@"App Sandbox Issue", @"App Sandbox Issue")
+                                                     message:[SABookmarkAlertContent staleBookmarksMessageWithCount:secureBookmarkManager.staleBookmarks.count]
+                                                   listItems:[SABookmarkAlertContent displayNamesForBookmarkPaths:staleBookmarkPaths]
+                                               accessoryView:_staleBookmarkHelpView
+                                          primaryButtonTitle:NSLocalizedString(@"Open Files Preferences", @"open files preferences button")
+                                        secondaryButtonTitle:NSLocalizedString(@"Continue", @"continue launching button")
                           primaryButtonHandler:^{
             SPLog(@"re-request access now");
             [self->prefsController showWindow:self];
             [self->prefsController displayPreferencePane:self->prefsController->fileItem];
-        } cancelButtonHandler:^{
-            SPLog(@"No not now");
+        } secondaryButtonHandler:^{
+            SPLog(@"Continue launching with stale bookmarks");
         }];
     }
 
@@ -595,7 +598,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     // it will enabled if user selects a *.sql file
     [encodingPopUp setEnabled:NO];
 
-    [panel setAllowedFileTypes:@[SPFileExtensionDefault, SPFileExtensionSQL, SPBundleFileExtension]];
+    [panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionDefault], [UTType typeWithFilenameExtension:SPFileExtensionSQL], [UTType typeWithFilenameExtension:SPBundleFileExtension]]];
 
     // Check if at least one document exists, if so show a sheet
     if ([self.tabManager activeWindowController]) {

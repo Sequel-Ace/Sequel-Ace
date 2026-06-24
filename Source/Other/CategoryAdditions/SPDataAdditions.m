@@ -389,7 +389,7 @@ static void decodeValidHexSequence(const char *inBuffer,uint8_t *outBuffer, NSUI
  * - val cannot contain whitespace (whitespace before/after is ok)
  * - The leading x is case-INsensitive
  */
-+ (NSData *)dataWithHexString:(NSString *)hex
++ (NSData *)sp_dataWithHexString:(NSString *)hex
 {
 	if(!hex) return nil; // no string
 	const char *sourceBytes = [hex UTF8String];

@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPBundleEditorController.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPBundleCommandRunner.h"
 #import "SPOutlineView.h"
 #import "SPBundleCommandTextView.h"
@@ -52,6 +53,25 @@
 #define SP_BUNDLEEDITOR_OUTLINE_BUNDLE_TOOLTIP_STRING NSLocalizedString(@"“%@” Bundle",@"Bundle Editor : Outline View : Bundle item : tooltip")
 
 #define SP_BUNDLEEDITOR_SPLITVIEW_AUTOSAVE_STRING     @"SPBundleEditorSplitView"
+
+// SRRecorderCell recomputes its mouse-tracking rects whenever the recorder's frame changes
+// (window resize) or its first-responder status changes. On macOS 13+ that path removes a
+// now-stale tracking rect and throws, crashing the app (issue #1755). The cell holds the only
+// removeTrackingRect: call, and both the resize path (via the control) and the focus path
+// (becomeFirstResponder/resignFirstResponder) route through it. The shortcut field is
+// fixed-size and does not rely on hover tracking, so skip the reset.
+@interface SPBundleEditorShortcutRecorderCell : SRRecorderCell
+
+@end
+
+@implementation SPBundleEditorShortcutRecorderCell
+
+- (void)resetTrackingRects
+{
+	// Intentionally empty: see note above (#1755).
+}
+
+@end
 
 @interface SPBundleEditorController ()
 
@@ -769,7 +789,7 @@
 {
 	NSSavePanel *panel = [NSSavePanel savePanel];
 
-	[panel setAllowedFileTypes:@[SPUserBundleFileExtensionV2, SPUserBundleFileExtension]];
+	[panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPUserBundleFileExtensionV2], [UTType typeWithFilenameExtension:SPUserBundleFileExtension]]];
 	
 	[panel setExtensionHidden:NO];
 	[panel setAllowsOtherFileTypes:NO];
@@ -1500,10 +1520,8 @@
 	if(![self saveBundle:bundleDict atPath:draggedFilePath]) return NO;
 
 	// Write data to the pasteboard
-	NSArray *fileList = [NSArray arrayWithObjects:draggedFilePath, nil];
-	// NSPasteboard *pboard = [NSPasteboard pasteboardWithName:NSDragPboard];
-	[pboard declareTypes:@[NSFilenamesPboardType] owner:nil];
-	[pboard setPropertyList:fileList forType:NSFilenamesPboardType];
+	[pboard clearContents];
+	[pboard writeObjects:@[[NSURL fileURLWithPath:draggedFilePath]]];
 
 	// Start the drag operation
 	dragImage = [[NSWorkspace sharedWorkspace] iconForFile:draggedFilePath];

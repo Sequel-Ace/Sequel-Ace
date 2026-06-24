@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPContentFilterManager.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "ImageAndTextCell.h"
 #import "RegexKitLite.h"
 #import "SPQueryController.h"
@@ -330,7 +331,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 {
 	NSSavePanel *panel = [NSSavePanel savePanel];
 
-	[panel setAllowedFileTypes:@[SPFileExtensionDefault]];
+	[panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionDefault]]];
 
 	[panel setExtensionHidden:NO];
 	[panel setAllowsOtherFileTypes:NO];
@@ -389,7 +390,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 	[panel setCanChooseDirectories:NO];
 	[panel setAllowsMultipleSelection:NO];
 
-	[panel setAllowedFileTypes:@[SPFileExtensionDefault]];
+	[panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionDefault]]];
 
 	[panel beginSheetModalForWindow:[self window] completionHandler:^(NSInteger returnCode)
 	{

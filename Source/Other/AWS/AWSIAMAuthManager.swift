@@ -210,6 +210,18 @@ import Security
             throw AWSIAMAuthError.credentialsNotFound
         }
 
+        // IAM Identity Center (`aws sso login`) profiles exchange the cached token for credentials.
+        // Identity Center outranks static keys in the AWS credential precedence.
+        if baseCredentials.isSSOProfile {
+            return try resolveSSOCredentials(baseCredentials, profileName: profileName)
+        }
+
+        // Console sign-in (`aws login`) profiles resolve cached temporary credentials.
+        // Static keys and role assumption outrank console sign-in, matching the AWS CLI.
+        if baseCredentials.isLoginProfile && !baseCredentials.isValid && !baseCredentials.requiresRoleAssumption {
+            return try resolveLoginCredentials(baseCredentials, profileName: profileName)
+        }
+
         // Check if role assumption is needed (FIX: Handle roles without MFA)
         guard baseCredentials.requiresRoleAssumption else {
             // No role assumption needed, use base credentials directly
@@ -249,6 +261,28 @@ import Security
         cacheCredentials(assumedCredentials, for: profileName, duration: cacheDuration)
 
         return assumedCredentials
+    }
+
+    /// Resolve credentials for a console sign-in (`aws login`) profile, caching the result.
+    private static func resolveLoginCredentials(_ baseCredentials: AWSCredentials, profileName: String) throws -> AWSCredentials {
+        if let cached = getCachedCredentials(for: profileName) {
+            return cached
+        }
+
+        let resolved = try AWSLoginCredentialsProvider.resolveCredentials(for: baseCredentials)
+        cacheCredentials(resolved, for: profileName, duration: cacheDurationForAssumedCredentials(resolved))
+        return resolved
+    }
+
+    /// Resolve credentials for an IAM Identity Center (`aws sso login`) profile, caching the result.
+    private static func resolveSSOCredentials(_ baseCredentials: AWSCredentials, profileName: String) throws -> AWSCredentials {
+        if let cached = getCachedCredentials(for: profileName) {
+            return cached
+        }
+
+        let resolved = try AWSSSOClient.resolveCredentialsSynchronously(for: baseCredentials)
+        cacheCredentials(resolved, for: profileName, duration: cacheDurationForAssumedCredentials(resolved))
+        return resolved
     }
 
     // MARK: - Credential Caching

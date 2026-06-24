@@ -1326,10 +1326,10 @@
 "Execution stopped!\n" = "Ausführung angehalten!\n";
 
 /* menu item to run EXPLAIN on the current query (issue #2291) */
-"Explain Current Query" = "Explain Current Query";
+"Explain Current Query" = "Aktuelle Abfrage erklären";
 
 /* status text when the user runs EXPLAIN against a non-SELECT/WITH or multi-statement query */
-"EXPLAIN is only supported for a single SELECT or WITH statement." = "EXPLAIN is only supported for a single SELECT or WITH statement.";
+"EXPLAIN is only supported for a single SELECT or WITH statement." = "EXPLAIN wird nur für ein einzelnes SELECT- oder WITH-Statement unterstützt.";
 
 /* export selected favorites menu item */
 "Export Selected..." = "Ausgewählte exportieren …";
@@ -1408,7 +1408,7 @@
 "Filter" = "Filtern";
 
 /* apply filter label */
-"Apply Filter(s)" = "Filter(s) anwenden";
+"Apply Filter(s)" = "Filter anwenden";
 
 /* filter tables menu item */
 "Filter Tables" = "Tabellen filtern";
@@ -1655,7 +1655,7 @@ Befehle werden anwendungsweit ausgeführt";
 "items" = "Items";
 
 /* javascript exception */
-"JavaScript Exception" = "JavaScript Exception";
+"JavaScript Exception" = "JavaScript Ausnahme";
 
 /* javascript parsing error */
 "JavaScript Parsing Error" = "JavaScript Parse-Fehler";
@@ -1767,6 +1767,9 @@ Befehle werden anwendungsweit ausgeführt";
 /* MySQL connecting very short status message */
 "MySQL connecting..." = "Verbinde MySQL ...";
 
+/* mysql 8.4 invalid auto increment title */
+"AUTO_INCREMENT is unavailable" = "AUTO_INCREMENT is unavailable";
+
 /* mysql error message */
 "MySQL Error" = "MySQL Fehler";
 
@@ -1781,6 +1784,12 @@ Befehle werden anwendungsweit ausgeführt";
 
 /* mysql help categories */
 "MySQL Help – Categories" = "MySQL Hilfe – Kategorien";
+
+/* mysql 8.4 invalid auto increment message */
+"MySQL 8.4 and newer only support AUTO_INCREMENT on integer columns. The %@ column type cannot use AUTO_INCREMENT on this server." = "MySQL 8.4 and newer only support AUTO_INCREMENT on integer columns. The %@ column type cannot use AUTO_INCREMENT on this server.";
+
+/* mysql 8.4 invalid relation message */
+"MySQL 8.4 and newer require a foreign key to reference a full unique or primary key. Add a single-column unique key to %@.%@ or choose another referenced column." = "MySQL 8.4 and newer require a foreign key to reference a full unique or primary key. Add a single-column unique key to %@.%@ or choose another referenced column.";
 
 /* mysql said message */
 "MySQL said:" = "MySQL Ergebnis:";
@@ -2016,7 +2025,7 @@ Befehle werden anwendungsweit ausgeführt";
 "PROCS & FUNCS" = "PROZ. & FUNKT.";
 
 /* toolbar item label for switching to the Run Query tab */
-"Query" = "Abfrage";
+"Query" = "Query";
 
 /* query background label for color table (Prefs > Editor) */
 "Query Background" = "Query Hintergrund";
@@ -2105,6 +2114,9 @@ Befehle werden anwendungsweit ausgeführt";
 
 /* remote error */
 "Remote Error" = "Remote-Fehler";
+
+/* mysql 8.4 invalid relation title */
+"Referenced column needs a unique key" = "Referenced column needs a unique key";
 
 /* Bundle Editor : Remove-Bundle: remove button
  remove button */
@@ -2329,6 +2341,9 @@ Befehle werden anwendungsweit ausgeführt";
 /* selected items */
 "selected items" = "Ausgewählte Items";
 
+/* invalid auto increment fallback field type */
+"selected" = "selected";
+
 /* Bundle Editor : Scope=Data-Table : Input source dropdown: 'selected rows as comma-separated' item */
 "Selected Rows (CSV)" = "Ausgewählte Zeilen (CSV)";
 
@@ -2362,7 +2377,7 @@ Befehle werden anwendungsweit ausgeführt";
 
 /* Add Database : Charset dropdown : default item ($1 = charset name)
  Add Database : Collation dropdown : default item ($1 = collation name) */
-"Server Default (%@)" = "Server Default (%@)";
+"Server Default (%@)" = "Server Standard (%@)";
 
 /* server processes window title (var = hostname) */
 "Server Processes on %@" = "Server Prozesse auf %@";
@@ -3230,14 +3245,32 @@ Befehle werden anwendungsweit ausgeführt";
 /* Question to user to see if they would like to re-request access */
 "You have stale secure bookmarks:\n\n%@\n\nWould you like to re-request access now?" = "Einige „sichere Lesezeichen“ sind veraltet:\n\n%@\n\nSoll der Zugriff jetzt erneut angefordert werden?";
 
+/* single stale bookmark alert message */
+"Sequel Ace found 1 stale secure bookmark. You can continue launching now, or open Files preferences to refresh or revoke it." = "Sequel Ace found 1 stale secure bookmark. You can continue launching now, or open Files preferences to refresh or revoke it.";
+
+/* multiple stale bookmarks alert message */
+"Sequel Ace found %d stale secure bookmarks. You can continue launching now, or open Files preferences to refresh or revoke them." = "Sequel Ace found %d stale secure bookmarks. You can continue launching now, or open Files preferences to refresh or revoke them.";
+
 /* Question to user to see if they would like to request access to missing bookmarks */
 "You have missing secure bookmarks:\n\n%@\n\nWould you like to request access now?" = "Es fehlen sichere Lesezeichen:\n\n%@\n\nSoll der Zugriff jetzt angefordert werden?";
+
+/* single missing bookmark alert message */
+"Sequel Ace found 1 missing secure bookmark. You can request access now, or cancel and update it later in Files preferences." = "Sequel Ace found 1 missing secure bookmark. You can request access now, or cancel and update it later in Files preferences.";
+
+/* multiple missing bookmarks alert message */
+"Sequel Ace found %d missing secure bookmarks. You can request access now, or cancel and update them later in Files preferences." = "Sequel Ace found %d missing secure bookmarks. You can request access now, or cancel and update them later in Files preferences.";
 
 /* known hosts advance menu item title */
 "Use known hosts from ssh config (ADVANCED)" = "Bekannte Hosts aus der SSH Konfiguration verwenden (FORTGESCHRITTEN)";
 
 /* The answer, yes */
 "Yes" = "Ja";
+
+/* open files preferences button */
+"Open Files Preferences" = "Open Files Preferences";
+
+/* request access button */
+"Request Access" = "Request Access";
 
 /* Shown to remind users of their stale bookmarks */
 "A reminder of your stale secure bookmarks:<br /><br />%@<br />" = "Ihre veralteten „sicheren Lesezeichen“:<br /><br />%@<br />";
@@ -3351,7 +3384,7 @@ Befehle werden anwendungsweit ausgeführt";
 "Pin Table" = "Tabelle anpinnen";
 
 /* Menu option to pin a procedure to the top of the list of tables */
-"Pin Procedure" = "Pin Prozedur";
+"Pin Procedure" = "Prozedur anpinnen";
 
 /* Menu option to pin a function to the top of the list of tables */
 "Pin Function" = "Funktion anpinnen";
@@ -3381,58 +3414,91 @@ Befehle werden anwendungsweit ausgeführt";
 "The variable in the ?name= query parameter could not be matched with any of your favorites." = "Die Variable im ?name=-Abfrageparameter konnte keinem Ihrer Favoriten zugeordnet werden.";
 
 /* Vault connection: invalid host or port supplied */
-"Invalid Vault host or port." = "Invalid Vault host or port.";
+"Invalid Vault host or port." = "Ungültiger Vault-Host oder -Port.";
 
 /* Vault connection: HTTP error from Vault API (%d = HTTP status code) */
-"Vault returned HTTP %d." = "Vault returned HTTP %d.";
+"Vault returned HTTP %d." = "Vault hat HTTP %d zurückgegeben.";
 
 /* Vault connection: response body could not be parsed (%@ = detail) */
-"Vault response parse error: %@" = "Vault response parse error: %@";
+"Vault response parse error: %@" = "Vault-Antwort konnte nicht geparst werden: %@";
 
 /* Vault OIDC login: user cancelled the browser flow */
-"Vault login was cancelled." = "Vault login was cancelled.";
+"Vault login was cancelled." = "Vault-Anmeldung wurde abgebrochen.";
 
 /* Vault OIDC login: could not open a local callback port */
-"Could not bind a local port for the Vault OIDC callback." = "Could not bind a local port for the Vault OIDC callback.";
+"Could not bind a local port for the Vault OIDC callback." = "Für den Vault-OIDC-Callback konnte kein lokaler Port gebunden werden.";
 
 /* Vault OIDC login: browser callback did not arrive within the timeout */
-"Vault OIDC login timed out. Please try again." = "Vault OIDC login timed out. Please try again.";
+"Vault OIDC login timed out. Please try again." = "Vault-OIDC-Anmeldung ist abgelaufen. Bitte erneut versuchen.";
 
 /* Vault OIDC login: callback query string was malformed (%@ = detail) */
-"Unexpected Vault OIDC callback: %@" = "Unexpected Vault OIDC callback: %@";
+"Unexpected Vault OIDC callback: %@" = "Unerwarteter Vault-OIDC-Callback: %@";
 
 /* Vault auth manager: Vault host or credentials path not configured */
-"Vault host or credentials path is missing." = "Vault host or credentials path is missing.";
+"Vault host or credentials path is missing." = "Vault-Host oder Pfad zu den Zugangsdaten fehlt.";
 
 /* Vault auth manager: OIDC login flow failed */
-"Vault OIDC login failed." = "Vault OIDC login failed.";
+"Vault OIDC login failed." = "Vault-OIDC-Anmeldung fehlgeschlagen.";
 
 /* Vault auth manager: credentials endpoint returned an error */
-"Failed to generate credentials from Vault." = "Failed to generate credentials from Vault.";
+"Failed to generate credentials from Vault." = "Zugangsdaten konnten nicht aus Vault erzeugt werden.";
 
 /* Vault auth manager: credentials endpoint returned empty username/password */
-"Vault returned empty credentials." = "Vault returned empty credentials.";
+"Vault returned empty credentials." = "Vault hat leere Zugangsdaten zurückgegeben.";
 
 /* Vault connect-time validation: Vault host field is empty */
-"A Vault host is required to connect." = "A Vault host is required to connect.";
+"A Vault host is required to connect." = "Zum Verbinden ist ein Vault-Host erforderlich.";
 
 /* Vault connect-time validation: credentials path field is empty */
-"A Vault credentials path is required to connect." = "A Vault credentials path is required to connect.";
+"A Vault credentials path is required to connect." = "Zum Verbinden ist ein Vault-Pfad für Zugangsdaten erforderlich.";
 
 /* Vault connect-time validation: DB host field is empty */
-"A database host is required to connect." = "A database host is required to connect.";
+"A database host is required to connect." = "Zum Verbinden ist ein Datenbank-Host erforderlich.";
 
 /* Vault connection: error sheet title when credential generation fails */
-"Vault Authentication Failed" = "Vault Authentication Failed";
+"Vault Authentication Failed" = "Vault-Authentifizierung fehlgeschlagen";
 
 /* Vault save-favorite validation: DB host field is empty */
-"Please provide a database host to save a Vault favorite." = "Please provide a database host to save a Vault favorite.";
+"Please provide a database host to save a Vault favorite." = "Bitte geben Sie einen Datenbank-Host an, um einen Vault-Favoriten zu speichern.";
 
 /* Vault save-favorite validation: Vault host field is empty */
-"A Vault host is required to save a Vault favorite." = "A Vault host is required to save a Vault favorite.";
+"A Vault host is required to save a Vault favorite." = "Zum Speichern eines Vault-Favoriten ist ein Vault-Host erforderlich.";
 
 /* Vault save-favorite validation: credentials path field is empty */
-"A Vault credentials path is required to save a Vault favorite." = "A Vault credentials path is required to save a Vault favorite.";
+"A Vault credentials path is required to save a Vault favorite." = "Zum Speichern eines Vault-Favoriten ist ein Vault-Pfad für Zugangsdaten erforderlich.";
 
 /* Cell context menu filter submenu title */
-"Filter by Selected Value" = "Filter by Selected Value";
+"Filter by Selected Value" = "Nach ausgewähltem Wert filtern";
+
+/* AWS console sign-in (aws login) error: profile is missing login_session configuration */
+"The profile is not configured for AWS console sign-in" = "The profile is not configured for AWS console sign-in";
+
+/* AWS console sign-in (aws login) error: no cached session on disk */
+"No cached AWS console sign-in session was found. Run `aws login` and try again." = "No cached AWS console sign-in session was found. Run `aws login` and try again.";
+
+/* AWS console sign-in (aws login) error: cached credentials have expired */
+"The cached AWS console sign-in credentials have expired. They refresh about every 15 minutes. Run `aws login` and reconnect." = "The cached AWS console sign-in credentials have expired. They refresh about every 15 minutes. Run `aws login` and reconnect.";
+
+/* AWS console sign-in (aws login) error: cached session file could not be parsed */
+"The cached AWS console sign-in session could not be read" = "The cached AWS console sign-in session could not be read";
+
+/* AWS IAM Identity Center (aws sso login) error: profile is missing SSO configuration */
+"The profile is not configured for AWS IAM Identity Center" = "The profile is not configured for AWS IAM Identity Center";
+
+/* AWS IAM Identity Center (aws sso login) error: no cached token on disk */
+"No cached AWS SSO session was found. Run `aws sso login` and try again." = "No cached AWS SSO session was found. Run `aws sso login` and try again.";
+
+/* AWS IAM Identity Center (aws sso login) error: cached token has expired */
+"The cached AWS SSO token has expired. Run `aws sso login` and reconnect." = "The cached AWS SSO token has expired. Run `aws sso login` and reconnect.";
+
+/* AWS IAM Identity Center (aws sso login) error: network request failed */
+"Network request to AWS IAM Identity Center failed" = "Network request to AWS IAM Identity Center failed";
+
+/* AWS IAM Identity Center (aws sso login) error: response could not be parsed */
+"Invalid response from AWS IAM Identity Center" = "Invalid response from AWS IAM Identity Center";
+
+/* AWS IAM Identity Center (aws sso login) error: portal denied the request */
+"Access denied by AWS IAM Identity Center" = "Access denied by AWS IAM Identity Center";
+
+/* AWS IAM Identity Center (aws sso login) error: portal request timed out */
+"AWS IAM Identity Center request timed out" = "AWS IAM Identity Center request timed out";

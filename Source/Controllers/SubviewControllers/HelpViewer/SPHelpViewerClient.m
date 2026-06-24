@@ -35,12 +35,7 @@
 #import "RegexKitLite.h"
 #import "MGTemplateEngine.h"
 #import "ICUTemplateMatcher.h"
-
-typedef NS_ENUM(NSInteger, HelpVersionNumber) {
-	MySQLVer56 = 11,
-	MySQLVer57 = 12,
-	MySQLVer80 = 201,
-};
+#import "sequel-ace-Swift.h"
 
 @interface SPHelpViewerClient () <SPHelpViewerDataSource>
 
@@ -100,32 +95,25 @@ typedef NS_ENUM(NSInteger, HelpVersionNumber) {
 	//Hmmm. 5.5 dev search no longer exists - 5.5. redirects to 8.0
 	// 5.6 = https://dev.mysql.com/doc/search/?d=11&p=1&q=SELECT
 	// 8.0 https://dev.mysql.com/doc/search/?d=201&p=1&q=SELECT
+	// 8.4 https://dev.mysql.com/doc/search/?d=371&p=1&q=SELECT
+	// 9.7 https://dev.mysql.com/doc/search/?d=515&p=1&q=SELECT
 	// 5.7 https://dev.mysql.com/doc/search/?d=12&p=1&q=SELECT
+	// MariaDB exact topic links redirect to the current docs: https://mariadb.com/kb/en/select/
 	
 	// OLD: SPMySQLSearchURL = https://dev.mysql.com/doc/refman/%@/%@/%@.html
 	// NEW: SPMySQLSearchURL = https://dev.mysql.com/doc/search/?d=%d&p=1&q=%@
 
-	// default to 8.0
-	HelpVersionNumber version = MySQLVer80;
-	
-	if ([mySQLConnection serverVersionIsGreaterThanOrEqualTo:8 minorVersion:0 releaseVersion:0]){
-		version = MySQLVer80;
-	}
-	else if([mySQLConnection serverVersionIsGreaterThanOrEqualTo:5 minorVersion:7 releaseVersion:0]) {
-		version = MySQLVer57;
-	}
-	else if([mySQLConnection serverVersionIsGreaterThanOrEqualTo:5 minorVersion:6 releaseVersion:0]) {
-		version = MySQLVer56;
-	}
-	
-	SPLog(@"ver = %li", (long)version);
-		
-	NSString *url = [[NSString stringWithFormat: SPMySQLSearchURL, version, searchString] stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet];
+	// Use the cached version string here; -isMariaDB reads the raw MYSQL handle and can be unsafe after disconnect.
+	NSURL *url = [SAHelpViewerOnlineURLBuilder onlineHelpURLForTopic:searchString
+	                                             serverVersionString:[mySQLConnection serverVersionString]
+	                                               mysqlMajorVersion:(NSInteger)[mySQLConnection serverMajorVersion]
+	                                               mysqlMinorVersion:(NSInteger)[mySQLConnection serverMinorVersion]
+	                                             mysqlReleaseVersion:(NSInteger)[mySQLConnection serverReleaseVersion]];
 
 	SPLog("search URL: %@",url);
 	
-	if ([url length]) {
-		[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:url]];
+	if (url) {
+		[[NSWorkspace sharedWorkspace] openURL:url];
 	}
 }
 

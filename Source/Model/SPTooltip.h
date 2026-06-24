@@ -33,8 +33,7 @@
 @interface SPTooltip : NSWindow <WKNavigationDelegate>
 {
 	WKWebView*		wkWebView;
-	
-	WebPreferences*	webPreferences;
+
 	NSTimer*		animationTimer;
 	NSDate*			animationStart;
 

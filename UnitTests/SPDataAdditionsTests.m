@@ -390,40 +390,40 @@
 {
 	//nil
 	{
-		XCTAssertNil([NSData dataWithHexString:nil], @"nil input");
+		XCTAssertNil([NSData sp_dataWithHexString:nil], @"nil input");
 	}
 	//empty
 	{
-		XCTAssertTrue([[NSData dataWithHexString:@""] length] == 0, @"empty input");
+		XCTAssertTrue([[NSData sp_dataWithHexString:@""] length] == 0, @"empty input");
 	}
 	//single byte 0
 	{
 		const char single[] = {0};
-		XCTAssertEqualObjects([NSData dataWithHexString:@"0"], [NSData dataWithBytes:single length:1], @"single '0'" );
+		XCTAssertEqualObjects([NSData sp_dataWithHexString:@"0"], [NSData dataWithBytes:single length:1], @"single '0'" );
 	}
 	//empty, with 0x
 	{
-		XCTAssertEqualObjects([NSData dataWithHexString:@" 0x  "], [NSData data], @"empty input after trimming");
+		XCTAssertEqualObjects([NSData sp_dataWithHexString:@" 0x  "], [NSData data], @"empty input after trimming");
 	}
 	//one lower nibble
 	{
 		const char single[] = { 0xf };
-		XCTAssertEqualObjects([NSData dataWithHexString:@"0xf"], [NSData dataWithBytes:single length:1], @"0x0F");
+		XCTAssertEqualObjects([NSData sp_dataWithHexString:@"0xf"], [NSData dataWithBytes:single length:1], @"0x0F");
 	}
 	//full char, uppercase
 	{
 		const char single[] = { 0xcf };
-		XCTAssertEqualObjects([NSData dataWithHexString:@"CF"], [NSData dataWithBytes:single length:1], @"0xCF");
+		XCTAssertEqualObjects([NSData sp_dataWithHexString:@"CF"], [NSData dataWithBytes:single length:1], @"0xCF");
 	}
 	//regular input
 	{
 		NSString *inp = @"0x de AD Be eF\t0102 0304";
 		const char exp[] = {0xde,0xad,0xbe,0xef,0x01,0x02,0x03,0x04};
-		XCTAssertEqualObjects([NSData dataWithHexString:inp], [NSData dataWithBytes:exp length:sizeof(exp)], @"regular input");
+		XCTAssertEqualObjects([NSData sp_dataWithHexString:inp], [NSData dataWithBytes:exp length:sizeof(exp)], @"regular input");
 	}
 	//invalid input
 	{
-		XCTAssertNil([NSData dataWithHexString:@"0xaG"], @"invalid char in input");
+		XCTAssertNil([NSData sp_dataWithHexString:@"0xaG"], @"invalid char in input");
 	}
 }
 
@@ -431,32 +431,32 @@
 {
 	//empty
 	{
-		XCTAssertEqualObjects([NSData dataWithHexString:@"x''"], [NSData data], @"empty mysql hex literal");
+		XCTAssertEqualObjects([NSData sp_dataWithHexString:@"x''"], [NSData data], @"empty mysql hex literal");
 	}
 	//empty, whitespace around, capital x
 	{
-		XCTAssertEqualObjects([NSData dataWithHexString:@"  X''\t  "], [NSData data], @"empty mysql hex literal (2)");
+		XCTAssertEqualObjects([NSData sp_dataWithHexString:@"  X''\t  "], [NSData data], @"empty mysql hex literal (2)");
 	}
 	//nonempty valid, case-insensitive
 	{
 		const char exp[] = {0xde,0xad,0xbe,0xef};
-		XCTAssertEqualObjects([NSData dataWithHexString:@"X'deADBeeF'"], [NSData dataWithBytes:exp length:sizeof(exp)], @"regular input");
+		XCTAssertEqualObjects([NSData sp_dataWithHexString:@"X'deADBeeF'"], [NSData dataWithBytes:exp length:sizeof(exp)], @"regular input");
 	}
 	//bad: uneven
 	{
-		XCTAssertNil([NSData dataWithHexString:@"X'aFF'"],@"uneven length in mysql hex literal");
+		XCTAssertNil([NSData sp_dataWithHexString:@"X'aFF'"],@"uneven length in mysql hex literal");
 	}
 	//bad: whitespace inside literal
 	{
-		XCTAssertNil([NSData dataWithHexString:@"x'0A ff'"], @"whitespace inside mysql hex literal");
+		XCTAssertNil([NSData sp_dataWithHexString:@"x'0A ff'"], @"whitespace inside mysql hex literal");
 	}
 	//bad: non-whitespace after literal
 	{
-		XCTAssertNil([NSData dataWithHexString:@"X'1234'   ."], @"garbage at end");
+		XCTAssertNil([NSData sp_dataWithHexString:@"X'1234'   ."], @"garbage at end");
 	}
 	//bad: non hex char in literal
 	{
-		XCTAssertNil([NSData dataWithHexString:@"x'01äß'"], @"non-hex char in literal");
+		XCTAssertNil([NSData sp_dataWithHexString:@"x'01äß'"], @"non-hex char in literal");
 	}
 }
 

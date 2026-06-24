@@ -30,6 +30,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPCustomQuery.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPSQLParser.h"
 #import "SPDataCellFormatter.h"
 #import "SPDatabaseDocument.h"
@@ -51,7 +52,6 @@
 #import "SPThreadAdditions.h"
 #import "SPConstants.h"
 #import "SPAppController.h"
-#import "SPBundleHTMLOutputController.h"
 #import "SPFunctions.h"
 #import "SPHelpViewerClient.h"
 #import "SPHelpViewerController.h"
@@ -385,7 +385,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             // If no selected range, then make a new range then use it for appending query
             if (!selectedRange.length) {
               selectedRange = NSMakeRange(textView.textStorage.length, 0);
-              NSUInteger caretPosition = selectedRange.location;
             }
           
             [textView insertAsSnippet:selectedFaveQueryStr atRange:selectedRange];
@@ -425,7 +424,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             // If no selected range, then make a new range then use it for appending query
             if (!selectedRange.length) {
               selectedRange = NSMakeRange(textView.textStorage.length, 0);
-              NSUInteger caretPosition = selectedRange.location;
             }
           
             [textView insertAsSnippet:selectedHistoryQueryStr atRange:selectedRange];
@@ -566,7 +564,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 {
     NSSavePanel *panel = [NSSavePanel savePanel];
     
-    [panel setAllowedFileTypes:@[SPFileExtensionSQL]];
+    [panel setAllowedContentTypes:@[[UTType typeWithFilenameExtension:SPFileExtensionSQL]]];
     
     [panel setExtensionHidden:NO];
     [panel setAllowsOtherFileTypes:YES];
@@ -2868,7 +2866,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             BOOL correspondingWindowFound = NO;
             NSString *uuid = [data objectAtIndex:2];
             for (id win in [NSApp windows]) {
-                if ([[[[win delegate] class] description] isEqualToString:@"SPBundleHTMLOutputController"]) {
+                if ([[[[win delegate] class] description] isEqualToString:@"SABundleHTMLOutputWindowController"]) {
                     if ([[[win delegate] windowUUID] isEqualToString:uuid]) {
                         correspondingWindowFound = YES;
                         break;

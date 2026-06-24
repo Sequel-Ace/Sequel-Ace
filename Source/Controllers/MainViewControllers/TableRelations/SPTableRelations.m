@@ -52,6 +52,10 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
 - (void)_refreshRelationDataForcingCacheRefresh:(BOOL)clearAllCaches;
 - (void)_updateAvailableTableColumns;
+- (BOOL)_serverRequiresStandardForeignKeyReferences;
+- (NSSet *)_singleColumnUniqueReferenceColumnsForTable:(NSString *)table database:(NSString *)database;
+- (BOOL)_referenceColumnAllowsForeignKeyReference:(NSString *)column table:(NSString *)table database:(NSString *)database;
+- (void)_showInvalidForeignKeyReferenceAlertForColumn:(NSString *)column table:(NSString *)table;
 
 @end
 
@@ -147,6 +151,13 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
     }
     NSString *thatTable  = [refTablePopUpButton titleOfSelectedItem];
     NSString *thatColumn = [refColumnPopUpButton titleOfSelectedItem];
+
+	if (![self _referenceColumnAllowsForeignKeyReference:thatColumn table:thatTable database:thatDatabase]) {
+		[dataProgressIndicator setHidden:YES];
+		[dataProgressIndicator stopAnimation:self];
+		[self _showInvalidForeignKeyReferenceAlertForColumn:thatColumn table:thatTable];
+		return;
+	}
 
 	NSString *query = [NSString stringWithFormat:@"ALTER TABLE %@ ADD ",[thisTable backtickQuotedString]];
 	
@@ -544,6 +555,69 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 #pragma mark -
 #pragma mark Private API
 
+- (BOOL)_serverRequiresStandardForeignKeyReferences
+{
+	if ([connection isMariaDB] || ![connection serverVersionIsGreaterThanOrEqualTo:8 minorVersion:4 releaseVersion:0]) return NO;
+
+	SPMySQLResult *restrictionResult = [connection queryString:@"SELECT @@session.restrict_fk_on_non_standard_key"];
+	[restrictionResult setReturnDataAsStrings:YES];
+
+	id restrictionValue = [connection queryErrored] ? nil : [[restrictionResult getRowAsArray] firstObject];
+	return [SAForeignKeyReferenceRuleSupport requiresStandardForeignKeyReferencesWithMariaDB:[connection isMariaDB]
+																	 serverVersionIsAtLeast84:YES
+																	 restrictionQueryErrored:[connection queryErrored]
+																			 restrictionValue:restrictionValue];
+}
+
+- (NSSet *)_singleColumnUniqueReferenceColumnsForTable:(NSString *)table database:(NSString *)database
+{
+	if (![table length]) return [NSSet set];
+
+	NSString *tableReference = [table backtickQuotedString];
+	if ([database length]) {
+		tableReference = [NSString stringWithFormat:@"%@.%@", [database backtickQuotedString], [table backtickQuotedString]];
+	}
+
+	BOOL changeEncoding = ![[connection encoding] hasPrefix:@"utf8"];
+	if (changeEncoding) {
+		[connection storeEncodingForRestoration];
+		[connection setEncoding:@"utf8mb4"];
+	}
+
+	SPMySQLResult *indexResult = [connection queryString:[NSString stringWithFormat:@"SHOW INDEX FROM %@", tableReference]];
+	[indexResult setReturnDataAsStrings:YES];
+
+	if ([connection queryErrored]) {
+		if (changeEncoding) [connection restoreStoredEncoding];
+		return [NSSet set];
+	}
+
+	NSMutableArray *indexRows = [NSMutableArray array];
+	NSDictionary *indexRow;
+	while ((indexRow = [indexResult getRowAsDictionary])) {
+		[indexRows addObject:indexRow];
+	}
+
+	if (changeEncoding) [connection restoreStoredEncoding];
+
+	return [SAForeignKeyReferenceRuleSupport singleColumnUniqueReferenceColumns:indexRows];
+}
+
+- (BOOL)_referenceColumnAllowsForeignKeyReference:(NSString *)column table:(NSString *)table database:(NSString *)database
+{
+	if (![self _serverRequiresStandardForeignKeyReferences]) return YES;
+	if (![column length] || ![table length]) return NO;
+
+	return [[self _singleColumnUniqueReferenceColumnsForTable:table database:database] containsObject:column];
+}
+
+- (void)_showInvalidForeignKeyReferenceAlertForColumn:(NSString *)column table:(NSString *)table
+{
+	[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Referenced column needs a unique key", @"foreign key reference restriction title")
+								 message:[NSString stringWithFormat:NSLocalizedString(@"MySQL 8.4 and newer require a foreign key to reference a full unique or primary key. Add a single-column unique key to %@.%@ or choose another referenced column.", @"foreign key reference restriction message"), table ?: @"", column ?: @""]
+								callback:nil];
+}
+
 /**
  * Refresh the displayed relations, optionally forcing a refresh of the underlying cache.
  */
@@ -640,14 +714,21 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
     NSDictionary *tableInfo = [tableDataInstance informationForTable:table fromDatabase:database];
 	
 	NSArray *columns = [tableInfo objectForKey:@"columns"];
+	NSSet *standardReferenceColumns = nil;
+	if ([self _serverRequiresStandardForeignKeyReferences]) {
+		standardReferenceColumns = [self _singleColumnUniqueReferenceColumnsForTable:table database:database];
+	}
 	
 	NSMutableArray *validColumns = [NSMutableArray array];
 	
 	// Only add columns of the same data type
 	for (NSDictionary *aColumn in columns) 
 	{
-		if ([[columnInfo objectForKey:@"type"] isEqualToString:[aColumn objectForKey:@"type"]]) {
-			[validColumns addObject:[aColumn objectForKey:SPRelationNameKey]];
+		NSString *candidateColumnName = [aColumn objectForKey:SPRelationNameKey];
+		if ([[columnInfo objectForKey:@"type"] isEqualToString:[aColumn objectForKey:@"type"]]
+			&& (!standardReferenceColumns || [standardReferenceColumns containsObject:candidateColumnName]))
+		{
+			[validColumns addObject:candidateColumnName];
 		}
 	}
 	

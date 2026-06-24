@@ -51,6 +51,7 @@
 //0.00328s
 - (void)testPerformanceSafeReplacePointerAtIndex {
 
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         NSPointerArray *randomPointerArray = [SPTestingUtils randomPointerArray];
 
@@ -66,6 +67,7 @@
 //0.00327s
 - (void)testPerformanceReplacePointerAtIndex {
 
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         NSPointerArray *randomPointerArray = [SPTestingUtils randomPointerArray];
 

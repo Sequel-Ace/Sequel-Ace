@@ -144,9 +144,9 @@
             [[NSNotificationCenter defaultCenter] postNotificationName:@"SPFontChangedNotification" object:self];
 			break;
 		case SPPrefFontChangeTargetEditor:
-			font = [[NSFontPanel sharedFontPanel] panelConvertFont:[NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:SPCustomQueryEditorFont]]];
+			font = [[NSFontPanel sharedFontPanel] panelConvertFont:[SAArchiving fontFromData:[prefs dataForKey:SPCustomQueryEditorFont]]];
 			
-			[prefs setObject:[NSArchiver archivedDataWithRootObject:font] forKey:SPCustomQueryEditorFont];
+			[prefs setObject:[SAArchiving archivedDataForFont:font] forKey:SPCustomQueryEditorFont];
 			
 			[editorPreferencePane updateDisplayedEditorFontName];
 			break;

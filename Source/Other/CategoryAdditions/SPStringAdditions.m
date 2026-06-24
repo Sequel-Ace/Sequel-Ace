@@ -334,7 +334,7 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 	return lineRangesArray;
 }
 
-- (NSString *)stringByReplacingCharactersInSet:(NSCharacterSet *)set withString:(NSString *)string
+- (NSString *)sp_stringByReplacingCharactersInSet:(NSCharacterSet *)set withString:(NSString *)string
 {
 	NSUInteger len = [self length];
 	NSMutableString *newString = [NSMutableString string];

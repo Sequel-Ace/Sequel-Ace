@@ -29,7 +29,6 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPTooltip.h"
-#import "SPBundleHTMLOutputController.h"
 #import "SPCustomQuery.h"
 #import "SPAppController.h"
 #import "SPFieldEditorController.h"
@@ -687,7 +686,7 @@
     else if([action isEqualToString:SPBundleOutputActionShowAsHTML]) {
         BOOL correspondingWindowFound = NO;
         for(id win in [NSApp windows]) {
-            if([[win delegate] isKindOfClass:[SPBundleHTMLOutputController class]]) {
+            if([[win delegate] isKindOfClass:[SABundleHTMLOutputWindowController class]]) {
                 if([[[win delegate] windowUUID] isEqualToString:[cmdData objectForKey:SPBundleFileUUIDKey]]) {
                     correspondingWindowFound = YES;
                     [[win delegate] displayHTMLContent:output withOptions:nil];
@@ -696,7 +695,7 @@
             }
         }
         if(!correspondingWindowFound) {
-            SPBundleHTMLOutputController *c = [[SPBundleHTMLOutputController alloc] init];
+            SABundleHTMLOutputWindowController *c = [[SABundleHTMLOutputWindowController alloc] init];
             [c setWindowUUID:[cmdData objectForKey:SPBundleFileUUIDKey]];
             [c displayHTMLContent:output withOptions:nil];
             [SPBundleManager.shared addHTMLOutputController:c];

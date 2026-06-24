@@ -271,7 +271,7 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 		}
 
 		// Keep tracking the mouse outside the button, until the mouse button is released or it reenters the button
-		theEvent = [[controlView window] nextEventMatchingMask: NSEventTypeLeftMouseUp | NSEventMaskLeftMouseDragged];
+		theEvent = [[controlView window] nextEventMatchingMask: NSEventMaskLeftMouseUp | NSEventMaskLeftMouseDragged];
 		p = [controlView convertPoint:[theEvent locationInWindow] fromView:nil];
 		mouseInButton = NSMouseInRect(p, linkRect, [controlView isFlipped]);
 

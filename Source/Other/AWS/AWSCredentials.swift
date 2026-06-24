@@ -71,6 +71,16 @@ import OSLog
     let sourceProfile: String?
     let region: String?
 
+    // IAM Identity Center (SSO) profile configuration
+    let ssoSession: String?
+    let ssoStartURL: String?
+    let ssoRegion: String?
+    let ssoAccountID: String?
+    let ssoRoleName: String?
+
+    // Console sign-in (`aws login`) profile configuration
+    let loginSession: String?
+
     private static let log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "AWSCredentials")
 
     // MARK: - Initialization
@@ -95,6 +105,12 @@ import OSLog
         self.mfaSerial = nil
         self.sourceProfile = nil
         self.region = nil
+        self.ssoSession = nil
+        self.ssoStartURL = nil
+        self.ssoRegion = nil
+        self.ssoAccountID = nil
+        self.ssoRoleName = nil
+        self.loginSession = nil
         super.init()
     }
 
@@ -113,10 +129,16 @@ import OSLog
         self.mfaSerial = config["mfa_serial"]
         self.sourceProfile = config["source_profile"]
         self.region = config["region"]
+        self.ssoSession = config["sso_session"]
+        self.ssoStartURL = config["sso_start_url"]
+        self.ssoRegion = config["sso_region"]
+        self.ssoAccountID = config["sso_account_id"]
+        self.ssoRoleName = config["sso_role_name"]
+        self.loginSession = config["login_session"]
 
         super.init()
 
-        guard isValid else {
+        guard isValid || isSSOProfile || isLoginProfile else {
             throw AWSCredentialsError.missingCredentials
         }
     }
@@ -133,6 +155,19 @@ import OSLog
 
     var requiresRoleAssumption: Bool {
         roleArn?.isEmpty == false
+    }
+
+    /// True when the profile resolves credentials through IAM Identity Center (`aws sso login`).
+    var isSSOProfile: Bool {
+        guard ssoAccountID?.isEmpty == false, ssoRoleName?.isEmpty == false else {
+            return false
+        }
+        return ssoStartURL?.isEmpty == false || ssoSession?.isEmpty == false
+    }
+
+    /// True when the profile resolves credentials through console sign-in (`aws login`).
+    var isLoginProfile: Bool {
+        loginSession?.isEmpty == false
     }
 
     // MARK: - File Paths
@@ -259,6 +294,15 @@ import OSLog
             }
         }
 
+        // Pull sso_start_url / sso_region from the [sso-session] section the profile references
+        if let ssoSession = result["sso_session"],
+           result["sso_start_url"] == nil || result["sso_region"] == nil,
+           let sessionConfig = loadSSOSessionConfiguration(named: ssoSession) {
+            for (key, value) in sessionConfig where result[key] == nil {
+                result[key] = value
+            }
+        }
+
         // If profile has source_profile, load credentials from that
         if let sourceProfile = result["source_profile"], result["aws_access_key_id"] == nil {
             let sourceConfig = try loadProfileConfiguration(for: sourceProfile, visited: visited)
@@ -278,6 +322,14 @@ import OSLog
         }
 
         return result
+    }
+
+    /// Load the keys defined in an `[sso-session NAME]` section of the config file
+    private static func loadSSOSessionConfiguration(named sessionName: String) -> [String: String]? {
+        guard let contents = readAWSFileContents(at: configFilePath) else {
+            return nil
+        }
+        return parseAWSFile(contents, forProfile: "sso-session \(sessionName)", isConfigFile: false)
     }
 
     /// Read AWS file contents using security-scoped access when needed
@@ -355,22 +407,39 @@ import OSLog
             return
         }
 
+        for name in profileNames(inFileContents: contents, isConfigFile: isConfigFile) {
+            profiles.insert(name)
+        }
+    }
+
+    /// Extract selectable profile names from a credentials or config file.
+    /// Config-file `[sso-session NAME]` sections are excluded; `[profile NAME]` is reduced to `NAME`.
+    static func profileNames(inFileContents contents: String, isConfigFile: Bool) -> [String] {
+        var names = [String]()
+
         for rawLine in contents.components(separatedBy: .newlines) {
             let line = rawLine.trimmingCharacters(in: .whitespaces)
 
-            if line.hasPrefix("[") && line.hasSuffix("]") {
-                var profile = String(line.dropFirst().dropLast()).trimmingCharacters(in: .whitespaces)
+            guard line.hasPrefix("[") && line.hasSuffix("]") else {
+                continue
+            }
 
-                // In config file, profiles are named "profile xyz" except for "default"
-                if isConfigFile && profile.hasPrefix("profile ") {
-                    profile = String(profile.dropFirst(8)).trimmingCharacters(in: .whitespaces)
-                }
+            var profile = String(line.dropFirst().dropLast()).trimmingCharacters(in: .whitespaces)
 
-                if profile.isNotEmpty {
-                    profiles.insert(profile)
-                }
+            if isConfigFile && profile.hasPrefix("sso-session ") {
+                continue
+            }
+
+            if isConfigFile && profile.hasPrefix("profile ") {
+                profile = String(profile.dropFirst(8)).trimmingCharacters(in: .whitespaces)
+            }
+
+            if profile.isNotEmpty {
+                names.append(profile)
             }
         }
+
+        return names
     }
 
     // MARK: - Description

@@ -31,6 +31,8 @@
 #import "SPFavoriteColorSupport.h"
 #import "SPFunctions.h"
 
+#import "sequel-ace-Swift.h"
+
 
 @implementation SPFavoriteColorSupport
 
@@ -92,7 +94,7 @@ static SPFavoriteColorSupport *_colorSupport = nil;
 
 	for (NSData *archivedColor in archivedColors)
 	{
-		NSColor *color = [NSUnarchiver unarchiveObjectWithData:archivedColor];
+		NSColor *color = [SAArchiving colorFromData:archivedColor];
 
 		[colorList addObject:color];
 	}
@@ -117,7 +119,7 @@ static SPFavoriteColorSupport *_colorSupport = nil;
 
         for (NSData *archivedColor in archivedColors)
         {
-            NSColor *color = [NSUnarchiver unarchiveObjectWithData:archivedColor];
+            NSColor *color = [SAArchiving colorFromData:archivedColor];
 
             [colorList addObject:color];
         }

@@ -31,6 +31,7 @@
 //0.0259
 - (void)testPerformance_NormalNSArrayObjectAtIndex {
     // this is on main thread
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
         int const iterations = 10000;
@@ -48,6 +49,7 @@
 // 0.0264
 - (void)testPerformance_safeObjectAtIndex {
     // this is on main thread
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
         int const iterations = 10000;
@@ -123,6 +125,7 @@
 
 //0.668 s
 - (void)testPerformance_FirstObjectPassingTest_Last {
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
         int const iterations = 100;
@@ -147,6 +150,7 @@
 
 // 0.0274 s
 - (void)testPerformance_FirstObjectPassingTest_First {
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
         int const iterations = 100;

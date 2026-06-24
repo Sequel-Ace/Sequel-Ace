@@ -54,7 +54,7 @@
 	[prefs addObserver:self forKeyPath:SPCustomQueryEditorTabStopWidth options:NSKeyValueObservingOptionNew context:NULL];
 
 	if([prefs dataForKey:@"BundleEditorFont"]) {
-		NSFont *nf = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:@"BundleEditorFont"]];
+		NSFont *nf = [SAArchiving fontFromData:[prefs dataForKey:@"BundleEditorFont"]];
 		[self setFont:nf];
 	}
 
@@ -363,12 +363,12 @@
 	NSMutableParagraphStyle *paragraphStyle;
 
 	if(tvFont == nil && [prefs dataForKey:@"BundleEditorFont"]) {
-		tvFont = [NSUnarchiver unarchiveObjectWithData:[prefs dataForKey:@"BundleEditorFont"]];
+		tvFont = [SAArchiving fontFromData:[prefs dataForKey:@"BundleEditorFont"]];
 	}
 	if(tvFont == nil) {
 		tvFont = [NSUserDefaults getFont];
 		[self setFont:tvFont];
-		[prefs setObject:[NSArchiver archivedDataWithRootObject:tvFont] forKey:@"BundleEditorFont"];
+		[prefs setObject:[SAArchiving archivedDataForFont:tvFont] forKey:@"BundleEditorFont"];
 	}
 
 	BOOL oldEditableStatus = [self isEditable];
@@ -602,11 +602,14 @@
 {
 	NSPasteboard *pboard = [sender draggingPasteboard];
 
-	if ( [[pboard types] containsObject:NSFilenamesPboardType] && [[pboard types] containsObject:@"CorePasteboardFlavorType 0x54455854"])
+	if ( [[pboard types] containsObject:NSPasteboardTypeFileURL] && [[pboard types] containsObject:@"CorePasteboardFlavorType 0x54455854"])
 		return [super performDragOperation:sender];
 
-	if ( [[pboard types] containsObject:NSFilenamesPboardType] ) {
-		NSArray *files = [pboard propertyListForType:NSFilenamesPboardType];
+	if ( [[pboard types] containsObject:NSPasteboardTypeFileURL] ) {
+		NSArray *files = [pboard readObjectsForClasses:@[[NSURL class]] options:@{NSPasteboardURLReadingFileURLsOnlyKey: @YES}];
+
+		if([files count] == 0)
+			return [super performDragOperation:sender];
 
 		// Only one file path is allowed
 		if([files count] > 1) {
@@ -614,7 +617,7 @@
 			return YES;
 		}
 
-		NSString *filepath = [[pboard propertyListForType:NSFilenamesPboardType] objectAtIndex:0];
+		NSString *filepath = [(NSURL *)[files objectAtIndex:0] path];
 
 		// Set the new insertion point
 		NSPoint draggingLocation = [sender draggingLocation];
@@ -790,7 +793,7 @@
 - (void)saveChangedFontInUserDefaults
 {
 	if([[[[self delegate] class] description] isEqualToString:@"SPBundleEditorController"])
-		[prefs setObject:[NSArchiver archivedDataWithRootObject:[self font]] forKey:@"BundleEditorFont"];
+		[prefs setObject:[SAArchiving archivedDataForFont:[self font]] forKey:@"BundleEditorFont"];
 }
 
 // Action receiver for a font change in the font panel

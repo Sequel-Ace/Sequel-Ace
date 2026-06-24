@@ -46,6 +46,7 @@
 - (BOOL)_waitForNetworkConnectionWithTimeout:(double)timeoutSeconds;
 - (void)_disconnect;
 - (void)_updateConnectionVariables;
+- (BOOL)_serverIsProxySQL;
 - (void)_restoreConnectionVariables;
 - (void)_restoreSessionStateAfterReconnectWithDatabase:(NSString *)databaseName
                                               encoding:(NSString *)encodingName

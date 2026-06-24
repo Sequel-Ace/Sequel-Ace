@@ -12,21 +12,32 @@ import Foundation
 extension UserDefaults {
 	@objc static func saveFont(_ font: NSFont) {
 		let defaults = UserDefaults.standard
-		defaults.set(NSKeyedArchiver.archivedData(withRootObject: font.fontDescriptor), forKey: "fontSettings")
+		defaults.set(SAArchiving.archivedData(forFont: font), forKey: "fontSettings")
 	}
 
 	@objc static func getFont() -> NSFont {
 		let defaults = UserDefaults.standard
-		guard
-			let fontPreferences = defaults.data(forKey: "fontSettings"),
-			let fontDescriptor = NSKeyedUnarchiver.unarchiveObject(with: fontPreferences) as? NSFontDescriptor,
-			let savedFont = NSFont(descriptor: fontDescriptor, size: 0)
-		else {
-			let font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
-			Self .saveFont(font)
-			return font
+		guard let fontPreferences = defaults.data(forKey: "fontSettings") else {
+			return saveAndReturnDefaultFont()
 		}
-		return savedFont
+		// Current format: a whole NSFont archived via SAArchiving.
+		if let savedFont = SAArchiving.font(from: fontPreferences) {
+			return savedFont
+		}
+		// Legacy format: an archived NSFontDescriptor. Read it with the secure
+		// keyed API (which also reads non-secure keyed archives) so existing
+		// preferences survive; the next saveFont() rewrites it as a whole font.
+		if let fontDescriptor = try? NSKeyedUnarchiver.unarchivedObject(ofClass: NSFontDescriptor.self, from: fontPreferences),
+		   let savedFont = NSFont(descriptor: fontDescriptor, size: 0) {
+			return savedFont
+		}
+		return saveAndReturnDefaultFont()
+	}
+
+	private static func saveAndReturnDefaultFont() -> NSFont {
+		let font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
+		Self.saveFont(font)
+		return font
 	}
   
   @objc static func getSystemFont() -> NSFont {

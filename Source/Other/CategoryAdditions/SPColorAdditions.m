@@ -33,14 +33,14 @@
 @implementation NSColor (SPColorAdditions)
 
 /**
- * Convert self by using the NSCalibratedRGBColorSpace color space in a NSString
+ * Convert self by using the generic RGB color space in a NSString
  * #RRGGBBAA or if the alpha value is zero to #RRGGBB
  */
 - (NSString *)rgbHexString
 {
 	CGFloat red, green, blue, alpha;
 	NSString *redHexValue, *greenHexValue, *blueHexValue, *alphaHexValue;
-	NSColor *aColor = [self colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
+	NSColor *aColor = [self colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
 
 	if(aColor) {
 		[aColor getRed:&red green:&green blue:&blue alpha:&alpha];

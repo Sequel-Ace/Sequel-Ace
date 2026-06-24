@@ -9,6 +9,7 @@
 #import <XCTest/XCTest.h>
 #import "SPFunctions.h"
 #import "SPMainThreadTrampoline.h"
+#import "SPTestingUtils.h"
 
 @interface SPSyncTests : XCTestCase
 
@@ -27,6 +28,7 @@
 
 - (void)testPerformance_get_main_window_on_main {
 
+	SASkipUnlessPerformanceTestsEnabled();
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
 		int const iterations = 1000000;
@@ -48,6 +50,7 @@
 
 - (void)testPerformance_get_main_window_SPMainQSync {
 
+	SASkipUnlessPerformanceTestsEnabled();
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
 		int const iterations = 1000000;
@@ -72,6 +75,7 @@
 - (void)testPerformance_dispatch_sync {
 	
 	// this is on main thread
+	SASkipUnlessPerformanceTestsEnabled();
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
 		int const iterations = 1000000;
@@ -96,6 +100,7 @@
 // DOESN'T WORK
 - (void)testPerformance_onMainThread {
 	// this is on main thread
+	SASkipUnlessPerformanceTestsEnabled();
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
 		int const iterations = 1000000;
@@ -118,6 +123,7 @@
 
 - (void)testPerformance_SPMainQSync {
 	// this is on main thread
+	SASkipUnlessPerformanceTestsEnabled();
 	[self measureBlock:^{
 		// Put the code you want to measure the time of here.
 		int const iterations = 1000000;

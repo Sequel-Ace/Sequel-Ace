@@ -9,6 +9,7 @@
 //
 
 import AppKit
+import UniformTypeIdentifiers
 
 // Image name constants (mirrored from SPConnectionController.m)
 private let kSPDatabaseImage = "database-small"
@@ -73,7 +74,7 @@ private let kSPQuickConnectImageWhite = "quick-connect-icon-white.pdf"
         self.quickConnectCell.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
 
         // Folder icon
-        self.folderImage = NSWorkspace.shared.icon(forFileType: NSFileTypeForHFSTypeCode(OSType(kGenericFolderIcon)))
+        self.folderImage = NSWorkspace.shared.icon(for: .folder)
         self.folderImage.size = NSSize(width: 16, height: 16)
 
         super.init()

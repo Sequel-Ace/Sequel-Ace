@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPGeneralPreferencePane.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPPreferenceController.h"
 #import "SPFavoritesController.h"
 #import "SPTreeNode.h"
@@ -55,7 +56,7 @@ static NSString *SPDatabaseImage = @"database-small";
     [super awakeFromNib];
     
 	// Generic folder image for use in the outline view's groups
-	folderImage = [[NSWorkspace sharedWorkspace] iconForFileType:NSFileTypeForHFSTypeCode(kGenericFolderIcon)];
+	folderImage = [[NSWorkspace sharedWorkspace] iconForContentType:UTTypeFolder];
 	
 	[folderImage setSize:NSMakeSize(16, 16)];
 }

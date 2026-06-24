@@ -301,6 +301,7 @@
 
 // 0.0354 s
 - (void)testPerformanceIsEmptyString {
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
 
@@ -317,6 +318,7 @@
 }
 //0.0118 s
 - (void)testPerformanceIsEmptyString2{
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
 
@@ -334,6 +336,7 @@
 
 // 0.0105 s
 - (void)testPerformanceIsEmptyStringOldSchool {
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
 
@@ -353,6 +356,7 @@
 
 //0.0438 s
 - (void)testPerformanceIsEmptySet {
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
 
@@ -370,6 +374,7 @@
 
 // 0.0121 s
 - (void)testPerformanceIsEmptySet2{
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
 
@@ -387,6 +392,7 @@
 
 //0.0104 s
 - (void)testPerformanceIsEmptySetOldSchool {
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
 
@@ -406,6 +412,7 @@
 
 //0.00845 s
 - (void)testPerformanceIsEmptySetOldSchool2{
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
 
@@ -425,6 +432,7 @@
 
 // 0.0292 s
 - (void)testPerformanceNormalForLoop {
+    SASkipUnlessPerformanceTestsEnabled();
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
 
