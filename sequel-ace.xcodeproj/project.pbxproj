@@ -201,9 +201,10 @@
 		50805B0D1BF2A068005F7A99 /* SPPopUpButtonCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 50805B0C1BF2A068005F7A99 /* SPPopUpButtonCell.m */; };
 		50837F741E50DCD4004FAE8A /* SPJSONFormatterTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 50837F731E50DCD4004FAE8A /* SPJSONFormatterTests.m */; };
 		50837F771E50E007004FAE8A /* SPJSONFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 73F70A951E4E547500636550 /* SPJSONFormatter.m */; };
-		5AF0C3010000000000000002 /* SAPHPSerializedParserTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5AF0C3010000000000000001 /* SAPHPSerializedParserTests.m */; };
-		5AF0C3020000000000000003 /* SAPHPSerializedValue.m in Sources */ = {isa = PBXBuildFile; fileRef = 5AF0C3020000000000000002 /* SAPHPSerializedValue.m */; };
-		5AF0C3020000000000000004 /* SAPHPSerializedValue.m in Sources */ = {isa = PBXBuildFile; fileRef = 5AF0C3020000000000000002 /* SAPHPSerializedValue.m */; };
+		5AF0C3010000000000000002 /* SAPHPSerializedParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF0C3010000000000000001 /* SAPHPSerializedParserTests.swift */; };
+		5AF0C3020000000000000003 /* SAPHPSerializedValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF0C3020000000000000002 /* SAPHPSerializedValue.swift */; };
+		5AF0C3020000000000000004 /* SAPHPSerializedValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF0C3020000000000000002 /* SAPHPSerializedValue.swift */; };
+		5AF0C3030000000000000002 /* SPFieldEditorController+PHPSerialized.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF0C3030000000000000001 /* SPFieldEditorController+PHPSerialized.swift */; };
 		5089B0271BE714E300E226CD /* SPIdMenu.m in Sources */ = {isa = PBXBuildFile; fileRef = 5089B0261BE714E300E226CD /* SPIdMenu.m */; };
 		50A9F8B119EAD4B90053E571 /* SPGotoDatabaseController.m in Sources */ = {isa = PBXBuildFile; fileRef = 50A9F8B019EAD4B90053E571 /* SPGotoDatabaseController.m */; };
 		50D3C3521A77135F00B5429C /* SPParserUtils.c in Sources */ = {isa = PBXBuildFile; fileRef = 50D3C3501A77135F00B5429C /* SPParserUtils.c */; };
@@ -993,9 +994,9 @@
 		50805B0B1BF2A068005F7A99 /* SPPopUpButtonCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPPopUpButtonCell.h; sourceTree = "<group>"; };
 		50805B0C1BF2A068005F7A99 /* SPPopUpButtonCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPPopUpButtonCell.m; sourceTree = "<group>"; };
 		50837F731E50DCD4004FAE8A /* SPJSONFormatterTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPJSONFormatterTests.m; sourceTree = "<group>"; };
-		5AF0C3010000000000000001 /* SAPHPSerializedParserTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SAPHPSerializedParserTests.m; sourceTree = "<group>"; };
-		5AF0C3020000000000000001 /* SAPHPSerializedValue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SAPHPSerializedValue.h; sourceTree = "<group>"; };
-		5AF0C3020000000000000002 /* SAPHPSerializedValue.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SAPHPSerializedValue.m; sourceTree = "<group>"; };
+		5AF0C3010000000000000001 /* SAPHPSerializedParserTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAPHPSerializedParserTests.swift; sourceTree = "<group>"; };
+		5AF0C3020000000000000002 /* SAPHPSerializedValue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SAPHPSerializedValue.swift; sourceTree = "<group>"; };
+		5AF0C3030000000000000001 /* SPFieldEditorController+PHPSerialized.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "SPFieldEditorController+PHPSerialized.swift"; sourceTree = "<group>"; };
 		5089B0251BE714E300E226CD /* SPIdMenu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPIdMenu.h; sourceTree = "<group>"; };
 		5089B0261BE714E300E226CD /* SPIdMenu.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPIdMenu.m; sourceTree = "<group>"; };
 		50A77DA61E8EB903007466BC /* SPCompatibility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPCompatibility.h; sourceTree = "<group>"; };
@@ -1695,6 +1696,7 @@
 				BC675A131072039C00C5ACD4 /* SPContentFilterManager.m */,
 				BC9F087F100FCF2C00A80D32 /* SPFieldEditorController.h */,
 				BC9F0880100FCF2C00A80D32 /* SPFieldEditorController.m */,
+				5AF0C3030000000000000001 /* SPFieldEditorController+PHPSerialized.swift */,
 				173C4364104455E0001F3A30 /* SPQueryFavoriteManager.h */,
 				173C4365104455E0001F3A30 /* SPQueryFavoriteManager.m */,
 				1792C13510AD75C800ABE758 /* SPServerVariablesController.h */,
@@ -2122,8 +2124,7 @@
 				BCA6271A1031B9D40047E5D5 /* SPTooltip.h */,
 				BCA6271B1031B9D40047E5D5 /* SPTooltip.m */,
 				1798F192155017FB004B0AB8 /* Tree Nodes */,
-				5AF0C3020000000000000001 /* SAPHPSerializedValue.h */,
-				5AF0C3020000000000000002 /* SAPHPSerializedValue.m */,
+				5AF0C3020000000000000002 /* SAPHPSerializedValue.swift */,
 				51B09FD62F767A3E003BAFFF /* SAConnectionInfo.swift */,
 				5AF0C4000000000000000001 /* SAConnectionInfo+Favorite.swift */,
 				C57CA10F3F4B37E186CF7EF9 /* ConnectionStringParser.swift */,
@@ -2533,7 +2534,7 @@
 				50D3C35B1A771C4C00B5429C /* SPParserUtilsTest.m */,
 				503B02CE1AE95C2C0060CAB1 /* SPTableFilterParserTest.m */,
 				50837F731E50DCD4004FAE8A /* SPJSONFormatterTests.m */,
-				5AF0C3010000000000000001 /* SAPHPSerializedParserTests.m */,
+				5AF0C3010000000000000001 /* SAPHPSerializedParserTests.swift */,
 				1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */,
 				1AB068B224A3575600E2AAC2 /* SPValidateKeyAndCertFiles.m */,
 				1AE6C1CC25B07E9500880D73 /* SPFunctionsTests.m */,
@@ -3213,8 +3214,8 @@
 				1A2DD55125939B6400616E7E /* SPArrayAdditions.m in Sources */,
 				1AF0DA84259F631000961974 /* SPPointerArrayAdditionsTests.m in Sources */,
 				50837F741E50DCD4004FAE8A /* SPJSONFormatterTests.m in Sources */,
-				5AF0C3020000000000000004 /* SAPHPSerializedValue.m in Sources */,
-				5AF0C3010000000000000002 /* SAPHPSerializedParserTests.m in Sources */,
+				5AF0C3020000000000000004 /* SAPHPSerializedValue.swift in Sources */,
+				5AF0C3010000000000000002 /* SAPHPSerializedParserTests.swift in Sources */,
 				1AB925922551550200063446 /* NumberFormatterExtension.swift in Sources */,
 				50EA926A1AB246B8008D3C4F /* SPDatabaseActionTest.m in Sources */,
 				FD8099A92C59DE1D0084646F /* SABaseFormatter.swift in Sources */,
@@ -3433,8 +3434,9 @@
 				5147B00C2F8C000300C4C14A /* SAConnectionDetailsValidator.swift in Sources */,
 				5147B0112F8C000400C4C14A /* SAConnectionFormHelpers.swift in Sources */,
 				5147B01A2F8C000600C4C14A /* SAFavoriteSearchTreeWalker.swift in Sources */,
-				5AF0C3020000000000000003 /* SAPHPSerializedValue.m in Sources */,
+				5AF0C3020000000000000003 /* SAPHPSerializedValue.swift in Sources */,
 				BC9F0881100FCF2C00A80D32 /* SPFieldEditorController.m in Sources */,
+				5AF0C3030000000000000002 /* SPFieldEditorController+PHPSerialized.swift in Sources */,
 				58D2E229101222670063EF1D /* SPTextAndLinkCell.m in Sources */,
 				1A96E4B72588F34C0055F5F5 /* SecureBookmarkManager.swift in Sources */,
 				BC05F1C5101241DF008A97F8 /* YRKSpinningProgressIndicator.m in Sources */,
