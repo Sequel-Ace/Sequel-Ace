@@ -27,10 +27,16 @@
         <relationship name="user" optional="YES" minCount="1" maxCount="1" deletionRule="Nullify" destinationEntity="SPUser" inverseName="schema_privileges" inverseEntity="SPUser" indexed="YES" syncable="YES"/>
     </entity>
     <entity name="SPUser" representedClassName="SPUserMO" syncable="YES">
+        <attribute name="allow_nonexistent_definer_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="alter_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="alter_routine_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="authentication_string" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="binlog_admin_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
+        <attribute name="binlog_monitor_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
+        <attribute name="binlog_replay_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
+        <attribute name="connection_admin_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="create_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
+        <attribute name="create_role_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="create_routine_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="create_tablespace_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="create_temporary_tables_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
@@ -39,8 +45,10 @@
         <attribute name="delete_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="delete_versioning_rows_priv" optional="YES" attributeType="Boolean" syncable="YES"/>
         <attribute name="drop_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
+        <attribute name="drop_role_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="event_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="execute_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
+        <attribute name="federated_admin_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="file_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="grant_option_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="host" optional="YES" attributeType="String" maxValueString="60" defaultValueString="%" syncable="YES"/>
@@ -60,12 +68,19 @@
         <attribute name="password" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="plugin" optional="YES" attributeType="String" maxValueString="64" syncable="YES"/>
         <attribute name="process_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
+        <attribute name="read_only_admin_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="references_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="reload_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
+        <attribute name="replica_monitor_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="replication_client_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
+        <attribute name="replication_master_admin_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="replication_slave_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
+        <attribute name="replication_slave_admin_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="select_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
+        <attribute name="set_any_definer_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
+        <attribute name="set_user_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="show_databases_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
+        <attribute name="show_create_routine_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="show_view_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="shutdown_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="super_priv" optional="YES" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
@@ -79,6 +94,6 @@
     </entity>
     <elements>
         <element name="Privileges" positionX="412" positionY="90" width="128" height="373"/>
-        <element name="SPUser" positionX="135" positionY="45" width="207" height="705"/>
+        <element name="SPUser" positionX="135" positionY="45" width="207" height="735"/>
     </elements>
 </model>

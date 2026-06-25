@@ -33,6 +33,7 @@
 
 #import "SPDatabaseAction.h"
 #import "SPDatabaseData.h"
+#import "SPUserManager.h"
 #import "sequel-ace-Swift.h"
 #import <SPMySQL/SPMySQL.h>
 #import "../Source/Controllers/DataControllers/SPServerSupport.m"
@@ -50,6 +51,22 @@
 - (void)testIsMySQL8Flag_IsTrueForVersion8AndHigher;
 - (void)testIsMySQL8Flag_IsFalseForPreMySQL8Versions;
 - (void)testIsMySQL5Flag_RemainsLimitedToMajorVersion5;
+
+@end
+
+@interface SPUserManagerPrivilegeErrorTests : XCTestCase
+
+- (void)testMariaDBShowCreateRoutineErrorAddsSpecificExplanation;
+- (void)testMariaDBGrantAllErrorAddsSpecificExplanationWhenShowCreateRoutineIsSupported;
+- (void)testRegularMySQLErrorDoesNotMentionMariaDBShowCreateRoutine;
+- (void)testRevokeGrantOptionFailureMessageUsesGrantOptionContext;
+- (void)testUserManagerModelSupportsCurrentGlobalGrantTablePrivileges;
+- (void)testUserManagerModelKeepsGlobalOnlyPrivilegesOutOfSchemaPrivileges;
+- (void)testMySQLDynamicPrivilegeGrantNamesKeepUnderscores;
+- (void)testMySQLDynamicPrivAccessFailureHidesDynamicPrivilegeSupport;
+- (void)testMySQLDynamicGrantOptionPreservationOnlyAppliesToTrackedDynamicPrivileges;
+- (void)testMariaDBGlobalPrivAccessFailureKeepsSchemaShowCreateRoutineSupport;
+- (void)testGrantAllShortcutIsDatabaseScoped;
 
 @end
 
@@ -127,6 +144,257 @@
 	XCTAssertTrue([createDb createDatabase:@"target_name" withEncoding:@"" collation:nil], @"create database return");
 	
 	OCMVerifyAll(mockConnection);
+}
+
+@end
+
+@implementation SPUserManagerPrivilegeErrorTests
+
+- (void)testMariaDBShowCreateRoutineErrorAddsSpecificExplanation
+{
+	NSString *message = SPUserManagerPrivilegeOperationErrorMessageForServerError(@"Access denied for user 'admin'@'127.0.0.1' to database 'sample_db'",
+																				 @[@"show create routine"],
+																				 @"grant",
+																				 @"sample_db",
+																				 @"app_user",
+																				 @"localhost",
+																				 @"GRANT SHOW CREATE ROUTINE ON `sample_db`.* TO 'app_user'@'localhost'",
+																				 YES,
+																				 YES);
+
+	XCTAssertTrue([message containsString:@"Could not grant SHOW CREATE ROUTINE on database \"sample_db\" for app_user@localhost"]);
+	XCTAssertTrue([message containsString:@"Access denied for user 'admin'@'127.0.0.1' to database 'sample_db'"]);
+	XCTAssertTrue([message containsString:@"SHOW CREATE ROUTINE"]);
+	XCTAssertTrue([message containsString:@"SHOW GRANTS FOR CURRENT_USER()"]);
+}
+
+- (void)testMariaDBGrantAllErrorAddsSpecificExplanationWhenShowCreateRoutineIsSupported
+{
+	NSString *message = SPUserManagerPrivilegeOperationErrorMessageForServerError(@"Access denied for user 'root'@'localhost' to database 'test'",
+																				 @[],
+																				 @"grant",
+																				 @"test",
+																				 @"testuser",
+																				 @"localhost",
+																				 @"GRANT ALL ON `test`.* TO 'testuser'@'localhost' WITH GRANT OPTION",
+																				 YES,
+																				 YES);
+
+	XCTAssertTrue([message containsString:@"Could not grant ALL PRIVILEGES on database \"test\" for testuser@localhost"]);
+	XCTAssertTrue([message containsString:@"SHOW CREATE ROUTINE"]);
+}
+
+- (void)testRegularMySQLErrorDoesNotMentionMariaDBShowCreateRoutine
+{
+	NSString *message = SPUserManagerPrivilegeOperationErrorMessageForServerError(@"Access denied",
+																				 @[@"select"],
+																				 @"grant",
+																				 @"sample_db",
+																				 @"app_user",
+																				 @"localhost",
+																				 @"GRANT SELECT ON `sample_db`.* TO 'app_user'@'localhost'",
+																				 NO,
+																				 YES);
+
+	XCTAssertTrue([message containsString:@"Could not grant SELECT on database \"sample_db\" for app_user@localhost"]);
+	XCTAssertTrue([message containsString:@"Access denied"]);
+	XCTAssertFalse([message containsString:@"SHOW CREATE ROUTINE"]);
+}
+
+- (void)testRevokeGrantOptionFailureMessageUsesGrantOptionContext
+{
+	NSString *message = SPUserManagerPrivilegeOperationErrorMessageForServerError(@"You are not allowed to revoke this privilege",
+																				 @[@"grant option"],
+																				 @"revoke",
+																				 @"sample_db",
+																				 @"app_user",
+																				 @"localhost",
+																				 @"REVOKE GRANT OPTION ON `sample_db`.* FROM 'app_user'@'localhost'",
+																				 NO,
+																				 NO);
+
+	XCTAssertTrue([message containsString:@"Could not revoke GRANT OPTION on database \"sample_db\" for app_user@localhost"]);
+	XCTAssertTrue([message containsString:@"You are not allowed to revoke this privilege"]);
+	XCTAssertFalse([message containsString:@"SELECT"]);
+}
+
+- (void)testRevokeFailureMessageIncludesPrivilegeTargetAndServerReason
+{
+	NSString *message = SPUserManagerPrivilegeOperationErrorMessageForServerError(@"You are not allowed to revoke this privilege",
+																				 @[@"insert", @"update"],
+																				 @"revoke",
+																				 @"sample_db",
+																				 @"app_user",
+																				 @"localhost",
+																				 @"REVOKE INSERT, UPDATE ON `sample_db`.* FROM 'app_user'@'localhost'",
+																				 NO,
+																				 NO);
+
+	XCTAssertTrue([message containsString:@"Could not revoke INSERT, UPDATE on database \"sample_db\" for app_user@localhost"]);
+	XCTAssertTrue([message containsString:@"You are not allowed to revoke this privilege"]);
+}
+
+- (NSXMLDocument *)_userManagerModelDocumentWithError:(NSError **)error
+{
+	NSString *testFilePath = [NSString stringWithUTF8String:__FILE__];
+	NSString *repositoryRoot = [[testFilePath stringByDeletingLastPathComponent] stringByDeletingLastPathComponent];
+	NSURL *modelURL = [NSURL fileURLWithPath:[repositoryRoot stringByAppendingPathComponent:@"Source/Model/CoreData/SPUserManager.xcdatamodel/contents"]];
+
+	return [[NSXMLDocument alloc] initWithContentsOfURL:modelURL options:0 error:error];
+}
+
+- (void)testUserManagerModelSupportsCurrentGlobalGrantTablePrivileges
+{
+	NSError *error = nil;
+	NSXMLDocument *modelDocument = [self _userManagerModelDocumentWithError:&error];
+	NSArray *globalPrivilegeKeys = @[
+		@"allow_nonexistent_definer_priv",
+		@"binlog_admin_priv",
+		@"binlog_monitor_priv",
+		@"binlog_replay_priv",
+		@"connection_admin_priv",
+		@"create_role_priv",
+		@"drop_role_priv",
+		@"federated_admin_priv",
+		@"read_only_admin_priv",
+		@"replica_monitor_priv",
+		@"replication_master_admin_priv",
+		@"replication_slave_admin_priv",
+		@"set_any_definer_priv",
+		@"set_user_priv",
+		@"show_create_routine_priv"
+	];
+
+	XCTAssertNil(error);
+	XCTAssertNotNil(modelDocument);
+
+	for (NSString *privilegeKey in globalPrivilegeKeys)
+	{
+		NSString *xpath = [NSString stringWithFormat:@"/model/entity[@name='SPUser']/attribute[@name='%@']", privilegeKey];
+		XCTAssertEqual([[modelDocument nodesForXPath:xpath error:&error] count], 1U, @"Missing global privilege key %@", privilegeKey);
+		XCTAssertNil(error);
+	}
+}
+
+- (void)testUserManagerModelKeepsGlobalOnlyPrivilegesOutOfSchemaPrivileges
+{
+	NSError *error = nil;
+	NSXMLDocument *modelDocument = [self _userManagerModelDocumentWithError:&error];
+	NSArray *globalOnlyPrivilegeKeys = @[
+		@"allow_nonexistent_definer_priv",
+		@"binlog_admin_priv",
+		@"binlog_monitor_priv",
+		@"binlog_replay_priv",
+		@"connection_admin_priv",
+		@"create_role_priv",
+		@"drop_role_priv",
+		@"federated_admin_priv",
+		@"read_only_admin_priv",
+		@"replica_monitor_priv",
+		@"replication_master_admin_priv",
+		@"replication_slave_admin_priv",
+		@"set_any_definer_priv",
+		@"set_user_priv"
+	];
+
+	XCTAssertNil(error);
+	XCTAssertNotNil(modelDocument);
+	XCTAssertEqual([[modelDocument nodesForXPath:@"/model/entity[@name='Privileges']/attribute[@name='show_create_routine_priv']" error:&error] count], 1U);
+	XCTAssertNil(error);
+
+	for (NSString *privilegeKey in globalOnlyPrivilegeKeys)
+	{
+		NSString *xpath = [NSString stringWithFormat:@"/model/entity[@name='Privileges']/attribute[@name='%@']", privilegeKey];
+		XCTAssertEqual([[modelDocument nodesForXPath:xpath error:&error] count], 0U, @"Global-only privilege key %@ should not be available as a schema privilege", privilegeKey);
+		XCTAssertNil(error);
+	}
+}
+
+- (void)testMySQLDynamicPrivilegeGrantNamesKeepUnderscores
+{
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"allow_nonexistent_definer_priv", NO), @"allow_nonexistent_definer");
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"binlog_admin_priv", NO), @"binlog_admin");
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"connection_admin_priv", NO), @"connection_admin");
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"read_only_admin_priv", NO), @"read_only_admin");
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"replication_slave_admin_priv", NO), @"replication_slave_admin");
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"set_any_definer_priv", NO), @"set_any_definer");
+
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"create_user_priv", NO), @"create user");
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"set_user_priv", YES), @"set user");
+}
+
+- (void)testMySQLDynamicPrivAccessFailureHidesDynamicPrivilegeSupport
+{
+	NSMutableDictionary *supportedPrivileges = [@{
+		@"allow_nonexistent_definer_priv": @YES,
+		@"binlog_admin_priv": @YES,
+		@"connection_admin_priv": @YES,
+		@"create_role_priv": @YES,
+		@"read_only_admin_priv": @YES,
+		@"replication_slave_admin_priv": @YES,
+		@"select_priv": @YES,
+		@"set_any_definer_priv": @YES
+	} mutableCopy];
+
+	SPUserManagerApplyMySQLDynamicPrivilegeSupportAvailability(supportedPrivileges, YES);
+
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"binlog_admin_priv"], @YES);
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"set_any_definer_priv"], @YES);
+
+	SPUserManagerApplyMySQLDynamicPrivilegeSupportAvailability(supportedPrivileges, NO);
+
+	XCTAssertNil([supportedPrivileges objectForKey:@"allow_nonexistent_definer_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"binlog_admin_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"connection_admin_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"read_only_admin_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"replication_slave_admin_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"set_any_definer_priv"]);
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"create_role_priv"], @YES);
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"select_priv"], @YES);
+}
+
+- (void)testMySQLDynamicGrantOptionPreservationOnlyAppliesToTrackedDynamicPrivileges
+{
+	NSSet *grantOptionPrivilegeKeys = [NSSet setWithObjects:@"binlog_admin_priv", @"select_priv", nil];
+
+	XCTAssertTrue(SPUserManagerShouldPreserveMySQLDynamicPrivilegeGrantOption(@"binlog_admin_priv", grantOptionPrivilegeKeys));
+	XCTAssertFalse(SPUserManagerShouldPreserveMySQLDynamicPrivilegeGrantOption(@"select_priv", grantOptionPrivilegeKeys));
+	XCTAssertFalse(SPUserManagerShouldPreserveMySQLDynamicPrivilegeGrantOption(@"set_any_definer_priv", grantOptionPrivilegeKeys));
+	XCTAssertFalse(SPUserManagerShouldPreserveMySQLDynamicPrivilegeGrantOption(@"create_role_priv", grantOptionPrivilegeKeys));
+}
+
+- (void)testMariaDBGlobalPrivAccessFailureKeepsSchemaShowCreateRoutineSupport
+{
+	NSMutableDictionary *supportedPrivileges = [@{
+		@"select_priv": @YES,
+		@"create_role_priv": @YES,
+		@"binlog_admin_priv": @YES,
+		@"connection_admin_priv": @YES,
+		@"replication_master_admin_priv": @YES,
+		@"show_create_routine_priv": @YES
+	} mutableCopy];
+
+	SPUserManagerApplyMariaDBGlobalPrivilegeSupportAvailability(supportedPrivileges, YES);
+
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:SPUserManagerGlobalShowCreateRoutinePrivilegeSupportKey()], @YES);
+
+	SPUserManagerApplyMariaDBGlobalPrivilegeSupportAvailability(supportedPrivileges, NO);
+
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"select_priv"], @YES);
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"create_role_priv"], @YES);
+	XCTAssertNil([supportedPrivileges objectForKey:@"binlog_admin_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"connection_admin_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"replication_master_admin_priv"]);
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"show_create_routine_priv"], @YES);
+	XCTAssertNil([supportedPrivileges objectForKey:SPUserManagerGlobalShowCreateRoutinePrivilegeSupportKey()]);
+}
+
+- (void)testGrantAllShortcutIsDatabaseScoped
+{
+	XCTAssertTrue(SPUserManagerShouldUseAllPrivilegesShortcut(3, 3, YES));
+	XCTAssertFalse(SPUserManagerShouldUseAllPrivilegesShortcut(2, 3, YES));
+	XCTAssertFalse(SPUserManagerShouldUseAllPrivilegesShortcut(0, 0, YES));
+	XCTAssertFalse(SPUserManagerShouldUseAllPrivilegesShortcut(3, 3, NO));
 }
 
 @end
