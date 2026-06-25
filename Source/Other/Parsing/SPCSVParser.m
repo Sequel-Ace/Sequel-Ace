@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPCSVParser.h"
+#import "SPNotLoaded.h"
 
 /**
  * Please see the header files for a general description of the purpose of this class.
@@ -471,6 +472,14 @@
 - (void) setEscapeStringsAreMatchedStrictly:(BOOL)strictMatching
 {
 	useStrictEscapeMatching = strictMatching;
+}
+
+/**
+ * Return the currently configured line terminator string.
+ */
+- (NSString *)lineTerminatorString
+{
+	return lineEndString;
 }
 
 #pragma mark -

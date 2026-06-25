@@ -34,30 +34,30 @@
         <window title="User Managment" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" deferred="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="3" userLabel="UserManagerView">
             <windowStyleMask key="styleMask" titled="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="459" y="282" width="815" height="506"/>
+            <rect key="contentRect" x="459" y="282" width="870" height="536"/>
             <rect key="screenRect" x="0.0" y="0.0" width="2880" height="1595"/>
-            <value key="minSize" type="size" width="752" height="506"/>
+            <value key="minSize" type="size" width="870" height="536"/>
             <view key="contentView" id="4">
-                <rect key="frame" x="0.0" y="0.0" width="815" height="506"/>
+                <rect key="frame" x="0.0" y="0.0" width="870" height="536"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <splitView fixedFrame="YES" dividerStyle="thin" vertical="YES" translatesAutoresizingMaskIntoConstraints="NO" id="25" customClass="SPSplitView">
-                        <rect key="frame" x="0.0" y="0.0" width="815" height="506"/>
+                        <rect key="frame" x="0.0" y="0.0" width="870" height="536"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <customView fixedFrame="YES" id="26">
-                                <rect key="frame" x="0.0" y="0.0" width="177" height="506"/>
+                                <rect key="frame" x="0.0" y="0.0" width="177" height="536"/>
                                 <autoresizingMask key="autoresizingMask" heightSizable="YES"/>
                                 <subviews>
                                     <scrollView fixedFrame="YES" borderType="none" autohidesScrollers="YES" horizontalLineScroll="20" horizontalPageScroll="10" verticalLineScroll="20" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="28">
-                                        <rect key="frame" x="0.0" y="30" width="177" height="476"/>
+                                        <rect key="frame" x="0.0" y="30" width="177" height="506"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <clipView key="contentView" drawsBackground="NO" id="VfC-c0-tv4">
-                                            <rect key="frame" x="0.0" y="0.0" width="177" height="476"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="177" height="506"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <subviews>
                                                 <outlineView focusRingType="none" verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" selectionHighlightStyle="sourceList" columnReordering="NO" multipleSelection="NO" autosaveColumns="NO" rowHeight="20" headerView="i5I-fd-SyY" indentationPerLevel="14" autoresizesOutlineColumn="YES" outlineTableColumn="33" id="31" customClass="SPOutlineView">
-                                                    <rect key="frame" x="0.0" y="0.0" width="177" height="448"/>
+                                                    <rect key="frame" x="0.0" y="0.0" width="177" height="478"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <size key="intercellSpacing" width="3" height="0.0"/>
                                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -95,11 +95,11 @@
                                             <nil key="backgroundColor"/>
                                         </clipView>
                                         <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" controlSize="small" horizontal="YES" id="30">
-                                            <rect key="frame" x="0.0" y="462" width="171" height="14"/>
+                                            <rect key="frame" x="0.0" y="492" width="171" height="14"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                         <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" controlSize="small" horizontal="NO" id="29">
-                                            <rect key="frame" x="183" y="17" width="11" height="456"/>
+                                            <rect key="frame" x="183" y="17" width="11" height="486"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </scroller>
                                         <tableHeaderView key="headerView" wantsLayer="YES" id="i5I-fd-SyY">
@@ -181,11 +181,11 @@
                                 </subviews>
                             </customView>
                             <customView fixedFrame="YES" id="27">
-                                <rect key="frame" x="178" y="0.0" width="637" height="506"/>
+                                <rect key="frame" x="178" y="0.0" width="692" height="536"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="124">
-                                        <rect key="frame" x="329" y="12" width="147" height="32"/>
+                                        <rect key="frame" x="384" y="12" width="147" height="32"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
                                         <buttonCell key="cell" type="push" title="Cancel" bezelStyle="rounded" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="125">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -199,7 +199,7 @@ Gw
                                         </connections>
                                     </button>
                                     <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="122">
-                                        <rect key="frame" x="476" y="12" width="147" height="32"/>
+                                        <rect key="frame" x="531" y="12" width="147" height="32"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
                                         <buttonCell key="cell" type="push" title="Apply" bezelStyle="rounded" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="123">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -213,13 +213,13 @@ DQ
                                         </connections>
                                     </button>
                                     <tabView fixedFrame="YES" allowsTruncatedLabels="NO" initialItem="38" translatesAutoresizingMaskIntoConstraints="NO" id="37">
-                                        <rect key="frame" x="13" y="40" width="611" height="460"/>
+                                        <rect key="frame" x="13" y="40" width="666" height="490"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <font key="font" metaFont="system"/>
                                         <tabViewItems>
                                             <tabViewItem label="General" identifier="General" id="38">
                                                 <view key="view" id="41">
-                                                    <rect key="frame" x="10" y="33" width="591" height="414"/>
+                                                    <rect key="frame" x="10" y="33" width="646" height="444"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <subviews>
                                                         <box autoresizesSubviews="NO" fixedFrame="YES" borderType="line" title="Login Information" translatesAutoresizingMaskIntoConstraints="NO" id="44">
@@ -299,22 +299,22 @@ DQ
                                             </tabViewItem>
                                             <tabViewItem label="Global Privileges" identifier="Global Privileges" id="189">
                                                 <view key="view" id="190">
-                                                    <rect key="frame" x="10" y="33" width="591" height="414"/>
+                                                    <rect key="frame" x="10" y="33" width="646" height="444"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <subviews>
                                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="592">
-                                                            <rect key="frame" x="8" y="12" width="574" height="399"/>
+                                                            <rect key="frame" x="8" y="12" width="629" height="429"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                             <subviews>
                                                                 <box autoresizesSubviews="NO" borderType="line" title="Views and Procedures" translatesAutoresizingMaskIntoConstraints="NO" id="452">
-                                                                    <rect key="frame" x="273" y="253" width="293" height="134"/>
+                                                                    <rect key="frame" x="273" y="271" width="348" height="141"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                                                     <view key="contentView" id="kIh-Ff-5kV">
-                                                                        <rect key="frame" x="3" y="3" width="287" height="116"/>
+                                                                        <rect key="frame" x="3" y="3" width="342" height="123"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <subviews>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="473">
-                                                                                <rect key="frame" x="16" y="90" width="259" height="18"/>
+                                                                                <rect key="frame" x="16" y="97" width="259" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Create View" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="474">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -330,7 +330,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="475">
-                                                                                <rect key="frame" x="16" y="70" width="259" height="18"/>
+                                                                                <rect key="frame" x="16" y="78" width="259" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Show View" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="476">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -345,8 +345,29 @@ DQ
                                                                                     </binding>
                                                                                 </connections>
                                                                             </button>
+                                                                            <button translatesAutoresizingMaskIntoConstraints="NO" id="sCr-rT-001">
+                                                                                <rect key="frame" x="16" y="2" width="259" height="18"/>
+                                                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                <buttonCell key="cell" type="check" title="Show Create Routine" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="sCr-rT-002">
+                                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                    <font key="font" metaFont="system"/>
+                                                                                </buttonCell>
+                                                                                <connections>
+                                                                                    <binding destination="648" name="enabled" keyPath="show_create_routine_global_priv" id="sCr-rT-003">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNotNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="648" name="hidden" keyPath="show_create_routine_global_priv" id="sCr-rT-005">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="48" name="value" keyPath="selection.show_create_routine_priv" id="sCr-rT-004"/>
+                                                                                </connections>
+                                                                            </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="477">
-                                                                                <rect key="frame" x="16" y="50" width="259" height="18"/>
+                                                                                <rect key="frame" x="16" y="59" width="259" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Create Routine" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="478">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -362,7 +383,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="479">
-                                                                                <rect key="frame" x="16" y="30" width="259" height="18"/>
+                                                                                <rect key="frame" x="16" y="40" width="259" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Alter Routine" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="480">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -378,7 +399,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="481">
-                                                                                <rect key="frame" x="16" y="10" width="259" height="18"/>
+                                                                                <rect key="frame" x="16" y="21" width="259" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Execute" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="482">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -397,7 +418,7 @@ DQ
                                                                     </view>
                                                                 </box>
                                                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="511">
-                                                                    <rect key="frame" x="66" y="12" width="157" height="32"/>
+                                                                    <rect key="frame" x="150" y="15" width="122" height="32"/>
                                                                     <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
                                                                     <buttonCell key="cell" type="push" title="Uncheck All" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="512">
                                                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -408,7 +429,7 @@ DQ
                                                                     </connections>
                                                                 </button>
                                                                 <box autoresizesSubviews="NO" borderType="line" title="Database and Tables" translatesAutoresizingMaskIntoConstraints="NO" id="451">
-                                                                    <rect key="frame" x="17" y="153" width="254" height="234"/>
+                                                                    <rect key="frame" x="17" y="178" width="254" height="234"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                                                     <view key="contentView" id="BCE-hZ-s0G">
                                                                         <rect key="frame" x="3" y="3" width="248" height="216"/>
@@ -431,7 +452,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="457">
-                                                                                <rect key="frame" x="16" y="170" width="220" height="18"/>
+                                                                                <rect key="frame" x="16" y="171" width="220" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Insert" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="458">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -447,7 +468,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="459">
-                                                                                <rect key="frame" x="16" y="150" width="220" height="18"/>
+                                                                                <rect key="frame" x="16" y="152" width="220" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Update" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="460">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -463,7 +484,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="461">
-                                                                                <rect key="frame" x="16" y="130" width="220" height="18"/>
+                                                                                <rect key="frame" x="16" y="133" width="220" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Delete" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="462">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -479,7 +500,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="463">
-                                                                                <rect key="frame" x="16" y="110" width="220" height="18"/>
+                                                                                <rect key="frame" x="16" y="114" width="220" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="References" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="464">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -495,7 +516,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="465">
-                                                                                <rect key="frame" x="16" y="90" width="220" height="18"/>
+                                                                                <rect key="frame" x="16" y="95" width="220" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Create" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="466">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -511,7 +532,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="467">
-                                                                                <rect key="frame" x="16" y="70" width="220" height="18"/>
+                                                                                <rect key="frame" x="16" y="76" width="220" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Drop" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="468">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -527,7 +548,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="469">
-                                                                                <rect key="frame" x="16" y="50" width="220" height="18"/>
+                                                                                <rect key="frame" x="16" y="57" width="220" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Alter" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="470">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -543,7 +564,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="471">
-                                                                                <rect key="frame" x="16" y="30" width="220" height="18"/>
+                                                                                <rect key="frame" x="16" y="38" width="220" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Index" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="472">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -559,7 +580,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="719">
-                                                                                <rect key="frame" x="16" y="10" width="220" height="18"/>
+                                                                                <rect key="frame" x="16" y="19" width="220" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Trigger" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="720">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -578,7 +599,7 @@ DQ
                                                                     </view>
                                                                 </box>
                                                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="509">
-                                                                    <rect key="frame" x="65" y="44" width="157" height="32"/>
+                                                                    <rect key="frame" x="17" y="15" width="122" height="32"/>
                                                                     <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
                                                                     <buttonCell key="cell" type="push" title="Check All" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="510">
                                                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -589,14 +610,14 @@ DQ
                                                                     </connections>
                                                                 </button>
                                                                 <box autoresizesSubviews="NO" borderType="line" title="Administration" translatesAutoresizingMaskIntoConstraints="NO" id="453">
-                                                                    <rect key="frame" x="273" y="15" width="293" height="234"/>
+                                                                    <rect key="frame" x="273" y="0" width="348" height="255"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                                                     <view key="contentView" id="F8k-eh-RHk">
-                                                                        <rect key="frame" x="3" y="3" width="287" height="216"/>
+                                                                        <rect key="frame" x="3" y="3" width="342" height="237"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <subviews>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="487">
-                                                                                <rect key="frame" x="16" y="190" width="112" height="18"/>
+                                                                                <rect key="frame" x="16" y="211" width="160" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Reload" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="488">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -612,7 +633,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="489">
-                                                                                <rect key="frame" x="16" y="170" width="112" height="18"/>
+                                                                                <rect key="frame" x="16" y="192" width="160" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Shutdown" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="490">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -628,7 +649,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="491">
-                                                                                <rect key="frame" x="16" y="150" width="259" height="18"/>
+                                                                                <rect key="frame" x="16" y="173" width="160" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="File" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="492">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -644,7 +665,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="493">
-                                                                                <rect key="frame" x="16" y="130" width="259" height="18"/>
+                                                                                <rect key="frame" x="16" y="154" width="160" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Process" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="494">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -660,7 +681,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="495">
-                                                                                <rect key="frame" x="16" y="110" width="259" height="18"/>
+                                                                                <rect key="frame" x="16" y="135" width="160" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Super" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="496">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -676,7 +697,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="497">
-                                                                                <rect key="frame" x="16" y="90" width="259" height="18"/>
+                                                                                <rect key="frame" x="16" y="116" width="160" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Create Temp Table" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="498">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -692,7 +713,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="499">
-                                                                                <rect key="frame" x="16" y="70" width="259" height="18"/>
+                                                                                <rect key="frame" x="16" y="97" width="160" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Lock Tables" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="500">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -708,7 +729,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="501">
-                                                                                <rect key="frame" x="16" y="50" width="259" height="18"/>
+                                                                                <rect key="frame" x="16" y="78" width="160" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Show Databases" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="502">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -724,7 +745,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="503">
-                                                                                <rect key="frame" x="16" y="30" width="259" height="18"/>
+                                                                                <rect key="frame" x="16" y="59" width="160" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Create User" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="504">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -740,7 +761,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="505">
-                                                                                <rect key="frame" x="16" y="10" width="259" height="18"/>
+                                                                                <rect key="frame" x="16" y="40" width="160" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Grant" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="506">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -755,8 +776,50 @@ DQ
                                                                                     <binding destination="48" name="value" keyPath="selection.grant_option_priv" id="540"/>
                                                                                 </connections>
                                                                             </button>
+                                                                            <button translatesAutoresizingMaskIntoConstraints="NO" id="sad-GL-bt1">
+                                                                                <rect key="frame" x="16" y="21" width="160" height="18"/>
+                                                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                <buttonCell key="cell" type="check" title="Set Any Definer" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="sad-GL-cl1">
+                                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                    <font key="font" metaFont="system"/>
+                                                                                </buttonCell>
+                                                                                <connections>
+                                                                                    <binding destination="648" name="enabled" keyPath="set_any_definer_priv" id="sad-GL-en1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNotNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="648" name="hidden" keyPath="set_any_definer_priv" id="sad-GL-hi1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="48" name="value" keyPath="selection.set_any_definer_priv" id="sad-GL-va1"/>
+                                                                                </connections>
+                                                                            </button>
+                                                                            <button translatesAutoresizingMaskIntoConstraints="NO" id="and-GL-bt1">
+                                                                                <rect key="frame" x="16" y="2" width="160" height="18"/>
+                                                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                <buttonCell key="cell" type="check" title="Nonexistent Definer" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="and-GL-cl1">
+                                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                    <font key="font" metaFont="system"/>
+                                                                                </buttonCell>
+                                                                                <connections>
+                                                                                    <binding destination="648" name="enabled" keyPath="allow_nonexistent_definer_priv" id="and-GL-en1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNotNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="648" name="hidden" keyPath="allow_nonexistent_definer_priv" id="and-GL-hi1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="48" name="value" keyPath="selection.allow_nonexistent_definer_priv" id="and-GL-va1"/>
+                                                                                </connections>
+                                                                            </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="725">
-                                                                                <rect key="frame" x="132" y="190" width="143" height="18"/>
+                                                                                <rect key="frame" x="186" y="211" width="148" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Event" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="726">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -772,7 +835,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="ecH-YW-CVE">
-                                                                                <rect key="frame" x="132" y="170" width="143" height="18"/>
+                                                                                <rect key="frame" x="186" y="192" width="148" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Create Tablespace" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="ftz-WX-x7r">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -787,18 +850,228 @@ DQ
                                                                                     <binding destination="48" name="value" keyPath="selection.create_tablespace_priv" id="6GM-JO-bwm"/>
                                                                                 </connections>
                                                                             </button>
+                                                                            <button translatesAutoresizingMaskIntoConstraints="NO" id="crl-GL-bt1">
+                                                                                <rect key="frame" x="186" y="173" width="148" height="18"/>
+                                                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                <buttonCell key="cell" type="check" title="Create Role" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="crl-GL-cl1">
+                                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                    <font key="font" metaFont="system"/>
+                                                                                </buttonCell>
+                                                                                <connections>
+                                                                                    <binding destination="648" name="enabled" keyPath="create_role_priv" id="crl-GL-en1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNotNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="648" name="hidden" keyPath="create_role_priv" id="crl-GL-hi1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="48" name="value" keyPath="selection.create_role_priv" id="crl-GL-va1"/>
+                                                                                </connections>
+                                                                            </button>
+                                                                            <button translatesAutoresizingMaskIntoConstraints="NO" id="drl-GL-bt1">
+                                                                                <rect key="frame" x="186" y="154" width="148" height="18"/>
+                                                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                <buttonCell key="cell" type="check" title="Drop Role" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="drl-GL-cl1">
+                                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                    <font key="font" metaFont="system"/>
+                                                                                </buttonCell>
+                                                                                <connections>
+                                                                                    <binding destination="648" name="enabled" keyPath="drop_role_priv" id="drl-GL-en1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNotNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="648" name="hidden" keyPath="drop_role_priv" id="drl-GL-hi1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="48" name="value" keyPath="selection.drop_role_priv" id="drl-GL-va1"/>
+                                                                                </connections>
+                                                                            </button>
+                                                                            <button translatesAutoresizingMaskIntoConstraints="NO" id="bad-GL-bt1">
+                                                                                <rect key="frame" x="186" y="135" width="148" height="18"/>
+                                                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                <buttonCell key="cell" type="check" title="Binlog Admin" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="bad-GL-cl1">
+                                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                    <font key="font" metaFont="system"/>
+                                                                                </buttonCell>
+                                                                                <connections>
+                                                                                    <binding destination="648" name="enabled" keyPath="binlog_admin_priv" id="bad-GL-en1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNotNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="648" name="hidden" keyPath="binlog_admin_priv" id="bad-GL-hi1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="48" name="value" keyPath="selection.binlog_admin_priv" id="bad-GL-va1"/>
+                                                                                </connections>
+                                                                            </button>
+                                                                            <button translatesAutoresizingMaskIntoConstraints="NO" id="bmo-GL-bt1">
+                                                                                <rect key="frame" x="186" y="116" width="148" height="18"/>
+                                                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                <buttonCell key="cell" type="check" title="Binlog Monitor" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="bmo-GL-cl1">
+                                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                    <font key="font" metaFont="system"/>
+                                                                                </buttonCell>
+                                                                                <connections>
+                                                                                    <binding destination="648" name="enabled" keyPath="binlog_monitor_priv" id="bmo-GL-en1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNotNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="648" name="hidden" keyPath="binlog_monitor_priv" id="bmo-GL-hi1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="48" name="value" keyPath="selection.binlog_monitor_priv" id="bmo-GL-va1"/>
+                                                                                </connections>
+                                                                            </button>
+                                                                            <button translatesAutoresizingMaskIntoConstraints="NO" id="brp-GL-bt1">
+                                                                                <rect key="frame" x="186" y="97" width="148" height="18"/>
+                                                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                <buttonCell key="cell" type="check" title="Binlog Replay" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="brp-GL-cl1">
+                                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                    <font key="font" metaFont="system"/>
+                                                                                </buttonCell>
+                                                                                <connections>
+                                                                                    <binding destination="648" name="enabled" keyPath="binlog_replay_priv" id="brp-GL-en1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNotNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="648" name="hidden" keyPath="binlog_replay_priv" id="brp-GL-hi1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="48" name="value" keyPath="selection.binlog_replay_priv" id="brp-GL-va1"/>
+                                                                                </connections>
+                                                                            </button>
+                                                                            <button translatesAutoresizingMaskIntoConstraints="NO" id="cad-GL-bt1">
+                                                                                <rect key="frame" x="186" y="78" width="148" height="18"/>
+                                                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                <buttonCell key="cell" type="check" title="Connection Admin" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="cad-GL-cl1">
+                                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                    <font key="font" metaFont="system"/>
+                                                                                </buttonCell>
+                                                                                <connections>
+                                                                                    <binding destination="648" name="enabled" keyPath="connection_admin_priv" id="cad-GL-en1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNotNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="648" name="hidden" keyPath="connection_admin_priv" id="cad-GL-hi1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="48" name="value" keyPath="selection.connection_admin_priv" id="cad-GL-va1"/>
+                                                                                </connections>
+                                                                            </button>
+                                                                            <button translatesAutoresizingMaskIntoConstraints="NO" id="fad-GL-bt1">
+                                                                                <rect key="frame" x="186" y="59" width="148" height="18"/>
+                                                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                <buttonCell key="cell" type="check" title="Federated Admin" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="fad-GL-cl1">
+                                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                    <font key="font" metaFont="system"/>
+                                                                                </buttonCell>
+                                                                                <connections>
+                                                                                    <binding destination="648" name="enabled" keyPath="federated_admin_priv" id="fad-GL-en1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNotNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="648" name="hidden" keyPath="federated_admin_priv" id="fad-GL-hi1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="48" name="value" keyPath="selection.federated_admin_priv" id="fad-GL-va1"/>
+                                                                                </connections>
+                                                                            </button>
+                                                                            <button translatesAutoresizingMaskIntoConstraints="NO" id="roa-GL-bt1">
+                                                                                <rect key="frame" x="186" y="40" width="148" height="18"/>
+                                                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                <buttonCell key="cell" type="check" title="Read Only Admin" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="roa-GL-cl1">
+                                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                    <font key="font" metaFont="system"/>
+                                                                                </buttonCell>
+                                                                                <connections>
+                                                                                    <binding destination="648" name="enabled" keyPath="read_only_admin_priv" id="roa-GL-en1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNotNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="648" name="hidden" keyPath="read_only_admin_priv" id="roa-GL-hi1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="48" name="value" keyPath="selection.read_only_admin_priv" id="roa-GL-va1"/>
+                                                                                </connections>
+                                                                            </button>
+                                                                            <button translatesAutoresizingMaskIntoConstraints="NO" id="rmo-GL-bt1">
+                                                                                <rect key="frame" x="186" y="21" width="148" height="18"/>
+                                                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                <buttonCell key="cell" type="check" title="Replica Monitor" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="rmo-GL-cl1">
+                                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                    <font key="font" metaFont="system"/>
+                                                                                </buttonCell>
+                                                                                <connections>
+                                                                                    <binding destination="648" name="enabled" keyPath="replica_monitor_priv" id="rmo-GL-en1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNotNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="648" name="hidden" keyPath="replica_monitor_priv" id="rmo-GL-hi1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="48" name="value" keyPath="selection.replica_monitor_priv" id="rmo-GL-va1"/>
+                                                                                </connections>
+                                                                            </button>
+                                                                            <button translatesAutoresizingMaskIntoConstraints="NO" id="set-GL-bt1">
+                                                                                <rect key="frame" x="186" y="2" width="148" height="18"/>
+                                                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                <buttonCell key="cell" type="check" title="Set User" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="set-GL-cl1">
+                                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                    <font key="font" metaFont="system"/>
+                                                                                </buttonCell>
+                                                                                <connections>
+                                                                                    <binding destination="648" name="enabled" keyPath="set_user_priv" id="set-GL-en1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNotNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="648" name="hidden" keyPath="set_user_priv" id="set-GL-hi1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="48" name="value" keyPath="selection.set_user_priv" id="set-GL-va1"/>
+                                                                                </connections>
+                                                                            </button>
                                                                         </subviews>
                                                                     </view>
                                                                 </box>
                                                                 <box autoresizesSubviews="NO" borderType="line" title="Replication" translatesAutoresizingMaskIntoConstraints="NO" id="454">
-                                                                    <rect key="frame" x="17" y="75" width="255" height="74"/>
+                                                                    <rect key="frame" x="17" y="49" width="255" height="103"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                                                     <view key="contentView" id="mKr-0m-x8O">
-                                                                        <rect key="frame" x="3" y="3" width="249" height="56"/>
+                                                                        <rect key="frame" x="3" y="3" width="249" height="85"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <subviews>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="483">
-                                                                                <rect key="frame" x="16" y="30" width="221" height="18"/>
+                                                                                <rect key="frame" x="16" y="59" width="221" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Replication Client" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="484">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -814,7 +1087,7 @@ DQ
                                                                                 </connections>
                                                                             </button>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="485">
-                                                                                <rect key="frame" x="16" y="10" width="221" height="18"/>
+                                                                                <rect key="frame" x="16" y="40" width="221" height="18"/>
                                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                 <buttonCell key="cell" type="check" title="Replication Slave" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="486">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -829,6 +1102,48 @@ DQ
                                                                                     <binding destination="48" name="value" keyPath="selection.replication_slave_priv" id="542"/>
                                                                                 </connections>
                                                                             </button>
+                                                                            <button translatesAutoresizingMaskIntoConstraints="NO" id="rma-GL-bt1">
+                                                                                <rect key="frame" x="16" y="21" width="221" height="18"/>
+                                                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                <buttonCell key="cell" type="check" title="Replication Master Admin" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="rma-GL-cl1">
+                                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                    <font key="font" metaFont="system"/>
+                                                                                </buttonCell>
+                                                                                <connections>
+                                                                                    <binding destination="648" name="enabled" keyPath="replication_master_admin_priv" id="rma-GL-en1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNotNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="648" name="hidden" keyPath="replication_master_admin_priv" id="rma-GL-hi1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="48" name="value" keyPath="selection.replication_master_admin_priv" id="rma-GL-va1"/>
+                                                                                </connections>
+                                                                            </button>
+                                                                            <button translatesAutoresizingMaskIntoConstraints="NO" id="rsa-GL-bt1">
+                                                                                <rect key="frame" x="16" y="2" width="221" height="18"/>
+                                                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                <buttonCell key="cell" type="check" title="Replication Slave Admin" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="rsa-GL-cl1">
+                                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                                    <font key="font" metaFont="system"/>
+                                                                                </buttonCell>
+                                                                                <connections>
+                                                                                    <binding destination="648" name="enabled" keyPath="replication_slave_admin_priv" id="rsa-GL-en1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNotNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="648" name="hidden" keyPath="replication_slave_admin_priv" id="rsa-GL-hi1">
+                                                                                        <dictionary key="options">
+                                                                                            <string key="NSValueTransformerName">NSIsNil</string>
+                                                                                        </dictionary>
+                                                                                    </binding>
+                                                                                    <binding destination="48" name="value" keyPath="selection.replication_slave_admin_priv" id="rsa-GL-va1"/>
+                                                                                </connections>
+                                                                            </button>
                                                                         </subviews>
                                                                     </view>
                                                                 </box>
@@ -839,7 +1154,7 @@ DQ
                                             </tabViewItem>
                                             <tabViewItem label="Schema Privileges" identifier="Schema Privileges" id="743">
                                                 <view key="view" id="744">
-                                                    <rect key="frame" x="10" y="33" width="591" height="414"/>
+                                                    <rect key="frame" x="10" y="33" width="646" height="444"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <subviews>
                                                         <scrollView autohidesScrollers="YES" horizontalLineScroll="16" horizontalPageScroll="10" verticalLineScroll="16" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="745">
@@ -1024,7 +1339,7 @@ DQ
                                             </tabViewItem>
                                             <tabViewItem label="Resources" identifier="Resources" id="42">
                                                 <view key="view" id="43">
-                                                    <rect key="frame" x="10" y="33" width="591" height="414"/>
+                                                    <rect key="frame" x="10" y="33" width="646" height="444"/>
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <subviews>
                                                         <box borderType="line" title="Resource Limits" translatesAutoresizingMaskIntoConstraints="NO" id="593">
@@ -1193,14 +1508,29 @@ DQ
                 <string>references_priv</string>
                 <string>alter_priv</string>
                 <string>index_priv</string>
+                <string>allow_nonexistent_definer_priv</string>
+                <string>binlog_admin_priv</string>
+                <string>binlog_monitor_priv</string>
+                <string>binlog_replay_priv</string>
+                <string>connection_admin_priv</string>
+                <string>create_role_priv</string>
                 <string>create_view_priv</string>
+                <string>drop_role_priv</string>
+                <string>federated_admin_priv</string>
                 <string>show_view_priv</string>
+                <string>show_create_routine_priv</string>
                 <string>create_routine_priv</string>
                 <string>alter_routine_priv</string>
                 <string>execute_priv</string>
+                <string>read_only_admin_priv</string>
                 <string>shutdown_priv</string>
                 <string>file_priv</string>
                 <string>process_priv</string>
+                <string>replica_monitor_priv</string>
+                <string>replication_master_admin_priv</string>
+                <string>replication_slave_admin_priv</string>
+                <string>set_any_definer_priv</string>
+                <string>set_user_priv</string>
                 <string>super_priv</string>
                 <string>create_temporary_table_priv</string>
                 <string>lock_table_priv</string>

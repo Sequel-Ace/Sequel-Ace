@@ -33,6 +33,7 @@
 
 #import "SPDatabaseAction.h"
 #import "SPDatabaseData.h"
+#import "SPUserManager.h"
 #import "sequel-ace-Swift.h"
 #import <SPMySQL/SPMySQL.h>
 #import "../Source/Controllers/DataControllers/SPServerSupport.m"
@@ -53,12 +54,38 @@
 
 @end
 
+@interface SPUserManagerPrivilegeErrorTests : XCTestCase
+
+- (void)testMariaDBShowCreateRoutineErrorAddsSpecificExplanation;
+- (void)testMariaDBGrantAllErrorAddsSpecificExplanationWhenShowCreateRoutineIsSupported;
+- (void)testRegularMySQLErrorDoesNotMentionMariaDBShowCreateRoutine;
+- (void)testRevokeGrantOptionFailureMessageUsesGrantOptionContext;
+- (void)testUserManagerModelSupportsCurrentGlobalGrantTablePrivileges;
+- (void)testUserManagerModelKeepsGlobalOnlyPrivilegesOutOfSchemaPrivileges;
+- (void)testMySQLDynamicPrivilegeGrantNamesKeepUnderscores;
+- (void)testMySQLDynamicPrivAccessFailureHidesDynamicPrivilegeSupport;
+- (void)testMySQLDynamicGrantOptionPreservationOnlyAppliesToTrackedDynamicPrivileges;
+- (void)testMariaDBGlobalPrivAccessFailureKeepsSchemaShowCreateRoutineSupport;
+- (void)testGrantAllShortcutIsDatabaseScoped;
+
+@end
+
 @interface SPDatabaseDataCharsetTests : XCTestCase
 
 - (void)testNormalizeCharacterSetRows_MapsShowCharacterSetColumns;
 - (void)testNormalizeCharacterSetRows_DeduplicatesByCharacterSetName;
 - (void)testNormalizeCharacterSetRows_SkipsRowsWithoutCharacterSetName;
 - (void)testFallbackCharacterSetEncodings_UsesExpectedOrder;
+
+@end
+
+@interface SPDatabaseDataCollationTests : XCTestCase
+
+- (void)testNormalizeCollationRows_MapsShowCollationColumns;
+- (void)testSortCollationRows_OrdersByCollationName;
+- (void)testShowCollationForEncoding_EscapesEncodingAndReturnsSortedNormalizedRows;
+- (void)testDatabaseCollationsForEncoding_ShowFallbackRetriesUtf8Alias;
+- (void)testDatabaseCollationsForEncoding_ShowFallbackRetriesUtf8mb3Alias;
 
 @end
 
@@ -73,6 +100,10 @@
 
 - (NSArray *)_normalizedCharacterSetEncodingsFromRows:(NSArray *)rows;
 - (NSArray *)_fallbackCharacterSetEncodings;
+- (NSArray *)_normalizedCollationRowsFromRows:(NSArray *)rows;
+- (NSArray *)_sortedCollationRowsByName:(NSArray *)rows;
+- (NSArray *)_getCollationRowsFromShowCollationForEncoding:(NSString *)encoding;
+- (NSArray *)_getDatabaseDataForQuery:(NSString *)query;
 
 @end
 
@@ -127,6 +158,257 @@
 	XCTAssertTrue([createDb createDatabase:@"target_name" withEncoding:@"" collation:nil], @"create database return");
 	
 	OCMVerifyAll(mockConnection);
+}
+
+@end
+
+@implementation SPUserManagerPrivilegeErrorTests
+
+- (void)testMariaDBShowCreateRoutineErrorAddsSpecificExplanation
+{
+	NSString *message = SPUserManagerPrivilegeOperationErrorMessageForServerError(@"Access denied for user 'admin'@'127.0.0.1' to database 'sample_db'",
+																				 @[@"show create routine"],
+																				 @"grant",
+																				 @"sample_db",
+																				 @"app_user",
+																				 @"localhost",
+																				 @"GRANT SHOW CREATE ROUTINE ON `sample_db`.* TO 'app_user'@'localhost'",
+																				 YES,
+																				 YES);
+
+	XCTAssertTrue([message containsString:@"Could not grant SHOW CREATE ROUTINE on database \"sample_db\" for app_user@localhost"]);
+	XCTAssertTrue([message containsString:@"Access denied for user 'admin'@'127.0.0.1' to database 'sample_db'"]);
+	XCTAssertTrue([message containsString:@"SHOW CREATE ROUTINE"]);
+	XCTAssertTrue([message containsString:@"SHOW GRANTS FOR CURRENT_USER()"]);
+}
+
+- (void)testMariaDBGrantAllErrorAddsSpecificExplanationWhenShowCreateRoutineIsSupported
+{
+	NSString *message = SPUserManagerPrivilegeOperationErrorMessageForServerError(@"Access denied for user 'root'@'localhost' to database 'test'",
+																				 @[],
+																				 @"grant",
+																				 @"test",
+																				 @"testuser",
+																				 @"localhost",
+																				 @"GRANT ALL ON `test`.* TO 'testuser'@'localhost' WITH GRANT OPTION",
+																				 YES,
+																				 YES);
+
+	XCTAssertTrue([message containsString:@"Could not grant ALL PRIVILEGES on database \"test\" for testuser@localhost"]);
+	XCTAssertTrue([message containsString:@"SHOW CREATE ROUTINE"]);
+}
+
+- (void)testRegularMySQLErrorDoesNotMentionMariaDBShowCreateRoutine
+{
+	NSString *message = SPUserManagerPrivilegeOperationErrorMessageForServerError(@"Access denied",
+																				 @[@"select"],
+																				 @"grant",
+																				 @"sample_db",
+																				 @"app_user",
+																				 @"localhost",
+																				 @"GRANT SELECT ON `sample_db`.* TO 'app_user'@'localhost'",
+																				 NO,
+																				 YES);
+
+	XCTAssertTrue([message containsString:@"Could not grant SELECT on database \"sample_db\" for app_user@localhost"]);
+	XCTAssertTrue([message containsString:@"Access denied"]);
+	XCTAssertFalse([message containsString:@"SHOW CREATE ROUTINE"]);
+}
+
+- (void)testRevokeGrantOptionFailureMessageUsesGrantOptionContext
+{
+	NSString *message = SPUserManagerPrivilegeOperationErrorMessageForServerError(@"You are not allowed to revoke this privilege",
+																				 @[@"grant option"],
+																				 @"revoke",
+																				 @"sample_db",
+																				 @"app_user",
+																				 @"localhost",
+																				 @"REVOKE GRANT OPTION ON `sample_db`.* FROM 'app_user'@'localhost'",
+																				 NO,
+																				 NO);
+
+	XCTAssertTrue([message containsString:@"Could not revoke GRANT OPTION on database \"sample_db\" for app_user@localhost"]);
+	XCTAssertTrue([message containsString:@"You are not allowed to revoke this privilege"]);
+	XCTAssertFalse([message containsString:@"SELECT"]);
+}
+
+- (void)testRevokeFailureMessageIncludesPrivilegeTargetAndServerReason
+{
+	NSString *message = SPUserManagerPrivilegeOperationErrorMessageForServerError(@"You are not allowed to revoke this privilege",
+																				 @[@"insert", @"update"],
+																				 @"revoke",
+																				 @"sample_db",
+																				 @"app_user",
+																				 @"localhost",
+																				 @"REVOKE INSERT, UPDATE ON `sample_db`.* FROM 'app_user'@'localhost'",
+																				 NO,
+																				 NO);
+
+	XCTAssertTrue([message containsString:@"Could not revoke INSERT, UPDATE on database \"sample_db\" for app_user@localhost"]);
+	XCTAssertTrue([message containsString:@"You are not allowed to revoke this privilege"]);
+}
+
+- (NSXMLDocument *)_userManagerModelDocumentWithError:(NSError **)error
+{
+	NSString *testFilePath = [NSString stringWithUTF8String:__FILE__];
+	NSString *repositoryRoot = [[testFilePath stringByDeletingLastPathComponent] stringByDeletingLastPathComponent];
+	NSURL *modelURL = [NSURL fileURLWithPath:[repositoryRoot stringByAppendingPathComponent:@"Source/Model/CoreData/SPUserManager.xcdatamodel/contents"]];
+
+	return [[NSXMLDocument alloc] initWithContentsOfURL:modelURL options:0 error:error];
+}
+
+- (void)testUserManagerModelSupportsCurrentGlobalGrantTablePrivileges
+{
+	NSError *error = nil;
+	NSXMLDocument *modelDocument = [self _userManagerModelDocumentWithError:&error];
+	NSArray *globalPrivilegeKeys = @[
+		@"allow_nonexistent_definer_priv",
+		@"binlog_admin_priv",
+		@"binlog_monitor_priv",
+		@"binlog_replay_priv",
+		@"connection_admin_priv",
+		@"create_role_priv",
+		@"drop_role_priv",
+		@"federated_admin_priv",
+		@"read_only_admin_priv",
+		@"replica_monitor_priv",
+		@"replication_master_admin_priv",
+		@"replication_slave_admin_priv",
+		@"set_any_definer_priv",
+		@"set_user_priv",
+		@"show_create_routine_priv"
+	];
+
+	XCTAssertNil(error);
+	XCTAssertNotNil(modelDocument);
+
+	for (NSString *privilegeKey in globalPrivilegeKeys)
+	{
+		NSString *xpath = [NSString stringWithFormat:@"/model/entity[@name='SPUser']/attribute[@name='%@']", privilegeKey];
+		XCTAssertEqual([[modelDocument nodesForXPath:xpath error:&error] count], 1U, @"Missing global privilege key %@", privilegeKey);
+		XCTAssertNil(error);
+	}
+}
+
+- (void)testUserManagerModelKeepsGlobalOnlyPrivilegesOutOfSchemaPrivileges
+{
+	NSError *error = nil;
+	NSXMLDocument *modelDocument = [self _userManagerModelDocumentWithError:&error];
+	NSArray *globalOnlyPrivilegeKeys = @[
+		@"allow_nonexistent_definer_priv",
+		@"binlog_admin_priv",
+		@"binlog_monitor_priv",
+		@"binlog_replay_priv",
+		@"connection_admin_priv",
+		@"create_role_priv",
+		@"drop_role_priv",
+		@"federated_admin_priv",
+		@"read_only_admin_priv",
+		@"replica_monitor_priv",
+		@"replication_master_admin_priv",
+		@"replication_slave_admin_priv",
+		@"set_any_definer_priv",
+		@"set_user_priv"
+	];
+
+	XCTAssertNil(error);
+	XCTAssertNotNil(modelDocument);
+	XCTAssertEqual([[modelDocument nodesForXPath:@"/model/entity[@name='Privileges']/attribute[@name='show_create_routine_priv']" error:&error] count], 1U);
+	XCTAssertNil(error);
+
+	for (NSString *privilegeKey in globalOnlyPrivilegeKeys)
+	{
+		NSString *xpath = [NSString stringWithFormat:@"/model/entity[@name='Privileges']/attribute[@name='%@']", privilegeKey];
+		XCTAssertEqual([[modelDocument nodesForXPath:xpath error:&error] count], 0U, @"Global-only privilege key %@ should not be available as a schema privilege", privilegeKey);
+		XCTAssertNil(error);
+	}
+}
+
+- (void)testMySQLDynamicPrivilegeGrantNamesKeepUnderscores
+{
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"allow_nonexistent_definer_priv", NO), @"allow_nonexistent_definer");
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"binlog_admin_priv", NO), @"binlog_admin");
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"connection_admin_priv", NO), @"connection_admin");
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"read_only_admin_priv", NO), @"read_only_admin");
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"replication_slave_admin_priv", NO), @"replication_slave_admin");
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"set_any_definer_priv", NO), @"set_any_definer");
+
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"create_user_priv", NO), @"create user");
+	XCTAssertEqualObjects(SPUserManagerGrantNameForPrivilegeKey(@"set_user_priv", YES), @"set user");
+}
+
+- (void)testMySQLDynamicPrivAccessFailureHidesDynamicPrivilegeSupport
+{
+	NSMutableDictionary *supportedPrivileges = [@{
+		@"allow_nonexistent_definer_priv": @YES,
+		@"binlog_admin_priv": @YES,
+		@"connection_admin_priv": @YES,
+		@"create_role_priv": @YES,
+		@"read_only_admin_priv": @YES,
+		@"replication_slave_admin_priv": @YES,
+		@"select_priv": @YES,
+		@"set_any_definer_priv": @YES
+	} mutableCopy];
+
+	SPUserManagerApplyMySQLDynamicPrivilegeSupportAvailability(supportedPrivileges, YES);
+
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"binlog_admin_priv"], @YES);
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"set_any_definer_priv"], @YES);
+
+	SPUserManagerApplyMySQLDynamicPrivilegeSupportAvailability(supportedPrivileges, NO);
+
+	XCTAssertNil([supportedPrivileges objectForKey:@"allow_nonexistent_definer_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"binlog_admin_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"connection_admin_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"read_only_admin_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"replication_slave_admin_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"set_any_definer_priv"]);
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"create_role_priv"], @YES);
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"select_priv"], @YES);
+}
+
+- (void)testMySQLDynamicGrantOptionPreservationOnlyAppliesToTrackedDynamicPrivileges
+{
+	NSSet *grantOptionPrivilegeKeys = [NSSet setWithObjects:@"binlog_admin_priv", @"select_priv", nil];
+
+	XCTAssertTrue(SPUserManagerShouldPreserveMySQLDynamicPrivilegeGrantOption(@"binlog_admin_priv", grantOptionPrivilegeKeys));
+	XCTAssertFalse(SPUserManagerShouldPreserveMySQLDynamicPrivilegeGrantOption(@"select_priv", grantOptionPrivilegeKeys));
+	XCTAssertFalse(SPUserManagerShouldPreserveMySQLDynamicPrivilegeGrantOption(@"set_any_definer_priv", grantOptionPrivilegeKeys));
+	XCTAssertFalse(SPUserManagerShouldPreserveMySQLDynamicPrivilegeGrantOption(@"create_role_priv", grantOptionPrivilegeKeys));
+}
+
+- (void)testMariaDBGlobalPrivAccessFailureKeepsSchemaShowCreateRoutineSupport
+{
+	NSMutableDictionary *supportedPrivileges = [@{
+		@"select_priv": @YES,
+		@"create_role_priv": @YES,
+		@"binlog_admin_priv": @YES,
+		@"connection_admin_priv": @YES,
+		@"replication_master_admin_priv": @YES,
+		@"show_create_routine_priv": @YES
+	} mutableCopy];
+
+	SPUserManagerApplyMariaDBGlobalPrivilegeSupportAvailability(supportedPrivileges, YES);
+
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:SPUserManagerGlobalShowCreateRoutinePrivilegeSupportKey()], @YES);
+
+	SPUserManagerApplyMariaDBGlobalPrivilegeSupportAvailability(supportedPrivileges, NO);
+
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"select_priv"], @YES);
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"create_role_priv"], @YES);
+	XCTAssertNil([supportedPrivileges objectForKey:@"binlog_admin_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"connection_admin_priv"]);
+	XCTAssertNil([supportedPrivileges objectForKey:@"replication_master_admin_priv"]);
+	XCTAssertEqualObjects([supportedPrivileges objectForKey:@"show_create_routine_priv"], @YES);
+	XCTAssertNil([supportedPrivileges objectForKey:SPUserManagerGlobalShowCreateRoutinePrivilegeSupportKey()]);
+}
+
+- (void)testGrantAllShortcutIsDatabaseScoped
+{
+	XCTAssertTrue(SPUserManagerShouldUseAllPrivilegesShortcut(3, 3, YES));
+	XCTAssertFalse(SPUserManagerShouldUseAllPrivilegesShortcut(2, 3, YES));
+	XCTAssertFalse(SPUserManagerShouldUseAllPrivilegesShortcut(0, 0, YES));
+	XCTAssertFalse(SPUserManagerShouldUseAllPrivilegesShortcut(3, 3, NO));
 }
 
 @end
@@ -244,6 +526,154 @@
 	XCTAssertEqualObjects([[fallbackRows objectAtIndex:1] objectForKey:@"CHARACTER_SET_NAME"], @"utf8");
 	XCTAssertEqualObjects([[fallbackRows objectAtIndex:2] objectForKey:@"CHARACTER_SET_NAME"], @"latin1");
 
+}
+
+@end
+
+@implementation SPDatabaseDataCollationTests
+
+- (void)testNormalizeCollationRows_MapsShowCollationColumns
+{
+	SPDatabaseData *databaseData = [[SPDatabaseData alloc] init];
+
+	NSArray *rows = @[
+		@{
+			@"Collation": @"utf8mb4_general_ci",
+			@"Charset": @"utf8mb4",
+			@"Id": @"45",
+			@"Default": @"Yes",
+			@"Compiled": @"Yes",
+			@"Sortlen": @"1"
+		}
+	];
+
+	NSArray *normalizedRows = [databaseData _normalizedCollationRowsFromRows:rows];
+
+	XCTAssertEqual([normalizedRows count], 1UL);
+	NSDictionary *row = [normalizedRows firstObject];
+	XCTAssertEqualObjects([row objectForKey:@"COLLATION_NAME"], @"utf8mb4_general_ci");
+	XCTAssertEqualObjects([row objectForKey:@"CHARACTER_SET_NAME"], @"utf8mb4");
+	XCTAssertEqualObjects([row objectForKey:@"ID"], @"45");
+	XCTAssertEqualObjects([row objectForKey:@"IS_DEFAULT"], @"Yes");
+	XCTAssertEqualObjects([row objectForKey:@"IS_COMPILED"], @"Yes");
+	XCTAssertEqualObjects([row objectForKey:@"SORTLEN"], @"1");
+}
+
+- (void)testSortCollationRows_OrdersByCollationName
+{
+	SPDatabaseData *databaseData = [[SPDatabaseData alloc] init];
+
+	NSArray *rows = @[
+		@{@"COLLATION_NAME": @"utf8mb4_unicode_ci"},
+		@{@"COLLATION_NAME": @"utf8mb4_bin"},
+		@{@"COLLATION_NAME": @"utf8mb4_general_ci"}
+	];
+
+	NSArray *sortedRows = [databaseData _sortedCollationRowsByName:rows];
+
+	XCTAssertEqualObjects([sortedRows valueForKey:@"COLLATION_NAME"], (@[
+		@"utf8mb4_bin",
+		@"utf8mb4_general_ci",
+		@"utf8mb4_unicode_ci"
+	]));
+}
+
+- (void)testShowCollationForEncoding_EscapesEncodingAndReturnsSortedNormalizedRows
+{
+	SPDatabaseData *databaseData = [[SPDatabaseData alloc] init];
+	id databaseDataMock = OCMPartialMock(databaseData);
+
+	NSArray *rows = @[
+		@{
+			@"Collation": @"utf8mb4_unicode_ci",
+			@"Charset": @"utf8mb4",
+			@"Id": @"224",
+			@"Default": @"",
+			@"Compiled": @"Yes",
+			@"Sortlen": @"8"
+		},
+		@{
+			@"Collation": @"utf8mb4_bin",
+			@"Charset": @"utf8mb4",
+			@"Id": @"46",
+			@"Default": @"",
+			@"Compiled": @"Yes",
+			@"Sortlen": @"1"
+		}
+	];
+
+	OCMStub([databaseDataMock _getDatabaseDataForQuery:@"SHOW COLLATION WHERE `Charset` = 'utf8''mb4'"]).andReturn(rows);
+
+	NSArray *collationRows = [(SPDatabaseData *)databaseDataMock _getCollationRowsFromShowCollationForEncoding:@"utf8'mb4"];
+
+	XCTAssertEqualObjects([collationRows valueForKey:@"COLLATION_NAME"], (@[
+		@"utf8mb4_bin",
+		@"utf8mb4_unicode_ci"
+	]));
+	XCTAssertEqualObjects([[collationRows firstObject] objectForKey:@"CHARACTER_SET_NAME"], @"utf8mb4");
+	OCMVerify([databaseDataMock _getDatabaseDataForQuery:@"SHOW COLLATION WHERE `Charset` = 'utf8''mb4'"]);
+
+	[databaseDataMock stopMocking];
+}
+
+- (void)testDatabaseCollationsForEncoding_ShowFallbackRetriesUtf8Alias
+{
+	SPDatabaseData *databaseData = [[SPDatabaseData alloc] init];
+	id databaseDataMock = OCMPartialMock(databaseData);
+
+	NSArray *aliasRows = @[
+		@{
+			@"Collation": @"utf8mb3_general_ci",
+			@"Charset": @"utf8mb3",
+			@"Id": @"33",
+			@"Default": @"Yes",
+			@"Compiled": @"Yes",
+			@"Sortlen": @"1"
+		}
+	];
+
+	OCMStub([databaseDataMock _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = 'utf8' ORDER BY `collation_name` ASC"]).andReturn(@[]);
+	OCMStub([databaseDataMock _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = 'utf8mb3' ORDER BY `collation_name` ASC"]).andReturn(@[]);
+	OCMStub([databaseDataMock _getDatabaseDataForQuery:@"SHOW COLLATION WHERE `Charset` = 'utf8'"]).andReturn(@[]);
+	OCMStub([databaseDataMock _getDatabaseDataForQuery:@"SHOW COLLATION WHERE `Charset` = 'utf8mb3'"]).andReturn(aliasRows);
+
+	NSArray *collationRows = [(SPDatabaseData *)databaseDataMock getDatabaseCollationsForEncoding:@"utf8"];
+
+	XCTAssertEqualObjects([collationRows valueForKey:@"COLLATION_NAME"], (@[@"utf8mb3_general_ci"]));
+	XCTAssertEqualObjects([[collationRows firstObject] objectForKey:@"CHARACTER_SET_NAME"], @"utf8mb3");
+	OCMVerify([databaseDataMock _getDatabaseDataForQuery:@"SHOW COLLATION WHERE `Charset` = 'utf8mb3'"]);
+
+	[databaseDataMock stopMocking];
+}
+
+- (void)testDatabaseCollationsForEncoding_ShowFallbackRetriesUtf8mb3Alias
+{
+	SPDatabaseData *databaseData = [[SPDatabaseData alloc] init];
+	id databaseDataMock = OCMPartialMock(databaseData);
+
+	NSArray *aliasRows = @[
+		@{
+			@"Collation": @"utf8_general_ci",
+			@"Charset": @"utf8",
+			@"Id": @"33",
+			@"Default": @"Yes",
+			@"Compiled": @"Yes",
+			@"Sortlen": @"1"
+		}
+	];
+
+	OCMStub([databaseDataMock _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = 'utf8mb3' ORDER BY `collation_name` ASC"]).andReturn(@[]);
+	OCMStub([databaseDataMock _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = 'utf8' ORDER BY `collation_name` ASC"]).andReturn(@[]);
+	OCMStub([databaseDataMock _getDatabaseDataForQuery:@"SHOW COLLATION WHERE `Charset` = 'utf8mb3'"]).andReturn(@[]);
+	OCMStub([databaseDataMock _getDatabaseDataForQuery:@"SHOW COLLATION WHERE `Charset` = 'utf8'"]).andReturn(aliasRows);
+
+	NSArray *collationRows = [(SPDatabaseData *)databaseDataMock getDatabaseCollationsForEncoding:@"utf8mb3"];
+
+	XCTAssertEqualObjects([collationRows valueForKey:@"COLLATION_NAME"], (@[@"utf8_general_ci"]));
+	XCTAssertEqualObjects([[collationRows firstObject] objectForKey:@"CHARACTER_SET_NAME"], @"utf8");
+	OCMVerify([databaseDataMock _getDatabaseDataForQuery:@"SHOW COLLATION WHERE `Charset` = 'utf8'"]);
+
+	[databaseDataMock stopMocking];
 }
 
 @end

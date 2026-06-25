@@ -249,6 +249,15 @@
 		5147B0112F8C000400C4C14A /* SAConnectionFormHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0102F8C000400C4C14A /* SAConnectionFormHelpers.swift */; };
 		5147B0122F8C000400C4C14A /* SAConnectionFormHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0102F8C000400C4C14A /* SAConnectionFormHelpers.swift */; };
 		5147B0142F8C000400C4C14A /* SAConnectionFormHelpersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0132F8C000400C4C14A /* SAConnectionFormHelpersTests.swift */; };
+		5147B0162F8D000100C4C14A /* SPCSVParserTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0152F8D000100C4C14A /* SPCSVParserTests.m */; };
+		5147B0172F8D000100C4C14A /* SPCSVParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 5822D3081061833C00CE2157 /* SPCSVParser.m */; };
+		5147B0182F8D000100C4C14A /* SPNotLoaded.m in Sources */ = {isa = PBXBuildFile; fileRef = 582A01E8107C0C170027D42B /* SPNotLoaded.m */; };
+		51AA84022FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AA84012FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift */; };
+		51AA84032FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AA84012FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift */; };
+		51AA84052FDE000100C4C14A /* SAAutoIncrementRuleSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AA84042FDE000100C4C14A /* SAAutoIncrementRuleSupportTests.swift */; };
+		51BB84022FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BB84012FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift */; };
+		51BB84032FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BB84012FDE000200C4C14A /* SAForeignKeyReferenceRuleSupport.swift */; };
+		51BB84052FDE000200C4C14A /* SAForeignKeyReferenceRuleSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BB84042FDE000200C4C14A /* SAForeignKeyReferenceRuleSupportTests.swift */; };
 		5147B01A2F8C000600C4C14A /* SAFavoriteSearchTreeWalker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0192F8C000600C4C14A /* SAFavoriteSearchTreeWalker.swift */; };
 		514B40A02F683E3700369718 /* SAAboutWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000001C /* SAAboutWindowController.swift */; };
 		514B40A72F68412000369718 /* License.md in Resources */ = {isa = PBXBuildFile; fileRef = 514B40A62F68412000369718 /* License.md */; };
@@ -1012,6 +1021,7 @@
 		50D3C3501A77135F00B5429C /* SPParserUtils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = SPParserUtils.c; sourceTree = "<group>"; };
 		50D3C3511A77135F00B5429C /* SPParserUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPParserUtils.h; sourceTree = "<group>"; };
 		50D3C35B1A771C4C00B5429C /* SPParserUtilsTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPParserUtilsTest.m; sourceTree = "<group>"; };
+		5147B0152F8D000100C4C14A /* SPCSVParserTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPCSVParserTests.m; sourceTree = "<group>"; };
 		50E217B118174246009D3580 /* SPColorSelectorView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPColorSelectorView.h; sourceTree = "<group>"; };
 		50E217B218174246009D3580 /* SPColorSelectorView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPColorSelectorView.m; sourceTree = "<group>"; };
 		50E217B418174280009D3580 /* SPFavoriteColorSupport.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPFavoriteColorSupport.h; sourceTree = "<group>"; };
@@ -2549,6 +2559,7 @@
 				1AB0688D24A355B500E2AAC2 /* fixtures */,
 				1A4152ED25AF530F00B17249 /* GeneralSwiftTests.swift */,
 				50D3C35B1A771C4C00B5429C /* SPParserUtilsTest.m */,
+				5147B0152F8D000100C4C14A /* SPCSVParserTests.m */,
 				503B02CE1AE95C2C0060CAB1 /* SPTableFilterParserTest.m */,
 				50837F731E50DCD4004FAE8A /* SPJSONFormatterTests.m */,
 				1A85CB8C2493BC4A00B57B93 /* SPSyncTests.m */,
@@ -3328,6 +3339,9 @@
 				5147B0122F8C000400C4C14A /* SAConnectionFormHelpers.swift in Sources */,
 				51EA02532FDFF02C00DF6A7B /* SAArchivingTests.swift in Sources */,
 				5147B0142F8C000400C4C14A /* SAConnectionFormHelpersTests.swift in Sources */,
+				5147B0162F8D000100C4C14A /* SPCSVParserTests.m in Sources */,
+				5147B0172F8D000100C4C14A /* SPCSVParser.m in Sources */,
+				5147B0182F8D000100C4C14A /* SPNotLoaded.m in Sources */,
 				1717FA401558313A0065C036 /* RegexKitLite.m in Sources */,
 				50D3C35C1A771C4C00B5429C /* SPParserUtilsTest.m in Sources */,
 				1AE6C1CD25B07E9500880D73 /* SPFunctionsTests.m in Sources */,

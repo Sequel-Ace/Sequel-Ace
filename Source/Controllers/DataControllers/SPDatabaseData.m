@@ -46,6 +46,10 @@
 - (NSArray *)_normalizedCharacterSetEncodingsFromRows:(NSArray *)rows;
 - (NSArray *)_fallbackCharacterSetEncodings;
 - (void)_showCharacterSetFallbackWarning;
+- (NSArray *)_normalizedCollationRowsFromRows:(NSArray *)rows;
+- (NSArray *)_sortedCollationRowsByName:(NSArray *)rows;
+- (NSArray *)_getCollationRowsFromShowCollationForEncoding:(NSString *)encoding;
+- (NSString *)_utf8AliasForEncoding:(NSString *)encoding;
 
 NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, void *context);
 
@@ -54,6 +58,7 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 @implementation SPDatabaseData
 {
 	BOOL _hasShownCharacterSetFallbackWarning;
+	BOOL _hasShownCollationError;
 }
 
 @synthesize connection;
@@ -71,18 +76,19 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 		defaultCharacterSetEncoding = nil;
 		serverDefaultCollation = nil;
 		serverDefaultCharacterSetEncoding = nil;
-		
+
 		collations             = [[NSMutableArray alloc] init];
 		characterSetCollations = [[NSMutableArray alloc] init];
 		storageEngines         = [[NSMutableArray alloc] init];
 		characterSetEncodings  = [[NSMutableArray alloc] init];
-		
+
 		cachedCollationsByEncoding = [[NSMutableDictionary alloc] init];
 		_hasShownCharacterSetFallbackWarning = NO;
-		
+		_hasShownCollationError = NO;
+
 		charsetCollationLock = [[NSObject alloc] init];
 	}
-	
+
 	return self;
 }
 
@@ -97,9 +103,9 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 - (void)resetAllData
 {
 	[storageEngines removeAllObjects];
-	
+
 	@synchronized(charsetCollationLock) {
-		
+
 		// need to set these to nil
 		// otherwise leftover values are used
 		// in future queries
@@ -109,16 +115,18 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 		defaultCollation = nil;
 		serverDefaultCharacterSetEncoding = nil;
 		serverDefaultCollation = nil;
-		
+
 		[collations removeAllObjects];
 		[characterSetEncodings removeAllObjects];
 		[characterSetCollations removeAllObjects];
 		_hasShownCharacterSetFallbackWarning = NO;
+		_hasShownCollationError = NO;
 	}
 }
 
 /**
  * Returns all of the database's currently available collations by querying information_schema.collations.
+ * Falls back to SHOW COLLATION for older MySQL versions.
  *
  * This method is thread-safe.
  */
@@ -126,33 +134,39 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 {
 	@synchronized(charsetCollationLock) {
 		if ([collations count] == 0) {
-			
-			// Try to retrieve the available collations from the database
-            [collations addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`collations` ORDER BY `collation_name` ASC"]];
-			
-			// If that failed, get the list of collations from the hard-coded list
+
+			// Try to retrieve the available collations from information_schema
+			[collations addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT * FROM `information_schema`.`collations` ORDER BY `collation_name` ASC"]];
+
+			// Fallback to SHOW COLLATION for older MySQL versions or restricted access
 			if (![collations count]) {
-				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Unable to get database collations", @"Unable to get database collations") callback:nil];
+				NSArray *showCollations = [self _normalizedCollationRowsFromRows:[self _getDatabaseDataForQuery:@"SHOW COLLATION"]];
+				[collations addObjectsFromArray:[self _sortedCollationRowsByName:showCollations]];
+			}
+
+			if (![collations count]) {
+				SPLog(@"Unable to get database collations from any source");
 			}
 		}
-			
+
 		return [NSArray arrayWithArray:collations];
 	}
 }
 
 /**
- * Returns all of the database's currently available collations allowed for the supplied encoding by 
+ * Returns all of the database's currently available collations allowed for the supplied encoding by
  * querying information_schema.collations.
+ * Falls back to SHOW COLLATION for older MySQL versions.
  *
  * This method is thread-safe.
- */ 
+ */
 - (NSArray *)getDatabaseCollationsForEncoding:(NSString *)encoding
 {
 	@synchronized(charsetCollationLock) {
 		if (encoding && ((characterSetEncoding == nil) || (![characterSetEncoding isEqualToString:encoding]) || ([characterSetCollations count] == 0))) {
 			 //depends on encoding
 			[characterSetCollations removeAllObjects];
-			
+
 			characterSetEncoding = [[NSString alloc] initWithString:encoding];
 
 			NSArray *cachedCollations = [cachedCollationsByEncoding objectForKey:characterSetEncoding];
@@ -161,21 +175,34 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 				goto copy_return;
 			}
 
-			// Try to retrieve the available collations for the supplied encoding from the database
-            [characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", characterSetEncoding]]];
+			// Try to retrieve the available collations for the supplied encoding from information_schema
+			NSString *escapedEncoding = [characterSetEncoding stringByReplacingOccurrencesOfString:@"'" withString:@"''" ];
+			[characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", escapedEncoding]]];
 
-            //Special handling to try utf8 if the encoding is utf8mb3 https://github.com/Sequel-Ace/Sequel-Ace/issues/1064
-            if (![characterSetCollations count] && [characterSetEncoding isEqualToString:@"utf8mb3"]) {
-                [characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", @"utf8"]]];
-            } else if (![characterSetCollations count] && [characterSetEncoding isEqualToString:@"utf8"]) {
-                [characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", @"utf8mb3"]]];
-            }
+			//Special handling to try utf8 if the encoding is utf8mb3 https://github.com/Sequel-Ace/Sequel-Ace/issues/1064
+			NSString *utf8AliasEncoding = [self _utf8AliasForEncoding:characterSetEncoding];
+			if (![characterSetCollations count] && utf8AliasEncoding) {
+				NSString *escapedUtf8AliasEncoding = [utf8AliasEncoding stringByReplacingOccurrencesOfString:@"'" withString:@"''"];
+				[characterSetCollations addObjectsFromArray:[self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SELECT * FROM `information_schema`.`collations` WHERE character_set_name = '%@' ORDER BY `collation_name` ASC", escapedUtf8AliasEncoding]]];
+			}
 
-			// If that failed, get the list of collations matching the supplied encoding from the hard-coded list
+			// Fallback to SHOW COLLATION for older MySQL versions or restricted access
 			if (![characterSetCollations count]) {
-                SPMainQSync(^{
-                    [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Unable to get database collations for given encoding", @"Unable to get database collations for given encoding") callback:nil];
-                });
+				[characterSetCollations addObjectsFromArray:[self _getCollationRowsFromShowCollationForEncoding:characterSetEncoding]];
+				if (![characterSetCollations count] && utf8AliasEncoding) {
+					[characterSetCollations addObjectsFromArray:[self _getCollationRowsFromShowCollationForEncoding:utf8AliasEncoding]];
+				}
+			}
+
+			// If all sources failed, log once and show a single error alert
+			if (![characterSetCollations count]) {
+				SPLog(@"Unable to get database collations for encoding '%@'", characterSetEncoding);
+				if (!_hasShownCollationError) {
+					_hasShownCollationError = YES;
+					SPMainQSync(^{
+						[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:NSLocalizedString(@"Unable to get database collations for given encoding", @"Unable to get database collations for given encoding") callback:nil];
+					});
+				}
 			}
 
 			if ([characterSetCollations count]) {
@@ -190,7 +217,7 @@ copy_return:
 
 /** Get the collation that is marked as default for a given encoding by the server
  * @param encoding The encoding, e.g. @"latin1"
- * @return The default collation (e.g. @"latin1_swedish_ci") or 
+ * @return The default collation (e.g. @"latin1_swedish_ci") or
  *         nil if either encoding was nil or the server does not provide the neccesary details
  *
  * This method is thread-safe.
@@ -241,24 +268,24 @@ copy_return:
  * This method is NOT thread-safe!
  */
 - (NSArray *)getDatabaseStorageEngines
-{	
+{
 	if ([storageEngines count] == 0) {
         // Check the information_schema.engines table is accessible
         SPMySQLResult *result = [connection queryString:@"SHOW TABLES IN information_schema LIKE 'ENGINES'"];
-        
+
         if ([result numberOfRows] == 1) {
-            
+
             // Table is accessible so get available storage engines
             // Note, that the case of the column names specified in this query are important.
             [storageEngines addObjectsFromArray:[self _getDatabaseDataForQuery:@"SELECT Engine, Support FROM `information_schema`.`engines` WHERE SUPPORT IN ('DEFAULT', 'YES') AND Engine != 'PERFORMANCE_SCHEMA'"]];
         }
 	}
-	
+
 	return [storageEngines sortedArrayUsingFunction:_sortStorageEngineEntry context:nil];
 }
 
 /**
- * Returns all of the database's currently available character set encodings 
+ * Returns all of the database's currently available character set encodings
  * @return [{CHARACTER_SET_NAME: 'utf8', DESCRIPTION: 'UTF-8 Unicode', DEFAULT_COLLATE_NAME: 'utf8_general_ci', MAXLEN: 3},...]
  *         The Array is never empty and never nil but results might be unreliable.
  *
@@ -267,7 +294,7 @@ copy_return:
  * Else a hardcoded list will be returned
  *
  * This method is thread-safe.
- */ 
+ */
 - (NSArray *)getDatabaseCharacterSetEncodings
 {
 	BOOL shouldShowFallbackWarning = NO;
@@ -317,7 +344,7 @@ copy_return:
 		if (!defaultCharacterSetEncoding) {
 			defaultCharacterSetEncoding = [self _getSingleVariableValue:@"character_set_database"];
 		}
-		
+
 		return [defaultCharacterSetEncoding copy];
 	}
 }
@@ -335,7 +362,7 @@ copy_return:
 		if (!defaultCollation) {
 			defaultCollation = [self _getSingleVariableValue:@"collation_database"];
 		}
-			
+
 		return [defaultCollation copy];
 	}
 }
@@ -353,7 +380,7 @@ copy_return:
 		if (!serverDefaultCharacterSetEncoding) {
 			serverDefaultCharacterSetEncoding = [self _getSingleVariableValue:@"character_set_server"];
 		}
-		
+
 		return [serverDefaultCharacterSetEncoding copy];
 	}
 }
@@ -371,7 +398,7 @@ copy_return:
 		if (!serverDefaultCollation) {
 			serverDefaultCollation = [self _getSingleVariableValue:@"collation_server"];
 		}
-		
+
 		return [serverDefaultCollation copy];
 	}
 }
@@ -402,7 +429,7 @@ copy_return:
 		// Retrieve the corresponding value for the determined key, ensuring return as a string
 		defaultStorageEngine = [self _getSingleVariableValue:storageEngineKey];
 	}
-	
+
 	return defaultStorageEngine;
 }
 
@@ -417,30 +444,30 @@ copy_return:
 - (NSString *)_getSingleVariableValue:(NSString *)variable
 {
 	SPMySQLResult *result = [connection queryString:[NSString stringWithFormat:@"SHOW VARIABLES LIKE %@", [variable tickQuotedString]]];;
-	
+
 	[result setReturnDataAsStrings:YES];
-	
+
 	if([connection queryErrored])
 		SPLog(@"server variable lookup failed for '%@': %@ (%lu)",variable,[connection lastErrorMessage],[connection lastErrorID]);
-	
+
 	if ([result numberOfRows] != 1)
 		return nil;
-	
+
 	return [[result getRowAsDictionary] objectForKey:@"Value"];
 }
 
 /**
- * Executes the supplied query against the current connection and returns the result as an array of 
+ * Executes the supplied query against the current connection and returns the result as an array of
  * NSDictionarys, one for each row.
  */
 - (NSArray *)_getDatabaseDataForQuery:(NSString *)query
 {
 	SPMySQLResult *result = [connection queryString:query];
-	
+
 	if ([connection queryErrored]) return @[];
-	
+
 	[result setReturnDataAsStrings:YES];
-	
+
 	return [result getAllRows];
 }
 
@@ -461,6 +488,78 @@ copy_return:
 									 message:NSLocalizedString(@"The server did not provide character set metadata. Sequel Ace will continue using a fallback UTF-8 compatible character set list.", @"charset fallback warning message")
 									callback:nil];
 	});
+}
+
+/**
+ * Normalize collation rows from SHOW COLLATION to use information_schema.collations column names.
+ * SHOW COLLATION returns: Collation, Charset, Id, Default, Compiled, Sortlen
+ * information_schema.collations: COLLATION_NAME, CHARACTER_SET_NAME, ID, IS_DEFAULT, IS_COMPILED, SORTLEN
+ */
+- (NSArray *)_normalizedCollationRowsFromRows:(NSArray *)rows
+{
+	NSMutableArray *normalized = [NSMutableArray arrayWithCapacity:[rows count]];
+	for (NSDictionary *row in rows) {
+		NSMutableDictionary *n = [NSMutableDictionary dictionaryWithCapacity:6];
+
+		// Collation -> COLLATION_NAME
+		NSString *collationName = [row objectForKey:@"Collation"] ?: [row objectForKey:@"COLLATION_NAME"];
+		if (collationName) [n setObject:collationName forKey:@"COLLATION_NAME"];
+
+		// Charset -> CHARACTER_SET_NAME
+		NSString *charsetName = [row objectForKey:@"Charset"] ?: [row objectForKey:@"CHARACTER_SET_NAME"];
+		if (charsetName) [n setObject:charsetName forKey:@"CHARACTER_SET_NAME"];
+
+		// Id -> ID
+		NSString *collationId = [row objectForKey:@"Id"] ?: [row objectForKey:@"ID"];
+		if (collationId) [n setObject:collationId forKey:@"ID"];
+
+		// Default -> IS_DEFAULT
+		NSString *isDefault = [row objectForKey:@"Default"] ?: [row objectForKey:@"IS_DEFAULT"];
+		if (isDefault) {
+			[n setObject:isDefault forKey:@"IS_DEFAULT"];
+		} else if ([row objectForKey:@"Default"] != nil || [row objectForKey:@"IS_DEFAULT"] != nil) {
+			[n setObject:@"" forKey:@"IS_DEFAULT"];
+		}
+
+		// Compiled -> IS_COMPILED
+		NSString *isCompiled = [row objectForKey:@"Compiled"] ?: [row objectForKey:@"IS_COMPILED"];
+		if (isCompiled) [n setObject:isCompiled forKey:@"IS_COMPILED"];
+
+		// Sortlen -> SORTLEN
+		NSString *sortLength = [row objectForKey:@"Sortlen"] ?: [row objectForKey:@"SORTLEN"];
+		if (sortLength) [n setObject:sortLength forKey:@"SORTLEN"];
+
+		[normalized addObject:n];
+	}
+	return normalized;
+}
+
+- (NSArray *)_sortedCollationRowsByName:(NSArray *)rows
+{
+	return [rows sortedArrayUsingComparator:^NSComparisonResult(NSDictionary *leftRow, NSDictionary *rightRow) {
+		NSString *leftName = [leftRow objectForKey:@"COLLATION_NAME"] ?: @"";
+		NSString *rightName = [rightRow objectForKey:@"COLLATION_NAME"] ?: @"";
+		return [leftName compare:rightName];
+	}];
+}
+
+- (NSString *)_utf8AliasForEncoding:(NSString *)encoding
+{
+	if ([encoding isEqualToString:@"utf8mb3"]) return @"utf8";
+	if ([encoding isEqualToString:@"utf8"]) return @"utf8mb3";
+	return nil;
+}
+
+/**
+ * Get collation rows from SHOW COLLATION filtered by encoding, with normalized column names.
+ */
+- (NSArray *)_getCollationRowsFromShowCollationForEncoding:(NSString *)encoding
+{
+	if (!encoding) return @[];
+
+	NSString *escapedEncoding = [encoding stringByReplacingOccurrencesOfString:@"'" withString:@"''"];
+	NSArray *rows = [self _getDatabaseDataForQuery:[NSString stringWithFormat:@"SHOW COLLATION WHERE `Charset` = '%@'", escapedEncoding]];
+	return [self _sortedCollationRowsByName:[self _normalizedCollationRowsFromRows:rows]];
 }
 
 
