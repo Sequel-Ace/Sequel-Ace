@@ -108,6 +108,11 @@ final class SAPHPSerializedParserTests: XCTestCase {
 
     func testFloatValidationUsesPHPDotDecimalFormat() {
         XCTAssertTrue(SAPHPSerializedValue.isValidPHPFloatString("12.34"))
+        XCTAssertTrue(SAPHPSerializedValue.isValidPHPFloatString("+12.34"))
+        XCTAssertTrue(SAPHPSerializedValue.isValidPHPFloatString("1."))
+        XCTAssertTrue(SAPHPSerializedValue.isValidPHPFloatString(".5"))
+        XCTAssertTrue(SAPHPSerializedValue.isValidPHPFloatString("1.e3"))
+        XCTAssertTrue(SAPHPSerializedValue.isValidPHPFloatString("-1.2E+3"))
         XCTAssertFalse(SAPHPSerializedValue.isValidPHPFloatString("12,34"))
     }
 
@@ -115,17 +120,28 @@ final class SAPHPSerializedParserTests: XCTestCase {
         XCTAssertTrue(SAPHPSerializedValue.isValidPHPFloatString("INF"))
         XCTAssertTrue(SAPHPSerializedValue.isValidPHPFloatString("-INF"))
         XCTAssertTrue(SAPHPSerializedValue.isValidPHPFloatString("NAN"))
+        XCTAssertFalse(SAPHPSerializedValue.isValidPHPFloatString("+INF"))
         XCTAssertFalse(SAPHPSerializedValue.isValidPHPFloatString("inf"))
         XCTAssertFalse(SAPHPSerializedValue.isValidPHPFloatString("-inf"))
         XCTAssertFalse(SAPHPSerializedValue.isValidPHPFloatString("nan"))
     }
 
-    func testRejectsNoncanonicalSerializedSpecialFloatTokens() {
-        var errorMessage: NSString?
-        let value = SAPHPSerializedParser.parseString("d:inf;", errorMessage: &errorMessage)
+    func testFloatValidationRejectsSwiftOnlyFloatLiterals() {
+        XCTAssertFalse(SAPHPSerializedValue.isValidPHPFloatString("0x1p2"))
+        XCTAssertFalse(SAPHPSerializedValue.isValidPHPFloatString("infinity"))
+        XCTAssertFalse(SAPHPSerializedValue.isValidPHPFloatString("+INF"))
+        XCTAssertFalse(SAPHPSerializedValue.isValidPHPFloatString("1e"))
+        XCTAssertFalse(SAPHPSerializedValue.isValidPHPFloatString("."))
+    }
 
-        XCTAssertNil(value)
-        XCTAssertNotNil(errorMessage)
+    func testRejectsNoncanonicalSerializedSpecialFloatTokens() {
+        for rawValue in ["inf", "+INF", "0x1p2", "infinity"] {
+            var errorMessage: NSString?
+            let value = SAPHPSerializedParser.parseString("d:\(rawValue);", errorMessage: &errorMessage)
+
+            XCTAssertNil(value, rawValue)
+            XCTAssertNotNil(errorMessage, rawValue)
+        }
     }
 
     func testRejectsExcessiveNestingDepth() {

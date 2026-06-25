@@ -124,7 +124,56 @@ final class SAPHPSerializedValue: NSObject {
             return false
         }
 
-        return Double(string) != nil
+        return isValidPHPDecimalFloatString(string) && Double(string) != nil
+    }
+
+    private static func isValidPHPDecimalFloatString(_ string: String) -> Bool {
+        let scalars = Array(string.unicodeScalars)
+        var index = 0
+
+        if scalars[index].value == 43 || scalars[index].value == 45 {
+            index += 1
+            guard index < scalars.count else {
+                return false
+            }
+        }
+
+        var integerDigitCount = 0
+        while index < scalars.count && scalars[index].value >= 48 && scalars[index].value <= 57 {
+            integerDigitCount += 1
+            index += 1
+        }
+
+        var fractionalDigitCount = 0
+        if index < scalars.count && scalars[index].value == 46 {
+            index += 1
+            while index < scalars.count && scalars[index].value >= 48 && scalars[index].value <= 57 {
+                fractionalDigitCount += 1
+                index += 1
+            }
+        }
+
+        guard integerDigitCount > 0 || fractionalDigitCount > 0 else {
+            return false
+        }
+
+        if index < scalars.count && (scalars[index].value == 69 || scalars[index].value == 101) {
+            index += 1
+            if index < scalars.count && (scalars[index].value == 43 || scalars[index].value == 45) {
+                index += 1
+            }
+
+            let exponentStartIndex = index
+            while index < scalars.count && scalars[index].value >= 48 && scalars[index].value <= 57 {
+                index += 1
+            }
+
+            guard index > exponentStartIndex else {
+                return false
+            }
+        }
+
+        return index == scalars.count
     }
 
     @objc(isContainer)
