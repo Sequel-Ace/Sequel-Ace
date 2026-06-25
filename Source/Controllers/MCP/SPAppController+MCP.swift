@@ -559,11 +559,13 @@ extension SPAppController: SPMCPDataSource {
     // `LIMIT maxRows + 1` so the database does not materialise an unbounded result.
     // Caller holds mcpDBQueue.
     private func mcpExecuteResultQuery(_ sql: String, onConnection conn: SPMySQLConnection, connectionID connID: String, maxRows: Int = mcpMaxResultRows) -> [String: Any] {
-        let res = conn.queryString(sql)
+        let result = conn.queryString(sql)
         if conn.queryErrored() { return ["error": conn.lastErrorMessage() ?? "Query error"] }
 
-        // Non-SELECT statements (INSERT, UPDATE, DELETE, ...) return nil result.
-        guard let res = res else {
+        // Non-result statements (INSERT, UPDATE, DELETE, ...) come back as nil or an
+        // SPMySQLEmptyResult (a successful write, not a result set). Report the affected
+        // row count so a successful write is distinguishable from an empty SELECT.
+        guard let res = result, !(res is SPMySQLEmptyResult) else {
             return ["columns": [], "rows": [],
                     "rowsAffected": conn.rowsAffectedByLastQuery(),
                     "connection": connID]
