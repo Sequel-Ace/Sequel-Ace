@@ -475,7 +475,9 @@ extension SPAppController: SPMCPDataSource {
         // table - keeps SELECT * joins with duplicate column names working (a derived
         // table requires unique column names). Skip if the query already ends with its
         // own LIMIT clause, and fall back to the read-side cap for anything we don't
-        // append to.
+        // append to. Only plain SELECTs (or a parenthesised SELECT/UNION) are capped:
+        // a CTE can precede a data-changing statement (WITH ... UPDATE/DELETE), so
+        // appending LIMIT to a WITH query could silently limit a write.
         let effectiveLimit = limit > 0 ? min(limit, mcpMaxResultRows) : mcpMaxResultRows
         var finalSQL = bound
         var t = bound.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -483,7 +485,7 @@ extension SPAppController: SPMCPDataSource {
         let up = t.uppercased()
         let hasTrailingLimit = t.range(of: "(?i)\\blimit\\s+[0-9]+(\\s*,\\s*[0-9]+|\\s+offset\\s+[0-9]+)?\\s*$",
                                        options: .regularExpression) != nil
-        if (up.hasPrefix("SELECT") || up.hasPrefix("(") || up.hasPrefix("WITH")) && !hasTrailingLimit {
+        if (up.hasPrefix("SELECT") || up.hasPrefix("(")) && !hasTrailingLimit {
             let off = max(0, offset)
             finalSQL = off > 0 ? "\(t) LIMIT \(effectiveLimit + 1) OFFSET \(off)" : "\(t) LIMIT \(effectiveLimit + 1)"
         }
