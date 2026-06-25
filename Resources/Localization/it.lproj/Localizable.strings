@@ -437,6 +437,81 @@ selezionare il certificato e riprovare.";
 /* mysql error occurred informative message */
 "An error occurred whilst trying to perform the operation.\n\nMySQL said: %@" = "Si è verificato un errore durante il tentativo di eseguire l'operazione.\n\nMySQL ha detto: %@";
 
+/* all privileges operation description */
+"ALL PRIVILEGES" = "ALL PRIVILEGES";
+
+/* privilege operation all databases scope */
+"all databases" = "all databases";
+
+/* privilege operation error message */
+"Could not %@ %@ on %@ for %@.\n\nMySQL said: %@" = "Could not %1$@ %2$@ on %3$@ for %4$@.\n\nMySQL said: %5$@";
+
+/* privilege operation database scope */
+"database \"%@\"" = "database \"%@\"";
+
+/* fallback privilege operation description */
+"change" = "change";
+
+/* grant privilege operation */
+"grant" = "grant";
+
+/* mariadb show create routine grant error explanation */
+"\n\nThis MariaDB server supports SHOW CREATE ROUTINE, but the connected account was not allowed to grant or revoke it. This can happen after upgrading MariaDB before the new privilege has been added back to an administrative account. Check SHOW GRANTS FOR CURRENT_USER(), then grant SHOW CREATE ROUTINE WITH GRANT OPTION to the account or repair the server's grant tables." = "\n\nThis MariaDB server supports SHOW CREATE ROUTINE, but the connected account was not allowed to grant or revoke it. This can happen after upgrading MariaDB before the new privilege has been added back to an administrative account. Check SHOW GRANTS FOR CURRENT_USER(), then grant SHOW CREATE ROUTINE WITH GRANT OPTION to the account or repair the server's grant tables.";
+
+/* allow nonexistent definer privilege checkbox title */
+"Nonexistent Definer" = "Nonexistent Definer";
+
+/* revoke privilege operation */
+"revoke" = "revoke";
+
+/* binlog admin privilege checkbox title */
+"Binlog Admin" = "Binlog Admin";
+
+/* binlog monitor privilege checkbox title */
+"Binlog Monitor" = "Binlog Monitor";
+
+/* binlog replay privilege checkbox title */
+"Binlog Replay" = "Binlog Replay";
+
+/* connection admin privilege checkbox title */
+"Connection Admin" = "Connection Admin";
+
+/* create role privilege checkbox title */
+"Create Role" = "Create Role";
+
+/* drop role privilege checkbox title */
+"Drop Role" = "Drop Role";
+
+/* federated admin privilege checkbox title */
+"Federated Admin" = "Federated Admin";
+
+/* read only admin privilege checkbox title */
+"Read Only Admin" = "Read Only Admin";
+
+/* replica monitor privilege checkbox title */
+"Replica Monitor" = "Replica Monitor";
+
+/* replication master admin privilege checkbox title */
+"Replication Master Admin" = "Replication Master Admin";
+
+/* replication slave admin privilege checkbox title */
+"Replication Slave Admin" = "Replication Slave Admin";
+
+/* set user privilege checkbox title */
+"Set User" = "Set User";
+
+/* set any definer privilege checkbox title */
+"Set Any Definer" = "Set Any Definer";
+
+/* show create routine privilege checkbox title */
+"Show Create Routine" = "Show Create Routine";
+
+/* fallback privilege operation account description */
+"the selected account" = "the selected account";
+
+/* fallback privileges operation description */
+"the selected privileges" = "the selected privileges";
+
 /* mysql resource limits unsupported message */
 "Resource Limits are not supported for your version of MySQL. Any Resouce Limits you specified have been discarded and not saved. MySQL said: %@" = "I limiti di risorse non sono supportati per la tua versione di MySQL. Tutti i limiti di rialzo specificati sono stati scartati e non salvati. MySQL ha detto: %@";
 
