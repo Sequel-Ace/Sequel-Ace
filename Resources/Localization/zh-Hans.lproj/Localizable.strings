@@ -1481,6 +1481,9 @@
 /* export header generation time label */
 "Generation Time" = "生成时间";
 
+/* connection view : get server public key checkbox */
+"Get Public Key" = "Get Public Key";
+
 /* Content Filter Manager : Filter Entry List: 'Global' Header
  Query Favorites : List : Section Heading : global query favorites */
 "Global" = "全局";
@@ -2198,6 +2201,9 @@
 
 /* description of linestring */
 "Represents an ordered set of coordinates where each consecutive pair of two points is connected by a straight line." = "一系列坐标的有序集合，由各点按顺序连线确定形状。";
+
+/* connection view : get server public key help */
+"Request the server RSA public key for caching_sha2_password over non-SSL connections." = "Request the server RSA public key for caching_sha2_password over non-SSL connections.";
 
 /* required placeholder string */
 "required" = "必填项";
