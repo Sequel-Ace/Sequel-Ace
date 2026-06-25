@@ -662,12 +662,25 @@ extension SPAppController: SPMCPDataSource {
         // Confine writes to the configured export folder. An MCP tool path is
         // attacker-influencable (prompt injection), so never write to an arbitrary path.
         // Resolve symlinks so a link inside the folder cannot redirect writes outside it.
-        var base = UserDefaults.standard.string(forKey: SPMCPExportPath) ?? ""
+        let configuredBase = UserDefaults.standard.string(forKey: SPMCPExportPath) ?? ""
+        var base = configuredBase
         if base.isEmpty {
             base = NSSearchPathForDirectoriesInDomains(.downloadsDirectory, .userDomainMask, true).first
                 ?? NSTemporaryDirectory()
         }
         let realBase = (((base as NSString).standardizingPath as NSString).resolvingSymlinksInPath as NSString).standardizingPath
+
+        // In a sandboxed build, a custom export folder (outside the default Downloads
+        // entitlement) is only writable while its security-scoped bookmark is active.
+        // The bookmark is keyed by the chosen folder URL; start access for the write
+        // and stop it after. Best-effort: when there is no bookmark (default folder,
+        // or a non-sandboxed build) this is nil and the write proceeds normally.
+        var scopedURL: URL?
+        if !configuredBase.isEmpty {
+            let folderKey = URL(fileURLWithPath: configuredBase, isDirectory: true).absoluteString
+            scopedURL = SecureBookmarkManager.sharedInstance.bookmarkFor(filename: folderKey)
+        }
+        defer { scopedURL?.stopAccessingSecurityScopedResource() }
 
         let filename = (path as NSString).lastPathComponent
         if filename.isEmpty || filename == "." || filename == ".." {

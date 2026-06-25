@@ -291,9 +291,17 @@ final class SPMCPPreferencePane: SPPreferencePane, SPPreferencePaneProtocol, NST
         }
 
         let apply: (NSApplication.ModalResponse) -> Void = { [weak self] result in
-            if result == .OK, let path = panel.url?.path {
-                self?.defaults.set(path, forKey: SPMCPExportPath)
-                self?.exportPathField.stringValue = path
+            if result == .OK, let url = panel.url {
+                self?.defaults.set(url.path, forKey: SPMCPExportPath)
+                self?.exportPathField.stringValue = url.path
+                // Persist a security-scoped bookmark so a sandboxed build can still
+                // write to a custom folder (one outside the default Downloads
+                // entitlement) after relaunch, when the open-panel grant is gone.
+                _ = SecureBookmarkManager.sharedInstance.addBookmarkFor(
+                    url: url,
+                    options: URL.BookmarkCreationOptions.withSecurityScope.rawValue,
+                    isForStaleBookmark: false,
+                    isForKnownHostsFile: false)
             }
         }
         // Present as a sheet when attached to a window, otherwise fall back to a
