@@ -571,13 +571,25 @@ extension SPAppController: SPMCPDataSource {
                     "connection": connID]
         }
 
-        let fieldNames = res.fieldNames() ?? []
+        let fieldNames = (res.fieldNames() as? [String]) ?? []
+        // Disambiguate duplicate column names (e.g. SELECT * across joined tables that
+        // both have `id`). Rows are read as ordered arrays and packaged as objects, so
+        // without this a later duplicate would overwrite an earlier one and a value
+        // would be lost; suffixing keeps every value and keeps CSV headers aligned.
+        // ["id","name","id"] -> ["id","name","id_2"].
+        var nameCounts: [String: Int] = [:]
+        let columns: [String] = fieldNames.map { name in
+            let count = (nameCounts[name] ?? 0) + 1
+            nameCounts[name] = count
+            return count == 1 ? name : "\(name)_\(count)"
+        }
         var rows: [[String: Any]] = []
         var truncated = false
-        while let row = res.getRowAsDictionary() as? [String: Any] {
+        while let row = res.getRowAsArray() as? [Any] {
             if rows.count >= maxRows { truncated = true; break }   // a further row exists beyond the cap
             var safeRow: [String: Any] = [:]
-            for (key, val) in row {
+            for (i, key) in columns.enumerated() {
+                let val: Any = i < row.count ? row[i] : NSNull()
                 if val is NSNull {
                     safeRow[key] = NSNull()
                 } else if val is String || val is NSNumber {
@@ -592,7 +604,7 @@ extension SPAppController: SPMCPDataSource {
         }
 
         var r: [String: Any] = [:]
-        r["columns"] = fieldNames
+        r["columns"] = columns
         r["rows"] = rows
         r["rowCount"] = rows.count
         r["connection"] = connID
