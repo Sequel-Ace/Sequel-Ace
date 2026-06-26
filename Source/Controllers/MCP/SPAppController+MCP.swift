@@ -486,9 +486,10 @@ extension SPAppController: SPMCPDataSource {
         let cap = mcpMaxResultRows
         var finalSQL = bound
         var maxRows = cap
-        // Executable comments (/*! ... */) change semantics, so don't rewrite those;
-        // fall back to the read-side cap (in read-only mode the guard already rejects them).
-        if !bound.contains("/*!") {
+        // Executable comments (/*! ... */, MariaDB /*M! ... */) change semantics, so
+        // don't rewrite those; fall back to the read-side cap (in read-only mode the
+        // guard already rejects them).
+        if !SPMCPReadOnlyGuard.hasExecutableComment(bound) {
             var t = SPMCPReadOnlyGuard.stripCommentsQuoteAware(bound).trimmingCharacters(in: .whitespacesAndNewlines)
             while t.hasSuffix(";") { t = String(t.dropLast()).trimmingCharacters(in: .whitespacesAndNewlines) }
             let up = t.uppercased()

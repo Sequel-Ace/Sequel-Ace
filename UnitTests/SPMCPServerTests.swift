@@ -281,6 +281,18 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
         ], "file-write")
     }
 
+    // Executable comments run their body on the server: MySQL /*! */ and MariaDB
+    // /*M! */. Both must be rejected (the body can hide a write / file clause).
+    func testExecutableCommentsRejected() {
+        assertRejected([
+            "SELECT 1 /*! INTO OUTFILE '/tmp/x' */",
+            "SELECT 1 /*!12345 INTO OUTFILE '/tmp/x' */",
+            "SELECT 1 /*M! INTO OUTFILE '/tmp/x' */",
+            "SELECT 1 /*m! INTO OUTFILE '/tmp/x' */",
+            "SELECT 1 /*M!100000 INTO OUTFILE '/tmp/x' */",
+        ], "executable-comment")
+    }
+
     func testFileReadRejected() {
         // LOAD_FILE() is a plain SELECT but reads server-local files.
         assertRejected([

@@ -28,10 +28,9 @@ enum SPMCPReadOnlyGuard {
 
     /// `true` only when `sql` is a single, non-destructive read statement.
     static func isReadOnly(_ sql: String) -> Bool {
-        // Reject MySQL executable comments (/*! ... */ and /*!12345 ... */): their
-        // contents are run by the server, so a normal comment strip would hide a
-        // write or a statement separator from the checks below.
-        if sql.contains("/*!") { return false }
+        // Reject executable comments: their contents run on the server, so a normal
+        // comment strip would hide a write or statement separator from the checks below.
+        if hasExecutableComment(sql) { return false }
 
         // Strip comments first so they cannot hide a statement separator or verb.
         // Use a quote-aware stripper: a quote-unaware one treats a `#` or `--` inside
@@ -67,7 +66,7 @@ enum SPMCPReadOnlyGuard {
     /// modifier region - not just the prefix - for ANALYZE. An executable /*! */
     /// comment is also treated as unsafe.
     static func explainWouldExecute(_ sql: String) -> Bool {
-        if sql.contains("/*!") { return true }
+        if hasExecutableComment(sql) { return true }
         let stripped = stripCommentsQuoteAware(sql)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         // The statement body starts at one of these keywords; ANALYZE/FORMAT before
@@ -80,6 +79,15 @@ enum SPMCPReadOnlyGuard {
             if head == "ANALYZE" { return true }
         }
         return false
+    }
+
+    /// `true` if `sql` contains an executable comment whose body the server runs:
+    /// MySQL `/*! ... */` (and `/*!12345 ... */`) and MariaDB `/*M! ... */`. A normal
+    /// comment strip would discard the body, hiding a write or file clause from the
+    /// read-only checks, so these are rejected outright before stripping.
+    static func hasExecutableComment(_ sql: String) -> Bool {
+        let lower = sql.lowercased()
+        return lower.contains("/*!") || lower.contains("/*m!")
     }
 
     /// Strips SQL comments (`-- ` and `#` to end of line, and `/* ... */`) while
