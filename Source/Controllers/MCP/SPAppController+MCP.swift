@@ -474,37 +474,38 @@ extension SPAppController: SPMCPDataSource {
             }
         }
 
-        // Cap how many rows the query may return. A positive limit is honoured but
-        // never exceeds mcpMaxResultRows; limit <= 0 ("all rows") falls back to that
-        // cap. Append `LIMIT effectiveLimit + 1` to read queries so the database stops
-        // at the cap (instead of materialising a huge result) while still letting us
-        // detect that more rows existed. Appending - rather than wrapping in a derived
-        // table - keeps SELECT * joins with duplicate column names working (a derived
-        // table requires unique column names). Skip if the query already ends with its
-        // own LIMIT clause, and fall back to the read-side cap for anything we don't
-        // append to. Only plain SELECTs (or a parenthesised SELECT/UNION) are capped:
-        // a CTE can precede a data-changing statement (WITH ... UPDATE/DELETE), so
-        // appending LIMIT to a WITH query could silently limit a write.
+        // Cap how many rows the query may return so the database does not materialise a
+        // huge result. The analysis runs on a COMMENT-STRIPPED copy (and that stripped
+        // copy is what we execute for capped SELECTs): otherwise a leading comment
+        // (`/* x */ SELECT ...`) hides the SELECT prefix and skips the cap, and a
+        // trailing line comment (`... -- LIMIT 1`) looks like a real LIMIT that MySQL
+        // actually ignores. Appending LIMIT (rather than wrapping in a derived table)
+        // keeps SELECT * joins with duplicate column names working. Only plain SELECTs
+        // (or a parenthesised SELECT/UNION) are capped: a CTE can precede a data-changing
+        // statement (WITH ... UPDATE/DELETE), so capping a WITH query could limit a write.
         let cap = mcpMaxResultRows
         var finalSQL = bound
-        var t = bound.trimmingCharacters(in: .whitespacesAndNewlines)
-        while t.hasSuffix(";") { t = String(t.dropLast()).trimmingCharacters(in: .whitespacesAndNewlines) }
-        let up = t.uppercased()
         var maxRows = cap
-        if up.hasPrefix("SELECT") || up.hasPrefix("(") {
-            if let clamp = mcpClampTrailingLimit(t, cap: cap) {
-                // The query has its own trailing LIMIT. Honour it, but if it exceeds
-                // the cap, shrink it so the database does not materialise a huge result
-                // before the read-side cap can apply.
-                if clamp.count > cap { finalSQL = clamp.clamped }
-                maxRows = min(clamp.count, cap)
-            } else {
-                // No trailing LIMIT: append one so the database stops at the cap. The
-                // +1 lets us detect that more rows existed (truncation).
-                let effectiveLimit = limit > 0 ? min(limit, cap) : cap
-                maxRows = effectiveLimit
-                let off = max(0, offset)
-                finalSQL = off > 0 ? "\(t) LIMIT \(effectiveLimit + 1) OFFSET \(off)" : "\(t) LIMIT \(effectiveLimit + 1)"
+        // Executable comments (/*! ... */) change semantics, so don't rewrite those;
+        // fall back to the read-side cap (in read-only mode the guard already rejects them).
+        if !bound.contains("/*!") {
+            var t = SPMCPReadOnlyGuard.stripCommentsQuoteAware(bound).trimmingCharacters(in: .whitespacesAndNewlines)
+            while t.hasSuffix(";") { t = String(t.dropLast()).trimmingCharacters(in: .whitespacesAndNewlines) }
+            let up = t.uppercased()
+            if up.hasPrefix("SELECT") || up.hasPrefix("(") {
+                if let clamp = mcpClampTrailingLimit(t, cap: cap) {
+                    // Has its own trailing LIMIT. Execute the stripped query; if the
+                    // limit exceeds the cap, shrink it so the DB stops at the cap.
+                    finalSQL = clamp.count > cap ? clamp.clamped : t
+                    maxRows = min(clamp.count, cap)
+                } else {
+                    // No trailing LIMIT: append one so the database stops at the cap.
+                    // The +1 lets us detect that more rows existed (truncation).
+                    let effectiveLimit = limit > 0 ? min(limit, cap) : cap
+                    maxRows = effectiveLimit
+                    let off = max(0, offset)
+                    finalSQL = off > 0 ? "\(t) LIMIT \(effectiveLimit + 1) OFFSET \(off)" : "\(t) LIMIT \(effectiveLimit + 1)"
+                }
             }
         }
 
