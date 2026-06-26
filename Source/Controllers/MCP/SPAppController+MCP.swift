@@ -478,21 +478,61 @@ extension SPAppController: SPMCPDataSource {
         // append to. Only plain SELECTs (or a parenthesised SELECT/UNION) are capped:
         // a CTE can precede a data-changing statement (WITH ... UPDATE/DELETE), so
         // appending LIMIT to a WITH query could silently limit a write.
-        let effectiveLimit = limit > 0 ? min(limit, mcpMaxResultRows) : mcpMaxResultRows
+        let cap = mcpMaxResultRows
         var finalSQL = bound
         var t = bound.trimmingCharacters(in: .whitespacesAndNewlines)
         while t.hasSuffix(";") { t = String(t.dropLast()).trimmingCharacters(in: .whitespacesAndNewlines) }
         let up = t.uppercased()
-        let hasTrailingLimit = t.range(of: "(?i)\\blimit\\s+[0-9]+(\\s*,\\s*[0-9]+|\\s+offset\\s+[0-9]+)?\\s*$",
-                                       options: .regularExpression) != nil
-        if (up.hasPrefix("SELECT") || up.hasPrefix("(")) && !hasTrailingLimit {
-            let off = max(0, offset)
-            finalSQL = off > 0 ? "\(t) LIMIT \(effectiveLimit + 1) OFFSET \(off)" : "\(t) LIMIT \(effectiveLimit + 1)"
+        var maxRows = cap
+        if up.hasPrefix("SELECT") || up.hasPrefix("(") {
+            if let clamp = mcpClampTrailingLimit(t, cap: cap) {
+                // The query has its own trailing LIMIT. Honour it, but if it exceeds
+                // the cap, shrink it so the database does not materialise a huge result
+                // before the read-side cap can apply.
+                if clamp.count > cap { finalSQL = clamp.clamped }
+                maxRows = min(clamp.count, cap)
+            } else {
+                // No trailing LIMIT: append one so the database stops at the cap. The
+                // +1 lets us detect that more rows existed (truncation).
+                let effectiveLimit = limit > 0 ? min(limit, cap) : cap
+                maxRows = effectiveLimit
+                let off = max(0, offset)
+                finalSQL = off > 0 ? "\(t) LIMIT \(effectiveLimit + 1) OFFSET \(off)" : "\(t) LIMIT \(effectiveLimit + 1)"
+            }
         }
 
         return mcpDBSync {
-            mcpExecuteResultQuery(finalSQL, onConnection: conn, connectionID: ci.id, maxRows: effectiveLimit)
+            mcpExecuteResultQuery(finalSQL, onConnection: conn, connectionID: ci.id, maxRows: maxRows)
         }
+    }
+
+    /// Parses a trailing `LIMIT` clause and returns its row count plus a copy of the
+    /// query with that count clamped to `cap + 1` (preserving any offset form), or nil
+    /// if there is no trailing LIMIT. Lets run_query enforce the row cap even when the
+    /// caller supplied an explicit LIMIT larger than the cap.
+    private func mcpClampTrailingLimit(_ sql: String, cap: Int) -> (count: Int, clamped: String)? {
+        let pattern = "(?i)\\blimit\\s+([0-9]+)(?:\\s*,\\s*([0-9]+)|\\s+offset\\s+([0-9]+))?\\s*$"
+        guard let re = try? NSRegularExpression(pattern: pattern) else { return nil }
+        let ns = sql as NSString
+        guard let m = re.firstMatch(in: sql, range: NSRange(location: 0, length: ns.length)) else { return nil }
+        func group(_ i: Int) -> String? {
+            let r = m.range(at: i)
+            return r.location == NSNotFound ? nil : ns.substring(with: r)
+        }
+        let first = group(1) ?? "0"      // `LIMIT first` or, in the comma form, the offset
+        let commaCount = group(2)        // `LIMIT offset, count`
+        let offsetValue = group(3)       // `LIMIT count OFFSET value`
+        let count = Int(commaCount ?? first) ?? 0
+        let newCount = min(count, cap + 1)
+        let clause: String
+        if commaCount != nil {
+            clause = "LIMIT \(first), \(newCount)"
+        } else if let offsetValue = offsetValue {
+            clause = "LIMIT \(newCount) OFFSET \(offsetValue)"
+        } else {
+            clause = "LIMIT \(newCount)"
+        }
+        return (count, ns.replacingCharacters(in: m.range, with: clause))
     }
 
     /// Substitutes each unquoted ? in `sql` with the next param as an escaped SQL

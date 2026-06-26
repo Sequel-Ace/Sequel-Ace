@@ -225,7 +225,7 @@ private extension SPMCPServer {
 
     // Accumulate data until we have a complete HTTP request, then dispatch.
     func receiveRequest(on connection: NWConnection, buffer: Data) {
-        connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, _, error in
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, isComplete, error in
             guard let self else { return }
             if let error {
                 connection.cancel()
@@ -243,6 +243,13 @@ private extension SPMCPServer {
             }
 
             guard let request = HTTPRequest(data: buf) else {
+                // The peer closed (EOF) before sending a complete request: cancel
+                // rather than re-arm, otherwise receive keeps completing immediately
+                // on the closed connection and spins the server.
+                if isComplete {
+                    connection.cancel()
+                    return
+                }
                 // Need more data
                 self.receiveRequest(on: connection, buffer: buf)
                 return
