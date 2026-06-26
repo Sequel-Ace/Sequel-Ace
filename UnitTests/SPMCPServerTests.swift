@@ -303,6 +303,16 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
         ], "in-string-comment-marker")
     }
 
+    // The shape produced when a bound parameter closes a comment it sits inside
+    // (`SELECT 1 /* ? */` + param `*/ INTO OUTFILE ... /*`): the guard, re-run on the
+    // bound SQL, must see the now-live INTO OUTFILE and reject it.
+    func testCommentBreakoutAfterBindingRejected() {
+        assertRejected([
+            "SELECT 1 /* '*/ INTO OUTFILE \"/tmp/x\" /*' */",
+            "SELECT 1 /* '*/ ; DROP TABLE t /*' */",
+        ], "comment-breakout")
+    }
+
     func testExplainAnalyzeWriteRejected() {
         // EXPLAIN ANALYZE executes its statement in MySQL.
         assertRejected([

@@ -465,6 +465,13 @@ extension SPAppController: SPMCPDataSource {
             let (result, err) = mcpBindParams(params, intoSQL: sql, connection: conn)
             guard let boundSQL = result else { return ["error": err ?? "Parameter binding failed"] }
             bound = boundSQL
+            // The dispatcher validated the UNBOUND sql; a placeholder inside a comment
+            // (e.g. `SELECT 1 /* ? */`) lets a param close the comment and smuggle
+            // INTO OUTFILE etc. past that check. Re-validate the BOUND sql - what
+            // actually runs - so the read-only boundary holds.
+            if UserDefaults.standard.bool(forKey: SPMCPReadOnly), !SPMCPReadOnlyGuard.isReadOnly(bound) {
+                return ["error": "Read-only mode is enabled. Only single, non-destructive read statements (SELECT, SHOW, DESCRIBE, EXPLAIN) are allowed. Turn off read-only mode in Sequel Ace Preferences > MCP Server to run write queries."]
+            }
         }
 
         // Cap how many rows the query may return. A positive limit is honoured but
