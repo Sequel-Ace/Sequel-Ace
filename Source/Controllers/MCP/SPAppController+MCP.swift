@@ -118,9 +118,11 @@ private func mcpOpenExportFile(base: String, relativeDirs: [String], filename: S
 
 // MySQL can return text columns as NSData; decode to a string so values are
 // usable directly (not just at JSON-serialisation time). Non-data values pass through.
+// Genuinely binary data (BLOB/VARBINARY, non-UTF-8 bytes) is base64-encoded rather
+// than rendered as NSData's description (`{length = N, bytes = 0x...}`), which is junk.
 private func mcpDecode(_ value: Any?) -> Any {
     if let data = value as? Data {
-        return String(data: data, encoding: .utf8) ?? (data as NSData).description
+        return String(data: data, encoding: .utf8) ?? data.base64EncodedString()
     }
     return value ?? NSNull()
 }
@@ -644,7 +646,9 @@ extension SPAppController: SPMCPDataSource {
                 } else if val is String || val is NSNumber {
                     safeRow[key] = val
                 } else if let data = val as? Data {
-                    safeRow[key] = String(data: data, encoding: .utf8) ?? (data as NSData).description
+                    // Text decodes as UTF-8; genuinely binary data is base64-encoded
+                    // rather than NSData's "{length = N, bytes = 0x...}" description.
+                    safeRow[key] = String(data: data, encoding: .utf8) ?? data.base64EncodedString()
                 } else {
                     safeRow[key] = "\(val)"
                 }
