@@ -103,7 +103,7 @@ Once connected, you can ask your agent things like:
 
 - The server only accepts connections from `127.0.0.1`. Connections from any other address receive HTTP 403.
 - Requests that carry a non-loopback `Origin` header are rejected, so a web page cannot reach the server through your browser (DNS-rebinding protection).
-- **Read-only mode** is on by default and rejects any statement that is not a `SELECT`, `SHOW`, `DESCRIBE`, or `EXPLAIN`. For defence in depth, also connect with a read-only database user.
+- **Read-only mode** is on by default and rejects any statement that is not a `SELECT`, `SHOW`, `DESCRIBE`, or `EXPLAIN` (it also blocks stacked statements, `INTO OUTFILE`/`DUMPFILE`, `LOAD_FILE`, `EXPLAIN ANALYZE`, and MySQL/MariaDB executable comments). This is statement-level filtering and cannot detect side effects inside a called stored function or UDF (for example a function that performs an `INSERT`, or `sys_exec`). For a hard guarantee, connect with a **read-only database user** - that boundary is enforced by the server itself.
 - The server exposes whatever databases and privileges the active Sequel Ace connection has.
 - Disable the server in Preferences when you are not using it.
 
