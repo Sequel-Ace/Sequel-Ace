@@ -110,8 +110,13 @@ enum SPMCPReadOnlyGuard {
                 continue
             }
             if c == "'" || c == "\"" || c == "`" { quote = c; out.append(c); i += 1; continue }
+            // Replace each comment with a single space: MySQL treats a comment as
+            // whitespace, so dropping it outright would merge adjacent tokens (e.g.
+            // `FROM/**/t` -> `FROMt`), which matters because the stripped SQL is also
+            // what run_query executes for capped reads.
             if c == "#" {                                        // # comment to end of line
                 while i < n && chars[i] != "\n" { i += 1 }
+                out.append(" ")
                 continue
             }
             // -- comment: the second dash must be followed by whitespace/control or EOL
@@ -119,6 +124,7 @@ enum SPMCPReadOnlyGuard {
                 let next = i + 2 < n ? chars[i + 2] : " "
                 if i + 2 >= n || next == " " || next == "\t" || next == "\n" || next == "\r" {
                     while i < n && chars[i] != "\n" { i += 1 }
+                    out.append(" ")
                     continue
                 }
             }
@@ -126,6 +132,7 @@ enum SPMCPReadOnlyGuard {
                 i += 2
                 while i + 1 < n && !(chars[i] == "*" && chars[i + 1] == "/") { i += 1 }
                 i = min(i + 2, n)
+                out.append(" ")
                 continue
             }
             out.append(c)

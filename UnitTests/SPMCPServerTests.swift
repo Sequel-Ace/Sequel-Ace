@@ -313,6 +313,17 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
         ], "comment-breakout")
     }
 
+    // A comment is whitespace in MySQL: stripping must replace it with a space so
+    // adjacent tokens are not merged (the stripped SQL is also what run_query runs).
+    func testCommentStripInsertsWhitespace() {
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT 1/* */AS x"), "SELECT 1 AS x")
+        XCTAssertEqual(SPMCPReadOnlyGuard.stripCommentsQuoteAware("SELECT * FROM/**/t"), "SELECT * FROM t")
+        // Still caught: INTO/**/OUTFILE -> INTO OUTFILE keeps the keyword intact.
+        XCTAssertFalse(SPMCPReadOnlyGuard.isReadOnly("SELECT 1 INTO/**/OUTFILE '/tmp/x'"))
+        // Still allowed: a comment between other tokens is just whitespace.
+        XCTAssertTrue(SPMCPReadOnlyGuard.isReadOnly("SELECT/**/1 AS a"))
+    }
+
     func testExplainAnalyzeWriteRejected() {
         // EXPLAIN ANALYZE executes its statement in MySQL.
         assertRejected([
