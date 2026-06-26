@@ -34,7 +34,11 @@ enum SPMCPReadOnlyGuard {
         if sql.contains("/*!") { return false }
 
         // Strip comments first so they cannot hide a statement separator or verb.
-        let stripped = SPCustomQuerySQLClassifier.stripSQLComments(sql)
+        // Use a quote-aware stripper: a quote-unaware one treats a `#` or `--` inside
+        // a string literal as a comment and drops the rest of the line, which would
+        // hide a trailing OUTFILE / `;` / LOAD_FILE from the checks below while the
+        // raw SQL still runs (e.g. `SELECT '#' INTO OUTFILE '/tmp/x'`).
+        let stripped = stripCommentsQuoteAware(sql)
 
         var core = stripped.trimmingCharacters(in: .whitespacesAndNewlines)
         while core.hasSuffix(";") {
@@ -64,7 +68,7 @@ enum SPMCPReadOnlyGuard {
     /// comment is also treated as unsafe.
     static func explainWouldExecute(_ sql: String) -> Bool {
         if sql.contains("/*!") { return true }
-        let stripped = SPCustomQuerySQLClassifier.stripSQLComments(sql)
+        let stripped = stripCommentsQuoteAware(sql)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         // The statement body starts at one of these keywords; ANALYZE/FORMAT before
         // it are EXPLAIN modifiers.
@@ -76,6 +80,58 @@ enum SPMCPReadOnlyGuard {
             if head == "ANALYZE" { return true }
         }
         return false
+    }
+
+    /// Strips SQL comments (`-- ` and `#` to end of line, and `/* ... */`) while
+    /// respecting string literals ('...', "...") and backtick identifiers, so a
+    /// comment marker inside a quoted string is left intact. A quote-unaware strip
+    /// would treat such a marker as a real comment and drop everything after it,
+    /// which a request could exploit to hide OUTFILE/LOAD_FILE/`;` from the
+    /// read-only checks. (`/*! ... */` executable comments are rejected before this.)
+    static func stripCommentsQuoteAware(_ sql: String) -> String {
+        var out = ""
+        let chars: [Character] = Array(sql)
+        let n = chars.count
+        var i = 0
+        var quote: Character?
+        while i < n {
+            let c = chars[i]
+            if let q = quote {
+                out.append(c)
+                if c == "\\" && q != "`" {                       // backslash escape in '...'/"..."
+                    if i + 1 < n { out.append(chars[i + 1]); i += 2; continue }
+                } else if c == q {
+                    if i + 1 < n && chars[i + 1] == q {          // doubled-quote escape ('' "" ``)
+                        out.append(q); i += 2; continue
+                    }
+                    quote = nil
+                }
+                i += 1
+                continue
+            }
+            if c == "'" || c == "\"" || c == "`" { quote = c; out.append(c); i += 1; continue }
+            if c == "#" {                                        // # comment to end of line
+                while i < n && chars[i] != "\n" { i += 1 }
+                continue
+            }
+            // -- comment: the second dash must be followed by whitespace/control or EOL
+            if c == "-" && i + 1 < n && chars[i + 1] == "-" {
+                let next = i + 2 < n ? chars[i + 2] : " "
+                if i + 2 >= n || next == " " || next == "\t" || next == "\n" || next == "\r" {
+                    while i < n && chars[i] != "\n" { i += 1 }
+                    continue
+                }
+            }
+            if c == "/" && i + 1 < n && chars[i + 1] == "*" {    // /* ... */ block comment
+                i += 2
+                while i + 1 < n && !(chars[i] == "*" && chars[i + 1] == "/") { i += 1 }
+                i = min(i + 2, n)
+                continue
+            }
+            out.append(c)
+            i += 1
+        }
+        return out
     }
 }
 

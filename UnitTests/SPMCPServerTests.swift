@@ -290,6 +290,19 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
         ], "file-read")
     }
 
+    // A comment marker inside a string literal must not hide a trailing OUTFILE /
+    // LOAD_FILE / `;` from the guard: a quote-unaware strip would drop everything
+    // after the in-string `#` or `--`, leaving an apparently-safe `SELECT '`.
+    func testCommentMarkerInStringDoesNotHideDanger() {
+        assertRejected([
+            "SELECT '#' INTO OUTFILE '/tmp/x'",
+            "SELECT '-- ' INTO DUMPFILE '/tmp/x'",
+            "SELECT '#' AS c, LOAD_FILE('/etc/passwd')",
+            "SELECT '#'; DROP TABLE t",
+            "SELECT '/* ' INTO OUTFILE '/tmp/x'",
+        ], "in-string-comment-marker")
+    }
+
     func testExplainAnalyzeWriteRejected() {
         // EXPLAIN ANALYZE executes its statement in MySQL.
         assertRejected([
