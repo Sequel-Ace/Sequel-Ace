@@ -33,6 +33,8 @@
 #import "SPSQLParser.h"
 #import "SPStringAdditions.h"
 #import "SPDatabaseDocument.h"
+#import "SPFieldEditorController.h"
+#import "SPTooltip.h"
 #import "YRKSpinningProgressIndicator.h"
 #import "SPTableContent.h"
 #import "SPProcessListController.h"

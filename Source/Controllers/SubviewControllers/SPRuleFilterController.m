@@ -2028,7 +2028,10 @@ static BOOL SerIsUntouchedStarterRule(NSDictionary *dict)
 
 - (BOOL)isEqual:(id)other {
 	if (other == self) return YES;
-	if (other && [[other class] isEqual:[self class]] && [name isEqualToString:[other name]] && [typegrouping isEqualToString:[other typegrouping]]) return YES;
+	if (other && [[other class] isEqual:[self class]]) {
+		ColumnNode *otherColumn = (ColumnNode *)other;
+		if ([name isEqualToString:[otherColumn name]] && [typegrouping isEqualToString:[otherColumn typegrouping]]) return YES;
+	}
 
 	return NO;
 }
