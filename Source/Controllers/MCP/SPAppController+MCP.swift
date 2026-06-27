@@ -548,26 +548,52 @@ extension SPAppController: SPMCPDataSource {
 
     /// Substitutes each unquoted ? in `sql` with the next param as an escaped SQL
     /// literal. Returns (nil, error) if the placeholder and param counts differ.
+    /// Quote- and comment-aware: a `?` inside a string literal or a comment is NOT a
+    /// placeholder and is copied verbatim, so a `?` parked in a comment cannot turn
+    /// param data into executable SQL (it just fails the placeholder/param count check).
     private func mcpBindParams(_ params: [Any], intoSQL sql: String, connection conn: SPMySQLConnection) -> (String?, String?) {
         var out = ""
         var pIndex = 0
         var quote: Character?
         let chars: [Character] = Array(sql)
+        let n = chars.count
         var i = 0
-        while i < chars.count {
+        while i < n {
             let c = chars[i]
             if let q = quote {
                 out.append(c)
                 if c == "\\" && q != "`" {                       // backslash escape in a string literal
-                    if i + 1 < chars.count { out.append(chars[i + 1]); i += 1 }
+                    if i + 1 < n { out.append(chars[i + 1]); i += 1 }
                 } else if c == q {
-                    if i + 1 < chars.count && chars[i + 1] == q { // doubled-quote escape
+                    if i + 1 < n && chars[i + 1] == q {           // doubled-quote escape
                         out.append(q); i += 1
                     } else {
                         quote = nil
                     }
                 }
                 i += 1
+                continue
+            }
+            // Comments are copied verbatim; a `?` inside one is not a placeholder.
+            if c == "#" {                                        // # to end of line
+                while i < n && chars[i] != "\n" { out.append(chars[i]); i += 1 }
+                continue
+            }
+            if c == "-" && i + 1 < n && chars[i + 1] == "-" {    // -- (needs whitespace/EOL after)
+                let next = i + 2 < n ? chars[i + 2] : " "
+                if i + 2 >= n || next == " " || next == "\t" || next == "\n" || next == "\r" {
+                    while i < n && chars[i] != "\n" { out.append(chars[i]); i += 1 }
+                    continue
+                }
+            }
+            if c == "/" && i + 1 < n && chars[i + 1] == "*" {    // /* ... */ block comment
+                out.append("/"); out.append("*"); i += 2
+                while i < n {
+                    if i + 1 < n && chars[i] == "*" && chars[i + 1] == "/" {
+                        out.append("*"); out.append("/"); i += 2; break
+                    }
+                    out.append(chars[i]); i += 1
+                }
                 continue
             }
             if c == "'" || c == "\"" || c == "`" { quote = c; out.append(c); i += 1; continue }
