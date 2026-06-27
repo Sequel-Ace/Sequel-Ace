@@ -653,12 +653,18 @@ extension SPAppController: SPMCPDataSource {
         // both have `id`). Rows are read as ordered arrays and packaged as objects, so
         // without this a later duplicate would overwrite an earlier one and a value
         // would be lost; suffixing keeps every value and keeps CSV headers aligned.
-        // ["id","name","id"] -> ["id","name","id_2"].
-        var nameCounts: [String: Int] = [:]
+        // The suffix is bumped until it is actually unused, so it cannot collide with a
+        // name that already exists (["id","id_2","id"] -> ["id","id_2","id_3"]).
+        var usedNames = Set<String>()
         let columns: [String] = fieldNames.map { name in
-            let count = (nameCounts[name] ?? 0) + 1
-            nameCounts[name] = count
-            return count == 1 ? name : "\(name)_\(count)"
+            var candidate = name
+            var suffix = 1
+            while usedNames.contains(candidate) {
+                suffix += 1
+                candidate = "\(name)_\(suffix)"
+            }
+            usedNames.insert(candidate)
+            return candidate
         }
         var rows: [[String: Any]] = []
         var truncated = false
