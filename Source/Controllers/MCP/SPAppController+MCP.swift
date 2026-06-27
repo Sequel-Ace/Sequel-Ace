@@ -374,7 +374,11 @@ extension SPAppController: SPMCPDataSource {
             if conn.queryErrored() || res == nil { return ["error": conn.lastErrorMessage() ?? "Could not read table DDL"] }
             var ddl = ""
             if let row = res?.getRowAsDictionary() as? [String: Any] {
-                ddl = (row["Create Table"] as? String) ?? (row["Create View"] as? String) ?? ""
+                // SPMySQL may return the DDL column as NSData; decode it (a plain
+                // `as? String` cast would fail and leave the DDL empty).
+                if let raw = row["Create Table"] ?? row["Create View"], !(raw is NSNull) {
+                    ddl = "\(mcpDecode(raw))"
+                }
             }
             return ["ddl": ddl, "connection": ci.id]
         }
@@ -447,7 +451,9 @@ extension SPAppController: SPMCPDataSource {
             var def = ""
             if let row = res?.getRowAsDictionary() as? [String: Any] {
                 for (k, v) in row where (k.hasPrefix("Create ") || k == "SQL Original Statement") {
-                    if !(v is NSNull) { def = "\(v)"; break }
+                    // SPMySQL may return the definition column as NSData; decode it so
+                    // we emit the SQL text, not the NSData byte/length description.
+                    if !(v is NSNull) { def = "\(mcpDecode(v))"; break }
                 }
             }
             return ["definition": def, "connection": ci.id]
