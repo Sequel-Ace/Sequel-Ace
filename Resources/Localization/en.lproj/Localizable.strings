@@ -2486,7 +2486,6 @@
 /* sql data access label (Navigator) */
 "SQL Data Access" = "SQL Data Access";
 
-
 /* Connection Secured via SSL information text */
 "Connection Secured via SSL" = "Connection Secured via SSL";
 
@@ -3474,6 +3473,69 @@
 
 /* Cell context menu filter submenu title */
 "Filter by Selected Value" = "Filter by Selected Value";
+
+/* MCP pref: enable checkbox */
+"Enable MCP Server (localhost only)" = "Enable MCP Server (localhost only)";
+
+/* MCP pref: port label */
+"Port:" = "Port:";
+
+/* MCP pref: port hint */
+"Default: 8765. Any unprivileged port (1024–65535) may be used." = "Default: 8765. Any unprivileged port (1024–65535) may be used.";
+
+/* MCP pref: choose button */
+"Choose…" = "Choose…";
+
+/* MCP preference pane name */
+"MCP Server" = "MCP Server";
+
+/* MCP preference pane tooltip */
+"MCP Server Preferences" = "MCP Server Preferences";
+
+/* MCP pref: invalid port alert */
+"Invalid Port" = "Invalid Port";
+
+/* MCP pref: port range */
+"Port must be between %ld and %ld." = "Port must be between %ld and %ld.";
+
+/* MCP pref: open panel prompt */
+"Choose" = "Choose";
+
+/* MCP pref: open panel message */
+"Choose the default folder for MCP query exports." = "Choose the default folder for MCP query exports.";
+
+/* MCP pref: status disabled */
+"MCP server is disabled." = "MCP server is disabled.";
+
+/* MCP pref: status running */
+"MCP server is running on http://127.0.0.1:%ld/mcp" = "MCP server is running on http://127.0.0.1:%ld/mcp";
+
+/* MCP pref: status stopped */
+"MCP server is not running." = "MCP server is not running.";
+
+/* MCP start error title */
+"MCP Server Error" = "MCP Server Error";
+
+/* MCP start error message */
+"The MCP server could not start on port %ld: %@\n\nYou can change the port in Preferences > MCP Server." = "The MCP server could not start on port %ld: %@\n\nYou can change the port in Preferences > MCP Server.";
+
+/* MCP pref: read-only checkbox */
+"Read-only mode (reject queries that modify data)" = "Read-only mode (reject queries that modify data)";
+
+/* MCP pref: server row label */
+"Server:" = "Server:";
+
+/* MCP pref: export row label */
+"Export folder:" = "Export folder:";
+
+/* MCP pref: endpoint row label */
+"Endpoint:" = "Endpoint:";
+
+/* MCP pref: copy endpoint button */
+"Copy" = "Copy";
+
+/* MCP pref: endpoint hint */
+"Add this URL to any MCP-compatible client (Claude, Cursor, Cline, VS Code, and others)." = "Add this URL to any MCP-compatible client (Claude, Cursor, Cline, VS Code, and others).";
 
 /* AWS console sign-in (aws login) error: profile is missing login_session configuration */
 "The profile is not configured for AWS console sign-in" = "The profile is not configured for AWS console sign-in";

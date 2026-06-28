@@ -54,12 +54,15 @@
 @synthesize editorPreferencePane;
 @synthesize networkPreferencePane;
 @synthesize filePreferencePane;
+@synthesize mcpPreferencePane;
 @synthesize fontChangeTarget;
 
 - (instancetype)init
 {
-	if ((self = [super initWithWindowNibName:@"Preferences"])) {		
-		fontChangeTarget = 0;
+	if ((self = [super initWithWindowNibName:@"Preferences"])) {
+		fontChangeTarget   = 0;
+		// Instantiate the MCP pane programmatically (no XIB required).
+		mcpPreferencePane = [[SPMCPPreferencePane alloc] init];
 	}
 
 	return self;
@@ -86,6 +89,7 @@
 					   editorPreferencePane,
 					   networkPreferencePane,
 					   filePreferencePane,
+					   mcpPreferencePane,
 					   nil];
     [super windowDidLoad];
 }
@@ -209,14 +213,24 @@
 	[networkItem setAction:@selector(displayPreferencePane:)];
 	
 	// File preferences
-	
+
 	fileItem = [[NSToolbarItem alloc] initWithItemIdentifier:[filePreferencePane preferencePaneIdentifier]];
-	
+
 	[fileItem setLabel:[filePreferencePane preferencePaneName]];
 	[fileItem setImage:[filePreferencePane preferencePaneIcon]];
 	[fileItem setToolTip:[filePreferencePane preferencePaneToolTip]];
 	[fileItem setTarget:self];
 	[fileItem setAction:@selector(displayPreferencePane:)];
+
+	// MCP Server preferences
+
+	mcpItem = [[NSToolbarItem alloc] initWithItemIdentifier:[mcpPreferencePane preferencePaneIdentifier]];
+
+	[mcpItem setLabel:[mcpPreferencePane preferencePaneName]];
+	[mcpItem setImage:[mcpPreferencePane preferencePaneIcon]];
+	[mcpItem setToolTip:[mcpPreferencePane preferencePaneToolTip]];
+	[mcpItem setTarget:self];
+	[mcpItem setAction:@selector(displayPreferencePane:)];
 
 	[toolbar setDelegate:self];
 	[toolbar setSelectedItemIdentifier:[generalPreferencePane preferencePaneIdentifier]];
@@ -286,6 +300,9 @@
 	else if ([itemIdentifier isEqualToString:SPPreferenceToolbarFile]) {
 		return fileItem;
 	}
+	else if ([itemIdentifier isEqualToString:SPPreferenceToolbarMCP]) {
+		return mcpItem;
+	}
 
 	return [[NSToolbarItem alloc] initWithItemIdentifier:itemIdentifier];
 }
@@ -299,7 +316,8 @@
 			 SPPreferenceToolbarEditor,
 			 SPPreferenceToolbarShortcuts,
 			 SPPreferenceToolbarNetwork,
-			 SPPreferenceToolbarFile
+			 SPPreferenceToolbarFile,
+			 SPPreferenceToolbarMCP
 			 ];
 }
 
@@ -312,7 +330,8 @@
 			 SPPreferenceToolbarEditor,
 			 SPPreferenceToolbarShortcuts,
 			 SPPreferenceToolbarNetwork,
-			 SPPreferenceToolbarFile
+			 SPPreferenceToolbarFile,
+			 SPPreferenceToolbarMCP
 			 ];
 }
 
@@ -325,7 +344,8 @@
 			 SPPreferenceToolbarEditor,
 			 SPPreferenceToolbarShortcuts,
 			 SPPreferenceToolbarNetwork,
-			 SPPreferenceToolbarFile
+			 SPPreferenceToolbarFile,
+			 SPPreferenceToolbarMCP
 			 ];
 }
 
