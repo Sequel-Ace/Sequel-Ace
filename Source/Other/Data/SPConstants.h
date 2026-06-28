@@ -516,6 +516,13 @@ extern NSString *SPPreferenceToolbarNetwork;
 extern NSString *SPPreferenceToolbarEditor;
 extern NSString *SPPreferenceToolbarShortcuts;
 extern NSString *SPPreferenceToolbarFile;
+extern NSString *SPPreferenceToolbarMCP;
+
+// MCP Server Prefpane
+extern NSString *SPMCPServerEnabled;
+extern NSString *SPMCPServerPort;
+extern NSString *SPMCPExportPath;
+extern NSString *SPMCPReadOnly;
 
 // Connection favorite keys
 extern NSString *SPFavoritesRootKey;

@@ -52,6 +52,14 @@ To install an unofficial community maintained [Homebrew](https://brew.sh) [Cask]
 brew install --cask sequel-ace
 ```
 
+## MCP Server (AI Agent Integration)
+
+Sequel Ace includes a built-in [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that lets AI agents (Claude Code, Cursor, and others) query your databases through Sequel Ace's existing connections. It is off by default, listens on localhost only, and runs in read-only mode unless you turn that off.
+
+Enable it under **Preferences > MCP Server**. See the [MCP server guide](https://sequel-ace.com/get-started/mcp-server.html) for setup, the full tool list, client configuration, and the security model.
+
+---
+
 ## Moving Saved Connections from Sequel Pro
 
 To migrate your favorites, please check the [migration guide](https://sequel-ace.com/get-started/migrating-from-sequel-pro.html).
