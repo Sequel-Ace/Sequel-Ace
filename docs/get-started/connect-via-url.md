@@ -48,6 +48,7 @@ These query parameters are currently supported:
 - `ssh_password`
 - `ssh_keyLocation`
 - `ssh_keyLocationEnabled` (set to `1` to enable key-based auth; `0` or omission keeps password auth)
+- `ssh_remote_socket_path`
 - `socket`
 - `aws_profile`
 - `aws_region`
@@ -61,10 +62,10 @@ When `type` is omitted, Sequel Ace infers mode in this order:
 
 1. AWS IAM if `aws_profile` or `aws_region` is present
 2. Socket if `socket` is present
-3. SSH if `ssh_host` is present
+3. SSH if `ssh_host` or `ssh_remote_socket_path` is present
 4. TCP/IP otherwise
 
-If both `socket` and `ssh_host` are present without `type`, Socket mode is used.
+If `socket` is present with `ssh_host` or `ssh_remote_socket_path` but no `type`, Socket mode is used.
 If `ssh_keyLocation` is provided but `ssh_keyLocationEnabled` is not `1`, Sequel Ace still uses password auth.
 
 Examples:
@@ -75,6 +76,9 @@ open 'mysql://db_user:db_password@127.0.0.1:3306/my_database?ssh_host=ssh.exampl
 
 # SSH connection using key auth
 open 'mysql://db_user:db_password@127.0.0.1:3306/my_database?ssh_host=ssh.example.com&ssh_port=22&ssh_user=ssh_user&ssh_keyLocation=%2FUsers%2Fyou%2F.ssh%2Fid_rsa&ssh_keyLocationEnabled=1'
+
+# SSH connection to a remote Unix socket on the SSH host
+open 'mysql://db_user:db_password@127.0.0.1/my_database?ssh_host=ssh.example.com&ssh_port=22&ssh_user=ssh_user&ssh_remote_socket_path=%2Fvar%2Frun%2Fmysqld%2Fmysqld.sock'
 
 # `ssh_keyLocation` without enabling key auth still uses password auth
 open 'mysql://db_user:db_password@127.0.0.1:3306/my_database?ssh_host=ssh.example.com&ssh_port=22&ssh_user=ssh_user&ssh_keyLocation=%2FUsers%2Fyou%2F.ssh%2Fid_rsa&ssh_keyLocationEnabled=0'
@@ -106,6 +110,7 @@ If any unsupported query parameter is included, Sequel Ace shows an error and do
 - If no host is provided, Sequel Ace uses `127.0.0.1`.
 - The first path segment is treated as the database name.
 - For socket URLs, use the `socket` query parameter for the Unix socket path. Socket files must be inside Sequel Ace's container path due to macOS sandboxing.
+- For SSH remote socket URLs, use `ssh_remote_socket_path` for the Unix socket path on the SSH host.
 - AWS IAM URLs require Sequel Ace to already have sandbox access to your `~/.aws` directory. Grant access from the **AWS IAM** tab first.
 - If you use `ssh_keyLocation`, Sequel Ace must already have sandbox access to that key path. Grant access in **Sequel Ace → Preferences → Files** (add the key file or its containing folder).
 - `enable_cleartext_plugin=1` lets the MySQL client transmit the password unobscured to plugins that require it (typically PAM or LDAP back-ends). Only enable it on TLS-encrypted or SSH-tunneled connections.

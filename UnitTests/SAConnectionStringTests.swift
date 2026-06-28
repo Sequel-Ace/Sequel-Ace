@@ -72,6 +72,21 @@ final class SAConnectionStringTests: XCTestCase {
         XCTAssertTrue(connectionString.contains("ssh_port=2222"))
     }
 
+    func testSSHTunnelConnectionStringIncludesRemoteSocketPath() throws {
+        var info = SAConnectionInfo()
+        info.type = .sshTunnel
+        info.host = "127.0.0.1"
+        info.user = "dbuser"
+        info.sshHost = "bastion.example.com"
+        info.sshUser = "ubuntu"
+        info.sshRemoteSocketPath = "/var/run/mysqld/mysqld.sock"
+
+        let connectionString = try XCTUnwrap(info.toConnectionString(includePassword: false))
+
+        XCTAssertTrue(connectionString.contains("type=ssh"))
+        XCTAssertTrue(connectionString.contains("ssh_remote_socket_path=/var/run/mysqld/mysqld.sock"))
+    }
+
     func testSSHKeyPathExcludedByDefault() throws {
         var info = SAConnectionInfo()
         info.type = .sshTunnel
@@ -135,6 +150,24 @@ final class SAConnectionStringTests: XCTestCase {
 
         XCTAssertTrue(result.success)
         XCTAssertEqual((result.details["requestServerPublicKey"] as? NSNumber)?.boolValue, true)
+    }
+
+    func testConnectionStringParsesSSHRemoteSocketPath() throws {
+        let url = try XCTUnwrap(URL(string: "mysql://dbuser@127.0.0.1?ssh_host=bastion.example.com&ssh_user=ubuntu&ssh_remote_socket_path=%2Fvar%2Frun%2Fmysqld%2Fmysqld.sock"))
+        let result = ConnectionStringParser.parse(url)
+
+        XCTAssertTrue(result.success)
+        XCTAssertEqual(result.details["type"] as? String, "SPSSHTunnelConnection")
+        XCTAssertEqual(result.details["ssh_remote_socket_path"] as? String, "/var/run/mysqld/mysqld.sock")
+        XCTAssertEqual(result.details["sshRemoteSocketPath"] as? String, "/var/run/mysqld/mysqld.sock")
+    }
+
+    func testConnectionStringInfersSSHTunnelFromRemoteSocketPath() throws {
+        let url = try XCTUnwrap(URL(string: "mysql://dbuser@127.0.0.1?ssh_remote_socket_path=%2Fvar%2Frun%2Fmysqld%2Fmysqld.sock"))
+        let result = ConnectionStringParser.parse(url)
+
+        XCTAssertTrue(result.success)
+        XCTAssertEqual(result.details["type"] as? String, "SPSSHTunnelConnection")
     }
 
     func testEmptyHostDefaultsToLocalhost() throws {
