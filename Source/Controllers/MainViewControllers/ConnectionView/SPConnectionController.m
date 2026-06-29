@@ -2171,6 +2171,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         if ([details objectForKey:@"ssh_user"]) [favorite setObject:[details objectForKey:@"ssh_user"] forKey:SPFavoriteSSHUserKey];
         if ([details objectForKey:@"ssh_keyLocationEnabled"]) [favorite setObject:[details objectForKey:@"ssh_keyLocationEnabled"] forKey:SPFavoriteSSHKeyLocationEnabledKey];
         if ([details objectForKey:@"ssh_keyLocation"]) [favorite setObject:[details objectForKey:@"ssh_keyLocation"] forKey:SPFavoriteSSHKeyLocationKey];
+        id sshRemoteSocketPath = [details objectForKey:SPFavoriteSSHRemoteSocketPathKey] ?: [details objectForKey:@"ssh_remote_socket_path"];
+        if (sshRemoteSocketPath) [favorite setObject:sshRemoteSocketPath forKey:SPFavoriteSSHRemoteSocketPathKey];
     }
     else if (typeTag == SPAWSIAMConnection) {
         if ([details objectForKey:@"aws_region"]) [favorite setObject:[details objectForKey:@"aws_region"] forKey:@"awsRegion"];
@@ -2356,15 +2358,18 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                 NSString *existingSSHHost = [favoriteDict objectForKey:SPFavoriteSSHHostKey] ?: @"";
                 NSString *existingSSHUser = [favoriteDict objectForKey:SPFavoriteSSHUserKey] ?: @"";
                 NSString *existingSSHPort = [favoriteDict objectForKey:SPFavoriteSSHPortKey] ?: @"";
+                NSString *existingSSHRemoteSocketPath = [favoriteDict objectForKey:SPFavoriteSSHRemoteSocketPathKey] ?: @"";
 
                 // Check both URL keys (from connection string) and favorite keys (from plist import)
                 NSString *newSSHHost = [modeFields objectForKey:@"ssh_host"] ?: [modeFields objectForKey:SPFavoriteSSHHostKey] ?: @"";
                 NSString *newSSHUser = [modeFields objectForKey:@"ssh_user"] ?: [modeFields objectForKey:SPFavoriteSSHUserKey] ?: @"";
                 NSString *newSSHPort = [modeFields objectForKey:@"ssh_port"] ?: [modeFields objectForKey:SPFavoriteSSHPortKey] ?: @"";
+                NSString *newSSHRemoteSocketPath = [modeFields objectForKey:@"ssh_remote_socket_path"] ?: [modeFields objectForKey:SPFavoriteSSHRemoteSocketPathKey] ?: @"";
 
                 if (![existingSSHHost isEqualToString:newSSHHost] ||
                     ![existingSSHUser isEqualToString:newSSHUser] ||
-                    ![existingSSHPort isEqualToString:newSSHPort]) {
+                    ![existingSSHPort isEqualToString:newSSHPort] ||
+                    ![existingSSHRemoteSocketPath isEqualToString:newSSHRemoteSocketPath]) {
                     continue;
                 }
             }
