@@ -1405,6 +1405,19 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     NSString *port      = [self vaultPort] ?: @"";
     NSString *oidcMount = [self vaultOIDCMount] ?: @"";
 
+    // Listing roles needs a Vault token; if none is cached, refreshing will open
+    // the browser for OIDC login. Confirm first so it isn't a surprise.
+    if (![VaultAuthManager hasCachedTokenWithHost:host port:port oidcMount:oidcMount]) {
+        NSAlert *confirm = [[NSAlert alloc] init];
+        confirm.messageText = NSLocalizedString(@"Sign in to Vault?", @"Vault roles refresh – login confirm");
+        confirm.informativeText = NSLocalizedString(@"Listing roles requires authenticating to Vault, which will open your web browser.", @"Vault roles refresh – login confirm detail");
+        [confirm addButtonWithTitle:NSLocalizedString(@"Continue", @"continue button")];
+        [confirm addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
+        if ([confirm runModal] != NSAlertFirstButtonReturn) {
+            return;
+        }
+    }
+
     [vaultRefreshRolesButton setEnabled:NO];
     [vaultRolesProgressIndicator setHidden:NO];
     [vaultRolesProgressIndicator startAnimation:self];

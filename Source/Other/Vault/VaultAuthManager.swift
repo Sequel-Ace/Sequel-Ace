@@ -368,6 +368,14 @@ import OSLog
         return trimmed.isEmpty ? "oidc" : trimmed
     }
 
+    /// Whether a Vault token is currently cached for this host + OIDC mount.
+    /// Cheap (Keychain / in-memory only, NO network) — safe to call on the main thread.
+    @objc(hasCachedTokenWithHost:port:oidcMount:)
+    static func hasCachedToken(host: String, port: String, oidcMount: String) -> Bool {
+        guard let baseURL = VaultClient.buildBaseURL(host: host, port: port) else { return false }
+        return VaultOIDCHandler.cachedToken(for: baseURL, mount: effectiveOIDCMount(oidcMount)) != nil
+    }
+
     /// List database roles under `mount`, ensuring a valid Vault token first
     /// (reusing the cached token, else running the OIDC login flow).
     /// MUST be called from a background thread.
