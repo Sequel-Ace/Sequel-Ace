@@ -269,8 +269,9 @@ final class VaultClient {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw VaultClientError.parseError("no HTTP response")
         }
-        // Vault returns 404 for a mount with no roles; treat that as an empty list.
-        if httpResponse.statusCode == 404 { return [] }
+        // A 404 is ambiguous in Vault (a missing/mistyped mount and an empty role
+        // list are indistinguishable), so surface it as an error rather than
+        // silently returning [] and hiding a wrong mount path.
         guard httpResponse.statusCode == 200, let data = data else {
             let vaultDetail = parseVaultErrors(from: data)
             os_log("listDatabaseRoles HTTP error: %d%{public}@", log: log, type: .error,
