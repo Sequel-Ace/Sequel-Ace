@@ -1381,8 +1381,14 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 - (void)setVaultCredentialsPath:(NSString *)path
 {
     NSString *value = path ?: @"";
-    [self setVaultMount:[VaultCredentialsPath mountFromCredPath:value]];
-    [self setVaultCredentialsRole:[VaultCredentialsPath roleFromCredPath:value]];
+    // Set both backing ivars before emitting KVO so observers of the dependent
+    // vaultCredentialsPath key never see a half-updated mount/role pair.
+    [self willChangeValueForKey:@"vaultMount"];
+    [self willChangeValueForKey:@"vaultCredentialsRole"];
+    vaultMount = [[VaultCredentialsPath mountFromCredPath:value] copy];
+    vaultCredentialsRole = [[VaultCredentialsPath roleFromCredPath:value] copy];
+    [self didChangeValueForKey:@"vaultCredentialsRole"];
+    [self didChangeValueForKey:@"vaultMount"];
 }
 
 /**
