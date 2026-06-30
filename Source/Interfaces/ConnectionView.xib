@@ -2280,6 +2280,7 @@ DQ
                                                                                                     </dictionary>
                                                                                                 </binding>
                                                                                                 <outlet property="delegate" destination="-2" id="VLT-MOUNT-DLG1"/>
+                                                                                                <outlet property="nextKeyView" destination="VLT-ROLE-CMB1" id="VLT-MOUNT-NKV1"/>
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="VLT-ROLE-LBL1">
@@ -2306,6 +2307,7 @@ DQ
                                                                                                         <bool key="NSContinuouslyUpdatesValue" value="YES"/>
                                                                                                     </dictionary>
                                                                                                 </binding>
+                                                                                                <outlet property="nextKeyView" destination="2BI-5B-eqi" id="VLT-ROLE-NKV1"/>
                                                                                             </connections>
                                                                                         </comboBox>
                                                                                         <button toolTip="Fetch the list of Vault database credentials roles for the mount." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="VLT-ROLE-BTN1">
@@ -2320,7 +2322,7 @@ DQ
                                                                                             </connections>
                                                                                         </button>
                                                                                         <progressIndicator verticalHuggingPriority="750" fixedFrame="YES" hidden="YES" maxValue="100" displayedWhenStopped="NO" indeterminate="YES" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="VLT-ROLE-PRG1">
-                                                                                            <rect key="frame" x="334" y="300" width="16" height="16"/>
+                                                                                            <rect key="frame" x="361" y="300" width="16" height="16"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                         </progressIndicator>
                                                                                         <textField identifier="vaultPortField" toolTip="Vault HTTPS port (default 443)." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2BI-5B-eqi">
