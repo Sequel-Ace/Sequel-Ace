@@ -1438,6 +1438,17 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                 [self willChangeValueForKey:@"vaultAvailableRoles"];
                 self->vaultAvailableRoles = [roles copy];
                 [self didChangeValueForKey:@"vaultAvailableRoles"];
+                if (roles.count == 0) {
+                    NSAlert *empty = [[NSAlert alloc] init];
+                    empty.messageText = NSLocalizedString(@"No Vault roles found", @"Vault roles refresh – empty");
+                    empty.informativeText = NSLocalizedString(@"No database roles were returned for this mount. Check the Vault mount path and that your token may list roles, or type the role manually.", @"Vault roles refresh – empty detail");
+                    NSWindow *emptyParentWindow = [self->dbDocument parentWindowControllerWindow];
+                    if (emptyParentWindow) {
+                        [empty beginSheetModalForWindow:emptyParentWindow completionHandler:nil];
+                    } else {
+                        [empty runModal];
+                    }
+                }
             } else {
                 NSAlert *alert = [[NSAlert alloc] init];
                 alert.messageText = NSLocalizedString(@"Could not load Vault roles", @"Vault roles refresh – failure");
