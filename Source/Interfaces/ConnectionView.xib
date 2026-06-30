@@ -2301,7 +2301,6 @@ DQ
                                                                                                 <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                                             </comboBoxCell>
                                                                                             <connections>
-                                                                                                <binding destination="-2" name="contentValues" keyPath="vaultAvailableRoles" id="VLT-ROLE-BND1"/>
                                                                                                 <binding destination="-2" name="value" keyPath="vaultCredentialsRole" id="VLT-ROLE-BND2">
                                                                                                     <dictionary key="options">
                                                                                                         <bool key="NSContinuouslyUpdatesValue" value="YES"/>
