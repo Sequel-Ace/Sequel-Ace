@@ -1449,7 +1449,12 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         NSAlert *alert = [[NSAlert alloc] init];
         alert.messageText = NSLocalizedString(@"Enter a Vault mount first", @"Vault roles refresh – missing mount");
         alert.informativeText = NSLocalizedString(@"The list of roles is read from <mount>/roles. Fill in the Vault mount field, then refresh.", @"Vault roles refresh – missing mount detail");
-        [alert beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:nil];
+        NSWindow *parentWindow = [dbDocument parentWindowControllerWindow];
+        if (parentWindow) {
+            [alert beginSheetModalForWindow:parentWindow completionHandler:nil];
+        } else {
+            [alert runModal];
+        }
         return;
     }
 
