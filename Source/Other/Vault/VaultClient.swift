@@ -251,6 +251,11 @@ final class VaultClient {
         let cleaned = mount.trimmingCharacters(in: .whitespacesAndNewlines)
             .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         guard !cleaned.isEmpty else { throw VaultClientError.parseError("empty Vault mount") }
+        // Reject path-traversal segments so a crafted mount cannot redirect the
+        // authenticated request to a different Vault endpoint.
+        guard !cleaned.split(separator: "/").contains("..") else {
+            throw VaultClientError.parseError("invalid Vault mount path")
+        }
         let url = baseURL.appendingPathComponent("v1/\(cleaned)/roles")
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
         request.httpMethod = "LIST"
