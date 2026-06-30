@@ -1389,6 +1389,12 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     vaultCredentialsRole = [[VaultCredentialsPath roleFromCredPath:value] copy];
     [self didChangeValueForKey:@"vaultCredentialsRole"];
     [self didChangeValueForKey:@"vaultMount"];
+
+    // The fetched role list belongs to the previous mount; drop it so the
+    // dropdown isn't stale after switching favorites (the user can re-Refresh).
+    [self willChangeValueForKey:@"vaultAvailableRoles"];
+    vaultAvailableRoles = nil;
+    [self didChangeValueForKey:@"vaultAvailableRoles"];
 }
 
 /**
