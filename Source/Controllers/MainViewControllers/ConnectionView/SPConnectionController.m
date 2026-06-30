@@ -463,9 +463,10 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                                     callback:nil];
         return;
     }
-    if ([self _isVaultConnection] && ![[self vaultCredentialsPath] length]) {
+    if ([self _isVaultConnection] && (![[[self vaultMount] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] length]
+                                       || ![[[self vaultCredentialsRole] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] length])) {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message")
-                                     message:NSLocalizedString(@"A Vault credentials path is required to connect.", @"vault creds path required connect message")
+                                     message:NSLocalizedString(@"A Vault mount and role are required to connect.", @"vault mount and role required connect message")
                                     callback:nil];
         return;
     }
@@ -2840,9 +2841,10 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                                     callback:nil];
         return;
     }
-    if (validateDetails && [self type] == SPVaultConnection && ![[self vaultCredentialsPath] length]) {
+    if (validateDetails && [self type] == SPVaultConnection && (![[[self vaultMount] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] length]
+                                                                 || ![[[self vaultCredentialsRole] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] length])) {
         [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Insufficient connection details", @"insufficient details message")
-                                     message:NSLocalizedString(@"A Vault credentials path is required to save a Vault favorite.", @"vault creds path required save message")
+                                     message:NSLocalizedString(@"A Vault mount and role are required to save a Vault favorite.", @"vault mount and role required save message")
                                     callback:nil];
         return;
     }
