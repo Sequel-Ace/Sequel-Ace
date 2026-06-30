@@ -395,6 +395,7 @@ import OSLog
                try VaultClient.tokenLookupSelf(baseURL: baseURL, token: cached) {
                 token = cached
             } else {
+                os_log("Vault listRoles: no valid cached token, falling through to OIDC login", log: log, type: .info)
                 token = try VaultOIDCHandler.login(baseURL: baseURL, mount: effectiveOIDCMount, identifier: nil)
             }
         } catch let oidcError as VaultOIDCError {
@@ -403,12 +404,14 @@ import OSLog
                 domain: errorDomain,
                 code: authError.rawValue,
                 userInfo: [NSLocalizedDescriptionKey: oidcError.localizedDescription ?? ""])
+            os_log("Vault OIDC login failed: %{public}@", log: log, type: .error, oidcError.localizedDescription ?? "unknown")
             return nil
         } catch {
             errorPointer?.pointee = NSError(
                 domain: errorDomain,
                 code: VaultAuthError.loginFailed.rawValue,
                 userInfo: [NSLocalizedDescriptionKey: error.localizedDescription])
+            os_log("Vault login error: %{public}@", log: log, type: .error, error.localizedDescription)
             return nil
         }
 
