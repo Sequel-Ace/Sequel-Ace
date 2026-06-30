@@ -2513,7 +2513,7 @@ DQ
                                                                                     </subviews>
                                                                                 </customView>
                                                                                 <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Va1-ul-SSL">
-                                                                                    <rect key="frame" x="21" y="-48" width="377" height="104"/>
+                                                                                    <rect key="frame" x="21" y="-78" width="377" height="104"/>
                                                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                     <subviews>
                                                                                         <button toolTip="Click to choose the SSL private key file." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Va1-ul-KEY">

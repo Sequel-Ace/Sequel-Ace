@@ -4733,6 +4733,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         [awsRegionComboBox setTarget:self];
         [awsRegionComboBox setAction:@selector(updateAWSIAMInterface:)];
 
+        // Localize the Vault role refresh button title (static XIB titles are not localized in this app).
+        [vaultRefreshRolesButton setTitle:NSLocalizedString(@"Refresh", @"Vault roles refresh button title")];
+
         // Initialize the connection service
         self.connectionService = [[SAConnectionService alloc] init];
         if ([dbDocument conformsToProtocol:@protocol(SPMySQLConnectionDelegate)]) {
