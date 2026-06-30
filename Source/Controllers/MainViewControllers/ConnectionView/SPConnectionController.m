@@ -4107,6 +4107,18 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 }
 
 /**
+ * Selecting a Vault role from the combo box dropdown does not emit
+ * controlTextDidChange:, so mark the connection as edited here to mirror the
+ * behaviour of editing any other field (the value binding updates on selection).
+ */
+- (void)comboBoxSelectionDidChange:(NSNotification *)notification
+{
+    if ([notification object] == vaultCredentialsRoleComboBox) {
+        [self _startEditingConnection];
+    }
+}
+
+/**
  * React to the end of control text changes in the connection interface.
  */
 - (void)controlTextDidEndEditing:(NSNotification *)notification
