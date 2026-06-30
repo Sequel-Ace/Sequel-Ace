@@ -249,6 +249,9 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
 @synthesize useAWSIAMAuth;
 @synthesize awsRegion;
 @synthesize awsProfile;
+@synthesize vaultMount;
+@synthesize vaultCredentialsRole;
+@synthesize vaultAvailableRoles;
 @synthesize useSSL;
 @synthesize sslKeyFileLocationEnabled;
 @synthesize sslKeyFileLocation;
@@ -1348,6 +1351,88 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 - (NSArray<NSString *> *)awsAvailableRegions
 {
     return awsAvailableRegionValues ?: [AWSIAMAuthManager cachedOrFallbackRegions];
+}
+
+#pragma mark -
+#pragma mark Vault Authentication
+
+/**
+ * KVO: vaultCredentialsPath is affected by vaultMount and vaultCredentialsRole.
+ */
++ (NSSet *)keyPathsForValuesAffectingVaultCredentialsPath
+{
+    return [NSSet setWithObjects:@"vaultMount", @"vaultCredentialsRole", nil];
+}
+
+/**
+ * Computed getter: joins mount + role into the full credentials path.
+ * Existing persistence (SPFavoriteVaultCredentialsPathKey) and the connect
+ * path read this value, so they remain unchanged.
+ */
+- (NSString *)vaultCredentialsPath
+{
+    return [VaultCredentialsPath credPathWithMount:(vaultMount ?: @"") role:(vaultCredentialsRole ?: @"")];
+}
+
+/**
+ * Computed setter: called when loading a favorite — splits the stored path
+ * back into the mount and role fields.
+ */
+- (void)setVaultCredentialsPath:(NSString *)path
+{
+    NSString *value = path ?: @"";
+    [self setVaultMount:[VaultCredentialsPath mountFromCredPath:value]];
+    [self setVaultCredentialsRole:[VaultCredentialsPath roleFromCredPath:value]];
+}
+
+/**
+ * Fetches the list of Vault database roles for the current mount on a
+ * background thread (the call may open a browser for OIDC login), then
+ * updates vaultAvailableRoles on the main thread via KVO.
+ */
+- (IBAction)refreshVaultRoles:(id)sender
+{
+    NSString *mount = [self vaultMount] ?: @"";
+    if (![[mount stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] length]) {
+        NSAlert *alert = [[NSAlert alloc] init];
+        alert.messageText = NSLocalizedString(@"Enter a Vault mount first", @"Vault roles refresh – missing mount");
+        alert.informativeText = NSLocalizedString(@"The list of roles is read from <mount>/roles. Fill in the Vault mount field, then refresh.", @"Vault roles refresh – missing mount detail");
+        [alert beginSheetModalForWindow:[dbDocument parentWindowControllerWindow] completionHandler:nil];
+        return;
+    }
+
+    NSString *host      = [self vaultHost] ?: @"";
+    NSString *port      = [self vaultPort] ?: @"";
+    NSString *oidcMount = [self vaultOIDCMount] ?: @"";
+
+    [vaultRefreshRolesButton setEnabled:NO];
+    [vaultRolesProgressIndicator setHidden:NO];
+    [vaultRolesProgressIndicator startAnimation:self];
+
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        NSError *error = nil;
+        NSArray<NSString *> *roles = [VaultAuthManager listRolesWithHost:host
+                                                                    port:port
+                                                               oidcMount:oidcMount
+                                                                   mount:mount
+                                                                   error:&error];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self->vaultRolesProgressIndicator stopAnimation:self];
+            [self->vaultRolesProgressIndicator setHidden:YES];
+            [self->vaultRefreshRolesButton setEnabled:YES];
+
+            if (roles) {
+                [self willChangeValueForKey:@"vaultAvailableRoles"];
+                self->vaultAvailableRoles = [roles copy];
+                [self didChangeValueForKey:@"vaultAvailableRoles"];
+            } else {
+                NSAlert *alert = [[NSAlert alloc] init];
+                alert.messageText = NSLocalizedString(@"Could not load Vault roles", @"Vault roles refresh – failure");
+                alert.informativeText = error.localizedDescription ?: NSLocalizedString(@"Unknown error. You can still type the role manually.", @"Vault roles refresh – failure detail");
+                [alert beginSheetModalForWindow:[self->dbDocument parentWindowControllerWindow] completionHandler:nil];
+            }
+        });
+    });
 }
 
 #pragma mark -
