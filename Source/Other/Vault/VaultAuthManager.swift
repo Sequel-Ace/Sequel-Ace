@@ -363,6 +363,66 @@ import OSLog
         return true
     }
 
+    /// List database roles under `mount`, ensuring a valid Vault token first
+    /// (reusing the cached token, else running the OIDC login flow).
+    /// MUST be called from a background thread.
+    @objc(listRolesWithHost:port:oidcMount:mount:error:)
+    static func listRoles(
+        host: String,
+        port: String,
+        oidcMount: String,
+        mount: String,
+        error errorPointer: NSErrorPointer
+    ) -> [String]? {
+        assert(!Thread.isMainThread, "listRoles must not be called on the main thread")
+
+        let trimmedMountValue = mount.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let baseURL = VaultClient.buildBaseURL(host: host, port: port), !trimmedMountValue.isEmpty else {
+            errorPointer?.pointee = NSError(
+                domain: errorDomain,
+                code: VaultAuthError.invalidConfiguration.rawValue,
+                userInfo: [NSLocalizedDescriptionKey: VaultAuthError.invalidConfiguration.localizedDescription ?? ""])
+            return nil
+        }
+
+        let trimmedOIDCMount = oidcMount.trimmingCharacters(in: .whitespacesAndNewlines)
+        let effectiveOIDCMount = trimmedOIDCMount.isEmpty ? "oidc" : trimmedOIDCMount
+
+        // Resolve a valid token: cached-and-valid, else OIDC login.
+        let token: String
+        do {
+            if let cached = VaultOIDCHandler.cachedToken(for: baseURL, mount: effectiveOIDCMount),
+               try VaultClient.tokenLookupSelf(baseURL: baseURL, token: cached) {
+                token = cached
+            } else {
+                token = try VaultOIDCHandler.login(baseURL: baseURL, mount: effectiveOIDCMount, identifier: nil)
+            }
+        } catch let oidcError as VaultOIDCError {
+            let authError: VaultAuthError = (oidcError == .cancelled) ? .loginCancelled : .loginFailed
+            errorPointer?.pointee = NSError(
+                domain: errorDomain,
+                code: authError.rawValue,
+                userInfo: [NSLocalizedDescriptionKey: oidcError.localizedDescription ?? ""])
+            return nil
+        } catch {
+            errorPointer?.pointee = NSError(
+                domain: errorDomain,
+                code: VaultAuthError.loginFailed.rawValue,
+                userInfo: [NSLocalizedDescriptionKey: error.localizedDescription])
+            return nil
+        }
+
+        do {
+            return try VaultClient.listDatabaseRoles(baseURL: baseURL, mount: trimmedMountValue, token: token)
+        } catch {
+            errorPointer?.pointee = NSError(
+                domain: errorDomain,
+                code: VaultAuthError.credentialsFailed.rawValue,
+                userInfo: [NSLocalizedDescriptionKey: error.localizedDescription])
+            return nil
+        }
+    }
+
     /// Check whether there is a valid cached Vault token for the default OIDC mount on the given host.
     /// MUST be called from a background thread — performs synchronous network I/O.
     @objc(isAuthorizedWithHost:port:)
