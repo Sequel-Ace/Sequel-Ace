@@ -169,8 +169,7 @@ import OSLog
             return false
         }
 
-        let trimmedMount = oidcMount.trimmingCharacters(in: .whitespacesAndNewlines)
-        let effectiveMount = trimmedMount.isEmpty ? "oidc" : trimmedMount
+        let effectiveMount = effectiveOIDCMount(oidcMount)
 
         let key = cacheKey(baseURL: baseURL, oidcMount: effectiveMount, credPath: effectiveCredPath)
         let activeLoginIdentifier = loginIdentifier.isEmpty ? nil : loginIdentifier
@@ -363,6 +362,12 @@ import OSLog
         return true
     }
 
+    /// Normalize an OIDC auth mount, defaulting to "oidc" when blank.
+    private static func effectiveOIDCMount(_ mount: String) -> String {
+        let trimmed = mount.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "oidc" : trimmed
+    }
+
     /// List database roles under `mount`, ensuring a valid Vault token first
     /// (reusing the cached token, else running the OIDC login flow).
     /// MUST be called from a background thread.
@@ -385,18 +390,17 @@ import OSLog
             return nil
         }
 
-        let trimmedOIDCMount = oidcMount.trimmingCharacters(in: .whitespacesAndNewlines)
-        let effectiveOIDCMount = trimmedOIDCMount.isEmpty ? "oidc" : trimmedOIDCMount
+        let oidcMountResolved = effectiveOIDCMount(oidcMount)
 
         // Resolve a valid token: cached-and-valid, else OIDC login.
         let token: String
         do {
-            if let cached = VaultOIDCHandler.cachedToken(for: baseURL, mount: effectiveOIDCMount),
+            if let cached = VaultOIDCHandler.cachedToken(for: baseURL, mount: oidcMountResolved),
                try VaultClient.tokenLookupSelf(baseURL: baseURL, token: cached) {
                 token = cached
             } else {
                 os_log("Vault listRoles: no valid cached token, falling through to OIDC login", log: log, type: .info)
-                token = try VaultOIDCHandler.login(baseURL: baseURL, mount: effectiveOIDCMount, identifier: nil)
+                token = try VaultOIDCHandler.login(baseURL: baseURL, mount: oidcMountResolved, identifier: nil)
             }
         } catch let oidcError as VaultOIDCError {
             let authError: VaultAuthError = (oidcError == .cancelled) ? .loginCancelled : .loginFailed
@@ -441,8 +445,6 @@ import OSLog
     static func isAuthorized(host: String, port: String, oidcMount: String) -> Bool {
         assert(!Thread.isMainThread, "isAuthorized must not be called on the main thread")
         guard let baseURL = VaultClient.buildBaseURL(host: host, port: port) else { return false }
-        let trimmedMount = oidcMount.trimmingCharacters(in: .whitespacesAndNewlines)
-        let effectiveMount = trimmedMount.isEmpty ? "oidc" : trimmedMount
-        return isAuthorized(baseURL: baseURL, mount: effectiveMount)
+        return isAuthorized(baseURL: baseURL, mount: effectiveOIDCMount(oidcMount))
     }
 }
