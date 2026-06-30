@@ -1429,7 +1429,12 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                 NSAlert *alert = [[NSAlert alloc] init];
                 alert.messageText = NSLocalizedString(@"Could not load Vault roles", @"Vault roles refresh – failure");
                 alert.informativeText = error.localizedDescription ?: NSLocalizedString(@"Unknown error. You can still type the role manually.", @"Vault roles refresh – failure detail");
-                [alert beginSheetModalForWindow:[self->dbDocument parentWindowControllerWindow] completionHandler:nil];
+                NSWindow *parentWindow = [self->dbDocument parentWindowControllerWindow];
+                if (parentWindow) {
+                    [alert beginSheetModalForWindow:parentWindow completionHandler:nil];
+                } else {
+                    [alert runModal];
+                }
             }
         });
     });
