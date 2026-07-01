@@ -249,7 +249,6 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
 @synthesize useAWSIAMAuth;
 @synthesize awsRegion;
 @synthesize awsProfile;
-@synthesize vaultMount;
 @synthesize vaultAvailableRoles;
 @synthesize useSSL;
 @synthesize sslKeyFileLocationEnabled;
@@ -1411,6 +1410,29 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     [self willChangeValueForKey:@"vaultCredentialsRole"];
     vaultCredentialsRole = [role copy];
     [self didChangeValueForKey:@"vaultCredentialsRole"];
+}
+
+- (NSString *)vaultMount
+{
+    return vaultMount;
+}
+
+- (void)setVaultMount:(NSString *)mount
+{
+    if (mount == vaultMount || [mount isEqualToString:vaultMount]) {
+        return;
+    }
+    [self willChangeValueForKey:@"vaultMount"];
+    vaultMount = [mount copy];
+    [self didChangeValueForKey:@"vaultMount"];
+
+    // The fetched role list belongs to the previous mount; invalidate it so the
+    // dropdown can't keep offering (or saving) a role from a different mount
+    // until the user refreshes again.
+    [self willChangeValueForKey:@"vaultAvailableRoles"];
+    vaultAvailableRoles = nil;
+    [self didChangeValueForKey:@"vaultAvailableRoles"];
+    [self _reloadVaultRoleComboItems];
 }
 
 - (void)_reloadVaultRoleComboItems
