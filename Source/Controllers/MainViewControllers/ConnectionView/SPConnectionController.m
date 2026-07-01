@@ -1497,6 +1497,11 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     }
 
     [vaultRefreshRolesButton setEnabled:NO];
+    // Refreshing may open the same OIDC browser login as connecting, which binds a
+    // fixed localhost callback port; disable Connect/Test so a second concurrent
+    // login can't be started and clash on that port.
+    [connectButton setEnabled:NO];
+    [testConnectButton setEnabled:NO];
     [vaultRolesProgressIndicator setHidden:NO];
     [vaultRolesProgressIndicator startAnimation:self];
 
@@ -1511,6 +1516,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             [self->vaultRolesProgressIndicator stopAnimation:self];
             [self->vaultRolesProgressIndicator setHidden:YES];
             [self->vaultRefreshRolesButton setEnabled:YES];
+            [self->connectButton setEnabled:YES];
+            [self->testConnectButton setEnabled:YES];
 
             // Discard stale results: if the mount changed (edited, or a different
             // favorite loaded) while this LIST was in flight, the roles belong to
