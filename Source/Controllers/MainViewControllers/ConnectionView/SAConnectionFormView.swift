@@ -34,6 +34,18 @@ struct SAConnectionFormView: View {
 
     var body: some View {
         Form {
+            // ── Database backend selector ──────────────────────────────────
+            Section {
+                Picker(selection: $model.info.databaseBackend) {
+                    ForEach([SADatabaseBackend.mysql, SADatabaseBackend.postgresql], id: \.self) { backend in
+                        Text(backend.displayName).tag(backend)
+                    }
+                } label: {
+                    Text("Database", comment: "connection view : database backend picker label")
+                }
+                .pickerStyle(.segmented)
+            }
+
             Section {
                 TextField(text: $model.info.name, prompt: Text(namePrompt)) {
                     Text("Name", comment: "connection view : field label")
@@ -56,16 +68,19 @@ struct SAConnectionFormView: View {
                 TextField(text: $model.info.database, prompt: Text("optional", comment: "connection view : optional field placeholder")) {
                     Text("Database", comment: "connection view : field label")
                 }
-                TextField(text: $model.info.port, prompt: Text(verbatim: "3306")) {
+                TextField(text: $model.info.port, prompt: Text(verbatim: model.defaultPortString)) {
                     Text("Port", comment: "connection view : field label")
                 }
             }
 
-            Section {
-                Toggle(isOn: requestServerPublicKeyBinding) {
-                    Text("Get Public Key", comment: "connection view : get server public key checkbox")
+            // MySQL-only controls — hidden when PostgreSQL is selected
+            if model.info.databaseBackend == .mysql {
+                Section {
+                    Toggle(isOn: requestServerPublicKeyBinding) {
+                        Text("Get Public Key", comment: "connection view : get server public key checkbox")
+                    }
+                    .help(NSLocalizedString("Request the server RSA public key for caching_sha2_password over non-SSL connections.", comment: "connection view : get server public key help"))
                 }
-                .help(NSLocalizedString("Request the server RSA public key for caching_sha2_password over non-SSL connections.", comment: "connection view : get server public key help"))
             }
 
             Section {

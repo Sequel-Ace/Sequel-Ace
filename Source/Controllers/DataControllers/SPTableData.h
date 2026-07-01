@@ -31,6 +31,7 @@
 @class SPDatabaseDocument;
 @class SPTablesList;
 @class SPMySQLConnection;
+#import "SPDatabaseConnection.h"
 
 @interface SPTableData: NSObject {
 	IBOutlet __weak SPDatabaseDocument* tableDocumentInstance;
@@ -46,7 +47,7 @@
 	NSString *tableEncoding;
 	NSString *tableCreateSyntax;
 	
-	SPMySQLConnection *mySQLConnection;
+	id<SPDatabaseConnection> mySQLConnection;
 
 	pthread_mutex_t dataProcessingLock;
 
@@ -54,7 +55,7 @@
 }
 
 @property (readonly, assign) BOOL tableHasAutoIncrementField;
-@property (nonatomic, strong) SPMySQLConnection *connection;
+@property (nonatomic, strong) id<SPDatabaseConnection> connection;
 
 - (NSArray *)createTableSyntaxFromView:(NSString *)tableName withSyntaxResult:(NSArray *)syntaxResult;
 - (NSString *) tableEncoding;

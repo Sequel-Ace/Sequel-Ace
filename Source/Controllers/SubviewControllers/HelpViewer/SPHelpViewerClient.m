@@ -30,6 +30,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPHelpViewerClient.h"
+#import "SPDatabaseConnection.h"
 #import "SPHelpViewerController.h"
 #import <SPMySQL/SPMySQL.h>
 #import "RegexKitLite.h"
@@ -254,7 +255,7 @@
 	return [NSString stringWithFormat:@"<a title='%2$@' href='%1$@' class='internallink'>%1$@</a>", aTopic, linkTitle];
 }
 
-- (void)setConnection:(SPMySQLConnection *)theConnection
+- (void)setConnection:(id<SPDatabaseConnection>)theConnection
 {
 	mySQLConnection = theConnection;
 }

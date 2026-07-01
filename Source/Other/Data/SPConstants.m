@@ -388,6 +388,9 @@ NSString *SPFavoriteVaultPortKey                         = @"vaultPort";
 NSString *SPFavoriteVaultOIDCMountKey                    = @"vaultOIDCMount";
 NSString *SPFavoriteVaultCredentialsPathKey              = @"vaultCredentialsPath";
 
+// Database backend type
+NSString *SPFavoriteDatabaseTypeKey                      = @"databaseType";
+
 NSString *SPConnectionFavoritesChangedNotification       = @"SPConnectionFavoritesChanged";
 NSString *SPConnectionShownSocketHelp                    = @"SPConnectionShownSocketHelp";
 NSString *SPStaleBookmarksHelp                           = @"SPStaleBookmarksHelp";
