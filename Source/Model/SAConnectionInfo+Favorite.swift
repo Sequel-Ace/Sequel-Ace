@@ -35,6 +35,7 @@ import Foundation
 private enum FavoriteKey {
     static let id = "id"
     static let type = "type"
+    static let databaseType = "databaseType"
     static let name = "name"
     static let useAWSIAMAuth = "useAWSIAMAuth"
     static let host = "host"
@@ -107,6 +108,10 @@ extension SAConnectionInfo {
     static func fromFavoriteDictionary(_ favorite: [AnyHashable: Any]?) -> SAConnectionInfo {
         let fav = favorite ?? [:]
         var info = SAConnectionInfo()
+
+        // Database backend: defaults to MySQL for existing favorites that predate PostgreSQL support.
+        let rawBackend = intValue(fav[FavoriteKey.databaseType], default: SADatabaseBackend.mysql.rawValue)
+        info.databaseBackend = SADatabaseBackend(rawValue: rawBackend) ?? .mysql
 
         // Connection type: unknown raw values fall back to TCP/IP (the
         // historical default for a missing key).
@@ -211,6 +216,7 @@ extension SAConnectionInfoObjC {
         let favorite: [String: Any] = [
             FavoriteKey.name: NSLocalizedString("New Favorite", comment: "new favorite name"),
             FavoriteKey.type: NSNumber(value: 0),
+            FavoriteKey.databaseType: NSNumber(value: 0),
             FavoriteKey.host: "",
             FavoriteKey.socket: "",
             FavoriteKey.user: "",

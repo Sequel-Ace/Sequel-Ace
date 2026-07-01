@@ -32,6 +32,8 @@
 #import "SPDatabaseDocument.h"
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPConnectionController.h"
+#import "SPDatabaseConnection.h"
+#import "SPMySQLConnectionWrapper.h"
 #import "SPTablesList.h"
 #import "SPDatabaseStructure.h"
 #import "SPFileHandle.h"
@@ -392,6 +394,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     _isConnected = YES;
     mySQLConnection = theConnection;
+    databaseConnection = [[SPMySQLConnectionWrapper alloc] initWithConnection:theConnection];
 
     // Now that we have a connection, determine what functionality the database supports.
     // Note that this must be done before anything else as it's used by nearly all of the main controllers.
@@ -568,6 +571,55 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 - (SPMySQLConnection *)getConnection
 {
     return mySQLConnection;
+}
+
+- (void)setDatabaseConnection:(id<SPDatabaseConnection>)connection {
+    databaseConnection = connection;
+    _isConnected = YES;
+
+    serverSupport = [[SPServerSupport alloc] initWithMajorVersion:[connection serverMajorVersion]
+                                                            minor:[connection serverMinorVersion]
+                                                          release:[connection serverReleaseVersion]];
+
+    NSURL *newURL = [[SPQueryController sharedQueryController] registerDocumentWithFileURL:[self fileURL] andContextInfo:spfPreferences];
+    [self setFileURL:newURL];
+
+    if ([self isUntitled]) {
+        [[[self.parentWindowController window] standardWindowButton:NSWindowDocumentIconButton] setImage:nil];
+    }
+
+    mySQLVersion = [connection serverVersionString];
+
+    NSString *tmpDb = [connectionController database];
+    if (tmpDb != nil && ![tmpDb isEqualToString:@""]) {
+        selectedDatabase = tmpDb;
+        [spHistoryControllerInstance updateHistoryEntries];
+    }
+
+    [connection setEncoding:[connection preferredUTF8Encoding]];
+
+    [chooseDatabaseButton setEnabled:!_isWorkingLevel];
+
+    [databaseDataInstance setConnection:connection];
+    [databaseDataInstance setServerSupport:serverSupport];
+
+    [tablesListInstance setConnection:connection];
+
+    [tableSourceInstance setConnection:connection];
+    [tableContentInstance setConnection:connection];
+    [customQueryInstance setConnection:connection];
+    [tableDataInstance setConnection:connection];
+    [helpViewerClientInstance setConnection:connection];
+
+    [[self onMainThread] updateWindowTitle:self];
+
+    [self setDatabases];
+    [self setUpInterface];
+    [self startDatabaseInterface];
+}
+
+- (id<SPDatabaseConnection>)activeDatabaseConnection {
+    return databaseConnection ?: (id<SPDatabaseConnection>)mySQLConnection;
 }
 
 #pragma mark -
@@ -1420,6 +1472,11 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)detectDatabaseEncoding
 {
+    if (databaseConnection && [databaseConnection isPostgreSQL]) {
+        _supportsEncoding = NO;
+        return;
+    }
+
     _supportsEncoding = YES;
 
     NSString *mysqlEncoding = [databaseDataInstance getDatabaseDefaultCharacterSet];
@@ -1447,10 +1504,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
- * return YES if MySQL server supports choosing connection and table encodings (MySQL 4.1 and newer)
+ * return YES if MySQL server supports choosing connection and table encodings (MySQL 4.1 and newer).
+ * Always returns NO for PostgreSQL connections.
  */
 - (BOOL)supportsEncoding
 {
+    if (databaseConnection && [databaseConnection isPostgreSQL]) return NO;
     return _supportsEncoding;
 }
 

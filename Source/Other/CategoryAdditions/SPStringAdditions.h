@@ -65,6 +65,11 @@ static inline id NSMutableAttributedStringAttributeAtIndex(NSMutableAttributedSt
 - (NSString *)XMLEscapeStringForContent;
 - (NSString *)backtickQuotedString;
 - (NSString *)tickQuotedString;
+/// Returns the string quoted with double-quotes for PostgreSQL identifier quoting.
+- (NSString *)doubleQuotedString;
+/// Returns the string quoted with either backticks (MySQL) or double-quotes (PostgreSQL)
+/// based on the provided connection.  Pass nil to use backtick quoting.
+- (NSString *)identifierQuotedStringForConnection:(nullable id)connection;
 - (NSString *)replaceUnderscoreWithSpace;
 - (NSArray *)lineRangesForRange:(NSRange)aRange;
 - (NSString *)createViewSyntaxPrettifier;

@@ -30,6 +30,7 @@
 
 @class SPServerSupport;
 @class SPMySQLConnection;
+#import "SPDatabaseConnection.h"
 
 /**
  * @class SPDatabaseData SPDatabaseData.h
@@ -55,7 +56,7 @@
 	NSMutableArray *characterSetEncodings;
 	NSMutableDictionary *cachedCollationsByEncoding;
 	
-	SPMySQLConnection *connection;
+	id<SPDatabaseConnection> connection;
 	SPServerSupport *serverSupport;
 	
 	NSObject *charsetCollationLock;
@@ -64,7 +65,7 @@
 /**
  * @property connection The current database connection
  */
-@property (readwrite, strong) SPMySQLConnection *connection;
+@property (readwrite, strong) id<SPDatabaseConnection> connection;
 
 /**
  * @property serverSupport The connection's associated SPServerSupport instance

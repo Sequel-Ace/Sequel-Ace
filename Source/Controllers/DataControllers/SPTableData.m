@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPTableData.h"
+#import "SPDatabaseConnection.h"
 #import "SPSQLParser.h"
 #import "SPDatabaseDocument.h"
 #import "SPTablesList.h"

@@ -30,6 +30,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPDataImport.h"
+#import "SPDatabaseConnection.h"
 #import "SPDatabaseDocument.h"
 #import "SPTablesList.h"
 #import "SPTableStructure.h"
@@ -1639,7 +1640,7 @@
 /**
  * Sets the connection (received from SPDatabaseDocument) and makes things that have to be done only once.
  */
-- (void)setConnection:(SPMySQLConnection *)theConnection
+- (void)setConnection:(id<SPDatabaseConnection>)theConnection
 {
 	NSButtonCell *switchButton = [[NSButtonCell alloc] init];
 	

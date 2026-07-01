@@ -62,6 +62,12 @@ typedef NS_ENUM(NSUInteger, SPConnectionType) {
 	SPVaultConnection     = 4
 };
 
+// Database backend types
+typedef NS_ENUM(NSInteger, SPDatabaseType) {
+	SPDatabaseTypeMySQL      = 0,
+	SPDatabaseTypePostgreSQL = 1
+};
+
 // Export type constants
 typedef NS_ENUM(NSUInteger, SPExportType) {
 	SPSQLExport   = 0,
@@ -570,6 +576,9 @@ extern NSString *SPFavoriteVaultHostKey;
 extern NSString *SPFavoriteVaultPortKey;
 extern NSString *SPFavoriteVaultOIDCMountKey;
 extern NSString *SPFavoriteVaultCredentialsPathKey;
+
+// Database backend type (SPDatabaseType)
+extern NSString *SPFavoriteDatabaseTypeKey;
 
 extern NSString *SPConnectionFavoritesChangedNotification;
 extern NSString *SPConnectionShownSocketHelp;
