@@ -1519,10 +1519,15 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             [self->connectButton setEnabled:YES];
             [self->testConnectButton setEnabled:YES];
 
-            // Discard stale results: if the mount changed (edited, or a different
-            // favorite loaded) while this LIST was in flight, the roles belong to
-            // the old mount and must not repopulate the combo box.
-            if (![(self->vaultMount ?: @"") isEqualToString:mount]) {
+            // Discard stale results: if the Vault context (host/port/OIDC mount/
+            // mount) changed while this LIST was in flight — edited fields, or a
+            // different favorite loaded (even one that reuses the same mount name
+            // on a different server) — the roles/error belong to a different
+            // request and must not populate this form.
+            if (![(self->vaultHost ?: @"") isEqualToString:host]
+                || ![(self->vaultPort ?: @"") isEqualToString:port]
+                || ![(self->vaultOIDCMount ?: @"") isEqualToString:oidcMount]
+                || ![(self->vaultMount ?: @"") isEqualToString:mount]) {
                 return;
             }
 
