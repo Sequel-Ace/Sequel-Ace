@@ -1512,6 +1512,13 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             [self->vaultRolesProgressIndicator setHidden:YES];
             [self->vaultRefreshRolesButton setEnabled:YES];
 
+            // Discard stale results: if the mount changed (edited, or a different
+            // favorite loaded) while this LIST was in flight, the roles belong to
+            // the old mount and must not repopulate the combo box.
+            if (![(self->vaultMount ?: @"") isEqualToString:mount]) {
+                return;
+            }
+
             if (roles) {
                 [self willChangeValueForKey:@"vaultAvailableRoles"];
                 self->vaultAvailableRoles = [roles copy];
