@@ -740,6 +740,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     if ([vaultLoginIdentifier length]) {
         [VaultOIDCHandler cancelActiveLoginWithIdentifier:vaultLoginIdentifier];
     }
+    // Also abort a role-refresh OIDC login (its own internal identifier) so its
+    // callback listener frees the fixed localhost port rather than lingering.
+    [VaultOIDCHandler cancelActiveLogin];
 
     // Cancel via connection service (handles both MySQL and SSH tunnel)
     [self.connectionService cancel];
@@ -1513,6 +1516,12 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                                                                    mount:mount
                                                                    error:&error];
         dispatch_async(dispatch_get_main_queue(), ^{
+            // The window is closing or the connection was cancelled (which aborts
+            // the OIDC login this fetch may be waiting on); drop the response
+            // without touching the torn-down UI or showing an alert.
+            if (self->dbDocument == nil || self->cancellingConnection) {
+                return;
+            }
             [self->vaultRolesProgressIndicator stopAnimation:self];
             [self->vaultRolesProgressIndicator setHidden:YES];
             [self->vaultRefreshRolesButton setEnabled:YES];
@@ -3628,6 +3637,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                 if ([vaultLoginIdentifier length]) {
                     [VaultOIDCHandler cancelActiveLoginWithIdentifier:vaultLoginIdentifier];
                 }
+                // Also abort any role-refresh OIDC login (started with its own
+                // internal identifier, so not covered above) so its listener frees
+                // the fixed localhost callback port instead of lingering to timeout.
+                [VaultOIDCHandler cancelActiveLogin];
                 [VaultAuthManager clearCachedCredentialsForHost:[self vaultHost] ?: @""
                                                            port:[self vaultPort] ?: @""
                                                       oidcMount:[self vaultOIDCMount] ?: @""
