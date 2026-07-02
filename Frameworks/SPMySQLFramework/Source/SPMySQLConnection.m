@@ -89,6 +89,7 @@ const SPMySQLClientFlags SPMySQLConnectionOptions =
 @synthesize socketPath;
 @synthesize allowDataLocalInfile;
 @synthesize enableClearTextPlugin;
+@synthesize requestServerPublicKey;
 @synthesize useSSL;
 @synthesize sslKeyFilePath;
 @synthesize sslCertificatePath;
@@ -882,6 +883,11 @@ asm(".desc ___crashreporter_info__, 0x10");
 	// Allow using ENABLE CLEARTEXT PLUGIN; ref: https://github.com/Sequel-Ace/Sequel-Ace/issues/368
 	if (enableClearTextPlugin) {
 		mysql_options(theConnection, MYSQL_ENABLE_CLEARTEXT_PLUGIN, [@"On" UTF8String]);
+	}
+
+	if (requestServerPublicKey) {
+		bool trueMyBool = TRUE;
+		mysql_options(theConnection, MYSQL_OPT_GET_SERVER_PUBLIC_KEY, &trueMyBool);
 	}
     
 	// Set up the connection variables in the format MySQL needs, from the class-wide variables

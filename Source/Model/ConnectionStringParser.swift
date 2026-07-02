@@ -29,9 +29,9 @@ import Foundation
     /// Valid query parameters for mysql:// URLs
     @objc public static let validQueryParameters: [String] = [
         "type", "socket",
-        "ssh_host", "ssh_port", "ssh_user", "ssh_password", "ssh_keyLocationEnabled", "ssh_keyLocation",
+        "ssh_host", "ssh_port", "ssh_user", "ssh_password", "ssh_keyLocationEnabled", "ssh_keyLocation", "ssh_remote_socket_path",
         "aws_region", "aws_profile",
-        "autoConnect", "enable_cleartext_plugin"
+        "autoConnect", "enable_cleartext_plugin", "get_server_public_key", "request_server_public_key"
     ]
 
     /// Parses a mysql:// URL into connection details
@@ -128,6 +128,10 @@ import Foundation
                 case "ssh_keyLocation":
                     details["ssh_keyLocation"] = value
 
+                case "ssh_remote_socket_path":
+                    details["ssh_remote_socket_path"] = value
+                    details["sshRemoteSocketPath"] = value
+
                 case "aws_region":
                     details["aws_region"] = value
 
@@ -138,6 +142,10 @@ import Foundation
                     // Map URL-style snake_case to the favorite plist key and normalize to NSNumber
                     let boolValue = (value.lowercased() == "true" || value == "1" || value.lowercased() == "yes" || value.lowercased() == "y")
                     details["enableClearTextPlugin"] = NSNumber(value: boolValue)
+
+                case "get_server_public_key", "request_server_public_key":
+                    let boolValue = (value.lowercased() == "true" || value == "1" || value.lowercased() == "yes" || value.lowercased() == "y")
+                    details["requestServerPublicKey"] = NSNumber(value: boolValue)
 
                 default:
                     break
@@ -150,7 +158,8 @@ import Foundation
             let hasAWSIAMIndicators = (details["aws_profile"] as? String)?.isEmpty == false ||
                                      (details["aws_region"] as? String)?.isEmpty == false
             let hasSocketIndicators = (details["socket"] as? String)?.isEmpty == false
-            let hasSSHIndicators = (details["ssh_host"] as? String)?.isEmpty == false
+            let hasSSHIndicators = (details["ssh_host"] as? String)?.isEmpty == false ||
+                                   (details["ssh_remote_socket_path"] as? String)?.isEmpty == false
 
             if hasAWSIAMIndicators {
                 details["type"] = "SPAWSIAMConnection"

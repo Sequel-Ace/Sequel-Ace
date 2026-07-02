@@ -56,6 +56,7 @@ struct SAConnectionInfo {
 
     var allowDataLocalInfile: Int = 0
     var enableClearTextPlugin: Int = 0
+    var requestServerPublicKey: Int = 0
 
     // MARK: AWS IAM Authentication
 
@@ -220,6 +221,11 @@ struct SAConnectionInfo {
     @objc var enableClearTextPlugin: Int {
         get { info.enableClearTextPlugin }
         set { info.enableClearTextPlugin = newValue }
+    }
+
+    @objc var requestServerPublicKey: Int {
+        get { info.requestServerPublicKey }
+        set { info.requestServerPublicKey = newValue }
     }
 
     // MARK: AWS IAM

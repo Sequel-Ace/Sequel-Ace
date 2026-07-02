@@ -48,6 +48,7 @@ private enum FavoriteKey {
     static let timeZoneIdentifier = "timeZone"
     static let allowDataLocalInfile = "allowDataLocalInfile"
     static let enableClearTextPlugin = "enableClearTextPlugin"
+    static let requestServerPublicKey = "requestServerPublicKey"
     static let awsRegion = "awsRegion"
     static let awsProfile = "awsProfile"
     static let vaultHost = "vaultHost"
@@ -134,6 +135,7 @@ extension SAConnectionInfo {
         // Special prefs (NSControlStateValue semantics: 0 = off, 1 = on)
         info.allowDataLocalInfile = intValue(fav[FavoriteKey.allowDataLocalInfile], default: 0)
         info.enableClearTextPlugin = intValue(fav[FavoriteKey.enableClearTextPlugin], default: 0)
+        info.requestServerPublicKey = intValue(fav[FavoriteKey.requestServerPublicKey], default: 0)
 
         // AWS IAM: the toggle is derived from the connection type, not stored.
         info.useAWSIAMAuth = info.type == .awsIAM ? 1 : 0
@@ -218,6 +220,7 @@ extension SAConnectionInfoObjC {
             FavoriteKey.timeZoneIdentifier: "",
             FavoriteKey.allowDataLocalInfile: off,
             FavoriteKey.enableClearTextPlugin: off,
+            FavoriteKey.requestServerPublicKey: off,
             FavoriteKey.useAWSIAMAuth: off,
             FavoriteKey.awsRegion: "",
             FavoriteKey.awsProfile: "default",

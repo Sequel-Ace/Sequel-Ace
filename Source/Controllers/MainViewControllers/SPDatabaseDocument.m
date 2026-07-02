@@ -3615,6 +3615,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [connection setObject:[NSNumber numberWithInteger:[connectionController useSSL]] forKey:@"useSSL"];
         [connection setObject:[NSNumber numberWithInteger:[connectionController allowDataLocalInfile]] forKey:@"allowDataLocalInfile"];
         [connection setObject:[NSNumber numberWithInteger:[connectionController enableClearTextPlugin]] forKey:@"enableClearTextPlugin"];
+        [connection setObject:[NSNumber numberWithInteger:[connectionController requestServerPublicKey]] forKey:@"requestServerPublicKey"];
         [connection setObject:[NSNumber numberWithInteger:[connectionController sslKeyFileLocationEnabled]] forKey:@"sslKeyFileLocationEnabled"];
         if ([connectionController sslKeyFileLocation]) [connection setObject:[connectionController sslKeyFileLocation] forKey:@"sslKeyFileLocation"];
         [connection setObject:[NSNumber numberWithInteger:[connectionController sslCertificateFileLocationEnabled]] forKey:@"sslCertificateFileLocationEnabled"];
@@ -3771,6 +3772,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // Set Enable cleartext plugin
     if ([connection objectForKey:@"enableClearTextPlugin"])             [connectionController setEnableClearTextPlugin:[[connection objectForKey:@"enableClearTextPlugin"] intValue]];
+    if ([connection objectForKey:@"requestServerPublicKey"])            [connectionController setRequestServerPublicKey:[[connection objectForKey:@"requestServerPublicKey"] intValue]];
 
     // Set SSL details
     if ([connection objectForKey:@"useSSL"])                            [connectionController setUseSSL:[[connection objectForKey:@"useSSL"] intValue]];

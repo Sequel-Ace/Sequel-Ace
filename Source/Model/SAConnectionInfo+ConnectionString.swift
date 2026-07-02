@@ -71,6 +71,9 @@ extension SAConnectionInfo {
                 queryItems.append(URLQueryItem(name: "ssh_keyLocationEnabled", value: "1"))
                 queryItems.append(URLQueryItem(name: "ssh_keyLocation", value: sshKeyLocation))
             }
+            if !sshRemoteSocketPath.isEmpty {
+                queryItems.append(URLQueryItem(name: "ssh_remote_socket_path", value: sshRemoteSocketPath))
+            }
 
         case .awsIAM:
             queryItems.append(URLQueryItem(name: "type", value: "aws_iam"))
@@ -92,6 +95,9 @@ extension SAConnectionInfo {
         // Add cleartext plugin flag if enabled (for LDAP/cleartext auth)
         if enableClearTextPlugin != 0 {
             queryItems.append(URLQueryItem(name: "enable_cleartext_plugin", value: "1"))
+        }
+        if requestServerPublicKey != 0 {
+            queryItems.append(URLQueryItem(name: "get_server_public_key", value: "1"))
         }
 
         if !queryItems.isEmpty {
@@ -208,6 +214,9 @@ extension SPFavoriteNode {
 
             // Note: SSH key paths are excluded by default as they are local to the machine
             // If needed, use toConnectionString(includePassword:includeSSHKeyPath:) with includeSSHKeyPath: true
+            if let sshRemoteSocketPath = favoriteDict[SPFavoriteSSHRemoteSocketPathKey] as? String, !sshRemoteSocketPath.isEmpty {
+                queryItems.append(URLQueryItem(name: "ssh_remote_socket_path", value: sshRemoteSocketPath))
+            }
         }
         else if typeValue == 3 { // SPAWSIAMConnection
             queryItems.append(URLQueryItem(name: "type", value: "aws_iam"))
@@ -223,6 +232,10 @@ extension SPFavoriteNode {
         if let enableClearText = favoriteDict[SPFavoriteEnableClearTextPluginKey] as? NSNumber,
            enableClearText.boolValue {
             queryItems.append(URLQueryItem(name: "enable_cleartext_plugin", value: "1"))
+        }
+        if let requestServerPublicKey = favoriteDict[SPFavoriteRequestServerPublicKeyKey] as? NSNumber,
+           requestServerPublicKey.boolValue {
+            queryItems.append(URLQueryItem(name: "get_server_public_key", value: "1"))
         }
 
         if !queryItems.isEmpty {

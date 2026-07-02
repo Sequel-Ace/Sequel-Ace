@@ -281,6 +281,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     [SPBundleManager.shared reloadBundles:self];
     [self _copyDefaultThemes];
 
+    // Start the embedded MCP server if enabled in preferences.
+    [self setupMCPServer];
+
     // If no documents are open, open one
     if (![self frontDocument]) {
 
@@ -1498,6 +1501,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
             return NSTerminateCancel;
         }
     }
+
+    // Shut down the MCP server before the app exits.
+    [SPMCPServer.shared stop];
 
     BOOL shouldSaveFavorites = NO;
 

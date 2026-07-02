@@ -333,6 +333,13 @@ NSString *SPPreferenceToolbarNetwork             = @"SPPreferenceToolbarNetwork"
 NSString *SPPreferenceToolbarEditor              = @"SPPreferenceToolbarEditor";
 NSString *SPPreferenceToolbarShortcuts           = @"SPPreferenceToolbarShortcuts";
 NSString *SPPreferenceToolbarFile				 = @"SPPreferenceToolbarFile";
+NSString *SPPreferenceToolbarMCP                 = @"SPPreferenceToolbarMCP";
+
+// MCP Server Prefpane
+NSString *SPMCPServerEnabled                     = @"SPMCPServerEnabled";
+NSString *SPMCPServerPort                        = @"SPMCPServerPort";
+NSString *SPMCPExportPath                        = @"SPMCPExportPath";
+NSString *SPMCPReadOnly                          = @"SPMCPReadOnly";
 
 // Connection favorite keys
 NSString *SPFavoritesRootKey                             = @"Favorites Root";
@@ -358,6 +365,7 @@ NSString *SPFavoriteSSHKeyLocationKey                    = @"sshKeyLocation";
 NSString *SPFavoriteSSHRemoteSocketPathKey               = @"sshRemoteSocketPath";
 NSString *SPFavoriteAllowDataLocalInfileKey              = @"allowDataLocalInfile";
 NSString *SPFavoriteEnableClearTextPluginKey             = @"enableClearTextPlugin";
+NSString *SPFavoriteRequestServerPublicKeyKey            = @"requestServerPublicKey";
 NSString *SPFavoriteUseSSLKey                            = @"useSSL";
 NSString *SPFavoriteSSLKeyFileLocationEnabledKey         = @"sslKeyFileLocationEnabled";
 NSString *SPFavoriteSSLKeyFileLocationKey                = @"sslKeyFileLocation";

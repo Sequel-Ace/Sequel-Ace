@@ -245,6 +245,7 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
 @synthesize timeZoneIdentifier;
 @synthesize allowDataLocalInfile;
 @synthesize enableClearTextPlugin;
+@synthesize requestServerPublicKey;
 @synthesize useAWSIAMAuth;
 @synthesize awsRegion;
 @synthesize awsProfile;
@@ -1124,6 +1125,11 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     [self _startEditingConnection];
 }
 
+- (IBAction)requestServerPublicKeyChanged:(id)sender
+{
+    [self _startEditingConnection];
+}
+
 - (BOOL)_isAWSIAMConnection
 {
     return [self type] == SPAWSIAMConnection;
@@ -1527,6 +1533,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
     // Clear text plugin
     [self setEnableClearTextPlugin:[details enableClearTextPlugin]];
+    [self setRequestServerPublicKey:[details requestServerPublicKey]];
 
     // AWS IAM Authentication (profile-based only - manual credentials not supported)
     [self setUseAWSIAMAuth:[details useAWSIAMAuth]];
@@ -2164,6 +2171,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         if ([details objectForKey:@"ssh_user"]) [favorite setObject:[details objectForKey:@"ssh_user"] forKey:SPFavoriteSSHUserKey];
         if ([details objectForKey:@"ssh_keyLocationEnabled"]) [favorite setObject:[details objectForKey:@"ssh_keyLocationEnabled"] forKey:SPFavoriteSSHKeyLocationEnabledKey];
         if ([details objectForKey:@"ssh_keyLocation"]) [favorite setObject:[details objectForKey:@"ssh_keyLocation"] forKey:SPFavoriteSSHKeyLocationKey];
+        id sshRemoteSocketPath = [details objectForKey:SPFavoriteSSHRemoteSocketPathKey] ?: [details objectForKey:@"ssh_remote_socket_path"];
+        if (sshRemoteSocketPath) [favorite setObject:sshRemoteSocketPath forKey:SPFavoriteSSHRemoteSocketPathKey];
     }
     else if (typeTag == SPAWSIAMConnection) {
         if ([details objectForKey:@"aws_region"]) [favorite setObject:[details objectForKey:@"aws_region"] forKey:@"awsRegion"];
@@ -2182,6 +2191,18 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                               [[clearTextValue lowercaseString] isEqualToString:@"true"]);
         }
         [favorite setObject:@(enableClearText) forKey:SPFavoriteEnableClearTextPluginKey];
+    }
+
+    id publicKeyValue = [details objectForKey:@"requestServerPublicKey"] ?: [details objectForKey:@"get_server_public_key"] ?: [details objectForKey:@"request_server_public_key"];
+    if (publicKeyValue) {
+        BOOL requestPublicKey = NO;
+        if ([publicKeyValue isKindOfClass:[NSNumber class]]) {
+            requestPublicKey = [publicKeyValue boolValue];
+        } else if ([publicKeyValue isKindOfClass:[NSString class]]) {
+            requestPublicKey = ([publicKeyValue isEqualToString:@"1"] ||
+                                [[publicKeyValue lowercaseString] isEqualToString:@"true"]);
+        }
+        [favorite setObject:@(requestPublicKey) forKey:SPFavoriteRequestServerPublicKeyKey];
     }
 
     // Generate unique ID for this favorite
@@ -2337,15 +2358,18 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                 NSString *existingSSHHost = [favoriteDict objectForKey:SPFavoriteSSHHostKey] ?: @"";
                 NSString *existingSSHUser = [favoriteDict objectForKey:SPFavoriteSSHUserKey] ?: @"";
                 NSString *existingSSHPort = [favoriteDict objectForKey:SPFavoriteSSHPortKey] ?: @"";
+                NSString *existingSSHRemoteSocketPath = [favoriteDict objectForKey:SPFavoriteSSHRemoteSocketPathKey] ?: @"";
 
                 // Check both URL keys (from connection string) and favorite keys (from plist import)
                 NSString *newSSHHost = [modeFields objectForKey:@"ssh_host"] ?: [modeFields objectForKey:SPFavoriteSSHHostKey] ?: @"";
                 NSString *newSSHUser = [modeFields objectForKey:@"ssh_user"] ?: [modeFields objectForKey:SPFavoriteSSHUserKey] ?: @"";
                 NSString *newSSHPort = [modeFields objectForKey:@"ssh_port"] ?: [modeFields objectForKey:SPFavoriteSSHPortKey] ?: @"";
+                NSString *newSSHRemoteSocketPath = [modeFields objectForKey:@"ssh_remote_socket_path"] ?: [modeFields objectForKey:SPFavoriteSSHRemoteSocketPathKey] ?: @"";
 
                 if (![existingSSHHost isEqualToString:newSSHHost] ||
                     ![existingSSHUser isEqualToString:newSSHUser] ||
-                    ![existingSSHPort isEqualToString:newSSHPort]) {
+                    ![existingSSHPort isEqualToString:newSSHPort] ||
+                    ![existingSSHRemoteSocketPath isEqualToString:newSSHRemoteSocketPath]) {
                     continue;
                 }
             }
@@ -2748,6 +2772,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     [theFavorite setObject:[NSNumber numberWithInteger:[self allowDataLocalInfile]] forKey:SPFavoriteAllowDataLocalInfileKey];
     // Clear text plugin
     [theFavorite setObject:[NSNumber numberWithInteger:[self enableClearTextPlugin]] forKey:SPFavoriteEnableClearTextPluginKey];
+    [theFavorite setObject:[NSNumber numberWithInteger:[self requestServerPublicKey]] forKey:SPFavoriteRequestServerPublicKeyKey];
     // AWS IAM Authentication (profile-based only)
     NSInteger awsIAMEnabled = ([self type] == SPAWSIAMConnection) ? NSControlStateValueOn : NSControlStateValueOff;
     [theFavorite setObject:[NSNumber numberWithInteger:awsIAMEnabled] forKey:SPFavoriteUseAWSIAMAuthKey];
@@ -3522,6 +3547,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     info.timeZoneIdentifier = timeZoneIdentifier ?: @"";
     info.allowDataLocalInfile = self.allowDataLocalInfile;
     info.enableClearTextPlugin = self.enableClearTextPlugin;
+    info.requestServerPublicKey = self.requestServerPublicKey;
     info.useAWSIAMAuth = self.useAWSIAMAuth;
     info.awsRegion = self.awsRegion ?: @"";
     info.awsProfile = self.awsProfile ?: @"";
@@ -4890,6 +4916,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
               context:NULL];
 
     [self addObserver:self
+           forKeyPath:SPFavoriteRequestServerPublicKeyKey
+              options:(NSKeyValueObservingOptionOld | NSKeyValueObservingOptionNew)
+              context:NULL];
+
+    [self addObserver:self
            forKeyPath:SPFavoriteUseSSLKey
               options:(NSKeyValueObservingOptionOld | NSKeyValueObservingOptionNew)
               context:NULL];
@@ -5130,6 +5161,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [self removeObserver:self forKeyPath:SPFavoritePortKey];
     [self removeObserver:self forKeyPath:SPFavoriteAllowDataLocalInfileKey];
     [self removeObserver:self forKeyPath:SPFavoriteEnableClearTextPluginKey];
+    [self removeObserver:self forKeyPath:SPFavoriteRequestServerPublicKeyKey];
     [self removeObserver:self forKeyPath:SPFavoriteUseSSLKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSHHostKey];
     [self removeObserver:self forKeyPath:SPFavoriteSSHUserKey];

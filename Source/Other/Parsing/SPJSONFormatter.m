@@ -87,11 +87,11 @@ static char GetNextANSIChar(SPJSONTokenizerState *stateInfo);
         [tabs appendString:indentString];
       
       NSInteger myIdLevel = idLevel;
-      while(myIdLevel > [tabs length]) {
+      while(myIdLevel > 32) {
         [formatted appendString:tabs];
-        myIdLevel -= [tabs length];
+        myIdLevel -= 32;
       }
-      [formatted appendString:[tabs substringWithRange:NSMakeRange(0, myIdLevel*indentWidth)]];
+      [formatted appendString:[tabs substringWithRange:NSMakeRange(0, myIdLevel * [indentString length])]];
       needIndent = NO;
     }
     

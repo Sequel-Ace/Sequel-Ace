@@ -54,6 +54,25 @@
 
 #define SP_BUNDLEEDITOR_SPLITVIEW_AUTOSAVE_STRING     @"SPBundleEditorSplitView"
 
+// SRRecorderCell recomputes its mouse-tracking rects whenever the recorder's frame changes
+// (window resize) or its first-responder status changes. On macOS 13+ that path removes a
+// now-stale tracking rect and throws, crashing the app (issue #1755). The cell holds the only
+// removeTrackingRect: call, and both the resize path (via the control) and the focus path
+// (becomeFirstResponder/resignFirstResponder) route through it. The shortcut field is
+// fixed-size and does not rely on hover tracking, so skip the reset.
+@interface SPBundleEditorShortcutRecorderCell : SRRecorderCell
+
+@end
+
+@implementation SPBundleEditorShortcutRecorderCell
+
+- (void)resetTrackingRects
+{
+	// Intentionally empty: see note above (#1755).
+}
+
+@end
+
 @interface SPBundleEditorController ()
 
 - (void)_updateBundleDataView;
