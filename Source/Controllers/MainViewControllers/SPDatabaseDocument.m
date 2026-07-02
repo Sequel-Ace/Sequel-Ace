@@ -74,14 +74,12 @@
 #import "SPAppController.h"
 #import "SPTableTriggers.h"
 #import "SPTableStructure.h"
-#import "SPPrintAccessory.h"
 #import "MGTemplateEngine.h"
 #import "ICUTemplateMatcher.h"
 #import "SPFavoritesOutlineView.h"
 #import "SPSSHTunnel.h"
 #import "SPHelpViewerClient.h"
 #import "SPHelpViewerController.h"
-#import "SPPrintUtility.h"
 #import "SPBundleManager.h"
 
 #import "sequel-ace-Swift.h"
@@ -208,9 +206,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         gotoDatabaseController = nil;
 
         isProcessing = NO;
-
-        printWebView = [[WebView alloc] init];
-        [printWebView setFrameLoadDelegate:self];
 
         prefs = [NSUserDefaults standardUserDefaults];
         undoManager = [[NSUndoManager alloc] init];
@@ -5986,30 +5981,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark - SPPrintController
 
 /**
- * WebView delegate method.
- */
-- (void)webView:(WebView *)sender didFinishLoadForFrame:(WebFrame *)frame {
-
-
-    NSPrintOperation *op = [SPPrintUtility preparePrintOperationWithView:[[[printWebView mainFrame] frameView] documentView] printView:printWebView];
-
-    /* -endTask has to be called first, since the toolbar caches the item enabled state before starting a sheet,
-     * disables all items and restores the cached state after the sheet ends. Because the database chooser is disabled
-     * during tasks, launching the sheet before calling -endTask first would result in the following flow:
-     * - toolbar item caches database chooser state as disabled (because of the active task)
-     * - sheet is shown
-     * - endTask reenables database chooser (has no effect because of the open sheet)
-     * - user dismisses sheet after some time
-     * - toolbar item restores cached state and disables database chooser again
-     * => Inconsistent UI: database chooser disabled when it should actually be enabled
-     */
-    if ([self isWorking]) [self endTask];
-
-    [op runOperationModalForWindow:[self.parentWindowController window] delegate:self didRunSelector:nil contextInfo:nil];
-}
-
-/**
- * Loads the print document interface. The actual printing is done in the doneLoading delegate.
+ * Starts generating the print document. The actual printing runs once the
+ * generated HTML has been rendered offscreen.
  */
 - (void)printDocument {
     // Only display warning for the 'Table Content' view
@@ -6067,13 +6040,30 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
- * Loads the supplied HTML string in the print WebView.
+ * Renders the supplied HTML string in an offscreen web view and runs the
+ * resulting print operation once loading finishes.
  */
 - (void)loadPrintWebViewWithHTMLString:(NSString *)HTMLString
 {
-    [[printWebView mainFrame] loadHTMLString:HTMLString baseURL:nil];
+    if (!printRenderer) printRenderer = [[SAHTMLPrintRenderer alloc] init];
 
+    [printRenderer printHTMLString:HTMLString completionHandler:^(NSPrintOperation *op) {
+        /* -endTask has to be called first, since the toolbar caches the item enabled state before starting a sheet,
+         * disables all items and restores the cached state after the sheet ends. Because the database chooser is disabled
+         * during tasks, launching the sheet before calling -endTask first would result in the following flow:
+         * - toolbar item caches database chooser state as disabled (because of the active task)
+         * - sheet is shown
+         * - endTask reenables database chooser (has no effect because of the open sheet)
+         * - user dismisses sheet after some time
+         * - toolbar item restores cached state and disables database chooser again
+         * => Inconsistent UI: database chooser disabled when it should actually be enabled
+         */
+        if ([self isWorking]) [self endTask];
 
+        if (!op) return;
+
+        [op runOperationModalForWindow:[self.parentWindowController window] delegate:self didRunSelector:nil contextInfo:nil];
+    }];
 }
 
 /**
@@ -6230,7 +6220,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [engine setObject:[[extendedTableInfoInstance onMainThread] tableInformationForPrinting] forKey:@"i"];
 
         [printData setObject:heading forKey:@"heading"];
-        [printData setObject:[[NSUnarchiver unarchiveObjectWithData:[prefs objectForKey:SPCustomQueryEditorFont]] fontName] forKey:@"font"];
+        [printData setObject:[[SAArchiving fontFromData:[prefs objectForKey:SPCustomQueryEditorFont]] fontName] forKey:@"font"];
 
         NSString *HTMLString = [engine processTemplateInFileAtPath:[[NSBundle mainBundle] pathForResource:SPHTMLTableInfoPrintTemplate ofType:@"html"] withVariables:printData];
 
@@ -6339,7 +6329,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
             // #2924: The connection controller doesn't retain its delegate (us), but it may outlive us (e.g. when running a bg thread)
             [connectionController setDelegate:nil];
-            [printWebView setFrameLoadDelegate:nil];
+            [printRenderer invalidate];
         }
     }
 }

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0FA952B1549148DF8C1B7E61 /* SAStaleBookmarkAlertContentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5438EBE13DEF4D968F600054 /* SAStaleBookmarkAlertContentTests.swift */; };
 		1141A389117BBFF200126A28 /* SPTableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1141A388117BBFF200126A28 /* SPTableCopy.m */; };
 		1198F5B31174EDD500670590 /* SPDatabaseCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1198F5B21174EDD500670590 /* SPDatabaseCopy.m */; };
 		11ACD43BE52B0351BBFE518F /* AWSSSOClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABAD424F195B2E207BF7C604 /* AWSSSOClient.swift */; };
@@ -105,7 +106,6 @@
 		1A4152F125AF531000B17249 /* GeneralSwiftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4152ED25AF530F00B17249 /* GeneralSwiftTests.swift */; };
 		1A445DAA25BACBE5004E9A77 /* naughty_strings.txt in Resources */ = {isa = PBXBuildFile; fileRef = 1A445DA925BACBE5004E9A77 /* naughty_strings.txt */; };
 		1A4CB03425923C4B00EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
-		0FA952B1549148DF8C1B7E61 /* SAStaleBookmarkAlertContentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5438EBE13DEF4D968F600054 /* SAStaleBookmarkAlertContentTests.swift */; };
 		1A4CB04F2592535300EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
 		1A4CB06B25926D7C00EDF804 /* StringRegexExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4CB03325923C4B00EDF804 /* StringRegexExtension.swift */; };
 		1A4DC22D25DECEA000DA4FE1 /* ProgressWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4DC22C25DECEA000DA4FE1 /* ProgressWindowController.swift */; };
@@ -169,7 +169,6 @@
 		296DC8BB0F909194002A3258 /* NSDictionary_DeepMutableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8B10F909194002A3258 /* NSDictionary_DeepMutableCopy.m */; };
 		296DC8BC0F909194002A3258 /* MGTemplateStandardFilters.m in Sources */ = {isa = PBXBuildFile; fileRef = 296DC8B40F909194002A3258 /* MGTemplateStandardFilters.m */; };
 		296DC8BF0F9091DF002A3258 /* libicucore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 296DC8BE0F9091DF002A3258 /* libicucore.dylib */; };
-		29A1B7E50FD1293A000B88E8 /* SPPrintAccessory.m in Sources */ = {isa = PBXBuildFile; fileRef = 29A1B7E40FD1293A000B88E8 /* SPPrintAccessory.m */; };
 		29FA88231114619E00D1AF3D /* SPTableTriggers.m in Sources */ = {isa = PBXBuildFile; fileRef = 29FA88221114619E00D1AF3D /* SPTableTriggers.m */; };
 		380F4EF50FC0B68F00B0BFD7 /* SPStringAdditionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 380F4EF40FC0B68F00B0BFD7 /* SPStringAdditionsTests.m */; };
 		384582C40FB95FF800DDACB6 /* func-small.png in Resources */ = {isa = PBXBuildFile; fileRef = 384582C30FB95FF800DDACB6 /* func-small.png */; };
@@ -246,21 +245,20 @@
 		5147B0112F8C000400C4C14A /* SAConnectionFormHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0102F8C000400C4C14A /* SAConnectionFormHelpers.swift */; };
 		5147B0122F8C000400C4C14A /* SAConnectionFormHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0102F8C000400C4C14A /* SAConnectionFormHelpers.swift */; };
 		5147B0142F8C000400C4C14A /* SAConnectionFormHelpersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0132F8C000400C4C14A /* SAConnectionFormHelpersTests.swift */; };
-		51AA84022FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AA84012FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift */; };
-		51AA84032FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AA84012FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift */; };
-		51AA84052FDE000100C4C14A /* SAAutoIncrementRuleSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AA84042FDE000100C4C14A /* SAAutoIncrementRuleSupportTests.swift */; };
 		5147B01A2F8C000600C4C14A /* SAFavoriteSearchTreeWalker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5147B0192F8C000600C4C14A /* SAFavoriteSearchTreeWalker.swift */; };
 		514B40A02F683E3700369718 /* SAAboutWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000001C /* SAAboutWindowController.swift */; };
 		514B40A72F68412000369718 /* License.md in Resources */ = {isa = PBXBuildFile; fileRef = 514B40A62F68412000369718 /* License.md */; };
 		514B40A82F68412000369718 /* Credits.md in Resources */ = {isa = PBXBuildFile; fileRef = 514B40A52F68412000369718 /* Credits.md */; };
 		514DD98925FACF1500EA3B3B /* SPDatabaseDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 514DD98825FACF1500EA3B3B /* SPDatabaseDocument.swift */; };
-		517412302573E10C00EB6935 /* SPPrintUtility.m in Sources */ = {isa = PBXBuildFile; fileRef = 5174122F2573E10C00EB6935 /* SPPrintUtility.m */; };
 		517412382573E8F900EB6935 /* EditorQuickLookTypes.plist in Resources */ = {isa = PBXBuildFile; fileRef = 517412372573E8F900EB6935 /* EditorQuickLookTypes.plist */; };
 		517BFF442F7DA38F00F6D812 /* SAConnectionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 517BFF432F7DA38F00F6D812 /* SAConnectionServiceTests.swift */; };
 		517E4512257A954000ED333B /* ContentFilters.plist in Resources */ = {isa = PBXBuildFile; fileRef = 517E4511257A954000ED333B /* ContentFilters.plist */; };
 		5193502F2567D2FB001272B5 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193502E2567D2FB001272B5 /* CollectionExtension.swift */; };
 		519350302567D2FB001272B5 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5193502E2567D2FB001272B5 /* CollectionExtension.swift */; };
 		51A709392565B99F001F1D2F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 51A709382565B99F001F1D2F /* Images.xcassets */; };
+		51AA84022FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AA84012FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift */; };
+		51AA84032FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AA84012FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift */; };
+		51AA84052FDE000100C4C14A /* SAAutoIncrementRuleSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AA84042FDE000100C4C14A /* SAAutoIncrementRuleSupportTests.swift */; };
 		51B09FC92F7677AA003BAFFF /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 51B09FC82F7677AA003BAFFF /* GoogleService-Info.plist */; };
 		51B09FCF2F7677EB003BAFFF /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 51B09FCE2F7677EB003BAFFF /* FirebaseAnalytics */; };
 		51B09FD12F7677EB003BAFFF /* FirebaseAnalyticsCore in Frameworks */ = {isa = PBXBuildFile; productRef = 51B09FD02F7677EB003BAFFF /* FirebaseAnalyticsCore */; };
@@ -276,11 +274,11 @@
 		51BC14F825BE135500F1CDC9 /* SPWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC14F725BE135500F1CDC9 /* SPWindowController.swift */; };
 		51BC150125BE138700F1CDC9 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 51BC150025BE138700F1CDC9 /* SnapKit */; };
 		51BC150625BE13C400F1CDC9 /* NSViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */; };
+		51C396462FF6BB8A007C2DD3 /* SAPrintUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C396452FF6BB8A007C2DD3 /* SAPrintUtility.swift */; };
 		51C4626D254ED02500F63E70 /* UserDefaultsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */; };
 		51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
 		51C8597C24C8A31400A8C7C4 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
 		51C8598024C8A6D700A8C7C4 /* SPStringAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = 1789343B0F30C1DD0097539A /* SPStringAdditions.m */; };
-		51CD0BDC258D06D8009E2484 /* PrintAccessory.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BBE258D06D7009E2484 /* PrintAccessory.xib */; };
 		51CD0BDD258D06D8009E2484 /* DataMigrationDialog.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BBF258D06D7009E2484 /* DataMigrationDialog.xib */; };
 		51CD0BDE258D06D8009E2484 /* Preferences.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BC0258D06D7009E2484 /* Preferences.xib */; };
 		51CD0BDF258D06D8009E2484 /* FilterTableWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51CD0BC1258D06D7009E2484 /* FilterTableWindow.xib */; };
@@ -312,16 +310,16 @@
 		51EA02532FDFF02C00DF6A7B /* SAArchivingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EA02522FDFF02C00DF6A7B /* SAArchivingTests.swift */; };
 		51EAE7252FDFEFA300DF6A7B /* SAArchiving.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EAE7242FDFEFA300DF6A7B /* SAArchiving.swift */; };
 		51EAE7262FDFEFA300DF6A7B /* SAArchiving.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EAE7242FDFEFA300DF6A7B /* SAArchiving.swift */; };
+		51EF3E642FDC24EE00EFFF09 /* SAConnectionFormModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E632FDC24EE00EFFF09 /* SAConnectionFormModel.swift */; };
+		51EF3E652FDC24EF00EFFF09 /* SAConnectionFormModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E632FDC24EE00EFFF09 /* SAConnectionFormModel.swift */; };
+		51EF3E692FDC250300EFFF09 /* SAConnectionFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E682FDC250300EFFF09 /* SAConnectionFormView.swift */; };
+		51EF3E6B2FDC251800EFFF09 /* SAConnectionFormModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E6A2FDC251800EFFF09 /* SAConnectionFormModelTests.swift */; };
 		51EF3E712FDC2A6500EFFF09 /* SABundleJSBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E702FDC2A6500EFFF09 /* SABundleJSBridge.swift */; };
 		51EF3E762FDC2A9800EFFF09 /* SAWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E752FDC2A9800EFFF09 /* SAWebView.swift */; };
 		51EF3E782FDC2AB700EFFF09 /* SABundleJSBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E772FDC2AB700EFFF09 /* SABundleJSBridgeTests.swift */; };
 		51EF3E792FDC2C8400EFFF09 /* SABundleJSBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E702FDC2A6500EFFF09 /* SABundleJSBridge.swift */; };
 		51EF3E7B2FDC2E5800EFFF09 /* SABundleHTMLOutputWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E7A2FDC2E5800EFFF09 /* SABundleHTMLOutputWindowController.swift */; };
 		51EF3E7D2FDC2E6300EFFF09 /* SABundleHTMLOutputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E7C2FDC2E6300EFFF09 /* SABundleHTMLOutputView.swift */; };
-		51EF3E642FDC24EE00EFFF09 /* SAConnectionFormModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E632FDC24EE00EFFF09 /* SAConnectionFormModel.swift */; };
-		51EF3E652FDC24EF00EFFF09 /* SAConnectionFormModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E632FDC24EE00EFFF09 /* SAConnectionFormModel.swift */; };
-		51EF3E692FDC250300EFFF09 /* SAConnectionFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E682FDC250300EFFF09 /* SAConnectionFormView.swift */; };
-		51EF3E6B2FDC251800EFFF09 /* SAConnectionFormModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E6A2FDC251800EFFF09 /* SAConnectionFormModelTests.swift */; };
 		51F41FBA25F56A5900594BA5 /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 51F41FB625F56A5900594BA5 /* MainWindow.xib */; };
 		51F4AFBF24B26665006144D5 /* NSAlertExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */; };
 		5806B76411A991EC00813A88 /* SPDocumentController.m in Sources */ = {isa = PBXBuildFile; fileRef = 5806B76311A991EC00813A88 /* SPDocumentController.m */; };
@@ -943,8 +941,6 @@
 		296DC8B40F909194002A3258 /* MGTemplateStandardFilters.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MGTemplateStandardFilters.m; sourceTree = "<group>"; };
 		296DC8B50F909194002A3258 /* MGTemplateStandardFilters.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MGTemplateStandardFilters.h; sourceTree = "<group>"; };
 		296DC8BE0F9091DF002A3258 /* libicucore.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libicucore.dylib; path = usr/lib/libicucore.dylib; sourceTree = SDKROOT; };
-		29A1B7E30FD1293A000B88E8 /* SPPrintAccessory.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.objc; fileEncoding = 4; path = SPPrintAccessory.h; sourceTree = "<group>"; };
-		29A1B7E40FD1293A000B88E8 /* SPPrintAccessory.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPPrintAccessory.m; sourceTree = "<group>"; wrapsLines = 0; };
 		29FA88211114619E00D1AF3D /* SPTableTriggers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTableTriggers.h; sourceTree = "<group>"; };
 		29FA88221114619E00D1AF3D /* SPTableTriggers.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTableTriggers.m; sourceTree = "<group>"; };
 		2A37F4C4FDCFA73011CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
@@ -1026,7 +1022,6 @@
 		5146E0542F7A640C00C4C14A /* SADatabaseListManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SADatabaseListManagerTests.swift; sourceTree = "<group>"; };
 		5147B0012F8C000100C4C14A /* SAWindowTitleBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAWindowTitleBuilder.swift; sourceTree = "<group>"; };
 		5147B0042F8C000100C4C14A /* SAWindowTitleBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAWindowTitleBuilderTests.swift; sourceTree = "<group>"; };
-		5438EBE13DEF4D968F600054 /* SAStaleBookmarkAlertContentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAStaleBookmarkAlertContentTests.swift; sourceTree = "<group>"; };
 		5147B0062F8C000200C4C14A /* SAFavoriteSearchMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoriteSearchMatcher.swift; sourceTree = "<group>"; };
 		5147B0092F8C000200C4C14A /* SAFavoriteSearchMatcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoriteSearchMatcherTests.swift; sourceTree = "<group>"; };
 		5147B00B2F8C000300C4C14A /* SAConnectionDetailsValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionDetailsValidator.swift; sourceTree = "<group>"; };
@@ -1034,8 +1029,6 @@
 		5147B0102F8C000400C4C14A /* SAConnectionFormHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionFormHelpers.swift; sourceTree = "<group>"; };
 		5147B0132F8C000400C4C14A /* SAConnectionFormHelpersTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionFormHelpersTests.swift; sourceTree = "<group>"; };
 		5147B0192F8C000600C4C14A /* SAFavoriteSearchTreeWalker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAFavoriteSearchTreeWalker.swift; sourceTree = "<group>"; };
-		51AA84012FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAAutoIncrementRuleSupport.swift; sourceTree = "<group>"; };
-		51AA84042FDE000100C4C14A /* SAAutoIncrementRuleSupportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAAutoIncrementRuleSupportTests.swift; sourceTree = "<group>"; };
 		514B40A12F683E7900369718 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		514B40A52F68412000369718 /* Credits.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = Credits.md; sourceTree = "<group>"; };
 		514B40A62F68412000369718 /* License.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = License.md; sourceTree = "<group>"; };
@@ -1043,8 +1036,6 @@
 		514DD98825FACF1500EA3B3B /* SPDatabaseDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPDatabaseDocument.swift; sourceTree = "<group>"; };
 		516A76C52653B4E800DC6501 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Localizable.strings; sourceTree = "<group>"; };
 		51731E7B27DFB99A00D81B98 /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/Localizable.strings; sourceTree = "<group>"; };
-		5174122E2573E10C00EB6935 /* SPPrintUtility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPPrintUtility.h; sourceTree = "<group>"; };
-		5174122F2573E10C00EB6935 /* SPPrintUtility.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SPPrintUtility.m; sourceTree = "<group>"; };
 		517412372573E8F900EB6935 /* EditorQuickLookTypes.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = EditorQuickLookTypes.plist; sourceTree = "<group>"; };
 		517BFF432F7DA38F00F6D812 /* SAConnectionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionServiceTests.swift; sourceTree = "<group>"; };
 		517E44C2257A8F2C00ED333B /* AppleScriptObjC.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppleScriptObjC.framework; path = System/Library/Frameworks/AppleScriptObjC.framework; sourceTree = SDKROOT; };
@@ -1054,6 +1045,8 @@
 		5199783E27760147008DEB7B /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		519F2829261A5A1800370B14 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
 		51A709382565B99F001F1D2F /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
+		51AA84012FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAAutoIncrementRuleSupport.swift; sourceTree = "<group>"; };
+		51AA84042FDE000100C4C14A /* SAAutoIncrementRuleSupportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAAutoIncrementRuleSupportTests.swift; sourceTree = "<group>"; };
 		51B09FC82F7677AA003BAFFF /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		51B09FD62F767A3E003BAFFF /* SAConnectionInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionInfo.swift; sourceTree = "<group>"; };
 		51B09FDC2F767A4C003BAFFF /* SAConnectionDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionDelegate.swift; sourceTree = "<group>"; };
@@ -1068,9 +1061,9 @@
 		51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSViewExtension.swift; sourceTree = "<group>"; };
 		51C04C98261E4CF5001F5554 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51C04C9D261E4DB6001F5554 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/Localizable.strings; sourceTree = "<group>"; };
+		51C396452FF6BB8A007C2DD3 /* SAPrintUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAPrintUtility.swift; sourceTree = "<group>"; };
 		51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsExtension.swift; sourceTree = "<group>"; };
 		51C8597B24C8A31400A8C7C4 /* StringExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringExtension.swift; sourceTree = "<group>"; };
-		51CD0BBE258D06D7009E2484 /* PrintAccessory.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = PrintAccessory.xib; sourceTree = "<group>"; };
 		51CD0BBF258D06D7009E2484 /* DataMigrationDialog.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DataMigrationDialog.xib; sourceTree = "<group>"; };
 		51CD0BC0258D06D7009E2484 /* Preferences.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = Preferences.xib; sourceTree = "<group>"; };
 		51CD0BC1258D06D7009E2484 /* FilterTableWindow.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = FilterTableWindow.xib; sourceTree = "<group>"; };
@@ -1099,18 +1092,19 @@
 		51CD0BDA258D06D8009E2484 /* DatabaseProcessList.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DatabaseProcessList.xib; sourceTree = "<group>"; };
 		51EA02522FDFF02C00DF6A7B /* SAArchivingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAArchivingTests.swift; sourceTree = "<group>"; };
 		51EAE7242FDFEFA300DF6A7B /* SAArchiving.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAArchiving.swift; sourceTree = "<group>"; };
+		51EF3E632FDC24EE00EFFF09 /* SAConnectionFormModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionFormModel.swift; sourceTree = "<group>"; };
+		51EF3E682FDC250300EFFF09 /* SAConnectionFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionFormView.swift; sourceTree = "<group>"; };
+		51EF3E6A2FDC251800EFFF09 /* SAConnectionFormModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionFormModelTests.swift; sourceTree = "<group>"; };
 		51EF3E702FDC2A6500EFFF09 /* SABundleJSBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SABundleJSBridge.swift; sourceTree = "<group>"; };
 		51EF3E752FDC2A9800EFFF09 /* SAWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAWebView.swift; sourceTree = "<group>"; };
 		51EF3E772FDC2AB700EFFF09 /* SABundleJSBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SABundleJSBridgeTests.swift; sourceTree = "<group>"; };
 		51EF3E7A2FDC2E5800EFFF09 /* SABundleHTMLOutputWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SABundleHTMLOutputWindowController.swift; sourceTree = "<group>"; };
 		51EF3E7C2FDC2E6300EFFF09 /* SABundleHTMLOutputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SABundleHTMLOutputView.swift; sourceTree = "<group>"; };
-		51EF3E632FDC24EE00EFFF09 /* SAConnectionFormModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionFormModel.swift; sourceTree = "<group>"; };
-		51EF3E682FDC250300EFFF09 /* SAConnectionFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionFormView.swift; sourceTree = "<group>"; };
-		51EF3E6A2FDC251800EFFF09 /* SAConnectionFormModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionFormModelTests.swift; sourceTree = "<group>"; };
 		51F41FB625F56A5900594BA5 /* MainWindow.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainWindow.xib; sourceTree = "<group>"; };
 		51F4AFBD24B26665006144D5 /* Sequel-Ace-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Sequel-Ace-Bridging-Header.h"; sourceTree = "<group>"; };
 		51F4AFBE24B26665006144D5 /* NSAlertExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSAlertExtension.swift; sourceTree = "<group>"; };
 		54146A7693E8D862D06856BF /* SAConnectionInfo+ConnectionString.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "SAConnectionInfo+ConnectionString.swift"; sourceTree = "<group>"; };
+		5438EBE13DEF4D968F600054 /* SAStaleBookmarkAlertContentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAStaleBookmarkAlertContentTests.swift; sourceTree = "<group>"; };
 		5806B76211A991EC00813A88 /* SPDocumentController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPDocumentController.h; sourceTree = "<group>"; };
 		5806B76311A991EC00813A88 /* SPDocumentController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPDocumentController.m; sourceTree = "<group>"; };
 		581068B51015411B0068C6E2 /* link-arrow-highlighted.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "link-arrow-highlighted.png"; sourceTree = "<group>"; };
@@ -1981,8 +1975,6 @@
 		17DC8828126B332F00E9AAEC /* Accessory Views */ = {
 			isa = PBXGroup;
 			children = (
-				29A1B7E30FD1293A000B88E8 /* SPPrintAccessory.h */,
-				29A1B7E40FD1293A000B88E8 /* SPPrintAccessory.m */,
 				D35577F42728C6CF002B3989 /* SPWindowTabAccessory.swift */,
 				BC01BCCD104024BE006BDEE7 /* SPEncodingPopupAccessory.h */,
 				BC01BCCE104024BE006BDEE7 /* SPEncodingPopupAccessory.m */,
@@ -2311,7 +2303,6 @@
 				51CD0BCA258D06D8009E2484 /* MainMenu.xib */,
 				51CD0BC7258D06D8009E2484 /* Navigator.xib */,
 				51CD0BC0258D06D7009E2484 /* Preferences.xib */,
-				51CD0BBE258D06D7009E2484 /* PrintAccessory.xib */,
 				51CD0BCE258D06D8009E2484 /* ProgressIndicatorLayer.xib */,
 				51CD0BD7258D06D8009E2484 /* QueryFavoriteManager.xib */,
 				51CD0BCF258D06D8009E2484 /* SaveSPFAccessory.xib */,
@@ -2506,13 +2497,12 @@
 				5089B0251BE714E300E226CD /* SPIdMenu.h */,
 				5089B0261BE714E300E226CD /* SPIdMenu.m */,
 				50A77DA61E8EB903007466BC /* SPCompatibility.h */,
-				5174122E2573E10C00EB6935 /* SPPrintUtility.h */,
-				5174122F2573E10C00EB6935 /* SPPrintUtility.m */,
 				1A11E4FC25A32789001CB721 /* SPPanelOptions.h */,
 				1A11E50325A327F1001CB721 /* SPPanelOptions.m */,
 				4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */,
 				B6E4019A9F1C4A8AA0B3D105 /* SALocalNetworkPermissionChecker.swift */,
 				5146ADF82F79B9EF00C4C14A /* SAConnectionService.swift */,
+				51C396452FF6BB8A007C2DD3 /* SAPrintUtility.swift */,
 			);
 			path = Utility;
 			sourceTree = "<group>";
@@ -3012,7 +3002,6 @@
 				8831EFC9224016E000D10172 /* button_edit_mode_selectedTemplate.pdf in Resources */,
 				17E641FC0EF02088001BC333 /* sequel-pro.scriptSuite in Resources */,
 				17E641FD0EF02088001BC333 /* sequel-pro.scriptTerminology in Resources */,
-				51CD0BDC258D06D8009E2484 /* PrintAccessory.xib in Resources */,
 				51CD0BEC258D06D8009E2484 /* ProgressIndicatorLayer.xib in Resources */,
 				B5E2C5FA0F2353B5007446E0 /* table-property.png in Resources */,
 				51CD0BDD258D06D8009E2484 /* DataMigrationDialog.xib in Resources */,
@@ -3407,7 +3396,6 @@
 				73F70A961E4E547500636550 /* SPJSONFormatter.m in Sources */,
 				58CDB3300FCE138D00F8ACA3 /* SPSSHTunnel.m in Sources */,
 				1A70BC6B25EF439F004BB992 /* FileManagerExtension.swift in Sources */,
-				29A1B7E50FD1293A000B88E8 /* SPPrintAccessory.m in Sources */,
 				BC1847EA0FE6EC8400094BFB /* SPEditSheetTextView.m in Sources */,
 				BC2C16D40FEBEDF10003993B /* SPDataAdditions.m in Sources */,
 				5822C9B51000DB2400DCC3D6 /* SPConnectionController.m in Sources */,
@@ -3428,6 +3416,7 @@
 				BC05F1C5101241DF008A97F8 /* YRKSpinningProgressIndicator.m in Sources */,
 				967D875B24B67B4300BAE934 /* SPAutosizingTextView.swift in Sources */,
 				503B02CA1AE82C5E0060CAB1 /* SPTableFilterParser.m in Sources */,
+				51C396462FF6BB8A007C2DD3 /* SAPrintUtility.swift in Sources */,
 				1A9F343F257B0DBE0062EC87 /* SPBundleManager.m in Sources */,
 				4D90B79A101E0CDF00D116A1 /* SPUserManager.m in Sources */,
 				FD18C8992C3C9B2F002A5D57 /* SAUuidFormatter.swift in Sources */,
@@ -3459,7 +3448,6 @@
 				173284EA1088FEDE0062E892 /* SPConstants.m in Sources */,
 				171312CE109D23C700FB465F /* SPTableTextFieldCell.m in Sources */,
 				174CE14210AB9281008F892B /* SPProcessListController.m in Sources */,
-				517412302573E10C00EB6935 /* SPPrintUtility.m in Sources */,
 				1792C13710AD75C800ABE758 /* SPServerVariablesController.m in Sources */,
 				1A70BC6625EF4243004BB992 /* ReportExceptionApplication.m in Sources */,
 				5089B0271BE714E300E226CD /* SPIdMenu.m in Sources */,
