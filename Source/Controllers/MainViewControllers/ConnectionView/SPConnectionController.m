@@ -1470,6 +1470,13 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
  */
 - (IBAction)refreshVaultRoles:(id)sender
 {
+    // Don't refresh while a connect/test is in flight: it would start a second
+    // OIDC login clashing on the fixed callback port, and the Connect button is
+    // repurposed as Cancel during a connection, so it must stay untouched.
+    if (isConnecting) {
+        return;
+    }
+
     NSString *mount = [self vaultMount] ?: @"";
     if (![[mount stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] length]) {
         NSAlert *alert = [[NSAlert alloc] init];
