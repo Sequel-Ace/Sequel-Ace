@@ -6220,7 +6220,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [engine setObject:[[extendedTableInfoInstance onMainThread] tableInformationForPrinting] forKey:@"i"];
 
         [printData setObject:heading forKey:@"heading"];
-        [printData setObject:[[SAArchiving fontFromData:[prefs objectForKey:SPCustomQueryEditorFont]] fontName] forKey:@"font"];
+        NSFont *printFont = [SAArchiving fontFromData:[prefs objectForKey:SPCustomQueryEditorFont]]
+            ?: [NSFont userFixedPitchFontOfSize:[NSFont systemFontSize]]
+            ?: [NSFont systemFontOfSize:[NSFont systemFontSize]];
+        [printData setObject:[printFont fontName] forKey:@"font"];
 
         NSString *HTMLString = [engine processTemplateInFileAtPath:[[NSBundle mainBundle] pathForResource:SPHTMLTableInfoPrintTemplate ofType:@"html"] withVariables:printData];
 
