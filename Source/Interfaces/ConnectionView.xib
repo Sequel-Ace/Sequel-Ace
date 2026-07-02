@@ -80,7 +80,9 @@
                 <outlet property="vaultColorField" destination="qFW-FI-7xU" id="Va1-ul-t08"/>
                 <outlet property="vaultConnectionFormContainer" destination="w5M-ZX-3Pe" id="Va1-ul-t09"/>
                 <outlet property="vaultConnectionSSLDetailsContainer" destination="Va1-ul-SSL" id="Va1-ul-SS1"/>
-                <outlet property="vaultCredentialsPathField" destination="0lr-8d-HwN" id="Va1-ul-t10"/>
+                <outlet property="vaultCredentialsRoleComboBox" destination="VLT-ROLE-CMB1" id="VLT-ROLE-OUT1"/>
+                <outlet property="vaultRefreshRolesButton" destination="VLT-ROLE-BTN1" id="VLT-ROLE-OUT2"/>
+                <outlet property="vaultRolesProgressIndicator" destination="VLT-ROLE-PRG1" id="VLT-ROLE-OUT3"/>
                 <outlet property="vaultDatabaseField" destination="lY2-9n-1fJ" id="Va1-ul-t11"/>
                 <outlet property="vaultHostField" destination="cI3-zb-LVU" id="Va1-ul-t12"/>
                 <outlet property="vaultNameField" destination="fxz-pP-N1T" id="Va1-ul-t13"/>
@@ -2143,11 +2145,11 @@ DQ
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
                                                                                 <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="w5M-ZX-3Pe">
-                                                                                    <rect key="frame" x="21" y="-4" width="377" height="505"/>
+                                                                                    <rect key="frame" x="21" y="-34" width="377" height="535"/>
                                                                                     <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                     <subviews>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="XXW-x9-Boy">
-                                                                                            <rect key="frame" x="7" y="459" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="489" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Name:" id="0si-yi-dau">
                                                                                                 <font key="font" metaFont="system"/>
@@ -2156,7 +2158,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField identifier="vaultNameField" toolTip="Enter a nickname to use if adding to favorites. Optional." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="fxz-pP-N1T">
-                                                                                            <rect key="frame" x="110" y="457" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="487" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="optional" drawsBackground="YES" usesSingleLineMode="YES" id="4ia-gZ-avU">
                                                                                                 <font key="font" metaFont="system"/>
@@ -2174,7 +2176,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3EO-XF-o77">
-                                                                                            <rect key="frame" x="7" y="399" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="429" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Host:" id="d0k-Gi-GVz">
                                                                                                 <font key="font" metaFont="system"/>
@@ -2183,7 +2185,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField identifier="vaultSQLHostField" toolTip="Enter the hostname of the MySQL server you want to connect to.  Enter 127.0.0.1 to connect to a server on this computer" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="jsz-x1-xw8">
-                                                                                            <rect key="frame" x="110" y="397" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="427" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="e.g. mydb.us-east-1.rds.amazonaws.com" drawsBackground="YES" usesSingleLineMode="YES" id="u7v-x5-K5O">
                                                                                                 <font key="font" metaFont="system"/>
@@ -2200,7 +2202,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Bqm-Uu-QW1">
-                                                                                            <rect key="frame" x="7" y="365" width="98" height="17"/>
+                                                                                            <rect key="frame" x="7" y="395" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Vault host:" id="0PJ-aa-59b">
                                                                                                 <font key="font" metaFont="system"/>
@@ -2209,7 +2211,7 @@ DQ
                                                                                             </textFieldCell>
                                                                                         </textField>
                                                                                         <textField identifier="vaultHostField" toolTip="Enter the hostname of your Vault server." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="cI3-zb-LVU">
-                                                                                            <rect key="frame" x="110" y="363" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="393" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="aGj-Hn-ru3">
                                                                                                 <font key="font" metaFont="system"/>
@@ -2223,7 +2225,7 @@ DQ
                                                                                                     </dictionary>
                                                                                                 </binding>
                                                                                                 <outlet property="delegate" destination="-2" id="3bu-cM-pps"/>
-                                                                                                <outlet property="nextKeyView" destination="0lr-8d-HwN" id="Hfo-k8-hU2"/>
+                                                                                                <outlet property="nextKeyView" destination="VLT-MOUNT-FLD1" id="Hfo-k8-hU2"/>
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="aOQ-Rd-085">
@@ -2253,32 +2255,76 @@ DQ
                                                                                                 <outlet property="delegate" destination="-2" id="Uhd-ni-vKk"/>
                                                                                             </connections>
                                                                                         </textField>
-                                                                                        <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Rdt-ev-T0F">
-                                                                                            <rect key="frame" x="7" y="331" width="98" height="17"/>
+                                                                                        <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="VLT-MOUNT-LBL1">
+                                                                                            <rect key="frame" x="7" y="361" width="98" height="17"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Vault path:" id="ZDY-sZ-ngV">
+                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Vault mount:" id="VLT-MOUNT-LBLC1">
                                                                                                 <font key="font" metaFont="system"/>
                                                                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                                                 <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                                             </textFieldCell>
                                                                                         </textField>
-                                                                                        <textField identifier="vaultCredentialsPathField" toolTip="Path to the Vault database credentials role (e.g. databases_credentials/creds/role-name)." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="0lr-8d-HwN">
-                                                                                            <rect key="frame" x="110" y="329" width="247" height="22"/>
+                                                                                        <textField identifier="vaultMountField" toolTip="Vault database secrets engine mount (e.g. databases_credentials)." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="VLT-MOUNT-FLD1">
+                                                                                            <rect key="frame" x="110" y="359" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="databases_credentials/creds/role-name" drawsBackground="YES" usesSingleLineMode="YES" id="J0T-1i-wzr">
+                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" placeholderString="databases_credentials" drawsBackground="YES" usesSingleLineMode="YES" id="VLT-MOUNT-FLDC1">
                                                                                                 <font key="font" metaFont="system"/>
                                                                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                                                 <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                                             </textFieldCell>
                                                                                             <connections>
-                                                                                                <binding destination="-2" name="value" keyPath="vaultCredentialsPath" id="NFg-kH-USB">
+                                                                                                <binding destination="-2" name="value" keyPath="vaultMount" id="VLT-MOUNT-BND1">
+                                                                                                    <dictionary key="options">
+                                                                                                        <bool key="NSContinuouslyUpdatesValue" value="YES"/>
+                                                                                                        <string key="NSNullPlaceholder">databases_credentials</string>
+                                                                                                    </dictionary>
+                                                                                                </binding>
+                                                                                                <outlet property="delegate" destination="-2" id="VLT-MOUNT-DLG1"/>
+                                                                                                <outlet property="nextKeyView" destination="VLT-ROLE-CMB1" id="VLT-MOUNT-NKV1"/>
+                                                                                            </connections>
+                                                                                        </textField>
+                                                                                        <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="VLT-ROLE-LBL1">
+                                                                                            <rect key="frame" x="7" y="331" width="98" height="17"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Role:" id="VLT-ROLE-LBLC1">
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </textFieldCell>
+                                                                                        </textField>
+                                                                                        <comboBox identifier="vaultCredentialsRoleComboBox" toolTip="Vault database credentials role. Click Refresh to list roles for the mount, or type one manually." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="VLT-ROLE-CMB1">
+                                                                                            <rect key="frame" x="108" y="327" width="187" height="25"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <comboBoxCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" numberOfVisibleItems="10" id="VLT-ROLE-CMBC1">
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                                            </comboBoxCell>
+                                                                                            <connections>
+                                                                                                <binding destination="-2" name="value" keyPath="vaultCredentialsRole" id="VLT-ROLE-BND2">
                                                                                                     <dictionary key="options">
                                                                                                         <bool key="NSContinuouslyUpdatesValue" value="YES"/>
                                                                                                     </dictionary>
                                                                                                 </binding>
-                                                                                                <outlet property="delegate" destination="-2" id="6Vg-6M-nxP"/>
+                                                                                                <outlet property="delegate" destination="-2" id="VLT-ROLE-DLG1"/>
+                                                                                                <outlet property="nextKeyView" destination="2BI-5B-eqi" id="VLT-ROLE-NKV1"/>
                                                                                             </connections>
-                                                                                        </textField>
+                                                                                        </comboBox>
+                                                                                        <button toolTip="Fetch the list of Vault database credentials roles for the mount." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="VLT-ROLE-BTN1">
+                                                                                            <rect key="frame" x="299" y="327" width="58" height="25"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                            <buttonCell key="cell" type="push" title="Refresh" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="VLT-ROLE-BTNC1">
+                                                                                                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                                                                <font key="font" metaFont="system"/>
+                                                                                            </buttonCell>
+                                                                                            <connections>
+                                                                                                <action selector="refreshVaultRoles:" target="-2" id="VLT-ROLE-ACT1"/>
+                                                                                            </connections>
+                                                                                        </button>
+                                                                                        <progressIndicator verticalHuggingPriority="750" fixedFrame="YES" hidden="YES" maxValue="100" displayedWhenStopped="NO" indeterminate="YES" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="VLT-ROLE-PRG1">
+                                                                                            <rect key="frame" x="361" y="330" width="16" height="16"/>
+                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                                        </progressIndicator>
                                                                                         <textField identifier="vaultPortField" toolTip="Vault HTTPS port (default 443)." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2BI-5B-eqi">
                                                                                             <rect key="frame" x="110" y="297" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
@@ -2352,7 +2398,7 @@ DQ
                                                                                             </connections>
                                                                                         </textField>
                                                                                         <customView identifier="vaultColorField" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="qFW-FI-7xU" customClass="SPColorSelectorView">
-                                                                                            <rect key="frame" x="110" y="427" width="247" height="22"/>
+                                                                                            <rect key="frame" x="110" y="457" width="247" height="22"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                             <connections>
                                                                                                 <outlet property="delegate" destination="-2" id="zTb-Ej-dIX"/>
@@ -2467,7 +2513,7 @@ DQ
                                                                                     </subviews>
                                                                                 </customView>
                                                                                 <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Va1-ul-SSL">
-                                                                                    <rect key="frame" x="21" y="-48" width="377" height="104"/>
+                                                                                    <rect key="frame" x="21" y="-78" width="377" height="104"/>
                                                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                                     <subviews>
                                                                                         <button toolTip="Click to choose the SSL private key file." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Va1-ul-KEY">

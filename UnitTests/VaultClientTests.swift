@@ -160,4 +160,26 @@ final class VaultClientTests: XCTestCase {
         """.data(using: .utf8)!
         XCTAssertThrowsError(try VaultClient.parseToken(from: json))
     }
+
+    // MARK: - parseRoleList
+
+    func testParseRoleListExtractsAndSortsKeys() throws {
+        let json = """
+        { "data": { "keys": ["prod", "dev", "Analytics"] } }
+        """.data(using: .utf8)!
+        let roles = try VaultClient.parseRoleList(from: json)
+        XCTAssertEqual(roles, ["Analytics", "dev", "prod"]) // case-insensitive ascending
+    }
+
+    func testParseRoleListEmptyKeysReturnsEmptyArray() throws {
+        let json = """
+        { "data": { "keys": [] } }
+        """.data(using: .utf8)!
+        XCTAssertEqual(try VaultClient.parseRoleList(from: json), [])
+    }
+
+    func testParseRoleListThrowsWhenDataMissing() {
+        let json = "{ \"foo\": 1 }".data(using: .utf8)!
+        XCTAssertThrowsError(try VaultClient.parseRoleList(from: json))
+    }
 }

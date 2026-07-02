@@ -95,6 +95,15 @@ final class VaultClient {
         return token
     }
 
+    static func parseRoleList(from data: Data) throws -> [String] {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let dataDict = json["data"] as? [String: Any],
+              let keys = dataDict["keys"] as? [String] else {
+            throw VaultClientError.parseError("missing data.keys in roles response")
+        }
+        return keys.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+    }
+
     // MARK: - Helpers
 
     private static func effectiveMount(_ mount: String) -> String {
@@ -235,6 +244,41 @@ final class VaultClient {
             throw VaultClientError.httpError(httpResponse.statusCode, vaultDetail)
         }
         return try parseCredentials(from: data)
+    }
+
+    /// List the database roles available under `mount` (Vault `LIST <mount>/roles`).
+    static func listDatabaseRoles(baseURL: URL, mount: String, token: String) throws -> [String] {
+        let cleaned = mount.trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        guard !cleaned.isEmpty else { throw VaultClientError.parseError("empty Vault mount") }
+        // Reject path-traversal segments so a crafted mount cannot redirect the
+        // authenticated request to a different Vault endpoint.
+        guard !cleaned.split(separator: "/").contains("..") else {
+            throw VaultClientError.parseError("invalid Vault mount path")
+        }
+        let url = baseURL.appendingPathComponent("v1/\(cleaned)/roles")
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
+        request.httpMethod = "LIST"
+        request.setValue(token, forHTTPHeaderField: "X-Vault-Token")
+
+        let (data, response, error) = synchronousDataTask(with: request)
+        if let error = error {
+            os_log("listDatabaseRoles network error: %{public}@", log: log, type: .error, error.localizedDescription)
+            throw VaultClientError.networkError(error)
+        }
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw VaultClientError.parseError("no HTTP response")
+        }
+        // A 404 is ambiguous in Vault (a missing/mistyped mount and an empty role
+        // list are indistinguishable), so surface it as an error rather than
+        // silently returning [] and hiding a wrong mount path.
+        guard httpResponse.statusCode == 200, let data = data else {
+            let vaultDetail = parseVaultErrors(from: data)
+            os_log("listDatabaseRoles HTTP error: %d%{public}@", log: log, type: .error,
+                   httpResponse.statusCode, vaultDetail.map { " – \($0)" } ?? "")
+            throw VaultClientError.httpError(httpResponse.statusCode, vaultDetail)
+        }
+        return try parseRoleList(from: data)
     }
 
     // MARK: - Synchronous helper
