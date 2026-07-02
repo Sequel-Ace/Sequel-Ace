@@ -120,6 +120,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	NSString *vaultCredentialsRole;
 	NSArray<NSString *> *vaultAvailableRoles;
 	NSUInteger vaultRoleReloadToken;
+	NSString *vaultRolesLoginIdentifier;
 
 	// SSL details
 	NSInteger useSSL;

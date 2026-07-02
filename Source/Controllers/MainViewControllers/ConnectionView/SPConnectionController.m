@@ -740,9 +740,11 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     if ([vaultLoginIdentifier length]) {
         [VaultOIDCHandler cancelActiveLoginWithIdentifier:vaultLoginIdentifier];
     }
-    // Also abort a role-refresh OIDC login (its own internal identifier) so its
+    // Also abort this window's role-refresh OIDC login (its own identifier) so its
     // callback listener frees the fixed localhost port rather than lingering.
-    [VaultOIDCHandler cancelActiveLogin];
+    if ([vaultRolesLoginIdentifier length]) {
+        [VaultOIDCHandler cancelActiveLoginWithIdentifier:vaultRolesLoginIdentifier];
+    }
 
     // Cancel via connection service (handles both MySQL and SSH tunnel)
     [self.connectionService cancel];
@@ -1499,6 +1501,11 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         }
     }
 
+    // Prepare a login identifier scoped to this refresh so a close/cancel can
+    // abort exactly this window's OIDC login (not other windows' logins).
+    NSString *rolesLoginIdentifier = [VaultOIDCHandler prepareActiveLogin];
+    vaultRolesLoginIdentifier = rolesLoginIdentifier;
+
     [vaultRefreshRolesButton setEnabled:NO];
     // Refreshing may open the same OIDC browser login as connecting, which binds a
     // fixed localhost callback port; disable Connect/Test so a second concurrent
@@ -1514,8 +1521,13 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                                                                     port:port
                                                                oidcMount:oidcMount
                                                                    mount:mount
+                                                         loginIdentifier:rolesLoginIdentifier
                                                                    error:&error];
+        [VaultOIDCHandler clearPreparedActiveLoginWithIdentifier:rolesLoginIdentifier];
         dispatch_async(dispatch_get_main_queue(), ^{
+            if ([self->vaultRolesLoginIdentifier isEqualToString:rolesLoginIdentifier]) {
+                self->vaultRolesLoginIdentifier = nil;
+            }
             // The window is closing or the connection was cancelled (which aborts
             // the OIDC login this fetch may be waiting on); drop the response
             // without touching the torn-down UI or showing an alert.
@@ -3637,10 +3649,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                 if ([vaultLoginIdentifier length]) {
                     [VaultOIDCHandler cancelActiveLoginWithIdentifier:vaultLoginIdentifier];
                 }
-                // Also abort any role-refresh OIDC login (started with its own
-                // internal identifier, so not covered above) so its listener frees
-                // the fixed localhost callback port instead of lingering to timeout.
-                [VaultOIDCHandler cancelActiveLogin];
+                // Also abort this window's role-refresh OIDC login (its own
+                // identifier, not covered above) so its listener frees the fixed
+                // localhost callback port instead of lingering to timeout.
+                if ([vaultRolesLoginIdentifier length]) {
+                    [VaultOIDCHandler cancelActiveLoginWithIdentifier:vaultRolesLoginIdentifier];
+                }
                 [VaultAuthManager clearCachedCredentialsForHost:[self vaultHost] ?: @""
                                                            port:[self vaultPort] ?: @""
                                                       oidcMount:[self vaultOIDCMount] ?: @""

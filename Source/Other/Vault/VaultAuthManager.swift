@@ -379,12 +379,13 @@ import OSLog
     /// List database roles under `mount`, ensuring a valid Vault token first
     /// (reusing the cached token, else running the OIDC login flow).
     /// MUST be called from a background thread.
-    @objc(listRolesWithHost:port:oidcMount:mount:error:)
+    @objc(listRolesWithHost:port:oidcMount:mount:loginIdentifier:error:)
     static func listRoles(
         host: String,
         port: String,
         oidcMount: String,
         mount: String,
+        loginIdentifier: String,
         error errorPointer: NSErrorPointer
     ) -> [String]? {
         assert(!Thread.isMainThread, "listRoles must not be called on the main thread")
@@ -408,7 +409,8 @@ import OSLog
                 token = cached
             } else {
                 os_log("Vault listRoles: no valid cached token, falling through to OIDC login", log: log, type: .info)
-                token = try VaultOIDCHandler.login(baseURL: baseURL, mount: oidcMountResolved, identifier: nil)
+                let effectiveIdentifier = loginIdentifier.isEmpty ? nil : loginIdentifier
+                token = try VaultOIDCHandler.login(baseURL: baseURL, mount: oidcMountResolved, identifier: effectiveIdentifier)
             }
         } catch let oidcError as VaultOIDCError {
             let authError: VaultAuthError = (oidcError == .cancelled) ? .loginCancelled : .loginFailed
