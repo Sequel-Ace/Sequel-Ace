@@ -53,19 +53,19 @@
 @class SPHelpViewerClient;
 @class SPDataImport;
 @class SATaskController;
+@class SAHTMLPrintRenderer;
 
 #import "SPDatabaseContentViewDelegate.h"
 #import "SPConnectionControllerDelegateProtocol.h"
 #import "SPThreadAdditions.h"
 #import "SPConstants.h"
 
-#import <WebKit/WebKit.h>
 #import <SPMySQL/SPMySQLConnectionDelegate.h>
 
 /**
  * The SPDatabaseDocument class controls the primary database view window.
  */
-@interface SPDatabaseDocument : NSObject <SPConnectionControllerDelegateProtocol, SPMySQLConnectionDelegate, NSTextFieldDelegate, NSToolbarDelegate, SPCountedObject, WebFrameLoadDelegate>
+@interface SPDatabaseDocument : NSObject <SPConnectionControllerDelegateProtocol, SPMySQLConnectionDelegate, NSTextFieldDelegate, NSToolbarDelegate, SPCountedObject>
 {
 	// IBOutlets
 	IBOutlet SPTablesList *tablesListInstance;
@@ -188,7 +188,7 @@
 
 	NSToolbarItem *chooseDatabaseToolbarItem;
 	
-	WebView *printWebView;
+	SAHTMLPrintRenderer *printRenderer;
 
 	NSMutableArray *allDatabases;
 	NSMutableArray *allSystemDatabases;
