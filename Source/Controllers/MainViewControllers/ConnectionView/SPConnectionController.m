@@ -1324,16 +1324,16 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 {
     [AWSIAMAuthManager refreshAWSRegionsIfNeededWithCompletion:^(NSArray<NSString *> *regions) {
         if (!regions || !regions.count) return;
-        if ([awsAvailableRegionValues isEqualToArray:regions]) return;
+        if ([self->awsAvailableRegionValues isEqualToArray:regions]) return;
 
         NSString *currentRegion = [[self awsRegion] copy];
 
         [self willChangeValueForKey:@"awsAvailableRegions"];
-        awsAvailableRegionValues = [regions copy];
+        self->awsAvailableRegionValues = [regions copy];
         [self didChangeValueForKey:@"awsAvailableRegions"];
 
-        if (awsRegionComboBox) {
-            [awsRegionComboBox reloadData];
+        if (self->awsRegionComboBox) {
+            [self->awsRegionComboBox reloadData];
         }
 
         if ([currentRegion length]) {

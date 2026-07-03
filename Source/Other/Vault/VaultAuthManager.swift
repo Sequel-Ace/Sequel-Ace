@@ -164,7 +164,7 @@ import OSLog
             errorPointer?.pointee = NSError(
                 domain: errorDomain,
                 code: VaultAuthError.invalidConfiguration.rawValue,
-                userInfo: [NSLocalizedDescriptionKey: VaultAuthError.invalidConfiguration.localizedDescription ?? ""]
+                userInfo: [NSLocalizedDescriptionKey: VaultAuthError.invalidConfiguration.localizedDescription]
             )
             return false
         }
@@ -179,7 +179,7 @@ import OSLog
             errorPointer?.pointee = NSError(
                 domain: errorDomain,
                 code: VaultAuthError.loginCancelled.rawValue,
-                userInfo: [NSLocalizedDescriptionKey: VaultAuthError.loginCancelled.localizedDescription ?? ""]
+                userInfo: [NSLocalizedDescriptionKey: VaultAuthError.loginCancelled.localizedDescription]
             )
             return false
         }
@@ -277,7 +277,7 @@ import OSLog
                         errorPointer?.pointee = NSError(
                             domain: errorDomain,
                             code: VaultAuthError.emptyCredentials.rawValue,
-                            userInfo: [NSLocalizedDescriptionKey: VaultAuthError.emptyCredentials.localizedDescription ?? ""]
+                            userInfo: [NSLocalizedDescriptionKey: VaultAuthError.emptyCredentials.localizedDescription]
                         )
                         finishInFlight(); return false
                     }
@@ -315,9 +315,9 @@ import OSLog
             errorPointer?.pointee = NSError(
                 domain: errorDomain,
                 code: authError.rawValue,
-                userInfo: [NSLocalizedDescriptionKey: oidcError.localizedDescription ?? ""]
+                userInfo: [NSLocalizedDescriptionKey: oidcError.localizedDescription]
             )
-            os_log("Vault OIDC login failed: %{public}@", log: log, type: .error, oidcError.localizedDescription ?? "unknown")
+            os_log("Vault OIDC login failed: %{public}@", log: log, type: .error, oidcError.localizedDescription)
             finishInFlight(); return false
         } catch {
             errorPointer?.pointee = NSError(
@@ -351,7 +351,7 @@ import OSLog
             errorPointer?.pointee = NSError(
                 domain: errorDomain,
                 code: VaultAuthError.emptyCredentials.rawValue,
-                userInfo: [NSLocalizedDescriptionKey: VaultAuthError.emptyCredentials.localizedDescription ?? ""]
+                userInfo: [NSLocalizedDescriptionKey: VaultAuthError.emptyCredentials.localizedDescription]
             )
             finishInFlight(); return false
         }

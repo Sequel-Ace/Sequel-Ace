@@ -259,6 +259,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 - (IBAction)addFilter:(id)sender;
 - (void)_updateButtonStates;
 - (void)_doChangeToRuleEditorData:(void (^)(void))duringBlock;
+- (void)_invokeFilterTargetActionWithObject:(id)object;
 - (IBAction)_checkboxClicked:(id)sender;
 - (void)_updateCheckedStateUpwardsFromCompoundRow:(NSInteger)row;
 - (void)_updateCheckedStateForRow:(NSInteger)row to:(NSControlStateValue)newState;
@@ -889,7 +890,12 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		id _target = [[node settings] objectForKey:@"target"];
 		SEL _action = (SEL)[(NSValue *)[[node settings] objectForKey:@"action"] pointerValue];
 		if(_target && _action) {
+			// The registered filter actions are plain void IBAction-style methods,
+			// so there is no returned object for ARC to leak.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 			[_target performSelector:_action withObject:sender];
+#pragma clang diagnostic pop
 			return;
 		}
 	}
@@ -1012,7 +1018,21 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 
 - (IBAction)filterTable:(id)sender
 {
-	if(target && action) [target performSelector:action withObject:self];
+	[self _invokeFilterTargetActionWithObject:self];
+}
+
+/**
+ * Invokes the runtime-registered target/action pair (see setTarget:/setAction:).
+ * The registered actions are void IBAction-style methods, so there is no
+ * returned object for ARC to leak.
+ */
+- (void)_invokeFilterTargetActionWithObject:(id)object
+{
+	if(!target || !action) return;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+	[target performSelector:action withObject:object];
+#pragma clang diagnostic pop
 }
 
 - (void)resetFilter {
@@ -1025,7 +1045,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	[self _doChangeToRuleEditorData:^{
 		[[self->_modelContainer mutableArrayValueForKey:@"model"] removeAllObjects];
 	}];
-	if(target && action) [target performSelector:action withObject:nil];
+	[self _invokeFilterTargetActionWithObject:nil];
 }
 
 - (IBAction)addFilter:(id)sender
@@ -1060,7 +1080,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	// - There is no direct way to know whether the action was triggered by the user, so we can only try to exclude all other causes of changes
 	NSInteger newRowCount = [filterRuleEditor numberOfRows];
 	if(!isDoingChangeCausedOutsideOfRuleEditor && previousRowCount > 0 && newRowCount == 0) {
-		if(target && action) [target performSelector:action withObject:nil];
+		[self _invokeFilterTargetActionWithObject:nil];
 	}
 	previousRowCount = newRowCount;
 }
