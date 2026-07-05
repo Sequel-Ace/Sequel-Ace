@@ -37,6 +37,20 @@
 #import "Locking.h"
 #import "Conversion.h"
 
+// Class extension: these are implemented in the main @implementation block of
+// SPMySQLConnection.m (declaring them on the PrivateAPI category would make
+// clang warn that the category's @implementation lacks their definitions).
+@interface SPMySQLConnection ()
+
++ (NSArray<NSString *> *)defaultSSLCipherList;
++ (NSArray<NSString *> *)legacySSLCipherList;
++ (NSString *)_defaultSSLCipherListString;
++ (NSString *)_defaultTLSSuiteListString;
++ (NSArray<NSString *> *)_mergedSSLCipherPreferenceListFromSavedCipherString:(NSString *)savedCipherString disabledMarker:(NSString *)disabledMarker;
++ (NSString *)_reachabilityProbeHostForHost:(NSString *)host useSocket:(BOOL)useSocket hasProxy:(BOOL)hasProxy;
+
+@end
+
 @interface SPMySQLConnection (PrivateAPI)
 
 - (BOOL)_connect;
@@ -54,12 +68,6 @@
                                  timeZoneIdentifier:(NSString *)timeZoneIdentifier;
 - (void)_validateThreadSetup;
 + (void)_removeThreadVariables:(NSNotification *)aNotification;
-+ (NSArray<NSString *> *)defaultSSLCipherList;
-+ (NSArray<NSString *> *)legacySSLCipherList;
-+ (NSString *)_defaultSSLCipherListString;
-+ (NSString *)_defaultTLSSuiteListString;
-+ (NSArray<NSString *> *)_mergedSSLCipherPreferenceListFromSavedCipherString:(NSString *)savedCipherString disabledMarker:(NSString *)disabledMarker;
-+ (NSString *)_reachabilityProbeHostForHost:(NSString *)host useSocket:(BOOL)useSocket hasProxy:(BOOL)hasProxy;
 
 @end
 

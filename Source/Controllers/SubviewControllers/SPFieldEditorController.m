@@ -33,6 +33,7 @@
 #import "RegexKitLite.h"
 #import "SPTooltip.h"
 #import "SPGeometryDataView.h"
+#import "SPImageView.h"
 #import "SPCopyTable.h"
 #import "SPWindow.h"
 #include <objc/objc-runtime.h>
