@@ -78,7 +78,7 @@ static NSString *SPConnectionViewNibName   = @"ConnectionView";
 const static NSInteger SPUseServerTimeZoneTag = -1;
 const static NSInteger SPUseSystemTimeZoneTag = -2;
 
-@interface SPConnectionController ()
+@interface SPConnectionController () <SAVaultRoleListControllerDelegate>
 
 // Privately redeclare as read/write to get the synthesized setter
 @property (readwrite, assign) BOOL isEditingConnection;
@@ -249,7 +249,6 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
 @synthesize useAWSIAMAuth;
 @synthesize awsRegion;
 @synthesize awsProfile;
-@synthesize vaultAvailableRoles;
 @synthesize useSSL;
 @synthesize sslKeyFileLocationEnabled;
 @synthesize sslKeyFileLocation;
@@ -740,11 +739,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     if ([vaultLoginIdentifier length]) {
         [VaultOIDCHandler cancelActiveLoginWithIdentifier:vaultLoginIdentifier];
     }
-    // Also abort this window's role-refresh OIDC login (its own identifier) so its
-    // callback listener frees the fixed localhost port rather than lingering.
-    if ([vaultRolesLoginIdentifier length]) {
-        [VaultOIDCHandler cancelActiveLoginWithIdentifier:vaultRolesLoginIdentifier];
-    }
+    // Also abort this window's role-refresh OIDC login so its callback listener
+    // frees the fixed localhost port rather than lingering.
+    [vaultRoleListController cancelActiveLogin];
 
     // Cancel via connection service (handles both MySQL and SSH tunnel)
     [self.connectionService cancel];
@@ -1374,7 +1371,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
  */
 - (NSString *)vaultCredentialsPath
 {
-    return [VaultCredentialsPath credPathWithMount:(vaultMount ?: @"") role:(vaultCredentialsRole ?: @"")];
+    return [SAVaultCredentialsPath credPathWithMount:(vaultMount ?: @"") role:(vaultCredentialsRole ?: @"")];
 }
 
 /**
@@ -1388,17 +1385,13 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     // vaultCredentialsPath key never see a half-updated mount/role pair.
     [self willChangeValueForKey:@"vaultMount"];
     [self willChangeValueForKey:@"vaultCredentialsRole"];
-    vaultMount = [[VaultCredentialsPath mountFromCredPath:value] copy];
-    vaultCredentialsRole = [[VaultCredentialsPath roleFromCredPath:value] copy];
+    vaultMount = [[SAVaultCredentialsPath mountFromCredPath:value] copy];
+    vaultCredentialsRole = [[SAVaultCredentialsPath roleFromCredPath:value] copy];
     [self didChangeValueForKey:@"vaultCredentialsRole"];
     [self didChangeValueForKey:@"vaultMount"];
 
-    // The fetched role list belongs to the previous mount; drop it so the
-    // dropdown isn't stale after switching favorites (the user can re-Refresh).
-    [self willChangeValueForKey:@"vaultAvailableRoles"];
-    vaultAvailableRoles = nil;
-    [self didChangeValueForKey:@"vaultAvailableRoles"];
-    [self _reloadVaultRoleComboItems];
+    // Loading a favorite changes the mount; drop any previously fetched role list.
+    [vaultRoleListController invalidateRoles];
 }
 
 - (NSString *)vaultCredentialsRole
@@ -1409,7 +1402,7 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 - (void)setVaultCredentialsRole:(NSString *)role
 {
     // Ignore selection of the dropdown separator pseudo-row.
-    if ([role isEqualToString:[VaultRoleFilter separator]]) {
+    if ([role isEqualToString:[SAVaultRoleFilter separator]]) {
         return;
     }
     [self willChangeValueForKey:@"vaultCredentialsRole"];
@@ -1431,171 +1424,61 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     vaultMount = [mount copy];
     [self didChangeValueForKey:@"vaultMount"];
 
-    // The fetched role list belongs to the previous mount; invalidate it so the
-    // dropdown can't keep offering (or saving) a role from a different mount
-    // until the user refreshes again.
-    [self _invalidateFetchedVaultRoles];
+    // The fetched role list belongs to the previous mount; invalidate it.
+    [vaultRoleListController invalidateRoles];
 }
 
-// Drop the fetched Vault role list (and clear the dropdown). The list is tied to
-// a specific Vault server + token + mount, so any change to that context must
-// invalidate it or the combo could offer/save a role from a different context.
-- (void)_invalidateFetchedVaultRoles
-{
-    [self willChangeValueForKey:@"vaultAvailableRoles"];
-    vaultAvailableRoles = nil;
-    [self didChangeValueForKey:@"vaultAvailableRoles"];
-    [self _reloadVaultRoleComboItems];
-}
-
-- (void)_reloadVaultRoleComboItems
-{
-    // While the field is being edited, the committed -stringValue can lag behind
-    // what the user has typed; the live text lives in the field editor.
-    NSString *query = [[vaultCredentialsRoleComboBox currentEditor] string] ?: ([vaultCredentialsRoleComboBox stringValue] ?: @"");
-    NSArray<NSString *> *ordered = [VaultRoleFilter orderedRoles:(vaultAvailableRoles ?: @[])
-                                                            query:query];
-    [vaultCredentialsRoleComboBox removeAllItems];
-    [vaultCredentialsRoleComboBox addItemsWithObjectValues:ordered];
-}
-
-/**
- * Reorder the role list every time the dropdown is about to open, so it always
- * reflects what is currently typed (NSComboBox does not live-refresh an already
- * open popup, so ordering it just before it appears is the reliable hook).
- */
+// NSComboBox does not live-refresh an already open popup, so reorder the list
+// just before it appears (behaviour lives in SAVaultRoleListController).
 - (void)comboBoxWillPopUp:(NSNotification *)notification
 {
     if ([notification object] == vaultCredentialsRoleComboBox) {
-        [self _reloadVaultRoleComboItems];
+        [vaultRoleListController reloadItems];
     }
 }
 
 /**
- * Fetches the list of Vault database roles for the current mount on a
- * background thread (the call may open a browser for OIDC login), then
- * updates vaultAvailableRoles on the main thread via KVO.
+ * Trigger a Vault role refresh. The fetch/debounce/ordering/alert logic lives in
+ * SAVaultRoleListController; this is a thin IBAction forwarder.
  */
 - (IBAction)refreshVaultRoles:(id)sender
 {
-    // Don't refresh while a connect/test is in flight: it would start a second
-    // OIDC login clashing on the fixed callback port, and the Connect button is
-    // repurposed as Cancel during a connection, so it must stay untouched.
-    if (isConnecting) {
-        return;
-    }
+    [vaultRoleListController refresh];
+}
 
-    NSString *mount = [self vaultMount] ?: @"";
-    if (![[mount stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] length]) {
-        NSAlert *alert = [[NSAlert alloc] init];
-        alert.messageText = NSLocalizedString(@"Enter a Vault mount first", @"Vault roles refresh – missing mount");
-        alert.informativeText = NSLocalizedString(@"The list of roles is read from <mount>/roles. Fill in the Vault mount field, then refresh.", @"Vault roles refresh – missing mount detail");
-        NSWindow *parentWindow = [dbDocument parentWindowControllerWindow];
-        if (parentWindow) {
-            [alert beginSheetModalForWindow:parentWindow completionHandler:nil];
-        } else {
-            [alert runModal];
-        }
-        return;
-    }
+#pragma mark -
+#pragma mark SAVaultRoleListControllerDelegate
 
-    NSString *host      = [self vaultHost] ?: @"";
-    NSString *port      = [self vaultPort] ?: @"";
-    NSString *oidcMount = [self vaultOIDCMount] ?: @"";
+- (NSString *)vaultRoleListCurrentHost      { return [self vaultHost] ?: @""; }
+- (NSString *)vaultRoleListCurrentPort      { return [self vaultPort] ?: @""; }
+- (NSString *)vaultRoleListCurrentOIDCMount { return [self vaultOIDCMount] ?: @""; }
+- (NSString *)vaultRoleListCurrentMount     { return [self vaultMount] ?: @""; }
+- (NSString *)vaultRoleListCurrentRole      { return [self vaultCredentialsRole] ?: @""; }
 
-    // Listing roles needs a Vault token; if none is cached, refreshing will open
-    // the browser for OIDC login. Confirm first so it isn't a surprise.
-    if (![VaultAuthManager hasCachedTokenWithHost:host port:port oidcMount:oidcMount]) {
-        NSAlert *confirm = [[NSAlert alloc] init];
-        confirm.messageText = NSLocalizedString(@"Sign in to Vault?", @"Vault roles refresh – login confirm");
-        confirm.informativeText = NSLocalizedString(@"Listing roles requires authenticating to Vault, which will open your web browser.", @"Vault roles refresh – login confirm detail");
-        [confirm addButtonWithTitle:NSLocalizedString(@"Continue", @"continue button")];
-        [confirm addButtonWithTitle:NSLocalizedString(@"Cancel", @"cancel button")];
-        if ([confirm runModal] != NSAlertFirstButtonReturn) {
-            return;
-        }
-    }
+- (NSWindow *)vaultRoleListParentWindow { return [dbDocument parentWindowControllerWindow]; }
 
-    // Prepare a login identifier scoped to this refresh so a close/cancel can
-    // abort exactly this window's OIDC login (not other windows' logins).
-    NSString *rolesLoginIdentifier = [VaultOIDCHandler prepareActiveLogin];
-    vaultRolesLoginIdentifier = rolesLoginIdentifier;
+- (BOOL)vaultRoleListShouldDeferForActiveConnection { return isConnecting; }
 
-    [vaultRefreshRolesButton setEnabled:NO];
-    // Refreshing may open the same OIDC browser login as connecting, which binds a
-    // fixed localhost callback port; disable Connect/Test so a second concurrent
-    // login can't be started and clash on that port.
-    [connectButton setEnabled:NO];
-    [testConnectButton setEnabled:NO];
-    [vaultRolesProgressIndicator setHidden:NO];
-    [vaultRolesProgressIndicator startAnimation:self];
+- (BOOL)vaultRoleListWasTornDown { return (dbDocument == nil || cancellingConnection); }
 
-    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
-        NSError *error = nil;
-        NSArray<NSString *> *roles = [VaultAuthManager listRolesWithHost:host
-                                                                    port:port
-                                                               oidcMount:oidcMount
-                                                                   mount:mount
-                                                         loginIdentifier:rolesLoginIdentifier
-                                                                   error:&error];
-        [VaultOIDCHandler clearPreparedActiveLoginWithIdentifier:rolesLoginIdentifier];
+- (void)vaultRoleListSetConnectControlsEnabled:(BOOL)enabled
+{
+    [connectButton setEnabled:enabled];
+    [testConnectButton setEnabled:enabled];
+}
+
+- (void)vaultRoleListDidCommitSelection
+{
+    [self _startEditingConnection];
+    if (favoriteNameFieldWasAutogenerated) {
+        // Defer so the combo's value binding commits the selected role before the
+        // name is regenerated from it.
         dispatch_async(dispatch_get_main_queue(), ^{
-            if ([self->vaultRolesLoginIdentifier isEqualToString:rolesLoginIdentifier]) {
-                self->vaultRolesLoginIdentifier = nil;
-            }
-            // The window is closing or the connection was cancelled (which aborts
-            // the OIDC login this fetch may be waiting on); drop the response
-            // without touching the torn-down UI or showing an alert.
-            if (self->dbDocument == nil || self->cancellingConnection) {
-                return;
-            }
-            [self->vaultRolesProgressIndicator stopAnimation:self];
-            [self->vaultRolesProgressIndicator setHidden:YES];
-            [self->vaultRefreshRolesButton setEnabled:YES];
-            [self->connectButton setEnabled:YES];
-            [self->testConnectButton setEnabled:YES];
-
-            // Discard stale results: if the Vault context (host/port/OIDC mount/
-            // mount) changed while this LIST was in flight — edited fields, or a
-            // different favorite loaded (even one that reuses the same mount name
-            // on a different server) — the roles/error belong to a different
-            // request and must not populate this form.
-            if (![(self->vaultHost ?: @"") isEqualToString:host]
-                || ![(self->vaultPort ?: @"") isEqualToString:port]
-                || ![(self->vaultOIDCMount ?: @"") isEqualToString:oidcMount]
-                || ![(self->vaultMount ?: @"") isEqualToString:mount]) {
-                return;
-            }
-
-            if (roles) {
-                [self willChangeValueForKey:@"vaultAvailableRoles"];
-                self->vaultAvailableRoles = [roles copy];
-                [self didChangeValueForKey:@"vaultAvailableRoles"];
-                [self _reloadVaultRoleComboItems];
-                if (roles.count == 0) {
-                    NSAlert *empty = [[NSAlert alloc] init];
-                    empty.messageText = NSLocalizedString(@"No Vault roles found", @"Vault roles refresh – empty");
-                    empty.informativeText = NSLocalizedString(@"No database roles were returned for this mount. Check the Vault mount path and that your token may list roles, or type the role manually.", @"Vault roles refresh – empty detail");
-                    NSWindow *emptyParentWindow = [self->dbDocument parentWindowControllerWindow];
-                    if (emptyParentWindow) {
-                        [empty beginSheetModalForWindow:emptyParentWindow completionHandler:nil];
-                    } else {
-                        [empty runModal];
-                    }
-                }
-            } else {
-                NSAlert *alert = [[NSAlert alloc] init];
-                alert.messageText = NSLocalizedString(@"Could not load Vault roles", @"Vault roles refresh – failure");
-                alert.informativeText = error.localizedDescription ?: NSLocalizedString(@"Unknown error. You can still type the role manually.", @"Vault roles refresh – failure detail");
-                NSWindow *parentWindow = [self->dbDocument parentWindowControllerWindow];
-                if (parentWindow) {
-                    [alert beginSheetModalForWindow:parentWindow completionHandler:nil];
-                } else {
-                    [alert runModal];
-                }
+            if (self->favoriteNameFieldWasAutogenerated) {
+                [self setName:[self _generateNameForConnection]];
             }
         });
-    });
+    }
 }
 
 #pragma mark -
@@ -3664,12 +3547,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                 if ([vaultLoginIdentifier length]) {
                     [VaultOIDCHandler cancelActiveLoginWithIdentifier:vaultLoginIdentifier];
                 }
-                // Also abort this window's role-refresh OIDC login (its own
-                // identifier, not covered above) so its listener frees the fixed
-                // localhost callback port instead of lingering to timeout.
-                if ([vaultRolesLoginIdentifier length]) {
-                    [VaultOIDCHandler cancelActiveLoginWithIdentifier:vaultRolesLoginIdentifier];
-                }
+                // Also abort this window's role-refresh OIDC login so its listener
+                // frees the fixed localhost callback port instead of lingering.
+                [vaultRoleListController cancelActiveLogin];
                 [VaultAuthManager clearCachedCredentialsForHost:[self vaultHost] ?: @""
                                                            port:[self vaultPort] ?: @""
                                                       oidcMount:[self vaultOIDCMount] ?: @""
@@ -4266,17 +4146,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [self _startEditingConnection];
 
     if ([notification object] == vaultCredentialsRoleComboBox) {
-        // Debounce the dropdown reorder so rapid typing doesn't reshuffle (and
-        // flicker) the popup on every keystroke. Use a GCD timer rather than
-        // -performSelector:afterDelay: because the latter only fires in the
-        // default run-loop mode and would be starved while the field/popup is in
-        // event-tracking mode (i.e. exactly while the user is typing).
-        NSUInteger token = ++vaultRoleReloadToken;
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.15 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            if (self->vaultRoleReloadToken == token) {
-                [self _reloadVaultRoleComboItems];
-            }
-        });
+        [vaultRoleListController scheduleDebouncedReload];
     }
 
     // Editing any other part of the Vault context invalidates a previously
@@ -4284,7 +4154,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     if ([notification object] == vaultHostField
         || [notification object] == vaultPortField
         || [notification object] == vaultOIDCMountField) {
-        [self _invalidateFetchedVaultRoles];
+        [vaultRoleListController invalidateRoles];
     }
 
     if (favoriteNameFieldWasAutogenerated && (field != standardNameField && field != awsIAMNameField && field != socketNameField && field != sshNameField && field != vaultNameField)) {
@@ -4297,31 +4167,12 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     }
 }
 
-/**
- * Selecting a Vault role from the combo box dropdown does not emit
- * controlTextDidChange:, so mark the connection as edited here to mirror the
- * behaviour of editing any other field (the value binding updates on selection).
- */
+// Selecting a Vault role from the dropdown is handled by SAVaultRoleListController
+// (separator guard + edit/name-regen via the delegate); this is a thin forwarder.
 - (void)comboBoxSelectionDidChange:(NSNotification *)notification
 {
-    if ([notification object] != vaultCredentialsRoleComboBox) {
-        return;
-    }
-    NSInteger idx = [vaultCredentialsRoleComboBox indexOfSelectedItem];
-    if (idx >= 0 && [[vaultCredentialsRoleComboBox itemObjectValueAtIndex:idx] isEqual:[VaultRoleFilter separator]]) {
-        // Separator is not a real role; restore the field to the current value.
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self->vaultCredentialsRoleComboBox setStringValue:(self->vaultCredentialsRole ?: @"")];
-        });
-        return;
-    }
-    [self _startEditingConnection];
-    if (favoriteNameFieldWasAutogenerated) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (self->favoriteNameFieldWasAutogenerated) {
-                [self setName:[self _generateNameForConnection]];
-            }
-        });
+    if ([notification object] == vaultCredentialsRoleComboBox) {
+        [vaultRoleListController handleComboSelectionChange];
     }
 }
 
@@ -4954,6 +4805,13 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
         // Localize the Vault role refresh button title (static XIB titles are not localized in this app).
         [vaultRefreshRolesButton setTitle:NSLocalizedString(@"Refresh", @"Vault roles refresh button title")];
+
+        // The Vault role dropdown's fetch/ordering/debounce/OIDC logic lives in a
+        // Swift controller; this object only forwards bindings/IBActions to it.
+        vaultRoleListController = [[SAVaultRoleListController alloc] initWithComboBox:vaultCredentialsRoleComboBox
+                                                                       refreshButton:vaultRefreshRolesButton
+                                                                   progressIndicator:vaultRolesProgressIndicator];
+        vaultRoleListController.delegate = self;
 
         // Initialize the connection service
         self.connectionService = [[SAConnectionService alloc] init];

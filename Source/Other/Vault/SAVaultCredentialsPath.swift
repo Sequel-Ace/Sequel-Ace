@@ -1,5 +1,5 @@
 //
-//  VaultCredentialsPath.swift
+//  SAVaultCredentialsPath.swift
 //  Sequel Ace
 //
 //  Pure helpers to split/join the Vault database credentials path
@@ -8,7 +8,7 @@
 
 import Foundation
 
-@objcMembers final class VaultCredentialsPath: NSObject {
+@objcMembers final class SAVaultCredentialsPath: NSObject {
 
     private static let separator = "/creds/"
     private static let slashes = CharacterSet(charactersIn: "/")

@@ -41,6 +41,7 @@
 @class SAConnectionViewCoordinator;
 @class SAFavoritesListDataSource;
 @class SAConnectionService;
+@class SAVaultRoleListController;
 
 @class SPDatabaseDocument,
 	   SPFavoritesController,
@@ -118,9 +119,7 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	// vaultCredentialsPath is now a computed property (no backing ivar)
 	NSString *vaultMount;
 	NSString *vaultCredentialsRole;
-	NSArray<NSString *> *vaultAvailableRoles;
-	NSUInteger vaultRoleReloadToken;
-	NSString *vaultRolesLoginIdentifier;
+	SAVaultRoleListController *vaultRoleListController;
 
 	// SSL details
 	NSInteger useSSL;
@@ -293,7 +292,6 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 @property (readwrite, copy) NSString *vaultOIDCMount;
 @property (readwrite, copy) NSString *vaultMount;
 @property (readwrite, copy) NSString *vaultCredentialsRole;
-@property (readwrite, copy) NSArray<NSString *> *vaultAvailableRoles;
 /// Computed from vaultMount + vaultCredentialsRole; setter splits on load.
 @property (readwrite, copy) NSString *vaultCredentialsPath;
 @property (readwrite) NSInteger useSSL;

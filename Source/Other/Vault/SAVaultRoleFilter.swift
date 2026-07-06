@@ -1,5 +1,5 @@
 //
-//  VaultRoleFilter.swift
+//  SAVaultRoleFilter.swift
 //  Sequel Ace
 //
 //  Fuzzy ordering for the Vault role dropdown: case-insensitive subsequence
@@ -9,7 +9,7 @@
 
 import Foundation
 
-@objcMembers final class VaultRoleFilter: NSObject {
+@objcMembers final class SAVaultRoleFilter: NSObject {
 
     /// Non-selectable visual separator placed between fuzzy matches and the rest.
     static let separator = "──────────"
