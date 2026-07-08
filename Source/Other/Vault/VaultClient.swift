@@ -251,10 +251,21 @@ final class VaultClient {
         let cleaned = mount.trimmingCharacters(in: .whitespacesAndNewlines)
             .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         guard !cleaned.isEmpty else { throw VaultClientError.parseError("empty Vault mount") }
-        // Reject path-traversal segments so a crafted mount cannot redirect the
-        // authenticated request to a different Vault endpoint.
-        guard !cleaned.split(separator: "/").contains("..") else {
-            throw VaultClientError.parseError("invalid Vault mount path")
+        // Validate the mount against a strict allowlist. The cleaned value is
+        // interpolated straight into the request path with a bearer token attached,
+        // so anything outside a normal Vault mount name could steer the
+        // authenticated request onto a different path of the same host. Each
+        // segment must be non-empty and contain only characters valid in a Vault
+        // mount name; this also rejects "." / ".." traversal segments and any
+        // embedded empty ("//") segment.
+        let allowedMountCharacters = CharacterSet(charactersIn:
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.")
+        for segment in cleaned.split(separator: "/", omittingEmptySubsequences: false) {
+            let s = String(segment)
+            guard !s.isEmpty, s != ".", s != "..",
+                  s.unicodeScalars.allSatisfy({ allowedMountCharacters.contains($0) }) else {
+                throw VaultClientError.parseError("invalid Vault mount path")
+            }
         }
         let url = baseURL.appendingPathComponent("v1/\(cleaned)/roles")
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
