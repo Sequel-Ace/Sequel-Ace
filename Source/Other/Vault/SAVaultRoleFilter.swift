@@ -14,11 +14,6 @@ import Foundation
     /// Non-selectable visual separator placed between fuzzy matches and the rest.
     static let separator = "──────────"
 
-    /// Whether `query` matches `candidate` as a case-insensitive subsequence.
-    static func matches(query: String, candidate: String) -> Bool {
-        return score(query: query, candidate: candidate) != nil
-    }
-
     /// Subsequence score (higher = better), or nil when `query` is not a
     /// subsequence of `candidate`. Word-boundary and consecutive-character
     /// matches score higher so the closest matches rank first.

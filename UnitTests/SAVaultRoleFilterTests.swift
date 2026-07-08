@@ -6,14 +6,14 @@ import XCTest
 final class SAVaultRoleFilterTests: XCTestCase {
 
     func testSubsequenceMatchesAcrossWords() {
-        XCTAssertTrue(SAVaultRoleFilter.matches(query: "something", candidate: "Small Orient Method Thing"))
-        XCTAssertTrue(SAVaultRoleFilter.matches(query: "SOMETHING", candidate: "small orient method thing"))
+        XCTAssertNotNil(SAVaultRoleFilter.score(query: "something", candidate: "Small Orient Method Thing"))
+        XCTAssertNotNil(SAVaultRoleFilter.score(query: "SOMETHING", candidate: "small orient method thing"))
     }
 
     func testNonSubsequenceDoesNotMatch() {
-        XCTAssertFalse(SAVaultRoleFilter.matches(query: "xyz", candidate: "Small Orient Method Thing"))
+        XCTAssertNil(SAVaultRoleFilter.score(query: "xyz", candidate: "Small Orient Method Thing"))
         // 'q' is absent entirely
-        XCTAssertFalse(SAVaultRoleFilter.matches(query: "q", candidate: "abc"))
+        XCTAssertNil(SAVaultRoleFilter.score(query: "q", candidate: "abc"))
     }
 
     func testEmptyQueryReturnsAllAlphabetical() {
