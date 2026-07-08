@@ -84,7 +84,15 @@ import AppKit
 
     /// Drop the fetched role list (tied to a specific server/token/mount) and
     /// clear the dropdown. Call whenever any Vault context field changes.
+    ///
+    /// Also abort any in-flight refresh login: it is bound to the now-stale
+    /// host/port/OIDC mount and may be parked in the OIDC browser flow for the
+    /// old server. Cancelling makes the background LIST return promptly so the
+    /// completion handler re-enables Connect/Test instead of leaving them
+    /// disabled until the stale login times out; the result is discarded there
+    /// as stale.
     @objc func invalidateRoles() {
+        cancelActiveLogin()
         availableRoles = []
         reloadItems()
     }
