@@ -248,8 +248,7 @@ final class VaultClient {
 
     /// List the database roles available under `mount` (Vault `LIST <mount>/roles`).
     static func listDatabaseRoles(baseURL: URL, mount: String, token: String) throws -> [String] {
-        let cleaned = mount.trimmingCharacters(in: .whitespacesAndNewlines)
-            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        let cleaned = SAVaultCredentialsPath.normalizeMount(mount)
         guard !cleaned.isEmpty else { throw VaultClientError.parseError("empty Vault mount") }
         // Validate the mount against a strict allowlist. The cleaned value is
         // interpolated straight into the request path with a bearer token attached,

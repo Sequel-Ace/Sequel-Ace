@@ -13,6 +13,14 @@ import Foundation
     private static let separator = "/creds/"
     private static let slashes = CharacterSet(charactersIn: "/")
 
+    /// Normalize a Vault mount: trim surrounding whitespace, then strip leading and
+    /// trailing slashes. Shared by `credPath(mount:role:)` and the role LIST request
+    /// so the mount the UI joins into the path matches the mount the client queries.
+    static func normalizeMount(_ mount: String) -> String {
+        return mount.trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: slashes)
+    }
+
     /// Mount prefix (everything before the final `/creds/`). Empty when the path is
     /// unparseable. Splitting on the last separator keeps a mount that itself
     /// contains a `creds` segment intact (e.g. `team/creds/mysql/creds/ro`).
@@ -33,7 +41,7 @@ import Foundation
     /// Rebuild `<mount>/creds/<role>`. Returns "" when role is empty; returns the
     /// role verbatim when mount is empty (lets a user paste a full path).
     static func credPath(mount: String, role: String) -> String {
-        let m = mount.trimmingCharacters(in: .whitespacesAndNewlines).trimmingCharacters(in: slashes)
+        let m = normalizeMount(mount)
         let r = role.trimmingCharacters(in: .whitespacesAndNewlines).trimmingCharacters(in: slashes)
         if r.isEmpty { return "" }
         if m.isEmpty { return r }
