@@ -13,18 +13,20 @@ import Foundation
     private static let separator = "/creds/"
     private static let slashes = CharacterSet(charactersIn: "/")
 
-    /// Mount prefix (everything before `/creds/`). Empty when the path is unparseable.
+    /// Mount prefix (everything before the final `/creds/`). Empty when the path is
+    /// unparseable. Splitting on the last separator keeps a mount that itself
+    /// contains a `creds` segment intact (e.g. `team/creds/mysql/creds/ro`).
     static func mount(fromCredPath credPath: String) -> String {
         let p = credPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let range = p.range(of: separator) else { return "" }
+        guard let range = p.range(of: separator, options: .backwards) else { return "" }
         return String(p[..<range.lowerBound])
     }
 
-    /// Role suffix (everything after `/creds/`). Falls back to the whole string
-    /// when `/creds/` is absent, so a hand-typed value is never dropped.
+    /// Role suffix (everything after the final `/creds/`). Falls back to the whole
+    /// string when `/creds/` is absent, so a hand-typed value is never dropped.
     static func role(fromCredPath credPath: String) -> String {
         let p = credPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let range = p.range(of: separator) else { return p }
+        guard let range = p.range(of: separator, options: .backwards) else { return p }
         return String(p[range.upperBound...])
     }
 

@@ -20,6 +20,18 @@ final class SAVaultCredentialsPathTests: XCTestCase {
         XCTAssertEqual(SAVaultCredentialsPath.role(fromCredPath: "team/db/creds/ro"), "ro")
     }
 
+    func testMountContainingCredsSegmentIsPreserved() {
+        // A valid nested mount whose path itself contains a `creds` segment must
+        // split at the final separator, not the first one.
+        let path = "team/creds/mysql/creds/readonly"
+        XCTAssertEqual(SAVaultCredentialsPath.mount(fromCredPath: path), "team/creds/mysql")
+        XCTAssertEqual(SAVaultCredentialsPath.role(fromCredPath: path), "readonly")
+        let rebuilt = SAVaultCredentialsPath.credPath(
+            mount: SAVaultCredentialsPath.mount(fromCredPath: path),
+            role: SAVaultCredentialsPath.role(fromCredPath: path))
+        XCTAssertEqual(rebuilt, path)
+    }
+
     func testPathWithoutCredsFallsBackToRole() {
         // Unparseable path: keep the whole string as the role so nothing is lost.
         XCTAssertEqual(SAVaultCredentialsPath.mount(fromCredPath: "weird-value"), "")
