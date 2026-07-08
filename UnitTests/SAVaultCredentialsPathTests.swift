@@ -58,6 +58,22 @@ final class SAVaultCredentialsPathTests: XCTestCase {
         XCTAssertEqual(SAVaultCredentialsPath.credPath(mount: "databases_credentials", role: "  "), "")
     }
 
+    func testCredPathHonorsFullPathPastedIntoRoleWhenMountIsSet() {
+        // Pasting a full path into Role while the mount is populated must not
+        // double the path (regression: databases_credentials/creds/databases_credentials/creds/RW).
+        XCTAssertEqual(
+            SAVaultCredentialsPath.credPath(mount: "databases_credentials",
+                                            role: "databases_credentials/creds/RW"),
+            "databases_credentials/creds/RW")
+    }
+
+    func testCredPathHonorsFullPathWithDifferentMountPastedIntoRole() {
+        // The pasted path wins over the mount field entirely.
+        XCTAssertEqual(
+            SAVaultCredentialsPath.credPath(mount: "some_mount", role: "other_mount/creds/ro"),
+            "other_mount/creds/ro")
+    }
+
     func testRoundTrip() {
         let original = "databases_credentials/creds/role-name"
         let rebuilt = SAVaultCredentialsPath.credPath(

@@ -44,6 +44,11 @@ import Foundation
         let m = normalizeMount(mount)
         let r = role.trimmingCharacters(in: .whitespacesAndNewlines).trimmingCharacters(in: slashes)
         if r.isEmpty { return "" }
+        // A role that itself contains "/creds/" is already a full credentials path
+        // (e.g. pasted into the Role field, which the UI explicitly invites). Honor
+        // it verbatim instead of prefixing the mount, which would double the path
+        // into "<mount>/creds/<mount>/creds/<role>".
+        if r.range(of: separator) != nil { return r }
         if m.isEmpty { return r }
         return "\(m)\(separator)\(r)"
     }
