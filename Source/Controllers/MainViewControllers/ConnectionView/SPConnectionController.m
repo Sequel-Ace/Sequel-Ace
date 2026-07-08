@@ -1459,7 +1459,13 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
 - (BOOL)vaultRoleListShouldDeferForActiveConnection { return isConnecting; }
 
-- (BOOL)vaultRoleListWasTornDown { return (dbDocument == nil || cancellingConnection); }
+// Only a genuine window teardown should discard a role-refresh response.
+// -_documentWillClose: nils dbDocument, so that alone captures the closing case.
+// cancellingConnection must NOT be used here: it stays YES after a connection is
+// cancelled (it is only reset when the next connection starts), which would make a
+// later, unrelated role refresh bail out of its completion before re-enabling the
+// spinner and the Refresh/Connect/Test controls, leaving the form stuck.
+- (BOOL)vaultRoleListWasTornDown { return (dbDocument == nil); }
 
 - (void)vaultRoleListSetConnectControlsEnabled:(BOOL)enabled
 {
