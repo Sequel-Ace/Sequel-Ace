@@ -60,13 +60,17 @@ enum SPCustomQuerySQLClassifier {
         return false
     }
 
-    /// Replace every MySQL comment with a single space. Comments are replaced
-    /// so adjacent tokens stay separated, e.g. `SELECT/*c*/1` becomes
-    /// `SELECT 1` rather than `SELECT1`. The `--` form follows MySQL's rule
-    /// that the second dash must be followed by whitespace/control to count
-    /// as a comment, so `SELECT--1` is left intact as double negation. Comment
+    /// Replace ordinary MySQL comments with a single space while preserving
+    /// executable comment bodies. With server context, version and MariaDB
+    /// gates are applied before preserving a body. Comments are replaced so
+    /// adjacent tokens stay separated, e.g. `SELECT/*c*/1` becomes `SELECT 1`.
+    /// The `--` form follows MySQL's whitespace/control rule, and comment
     /// markers inside strings or quoted identifiers are preserved.
-    static func stripSQLComments(_ source: String) -> String {
+    static func stripSQLComments(
+        _ source: String,
+        serverVersion: Int? = nil,
+        serverIsMariaDB: Bool = false
+    ) -> String {
         let characters: [Character] = source.map { $0 }
         var result = ""
         var index = 0
@@ -123,15 +127,52 @@ enum SPCustomQuerySQLClassifier {
             }
 
             if character == "/", index + 1 < characters.count, characters[index + 1] == "*" {
-                result.append(" ")
-                index += 2
-                while index < characters.count {
-                    if characters[index] == "*", index + 1 < characters.count, characters[index + 1] == "/" {
-                        index += 2
-                        break
-                    }
-                    index += 1
+                var executableContentStart: Int?
+                var isMariaDBOnlyComment = false
+                if index + 2 < characters.count, characters[index + 2] == "!" {
+                    executableContentStart = index + 3
+                } else if index + 3 < characters.count,
+                          (characters[index + 2] == "M" || characters[index + 2] == "m"),
+                          characters[index + 3] == "!" {
+                    executableContentStart = index + 4
+                    isMariaDBOnlyComment = true
                 }
+
+                var closingIndex = index + 2
+                while closingIndex + 1 < characters.count,
+                      !(characters[closingIndex] == "*" && characters[closingIndex + 1] == "/") {
+                    closingIndex += 1
+                }
+                let hasClosingMarker = closingIndex + 1 < characters.count
+                let contentEnd = hasClosingMarker ? closingIndex : characters.count
+
+                result.append(" ")
+                if var contentStart = executableContentStart {
+                    let versionStart = contentStart
+                    while contentStart < contentEnd, isASCIIDigit(characters[contentStart]) {
+                        contentStart += 1
+                    }
+                    let hasVersionGate = contentStart > versionStart
+                    let requiredVersion = hasVersionGate
+                        ? Int(String(characters[versionStart..<contentStart]))
+                        : nil
+                    if shouldPreserveExecutableComment(
+                        requiredVersion: requiredVersion,
+                        hasVersionGate: hasVersionGate,
+                        isMariaDBOnlyComment: isMariaDBOnlyComment,
+                        serverVersion: serverVersion,
+                        serverIsMariaDB: serverIsMariaDB
+                    ), contentStart < contentEnd {
+                        result.append(stripSQLComments(
+                            String(characters[contentStart..<contentEnd]),
+                            serverVersion: serverVersion,
+                            serverIsMariaDB: serverIsMariaDB
+                        ))
+                    }
+                    result.append(" ")
+                }
+
+                index = hasClosingMarker ? closingIndex + 2 : characters.count
                 continue
             }
 
@@ -144,6 +185,35 @@ enum SPCustomQuerySQLClassifier {
 
     private static func isMySQLCommentWhitespace(_ character: Character) -> Bool {
         character.unicodeScalars.allSatisfy { $0.value <= 0x20 }
+    }
+
+    private static func isASCIIDigit(_ character: Character) -> Bool {
+        character.unicodeScalars.count == 1 && character.unicodeScalars.allSatisfy { (48...57).contains($0.value) }
+    }
+
+    private static func shouldPreserveExecutableComment(
+        requiredVersion: Int?,
+        hasVersionGate: Bool,
+        isMariaDBOnlyComment: Bool,
+        serverVersion: Int?,
+        serverIsMariaDB: Bool
+    ) -> Bool {
+        // Without connection context, inspect every executable body so safety
+        // classification remains conservative.
+        guard let serverVersion else { return true }
+        if isMariaDBOnlyComment && !serverIsMariaDB { return false }
+        if hasVersionGate && requiredVersion == nil { return false }
+        if let requiredVersion, requiredVersion > serverVersion { return false }
+
+        // MariaDB intentionally ignores MySQL 5.7+ version-gated comments in
+        // this range; /*M! ... */ remains available for MariaDB-specific SQL.
+        if serverIsMariaDB,
+           !isMariaDBOnlyComment,
+           let requiredVersion,
+           (50_700...99_999).contains(requiredVersion) {
+            return false
+        }
+        return true
     }
 
     private static func hasLeadingSQLKeyword(_ keyword: String, in upper: String, allowBare: Bool = true) -> Bool {
@@ -213,24 +283,38 @@ enum SPCustomQuerySQLClassifier {
 @objc final class SASQLDatabaseContext: NSObject {
 
     private static let identifierPattern = "(`(?:``|[^`])*`|[^\\s;]+)"
-    private static let useRegex = try! NSRegularExpression(
+    private static let useRegex = makeRegex(
         pattern: "(?is)^\\s*USE\\s+\(identifierPattern)\\s*;?\\s*$"
     )
-    private static let dropDatabaseRegex = try! NSRegularExpression(
+    private static let dropDatabaseRegex = makeRegex(
         pattern: "(?is)^\\s*DROP\\s+(?:DATABASE|SCHEMA)\\s+(?:IF\\s+EXISTS\\s+)?\(identifierPattern)\\s*;?\\s*$"
     )
 
-    @objc(databaseNameAfterSuccessfulQuery:currentDatabase:)
-    static func databaseName(afterSuccessfulQuery query: String, currentDatabase: String?) -> String? {
-        let queryWithoutComments = SPCustomQuerySQLClassifier.stripSQLComments(query)
+    @objc(databaseNameAfterSuccessfulQuery:currentDatabase:databaseNamesAreCaseSensitive:serverVersion:serverIsMariaDB:)
+    static func databaseName(
+        afterSuccessfulQuery query: String,
+        currentDatabase: String?,
+        databaseNamesAreCaseSensitive: Bool,
+        serverVersion: Int,
+        serverIsMariaDB: Bool
+    ) -> String? {
+        let queryWithoutComments = SPCustomQuerySQLClassifier.stripSQLComments(
+            query,
+            serverVersion: serverVersion,
+            serverIsMariaDB: serverIsMariaDB
+        )
 
         if let selectedDatabase = databaseName(matchedBy: useRegex, in: queryWithoutComments) {
             return selectedDatabase
         }
 
         if let droppedDatabase = databaseName(matchedBy: dropDatabaseRegex, in: queryWithoutComments),
-           droppedDatabase == currentDatabase {
-            return nil
+           let currentDatabase {
+            let namesMatch = droppedDatabase == currentDatabase
+                || (!databaseNamesAreCaseSensitive && droppedDatabase.caseInsensitiveCompare(currentDatabase) == .orderedSame)
+            if namesMatch {
+                return nil
+            }
         }
 
         return currentDatabase
@@ -249,5 +333,13 @@ enum SPCustomQuerySQLClassifier {
         }
 
         return String(identifier.dropFirst().dropLast()).replacingOccurrences(of: "``", with: "`")
+    }
+
+    private static func makeRegex(pattern: String) -> NSRegularExpression {
+        do {
+            return try NSRegularExpression(pattern: pattern)
+        } catch {
+            preconditionFailure("Invalid SQL database-context regular expression '\(pattern)': \(error)")
+        }
     }
 }

@@ -32,6 +32,18 @@
 #import "SPMySQL Private APIs.h"
 #import "SPMySQLArrayAdditions.h"
 
+static int SPMySQLApplyEncodingState(MYSQL *connection, NSString *encodingName, BOOL useLatin1Transport)
+{
+	if (![encodingName length] || mysql_set_character_set(connection, [encodingName UTF8String])) return 1;
+	if (!useLatin1Transport) return 0;
+
+	static const char setResultsLatin1[] = "SET CHARACTER_SET_RESULTS=latin1";
+	if (mysql_real_query(connection, setResultsLatin1, sizeof(setResultsLatin1) - 1)) return 1;
+
+	static const char setClientLatin1[] = "SET CHARACTER_SET_CLIENT=latin1";
+	return mysql_real_query(connection, setClientLatin1, sizeof(setClientLatin1) - 1);
+}
+
 @implementation SPMySQLConnection (Querying_and_Preparation)
 
 #pragma mark -
@@ -345,14 +357,14 @@
 		uint64_t queryStartTime = _monotonicTime();
 		queryStatus = 0;
 		if ([databaseName length]) {
-			const char *connectionCharacterSet = mysql_character_set_name(mySQLConnection);
-			NSString *originalCharacterSet = connectionCharacterSet ? [NSString stringWithUTF8String:connectionCharacterSet] : nil;
-			BOOL encodingChangeRequired = [originalCharacterSet length] && ![originalCharacterSet hasPrefix:@"utf8"];
+			BOOL encodingChangeRequired = ![encoding hasPrefix:@"utf8"] || encodingUsesLatin1Transport;
 
 			// mysql_select_db() interprets the UTF-8 database name using the active
 			// connection character set. Temporarily use UTF-8, matching
-			// selectDatabase:, and restore the original transport before the query.
-			if (encodingChangeRequired && mysql_set_character_set(mySQLConnection, "utf8mb4")) {
+			// selectDatabase:, and restore the framework-managed encoding and
+			// Latin1 transport state before the query. The public encoding helpers
+			// cannot be used while this non-recursive connection lock is held.
+			if (encodingChangeRequired && SPMySQLApplyEncodingState(mySQLConnection, @"utf8mb4", NO)) {
 				queryStatus = 1;
 				databaseAssertionFailed = YES;
 				theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
@@ -367,7 +379,7 @@
 					theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
 				}
 
-				if (encodingChangeRequired && mysql_set_character_set(mySQLConnection, [originalCharacterSet UTF8String]) && !queryStatus) {
+				if (encodingChangeRequired && SPMySQLApplyEncodingState(mySQLConnection, encoding, encodingUsesLatin1Transport) && !queryStatus) {
 					queryStatus = 1;
 					databaseAssertionFailed = YES;
 					theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];

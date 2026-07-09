@@ -771,6 +771,12 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         SEL                          callbackMethod = NULL;
         NSString                    *databaseName   = [taskArguments objectForKey:@"database"];
         NSString                    *taskButtonString;
+        id lowerCaseTableNames = [mySQLConnection getFirstFieldFromQuery:@"SELECT @@lower_case_table_names" assertingDatabase:databaseName];
+        // If the setting cannot be read, prefer clearing a case-only match over retaining a stale assertion.
+        BOOL databaseNamesAreCaseSensitive = [lowerCaseTableNames respondsToSelector:@selector(integerValue)] && [lowerCaseTableNames integerValue] == 0;
+        NSInteger serverVersion = (NSInteger)([mySQLConnection serverMajorVersion] * 10000 + [mySQLConnection serverMinorVersion] * 100 + [mySQLConnection serverReleaseVersion]);
+        NSString *serverVersionString = [mySQLConnection serverVersionString];
+        BOOL serverIsMariaDB = [serverVersionString length] && [serverVersionString rangeOfString:@"mariadb" options:NSCaseInsensitiveSearch].location != NSNotFound;
         
         NSUInteger __block i, totalQueriesRun = 0, totalAffectedRows = 0;
         double executionTime = 0;
@@ -971,7 +977,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 if (!databaseWasChanged && [query isMatchedByRegex:@"(?i)^\\s*\\b(use|drop\\s+database|drop\\s+schema)\\b\\s+."]) {
                     databaseWasChanged = YES;
                 }
-                databaseName = [SASQLDatabaseContext databaseNameAfterSuccessfulQuery:query currentDatabase:databaseName];
+                databaseName = [SASQLDatabaseContext databaseNameAfterSuccessfulQuery:query
+                                                                          currentDatabase:databaseName
+                                                   databaseNamesAreCaseSensitive:databaseNamesAreCaseSensitive
+                                                                    serverVersion:serverVersion
+                                                                    serverIsMariaDB:serverIsMariaDB];
             }
 
             // write errors to console

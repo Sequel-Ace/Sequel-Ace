@@ -60,6 +60,16 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
             SPCustomQuerySQLClassifier.stripSQLComments("SELECT '-- value', `db#name`, \"/* value */\""),
             "SELECT '-- value', `db#name`, \"/* value */\""
         )
+        XCTAssertEqual(
+            SPCustomQuerySQLClassifier.stripSQLComments("/*!40101 USE executable_db */").trimmingCharacters(in: .whitespacesAndNewlines),
+            "USE executable_db"
+        )
+        XCTAssertFalse(
+            SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("/*! EXPLAIN ANALYZE DELETE FROM t */")
+        )
+        XCTAssertFalse(
+            SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("/*!99999 DELETE FROM future_table */")
+        )
     }
 
     func testLeadingParenthesesAreUnwrappedConsistentlyWithExplainable() {
@@ -123,59 +133,141 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
 
     func testDatabaseContextTracksUseStatementsWithCommentsAndQuotedNames() {
         XCTAssertEqual(
-            SASQLDatabaseContext.databaseName(afterSuccessfulQuery: "USE new_db; -- selected\n", currentDatabase: "old_db"),
+            contextDatabaseName(afterSuccessfulQuery: "USE new_db; -- selected\n", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
             "new_db"
         )
         XCTAssertEqual(
-            SASQLDatabaseContext.databaseName(afterSuccessfulQuery: "/* before */ USE `new``db/*literal*/#name` /* after */", currentDatabase: "old_db"),
+            contextDatabaseName(afterSuccessfulQuery: "/* before */ USE `new``db/*literal*/#name` /* after */", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
             "new`db/*literal*/#name"
         )
         XCTAssertEqual(
-            SASQLDatabaseContext.databaseName(afterSuccessfulQuery: "USE hash_db # selected", currentDatabase: "old_db"),
+            contextDatabaseName(afterSuccessfulQuery: "USE hash_db # selected", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
             "hash_db"
         )
         XCTAssertEqual(
-            SASQLDatabaseContext.databaseName(afterSuccessfulQuery: "USEFUL db", currentDatabase: "old_db"),
+            contextDatabaseName(afterSuccessfulQuery: "USEFUL db", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
             "old_db"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(afterSuccessfulQuery: "/*!40101 USE versioned_db */", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
+            "versioned_db"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(
+                afterSuccessfulQuery: "/*M!100100 USE maria_db */",
+                currentDatabase: "old_db",
+                databaseNamesAreCaseSensitive: true,
+                serverVersion: 101_100,
+                serverIsMariaDB: true
+            ),
+            "maria_db"
         )
     }
 
-    func testDatabaseContextClearsOnlyWhenTheCurrentDatabaseWasDropped() {
-        XCTAssertNil(
-            SASQLDatabaseContext.databaseName(afterSuccessfulQuery: "DROP DATABASE `app_db`", currentDatabase: "app_db")
-        )
-        XCTAssertNil(
-            SASQLDatabaseContext.databaseName(afterSuccessfulQuery: "DROP SCHEMA IF EXISTS app_db; -- rebuild", currentDatabase: "app_db")
+    func testDatabaseContextHonorsExecutableCommentVersionAndServerFlavor() {
+        XCTAssertEqual(
+            contextDatabaseName(
+                afterSuccessfulQuery: "/*!99999 USE future_db */",
+                currentDatabase: "old_db",
+                databaseNamesAreCaseSensitive: true
+            ),
+            "old_db"
         )
         XCTAssertEqual(
-            SASQLDatabaseContext.databaseName(afterSuccessfulQuery: "DROP DATABASE reporting", currentDatabase: "app_db"),
+            contextDatabaseName(
+                afterSuccessfulQuery: "/*M!100100 USE maria_db */",
+                currentDatabase: "old_db",
+                databaseNamesAreCaseSensitive: true
+            ),
+            "old_db"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(
+                afterSuccessfulQuery: "/*!80000 USE mysql_only_db */",
+                currentDatabase: "old_db",
+                databaseNamesAreCaseSensitive: true,
+                serverVersion: 101_100,
+                serverIsMariaDB: true
+            ),
+            "old_db"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(
+                afterSuccessfulQuery: "/*!40101 USE shared_db */",
+                currentDatabase: "old_db",
+                databaseNamesAreCaseSensitive: true,
+                serverVersion: 101_100,
+                serverIsMariaDB: true
+            ),
+            "shared_db"
+        )
+    }
+
+    func testDatabaseContextClearsOnlyWhenDroppedNameMatchesUnderServerCaseRules() {
+        XCTAssertNil(
+            contextDatabaseName(afterSuccessfulQuery: "DROP DATABASE `app_db`", currentDatabase: "app_db", databaseNamesAreCaseSensitive: true)
+        )
+        XCTAssertNil(
+            contextDatabaseName(afterSuccessfulQuery: "DROP SCHEMA IF EXISTS app_db; -- rebuild", currentDatabase: "app_db", databaseNamesAreCaseSensitive: true)
+        )
+        XCTAssertEqual(
+            contextDatabaseName(afterSuccessfulQuery: "DROP DATABASE reporting", currentDatabase: "app_db", databaseNamesAreCaseSensitive: false),
             "app_db"
         )
         XCTAssertEqual(
-            SASQLDatabaseContext.databaseName(afterSuccessfulQuery: "DROP DATABASE app_db_backup", currentDatabase: "app_db"),
+            contextDatabaseName(afterSuccessfulQuery: "DROP DATABASE app_db_backup", currentDatabase: "app_db", databaseNamesAreCaseSensitive: false),
             "app_db"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(afterSuccessfulQuery: "DROP DATABASE app_db", currentDatabase: "App_DB", databaseNamesAreCaseSensitive: true),
+            "App_DB"
+        )
+        XCTAssertNil(
+            contextDatabaseName(afterSuccessfulQuery: "DROP DATABASE app_db", currentDatabase: "App_DB", databaseNamesAreCaseSensitive: false)
+        )
+        XCTAssertNil(
+            contextDatabaseName(afterSuccessfulQuery: "/*! DROP DATABASE App_DB */", currentDatabase: "App_DB", databaseNamesAreCaseSensitive: true)
         )
     }
 
     func testDatabaseContextSupportsDropCreateUseRebuildSequence() {
         var databaseName: String? = "app_db"
 
-        databaseName = SASQLDatabaseContext.databaseName(
+        databaseName = contextDatabaseName(
             afterSuccessfulQuery: "DROP DATABASE app_db",
-            currentDatabase: databaseName
+            currentDatabase: databaseName,
+            databaseNamesAreCaseSensitive: true
         )
         XCTAssertNil(databaseName)
 
-        databaseName = SASQLDatabaseContext.databaseName(
+        databaseName = contextDatabaseName(
             afterSuccessfulQuery: "CREATE DATABASE app_db",
-            currentDatabase: databaseName
+            currentDatabase: databaseName,
+            databaseNamesAreCaseSensitive: true
         )
         XCTAssertNil(databaseName)
 
-        databaseName = SASQLDatabaseContext.databaseName(
+        databaseName = contextDatabaseName(
             afterSuccessfulQuery: "USE app_db; /* restored */",
-            currentDatabase: databaseName
+            currentDatabase: databaseName,
+            databaseNamesAreCaseSensitive: true
         )
         XCTAssertEqual(databaseName, "app_db")
+    }
+
+    private func contextDatabaseName(
+        afterSuccessfulQuery query: String,
+        currentDatabase: String?,
+        databaseNamesAreCaseSensitive: Bool,
+        serverVersion: Int = 80_000,
+        serverIsMariaDB: Bool = false
+    ) -> String? {
+        SASQLDatabaseContext.databaseName(
+            afterSuccessfulQuery: query,
+            currentDatabase: currentDatabase,
+            databaseNamesAreCaseSensitive: databaseNamesAreCaseSensitive,
+            serverVersion: serverVersion,
+            serverIsMariaDB: serverIsMariaDB
+        )
     }
 }

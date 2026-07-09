@@ -119,6 +119,23 @@
 		XCTAssertEqualObjects([connection encoding], @"latin1");
 		XCTAssertTrue([connection setEncoding:originalEncoding]);
 
+		XCTAssertTrue([connection setEncoding:@"latin2"]);
+		NSString *expectedConnectionCharacterSet = [connection getFirstFieldFromQuery:@"SELECT @@character_set_connection"];
+		XCTAssertTrue([connection setEncodingUsesLatin1Transport:YES]);
+		SPMySQLResult *latin1TransportResult = [connection queryString:@"SELECT DATABASE()" assertingDatabase:unicodeDatabase];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		XCTAssertEqualObjects([[latin1TransportResult getRowAsArray] firstObject], unicodeDatabase);
+		XCTAssertEqualObjects([connection encoding], @"latin2");
+		XCTAssertTrue([connection encodingUsesLatin1Transport]);
+
+		SPMySQLResult *transportStateResult = [connection queryString:@"SELECT @@character_set_client, @@character_set_results, @@character_set_connection"];
+		NSArray *transportState = [transportStateResult getRowAsArray];
+		XCTAssertEqualObjects([transportState objectAtIndex:0], @"latin1");
+		XCTAssertEqualObjects([transportState objectAtIndex:1], @"latin1");
+		XCTAssertEqualObjects([transportState objectAtIndex:2], expectedConnectionCharacterSet);
+		XCTAssertTrue([connection setEncodingUsesLatin1Transport:NO]);
+		XCTAssertTrue([connection setEncoding:originalEncoding]);
+
 		SPMySQLStreamingResultStore *resultStore = [connection resultStoreFromQueryString:@"SELECT DATABASE()" assertingDatabase:databaseA];
 		[resultStore startDownload];
 		NSDate *deadline = [NSDate dateWithTimeIntervalSinceNow:5];

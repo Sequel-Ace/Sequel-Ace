@@ -409,6 +409,12 @@
 
 	[tableDocumentInstance setQueryMode:SPImportExportQueryMode];
 	NSString *databaseName = [tableDocumentInstance database] ?: [mySQLConnection database];
+	id lowerCaseTableNames = [mySQLConnection getFirstFieldFromQuery:@"SELECT @@lower_case_table_names" assertingDatabase:databaseName];
+	// If the setting cannot be read, prefer clearing a case-only match over retaining a stale assertion.
+	BOOL databaseNamesAreCaseSensitive = [lowerCaseTableNames respondsToSelector:@selector(integerValue)] && [lowerCaseTableNames integerValue] == 0;
+	NSInteger serverVersion = (NSInteger)([mySQLConnection serverMajorVersion] * 10000 + [mySQLConnection serverMinorVersion] * 100 + [mySQLConnection serverReleaseVersion]);
+	NSString *serverVersionString = [mySQLConnection serverVersionString];
+	BOOL serverIsMariaDB = [serverVersionString length] && [serverVersionString rangeOfString:@"mariadb" options:NSCaseInsensitiveSearch].location != NSNotFound;
 
 	// Determine the file encoding.  The first item in the encoding menu is "Autodetect"; if
 	// this is selected, attempt to detect the encoding of the file
@@ -633,7 +639,11 @@
                     }
                 }
                 else if (![mySQLConnection queryErrored]) {
-                    databaseName = [SASQLDatabaseContext databaseNameAfterSuccessfulQuery:query currentDatabase:databaseName];
+                    databaseName = [SASQLDatabaseContext databaseNameAfterSuccessfulQuery:query
+                                                                              currentDatabase:databaseName
+                                                       databaseNamesAreCaseSensitive:databaseNamesAreCaseSensitive
+                                                                        serverVersion:serverVersion
+                                                                        serverIsMariaDB:serverIsMariaDB];
                 }
 
                 // Increment the processed queries count
@@ -674,7 +684,11 @@
 			[errors appendFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(queriesPerformed+1), [mySQLConnection lastErrorMessage]];
 		}
 		else if (![mySQLConnection queryErrored]) {
-			databaseName = [SASQLDatabaseContext databaseNameAfterSuccessfulQuery:query currentDatabase:databaseName];
+			databaseName = [SASQLDatabaseContext databaseNameAfterSuccessfulQuery:query
+			                                                                  currentDatabase:databaseName
+			                                           databaseNamesAreCaseSensitive:databaseNamesAreCaseSensitive
+			                                                            serverVersion:serverVersion
+			                                                            serverIsMariaDB:serverIsMariaDB];
 		}
 
 		// Increment the processed queries count
