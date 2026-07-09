@@ -121,6 +121,7 @@ struct SAConnectionInfo {
     /// Returns the client-side MySQL host for the supplied connection details.
     @objc class func resolvedMySQLConnectHost(for info: SAConnectionInfoObjC) -> String? {
         let trimmedHost = info.host.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedHost = trimmedHost.lowercased()
         let fallbackHost = trimmedHost.isEmpty ? "127.0.0.1" : trimmedHost
 
         switch info.type {
@@ -128,8 +129,14 @@ struct SAConnectionInfo {
             return nil
 
         case .sshTunnel:
-            // This is the local client side of the SSH tunnel after ssh -L
-            // has bound a listener. info.host remains the remote MySQL target.
+            // Preserve explicit loopback values so localhost-specific grants
+            // continue to work through the local forwarded endpoint.
+            if normalizedHost == "localhost" {
+                return normalizedHost
+            }
+            if normalizedHost == "127.0.0.1" || normalizedHost == "::1" {
+                return trimmedHost
+            }
             return "127.0.0.1"
 
         case .tcpIP, .awsIAM, .vault:
@@ -138,18 +145,6 @@ struct SAConnectionInfo {
         @unknown default:
             return fallbackHost
         }
-    }
-
-    /// Returns the remote MySQL host that the SSH tunnel should forward to.
-    @objc class func resolvedSSHTunnelRemoteHost(for info: SAConnectionInfoObjC) -> String {
-        let trimmedHost = info.host.trimmingCharacters(in: .whitespacesAndNewlines)
-        let normalizedHost = trimmedHost.lowercased()
-
-        if normalizedHost == "localhost" {
-            return normalizedHost
-        }
-
-        return trimmedHost.isEmpty ? "127.0.0.1" : trimmedHost
     }
 
     // MARK: Basic Connection

@@ -148,22 +148,22 @@ final class SAConnectionInfoMappingTests: XCTestCase {
         XCTAssertEqual(info.requestServerPublicKey, 1)
     }
 
-    /// SSH tunnels always connect the MySQL client to the local forwarded endpoint.
-    func testResolvedMySQLConnectHostUsesLoopbackForLocalhostSSHTunnelConnections() {
+    /// Ensures localhost-specific grants still work through SSH tunnel forwarding.
+    func testResolvedMySQLConnectHostPreservesLocalhostForSSHTunnelConnections() {
         let info = SAConnectionInfoObjC()
         info.type = .sshTunnel
         info.host = "localhost"
 
-        XCTAssertEqual(SAConnectionInfoObjC.resolvedMySQLConnectHost(for: info), "127.0.0.1")
+        XCTAssertEqual(SAConnectionInfoObjC.resolvedMySQLConnectHost(for: info), "localhost")
     }
 
-    /// The local client endpoint is independent from the configured remote MySQL host.
-    func testResolvedMySQLConnectHostUsesLoopbackForIPv4SSHTunnelConnections() {
+    /// Normalizes localhost spellings while still preserving loopback semantics.
+    func testResolvedMySQLConnectHostCanonicalizesLocalhostCasingForSSHTunnelConnections() {
         let info = SAConnectionInfoObjC()
         info.type = .sshTunnel
-        info.host = "127.0.0.1"
+        info.host = " LocalHost "
 
-        XCTAssertEqual(SAConnectionInfoObjC.resolvedMySQLConnectHost(for: info), "127.0.0.1")
+        XCTAssertEqual(SAConnectionInfoObjC.resolvedMySQLConnectHost(for: info), "localhost")
     }
 
     /// Ensures remote SSH target hosts do not leak into the local MySQL connect host.
@@ -175,33 +175,6 @@ final class SAConnectionInfoMappingTests: XCTestCase {
         XCTAssertEqual(SAConnectionInfoObjC.resolvedMySQLConnectHost(for: info), "127.0.0.1")
     }
 
-    /// The SSH command still forwards to the user-entered remote MySQL host.
-    func testResolvedSSHTunnelRemoteHostPreservesLocalhost() {
-        let info = SAConnectionInfoObjC()
-        info.type = .sshTunnel
-        info.host = " LocalHost "
-
-        XCTAssertEqual(SAConnectionInfoObjC.resolvedSSHTunnelRemoteHost(for: info), "localhost")
-    }
-
-    /// The SSH command preserves explicit remote loopback targets.
-    func testResolvedSSHTunnelRemoteHostPreservesIPv4Loopback() {
-        let info = SAConnectionInfoObjC()
-        info.type = .sshTunnel
-        info.host = "127.0.0.1"
-
-        XCTAssertEqual(SAConnectionInfoObjC.resolvedSSHTunnelRemoteHost(for: info), "127.0.0.1")
-    }
-
-    /// The SSH command preserves ordinary remote hostnames instead of using the local endpoint.
-    func testResolvedSSHTunnelRemoteHostPreservesCustomHost() {
-        let info = SAConnectionInfoObjC()
-        info.type = .sshTunnel
-        info.host = "db.internal"
-
-        XCTAssertEqual(SAConnectionInfoObjC.resolvedSSHTunnelRemoteHost(for: info), "db.internal")
-    }
-
     /// Falls back to loopback when no explicit TCP host has been supplied.
     func testResolvedMySQLConnectHostDefaultsToLoopbackWhenBlank() {
         let info = SAConnectionInfoObjC()
@@ -209,15 +182,6 @@ final class SAConnectionInfoMappingTests: XCTestCase {
         info.host = ""
 
         XCTAssertEqual(SAConnectionInfoObjC.resolvedMySQLConnectHost(for: info), "127.0.0.1")
-    }
-
-    /// Blank tunnel targets retain the historical fallback to local loopback.
-    func testResolvedSSHTunnelRemoteHostDefaultsToLoopbackWhenBlank() {
-        let info = SAConnectionInfoObjC()
-        info.type = .sshTunnel
-        info.host = "   "
-
-        XCTAssertEqual(SAConnectionInfoObjC.resolvedSSHTunnelRemoteHost(for: info), "127.0.0.1")
     }
 
     /// Falls back to loopback for blank TCP favorites after trimming user input.
