@@ -144,7 +144,20 @@ final class SAConnectionInfoMappingTests: XCTestCase {
 
         XCTAssertTrue(SAConnectionInfoObjC.shouldDeferMySQLPasswordToDelegate(
             for: info,
-            password: SAConnectionInfoObjC.keychainPasswordPlaceholder
+            password: SAConnectionInfoObjC.keychainPasswordPlaceholder,
+            delegateAvailable: true
+        ))
+    }
+
+    func testUnchangedKeychainPasswordWithoutDelegateIsPassedDirectly() {
+        let info = SAConnectionInfoObjC()
+        info.type = .sshTunnel
+        info.connectionKeychainItemName = "Favorite password"
+
+        XCTAssertFalse(SAConnectionInfoObjC.shouldDeferMySQLPasswordToDelegate(
+            for: info,
+            password: SAConnectionInfoObjC.keychainPasswordPlaceholder,
+            delegateAvailable: false
         ))
     }
 
@@ -155,7 +168,8 @@ final class SAConnectionInfoMappingTests: XCTestCase {
 
         XCTAssertFalse(SAConnectionInfoObjC.shouldDeferMySQLPasswordToDelegate(
             for: info,
-            password: "temporary override"
+            password: "temporary override",
+            delegateAvailable: true
         ))
     }
 
@@ -165,7 +179,8 @@ final class SAConnectionInfoMappingTests: XCTestCase {
 
         XCTAssertFalse(SAConnectionInfoObjC.shouldDeferMySQLPasswordToDelegate(
             for: info,
-            password: SAConnectionInfoObjC.keychainPasswordPlaceholder
+            password: SAConnectionInfoObjC.keychainPasswordPlaceholder,
+            delegateAvailable: true
         ))
     }
 
@@ -177,7 +192,8 @@ final class SAConnectionInfoMappingTests: XCTestCase {
 
             XCTAssertFalse(SAConnectionInfoObjC.shouldDeferMySQLPasswordToDelegate(
                 for: info,
-                password: SAConnectionInfoObjC.keychainPasswordPlaceholder
+                password: SAConnectionInfoObjC.keychainPasswordPlaceholder,
+                delegateAvailable: true
             ))
         }
     }

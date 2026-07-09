@@ -531,7 +531,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     // unset on SPMySQLConnection and is requested from its delegate at connect time.
     SAConnectionInfoObjC *info = [self _buildConnectionInfo];
     BOOL deferMySQLPasswordToDelegate = [SAConnectionInfoObjC shouldDeferMySQLPasswordToDelegateForInfo:info
-                                                                                                   password:[self password] ?: @""];
+                                                                                                   password:[self password] ?: @""
+                                                                                         delegateAvailable:self.connectionService.mySQLDelegate != nil];
 
     // Resolve explicit passwords and generated credentials before entering the service.
     NSString *resolvedPassword = deferMySQLPasswordToDelegate ? nil : [self _resolvedMySQLPassword];
