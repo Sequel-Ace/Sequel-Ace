@@ -71,6 +71,19 @@ typedef struct {
 
 typedef void (^QueryProgressHandler)(QueryProgress *);
 
+static NSString *SADatabaseNameFromUseQuery(NSString *query)
+{
+    NSString *databaseName = [query stringByMatching:@"(?is)^\\s*USE\\s+(`(?:``|[^`])*`|[^\\s;]+)\\s*;?\\s*$" capture:1L];
+    if (![databaseName length]) return nil;
+
+    if ([databaseName hasPrefix:@"`"] && [databaseName hasSuffix:@"`"] && [databaseName length] >= 2) {
+        databaseName = [databaseName substringWithRange:NSMakeRange(1, [databaseName length] - 2)];
+        databaseName = [databaseName stringByReplacingOccurrencesOfString:@"``" withString:@"`"];
+    }
+
+    return databaseName;
+}
+
 /**
  * This class is used to decouple the background thread running the SQL queries
  * from the main thread displaying the progress.
@@ -654,7 +667,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     NSValue *encodedCallbackMethod = nil;
     if (customQueryCallbackMethod)
         encodedCallbackMethod = [NSValue valueWithBytes:&customQueryCallbackMethod objCType:@encode(SEL)];
-    NSDictionary *taskArguments = [NSDictionary dictionaryWithObjectsAndKeys:queries, @"queries", encodedCallbackMethod, @"callback", nil];
+    NSMutableDictionary *taskArguments = [NSMutableDictionary dictionaryWithObjectsAndKeys:queries, @"queries", nil];
+    if (encodedCallbackMethod) [taskArguments setObject:encodedCallbackMethod forKey:@"callback"];
+
+    NSString *databaseName = [tableDocumentInstance database];
+    if ([databaseName length]) [taskArguments setObject:databaseName forKey:@"database"];
     
     // If a helper thread is already running, execute inline - otherwise detach a new thread for the queries
     if ([NSThread isMainThread]) {
@@ -765,6 +782,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         SPMySQLStreamingResultStore *resultStore    = nil;
         NSMutableString             *errors         = [NSMutableString string];
         SEL                          callbackMethod = NULL;
+        NSString                    *databaseName   = [taskArguments objectForKey:@"database"];
         NSString                    *taskButtonString;
         
         NSUInteger __block i, totalQueriesRun = 0, totalAffectedRows = 0;
@@ -831,7 +849,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             [tempQueries addObject:query];
             
             // Run the query, timing execution (note this also includes network and overhead)
-            resultStore = [mySQLConnection resultStoreFromQueryString:query];
+            resultStore = [mySQLConnection resultStoreFromQueryString:query assertingDatabase:databaseName];
             executionTime += [resultStore queryExecutionTime];
             totalQueriesRun++;
             
@@ -961,6 +979,10 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 if (!databaseWasChanged && [query isMatchedByRegex:@"(?i)^\\s*\\b(use|drop\\s+database|drop\\s+schema)\\b\\s+."]) {
                     databaseWasChanged = YES;
                 }
+                NSString *updatedDatabaseName = SADatabaseNameFromUseQuery(query);
+                if ([updatedDatabaseName length]) {
+                    databaseName = updatedDatabaseName;
+                }
             }
 
             // write errors to console
@@ -988,7 +1010,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         
         // Perform empty query if no query is given
         if ( !queryCount ) {
-            resultStore = [mySQLConnection resultStoreFromQueryString:@""];
+            resultStore = [mySQLConnection resultStoreFromQueryString:@"" assertingDatabase:databaseName];
             [resultStore cancelResultLoad];
             [errors setStringOrNil:[mySQLConnection lastErrorMessage]];
         }

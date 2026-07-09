@@ -196,7 +196,12 @@
  */
 - (SPMySQLResult *)queryString:(NSString *)theQueryString
 {
-	return SPMySQLConnectionQueryString(self, theQueryString, stringEncoding, SPMySQLResultAsResult);
+	return [self queryString:theQueryString assertingDatabase:nil];
+}
+
+- (SPMySQLResult *)queryString:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName
+{
+	return [self queryString:theQueryString usingEncoding:stringEncoding withResultType:SPMySQLResultAsResult assertingDatabase:databaseName];
 }
 
 /**
@@ -206,7 +211,12 @@
  */
 - (SPMySQLFastStreamingResult *)streamingQueryString:(NSString *)theQueryString
 {
-	return SPMySQLConnectionQueryString(self, theQueryString, stringEncoding, SPMySQLResultAsFastStreamingResult);
+	return [self streamingQueryString:theQueryString assertingDatabase:nil];
+}
+
+- (SPMySQLFastStreamingResult *)streamingQueryString:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName
+{
+	return [self queryString:theQueryString usingEncoding:stringEncoding withResultType:SPMySQLResultAsFastStreamingResult assertingDatabase:databaseName];
 }
 
 /**
@@ -216,7 +226,12 @@
  */
 - (SPMySQLStreamingResultStore *)resultStoreFromQueryString:(NSString *)theQueryString
 {
-	return SPMySQLConnectionQueryString(self, theQueryString, stringEncoding, SPMySQLResultAsStreamingResultStore);
+	return [self resultStoreFromQueryString:theQueryString assertingDatabase:nil];
+}
+
+- (SPMySQLStreamingResultStore *)resultStoreFromQueryString:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName
+{
+	return [self queryString:theQueryString usingEncoding:stringEncoding withResultType:SPMySQLResultAsStreamingResultStore assertingDatabase:databaseName];
 }
 
 /**
@@ -231,7 +246,12 @@
  */
 - (id)streamingQueryString:(NSString *)theQueryString useLowMemoryBlockingStreaming:(BOOL)fullStreaming
 {
-	return SPMySQLConnectionQueryString(self, theQueryString, stringEncoding, fullStreaming?SPMySQLResultAsLowMemStreamingResult:SPMySQLResultAsFastStreamingResult);
+	return [self streamingQueryString:theQueryString useLowMemoryBlockingStreaming:fullStreaming assertingDatabase:nil];
+}
+
+- (id)streamingQueryString:(NSString *)theQueryString useLowMemoryBlockingStreaming:(BOOL)fullStreaming assertingDatabase:(NSString *)databaseName
+{
+	return [self queryString:theQueryString usingEncoding:stringEncoding withResultType:fullStreaming?SPMySQLResultAsLowMemStreamingResult:SPMySQLResultAsFastStreamingResult assertingDatabase:databaseName];
 }
 
 /**
@@ -245,6 +265,11 @@
  *          You MUST check the isCancelled flag before using the result!
  */
 - (id)queryString:(NSString *)theQueryString usingEncoding:(NSStringEncoding)theEncoding withResultType:(SPMySQLResultType)theReturnType
+{
+	return [self queryString:theQueryString usingEncoding:theEncoding withResultType:theReturnType assertingDatabase:nil];
+}
+
+- (id)queryString:(NSString *)theQueryString usingEncoding:(NSStringEncoding)theEncoding withResultType:(SPMySQLResultType)theReturnType assertingDatabase:(NSString *)databaseName
 {
 	double queryExecutionTime;
 	NSString *theErrorMessage;
@@ -309,20 +334,32 @@
 	// Lock the connection while it's actively in use
 	[self _lockConnection];
 
-	unsigned long long theAffectedRowCount;
+	unsigned long long theAffectedRowCount = (unsigned long long)~0;
 	do {
 
 		// While recording the overall execution time (including network lag!), run
-		// the raw query
+		// the raw query. If the caller supplied an expected database, assert it
+		// under the same lock as the query so another thread cannot interleave a
+		// different USE between database selection and execution.
 		uint64_t queryStartTime = _monotonicTime();
-		queryStatus = mysql_real_query(mySQLConnection, queryBytes, queryBytesLength);
+		if ([databaseName length] && mysql_select_db(mySQLConnection, [databaseName UTF8String])) {
+			queryStatus = 1;
+			theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
+			theErrorID = mysql_errno(mySQLConnection);
+			// sqlstate is always an ASCII string, regardless of charset (but use latin1 anyway as that is less picky about invalid bytes)
+			theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
+		} else {
+			queryStatus = mysql_real_query(mySQLConnection, queryBytes, queryBytesLength);
+		}
 		queryExecutionTime = _timeIntervalSinceMonotonicTime(queryStartTime);
 		lastConnectionUsedTime = _monotonicTime();
 		
-		// "An integer greater than zero indicates the number of rows affected or retrieved.
-		//  Zero indicates that no records were updated for an UPDATE statement, no rows matched the WHERE clause in the query or that no query has yet been executed.
-		//  -1 indicates that the query returned an error or that, for a SELECT query, mysql_affected_rows() was called prior to calling mysql_store_result()."
-		theAffectedRowCount = mysql_affected_rows(mySQLConnection);
+		if (!queryStatus) {
+			// "An integer greater than zero indicates the number of rows affected or retrieved.
+			//  Zero indicates that no records were updated for an UPDATE statement, no rows matched the WHERE clause in the query or that no query has yet been executed.
+			//  -1 indicates that the query returned an error or that, for a SELECT query, mysql_affected_rows() was called prior to calling mysql_store_result()."
+			theAffectedRowCount = mysql_affected_rows(mySQLConnection);
+		}
 
 		// If the query succeeded, no need to re-attempt.
 		if (!queryStatus) {

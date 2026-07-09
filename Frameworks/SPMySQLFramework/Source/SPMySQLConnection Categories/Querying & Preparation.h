@@ -38,10 +38,15 @@
 
 // Queries
 - (SPMySQLResult *)queryString:(NSString *)theQueryString;
+- (SPMySQLResult *)queryString:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName;
 - (SPMySQLFastStreamingResult *)streamingQueryString:(NSString *)theQueryString;
+- (SPMySQLFastStreamingResult *)streamingQueryString:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName;
 - (id)streamingQueryString:(NSString *)theQueryString useLowMemoryBlockingStreaming:(BOOL)fullStreaming;
+- (id)streamingQueryString:(NSString *)theQueryString useLowMemoryBlockingStreaming:(BOOL)fullStreaming assertingDatabase:(NSString *)databaseName;
 - (SPMySQLStreamingResultStore *)resultStoreFromQueryString:(NSString *)theQueryString;
+- (SPMySQLStreamingResultStore *)resultStoreFromQueryString:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName;
 - (id)queryString:(NSString *)theQueryString usingEncoding:(NSStringEncoding)theEncoding withResultType:(SPMySQLResultType)theReturnType;
+- (id)queryString:(NSString *)theQueryString usingEncoding:(NSStringEncoding)theEncoding withResultType:(SPMySQLResultType)theReturnType assertingDatabase:(NSString *)databaseName;
 
 // Query convenience functions
 - (NSArray *)getAllRowsFromQuery:(NSString *)theQueryString;
