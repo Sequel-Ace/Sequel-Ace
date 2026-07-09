@@ -457,7 +457,9 @@ import Foundation
         let remoteSocketPath = info.sshRemoteSocketPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let useRemoteSocket = !remoteSocketPath.isEmpty
         let mysqlPort = useRemoteSocket ? 0 : (Int(info.port) ?? 3306)
-        let mysqlHost = useRemoteSocket ? "127.0.0.1" : info.host
+        let mysqlHost = useRemoteSocket
+            ? "127.0.0.1"
+            : SAConnectionInfoObjC.resolvedSSHTunnelRemoteHost(for: info)
 
         guard let tunnel = SPSSHTunnel(
             toHost: info.sshHost,
