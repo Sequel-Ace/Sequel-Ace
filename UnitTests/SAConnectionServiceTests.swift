@@ -137,6 +137,51 @@ final class SAConnectionInfoMappingTests: XCTestCase {
         XCTAssertEqual(info.connectionSSHKeychainItemAccount, "tunnel@jump")
     }
 
+    func testUnchangedKeychainPasswordIsDeferredToConnectionDelegate() {
+        let info = SAConnectionInfoObjC()
+        info.type = .sshTunnel
+        info.connectionKeychainItemName = "Favorite password"
+
+        XCTAssertTrue(SAConnectionInfoObjC.shouldDeferMySQLPasswordToDelegate(
+            for: info,
+            password: SAConnectionInfoObjC.keychainPasswordPlaceholder
+        ))
+    }
+
+    func testExplicitPasswordOverrideIsPassedDirectly() {
+        let info = SAConnectionInfoObjC()
+        info.type = .sshTunnel
+        info.connectionKeychainItemName = "Favorite password"
+
+        XCTAssertFalse(SAConnectionInfoObjC.shouldDeferMySQLPasswordToDelegate(
+            for: info,
+            password: "temporary override"
+        ))
+    }
+
+    func testPasswordWithoutKeychainItemIsPassedDirectly() {
+        let info = SAConnectionInfoObjC()
+        info.type = .sshTunnel
+
+        XCTAssertFalse(SAConnectionInfoObjC.shouldDeferMySQLPasswordToDelegate(
+            for: info,
+            password: SAConnectionInfoObjC.keychainPasswordPlaceholder
+        ))
+    }
+
+    func testGeneratedCredentialsAreNeverDeferredToConnectionDelegate() {
+        for connectionType in [SAConnectionType.awsIAM, .vault] {
+            let info = SAConnectionInfoObjC()
+            info.type = connectionType
+            info.connectionKeychainItemName = "Favorite password"
+
+            XCTAssertFalse(SAConnectionInfoObjC.shouldDeferMySQLPasswordToDelegate(
+                for: info,
+                password: SAConnectionInfoObjC.keychainPasswordPlaceholder
+            ))
+        }
+    }
+
     func testSpecialSettingsForService() {
         let info = SAConnectionInfoObjC()
         info.allowDataLocalInfile = 1
