@@ -56,6 +56,10 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAINER ANALYZE DELETE FROM t"))
         XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("SELECTOR_TABLE"))
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("SELECT/* c */1"))
+        XCTAssertEqual(
+            SPCustomQuerySQLClassifier.stripSQLComments("SELECT '-- value', `db#name`, \"/* value */\""),
+            "SELECT '-- value', `db#name`, \"/* value */\""
+        )
     }
 
     func testLeadingParenthesesAreUnwrappedConsistentlyWithExplainable() {
@@ -115,5 +119,63 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         // to a single space (sqlTokens splits on any whitespace scalar).
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN    SELECT  *  FROM  t"))
         XCTAssertTrue(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("EXPLAIN\t\tSELECT * FROM t"))
+    }
+
+    func testDatabaseContextTracksUseStatementsWithCommentsAndQuotedNames() {
+        XCTAssertEqual(
+            SASQLDatabaseContext.databaseName(afterSuccessfulQuery: "USE new_db; -- selected\n", currentDatabase: "old_db"),
+            "new_db"
+        )
+        XCTAssertEqual(
+            SASQLDatabaseContext.databaseName(afterSuccessfulQuery: "/* before */ USE `new``db/*literal*/#name` /* after */", currentDatabase: "old_db"),
+            "new`db/*literal*/#name"
+        )
+        XCTAssertEqual(
+            SASQLDatabaseContext.databaseName(afterSuccessfulQuery: "USE hash_db # selected", currentDatabase: "old_db"),
+            "hash_db"
+        )
+        XCTAssertEqual(
+            SASQLDatabaseContext.databaseName(afterSuccessfulQuery: "USEFUL db", currentDatabase: "old_db"),
+            "old_db"
+        )
+    }
+
+    func testDatabaseContextClearsOnlyWhenTheCurrentDatabaseWasDropped() {
+        XCTAssertNil(
+            SASQLDatabaseContext.databaseName(afterSuccessfulQuery: "DROP DATABASE `app_db`", currentDatabase: "app_db")
+        )
+        XCTAssertNil(
+            SASQLDatabaseContext.databaseName(afterSuccessfulQuery: "DROP SCHEMA IF EXISTS app_db; -- rebuild", currentDatabase: "app_db")
+        )
+        XCTAssertEqual(
+            SASQLDatabaseContext.databaseName(afterSuccessfulQuery: "DROP DATABASE reporting", currentDatabase: "app_db"),
+            "app_db"
+        )
+        XCTAssertEqual(
+            SASQLDatabaseContext.databaseName(afterSuccessfulQuery: "DROP DATABASE app_db_backup", currentDatabase: "app_db"),
+            "app_db"
+        )
+    }
+
+    func testDatabaseContextSupportsDropCreateUseRebuildSequence() {
+        var databaseName: String? = "app_db"
+
+        databaseName = SASQLDatabaseContext.databaseName(
+            afterSuccessfulQuery: "DROP DATABASE app_db",
+            currentDatabase: databaseName
+        )
+        XCTAssertNil(databaseName)
+
+        databaseName = SASQLDatabaseContext.databaseName(
+            afterSuccessfulQuery: "CREATE DATABASE app_db",
+            currentDatabase: databaseName
+        )
+        XCTAssertNil(databaseName)
+
+        databaseName = SASQLDatabaseContext.databaseName(
+            afterSuccessfulQuery: "USE app_db; /* restored */",
+            currentDatabase: databaseName
+        )
+        XCTAssertEqual(databaseName, "app_db")
     }
 }

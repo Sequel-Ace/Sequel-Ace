@@ -2743,7 +2743,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		scanner = [[NSScanner alloc] initWithString:[[queryResult getRowAsDictionary] objectForKey:@"Create View"]];
 		[scanner scanUpToString:@"AS" intoString:nil];
 		[scanner scanUpToString:@"" intoString:&scanString];
-		[mySQLConnection queryString:[NSString stringWithFormat:@"CREATE VIEW %@ %@", [tableName backtickQuotedString], scanString] assertingDatabase:sourceDatabaseName];
+		NSString *viewDatabaseName = moveToDifferentDB ? targetDatabaseName : sourceDatabaseName;
+		[mySQLConnection queryString:[NSString stringWithFormat:@"CREATE VIEW %@ %@", [tableName backtickQuotedString], scanString] assertingDatabase:viewDatabaseName];
 	}
 	else if(tblType == SPTableTypeTable){
 
@@ -2825,7 +2826,13 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		}
 	}
 
-	if (moveToDifferentDB == YES){
+	if (moveToDifferentDB == YES && tblType == SPTableTypeView) {
+		SPMainQSync(^{
+			[self->mySQLConnection selectDatabase:targetDatabaseName];
+			[self->tableDocumentInstance selectDatabase:targetDatabaseName item:nil];
+		});
+	}
+	else if (moveToDifferentDB == YES){
 		SPLog(@"Copying table to new database, targetDatabaseName = %@", targetDatabaseName);
 		[self _moveTable:tableName from:sourceDatabaseName to:targetDatabaseName tempTable:tempTableName];
 

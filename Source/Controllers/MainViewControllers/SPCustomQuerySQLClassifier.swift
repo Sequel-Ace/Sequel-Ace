@@ -64,14 +64,86 @@ enum SPCustomQuerySQLClassifier {
     /// so adjacent tokens stay separated, e.g. `SELECT/*c*/1` becomes
     /// `SELECT 1` rather than `SELECT1`. The `--` form follows MySQL's rule
     /// that the second dash must be followed by whitespace/control to count
-    /// as a comment, so `SELECT--1` is left intact as double negation.
+    /// as a comment, so `SELECT--1` is left intact as double negation. Comment
+    /// markers inside strings or quoted identifiers are preserved.
     static func stripSQLComments(_ source: String) -> String {
-        var result = source
-        let opts: NSString.CompareOptions = [.regularExpression]
-        result = result.replacingOccurrences(of: "--[\\s][^\n]*", with: " ", options: opts)
-        result = result.replacingOccurrences(of: "#[^\n]*", with: " ", options: opts)
-        result = result.replacingOccurrences(of: "/\\*(.|\n)*?\\*/", with: " ", options: opts)
+        let characters: [Character] = source.map { $0 }
+        var result = ""
+        var index = 0
+        var quote: Character?
+
+        while index < characters.count {
+            let character = characters[index]
+
+            if let activeQuote = quote {
+                result.append(character)
+
+                if character == "\\", activeQuote != "`", index + 1 < characters.count {
+                    index += 1
+                    result.append(characters[index])
+                } else if character == activeQuote {
+                    if index + 1 < characters.count, characters[index + 1] == activeQuote {
+                        index += 1
+                        result.append(characters[index])
+                    } else {
+                        quote = nil
+                    }
+                }
+
+                index += 1
+                continue
+            }
+
+            if character == "'" || character == "\"" || character == "`" {
+                quote = character
+                result.append(character)
+                index += 1
+                continue
+            }
+
+            if character == "#" {
+                result.append(" ")
+                index += 1
+                while index < characters.count, characters[index] != "\n" {
+                    index += 1
+                }
+                continue
+            }
+
+            if character == "-",
+               index + 2 < characters.count,
+               characters[index + 1] == "-",
+               isMySQLCommentWhitespace(characters[index + 2]) {
+                result.append(" ")
+                index += 2
+                while index < characters.count, characters[index] != "\n" {
+                    index += 1
+                }
+                continue
+            }
+
+            if character == "/", index + 1 < characters.count, characters[index + 1] == "*" {
+                result.append(" ")
+                index += 2
+                while index < characters.count {
+                    if characters[index] == "*", index + 1 < characters.count, characters[index + 1] == "/" {
+                        index += 2
+                        break
+                    }
+                    index += 1
+                }
+                continue
+            }
+
+            result.append(character)
+            index += 1
+        }
+
         return result
+    }
+
+    private static func isMySQLCommentWhitespace(_ character: Character) -> Bool {
+        character.unicodeScalars.allSatisfy { $0.value <= 0x20 }
     }
 
     private static func hasLeadingSQLKeyword(_ keyword: String, in upper: String, allowBare: Bool = true) -> Bool {
@@ -135,5 +207,47 @@ enum SPCustomQuerySQLClassifier {
                 return
             }
         }
+    }
+}
+
+@objc final class SASQLDatabaseContext: NSObject {
+
+    private static let identifierPattern = "(`(?:``|[^`])*`|[^\\s;]+)"
+    private static let useRegex = try! NSRegularExpression(
+        pattern: "(?is)^\\s*USE\\s+\(identifierPattern)\\s*;?\\s*$"
+    )
+    private static let dropDatabaseRegex = try! NSRegularExpression(
+        pattern: "(?is)^\\s*DROP\\s+(?:DATABASE|SCHEMA)\\s+(?:IF\\s+EXISTS\\s+)?\(identifierPattern)\\s*;?\\s*$"
+    )
+
+    @objc(databaseNameAfterSuccessfulQuery:currentDatabase:)
+    static func databaseName(afterSuccessfulQuery query: String, currentDatabase: String?) -> String? {
+        let queryWithoutComments = SPCustomQuerySQLClassifier.stripSQLComments(query)
+
+        if let selectedDatabase = databaseName(matchedBy: useRegex, in: queryWithoutComments) {
+            return selectedDatabase
+        }
+
+        if let droppedDatabase = databaseName(matchedBy: dropDatabaseRegex, in: queryWithoutComments),
+           droppedDatabase == currentDatabase {
+            return nil
+        }
+
+        return currentDatabase
+    }
+
+    private static func databaseName(matchedBy regex: NSRegularExpression, in query: String) -> String? {
+        let range = NSRange(query.startIndex..<query.endIndex, in: query)
+        guard let match = regex.firstMatch(in: query, range: range),
+              let captureRange = Range(match.range(at: 1), in: query) else {
+            return nil
+        }
+
+        let identifier = String(query[captureRange])
+        guard identifier.hasPrefix("`"), identifier.hasSuffix("`"), identifier.count >= 2 else {
+            return identifier
+        }
+
+        return String(identifier.dropFirst().dropLast()).replacingOccurrences(of: "``", with: "`")
     }
 }

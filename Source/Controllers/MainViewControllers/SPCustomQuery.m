@@ -71,19 +71,6 @@ typedef struct {
 
 typedef void (^QueryProgressHandler)(QueryProgress *);
 
-static NSString *SADatabaseNameFromUseQuery(NSString *query)
-{
-    NSString *databaseName = [query stringByMatching:@"(?is)^\\s*USE\\s+(`(?:``|[^`])*`|[^\\s;]+)\\s*;?\\s*$" capture:1L];
-    if (![databaseName length]) return nil;
-
-    if ([databaseName hasPrefix:@"`"] && [databaseName hasSuffix:@"`"] && [databaseName length] >= 2) {
-        databaseName = [databaseName substringWithRange:NSMakeRange(1, [databaseName length] - 2)];
-        databaseName = [databaseName stringByReplacingOccurrencesOfString:@"``" withString:@"`"];
-    }
-
-    return databaseName;
-}
-
 /**
  * This class is used to decouple the background thread running the SQL queries
  * from the main thread displaying the progress.
@@ -984,10 +971,7 @@ static NSString *SADatabaseNameFromUseQuery(NSString *query)
                 if (!databaseWasChanged && [query isMatchedByRegex:@"(?i)^\\s*\\b(use|drop\\s+database|drop\\s+schema)\\b\\s+."]) {
                     databaseWasChanged = YES;
                 }
-                NSString *updatedDatabaseName = SADatabaseNameFromUseQuery(query);
-                if ([updatedDatabaseName length]) {
-                    databaseName = updatedDatabaseName;
-                }
+                databaseName = [SASQLDatabaseContext databaseNameAfterSuccessfulQuery:query currentDatabase:databaseName];
             }
 
             // write errors to console

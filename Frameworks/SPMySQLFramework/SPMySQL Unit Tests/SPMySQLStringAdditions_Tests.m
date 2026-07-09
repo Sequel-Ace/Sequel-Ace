@@ -29,7 +29,8 @@
 {
 	NSDictionary *environment = [[NSProcessInfo processInfo] environment];
 	NSString *socketPath = [environment objectForKey:@"SPMYSQL_TEST_SOCKET"];
-	if (![socketPath length]) {
+	NSString *testHost = [environment objectForKey:@"SPMYSQL_TEST_HOST"];
+	if (![socketPath length] && ![testHost length]) {
 		for (NSString *candidate in @[@"/tmp/mysql.sock", @"/opt/homebrew/var/mysql/mysql.sock"]) {
 			if ([[NSFileManager defaultManager] fileExistsAtPath:candidate]) {
 				socketPath = candidate;
@@ -44,19 +45,18 @@
 	connection.password = [environment objectForKey:@"SPMYSQL_TEST_PASSWORD"];
 	connection.useKeepAlive = NO;
 
-	if ([socketPath length]) {
-		connection.useSocket = YES;
-		connection.socketPath = socketPath;
-	} else {
-		NSString *testHost = [environment objectForKey:@"SPMYSQL_TEST_HOST"];
-		if (![testHost length]) return nil;
-
+	if ([testHost length]) {
 		connection.useSocket = NO;
 		connection.host = testHost;
 		NSString *testPort = [environment objectForKey:@"SPMYSQL_TEST_PORT"];
 		if ([testPort length]) {
 			connection.port = [testPort integerValue];
 		}
+	} else if ([socketPath length]) {
+		connection.useSocket = YES;
+		connection.socketPath = socketPath;
+	} else {
+		return nil;
 	}
 
 	return connection;
@@ -86,11 +86,15 @@
 	NSString *identifier = [[[[NSUUID UUID] UUIDString] lowercaseString] stringByReplacingOccurrencesOfString:@"-" withString:@"_"];
 	NSString *databaseA = [NSString stringWithFormat:@"sa_atomic_%@_a", identifier];
 	NSString *databaseB = [NSString stringWithFormat:@"sa_atomic_%@_b", identifier];
+	NSString *unicodeDatabase = [NSString stringWithFormat:@"sa_atomic_%@_\u00E9", identifier];
+	BOOL workersFinished = YES;
 
 	@try {
 		[connection queryString:[NSString stringWithFormat:@"CREATE DATABASE %@", [databaseA mySQLBacktickQuotedString]]];
 		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
 		[connection queryString:[NSString stringWithFormat:@"CREATE DATABASE %@", [databaseB mySQLBacktickQuotedString]]];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		[connection queryString:[NSString stringWithFormat:@"CREATE DATABASE %@", [unicodeDatabase mySQLBacktickQuotedString]]];
 		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
 
 		XCTAssertTrue([connection selectDatabase:databaseB]);
@@ -101,14 +105,31 @@
 		NSDictionary *row = [allRows firstObject];
 		XCTAssertEqualObjects([row objectForKey:@"db"], databaseA);
 
+		NSString *originalEncoding = [connection encoding];
+		XCTAssertTrue([connection setEncoding:@"latin1"]);
+		SPMySQLResult *unicodeResult = [connection queryString:@"SELECT DATABASE()" assertingDatabase:unicodeDatabase];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		XCTAssertEqualObjects([[unicodeResult getRowAsArray] firstObject], unicodeDatabase);
+		XCTAssertEqualObjects([connection encoding], @"latin1");
+
+		NSString *missingDatabase = [unicodeDatabase stringByAppendingString:@"_missing"];
+		[connection queryString:@"SELECT 1" assertingDatabase:missingDatabase];
+		XCTAssertTrue([connection queryErrored]);
+		XCTAssertEqual([connection lastErrorID], 1049U);
+		XCTAssertEqualObjects([connection encoding], @"latin1");
+		XCTAssertTrue([connection setEncoding:originalEncoding]);
+
 		SPMySQLStreamingResultStore *resultStore = [connection resultStoreFromQueryString:@"SELECT DATABASE()" assertingDatabase:databaseA];
 		[resultStore startDownload];
 		NSDate *deadline = [NSDate dateWithTimeIntervalSinceNow:5];
 		while ([resultStore numberOfRows] == 0 && [deadline timeIntervalSinceNow] > 0) {
 			usleep(1000);
 		}
-		XCTAssertEqual([resultStore numberOfRows], 1);
-		XCTAssertEqualObjects([[resultStore rowContentsAtIndex:0] firstObject], databaseA);
+		NSUInteger rowCount = [resultStore numberOfRows];
+		XCTAssertEqual(rowCount, 1);
+		if (rowCount == 1) {
+			XCTAssertEqualObjects([[resultStore rowContentsAtIndex:0] firstObject], databaseA);
+		}
 		[resultStore cancelResultLoad];
 
 		__block NSString *firstMismatch = nil;
@@ -116,6 +137,7 @@
 		dispatch_group_t group = dispatch_group_create();
 		dispatch_queue_t queue = dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0);
 		const NSInteger iterations = 500;
+		workersFinished = NO;
 
 		dispatch_group_async(group, queue, ^{
 			for (NSInteger i = 0; i < iterations; i++) {
@@ -142,13 +164,17 @@
 		});
 
 		long waitResult = dispatch_group_wait(group, dispatch_time(DISPATCH_TIME_NOW, 30 * NSEC_PER_SEC));
+		workersFinished = (waitResult == 0);
 		XCTAssertEqual(waitResult, 0);
 		XCTAssertNil(firstMismatch);
 	}
 	@finally {
-		[connection queryString:[NSString stringWithFormat:@"DROP DATABASE IF EXISTS %@", [databaseA mySQLBacktickQuotedString]]];
-		[connection queryString:[NSString stringWithFormat:@"DROP DATABASE IF EXISTS %@", [databaseB mySQLBacktickQuotedString]]];
-		[connection disconnect];
+		if (workersFinished) {
+			[connection queryString:[NSString stringWithFormat:@"DROP DATABASE IF EXISTS %@", [databaseA mySQLBacktickQuotedString]]];
+			[connection queryString:[NSString stringWithFormat:@"DROP DATABASE IF EXISTS %@", [databaseB mySQLBacktickQuotedString]]];
+			[connection queryString:[NSString stringWithFormat:@"DROP DATABASE IF EXISTS %@", [unicodeDatabase mySQLBacktickQuotedString]]];
+			[connection disconnect];
+		}
 	}
 }
 

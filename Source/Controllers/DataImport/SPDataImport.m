@@ -53,19 +53,6 @@
 
 #define SP_FILE_READ_ERROR_STRING NSLocalizedString(@"File read error", @"File read error title (Import Dialog)")
 
-static NSString *SAImportDatabaseNameFromUseQuery(NSString *query)
-{
-	NSString *databaseName = [query stringByMatching:@"(?is)^\\s*USE\\s+(`(?:``|[^`])*`|[^\\s;]+)\\s*;?\\s*$" capture:1L];
-	if (![databaseName length]) return nil;
-
-	if ([databaseName hasPrefix:@"`"] && [databaseName hasSuffix:@"`"] && [databaseName length] >= 2) {
-		databaseName = [databaseName substringWithRange:NSMakeRange(1, [databaseName length] - 2)];
-		databaseName = [databaseName stringByReplacingOccurrencesOfString:@"``" withString:@"`"];
-	}
-
-	return databaseName;
-}
-
 @interface SPDataImport ()
 
 - (void)_startBackgroundImportTaskForFilename:(NSString *)filename;
@@ -646,10 +633,7 @@ static NSString *SAImportDatabaseNameFromUseQuery(NSString *query)
                     }
                 }
                 else if (![mySQLConnection queryErrored]) {
-                    NSString *updatedDatabaseName = SAImportDatabaseNameFromUseQuery(query);
-                    if ([updatedDatabaseName length]) {
-                        databaseName = updatedDatabaseName;
-                    }
+                    databaseName = [SASQLDatabaseContext databaseNameAfterSuccessfulQuery:query currentDatabase:databaseName];
                 }
 
                 // Increment the processed queries count
@@ -690,10 +674,7 @@ static NSString *SAImportDatabaseNameFromUseQuery(NSString *query)
 			[errors appendFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(queriesPerformed+1), [mySQLConnection lastErrorMessage]];
 		}
 		else if (![mySQLConnection queryErrored]) {
-			NSString *updatedDatabaseName = SAImportDatabaseNameFromUseQuery(query);
-			if ([updatedDatabaseName length]) {
-				databaseName = updatedDatabaseName;
-			}
+			databaseName = [SASQLDatabaseContext databaseNameAfterSuccessfulQuery:query currentDatabase:databaseName];
 		}
 
 		// Increment the processed queries count

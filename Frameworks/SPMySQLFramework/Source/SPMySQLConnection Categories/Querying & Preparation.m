@@ -336,19 +336,48 @@
 
 	unsigned long long theAffectedRowCount = (unsigned long long)~0;
 	do {
+		BOOL databaseAssertionFailed = NO;
 
 		// While recording the overall execution time (including network lag!), run
 		// the raw query. If the caller supplied an expected database, assert it
 		// under the same lock as the query so another thread cannot interleave a
 		// different USE between database selection and execution.
 		uint64_t queryStartTime = _monotonicTime();
-		if ([databaseName length] && mysql_select_db(mySQLConnection, [databaseName UTF8String])) {
-			queryStatus = 1;
-			theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
-			theErrorID = mysql_errno(mySQLConnection);
-			// sqlstate is always an ASCII string, regardless of charset (but use latin1 anyway as that is less picky about invalid bytes)
-			theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
-		} else {
+		queryStatus = 0;
+		if ([databaseName length]) {
+			const char *connectionCharacterSet = mysql_character_set_name(mySQLConnection);
+			NSString *originalCharacterSet = connectionCharacterSet ? [NSString stringWithUTF8String:connectionCharacterSet] : nil;
+			BOOL encodingChangeRequired = [originalCharacterSet length] && ![originalCharacterSet hasPrefix:@"utf8"];
+
+			// mysql_select_db() interprets the UTF-8 database name using the active
+			// connection character set. Temporarily use UTF-8, matching
+			// selectDatabase:, and restore the original transport before the query.
+			if (encodingChangeRequired && mysql_set_character_set(mySQLConnection, "utf8mb4")) {
+				queryStatus = 1;
+				databaseAssertionFailed = YES;
+				theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
+				theErrorID = mysql_errno(mySQLConnection);
+				theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
+			} else {
+				queryStatus = mysql_select_db(mySQLConnection, [databaseName UTF8String]);
+				if (queryStatus) {
+					databaseAssertionFailed = YES;
+					theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
+					theErrorID = mysql_errno(mySQLConnection);
+					theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
+				}
+
+				if (encodingChangeRequired && mysql_set_character_set(mySQLConnection, [originalCharacterSet UTF8String]) && !queryStatus) {
+					queryStatus = 1;
+					databaseAssertionFailed = YES;
+					theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
+					theErrorID = mysql_errno(mySQLConnection);
+					theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
+				}
+			}
+		}
+
+		if (!queryStatus) {
 			queryStatus = mysql_real_query(mySQLConnection, queryBytes, queryBytesLength);
 		}
 		queryExecutionTime = _timeIntervalSinceMonotonicTime(queryStartTime);
@@ -371,11 +400,14 @@
 		// If the query failed, determine whether to reattempt the query
 		} else {
 
-			// Store the error state
-			theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
-			theErrorID = mysql_errno(mySQLConnection);
-			// sqlstate is always an ASCII string, regardless of charset (but use latin1 anyway as that is less picky about invalid bytes)
-			theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
+			// Store query errors here. Assertion errors are captured before the
+			// original character set is restored, so restoration cannot hide them.
+			if (!databaseAssertionFailed) {
+				theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
+				theErrorID = mysql_errno(mySQLConnection);
+				// sqlstate is always an ASCII string, regardless of charset (but use latin1 anyway as that is less picky about invalid bytes)
+				theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
+			}
 
 			// Prevent retries if the query was cancelled or not a connection error
 			if (lastQueryWasCancelled || ![SPMySQLConnection isErrorIDConnectionError:theErrorID]) {
