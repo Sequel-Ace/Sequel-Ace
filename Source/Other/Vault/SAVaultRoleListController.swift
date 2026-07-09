@@ -50,6 +50,16 @@ import AppKit
     /// close/cancel can abort exactly this login and free the callback port.
     private var activeLoginIdentifier: String?
 
+    /// True from the moment a refresh starts its background LIST until the response
+    /// is handled. A refresh may hold the fixed OIDC callback port, so every
+    /// connection start (not just the Connect/Test buttons) must refuse to run
+    /// while this is set — see -[SPConnectionController initiateConnection:].
+    private var isRefreshing = false
+
+    /// Whether a role refresh is currently in flight. Connection entry points check
+    /// this to avoid launching an OIDC login that clashes on the callback port.
+    @objc func isRefreshInFlight() -> Bool { return isRefreshing }
+
     @objc(initWithComboBox:refreshButton:progressIndicator:)
     init(comboBox: NSComboBox, refreshButton: NSButton, progressIndicator: NSProgressIndicator) {
         self.comboBox = comboBox
@@ -165,6 +175,7 @@ import AppKit
         delegate.vaultRoleListSetConnectControlsEnabled(false)
         progressIndicator?.isHidden = false
         progressIndicator?.startAnimation(self)
+        isRefreshing = true
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             var error: NSError?
@@ -173,6 +184,9 @@ import AppKit
             VaultOIDCHandler.clearPreparedActiveLogin(identifier: loginIdentifier)
             DispatchQueue.main.async {
                 guard let self = self else { return }
+                // Clear before any early return below so connection starts are
+                // never left blocked by a refresh that has actually finished.
+                self.isRefreshing = false
                 if self.activeLoginIdentifier == loginIdentifier {
                     self.activeLoginIdentifier = nil
                 }

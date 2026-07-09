@@ -392,6 +392,18 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
     // ensure that one of the connections was double-clicked, not the area above or below
     if (sender == favoritesOutlineView && [favoritesOutlineView clickedRow] <= 0) return;
 
+    // A Vault role refresh may be mid-OIDC-login on the fixed localhost callback
+    // port; starting a connection now would open a second login that clashes on
+    // that port and leaves one side failing/timing out. Disabling the Connect/Test
+    // buttons doesn't cover every entry point (favorites double-click and external
+    // callers reach here directly), so all connection starts are gated here.
+    if ([vaultRoleListController isRefreshInFlight]) {
+        [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Vault role refresh in progress", @"vault role refresh in progress title")
+                                     message:NSLocalizedString(@"Wait for the Vault role list to finish loading before connecting.", @"vault role refresh in progress message")
+                                    callback:nil];
+        return;
+    }
+
     // If triggered via the "Test Connection" button, set the state - otherwise clear it
     isTestingConnection = (sender == testConnectButton);
     self.localNetworkPermissionDeniedForCurrentAttempt = NO;
