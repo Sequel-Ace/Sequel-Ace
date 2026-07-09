@@ -751,7 +751,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
      */
     NSLog(@"=================");
 
-    SPMySQLResult *showTablesQuery = [mySQLConnection queryString:@"show tables"];
+    SPMySQLResult *showTablesQuery = [mySQLConnection queryString:@"show tables" assertingDatabase:[self database]];
 
     NSArray *tableRow;
     while ((tableRow = [showTablesQuery getRowAsArray]) != nil) {
@@ -762,13 +762,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             NSLog(@"Scanning %@", table);
 
 
-            NSDictionary *tableStatus = [[mySQLConnection queryString:[NSString stringWithFormat:@"SHOW TABLE STATUS LIKE %@", [table tickQuotedString]]] getRowAsDictionary];
+            NSDictionary *tableStatus = [[mySQLConnection queryString:[NSString stringWithFormat:@"SHOW TABLE STATUS LIKE %@", [table tickQuotedString]] assertingDatabase:[self database]] getRowAsDictionary];
             NSInteger rowCountEstimate = [tableStatus[@"Rows"] integerValue];
             NSLog(@"Estimated row count: %li", rowCountEstimate);
 
 
 
-            SPMySQLResult *tableContentsQuery = [mySQLConnection streamingQueryString:[NSString stringWithFormat:@"select * from %@", [table backtickQuotedString]] useLowMemoryBlockingStreaming:NO];
+            SPMySQLResult *tableContentsQuery = [mySQLConnection streamingQueryString:[NSString stringWithFormat:@"select * from %@", [table backtickQuotedString]] useLowMemoryBlockingStreaming:NO assertingDatabase:[self database]];
             //NSDate *lastProgressUpdate = [NSDate date];
             time_t lastProgressUpdate = time(NULL);
             NSInteger rowCount = 0;
@@ -962,6 +962,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         {
             dbName = [eachRow firstObject];
         }
+        mySQLConnection.database = [dbName unboxNull] ? dbName : nil;
 
         SPMainQSync(^{
             // TODO: there have been crash reports because dbName == nil at this point. When could that happen?
@@ -1506,7 +1507,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             return;
         }
 
-        SPMySQLResult *theResult = [mySQLConnection queryString:query];
+        SPMySQLResult *theResult = [mySQLConnection queryString:query assertingDatabase:[self database]];
         [theResult setReturnDataAsStrings:YES];
 
         // Check for errors, only displaying if the connection hasn't been terminated
@@ -1590,7 +1591,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"CHECK TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"CHECK TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]] assertingDatabase:[self database]];
     [theResult setReturnDataAsStrings:YES];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
@@ -1648,7 +1649,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"ANALYZE TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"ANALYZE TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]] assertingDatabase:[self database]];
     [theResult setReturnDataAsStrings:YES];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
@@ -1707,7 +1708,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"OPTIMIZE TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"OPTIMIZE TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]] assertingDatabase:[self database]];
     [theResult setReturnDataAsStrings:YES];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
@@ -1765,7 +1766,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"REPAIR TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"REPAIR TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]] assertingDatabase:[self database]];
     [theResult setReturnDataAsStrings:YES];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
@@ -1823,7 +1824,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"FLUSH TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"FLUSH TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]] assertingDatabase:[self database]];
     [theResult setReturnDataAsStrings:YES];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
@@ -1882,7 +1883,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"CHECKSUM TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"CHECKSUM TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]] assertingDatabase:[self database]];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
 
@@ -4403,7 +4404,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 // Get create syntax
                 SPMySQLResult *queryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW CREATE %@ %@",
                                                                            itemTypeStr,
-                                                                           [item backtickQuotedString]]];
+                                                                           [item backtickQuotedString]] assertingDatabase:[self database]];
                 [queryResult setReturnDataAsStrings:YES];
 
                 if (changeEncoding) [mySQLConnection restoreStoredEncoding];
@@ -4483,7 +4484,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                     SPLog(@"Couldn't create file handle to %@", resultFileName);
                 }
 
-                SPMySQLResult *theResult = [mySQLConnection streamingQueryString:query];
+                SPMySQLResult *theResult = [mySQLConnection streamingQueryString:query assertingDatabase:[self database]];
                 [theResult setReturnDataAsStrings:YES];
                 if ([mySQLConnection queryErrored]) {
                     [fh writeData:[[NSString stringWithFormat:@"MySQL said: %@", [mySQLConnection lastErrorMessage]] dataUsingEncoding:NSUTF8StringEncoding]];

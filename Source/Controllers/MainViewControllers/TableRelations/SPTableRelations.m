@@ -185,7 +185,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	}
 	
 	// Execute query
-	[connection queryString:query];
+	[connection queryString:query assertingDatabase:[tableDocumentInstance database]];
 
 	[dataProgressIndicator setHidden:YES];
 	[dataProgressIndicator stopAnimation:self];
@@ -316,7 +316,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 				NSString *relationName = [[self->relationData objectAtIndex:row] objectForKey:SPRelationNameKey];
 				NSString *query = [NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [thisTable backtickQuotedString], [relationName backtickQuotedString]];
 
-				[self->connection queryString:query];
+				[self->connection queryString:query assertingDatabase:[self->tableDocumentInstance database]];
 
 				if ([self->connection queryErrored]) {
 
@@ -584,7 +584,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 		[connection setEncoding:@"utf8mb4"];
 	}
 
-	SPMySQLResult *indexResult = [connection queryString:[NSString stringWithFormat:@"SHOW INDEX FROM %@", tableReference]];
+	SPMySQLResult *indexResult = [connection queryString:[NSString stringWithFormat:@"SHOW INDEX FROM %@", tableReference] assertingDatabase:database];
 	[indexResult setReturnDataAsStrings:YES];
 
 	if ([connection queryErrored]) {

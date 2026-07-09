@@ -412,7 +412,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 				[[fieldMappingTableColumnNames objectAtIndex:currentIndex] backtickQuotedString],
 				[fieldMappingTableTypes objectAtIndex:currentIndex]];
 
-			[mySQLConnection queryString:createString];
+			[mySQLConnection queryString:createString assertingDatabase:[tablesListInstance selectedDatabase]];
 
 			if ([mySQLConnection queryErrored]) {
 				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new column", @"error adding new column message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@", @"error adding new column informative message"), [fieldMappingTableColumnNames objectAtIndex:currentIndex], createString, [mySQLConnection lastErrorMessage]] callback:nil];
@@ -456,7 +456,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			[createString appendString:[NSString stringWithFormat:@" DEFAULT CHARACTER SET %@", [encodingName backtickQuotedString]]];
 		}
 
-		[mySQLConnection queryString:createString];
+		[mySQLConnection queryString:createString assertingDatabase:[tablesListInstance selectedDatabase]];
 
 		if ([mySQLConnection queryErrored]) {
 			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@", @"error adding new table informative message"), [newTableNameTextField stringValue], createString, [mySQLConnection lastErrorMessage]] callback:nil];

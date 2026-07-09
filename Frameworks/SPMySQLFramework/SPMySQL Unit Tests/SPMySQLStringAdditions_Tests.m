@@ -96,6 +96,10 @@
 		XCTAssertTrue([connection selectDatabase:databaseB]);
 		SPMySQLResult *result = [connection queryString:@"SELECT DATABASE()" assertingDatabase:databaseA];
 		XCTAssertEqualObjects([[result getRowAsArray] firstObject], databaseA);
+		XCTAssertEqualObjects([connection getFirstFieldFromQuery:@"SELECT DATABASE()" assertingDatabase:databaseA], databaseA);
+		NSArray *allRows = [connection getAllRowsFromQuery:@"SELECT DATABASE() AS db" assertingDatabase:databaseA];
+		NSDictionary *row = [allRows firstObject];
+		XCTAssertEqualObjects([row objectForKey:@"db"], databaseA);
 
 		SPMySQLStreamingResultStore *resultStore = [connection resultStoreFromQueryString:@"SELECT DATABASE()" assertingDatabase:databaseA];
 		[resultStore startDownload];

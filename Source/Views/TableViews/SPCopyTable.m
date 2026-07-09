@@ -651,7 +651,7 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
                                 [NSString stringWithFormat:@"SELECT %@ FROM %@ WHERE %@",
                                     [[data safeObjectForKey:kHeader] backtickQuotedString],
                                     [selectedTable backtickQuotedString],
-                                    whereArgument]];
+                                    whereArgument] assertingDatabase:selectedDatabase];
                 }
 
                 // Check for NULL value
@@ -929,9 +929,10 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 /**
  * Init self with data coming from the table content view. Mainly used for copying data properly.
  */
-- (void) setTableInstance:(id)anInstance withTableData:(SPDataStorage *)theTableStorage withColumns:(NSArray *)columnDefs withTableName:(NSString *)aTableName withConnection:(id)aMySqlConnection
+- (void)setTableInstance:(id)anInstance withTableData:(SPDataStorage *)theTableStorage withColumns:(NSArray *)columnDefs withTableName:(NSString *)aTableName withDatabaseName:(NSString *)aDatabaseName withConnection:(id)aMySqlConnection
 {
 	selectedTable     = aTableName;
+	selectedDatabase  = aDatabaseName;
 	mySQLConnection   = aMySqlConnection;
 	tableInstance     = anInstance;
 	tableStorage	  = theTableStorage;

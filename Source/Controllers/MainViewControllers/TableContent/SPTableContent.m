@@ -305,7 +305,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[[self onMainThread] setTableDetails:tableDetails];
 
 	// Init copyTable with necessary information for copying selected rows as SQL INSERT
-	[tableContentView setTableInstance:self withTableData:tableValues withColumns:dataColumns withTableName:selectedTable withConnection:mySQLConnection];
+	[tableContentView setTableInstance:self withTableData:tableValues withColumns:dataColumns withTableName:selectedTable withDatabaseName:[tableDocumentInstance database] withConnection:mySQLConnection];
 
 	// Trigger a data refresh
 	[self loadTableValues];

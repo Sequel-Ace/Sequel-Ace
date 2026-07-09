@@ -532,6 +532,7 @@
 - (NSDictionary *) informationForTable:(NSString *)tableName fromDatabase:(NSString *)database
 {
     BOOL changeEncoding = ![[mySQLConnection encoding] hasPrefix:@"utf8"];
+    NSString *databaseName = database ?: [tableListInstance selectedDatabase];
 
     // Catch unselected tables and return nil
     if ([tableName isEqualToString:@""] || !tableName) return nil;
@@ -558,7 +559,7 @@
         queryStr = [NSString stringWithFormat:@"SHOW CREATE TABLE %@", [tableName backtickQuotedString]];
     }
 
-    theResult = [mySQLConnection queryString:queryStr];
+    theResult = [mySQLConnection queryString:queryStr assertingDatabase:databaseName];
 
     SPLog(@"queryStr: %@", queryStr);
 
@@ -602,7 +603,7 @@
     // MARK: removed isMySQL8 == YES, so this is used for all versions
     if([database isEqualToString:SPMySQLInformationSchemaDatabase]){
         resultFieldNames = @[@"Table", @"Create Table"];
-        syntaxResult = [self createTableSyntaxFromView:tableName withSyntaxResult:syntaxResult];
+        syntaxResult = [self createTableSyntaxFromView:tableName fromDatabase:databaseName withSyntaxResult:syntaxResult];
     }
 
     // Only continue if syntaxResult is not nil. This accommodates causes where the above query caused the
@@ -638,7 +639,7 @@
     return tableData;
 }
 
-- (NSArray *)createTableSyntaxFromView:(NSString *)tableName withSyntaxResult:(NSArray *)syntaxResult {
+- (NSArray *)createTableSyntaxFromView:(NSString *)tableName fromDatabase:(NSString *)databaseName withSyntaxResult:(NSArray *)syntaxResult {
 
     SPLog(@"createTableSyntaxFromView");
 
@@ -646,7 +647,7 @@
 
     SPLog(@"queryStr: %@", queryStr);
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:queryStr];
+    SPMySQLResult *theResult = [mySQLConnection queryString:queryStr assertingDatabase:databaseName];
 
     NSMutableString *viewCreateStr = [[NSMutableString alloc] init];
 
@@ -1014,6 +1015,7 @@
 	NSDictionary *resultRow;
 	NSMutableDictionary *tableColumn, *viewData;
 	BOOL changeEncoding = ![[mySQLConnection encoding] hasPrefix:@"utf8"];
+	NSString *databaseName = [tableListInstance selectedDatabase];
 
 	// Catch unselected views and return nil
 	if ([viewName isEqualToString:@""] || !viewName) return nil;
@@ -1027,7 +1029,7 @@
 	// Retrieve the CREATE TABLE syntax for the table
 	SPMySQLResult *theResult = [mySQLConnection queryString: [NSString stringWithFormat: @"SHOW CREATE TABLE %@",
 																					   [viewName backtickQuotedString]
-																					]];
+																					] assertingDatabase:databaseName];
 	[theResult setReturnDataAsStrings:YES];
 
 	// Check for any errors, but only display them if a connection still exists
@@ -1066,7 +1068,7 @@
 	tableCreateSyntax = [[NSString alloc] initWithString:syntaxString];
 
 	// Retrieve the SHOW COLUMNS syntax for the table
-	theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [viewName backtickQuotedString]]];
+	theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [viewName backtickQuotedString]] assertingDatabase:databaseName];
 	[theResult setReturnDataAsStrings:YES];
 
 	// Check for any errors, but only display them if a connection still exists
@@ -1183,7 +1185,7 @@
 	}
 	else if ([tableListInstance tableType] == SPTableTypeTable) {
 		[escapedTableName replaceOccurrencesOfRegex:@"\\\\(?=\\Z|[^\'])" withString:@"\\\\\\\\"];
-		tableStatusResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW TABLE STATUS LIKE '%@'", escapedTableName ]];
+		tableStatusResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW TABLE STATUS LIKE '%@'", escapedTableName ] assertingDatabase:selectedDatabaseName];
 	}
 	[tableStatusResult setReturnDataAsStrings:YES]; //TODO: workaround for #2700 (#2699)
 
@@ -1222,7 +1224,7 @@
 		// [status objectForKey:@"Rows"] is NULL then try to get the number of rows via SELECT COUNT(1) FROM `foo`
 		// this happens e.g. for db "information_schema"
 		if([[status objectForKey:@"Rows"] isNSNull]) {
-			tableStatusResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [escapedTableName backtickQuotedString] ]];
+			tableStatusResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [escapedTableName backtickQuotedString] ] assertingDatabase:selectedDatabaseName];
 			// this query can fail e.g. if a table is damaged
 			if (tableStatusResult && ![mySQLConnection queryErrored]) {
 				[status safeSetObject:[[tableStatusResult getRowAsArray] firstObject] forKey:@"Rows"];
@@ -1274,7 +1276,7 @@
 	}
 
 	SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"/*!50003 SHOW TRIGGERS WHERE `Table` = %@ */",
-											  [[tableListInstance tableName] tickQuotedString]]];
+											  [[tableListInstance tableName] tickQuotedString]] assertingDatabase:[tableListInstance selectedDatabase]];
 	[theResult setReturnDataAsStrings:YES];
 
 	// Check for any errors, but only display them if a connection still exists
@@ -1342,7 +1344,7 @@
 	}
 
 	// Fetch the number of rows
-	SPMySQLResult *rowResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [[tableListInstance tableName] backtickQuotedString]]];
+	SPMySQLResult *rowResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [[tableListInstance tableName] backtickQuotedString]] assertingDatabase:[tableListInstance selectedDatabase]];
 	if ([mySQLConnection queryErrored] || !rowResult) {
 		return NO;
 	}

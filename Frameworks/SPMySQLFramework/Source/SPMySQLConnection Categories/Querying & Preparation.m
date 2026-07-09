@@ -485,7 +485,12 @@
  */
 - (NSArray *)getAllRowsFromQuery:(NSString *)theQueryString
 {
-	return [[self queryString:theQueryString] getAllRows];
+	return [self getAllRowsFromQuery:theQueryString assertingDatabase:nil];
+}
+
+- (NSArray *)getAllRowsFromQuery:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName
+{
+	return [[self queryString:theQueryString assertingDatabase:databaseName] getAllRows];
 }
 
 /**
@@ -494,7 +499,12 @@
  */
 - (id)getFirstFieldFromQuery:(NSString *)theQueryString
 {
-	return [[[self queryString:theQueryString] getRowAsArray] firstObject];
+	return [self getFirstFieldFromQuery:theQueryString assertingDatabase:nil];
+}
+
+- (id)getFirstFieldFromQuery:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName
+{
+	return [[[self queryString:theQueryString assertingDatabase:databaseName] getRowAsArray] firstObject];
 }
 
 #pragma mark -

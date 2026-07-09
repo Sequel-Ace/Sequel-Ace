@@ -869,18 +869,23 @@ static NSString *SADatabaseNameFromUseQuery(NSString *query)
                 // resultTableName will be set to the original table name (not defined via AS) provided by mysql return
                 // and the resultTableName can differ due to case-sensitive/insensitive settings!.
                 NSString *resultTableName = [[cqColumnDefinition objectAtIndex:0] objectForKey:@"org_table"];
+                NSString *resultDatabaseName = [[cqColumnDefinition objectAtIndex:0] objectForKey:@"db"];
                 for(id field in cqColumnDefinition) {
                     if(![[field objectForKey:@"org_table"] isEqualToString:resultTableName]) {
                         resultTableName = nil;
-                        break;
                     }
+                    if(![[field objectForKey:@"db"] isEqualToString:resultDatabaseName]) {
+                        resultDatabaseName = nil;
+                    }
+                    if(!resultTableName && !resultDatabaseName) break;
                 }
-                
+
                 // Init copyTable with necessary information for copying selected rows as SQL INSERT
                 [customQueryView setTableInstance:self
                                     withTableData:resultData
                                       withColumns:cqColumnDefinition
                                     withTableName:resultTableName
+                                withDatabaseName:resultDatabaseName ?: databaseName
                                    withConnection:mySQLConnection];
                 
                 [self updateResultStore:resultStore];
@@ -2101,7 +2106,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     SPMySQLResult *tempResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
                                                               [[columnDefinition objectForKey:@"db"] backtickQuotedString],
                                                               [tableForColumn backtickQuotedString],
-                                                              fieldIDQueryStr]];
+                                                              fieldIDQueryStr] assertingDatabase:[columnDefinition objectForKey:@"db"]];
     
     if ([mySQLConnection queryErrored]) {
         [tableDocumentInstance endTask];
@@ -2121,7 +2126,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         tempResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
                                                    [[columnDefinition objectForKey:@"db"] backtickQuotedString],
                                                    [tableForColumn backtickQuotedString],
-                                                   fieldIDQueryStr]];
+                                                   fieldIDQueryStr] assertingDatabase:[columnDefinition objectForKey:@"db"]];
         
         if ([mySQLConnection queryErrored]) {
             [tableDocumentInstance endTask];
@@ -2166,7 +2171,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     
     // Get the primary key if there is one, using any columns present within it
     SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@.%@",
-                                                             [database backtickQuotedString], [tableForColumn backtickQuotedString]]];
+                                                             [database backtickQuotedString], [tableForColumn backtickQuotedString]] assertingDatabase:database];
     [theResult setReturnDataAsStrings:YES];
     NSMutableArray *primaryColumnsInSpecifiedTable = [NSMutableArray array];
     for (NSDictionary *eachRow in theResult) {
@@ -2284,7 +2289,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         SPLog(@"queryStr: %@", queryStr);
 
         if ([prefs boolForKey:SPQueryWarningEnabled] == NO) {
-            [mySQLConnection queryString:queryStr];
+            [mySQLConnection queryString:queryStr assertingDatabase:[columnDefinition objectForKey:@"db"]];
 
             // Check for errors while UPDATE
             if ([mySQLConnection queryErrored]) {
@@ -2335,7 +2340,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
                                   primaryButtonTitle:NSLocalizedString(@"Proceed", @"Proceed")
                                 primaryButtonHandler:^{
                     SPLog(@"User clicked Yes, exec queries");
-                    [self->mySQLConnection queryString:queryStr];
+                    [self->mySQLConnection queryString:queryStr assertingDatabase:[columnDefinition objectForKey:@"db"]];
 
                     // Check for errors while UPDATE
                     if ([self->mySQLConnection queryErrored]) {

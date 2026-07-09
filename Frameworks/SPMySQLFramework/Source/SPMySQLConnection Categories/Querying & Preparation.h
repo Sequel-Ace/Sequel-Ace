@@ -50,7 +50,9 @@
 
 // Query convenience functions
 - (NSArray *)getAllRowsFromQuery:(NSString *)theQueryString;
+- (NSArray *)getAllRowsFromQuery:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName;
 - (id)getFirstFieldFromQuery:(NSString *)theQueryString;
+- (id)getFirstFieldFromQuery:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName;
 
 // Query information
 - (unsigned long long)rowsAffectedByLastQuery;

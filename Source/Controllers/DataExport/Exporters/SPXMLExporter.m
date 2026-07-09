@@ -104,17 +104,18 @@
     if ((![self xmlDataArray]) && [self xmlTableName]) {
 
         isTableExport = YES;
+        NSString *databaseName = [connection database];
 
-        totalRows       = [[connection getFirstFieldFromQuery:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [[self xmlTableName] backtickQuotedString]]] integerValue];
-        streamingResult = [connection streamingQueryString:[NSString stringWithFormat:@"SELECT * FROM %@", [[self xmlTableName] backtickQuotedString]] useLowMemoryBlockingStreaming:[self exportUsingLowMemoryBlockingStreaming]];
+        totalRows       = [[connection getFirstFieldFromQuery:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [[self xmlTableName] backtickQuotedString]] assertingDatabase:databaseName] integerValue];
+        streamingResult = [connection streamingQueryString:[NSString stringWithFormat:@"SELECT * FROM %@", [[self xmlTableName] backtickQuotedString]] useLowMemoryBlockingStreaming:[self exportUsingLowMemoryBlockingStreaming] assertingDatabase:databaseName];
 
         // Only include the structure if necessary
         if (([self xmlFormat] == SPXMLExportMySQLFormat) && [self xmlOutputIncludeStructure]) {
 
-            structureResult = [connection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [[self xmlTableName] backtickQuotedString]]];
+            structureResult = [connection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [[self xmlTableName] backtickQuotedString]] assertingDatabase:databaseName];
             NSMutableString *escapedTableName = [NSMutableString stringWithString:[[self xmlTableName] tickQuotedString]];
             [escapedTableName replaceOccurrencesOfString:@"\\" withString:@"\\\\\\\\" options:0 range:NSMakeRange(0, [escapedTableName length])];
-            statusResult    = [connection queryString:[NSString stringWithFormat:@"SHOW TABLE STATUS LIKE %@", escapedTableName]];
+            statusResult    = [connection queryString:[NSString stringWithFormat:@"SHOW TABLE STATUS LIKE %@", escapedTableName] assertingDatabase:databaseName];
 
             if ([structureResult numberOfRows] && [statusResult numberOfRows]) {
 

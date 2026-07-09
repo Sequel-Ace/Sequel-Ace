@@ -76,6 +76,7 @@
 - (void)testNormalizeCharacterSetRows_DeduplicatesByCharacterSetName;
 - (void)testNormalizeCharacterSetRows_SkipsRowsWithoutCharacterSetName;
 - (void)testFallbackCharacterSetEncodings_UsesExpectedOrder;
+- (void)testDatabaseDefaultCharacterSet_AssertsSelectedDatabase;
 
 @end
 
@@ -86,6 +87,8 @@
 - (void)testShowCollationForEncoding_EscapesEncodingAndReturnsSortedNormalizedRows;
 - (void)testDatabaseCollationsForEncoding_ShowFallbackRetriesUtf8Alias;
 - (void)testDatabaseCollationsForEncoding_ShowFallbackRetriesUtf8mb3Alias;
+- (void)testDatabaseDefaultCollation_AssertsSelectedDatabase;
+- (void)testServerDefaultCollation_RemainsServerScoped;
 
 @end
 
@@ -528,6 +531,28 @@
 
 }
 
+- (void)testDatabaseDefaultCharacterSet_AssertsSelectedDatabase
+{
+	SPDatabaseData *databaseData = [[SPDatabaseData alloc] init];
+	id mockConnection = OCMStrictClassMock([SPMySQLConnection class]);
+	id mockResult = OCMStrictClassMock([SPMySQLResult class]);
+
+	OCMExpect([mockConnection database]).andReturn(@"selected_db");
+	OCMExpect([mockConnection queryString:@"SHOW VARIABLES LIKE 'character_set_database'" assertingDatabase:@"selected_db"]).andReturn(mockResult);
+	OCMExpect([mockResult setReturnDataAsStrings:YES]);
+	OCMStub([mockConnection queryErrored]).andReturn(NO);
+	OCMExpect([mockResult numberOfRows]).andReturn(1);
+	OCMExpect([mockResult getRowAsDictionary]).andReturn(@{@"Value": @"utf8mb4"});
+
+	[databaseData setConnection:mockConnection];
+	XCTAssertEqualObjects([databaseData getDatabaseDefaultCharacterSet], @"utf8mb4");
+
+	OCMVerifyAll(mockConnection);
+	OCMVerifyAll(mockResult);
+	[mockConnection stopMocking];
+	[mockResult stopMocking];
+}
+
 @end
 
 @implementation SPDatabaseDataCollationTests
@@ -674,6 +699,49 @@
 	OCMVerify([databaseDataMock _getDatabaseDataForQuery:@"SHOW COLLATION WHERE `Charset` = 'utf8'"]);
 
 	[databaseDataMock stopMocking];
+}
+
+- (void)testDatabaseDefaultCollation_AssertsSelectedDatabase
+{
+	SPDatabaseData *databaseData = [[SPDatabaseData alloc] init];
+	id mockConnection = OCMStrictClassMock([SPMySQLConnection class]);
+	id mockResult = OCMStrictClassMock([SPMySQLResult class]);
+
+	OCMExpect([mockConnection database]).andReturn(@"selected_db");
+	OCMExpect([mockConnection queryString:@"SHOW VARIABLES LIKE 'collation_database'" assertingDatabase:@"selected_db"]).andReturn(mockResult);
+	OCMExpect([mockResult setReturnDataAsStrings:YES]);
+	OCMStub([mockConnection queryErrored]).andReturn(NO);
+	OCMExpect([mockResult numberOfRows]).andReturn(1);
+	OCMExpect([mockResult getRowAsDictionary]).andReturn(@{@"Value": @"utf8mb4_0900_ai_ci"});
+
+	[databaseData setConnection:mockConnection];
+	XCTAssertEqualObjects([databaseData getDatabaseDefaultCollation], @"utf8mb4_0900_ai_ci");
+
+	OCMVerifyAll(mockConnection);
+	OCMVerifyAll(mockResult);
+	[mockConnection stopMocking];
+	[mockResult stopMocking];
+}
+
+- (void)testServerDefaultCollation_RemainsServerScoped
+{
+	SPDatabaseData *databaseData = [[SPDatabaseData alloc] init];
+	id mockConnection = OCMStrictClassMock([SPMySQLConnection class]);
+	id mockResult = OCMStrictClassMock([SPMySQLResult class]);
+
+	OCMExpect([mockConnection queryString:@"SHOW VARIABLES LIKE 'collation_server'"]).andReturn(mockResult);
+	OCMExpect([mockResult setReturnDataAsStrings:YES]);
+	OCMStub([mockConnection queryErrored]).andReturn(NO);
+	OCMExpect([mockResult numberOfRows]).andReturn(1);
+	OCMExpect([mockResult getRowAsDictionary]).andReturn(@{@"Value": @"utf8mb4_0900_ai_ci"});
+
+	[databaseData setConnection:mockConnection];
+	XCTAssertEqualObjects([databaseData getServerDefaultCollation], @"utf8mb4_0900_ai_ci");
+
+	OCMVerifyAll(mockConnection);
+	OCMVerifyAll(mockResult);
+	[mockConnection stopMocking];
+	[mockResult stopMocking];
 }
 
 @end

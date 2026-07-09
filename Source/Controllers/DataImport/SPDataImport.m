@@ -53,6 +53,19 @@
 
 #define SP_FILE_READ_ERROR_STRING NSLocalizedString(@"File read error", @"File read error title (Import Dialog)")
 
+static NSString *SAImportDatabaseNameFromUseQuery(NSString *query)
+{
+	NSString *databaseName = [query stringByMatching:@"(?is)^\\s*USE\\s+(`(?:``|[^`])*`|[^\\s;]+)\\s*;?\\s*$" capture:1L];
+	if (![databaseName length]) return nil;
+
+	if ([databaseName hasPrefix:@"`"] && [databaseName hasSuffix:@"`"] && [databaseName length] >= 2) {
+		databaseName = [databaseName substringWithRange:NSMakeRange(1, [databaseName length] - 2)];
+		databaseName = [databaseName stringByReplacingOccurrencesOfString:@"``" withString:@"`"];
+	}
+
+	return databaseName;
+}
+
 @interface SPDataImport ()
 
 - (void)_startBackgroundImportTaskForFilename:(NSString *)filename;
@@ -408,6 +421,7 @@
 	});
 
 	[tableDocumentInstance setQueryMode:SPImportExportQueryMode];
+	NSString *databaseName = [tableDocumentInstance database] ?: [mySQLConnection database];
 
 	// Determine the file encoding.  The first item in the encoding menu is "Autodetect"; if
 	// this is selected, attempt to detect the encoding of the file
@@ -562,7 +576,7 @@
                 if (![query length]) continue;
 
                 // Run the query
-                [mySQLConnection queryString:query usingEncoding:sqlEncoding withResultType:SPMySQLResultAsResult];
+                [mySQLConnection queryString:query usingEncoding:sqlEncoding withResultType:SPMySQLResultAsResult assertingDatabase:databaseName];
 
                 // in case the query was a "SET @@sql_mode = ...", the server_status may have changed
                 if([mySQLConnection updateServerStatusBits:&serverStatus]) [sqlParser setNoBackslashEscapes:serverStatus.noBackslashEscapes];
@@ -631,6 +645,12 @@
                         }
                     }
                 }
+                else if (![mySQLConnection queryErrored]) {
+                    NSString *updatedDatabaseName = SAImportDatabaseNameFromUseQuery(query);
+                    if ([updatedDatabaseName length]) {
+                        databaseName = updatedDatabaseName;
+                    }
+                }
 
                 // Increment the processed queries count
                 queriesPerformed++;
@@ -662,12 +682,18 @@
 	if ([query length] && !progressCancelled) {
 
 		// Run the query
-		[mySQLConnection queryString:query usingEncoding:sqlEncoding withResultType:SPMySQLResultAsResult];
+		[mySQLConnection queryString:query usingEncoding:sqlEncoding withResultType:SPMySQLResultAsResult assertingDatabase:databaseName];
 		// we don't care for the server_status that is set AFTER the last query has been executed
 
 		// Check for any errors
 		if ([mySQLConnection queryErrored] && ![[mySQLConnection lastErrorMessage] isEqualToString:@"Query was empty"]) {
 			[errors appendFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(queriesPerformed+1), [mySQLConnection lastErrorMessage]];
+		}
+		else if (![mySQLConnection queryErrored]) {
+			NSString *updatedDatabaseName = SAImportDatabaseNameFromUseQuery(query);
+			if ([updatedDatabaseName length]) {
+				databaseName = updatedDatabaseName;
+			}
 		}
 
 		// Increment the processed queries count
@@ -807,6 +833,7 @@
 	});
 
 	[tableDocumentInstance setQueryMode:SPImportExportQueryMode];
+	NSString *databaseName = [tableDocumentInstance database] ?: [mySQLConnection database];
 
 	SPMainQSync(^{
 		// Determine the file encoding.  The first item in the encoding menu is "Autodetect";
@@ -1067,9 +1094,9 @@
 
 					// Perform the query
 					if(csvImportMethodHasTail)
-						[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString]];
+						[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString] assertingDatabase:databaseName];
 					else
-						[mySQLConnection queryString:query];
+						[mySQLConnection queryString:query assertingDatabase:databaseName];
 				} else {
 					if(insertRemainingRowsAfterUpdate) {
 						[insertRemainingBaseString setString:@"INSERT INTO "];
@@ -1092,9 +1119,9 @@
 
 						// Perform the query
 						if(csvImportMethodHasTail)
-							[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString]];
+							[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString] assertingDatabase:databaseName];
 						else
-							[mySQLConnection queryString:query];
+							[mySQLConnection queryString:query assertingDatabase:databaseName];
 
 						if ([mySQLConnection queryErrored]) {
 							[[tableDocumentInstance onMainThread] showConsole];
@@ -1113,9 +1140,9 @@
 
 							// Perform the query
 							if(csvImportMethodHasTail)
-								[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString]];
+								[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString] assertingDatabase:databaseName];
 							else
-								[mySQLConnection queryString:query];
+								[mySQLConnection queryString:query assertingDatabase:databaseName];
 
 							if ([mySQLConnection queryErrored]) {
 								[errors appendFormat:
@@ -1152,9 +1179,9 @@
 
 						// Perform the query
 						if(csvImportMethodHasTail)
-							[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString]];
+							[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString] assertingDatabase:databaseName];
 						else
-							[mySQLConnection queryString:query];
+							[mySQLConnection queryString:query assertingDatabase:databaseName];
 
 						if ([mySQLConnection queryErrored]) {
 							[errors appendFormat:

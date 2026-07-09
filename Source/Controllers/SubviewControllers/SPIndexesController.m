@@ -803,7 +803,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 				}
 
 				// Execute the query
-				[connection queryString:query];
+				[connection queryString:query assertingDatabase:[dbDocument database]];
 
 				// Check for errors, but only if the query wasn't cancelled
 				if ([connection queryErrored] && ![connection lastQueryWasCancelled]) {
@@ -843,7 +843,7 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 		// Remove the foreign key dependency before the index if required
 		if ([fkName length]) {
 
-			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [table backtickQuotedString], [fkName backtickQuotedString]]];
+			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [table backtickQuotedString], [fkName backtickQuotedString]] assertingDatabase:[dbDocument database]];
 
 			// Check for errors, but only if the query wasn't cancelled
 			if ([connection queryErrored] && ![connection lastQueryWasCancelled]) {
@@ -857,11 +857,11 @@ static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 		}
 
 		if ([index isEqualToString:@"PRIMARY"]) {
-			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP PRIMARY KEY", [table backtickQuotedString]]];
+			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP PRIMARY KEY", [table backtickQuotedString]] assertingDatabase:[dbDocument database]];
 		}
 		else {
 			[connection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP INDEX %@",
-			                                                   [table backtickQuotedString], [index backtickQuotedString]]];
+			                                                   [table backtickQuotedString], [index backtickQuotedString]] assertingDatabase:[dbDocument database]];
 		}
 
 		// Check for errors, but only if the query wasn't cancelled

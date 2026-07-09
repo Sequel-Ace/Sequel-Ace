@@ -42,6 +42,7 @@
 @interface SPDatabaseData ()
 
 - (NSString *)_getSingleVariableValue:(NSString *)variable;
+- (NSString *)_getSingleVariableValue:(NSString *)variable assertingDatabase:(NSString *)databaseName;
 - (NSArray *)_getDatabaseDataForQuery:(NSString *)query;
 - (NSArray *)_normalizedCharacterSetEncodingsFromRows:(NSArray *)rows;
 - (NSArray *)_fallbackCharacterSetEncodings;
@@ -342,7 +343,7 @@ copy_return:
 {
 	@synchronized(charsetCollationLock) {
 		if (!defaultCharacterSetEncoding) {
-			defaultCharacterSetEncoding = [self _getSingleVariableValue:@"character_set_database"];
+			defaultCharacterSetEncoding = [self _getSingleVariableValue:@"character_set_database" assertingDatabase:[connection database]];
 		}
 
 		return [defaultCharacterSetEncoding copy];
@@ -360,7 +361,7 @@ copy_return:
 {
 	@synchronized(charsetCollationLock) {
 		if (!defaultCollation) {
-			defaultCollation = [self _getSingleVariableValue:@"collation_database"];
+			defaultCollation = [self _getSingleVariableValue:@"collation_database" assertingDatabase:[connection database]];
 		}
 
 		return [defaultCollation copy];
@@ -443,7 +444,13 @@ copy_return:
  */
 - (NSString *)_getSingleVariableValue:(NSString *)variable
 {
-	SPMySQLResult *result = [connection queryString:[NSString stringWithFormat:@"SHOW VARIABLES LIKE %@", [variable tickQuotedString]]];;
+	return [self _getSingleVariableValue:variable assertingDatabase:nil];
+}
+
+- (NSString *)_getSingleVariableValue:(NSString *)variable assertingDatabase:(NSString *)databaseName
+{
+	NSString *query = [NSString stringWithFormat:@"SHOW VARIABLES LIKE %@", [variable tickQuotedString]];
+	SPMySQLResult *result = [databaseName length] ? [connection queryString:query assertingDatabase:databaseName] : [connection queryString:query];
 
 	[result setReturnDataAsStrings:YES];
 
