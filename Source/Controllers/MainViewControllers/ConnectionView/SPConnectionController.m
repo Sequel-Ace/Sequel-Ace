@@ -1467,8 +1467,6 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 - (NSString *)vaultRoleListCurrentMount     { return [self vaultMount] ?: @""; }
 - (NSString *)vaultRoleListCurrentRole      { return [self vaultCredentialsRole] ?: @""; }
 
-- (NSWindow *)vaultRoleListParentWindow { return [dbDocument parentWindowControllerWindow]; }
-
 - (BOOL)vaultRoleListShouldDeferForActiveConnection { return isConnecting; }
 
 // Only a genuine window teardown should discard a role-refresh response.

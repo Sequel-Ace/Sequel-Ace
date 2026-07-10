@@ -19,7 +19,6 @@ import AppKit
     func vaultRoleListCurrentOIDCMount() -> String
     func vaultRoleListCurrentMount() -> String
     func vaultRoleListCurrentRole() -> String
-    func vaultRoleListParentWindow() -> NSWindow?
     /// A connect/test is in flight — refreshing would start a clashing OIDC login.
     func vaultRoleListShouldDeferForActiveConnection() -> Bool
     /// The window is closing (its document is gone) — drop any response.
@@ -143,10 +142,8 @@ import AppKit
 
         let mount = delegate.vaultRoleListCurrentMount()
         if mount.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            let alert = NSAlert()
-            alert.messageText = NSLocalizedString("Enter a Vault mount first", comment: "Vault roles refresh – missing mount")
-            alert.informativeText = NSLocalizedString("The list of roles is read from <mount>/roles. Fill in the Vault mount field, then refresh.", comment: "Vault roles refresh – missing mount detail")
-            present(alert)
+            NSAlert.createWarningAlert(title: NSLocalizedString("Enter a Vault mount first", comment: "Vault roles refresh – missing mount"),
+                                       message: NSLocalizedString("The list of roles is read from <mount>/roles. Fill in the Vault mount field, then refresh.", comment: "Vault roles refresh – missing mount detail"))
             return
         }
 
@@ -216,28 +213,14 @@ import AppKit
                     self.availableRoles = roles
                     self.reloadItems()
                     if roles.isEmpty {
-                        let empty = NSAlert()
-                        empty.messageText = NSLocalizedString("No Vault roles found", comment: "Vault roles refresh – empty")
-                        empty.informativeText = NSLocalizedString("No database roles were returned for this mount. Check the Vault mount path and that your token may list roles, or type the role manually.", comment: "Vault roles refresh – empty detail")
-                        self.present(empty)
+                        NSAlert.createWarningAlert(title: NSLocalizedString("No Vault roles found", comment: "Vault roles refresh – empty"),
+                                                   message: NSLocalizedString("No database roles were returned for this mount. Check the Vault mount path and that your token may list roles, or type the role manually.", comment: "Vault roles refresh – empty detail"))
                     }
                 } else {
-                    let alert = NSAlert()
-                    alert.messageText = NSLocalizedString("Could not load Vault roles", comment: "Vault roles refresh – failure")
-                    alert.informativeText = error?.localizedDescription ?? NSLocalizedString("Unknown error. You can still type the role manually.", comment: "Vault roles refresh – failure detail")
-                    self.present(alert)
+                    NSAlert.createWarningAlert(title: NSLocalizedString("Could not load Vault roles", comment: "Vault roles refresh – failure"),
+                                               message: error?.localizedDescription ?? NSLocalizedString("Unknown error. You can still type the role manually.", comment: "Vault roles refresh – failure detail"))
                 }
             }
-        }
-    }
-
-    // MARK: - Helpers
-
-    private func present(_ alert: NSAlert) {
-        if let window = delegate?.vaultRoleListParentWindow() {
-            alert.beginSheetModal(for: window, completionHandler: nil)
-        } else {
-            alert.runModal()
         }
     }
 }
