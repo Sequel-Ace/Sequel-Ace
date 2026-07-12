@@ -182,6 +182,7 @@
 		3E242D4F20FEB44D0015470D /* button_bar_spacer_dark.png in Resources */ = {isa = PBXBuildFile; fileRef = 3E242D4B20FEB44D0015470D /* button_bar_spacer_dark.png */; };
 		3E242D5020FEB44D0015470D /* button_bar_spacer_dark@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3E242D4E20FEB44D0015470D /* button_bar_spacer_dark@2x.png */; };
 		44011FFBC7DF57126761313F /* SQLitePinnedTableManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44011DFD0DC2836DB08A0619 /* SQLitePinnedTableManager.swift */; };
+		49B1A8182FC5FCC2000A4916 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 49B1A8172FC5FCC2000A4916 /* AppIcon.icon */; };
 		4D90B79A101E0CDF00D116A1 /* SPUserManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D90B799101E0CDF00D116A1 /* SPUserManager.m */; };
 		4D90B79E101E0CF200D116A1 /* SPUserManager.xcdatamodel in Sources */ = {isa = PBXBuildFile; fileRef = 4D90B79B101E0CF200D116A1 /* SPUserManager.xcdatamodel */; };
 		4D90B79F101E0CF200D116A1 /* SPUserMO.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D90B79D101E0CF200D116A1 /* SPUserMO.m */; };
@@ -990,6 +991,7 @@
 		3E242D4E20FEB44D0015470D /* button_bar_spacer_dark@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "button_bar_spacer_dark@2x.png"; sourceTree = "<group>"; };
 		4262EAB6230F7996EC17A13A /* SABundleVersionUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SABundleVersionUpdater.swift; sourceTree = "<group>"; };
 		44011DFD0DC2836DB08A0619 /* SQLitePinnedTableManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SQLitePinnedTableManager.swift; sourceTree = "<group>"; };
+		49B1A8172FC5FCC2000A4916 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		4D90B798101E0CDF00D116A1 /* SPUserManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPUserManager.h; sourceTree = "<group>"; };
 		4D90B799101E0CDF00D116A1 /* SPUserManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPUserManager.m; sourceTree = "<group>"; };
 		4D90B79B101E0CF200D116A1 /* SPUserManager.xcdatamodel */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = wrapper.xcdatamodel; path = SPUserManager.xcdatamodel; sourceTree = "<group>"; };
@@ -2116,6 +2118,7 @@
 				1740F8350FC3069700CF3699 /* Templates */,
 				96D494B8249C07940092F335 /* SSH Helpers */,
 				583A278D23F06F1000FBE97B /* Colors.xcassets */,
+				49B1A8172FC5FCC2000A4916 /* AppIcon.icon */,
 				51A709382565B99F001F1D2F /* Images.xcassets */,
 				514B40A52F68412000369718 /* Credits.md */,
 				514B40A62F68412000369718 /* License.md */,
@@ -3182,6 +3185,7 @@
 				582E944C16837986003459FD /* hideconsole.png in Resources */,
 				514B40A72F68412000369718 /* License.md in Resources */,
 				514B40A82F68412000369718 /* Credits.md in Resources */,
+				49B1A8182FC5FCC2000A4916 /* AppIcon.icon in Resources */,
 				582E945016837AA9003459FD /* network-small.png in Resources */,
 				582E947016837DB2003459FD /* showconsole.png in Resources */,
 				582E9483168380D6003459FD /* sync_arrows_01.png in Resources */,
