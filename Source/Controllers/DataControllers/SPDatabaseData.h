@@ -30,7 +30,7 @@
 
 @class SPServerSupport;
 @class SPMySQLConnection;
-#import "SPDatabaseConnection.h"
+@protocol SPDatabaseConnection;
 
 /**
  * @class SPDatabaseData SPDatabaseData.h

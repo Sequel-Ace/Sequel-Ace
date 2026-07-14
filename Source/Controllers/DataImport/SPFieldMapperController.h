@@ -32,7 +32,7 @@
 @class SPTableView;
 @class SPTablesList;
 @class SPMySQLConnection;
-#import "SPDatabaseConnection.h"
+@protocol SPDatabaseConnection;
 
 @interface SPFieldMapperController : NSWindowController <NSTokenFieldCellDelegate, NSMenuDelegate>
 {
@@ -125,7 +125,7 @@
 	NSArray *primaryKeyFields;
 	NSNumber *lastDisabledCSVFieldcolumn;
 
-	id<SPDatabaseConnection> mySQLConnection;
+	SPMySQLConnection *mySQLConnection;
 
 	NSString *sourcePath;
 
@@ -150,7 +150,7 @@
 
 - (instancetype)initWithDelegate:(id)managerDelegate;
 
-- (void)setConnection:(id<SPDatabaseConnection>)theConnection;
+- (void)setConnection:(SPMySQLConnection *)theConnection;
 - (void)setImportDataArray:(id)theFieldMappingImportArray hasHeader:(BOOL)hasHeader isPreview:(BOOL)isPreview;
 
 // Getter methods

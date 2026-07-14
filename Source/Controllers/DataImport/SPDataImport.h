@@ -30,7 +30,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 @class SPMySQLConnection;
-#import "SPDatabaseConnection.h"
+@protocol SPDatabaseConnection;
 @class SPFieldMapperController;
 @class SPFileHandle;
 @class SPDatabaseDocument;
@@ -80,7 +80,7 @@ typedef enum {
 	IBOutlet NSTextField *singleProgressTitle;
 	IBOutlet NSTextField *singleProgressText;
 
-	id<SPDatabaseConnection> mySQLConnection;
+	SPMySQLConnection *mySQLConnection;
 
 	// Field Mapper Controller
 	NSArray *fieldMappingImportArray;
@@ -133,7 +133,7 @@ typedef enum {
 - (NSString *)mappedUpdateSetStatementStringForRowArray:(NSArray *)csvRowArray;
 
 // Additional methods
-- (void)setConnection:(id<SPDatabaseConnection>)theConnection;
+- (void)setConnection:(SPMySQLConnection *)theConnection;
 - (void)showErrorSheetWithMessage:(NSString*)message;
 
 // Import delegate notifications

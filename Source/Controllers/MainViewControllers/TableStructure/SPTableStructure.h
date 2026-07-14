@@ -37,7 +37,7 @@
 @class SPIndexesController;
 @class SPTableView;
 @class SPMySQLConnection;
-#import "SPDatabaseConnection.h"
+@protocol SPDatabaseConnection;
 @class SPMySQLResult;
 @class SPExtendedTableInfo;
 @class SPTableInfo;
@@ -93,7 +93,7 @@
 	IBOutlet id viewColumnsMenu;
 	IBOutlet NSPopUpButtonCell *encodingPopupCell;
 
-	id<SPDatabaseConnection> mySQLConnection;
+	SPMySQLConnection *mySQLConnection;
 	
 	SPTableFieldValidation *fieldValidation;
 
@@ -128,7 +128,7 @@
 - (IBAction)closeSheet:(id)sender;
 
 // Additional methods
-- (void)setConnection:(id<SPDatabaseConnection>)theConnection;
+- (void)setConnection:(SPMySQLConnection *)theConnection;
 - (NSArray *)convertIndexResultToArray:(SPMySQLResult *)theResult;
 - (BOOL)saveRowOnDeselect;
 - (BOOL)addRowToDB;

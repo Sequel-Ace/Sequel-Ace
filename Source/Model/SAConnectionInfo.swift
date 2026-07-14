@@ -178,6 +178,11 @@ struct SAConnectionInfo {
 
     // MARK: Basic Connection
 
+    @objc var databaseBackend: SADatabaseBackend {
+        get { info.databaseBackend }
+        set { info.databaseBackend = newValue }
+    }
+
     @objc var type: SAConnectionType {
         get { info.type }
         set { info.type = newValue }

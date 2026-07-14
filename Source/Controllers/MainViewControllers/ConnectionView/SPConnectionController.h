@@ -32,7 +32,7 @@
 #import "SPFavoritesExportProtocol.h"
 #import "SPFavoritesImportProtocol.h"
 #import "SPReachability.h"
-#import "SPDatabaseConnection.h"
+@protocol SPDatabaseConnection;
 
 #import <SPMySQL/SPMySQL.h>
 

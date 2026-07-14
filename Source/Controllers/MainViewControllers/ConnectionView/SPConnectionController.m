@@ -61,8 +61,6 @@
 // See: AWSCredentials.swift, RDSIAMAuthentication.swift, AWSSTSClient.swift, AWSMFATokenDialog.swift, AWSIAMAuthManager.swift
 
 #import <SPMySQL/SPMySQL.h>
-#import "SPMySQLConnectionWrapper.h"
-#import "SPPostgreSQLConnectionWrapper.h"
 #import "SPConstants.h"
 
 #import "sequel-ace-Swift.h"
@@ -3586,6 +3584,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 {
     SAConnectionInfoObjC *info = [[SAConnectionInfoObjC alloc] init];
     info.type = (SAConnectionType)self.type;
+    info.databaseBackend = (SADatabaseBackend)self.databaseType;
     info.name = self.name ?: @"";
     info.host = self.host ?: @"";
     info.user = self.user ?: @"";

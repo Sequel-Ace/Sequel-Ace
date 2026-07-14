@@ -32,8 +32,6 @@
 #import "SPDatabaseDocument.h"
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPConnectionController.h"
-#import "SPDatabaseConnection.h"
-#import "SPMySQLConnectionWrapper.h"
 #import "SPTablesList.h"
 #import "SPDatabaseStructure.h"
 #import "SPFileHandle.h"
@@ -451,14 +449,14 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     // Set the connection on the database structure builder
     [databaseStructureRetrieval setConnectionToClone:mySQLConnection];
 
-    [databaseDataInstance setConnection:mySQLConnection];
+    [databaseDataInstance setConnection:databaseConnection];
 
     // Pass the support class to the data instance
     [databaseDataInstance setServerSupport:serverSupport];
 
     // Set the connection on the tables list instance - this updates the table list while the connection
     // is still UTF8
-    [tablesListInstance setConnection:mySQLConnection];
+    [tablesListInstance setConnection:databaseConnection];
 
     // Set the connection encoding if necessary
     NSNumber *encodingType = [prefs objectForKey:SPDefaultEncoding];
@@ -469,7 +467,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [[self onMainThread] updateEncodingMenuWithSelectedEncoding:[self encodingTagFromMySQLEncoding:[mySQLConnection encoding]]];
     }
 
-    // For each of the main controllers, assign the current connection
+    // For each of the main controllers, assign the current connection.
+    // MySQL-specific controllers use the raw SPMySQLConnection; PG-aware ones use the wrapper.
     SPLog(@"setConnection for each of main controllers");
     [tableSourceInstance setConnection:mySQLConnection];
     [tableContentInstance setConnection:mySQLConnection];
@@ -605,17 +604,30 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     [tablesListInstance setConnection:connection];
 
-    [tableSourceInstance setConnection:connection];
-    [tableContentInstance setConnection:connection];
-    [customQueryInstance setConnection:connection];
-    [tableDataInstance setConnection:connection];
-    [helpViewerClientInstance setConnection:connection];
-
     [[self onMainThread] updateWindowTitle:self];
 
     [self setDatabases];
-    [self setUpInterface];
-    [self startDatabaseInterface];
+
+    switch ([prefs integerForKey:SPDefaultViewMode] > 0 ? [prefs integerForKey:SPDefaultViewMode] : [prefs integerForKey:SPLastViewMode]) {
+        case SPContentViewMode:
+            [self viewContent];
+            break;
+        case SPTableInfoViewMode:
+            [self viewStatus];
+            break;
+        case SPQueryEditorViewMode:
+            [self viewQuery];
+            break;
+        default:
+            [self viewStructure];
+            break;
+    }
+
+    if ([self database]) [self detectDatabaseEncoding];
+
+    if (![[self selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarCustomQuery]) {
+        [[tablesListInstance onMainThread] makeTableListFilterHaveFocus];
+    }
 }
 
 - (id<SPDatabaseConnection>)activeDatabaseConnection {
@@ -5137,7 +5149,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     [self setDatabases];
 
-    [tablesListInstance setConnection:mySQLConnection];
+    [tablesListInstance setConnection:databaseConnection ?: (id<SPDatabaseConnection>)mySQLConnection];
 
     // inform observers that a database was dropped
     [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:SPDatabaseCreatedRemovedRenamedNotification object:nil];
@@ -5240,7 +5252,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (void)reattachTablesListConnection
 {
-    [tablesListInstance setConnection:mySQLConnection];
+    [tablesListInstance setConnection:databaseConnection ?: (id<SPDatabaseConnection>)mySQLConnection];
 }
 
 - (void)refreshWindowTitle

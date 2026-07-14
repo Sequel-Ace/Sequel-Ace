@@ -259,7 +259,7 @@ pub extern "C" fn sp_postgresql_streaming_result_has_more(result: *const SPPostg
 #[no_mangle]
 pub extern "C" fn sp_postgresql_streaming_result_next_batch(
     result: *mut SPPostgreSQLStreamingResult,
-    _row_callback: extern "C" fn(*const c_char, c_int, *mut c_char, *mut *mut c_char),
+    _row_callback: Option<extern "C" fn(*const c_char, c_int, *mut c_char, *mut *mut c_char)>,
     _user_data: *mut std::os::raw::c_void,
 ) -> c_int {
     if result.is_null() { return 0; }

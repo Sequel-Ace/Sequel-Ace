@@ -30,11 +30,11 @@ final class SPPostgreSQLIntegrationTests: XCTestCase {
 
     private func makeConfiguredWrapper() -> SPPostgreSQLConnectionWrapper {
         let wrapper = SPPostgreSQLConnectionWrapper()
-        wrapper.setHost(host)
+        wrapper.host = host
         wrapper.setPort(UInt(port) ?? 5432)
         wrapper.setUsername(user)
         wrapper.setPassword(password)
-        wrapper.setDatabase(database)
+        wrapper.database = database
         return wrapper
     }
 
@@ -91,11 +91,11 @@ final class SPPostgreSQLIntegrationTests: XCTestCase {
         try XCTSkipUnless(isConfigured, "Set SEQUEL_ACE_PG_TEST_HOST to run integration tests")
 
         let wrapper = SPPostgreSQLConnectionWrapper()
-        wrapper.setHost(host)
+        wrapper.host = host
         wrapper.setPort(UInt(port) ?? 5432)
         wrapper.setUsername(user)
         wrapper.setPassword(password)
-        wrapper.setDatabase(database)
+        wrapper.database = database
 
         XCTAssertTrue(wrapper.connect())
         let databases = wrapper.databases()

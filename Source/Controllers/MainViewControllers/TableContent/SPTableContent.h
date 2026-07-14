@@ -38,7 +38,7 @@
 @class SPTextView;
 @class SPFieldEditorController;
 @class SPMySQLConnection;
-#import "SPDatabaseConnection.h"
+@protocol SPDatabaseConnection;
 @class SPMySQLStreamingResultStore;
 @class SPTableData;
 @class SPDatabaseDocument;
@@ -88,7 +88,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 	IBOutlet SPRuleFilterController *ruleFilterController;
 	IBOutlet SPFilterTableController *filterTableController;
 	IBOutlet NSSearchField *columnFilterSearchField;
-	id<SPDatabaseConnection> mySQLConnection;
+	SPMySQLConnection *mySQLConnection;
 
 	BOOL _mainNibLoaded;
 	BOOL isWorking;
@@ -214,7 +214,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 - (void)endDocumentTaskForTab:(NSNotification *)aNotification;
 
 // Additional methods
-- (void)setConnection:(id<SPDatabaseConnection>)theConnection;
+- (void)setConnection:(SPMySQLConnection *)theConnection;
 - (void)clickLinkArrow:(SPTextAndLinkCell *)theArrowCell;
 - (void)clickLinkArrowTask:(SPTextAndLinkCell *)theArrowCell;
 - (void)updateResultStore:(SPMySQLStreamingResultStore *)theResultStore approximateRowCount:(NSUInteger)targetRowCount;

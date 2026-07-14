@@ -30,7 +30,6 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPTablesList.h"
-#import "SPDatabaseConnection.h"
 #import "SPDatabaseDocument.h"
 #import "SPTableStructure.h"
 #import "SPDatabaseStructure.h"
@@ -245,9 +244,10 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 				@"SELECT table_name, table_type FROM information_schema.tables "
 				 "WHERE table_schema = '%@' ORDER BY table_name", schema];
 			theResult = [mySQLConnection queryString:pgTableQuery];
-			[theResult setDefaultRowReturnType:SPMySQLResultRowAsDictionary];
-			[theResult setReturnDataAsStrings:YES];
-			for (NSDictionary *eachRow in theResult) {
+			unsigned long long rowCount = [theResult numberOfRows];
+			for (unsigned long long rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+				[theResult seekToRow:rowIndex];
+				NSDictionary *eachRow = [theResult getRowAsDictionary];
 				NSString *tableName = [eachRow objectForKey:@"table_name"];
 				NSString *tableType = [eachRow objectForKey:@"table_type"];
 				if (tableName == nil || [tableName isNSNull]) continue;

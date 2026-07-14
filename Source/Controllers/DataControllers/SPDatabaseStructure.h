@@ -29,14 +29,14 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 @class SPMySQLConnection;
-#import "SPDatabaseConnection.h"
+@protocol SPDatabaseConnection;
 @class SPDatabaseDocument;
 
 #import <SPMySQL/SPMySQL.h>
 
 @interface SPDatabaseStructure : NSObject <SPMySQLConnectionDelegate> 
 {
-	id<SPDatabaseConnection> mySQLConnection;
+	SPMySQLConnection *mySQLConnection;
 
 	NSMutableDictionary *structure;
 	NSMutableArray *allKeysofDbStructure;

@@ -68,3 +68,6 @@
 // (queryString:, escapeAndQuoteString:, queryErrored, ...) - needed by SPAppController+MCP.swift.
 #import <SPMySQL/SPMySQL.h>
 #import "SPSSHTunnel.h"
+
+// PostgreSQL Rust FFI
+#import "sppostgresql_ffi.h"

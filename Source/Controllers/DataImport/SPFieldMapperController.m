@@ -220,7 +220,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 #pragma mark -
 #pragma mark Setter methods
 
-- (void)setConnection:(id<SPDatabaseConnection>)theConnection
+- (void)setConnection:(SPMySQLConnection *)theConnection
 {
 	mySQLConnection = theConnection;
 }

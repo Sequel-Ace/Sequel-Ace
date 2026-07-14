@@ -25,12 +25,14 @@ cd "$RUST_SRC_DIR"
 echo "Building for arm64 (Apple Silicon)..."
 cargo build --release --target aarch64-apple-darwin
 
-echo "Building for x86_64 (Intel)..."
-cargo build --release --target x86_64-apple-darwin
-
 ARM64_LIB="target/aarch64-apple-darwin/release/libsppostgresql.a"
 X86_64_LIB="target/x86_64-apple-darwin/release/libsppostgresql.a"
 UNIVERSAL_LIB="$BUILD_DIR/libsppostgresql.a"
+
+if rustup target list --installed 2>/dev/null | grep -q '^x86_64-apple-darwin$'; then
+    echo "Building for x86_64 (Intel)..."
+    cargo build --release --target x86_64-apple-darwin
+fi
 
 if [ -f "$ARM64_LIB" ] && [ -f "$X86_64_LIB" ]; then
     lipo -create "$ARM64_LIB" "$X86_64_LIB" -output "$UNIVERSAL_LIB"

@@ -44,7 +44,7 @@
 @class SPCustomQuery;
 @class SPDatabaseStructure;
 @class SPMySQLConnection;
-#import "SPDatabaseConnection.h"
+@protocol SPDatabaseConnection;
 @class SPCharsetCollationHelper;
 @class SPGotoDatabaseController;
 @class SPCreateDatabaseInfo;

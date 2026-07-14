@@ -31,7 +31,7 @@
 
 @class SPHelpViewerController;
 @class SPMySQLConnection;
-#import "SPDatabaseConnection.h"
+@protocol SPDatabaseConnection;
 @class MGTemplateEngine;
 
 /**
@@ -51,12 +51,12 @@
 	SPHelpViewerController *controller;
 
 	NSString *helpHTMLTemplate;
-	id<SPDatabaseConnection> mySQLConnection;
+	SPMySQLConnection *mySQLConnection;
 
 	MGTemplateEngine *engine;
 }
 
-- (void)setConnection:(id<SPDatabaseConnection>)theConnection;
+- (void)setConnection:(SPMySQLConnection *)theConnection;
 
 - (NSWindow *)helpWebViewWindow;
 

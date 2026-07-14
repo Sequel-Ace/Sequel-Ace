@@ -32,7 +32,7 @@
 @class SPHistoryController;
 @class SPTableView;
 @class SPMySQLConnection;
-#import "SPDatabaseConnection.h"
+@protocol SPDatabaseConnection;
 @class SPDatabaseDocument; 
 @class SPDatabaseData;
 @class SPTableStructure;

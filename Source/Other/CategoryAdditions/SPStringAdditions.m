@@ -30,7 +30,6 @@
 
 #import "SPStringAdditions.h"
 #import "RegexKitLite.h"
-#import "SPDatabaseConnection.h"
 #include <stdlib.h>
 #import <CommonCrypto/CommonDigest.h>
 
