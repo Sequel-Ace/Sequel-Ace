@@ -31,89 +31,64 @@
 #import "SPMySQLConnection.h"
 #import "SPMySQL Private APIs.h"
 #import "SPMySQLArrayAdditions.h"
+#import <SPMySQL/SPMySQL-Swift.h>
 #import "Encoding.h"
 
 #include <string.h>
 
-static BOOL SPMySQLSessionIdentifierIsSafe(const char *identifier)
-{
-	if (!identifier || !identifier[0]) return NO;
-	return strspn(identifier, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_") == strlen(identifier);
-}
-
+// Thin bridges around the C client state and result APIs. Database assertion
+// policy and session-state decisions live in SADatabaseAssertion.swift.
 static BOOL SPMySQLConnectionTracksSessionState(MYSQL *connection)
 {
 	return (connection->client_flag & CLIENT_SESSION_TRACK)
 		&& (connection->server_capabilities & CLIENT_SESSION_TRACK);
 }
 
-static NSString *SPMySQLClientCharacterSet(MYSQL *connection)
+static NSData *SPMySQLDataForCString(const char *bytes)
 {
-	const char *connectorCharacterSetName = mysql_character_set_name(connection);
-	if (SPMySQLConnectionTracksSessionState(connection)
-		&& SPMySQLSessionIdentifierIsSafe(connectorCharacterSetName)) {
-		return [NSString stringWithUTF8String:connectorCharacterSetName];
-	}
+	return bytes ? [NSData dataWithBytes:bytes length:strlen(bytes)] : nil;
+}
 
-	// Servers without session tracking cannot keep the connector's charset in
-	// sync after caller-issued SET NAMES statements. Query only on that legacy
-	// path; current servers expose the actual value through the connector.
-	static const char characterSetQuery[] = "SELECT CAST(@@character_set_client AS BINARY)";
-	if (mysql_real_query(connection, characterSetQuery, sizeof(characterSetQuery) - 1)) return nil;
+static SADatabaseAssertionError *SPMySQLCurrentAssertionError(MYSQL *connection, SPMySQLConnection *owner, NSString *fallbackMessage)
+{
+	NSUInteger errorID = mysql_errno(connection);
+	NSString *message = errorID ? [owner _stringForCString:mysql_error(connection)] : fallbackMessage;
+	NSString *sqlState = errorID ? _stringForCStringWithEncoding(mysql_sqlstate(connection), NSISOLatin1StringEncoding) : nil;
+	return [[SADatabaseAssertionError alloc] initWithErrorID:errorID message:message sqlState:sqlState];
+}
+
+static SADatabaseSessionValueLookup *SPMySQLQuerySessionValue(MYSQL *connection, SPMySQLConnection *owner, const char *query, size_t queryLength, NSString *queryErrorMessage, NSString *resultErrorMessage)
+{
+	if (mysql_real_query(connection, query, queryLength)) {
+		SADatabaseAssertionError *error = SPMySQLCurrentAssertionError(connection, owner, queryErrorMessage);
+		return [[SADatabaseSessionValueLookup alloc] initWithData:nil error:error];
+	}
 
 	MYSQL_RES *result = mysql_store_result(connection);
-	if (!result) return nil;
-
-	MYSQL_ROW row = mysql_fetch_row(result);
-	NSString *characterSet = (row && mysql_num_fields(result) >= 1 && SPMySQLSessionIdentifierIsSafe(row[0]))
-		? [NSString stringWithUTF8String:row[0]]
-		: nil;
-
-	mysql_free_result(result);
-	return characterSet;
-}
-
-static NSMutableData *SPMySQLNullTerminatedDatabaseNameData(NSString *databaseName, NSStringEncoding stringEncoding)
-{
-	NSData *encodedName = [databaseName dataUsingEncoding:stringEncoding allowLossyConversion:NO];
-	if (!encodedName) return nil;
-	if ([encodedName length] && memchr([encodedName bytes], 0, [encodedName length])) return nil;
-
-	NSMutableData *terminatedName = [encodedName mutableCopy];
-	const unsigned char terminator = 0;
-	[terminatedName appendBytes:&terminator length:1];
-	return terminatedName;
-}
-
-static BOOL SPMySQLActiveDatabaseMatches(MYSQL *connection, NSString *databaseName)
-{
-	const char *activeDatabase = connection->db;
-	if (!activeDatabase || !activeDatabase[0]) return NO;
-	size_t activeDatabaseLength = strlen(activeDatabase);
-
-	NSMutableData *utf8Name = SPMySQLNullTerminatedDatabaseNameData(databaseName, NSUTF8StringEncoding);
-	if (utf8Name && activeDatabaseLength + 1 == [utf8Name length]
-		&& !memcmp(activeDatabase, [utf8Name bytes], activeDatabaseLength + 1)) {
-		return YES;
+	if (!result) {
+		SADatabaseAssertionError *error = SPMySQLCurrentAssertionError(connection, owner, resultErrorMessage);
+		return [[SADatabaseSessionValueLookup alloc] initWithData:nil error:error];
 	}
 
-	const char *connectorCharacterSetName = mysql_character_set_name(connection);
-	if (!SPMySQLSessionIdentifierIsSafe(connectorCharacterSetName)) return NO;
-	NSStringEncoding connectorEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:connectorCharacterSetName];
-	NSMutableData *connectorEncodedName = SPMySQLNullTerminatedDatabaseNameData(databaseName, connectorEncoding);
-	return connectorEncodedName
-		&& activeDatabaseLength + 1 == [connectorEncodedName length]
-		&& !memcmp(activeDatabase, [connectorEncodedName bytes], activeDatabaseLength + 1);
-}
+	MYSQL_ROW row = mysql_fetch_row(result);
+	if (!row || mysql_num_fields(result) < 1) {
+		SADatabaseAssertionError *error = SPMySQLCurrentAssertionError(connection, owner, resultErrorMessage);
+		mysql_free_result(result);
+		return [[SADatabaseSessionValueLookup alloc] initWithData:nil error:error];
+	}
 
-static int SPMySQLSetClientCharacterSet(MYSQL *connection, NSString *characterSet)
-{
-	const char *characterSetBytes = [characterSet UTF8String];
-	if (!SPMySQLSessionIdentifierIsSafe(characterSetBytes)) return 1;
-
-	NSString *query = [NSString stringWithFormat:@"SET CHARACTER_SET_CLIENT=%@", characterSet];
-	const char *queryBytes = [query UTF8String];
-	return mysql_real_query(connection, queryBytes, strlen(queryBytes));
+	NSData *valueData = nil;
+	if (row[0]) {
+		unsigned long *fieldLengths = mysql_fetch_lengths(result);
+		if (!fieldLengths) {
+			SADatabaseAssertionError *error = SPMySQLCurrentAssertionError(connection, owner, resultErrorMessage);
+			mysql_free_result(result);
+			return [[SADatabaseSessionValueLookup alloc] initWithData:nil error:error];
+		}
+		valueData = [NSData dataWithBytes:row[0] length:fieldLengths[0]];
+	}
+	mysql_free_result(result);
+	return [[SADatabaseSessionValueLookup alloc] initWithData:valueData error:nil];
 }
 
 @interface SPMySQLConnection (Querying_and_Preparation_Internal)
@@ -470,98 +445,60 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		// different USE between database selection and execution.
 		uint64_t queryStartTime = _monotonicTime();
 		queryStatus = 0;
-		if (databaseContextIsRequired) {
-			// nil is an explicit assertion that no database is selected. This is
-			// distinct from the legacy assertingDatabase:nil API, which performs no
-			// assertion at all.
-			if (![databaseName length]) {
-				if (mySQLConnection->db && mySQLConnection->db[0]) {
-					queryStatus = 1;
-					databaseAssertionFailed = YES;
-					theErrorID = 1046; // ER_NO_DB_ERROR
-					theErrorMessage = @"No database selected";
-					theSqlstate = @"3D000";
-				}
+		NSData *activeDatabaseData = SPMySQLDataForCString(mySQLConnection->db);
+		NSData *connectorCharacterSetData = SPMySQLDataForCString(mysql_character_set_name(mySQLConnection));
+		SADatabaseAssertionError *databaseAssertionError = [SADatabaseAssertion
+			assertDatabase:databaseName
+			required:databaseContextIsRequired
+			activeDatabaseData:activeDatabaseData
+			connectorTracksSessionState:SPMySQLConnectionTracksSessionState(mySQLConnection)
+			connectorCharacterSetData:connectorCharacterSetData
+			stringEncodingProvider:^NSUInteger(NSString *characterSetName) {
+				return [SPMySQLConnection stringEncodingForMySQLCharset:[characterSetName UTF8String]];
 			}
-			else if (!SPMySQLActiveDatabaseMatches(mySQLConnection, databaseName)) {
-				NSString *clientCharacterSet = nil;
-				NSMutableData *databaseNameData = nil;
-				BOOL restoreClientCharacterSet = NO;
-
-				if ([databaseName canBeConvertedToEncoding:NSASCIIStringEncoding]) {
-					databaseNameData = SPMySQLNullTerminatedDatabaseNameData(databaseName, NSASCIIStringEncoding);
-				}
-				else {
-					// mysql_character_set_name reflects caller-issued SET NAMES when
-					// session tracking is available. Legacy servers are queried only
-					// on this selection-required path.
-					clientCharacterSet = SPMySQLClientCharacterSet(mySQLConnection);
-					if (!clientCharacterSet) {
-						queryStatus = 1;
-						databaseAssertionFailed = YES;
-						theErrorID = mysql_errno(mySQLConnection);
-						if (theErrorID) {
-							theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
-							theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
-						} else {
-							theErrorMessage = @"Unable to determine the connection character set before selecting the database.";
-							theSqlstate = nil;
-						}
-					}
-					else {
-						NSStringEncoding clientStringEncoding = [SPMySQLConnection stringEncodingForMySQLCharset:[clientCharacterSet UTF8String]];
-						databaseNameData = SPMySQLNullTerminatedDatabaseNameData(databaseName, clientStringEncoding);
-
-						if (!databaseNameData) {
-							// Change only character_set_client. Results, connection
-							// charset, and collation remain caller-managed and untouched.
-							if (SPMySQLSetClientCharacterSet(mySQLConnection, @"utf8mb4")) {
-								queryStatus = 1;
-								databaseAssertionFailed = YES;
-								theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
-								theErrorID = mysql_errno(mySQLConnection);
-								theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
-							}
-							else {
-								restoreClientCharacterSet = YES;
-								databaseNameData = SPMySQLNullTerminatedDatabaseNameData(databaseName, NSUTF8StringEncoding);
-							}
-						}
-					}
-				}
-
-				if (!queryStatus && !databaseNameData) {
-					queryStatus = 1;
-					databaseAssertionFailed = YES;
-					theErrorID = 0;
-					theErrorMessage = @"Unable to encode the database name before selecting it.";
-					theSqlstate = nil;
-				}
-
-				if (!queryStatus) {
-					queryStatus = mysql_select_db(mySQLConnection, [databaseNameData bytes]);
-					if (queryStatus) {
-						databaseAssertionFailed = YES;
-						theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
-						theErrorID = mysql_errno(mySQLConnection);
-						theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
-					}
-				}
-
-				// Preserve the selection error before restoration can replace the C
-				// API error state. A restoration failure aborts an otherwise valid
-				// target query rather than leaking a changed client charset.
-				if (restoreClientCharacterSet) {
-					int restoreStatus = SPMySQLSetClientCharacterSet(mySQLConnection, clientCharacterSet);
-					if (restoreStatus && !queryStatus) {
-						queryStatus = restoreStatus;
-						databaseAssertionFailed = YES;
-						theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
-						theErrorID = mysql_errno(mySQLConnection);
-						theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
-					}
-				}
+			queryActiveDatabaseData:^SADatabaseSessionValueLookup *{
+				static const char activeDatabaseQuery[] = "SELECT CAST(DATABASE() AS BINARY)";
+				return SPMySQLQuerySessionValue(mySQLConnection,
+				                                  self,
+				                                  activeDatabaseQuery,
+				                                  sizeof(activeDatabaseQuery) - 1,
+				                                  @"Unable to query the selected database before asserting an empty database context.",
+				                                  @"Unable to read the selected database before asserting an empty database context.");
 			}
+			queryClientCharacterSetData:^SADatabaseSessionValueLookup *{
+				static const char characterSetQuery[] = "SELECT CAST(@@character_set_client AS BINARY)";
+				return SPMySQLQuerySessionValue(mySQLConnection,
+				                                  self,
+				                                  characterSetQuery,
+				                                  sizeof(characterSetQuery) - 1,
+				                                  @"Unable to query the connection character set before selecting the database.",
+				                                  @"Unable to read the connection character set before selecting the database.");
+			}
+			executeSQL:^SADatabaseAssertionError *(NSString *sql) {
+				const char *sqlBytes = [sql UTF8String];
+				if (!sqlBytes) {
+					return [[SADatabaseAssertionError alloc] initWithErrorID:0
+					                                             message:@"Unable to encode the database assertion statement."
+					                                            sqlState:nil];
+				}
+				if (mysql_real_query(mySQLConnection, sqlBytes, strlen(sqlBytes))) {
+					return SPMySQLCurrentAssertionError(mySQLConnection, self, @"Unable to update the connection character set while selecting the database.");
+				}
+				return nil;
+			}
+			selectDatabase:^SADatabaseAssertionError *(NSData *databaseNameData) {
+				if (mysql_select_db(mySQLConnection, [databaseNameData bytes])) {
+					return SPMySQLCurrentAssertionError(mySQLConnection, self, @"Unable to select the requested database.");
+				}
+				return nil;
+			}];
+
+		if (databaseAssertionError) {
+			queryStatus = 1;
+			databaseAssertionFailed = YES;
+			theErrorID = databaseAssertionError.errorID;
+			theErrorMessage = databaseAssertionError.message;
+			theSqlstate = databaseAssertionError.sqlState;
 		}
 
 		if (!queryStatus) {
