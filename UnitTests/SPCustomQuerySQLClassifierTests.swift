@@ -72,6 +72,56 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         )
     }
 
+    func testUnknownExecutableCommentGatesAlwaysRequireWarning() {
+        // On current servers the future-gated SELECT is ignored, so the DELETE
+        // is the real leading statement. Preserving only the comment body would
+        // incorrectly classify this as a safe SELECT.
+        XCTAssertFalse(
+            SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(
+                "/*!99999 SELECT */ DELETE FROM important_table"
+            )
+        )
+
+        // The inverse interpretation must also be considered: ignoring a gated
+        // destructive body is not safe when an unknown server may execute it.
+        XCTAssertFalse(
+            SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(
+                "/*!99999 DELETE FROM important_table */ SELECT 1"
+            )
+        )
+
+        // Even when both visible forms are reads, unknown gates are rejected
+        // instead of guessing which SQL token stream the server will execute.
+        let futureRead = "/*!99999 SELECT 1 */ SELECT 2"
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(futureRead))
+        XCTAssertFalse(SPCustomQuerySQLClassifier.isQueryExplainable(futureRead))
+
+        // Supplying server context removes the ambiguity and retains the
+        // existing behavior for known inactive gates.
+        XCTAssertTrue(
+            SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(
+                futureRead,
+                serverVersion: 80_000,
+                serverIsMariaDB: false
+            )
+        )
+
+        // MariaDB-only executable comments are also indeterminate when the
+        // caller has not supplied the server flavor.
+        XCTAssertFalse(
+            SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(
+                "/*M! SELECT 1 */ SELECT 2"
+            )
+        )
+
+        // Gate-looking text inside a string is data, not an executable comment.
+        XCTAssertTrue(
+            SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning(
+                "SELECT '/*!99999 DELETE FROM important_table */'"
+            )
+        )
+    }
+
     func testLeadingParenthesesAreUnwrappedConsistentlyWithExplainable() {
         // Matches isQueryExplainable's leading-`(` stripping so the destructive
         // gate and the manual Explain menu share the same view of wrapped

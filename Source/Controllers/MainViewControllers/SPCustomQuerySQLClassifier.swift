@@ -10,6 +10,11 @@ import Foundation
 
 enum SPCustomQuerySQLClassifier {
 
+    private struct CommentStrippingResult {
+        let sql: String
+        let hasIndeterminateExecutableComment: Bool
+    }
+
     private static let mutatingExplainAnalyzeStatements: Set<String> = [
         "UPDATE",
         "DELETE",
@@ -26,7 +31,13 @@ enum SPCustomQuerySQLClassifier {
     static func isQueryExplainable(_ query: String?) -> Bool {
         guard let query = query, !query.isEmpty else { return false }
 
-        var trimmed = stripSQLComments(query).trimmingCharacters(in: .whitespacesAndNewlines)
+        let strippingResult = stripSQLCommentsWithMetadata(query)
+        // Without server context, a gated body may execute or disappear and
+        // expose a different leading statement. Do not guess which form can
+        // safely be passed to EXPLAIN.
+        guard !strippingResult.hasIndeterminateExecutableComment else { return false }
+
+        var trimmed = strippingResult.sql.trimmingCharacters(in: .whitespacesAndNewlines)
         while trimmed.hasPrefix("(") {
             trimmed = String(trimmed.dropFirst()).trimmingCharacters(in: .whitespacesAndNewlines)
         }
@@ -36,10 +47,23 @@ enum SPCustomQuerySQLClassifier {
         return ["SELECT", "WITH"].contains { hasLeadingSQLKeyword($0, in: upper, allowBare: false) }
     }
 
-    static func isQuerySafeWithoutDestructiveWarning(_ query: String?) -> Bool {
+    static func isQuerySafeWithoutDestructiveWarning(
+        _ query: String?,
+        serverVersion: Int? = nil,
+        serverIsMariaDB: Bool = false
+    ) -> Bool {
         guard let query = query, !query.isEmpty else { return false }
 
-        var trimmed = stripSQLComments(query).trimmingCharacters(in: .whitespacesAndNewlines)
+        let strippingResult = stripSQLCommentsWithMetadata(
+            query,
+            serverVersion: serverVersion,
+            serverIsMariaDB: serverIsMariaDB
+        )
+        // Both the executed and ignored forms must be safe. When the active
+        // form is unknown, require the destructive-query confirmation.
+        guard !strippingResult.hasIndeterminateExecutableComment else { return false }
+
+        var trimmed = strippingResult.sql.trimmingCharacters(in: .whitespacesAndNewlines)
         // Unwrap leading parentheses so `(SELECT ...)` is treated the same as
         // `SELECT ...`, matching isQueryExplainable's behaviour.
         while trimmed.hasPrefix("(") {
@@ -71,8 +95,21 @@ enum SPCustomQuerySQLClassifier {
         serverVersion: Int? = nil,
         serverIsMariaDB: Bool = false
     ) -> String {
+        stripSQLCommentsWithMetadata(
+            source,
+            serverVersion: serverVersion,
+            serverIsMariaDB: serverIsMariaDB
+        ).sql
+    }
+
+    private static func stripSQLCommentsWithMetadata(
+        _ source: String,
+        serverVersion: Int? = nil,
+        serverIsMariaDB: Bool = false
+    ) -> CommentStrippingResult {
         let characters: [Character] = source.map { $0 }
         var result = ""
+        var hasIndeterminateExecutableComment = false
         var index = 0
         var quote: Character?
 
@@ -163,6 +200,10 @@ enum SPCustomQuerySQLClassifier {
                     let requiredVersion = hasVersionGate
                         ? Int(String(characters[versionStart..<contentStart]))
                         : nil
+                    if serverVersion == nil,
+                       hasVersionGate || (isMariaDBOnlyComment && !serverIsMariaDB) {
+                        hasIndeterminateExecutableComment = true
+                    }
                     if shouldPreserveExecutableComment(
                         requiredVersion: requiredVersion,
                         hasVersionGate: hasVersionGate,
@@ -170,11 +211,14 @@ enum SPCustomQuerySQLClassifier {
                         serverVersion: serverVersion,
                         serverIsMariaDB: serverIsMariaDB
                     ), contentStart < contentEnd {
-                        result.append(stripSQLComments(
+                        let nestedResult = stripSQLCommentsWithMetadata(
                             String(characters[contentStart..<contentEnd]),
                             serverVersion: serverVersion,
                             serverIsMariaDB: serverIsMariaDB
-                        ))
+                        )
+                        result.append(nestedResult.sql)
+                        hasIndeterminateExecutableComment = hasIndeterminateExecutableComment
+                            || nestedResult.hasIndeterminateExecutableComment
                     }
                     result.append(" ")
                 }
@@ -187,7 +231,10 @@ enum SPCustomQuerySQLClassifier {
             index += 1
         }
 
-        return result
+        return CommentStrippingResult(
+            sql: result,
+            hasIndeterminateExecutableComment: hasIndeterminateExecutableComment
+        )
     }
 
     private static func isMySQLCommentWhitespace(_ character: Character) -> Bool {
@@ -205,8 +252,9 @@ enum SPCustomQuerySQLClassifier {
         serverVersion: Int?,
         serverIsMariaDB: Bool
     ) -> Bool {
-        // Without connection context, inspect every executable body so safety
-        // classification remains conservative.
+        // Without connection context, preserve every executable body for
+        // inspection. The stripping metadata makes classifiers reject gates
+        // whose executed-versus-ignored state cannot be determined.
         guard let serverVersion else { return true }
         if isMariaDBOnlyComment && !serverIsMariaDB { return false }
         if hasVersionGate && requiredVersion == nil { return false }
