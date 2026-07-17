@@ -30,6 +30,13 @@ import Foundation
         return String(p[..<range.lowerBound])
     }
 
+    /// Whether `value` already contains the `/creds/` separator, i.e. it looks like
+    /// a full credentials path (e.g. pasted into the Role field) rather than a bare
+    /// role name. Used to decide when to split it back into Mount + Role.
+    static func isFullCredPath(_ value: String) -> Bool {
+        return value.range(of: separator) != nil
+    }
+
     /// Role suffix (everything after the final `/creds/`). Falls back to the whole
     /// string when `/creds/` is absent, so a hand-typed value is never dropped.
     static func role(fromCredPath credPath: String) -> String {

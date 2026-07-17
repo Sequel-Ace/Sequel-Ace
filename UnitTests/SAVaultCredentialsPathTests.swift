@@ -81,4 +81,29 @@ final class SAVaultCredentialsPathTests: XCTestCase {
             role: SAVaultCredentialsPath.role(fromCredPath: original))
         XCTAssertEqual(rebuilt, original)
     }
+
+    // MARK: - isFullCredPath (drives the Role-field split on commit)
+
+    func testIsFullCredPathDetectsSeparator() {
+        XCTAssertTrue(SAVaultCredentialsPath.isFullCredPath("mountB/creds/reader"))
+        XCTAssertTrue(SAVaultCredentialsPath.isFullCredPath("a/b/creds/c"))
+    }
+
+    func testIsFullCredPathFalseForBareRole() {
+        XCTAssertFalse(SAVaultCredentialsPath.isFullCredPath("reader"))
+        XCTAssertFalse(SAVaultCredentialsPath.isFullCredPath("mountB/creds")) // no trailing separator
+        XCTAssertFalse(SAVaultCredentialsPath.isFullCredPath(""))
+    }
+
+    func testFullPathSplitYieldsConsistentMountAndRole() {
+        // Pasting "mountB/creds/reader" into Role must resolve to mount=mountB,
+        // role=reader — so the visible Mount/Role match the endpoint used.
+        let pasted = "mountB/creds/reader"
+        XCTAssertTrue(SAVaultCredentialsPath.isFullCredPath(pasted))
+        XCTAssertEqual(SAVaultCredentialsPath.mount(fromCredPath: pasted), "mountB")
+        XCTAssertEqual(SAVaultCredentialsPath.role(fromCredPath: pasted), "reader")
+        XCTAssertEqual(
+            SAVaultCredentialsPath.credPath(mount: "mountB", role: "reader"),
+            pasted)
+    }
 }

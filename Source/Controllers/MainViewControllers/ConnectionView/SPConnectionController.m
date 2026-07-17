@@ -4208,6 +4208,21 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 {
     id field = [notification object];
 
+    // If a full credentials path was typed/pasted into the Role field (it contains
+    // "/creds/"), split it into Mount + Role now that editing has committed, so the
+    // Mount control, the Role field, and the cached dropdown all agree with the
+    // endpoint that will actually be used — otherwise the UI would keep showing the
+    // old mount while save/connect used the pasted one, and picking a dropdown item
+    // would silently revert. Done on commit (not per keystroke) so typing a path
+    // isn't yanked away mid-edit. setVaultMount: invalidates the cached role list.
+    if (field == vaultCredentialsRoleComboBox) {
+        NSString *currentRole = [self vaultCredentialsRole] ?: @"";
+        if ([SAVaultCredentialsPath isFullCredPath:currentRole]) {
+            [self setVaultMount:[SAVaultCredentialsPath mountFromCredPath:currentRole]];
+            [self setVaultCredentialsRole:[SAVaultCredentialsPath roleFromCredPath:currentRole]];
+        }
+    }
+
     // Handle updates to the 'name' field of the selected favourite.  The favourite name should
     // have leading or trailing spaces removed at the end of editing, and if it's left empty,
     // should have a default name set.
