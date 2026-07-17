@@ -2040,49 +2040,49 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 /**
  * Saves a password to the keychain for a favorite using proper keychain helper methods.
  */
-- (void)savePassword:(NSString *)password forFavorite:(NSDictionary *)favorite
+- (void)savePassword:(NSString *)newPassword forFavorite:(NSDictionary *)favorite
 {
-    if (!password || password.length == 0) {
+    if (!newPassword || newPassword.length == 0) {
         return;
     }
 
     NSString *favoriteName = [favorite objectForKey:SPFavoriteNameKey] ?: @"";
     NSNumber *favoriteID = [favorite objectForKey:SPFavoriteIDKey] ?: @(-1);
-    NSString *user = [favorite objectForKey:SPFavoriteUserKey] ?: @"";
-    NSString *host = [favorite objectForKey:SPFavoriteHostKey] ?: @"";
-    NSString *database = [favorite objectForKey:SPFavoriteDatabaseKey] ?: @"";
+    NSString *favoriteUser = [favorite objectForKey:SPFavoriteUserKey] ?: @"";
+    NSString *favoriteHost = [favorite objectForKey:SPFavoriteHostKey] ?: @"";
+    NSString *favoriteDatabase = [favorite objectForKey:SPFavoriteDatabaseKey] ?: @"";
     NSInteger typeTag = [[favorite objectForKey:SPFavoriteTypeKey] integerValue];
 
-    // Normalize host for keychain (socket connections use "localhost")
-    NSString *hostForKeychain = (typeTag == SPSocketConnection) ? @"localhost" : host;
+    // Normalize favoriteHost for keychain (socket connections use "localhost")
+    NSString *hostForKeychain = (typeTag == SPSocketConnection) ? @"localhost" : favoriteHost;
 
     // Use keychain helper methods for consistent format
     NSString *keychainName = [keychain nameForFavoriteName:favoriteName id:[NSString stringWithFormat:@"%@", favoriteID]];
-    NSString *keychainAccount = [keychain accountForUser:user host:hostForKeychain database:database];
+    NSString *keychainAccount = [keychain accountForUser:favoriteUser host:hostForKeychain database:favoriteDatabase];
 
-    [keychain addPassword:password forName:keychainName account:keychainAccount];
+    [keychain addPassword:newPassword forName:keychainName account:keychainAccount];
 }
 
 /**
- * Helper method to save SSH password to keychain for a favorite.
+ * Helper method to save SSH newPassword to keychain for a favorite.
  * Uses consistent keychain naming format via SPKeychain helper methods.
  */
-- (void)saveSSHPassword:(NSString *)sshPassword forFavorite:(NSDictionary *)favorite
+- (void)saveSSHPassword:(NSString *)newSSHPassword forFavorite:(NSDictionary *)favorite
 {
-    if (!sshPassword || sshPassword.length == 0) {
+    if (!newSSHPassword || newSSHPassword.length == 0) {
         return;
     }
 
     NSString *favoriteName = [favorite objectForKey:SPFavoriteNameKey] ?: @"";
     NSNumber *favoriteID = [favorite objectForKey:SPFavoriteIDKey] ?: @(-1);
-    NSString *sshUser = [favorite objectForKey:SPFavoriteSSHUserKey] ?: @"";
-    NSString *sshHost = [favorite objectForKey:SPFavoriteSSHHostKey] ?: @"";
+    NSString *favoriteSSHUser = [favorite objectForKey:SPFavoriteSSHUserKey] ?: @"";
+    NSString *favoriteSSHHost = [favorite objectForKey:SPFavoriteSSHHostKey] ?: @"";
 
     // Use keychain helper methods for consistent SSH password format
     NSString *keychainName = [keychain nameForSSHForFavoriteName:favoriteName id:[NSString stringWithFormat:@"%@", favoriteID]];
-    NSString *keychainAccount = [keychain accountForSSHUser:sshUser sshHost:sshHost];
+    NSString *keychainAccount = [keychain accountForSSHUser:favoriteSSHUser sshHost:favoriteSSHHost];
 
-    [keychain addPassword:sshPassword forName:keychainName account:keychainAccount];
+    [keychain addPassword:newSSHPassword forName:keychainName account:keychainAccount];
 }
 
 - (void)showImportFilePanel
@@ -2140,21 +2140,21 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     // Create a favorite from the connection details
     NSMutableDictionary *favorite = [NSMutableDictionary dictionary];
 
-    // Set a default name based on host
-    NSString *host = [details objectForKey:@"host"] ?: @"localhost";
-    NSString *user = [details objectForKey:@"user"] ?: @"";
-    NSString *database = [details objectForKey:@"database"] ?: @"";
+    // Set a default name based on detailHost
+    NSString *detailHost = [details objectForKey:@"host"] ?: @"localhost";
+    NSString *detailUser = [details objectForKey:@"user"] ?: @"";
+    NSString *detailDatabase = [details objectForKey:@"database"] ?: @"";
     NSString *favoriteName = [NSString stringWithFormat:@"%@@%@%@",
-                              user.length ? user : @"",
-                              host,
-                              database.length ? [NSString stringWithFormat:@"/%@", database] : @""];
+                              detailUser.length ? detailUser : @"",
+                              detailHost,
+                              detailDatabase.length ? [NSString stringWithFormat:@"/%@", detailDatabase] : @""];
     [favorite setObject:favoriteName forKey:SPFavoriteNameKey];
 
     // Map the connection details to favorite keys
     if ([details objectForKey:@"host"]) [favorite setObject:[details objectForKey:@"host"] forKey:SPFavoriteHostKey];
     if ([details objectForKey:@"user"]) [favorite setObject:[details objectForKey:@"user"] forKey:SPFavoriteUserKey];
     if ([details objectForKey:@"database"]) [favorite setObject:[details objectForKey:@"database"] forKey:SPFavoriteDatabaseKey];
-    // Handle port - can be NSString (from parser) or NSNumber (from other sources)
+    // Handle detailPort - can be NSString (from parser) or NSNumber (from other sources)
     if ([details objectForKey:@"port"]) {
         id portValue = [details objectForKey:@"port"];
         if ([portValue isKindOfClass:[NSNumber class]]) {
@@ -2177,8 +2177,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         if ([details objectForKey:@"ssh_user"]) [favorite setObject:[details objectForKey:@"ssh_user"] forKey:SPFavoriteSSHUserKey];
         if ([details objectForKey:@"ssh_keyLocationEnabled"]) [favorite setObject:[details objectForKey:@"ssh_keyLocationEnabled"] forKey:SPFavoriteSSHKeyLocationEnabledKey];
         if ([details objectForKey:@"ssh_keyLocation"]) [favorite setObject:[details objectForKey:@"ssh_keyLocation"] forKey:SPFavoriteSSHKeyLocationKey];
-        id sshRemoteSocketPath = [details objectForKey:SPFavoriteSSHRemoteSocketPathKey] ?: [details objectForKey:@"ssh_remote_socket_path"];
-        if (sshRemoteSocketPath) [favorite setObject:sshRemoteSocketPath forKey:SPFavoriteSSHRemoteSocketPathKey];
+        id detailSSHRemoteSocketPath = [details objectForKey:SPFavoriteSSHRemoteSocketPathKey] ?: [details objectForKey:@"ssh_remote_socket_path"];
+        if (detailSSHRemoteSocketPath) [favorite setObject:detailSSHRemoteSocketPath forKey:SPFavoriteSSHRemoteSocketPathKey];
     }
     else if (typeTag == SPAWSIAMConnection) {
         if ([details objectForKey:@"aws_region"]) [favorite setObject:[details objectForKey:@"aws_region"] forKey:@"awsRegion"];
@@ -2215,23 +2215,23 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     NSNumber *favoriteID = [self _createNewFavoriteID];
     [favorite setObject:favoriteID forKey:SPFavoriteIDKey];
 
-    // Store passwords for later (will be saved to keychain after user confirms action)
+    // Store passwords for later (will be saved to keychain after detailUser confirms action)
     NSString *passwordFromURL = [details objectForKey:@"password"];
     NSString *sshPasswordFromURL = [details objectForKey:@"ssh_password"];
 
     // Check for duplicates (including mode-specific fields for accurate matching)
-    NSString *port = [favorite objectForKey:SPFavoritePortKey] ?: @"";
-    SPTreeNode *duplicateNode = [self findDuplicateFavoriteForHost:host
-                                                              user:user
-                                                          database:database
-                                                              port:port
+    NSString *detailPort = [favorite objectForKey:SPFavoritePortKey] ?: @"";
+    SPTreeNode *duplicateNode = [self findDuplicateFavoriteForHost:detailHost
+                                                              user:detailUser
+                                                          database:detailDatabase
+                                                              port:detailPort
                                                               type:typeString
                                                 modeSpecificFields:details];
 
     if (duplicateNode) {
         // Found a duplicate - create item and show UI
         SPDuplicateImportItem *item = [[SPDuplicateImportItem alloc] initWithFavoriteName:favoriteName
-                                                                                      host:host
+                                                                                      host:detailHost
                                                                                   favorite:favorite
                                                                              duplicateNode:duplicateNode];
 
@@ -2309,20 +2309,20 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     }
 }
 
-- (SPTreeNode *)findDuplicateFavoriteForHost:(NSString *)host
-                                         user:(NSString *)user
-                                     database:(NSString *)database
-                                         port:(NSString *)port
-                                         type:(NSString *)type
+- (SPTreeNode *)findDuplicateFavoriteForHost:(NSString *)candidateHost
+                                         user:(NSString *)candidateUser
+                                     database:(NSString *)candidateDatabase
+                                         port:(NSString *)candidatePort
+                                         type:(NSString *)candidateType
 {
-    return [self findDuplicateFavoriteForHost:host user:user database:database port:port type:type modeSpecificFields:nil];
+    return [self findDuplicateFavoriteForHost:candidateHost user:candidateUser database:candidateDatabase port:candidatePort type:candidateType modeSpecificFields:nil];
 }
 
-- (SPTreeNode *)findDuplicateFavoriteForHost:(NSString *)host
-                                         user:(NSString *)user
-                                     database:(NSString *)database
-                                         port:(NSString *)port
-                                         type:(NSString *)type
+- (SPTreeNode *)findDuplicateFavoriteForHost:(NSString *)candidateHost
+                                         user:(NSString *)candidateUser
+                                     database:(NSString *)candidateDatabase
+                                         port:(NSString *)candidatePort
+                                         type:(NSString *)candidateType
                               modeSpecificFields:(NSDictionary *)modeFields
 {
     // Get all favorite leaves
@@ -2340,24 +2340,24 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         NSString *existingDatabase = [favoriteDict objectForKey:SPFavoriteDatabaseKey] ?: @"";
         NSString *existingPort = [favoriteDict objectForKey:SPFavoritePortKey] ?: @"";
 
-        // Get type string using centralized helper
+        // Get candidateType string using centralized helper
         NSInteger existingTypeInt = [[favoriteDict objectForKey:SPFavoriteTypeKey] integerValue];
         NSString *existingType = [SPConnectionController stringForFavoriteTypeTag:existingTypeInt];
         NSString *normalizedExistingPort = [SPConnectionController normalizedPortForDuplicateComparison:existingPort type:existingType];
-        NSString *normalizedNewPort = [SPConnectionController normalizedPortForDuplicateComparison:port type:type];
+        NSString *normalizedNewPort = [SPConnectionController normalizedPortForDuplicateComparison:candidatePort type:candidateType];
 
         // Check if basic fields match
-        if (![existingHost isEqualToString:host] ||
-            ![existingUser isEqualToString:user] ||
-            ![existingDatabase isEqualToString:database] ||
+        if (![existingHost isEqualToString:candidateHost] ||
+            ![existingUser isEqualToString:candidateUser] ||
+            ![existingDatabase isEqualToString:candidateDatabase] ||
             ![normalizedExistingPort isEqualToString:normalizedNewPort] ||
-            ![existingType isEqualToString:type]) {
+            ![existingType isEqualToString:candidateType]) {
             continue;
         }
 
         // If mode-specific fields were provided, compare them too
         if (modeFields) {
-            NSInteger typeTag = [SPConnectionController favoriteTypeTagForString:type];
+            NSInteger typeTag = [SPConnectionController favoriteTypeTagForString:candidateType];
 
             if (typeTag == SPSSHTunnelConnection) {
                 // Compare SSH-specific fields
@@ -2412,12 +2412,12 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     return nil;
 }
 
-- (void)updateFavoriteNode:(SPTreeNode *)node withData:(NSDictionary *)newData password:(NSString *)password
+- (void)updateFavoriteNode:(SPTreeNode *)node withData:(NSDictionary *)newData password:(NSString *)newPassword
 {
-    [self updateFavoriteNode:node withData:newData password:password sshPassword:nil];
+    [self updateFavoriteNode:node withData:newData password:newPassword sshPassword:nil];
 }
 
-- (void)updateFavoriteNode:(SPTreeNode *)node withData:(NSDictionary *)newData password:(NSString *)password sshPassword:(NSString *)sshPassword
+- (void)updateFavoriteNode:(SPTreeNode *)node withData:(NSDictionary *)newData password:(NSString *)newPassword sshPassword:(NSString *)newSSHPassword
 {
     id representedObject = [node representedObject];
     if (![representedObject respondsToSelector:@selector(nodeFavorite)]) return;
@@ -2459,16 +2459,16 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     NSString *newKeychainName = [keychain nameForFavoriteName:newName id:[NSString stringWithFormat:@"%@", favoriteID]];
     NSString *newKeychainAccount = [keychain accountForUser:newUser host:newHostForKeychain database:newDatabase];
 
-    // Update keychain if account changed or new password provided
+    // Update keychain if account changed or new newPassword provided
     BOOL accountChanged = ![oldKeychainAccount isEqualToString:newKeychainAccount];
-    BOOL hasNewPassword = (password && password.length > 0);
+    BOOL hasNewPassword = (newPassword && newPassword.length > 0);
 
     if (accountChanged || hasNewPassword) {
-        // Try to get existing password
+        // Try to get existing newPassword
         NSString *existingPassword = [keychain getPasswordForName:oldKeychainName account:oldKeychainAccount];
 
-        // Determine which password to save
-        NSString *passwordToSave = hasNewPassword ? password : existingPassword;
+        // Determine which newPassword to save
+        NSString *passwordToSave = hasNewPassword ? newPassword : existingPassword;
 
         if (passwordToSave && passwordToSave.length > 0) {
             if ([keychain passwordExistsForName:oldKeychainName account:oldKeychainAccount]) {
@@ -2485,12 +2485,12 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                               account:newKeychainAccount];
             }
         } else if (accountChanged && existingPassword) {
-            // No password to save but account changed - delete old entry
+            // No newPassword to save but account changed - delete old entry
             [keychain deletePasswordForName:oldKeychainName account:oldKeychainAccount];
         }
     }
 
-    // Update SSH password if this is an SSH connection
+    // Update SSH newPassword if this is an SSH connection
     if (newTypeTag == SPSSHTunnelConnection) {
         NSString *newSSHUser = [favoriteDict objectForKey:SPFavoriteSSHUserKey] ?: @"";
         NSString *newSSHHost = [favoriteDict objectForKey:SPFavoriteSSHHostKey] ?: @"";
@@ -2501,11 +2501,11 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         NSString *newSSHKeychainAccount = [keychain accountForSSHUser:newSSHUser sshHost:newSSHHost];
 
         BOOL sshAccountChanged = ![oldSSHKeychainAccount isEqualToString:newSSHKeychainAccount];
-        BOOL hasNewSSHPassword = (sshPassword && sshPassword.length > 0);
+        BOOL hasNewSSHPassword = (newSSHPassword && newSSHPassword.length > 0);
 
         if (sshAccountChanged || hasNewSSHPassword) {
             NSString *existingSSHPassword = [keychain getPasswordForName:oldSSHKeychainName account:oldSSHKeychainAccount];
-            NSString *sshPasswordToSave = hasNewSSHPassword ? sshPassword : existingSSHPassword;
+            NSString *sshPasswordToSave = hasNewSSHPassword ? newSSHPassword : existingSSHPassword;
 
             if (sshPasswordToSave && sshPasswordToSave.length > 0) {
                 if ([keychain passwordExistsForName:oldSSHKeychainName account:oldSSHKeychainAccount]) {
@@ -4290,19 +4290,19 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     NSMutableArray *duplicates = [NSMutableArray array];
 
     for (NSDictionary *favorite in importFavorites) {
-        NSString *host = [favorite objectForKey:SPFavoriteHostKey] ?: @"";
-        NSString *user = [favorite objectForKey:SPFavoriteUserKey] ?: @"";
-        NSString *database = [favorite objectForKey:SPFavoriteDatabaseKey] ?: @"";
-        NSString *port = [favorite objectForKey:SPFavoritePortKey] ?: @"";
+        NSString *importedHost = [favorite objectForKey:SPFavoriteHostKey] ?: @"";
+        NSString *importedUser = [favorite objectForKey:SPFavoriteUserKey] ?: @"";
+        NSString *importedDatabase = [favorite objectForKey:SPFavoriteDatabaseKey] ?: @"";
+        NSString *importedPort = [favorite objectForKey:SPFavoritePortKey] ?: @"";
         NSInteger typeInt = [[favorite objectForKey:SPFavoriteTypeKey] integerValue];
 
         // Use centralized helper for type mapping
         NSString *typeString = [SPConnectionController stringForFavoriteTypeTag:typeInt];
 
-        SPTreeNode *duplicateNode = [self findDuplicateFavoriteForHost:host
-                                                                  user:user
-                                                              database:database
-                                                                  port:port
+        SPTreeNode *duplicateNode = [self findDuplicateFavoriteForHost:importedHost
+                                                                  user:importedUser
+                                                              database:importedDatabase
+                                                                  port:importedPort
                                                                   type:typeString
                                                     modeSpecificFields:favorite];
 
@@ -4321,10 +4321,10 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
             SPTreeNode *node = [dupInfo objectForKey:@"node"];
 
             NSString *favoriteName = [favorite objectForKey:SPFavoriteNameKey] ?: @"Unnamed";
-            NSString *host = [favorite objectForKey:SPFavoriteHostKey] ?: @"";
+            NSString *importedHost = [favorite objectForKey:SPFavoriteHostKey] ?: @"";
 
             SPDuplicateImportItem *item = [[SPDuplicateImportItem alloc] initWithFavoriteName:favoriteName
-                                                                                          host:host
+                                                                                          host:importedHost
                                                                                       favorite:favorite
                                                                                  duplicateNode:node];
             [duplicateItems addObject:item];

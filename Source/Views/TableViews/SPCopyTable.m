@@ -115,10 +115,10 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 	NSInteger storageColumn = [self _storageColumnIndexForVisibleColumn:visibleColumn];
 	if(storageColumn == NSNotFound) return;
 
-	NSArray *columnDefinitions = [(id <SPDatabaseContentViewDelegate>)[self delegate] dataColumnDefinitions];
-	if(storageColumn < 0 || storageColumn >= (NSInteger)[columnDefinitions count]) return;
+	NSArray *dataColumnDefinitions = [(id <SPDatabaseContentViewDelegate>)[self delegate] dataColumnDefinitions];
+	if(storageColumn < 0 || storageColumn >= (NSInteger)[dataColumnDefinitions count]) return;
 
-	NSDictionary *columnDefinition = [columnDefinitions objectAtIndex:storageColumn];
+	NSDictionary *columnDefinition = [dataColumnDefinitions objectAtIndex:storageColumn];
 	NSString *columnName = [columnDefinition objectForKey:@"name"];
 	NSString *typeGrouping = [columnDefinition objectForKey:@"typegrouping"];
 	NSArray<SACellFilterMenuItemDescriptor *> *descriptors = [SACellFilterMenuBuilder menuItemDescriptorsWithColumnName:columnName
