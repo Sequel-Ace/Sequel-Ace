@@ -265,9 +265,10 @@ extension SPAppController: SPMCPDataSource {
                 guard let conn = c, conn.isConnected() else { continue }
                 var info: [String: Any] = [:]
                 info["id"] = mcpDocumentID(doc)
-                let displayName = doc.displayName() ?? ""
-                info["name"] = displayName.isEmpty ? (doc.host() ?? "") : displayName
-                if let host = doc.host(), !host.isEmpty { info["host"] = host }
+                let displayName = doc.displayName()
+                info["name"] = displayName.isEmpty ? doc.host() : displayName
+                let host = doc.host()
+                if !host.isEmpty { info["host"] = host }
                 if let db = doc.database(), !db.isEmpty { info["database"] = db }
                 info["active"] = (front != nil && doc == front)
                 result.append(info)

@@ -62,7 +62,7 @@ private extension SPWindowController {
         databaseDocument.updateWindowTitle(self)
 
         window?.contentView?.addSubview(databaseDocument.databaseView())
-        databaseDocument.databaseView()?.frame = window?.contentView?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 400)
+        databaseDocument.databaseView().frame = window?.contentView?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 400)
 
         if #available(macOS 10.13, *) {
             window?.tab.accessoryView = tabAccessoryView
