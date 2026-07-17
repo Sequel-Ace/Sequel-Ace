@@ -30,6 +30,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 #import "SPCustomQuery.h"
+#import "SPDatabaseConnection.h"
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import "SPSQLParser.h"
 #import "SPDataCellFormatter.h"
@@ -1834,7 +1835,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 /**
  * Sets the connection (received from SPDatabaseDocument) and makes things that have to be done only once
  */
-- (void)setConnection:(SPMySQLConnection *)theConnection
+- (void)setConnection:(id<SPDatabaseConnection>)theConnection
 {
     mySQLConnection = theConnection;
     currentQueryRanges = nil;

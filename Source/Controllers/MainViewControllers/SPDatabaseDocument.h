@@ -44,6 +44,7 @@
 @class SPCustomQuery;
 @class SPDatabaseStructure;
 @class SPMySQLConnection;
+#import "SPDatabaseConnection.h"
 @class SPCharsetCollationHelper;
 @class SPGotoDatabaseController;
 @class SPCreateDatabaseInfo;
@@ -149,8 +150,9 @@
 	IBOutlet id inputTextWindowSecureTextField;
 	NSInteger passwordSheetReturnCode;
 
-	// Master connection
+	// Master connection (set by SPConnectionController on successful connect)
 	SPMySQLConnection *mySQLConnection;
+	id<SPDatabaseConnection> databaseConnection;
 
 	// Controllers
 	SPConnectionController *connectionController;
@@ -262,6 +264,11 @@
 // Connection callback and methods
 - (void)setConnection:(SPMySQLConnection *)theConnection;
 - (SPMySQLConnection *)getConnection;
+
+/// Set an abstract database connection (PostgreSQL or wrapped MySQL).
+- (void)setDatabaseConnection:(id<SPDatabaseConnection>)connection;
+/// Returns the active connection regardless of backend type.
+- (id<SPDatabaseConnection>)activeDatabaseConnection;
 
 // Database methods
 - (IBAction)chooseDatabase:(id)sender;

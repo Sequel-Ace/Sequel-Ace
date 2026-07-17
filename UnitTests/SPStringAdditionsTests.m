@@ -1003,6 +1003,28 @@ static NSRange RangeFromArray(NSArray *a,NSUInteger idx);
 }
 
 
+// MARK: - PostgreSQL identifier quoting
+
+- (void)testDoubleQuotedStringSimple {
+    NSString *result = [@"tablename" doubleQuotedString];
+    XCTAssertEqualObjects(result, @"\"tablename\"");
+}
+
+- (void)testDoubleQuotedStringEscapesInternalDoubleQuote {
+    NSString *result = [@"my\"table" doubleQuotedString];
+    XCTAssertEqualObjects(result, @"\"my\"\"table\"");
+}
+
+- (void)testDoubleQuotedStringEmpty {
+    NSString *result = [@"" doubleQuotedString];
+    XCTAssertEqualObjects(result, @"\"\"");
+}
+
+- (void)testIdentifierQuotedStringNilConnectionUsesBacktick {
+    NSString *result = [@"tablename" identifierQuotedStringForConnection:nil];
+    XCTAssertEqualObjects(result, @"`tablename`");
+}
+
 @end
 
 NSRange RangeFromArray(NSArray *a,NSUInteger idx)

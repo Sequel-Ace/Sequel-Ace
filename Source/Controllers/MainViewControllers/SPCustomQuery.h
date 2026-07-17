@@ -44,6 +44,7 @@
 @class SPSplitView;
 @class SPFieldEditorController;
 @class SPMySQLConnection;
+#import "SPDatabaseConnection.h"
 @class SPMySQLStreamingResultStore;
 @class SPTextView;
 @class SPDatabaseDocument;
@@ -118,7 +119,7 @@
 	SPQueryFavoriteManager *favoritesManager;
 
 	NSUserDefaults *prefs;
-	SPMySQLConnection *mySQLConnection;
+	id<SPDatabaseConnection> mySQLConnection;
 
 	NSString *usedQuery;
 	NSRange currentQueryRange;
@@ -244,7 +245,7 @@
 - (void)tableSortCallback;
 
 // Other
-- (void)setConnection:(SPMySQLConnection *)theConnection;
+- (void)setConnection:(id<SPDatabaseConnection>)theConnection;
 - (void)doPerformQueryService:(NSString *)query;
 - (void)doPerformLoadQueryService:(NSString *)query;
 - (void)selectCurrentQuery;

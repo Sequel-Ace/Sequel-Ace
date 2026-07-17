@@ -1,0 +1,1 @@
+{"rustc":9783247635632824192,"features":"","declared_features":"","target":0,"profile":0,"path":0,"deps":[[17989731678791879549,"build_script_build",false,16103278664140407541]],"local":[{"RerunIfChanged":{"output":"x86_64-apple-darwin/release/build/getrandom-965abc080ba0c586/output","paths":["build.rs"]}}],"rustflags":[],"config":0,"compile_kind":0}

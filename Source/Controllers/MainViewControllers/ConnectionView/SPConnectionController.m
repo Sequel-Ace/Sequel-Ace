@@ -61,6 +61,9 @@
 // See: AWSCredentials.swift, RDSIAMAuthentication.swift, AWSSTSClient.swift, AWSMFATokenDialog.swift, AWSIAMAuthManager.swift
 
 #import <SPMySQL/SPMySQL.h>
+#import "SPMySQLConnectionWrapper.h"
+#import "SPPostgreSQLConnectionWrapper.h"
+#import "SPConstants.h"
 
 #import "sequel-ace-Swift.h"
 
@@ -276,6 +279,8 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
 @synthesize isConnecting;
 @synthesize isEditingConnection;
 @synthesize errorShowing;
+@synthesize databaseType;
+@synthesize databaseConnection;
 
 + (void)initialize {
 
@@ -628,8 +633,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             return;
         }
 
-        // Success — store connection and delegate to existing handler
+        // Success — store connection, wrap it, and delegate to existing handler.
         strongSelf->mySQLConnection = result.connection;
+        strongSelf->databaseConnection = [[SPMySQLConnectionWrapper alloc] initWithConnection:result.connection];
         [strongSelf mySQLConnectionEstablished];
     };
 
@@ -718,7 +724,13 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         return;
     }
 
-    // Non-Vault: connect via service directly (async — completion on main thread)
+    // PostgreSQL: connect via the Rust-backed wrapper on a background thread.
+    if (self.databaseType == SPDatabaseTypePostgreSQL) {
+        [self _initiatePostgreSQLConnectionWithInfo:info password:resolvedPassword];
+        return;
+    }
+
+    // Non-Vault MySQL: connect via service directly (async — completion on main thread)
     [self.connectionService connectWith:info
                             preferences:preferences
                                password:resolvedPassword
@@ -761,7 +773,51 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 }
 
 - (BOOL)isConnectedViaSSL {
-    return [mySQLConnection isConnectedViaSSL];
+    return databaseConnection ? [databaseConnection isConnectedViaSSL] : [mySQLConnection isConnectedViaSSL];
+}
+
+- (id<SPDatabaseConnection>)activeDatabaseConnection {
+    return databaseConnection;
+}
+
+#pragma mark - PostgreSQL Connection
+
+- (void)_initiatePostgreSQLConnectionWithInfo:(SAConnectionInfoObjC *)info password:(NSString *)password {
+    SPPostgreSQLConnectionWrapper *pgConn = [[SPPostgreSQLConnectionWrapper alloc] init];
+    [pgConn setHost:info.host ?: @""];
+    [pgConn setUsername:info.user ?: @""];
+    [pgConn setPassword:password ?: @""];
+    [pgConn setDatabase:info.database ?: @""];
+
+    NSUInteger port = [info.port integerValue];
+    [pgConn setPort:port > 0 ? port : [SPPostgreSQLConnectionWrapper defaultPort]];
+    [pgConn setUseSSL:info.useSSL != 0];
+
+    __weak __kindof SPConnectionController *weakSelf = self;
+    NSUInteger attemptID = connectionAttemptID;
+
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        SPConnectionController *strongSelf = weakSelf;
+        if (!strongSelf || strongSelf->cancellingConnection || strongSelf->connectionAttemptID != attemptID) return;
+
+        BOOL connected = [pgConn connect];
+
+        dispatch_async(dispatch_get_main_queue(), ^{
+            SPConnectionController *s = weakSelf;
+            if (!s || s->cancellingConnection || s->connectionAttemptID != attemptID) return;
+
+            if (!connected) {
+                NSString *errMsg = [pgConn lastErrorMessage] ?: NSLocalizedString(@"Unknown error", @"");
+                [s failConnectionWithTitle:NSLocalizedString(@"Unable to connect", @"connection failed title")
+                             errorMessage:errMsg
+                                   detail:nil];
+                return;
+            }
+
+            s->databaseConnection = pgConn;
+            [s mySQLConnectionEstablished];
+        });
+    });
 }
 
 #pragma mark -
@@ -1492,6 +1548,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     NSUInteger connectionType = (NSUInteger)[details type];
     previousType = connectionType;
     [self setType:connectionType];
+
+    // Database backend (MySQL vs PostgreSQL)
+    self.databaseType = (SPDatabaseType)[details databaseBackend];
 
     // Standard details
     [self setName:[details name]];
@@ -2764,6 +2823,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
         [theFavorite setObject:favoriteName forKey:SPFavoriteNameKey];
     }
 
+    // Database backend
+    [theFavorite setObject:[NSNumber numberWithInteger:self.databaseType] forKey:SPFavoriteDatabaseTypeKey];
+
     // Set standard details for the connection
     [theFavorite setObject:[NSNumber numberWithInteger:[self type]] forKey:SPFavoriteTypeKey];
     _setOrRemoveKey(SPFavoriteHostKey, [self host]);
@@ -3508,8 +3570,17 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     if (self.connectionDelegate) {
         [self.connectionDelegate connectionDidEstablish:mySQLConnection info:[self _buildConnectionInfo]];
     } else {
-        // Legacy path: pass the connection directly to the document.
-        [dbDocument setConnection:mySQLConnection];
+        // Legacy path: pass the concrete MySQL connection to the document (MySQL backends).
+        // PostgreSQL connections are accessed via activeDatabaseConnection.
+        if (databaseConnection && [databaseConnection isPostgreSQL]) {
+            // PostgreSQL: document needs to use databaseConnection instead of mySQLConnection.
+            // Call setDatabaseConnection: if available, otherwise fall back.
+            if ([dbDocument respondsToSelector:@selector(setDatabaseConnection:)]) {
+                [dbDocument setDatabaseConnection:databaseConnection];
+            }
+        } else {
+            [dbDocument setConnection:mySQLConnection];
+        }
     }
 }
 

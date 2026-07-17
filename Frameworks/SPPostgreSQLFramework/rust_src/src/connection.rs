@@ -1,0 +1,201 @@
+//
+//  connection.rs
+//  SPPostgreSQLFramework - PostgreSQL Connection Implementation
+//
+
+use postgres::{Client, NoTls, Config};
+use postgres_native_tls::MakeTlsConnector;
+use native_tls::TlsConnector;
+use std::error::Error;
+use crate::result::PostgreSQLResult;
+use crate::errors::PostgreSQLError;
+use crate::streaming_result::PostgreSQLStreamingResult;
+
+pub struct PostgreSQLConnection {
+    client: Option<Client>,
+    last_error: Option<String>,
+    config: Config,
+}
+
+impl PostgreSQLConnection {
+    pub fn new() -> Self {
+        PostgreSQLConnection {
+            client: None,
+            last_error: None,
+            config: Config::new(),
+        }
+    }
+
+    pub fn connect(
+        &mut self,
+        host: &str,
+        port: u16,
+        username: &str,
+        password: &str,
+        database: &str,
+        use_ssl: bool,
+    ) -> Result<(), Box<dyn Error>> {
+        self.config.host(host);
+        self.config.port(port);
+        self.config.user(username);
+        self.config.password(password);
+        self.config.dbname(database);
+
+        let result = if use_ssl {
+            let connector = TlsConnector::builder()
+                .danger_accept_invalid_certs(true)
+                .danger_accept_invalid_hostnames(true)
+                .build()?;
+            let tls = MakeTlsConnector::new(connector);
+            self.config.connect(tls)
+        } else {
+            self.config.connect(NoTls)
+        };
+
+        match result {
+            Ok(client) => {
+                self.client = Some(client);
+                self.last_error = None;
+                Ok(())
+            },
+            Err(e) => {
+                self.last_error = Some(e.to_string());
+                Err(Box::new(e))
+            }
+        }
+    }
+
+    pub fn disconnect(&mut self) {
+        self.client = None;
+        self.last_error = None;
+    }
+
+    pub fn is_connected(&self) -> bool {
+        self.client.is_some()
+    }
+
+    pub fn execute_query(&mut self, query: &str) -> Result<PostgreSQLResult, Box<dyn Error>> {
+        match &mut self.client {
+            Some(client) => {
+                let trimmed = query.trim_start().to_uppercase();
+                let is_command = trimmed.starts_with("UPDATE")
+                    || trimmed.starts_with("DELETE")
+                    || trimmed.starts_with("INSERT");
+
+                if is_command {
+                    match client.execute(query, &[]) {
+                        Ok(affected_rows) => {
+                            self.last_error = None;
+                            Ok(PostgreSQLResult::from_command(affected_rows))
+                        },
+                        Err(e) => {
+                            self.last_error = Some(e.to_string());
+                            Err(Box::new(e))
+                        }
+                    }
+                } else {
+                    match client.prepare(query) {
+                        Ok(statement) => {
+                            match client.query(&statement, &[]) {
+                                Ok(rows) => {
+                                    self.last_error = None;
+                                    Ok(PostgreSQLResult::from_rows_with_columns(rows, statement.columns()))
+                                },
+                                Err(e) => {
+                                    self.last_error = Some(e.to_string());
+                                    Err(Box::new(e))
+                                }
+                            }
+                        },
+                        Err(e) => {
+                            self.last_error = Some(e.to_string());
+                            Err(Box::new(e))
+                        }
+                    }
+                }
+            },
+            None => {
+                let error = PostgreSQLError::NotConnected;
+                self.last_error = Some(error.to_string());
+                Err(Box::new(error))
+            }
+        }
+    }
+
+    pub fn execute_streaming_query(
+        &mut self,
+        query: &str,
+        batch_size: usize,
+    ) -> Result<PostgreSQLStreamingResult, Box<dyn Error>> {
+        match &mut self.client {
+            Some(client) => {
+                match PostgreSQLStreamingResult::new(client, query, batch_size) {
+                    Ok(result) => {
+                        self.last_error = None;
+                        Ok(result)
+                    },
+                    Err(e) => {
+                        self.last_error = Some(e.to_string());
+                        Err(e)
+                    }
+                }
+            },
+            None => {
+                let error = PostgreSQLError::NotConnected;
+                self.last_error = Some(error.to_string());
+                Err(Box::new(error))
+            }
+        }
+    }
+
+    pub fn list_databases(&mut self) -> Result<Vec<String>, Box<dyn Error>> {
+        let query = "SELECT datname FROM pg_database WHERE datistemplate = false ORDER BY datname";
+        match &mut self.client {
+            Some(client) => {
+                match client.query(query, &[]) {
+                    Ok(rows) => {
+                        let databases: Vec<String> = rows
+                            .iter()
+                            .filter_map(|row| row.try_get::<_, String>(0).ok())
+                            .collect();
+                        Ok(databases)
+                    },
+                    Err(e) => {
+                        self.last_error = Some(e.to_string());
+                        Err(Box::new(e))
+                    }
+                }
+            },
+            None => {
+                let error = PostgreSQLError::NotConnected;
+                self.last_error = Some(error.to_string());
+                Err(Box::new(error))
+            }
+        }
+    }
+
+    pub fn escape_string(&self, input: &str) -> String {
+        input.replace("'", "''")
+    }
+
+    pub fn last_error(&self) -> Option<String> {
+        self.last_error.clone()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_connection_creation() {
+        let conn = PostgreSQLConnection::new();
+        assert!(!conn.is_connected());
+    }
+
+    #[test]
+    fn test_escape_string() {
+        let conn = PostgreSQLConnection::new();
+        assert_eq!(conn.escape_string("It's a test"), "It''s a test");
+    }
+}
