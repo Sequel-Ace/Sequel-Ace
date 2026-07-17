@@ -123,6 +123,25 @@ import AppKit
 
     // MARK: - OIDC login lifecycle
 
+    /// Ask the user before an OIDC browser login opens. Called from the background
+    /// LIST thread the instant a browser popup becomes imminent — whether because
+    /// no token is cached or because a cached token turned out to be expired — so
+    /// the prompt covers every path that can open the browser, not just the
+    /// no-token case. Runs synchronously on the main thread and returns the choice.
+    private func confirmBrowserLoginOnMainThread() -> Bool {
+        if Thread.isMainThread { return runBrowserLoginConfirm() }
+        return DispatchQueue.main.sync { self.runBrowserLoginConfirm() }
+    }
+
+    private func runBrowserLoginConfirm() -> Bool {
+        let confirm = NSAlert()
+        confirm.messageText = NSLocalizedString("Sign in to Vault?", comment: "Vault roles refresh – login confirm")
+        confirm.informativeText = NSLocalizedString("Listing roles requires authenticating to Vault, which will open your web browser.", comment: "Vault roles refresh – login confirm detail")
+        confirm.addButton(withTitle: NSLocalizedString("Continue", comment: "continue button"))
+        confirm.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button"))
+        return confirm.runModal() == .alertFirstButtonReturn
+    }
+
     /// Abort this window's in-flight refresh OIDC login (on window close/cancel)
     /// so its listener releases the fixed localhost callback port.
     @objc func cancelActiveLogin() {
@@ -151,16 +170,11 @@ import AppKit
         let port = delegate.vaultRoleListCurrentPort()
         let oidcMount = delegate.vaultRoleListCurrentOIDCMount()
 
-        // Listing roles needs a Vault token; if none is cached, refreshing will
-        // open the browser for OIDC login. Confirm first so it isn't a surprise.
-        if !VaultAuthManager.hasCachedToken(host: host, port: port, oidcMount: oidcMount) {
-            let confirm = NSAlert()
-            confirm.messageText = NSLocalizedString("Sign in to Vault?", comment: "Vault roles refresh – login confirm")
-            confirm.informativeText = NSLocalizedString("Listing roles requires authenticating to Vault, which will open your web browser.", comment: "Vault roles refresh – login confirm detail")
-            confirm.addButton(withTitle: NSLocalizedString("Continue", comment: "continue button"))
-            confirm.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button"))
-            if confirm.runModal() != .alertFirstButtonReturn { return }
-        }
+        // The browser-login confirmation is decided in the background flow, right
+        // before a login would actually open the browser (see confirmBrowserLogin
+        // passed to listRoles). That covers every case that can open the browser —
+        // no cached token *and* a cached-but-expired token — instead of an upfront
+        // presence-only check that a stale token would slip past.
 
         // Scope the login to this refresh so a close/cancel aborts only this one.
         let loginIdentifier = VaultOIDCHandler.prepareActiveLogin()
@@ -177,7 +191,11 @@ import AppKit
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             var error: NSError?
             let roles = VaultAuthManager.listRoles(host: host, port: port, oidcMount: oidcMount,
-                                                   mount: mount, loginIdentifier: loginIdentifier, error: &error)
+                                                   mount: mount, loginIdentifier: loginIdentifier,
+                                                   confirmBrowserLogin: { [weak self] in
+                                                       self?.confirmBrowserLoginOnMainThread() ?? false
+                                                   },
+                                                   error: &error)
             VaultOIDCHandler.clearPreparedActiveLogin(identifier: loginIdentifier)
             DispatchQueue.main.async {
                 guard let self = self else { return }

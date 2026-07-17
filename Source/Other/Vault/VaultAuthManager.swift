@@ -368,14 +368,6 @@ import OSLog
         return trimmed.isEmpty ? "oidc" : trimmed
     }
 
-    /// Whether a Vault token is currently cached for this host + OIDC mount.
-    /// Cheap (Keychain / in-memory only, NO network) — safe to call on the main thread.
-    @objc(hasCachedTokenWithHost:port:oidcMount:)
-    static func hasCachedToken(host: String, port: String, oidcMount: String) -> Bool {
-        guard let baseURL = VaultClient.buildBaseURL(host: host, port: port) else { return false }
-        return VaultOIDCHandler.cachedToken(for: baseURL, mount: effectiveOIDCMount(oidcMount)) != nil
-    }
-
     /// Whether `error` is a user/lifecycle cancellation of a Vault login (declined
     /// browser confirmation, tab switch, or document teardown). Callers use this to
     /// stay silent instead of surfacing a "failure" alert for an expected abort.
@@ -388,13 +380,18 @@ import OSLog
     /// List database roles under `mount`, ensuring a valid Vault token first
     /// (reusing the cached token, else running the OIDC login flow).
     /// MUST be called from a background thread.
-    @objc(listRolesWithHost:port:oidcMount:mount:loginIdentifier:error:)
+    ///
+    /// `confirmBrowserLogin` is invoked (synchronously) only when a browser OIDC
+    /// login is about to open — i.e. there is no valid cached token, covering both
+    /// the "no token" and "cached-but-expired token" cases. Return false to abort
+    /// without opening the browser; the call then fails with `.loginCancelled`.
     static func listRoles(
         host: String,
         port: String,
         oidcMount: String,
         mount: String,
         loginIdentifier: String,
+        confirmBrowserLogin: () -> Bool,
         error errorPointer: NSErrorPointer
     ) -> [String]? {
         assert(!Thread.isMainThread, "listRoles must not be called on the main thread")
@@ -417,6 +414,16 @@ import OSLog
                try VaultClient.tokenLookupSelf(baseURL: baseURL, token: cached) {
                 token = cached
             } else {
+                // No valid cached token (missing or expired): a browser login is
+                // about to open. Confirm first so it's never a surprise, then abort
+                // cleanly if the user declines.
+                guard confirmBrowserLogin() else {
+                    errorPointer?.pointee = NSError(
+                        domain: errorDomain,
+                        code: VaultAuthError.loginCancelled.rawValue,
+                        userInfo: [NSLocalizedDescriptionKey: VaultAuthError.loginCancelled.localizedDescription ?? ""])
+                    return nil
+                }
                 os_log("Vault listRoles: no valid cached token, falling through to OIDC login", log: log, type: .info)
                 let effectiveIdentifier = loginIdentifier.isEmpty ? nil : loginIdentifier
                 token = try VaultOIDCHandler.login(baseURL: baseURL, mount: oidcMountResolved, identifier: effectiveIdentifier)
