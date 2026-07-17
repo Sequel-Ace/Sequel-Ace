@@ -239,55 +239,40 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		// Select the table list for the current database.  On MySQL versions after 5 this will include
 		// views; on MySQL versions >= 5.0.02 select the "full" list to also select the table type column.
-		if ([prefs boolForKey:SPDisplayCommentsInTablesList]) {
+		BOOL displayTableComments = [prefs boolForKey:SPDisplayCommentsInTablesList];
+		if (displayTableComments) {
 			theResult = [mySQLConnection queryString:@"SHOW TABLE STATUS"];
 		} else {
 			theResult = [mySQLConnection queryString:@"SHOW FULL TABLES"];
 		}
-		[theResult setDefaultRowReturnType:SPMySQLResultRowAsDictionary];
+		[theResult setDefaultRowReturnType:SPMySQLResultRowAsArray];
 		[theResult setReturnDataAsStrings:YES]; // TODO: workaround for bug #2700 (#2699)
-		if ([theResult numberOfFields] == 1 && [[theResult getRow] isKindOfClass:[NSArray class]]) {
-			for (NSArray *eachRow in theResult) {
-				[tables addObject:[eachRow objectAtIndex:0]];
-				[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeTable]];
+		NSUInteger commentFieldIndex = NSNotFound;
+		if (displayTableComments) {
+			NSArray *fieldNames = [theResult fieldNames];
+			for (NSUInteger i = 0; i < [fieldNames count]; i++) {
+				if ([[fieldNames objectAtIndex:i] caseInsensitiveCompare:@"Comment"] == NSOrderedSame) {
+					commentFieldIndex = i;
+					break;
+				}
 			}
-		} else {
-			for (NSDictionary *eachRow in theResult) {
+		}
 
-				NSMutableDictionary *mutableRow = [eachRow mutableCopy];
-				NSString *tableType = [mutableRow objectForKey:@"Table_type"];
-				[mutableRow removeObjectForKey:@"Table_type"];
+		for (NSArray *eachRow in theResult) {
+			id tableName = [eachRow safeObjectAtIndex:0];
+			if (!tableName || [tableName isNSNull]) continue;
 
-				// Due to encoding problems it can be the case that [resultRow objectAtIndex:0]
-				// return NSNull, thus catch that case for safety reasons
-				id tableName = [mutableRow objectForKey:@"Name"];
-				if (tableName == nil || [tableName isNSNull]) {
-					tableName = [mutableRow objectForKey:@"NAME"];
-				}
-				if ((tableName == nil || [tableName isNSNull]) && mutableRow.allValues.count == 1) {
-					tableName = [mutableRow.allValues firstObject];
-				}
-				if (tableName == nil || [tableName isNSNull]) {
-					tableName = @"...";
-				}
-				[tables addObject:tableName];
-				
-				// comments is usefull
-				id tableComment = [mutableRow objectForKey:@"Comment"];
-				if (tableComment == nil || [tableComment isNSNull]) {
-					tableComment = [mutableRow objectForKey:@"COMMENT"];
-				}
-				if (tableComment == nil || [tableComment isNSNull]) {
-					tableComment = @"";
-				}
-				[tableComments setValue:tableComment forKey:tableName];
+			NSString *tableType = (!displayTableComments && [eachRow count] > 1) ? [eachRow safeObjectAtIndex:1] : nil;
+			id tableComment = (commentFieldIndex != NSNotFound && [eachRow count] > commentFieldIndex) ? [eachRow safeObjectAtIndex:commentFieldIndex] : @"";
+			if (!tableComment || [tableComment isNSNull]) tableComment = @"";
 
-				if ([@"VIEW" isEqualToString:tableComment] || [@"VIEW" isEqualToString:tableType]) {
-					[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeView]];
-					tableListContainsViews = YES;
-				} else {
-					[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeTable]];
-				}
+			[tables addObject:tableName];
+			[tableComments setValue:tableComment forKey:tableName];
+			if ([@"VIEW" isEqualToString:tableComment] || [@"VIEW" isEqualToString:tableType]) {
+				[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeView]];
+				tableListContainsViews = YES;
+			} else {
+				[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeTable]];
 			}
 		}
 
