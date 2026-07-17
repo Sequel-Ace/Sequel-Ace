@@ -1435,7 +1435,7 @@
 	} else if ([detailString isEqualToString:@"DATE"] || [detailString isEqualToString:@"TIME"] || [detailString isEqualToString:@"TIMESTAMP"]
 				|| [detailString isEqualToString:@"DATETIME"] || [detailString isEqualToString:@"YEAR"]) {
 		[fieldDetails setObject:@"date" forKey:@"typegrouping"];
-	} else if ([detailString isEqualToString:@"CHAR"] || [detailString isEqualToString:@"VARCHAR"]) {
+	} else if ([detailString isEqualToString:@"CHAR"] || [detailString isEqualToString:@"VARCHAR"] || [detailString isEqualToString:@"INET4"] || [detailString isEqualToString:@"INET6"]) {
 		[fieldDetails setObject:@"string" forKey:@"typegrouping"];
 	} else if ([detailString isEqualToString:@"BINARY"] || [detailString isEqualToString:@"VARBINARY"]) {
 		[fieldDetails setObject:@"binary" forKey:@"typegrouping"];

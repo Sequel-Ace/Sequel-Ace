@@ -244,6 +244,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		SPMySQLJsonType,
 		SPMySQLEnumType,
 		SPMySQLSetType,
+		SPMySQLInet4Type,
+		SPMySQLInet6Type,
 		@"--------",
 		SPMySQLDateType,
 		SPMySQLDatetimeType,
