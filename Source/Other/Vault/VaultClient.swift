@@ -246,27 +246,37 @@ final class VaultClient {
         return try parseCredentials(from: data)
     }
 
-    /// List the database roles available under `mount` (Vault `LIST <mount>/roles`).
-    static func listDatabaseRoles(baseURL: URL, mount: String, token: String) throws -> [String] {
+    /// Build and validate the `v1/<mount>/roles` URL for a LIST request. Pure and
+    /// testable.
+    ///
+    /// Vault mount paths permit ASCII printable characters, so this deliberately
+    /// does NOT restrict the character set to `[A-Za-z0-9_.-]` (which rejected
+    /// otherwise valid mounts containing `+`, `@`, spaces, etc.). It enforces only
+    /// what's needed to keep the token-bearing request on the intended endpoint:
+    /// a non-empty mount, and every `/`-separated segment being non-empty and not
+    /// a `.` / `..` traversal segment. Any other printable character is
+    /// percent-encoded into a single literal path component by
+    /// `appendingPathComponent`, so it cannot alter the URL's host or structure;
+    /// an already-encoded sequence such as `%2e%2e` has its `%` re-encoded and so
+    /// stays literal rather than decoding back into a traversal.
+    static func rolesURL(baseURL: URL, mount: String) throws -> URL {
         let cleaned = SAVaultCredentialsPath.normalizeMount(mount)
         guard !cleaned.isEmpty else { throw VaultClientError.parseError("empty Vault mount") }
-        // Validate the mount against a strict allowlist. The cleaned value is
-        // interpolated straight into the request path with a bearer token attached,
-        // so anything outside a normal Vault mount name could steer the
-        // authenticated request onto a different path of the same host. Each
-        // segment must be non-empty and contain only characters valid in a Vault
-        // mount name; this also rejects "." / ".." traversal segments and any
-        // embedded empty ("//") segment.
-        let allowedMountCharacters = CharacterSet(charactersIn:
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.")
         for segment in cleaned.split(separator: "/", omittingEmptySubsequences: false) {
             let s = String(segment)
-            guard !s.isEmpty, s != ".", s != "..",
-                  s.unicodeScalars.allSatisfy({ allowedMountCharacters.contains($0) }) else {
+            guard !s.isEmpty, s != ".", s != ".." else {
+                throw VaultClientError.parseError("invalid Vault mount path")
+            }
+            guard s.unicodeScalars.allSatisfy({ $0.value >= 0x20 && $0.value <= 0x7E }) else {
                 throw VaultClientError.parseError("invalid Vault mount path")
             }
         }
-        let url = baseURL.appendingPathComponent("v1/\(cleaned)/roles")
+        return baseURL.appendingPathComponent("v1/\(cleaned)/roles")
+    }
+
+    /// List the database roles available under `mount` (Vault `LIST <mount>/roles`).
+    static func listDatabaseRoles(baseURL: URL, mount: String, token: String) throws -> [String] {
+        let url = try rolesURL(baseURL: baseURL, mount: mount)
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
         request.httpMethod = "LIST"
         request.setValue(token, forHTTPHeaderField: "X-Vault-Token")

@@ -182,4 +182,71 @@ final class VaultClientTests: XCTestCase {
         let json = "{ \"foo\": 1 }".data(using: .utf8)!
         XCTAssertThrowsError(try VaultClient.parseRoleList(from: json))
     }
+
+    // MARK: - rolesURL (mount validation + encoding)
+
+    private var vaultBase: URL { VaultClient.buildBaseURL(host: "vault.example.com", port: "443")! }
+
+    func testRolesURLForSimpleMount() throws {
+        let url = try VaultClient.rolesURL(baseURL: vaultBase, mount: "databases_credentials")
+        XCTAssertEqual(url.host, "vault.example.com")
+        XCTAssertEqual(url.path, "/v1/databases_credentials/roles")
+    }
+
+    func testRolesURLPreservesNestedMountSegments() throws {
+        let url = try VaultClient.rolesURL(baseURL: vaultBase, mount: "team/db")
+        XCTAssertEqual(url.path, "/v1/team/db/roles")
+    }
+
+    func testRolesURLTrimsWhitespaceAndSurroundingSlashes() throws {
+        let url = try VaultClient.rolesURL(baseURL: vaultBase, mount: "  /databases_credentials/  ")
+        XCTAssertEqual(url.path, "/v1/databases_credentials/roles")
+    }
+
+    func testRolesURLAllowsVaultLegalCharacters() throws {
+        // '+', '@', and spaces are valid in Vault mount paths and must be accepted
+        // (they are percent-encoded on the wire, not rejected).
+        for mount in ["db+role", "team@corp", "my mount"] {
+            let url = try VaultClient.rolesURL(baseURL: vaultBase, mount: mount)
+            XCTAssertEqual(url.host, "vault.example.com", "host must never change for \(mount)")
+            XCTAssertTrue(url.absoluteString.hasPrefix("https://vault.example.com:443/v1/"))
+            XCTAssertTrue(url.absoluteString.hasSuffix("/roles"))
+        }
+    }
+
+    func testRolesURLRejectsEmptyMount() {
+        XCTAssertThrowsError(try VaultClient.rolesURL(baseURL: vaultBase, mount: "   "))
+    }
+
+    func testRolesURLRejectsTraversalSegments() {
+        XCTAssertThrowsError(try VaultClient.rolesURL(baseURL: vaultBase, mount: "../secret"))
+        XCTAssertThrowsError(try VaultClient.rolesURL(baseURL: vaultBase, mount: "team/../secret"))
+        XCTAssertThrowsError(try VaultClient.rolesURL(baseURL: vaultBase, mount: "."))
+    }
+
+    func testRolesURLRejectsEmptyInteriorSegment() {
+        XCTAssertThrowsError(try VaultClient.rolesURL(baseURL: vaultBase, mount: "team//db"))
+    }
+
+    func testRolesURLRejectsControlCharacters() {
+        XCTAssertThrowsError(try VaultClient.rolesURL(baseURL: vaultBase, mount: "team\u{0000}db"))
+        XCTAssertThrowsError(try VaultClient.rolesURL(baseURL: vaultBase, mount: "team\ndb"))
+    }
+
+    func testRolesURLPercentEncodedTraversalDoesNotEscapeMount() throws {
+        // A literal "%2e%2e" is printable and passes the segment guard, but must
+        // NOT decode into a ".." traversal: appendingPathComponent re-encodes the
+        // "%" so it stays a literal segment, keeping the request under the mount.
+        let url = try VaultClient.rolesURL(baseURL: vaultBase, mount: "team/%2e%2e/secret")
+        XCTAssertEqual(url.host, "vault.example.com")
+        XCTAssertTrue(url.absoluteString.contains("%252e%252e"), "percent must be re-encoded: \(url.absoluteString)")
+        XCTAssertFalse(url.absoluteString.contains("/../"))
+    }
+
+    func testRolesURLCannotChangeHost() throws {
+        // A mount that looks like an authority component stays a path segment.
+        let url = try VaultClient.rolesURL(baseURL: vaultBase, mount: "@evil.com")
+        XCTAssertEqual(url.host, "vault.example.com")
+        XCTAssertEqual(url.path, "/v1/@evil.com/roles")
+    }
 }
