@@ -156,4 +156,68 @@ final class SAPrintUtilityTests: XCTestCase {
 
         waitForExpectations(timeout: 2)
     }
+
+    func testWebContentProcessTerminationFinishesWithNil() {
+        let renderer = SAHTMLPrintRenderer()
+        let completionFired = expectation(description: "completion handler runs")
+        var receivedOperation: NSPrintOperation? = NSPrintOperation()
+
+        renderer.printHTMLString("<html><body>crash</body></html>") { operation in
+            receivedOperation = operation
+            completionFired.fulfill()
+        }
+        renderer.webViewWebContentProcessDidTerminate(makeWebView())
+
+        waitForExpectations(timeout: 2)
+        XCTAssertNil(receivedOperation)
+    }
+
+    // MARK: - Print accessory
+
+    private func withRestoredPrintBackgroundDefault(_ body: () -> Void) {
+        let defaults = UserDefaults.standard
+        let original = defaults.object(forKey: printBackgroundPreferenceKey)
+        body()
+        if let original {
+            defaults.set(original, forKey: printBackgroundPreferenceKey)
+        } else {
+            defaults.removeObject(forKey: printBackgroundPreferenceKey)
+        }
+    }
+
+    func testAccessoryReadsInitialStateFromDefaults() {
+        withRestoredPrintBackgroundDefault {
+            UserDefaults.standard.set(true, forKey: printBackgroundPreferenceKey)
+            XCTAssertTrue(SAPrintAccessoryController(webView: nil).printsBackgrounds)
+
+            UserDefaults.standard.set(false, forKey: printBackgroundPreferenceKey)
+            XCTAssertFalse(SAPrintAccessoryController(webView: nil).printsBackgrounds)
+        }
+    }
+
+    func testAccessoryTogglePersistsDefaultAndAppliesToWebView() {
+        withRestoredPrintBackgroundDefault {
+            UserDefaults.standard.set(false, forKey: printBackgroundPreferenceKey)
+            let webView = makeWebView()
+            let accessory = SAPrintAccessoryController(webView: webView)
+
+            accessory.printsBackgrounds = true
+
+            XCTAssertTrue(UserDefaults.standard.bool(forKey: printBackgroundPreferenceKey))
+            if #available(macOS 13.3, *) {
+                XCTAssertTrue(webView.configuration.preferences.shouldPrintBackgrounds)
+            }
+        }
+    }
+
+    func testAccessorySummaryAndPreviewKeyPaths() {
+        let accessory = SAPrintAccessoryController(webView: nil)
+
+        let summary = accessory.localizedSummaryItems()
+        XCTAssertEqual(summary.count, 1)
+        XCTAssertNotNil(summary.first?[.itemName])
+        XCTAssertNotNil(summary.first?[.itemDescription])
+
+        XCTAssertTrue(accessory.keyPathsForValuesAffectingPreview().contains("printsBackgrounds"))
+    }
 }
