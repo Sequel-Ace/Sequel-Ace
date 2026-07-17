@@ -216,7 +216,10 @@ import AppKit
                         NSAlert.createWarningAlert(title: NSLocalizedString("No Vault roles found", comment: "Vault roles refresh – empty"),
                                                    message: NSLocalizedString("No database roles were returned for this mount. Check the Vault mount path and that your token may list roles, or type the role manually.", comment: "Vault roles refresh – empty detail"))
                     }
-                } else {
+                } else if !VaultAuthManager.isLoginCancellation(error) {
+                    // A cancelled login (declined browser confirm, tab switch, or
+                    // document teardown) is an expected abort, not a failure worth
+                    // an alert — stay silent for those.
                     NSAlert.createWarningAlert(title: NSLocalizedString("Could not load Vault roles", comment: "Vault roles refresh – failure"),
                                                message: error?.localizedDescription ?? NSLocalizedString("Unknown error. You can still type the role manually.", comment: "Vault roles refresh – failure detail"))
                 }

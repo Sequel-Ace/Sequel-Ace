@@ -3565,13 +3565,16 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
                 [NSThread detachNewThreadWithName:SPCtxt(@"SPConnectionController close background disconnect", dbDocument) target:mySQLConnection selector:@selector(disconnect) object:nil];
             }
 
+            // Abort any in-flight role-refresh OIDC login unconditionally: a refresh
+            // started on the Vault tab can still be running after the user switched
+            // away, and gating this on the *current* type being Vault would skip it
+            // and leave the fixed callback port / login guard held until timeout.
+            [vaultRoleListController cancelActiveLogin];
+
             if ([self _isVaultConnection]) {
                 if ([vaultLoginIdentifier length]) {
                     [VaultOIDCHandler cancelActiveLoginWithIdentifier:vaultLoginIdentifier];
                 }
-                // Also abort this window's role-refresh OIDC login so its listener
-                // frees the fixed localhost callback port instead of lingering.
-                [vaultRoleListController cancelActiveLogin];
                 [VaultAuthManager clearCachedCredentialsForHost:[self vaultHost] ?: @""
                                                            port:[self vaultPort] ?: @""
                                                       oidcMount:[self vaultOIDCMount] ?: @""
@@ -4245,6 +4248,14 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
 
     if (selectedTabView == previousType) return;
+
+    // Leaving the Vault tab: abort any in-flight role refresh so its OIDC login
+    // releases the fixed callback port and the process-wide login guard, instead
+    // of lingering until timeout (teardown cleanup is otherwise gated on the
+    // *current* type still being Vault, which no longer holds after this switch).
+    if (previousType == SPVaultConnection && selectedTabView != SPVaultConnection) {
+        [vaultRoleListController cancelActiveLogin];
+    }
 
     [self _startEditingConnection];
 

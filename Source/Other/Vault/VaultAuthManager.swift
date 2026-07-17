@@ -376,6 +376,15 @@ import OSLog
         return VaultOIDCHandler.cachedToken(for: baseURL, mount: effectiveOIDCMount(oidcMount)) != nil
     }
 
+    /// Whether `error` is a user/lifecycle cancellation of a Vault login (declined
+    /// browser confirmation, tab switch, or document teardown). Callers use this to
+    /// stay silent instead of surfacing a "failure" alert for an expected abort.
+    @objc(isLoginCancellationError:)
+    static func isLoginCancellation(_ error: NSError?) -> Bool {
+        guard let error = error else { return false }
+        return error.domain == errorDomain && error.code == VaultAuthError.loginCancelled.rawValue
+    }
+
     /// List database roles under `mount`, ensuring a valid Vault token first
     /// (reusing the cached token, else running the OIDC login flow).
     /// MUST be called from a background thread.
