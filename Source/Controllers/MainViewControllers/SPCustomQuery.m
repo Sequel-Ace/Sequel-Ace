@@ -842,7 +842,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             [tempQueries addObject:query];
             
             // Run the query, timing execution (note this also includes network and overhead)
-            resultStore = [mySQLConnection resultStoreFromQueryString:query assertingDatabase:databaseName];
+            resultStore = [mySQLConnection resultStoreFromQueryString:query assertingDatabaseContext:databaseName];
             executionTime += [resultStore queryExecutionTime];
             totalQueriesRun++;
             
@@ -999,8 +999,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             [[tableDocumentInstance onMainThread] setDatabases];
             
             if (databaseWasChanged) {
-                // Reset the current database
-                [tableDocumentInstance refreshCurrentDatabase];
+                // Commit the context derived from this batch. Re-reading the
+                // shared session here can observe a later background query.
+                [tableDocumentInstance setCurrentDatabaseFromQueryContext:databaseName];
             }
             
             // Reload table list
@@ -1013,7 +1014,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         
         // Perform empty query if no query is given
         if ( !queryCount ) {
-            resultStore = [mySQLConnection resultStoreFromQueryString:@"" assertingDatabase:databaseName];
+            resultStore = [mySQLConnection resultStoreFromQueryString:@"" assertingDatabaseContext:databaseName];
             [resultStore cancelResultLoad];
             [errors setStringOrNil:[mySQLConnection lastErrorMessage]];
         }

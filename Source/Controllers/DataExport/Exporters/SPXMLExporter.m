@@ -88,6 +88,7 @@
     // Check to see if we have at least a table name or data array
     if ((![self xmlTableName] && ![self xmlDataArray]) ||
         ([[self xmlTableName] length] == 0 && [[self xmlDataArray] count] == 0) ||
+        ([self xmlTableName] && ![self xmlDataArray] && ![[self databaseName] length]) ||
         (([self xmlFormat] == SPXMLExportMySQLFormat) && ((![self xmlOutputIncludeStructure]) && (![self xmlOutputIncludeContent]))) ||
         (([self xmlFormat] == SPXMLExportPlainFormat) && (![self xmlNULLString])))
     {
@@ -104,7 +105,7 @@
     if ((![self xmlDataArray]) && [self xmlTableName]) {
 
         isTableExport = YES;
-        NSString *databaseName = [connection database];
+        NSString *databaseName = [self databaseName];
 
         totalRows       = [[connection getFirstFieldFromQuery:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [[self xmlTableName] backtickQuotedString]] assertingDatabase:databaseName] integerValue];
         streamingResult = [connection streamingQueryString:[NSString stringWithFormat:@"SELECT * FROM %@", [[self xmlTableName] backtickQuotedString]] useLowMemoryBlockingStreaming:[self exportUsingLowMemoryBlockingStreaming] assertingDatabase:databaseName];

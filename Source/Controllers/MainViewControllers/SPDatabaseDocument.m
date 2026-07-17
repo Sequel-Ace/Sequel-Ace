@@ -711,8 +711,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     //to the db.opt file regardless if they were explicity given or not.
     //So there is no longer a "Default" option.
 
-    NSString *currentCharset = [databaseDataInstance getDatabaseDefaultCharacterSet];
-    NSString *currentCollation = [databaseDataInstance getDatabaseDefaultCollation];
+    NSString *databaseName = [self database];
+    NSString *currentCharset = [databaseDataInstance getDatabaseDefaultCharacterSetForDatabase:databaseName];
+    NSString *currentCollation = [databaseDataInstance getDatabaseDefaultCollationForDatabase:databaseName];
 
     // Setup the charset and collation dropdowns
     [alterDatabaseCharsetHelper setDatabaseData:databaseDataInstance];
@@ -962,30 +963,34 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         {
             dbName = [eachRow firstObject];
         }
-        mySQLConnection.database = [dbName unboxNull] ? dbName : nil;
-
-        SPMainQSync(^{
-            // TODO: there have been crash reports because dbName == nil at this point. When could that happen?
-            if([dbName unboxNull]) {
-                if([dbName respondsToSelector:@selector(isEqualToString:)]) {
-                    if(![dbName isEqualToString:self->selectedDatabase]) {
-                        self->selectedDatabase = [[NSString alloc] initWithString:dbName];
-                        [self->chooseDatabaseButton selectItemWithTitle:self->selectedDatabase];
-                        [self updateWindowTitle:self];
-                    }
-                }
-
-            } else {
-
-                self->selectedDatabase = nil;
-                [self->chooseDatabaseButton selectItemAtIndex:0];
-                [self updateWindowTitle:self];
-            }
-        });
+        [self setCurrentDatabaseFromQueryContext:[dbName unboxNull] ? dbName : nil];
     }
 
     //query finished
     [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:self];
+}
+
+/**
+ * Commit a database context already derived from successful queries.
+ *
+ * This method MAY be called from UI and background threads. It deliberately
+ * does not query the shared connection: another operation may have selected a
+ * different database after the caller's final statement completed.
+ */
+- (void)setCurrentDatabaseFromQueryContext:(NSString *)databaseName
+{
+    NSString *databaseSnapshot = [databaseName copy];
+    mySQLConnection.database = databaseSnapshot;
+
+    SPMainQSync(^{
+        self->selectedDatabase = databaseSnapshot;
+        if ([databaseSnapshot length]) {
+            [self->chooseDatabaseButton selectItemWithTitle:databaseSnapshot];
+        } else {
+            [self->chooseDatabaseButton selectItemAtIndex:0];
+        }
+        [self updateWindowTitle:self];
+    });
 }
 
 - (BOOL)navigatorSchemaPathExistsForDatabase:(NSString*)dbname
@@ -1424,7 +1429,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 {
     _supportsEncoding = YES;
 
-    NSString *mysqlEncoding = [databaseDataInstance getDatabaseDefaultCharacterSet];
+    NSString *mysqlEncoding = [databaseDataInstance getDatabaseDefaultCharacterSetForDatabase:[self database]];
 
 
 
@@ -2355,9 +2360,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 {
     SPCreateDatabaseInfo *dbInfo = [[SPCreateDatabaseInfo alloc] init];
 
-    [dbInfo setDatabaseName:[self database]];
-    [dbInfo setDefaultEncoding:[databaseDataInstance getDatabaseDefaultCharacterSet]];
-    [dbInfo setDefaultCollation:[databaseDataInstance getDatabaseDefaultCollation]];
+    NSString *databaseName = [self database];
+    [dbInfo setDatabaseName:databaseName];
+    [dbInfo setDefaultEncoding:[databaseDataInstance getDatabaseDefaultCharacterSetForDatabase:databaseName]];
+    [dbInfo setDefaultCollation:[databaseDataInstance getDatabaseDefaultCollationForDatabase:databaseName]];
 
     return dbInfo;
 }

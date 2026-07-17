@@ -317,6 +317,7 @@
 - (NSWindow *)getCreateTableSyntaxWindow;
 
 - (void)refreshCurrentDatabase;
+- (void)setCurrentDatabaseFromQueryContext:(NSString *)databaseName;
 
 - (void)saveConnectionPanelDidEnd:(NSSavePanel *)panel returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo;
 - (BOOL)saveDocumentWithFilePath:(NSString *)fileName inBackground:(BOOL)saveInBackground onlyPreferences:(BOOL)saveOnlyPreferences contextInfo:(NSDictionary*)contextInfo;

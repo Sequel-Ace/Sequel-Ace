@@ -95,6 +95,7 @@
 	NSString *databaseB = [NSString stringWithFormat:@"sa_atomic_%@_b", identifier];
 	NSString *unicodeDatabase = [NSString stringWithFormat:@"sa_atomic_%@_\u00E9", identifier];
 	NSString *unrepresentableDatabase = [NSString stringWithFormat:@"sa_atomic_%@_\u65E5", identifier];
+	NSString *noDatabaseContextDatabase = [NSString stringWithFormat:@"sa_atomic_%@_none", identifier];
 	BOOL workersFinished = YES;
 
 	@try {
@@ -105,6 +106,8 @@
 		[connection queryString:[NSString stringWithFormat:@"CREATE DATABASE %@", [unicodeDatabase mySQLBacktickQuotedString]]];
 		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
 		[connection queryString:[NSString stringWithFormat:@"CREATE DATABASE %@", [unrepresentableDatabase mySQLBacktickQuotedString]]];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		[connection queryString:[NSString stringWithFormat:@"CREATE DATABASE %@", [noDatabaseContextDatabase mySQLBacktickQuotedString]]];
 		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
 
 		XCTAssertTrue([connection selectDatabase:databaseB]);
@@ -221,6 +224,49 @@
 		XCTAssertTrue([connection setEncodingUsesLatin1Transport:NO]);
 		XCTAssertTrue([connection setEncoding:originalEncoding]);
 
+		// A matching assertion must not issue a hidden SELECT or redundant
+		// mysql_select_db before the target query. Those operations overwrite
+		// statement diagnostics that the next SQL statement can inspect.
+		[connection queryString:@"CREATE TABLE assertion_diagnostics (id INT PRIMARY KEY, value INT)" assertingDatabase:unicodeDatabase];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		[connection queryString:@"INSERT INTO assertion_diagnostics VALUES (1, 0)" assertingDatabase:unicodeDatabase];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		[connection queryString:@"UPDATE assertion_diagnostics SET value = value + 1 WHERE id = 1" assertingDatabase:unicodeDatabase];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		XCTAssertEqualObjects([connection getFirstFieldFromQuery:@"SELECT ROW_COUNT()" assertingDatabase:unicodeDatabase], @"1");
+
+		[connection queryString:@"DROP TABLE IF EXISTS assertion_missing_table" assertingDatabase:unicodeDatabase];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		SPMySQLResult *warningsResult = [connection queryString:@"SHOW WARNINGS" assertingDatabase:unicodeDatabase];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		XCTAssertGreaterThan([warningsResult numberOfRows], 0ULL);
+
+		[connection queryString:@"SELECT SQL_CALC_FOUND_ROWS value FROM assertion_diagnostics UNION ALL SELECT 2 UNION ALL SELECT 3 LIMIT 1" assertingDatabase:unicodeDatabase];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		XCTAssertEqualObjects([connection getFirstFieldFromQuery:@"SELECT FOUND_ROWS()" assertingDatabase:unicodeDatabase], @"3");
+
+		// The context API treats nil as an explicit no-database state. The
+		// legacy assertingDatabase:nil API remains intentionally nonasserting.
+		XCTAssertTrue([connection selectDatabase:noDatabaseContextDatabase]);
+		[connection queryString:[NSString stringWithFormat:@"DROP DATABASE %@", [noDatabaseContextDatabase mySQLBacktickQuotedString]] assertingDatabase:noDatabaseContextDatabase];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		SPMySQLResult *noDatabaseResult = [connection queryString:@"SELECT DATABASE()" assertingDatabaseContext:nil];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		XCTAssertEqualObjects([[noDatabaseResult getRowAsArray] firstObject], [NSNull null]);
+
+		[connection queryString:@"CREATE TABLE assertion_no_database_guard (id INT)" assertingDatabaseContext:nil];
+		XCTAssertTrue([connection queryErrored]);
+		XCTAssertEqual([connection lastErrorID], 1046U);
+
+		XCTAssertTrue([connection selectDatabase:databaseB]);
+		[connection queryString:@"CREATE TABLE assertion_no_database_guard (id INT)" assertingDatabaseContext:nil];
+		XCTAssertTrue([connection queryErrored]);
+		XCTAssertEqual([connection lastErrorID], 1046U);
+		XCTAssertEqualObjects([connection lastSqlstate], @"3D000");
+		XCTAssertEqualObjects([connection lastErrorMessage], @"No database selected");
+		XCTAssertEqualObjects([connection getFirstFieldFromQuery:@"SELECT DATABASE()" assertingDatabase:nil], databaseB);
+		XCTAssertEqualObjects([connection getFirstFieldFromQuery:@"SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'assertion_no_database_guard'" assertingDatabase:databaseB], @"0");
+
 		SPMySQLStreamingResultStore *resultStore = [connection resultStoreFromQueryString:@"SELECT DATABASE()" assertingDatabase:databaseA];
 		self.resultStoreDownloadExpectation = [self expectationWithDescription:@"Streaming result store download completes"];
 		resultStore.delegate = self;
@@ -278,6 +324,7 @@
 			[connection queryString:[NSString stringWithFormat:@"DROP DATABASE IF EXISTS %@", [databaseB mySQLBacktickQuotedString]]];
 			[connection queryString:[NSString stringWithFormat:@"DROP DATABASE IF EXISTS %@", [unicodeDatabase mySQLBacktickQuotedString]]];
 			[connection queryString:[NSString stringWithFormat:@"DROP DATABASE IF EXISTS %@", [unrepresentableDatabase mySQLBacktickQuotedString]]];
+			[connection queryString:[NSString stringWithFormat:@"DROP DATABASE IF EXISTS %@", [noDatabaseContextDatabase mySQLBacktickQuotedString]]];
 			[connection disconnect];
 		}
 	}

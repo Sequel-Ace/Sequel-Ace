@@ -1448,9 +1448,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	NSString *nullValue = [prefs stringForKey:SPNullValue];
 	CFStringRef escapedNullValue = CFXMLCreateStringByEscapingEntities(NULL, ((CFStringRef)nullValue), NULL);
+	NSString *databaseName = [tableDocumentInstance database];
 
-	SPMySQLResult *structureQueryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [selectedTable backtickQuotedString]] assertingDatabase:[tableDocumentInstance database]];
-	SPMySQLResult *indexesQueryResult   = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEXES FROM %@", [selectedTable backtickQuotedString]] assertingDatabase:[tableDocumentInstance database]];
+	SPMySQLResult *structureQueryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [selectedTable backtickQuotedString]] assertingDatabase:databaseName];
+	SPMySQLResult *indexesQueryResult   = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEXES FROM %@", [selectedTable backtickQuotedString]] assertingDatabase:databaseName];
 
 	[structureQueryResult setReturnDataAsStrings:YES];
 	[indexesQueryResult setReturnDataAsStrings:YES];
@@ -2721,7 +2722,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	if([[menu menuId] isEqualToString:@"encodingPopupMenu"]) {
 		NSString *tableEncoding = [tableDataInstance tableEncoding];
-		//NSString *databaseEncoding = [databaseDataInstance getDatabaseDefaultCharacterSet];
+		//NSString *databaseEncoding = [databaseDataInstance getDatabaseDefaultCharacterSetForDatabase:[tableDocumentInstance database]];
 		//NSString *serverEncoding = [databaseDataInstance getServerDefaultCharacterSet];
 
 		struct _cmpMap defaultCmp[] = {
@@ -2749,7 +2750,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		NSString *encoding = [rowData objectForKey:@"encodingName"];
 		NSString *encodingDefaultCollation = [databaseDataInstance getDefaultCollationForEncoding:encoding];
 		NSString *tableCollation = [tableDataInstance statusValueForKey:@"Collation"];
-		//NSString *databaseCollation = [databaseDataInstance getDatabaseDefaultCollation];
+		//NSString *databaseCollation = [databaseDataInstance getDatabaseDefaultCollationForDatabase:[tableDocumentInstance database]];
 		//NSString *serverCollation = [databaseDataInstance getServerDefaultCollation];
 
 		struct _cmpMap defaultCmp[] = {

@@ -45,6 +45,8 @@
 	NSString *defaultCollationForCharacterSet;
 	NSString *defaultCharacterSetEncoding;
 	NSString *defaultCollation;
+	NSString *defaultCharacterSetDatabase;
+	NSString *defaultCollationDatabase;
 	NSString *serverDefaultCharacterSetEncoding;
 	NSString *serverDefaultCollation;
 	NSString *defaultStorageEngine;
@@ -80,8 +82,8 @@
 - (NSArray *)getDatabaseStorageEngines;
 - (NSArray *)getDatabaseCharacterSetEncodings;
 
-- (NSString *)getDatabaseDefaultCharacterSet;
-- (NSString *)getDatabaseDefaultCollation;
+- (NSString *)getDatabaseDefaultCharacterSetForDatabase:(NSString *)databaseName;
+- (NSString *)getDatabaseDefaultCollationForDatabase:(NSString *)databaseName;
 - (NSString *)getDatabaseDefaultStorageEngine;
 
 - (NSString *)getServerDefaultCharacterSet;

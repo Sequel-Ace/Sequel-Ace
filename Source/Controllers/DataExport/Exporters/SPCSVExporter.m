@@ -93,7 +93,8 @@
     
     // Check to see if we have at least a table name or data array
     if ((![self csvTableName] && ![self csvDataArray]) ||
-        ([[self csvTableName] isEqualToString:@""] && [[self csvDataArray] count] == 0))
+        ([[self csvTableName] isEqualToString:@""] && [[self csvDataArray] count] == 0) ||
+        ([self csvTableName] && ![self csvDataArray] && ![[self databaseName] length]))
     {
         return;
     }
@@ -119,7 +120,7 @@
     
     // Mark the process as running
     [self setExportProcessIsRunning:YES];
-    NSString *databaseName = (![self csvDataArray] && [self csvTableName]) ? [connection database] : nil;
+    NSString *databaseName = (![self csvDataArray] && [self csvTableName]) ? [self databaseName] : nil;
 
     lastProgressValue = 0;
     

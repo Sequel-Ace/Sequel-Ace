@@ -425,8 +425,9 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	[addTableCharsetHelper setPromoteUTF8:YES];
 	[addTableCharsetHelper setDefaultCharsetFormatString:NSLocalizedString(@"Inherit from database (%@)", @"New Table Sheet : Table Encoding Dropdown : Default inherited from database")];
 	[addTableCharsetHelper setDefaultCollationFormatString:NSLocalizedString(@"Inherit from database (%@)", @"New Table Sheet : Table Collation Dropdown : Default inherited from database")];
-	[addTableCharsetHelper setDefaultCharset:[databaseDataInstance getDatabaseDefaultCharacterSet]];
-	[addTableCharsetHelper setDefaultCollation:[databaseDataInstance getDatabaseDefaultCollation]];
+	NSString *databaseName = [tableDocumentInstance database];
+	[addTableCharsetHelper setDefaultCharset:[databaseDataInstance getDatabaseDefaultCharacterSetForDatabase:databaseName]];
+	[addTableCharsetHelper setDefaultCollation:[databaseDataInstance getDatabaseDefaultCollationForDatabase:databaseName]];
 	[addTableCharsetHelper setSelectedCharset:nil]; //reset to not carry over state from last time sheet was shown
 	[addTableCharsetHelper setSelectedCollation:nil];
 	[addTableCharsetHelper setEnabled:YES];
@@ -464,7 +465,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	BOOL isDefaultCharset = ([tableEncodingButton indexOfSelectedItem] == 0);
 	
 	if(isDefaultCharset) {
-		NSString *defaultCollation = [databaseDataInstance getDatabaseDefaultCollation];
+		NSString *defaultCollation = [databaseDataInstance getDatabaseDefaultCollationForDatabase:[tableDocumentInstance database]];
 		NSString *defaultItemTitle = (defaultCollation)? [NSString stringWithFormat:fmtStrDefaultId,defaultCollation] : fmtStrDefaultUnknown;
 		[tableCollationButton safeAddItemWithTitle:defaultItemTitle];
 		//add the separator for the real items
@@ -685,7 +686,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	[chooseDatabaseButton itemAtIndex:1].enabled = YES;
 
-	(![mySQLConnection database]) ? [chooseDatabaseButton selectItemAtIndex:0] : [chooseDatabaseButton selectItemWithTitle:[mySQLConnection database]];
+	(![tableDocumentInstance database]) ? [chooseDatabaseButton selectItemAtIndex:0] : [chooseDatabaseButton selectItemWithTitle:[tableDocumentInstance database]];
 }
 /**
  * This action starts editing the table name in the table list
@@ -739,7 +740,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		return;
 	}
   
-  NSString *databaseName = [mySQLConnection database];
+  NSString *databaseName = [tableDocumentInstance database];
   NSString *connectionIdentifier = [self _pinnedTablesConnectionIdentifier];
   
   NSMutableArray *selectedTables = [NSMutableArray array];
@@ -772,7 +773,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
         return;
     }
 
-    NSString *databaseName = [mySQLConnection database];
+    NSString *databaseName = [tableDocumentInstance database];
 
     NSString *copiedSyntax =[NSString stringWithFormat:@"%@.%@", databaseName, selectedTableName];
     if ([copiedSyntax length] > 0) {
@@ -2131,7 +2132,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void)initPinnedTables {
     NSString * connectionIdentifier = [self _pinnedTablesConnectionIdentifier];
     NSString * legacyHostName = [mySQLConnection host] ?: @"";
-    NSString * databaseName = [mySQLConnection database] ?: @"";
+    NSString * databaseName = [tableDocumentInstance database] ?: @"";
 
     [_SQLitePinnedTableManager migratePinnedTablesFromLegacyHost:legacyHostName
                                           toConnectionIdentifier:connectionIdentifier
@@ -2158,7 +2159,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 - (void)handlePinnedTableRenameFrom: (NSString*) originalTableName To: (NSString*) newTableName {
 
-    NSString *databaseName = [mySQLConnection database];
+    NSString *databaseName = [tableDocumentInstance database];
     NSString *connectionIdentifier = [self _pinnedTablesConnectionIdentifier];
 
     if ([pinnedTables containsObject:originalTableName]) {
@@ -2173,7 +2174,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 - (void)unpinDeletedTableIfPinned: (NSString*) tableName {
 
-    NSString *databaseName = [mySQLConnection database];
+    NSString *databaseName = [tableDocumentInstance database];
     NSString *connectionIdentifier = [self _pinnedTablesConnectionIdentifier];
 
     if ([pinnedTables containsObject:tableName]) {
@@ -2187,7 +2188,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void)subscribeToTablePinningNotifications {
     
     NSString * connectionIdentifier = [self _pinnedTablesConnectionIdentifier];
-    NSString * databaseName = [mySQLConnection database];
+    NSString * databaseName = [tableDocumentInstance database];
     
     // remove observer for previous connection+database on database selection change by user
     if (pinnedTableNotificationName != nil) {

@@ -43,6 +43,7 @@
 
 - (NSString *)_getSingleVariableValue:(NSString *)variable;
 - (NSString *)_getSingleVariableValue:(NSString *)variable assertingDatabase:(NSString *)databaseName;
+- (NSString *)_getSingleVariableValue:(NSString *)variable assertingDatabase:(NSString *)databaseName databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 - (NSArray *)_getDatabaseDataForQuery:(NSString *)query;
 - (NSArray *)_normalizedCharacterSetEncodingsFromRows:(NSArray *)rows;
 - (NSArray *)_fallbackCharacterSetEncodings;
@@ -75,6 +76,8 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 		defaultCollationForCharacterSet = nil;
 		defaultCollation = nil;
 		defaultCharacterSetEncoding = nil;
+		defaultCharacterSetDatabase = nil;
+		defaultCollationDatabase = nil;
 		serverDefaultCollation = nil;
 		serverDefaultCharacterSetEncoding = nil;
 
@@ -114,6 +117,8 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 		defaultCollationForCharacterSet = nil;
 		defaultCharacterSetEncoding = nil;
 		defaultCollation = nil;
+		defaultCharacterSetDatabase = nil;
+		defaultCollationDatabase = nil;
 		serverDefaultCharacterSetEncoding = nil;
 		serverDefaultCollation = nil;
 
@@ -339,11 +344,18 @@ copy_return:
  *
  * This method is thread-safe.
  */
-- (NSString *)getDatabaseDefaultCharacterSet
+- (NSString *)getDatabaseDefaultCharacterSetForDatabase:(NSString *)databaseName
 {
 	@synchronized(charsetCollationLock) {
+		BOOL databaseChanged = (defaultCharacterSetDatabase != databaseName)
+			&& ![defaultCharacterSetDatabase isEqualToString:databaseName];
+		if (databaseChanged) {
+			defaultCharacterSetEncoding = nil;
+			defaultCharacterSetDatabase = [databaseName copy];
+		}
 		if (!defaultCharacterSetEncoding) {
-			defaultCharacterSetEncoding = [self _getSingleVariableValue:@"character_set_database" assertingDatabase:[connection database]];
+			defaultCharacterSetEncoding = [self _getSingleVariableValue:@"character_set_database" assertingDatabase:databaseName];
+			defaultCharacterSetDatabase = [databaseName copy];
 		}
 
 		return [defaultCharacterSetEncoding copy];
@@ -357,11 +369,18 @@ copy_return:
  *
  * This method is thread-safe.
  */
-- (NSString *)getDatabaseDefaultCollation
+- (NSString *)getDatabaseDefaultCollationForDatabase:(NSString *)databaseName
 {
 	@synchronized(charsetCollationLock) {
+		BOOL databaseChanged = (defaultCollationDatabase != databaseName)
+			&& ![defaultCollationDatabase isEqualToString:databaseName];
+		if (databaseChanged) {
+			defaultCollation = nil;
+			defaultCollationDatabase = [databaseName copy];
+		}
 		if (!defaultCollation) {
-			defaultCollation = [self _getSingleVariableValue:@"collation_database" assertingDatabase:[connection database]];
+			defaultCollation = [self _getSingleVariableValue:@"collation_database" assertingDatabase:databaseName];
+			defaultCollationDatabase = [databaseName copy];
 		}
 
 		return [defaultCollation copy];
@@ -444,13 +463,20 @@ copy_return:
  */
 - (NSString *)_getSingleVariableValue:(NSString *)variable
 {
-	return [self _getSingleVariableValue:variable assertingDatabase:nil];
+	return [self _getSingleVariableValue:variable assertingDatabase:nil databaseContextIsRequired:NO];
 }
 
 - (NSString *)_getSingleVariableValue:(NSString *)variable assertingDatabase:(NSString *)databaseName
 {
+	return [self _getSingleVariableValue:variable assertingDatabase:databaseName databaseContextIsRequired:YES];
+}
+
+- (NSString *)_getSingleVariableValue:(NSString *)variable assertingDatabase:(NSString *)databaseName databaseContextIsRequired:(BOOL)databaseContextIsRequired
+{
 	NSString *query = [NSString stringWithFormat:@"SHOW VARIABLES LIKE %@", [variable tickQuotedString]];
-	SPMySQLResult *result = [databaseName length] ? [connection queryString:query assertingDatabase:databaseName] : [connection queryString:query];
+	SPMySQLResult *result = databaseContextIsRequired
+		? [connection queryString:query assertingDatabaseContext:databaseName]
+		: [connection queryString:query];
 
 	[result setReturnDataAsStrings:YES];
 

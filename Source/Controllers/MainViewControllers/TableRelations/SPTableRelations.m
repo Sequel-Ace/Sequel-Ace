@@ -145,9 +145,10 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	
 	NSString *thisTable  = [tablesListInstance tableName];
 	NSString *thisColumn = [columnPopUpButton titleOfSelectedItem];
+	NSString *currentDatabase = [tableDocumentInstance database];
     NSString *thatDatabase = [refDatabasePopUpButton titleOfSelectedItem];
     if (!thatDatabase) {
-        thatDatabase = [tableDocumentInstance database];
+        thatDatabase = currentDatabase;
     }
     NSString *thatTable  = [refTablePopUpButton titleOfSelectedItem];
     NSString *thatColumn = [refColumnPopUpButton titleOfSelectedItem];
@@ -185,7 +186,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	}
 	
 	// Execute query
-	[connection queryString:query assertingDatabase:[tableDocumentInstance database]];
+	[connection queryString:query assertingDatabaseContext:currentDatabase];
 
 	[dataProgressIndicator setHidden:YES];
 	[dataProgressIndicator stopAnimation:self];

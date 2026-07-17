@@ -37,16 +37,22 @@
 - (NSString *)escapeData:(NSData *)theData includingQuotes:(BOOL)includeQuotes;
 
 // Queries
+// The assertingDatabase: variants retain the legacy behavior where nil means
+// no assertion. The assertingDatabaseContext: variants treat nil as an
+// explicit assertion that no database is selected.
 - (SPMySQLResult *)queryString:(NSString *)theQueryString;
 - (SPMySQLResult *)queryString:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName;
+- (SPMySQLResult *)queryString:(NSString *)theQueryString assertingDatabaseContext:(NSString *)databaseName;
 - (SPMySQLFastStreamingResult *)streamingQueryString:(NSString *)theQueryString;
 - (SPMySQLFastStreamingResult *)streamingQueryString:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName;
 - (id)streamingQueryString:(NSString *)theQueryString useLowMemoryBlockingStreaming:(BOOL)fullStreaming;
 - (id)streamingQueryString:(NSString *)theQueryString useLowMemoryBlockingStreaming:(BOOL)fullStreaming assertingDatabase:(NSString *)databaseName;
 - (SPMySQLStreamingResultStore *)resultStoreFromQueryString:(NSString *)theQueryString;
 - (SPMySQLStreamingResultStore *)resultStoreFromQueryString:(NSString *)theQueryString assertingDatabase:(NSString *)databaseName;
+- (SPMySQLStreamingResultStore *)resultStoreFromQueryString:(NSString *)theQueryString assertingDatabaseContext:(NSString *)databaseName;
 - (id)queryString:(NSString *)theQueryString usingEncoding:(NSStringEncoding)theEncoding withResultType:(SPMySQLResultType)theReturnType;
 - (id)queryString:(NSString *)theQueryString usingEncoding:(NSStringEncoding)theEncoding withResultType:(SPMySQLResultType)theReturnType assertingDatabase:(NSString *)databaseName;
+- (id)queryString:(NSString *)theQueryString usingEncoding:(NSStringEncoding)theEncoding withResultType:(SPMySQLResultType)theReturnType assertingDatabaseContext:(NSString *)databaseName;
 
 // Query convenience functions
 - (NSArray *)getAllRowsFromQuery:(NSString *)theQueryString;

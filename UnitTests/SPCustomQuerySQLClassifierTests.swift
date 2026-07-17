@@ -145,6 +145,20 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
             "hash_db"
         )
         XCTAssertEqual(
+            contextDatabaseName(afterSuccessfulQuery: "USE \"new\"\"db/*literal*/\"", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
+            "new\"db/*literal*/"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(
+                afterSuccessfulQuery: "USE [new]]db/*literal*/#name]",
+                currentDatabase: "old_db",
+                databaseNamesAreCaseSensitive: true,
+                serverVersion: 101_100,
+                serverIsMariaDB: true
+            ),
+            "new]db/*literal*/#name"
+        )
+        XCTAssertEqual(
             contextDatabaseName(afterSuccessfulQuery: "USEFUL db", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
             "old_db"
         )
@@ -227,6 +241,18 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         )
         XCTAssertNil(
             contextDatabaseName(afterSuccessfulQuery: "/*! DROP DATABASE App_DB */", currentDatabase: "App_DB", databaseNamesAreCaseSensitive: true)
+        )
+        XCTAssertNil(
+            contextDatabaseName(afterSuccessfulQuery: "DROP DATABASE \"App_\"\"DB\"", currentDatabase: "App_\"DB", databaseNamesAreCaseSensitive: true)
+        )
+        XCTAssertNil(
+            contextDatabaseName(
+                afterSuccessfulQuery: "DROP SCHEMA [App_]]DB]",
+                currentDatabase: "App_]DB",
+                databaseNamesAreCaseSensitive: true,
+                serverVersion: 101_100,
+                serverIsMariaDB: true
+            )
         )
     }
 

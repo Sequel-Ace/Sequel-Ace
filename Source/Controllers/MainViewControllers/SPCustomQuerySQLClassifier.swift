@@ -82,7 +82,7 @@ enum SPCustomQuerySQLClassifier {
             if let activeQuote = quote {
                 result.append(character)
 
-                if character == "\\", activeQuote != "`", index + 1 < characters.count {
+                if character == "\\", activeQuote != "`", activeQuote != "]", index + 1 < characters.count {
                     index += 1
                     result.append(characters[index])
                 } else if character == activeQuote {
@@ -100,6 +100,13 @@ enum SPCustomQuerySQLClassifier {
 
             if character == "'" || character == "\"" || character == "`" {
                 quote = character
+                result.append(character)
+                index += 1
+                continue
+            }
+
+            if serverIsMariaDB, character == "[" {
+                quote = "]"
                 result.append(character)
                 index += 1
                 continue
@@ -282,7 +289,7 @@ enum SPCustomQuerySQLClassifier {
 
 @objc final class SASQLDatabaseContext: NSObject {
 
-    private static let identifierPattern = "(`(?:``|[^`])*`|[^\\s;]+)"
+    private static let identifierPattern = #"(`(?:``|[^`])*`|"(?:""|[^"])*"|\[(?:\]\]|[^\]])*\]|[^\s;]+)"#
     private static let useRegex = makeRegex(
         pattern: "(?is)^\\s*USE\\s+\(identifierPattern)\\s*;?\\s*$"
     )
@@ -333,11 +340,21 @@ enum SPCustomQuerySQLClassifier {
         }
 
         let identifier = String(query[captureRange])
-        guard identifier.hasPrefix("`"), identifier.hasSuffix("`"), identifier.count >= 2 else {
-            return identifier
+        guard identifier.count >= 2 else { return identifier }
+
+        if identifier.hasPrefix("`"), identifier.hasSuffix("`") {
+            return String(identifier.dropFirst().dropLast()).replacingOccurrences(of: "``", with: "`")
         }
 
-        return String(identifier.dropFirst().dropLast()).replacingOccurrences(of: "``", with: "`")
+        if identifier.hasPrefix("\""), identifier.hasSuffix("\"") {
+            return String(identifier.dropFirst().dropLast()).replacingOccurrences(of: "\"\"", with: "\"")
+        }
+
+        if identifier.hasPrefix("["), identifier.hasSuffix("]") {
+            return String(identifier.dropFirst().dropLast()).replacingOccurrences(of: "]]", with: "]")
+        }
+
+        return identifier
     }
 
     private static func makeRegex(pattern: String) -> NSRegularExpression {
