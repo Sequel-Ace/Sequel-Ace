@@ -120,7 +120,7 @@
     
     // Mark the process as running
     [self setExportProcessIsRunning:YES];
-    NSString *databaseName = (![self csvDataArray] && [self csvTableName]) ? [self databaseName] : nil;
+    NSString *exportDatabaseName = (![self csvDataArray] && [self csvTableName]) ? [self databaseName] : nil;
 
     lastProgressValue = 0;
     
@@ -130,13 +130,13 @@
         NSDictionary *tableDetails = nil;
 
         // Determine whether the supplied table is actually a table or a view via the CREATE TABLE command, and get the table details
-        SPMySQLResult *queryResult = [connection queryString:[NSString stringWithFormat:@"SHOW CREATE TABLE %@", [[self csvTableName] backtickQuotedString]] assertingDatabase:databaseName];
+        SPMySQLResult *queryResult = [connection queryString:[NSString stringWithFormat:@"SHOW CREATE TABLE %@", [[self csvTableName] backtickQuotedString]] assertingDatabase:exportDatabaseName];
         [queryResult setReturnDataAsStrings:YES];
         
         if ([queryResult numberOfRows]) {
             id object = [[queryResult getRowAsDictionary] objectForKey:@"Create View"];
             
-            tableDetails = [[NSDictionary alloc] initWithDictionary:(object) ? [[self csvTableData] informationForView:[self csvTableName] fromDatabase:databaseName] : [[self csvTableData] informationForTable:[self csvTableName] fromDatabase:databaseName]];
+            tableDetails = [[NSDictionary alloc] initWithDictionary:(object) ? [[self csvTableData] informationForView:[self csvTableName] fromDatabase:exportDatabaseName] : [[self csvTableData] informationForTable:[self csvTableName] fromDatabase:exportDatabaseName]];
         }
         
         // Retrieve the table details via the data class, and use it to build an array containing column numeric status
@@ -154,8 +154,8 @@
     
     // Make a streaming request for the data if the data array isn't set
     if ((![self csvDataArray]) && [self csvTableName]) {
-        totalRows		= [[connection getFirstFieldFromQuery:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [[self csvTableName] backtickQuotedString]] assertingDatabase:databaseName] integerValue];
-        streamingResult = [connection streamingQueryString:[NSString stringWithFormat:@"SELECT * FROM %@", [[self csvTableName] backtickQuotedString]] useLowMemoryBlockingStreaming:[self exportUsingLowMemoryBlockingStreaming] assertingDatabase:databaseName];
+        totalRows		= [[connection getFirstFieldFromQuery:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [[self csvTableName] backtickQuotedString]] assertingDatabase:exportDatabaseName] integerValue];
+        streamingResult = [connection streamingQueryString:[NSString stringWithFormat:@"SELECT * FROM %@", [[self csvTableName] backtickQuotedString]] useLowMemoryBlockingStreaming:[self exportUsingLowMemoryBlockingStreaming] assertingDatabase:exportDatabaseName];
     }
     
     // Detect and restore special characters being used as terminating or line end strings
