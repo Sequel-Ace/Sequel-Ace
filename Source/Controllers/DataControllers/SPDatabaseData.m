@@ -74,10 +74,8 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 	if ((self = [super init])) {
 		characterSetEncoding = nil;
 		defaultCollationForCharacterSet = nil;
-		defaultCollation = nil;
-		defaultCharacterSetEncoding = nil;
-		defaultCharacterSetDatabase = nil;
-		defaultCollationDatabase = nil;
+		defaultCharacterSetCache = [[SADatabaseScopedValueCache alloc] init];
+		defaultCollationCache = [[SADatabaseScopedValueCache alloc] init];
 		serverDefaultCollation = nil;
 		serverDefaultCharacterSetEncoding = nil;
 
@@ -115,10 +113,8 @@ NSInteger _sortStorageEngineEntry(NSDictionary *itemOne, NSDictionary *itemTwo, 
 		// in future queries
 		characterSetEncoding = nil;
 		defaultCollationForCharacterSet = nil;
-		defaultCharacterSetEncoding = nil;
-		defaultCollation = nil;
-		defaultCharacterSetDatabase = nil;
-		defaultCollationDatabase = nil;
+		[defaultCharacterSetCache reset];
+		[defaultCollationCache reset];
 		serverDefaultCharacterSetEncoding = nil;
 		serverDefaultCollation = nil;
 
@@ -347,18 +343,9 @@ copy_return:
 - (NSString *)getDatabaseDefaultCharacterSetForDatabase:(NSString *)databaseName
 {
 	@synchronized(charsetCollationLock) {
-		BOOL databaseChanged = (defaultCharacterSetDatabase != databaseName)
-			&& ![defaultCharacterSetDatabase isEqualToString:databaseName];
-		if (databaseChanged) {
-			defaultCharacterSetEncoding = nil;
-			defaultCharacterSetDatabase = [databaseName copy];
-		}
-		if (!defaultCharacterSetEncoding) {
-			defaultCharacterSetEncoding = [self _getSingleVariableValue:@"character_set_database" assertingDatabase:databaseName];
-			defaultCharacterSetDatabase = [databaseName copy];
-		}
-
-		return [defaultCharacterSetEncoding copy];
+		return [[defaultCharacterSetCache valueForDatabase:databaseName loader:^NSString *(NSString *assertedDatabase) {
+			return [self _getSingleVariableValue:@"character_set_database" assertingDatabase:assertedDatabase];
+		}] copy];
 	}
 }
 
@@ -372,18 +359,9 @@ copy_return:
 - (NSString *)getDatabaseDefaultCollationForDatabase:(NSString *)databaseName
 {
 	@synchronized(charsetCollationLock) {
-		BOOL databaseChanged = (defaultCollationDatabase != databaseName)
-			&& ![defaultCollationDatabase isEqualToString:databaseName];
-		if (databaseChanged) {
-			defaultCollation = nil;
-			defaultCollationDatabase = [databaseName copy];
-		}
-		if (!defaultCollation) {
-			defaultCollation = [self _getSingleVariableValue:@"collation_database" assertingDatabase:databaseName];
-			defaultCollationDatabase = [databaseName copy];
-		}
-
-		return [defaultCollation copy];
+		return [[defaultCollationCache valueForDatabase:databaseName loader:^NSString *(NSString *assertedDatabase) {
+			return [self _getSingleVariableValue:@"collation_database" assertingDatabase:assertedDatabase];
+		}] copy];
 	}
 }
 

@@ -7,6 +7,8 @@
 //  More info at <https://github.com/Sequel-Ace/Sequel-Ace>
 //
 
+import Dispatch
+import Foundation
 import XCTest
 @testable import SPMySQL
 
@@ -399,5 +401,462 @@ final class SADatabaseAssertionTests: XCTestCase {
         var data = data
         data.append(0)
         return data
+    }
+}
+
+private final class SADatabaseAssertionMismatchRecorder {
+    private let lock = NSLock()
+    private var firstMessage: String?
+
+    func record(_ message: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        if firstMessage == nil {
+            firstMessage = message
+        }
+    }
+
+    var message: String? {
+        lock.lock()
+        defer { lock.unlock() }
+        return firstMessage
+    }
+}
+
+final class SADatabaseAssertionIntegrationTests: XCTestCase, SPMySQLStreamingResultStoreDelegate {
+    private var resultStoreDownloadExpectation: XCTestExpectation?
+
+    func resultStoreDidFinishLoadingData(_ resultStore: SPMySQLStreamingResultStore!) {
+        resultStoreDownloadExpectation?.fulfill()
+    }
+
+    func testQueriesCanAssertDatabaseAtomicallyOnSharedConnection() throws {
+        guard let connection = newLocalConnection() else {
+            throw XCTSkip("No local MySQL connection configured. Set SPMYSQL_TEST_SOCKET or SPMYSQL_TEST_HOST to run this integration regression.")
+        }
+        guard connection.connect() else {
+            throw XCTSkip("Local MySQL connection is unavailable for the database assertion regression.")
+        }
+
+        let identifier = UUID().uuidString.lowercased().replacingOccurrences(of: "-", with: "_")
+        let databaseA = "sa_atomic_\(identifier)_a"
+        let databaseB = "sa_atomic_\(identifier)_b"
+        let unicodeDatabase = "sa_atomic_\(identifier)_é"
+        let unrepresentableDatabase = "sa_atomic_\(identifier)_日"
+        let noDatabaseContextDatabase = "sa_atomic_\(identifier)_none"
+        let databases = [databaseA, databaseB, unicodeDatabase, unrepresentableDatabase, noDatabaseContextDatabase]
+        var workersFinished = true
+
+        defer {
+            if workersFinished {
+                _ = connection.setEncoding("utf8mb4")
+                for database in databases {
+                    _ = connection.queryString("DROP DATABASE IF EXISTS \(backtickQuoted(database))")
+                }
+                connection.disconnect()
+            }
+        }
+
+        for database in databases {
+            _ = connection.queryString("CREATE DATABASE \(backtickQuoted(database))")
+            assertQuerySucceeded(connection)
+        }
+
+        XCTAssertTrue(connection.selectDatabase(databaseB))
+        let selectedResult = connection.queryString("SELECT DATABASE()", assertingDatabase: databaseA)
+        XCTAssertEqual(try row(from: selectedResult).first as? String, databaseA)
+        XCTAssertEqual(
+            connection.getFirstField(fromQuery: "SELECT DATABASE()", assertingDatabase: databaseA) as? String,
+            databaseA
+        )
+        let allRows = try XCTUnwrap(
+            connection.getAllRows(fromQuery: "SELECT DATABASE() AS db", assertingDatabase: databaseA)
+        )
+        let databaseRow = try XCTUnwrap(allRows.first as? [String: Any])
+        XCTAssertEqual(databaseRow["db"] as? String, databaseA)
+
+        let originalEncoding = try XCTUnwrap(connection.encoding())
+        XCTAssertTrue(connection.setEncoding("latin1"))
+        let unicodeResult = connection.queryString("SELECT DATABASE()", assertingDatabase: unicodeDatabase)
+        assertQuerySucceeded(connection)
+        XCTAssertEqual(try row(from: unicodeResult).first as? String, unicodeDatabase)
+        XCTAssertEqual(connection.encoding(), "latin1")
+
+        _ = connection.queryString("SELECT 1", assertingDatabase: "\(unicodeDatabase)_missing")
+        XCTAssertTrue(connection.queryErrored())
+        XCTAssertEqual(connection.lastErrorID(), 1049)
+        XCTAssertEqual(connection.encoding(), "latin1")
+        XCTAssertTrue(connection.setEncoding(originalEncoding))
+
+        // Imports can issue SET NAMES directly, leaving the framework's cached
+        // encoding different from the caller-managed server session.
+        XCTAssertTrue(connection.setEncoding("latin1"))
+        _ = connection.queryString("SET NAMES utf8mb4 COLLATE utf8mb4_bin")
+        assertQuerySucceeded(connection)
+        XCTAssertTrue(unicodeDatabase.canBeConverted(to: .windowsCP1252))
+        let representableResult = connection.queryString(
+            "SELECT @@character_set_client, @@character_set_results, @@character_set_connection, @@collation_connection",
+            assertingDatabase: unicodeDatabase
+        )
+        assertQuerySucceeded(connection)
+        let representableState = try row(from: representableResult)
+        XCTAssertEqual(representableState[0] as? String, "utf8mb4")
+        XCTAssertEqual(representableState[1] as? String, "utf8mb4")
+        XCTAssertEqual(representableState[2] as? String, "utf8mb4")
+        XCTAssertEqual(representableState[3] as? String, "utf8mb4_bin")
+
+        XCTAssertFalse(unrepresentableDatabase.canBeConverted(to: .ascii))
+        let callerManagedResult = connection.queryString(
+            "SELECT @@character_set_client, @@character_set_results, @@character_set_connection, @@collation_connection",
+            usingEncoding: String.Encoding.ascii.rawValue,
+            with: SPMySQLResultAsResult,
+            assertingDatabase: unrepresentableDatabase
+        ) as? SPMySQLResult
+        assertQuerySucceeded(connection)
+        let callerManagedState = try row(from: callerManagedResult)
+        XCTAssertEqual(callerManagedState[0] as? String, "utf8mb4")
+        XCTAssertEqual(callerManagedState[1] as? String, "utf8mb4")
+        XCTAssertEqual(callerManagedState[2] as? String, "utf8mb4")
+        XCTAssertEqual(callerManagedState[3] as? String, "utf8mb4_bin")
+        XCTAssertEqual(connection.encoding(), "latin1")
+        XCTAssertTrue(connection.setEncoding(originalEncoding))
+
+        // Exercise the inverse stale-cache direction: the framework cache is
+        // UTF-8 while the caller-managed session expects latin1 bytes.
+        _ = connection.queryString("SET NAMES latin1 COLLATE latin1_bin")
+        assertQuerySucceeded(connection)
+        let inverseResult = connection.queryString(
+            "SELECT @@character_set_client, @@character_set_results, @@character_set_connection, @@collation_connection",
+            assertingDatabase: unicodeDatabase
+        )
+        assertQuerySucceeded(connection)
+        let inverseState = try row(from: inverseResult)
+        XCTAssertEqual(inverseState[0] as? String, "latin1")
+        XCTAssertEqual(inverseState[1] as? String, "latin1")
+        XCTAssertEqual(inverseState[2] as? String, "latin1")
+        XCTAssertEqual(inverseState[3] as? String, "latin1_bin")
+
+        _ = connection.queryString(
+            "SET CHARACTER_SET_RESULTS=NULL, CHARACTER_SET_CONNECTION=utf8mb4, COLLATION_CONNECTION=utf8mb4_bin"
+        )
+        assertQuerySucceeded(connection)
+        let inverseUnrepresentableResult = connection.queryString(
+            "SELECT @@character_set_client, @@character_set_results IS NULL, @@character_set_connection, @@collation_connection",
+            assertingDatabase: unrepresentableDatabase
+        )
+        assertQuerySucceeded(connection)
+        let inverseUnrepresentableState = try row(from: inverseUnrepresentableResult)
+        XCTAssertEqual(inverseUnrepresentableState[0] as? String, "latin1")
+        XCTAssertEqual(inverseUnrepresentableState[1] as? String, "1")
+        XCTAssertEqual(inverseUnrepresentableState[2] as? String, "utf8mb4")
+        XCTAssertEqual(inverseUnrepresentableState[3] as? String, "utf8mb4_bin")
+        XCTAssertEqual(connection.encoding(), originalEncoding)
+
+        _ = connection.queryString("SELECT 1", assertingDatabase: "\(unrepresentableDatabase)_missing")
+        XCTAssertTrue(connection.queryErrored())
+        XCTAssertEqual(connection.lastErrorID(), 1049)
+        let failedAssertionResult = connection.queryString(
+            "SELECT @@character_set_client, @@character_set_results IS NULL, @@character_set_connection, @@collation_connection"
+        )
+        assertQuerySucceeded(connection)
+        let failedAssertionState = try row(from: failedAssertionResult)
+        XCTAssertEqual(failedAssertionState[0] as? String, "latin1")
+        XCTAssertEqual(failedAssertionState[1] as? String, "1")
+        XCTAssertEqual(failedAssertionState[2] as? String, "utf8mb4")
+        XCTAssertEqual(failedAssertionState[3] as? String, "utf8mb4_bin")
+
+        _ = connection.queryString("SET NAMES utf8mb4")
+        assertQuerySucceeded(connection)
+
+        // Negotiating CLIENT_SESSION_TRACK does not guarantee that charset
+        // variables are actually included in the tracking payload.
+        let trackedSystemVariables = connection.getFirstField(
+            fromQuery: "SELECT @@session.session_track_system_variables",
+            assertingDatabase: nil
+        ) as? String
+        if !connection.queryErrored(), let trackedSystemVariables, !trackedSystemVariables.isEmpty {
+            _ = connection.queryString("SELECT DATABASE()", assertingDatabase: databaseA)
+            assertQuerySucceeded(connection)
+            _ = connection.queryString("SET SESSION session_track_system_variables=''")
+            assertQuerySucceeded(connection)
+            _ = connection.queryString("SET NAMES latin1")
+            assertQuerySucceeded(connection)
+
+            XCTAssertEqual(
+                connection.getFirstField(
+                    fromQuery: "SELECT @@character_set_client",
+                    assertingDatabase: unicodeDatabase
+                ) as? String,
+                "latin1"
+            )
+            assertQuerySucceeded(connection)
+
+            _ = connection.queryString(
+                "SET SESSION session_track_system_variables=\(tickQuoted(trackedSystemVariables))"
+            )
+            assertQuerySucceeded(connection)
+            _ = connection.queryString("SET NAMES utf8mb4")
+            assertQuerySucceeded(connection)
+        }
+
+        // The schema tracker can also be disabled while the capability remains
+        // negotiated. A successful USE must invalidate assertion state.
+        let schemaTrackingEnabled = connection.getFirstField(
+            fromQuery: "SELECT @@session.session_track_schema",
+            assertingDatabase: nil
+        ) as? String
+        if !connection.queryErrored(), let schemaTrackingEnabled, !schemaTrackingEnabled.isEmpty {
+            _ = connection.queryString("SELECT DATABASE()", assertingDatabase: databaseA)
+            assertQuerySucceeded(connection)
+            _ = connection.queryString("SET SESSION session_track_schema=OFF")
+            assertQuerySucceeded(connection)
+            _ = connection.queryString("USE \(backtickQuoted(databaseB))")
+            assertQuerySucceeded(connection)
+
+            XCTAssertEqual(
+                connection.getFirstField(fromQuery: "SELECT DATABASE()", assertingDatabase: databaseA) as? String,
+                databaseA
+            )
+            assertQuerySucceeded(connection)
+
+            let restoreValue = (Int(schemaTrackingEnabled) ?? 0) != 0 ? "ON" : "OFF"
+            _ = connection.queryString("SET SESSION session_track_schema=\(restoreValue)")
+            assertQuerySucceeded(connection)
+        }
+
+        XCTAssertTrue(connection.setEncoding("latin2"))
+        let expectedConnectionCharacterSet = connection.getFirstField(
+            fromQuery: "SELECT @@character_set_connection",
+            assertingDatabase: nil
+        ) as? String
+        XCTAssertTrue(connection.setEncodingUsesLatin1Transport(true))
+        let latin1TransportResult = connection.queryString(
+            "SELECT DATABASE()",
+            assertingDatabase: unicodeDatabase
+        )
+        assertQuerySucceeded(connection)
+        XCTAssertEqual(try row(from: latin1TransportResult).first as? String, unicodeDatabase)
+        XCTAssertEqual(connection.encoding(), "latin2")
+        XCTAssertTrue(connection.encodingUsesLatin1Transport())
+
+        let transportResult = connection.queryString(
+            "SELECT @@character_set_client, @@character_set_results, @@character_set_connection"
+        )
+        let transportState = try row(from: transportResult)
+        XCTAssertEqual(transportState[0] as? String, "latin1")
+        XCTAssertEqual(transportState[1] as? String, "latin1")
+        XCTAssertEqual(transportState[2] as? String, expectedConnectionCharacterSet)
+        XCTAssertTrue(connection.setEncodingUsesLatin1Transport(false))
+        XCTAssertTrue(connection.setEncoding(originalEncoding))
+
+        // A matching assertion must not issue a hidden query or redundant
+        // mysql_select_db that overwrites diagnostics inspected by the next SQL.
+        _ = connection.queryString(
+            "CREATE TABLE assertion_diagnostics (id INT PRIMARY KEY, value INT)",
+            assertingDatabase: unicodeDatabase
+        )
+        assertQuerySucceeded(connection)
+        _ = connection.queryString(
+            "INSERT INTO assertion_diagnostics VALUES (1, 0)",
+            assertingDatabase: unicodeDatabase
+        )
+        assertQuerySucceeded(connection)
+        _ = connection.queryString(
+            "UPDATE assertion_diagnostics SET value = value + 1 WHERE id = 1",
+            assertingDatabase: unicodeDatabase
+        )
+        assertQuerySucceeded(connection)
+        XCTAssertEqual(
+            connection.getFirstField(fromQuery: "SELECT ROW_COUNT()", assertingDatabase: unicodeDatabase) as? String,
+            "1"
+        )
+
+        _ = connection.queryString(
+            "DROP TABLE IF EXISTS assertion_missing_table",
+            assertingDatabase: unicodeDatabase
+        )
+        assertQuerySucceeded(connection)
+        let warningsResult = connection.queryString("SHOW WARNINGS", assertingDatabase: unicodeDatabase)
+        assertQuerySucceeded(connection)
+        XCTAssertGreaterThan(warningsResult?.numberOfRows() ?? 0, 0)
+
+        _ = connection.queryString(
+            "SELECT SQL_CALC_FOUND_ROWS value FROM assertion_diagnostics UNION ALL SELECT 2 UNION ALL SELECT 3 LIMIT 1",
+            assertingDatabase: unicodeDatabase
+        )
+        assertQuerySucceeded(connection)
+        XCTAssertEqual(
+            connection.getFirstField(fromQuery: "SELECT FOUND_ROWS()", assertingDatabase: unicodeDatabase) as? String,
+            "3"
+        )
+
+        // The context API treats nil as an explicit no-database state. The
+        // legacy assertingDatabase:nil API remains intentionally nonasserting.
+        XCTAssertTrue(connection.selectDatabase(noDatabaseContextDatabase))
+        _ = connection.queryString(
+            "DROP DATABASE \(backtickQuoted(noDatabaseContextDatabase))",
+            assertingDatabase: noDatabaseContextDatabase
+        )
+        assertQuerySucceeded(connection)
+        let noDatabaseResult = connection.queryString("SELECT DATABASE()", assertingDatabaseContext: nil)
+        assertQuerySucceeded(connection)
+        XCTAssertTrue(try row(from: noDatabaseResult).first is NSNull)
+
+        _ = connection.queryString(
+            "CREATE TABLE assertion_no_database_guard (id INT)",
+            assertingDatabaseContext: nil
+        )
+        XCTAssertTrue(connection.queryErrored())
+        XCTAssertEqual(connection.lastErrorID(), 1046)
+
+        XCTAssertTrue(connection.selectDatabase(databaseB))
+        _ = connection.queryString(
+            "CREATE TABLE assertion_no_database_guard (id INT)",
+            assertingDatabaseContext: nil
+        )
+        XCTAssertTrue(connection.queryErrored())
+        XCTAssertEqual(connection.lastErrorID(), 1046)
+        XCTAssertEqual(connection.lastSqlstate(), "3D000")
+        XCTAssertEqual(connection.lastErrorMessage(), "No database selected")
+        XCTAssertEqual(
+            connection.getFirstField(fromQuery: "SELECT DATABASE()", assertingDatabase: nil) as? String,
+            databaseB
+        )
+        XCTAssertEqual(
+            connection.getFirstField(
+                fromQuery: "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'assertion_no_database_guard'",
+                assertingDatabase: databaseB
+            ) as? String,
+            "0"
+        )
+
+        let resultStore = try XCTUnwrap(
+            connection.resultStore(fromQueryString: "SELECT DATABASE()", assertingDatabase: databaseA)
+        )
+        resultStoreDownloadExpectation = expectation(description: "Streaming result store download completes")
+        resultStore.delegate = self
+        resultStore.startDownload()
+        let resultStoreWait = XCTWaiter.wait(
+            for: [try XCTUnwrap(resultStoreDownloadExpectation)],
+            timeout: 5
+        )
+        XCTAssertEqual(resultStoreWait, .completed)
+        if resultStoreWait == .completed {
+            XCTAssertEqual(resultStore.numberOfRows(), 1)
+            let resultStoreRow = resultStore.rowContents(at: 0) as? [Any]
+            XCTAssertEqual(resultStoreRow?.first as? String, databaseA)
+        }
+        resultStore.cancelLoad()
+        resultStore.delegate = nil
+        resultStoreDownloadExpectation = nil
+
+        let mismatchRecorder = SADatabaseAssertionMismatchRecorder()
+        let workerGroup = DispatchGroup()
+        let workerQueue = DispatchQueue.global(qos: .userInitiated)
+        let iterations = 500
+        workersFinished = false
+
+        workerQueue.async(group: workerGroup) {
+            for iteration in 0..<iterations {
+                let shouldStop = autoreleasepool {
+                    let result = connection.queryString("SELECT DATABASE()", assertingDatabase: databaseA)
+                    let selectedDatabase = (result?.getRowAsArray() as? [Any])?.first as? String
+                    guard selectedDatabase == databaseA else {
+                        mismatchRecorder.record(
+                            "Expected \(databaseA), got \(selectedDatabase ?? "nil") at iteration \(iteration)"
+                        )
+                        return true
+                    }
+                    return false
+                }
+                if shouldStop { break }
+            }
+        }
+
+        workerQueue.async(group: workerGroup) {
+            for iteration in 0..<iterations {
+                let shouldStop = autoreleasepool {
+                    guard connection.selectDatabase(databaseB) else {
+                        mismatchRecorder.record(
+                            "selectDatabase failed at iteration \(iteration): \(connection.lastErrorMessage() ?? "unknown error")"
+                        )
+                        return true
+                    }
+                    return false
+                }
+                if shouldStop { break }
+            }
+        }
+
+        let workerWait = workerGroup.wait(timeout: .now() + 30)
+        workersFinished = workerWait == .success
+        XCTAssertEqual(workerWait, .success)
+        XCTAssertNil(mismatchRecorder.message)
+    }
+
+    private func newLocalConnection() -> SPMySQLConnection? {
+        let environment = ProcessInfo.processInfo.environment
+        var socketPath = environment["SPMYSQL_TEST_SOCKET"]
+        let testHost = environment["SPMYSQL_TEST_HOST"]
+
+        if (socketPath?.isEmpty ?? true), (testHost?.isEmpty ?? true) {
+            socketPath = ["/tmp/mysql.sock", "/opt/homebrew/var/mysql/mysql.sock"]
+                .first(where: { FileManager.default.fileExists(atPath: $0) })
+        }
+
+        let connection = SPMySQLConnection()
+        let testUser = environment["SPMYSQL_TEST_USER"]
+        connection.username = testUser?.isEmpty == false ? testUser : "root"
+        connection.password = environment["SPMYSQL_TEST_PASSWORD"]
+        connection.useKeepAlive = false
+
+        if let testHost, !testHost.isEmpty {
+            connection.useSocket = false
+            connection.host = testHost
+            if let port = environment["SPMYSQL_TEST_PORT"].flatMap(UInt.init) {
+                connection.port = port
+            }
+        } else if let socketPath, !socketPath.isEmpty {
+            connection.useSocket = true
+            connection.socketPath = socketPath
+        } else {
+            return nil
+        }
+
+        return connection
+    }
+
+    private func assertQuerySucceeded(
+        _ connection: SPMySQLConnection,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        XCTAssertFalse(
+            connection.queryErrored(),
+            connection.lastErrorMessage() ?? "Unknown MySQL error",
+            file: file,
+            line: line
+        )
+    }
+
+    private func row(
+        from result: SPMySQLResult?,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) throws -> [Any] {
+        try XCTUnwrap(
+            result?.getRowAsArray() as? [Any],
+            "Expected a result row",
+            file: file,
+            line: line
+        )
+    }
+
+    private func backtickQuoted(_ value: String) -> String {
+        "`\(value.replacingOccurrences(of: "`", with: "``"))`"
+    }
+
+    private func tickQuoted(_ value: String) -> String {
+        "'\(value.replacingOccurrences(of: "'", with: "''"))'"
     }
 }
