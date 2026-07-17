@@ -374,48 +374,11 @@ final class SABundleHTMLOutputWindowController: NSWindowController, NSWindowDele
     }
 
     @objc func printDocument(_ sender: Any?) {
-        guard let webView = model.webView, let window = window,
-              let printInfo = NSPrintInfo.shared.copy() as? NSPrintInfo else {
+        guard let webView = model.webView, let window = window else {
             return
         }
 
-        // Margin and pagination setup ported from SPPrintUtility — applied to a copy
-        // so the shared print info isn't mutated for the rest of the app.
-
-        let paperSize = printInfo.paperSize
-        let printableRect = printInfo.imageablePageBounds
-
-        let marginL = printableRect.origin.x
-        let marginR = paperSize.width - (printableRect.origin.x + printableRect.size.width)
-        let marginB = printableRect.origin.y
-        let marginT = paperSize.height - (printableRect.origin.y + printableRect.size.height)
-
-        // Make sure margins are symmetric and positive
-        let marginLR = max(0, max(marginL, marginR))
-        let marginTB = max(0, max(marginT, marginB))
-
-        printInfo.leftMargin = marginLR
-        printInfo.rightMargin = marginLR
-        printInfo.topMargin = marginTB
-        printInfo.bottomMargin = marginTB
-
-        printInfo.horizontalPagination = .fit
-        printInfo.verticalPagination = .automatic
-        printInfo.isVerticallyCentered = false
-
-        // The legacy print accessory toggled WebPreferences.shouldPrintBackgrounds;
-        // WKWebView only exposes this from macOS 13.3.
-        if #available(macOS 13.3, *) {
-            webView.configuration.preferences.shouldPrintBackgrounds = UserDefaults.standard.bool(forKey: SPPrintBackground)
-        }
-
-        let operation = webView.printOperation(with: printInfo)
-
-        // WKWebView's print operation view starts with a zero frame; without
-        // sizing it the preview and output are blank.
-        operation.view?.frame = NSRect(origin: .zero, size: webView.frame.size)
-
-        operation.printPanel.options.formUnion([.showsOrientation, .showsScaling, .showsPaperSize])
+        let operation = SAPrintUtility.printOperation(for: webView)
 
         operation.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
     }
