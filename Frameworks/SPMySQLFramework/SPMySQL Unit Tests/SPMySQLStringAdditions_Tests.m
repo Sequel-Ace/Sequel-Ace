@@ -87,6 +87,7 @@
 	NSString *databaseA = [NSString stringWithFormat:@"sa_atomic_%@_a", identifier];
 	NSString *databaseB = [NSString stringWithFormat:@"sa_atomic_%@_b", identifier];
 	NSString *unicodeDatabase = [NSString stringWithFormat:@"sa_atomic_%@_\u00E9", identifier];
+	NSString *unrepresentableDatabase = [NSString stringWithFormat:@"sa_atomic_%@_\u65E5", identifier];
 	BOOL workersFinished = YES;
 
 	@try {
@@ -95,6 +96,8 @@
 		[connection queryString:[NSString stringWithFormat:@"CREATE DATABASE %@", [databaseB mySQLBacktickQuotedString]]];
 		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
 		[connection queryString:[NSString stringWithFormat:@"CREATE DATABASE %@", [unicodeDatabase mySQLBacktickQuotedString]]];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		[connection queryString:[NSString stringWithFormat:@"CREATE DATABASE %@", [unrepresentableDatabase mySQLBacktickQuotedString]]];
 		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
 
 		XCTAssertTrue([connection selectDatabase:databaseB]);
@@ -126,16 +129,16 @@
 		XCTAssertTrue([connection setEncoding:@"latin1"]);
 		[connection queryString:@"SET NAMES utf8mb4"];
 		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
-		SPMySQLResult *callerManagedEncodingResult = [connection queryString:@"SELECT DATABASE(), @@character_set_client, @@character_set_results, @@character_set_connection"
-		                                                                    usingEncoding:NSUTF8StringEncoding
+		XCTAssertFalse([unrepresentableDatabase canBeConvertedToEncoding:NSASCIIStringEncoding]);
+		SPMySQLResult *callerManagedEncodingResult = [connection queryString:@"SELECT @@character_set_client, @@character_set_results, @@character_set_connection"
+		                                                                    usingEncoding:NSASCIIStringEncoding
 		                                                                   withResultType:SPMySQLResultAsResult
-		                                                               assertingDatabase:unicodeDatabase];
+		                                                               assertingDatabase:unrepresentableDatabase];
 		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
 		NSArray *callerManagedEncodingState = [callerManagedEncodingResult getRowAsArray];
-		XCTAssertEqualObjects([callerManagedEncodingState objectAtIndex:0], unicodeDatabase);
+		XCTAssertEqualObjects([callerManagedEncodingState objectAtIndex:0], @"utf8mb4");
 		XCTAssertEqualObjects([callerManagedEncodingState objectAtIndex:1], @"utf8mb4");
 		XCTAssertEqualObjects([callerManagedEncodingState objectAtIndex:2], @"utf8mb4");
-		XCTAssertEqualObjects([callerManagedEncodingState objectAtIndex:3], @"utf8mb4");
 		XCTAssertEqualObjects([connection encoding], @"latin1");
 		XCTAssertTrue([connection setEncoding:originalEncoding]);
 
@@ -210,6 +213,7 @@
 			[connection queryString:[NSString stringWithFormat:@"DROP DATABASE IF EXISTS %@", [databaseA mySQLBacktickQuotedString]]];
 			[connection queryString:[NSString stringWithFormat:@"DROP DATABASE IF EXISTS %@", [databaseB mySQLBacktickQuotedString]]];
 			[connection queryString:[NSString stringWithFormat:@"DROP DATABASE IF EXISTS %@", [unicodeDatabase mySQLBacktickQuotedString]]];
+			[connection queryString:[NSString stringWithFormat:@"DROP DATABASE IF EXISTS %@", [unrepresentableDatabase mySQLBacktickQuotedString]]];
 			[connection disconnect];
 		}
 	}

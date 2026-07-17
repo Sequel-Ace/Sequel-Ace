@@ -32,6 +32,62 @@
 #import "SPMySQL Private APIs.h"
 #import "SPMySQLArrayAdditions.h"
 
+#include <string.h>
+
+static BOOL SPMySQLCharacterSetNameIsSafe(const char *characterSetName)
+{
+	if (!characterSetName || !characterSetName[0]) return NO;
+	return strspn(characterSetName, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_") == strlen(characterSetName);
+}
+
+static NSArray *SPMySQLCaptureCharacterSetState(MYSQL *connection)
+{
+	const char *connectorCharacterSetName = mysql_character_set_name(connection);
+	if (!SPMySQLCharacterSetNameIsSafe(connectorCharacterSetName)) return nil;
+
+	NSString *connectorCharacterSet = [NSString stringWithUTF8String:connectorCharacterSetName];
+	// Request binary values so the names remain ASCII bytes even if the caller
+	// configured a non-ASCII-compatible character_set_results.
+	static const char characterSetQuery[] = "SELECT CAST(@@character_set_client AS BINARY), CAST(@@character_set_results AS BINARY), CAST(@@character_set_connection AS BINARY)";
+	if (mysql_real_query(connection, characterSetQuery, sizeof(characterSetQuery) - 1)) return nil;
+
+	MYSQL_RES *result = mysql_store_result(connection);
+	if (!result) return nil;
+
+	MYSQL_ROW row = mysql_fetch_row(result);
+	NSArray *characterSetState = nil;
+	if (row && mysql_num_fields(result) >= 3
+		&& SPMySQLCharacterSetNameIsSafe(row[0])
+		&& (!row[1] || SPMySQLCharacterSetNameIsSafe(row[1]))
+		&& SPMySQLCharacterSetNameIsSafe(row[2]))
+	{
+		characterSetState = @[
+			connectorCharacterSet,
+			[NSString stringWithUTF8String:row[0]],
+			row[1] ? [NSString stringWithUTF8String:row[1]] : [NSNull null],
+			[NSString stringWithUTF8String:row[2]],
+		];
+	}
+
+	mysql_free_result(result);
+	return characterSetState;
+}
+
+static int SPMySQLRestoreCharacterSetState(MYSQL *connection, NSArray *characterSetState)
+{
+	NSString *connectorCharacterSet = [characterSetState objectAtIndex:0];
+	if (mysql_set_character_set(connection, [connectorCharacterSet UTF8String])) return 1;
+
+	NSString *clientCharacterSet = [characterSetState objectAtIndex:1];
+	id resultsCharacterSetValue = [characterSetState objectAtIndex:2];
+	NSString *resultsCharacterSet = resultsCharacterSetValue == [NSNull null] ? @"NULL" : resultsCharacterSetValue;
+	NSString *connectionCharacterSet = [characterSetState objectAtIndex:3];
+	NSString *restoreQuery = [NSString stringWithFormat:@"SET CHARACTER_SET_CLIENT=%@, CHARACTER_SET_RESULTS=%@, CHARACTER_SET_CONNECTION=%@",
+		clientCharacterSet, resultsCharacterSet, connectionCharacterSet];
+	const char *restoreQueryBytes = [restoreQuery UTF8String];
+	return mysql_real_query(connection, restoreQueryBytes, strlen(restoreQueryBytes));
+}
+
 static int SPMySQLApplyEncodingState(MYSQL *connection, NSString *encodingName, BOOL useLatin1Transport)
 {
 	if (![encodingName length] || mysql_set_character_set(connection, [encodingName UTF8String])) return 1;
@@ -360,22 +416,33 @@ static int SPMySQLApplyEncodingState(MYSQL *connection, NSString *encodingName, 
 		queryStatus = 0;
 		if ([databaseName length]) {
 			BOOL encodingChangeRequired = !databaseNameBytes || (encodingUsesLatin1Transport && !databaseNameIsASCII);
+			NSArray *characterSetState = nil;
 
 			// Prefer the same caller-supplied encoding as the query. SQL imports can
 			// deliberately change the server character set with SET NAMES without
-			// updating the framework's cached encoding, so switching to UTF-8 and
-			// restoring that stale cache here would overwrite the import's session
-			// state. Fall back to a temporary UTF-8 selection only when the database
-			// name cannot be represented losslessly, or when non-ASCII bytes would
-			// otherwise be sent through the special Latin1 transport mode. The public
-			// encoding helpers cannot be used while this non-recursive lock is held.
-			if (encodingChangeRequired && SPMySQLApplyEncodingState(mySQLConnection, @"utf8mb4", NO)) {
+			// updating the framework's cached encoding. If a temporary UTF-8 selection
+			// is unavoidable, preserve both the connector's cached charset and the
+			// server's actual client/results/connection state before changing either.
+			// The public encoding helpers cannot be used while this non-recursive lock
+			// is held.
+			if (encodingChangeRequired) {
+				characterSetState = SPMySQLCaptureCharacterSetState(mySQLConnection);
+			}
+
+			if (encodingChangeRequired && (!characterSetState || SPMySQLApplyEncodingState(mySQLConnection, @"utf8mb4", NO))) {
 				queryStatus = 1;
 				databaseAssertionFailed = YES;
-				theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
 				theErrorID = mysql_errno(mySQLConnection);
-				theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
-			} else {
+				if (theErrorID) {
+					theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
+					theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
+				} else {
+					theErrorMessage = @"Unable to capture the connection character set state before selecting the database.";
+					theSqlstate = nil;
+				}
+			}
+
+			if (!queryStatus) {
 				queryStatus = mysql_select_db(mySQLConnection, encodingChangeRequired ? [databaseName UTF8String] : databaseNameBytes);
 				if (queryStatus) {
 					databaseAssertionFailed = YES;
@@ -384,12 +451,15 @@ static int SPMySQLApplyEncodingState(MYSQL *connection, NSString *encodingName, 
 					theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
 				}
 
-				if (encodingChangeRequired && SPMySQLApplyEncodingState(mySQLConnection, encoding, encodingUsesLatin1Transport) && !queryStatus) {
-					queryStatus = 1;
-					databaseAssertionFailed = YES;
-					theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
-					theErrorID = mysql_errno(mySQLConnection);
-					theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
+				if (encodingChangeRequired) {
+					int restoreStatus = SPMySQLRestoreCharacterSetState(mySQLConnection, characterSetState);
+					if (restoreStatus && !queryStatus) {
+						queryStatus = restoreStatus;
+						databaseAssertionFailed = YES;
+						theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];
+						theErrorID = mysql_errno(mySQLConnection);
+						theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
+					}
 				}
 			}
 		}
