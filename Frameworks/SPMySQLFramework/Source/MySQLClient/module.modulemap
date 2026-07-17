@@ -1,0 +1,4 @@
+module MySQLClient [system] {
+    header "../../MySQL Client Libraries/include/mysql.h"
+    export *
+}

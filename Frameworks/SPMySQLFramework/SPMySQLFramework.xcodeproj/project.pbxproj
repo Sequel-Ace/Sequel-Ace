@@ -141,6 +141,7 @@
 		1A96314525B9CE6600BF2E91 /* SPMySQLArrayAdditions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SPMySQLArrayAdditions.m; path = Source/SPMySQLArrayAdditions.m; sourceTree = "<group>"; };
 		1A96314C25B9CE9900BF2E91 /* SPMySQLMutableDictionaryAdditions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SPMySQLMutableDictionaryAdditions.m; path = Source/SPMySQLMutableDictionaryAdditions.m; sourceTree = "<group>"; };
 		1A96314D25B9CE9900BF2E91 /* SPMySQLMutableDictionaryAdditions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPMySQLMutableDictionaryAdditions.h; path = Source/SPMySQLMutableDictionaryAdditions.h; sourceTree = "<group>"; };
+		1B61BFAD76569C2412169CE7 /* MySQLClient.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; name = MySQLClient.modulemap; path = Source/MySQLClient/module.modulemap; sourceTree = "<group>"; };
 		20D13511F12C772CB1BD60E6 /* SADatabaseAssertionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabaseAssertionTests.swift; sourceTree = "<group>"; };
 		32DBCF5E0370ADEE00C91783 /* SPMySQLFramework_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPMySQLFramework_Prefix.pch; path = Source/SPMySQLFramework_Prefix.pch; sourceTree = "<group>"; };
 		386B159A6D535F0686530898 /* SADatabaseAssertion.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SADatabaseAssertion.swift; path = Source/SADatabaseAssertion.swift; sourceTree = "<group>"; };
@@ -344,6 +345,7 @@
 				17E3A57A1885A286009CF372 /* SPMySQLDataTypes.m */,
 				386B159A6D535F0686530898 /* SADatabaseAssertion.swift */,
 				0EA5700AA759774A87FC447F /* SPMySQL.modulemap */,
+				1B61BFAD76569C2412169CE7 /* MySQLClient.modulemap */,
 			);
 			name = "Other Sources";
 			sourceTree = "<group>";
@@ -777,6 +779,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -806,6 +809,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REEXPORTED_LIBRARY_NAMES = "crypto.3 ssl.3";
 				SKIP_INSTALL = YES;
+				SWIFT_INCLUDE_PATHS = "$(inherited) $(SRCROOT)/Source/MySQLClient";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "SPMySQL-Swift.h";
 				SWIFT_VERSION = 5.0;
 				WRAPPER_EXTENSION = framework;
@@ -816,6 +820,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -843,6 +848,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REEXPORTED_LIBRARY_NAMES = "crypto.3 ssl.3";
 				SKIP_INSTALL = YES;
+				SWIFT_INCLUDE_PATHS = "$(inherited) $(SRCROOT)/Source/MySQLClient";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "SPMySQL-Swift.h";
 				SWIFT_VERSION = 5.0;
 				WRAPPER_EXTENSION = framework;
@@ -1113,6 +1119,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -1122,6 +1129,7 @@
 				DEVELOPMENT_TEAM = NKQ4HJ66PX;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 20102;
+				ENABLE_TESTABILITY = YES;
 				FRAMEWORK_VERSION = A;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -1142,6 +1150,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REEXPORTED_LIBRARY_NAMES = "crypto.3 ssl.3";
 				SKIP_INSTALL = YES;
+				SWIFT_INCLUDE_PATHS = "$(inherited) $(SRCROOT)/Source/MySQLClient";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "SPMySQL-Swift.h";
 				SWIFT_VERSION = 5.0;
 				WRAPPER_EXTENSION = framework;
@@ -1240,6 +1249,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -1267,6 +1277,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REEXPORTED_LIBRARY_NAMES = "crypto.3 ssl.3";
 				SKIP_INSTALL = YES;
+				SWIFT_INCLUDE_PATHS = "$(inherited) $(SRCROOT)/Source/MySQLClient";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "SPMySQL-Swift.h";
 				SWIFT_VERSION = 5.0;
 				WRAPPER_EXTENSION = framework;
@@ -1327,6 +1338,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -1354,6 +1366,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REEXPORTED_LIBRARY_NAMES = "crypto.3 ssl.3";
 				SKIP_INSTALL = YES;
+				SWIFT_INCLUDE_PATHS = "$(inherited) $(SRCROOT)/Source/MySQLClient";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "SPMySQL-Swift.h";
 				SWIFT_VERSION = 5.0;
 				WRAPPER_EXTENSION = framework;

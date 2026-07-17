@@ -207,6 +207,47 @@
 		[connection queryString:@"SET NAMES utf8mb4"];
 		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
 
+		// CLIENT_SESSION_TRACK is only a negotiated capability. Administrators can
+		// exclude charset variables from the session tracking payload, in which case
+		// mysql_character_set_name remains stale after caller-issued SET NAMES.
+		NSString *trackedSystemVariables = [connection getFirstFieldFromQuery:@"SELECT @@session.session_track_system_variables"];
+		if (![connection queryErrored] && [trackedSystemVariables length]) {
+			[connection queryString:@"SELECT DATABASE()" assertingDatabase:databaseA];
+			XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+			[connection queryString:@"SET SESSION session_track_system_variables=''"];
+			XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+			[connection queryString:@"SET NAMES latin1"];
+			XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+
+			XCTAssertEqualObjects([connection getFirstFieldFromQuery:@"SELECT @@character_set_client" assertingDatabase:unicodeDatabase], @"latin1");
+			XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+
+			[connection queryString:[NSString stringWithFormat:@"SET SESSION session_track_system_variables=%@", [trackedSystemVariables mySQLTickQuotedString]]];
+			XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+			[connection queryString:@"SET NAMES utf8mb4"];
+			XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		}
+
+		// The schema tracker can likewise be disabled while the capability bits stay
+		// set. A successful USE must invalidate assertion state so a stale MYSQL->db
+		// value can never make a later assertion skip the required selection.
+		NSString *schemaTrackingEnabled = [connection getFirstFieldFromQuery:@"SELECT @@session.session_track_schema"];
+		if (![connection queryErrored] && [schemaTrackingEnabled length]) {
+			[connection queryString:@"SELECT DATABASE()" assertingDatabase:databaseA];
+			XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+			[connection queryString:@"SET SESSION session_track_schema=OFF"];
+			XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+			[connection queryString:[NSString stringWithFormat:@"USE %@", [databaseB mySQLBacktickQuotedString]]];
+			XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+
+			XCTAssertEqualObjects([connection getFirstFieldFromQuery:@"SELECT DATABASE()" assertingDatabase:databaseA], databaseA);
+			XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+
+			NSString *schemaTrackingRestoreValue = [schemaTrackingEnabled integerValue] ? @"ON" : @"OFF";
+			[connection queryString:[NSString stringWithFormat:@"SET SESSION session_track_schema=%@", schemaTrackingRestoreValue]];
+			XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		}
+
 		XCTAssertTrue([connection setEncoding:@"latin2"]);
 		NSString *expectedConnectionCharacterSet = [connection getFirstFieldFromQuery:@"SELECT @@character_set_connection"];
 		XCTAssertTrue([connection setEncodingUsesLatin1Transport:YES]);

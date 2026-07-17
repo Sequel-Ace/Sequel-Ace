@@ -8,18 +8,18 @@
 //
 
 import XCTest
-import SPMySQL
+@testable import SPMySQL
 
 final class SADatabaseAssertionTests: XCTestCase {
-    private let utf8CharacterSet = Data("utf8mb4".utf8)
     private let latin1CharacterSet = Data("latin1".utf8)
 
     func testDisabledAssertionDoesNotConsultOrMutateSession() {
         let error = assertDatabase(
             "target",
             required: false,
-            activeDatabaseData: Data("other".utf8),
-            connectorTracksSessionState: false,
+            selectedDatabaseName: "other",
+            databaseStateKnown: true,
+            databaseIsSelected: true,
             queryActiveDatabaseData: { unexpectedLookup("Unexpected active database query") },
             queryClientCharacterSetData: { unexpectedLookup("Unexpected charset query") },
             executeSQL: { _ in unexpectedError("Unexpected SQL") },
@@ -29,13 +29,13 @@ final class SADatabaseAssertionTests: XCTestCase {
         XCTAssertNil(error)
     }
 
-    func testMatchingTrackedDatabaseAvoidsAllSessionMutations() {
+    func testMatchingKnownDatabaseAvoidsAllSessionMutations() {
         let database = "tracked_é"
         let error = assertDatabase(
             database,
-            activeDatabaseData: Data(database.utf8),
-            connectorTracksSessionState: true,
-            connectorCharacterSetData: utf8CharacterSet,
+            selectedDatabaseName: database,
+            databaseStateKnown: true,
+            databaseIsSelected: true,
             stringEncodingProvider: { _ in unexpectedEncoding("UTF-8 match should not require charset mapping") },
             queryActiveDatabaseData: { unexpectedLookup("Unexpected active database query") },
             queryClientCharacterSetData: { unexpectedLookup("Unexpected charset query") },
@@ -46,37 +46,35 @@ final class SADatabaseAssertionTests: XCTestCase {
         XCTAssertNil(error)
     }
 
-    func testMatchingTrackedDatabaseUsesConnectorEncodingWithoutQuerying() throws {
-        let database = "tracked_é"
-        let activeDatabase = try XCTUnwrap(database.data(using: .windowsCP1252))
-        var mappedCharacterSets: [String] = []
-
-        let error = assertDatabase(
-            database,
-            activeDatabaseData: activeDatabase,
-            connectorTracksSessionState: true,
-            connectorCharacterSetData: latin1CharacterSet,
-            stringEncodingProvider: { name in
-                mappedCharacterSets.append(name)
-                return String.Encoding.windowsCP1252.rawValue
-            },
-            queryActiveDatabaseData: { unexpectedLookup("Unexpected active database query") },
-            queryClientCharacterSetData: { unexpectedLookup("Unexpected charset query") },
-            executeSQL: { _ in unexpectedError("Unexpected SQL") },
-            selectDatabase: { _ in unexpectedError("Unexpected database selection") }
-        )
-
-        XCTAssertNil(error)
-        XCTAssertEqual(mappedCharacterSets, ["latin1"])
-    }
-
-    func testLegacyConnectionReselectsEvenWhenCachedDatabaseMatches() {
+    func testSelectedDatabaseWithUnknownNameIsReselected() {
         var selectedDatabase: Data?
 
         let error = assertDatabase(
             "target",
-            activeDatabaseData: Data("target".utf8),
-            connectorTracksSessionState: false,
+            selectedDatabaseName: nil,
+            databaseStateKnown: true,
+            databaseIsSelected: true,
+            queryActiveDatabaseData: { unexpectedLookup("Unexpected active database query") },
+            queryClientCharacterSetData: { unexpectedLookup("ASCII names should not query the charset") },
+            executeSQL: { _ in unexpectedError("Unexpected SQL") },
+            selectDatabase: { data in
+                selectedDatabase = data
+                return nil
+            }
+        )
+
+        XCTAssertNil(error)
+        XCTAssertEqual(selectedDatabase, nullTerminated(Data("target".utf8)))
+    }
+
+    func testUnknownDatabaseStateSelectsRequestedDatabase() {
+        var selectedDatabase: Data?
+
+        let error = assertDatabase(
+            "target",
+            selectedDatabaseName: nil,
+            databaseStateKnown: false,
+            databaseIsSelected: false,
             queryActiveDatabaseData: { unexpectedLookup("Named contexts should reselect without querying") },
             queryClientCharacterSetData: { unexpectedLookup("ASCII names should not query the charset") },
             executeSQL: { _ in unexpectedError("Unexpected SQL") },
@@ -93,14 +91,16 @@ final class SADatabaseAssertionTests: XCTestCase {
     func testExplicitEmptyContextUsesTrackedState() {
         let selectedError = assertDatabase(
             nil,
-            activeDatabaseData: Data("selected".utf8),
-            connectorTracksSessionState: true,
+            selectedDatabaseName: "selected",
+            databaseStateKnown: true,
+            databaseIsSelected: true,
             queryActiveDatabaseData: { unexpectedLookup("Unexpected active database query") }
         )
         let emptyError = assertDatabase(
             nil,
-            activeDatabaseData: nil,
-            connectorTracksSessionState: true,
+            selectedDatabaseName: nil,
+            databaseStateKnown: true,
+            databaseIsSelected: false,
             queryActiveDatabaseData: { unexpectedLookup("Unexpected active database query") }
         )
 
@@ -114,8 +114,9 @@ final class SADatabaseAssertionTests: XCTestCase {
         var queryCount = 0
         let selectedError = assertDatabase(
             nil,
-            activeDatabaseData: nil,
-            connectorTracksSessionState: false,
+            selectedDatabaseName: nil,
+            databaseStateKnown: false,
+            databaseIsSelected: false,
             queryActiveDatabaseData: {
                 queryCount += 1
                 return .init(data: Data("selected".utf8), error: nil)
@@ -123,8 +124,9 @@ final class SADatabaseAssertionTests: XCTestCase {
         )
         let emptyError = assertDatabase(
             nil,
-            activeDatabaseData: Data("stale".utf8),
-            connectorTracksSessionState: false,
+            selectedDatabaseName: nil,
+            databaseStateKnown: false,
+            databaseIsSelected: false,
             queryActiveDatabaseData: {
                 queryCount += 1
                 return .init(data: nil, error: nil)
@@ -136,7 +138,7 @@ final class SADatabaseAssertionTests: XCTestCase {
         XCTAssertEqual(queryCount, 2)
     }
 
-    func testUntrackedConnectionUsesLiveClientCharset() throws {
+    func testSelectionUsesLiveClientCharset() throws {
         let database = "legacy_é"
         let expectedSelection = try XCTUnwrap(database.data(using: .windowsCP1252))
         var selectedDatabase: Data?
@@ -144,9 +146,9 @@ final class SADatabaseAssertionTests: XCTestCase {
 
         let error = assertDatabase(
             database,
-            activeDatabaseData: Data("other".utf8),
-            connectorTracksSessionState: false,
-            connectorCharacterSetData: utf8CharacterSet,
+            selectedDatabaseName: "other",
+            databaseStateKnown: true,
+            databaseIsSelected: true,
             stringEncodingProvider: { name in
                 XCTAssertEqual(name, "latin1")
                 return String.Encoding.windowsCP1252.rawValue
@@ -174,12 +176,12 @@ final class SADatabaseAssertionTests: XCTestCase {
 
         let error = assertDatabase(
             database,
-            activeDatabaseData: Data("other".utf8),
-            connectorTracksSessionState: true,
-            connectorCharacterSetData: latin1CharacterSet,
+            selectedDatabaseName: "other",
+            databaseStateKnown: true,
+            databaseIsSelected: true,
             stringEncodingProvider: { _ in String.Encoding.windowsCP1252.rawValue },
             queryActiveDatabaseData: { unexpectedLookup("Unexpected active database query") },
-            queryClientCharacterSetData: { unexpectedLookup("Tracked charset should be used directly") },
+            queryClientCharacterSetData: { .init(data: self.latin1CharacterSet, error: nil) },
             executeSQL: { sql in
                 actions.append(sql)
                 return nil
@@ -204,12 +206,12 @@ final class SADatabaseAssertionTests: XCTestCase {
 
         let error = assertDatabase(
             "legacy_日",
-            activeDatabaseData: Data("other".utf8),
-            connectorTracksSessionState: true,
-            connectorCharacterSetData: latin1CharacterSet,
+            selectedDatabaseName: "other",
+            databaseStateKnown: true,
+            databaseIsSelected: true,
             stringEncodingProvider: { _ in String.Encoding.windowsCP1252.rawValue },
             queryActiveDatabaseData: { unexpectedLookup("Unexpected active database query") },
-            queryClientCharacterSetData: { unexpectedLookup("Unexpected charset query") },
+            queryClientCharacterSetData: { .init(data: self.latin1CharacterSet, error: nil) },
             executeSQL: { sql in sql.hasSuffix("utf8mb4") ? nil : restoreError },
             selectDatabase: { _ in selectionError }
         )
@@ -222,12 +224,12 @@ final class SADatabaseAssertionTests: XCTestCase {
 
         let error = assertDatabase(
             "legacy_日",
-            activeDatabaseData: Data("other".utf8),
-            connectorTracksSessionState: true,
-            connectorCharacterSetData: latin1CharacterSet,
+            selectedDatabaseName: "other",
+            databaseStateKnown: true,
+            databaseIsSelected: true,
             stringEncodingProvider: { _ in String.Encoding.windowsCP1252.rawValue },
             queryActiveDatabaseData: { unexpectedLookup("Unexpected active database query") },
-            queryClientCharacterSetData: { unexpectedLookup("Unexpected charset query") },
+            queryClientCharacterSetData: { .init(data: self.latin1CharacterSet, error: nil) },
             executeSQL: { sql in sql.hasSuffix("utf8mb4") ? nil : restoreError },
             selectDatabase: { _ in nil }
         )
@@ -240,9 +242,9 @@ final class SADatabaseAssertionTests: XCTestCase {
 
         let error = assertDatabase(
             "legacy_日",
-            activeDatabaseData: Data("other".utf8),
-            connectorTracksSessionState: false,
-            connectorCharacterSetData: utf8CharacterSet,
+            selectedDatabaseName: "other",
+            databaseStateKnown: true,
+            databaseIsSelected: true,
             queryActiveDatabaseData: { unexpectedLookup("Unexpected active database query") },
             queryClientCharacterSetData: { .init(data: nil, error: lookupError) },
             executeSQL: { _ in unexpectedError("Lookup failure must stop before SQL") },
@@ -258,12 +260,12 @@ final class SADatabaseAssertionTests: XCTestCase {
 
         let error = assertDatabase(
             "legacy_日",
-            activeDatabaseData: Data("other".utf8),
-            connectorTracksSessionState: true,
-            connectorCharacterSetData: latin1CharacterSet,
+            selectedDatabaseName: "other",
+            databaseStateKnown: true,
+            databaseIsSelected: true,
             stringEncodingProvider: { _ in String.Encoding.windowsCP1252.rawValue },
             queryActiveDatabaseData: { unexpectedLookup("Unexpected active database query") },
-            queryClientCharacterSetData: { unexpectedLookup("Unexpected charset query") },
+            queryClientCharacterSetData: { .init(data: self.latin1CharacterSet, error: nil) },
             executeSQL: { sql in
                 statements.append(sql)
                 return charsetError
@@ -278,9 +280,9 @@ final class SADatabaseAssertionTests: XCTestCase {
     func testUnsafeQueriedCharsetIsRejectedBeforeSQLConstruction() {
         let error = assertDatabase(
             "legacy_日",
-            activeDatabaseData: Data("other".utf8),
-            connectorTracksSessionState: false,
-            connectorCharacterSetData: utf8CharacterSet,
+            selectedDatabaseName: "other",
+            databaseStateKnown: true,
+            databaseIsSelected: true,
             stringEncodingProvider: { _ in unexpectedEncoding("Unsafe charset must not be mapped") },
             queryActiveDatabaseData: { unexpectedLookup("Unexpected active database query") },
             queryClientCharacterSetData: { .init(data: Data("latin1;DROP".utf8), error: nil) },
@@ -295,8 +297,9 @@ final class SADatabaseAssertionTests: XCTestCase {
     func testEmbeddedNullIsRejectedBeforeConsultingSessionState() {
         let error = assertDatabase(
             "invalid\0database",
-            activeDatabaseData: Data("other".utf8),
-            connectorTracksSessionState: false,
+            selectedDatabaseName: "other",
+            databaseStateKnown: true,
+            databaseIsSelected: true,
             queryActiveDatabaseData: { unexpectedLookup("Unexpected active database query") },
             queryClientCharacterSetData: { unexpectedLookup("Unexpected charset query") },
             executeSQL: { _ in unexpectedError("Unexpected SQL") },
@@ -307,12 +310,33 @@ final class SADatabaseAssertionTests: XCTestCase {
         XCTAssertEqual(error?.message, "Unable to encode the database name before selecting it.")
     }
 
+    func testDatabaseContextChangingQueriesInvalidateAssertionState() {
+        XCTAssertTrue(queryMayChangeDatabaseContext("USE `target``name`"))
+        XCTAssertTrue(queryMayChangeDatabaseContext("DROP DATABASE IF EXISTS target"))
+        XCTAssertTrue(queryMayChangeDatabaseContext("DROP SCHEMA target;"))
+        XCTAssertTrue(queryMayChangeDatabaseContext("/*!80000 USE target */"))
+    }
+
+    func testCommentsAndQuotedTextDoNotInvalidateAssertionState() {
+        XCTAssertFalse(queryMayChangeDatabaseContext("SELECT 'USE target'"))
+        XCTAssertFalse(queryMayChangeDatabaseContext("/* USE target */ SELECT 1"))
+        XCTAssertFalse(queryMayChangeDatabaseContext("-- USE target\nSELECT 1"))
+        XCTAssertFalse(queryMayChangeDatabaseContext("SELECT 'DROP DATABASE target'"))
+    }
+
+    func testExecutableCommentVersionAndVendorGatesAreRespected() {
+        XCTAssertFalse(queryMayChangeDatabaseContext("/*!99999 USE target */"))
+        XCTAssertFalse(queryMayChangeDatabaseContext("/*M!80000 USE target */"))
+        XCTAssertFalse(queryMayChangeDatabaseContext("/*!80000 USE target */", serverIsMariaDB: true))
+        XCTAssertTrue(queryMayChangeDatabaseContext("/*M!80000 USE target */", serverIsMariaDB: true))
+    }
+
     private func assertDatabase(
         _ databaseName: String?,
         required: Bool = true,
-        activeDatabaseData: Data?,
-        connectorTracksSessionState: Bool,
-        connectorCharacterSetData: Data? = nil,
+        selectedDatabaseName: String?,
+        databaseStateKnown: Bool,
+        databaseIsSelected: Bool,
         stringEncodingProvider: (String) -> UInt = { _ in String.Encoding.utf8.rawValue },
         queryActiveDatabaseData: () -> SADatabaseSessionValueLookup,
         queryClientCharacterSetData: () -> SADatabaseSessionValueLookup = { .init(data: nil, error: nil) },
@@ -322,14 +346,25 @@ final class SADatabaseAssertionTests: XCTestCase {
         SADatabaseAssertion.assertDatabase(
             databaseName,
             required: required,
-            activeDatabaseData: activeDatabaseData,
-            connectorTracksSessionState: connectorTracksSessionState,
-            connectorCharacterSetData: connectorCharacterSetData,
+            selectedDatabaseName: selectedDatabaseName,
+            databaseStateKnown: databaseStateKnown,
+            databaseIsSelected: databaseIsSelected,
             stringEncodingProvider: stringEncodingProvider,
             queryActiveDatabaseData: queryActiveDatabaseData,
             queryClientCharacterSetData: queryClientCharacterSetData,
             executeSQL: executeSQL,
             selectDatabase: selectDatabase
+        )
+    }
+
+    private func queryMayChangeDatabaseContext(
+        _ query: String,
+        serverIsMariaDB: Bool = false
+    ) -> Bool {
+        SADatabaseAssertion.queryMayChangeDatabaseContext(
+            query,
+            serverVersion: 80_046,
+            serverIsMariaDB: serverIsMariaDB
         )
     }
 

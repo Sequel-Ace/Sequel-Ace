@@ -32,64 +32,6 @@
 #import "SPMySQL Private APIs.h"
 #import "SPMySQLArrayAdditions.h"
 #import <SPMySQL/SPMySQL-Swift.h>
-#import "Encoding.h"
-
-#include <string.h>
-
-// Thin bridges around the C client state and result APIs. Database assertion
-// policy and session-state decisions live in SADatabaseAssertion.swift.
-static BOOL SPMySQLConnectionTracksSessionState(MYSQL *connection)
-{
-	return (connection->client_flag & CLIENT_SESSION_TRACK)
-		&& (connection->server_capabilities & CLIENT_SESSION_TRACK);
-}
-
-static NSData *SPMySQLDataForCString(const char *bytes)
-{
-	return bytes ? [NSData dataWithBytes:bytes length:strlen(bytes)] : nil;
-}
-
-static SADatabaseAssertionError *SPMySQLCurrentAssertionError(MYSQL *connection, SPMySQLConnection *owner, NSString *fallbackMessage)
-{
-	NSUInteger errorID = mysql_errno(connection);
-	NSString *message = errorID ? [owner _stringForCString:mysql_error(connection)] : fallbackMessage;
-	NSString *sqlState = errorID ? _stringForCStringWithEncoding(mysql_sqlstate(connection), NSISOLatin1StringEncoding) : nil;
-	return [[SADatabaseAssertionError alloc] initWithErrorID:errorID message:message sqlState:sqlState];
-}
-
-static SADatabaseSessionValueLookup *SPMySQLQuerySessionValue(MYSQL *connection, SPMySQLConnection *owner, const char *query, size_t queryLength, NSString *queryErrorMessage, NSString *resultErrorMessage)
-{
-	if (mysql_real_query(connection, query, queryLength)) {
-		SADatabaseAssertionError *error = SPMySQLCurrentAssertionError(connection, owner, queryErrorMessage);
-		return [[SADatabaseSessionValueLookup alloc] initWithData:nil error:error];
-	}
-
-	MYSQL_RES *result = mysql_store_result(connection);
-	if (!result) {
-		SADatabaseAssertionError *error = SPMySQLCurrentAssertionError(connection, owner, resultErrorMessage);
-		return [[SADatabaseSessionValueLookup alloc] initWithData:nil error:error];
-	}
-
-	MYSQL_ROW row = mysql_fetch_row(result);
-	if (!row || mysql_num_fields(result) < 1) {
-		SADatabaseAssertionError *error = SPMySQLCurrentAssertionError(connection, owner, resultErrorMessage);
-		mysql_free_result(result);
-		return [[SADatabaseSessionValueLookup alloc] initWithData:nil error:error];
-	}
-
-	NSData *valueData = nil;
-	if (row[0]) {
-		unsigned long *fieldLengths = mysql_fetch_lengths(result);
-		if (!fieldLengths) {
-			SADatabaseAssertionError *error = SPMySQLCurrentAssertionError(connection, owner, resultErrorMessage);
-			mysql_free_result(result);
-			return [[SADatabaseSessionValueLookup alloc] initWithData:nil error:error];
-		}
-		valueData = [NSData dataWithBytes:row[0] length:fieldLengths[0]];
-	}
-	mysql_free_result(result);
-	return [[SADatabaseSessionValueLookup alloc] initWithData:valueData error:nil];
-}
 
 @interface SPMySQLConnection (Querying_and_Preparation_Internal)
 
@@ -434,6 +376,9 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 
 	// Lock the connection while it's actively in use
 	[self _lockConnection];
+	if (!databaseAssertionState) {
+		databaseAssertionState = [[SADatabaseAssertionState alloc] init];
+	}
 
 	unsigned long long theAffectedRowCount = (unsigned long long)~0;
 	do {
@@ -445,52 +390,13 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		// different USE between database selection and execution.
 		uint64_t queryStartTime = _monotonicTime();
 		queryStatus = 0;
-		NSData *activeDatabaseData = SPMySQLDataForCString(mySQLConnection->db);
-		NSData *connectorCharacterSetData = SPMySQLDataForCString(mysql_character_set_name(mySQLConnection));
-		SADatabaseAssertionError *databaseAssertionError = [SADatabaseAssertion
+		SADatabaseAssertionError *databaseAssertionError = [databaseAssertionState
 			assertDatabase:databaseName
 			required:databaseContextIsRequired
-			activeDatabaseData:activeDatabaseData
-			connectorTracksSessionState:SPMySQLConnectionTracksSessionState(mySQLConnection)
-			connectorCharacterSetData:connectorCharacterSetData
+			onMySQLConnection:mySQLConnection
+			errorStringEncodingValue:stringEncoding
 			stringEncodingProvider:^NSUInteger(NSString *characterSetName) {
 				return [SPMySQLConnection stringEncodingForMySQLCharset:[characterSetName UTF8String]];
-			}
-			queryActiveDatabaseData:^SADatabaseSessionValueLookup *{
-				static const char activeDatabaseQuery[] = "SELECT CAST(DATABASE() AS BINARY)";
-				return SPMySQLQuerySessionValue(mySQLConnection,
-				                                  self,
-				                                  activeDatabaseQuery,
-				                                  sizeof(activeDatabaseQuery) - 1,
-				                                  @"Unable to query the selected database before asserting an empty database context.",
-				                                  @"Unable to read the selected database before asserting an empty database context.");
-			}
-			queryClientCharacterSetData:^SADatabaseSessionValueLookup *{
-				static const char characterSetQuery[] = "SELECT CAST(@@character_set_client AS BINARY)";
-				return SPMySQLQuerySessionValue(mySQLConnection,
-				                                  self,
-				                                  characterSetQuery,
-				                                  sizeof(characterSetQuery) - 1,
-				                                  @"Unable to query the connection character set before selecting the database.",
-				                                  @"Unable to read the connection character set before selecting the database.");
-			}
-			executeSQL:^SADatabaseAssertionError *(NSString *sql) {
-				const char *sqlBytes = [sql UTF8String];
-				if (!sqlBytes) {
-					return [[SADatabaseAssertionError alloc] initWithErrorID:0
-					                                             message:@"Unable to encode the database assertion statement."
-					                                            sqlState:nil];
-				}
-				if (mysql_real_query(mySQLConnection, sqlBytes, strlen(sqlBytes))) {
-					return SPMySQLCurrentAssertionError(mySQLConnection, self, @"Unable to update the connection character set while selecting the database.");
-				}
-				return nil;
-			}
-			selectDatabase:^SADatabaseAssertionError *(NSData *databaseNameData) {
-				if (mysql_select_db(mySQLConnection, [databaseNameData bytes])) {
-					return SPMySQLCurrentAssertionError(mySQLConnection, self, @"Unable to select the requested database.");
-				}
-				return nil;
 			}];
 
 		if (databaseAssertionError) {
@@ -508,6 +414,7 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired
 		lastConnectionUsedTime = _monotonicTime();
 		
 		if (!queryStatus) {
+			[databaseAssertionState recordSuccessfulQuery:theQueryString onMySQLConnection:mySQLConnection];
 			// "An integer greater than zero indicates the number of rows affected or retrieved.
 			//  Zero indicates that no records were updated for an UPDATE statement, no rows matched the WHERE clause in the query or that no query has yet been executed.
 			//  -1 indicates that the query returned an error or that, for a SELECT query, mysql_affected_rows() was called prior to calling mysql_store_result()."
