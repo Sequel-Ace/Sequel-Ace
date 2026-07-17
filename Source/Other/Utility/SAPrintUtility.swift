@@ -10,6 +10,11 @@
 import AppKit
 import WebKit
 
+// Inlined so this file stays free of project ObjC types and can compile into
+// the Unit Tests target (no bridging header there). Keep in sync with
+// `SPPrintBackground` in SPConstants.m.
+let printBackgroundPreferenceKey = "PrintBackground"
+
 /// Builds `NSPrintOperation`s for `WKWebView`s with the app's shared page
 /// setup: symmetric margins derived from the printable page bounds, fit-width
 /// pagination, and the extended print-panel options.
@@ -18,8 +23,11 @@ import WebKit
 /// WebKit `WebView`.
 @objc final class SAPrintUtility: NSObject {
 
-    @objc(printOperationForWebView:)
-    static func printOperation(for webView: WKWebView) -> NSPrintOperation {
+    /// The app's shared page setup: a copy of the shared print info with
+    /// symmetric margins derived from the printable page bounds, fit-width
+    /// pagination, and top-aligned content. Pure — safe to call (and test)
+    /// without any web view or printer interaction.
+    @objc static func configuredPrintInfo() -> NSPrintInfo {
         // Applied to a copy so the shared print info isn't mutated for the
         // rest of the app.
         let printInfo = (NSPrintInfo.shared.copy() as? NSPrintInfo) ?? NSPrintInfo()
@@ -45,19 +53,29 @@ import WebKit
         printInfo.verticalPagination = .automatic
         printInfo.isVerticallyCentered = false
 
+        return printInfo
+    }
+
+    @objc(printOperationForWebView:)
+    static func printOperation(for webView: WKWebView) -> NSPrintOperation {
         // The legacy print accessory toggled WebPreferences.shouldPrintBackgrounds;
         // WKWebView only exposes this from macOS 13.3.
         if #available(macOS 13.3, *) {
-            webView.configuration.preferences.shouldPrintBackgrounds = UserDefaults.standard.bool(forKey: SPPrintBackground)
+            webView.configuration.preferences.shouldPrintBackgrounds = UserDefaults.standard.bool(forKey: printBackgroundPreferenceKey)
         }
 
-        let operation = webView.printOperation(with: printInfo)
+        let operation = webView.printOperation(with: configuredPrintInfo())
 
         // WKWebView's print operation view starts with a zero frame; without
         // sizing it the preview and output are blank.
         operation.view?.frame = NSRect(origin: .zero, size: webView.frame.size)
 
-        operation.printPanel.options.formUnion([.showsOrientation, .showsScaling, .showsPaperSize])
+        // Assign the panel back explicitly: relying on the lazy printPanel
+        // getter to cache the mutated panel is not guaranteed for the
+        // operation WebKit returns.
+        let panel = operation.printPanel
+        panel.options.formUnion([.showsOrientation, .showsScaling, .showsPaperSize])
+        operation.printPanel = panel
 
         return operation
     }

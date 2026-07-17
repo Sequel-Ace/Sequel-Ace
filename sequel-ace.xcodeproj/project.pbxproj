@@ -320,6 +320,8 @@
 		51D9527625AE2B5300574BEB /* FMDB in Frameworks */ = {isa = PBXBuildFile; productRef = 51D9527525AE2B5300574BEB /* FMDB */; };
 		51DCBEF0257134190098E303 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 38C613721C8977E600B3B6EF /* libz.tbd */; };
 		51EA02532FDFF02C00DF6A7B /* SAArchivingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EA02522FDFF02C00DF6A7B /* SAArchivingTests.swift */; };
+		51C397A12FF7BB0100C4C14A /* SAPrintUtilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C397A22FF7BB0100C4C14A /* SAPrintUtilityTests.swift */; };
+		51C397A32FF7BB0100C4C14A /* SAPrintUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C32B2D2FF6F90C007C2DD3 /* SAPrintUtility.swift */; };
 		51EAE7252FDFEFA300DF6A7B /* SAArchiving.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EAE7242FDFEFA300DF6A7B /* SAArchiving.swift */; };
 		51EAE7262FDFEFA300DF6A7B /* SAArchiving.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EAE7242FDFEFA300DF6A7B /* SAArchiving.swift */; };
 		51EF3E642FDC24EE00EFFF09 /* SAConnectionFormModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E632FDC24EE00EFFF09 /* SAConnectionFormModel.swift */; };
@@ -1117,6 +1119,7 @@
 		51CD0BD8258D06D8009E2484 /* ConnectionView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ConnectionView.xib; sourceTree = "<group>"; };
 		51CD0BDA258D06D8009E2484 /* DatabaseProcessList.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DatabaseProcessList.xib; sourceTree = "<group>"; };
 		51EA02522FDFF02C00DF6A7B /* SAArchivingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAArchivingTests.swift; sourceTree = "<group>"; };
+		51C397A22FF7BB0100C4C14A /* SAPrintUtilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAPrintUtilityTests.swift; sourceTree = "<group>"; };
 		51EAE7242FDFEFA300DF6A7B /* SAArchiving.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAArchiving.swift; sourceTree = "<group>"; };
 		51EF3E632FDC24EE00EFFF09 /* SAConnectionFormModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionFormModel.swift; sourceTree = "<group>"; };
 		51EF3E682FDC250300EFFF09 /* SAConnectionFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionFormView.swift; sourceTree = "<group>"; };
@@ -2598,6 +2601,7 @@
 				51EF3E772FDC2AB700EFFF09 /* SABundleJSBridgeTests.swift */,
 				51EF3E6A2FDC251800EFFF09 /* SAConnectionFormModelTests.swift */,
 				51EA02522FDFF02C00DF6A7B /* SAArchivingTests.swift */,
+				51C397A22FF7BB0100C4C14A /* SAPrintUtilityTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -3227,6 +3231,8 @@
 				51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */,
 				1A8B53A52584650700526DED /* SPURLAdditions.m in Sources */,
 				51EAE7262FDFEFA300DF6A7B /* SAArchiving.swift in Sources */,
+				51C397A12FF7BB0100C4C14A /* SAPrintUtilityTests.swift in Sources */,
+				51C397A32FF7BB0100C4C14A /* SAPrintUtility.swift in Sources */,
 				502D21F61BA50710000D4CE7 /* SPDataAdditionsTests.m in Sources */,
 				1A0FA3EE258B758B00486D52 /* SPArrayAdditions.m in Sources */,
 				1A70BC9225EF7EE9004BB992 /* FileManagerExtension.swift in Sources */,
