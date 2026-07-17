@@ -106,6 +106,8 @@ struct SAConnectionInfo {
 /// ObjC code can create, populate, and pass this object; Swift code can read `.info` to get the value type.
 @objc class SAConnectionInfoObjC: NSObject {
 
+    @objc static let keychainPasswordPlaceholder = "SequelAceSecretPassword"
+
     var info: SAConnectionInfo
 
     @objc override init() {
@@ -145,6 +147,25 @@ struct SAConnectionInfo {
         @unknown default:
             return fallbackHost
         }
+    }
+
+    /// Returns whether SPMySQLConnection should request the saved password from its delegate.
+    @objc(shouldDeferMySQLPasswordToDelegateForInfo:password:delegateAvailable:)
+    class func shouldDeferMySQLPasswordToDelegate(
+        for info: SAConnectionInfoObjC,
+        password: String,
+        delegateAvailable: Bool
+    ) -> Bool {
+        guard delegateAvailable else {
+            return false
+        }
+
+        guard info.type != .awsIAM, info.type != .vault else {
+            return false
+        }
+
+        return !info.connectionKeychainItemName.isEmpty
+            && password == keychainPasswordPlaceholder
     }
 
     // MARK: Basic Connection

@@ -204,7 +204,7 @@ import Foundation
     @objc func connect(
         with info: SAConnectionInfoObjC,
         preferences: SAConnectionPreferences,
-        password: String,
+        password: String?,
         sshPassword: String,
         parentWindow: NSWindow?,
         completion: @escaping (SAConnectionResult) -> Void
@@ -267,7 +267,7 @@ import Foundation
     private func connectMySQL(
         info: SAConnectionInfoObjC,
         preferences: SAConnectionPreferences,
-        password: String,
+        password: String?,
         tunnel: SPSSHTunnel?,
         attemptID: UInt64,
         completion: @escaping (SAConnectionResult) -> Void
@@ -304,7 +304,9 @@ import Foundation
                 break
             }
 
-            conn.password = password
+            if let password {
+                conn.password = password
+            }
             conn.allowDataLocalInfile = info.allowDataLocalInfile != 0
             conn.enableClearTextPlugin = info.enableClearTextPlugin != 0
             conn.requestServerPublicKey = info.requestServerPublicKey != 0
