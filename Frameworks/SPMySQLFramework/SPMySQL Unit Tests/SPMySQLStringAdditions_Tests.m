@@ -19,7 +19,9 @@
 
 @end
 
-@interface SPMySQLConnectionDatabaseAssertion_Tests : XCTestCase
+@interface SPMySQLConnectionDatabaseAssertion_Tests : XCTestCase <SPMySQLStreamingResultStoreDelegate>
+
+@property (nonatomic, strong) XCTestExpectation *resultStoreDownloadExpectation;
 
 @end
 
@@ -69,6 +71,11 @@
 		*firstMismatch = message;
 	}
 	[lock unlock];
+}
+
+- (void)resultStoreDidFinishLoadingData:(SPMySQLStreamingResultStore *)resultStore
+{
+	[self.resultStoreDownloadExpectation fulfill];
 }
 
 - (void)testQueriesCanAssertDatabaseAtomicallyOnSharedConnection
@@ -127,10 +134,22 @@
 		// session. Asserting a database must not overwrite that caller-managed
 		// state before the imported query runs.
 		XCTAssertTrue([connection setEncoding:@"latin1"]);
-		[connection queryString:@"SET NAMES utf8mb4"];
+		[connection queryString:@"SET NAMES utf8mb4 COLLATE utf8mb4_bin"];
 		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		XCTAssertTrue([unicodeDatabase canBeConvertedToEncoding:NSWindowsCP1252StringEncoding]);
+		SPMySQLResult *representableDatabaseResult = [connection queryString:@"SELECT @@character_set_client, @@character_set_results, @@character_set_connection, @@collation_connection"
+		                                                                     assertingDatabase:unicodeDatabase];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		if (![connection queryErrored]) {
+			NSArray *representableDatabaseState = [representableDatabaseResult getRowAsArray];
+			XCTAssertEqualObjects([representableDatabaseState objectAtIndex:0], @"utf8mb4");
+			XCTAssertEqualObjects([representableDatabaseState objectAtIndex:1], @"utf8mb4");
+			XCTAssertEqualObjects([representableDatabaseState objectAtIndex:2], @"utf8mb4");
+			XCTAssertEqualObjects([representableDatabaseState objectAtIndex:3], @"utf8mb4_bin");
+		}
+
 		XCTAssertFalse([unrepresentableDatabase canBeConvertedToEncoding:NSASCIIStringEncoding]);
-		SPMySQLResult *callerManagedEncodingResult = [connection queryString:@"SELECT @@character_set_client, @@character_set_results, @@character_set_connection"
+		SPMySQLResult *callerManagedEncodingResult = [connection queryString:@"SELECT @@character_set_client, @@character_set_results, @@character_set_connection, @@collation_connection"
 		                                                                    usingEncoding:NSASCIIStringEncoding
 		                                                                   withResultType:SPMySQLResultAsResult
 		                                                               assertingDatabase:unrepresentableDatabase];
@@ -139,8 +158,51 @@
 		XCTAssertEqualObjects([callerManagedEncodingState objectAtIndex:0], @"utf8mb4");
 		XCTAssertEqualObjects([callerManagedEncodingState objectAtIndex:1], @"utf8mb4");
 		XCTAssertEqualObjects([callerManagedEncodingState objectAtIndex:2], @"utf8mb4");
+		XCTAssertEqualObjects([callerManagedEncodingState objectAtIndex:3], @"utf8mb4_bin");
 		XCTAssertEqualObjects([connection encoding], @"latin1");
 		XCTAssertTrue([connection setEncoding:originalEncoding]);
+
+		// Exercise the inverse stale-cache direction as well: the framework cache
+		// remains UTF-8 while a caller-managed session expects latin1 bytes.
+		[connection queryString:@"SET NAMES latin1 COLLATE latin1_bin"];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		SPMySQLResult *inverseCallerManagedResult = [connection queryString:@"SELECT @@character_set_client, @@character_set_results, @@character_set_connection, @@collation_connection"
+		                                                                      assertingDatabase:unicodeDatabase];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		if (![connection queryErrored]) {
+			NSArray *inverseCallerManagedState = [inverseCallerManagedResult getRowAsArray];
+			XCTAssertEqualObjects([inverseCallerManagedState objectAtIndex:0], @"latin1");
+			XCTAssertEqualObjects([inverseCallerManagedState objectAtIndex:1], @"latin1");
+			XCTAssertEqualObjects([inverseCallerManagedState objectAtIndex:2], @"latin1");
+			XCTAssertEqualObjects([inverseCallerManagedState objectAtIndex:3], @"latin1_bin");
+		}
+		[connection queryString:@"SET CHARACTER_SET_RESULTS=NULL, CHARACTER_SET_CONNECTION=utf8mb4, COLLATION_CONNECTION=utf8mb4_bin"];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		SPMySQLResult *inverseUnrepresentableResult = [connection queryString:@"SELECT @@character_set_client, @@character_set_results IS NULL, @@character_set_connection, @@collation_connection"
+		                                                                         assertingDatabase:unrepresentableDatabase];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		if (![connection queryErrored]) {
+			NSArray *inverseUnrepresentableState = [inverseUnrepresentableResult getRowAsArray];
+			XCTAssertEqualObjects([inverseUnrepresentableState objectAtIndex:0], @"latin1");
+			XCTAssertEqualObjects([inverseUnrepresentableState objectAtIndex:1], @"1");
+			XCTAssertEqualObjects([inverseUnrepresentableState objectAtIndex:2], @"utf8mb4");
+			XCTAssertEqualObjects([inverseUnrepresentableState objectAtIndex:3], @"utf8mb4_bin");
+		}
+		XCTAssertEqualObjects([connection encoding], originalEncoding);
+
+		[connection queryString:@"SELECT 1" assertingDatabase:[unrepresentableDatabase stringByAppendingString:@"_missing"]];
+		XCTAssertTrue([connection queryErrored]);
+		XCTAssertEqual([connection lastErrorID], 1049U);
+		SPMySQLResult *failedAssertionStateResult = [connection queryString:@"SELECT @@character_set_client, @@character_set_results IS NULL, @@character_set_connection, @@collation_connection"];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		NSArray *failedAssertionState = [failedAssertionStateResult getRowAsArray];
+		XCTAssertEqualObjects([failedAssertionState objectAtIndex:0], @"latin1");
+		XCTAssertEqualObjects([failedAssertionState objectAtIndex:1], @"1");
+		XCTAssertEqualObjects([failedAssertionState objectAtIndex:2], @"utf8mb4");
+		XCTAssertEqualObjects([failedAssertionState objectAtIndex:3], @"utf8mb4_bin");
+
+		[connection queryString:@"SET NAMES utf8mb4"];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
 
 		XCTAssertTrue([connection setEncoding:@"latin2"]);
 		NSString *expectedConnectionCharacterSet = [connection getFirstFieldFromQuery:@"SELECT @@character_set_connection"];
@@ -160,15 +222,17 @@
 		XCTAssertTrue([connection setEncoding:originalEncoding]);
 
 		SPMySQLStreamingResultStore *resultStore = [connection resultStoreFromQueryString:@"SELECT DATABASE()" assertingDatabase:databaseA];
+		self.resultStoreDownloadExpectation = [self expectationWithDescription:@"Streaming result store download completes"];
+		resultStore.delegate = self;
 		[resultStore startDownload];
-		NSDate *deadline = [NSDate dateWithTimeIntervalSinceNow:5];
-		while ([resultStore numberOfRows] == 0 && [deadline timeIntervalSinceNow] > 0) {
-			usleep(1000);
-		}
-		NSUInteger rowCount = [resultStore numberOfRows];
-		XCTAssertEqual(rowCount, 1);
-		if (rowCount == 1) {
-			XCTAssertEqualObjects([[resultStore rowContentsAtIndex:0] firstObject], databaseA);
+		XCTWaiterResult resultStoreWaitResult = [XCTWaiter waitForExpectations:@[self.resultStoreDownloadExpectation] timeout:5];
+		XCTAssertEqual(resultStoreWaitResult, XCTWaiterResultCompleted);
+		if (resultStoreWaitResult == XCTWaiterResultCompleted) {
+			NSUInteger rowCount = [resultStore numberOfRows];
+			XCTAssertEqual(rowCount, 1);
+			if (rowCount == 1) {
+				XCTAssertEqualObjects([[resultStore rowContentsAtIndex:0] firstObject], databaseA);
+			}
 		}
 		[resultStore cancelResultLoad];
 
