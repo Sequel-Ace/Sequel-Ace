@@ -268,7 +268,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		0867D691FE84028FC02AAC07 = {
+		0867D691FE84028FC02AAC07 /* SPMySQLFramework */ = {
 			isa = PBXGroup;
 			children = (
 				177916A01E88733000EE3043 /* LICENSE */,
@@ -651,7 +651,7 @@
 				en,
 				Base,
 			);
-			mainGroup = 0867D691FE84028FC02AAC07;
+			mainGroup = 0867D691FE84028FC02AAC07 /* SPMySQLFramework */;
 			productRefGroup = 034768DFFF38A50411DB9C8B /* Products */;
 			projectDirPath = "";
 			projectRoot = "";

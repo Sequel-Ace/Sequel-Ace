@@ -2742,7 +2742,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 	if(tblType == SPTableTypeView){
 		scanner = [[NSScanner alloc] initWithString:[[queryResult getRowAsDictionary] objectForKey:@"Create View"]];
-		[scanner scanUpToString:@"AS" intoString:nil];
+		[scanner scanUpToString:@" AS " intoString:nil];
 		[scanner scanUpToString:@"" intoString:&scanString];
 		NSString *viewDatabaseName = moveToDifferentDB ? targetDatabaseName : sourceDatabaseName;
 		[mySQLConnection queryString:[NSString stringWithFormat:@"CREATE VIEW %@ %@", [tableName backtickQuotedString], scanString] assertingDatabase:viewDatabaseName];

@@ -4,6 +4,7 @@
 //
 
 import XCTest
+import SPMySQL
 
 final class SPCustomQuerySQLClassifierTests: XCTestCase {
 
@@ -69,6 +70,10 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         )
         XCTAssertFalse(
             SPCustomQuerySQLClassifier.isQuerySafeWithoutDestructiveWarning("/*!99999 DELETE FROM future_table */")
+        )
+        XCTAssertEqual(
+            SPCustomQuerySQLClassifier.stripSQLComments("SELECT 1--"),
+            "SELECT 1 "
         )
     }
 
@@ -199,14 +204,8 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
             "new\"db/*literal*/"
         )
         XCTAssertEqual(
-            contextDatabaseName(
-                afterSuccessfulQuery: "USE [new]]db/*literal*/#name]",
-                currentDatabase: "old_db",
-                databaseNamesAreCaseSensitive: true,
-                serverVersion: 101_100,
-                serverIsMariaDB: true
-            ),
-            "new]db/*literal*/#name"
+            contextDatabaseName(afterSuccessfulQuery: "USE`quoted_db`", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
+            "quoted_db"
         )
         XCTAssertEqual(
             contextDatabaseName(afterSuccessfulQuery: "USEFUL db", currentDatabase: "old_db", databaseNamesAreCaseSensitive: true),
@@ -265,6 +264,14 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
             ),
             "shared_db"
         )
+        XCTAssertEqual(
+            contextDatabaseName(
+                afterSuccessfulQuery: "/*!999999999999999999999999 USE overflow_db */",
+                currentDatabase: "old_db",
+                databaseNamesAreCaseSensitive: true
+            ),
+            "old_db"
+        )
     }
 
     func testDatabaseContextClearsOnlyWhenDroppedNameMatchesUnderServerCaseRules() {
@@ -296,18 +303,22 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
             contextDatabaseName(afterSuccessfulQuery: "DROP DATABASE \"App_\"\"DB\"", currentDatabase: "App_\"DB", databaseNamesAreCaseSensitive: true)
         )
         XCTAssertNil(
-            contextDatabaseName(
-                afterSuccessfulQuery: "DROP SCHEMA [App_]]DB]",
-                currentDatabase: "App_]DB",
-                databaseNamesAreCaseSensitive: true,
-                serverVersion: 101_100,
-                serverIsMariaDB: true
-            )
+            contextDatabaseName(afterSuccessfulQuery: "DROP DATABASE`app_db`", currentDatabase: "app_db", databaseNamesAreCaseSensitive: true)
+        )
+        XCTAssertNil(
+            contextDatabaseName(afterSuccessfulQuery: "DROP DATABASE IF EXISTS`app_db`", currentDatabase: "app_db", databaseNamesAreCaseSensitive: true)
         )
     }
 
-    func testDatabaseContextSupportsDropCreateUseRebuildSequence() {
+    func testDatabaseContextTracksCustomQueryAndImportBatchSequence() {
         var databaseName: String? = "app_db"
+
+        databaseName = contextDatabaseName(
+            afterSuccessfulQuery: "INSERT INTO events VALUES (1)",
+            currentDatabase: databaseName,
+            databaseNamesAreCaseSensitive: true
+        )
+        XCTAssertEqual(databaseName, "app_db")
 
         databaseName = contextDatabaseName(
             afterSuccessfulQuery: "DROP DATABASE app_db",
@@ -329,6 +340,52 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
             databaseNamesAreCaseSensitive: true
         )
         XCTAssertEqual(databaseName, "app_db")
+    }
+
+    func testDatabaseContextPrefixGuardSkipsOrdinaryStatements() {
+        for query in [
+            "INSERT INTO t VALUES (1)",
+            "UPDATE t SET value = 1",
+            "DELETE FROM t",
+            "SELECT 1",
+            "USEFUL identifier",
+            "DROPLET identifier"
+        ] {
+            XCTAssertFalse(SASQLDatabaseContext.queryCouldChangeDatabaseContext(query), query)
+        }
+
+        for query in [
+            "USE target",
+            " use target",
+            "DROP DATABASE target",
+            "drop schema target",
+            "# comment\nUSE target",
+            "-- comment\nUSE target",
+            "/* comment */ USE target"
+        ] {
+            XCTAssertTrue(SASQLDatabaseContext.queryCouldChangeDatabaseContext(query), query)
+        }
+    }
+
+    func testMariaDBDoesNotTreatBracketsAsQuotedIdentifiers() {
+        XCTAssertEqual(
+            SPCustomQuerySQLClassifier.stripSQLComments(
+                "SELECT [/* comment */]",
+                serverVersion: 101_100,
+                serverIsMariaDB: true
+            ),
+            "SELECT [ ]"
+        )
+        XCTAssertEqual(
+            contextDatabaseName(
+                afterSuccessfulQuery: "USE [new database]",
+                currentDatabase: "old_db",
+                databaseNamesAreCaseSensitive: true,
+                serverVersion: 101_100,
+                serverIsMariaDB: true
+            ),
+            "old_db"
+        )
     }
 
     func testDatabaseContextDetectsSelectionAndDeselectionTransitions() {
@@ -353,5 +410,183 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
             serverVersion: serverVersion,
             serverIsMariaDB: serverIsMariaDB
         )
+    }
+}
+
+final class SASQLDatabaseContextIntegrationTests: XCTestCase {
+
+    func testLiveCustomQueryBatchFollowsSuccessfulUse() throws {
+        guard let connection = newLocalConnection() else {
+            throw XCTSkip("No local MySQL connection configured for the custom-query batch regression.")
+        }
+        guard connection.connect() else {
+            throw XCTSkip("Local MySQL connection is unavailable for the custom-query batch regression.")
+        }
+
+        let identifier = UUID().uuidString.lowercased().replacingOccurrences(of: "-", with: "_")
+        let databaseA = "sa_batch_\(identifier)_a"
+        let databaseB = "sa_batch_\(identifier)_b"
+        let databases = [databaseA, databaseB]
+
+        defer {
+            for database in databases {
+                _ = connection.queryString("DROP DATABASE IF EXISTS \(backtickQuoted(database))")
+            }
+            connection.disconnect()
+        }
+
+        for database in databases {
+            _ = connection.queryString("CREATE DATABASE \(backtickQuoted(database))")
+            assertQuerySucceeded(connection)
+        }
+
+        // Mirror SPCustomQuery.performQueriesTask: each statement is asserted
+        // against the context derived from the preceding successful statement.
+        var databaseName: String? = databaseA
+        let queries = [
+            "CREATE TABLE before_use (value INT)",
+            "USE \(backtickQuoted(databaseB))",
+            "CREATE TABLE after_use (value INT)",
+            "INSERT INTO after_use VALUES (1)"
+        ]
+
+        for query in queries {
+            _ = connection.queryString(query, assertingDatabaseContext: databaseName)
+            assertQuerySucceeded(connection)
+            databaseName = SASQLDatabaseContext.databaseName(
+                afterSuccessfulQuery: query,
+                currentDatabase: databaseName,
+                databaseNamesAreCaseSensitive: true,
+                serverVersion: 80_000,
+                serverIsMariaDB: false
+            )
+        }
+
+        XCTAssertEqual(databaseName, databaseB)
+        XCTAssertEqual(
+            connection.getFirstField(
+                fromQuery: "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'after_use'",
+                assertingDatabase: databaseA
+            ) as? String,
+            "0"
+        )
+        XCTAssertEqual(
+            connection.getFirstField(
+                fromQuery: "SELECT COUNT(*) FROM after_use",
+                assertingDatabase: databaseB
+            ) as? String,
+            "1"
+        )
+    }
+
+    func testLiveCrossDatabaseViewCopyUsesTargetContext() throws {
+        guard let connection = newLocalConnection() else {
+            throw XCTSkip("No local MySQL connection configured for the cross-database view-copy regression.")
+        }
+        guard connection.connect() else {
+            throw XCTSkip("Local MySQL connection is unavailable for the cross-database view-copy regression.")
+        }
+
+        let identifier = UUID().uuidString.lowercased().replacingOccurrences(of: "-", with: "_")
+        let sourceDatabase = "sa_view_\(identifier)_source"
+        let targetDatabase = "sa_view_\(identifier)_target"
+        let databases = [sourceDatabase, targetDatabase]
+
+        defer {
+            for database in databases {
+                _ = connection.queryString("DROP DATABASE IF EXISTS \(backtickQuoted(database))")
+            }
+            connection.disconnect()
+        }
+
+        for database in databases {
+            _ = connection.queryString("CREATE DATABASE \(backtickQuoted(database))")
+            assertQuerySucceeded(connection)
+            _ = connection.queryString("CREATE TABLE items (value INT)", assertingDatabase: database)
+            assertQuerySucceeded(connection)
+        }
+        _ = connection.queryString("INSERT INTO items VALUES (1)", assertingDatabase: sourceDatabase)
+        assertQuerySucceeded(connection)
+        _ = connection.queryString("INSERT INTO items VALUES (2)", assertingDatabase: targetDatabase)
+        assertQuerySucceeded(connection)
+        _ = connection.queryString("CREATE VIEW source_view AS SELECT value FROM items", assertingDatabase: sourceDatabase)
+        assertQuerySucceeded(connection)
+
+        let createResult = connection.queryString("SHOW CREATE VIEW source_view", assertingDatabase: sourceDatabase)
+        assertQuerySucceeded(connection)
+        let createRow = try XCTUnwrap(createResult?.getRowAsArray() as? [Any])
+        let createStatement = try XCTUnwrap(createRow.count > 1 ? createRow[1] as? String : nil)
+        let bodyRange = try XCTUnwrap(createStatement.range(of: " AS "))
+        let viewBody = String(createStatement[bodyRange.lowerBound...])
+
+        // Mirror SPTablesList._copyTable's view branch: SHOW CREATE's body is
+        // unqualified, so asserting the target database is what binds it to
+        // the target's tables and creates the view in the requested schema.
+        _ = connection.queryString(
+            "CREATE VIEW copied_view \(viewBody)",
+            assertingDatabase: targetDatabase
+        )
+        assertQuerySucceeded(connection)
+
+        XCTAssertEqual(
+            connection.getFirstField(fromQuery: "SELECT value FROM copied_view", assertingDatabase: targetDatabase) as? String,
+            "2"
+        )
+        XCTAssertEqual(
+            connection.getFirstField(
+                fromQuery: "SELECT COUNT(*) FROM information_schema.views WHERE table_schema = DATABASE() AND table_name = 'copied_view'",
+                assertingDatabase: sourceDatabase
+            ) as? String,
+            "0"
+        )
+    }
+
+    private func newLocalConnection() -> SPMySQLConnection? {
+        let environment = ProcessInfo.processInfo.environment
+        var socketPath = environment["SPMYSQL_TEST_SOCKET"]
+        let testHost = environment["SPMYSQL_TEST_HOST"]
+
+        if (socketPath?.isEmpty ?? true), (testHost?.isEmpty ?? true) {
+            socketPath = ["/tmp/mysql.sock", "/opt/homebrew/var/mysql/mysql.sock"]
+                .first(where: { FileManager.default.fileExists(atPath: $0) })
+        }
+
+        let connection = SPMySQLConnection()
+        let testUser = environment["SPMYSQL_TEST_USER"]
+        connection.username = testUser?.isEmpty == false ? testUser : "root"
+        connection.password = environment["SPMYSQL_TEST_PASSWORD"]
+        connection.useKeepAlive = false
+
+        if let testHost, !testHost.isEmpty {
+            connection.useSocket = false
+            connection.host = testHost
+            if let port = environment["SPMYSQL_TEST_PORT"].flatMap(UInt.init) {
+                connection.port = port
+            }
+        } else if let socketPath, !socketPath.isEmpty {
+            connection.useSocket = true
+            connection.socketPath = socketPath
+        } else {
+            return nil
+        }
+
+        return connection
+    }
+
+    private func assertQuerySucceeded(
+        _ connection: SPMySQLConnection,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        XCTAssertFalse(
+            connection.queryErrored(),
+            connection.lastErrorMessage() ?? "Unknown MySQL error",
+            file: file,
+            line: line
+        )
+    }
+
+    private func backtickQuoted(_ identifier: String) -> String {
+        "`\(identifier.replacingOccurrences(of: "`", with: "``"))`"
     }
 }

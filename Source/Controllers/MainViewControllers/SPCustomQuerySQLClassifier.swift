@@ -89,7 +89,8 @@ enum SPCustomQuerySQLClassifier {
     /// gates are applied before preserving a body. Comments are replaced so
     /// adjacent tokens stay separated, e.g. `SELECT/*c*/1` becomes `SELECT 1`.
     /// The `--` form follows MySQL's whitespace/control rule, and comment
-    /// markers inside strings or quoted identifiers are preserved.
+    /// markers inside strings or quoted identifiers are preserved. Keep these
+    /// lexical rules mirrored in SPMySQLFramework's SADatabaseAssertion.
     static func stripSQLComments(
         _ source: String,
         serverVersion: Int? = nil,
@@ -119,7 +120,7 @@ enum SPCustomQuerySQLClassifier {
             if let activeQuote = quote {
                 result.append(character)
 
-                if character == "\\", activeQuote != "`", activeQuote != "]", index + 1 < characters.count {
+                if character == "\\", activeQuote != "`", index + 1 < characters.count {
                     index += 1
                     result.append(characters[index])
                 } else if character == activeQuote {
@@ -142,13 +143,6 @@ enum SPCustomQuerySQLClassifier {
                 continue
             }
 
-            if serverIsMariaDB, character == "[" {
-                quote = "]"
-                result.append(character)
-                index += 1
-                continue
-            }
-
             if character == "#" {
                 result.append(" ")
                 index += 1
@@ -159,9 +153,9 @@ enum SPCustomQuerySQLClassifier {
             }
 
             if character == "-",
-               index + 2 < characters.count,
+               index + 1 < characters.count,
                characters[index + 1] == "-",
-               isMySQLCommentWhitespace(characters[index + 2]) {
+               (index + 2 == characters.count || isMySQLCommentWhitespace(characters[index + 2])) {
                 result.append(" ")
                 index += 2
                 while index < characters.count, characters[index] != "\n" {
@@ -337,12 +331,13 @@ enum SPCustomQuerySQLClassifier {
 
 @objc final class SASQLDatabaseContext: NSObject {
 
-    private static let identifierPattern = #"(`(?:``|[^`])*`|"(?:""|[^"])*"|\[(?:\]\]|[^\]])*\]|[^\s;]+)"#
+    private static let identifierPattern = #"(`(?:``|[^`])*`|"(?:""|[^"])*"|[^\s;]+)"#
+    private static let identifierSeparator = #"(?:\s+|(?=[`"]))"#
     private static let useRegex = makeRegex(
-        pattern: "(?is)^\\s*USE\\s+\(identifierPattern)\\s*;?\\s*$"
+        pattern: "(?is)^\\s*USE\(identifierSeparator)\(identifierPattern)\\s*;?\\s*$"
     )
     private static let dropDatabaseRegex = makeRegex(
-        pattern: "(?is)^\\s*DROP\\s+(?:DATABASE|SCHEMA)\\s+(?:IF\\s+EXISTS\\s+)?\(identifierPattern)\\s*;?\\s*$"
+        pattern: "(?is)^\\s*DROP\\s+(?:DATABASE|SCHEMA)\(identifierSeparator)(?:IF\\s+EXISTS\(identifierSeparator))?\(identifierPattern)\\s*;?\\s*$"
     )
 
     @objc(databaseNameChangedFrom:to:)
@@ -358,6 +353,13 @@ enum SPCustomQuerySQLClassifier {
         serverVersion: Int,
         serverIsMariaDB: Bool
     ) -> String? {
+        // Keep this prefix check and executable-comment behavior in sync with
+        // SADatabaseAssertion in SPMySQLFramework. Ordinary statements must
+        // return here before the comment stripper allocates a Character array.
+        guard queryCouldChangeDatabaseContext(query) else {
+            return currentDatabase
+        }
+
         let queryWithoutComments = SPCustomQuerySQLClassifier.stripSQLComments(
             query,
             serverVersion: serverVersion,
@@ -380,6 +382,20 @@ enum SPCustomQuerySQLClassifier {
         return currentDatabase
     }
 
+    static func queryCouldChangeDatabaseContext(_ query: String) -> Bool {
+        guard let start = query.firstIndex(where: { !$0.isWhitespace }) else {
+            return false
+        }
+
+        let suffix = query[start...]
+        if suffix.hasPrefix("#") || suffix.hasPrefix("--") || suffix.hasPrefix("/*") {
+            return true
+        }
+
+        return hasLeadingKeyword("USE", in: query, at: start)
+            || hasLeadingKeyword("DROP", in: query, at: start)
+    }
+
     private static func databaseName(matchedBy regex: NSRegularExpression, in query: String) -> String? {
         let range = NSRange(query.startIndex..<query.endIndex, in: query)
         guard let match = regex.firstMatch(in: query, range: range),
@@ -398,11 +414,33 @@ enum SPCustomQuerySQLClassifier {
             return String(identifier.dropFirst().dropLast()).replacingOccurrences(of: "\"\"", with: "\"")
         }
 
-        if identifier.hasPrefix("["), identifier.hasSuffix("]") {
-            return String(identifier.dropFirst().dropLast()).replacingOccurrences(of: "]]", with: "]")
+        return identifier
+    }
+
+    private static func hasLeadingKeyword(
+        _ keyword: String,
+        in query: String,
+        at start: String.Index
+    ) -> Bool {
+        var queryIndex = start
+        for keywordCharacter in keyword {
+            guard queryIndex < query.endIndex,
+                  query[queryIndex].lowercased() == keywordCharacter.lowercased() else {
+                return false
+            }
+            query.formIndex(after: &queryIndex)
         }
 
-        return identifier
+        guard queryIndex < query.endIndex else {
+            return true
+        }
+        return !isIdentifierCharacter(query[queryIndex])
+    }
+
+    private static func isIdentifierCharacter(_ character: Character) -> Bool {
+        character == "_" || character == "$" || character.unicodeScalars.allSatisfy {
+            CharacterSet.alphanumerics.contains($0)
+        }
     }
 
     private static func makeRegex(pattern: String) -> NSRegularExpression {

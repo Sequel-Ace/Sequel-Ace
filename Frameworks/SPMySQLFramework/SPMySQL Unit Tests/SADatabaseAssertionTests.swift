@@ -107,7 +107,7 @@ final class SADatabaseAssertionTests: XCTestCase {
         )
 
         XCTAssertEqual(selectedError?.errorID, 1046)
-        XCTAssertEqual(selectedError?.message, "No database selected")
+        XCTAssertEqual(selectedError?.message, "A database is unexpectedly selected on this connection.")
         XCTAssertEqual(selectedError?.sqlState, "3D000")
         XCTAssertNil(emptyError)
     }
@@ -314,9 +314,37 @@ final class SADatabaseAssertionTests: XCTestCase {
 
     func testDatabaseContextChangingQueriesInvalidateAssertionState() {
         XCTAssertTrue(queryMayChangeDatabaseContext("USE `target``name`"))
+        XCTAssertTrue(queryMayChangeDatabaseContext("USE`target`"))
         XCTAssertTrue(queryMayChangeDatabaseContext("DROP DATABASE IF EXISTS target"))
+        XCTAssertTrue(queryMayChangeDatabaseContext("DROP DATABASE`target`"))
+        XCTAssertTrue(queryMayChangeDatabaseContext("DROP DATABASE IF EXISTS`target`"))
         XCTAssertTrue(queryMayChangeDatabaseContext("DROP SCHEMA target;"))
         XCTAssertTrue(queryMayChangeDatabaseContext("/*!80000 USE target */"))
+    }
+
+    func testDatabaseContextPrefixGuardSkipsOrdinaryStatements() {
+        for query in [
+            "INSERT INTO t VALUES (1)",
+            "UPDATE t SET value = 1",
+            "DELETE FROM t",
+            "SELECT 1",
+            "USEFUL identifier",
+            "DROPLET identifier"
+        ] {
+            XCTAssertFalse(SADatabaseAssertion.queryCouldChangeDatabaseContext(query), query)
+        }
+
+        for query in [
+            "USE target",
+            " use target",
+            "DROP DATABASE target",
+            "drop schema target",
+            "# comment\nUSE target",
+            "-- comment\nUSE target",
+            "/* comment */ USE target"
+        ] {
+            XCTAssertTrue(SADatabaseAssertion.queryCouldChangeDatabaseContext(query), query)
+        }
     }
 
     func testCommentsAndQuotedTextDoNotInvalidateAssertionState() {
@@ -324,6 +352,14 @@ final class SADatabaseAssertionTests: XCTestCase {
         XCTAssertFalse(queryMayChangeDatabaseContext("/* USE target */ SELECT 1"))
         XCTAssertFalse(queryMayChangeDatabaseContext("-- USE target\nSELECT 1"))
         XCTAssertFalse(queryMayChangeDatabaseContext("SELECT 'DROP DATABASE target'"))
+        XCTAssertEqual(
+            SADatabaseAssertion.stripSQLComments(
+                "SELECT 1--",
+                serverVersion: 80_046,
+                serverIsMariaDB: false
+            ),
+            "SELECT 1 "
+        )
     }
 
     func testExecutableCommentVersionAndVendorGatesAreRespected() {
@@ -331,6 +367,25 @@ final class SADatabaseAssertionTests: XCTestCase {
         XCTAssertFalse(queryMayChangeDatabaseContext("/*M!80000 USE target */"))
         XCTAssertFalse(queryMayChangeDatabaseContext("/*!80000 USE target */", serverIsMariaDB: true))
         XCTAssertTrue(queryMayChangeDatabaseContext("/*M!80000 USE target */", serverIsMariaDB: true))
+        XCTAssertFalse(queryMayChangeDatabaseContext("/*!999999999999999999999999 USE target */"))
+    }
+
+    func testMariaDBDoesNotTreatBracketsAsQuotedIdentifiers() {
+        XCTAssertEqual(
+            SADatabaseAssertion.stripSQLComments(
+                "SELECT [/* comment */]",
+                serverVersion: 101_100,
+                serverIsMariaDB: true
+            ),
+            "SELECT [ ]"
+        )
+        XCTAssertFalse(
+            SADatabaseAssertion.queryMayChangeDatabaseContext(
+                "USE [new database]",
+                serverVersion: 101_100,
+                serverIsMariaDB: true
+            )
+        )
     }
 
     private func assertDatabase(
@@ -717,7 +772,7 @@ final class SADatabaseAssertionIntegrationTests: XCTestCase, SPMySQLStreamingRes
         XCTAssertTrue(connection.queryErrored())
         XCTAssertEqual(connection.lastErrorID(), 1046)
         XCTAssertEqual(connection.lastSqlstate(), "3D000")
-        XCTAssertEqual(connection.lastErrorMessage(), "No database selected")
+        XCTAssertEqual(connection.lastErrorMessage(), "A database is unexpectedly selected on this connection.")
         XCTAssertEqual(
             connection.getFirstField(fromQuery: "SELECT DATABASE()", assertingDatabase: nil) as? String,
             databaseB

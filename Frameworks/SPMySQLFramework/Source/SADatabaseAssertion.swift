@@ -303,9 +303,9 @@ public final class SADatabaseAssertionState: NSObject {
 }
 
 final class SADatabaseAssertion: NSObject {
-    private static let noDatabaseError = SADatabaseAssertionError(
+    private static let unexpectedDatabaseError = SADatabaseAssertionError(
         errorID: 1046,
-        message: "No database selected",
+        message: "A database is unexpectedly selected on this connection.",
         sqlState: "3D000"
     )
 
@@ -321,9 +321,10 @@ final class SADatabaseAssertion: NSObject {
         sqlState: nil
     )
 
-    private static let identifierPattern = #"(`(?:``|[^`])*`|"(?:""|[^"])*"|\[(?:\]\]|[^\]])*\]|[^\s;]+)"#
+    private static let identifierPattern = #"(`(?:``|[^`])*`|"(?:""|[^"])*"|[^\s;]+)"#
+    private static let identifierSeparator = #"(?:\s+|(?=[`"]))"#
     private static let databaseContextChangingRegex = makeRegex(
-        pattern: "(?is)^\\s*(?:USE\\s+\(identifierPattern)|DROP\\s+(?:DATABASE|SCHEMA)\\s+(?:IF\\s+EXISTS\\s+)?\(identifierPattern))\\s*;?\\s*$"
+        pattern: "(?is)^\\s*(?:USE\(identifierSeparator)\(identifierPattern)|DROP\\s+(?:DATABASE|SCHEMA)\(identifierSeparator)(?:IF\\s+EXISTS\(identifierSeparator))?\(identifierPattern))\\s*;?\\s*$"
     )
 
     static func safeCharacterSetName(from data: Data?) -> String? {
@@ -362,13 +363,13 @@ final class SADatabaseAssertion: NSObject {
 
         guard let databaseName, databaseName.isEmpty == false else {
             if databaseStateKnown {
-                return databaseIsSelected ? noDatabaseError : nil
+                return databaseIsSelected ? unexpectedDatabaseError : nil
             } else {
                 let activeDatabaseLookup = queryActiveDatabaseData()
                 if let lookupError = activeDatabaseLookup.error {
                     return lookupError
                 }
-                return activeDatabaseLookup.data?.isEmpty == false ? noDatabaseError : nil
+                return activeDatabaseLookup.data?.isEmpty == false ? unexpectedDatabaseError : nil
             }
         }
 
@@ -430,8 +431,8 @@ final class SADatabaseAssertion: NSObject {
         serverIsMariaDB: Bool
     ) -> Bool {
         // Most queries cannot affect the default database. Avoid allocating a
-        // Character array for large SELECT/INSERT/UPDATE payloads unless the
-        // first non-whitespace byte can begin USE, DROP, or a MySQL comment.
+        // Character array for large payloads unless the first keyword is USE
+        // or DROP, or leading comments require conservative inspection.
         guard queryCouldChangeDatabaseContext(query) else {
             return false
         }
@@ -446,13 +447,23 @@ final class SADatabaseAssertion: NSObject {
     }
 
     static func queryCouldChangeDatabaseContext(_ query: String) -> Bool {
-        guard let firstCharacter = query.first(where: { !$0.isWhitespace }) else {
+        guard let start = query.firstIndex(where: { !$0.isWhitespace }) else {
             return false
         }
-        return "uUdD#-/".contains(firstCharacter)
+
+        let suffix = query[start...]
+        if suffix.hasPrefix("#") || suffix.hasPrefix("--") || suffix.hasPrefix("/*") {
+            return true
+        }
+
+        return hasLeadingKeyword("USE", in: query, at: start)
+            || hasLeadingKeyword("DROP", in: query, at: start)
     }
 
-    private static func stripSQLComments(
+    // Keep this implementation's lexical rules and executable-comment gates
+    // mirrored in SPCustomQuerySQLClassifier.swift. The framework invalidates
+    // connection assertion state; the app copy derives a batch's database.
+    static func stripSQLComments(
         _ source: String,
         serverVersion: Int,
         serverIsMariaDB: Bool
@@ -467,7 +478,7 @@ final class SADatabaseAssertion: NSObject {
 
             if let activeQuote = quote {
                 result.append(character)
-                if character == "\\", activeQuote != "`", activeQuote != "]", index + 1 < characters.count {
+                if character == "\\", activeQuote != "`", index + 1 < characters.count {
                     index += 1
                     result.append(characters[index])
                 } else if character == activeQuote {
@@ -488,13 +499,6 @@ final class SADatabaseAssertion: NSObject {
                 index += 1
                 continue
             }
-            if serverIsMariaDB, character == "[" {
-                quote = "]"
-                result.append(character)
-                index += 1
-                continue
-            }
-
             if character == "#" {
                 result.append(" ")
                 index += 1
@@ -505,9 +509,10 @@ final class SADatabaseAssertion: NSObject {
             }
 
             if character == "-",
-               index + 2 < characters.count,
+               index + 1 < characters.count,
                characters[index + 1] == "-",
-               characters[index + 2].unicodeScalars.allSatisfy({ $0.value <= 0x20 }) {
+               (index + 2 == characters.count
+                || characters[index + 2].unicodeScalars.allSatisfy({ $0.value <= 0x20 })) {
                 result.append(" ")
                 index += 2
                 while index < characters.count, characters[index] != "\n" {
@@ -544,11 +549,13 @@ final class SADatabaseAssertion: NSObject {
                           characters[contentStart].unicodeScalars.allSatisfy({ (48...57).contains($0.value) }) {
                         contentStart += 1
                     }
-                    let requiredVersion = contentStart > versionStart
+                    let hasVersionGate = contentStart > versionStart
+                    let requiredVersion = hasVersionGate
                         ? Int(String(characters[versionStart..<contentStart]))
                         : nil
                     if shouldPreserveExecutableComment(
                         requiredVersion: requiredVersion,
+                        hasVersionGate: hasVersionGate,
                         isMariaDBOnlyComment: isMariaDBOnlyComment,
                         serverVersion: serverVersion,
                         serverIsMariaDB: serverIsMariaDB
@@ -575,11 +582,15 @@ final class SADatabaseAssertion: NSObject {
 
     private static func shouldPreserveExecutableComment(
         requiredVersion: Int?,
+        hasVersionGate: Bool,
         isMariaDBOnlyComment: Bool,
         serverVersion: Int,
         serverIsMariaDB: Bool
     ) -> Bool {
         if isMariaDBOnlyComment && !serverIsMariaDB {
+            return false
+        }
+        if hasVersionGate && requiredVersion == nil {
             return false
         }
         if let requiredVersion, requiredVersion > serverVersion {
@@ -592,6 +603,32 @@ final class SADatabaseAssertion: NSObject {
             return false
         }
         return true
+    }
+
+    private static func hasLeadingKeyword(
+        _ keyword: String,
+        in query: String,
+        at start: String.Index
+    ) -> Bool {
+        var queryIndex = start
+        for keywordCharacter in keyword {
+            guard queryIndex < query.endIndex,
+                  query[queryIndex].lowercased() == keywordCharacter.lowercased() else {
+                return false
+            }
+            query.formIndex(after: &queryIndex)
+        }
+
+        guard queryIndex < query.endIndex else {
+            return true
+        }
+        return !isIdentifierCharacter(query[queryIndex])
+    }
+
+    private static func isIdentifierCharacter(_ character: Character) -> Bool {
+        character == "_" || character == "$" || character.unicodeScalars.allSatisfy {
+            CharacterSet.alphanumerics.contains($0)
+        }
     }
 
     private static func makeRegex(pattern: String) -> NSRegularExpression {
