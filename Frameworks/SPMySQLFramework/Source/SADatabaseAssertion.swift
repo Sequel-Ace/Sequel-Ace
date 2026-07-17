@@ -149,12 +149,39 @@ public final class SADatabaseAssertionState: NSObject {
 
         let serverVersion = Int(mysql_get_server_version(connection))
         let serverInfo = mysql_get_server_info(connection).map { String(cString: $0) } ?? ""
-        if SADatabaseAssertion.queryMayChangeDatabaseContext(
+        guard let contextChange = SADatabaseAssertion.databaseContextChange(
             query,
             serverVersion: serverVersion,
             serverIsMariaDB: serverInfo.range(of: "mariadb", options: .caseInsensitive) != nil
-        ) {
-            databaseState = .unknown
+        ) else {
+            return
+        }
+
+        switch contextChange {
+        case .selected(let databaseName):
+            databaseState = .selected(databaseName)
+        case .dropped(let databaseName):
+            switch databaseState {
+            case .selected(let selectedDatabaseName):
+                guard let selectedDatabaseName else {
+                    databaseState = .unknown
+                    return
+                }
+
+                if selectedDatabaseName == databaseName {
+                    databaseState = .none
+                } else if selectedDatabaseName.caseInsensitiveCompare(databaseName) == .orderedSame {
+                    // Without lower_case_table_names the differently-cased
+                    // names are ambiguous: the current database was dropped
+                    // on a case-insensitive server but not necessarily on a
+                    // case-sensitive one. Fall back to live verification.
+                    databaseState = .unknown
+                }
+            case .unknown:
+                databaseState = .unknown
+            case .none:
+                break
+            }
         }
     }
 
@@ -303,6 +330,11 @@ public final class SADatabaseAssertionState: NSObject {
 }
 
 final class SADatabaseAssertion: NSObject {
+    enum DatabaseContextChange: Equatable {
+        case selected(String)
+        case dropped(String)
+    }
+
     private static let unexpectedDatabaseError = SADatabaseAssertionError(
         errorID: 1046,
         message: "A database is unexpectedly selected on this connection.",
@@ -323,8 +355,11 @@ final class SADatabaseAssertion: NSObject {
 
     private static let identifierPattern = #"(`(?:``|[^`])*`|"(?:""|[^"])*"|[^\s;]+)"#
     private static let identifierSeparator = #"(?:\s+|(?=[`"]))"#
-    private static let databaseContextChangingRegex = makeRegex(
-        pattern: "(?is)^\\s*(?:USE\(identifierSeparator)\(identifierPattern)|DROP\\s+(?:DATABASE|SCHEMA)\(identifierSeparator)(?:IF\\s+EXISTS\(identifierSeparator))?\(identifierPattern))\\s*;?\\s*$"
+    private static let useRegex = makeRegex(
+        pattern: "(?is)^\\s*USE\(identifierSeparator)\(identifierPattern)\\s*;?\\s*$"
+    )
+    private static let dropDatabaseRegex = makeRegex(
+        pattern: "(?is)^\\s*DROP\\s+(?:DATABASE|SCHEMA)\(identifierSeparator)(?:IF\\s+EXISTS\(identifierSeparator))?\(identifierPattern)\\s*;?\\s*$"
     )
 
     static func safeCharacterSetName(from data: Data?) -> String? {
@@ -430,11 +465,23 @@ final class SADatabaseAssertion: NSObject {
         serverVersion: Int,
         serverIsMariaDB: Bool
     ) -> Bool {
+        databaseContextChange(
+            query,
+            serverVersion: serverVersion,
+            serverIsMariaDB: serverIsMariaDB
+        ) != nil
+    }
+
+    static func databaseContextChange(
+        _ query: String,
+        serverVersion: Int,
+        serverIsMariaDB: Bool
+    ) -> DatabaseContextChange? {
         // Most queries cannot affect the default database. Avoid allocating a
         // Character array for large payloads unless the first keyword is USE
         // or DROP, or leading comments require conservative inspection.
         guard queryCouldChangeDatabaseContext(query) else {
-            return false
+            return nil
         }
 
         let queryWithoutComments = stripSQLComments(
@@ -442,8 +489,15 @@ final class SADatabaseAssertion: NSObject {
             serverVersion: serverVersion,
             serverIsMariaDB: serverIsMariaDB
         )
-        let range = NSRange(queryWithoutComments.startIndex..<queryWithoutComments.endIndex, in: queryWithoutComments)
-        return databaseContextChangingRegex.firstMatch(in: queryWithoutComments, range: range) != nil
+
+        if let selectedDatabase = databaseName(matchedBy: useRegex, in: queryWithoutComments) {
+            return .selected(selectedDatabase)
+        }
+        if let droppedDatabase = databaseName(matchedBy: dropDatabaseRegex, in: queryWithoutComments) {
+            return .dropped(droppedDatabase)
+        }
+
+        return nil
     }
 
     static func queryCouldChangeDatabaseContext(_ query: String) -> Bool {
@@ -629,6 +683,28 @@ final class SADatabaseAssertion: NSObject {
         character == "_" || character == "$" || character.unicodeScalars.allSatisfy {
             CharacterSet.alphanumerics.contains($0)
         }
+    }
+
+    private static func databaseName(matchedBy regex: NSRegularExpression, in query: String) -> String? {
+        let range = NSRange(query.startIndex..<query.endIndex, in: query)
+        guard let match = regex.firstMatch(in: query, range: range),
+              let captureRange = Range(match.range(at: 1), in: query) else {
+            return nil
+        }
+
+        let identifier = String(query[captureRange])
+        guard identifier.count >= 2 else {
+            return identifier
+        }
+
+        if identifier.hasPrefix("`"), identifier.hasSuffix("`") {
+            return String(identifier.dropFirst().dropLast()).replacingOccurrences(of: "``", with: "`")
+        }
+        if identifier.hasPrefix("\""), identifier.hasSuffix("\"") {
+            return String(identifier.dropFirst().dropLast()).replacingOccurrences(of: "\"\"", with: "\"")
+        }
+
+        return identifier
     }
 
     private static func makeRegex(pattern: String) -> NSRegularExpression {
