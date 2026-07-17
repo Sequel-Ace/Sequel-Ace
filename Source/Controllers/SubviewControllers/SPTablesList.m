@@ -70,7 +70,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void)_addTable;
 - (void)_addTableWithDetails:(NSDictionary *)tableDetails;
 - (void)_copyTable;
-- (void)_renameTableOfType:(SPTableType)tableType from:(NSString *)oldTableName to:(NSString *)newTableName;
+- (void)_renameTableOfType:(SPTableType)tableType from:(NSString *)oldTableName to:(NSString *)newTableName inDatabase:(NSString *)databaseName;
 - (NSMutableArray *)_allSchemaObjectsOfType:(SPTableType)type;
 - (BOOL)_databaseHasObjectOfType:(SPTableType)type;
 - (NSString *)_pinnedTablesConnectionIdentifier;
@@ -1750,7 +1750,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 - (void) renameTableOfType:(SPTableType)tableType from:(NSString *)fromTableName to:(NSString *)toTableName {
   @try {
     // first: update the database
-    [self _renameTableOfType:tableType from:fromTableName to:toTableName];
+    [self _renameTableOfType:tableType from:fromTableName to:toTableName inDatabase:[tableDocumentInstance database]];
     
     // second : unpin fromTableName and pin toTableName
     [self handlePinnedTableRenameFrom:fromTableName To:toTableName];
@@ -2838,8 +2838,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
 		SPMainQSync(^{
 			[self->mySQLConnection selectDatabase:targetDatabaseName];
+			[self _renameTableOfType:SPTableTypeTableNewDB from:tempTableName to:tableName inDatabase:targetDatabaseName];
 			[self->tableDocumentInstance selectDatabase:targetDatabaseName item:nil];
-			[self _renameTableOfType:SPTableTypeTableNewDB from:tempTableName to:tableName];
 		});
 	}
 	else{
@@ -2913,10 +2913,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
  * This function ONLY changes the database. It does NOT refresh the views etc.
  * CAREFUL: This function raises an exception if renaming fails, and does not show an error message.
  */
-- (void)_renameTableOfType:(SPTableType)tableType from:(NSString *)oldTableName to:(NSString *)newTableName
+- (void)_renameTableOfType:(SPTableType)tableType from:(NSString *)oldTableName to:(NSString *)newTableName inDatabase:(NSString *)databaseName
 {
-	NSString *databaseName = [tableDocumentInstance database];
-
 	// check if the name really changed
 	if ([oldTableName isEqualToString:newTableName]) return;
 
@@ -2939,8 +2937,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			[NSException raise:@"No Tempname found" format:NSLocalizedString(@"An error occurred while renaming '%@'. No temporary name could be found. Please try renaming to something else first.", @"rename table error - no temporary name found"), oldTableName];
 		}
 
-		[self _renameTableOfType:tableType from:oldTableName to:tempTableName];
-		[self _renameTableOfType:tableType from:tempTableName to:newTableName];
+		[self _renameTableOfType:tableType from:oldTableName to:tempTableName inDatabase:databaseName];
+		[self _renameTableOfType:tableType from:tempTableName to:newTableName inDatabase:databaseName];
 		
 		return;
 	}
