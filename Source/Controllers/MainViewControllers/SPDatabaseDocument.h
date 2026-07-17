@@ -62,6 +62,8 @@
 
 #import <SPMySQL/SPMySQLConnectionDelegate.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  * The SPDatabaseDocument class controls the primary database view window.
  */
@@ -222,24 +224,27 @@
 	int64_t instanceId;
 }
 
-@property (nonatomic, strong) IBOutlet NSView *saveConnectionAccessory;
-@property (nonatomic, strong) IBOutlet NSButton *saveConnectionIncludeData;
-@property (nonatomic, strong) IBOutlet NSButton *saveConnectionIncludeQuery;
-@property (nonatomic, strong) IBOutlet NSButton *saveConnectionSavePassword;
-@property (nonatomic, strong) IBOutlet id saveConnectionSavePasswordAlert;
-@property (nonatomic, strong) IBOutlet NSButton *saveConnectionEncrypt;
-@property (nonatomic, strong) IBOutlet NSButton *saveConnectionAutoConnect;
-@property (nonatomic, strong) IBOutlet NSSecureTextField *saveConnectionEncryptString;
+// Outlets of the save-connection accessory view, loaded on demand — nil until
+// the accessory nib has been loaded.
+@property (nonatomic, strong, nullable) IBOutlet NSView *saveConnectionAccessory;
+@property (nonatomic, strong, nullable) IBOutlet NSButton *saveConnectionIncludeData;
+@property (nonatomic, strong, nullable) IBOutlet NSButton *saveConnectionIncludeQuery;
+@property (nonatomic, strong, nullable) IBOutlet NSButton *saveConnectionSavePassword;
+@property (nonatomic, strong, nullable) IBOutlet id saveConnectionSavePasswordAlert;
+@property (nonatomic, strong, nullable) IBOutlet NSButton *saveConnectionEncrypt;
+@property (nonatomic, strong, nullable) IBOutlet NSButton *saveConnectionAutoConnect;
+@property (nonatomic, strong, nullable) IBOutlet NSSecureTextField *saveConnectionEncryptString;
 
-@property (nonatomic, strong) NSTableView *dbTablesTableView;
-@property (readwrite, strong) NSURL *sqlFileURL;
+@property (nonatomic, strong, nullable) NSTableView *dbTablesTableView;
+@property (readwrite, strong, nullable) NSURL *sqlFileURL;
 @property (readwrite) NSStringEncoding sqlFileEncoding;
 @property (readwrite) BOOL isProcessing;
-@property (readwrite, copy) NSString *processID;
+@property (readwrite, copy, nullable) NSString *processID;
 @property (readonly, nonatomic, strong) NSToolbar *mainToolbar;
 
-@property (nonatomic, weak, readonly) SPWindowController *parentWindowController;
-@property (readonly, strong) SPServerSupport *serverSupport;
+@property (nonatomic, weak, readonly, nullable) SPWindowController *parentWindowController;
+// nil until a connection has been established.
+@property (readonly, strong, nullable) SPServerSupport *serverSupport;
 @property (readonly, strong) SPDatabaseStructure *databaseStructureRetrieval;
 @property (readonly, strong) SPDataImport *tableDumpInstance;
 @property (readonly, strong) SPTablesList *tablesListInstance;
@@ -248,7 +253,7 @@
 
 @property (readonly) int64_t instanceId;
 @property (readonly, strong) SPSplitView *contentViewSplitter;
-@property (strong) IBOutlet NSButton *multipleLineEditingButton;
+@property (strong, nullable) IBOutlet NSButton *multipleLineEditingButton;
 
 - (instancetype)initWithWindowController:(SPWindowController *)windowController;
 
@@ -261,16 +266,16 @@
 
 // Connection callback and methods
 - (void)setConnection:(SPMySQLConnection *)theConnection;
-- (SPMySQLConnection *)getConnection;
+- (nullable SPMySQLConnection *)getConnection;
 
 // Database methods
 - (IBAction)chooseDatabase:(id)sender;
-- (void)selectDatabase:(NSString *)aDatabase item:(NSString *)anItem;
-- (IBAction)makeTableListFilterHaveFocus:(id)sender;
-- (NSArray *)allDatabaseNames;
-- (NSArray *)allSystemDatabaseNames;
-- (NSDictionary *)getDbStructure;
-- (NSArray *)allSchemaKeys;
+- (void)selectDatabase:(NSString *)aDatabase item:(nullable NSString *)anItem;
+- (IBAction)makeTableListFilterHaveFocus:(nullable id)sender;
+- (nullable NSArray *)allDatabaseNames;
+- (nullable NSArray *)allSystemDatabaseNames;
+- (nullable NSDictionary *)getDbStructure;
+- (nullable NSArray *)allSchemaKeys;
 
 // Task progress and notification methods
 - (void)startTaskWithDescription:(nonnull NSString *)description;
@@ -294,8 +299,8 @@
 - (void)detectDatabaseEncoding;
 - (BOOL)supportsEncoding;
 - (void)updateEncodingMenuWithSelectedEncoding:(NSNumber *)encodingTag;
-- (NSNumber *)encodingTagFromMySQLEncoding:(NSString *)mysqlEncoding;
-- (NSString *)mysqlEncodingFromEncodingTag:(NSNumber *)encodingTag;
+- (nullable NSNumber *)encodingTagFromMySQLEncoding:(NSString *)mysqlEncoding;
+- (nullable NSString *)mysqlEncodingFromEncodingTag:(NSNumber *)encodingTag;
 
 // Table methods
 - (IBAction)saveCreateSyntax:(id)sender;
@@ -306,7 +311,7 @@
 // Other methods
 - (IBAction)closeSheet:(id)sender;
 - (IBAction)closePanelSheet:(id)sender;
-- (IBAction)validateSaveConnectionAccessory:(id)sender;
+- (IBAction)validateSaveConnectionAccessory:(nullable id)sender;
 - (IBAction)closePasswordSheet:(id)sender;
 - (IBAction)copyChecksumFromSheet:(id)sender;
 
@@ -318,8 +323,8 @@
 
 - (void)refreshCurrentDatabase;
 
-- (void)saveConnectionPanelDidEnd:(NSSavePanel *)panel returnCode:(NSInteger)returnCode contextInfo:(NSString *)contextInfo;
-- (BOOL)saveDocumentWithFilePath:(NSString *)fileName inBackground:(BOOL)saveInBackground onlyPreferences:(BOOL)saveOnlyPreferences contextInfo:(NSDictionary*)contextInfo;
+- (void)saveConnectionPanelDidEnd:(NSSavePanel *)panel returnCode:(NSInteger)returnCode contextInfo:(nullable NSString *)contextInfo;
+- (BOOL)saveDocumentWithFilePath:(nullable NSString *)fileName inBackground:(BOOL)saveInBackground onlyPreferences:(BOOL)saveOnlyPreferences contextInfo:(nullable NSDictionary*)contextInfo;
 - (void)setIsSavedInBundle:(BOOL)savedInBundle;
 - (void)setFileURL:(NSURL *)fileURL;
 - (void)connect;
@@ -327,14 +332,14 @@
 // Accessor methods
 - (NSString *)host;
 - (NSString *)name;
-- (NSString *)database;
+- (nullable NSString *)database;
 - (NSString *)port;
-- (NSString *)mySQLVersion;
+- (nullable NSString *)mySQLVersion;
 - (NSString *)user;
 - (NSString *)connectionID;
 - (NSString *)tabTitleForTooltip;
 - (BOOL)isSaveInBundle;
-- (NSURL *)fileURL;
+- (nullable NSURL *)fileURL;
 - (NSString *)displayName;
 - (NSUndoManager *)undoManager;
 - (NSArray *)allTableNames;
@@ -348,14 +353,14 @@
 
 // Menu methods
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem;
-- (IBAction)saveConnectionSheet:(id)sender;
+- (IBAction)saveConnectionSheet:(nullable id)sender;
 - (BOOL)isCustomQuerySelected;
 - (IBAction)showConnectionDebugMessages:(id)sender;
 
 // Toolbar methods
 - (void)updateWindowTitle:(id)sender;
-- (NSString *)selectedToolbarItemIdentifier;
-- (NSToolbarItem *)toolbar:(NSToolbar *)toolbar itemForItemIdentifier:(NSString *)itemIdentifier willBeInsertedIntoToolbar:(BOOL)flag;
+- (nullable NSString *)selectedToolbarItemIdentifier;
+- (nullable NSToolbarItem *)toolbar:(NSToolbar *)toolbar itemForItemIdentifier:(NSString *)itemIdentifier willBeInsertedIntoToolbar:(BOOL)flag;
 
 // Tab methods
 - (BOOL)parentTabShouldClose;
@@ -363,7 +368,7 @@
 - (void)setIsProcessing:(BOOL)value;
 - (BOOL)isProcessing;
 
-- (NSWindow *)parentWindowControllerWindow;
+- (nullable NSWindow *)parentWindowControllerWindow;
 
 // Scripting
 - (void)handleSchemeCommand:(NSDictionary*)commandDict;
@@ -385,7 +390,7 @@
 #pragma mark - SPDatabaseViewController
 
 // Accessors
-- (NSString *)table;
+- (nullable NSString *)table;
 - (SPTableType)tableType;
 
 - (BOOL)structureLoaded;
@@ -398,7 +403,7 @@
 - (void)setRelationsRequiresReload:(BOOL)reload;
 
 // Table control
-- (void)loadTable:(NSString *)aTable ofType:(SPTableType)aTableType;
+- (void)loadTable:(nullable NSString *)aTable ofType:(SPTableType)aTableType;
 
 - (NSView *)databaseView;
 
@@ -457,8 +462,8 @@
 
 - (void)focusOnTableContentFilter;
 - (void)showFilterTable;
-- (void)copyCreateTableSyntax:(SPDatabaseDocument *)sender;
-- (void)showCreateTableSyntax:(SPDatabaseDocument *)sender;
+- (void)copyCreateTableSyntax:(nullable SPDatabaseDocument *)sender;
+- (void)showCreateTableSyntax:(nullable SPDatabaseDocument *)sender;
 - (void)checkTable;
 - (void)repairTable;
 - (void)analyzeTable;
@@ -471,3 +476,5 @@
 - (void)showMySQLHelp;
 
 @end
+
+NS_ASSUME_NONNULL_END
