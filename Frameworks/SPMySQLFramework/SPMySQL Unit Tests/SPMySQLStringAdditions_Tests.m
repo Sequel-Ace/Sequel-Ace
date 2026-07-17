@@ -119,6 +119,26 @@
 		XCTAssertEqualObjects([connection encoding], @"latin1");
 		XCTAssertTrue([connection setEncoding:originalEncoding]);
 
+		// SQL imports issue SET NAMES directly so that the query's file encoding,
+		// rather than the framework's cached connection encoding, controls the
+		// session. Asserting a database must not overwrite that caller-managed
+		// state before the imported query runs.
+		XCTAssertTrue([connection setEncoding:@"latin1"]);
+		[connection queryString:@"SET NAMES utf8mb4"];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		SPMySQLResult *callerManagedEncodingResult = [connection queryString:@"SELECT DATABASE(), @@character_set_client, @@character_set_results, @@character_set_connection"
+		                                                                    usingEncoding:NSUTF8StringEncoding
+		                                                                   withResultType:SPMySQLResultAsResult
+		                                                               assertingDatabase:unicodeDatabase];
+		XCTAssertFalse([connection queryErrored], @"%@", [connection lastErrorMessage]);
+		NSArray *callerManagedEncodingState = [callerManagedEncodingResult getRowAsArray];
+		XCTAssertEqualObjects([callerManagedEncodingState objectAtIndex:0], unicodeDatabase);
+		XCTAssertEqualObjects([callerManagedEncodingState objectAtIndex:1], @"utf8mb4");
+		XCTAssertEqualObjects([callerManagedEncodingState objectAtIndex:2], @"utf8mb4");
+		XCTAssertEqualObjects([callerManagedEncodingState objectAtIndex:3], @"utf8mb4");
+		XCTAssertEqualObjects([connection encoding], @"latin1");
+		XCTAssertTrue([connection setEncoding:originalEncoding]);
+
 		XCTAssertTrue([connection setEncoding:@"latin2"]);
 		NSString *expectedConnectionCharacterSet = [connection getFirstFieldFromQuery:@"SELECT @@character_set_connection"];
 		XCTAssertTrue([connection setEncodingUsesLatin1Transport:YES]);

@@ -255,6 +255,14 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         XCTAssertEqual(databaseName, "app_db")
     }
 
+    func testDatabaseContextDetectsSelectionAndDeselectionTransitions() {
+        XCTAssertFalse(SASQLDatabaseContext.databaseNameChanged(from: nil, to: nil))
+        XCTAssertFalse(SASQLDatabaseContext.databaseNameChanged(from: "app_db", to: "app_db"))
+        XCTAssertTrue(SASQLDatabaseContext.databaseNameChanged(from: nil, to: "app_db"))
+        XCTAssertTrue(SASQLDatabaseContext.databaseNameChanged(from: "app_db", to: nil))
+        XCTAssertTrue(SASQLDatabaseContext.databaseNameChanged(from: "app_db", to: "reporting"))
+    }
+
     private func contextDatabaseName(
         afterSuccessfulQuery query: String,
         currentDatabase: String?,

@@ -942,7 +942,7 @@
     NSMutableString *placeholderSyntax;
 
     // Get structured information for the view via the SPTableData parsers
-    NSDictionary *viewInformation = [sqlTableDataInstance informationForView:viewName];
+    NSDictionary *viewInformation = [sqlTableDataInstance informationForView:viewName fromDatabase:[self sqlDatabaseName]];
 
     if (!viewInformation) return nil;
 

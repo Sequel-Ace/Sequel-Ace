@@ -977,6 +977,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
             } else {
 
+                self->selectedDatabase = nil;
                 [self->chooseDatabaseButton selectItemAtIndex:0];
                 [self updateWindowTitle:self];
             }

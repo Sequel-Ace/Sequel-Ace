@@ -977,11 +977,15 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 if (!databaseWasChanged && [query isMatchedByRegex:@"(?i)^\\s*\\b(use|drop\\s+database|drop\\s+schema)\\b\\s+."]) {
                     databaseWasChanged = YES;
                 }
-                databaseName = [SASQLDatabaseContext databaseNameAfterSuccessfulQuery:query
-                                                                          currentDatabase:databaseName
-                                                   databaseNamesAreCaseSensitive:databaseNamesAreCaseSensitive
-                                                                    serverVersion:serverVersion
-                                                                    serverIsMariaDB:serverIsMariaDB];
+                NSString *updatedDatabaseName = [SASQLDatabaseContext databaseNameAfterSuccessfulQuery:query
+                                                                                          currentDatabase:databaseName
+                                                                   databaseNamesAreCaseSensitive:databaseNamesAreCaseSensitive
+                                                                                    serverVersion:serverVersion
+                                                                                    serverIsMariaDB:serverIsMariaDB];
+                if ([SASQLDatabaseContext databaseNameChangedFrom:databaseName to:updatedDatabaseName]) {
+                    databaseWasChanged = YES;
+                }
+                databaseName = updatedDatabaseName;
             }
 
             // write errors to console

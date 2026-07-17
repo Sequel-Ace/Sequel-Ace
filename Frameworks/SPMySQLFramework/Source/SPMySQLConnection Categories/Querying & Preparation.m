@@ -326,6 +326,8 @@ static int SPMySQLApplyEncodingState(MYSQL *connection, NSString *encodingName, 
 	NSData *queryData = [theQueryString dataUsingEncoding:theEncoding allowLossyConversion:YES];
 	NSUInteger queryBytesLength = [queryData length];
 	const char *queryBytes = [queryData bytes];
+	BOOL databaseNameIsASCII = [databaseName canBeConvertedToEncoding:NSASCIIStringEncoding];
+	const char *databaseNameBytes = [databaseName canBeConvertedToEncoding:theEncoding] ? [databaseName cStringUsingEncoding:theEncoding] : NULL;
 
 	// Check the query length against the current maximum query length.  If it is
 	// larger, the query would error (and probably cause a disconnect), so if
@@ -357,13 +359,16 @@ static int SPMySQLApplyEncodingState(MYSQL *connection, NSString *encodingName, 
 		uint64_t queryStartTime = _monotonicTime();
 		queryStatus = 0;
 		if ([databaseName length]) {
-			BOOL encodingChangeRequired = ![encoding hasPrefix:@"utf8"] || encodingUsesLatin1Transport;
+			BOOL encodingChangeRequired = !databaseNameBytes || (encodingUsesLatin1Transport && !databaseNameIsASCII);
 
-			// mysql_select_db() interprets the UTF-8 database name using the active
-			// connection character set. Temporarily use UTF-8, matching
-			// selectDatabase:, and restore the framework-managed encoding and
-			// Latin1 transport state before the query. The public encoding helpers
-			// cannot be used while this non-recursive connection lock is held.
+			// Prefer the same caller-supplied encoding as the query. SQL imports can
+			// deliberately change the server character set with SET NAMES without
+			// updating the framework's cached encoding, so switching to UTF-8 and
+			// restoring that stale cache here would overwrite the import's session
+			// state. Fall back to a temporary UTF-8 selection only when the database
+			// name cannot be represented losslessly, or when non-ASCII bytes would
+			// otherwise be sent through the special Latin1 transport mode. The public
+			// encoding helpers cannot be used while this non-recursive lock is held.
 			if (encodingChangeRequired && SPMySQLApplyEncodingState(mySQLConnection, @"utf8mb4", NO)) {
 				queryStatus = 1;
 				databaseAssertionFailed = YES;
@@ -371,7 +376,7 @@ static int SPMySQLApplyEncodingState(MYSQL *connection, NSString *encodingName, 
 				theErrorID = mysql_errno(mySQLConnection);
 				theSqlstate = _stringForCStringWithEncoding(mysql_sqlstate(mySQLConnection), NSISOLatin1StringEncoding);
 			} else {
-				queryStatus = mysql_select_db(mySQLConnection, [databaseName UTF8String]);
+				queryStatus = mysql_select_db(mySQLConnection, encodingChangeRequired ? [databaseName UTF8String] : databaseNameBytes);
 				if (queryStatus) {
 					databaseAssertionFailed = YES;
 					theErrorMessage = [self _stringForCString:mysql_error(mySQLConnection)];

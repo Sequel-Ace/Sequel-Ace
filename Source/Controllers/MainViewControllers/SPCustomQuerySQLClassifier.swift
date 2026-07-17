@@ -290,6 +290,11 @@ enum SPCustomQuerySQLClassifier {
         pattern: "(?is)^\\s*DROP\\s+(?:DATABASE|SCHEMA)\\s+(?:IF\\s+EXISTS\\s+)?\(identifierPattern)\\s*;?\\s*$"
     )
 
+    @objc(databaseNameChangedFrom:to:)
+    static func databaseNameChanged(from currentDatabase: String?, to updatedDatabase: String?) -> Bool {
+        currentDatabase != updatedDatabase
+    }
+
     @objc(databaseNameAfterSuccessfulQuery:currentDatabase:databaseNamesAreCaseSensitive:serverVersion:serverIsMariaDB:)
     static func databaseName(
         afterSuccessfulQuery query: String,

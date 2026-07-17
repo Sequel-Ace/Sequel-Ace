@@ -1010,12 +1010,17 @@
  */
 - (NSDictionary *) informationForView:(NSString *)viewName
 {
+	return [self informationForView:viewName fromDatabase:nil];
+}
+
+- (NSDictionary *) informationForView:(NSString *)viewName fromDatabase:(NSString *)database
+{
 	SPSQLParser *fieldParser;
 	NSMutableArray *tableColumns;
 	NSDictionary *resultRow;
 	NSMutableDictionary *tableColumn, *viewData;
 	BOOL changeEncoding = ![[mySQLConnection encoding] hasPrefix:@"utf8"];
-	NSString *databaseName = [tableListInstance selectedDatabase];
+	NSString *databaseName = database ?: [tableListInstance selectedDatabase];
 
 	// Catch unselected views and return nil
 	if ([viewName isEqualToString:@""] || !viewName) return nil;
@@ -1034,7 +1039,7 @@
 
 	// Check for any errors, but only display them if a connection still exists
 	if ([mySQLConnection queryErrored]) {
-		[self _recordTableInformationLoadFailureForTable:viewName database:[tableListInstance selectedDatabase] tableType:SPTableTypeView];
+		[self _recordTableInformationLoadFailureForTable:viewName database:databaseName tableType:SPTableTypeView];
 		if ([mySQLConnection isConnected]) {
 			NSString *lastErrorMessage = [mySQLConnection lastErrorMessage];
 			SPMainQSync(^{
@@ -1059,7 +1064,7 @@
 
 	// A NULL value indicates that the user does not have permission to view the syntax
 	if ([syntaxString isNSNull]) {
-		[self _recordTableInformationLoadFailureForTable:viewName database:[tableListInstance selectedDatabase] tableType:SPTableTypeView];
+		[self _recordTableInformationLoadFailureForTable:viewName database:databaseName tableType:SPTableTypeView];
 		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Permission Denied", @"Permission Denied") message:NSLocalizedString(@"The creation syntax could not be retrieved due to a permissions error.\n\nPlease check your user permissions with an administrator.", @"Create syntax permission denied detail") callback:nil];
 		if (changeEncoding) [mySQLConnection restoreStoredEncoding];
 		return nil;
@@ -1073,7 +1078,7 @@
 
 	// Check for any errors, but only display them if a connection still exists
 	if ([mySQLConnection queryErrored]) {
-		[self _recordTableInformationLoadFailureForTable:viewName database:[tableListInstance selectedDatabase] tableType:SPTableTypeView];
+		[self _recordTableInformationLoadFailureForTable:viewName database:databaseName tableType:SPTableTypeView];
 		if ([mySQLConnection isConnected]) {
 			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while retrieving information.\nMySQL said: %@", @"message of panel when retrieving information failed"), [mySQLConnection lastErrorMessage]] callback:nil];
 			if (changeEncoding) [mySQLConnection restoreStoredEncoding];
