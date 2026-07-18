@@ -54,7 +54,7 @@ final class SPMCPPreferencePane: SPPreferencePane, SPPreferencePaneProtocol, NST
 
     override func loadView() {
         let viewW: CGFloat = 564.0
-        let viewH: CGFloat = 254.0
+        let viewH: CGFloat = 272.0
         let root = NSView(frame: NSRect(x: 0, y: 0, width: viewW, height: viewH))
         root.autoresizingMask = [.width, .height]
 
@@ -77,7 +77,7 @@ final class SPMCPPreferencePane: SPPreferencePane, SPPreferencePaneProtocol, NST
         let controlX: CGFloat = labelX + labelW + 12.0
         let controlW: CGFloat = viewW - 20.0 - controlX
         let chooseW: CGFloat  = 100.0
-        var y: CGFloat        = 218.0
+        var y: CGFloat        = 236.0
 
         // Server: enable, status, read-only
         let serverLabel = makeLabel(NSLocalizedString("Server:", comment: "MCP pref: server row label"),
