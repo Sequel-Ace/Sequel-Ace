@@ -175,10 +175,10 @@ final class SPMCPPreferencePane: SPPreferencePane, SPPreferencePaneProtocol, NST
         root.addSubview(copyButton)
         y -= 24
 
-        let endpointHint = makeSmallLabel(NSLocalizedString("Add this URL to any MCP-compatible client (Claude, Cursor, Cline, VS Code, and others).",
+        let endpointHint = makeSmallLabel(NSLocalizedString("Add this URL to any MCP client (Claude, Cursor, Cline, VS Code). This is the Streamable HTTP endpoint; SSE-only clients should use /sse instead of /mcp.",
                                                             comment: "MCP pref: endpoint hint"),
-                                          x: controlX, y: y - 14, width: controlW)
-        endpointHint.frame = NSRect(x: controlX, y: y - 14, width: controlW, height: 32)
+                                          x: controlX, y: y - 28, width: controlW)
+        endpointHint.frame = NSRect(x: controlX, y: y - 28, width: controlW, height: 46)
         endpointHint.autoresizingMask = ctrlMask
         root.addSubview(endpointHint)
 
