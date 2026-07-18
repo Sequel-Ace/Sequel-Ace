@@ -391,3 +391,35 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
         }
     }
 }
+
+final class SPMCPServerRouteTests: XCTestCase {
+
+    func testStreamableHTTPRoute() {
+        XCTAssertEqual(SPMCPHTTP.route(method: "POST", path: "/mcp"), .streamableHTTP)
+    }
+
+    func testGetOnMCPPathIsMethodNotAllowed() {
+        XCTAssertEqual(SPMCPHTTP.route(method: "GET", path: "/mcp"), .methodNotAllowed)
+    }
+
+    func testNonPostOnMCPPathIsMethodNotAllowed() {
+        XCTAssertEqual(SPMCPHTTP.route(method: "HEAD", path: "/mcp"), .methodNotAllowed)
+        XCTAssertEqual(SPMCPHTTP.route(method: "PUT", path: "/mcp"), .methodNotAllowed)
+    }
+
+    func testSSERoute() {
+        XCTAssertEqual(SPMCPHTTP.route(method: "GET", path: "/sse"), .sse)
+    }
+
+    func testMessageRoute() {
+        XCTAssertEqual(SPMCPHTTP.route(method: "POST", path: "/message"), .message)
+    }
+
+    func testHealthRoute() {
+        XCTAssertEqual(SPMCPHTTP.route(method: "GET", path: "/health"), .health)
+    }
+
+    func testUnknownPathIsNotFound() {
+        XCTAssertEqual(SPMCPHTTP.route(method: "GET", path: "/nope"), .notFound)
+    }
+}
