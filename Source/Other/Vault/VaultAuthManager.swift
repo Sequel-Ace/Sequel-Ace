@@ -415,9 +415,16 @@ import OSLog
                 token = cached
             } else {
                 // No valid cached token (missing or expired): a browser login is
-                // about to open. Confirm first so it's never a surprise, then abort
-                // cleanly if the user declines.
-                guard confirmBrowserLogin() else {
+                // about to open. But the refresh may have been cancelled while the
+                // cached-token check ran — editing the Vault host/mount, leaving the
+                // Vault tab, or document teardown all call cancelActiveLogin. Honor
+                // that cancellation before prompting or opening the browser (the `||`
+                // short-circuits, so a cancelled refresh never shows the dialog), and
+                // confirm first otherwise so a login is never a surprise. Either way
+                // the completion stays silent via isLoginCancellation.
+                let effectiveIdentifier = loginIdentifier.isEmpty ? nil : loginIdentifier
+                let alreadyCancelled = effectiveIdentifier.map { VaultOIDCHandler.isActiveLoginCancelled(identifier: $0) } ?? false
+                if alreadyCancelled || !confirmBrowserLogin() {
                     errorPointer?.pointee = NSError(
                         domain: errorDomain,
                         code: VaultAuthError.loginCancelled.rawValue,
@@ -425,7 +432,6 @@ import OSLog
                     return nil
                 }
                 os_log("Vault listRoles: no valid cached token, falling through to OIDC login", log: log, type: .info)
-                let effectiveIdentifier = loginIdentifier.isEmpty ? nil : loginIdentifier
                 token = try VaultOIDCHandler.login(baseURL: baseURL, mount: oidcMountResolved, identifier: effectiveIdentifier)
             }
         } catch let oidcError as VaultOIDCError {
