@@ -949,14 +949,22 @@ private extension SPMCPServer {
     func sendHTTPResponse(connection: NWConnection, status: Int, body: String, extraHeaders: [String] = [], keepAlive: Bool = false) {
         let statusLine: String
         switch status {
-        case 200: statusLine = "HTTP/1.1 200 OK"
-        case 202: statusLine = "HTTP/1.1 202 Accepted"
-        case 400: statusLine = "HTTP/1.1 400 Bad Request"
-        case 403: statusLine = "HTTP/1.1 403 Forbidden"
-        case 404: statusLine = "HTTP/1.1 404 Not Found"
-        case 405: statusLine = "HTTP/1.1 405 Method Not Allowed"
-        case 413: statusLine = "HTTP/1.1 413 Payload Too Large"
-        default:  statusLine = "HTTP/1.1 \(status)"
+        case 200:
+            statusLine = "HTTP/1.1 200 OK"
+        case 202:
+            statusLine = "HTTP/1.1 202 Accepted"
+        case 400:
+            statusLine = "HTTP/1.1 400 Bad Request"
+        case 403:
+            statusLine = "HTTP/1.1 403 Forbidden"
+        case 404:
+            statusLine = "HTTP/1.1 404 Not Found"
+        case 405:
+            statusLine = "HTTP/1.1 405 Method Not Allowed"
+        case 413:
+            statusLine = "HTTP/1.1 413 Payload Too Large"
+        default:
+            statusLine = "HTTP/1.1 \(status)"
         }
         let bodyData  = body.data(using: .utf8) ?? Data()
         let connValue = keepAlive ? "keep-alive" : "close"

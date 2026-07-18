@@ -33,12 +33,18 @@ enum SPMCPHTTP {
     /// Maps an HTTP method and path to a route.
     static func route(method: String, path: String) -> Route {
         switch (method, path) {
-        case ("POST", "/mcp"):     return .streamableHTTP
-        case (_, "/mcp"):          return .methodNotAllowed
-        case ("GET", "/sse"):      return .sse
-        case ("POST", "/message"): return .message
-        case ("GET", "/health"):   return .health
-        default:                   return .notFound
+        case ("POST", "/mcp"):
+            return .streamableHTTP
+        case (_, "/mcp"):
+            return .methodNotAllowed
+        case ("GET", "/sse"):
+            return .sse
+        case ("POST", "/message"):
+            return .message
+        case ("GET", "/health"):
+            return .health
+        default:
+            return .notFound
         }
     }
 }
