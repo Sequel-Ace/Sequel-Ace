@@ -391,3 +391,38 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
         }
     }
 }
+
+final class SPMCPFavoriteTests: XCTestCase {
+
+    func testPathStringWithNestedGroups() {
+        XCTAssertEqual(
+            SPMCPFavorite.pathString(groups: ["Production", "EU"], favoriteName: "main-db"),
+            "Production/EU/main-db"
+        )
+    }
+
+    func testPathStringWithNoGroupsIsJustTheName() {
+        XCTAssertEqual(SPMCPFavorite.pathString(groups: [], favoriteName: "First"), "First")
+    }
+
+    func testPathStringDropsEmptyGroupNames() {
+        XCTAssertEqual(
+            SPMCPFavorite.pathString(groups: ["", "Team", ""], favoriteName: "db"),
+            "Team/db"
+        )
+    }
+
+    func testIDStringFromNumber() {
+        XCTAssertEqual(SPMCPFavorite.idString(NSNumber(value: 42)), "42")
+    }
+
+    func testIDStringFromString() {
+        XCTAssertEqual(SPMCPFavorite.idString("42"), "42")
+    }
+
+    func testIDStringIsNilForEmptyOrMissing() {
+        XCTAssertNil(SPMCPFavorite.idString(""))
+        XCTAssertNil(SPMCPFavorite.idString(nil))
+        XCTAssertNil(SPMCPFavorite.idString(Date()))
+    }
+}
