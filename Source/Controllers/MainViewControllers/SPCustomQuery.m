@@ -654,7 +654,11 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
     NSValue *encodedCallbackMethod = nil;
     if (customQueryCallbackMethod)
         encodedCallbackMethod = [NSValue valueWithBytes:&customQueryCallbackMethod objCType:@encode(SEL)];
-    NSDictionary *taskArguments = [NSDictionary dictionaryWithObjectsAndKeys:queries, @"queries", encodedCallbackMethod, @"callback", nil];
+    NSMutableDictionary *taskArguments = [NSMutableDictionary dictionaryWithObjectsAndKeys:queries, @"queries", nil];
+    if (encodedCallbackMethod) [taskArguments setObject:encodedCallbackMethod forKey:@"callback"];
+
+    NSString *databaseName = [tableDocumentInstance database];
+    if ([databaseName length]) [taskArguments setObject:databaseName forKey:@"database"];
     
     // If a helper thread is already running, execute inline - otherwise detach a new thread for the queries
     if ([NSThread isMainThread]) {
@@ -765,7 +769,13 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         SPMySQLStreamingResultStore *resultStore    = nil;
         NSMutableString             *errors         = [NSMutableString string];
         SEL                          callbackMethod = NULL;
+        NSString                    *databaseName   = [taskArguments objectForKey:@"database"];
         NSString                    *taskButtonString;
+        BOOL databaseNamesAreCaseSensitive = NO;
+        BOOL databaseNameCaseSensitivityWasLoaded = NO;
+        NSInteger serverVersion = (NSInteger)([mySQLConnection serverMajorVersion] * 10000 + [mySQLConnection serverMinorVersion] * 100 + [mySQLConnection serverReleaseVersion]);
+        NSString *serverVersionString = [mySQLConnection serverVersionString];
+        BOOL serverIsMariaDB = [serverVersionString length] && [serverVersionString rangeOfString:@"mariadb" options:NSCaseInsensitiveSearch].location != NSNotFound;
         
         NSUInteger __block i, totalQueriesRun = 0, totalAffectedRows = 0;
         double executionTime = 0;
@@ -829,9 +839,24 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             
             // store trimmed queries for usedQueries and history
             [tempQueries addObject:query];
+
+            // Only a case-only DROP comparison needs lower_case_table_names.
+            // Load it immediately before that DROP so the user statement, not
+            // this metadata lookup, remains the source for SHOW WARNINGS,
+            // ROW_COUNT(), and FOUND_ROWS().
+            if (!databaseNameCaseSensitivityWasLoaded
+                && [SASQLDatabaseContext requiresDatabaseNameCaseSensitivityLookupForQuery:query
+                                                                         currentDatabase:databaseName
+                                                                            serverVersion:serverVersion
+                                                                          serverIsMariaDB:serverIsMariaDB]) {
+                id lowerCaseTableNames = [mySQLConnection getFirstFieldFromQuery:@"SELECT @@lower_case_table_names" assertingDatabase:databaseName];
+                // If the setting cannot be read, prefer clearing a case-only match over retaining a stale assertion.
+                databaseNamesAreCaseSensitive = [lowerCaseTableNames respondsToSelector:@selector(integerValue)] && [lowerCaseTableNames integerValue] == 0;
+                databaseNameCaseSensitivityWasLoaded = YES;
+            }
             
             // Run the query, timing execution (note this also includes network and overhead)
-            resultStore = [mySQLConnection resultStoreFromQueryString:query];
+            resultStore = [mySQLConnection resultStoreFromQueryString:query assertingDatabaseContext:databaseName];
             executionTime += [resultStore queryExecutionTime];
             totalQueriesRun++;
             
@@ -851,18 +876,23 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 // resultTableName will be set to the original table name (not defined via AS) provided by mysql return
                 // and the resultTableName can differ due to case-sensitive/insensitive settings!.
                 NSString *resultTableName = [[cqColumnDefinition objectAtIndex:0] objectForKey:@"org_table"];
+                NSString *resultDatabaseName = [[cqColumnDefinition objectAtIndex:0] objectForKey:@"db"];
                 for(id field in cqColumnDefinition) {
                     if(![[field objectForKey:@"org_table"] isEqualToString:resultTableName]) {
                         resultTableName = nil;
-                        break;
                     }
+                    if(![[field objectForKey:@"db"] isEqualToString:resultDatabaseName]) {
+                        resultDatabaseName = nil;
+                    }
+                    if(!resultTableName && !resultDatabaseName) break;
                 }
-                
+
                 // Init copyTable with necessary information for copying selected rows as SQL INSERT
                 [customQueryView setTableInstance:self
                                     withTableData:resultData
                                       withColumns:cqColumnDefinition
                                     withTableName:resultTableName
+                                withDatabaseName:resultDatabaseName ?: databaseName
                                    withConnection:mySQLConnection];
                 
                 [self updateResultStore:resultStore];
@@ -961,6 +991,15 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 if (!databaseWasChanged && [query isMatchedByRegex:@"(?i)^\\s*\\b(use|drop\\s+database|drop\\s+schema)\\b\\s+."]) {
                     databaseWasChanged = YES;
                 }
+                NSString *updatedDatabaseName = [SASQLDatabaseContext databaseNameAfterSuccessfulQuery:query
+                                                                                          currentDatabase:databaseName
+                                                                   databaseNamesAreCaseSensitive:databaseNamesAreCaseSensitive
+                                                                                    serverVersion:serverVersion
+                                                                                    serverIsMariaDB:serverIsMariaDB];
+                if ([SASQLDatabaseContext databaseNameChangedFrom:databaseName to:updatedDatabaseName]) {
+                    databaseWasChanged = YES;
+                }
+                databaseName = updatedDatabaseName;
             }
 
             // write errors to console
@@ -974,8 +1013,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             [[tableDocumentInstance onMainThread] setDatabases];
             
             if (databaseWasChanged) {
-                // Reset the current database
-                [tableDocumentInstance refreshCurrentDatabase];
+                // Commit the context derived from this batch. Re-reading the
+                // shared session here can observe a later background query.
+                [tableDocumentInstance setCurrentDatabaseFromQueryContext:databaseName];
             }
             
             // Reload table list
@@ -988,7 +1028,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         
         // Perform empty query if no query is given
         if ( !queryCount ) {
-            resultStore = [mySQLConnection resultStoreFromQueryString:@""];
+            resultStore = [mySQLConnection resultStoreFromQueryString:@"" assertingDatabaseContext:databaseName];
             [resultStore cancelResultLoad];
             [errors setStringOrNil:[mySQLConnection lastErrorMessage]];
         }
@@ -2079,7 +2119,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     SPMySQLResult *tempResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
                                                               [[columnDefinition objectForKey:@"db"] backtickQuotedString],
                                                               [tableForColumn backtickQuotedString],
-                                                              fieldIDQueryStr]];
+                                                              fieldIDQueryStr] assertingDatabase:[columnDefinition objectForKey:@"db"]];
     
     if ([mySQLConnection queryErrored]) {
         [tableDocumentInstance endTask];
@@ -2099,7 +2139,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         tempResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@.%@ %@",
                                                    [[columnDefinition objectForKey:@"db"] backtickQuotedString],
                                                    [tableForColumn backtickQuotedString],
-                                                   fieldIDQueryStr]];
+                                                   fieldIDQueryStr] assertingDatabase:[columnDefinition objectForKey:@"db"]];
         
         if ([mySQLConnection queryErrored]) {
             [tableDocumentInstance endTask];
@@ -2144,7 +2184,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     
     // Get the primary key if there is one, using any columns present within it
     SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@.%@",
-                                                             [database backtickQuotedString], [tableForColumn backtickQuotedString]]];
+                                                             [database backtickQuotedString], [tableForColumn backtickQuotedString]] assertingDatabase:database];
     [theResult setReturnDataAsStrings:YES];
     NSMutableArray *primaryColumnsInSpecifiedTable = [NSMutableArray array];
     for (NSDictionary *eachRow in theResult) {
@@ -2262,7 +2302,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         SPLog(@"queryStr: %@", queryStr);
 
         if ([prefs boolForKey:SPQueryWarningEnabled] == NO) {
-            [mySQLConnection queryString:queryStr];
+            [mySQLConnection queryString:queryStr assertingDatabase:[columnDefinition objectForKey:@"db"]];
 
             // Check for errors while UPDATE
             if ([mySQLConnection queryErrored]) {
@@ -2313,7 +2353,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
                                   primaryButtonTitle:NSLocalizedString(@"Proceed", @"Proceed")
                                 primaryButtonHandler:^{
                     SPLog(@"User clicked Yes, exec queries");
-                    [self->mySQLConnection queryString:queryStr];
+                    [self->mySQLConnection queryString:queryStr assertingDatabase:[columnDefinition objectForKey:@"db"]];
 
                     // Check for errors while UPDATE
                     if ([self->mySQLConnection queryErrored]) {
