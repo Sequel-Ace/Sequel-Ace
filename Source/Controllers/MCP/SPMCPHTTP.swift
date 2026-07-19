@@ -19,6 +19,34 @@ enum SPMCPHTTP {
         host = host.lowercased()   // hostnames are case-insensitive
         return host == "127.0.0.1" || host == "localhost" || host == "::1"
     }
+
+    /// The endpoint a request maps to, independent of the connection (pure and testable).
+    enum Route: Equatable {
+        case streamableHTTP   // POST /mcp
+        case sse              // GET /sse
+        case message          // POST /message
+        case health           // GET /health
+        case methodNotAllowed // a known path reached with the wrong method, e.g. GET /mcp
+        case notFound
+    }
+
+    /// Maps an HTTP method and path to a route.
+    static func route(method: String, path: String) -> Route {
+        switch (method, path) {
+        case ("POST", "/mcp"):
+            return .streamableHTTP
+        case (_, "/mcp"):
+            return .methodNotAllowed
+        case ("GET", "/sse"):
+            return .sse
+        case ("POST", "/message"):
+            return .message
+        case ("GET", "/health"):
+            return .health
+        default:
+            return .notFound
+        }
+    }
 }
 
 /// Decides whether a statement is safe to run while the MCP server is in
