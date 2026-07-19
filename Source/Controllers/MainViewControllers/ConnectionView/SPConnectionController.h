@@ -41,6 +41,7 @@
 @class SAConnectionViewCoordinator;
 @class SAFavoritesListDataSource;
 @class SAConnectionService;
+@class SAVaultRoleListController;
 
 @class SPDatabaseDocument,
 	   SPFavoritesController,
@@ -114,8 +115,11 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	NSString *vaultHost;
 	NSString *vaultPort;
 	NSString *vaultOIDCMount;
-	NSString *vaultCredentialsPath;
 	NSString *vaultLoginIdentifier;
+	// vaultCredentialsPath is now a computed property (no backing ivar)
+	NSString *vaultMount;
+	NSString *vaultCredentialsRole;
+	SAVaultRoleListController *vaultRoleListController;
 
 	// SSL details
 	NSInteger useSSL;
@@ -187,7 +191,9 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 	IBOutlet NSTextField       *vaultHostField;
 	IBOutlet NSTextField       *vaultPortField;
 	IBOutlet NSTextField       *vaultOIDCMountField;
-	IBOutlet NSTextField       *vaultCredentialsPathField;
+	IBOutlet NSComboBox        *vaultCredentialsRoleComboBox;
+	IBOutlet NSButton          *vaultRefreshRolesButton;
+	IBOutlet NSProgressIndicator *vaultRolesProgressIndicator;
 	IBOutlet NSPopUpButton     *vaultTimeZoneField;
 	IBOutlet SPColorSelectorView *vaultColorField;
 	IBOutlet NSButton          *vaultSSLKeyFileButton;
@@ -284,6 +290,9 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 @property (readwrite, copy) NSString *vaultHost;
 @property (readwrite, copy) NSString *vaultPort;
 @property (readwrite, copy) NSString *vaultOIDCMount;
+@property (readwrite, copy) NSString *vaultMount;
+@property (readwrite, copy) NSString *vaultCredentialsRole;
+/// Computed from vaultMount + vaultCredentialsRole; setter splits on load.
 @property (readwrite, copy) NSString *vaultCredentialsPath;
 @property (readwrite) NSInteger useSSL;
 @property (readwrite) NSInteger colorIndex;
@@ -337,6 +346,9 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 - (NSArray<NSString *> *)awsAvailableProfiles;
 - (NSArray<NSString *> *)awsAvailableRegions;
 - (BOOL)isAWSDirectoryAuthorized;
+
+// Vault Authentication
+- (IBAction)refreshVaultRoles:(id)sender;
 
 - (void)resizeTabViewToConnectionType:(NSUInteger)theType animating:(BOOL)animate;
 
