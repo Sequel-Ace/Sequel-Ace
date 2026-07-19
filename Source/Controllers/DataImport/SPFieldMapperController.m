@@ -60,6 +60,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 @implementation SPFieldMapperController
 
 @synthesize sourcePath;
+@synthesize databaseName;
 
 #pragma mark -
 #pragma mark Initialisation
@@ -412,7 +413,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 				[[fieldMappingTableColumnNames objectAtIndex:currentIndex] backtickQuotedString],
 				[fieldMappingTableTypes objectAtIndex:currentIndex]];
 
-			[mySQLConnection queryString:createString];
+			[mySQLConnection queryString:createString assertingDatabaseContext:databaseName];
 
 			if ([mySQLConnection queryErrored]) {
 				[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new column", @"error adding new column message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new column '%@' by\n\n%@.\n\nMySQL said: %@", @"error adding new column informative message"), [fieldMappingTableColumnNames objectAtIndex:currentIndex], createString, [mySQLConnection lastErrorMessage]] callback:nil];
@@ -456,7 +457,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 			[createString appendString:[NSString stringWithFormat:@" DEFAULT CHARACTER SET %@", [encodingName backtickQuotedString]]];
 		}
 
-		[mySQLConnection queryString:createString];
+		[mySQLConnection queryString:createString assertingDatabaseContext:databaseName];
 
 		if ([mySQLConnection queryErrored]) {
 			[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error adding new table", @"error adding new table message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to add the new table '%@' by\n\n%@.\n\nMySQL said: %@", @"error adding new table informative message"), [newTableNameTextField stringValue], createString, [mySQLConnection lastErrorMessage]] callback:nil];
@@ -524,7 +525,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	// Retrieve the information for the newly selected table using a SPTableData instance
 	SPTableData *selectedTableData = [[SPTableData alloc] init];
 	[selectedTableData setConnection:mySQLConnection];
-	NSDictionary *tableDetails = [selectedTableData informationForTable:[tableTargetPopup titleOfSelectedItem] fromDatabase:nil];
+	NSDictionary *tableDetails = [selectedTableData informationForTable:[tableTargetPopup titleOfSelectedItem] fromDatabase:databaseName];
 	targetTableHasPrimaryKey = NO;
 	BOOL isReplacePossible = NO;
 

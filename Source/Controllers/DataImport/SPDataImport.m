@@ -408,6 +408,12 @@
 	});
 
 	[tableDocumentInstance setQueryMode:SPImportExportQueryMode];
+	NSString *databaseName = [tableDocumentInstance database];
+	BOOL databaseNamesAreCaseSensitive = NO;
+	BOOL databaseNameCaseSensitivityWasLoaded = NO;
+	NSInteger serverVersion = (NSInteger)([mySQLConnection serverMajorVersion] * 10000 + [mySQLConnection serverMinorVersion] * 100 + [mySQLConnection serverReleaseVersion]);
+	NSString *serverVersionString = [mySQLConnection serverVersionString];
+	BOOL serverIsMariaDB = [serverVersionString length] && [serverVersionString rangeOfString:@"mariadb" options:NSCaseInsensitiveSearch].location != NSNotFound;
 
 	// Determine the file encoding.  The first item in the encoding menu is "Autodetect"; if
 	// this is selected, attempt to detect the encoding of the file
@@ -561,8 +567,22 @@
                 // Skip blank or whitespace-only queries to avoid errors
                 if (![query length]) continue;
 
+                // Only a case-only DROP comparison needs lower_case_table_names.
+                // Query it before that DROP so the DROP remains the most recent
+                // statement for any following diagnostic query in the import.
+                if (!databaseNameCaseSensitivityWasLoaded
+                    && [SASQLDatabaseContext requiresDatabaseNameCaseSensitivityLookupForQuery:query
+                                                                             currentDatabase:databaseName
+                                                                                serverVersion:serverVersion
+                                                                              serverIsMariaDB:serverIsMariaDB]) {
+                    id lowerCaseTableNames = [mySQLConnection getFirstFieldFromQuery:@"SELECT @@lower_case_table_names" assertingDatabase:databaseName];
+                    // If the setting cannot be read, prefer clearing a case-only match over retaining a stale assertion.
+                    databaseNamesAreCaseSensitive = [lowerCaseTableNames respondsToSelector:@selector(integerValue)] && [lowerCaseTableNames integerValue] == 0;
+                    databaseNameCaseSensitivityWasLoaded = YES;
+                }
+
                 // Run the query
-                [mySQLConnection queryString:query usingEncoding:sqlEncoding withResultType:SPMySQLResultAsResult];
+                [mySQLConnection queryString:query usingEncoding:sqlEncoding withResultType:SPMySQLResultAsResult assertingDatabaseContext:databaseName];
 
                 // in case the query was a "SET @@sql_mode = ...", the server_status may have changed
                 if([mySQLConnection updateServerStatusBits:&serverStatus]) [sqlParser setNoBackslashEscapes:serverStatus.noBackslashEscapes];
@@ -631,6 +651,13 @@
                         }
                     }
                 }
+                else if (![mySQLConnection queryErrored]) {
+                    databaseName = [SASQLDatabaseContext databaseNameAfterSuccessfulQuery:query
+                                                                              currentDatabase:databaseName
+                                                       databaseNamesAreCaseSensitive:databaseNamesAreCaseSensitive
+                                                                        serverVersion:serverVersion
+                                                                        serverIsMariaDB:serverIsMariaDB];
+                }
 
                 // Increment the processed queries count
                 queriesPerformed++;
@@ -661,13 +688,31 @@
 	query = [sqlParser stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 	if ([query length] && !progressCancelled) {
 
+		if (!databaseNameCaseSensitivityWasLoaded
+			&& [SASQLDatabaseContext requiresDatabaseNameCaseSensitivityLookupForQuery:query
+			                                                         currentDatabase:databaseName
+			                                                            serverVersion:serverVersion
+			                                                          serverIsMariaDB:serverIsMariaDB]) {
+			id lowerCaseTableNames = [mySQLConnection getFirstFieldFromQuery:@"SELECT @@lower_case_table_names" assertingDatabase:databaseName];
+			// If the setting cannot be read, prefer clearing a case-only match over retaining a stale assertion.
+			databaseNamesAreCaseSensitive = [lowerCaseTableNames respondsToSelector:@selector(integerValue)] && [lowerCaseTableNames integerValue] == 0;
+			databaseNameCaseSensitivityWasLoaded = YES;
+		}
+
 		// Run the query
-		[mySQLConnection queryString:query usingEncoding:sqlEncoding withResultType:SPMySQLResultAsResult];
+		[mySQLConnection queryString:query usingEncoding:sqlEncoding withResultType:SPMySQLResultAsResult assertingDatabaseContext:databaseName];
 		// we don't care for the server_status that is set AFTER the last query has been executed
 
 		// Check for any errors
 		if ([mySQLConnection queryErrored] && ![[mySQLConnection lastErrorMessage] isEqualToString:@"Query was empty"]) {
 			[errors appendFormat:NSLocalizedString(@"[ERROR in query %ld] %@\n", @"error text when multiple custom query failed"), (long)(queriesPerformed+1), [mySQLConnection lastErrorMessage]];
+		}
+		else if (![mySQLConnection queryErrored]) {
+			databaseName = [SASQLDatabaseContext databaseNameAfterSuccessfulQuery:query
+			                                                                  currentDatabase:databaseName
+			                                           databaseNamesAreCaseSensitive:databaseNamesAreCaseSensitive
+			                                                            serverVersion:serverVersion
+			                                                            serverIsMariaDB:serverIsMariaDB];
 		}
 
 		// Increment the processed queries count
@@ -696,7 +741,7 @@
 	[[tableDocumentInstance onMainThread] setDatabases];
 
 	// Update current selected database
-	[tableDocumentInstance refreshCurrentDatabase];
+	[tableDocumentInstance setCurrentDatabaseFromQueryContext:databaseName];
 
 	// Update current database tables 
 	[tablesListInstance updateTables:self];
@@ -807,6 +852,7 @@
 	});
 
 	[tableDocumentInstance setQueryMode:SPImportExportQueryMode];
+	NSString *databaseName = [tableDocumentInstance database];
 
 	SPMainQSync(^{
 		// Determine the file encoding.  The first item in the encoding menu is "Autodetect";
@@ -969,7 +1015,7 @@
 				&& ([parsedRows count] >= 100 || (!csvRowArray && allDataRead)))
 			{
 				[self _closeAndStopProgressSheet];
-				if (![self buildFieldMappingArrayWithData:parsedRows isPreview:!allDataRead ofSoureFile:filename]) {
+				if (![self buildFieldMappingArrayWithData:parsedRows isPreview:!allDataRead ofSoureFile:filename databaseName:databaseName]) {
 					[tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
 					if([filename hasPrefix:SPImportClipboardTempFileNamePrefix])
 						[fileManager removeItemAtPath:filename error:nil];
@@ -1067,9 +1113,9 @@
 
 					// Perform the query
 					if(csvImportMethodHasTail)
-						[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString]];
+						[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString] assertingDatabaseContext:databaseName];
 					else
-						[mySQLConnection queryString:query];
+						[mySQLConnection queryString:query assertingDatabaseContext:databaseName];
 				} else {
 					if(insertRemainingRowsAfterUpdate) {
 						[insertRemainingBaseString setString:@"INSERT INTO "];
@@ -1092,9 +1138,9 @@
 
 						// Perform the query
 						if(csvImportMethodHasTail)
-							[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString]];
+							[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString] assertingDatabaseContext:databaseName];
 						else
-							[mySQLConnection queryString:query];
+							[mySQLConnection queryString:query assertingDatabaseContext:databaseName];
 
 						if ([mySQLConnection queryErrored]) {
 							[[tableDocumentInstance onMainThread] showConsole];
@@ -1103,7 +1149,7 @@
 								(long)(rowsImported+1),[mySQLConnection lastErrorMessage]];
 							
 							if(user_defaults_get_bool_ud(SPConsoleEnableImportExportLogging, prefs) == YES){
-								[[SPQueryController sharedQueryController] showErrorInConsole:mySQLConnection.lastErrorMessage connection:mySQLConnection.host database:mySQLConnection.database];
+								[[SPQueryController sharedQueryController] showErrorInConsole:mySQLConnection.lastErrorMessage connection:mySQLConnection.host database:databaseName];
 							}
 						}
 
@@ -1113,9 +1159,9 @@
 
 							// Perform the query
 							if(csvImportMethodHasTail)
-								[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString]];
+								[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString] assertingDatabaseContext:databaseName];
 							else
-								[mySQLConnection queryString:query];
+								[mySQLConnection queryString:query assertingDatabaseContext:databaseName];
 
 							if ([mySQLConnection queryErrored]) {
 								[errors appendFormat:
@@ -1143,7 +1189,7 @@
 				if (!importMethodIsUpdate && [mySQLConnection queryErrored]) {
 					[[tableDocumentInstance onMainThread] showConsole];
 					if(user_defaults_get_bool_ud(SPConsoleEnableImportExportLogging, prefs) == YES){
-						[[SPQueryController sharedQueryController] showErrorInConsole:mySQLConnection.lastErrorMessage connection:mySQLConnection.host database:mySQLConnection.database];
+						[[SPQueryController sharedQueryController] showErrorInConsole:mySQLConnection.lastErrorMessage connection:mySQLConnection.host database:databaseName];
 					}
 					for (i = 0; i < csvRowsThisQuery; i++) {
 						if (progressCancelled) break;
@@ -1152,16 +1198,16 @@
 
 						// Perform the query
 						if(csvImportMethodHasTail)
-							[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString]];
+							[mySQLConnection queryString:[NSString stringWithFormat:@"%@ %@", query, csvImportTailString] assertingDatabaseContext:databaseName];
 						else
-							[mySQLConnection queryString:query];
+							[mySQLConnection queryString:query assertingDatabaseContext:databaseName];
 
 						if ([mySQLConnection queryErrored]) {
 							[errors appendFormat:
 								NSLocalizedString(@"[ERROR in row %ld] %@\n", @"error text when reading of csv file gave errors"),
 								(long)(rowsImported+1),[mySQLConnection lastErrorMessage]];
 							if(user_defaults_get_bool_ud(SPConsoleEnableImportExportLogging, prefs) == YES){
-								[[SPQueryController sharedQueryController] showErrorInConsole:mySQLConnection.lastErrorMessage connection:mySQLConnection.host database:mySQLConnection.database];
+								[[SPQueryController sharedQueryController] showErrorInConsole:mySQLConnection.lastErrorMessage connection:mySQLConnection.host database:databaseName];
 							}
 						}
 #warning duplicate code (see above)
@@ -1256,7 +1302,7 @@
  * Takes an array of data to show when selecting the field mapping, and an indicator of whether
  * that dataset is complete or a preview of the full data set.
  */
-- (BOOL) buildFieldMappingArrayWithData:(NSArray *)importData isPreview:(BOOL)dataIsPreviewData ofSoureFile:(NSString*)filename
+- (BOOL)buildFieldMappingArrayWithData:(NSArray *)importData isPreview:(BOOL)dataIsPreviewData ofSoureFile:(NSString*)filename databaseName:(NSString *)databaseName
 {
 
 	// Ensure data was provided, or alert than an import error occurred and return false.
@@ -1287,6 +1333,7 @@
 		// Init the field mapper controller
 		fieldMapperController = [[SPFieldMapperController alloc] initWithDelegate:self];
 		[fieldMapperController setConnection:self->mySQLConnection];
+		[fieldMapperController setDatabaseName:databaseName];
 		[fieldMapperController setSourcePath:filename];
 		[fieldMapperController setImportDataArray:self->fieldMappingImportArray hasHeader:[self->importFieldNamesSwitch state] isPreview:self->fieldMappingImportArrayIsPreview];
 		
@@ -1339,7 +1386,7 @@
 	// Store target table definitions
 	SPTableData *selectedTableData = [[SPTableData alloc] init];
 	[selectedTableData setConnection:mySQLConnection];
-	NSDictionary *targetTableDetails = [selectedTableData informationForTable:selectedTableTarget fromDatabase:nil];
+	NSDictionary *targetTableDetails = [selectedTableData informationForTable:selectedTableTarget fromDatabase:databaseName];
 
 	// Store all field names which are of typegrouping 'geometry' and 'bit', and check if
 	// numeric columns can hold NULL values to map empty strings to.

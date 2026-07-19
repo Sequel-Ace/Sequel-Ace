@@ -125,6 +125,7 @@
 	NSNumber *lastDisabledCSVFieldcolumn;
 
 	SPMySQLConnection *mySQLConnection;
+	NSString *databaseName;
 
 	NSString *sourcePath;
 
@@ -146,6 +147,7 @@
 }
 
 @property (copy) NSString* sourcePath;
+@property (copy) NSString *databaseName;
 
 - (instancetype)initWithDelegate:(id)managerDelegate;
 

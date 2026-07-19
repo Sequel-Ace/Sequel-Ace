@@ -72,7 +72,7 @@
     NSMutableString *metaString = [NSMutableString string];
     
     // Check that we have all the required info before starting the export
-    if ((![self dotExportTables]) || (![self dotTableData]) || ([[self dotExportTables] count] == 0)) {
+    if ((![self dotExportTables]) || (![self dotTableData]) || (![[self dotDatabaseName] length]) || ([[self dotExportTables] count] == 0)) {
         return;
     }
     
@@ -127,7 +127,7 @@
         
         NSString *tableName = [[self dotExportTables] safeObjectAtIndex:i];
         NSString *tableLinkName = [self dotForceLowerTableNames] ? [tableName lowercaseString] : tableName;
-        NSDictionary *tableInfo = [[self dotTableData] informationForTable:tableName fromDatabase:nil];
+        NSDictionary *tableInfo = [[self dotTableData] informationForTable:tableName fromDatabase:[self dotDatabaseName]];
         
         // Set the current table
         [self setDotExportCurrentTable:tableName];

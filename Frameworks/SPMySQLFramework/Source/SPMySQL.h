@@ -28,6 +28,8 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
+#import <Foundation/Foundation.h>
+
 @class SPMySQLConnection, SPMySQLResult, SPMySQLStreamingResult, SPMySQLFastStreamingResult, SPMySQLStreamingResultStore;
 
 // Global include file for the framework.

@@ -378,7 +378,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	if (!useFallbackEstimate) {
 		SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SELECT %@ FROM %@ PROCEDURE ANALYSE(0,8192)",
 			[fieldName backtickQuotedString],
-			[selectedTable backtickQuotedString]]];
+			[selectedTable backtickQuotedString]] assertingDatabase:[tableDocumentInstance database]];
 
 		// Check for errors
 		if ([mySQLConnection queryErrored]) {
@@ -476,7 +476,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	[queryString appendFormat:@" FROM %@", [selectedTable backtickQuotedString]];
 
-	SPMySQLResult *result = [mySQLConnection queryString:queryString];
+	SPMySQLResult *result = [mySQLConnection queryString:queryString assertingDatabase:[tableDocumentInstance database]];
 	if ([mySQLConnection queryErrored] || !result) return nil;
 
 	[result setReturnDataAsStrings:YES];
@@ -834,7 +834,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	// only int and float types can be AUTO_INCREMENT and right now BIGINT = 64 Bit (<= long long) is the largest type mysql supports
-	[mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ AUTO_INCREMENT = %llu", [selTable backtickQuotedString], [value unsignedLongLongValue]]];
+	[mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ AUTO_INCREMENT = %llu", [selTable backtickQuotedString], [value unsignedLongLongValue]] assertingDatabase:[tableDocumentInstance database]];
 
 	if ([mySQLConnection queryErrored]) {
 		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error", @"error") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to reset AUTO_INCREMENT of table '%@'.\n\nMySQL said: %@", @"error resetting auto_increment informative message"),selTable, [mySQLConnection lastErrorMessage]] callback:nil];
@@ -992,7 +992,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	autoIncrementIndex = nil;
 
 	// Execute query
-	[mySQLConnection queryString:queryString];
+	[mySQLConnection queryString:queryString assertingDatabase:[tableDocumentInstance database]];
 
 	if (![mySQLConnection queryErrored]) {
 		isEditingRow = NO;
@@ -1448,9 +1448,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	NSString *nullValue = [prefs stringForKey:SPNullValue];
 	CFStringRef escapedNullValue = CFXMLCreateStringByEscapingEntities(NULL, ((CFStringRef)nullValue), NULL);
+	NSString *databaseName = [tableDocumentInstance database];
 
-	SPMySQLResult *structureQueryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [selectedTable backtickQuotedString]]];
-	SPMySQLResult *indexesQueryResult   = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEXES FROM %@", [selectedTable backtickQuotedString]]];
+	SPMySQLResult *structureQueryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW COLUMNS FROM %@", [selectedTable backtickQuotedString]] assertingDatabase:databaseName];
+	SPMySQLResult *indexesQueryResult   = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEXES FROM %@", [selectedTable backtickQuotedString]] assertingDatabase:databaseName];
 
 	[structureQueryResult setReturnDataAsStrings:YES];
 	[indexesQueryResult setReturnDataAsStrings:YES];
@@ -1584,7 +1585,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 					}
 				}
 
-				[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [self->selectedTable backtickQuotedString], [relationName backtickQuotedString]]];
+				[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [self->selectedTable backtickQuotedString], [relationName backtickQuotedString]] assertingDatabase:[self->tableDocumentInstance database]];
 
 				// Check for errors, but only if the query wasn't cancelled
 				if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
@@ -1597,7 +1598,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 			// Remove field
 			[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP %@",
-																	[self->selectedTable backtickQuotedString], [[[[self activeFieldsSource] safeObjectAtIndex:[self->tableSourceView selectedRow]] safeObjectForKey:@"name"] backtickQuotedString]]];
+																	[self->selectedTable backtickQuotedString], [[[[self activeFieldsSource] safeObjectAtIndex:[self->tableSourceView selectedRow]] safeObjectForKey:@"name"] backtickQuotedString]] assertingDatabase:[self->tableDocumentInstance database]];
 
 			// Check for errors, but only if the query wasn't cancelled
 			if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
@@ -1656,7 +1657,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	// Retrieve the indexes for the table
-	SPMySQLResult *indexResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEX FROM %@", [aTable backtickQuotedString]]];
+	SPMySQLResult *indexResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW INDEX FROM %@", [aTable backtickQuotedString]] assertingDatabase:[tableDocumentInstance database]];
 
 	// If an error occurred, reset the interface and abort
 	if ([mySQLConnection queryErrored]) {
@@ -2311,7 +2312,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	}
 
 	// Run the query; report any errors, or reload the table on success
-	[mySQLConnection queryString:queryString];
+	[mySQLConnection queryString:queryString assertingDatabase:[tableDocumentInstance database]];
 
 	if ([mySQLConnection queryErrored]) {
 		[NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Error moving field", @"error moving field message") message:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to move the field.\n\nMySQL said: %@", @"error moving field informative message"), [mySQLConnection lastErrorMessage]] callback:nil];
@@ -2721,7 +2722,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	if([[menu menuId] isEqualToString:@"encodingPopupMenu"]) {
 		NSString *tableEncoding = [tableDataInstance tableEncoding];
-		//NSString *databaseEncoding = [databaseDataInstance getDatabaseDefaultCharacterSet];
+		//NSString *databaseEncoding = [databaseDataInstance getDatabaseDefaultCharacterSetForDatabase:[tableDocumentInstance database]];
 		//NSString *serverEncoding = [databaseDataInstance getServerDefaultCharacterSet];
 
 		struct _cmpMap defaultCmp[] = {
@@ -2749,7 +2750,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		NSString *encoding = [rowData objectForKey:@"encodingName"];
 		NSString *encodingDefaultCollation = [databaseDataInstance getDefaultCollationForEncoding:encoding];
 		NSString *tableCollation = [tableDataInstance statusValueForKey:@"Collation"];
-		//NSString *databaseCollation = [databaseDataInstance getDatabaseDefaultCollation];
+		//NSString *databaseCollation = [databaseDataInstance getDatabaseDefaultCollationForDatabase:[tableDocumentInstance database]];
 		//NSString *serverCollation = [databaseDataInstance getServerDefaultCollation];
 
 		struct _cmpMap defaultCmp[] = {
