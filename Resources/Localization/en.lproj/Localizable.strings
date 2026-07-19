@@ -4058,3 +4058,45 @@
 
 /* Copy connection string password warning */
 "Would you like to include the password in the connection string?\n\n⚠️ WARNING: Sharing passwords in plaintext (Slack, email, etc.) is a security risk!\n\nOnly include the password if you're sharing through a secure channel." = "Would you like to include the password in the connection string?\n\n⚠️ WARNING: Sharing passwords in plaintext (Slack, email, etc.) is a security risk!\n\nOnly include the password if you're sharing through a secure channel.";
+
+/* Vault roles refresh button title */
+"Refresh" = "Refresh";
+
+/* vault role refresh in progress title */
+"Vault role refresh in progress" = "Vault role refresh in progress";
+
+/* vault role refresh in progress message */
+"Wait for the Vault role list to finish loading before connecting." = "Wait for the Vault role list to finish loading before connecting.";
+
+/* vault creds path required connect message */
+"A Vault credentials path is required to connect. Fill in the mount and role, or paste a full path into the Role field." = "A Vault credentials path is required to connect. Fill in the mount and role, or paste a full path into the Role field.";
+
+/* vault creds path required save message */
+"A Vault credentials path is required to save a Vault favorite. Fill in the mount and role, or paste a full path into the Role field." = "A Vault credentials path is required to save a Vault favorite. Fill in the mount and role, or paste a full path into the Role field.";
+
+/* Vault roles refresh – missing mount */
+"Enter a Vault mount first" = "Enter a Vault mount first";
+
+/* Vault roles refresh – missing mount detail */
+"The list of roles is read from <mount>/roles. Fill in the Vault mount field, then refresh." = "The list of roles is read from <mount>/roles. Fill in the Vault mount field, then refresh.";
+
+/* Vault roles refresh – login confirm */
+"Sign in to Vault?" = "Sign in to Vault?";
+
+/* Vault roles refresh – login confirm detail */
+"Listing roles requires authenticating to Vault, which will open your web browser." = "Listing roles requires authenticating to Vault, which will open your web browser.";
+
+/* Vault roles refresh – empty */
+"No Vault roles found" = "No Vault roles found";
+
+/* Vault roles refresh – empty detail */
+"No database roles were returned for this mount. Check the Vault mount path and that your token may list roles, or type the role manually." = "No database roles were returned for this mount. Check the Vault mount path and that your token may list roles, or type the role manually.";
+
+/* Vault roles refresh – failure */
+"Could not load Vault roles" = "Could not load Vault roles";
+
+/* Vault roles refresh – failure detail */
+"Unknown error. You can still type the role manually." = "Unknown error. You can still type the role manually.";
+
+/* Vault OIDC login already in progress */
+"Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again." = "Another Vault sign-in is already in progress. Finish or cancel it (including in other windows) and try again.";

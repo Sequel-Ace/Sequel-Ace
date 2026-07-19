@@ -589,6 +589,13 @@
 		FA1B2C3D4E5F6A7B8C9D0E11 /* VaultClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E01 /* VaultClient.swift */; };
 		FA1B2C3D4E5F6A7B8C9D0E12 /* VaultClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E01 /* VaultClient.swift */; };
 		FA1B2C3D4E5F6A7B8C9D0E13 /* VaultClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E02 /* VaultClientTests.swift */; };
+		FA1B2C3D4E5F6A7B8C9D0E1A /* SAVaultCredentialsPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E07 /* SAVaultCredentialsPath.swift */; };
+		FA1B2C3D4E5F6A7B8C9D0E1B /* SAVaultCredentialsPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E07 /* SAVaultCredentialsPath.swift */; };
+		FA1B2C3D4E5F6A7B8C9D0E1C /* SAVaultCredentialsPathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E08 /* SAVaultCredentialsPathTests.swift */; };
+		FA1B2C3D4E5F6A7B8C9D0E1D /* SAVaultRoleFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E09 /* SAVaultRoleFilter.swift */; };
+		FA1B2C3D4E5F6A7B8C9D0E1E /* SAVaultRoleFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E09 /* SAVaultRoleFilter.swift */; };
+		FA1B2C3D4E5F6A7B8C9D0E20 /* SAVaultRoleListController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E0B /* SAVaultRoleListController.swift */; };
+		FA1B2C3D4E5F6A7B8C9D0E1F /* SAVaultRoleFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E0A /* SAVaultRoleFilterTests.swift */; };
 		FA1B2C3D4E5F6A7B8C9D0E14 /* VaultOIDCHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E03 /* VaultOIDCHandler.swift */; };
 		FA1B2C3D4E5F6A7B8C9D0E15 /* VaultAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E04 /* VaultAuthManager.swift */; };
 		FA1B2C3D4E5F6A7B8C9D0E16 /* VaultAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1B2C3D4E5F6A7B8C9D0E04 /* VaultAuthManager.swift */; };
@@ -1427,6 +1434,11 @@
 		F4C0BDAE2E9F4D5E8A1B0201 /* SecureBookmarkManagerStub.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureBookmarkManagerStub.swift; sourceTree = "<group>"; };
 		FA1B2C3D4E5F6A7B8C9D0E01 /* VaultClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultClient.swift; sourceTree = "<group>"; };
 		FA1B2C3D4E5F6A7B8C9D0E02 /* VaultClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultClientTests.swift; sourceTree = "<group>"; };
+		FA1B2C3D4E5F6A7B8C9D0E07 /* SAVaultCredentialsPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAVaultCredentialsPath.swift; sourceTree = "<group>"; };
+		FA1B2C3D4E5F6A7B8C9D0E08 /* SAVaultCredentialsPathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAVaultCredentialsPathTests.swift; sourceTree = "<group>"; };
+		FA1B2C3D4E5F6A7B8C9D0E09 /* SAVaultRoleFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAVaultRoleFilter.swift; sourceTree = "<group>"; };
+		FA1B2C3D4E5F6A7B8C9D0E0B /* SAVaultRoleListController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAVaultRoleListController.swift; sourceTree = "<group>"; };
+		FA1B2C3D4E5F6A7B8C9D0E0A /* SAVaultRoleFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAVaultRoleFilterTests.swift; sourceTree = "<group>"; };
 		FA1B2C3D4E5F6A7B8C9D0E03 /* VaultOIDCHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultOIDCHandler.swift; sourceTree = "<group>"; };
 		FA1B2C3D4E5F6A7B8C9D0E04 /* VaultAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultAuthManager.swift; sourceTree = "<group>"; };
 		FA1B2C3D4E5F6A7B8C9D0E05 /* VaultAuthManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultAuthManagerTests.swift; sourceTree = "<group>"; };
@@ -2591,6 +2603,8 @@
 				FA1B2C3D4E5F6A7B8C9D0E02 /* VaultClientTests.swift */,
 				FA1B2C3D4E5F6A7B8C9D0E05 /* VaultAuthManagerTests.swift */,
 				FA1B2C3D4E5F6A7B8C9D0E06 /* VaultOIDCHandlerTests.swift */,
+				FA1B2C3D4E5F6A7B8C9D0E08 /* SAVaultCredentialsPathTests.swift */,
+				FA1B2C3D4E5F6A7B8C9D0E0A /* SAVaultRoleFilterTests.swift */,
 				F4C0BDAE2E9F4D5E8A1B0201 /* SecureBookmarkManagerStub.swift */,
 				5146E0472F7A640C00C4C14A /* SAConnectionInfoTests.swift */,
 				5AF0C4000000000000000011 /* SAConnectionInfoFavoriteTests.swift */,
@@ -2830,6 +2844,9 @@
 			isa = PBXGroup;
 			children = (
 				FA1B2C3D4E5F6A7B8C9D0E01 /* VaultClient.swift */,
+				FA1B2C3D4E5F6A7B8C9D0E07 /* SAVaultCredentialsPath.swift */,
+				FA1B2C3D4E5F6A7B8C9D0E09 /* SAVaultRoleFilter.swift */,
+				FA1B2C3D4E5F6A7B8C9D0E0B /* SAVaultRoleListController.swift */,
 				FA1B2C3D4E5F6A7B8C9D0E03 /* VaultOIDCHandler.swift */,
 				FA1B2C3D4E5F6A7B8C9D0E04 /* VaultAuthManager.swift */,
 			);
@@ -3287,6 +3304,10 @@
 				FA1B2C3D4E5F6A7B8C9D0E18 /* VaultOIDCHandler.swift in Sources */,
 				FA1B2C3D4E5F6A7B8C9D0E19 /* VaultOIDCHandlerTests.swift in Sources */,
 				FA1B2C3D4E5F6A7B8C9D0E12 /* VaultClient.swift in Sources */,
+				FA1B2C3D4E5F6A7B8C9D0E1B /* SAVaultCredentialsPath.swift in Sources */,
+				FA1B2C3D4E5F6A7B8C9D0E1C /* SAVaultCredentialsPathTests.swift in Sources */,
+				FA1B2C3D4E5F6A7B8C9D0E1E /* SAVaultRoleFilter.swift in Sources */,
+				FA1B2C3D4E5F6A7B8C9D0E1F /* SAVaultRoleFilterTests.swift in Sources */,
 				FA1B2C3D4E5F6A7B8C9D0E16 /* VaultAuthManager.swift in Sources */,
 				F4C0BDAE2E9F4D5E8A1B0101 /* AWSCredentials.swift in Sources */,
 				F4C0BDAE2E9F4D5E8A1B0102 /* RDSIAMAuthentication.swift in Sources */,
@@ -3469,6 +3490,9 @@
 				F3A4B8C191E14E7094C9B015 /* AWSIAMAuthManager.swift in Sources */,
 				F3A4B8C191E14E7094C9B016 /* AWSDirectoryBookmarkManager.swift in Sources */,
 				FA1B2C3D4E5F6A7B8C9D0E11 /* VaultClient.swift in Sources */,
+				FA1B2C3D4E5F6A7B8C9D0E1A /* SAVaultCredentialsPath.swift in Sources */,
+				FA1B2C3D4E5F6A7B8C9D0E1D /* SAVaultRoleFilter.swift in Sources */,
+				FA1B2C3D4E5F6A7B8C9D0E20 /* SAVaultRoleListController.swift in Sources */,
 				FA1B2C3D4E5F6A7B8C9D0E14 /* VaultOIDCHandler.swift in Sources */,
 				51EF3E642FDC24EE00EFFF09 /* SAConnectionFormModel.swift in Sources */,
 				FA1B2C3D4E5F6A7B8C9D0E15 /* VaultAuthManager.swift in Sources */,
