@@ -42,6 +42,13 @@ final class SAConnectionFormModel: ObservableObject {
         objc.info = info
     }
 
+    // MARK: - Backend-derived display values
+
+    /// The default port placeholder string for the port text field.
+    var defaultPortString: String {
+        String(info.databaseBackend.defaultPort)
+    }
+
     // MARK: - Derived display values
 
     /// The name shown for this connection: the user-entered name when
@@ -65,6 +72,8 @@ final class SAConnectionFormModel: ObservableObject {
     /// host (SAConnectionService connects through the socket instead).
     var canAttemptConnection: Bool {
         let hasHost = !info.host.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        // PostgreSQL only supports TCP/IP connections for now.
+        if info.databaseBackend == .postgresql { return hasHost }
         switch info.type {
         case .socket:
             return true

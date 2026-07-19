@@ -44,6 +44,7 @@
 @class SPSplitView;
 @class SPFieldEditorController;
 @class SPMySQLConnection;
+@protocol SPDatabaseConnection;
 @class SPMySQLStreamingResultStore;
 @class SPTextView;
 @class SPDatabaseDocument;

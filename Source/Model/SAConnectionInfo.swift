@@ -19,6 +19,31 @@ import Foundation
     case vault = 4
 }
 
+// MARK: - Database Backend
+
+/// The database backend to use for this connection.
+/// Mirrors SPDatabaseType from SPConstants.h for Swift usage.
+@objc enum SADatabaseBackend: Int, Codable {
+    case mysql      = 0
+    case postgresql = 1
+
+    /// Human-readable display name.
+    var displayName: String {
+        switch self {
+        case .mysql:      return "MySQL / MariaDB"
+        case .postgresql: return "PostgreSQL"
+        }
+    }
+
+    /// Default port number for this backend.
+    var defaultPort: Int {
+        switch self {
+        case .mysql:      return 3306
+        case .postgresql: return 5432
+        }
+    }
+}
+
 // MARK: - Time Zone Mode
 
 /// Mirrors SPConnectionTimeZoneMode from SPConnectionController.h for Swift usage.
@@ -30,9 +55,13 @@ import Foundation
 
 // MARK: - SAConnectionInfo
 
-/// A value type capturing all parameters needed to establish a MySQL connection.
+/// A value type capturing all parameters needed to establish a database connection.
 /// This consolidates the 30+ ivars scattered across SPConnectionController into a single model.
 struct SAConnectionInfo {
+
+    // MARK: Database Backend
+
+    var databaseBackend: SADatabaseBackend = .mysql
 
     // MARK: Basic Connection
 
@@ -169,6 +198,11 @@ struct SAConnectionInfo {
     }
 
     // MARK: Basic Connection
+
+    @objc var databaseBackend: SADatabaseBackend {
+        get { info.databaseBackend }
+        set { info.databaseBackend = newValue }
+    }
 
     @objc var type: SAConnectionType {
         get { info.type }

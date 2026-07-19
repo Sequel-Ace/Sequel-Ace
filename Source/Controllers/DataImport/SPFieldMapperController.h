@@ -32,6 +32,7 @@
 @class SPTableView;
 @class SPTablesList;
 @class SPMySQLConnection;
+@protocol SPDatabaseConnection;
 
 @interface SPFieldMapperController : NSWindowController <NSTokenFieldCellDelegate, NSMenuDelegate>
 {

@@ -196,7 +196,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
     SPLog(@"updateTables, sender: %@", sender);
 
-	SPMySQLResult *theResult;
+	id<SPDatabaseResult> theResult;
 	NSString *previousSelectedTable = nil;
 	NSString *previousFilterString = nil;
 	BOOL previousTableListIsSelectable = tableListIsSelectable;
@@ -237,89 +237,110 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			[mySQLConnection setEncoding:@"utf8mb4"];
 		}
 
-		// Select the table list for the current database.  On MySQL versions after 5 this will include
-		// views; on MySQL versions >= 5.0.02 select the "full" list to also select the table type column.
-		if ([prefs boolForKey:SPDisplayCommentsInTablesList]) {
-			theResult = [mySQLConnection queryString:@"SHOW TABLE STATUS"];
-		} else {
-			theResult = [mySQLConnection queryString:@"SHOW FULL TABLES"];
-		}
-		[theResult setDefaultRowReturnType:SPMySQLResultRowAsDictionary];
-		[theResult setReturnDataAsStrings:YES]; // TODO: workaround for bug #2700 (#2699)
-		if ([theResult numberOfFields] == 1 && [[theResult getRow] isKindOfClass:[NSArray class]]) {
-			for (NSArray *eachRow in theResult) {
-				[tables addObject:[eachRow objectAtIndex:0]];
-				[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeTable]];
-			}
-		} else {
-			for (NSDictionary *eachRow in theResult) {
-
-				NSMutableDictionary *mutableRow = [eachRow mutableCopy];
-				NSString *tableType = [mutableRow objectForKey:@"Table_type"];
-				[mutableRow removeObjectForKey:@"Table_type"];
-
-				// Due to encoding problems it can be the case that [resultRow objectAtIndex:0]
-				// return NSNull, thus catch that case for safety reasons
-				id tableName = [mutableRow objectForKey:@"Name"];
-				if (tableName == nil || [tableName isNSNull]) {
-					tableName = [mutableRow objectForKey:@"NAME"];
-				}
-				if ((tableName == nil || [tableName isNSNull]) && mutableRow.allValues.count == 1) {
-					tableName = [mutableRow.allValues firstObject];
-				}
-				if (tableName == nil || [tableName isNSNull]) {
-					tableName = @"...";
-				}
+		if ([mySQLConnection isPostgreSQL]) {
+			// PostgreSQL: use information_schema for table + view listing
+			NSString *schema = @"public";
+			NSString *pgTableQuery = [NSString stringWithFormat:
+				@"SELECT table_name, table_type FROM information_schema.tables "
+				 "WHERE table_schema = '%@' ORDER BY table_name", schema];
+			theResult = [mySQLConnection queryString:pgTableQuery];
+			unsigned long long rowCount = [theResult numberOfRows];
+			for (unsigned long long rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+				[theResult seekToRow:rowIndex];
+				NSDictionary *eachRow = [theResult getRowAsDictionary];
+				NSString *tableName = [eachRow objectForKey:@"table_name"];
+				NSString *tableType = [eachRow objectForKey:@"table_type"];
+				if (tableName == nil || [tableName isNSNull]) continue;
 				[tables addObject:tableName];
-				
-				// comments is usefull
-				id tableComment = [mutableRow objectForKey:@"Comment"];
-				if (tableComment == nil || [tableComment isNSNull]) {
-					tableComment = [mutableRow objectForKey:@"COMMENT"];
-				}
-				if (tableComment == nil || [tableComment isNSNull]) {
-					tableComment = @"";
-				}
-				[tableComments setValue:tableComment forKey:tableName];
-
-				if ([@"VIEW" isEqualToString:tableComment] || [@"VIEW" isEqualToString:tableType]) {
+				if ([@"VIEW" isEqualToString:tableType]) {
 					[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeView]];
 					tableListContainsViews = YES;
 				} else {
 					[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeTable]];
 				}
 			}
+		} else {
+			// MySQL/MariaDB: use SHOW FULL TABLES / SHOW TABLE STATUS
+			if ([prefs boolForKey:SPDisplayCommentsInTablesList]) {
+				theResult = [mySQLConnection queryString:@"SHOW TABLE STATUS"];
+			} else {
+				theResult = [mySQLConnection queryString:@"SHOW FULL TABLES"];
+			}
+			[theResult setDefaultRowReturnType:SPMySQLResultRowAsDictionary];
+			[theResult setReturnDataAsStrings:YES]; // TODO: workaround for bug #2700 (#2699)
+			if ([theResult numberOfFields] == 1 && [[theResult getRow] isKindOfClass:[NSArray class]]) {
+				for (NSArray *eachRow in theResult) {
+					[tables addObject:[eachRow objectAtIndex:0]];
+					[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeTable]];
+				}
+			} else {
+				for (NSDictionary *eachRow in theResult) {
+
+					NSMutableDictionary *mutableRow = [eachRow mutableCopy];
+					NSString *tableType = [mutableRow objectForKey:@"Table_type"];
+					[mutableRow removeObjectForKey:@"Table_type"];
+
+					// Due to encoding problems it can be the case that [resultRow objectAtIndex:0]
+					// return NSNull, thus catch that case for safety reasons
+					id tableName = [mutableRow objectForKey:@"Name"];
+					if (tableName == nil || [tableName isNSNull]) {
+						tableName = [mutableRow objectForKey:@"NAME"];
+					}
+					if ((tableName == nil || [tableName isNSNull]) && mutableRow.allValues.count == 1) {
+						tableName = [mutableRow.allValues firstObject];
+					}
+					if (tableName == nil || [tableName isNSNull]) {
+						tableName = @"...";
+					}
+					[tables addObject:tableName];
+					
+					// comments is usefull
+					id tableComment = [mutableRow objectForKey:@"Comment"];
+					if (tableComment == nil || [tableComment isNSNull]) {
+						tableComment = [mutableRow objectForKey:@"COMMENT"];
+					}
+					if (tableComment == nil || [tableComment isNSNull]) {
+						tableComment = @"";
+					}
+					[tableComments setValue:tableComment forKey:tableName];
+
+					if ([@"VIEW" isEqualToString:tableComment] || [@"VIEW" isEqualToString:tableType]) {
+						[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeView]];
+						tableListContainsViews = YES;
+					} else {
+						[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeTable]];
+					}
+				}
+			}
 		}
 
-		/* Grab the procedures and functions
-		 *
-		 * Using information_schema gives us more info (for information window perhaps?) but breaks
-		 * backward compatibility with pre 4 I believe. I left the other methods below, in case.
-		 */
-        NSString *pQuery = [NSString stringWithFormat:@"SELECT * FROM information_schema.routines WHERE routine_schema = %@ ORDER BY routine_name", [[tableDocumentInstance database] tickQuotedString]];
-        theResult = [mySQLConnection queryString:pQuery];
-        [theResult setDefaultRowReturnType:SPMySQLResultRowAsArray];
-        [theResult setReturnDataAsStrings:YES]; //see tables above
-        
-        // Check for mysql errors - if information_schema is not accessible for some reasons
-        // omit adding procedures and functions
-        if(![mySQLConnection queryErrored] && theResult != nil && [theResult numberOfRows] && [theResult numberOfFields] > 3) {
+		/* Grab the procedures and functions — MySQL/MariaDB only */
+		if (![mySQLConnection isPostgreSQL]) {
+			NSString *pQuery = [NSString stringWithFormat:@"SELECT * FROM information_schema.routines WHERE routine_schema = %@ ORDER BY routine_name", [[tableDocumentInstance database] tickQuotedString]];
+			theResult = [mySQLConnection queryString:pQuery];
+			[theResult setDefaultRowReturnType:SPMySQLResultRowAsArray];
+			[theResult setReturnDataAsStrings:YES]; //see tables above
+			
+			// Check for mysql errors - if information_schema is not accessible for some reasons
+			// omit adding procedures and functions
+			if(![mySQLConnection queryErrored] && theResult != nil && [theResult numberOfRows] && [theResult numberOfFields] > 3) {
 
-            // Add the header row
-            [tables addObject:NSLocalizedString(@"PROCS & FUNCS",@"header for procs & funcs list")];
-            [tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeNone]];
+				// Add the header row
+				[tables addObject:NSLocalizedString(@"PROCS & FUNCS",@"header for procs & funcs list")];
+				[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeNone]];
 
-            for (NSArray *eachRow in theResult) {
-                [tables addObject:[eachRow safeObjectAtIndex:3]];
-                if([[eachRow safeObjectAtIndex:4] isNSNull] == NO ){
-                    if ([[eachRow safeObjectAtIndex:4] isEqualToString:@"PROCEDURE"]) {
-                        [tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeProc]];
-                    } else {
-                        [tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeFunc]];
-                    }
-                }
-            }
-        }
+				for (NSArray *eachRow in theResult) {
+					[tables addObject:[eachRow safeObjectAtIndex:3]];
+					if([[eachRow safeObjectAtIndex:4] isNSNull] == NO ){
+						if ([[eachRow safeObjectAtIndex:4] isEqualToString:@"PROCEDURE"]) {
+							[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeProc]];
+						} else {
+							[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeFunc]];
+						}
+					}
+				}
+			}
+		}
 
 		// Restore encoding if appropriate
 		if (changeEncoding) [mySQLConnection restoreStoredEncoding];
@@ -839,7 +860,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 /**
  * Sets the connection (received from SPDatabaseDocument) and makes things that have to be done only once
  */
-- (void)setConnection:(SPMySQLConnection *)theConnection
+- (void)setConnection:(id<SPDatabaseConnection>)theConnection
 {
 	mySQLConnection = theConnection;
 	
@@ -2772,7 +2793,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	else if(tblType == SPTableTypeFunc || tblType == SPTableTypeProc)
 	{
 		// get the create syntax
-		SPMySQLResult *theResult;
+		id<SPDatabaseResult> theResult;
 
 		if(selectedTableType == SPTableTypeProc)
 			theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW CREATE PROCEDURE %@", [selectedTableName backtickQuotedString]]];
@@ -2966,7 +2987,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 			default: break;
 		}
 
-		SPMySQLResult *theResult  = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW CREATE %@ %@", stringTableType, [oldTableName backtickQuotedString] ] ];
+		id<SPDatabaseResult> theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW CREATE %@ %@", stringTableType, [oldTableName backtickQuotedString] ] ];
 		if ([mySQLConnection queryErrored]) {
 			[NSException raise:@"MySQL Error" format:NSLocalizedString(@"An error occurred while renaming. I couldn't retrieve the syntax for '%@'.\n\nMySQL said: %@", @"rename precedure/function error - can't retrieve syntax"), oldTableName, [mySQLConnection lastErrorMessage]];
 		}

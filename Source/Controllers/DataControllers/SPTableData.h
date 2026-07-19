@@ -31,6 +31,7 @@
 @class SPDatabaseDocument;
 @class SPTablesList;
 @class SPMySQLConnection;
+@protocol SPDatabaseConnection;
 
 @interface SPTableData: NSObject {
 	IBOutlet __weak SPDatabaseDocument* tableDocumentInstance;

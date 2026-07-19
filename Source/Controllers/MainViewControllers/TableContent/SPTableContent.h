@@ -38,6 +38,7 @@
 @class SPTextView;
 @class SPFieldEditorController;
 @class SPMySQLConnection;
+@protocol SPDatabaseConnection;
 @class SPMySQLStreamingResultStore;
 @class SPTableData;
 @class SPDatabaseDocument;

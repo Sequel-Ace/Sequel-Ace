@@ -37,6 +37,7 @@
 @class SPIndexesController;
 @class SPTableView;
 @class SPMySQLConnection;
+@protocol SPDatabaseConnection;
 @class SPMySQLResult;
 @class SPExtendedTableInfo;
 @class SPTableInfo;

@@ -29,6 +29,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 @class SPMySQLConnection;
+@protocol SPDatabaseConnection;
 @class SPDatabaseDocument;
 
 #import <SPMySQL/SPMySQL.h>

@@ -30,6 +30,7 @@
 //  More info at <https://github.com/sequelpro/sequelpro>
 
 @class SPMySQLConnection;
+@protocol SPDatabaseConnection;
 @class SPFieldMapperController;
 @class SPFileHandle;
 @class SPDatabaseDocument;

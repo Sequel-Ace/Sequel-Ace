@@ -610,6 +610,16 @@
 		FD8099A82C59DDF70084646F /* SAUuidFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD18C8982C3C9B2F002A5D57 /* SAUuidFormatter.swift */; };
 		FD8099A92C59DE1D0084646F /* SABaseFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2056042C3A7E90008DD271 /* SABaseFormatter.swift */; };
 		FDCF55E52788278500D30655 /* TableSortHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */; };
+		862191EA6E8A4313BEABFDF9 /* SPDatabaseConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 613C52DC1276435B88B372AD /* SPDatabaseConnection.swift */; };
+		37AAD065270E4D9A96CFF189 /* SPMySQLConnectionWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83FD36E49F9549DB9ABAF26A /* SPMySQLConnectionWrapper.swift */; };
+		570034DBD8924AC09D6FEF12 /* SPMySQLResultWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC7B9858D12445DA342BFD1 /* SPMySQLResultWrapper.swift */; };
+		4511D64A177C4C1ABBC15825 /* SPPostgreSQLConnectionWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DC1D8AEF09B4E609FF33F48 /* SPPostgreSQLConnectionWrapper.swift */; };
+		406F0070B3F5474F86E3E291 /* SPPostgreSQLResultWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8593678971D47CB9628EF51 /* SPPostgreSQLResultWrapper.swift */; };
+		5BBAC5A23D1647D684F8EC10 /* SPPostgreSQLStreamingResultWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F7B8789D6974154B8166493 /* SPPostgreSQLStreamingResultWrapper.swift */; };
+		12BEC69A4A2642519648B3A3 /* SPPostgreSQLTypeMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D2EE1BDCAA140B3B01656C1 /* SPPostgreSQLTypeMapper.swift */; };
+		CEBCBCDC187B44DEBAD535CD /* SAPostgreSQLTypeMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99706F4429AA4BD2BE9B343E /* SAPostgreSQLTypeMapperTests.swift */; };
+		3979D868FF464BEA93C972D9 /* SAConnectionInfoPostgreSQLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FE04A14774F47049D54839D /* SAConnectionInfoPostgreSQLTests.swift */; };
+		C8752B84F1894B48AC10E7D5 /* SPPostgreSQLIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BC6448FC637476CB4554E6F /* SPPostgreSQLIntegrationTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1447,6 +1457,16 @@
 		FD2056042C3A7E90008DD271 /* SABaseFormatter.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SABaseFormatter.swift; sourceTree = "<group>"; };
 		FD6DFF862ADB40630057B713 /* SPTableHistoryManager.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = SPTableHistoryManager.swift; sourceTree = "<group>"; tabWidth = 4; usesTabs = 1; };
 		FD8099A62C59DCFA0084646F /* SAUuidFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAUuidFormatterTests.swift; sourceTree = "<group>"; };
+		613C52DC1276435B88B372AD /* SPDatabaseConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPDatabaseConnection.swift; sourceTree = "<group>"; };
+		83FD36E49F9549DB9ABAF26A /* SPMySQLConnectionWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPMySQLConnectionWrapper.swift; sourceTree = "<group>"; };
+		FAC7B9858D12445DA342BFD1 /* SPMySQLResultWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPMySQLResultWrapper.swift; sourceTree = "<group>"; };
+		8DC1D8AEF09B4E609FF33F48 /* SPPostgreSQLConnectionWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPPostgreSQLConnectionWrapper.swift; sourceTree = "<group>"; };
+		B8593678971D47CB9628EF51 /* SPPostgreSQLResultWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPPostgreSQLResultWrapper.swift; sourceTree = "<group>"; };
+		8F7B8789D6974154B8166493 /* SPPostgreSQLStreamingResultWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPPostgreSQLStreamingResultWrapper.swift; sourceTree = "<group>"; };
+		4D2EE1BDCAA140B3B01656C1 /* SPPostgreSQLTypeMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPPostgreSQLTypeMapper.swift; sourceTree = "<group>"; };
+		99706F4429AA4BD2BE9B343E /* SAPostgreSQLTypeMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAPostgreSQLTypeMapperTests.swift; sourceTree = "<group>"; };
+		6FE04A14774F47049D54839D /* SAConnectionInfoPostgreSQLTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionInfoPostgreSQLTests.swift; sourceTree = "<group>"; };
+		0BC6448FC637476CB4554E6F /* SPPostgreSQLIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPPostgreSQLIntegrationTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -2210,6 +2230,7 @@
 				17E6416F0EF01F4C001BC333 /* Keychain */,
 				58FEF15E0F23D60A00518E8E /* Parsing */,
 				17E641720EF01F6B001BC333 /* SSH Tunnel */,
+				D0D45BA919C64701BE929267 /* DatabaseAbstraction */,
 				B57747D60F7A8990003B34F9 /* Category Additions */,
 				58DA884E103E1597000B98DF /* Debugging & Support */,
 				F3A4B8C191E14E7094C9C005 /* AWS */,
@@ -2604,6 +2625,9 @@
 				F4C0BDAE2E9F4D5E8A1B0201 /* SecureBookmarkManagerStub.swift */,
 				5146E0472F7A640C00C4C14A /* SAConnectionInfoTests.swift */,
 				5AF0C4000000000000000011 /* SAConnectionInfoFavoriteTests.swift */,
+					99706F4429AA4BD2BE9B343E /* SAPostgreSQLTypeMapperTests.swift */,
+				6FE04A14774F47049D54839D /* SAConnectionInfoPostgreSQLTests.swift */,
+				0BC6448FC637476CB4554E6F /* SPPostgreSQLIntegrationTests.swift */,
 				517BFF432F7DA38F00F6D812 /* SAConnectionServiceTests.swift */,
 				5146E04B2F7A640C00C4C14A /* SAViewModeTests.swift */,
 				5146E0542F7A640C00C4C14A /* SADatabaseListManagerTests.swift */,
@@ -2644,6 +2668,7 @@
 		51B09FDB2F767A43003BAFFF /* Protocols */ = {
 			isa = PBXGroup;
 			children = (
+				613C52DC1276435B88B372AD /* SPDatabaseConnection.swift */,
 				51B09FDC2F767A4C003BAFFF /* SAConnectionDelegate.swift */,
 				51B09FDE2F767A53003BAFFF /* SADatabaseDocumentProviding.swift */,
 				51B09FE02F767A5E003BAFFF /* SAFavoritesProviding.swift */,
@@ -2859,6 +2884,19 @@
 			path = Formatters;
 			sourceTree = "<group>";
 		};
+		D0D45BA919C64701BE929267 /* DatabaseAbstraction */ = {
+			isa = PBXGroup;
+			children = (
+				83FD36E49F9549DB9ABAF26A /* SPMySQLConnectionWrapper.swift */,
+				FAC7B9858D12445DA342BFD1 /* SPMySQLResultWrapper.swift */,
+				8DC1D8AEF09B4E609FF33F48 /* SPPostgreSQLConnectionWrapper.swift */,
+				B8593678971D47CB9628EF51 /* SPPostgreSQLResultWrapper.swift */,
+				8F7B8789D6974154B8166493 /* SPPostgreSQLStreamingResultWrapper.swift */,
+				4D2EE1BDCAA140B3B01656C1 /* SPPostgreSQLTypeMapper.swift */,
+			);
+			path = DatabaseAbstraction;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -2921,6 +2959,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = C05733C708A9546B00998B17 /* Build configuration list for PBXNativeTarget "Sequel Ace" */;
 			buildPhases = (
+				E4880F3B83C942D18691DEBF /* Build PostgreSQL Rust Library */,
 				8D15AC300486D014006FF6A4 /* Sources */,
 				8D15AC330486D014006FF6A4 /* Frameworks */,
 				8D15AC2B0486D014006FF6A4 /* Resources */,
@@ -3232,6 +3271,22 @@
 			shellPath = /bin/sh;
 			shellScript = "if [ \"${CONFIGURATION}\" = \"Release\" ] || [ \"${CONFIGURATION}\" = \"Beta\" ] || [ \"${CONFIGURATION}\" = \"Distribution\" ]; then\n    echo \"[SA] Uploading dSYM symbols to Firebase Crashlytics for \\\"${CONFIGURATION}\\\" build\"\n\n    UPLOAD_SYMBOLS=\"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/upload-symbols\"\n\n    if [ ! -x \"${UPLOAD_SYMBOLS}\" ]; then\n        echo \"warning: [SA] Firebase upload-symbols not found at ${UPLOAD_SYMBOLS}, skipping dSYM upload\"\n        exit 0\n    fi\n\n    \"${UPLOAD_SYMBOLS}\" -gsp \"${PROJECT_DIR}/Resources/GoogleService-Info.plist\" -p macos \"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}\"\nelse\n    echo \"[SA] Not uploading symbols for \\\"${CONFIGURATION}\\\" build\"\nfi\n";
 		};
+		E4880F3B83C942D18691DEBF /* Build PostgreSQL Rust Library */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Build PostgreSQL Rust Library";
+			outputPaths = (
+				"$(SRCROOT)/Frameworks/SPPostgreSQLFramework/libsppostgresql.a",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Frameworks/SPPostgreSQLFramework/xcode_build_rust.sh\"\n";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -3245,6 +3300,9 @@
 				505F568F1BCEE485007467DD /* SPFunctions.m in Sources */,
 				FD8099A82C59DDF70084646F /* SAUuidFormatter.swift in Sources */,
 				502D21F81BA50966000D4CE7 /* SPDataAdditions.m in Sources */,
+					CEBCBCDC187B44DEBAD535CD /* SAPostgreSQLTypeMapperTests.swift in Sources */,
+				3979D868FF464BEA93C972D9 /* SAConnectionInfoPostgreSQLTests.swift in Sources */,
+				C8752B84F1894B48AC10E7D5 /* SPPostgreSQLIntegrationTests.swift in Sources */,
 				517BFF442F7DA38F00F6D812 /* SAConnectionServiceTests.swift in Sources */,
 				1A9498DE2551776D000BC793 /* DateFormatterExtension.swift in Sources */,
 				C812F06F0D4A95968C1B0154 /* SABundleVersionUpdater.swift in Sources */,
@@ -3589,6 +3647,13 @@
 				1ACA0B6625BEBE18002FA618 /* PopupButtonExtensions.swift in Sources */,
 				17F90E481210B42700274C98 /* SPExportFile.m in Sources */,
 				5146ADF92F79B9EF00C4C14A /* SAConnectionService.swift in Sources */,
+				862191EA6E8A4313BEABFDF9 /* SPDatabaseConnection.swift in Sources */,
+				37AAD065270E4D9A96CFF189 /* SPMySQLConnectionWrapper.swift in Sources */,
+				570034DBD8924AC09D6FEF12 /* SPMySQLResultWrapper.swift in Sources */,
+				4511D64A177C4C1ABBC15825 /* SPPostgreSQLConnectionWrapper.swift in Sources */,
+				406F0070B3F5474F86E3E291 /* SPPostgreSQLResultWrapper.swift in Sources */,
+				5BBAC5A23D1647D684F8EC10 /* SPPostgreSQLStreamingResultWrapper.swift in Sources */,
+				12BEC69A4A2642519648B3A3 /* SPPostgreSQLTypeMapper.swift in Sources */,
 				BC85F5D012193B7D00E255B5 /* SPColorAdditions.m in Sources */,
 				51B09FEC2F7696C7003BAFFF /* SAConnectionWindowController.swift in Sources */,
 				1AF5A262250AC401009885DF /* SPBrackets.m in Sources */,
@@ -3957,6 +4022,9 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Frameworks/SPPostgreSQLFramework/Headers",
+				);
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INSTALL_PATH = /Applications;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -3965,11 +4033,17 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib",
+				"$(PROJECT_DIR)/Frameworks/SPPostgreSQLFramework",
 					"$(inherited)",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				OTHER_LDFLAGS = "-ObjC";
+				OTHER_LDFLAGS = (
+					"-ObjC",
+					"-lsppostgresql",
+					"-lresolv",
+					"-lc++",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
 				PRODUCT_NAME = "Sequel Ace";
@@ -4280,6 +4354,9 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Frameworks/SPPostgreSQLFramework/Headers",
+				);
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INSTALL_PATH = /Applications;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -4288,11 +4365,17 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib",
+				"$(PROJECT_DIR)/Frameworks/SPPostgreSQLFramework",
 					"$(inherited)",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				OTHER_LDFLAGS = "-ObjC";
+				OTHER_LDFLAGS = (
+					"-ObjC",
+					"-lsppostgresql",
+					"-lresolv",
+					"-lc++",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace-beta";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
 				PRODUCT_NAME = "Sequel Ace Beta";
@@ -4435,6 +4518,9 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Frameworks/SPPostgreSQLFramework/Headers",
+				);
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INSTALL_PATH = /Applications;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -4443,11 +4529,17 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib",
+				"$(PROJECT_DIR)/Frameworks/SPPostgreSQLFramework",
 					"$(inherited)",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				OTHER_LDFLAGS = "-ObjC";
+				OTHER_LDFLAGS = (
+					"-ObjC",
+					"-lsppostgresql",
+					"-lresolv",
+					"-lc++",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
 				PRODUCT_NAME = "Sequel Ace";
@@ -4489,6 +4581,9 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INFOPLIST_FILE = Resources/Plists/Info.plist;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Frameworks/SPPostgreSQLFramework/Headers",
+				);
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INSTALL_PATH = /Applications;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -4497,11 +4592,17 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/Frameworks/SPMySQLFramework/MySQL\\ Client\\ Libraries/lib",
+				"$(PROJECT_DIR)/Frameworks/SPPostgreSQLFramework",
 					"$(inherited)",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
-				OTHER_LDFLAGS = "-ObjC";
+				OTHER_LDFLAGS = (
+					"-ObjC",
+					"-lsppostgresql",
+					"-lresolv",
+					"-lc++",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
 				PRODUCT_NAME = "Sequel Ace";

@@ -44,6 +44,7 @@
 @class SPCustomQuery;
 @class SPDatabaseStructure;
 @class SPMySQLConnection;
+@protocol SPDatabaseConnection;
 @class SPCharsetCollationHelper;
 @class SPGotoDatabaseController;
 @class SPCreateDatabaseInfo;
@@ -151,8 +152,9 @@ NS_ASSUME_NONNULL_BEGIN
 	IBOutlet id inputTextWindowSecureTextField;
 	NSInteger passwordSheetReturnCode;
 
-	// Master connection
+	// Master connection (set by SPConnectionController on successful connect)
 	SPMySQLConnection *mySQLConnection;
+	id<SPDatabaseConnection> databaseConnection;
 
 	// Controllers
 	SPConnectionController *connectionController;
@@ -267,6 +269,11 @@ NS_ASSUME_NONNULL_BEGIN
 // Connection callback and methods
 - (void)setConnection:(SPMySQLConnection *)theConnection;
 - (nullable SPMySQLConnection *)getConnection;
+
+/// Set an abstract database connection (PostgreSQL or wrapped MySQL).
+- (void)setDatabaseConnection:(id<SPDatabaseConnection>)connection;
+/// Returns the active connection regardless of backend type.
+- (id<SPDatabaseConnection>)activeDatabaseConnection;
 
 // Database methods
 - (IBAction)chooseDatabase:(id)sender;

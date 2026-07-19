@@ -32,6 +32,7 @@
 #import "SPFavoritesExportProtocol.h"
 #import "SPFavoritesImportProtocol.h"
 #import "SPReachability.h"
+@protocol SPDatabaseConnection;
 
 #import <SPMySQL/SPMySQL.h>
 
@@ -65,6 +66,9 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 @interface SPConnectionController : NSViewController <SPMySQLConnectionDelegate, NSOpenSavePanelDelegate, SPFavoritesImportProtocol, SPFavoritesExportProtocol, NSSplitViewDelegate, SAFavoritesListDelegate>
 {
 	__weak id dbDocument;
+	id<SPDatabaseConnection> databaseConnection;
+
+	// Retained for MySQL-specific callbacks that require an SPMySQLConnection directly.
 	SPMySQLConnection *mySQLConnection;
 
 	SPKeychain *keychain;
@@ -264,6 +268,12 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 
 }
 
+/// The database backend currently selected (SPDatabaseTypeMySQL or SPDatabaseTypePostgreSQL).
+@property (readwrite) SPDatabaseType databaseType;
+
+/// The active database connection (set after a successful connection).
+@property (readwrite, strong) id<SPDatabaseConnection> databaseConnection;
+
 @property (readwrite, weak) id <SPConnectionControllerDelegateProtocol> delegate;
 @property (readwrite, weak) id <SAConnectionDelegate> connectionDelegate;
 @property (readwrite, strong) SAConnectionViewCoordinator *viewCoordinator;
@@ -391,6 +401,10 @@ typedef NS_ENUM(NSInteger, SPConnectionTimeZoneMode) {
 
 - (void)mySQLConnectionEstablished;
 - (void)addConnectionToDocument;
+
+/// Returns the active connection cast to id<SPDatabaseConnection> for use by consumers
+/// that don't need to know the concrete backend.
+- (id<SPDatabaseConnection>)activeDatabaseConnection;
 
 - (void)failConnectionWithTitle:(NSString *)theTitle errorMessage:(NSString *)theErrorMessage detail:(NSString *)errorDetail;
 

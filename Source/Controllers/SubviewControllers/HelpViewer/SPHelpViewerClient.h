@@ -31,6 +31,7 @@
 
 @class SPHelpViewerController;
 @class SPMySQLConnection;
+@protocol SPDatabaseConnection;
 @class MGTemplateEngine;
 
 /**

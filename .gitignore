@@ -8,6 +8,8 @@ xcuserdata/
 build/
 DerivedData/
 Frameworks/**/*.tar.gz
+Frameworks/SPPostgreSQLFramework/rust_src/target/
+Frameworks/SPPostgreSQLFramework/libsppostgresql.a
 
 ## Obj-C/Swift specific
 *.hmap

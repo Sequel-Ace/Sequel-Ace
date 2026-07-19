@@ -236,6 +236,29 @@ static NSInteger _smallestOf(NSInteger a, NSInteger b, NSInteger c);
 }
 
 /**
+ * Returns the string quoted with double-quotes for PostgreSQL identifier quoting.
+ *
+ * eg.: tablename    =>   "tablename"
+ *      my"table     =>   "my""table"
+ */
+- (NSString *)doubleQuotedString
+{
+	return [NSString stringWithFormat: @"\"%@\"", [self stringByReplacingOccurrencesOfString:@"\"" withString:@"\"\""]];
+}
+
+/**
+ * Returns the string quoted with either backticks (MySQL/MariaDB) or double-quotes (PostgreSQL)
+ * depending on the backend of the provided connection object.
+ */
+- (NSString *)identifierQuotedStringForConnection:(id)connection
+{
+	if (connection && [connection respondsToSelector:@selector(isPostgreSQL)] && [(id<SPDatabaseConnection>)connection isPostgreSQL]) {
+		return [self doubleQuotedString];
+	}
+	return [self backtickQuotedString];
+}
+
+/**
  * Returns the string quoted with ticks as required for MySQL identifiers.
  *
  * eg.: tablename    =>   'tablename'
