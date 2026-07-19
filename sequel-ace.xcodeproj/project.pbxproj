@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0B0F0950807A8DF7B38C26AC /* SPMCPFavorite.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E51CBFF347BD58D412A988F /* SPMCPFavorite.swift */; };
 		0FA952B1549148DF8C1B7E61 /* SAStaleBookmarkAlertContentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5438EBE13DEF4D968F600054 /* SAStaleBookmarkAlertContentTests.swift */; };
 		1141A389117BBFF200126A28 /* SPTableCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1141A388117BBFF200126A28 /* SPTableCopy.m */; };
 		1198F5B31174EDD500670590 /* SPDatabaseCopy.m in Sources */ = {isa = PBXBuildFile; fileRef = 1198F5B21174EDD500670590 /* SPDatabaseCopy.m */; };
@@ -284,6 +285,8 @@
 		51BC150125BE138700F1CDC9 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 51BC150025BE138700F1CDC9 /* SnapKit */; };
 		51BC150625BE13C400F1CDC9 /* NSViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */; };
 		51C32B2E2FF6F90C007C2DD3 /* SAPrintUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C32B2D2FF6F90C007C2DD3 /* SAPrintUtility.swift */; };
+		51C397A12FF7BB0100C4C14A /* SAPrintUtilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C397A22FF7BB0100C4C14A /* SAPrintUtilityTests.swift */; };
+		51C397A32FF7BB0100C4C14A /* SAPrintUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C32B2D2FF6F90C007C2DD3 /* SAPrintUtility.swift */; };
 		51C4626D254ED02500F63E70 /* UserDefaultsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */; };
 		51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
 		51C8597C24C8A31400A8C7C4 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C8597B24C8A31400A8C7C4 /* StringExtension.swift */; };
@@ -320,8 +323,6 @@
 		51D9527625AE2B5300574BEB /* FMDB in Frameworks */ = {isa = PBXBuildFile; productRef = 51D9527525AE2B5300574BEB /* FMDB */; };
 		51DCBEF0257134190098E303 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 38C613721C8977E600B3B6EF /* libz.tbd */; };
 		51EA02532FDFF02C00DF6A7B /* SAArchivingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EA02522FDFF02C00DF6A7B /* SAArchivingTests.swift */; };
-		51C397A12FF7BB0100C4C14A /* SAPrintUtilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C397A22FF7BB0100C4C14A /* SAPrintUtilityTests.swift */; };
-		51C397A32FF7BB0100C4C14A /* SAPrintUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C32B2D2FF6F90C007C2DD3 /* SAPrintUtility.swift */; };
 		51EAE7252FDFEFA300DF6A7B /* SAArchiving.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EAE7242FDFEFA300DF6A7B /* SAArchiving.swift */; };
 		51EAE7262FDFEFA300DF6A7B /* SAArchiving.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EAE7242FDFEFA300DF6A7B /* SAArchiving.swift */; };
 		51EF3E642FDC24EE00EFFF09 /* SAConnectionFormModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51EF3E632FDC24EE00EFFF09 /* SAConnectionFormModel.swift */; };
@@ -421,6 +422,7 @@
 		5AF0C4000000000000000003 /* SAConnectionInfo+Favorite.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF0C4000000000000000001 /* SAConnectionInfo+Favorite.swift */; };
 		5AF0C4000000000000000012 /* SAConnectionInfoFavoriteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF0C4000000000000000011 /* SAConnectionInfoFavoriteTests.swift */; };
 		65F52CC824AE21D600FED3CB /* SPFilePreferencePane.m in Sources */ = {isa = PBXBuildFile; fileRef = 65F52CC724AE21D600FED3CB /* SPFilePreferencePane.m */; };
+		6ABF364B03D0324617CFABCC /* SPMCPFavorite.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E51CBFF347BD58D412A988F /* SPMCPFavorite.swift */; };
 		6CB1977AAE8D7D64B7593E66 /* SPBundleManagerAdditionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7CAA1A274071383C33F2E4C /* SPBundleManagerAdditionsTests.swift */; };
 		6F0EA8ED272F33B700514FF1 /* SPBundleManagerAdditions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F0EA8EC272F33B700514FF1 /* SPBundleManagerAdditions.swift */; };
 		6F0EA9242734ABE200514FF1 /* SABundleRunner.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F0EA9232734ABE200514FF1 /* SABundleRunner.m */; };
@@ -1095,6 +1097,7 @@
 		51C04C98261E4CF5001F5554 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51C04C9D261E4DB6001F5554 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/Localizable.strings; sourceTree = "<group>"; };
 		51C32B2D2FF6F90C007C2DD3 /* SAPrintUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAPrintUtility.swift; sourceTree = "<group>"; };
+		51C397A22FF7BB0100C4C14A /* SAPrintUtilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAPrintUtilityTests.swift; sourceTree = "<group>"; };
 		51C4626C254ED02500F63E70 /* UserDefaultsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsExtension.swift; sourceTree = "<group>"; };
 		51C8597B24C8A31400A8C7C4 /* StringExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringExtension.swift; sourceTree = "<group>"; };
 		51CC84002FDE000300C4C14A /* SAHelpViewerOnlineURLBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAHelpViewerOnlineURLBuilder.swift; sourceTree = "<group>"; };
@@ -1126,7 +1129,6 @@
 		51CD0BD8258D06D8009E2484 /* ConnectionView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ConnectionView.xib; sourceTree = "<group>"; };
 		51CD0BDA258D06D8009E2484 /* DatabaseProcessList.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DatabaseProcessList.xib; sourceTree = "<group>"; };
 		51EA02522FDFF02C00DF6A7B /* SAArchivingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAArchivingTests.swift; sourceTree = "<group>"; };
-		51C397A22FF7BB0100C4C14A /* SAPrintUtilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAPrintUtilityTests.swift; sourceTree = "<group>"; };
 		51EAE7242FDFEFA300DF6A7B /* SAArchiving.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAArchiving.swift; sourceTree = "<group>"; };
 		51EF3E632FDC24EE00EFFF09 /* SAConnectionFormModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionFormModel.swift; sourceTree = "<group>"; };
 		51EF3E682FDC250300EFFF09 /* SAConnectionFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionFormView.swift; sourceTree = "<group>"; };
@@ -1253,6 +1255,7 @@
 		5AF0C3030000000000000001 /* SPFieldEditorController+PHPSerialized.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "SPFieldEditorController+PHPSerialized.swift"; sourceTree = "<group>"; };
 		5AF0C4000000000000000001 /* SAConnectionInfo+Favorite.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SAConnectionInfo+Favorite.swift"; sourceTree = "<group>"; };
 		5AF0C4000000000000000011 /* SAConnectionInfoFavoriteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAConnectionInfoFavoriteTests.swift; sourceTree = "<group>"; };
+		5E51CBFF347BD58D412A988F /* SPMCPFavorite.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SPMCPFavorite.swift; sourceTree = "<group>"; };
 		65F52CC724AE21D600FED3CB /* SPFilePreferencePane.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPFilePreferencePane.m; sourceTree = "<group>"; };
 		65F52CCC24AE21F200FED3CB /* SPFilePreferencePane.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SPFilePreferencePane.h; sourceTree = "<group>"; };
 		6F0EA8EC272F33B700514FF1 /* SPBundleManagerAdditions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPBundleManagerAdditions.swift; sourceTree = "<group>"; };
@@ -2499,7 +2502,7 @@
 			path = MGTemplateEngine;
 			sourceTree = "<group>";
 		};
-		2A37F4AAFDCFA73011CA2CEA /* sequel-pro */ = {
+		2A37F4AAFDCFA73011CA2CEA = {
 			isa = PBXGroup;
 			children = (
 				518E02F227B91FBC007973E3 /* Entitlements */,
@@ -2814,6 +2817,7 @@
 				CB4D0AEB506704E1B3B2A8C6 /* SPMCPServer.swift */,
 				2B91D4A5EC24F24F7A7BCA7D /* SPMCPHTTP.swift */,
 				7AC51026DDFB4980A84A78F1 /* SPAppController+MCP.swift */,
+				5E51CBFF347BD58D412A988F /* SPMCPFavorite.swift */,
 			);
 			path = MCP;
 			sourceTree = "<group>";
@@ -2983,7 +2987,7 @@
 				cs,
 				eo,
 			);
-			mainGroup = 2A37F4AAFDCFA73011CA2CEA /* sequel-pro */;
+			mainGroup = 2A37F4AAFDCFA73011CA2CEA;
 			packageReferences = (
 				51D9527425AE2B5300574BEB /* XCRemoteSwiftPackageReference "fmdb" */,
 				51BC14FF25BE138700F1CDC9 /* XCRemoteSwiftPackageReference "SnapKit" */,
@@ -3375,6 +3379,7 @@
 				26BBEDE8A7A7D1C9DA602D39 /* SPMCPHTTP.swift in Sources */,
 				96557E151CF87F3F4EA29A47 /* AWSLoginCredentialsProvider.swift in Sources */,
 				11ACD43BE52B0351BBFE518F /* AWSSSOClient.swift in Sources */,
+				0B0F0950807A8DF7B38C26AC /* SPMCPFavorite.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3675,6 +3680,7 @@
 				1E4E58D8ABEA1E269DC46FD2 /* AWSSSOClient.swift in Sources */,
 				A57A61739BA9FEC6706473D6 /* SPAppController+MCP.swift in Sources */,
 				7EE575894C57515419B0A30A /* SPMCPPreferencePane.swift in Sources */,
+				6ABF364B03D0324617CFABCC /* SPMCPFavorite.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
