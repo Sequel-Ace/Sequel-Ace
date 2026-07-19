@@ -345,6 +345,34 @@ enum SPCustomQuerySQLClassifier {
         currentDatabase != updatedDatabase
     }
 
+    @objc(requiresDatabaseNameCaseSensitivityLookupForQuery:currentDatabase:serverVersion:serverIsMariaDB:)
+    static func requiresDatabaseNameCaseSensitivityLookup(
+        for query: String,
+        currentDatabase: String?,
+        serverVersion: Int,
+        serverIsMariaDB: Bool
+    ) -> Bool {
+        guard let currentDatabase,
+              queryCouldChangeDatabaseContext(query) else {
+            return false
+        }
+
+        let queryWithoutComments = SPCustomQuerySQLClassifier.stripSQLComments(
+            query,
+            serverVersion: serverVersion,
+            serverIsMariaDB: serverIsMariaDB
+        )
+        guard let droppedDatabase = databaseName(matchedBy: dropDatabaseRegex, in: queryWithoutComments),
+              droppedDatabase != currentDatabase else {
+            return false
+        }
+
+        // Exact matches are dropped under every lower_case_table_names mode,
+        // and clearly distinct names never affect the current database. Only
+        // a case-only difference needs the server setting to disambiguate.
+        return droppedDatabase.caseInsensitiveCompare(currentDatabase) == .orderedSame
+    }
+
     @objc(databaseNameAfterSuccessfulQuery:currentDatabase:databaseNamesAreCaseSensitive:serverVersion:serverIsMariaDB:)
     static func databaseName(
         afterSuccessfulQuery query: String,

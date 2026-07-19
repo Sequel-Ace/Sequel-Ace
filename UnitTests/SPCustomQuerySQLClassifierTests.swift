@@ -310,6 +310,41 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
         )
     }
 
+    func testCaseSensitivityLookupIsRequiredOnlyForCaseAmbiguousDrops() {
+        for query in [
+            "SHOW WARNINGS",
+            "SELECT ROW_COUNT()",
+            "SELECT FOUND_ROWS()",
+            "USE app_db",
+            "DROP DATABASE app_db",
+            "DROP DATABASE reporting"
+        ] {
+            XCTAssertFalse(
+                requiresCaseSensitivityLookup(for: query, currentDatabase: "app_db"),
+                query
+            )
+        }
+
+        XCTAssertFalse(
+            requiresCaseSensitivityLookup(for: "DROP DATABASE app_db", currentDatabase: nil)
+        )
+        XCTAssertTrue(
+            requiresCaseSensitivityLookup(for: "DROP DATABASE app_db", currentDatabase: "App_DB")
+        )
+        XCTAssertTrue(
+            requiresCaseSensitivityLookup(
+                for: "/*!80000 DROP SCHEMA IF EXISTS `app_db` */",
+                currentDatabase: "App_DB"
+            )
+        )
+        XCTAssertFalse(
+            requiresCaseSensitivityLookup(
+                for: "/*!99999 DROP DATABASE app_db */",
+                currentDatabase: "App_DB"
+            )
+        )
+    }
+
     func testDatabaseContextTracksCustomQueryAndImportBatchSequence() {
         var databaseName: String? = "app_db"
 
@@ -411,9 +446,108 @@ final class SPCustomQuerySQLClassifierTests: XCTestCase {
             serverIsMariaDB: serverIsMariaDB
         )
     }
+
+    private func requiresCaseSensitivityLookup(
+        for query: String,
+        currentDatabase: String?,
+        serverVersion: Int = 80_000,
+        serverIsMariaDB: Bool = false
+    ) -> Bool {
+        SASQLDatabaseContext.requiresDatabaseNameCaseSensitivityLookup(
+            for: query,
+            currentDatabase: currentDatabase,
+            serverVersion: serverVersion,
+            serverIsMariaDB: serverIsMariaDB
+        )
+    }
 }
 
 final class SASQLDatabaseContextIntegrationTests: XCTestCase {
+
+    func testLiveDeferredCaseSensitivityLookupPreservesDiagnosticsAcrossCustomQueryActions() throws {
+        guard let connection = newLocalConnection() else {
+            throw XCTSkip("No local MySQL connection configured for the diagnostic-preservation regression.")
+        }
+        guard connection.connect() else {
+            throw XCTSkip("Local MySQL connection is unavailable for the diagnostic-preservation regression.")
+        }
+
+        let identifier = UUID().uuidString.lowercased().replacingOccurrences(of: "-", with: "_")
+        let database = "sa_diagnostics_\(identifier)"
+
+        defer {
+            _ = connection.queryString("DROP DATABASE IF EXISTS \(backtickQuoted(database))")
+            connection.disconnect()
+        }
+
+        _ = connection.queryString("CREATE DATABASE \(backtickQuoted(database))")
+        assertQuerySucceeded(connection)
+        _ = connection.queryString(
+            "CREATE TABLE diagnostics (id INT PRIMARY KEY, value INT)",
+            assertingDatabase: database
+        )
+        assertQuerySucceeded(connection)
+        _ = connection.queryString(
+            "INSERT INTO diagnostics VALUES (1, 0)",
+            assertingDatabase: database
+        )
+        assertQuerySucceeded(connection)
+
+        _ = connection.queryString(
+            "UPDATE diagnostics SET value = value + 1 WHERE id = 1",
+            assertingDatabase: database
+        )
+        assertQuerySucceeded(connection)
+        XCTAssertFalse(
+            SASQLDatabaseContext.requiresDatabaseNameCaseSensitivityLookup(
+                for: "SELECT ROW_COUNT()",
+                currentDatabase: database,
+                serverVersion: 80_000,
+                serverIsMariaDB: false
+            )
+        )
+        XCTAssertEqual(
+            connection.getFirstField(fromQuery: "SELECT ROW_COUNT()", assertingDatabase: database) as? String,
+            "1"
+        )
+        assertQuerySucceeded(connection)
+
+        _ = connection.queryString(
+            "SELECT SQL_CALC_FOUND_ROWS value FROM diagnostics UNION ALL SELECT 2 UNION ALL SELECT 3 LIMIT 1",
+            assertingDatabase: database
+        )
+        assertQuerySucceeded(connection)
+        XCTAssertFalse(
+            SASQLDatabaseContext.requiresDatabaseNameCaseSensitivityLookup(
+                for: "SELECT FOUND_ROWS()",
+                currentDatabase: database,
+                serverVersion: 80_000,
+                serverIsMariaDB: false
+            )
+        )
+        XCTAssertEqual(
+            connection.getFirstField(fromQuery: "SELECT FOUND_ROWS()", assertingDatabase: database) as? String,
+            "3"
+        )
+        assertQuerySucceeded(connection)
+
+        _ = connection.queryString(
+            "DROP TABLE IF EXISTS missing_diagnostics_table",
+            assertingDatabase: database
+        )
+        assertQuerySucceeded(connection)
+        XCTAssertFalse(
+            SASQLDatabaseContext.requiresDatabaseNameCaseSensitivityLookup(
+                for: "SHOW WARNINGS",
+                currentDatabase: database,
+                serverVersion: 80_000,
+                serverIsMariaDB: false
+            )
+        )
+        let warningsResult = connection.queryString("SHOW WARNINGS", assertingDatabase: database)
+        assertQuerySucceeded(connection)
+        XCTAssertGreaterThan(warningsResult?.numberOfRows() ?? 0, 0)
+    }
 
     func testLiveCustomQueryBatchFollowsSuccessfulUse() throws {
         guard let connection = newLocalConnection() else {

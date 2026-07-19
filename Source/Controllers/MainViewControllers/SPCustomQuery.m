@@ -771,9 +771,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         SEL                          callbackMethod = NULL;
         NSString                    *databaseName   = [taskArguments objectForKey:@"database"];
         NSString                    *taskButtonString;
-        id lowerCaseTableNames = [mySQLConnection getFirstFieldFromQuery:@"SELECT @@lower_case_table_names" assertingDatabase:databaseName];
-        // If the setting cannot be read, prefer clearing a case-only match over retaining a stale assertion.
-        BOOL databaseNamesAreCaseSensitive = [lowerCaseTableNames respondsToSelector:@selector(integerValue)] && [lowerCaseTableNames integerValue] == 0;
+        BOOL databaseNamesAreCaseSensitive = NO;
+        BOOL databaseNameCaseSensitivityWasLoaded = NO;
         NSInteger serverVersion = (NSInteger)([mySQLConnection serverMajorVersion] * 10000 + [mySQLConnection serverMinorVersion] * 100 + [mySQLConnection serverReleaseVersion]);
         NSString *serverVersionString = [mySQLConnection serverVersionString];
         BOOL serverIsMariaDB = [serverVersionString length] && [serverVersionString rangeOfString:@"mariadb" options:NSCaseInsensitiveSearch].location != NSNotFound;
@@ -840,6 +839,21 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             
             // store trimmed queries for usedQueries and history
             [tempQueries addObject:query];
+
+            // Only a case-only DROP comparison needs lower_case_table_names.
+            // Load it immediately before that DROP so the user statement, not
+            // this metadata lookup, remains the source for SHOW WARNINGS,
+            // ROW_COUNT(), and FOUND_ROWS().
+            if (!databaseNameCaseSensitivityWasLoaded
+                && [SASQLDatabaseContext requiresDatabaseNameCaseSensitivityLookupForQuery:query
+                                                                         currentDatabase:databaseName
+                                                                            serverVersion:serverVersion
+                                                                          serverIsMariaDB:serverIsMariaDB]) {
+                id lowerCaseTableNames = [mySQLConnection getFirstFieldFromQuery:@"SELECT @@lower_case_table_names" assertingDatabase:databaseName];
+                // If the setting cannot be read, prefer clearing a case-only match over retaining a stale assertion.
+                databaseNamesAreCaseSensitive = [lowerCaseTableNames respondsToSelector:@selector(integerValue)] && [lowerCaseTableNames integerValue] == 0;
+                databaseNameCaseSensitivityWasLoaded = YES;
+            }
             
             // Run the query, timing execution (note this also includes network and overhead)
             resultStore = [mySQLConnection resultStoreFromQueryString:query assertingDatabaseContext:databaseName];

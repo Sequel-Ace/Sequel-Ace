@@ -409,9 +409,8 @@
 
 	[tableDocumentInstance setQueryMode:SPImportExportQueryMode];
 	NSString *databaseName = [tableDocumentInstance database];
-	id lowerCaseTableNames = [mySQLConnection getFirstFieldFromQuery:@"SELECT @@lower_case_table_names" assertingDatabase:databaseName];
-	// If the setting cannot be read, prefer clearing a case-only match over retaining a stale assertion.
-	BOOL databaseNamesAreCaseSensitive = [lowerCaseTableNames respondsToSelector:@selector(integerValue)] && [lowerCaseTableNames integerValue] == 0;
+	BOOL databaseNamesAreCaseSensitive = NO;
+	BOOL databaseNameCaseSensitivityWasLoaded = NO;
 	NSInteger serverVersion = (NSInteger)([mySQLConnection serverMajorVersion] * 10000 + [mySQLConnection serverMinorVersion] * 100 + [mySQLConnection serverReleaseVersion]);
 	NSString *serverVersionString = [mySQLConnection serverVersionString];
 	BOOL serverIsMariaDB = [serverVersionString length] && [serverVersionString rangeOfString:@"mariadb" options:NSCaseInsensitiveSearch].location != NSNotFound;
@@ -568,6 +567,20 @@
                 // Skip blank or whitespace-only queries to avoid errors
                 if (![query length]) continue;
 
+                // Only a case-only DROP comparison needs lower_case_table_names.
+                // Query it before that DROP so the DROP remains the most recent
+                // statement for any following diagnostic query in the import.
+                if (!databaseNameCaseSensitivityWasLoaded
+                    && [SASQLDatabaseContext requiresDatabaseNameCaseSensitivityLookupForQuery:query
+                                                                             currentDatabase:databaseName
+                                                                                serverVersion:serverVersion
+                                                                              serverIsMariaDB:serverIsMariaDB]) {
+                    id lowerCaseTableNames = [mySQLConnection getFirstFieldFromQuery:@"SELECT @@lower_case_table_names" assertingDatabase:databaseName];
+                    // If the setting cannot be read, prefer clearing a case-only match over retaining a stale assertion.
+                    databaseNamesAreCaseSensitive = [lowerCaseTableNames respondsToSelector:@selector(integerValue)] && [lowerCaseTableNames integerValue] == 0;
+                    databaseNameCaseSensitivityWasLoaded = YES;
+                }
+
                 // Run the query
                 [mySQLConnection queryString:query usingEncoding:sqlEncoding withResultType:SPMySQLResultAsResult assertingDatabaseContext:databaseName];
 
@@ -674,6 +687,17 @@
 	// If any text remains in the SQL parser, it's an unterminated query - execute it.
 	query = [sqlParser stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 	if ([query length] && !progressCancelled) {
+
+		if (!databaseNameCaseSensitivityWasLoaded
+			&& [SASQLDatabaseContext requiresDatabaseNameCaseSensitivityLookupForQuery:query
+			                                                         currentDatabase:databaseName
+			                                                            serverVersion:serverVersion
+			                                                          serverIsMariaDB:serverIsMariaDB]) {
+			id lowerCaseTableNames = [mySQLConnection getFirstFieldFromQuery:@"SELECT @@lower_case_table_names" assertingDatabase:databaseName];
+			// If the setting cannot be read, prefer clearing a case-only match over retaining a stale assertion.
+			databaseNamesAreCaseSensitive = [lowerCaseTableNames respondsToSelector:@selector(integerValue)] && [lowerCaseTableNames integerValue] == 0;
+			databaseNameCaseSensitivityWasLoaded = YES;
+		}
 
 		// Run the query
 		[mySQLConnection queryString:query usingEncoding:sqlEncoding withResultType:SPMySQLResultAsResult assertingDatabaseContext:databaseName];
