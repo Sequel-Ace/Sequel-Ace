@@ -133,4 +133,30 @@ final class VaultAuthManagerTests: XCTestCase {
         let gone = VaultAuthManager.cachedCredentials(for: "path/a")
         XCTAssertNil(gone, "Evicted entry must not be accessible even without a token check")
     }
+
+    // MARK: - isLoginCancellation
+
+    // Lets the role-refresh completion stay silent for an expected abort (declined
+    // browser confirmation, Vault-tab exit, document teardown) instead of alerting.
+    private static let vaultErrorDomain = "VaultAuthErrorDomain"
+
+    func testIsLoginCancellationRecognizesCancelledError() {
+        let error = NSError(domain: Self.vaultErrorDomain,
+                            code: VaultAuthError.loginCancelled.rawValue, userInfo: nil)
+        XCTAssertTrue(VaultAuthManager.isLoginCancellation(error))
+    }
+
+    func testIsLoginCancellationRejectsOtherErrorCodes() {
+        for code in [VaultAuthError.loginFailed, .credentialsFailed, .invalidConfiguration] {
+            let error = NSError(domain: Self.vaultErrorDomain, code: code.rawValue, userInfo: nil)
+            XCTAssertFalse(VaultAuthManager.isLoginCancellation(error), "code \(code.rawValue) is not a cancellation")
+        }
+    }
+
+    func testIsLoginCancellationRejectsOtherDomainAndNil() {
+        let foreign = NSError(domain: "SomeOtherDomain",
+                              code: VaultAuthError.loginCancelled.rawValue, userInfo: nil)
+        XCTAssertFalse(VaultAuthManager.isLoginCancellation(foreign))
+        XCTAssertFalse(VaultAuthManager.isLoginCancellation(nil))
+    }
 }
