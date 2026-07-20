@@ -122,6 +122,60 @@ import AppKit
     }
 }
 
+/// A normalized row from `SHOW FULL TABLES` or `SHOW TABLE STATUS`.
+///
+/// The server controls the result column labels for these statements. In
+/// particular, the table-name label contains the selected database name and
+/// some MySQL-compatible servers use different casing or entirely different
+/// labels. Normalizing array rows here keeps the table-list UI independent of
+/// those labels.
+@objc final class SATableListEntry: NSObject {
+    @objc let name: String
+    @objc let comment: String
+    @objc let isView: Bool
+
+    init(name: String, comment: String, isView: Bool) {
+        self.name = name
+        self.comment = comment
+        self.isView = isView
+        super.init()
+    }
+}
+
+@objc final class SATableListResultParser: NSObject {
+    /// Normalize rows using the stable result-column order documented by
+    /// MySQL and MariaDB. `SHOW FULL TABLES` returns the table name first and
+    /// table type second. `SHOW TABLE STATUS` returns the table name first;
+    /// its Comment column is located case-insensitively because later server
+    /// versions may append additional columns.
+    @objc(parseRows:fieldNames:displayTableComments:)
+    static func parse(rows: [NSArray],
+                      fieldNames: [String],
+                      displayTableComments: Bool) -> [SATableListEntry] {
+        let commentIndex = displayTableComments
+            ? fieldNames.firstIndex { $0.caseInsensitiveCompare("Comment") == .orderedSame }
+            : nil
+
+        return rows.compactMap { row in
+            guard row.count > 0 else { return nil }
+
+            // Preserve the legacy placeholder for a genuinely missing table
+            // name. Non-standard column labels no longer reach this fallback
+            // because the name is read directly from the first column.
+            let name = string(in: row, at: 0) ?? "..."
+            let tableType = displayTableComments ? nil : string(in: row, at: 1)
+            let comment = commentIndex.flatMap { string(in: row, at: $0) } ?? ""
+            let isView = comment == "VIEW" || tableType == "VIEW"
+            return SATableListEntry(name: name, comment: comment, isView: isView)
+        }
+    }
+
+    private static func string(in row: NSArray, at index: Int) -> String? {
+        guard index < row.count else { return nil }
+        return row[index] as? String
+    }
+}
+
 @objc final class SADatabaseListManager: NSObject {
 
     /// Separator placed between connectionID and database name in

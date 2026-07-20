@@ -247,28 +247,18 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 		}
 		[theResult setDefaultRowReturnType:SPMySQLResultRowAsArray];
 		[theResult setReturnDataAsStrings:YES]; // TODO: workaround for bug #2700 (#2699)
-		NSUInteger commentFieldIndex = NSNotFound;
-		if (displayTableComments) {
-			NSArray *fieldNames = [theResult fieldNames];
-			for (NSUInteger i = 0; i < [fieldNames count]; i++) {
-				if ([[fieldNames objectAtIndex:i] caseInsensitiveCompare:@"Comment"] == NSOrderedSame) {
-					commentFieldIndex = i;
-					break;
-				}
-			}
+		NSMutableArray *resultRows = [NSMutableArray arrayWithCapacity:[theResult numberOfRows]];
+		for (NSArray *eachRow in theResult) {
+			[resultRows addObject:eachRow];
 		}
 
-		for (NSArray *eachRow in theResult) {
-			id tableName = [eachRow safeObjectAtIndex:0];
-			if (!tableName || [tableName isNSNull]) continue;
-
-			NSString *tableType = (!displayTableComments && [eachRow count] > 1) ? [eachRow safeObjectAtIndex:1] : nil;
-			id tableComment = (commentFieldIndex != NSNotFound && [eachRow count] > commentFieldIndex) ? [eachRow safeObjectAtIndex:commentFieldIndex] : @"";
-			if (!tableComment || [tableComment isNSNull]) tableComment = @"";
-
-			[tables addObject:tableName];
-			[tableComments setValue:tableComment forKey:tableName];
-			if ([@"VIEW" isEqualToString:tableComment] || [@"VIEW" isEqualToString:tableType]) {
+		NSArray<SATableListEntry *> *normalizedRows = [SATableListResultParser parseRows:resultRows
+													  fieldNames:[theResult fieldNames] ?: @[]
+										 displayTableComments:displayTableComments];
+		for (SATableListEntry *row in normalizedRows) {
+			[tables addObject:row.name];
+			[tableComments setValue:row.comment forKey:row.name];
+			if (row.isView) {
 				[tableTypes addObject:[NSNumber numberWithInteger:SPTableTypeView]];
 				tableListContainsViews = YES;
 			} else {
