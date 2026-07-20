@@ -276,16 +276,20 @@ private extension SPMCPServer {
             return
         }
 
-        switch (request.method, request.path) {
-        case ("POST", "/mcp"):
+        switch SPMCPHTTP.route(method: request.method, path: request.path) {
+        case .streamableHTTP:
             handleStreamableHTTP(request: request, connection: connection)
-        case ("GET", "/sse"):
+        case .sse:
             handleSSE(request: request, connection: connection)
-        case ("POST", "/message"):
+        case .message:
             handleMessage(request: request, connection: connection)
-        case ("GET", "/health"):
+        case .health:
             sendHTTPResponse(connection: connection, status: 200, body: "OK", keepAlive: false)
-        default:
+        case .methodNotAllowed:
+            sendHTTPResponse(connection: connection, status: 405,
+                             body: "Method Not Allowed. POST to /mcp for the Streamable HTTP transport, or use GET /sse for the legacy SSE transport.",
+                             extraHeaders: ["Allow: POST"], keepAlive: false)
+        case .notFound:
             sendHTTPResponse(connection: connection, status: 404, body: "Not Found", keepAlive: false)
         }
     }
@@ -942,26 +946,34 @@ private extension SPMCPServer {
 private extension SPMCPServer {
 
     /// Sends a plain-text HTTP response with the given status code.
-    func sendHTTPResponse(connection: NWConnection, status: Int, body: String, keepAlive: Bool = false) {
+    func sendHTTPResponse(connection: NWConnection, status: Int, body: String, extraHeaders: [String] = [], keepAlive: Bool = false) {
         let statusLine: String
         switch status {
-        case 200: statusLine = "HTTP/1.1 200 OK"
-        case 202: statusLine = "HTTP/1.1 202 Accepted"
-        case 400: statusLine = "HTTP/1.1 400 Bad Request"
-        case 403: statusLine = "HTTP/1.1 403 Forbidden"
-        case 404: statusLine = "HTTP/1.1 404 Not Found"
-        case 413: statusLine = "HTTP/1.1 413 Payload Too Large"
-        default:  statusLine = "HTTP/1.1 \(status)"
+        case 200:
+            statusLine = "HTTP/1.1 200 OK"
+        case 202:
+            statusLine = "HTTP/1.1 202 Accepted"
+        case 400:
+            statusLine = "HTTP/1.1 400 Bad Request"
+        case 403:
+            statusLine = "HTTP/1.1 403 Forbidden"
+        case 404:
+            statusLine = "HTTP/1.1 404 Not Found"
+        case 405:
+            statusLine = "HTTP/1.1 405 Method Not Allowed"
+        case 413:
+            statusLine = "HTTP/1.1 413 Payload Too Large"
+        default:
+            statusLine = "HTTP/1.1 \(status)"
         }
         let bodyData  = body.data(using: .utf8) ?? Data()
         let connValue = keepAlive ? "keep-alive" : "close"
-        let response  = [
+        let response  = ([
             statusLine,
             "Content-Type: text/plain; charset=utf-8",
             "Content-Length: \(bodyData.count)",
-            "Connection: \(connValue)",
-            "", ""
-        ].joined(separator: "\r\n")
+            "Connection: \(connValue)"
+        ] + extraHeaders + ["", ""]).joined(separator: "\r\n")
 
         var responseData = response.data(using: .utf8)!
         responseData.append(bodyData)

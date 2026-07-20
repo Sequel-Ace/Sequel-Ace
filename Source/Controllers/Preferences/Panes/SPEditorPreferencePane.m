@@ -493,11 +493,20 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 - (void)colorChanged:(id)sender
 {
 	if (![[NSColorPanel sharedColorPanel] isVisible]) return;
-	
-	[prefs setObject:[SAArchiving archivedDataForColor:[sender color]] forKey:[editorColors objectAtIndex:colorRow]];
+
+	// The sender is untyped; without the cast clang resolves -color against an
+	// arbitrary declaration (e.g. a CGColorRef-returning property).
+	NSColor *newColor = [(NSColorPanel *)sender color];
+
+	// Archiving should never fail for an NSColor, but setObject:nil would
+	// throw; on failure keep the previously stored colour instead.
+	NSData *colorData = [SAArchiving archivedDataForColor:newColor];
+	if (colorData) {
+		[prefs setObject:colorData forKey:[editorColors objectAtIndex:colorRow]];
+	}
 
 	if ([[editorColors objectAtIndex:colorRow] isEqualTo:SPCustomQueryEditorBackgroundColor]) {
-		[colorSettingTableView setBackgroundColor:[sender color]];
+		[colorSettingTableView setBackgroundColor:newColor];
 	}
 
 	[colorSettingTableView reloadData];

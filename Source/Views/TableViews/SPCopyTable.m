@@ -115,10 +115,10 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 	NSInteger storageColumn = [self _storageColumnIndexForVisibleColumn:visibleColumn];
 	if(storageColumn == NSNotFound) return;
 
-	NSArray *columnDefinitions = [(id <SPDatabaseContentViewDelegate>)[self delegate] dataColumnDefinitions];
-	if(storageColumn < 0 || storageColumn >= (NSInteger)[columnDefinitions count]) return;
+	NSArray *dataColumnDefinitions = [(id <SPDatabaseContentViewDelegate>)[self delegate] dataColumnDefinitions];
+	if(storageColumn < 0 || storageColumn >= (NSInteger)[dataColumnDefinitions count]) return;
 
-	NSDictionary *columnDefinition = [columnDefinitions objectAtIndex:storageColumn];
+	NSDictionary *columnDefinition = [dataColumnDefinitions objectAtIndex:storageColumn];
 	NSString *columnName = [columnDefinition objectForKey:@"name"];
 	NSString *typeGrouping = [columnDefinition objectForKey:@"typegrouping"];
 	NSArray<SACellFilterMenuItemDescriptor *> *descriptors = [SACellFilterMenuBuilder menuItemDescriptorsWithColumnName:columnName
@@ -651,7 +651,7 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
                                 [NSString stringWithFormat:@"SELECT %@ FROM %@ WHERE %@",
                                     [[data safeObjectForKey:kHeader] backtickQuotedString],
                                     [selectedTable backtickQuotedString],
-                                    whereArgument]];
+                                    whereArgument] assertingDatabase:selectedDatabase];
                 }
 
                 // Check for NULL value
@@ -929,9 +929,10 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 /**
  * Init self with data coming from the table content view. Mainly used for copying data properly.
  */
-- (void) setTableInstance:(id)anInstance withTableData:(SPDataStorage *)theTableStorage withColumns:(NSArray *)columnDefs withTableName:(NSString *)aTableName withConnection:(id)aMySqlConnection
+- (void)setTableInstance:(id)anInstance withTableData:(SPDataStorage *)theTableStorage withColumns:(NSArray *)columnDefs withTableName:(NSString *)aTableName withDatabaseName:(NSString *)aDatabaseName withConnection:(id)aMySqlConnection
 {
 	selectedTable     = aTableName;
+	selectedDatabase  = aDatabaseName;
 	mySQLConnection   = aMySqlConnection;
 	tableInstance     = anInstance;
 	tableStorage	  = theTableStorage;

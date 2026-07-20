@@ -74,14 +74,12 @@
 #import "SPAppController.h"
 #import "SPTableTriggers.h"
 #import "SPTableStructure.h"
-#import "SPPrintAccessory.h"
 #import "MGTemplateEngine.h"
 #import "ICUTemplateMatcher.h"
 #import "SPFavoritesOutlineView.h"
 #import "SPSSHTunnel.h"
 #import "SPHelpViewerClient.h"
 #import "SPHelpViewerController.h"
-#import "SPPrintUtility.h"
 #import "SPBundleManager.h"
 
 #import "sequel-ace-Swift.h"
@@ -208,9 +206,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         gotoDatabaseController = nil;
 
         isProcessing = NO;
-
-        printWebView = [[WebView alloc] init];
-        [printWebView setFrameLoadDelegate:self];
 
         prefs = [NSUserDefaults standardUserDefaults];
         undoManager = [[NSUndoManager alloc] init];
@@ -711,8 +706,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     //to the db.opt file regardless if they were explicity given or not.
     //So there is no longer a "Default" option.
 
-    NSString *currentCharset = [databaseDataInstance getDatabaseDefaultCharacterSet];
-    NSString *currentCollation = [databaseDataInstance getDatabaseDefaultCollation];
+    NSString *databaseName = [self database];
+    NSString *currentCharset = [databaseDataInstance getDatabaseDefaultCharacterSetForDatabase:databaseName];
+    NSString *currentCollation = [databaseDataInstance getDatabaseDefaultCollationForDatabase:databaseName];
 
     // Setup the charset and collation dropdowns
     [alterDatabaseCharsetHelper setDatabaseData:databaseDataInstance];
@@ -751,7 +747,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
      */
     NSLog(@"=================");
 
-    SPMySQLResult *showTablesQuery = [mySQLConnection queryString:@"show tables"];
+    SPMySQLResult *showTablesQuery = [mySQLConnection queryString:@"show tables" assertingDatabase:[self database]];
 
     NSArray *tableRow;
     while ((tableRow = [showTablesQuery getRowAsArray]) != nil) {
@@ -762,13 +758,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             NSLog(@"Scanning %@", table);
 
 
-            NSDictionary *tableStatus = [[mySQLConnection queryString:[NSString stringWithFormat:@"SHOW TABLE STATUS LIKE %@", [table tickQuotedString]]] getRowAsDictionary];
+            NSDictionary *tableStatus = [[mySQLConnection queryString:[NSString stringWithFormat:@"SHOW TABLE STATUS LIKE %@", [table tickQuotedString]] assertingDatabase:[self database]] getRowAsDictionary];
             NSInteger rowCountEstimate = [tableStatus[@"Rows"] integerValue];
             NSLog(@"Estimated row count: %li", rowCountEstimate);
 
 
 
-            SPMySQLResult *tableContentsQuery = [mySQLConnection streamingQueryString:[NSString stringWithFormat:@"select * from %@", [table backtickQuotedString]] useLowMemoryBlockingStreaming:NO];
+            SPMySQLResult *tableContentsQuery = [mySQLConnection streamingQueryString:[NSString stringWithFormat:@"select * from %@", [table backtickQuotedString]] useLowMemoryBlockingStreaming:NO assertingDatabase:[self database]];
             //NSDate *lastProgressUpdate = [NSDate date];
             time_t lastProgressUpdate = time(NULL);
             NSInteger rowCount = 0;
@@ -962,28 +958,34 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         {
             dbName = [eachRow firstObject];
         }
-
-        SPMainQSync(^{
-            // TODO: there have been crash reports because dbName == nil at this point. When could that happen?
-            if([dbName unboxNull]) {
-                if([dbName respondsToSelector:@selector(isEqualToString:)]) {
-                    if(![dbName isEqualToString:self->selectedDatabase]) {
-                        self->selectedDatabase = [[NSString alloc] initWithString:dbName];
-                        [self->chooseDatabaseButton selectItemWithTitle:self->selectedDatabase];
-                        [self updateWindowTitle:self];
-                    }
-                }
-
-            } else {
-
-                [self->chooseDatabaseButton selectItemAtIndex:0];
-                [self updateWindowTitle:self];
-            }
-        });
+        [self setCurrentDatabaseFromQueryContext:[dbName unboxNull] ? dbName : nil];
     }
 
     //query finished
     [[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:self];
+}
+
+/**
+ * Commit a database context already derived from successful queries.
+ *
+ * This method MAY be called from UI and background threads. It deliberately
+ * does not query the shared connection: another operation may have selected a
+ * different database after the caller's final statement completed.
+ */
+- (void)setCurrentDatabaseFromQueryContext:(NSString *)databaseName
+{
+    NSString *databaseSnapshot = [databaseName copy];
+    mySQLConnection.database = databaseSnapshot;
+
+    SPMainQSync(^{
+        self->selectedDatabase = databaseSnapshot;
+        if ([databaseSnapshot length]) {
+            [self->chooseDatabaseButton selectItemWithTitle:databaseSnapshot];
+        } else {
+            [self->chooseDatabaseButton selectItemAtIndex:0];
+        }
+        [self updateWindowTitle:self];
+    });
 }
 
 - (BOOL)navigatorSchemaPathExistsForDatabase:(NSString*)dbname
@@ -1422,7 +1424,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 {
     _supportsEncoding = YES;
 
-    NSString *mysqlEncoding = [databaseDataInstance getDatabaseDefaultCharacterSet];
+    NSString *mysqlEncoding = [databaseDataInstance getDatabaseDefaultCharacterSetForDatabase:[self database]];
 
 
 
@@ -1506,7 +1508,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
             return;
         }
 
-        SPMySQLResult *theResult = [mySQLConnection queryString:query];
+        SPMySQLResult *theResult = [mySQLConnection queryString:query assertingDatabase:[self database]];
         [theResult setReturnDataAsStrings:YES];
 
         // Check for errors, only displaying if the connection hasn't been terminated
@@ -1590,7 +1592,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"CHECK TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"CHECK TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]] assertingDatabase:[self database]];
     [theResult setReturnDataAsStrings:YES];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
@@ -1648,7 +1650,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"ANALYZE TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"ANALYZE TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]] assertingDatabase:[self database]];
     [theResult setReturnDataAsStrings:YES];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
@@ -1707,7 +1709,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"OPTIMIZE TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"OPTIMIZE TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]] assertingDatabase:[self database]];
     [theResult setReturnDataAsStrings:YES];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
@@ -1765,7 +1767,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"REPAIR TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"REPAIR TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]] assertingDatabase:[self database]];
     [theResult setReturnDataAsStrings:YES];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
@@ -1823,7 +1825,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"FLUSH TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"FLUSH TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]] assertingDatabase:[self database]];
     [theResult setReturnDataAsStrings:YES];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
@@ -1882,7 +1884,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if([selectedItems count] == 0) return;
 
-    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"CHECKSUM TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]]];
+    SPMySQLResult *theResult = [mySQLConnection queryString:[NSString stringWithFormat:@"CHECKSUM TABLE %@", [selectedItems componentsJoinedAndBacktickQuoted]] assertingDatabase:[self database]];
 
     NSString *what = ([selectedItems count]>1) ? NSLocalizedString(@"selected items", @"selected items") : [NSString stringWithFormat:@"%@ '%@'", NSLocalizedString(@"table", @"table"), [self table]];
 
@@ -2353,9 +2355,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 {
     SPCreateDatabaseInfo *dbInfo = [[SPCreateDatabaseInfo alloc] init];
 
-    [dbInfo setDatabaseName:[self database]];
-    [dbInfo setDefaultEncoding:[databaseDataInstance getDatabaseDefaultCharacterSet]];
-    [dbInfo setDefaultCollation:[databaseDataInstance getDatabaseDefaultCollation]];
+    NSString *databaseName = [self database];
+    [dbInfo setDatabaseName:databaseName];
+    [dbInfo setDefaultEncoding:[databaseDataInstance getDatabaseDefaultCharacterSetForDatabase:databaseName]];
+    [dbInfo setDefaultCollation:[databaseDataInstance getDatabaseDefaultCollationForDatabase:databaseName]];
 
     return dbInfo;
 }
@@ -4403,7 +4406,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                 // Get create syntax
                 SPMySQLResult *queryResult = [mySQLConnection queryString:[NSString stringWithFormat:@"SHOW CREATE %@ %@",
                                                                            itemTypeStr,
-                                                                           [item backtickQuotedString]]];
+                                                                           [item backtickQuotedString]] assertingDatabase:[self database]];
                 [queryResult setReturnDataAsStrings:YES];
 
                 if (changeEncoding) [mySQLConnection restoreStoredEncoding];
@@ -4483,7 +4486,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
                     SPLog(@"Couldn't create file handle to %@", resultFileName);
                 }
 
-                SPMySQLResult *theResult = [mySQLConnection streamingQueryString:query];
+                SPMySQLResult *theResult = [mySQLConnection streamingQueryString:query assertingDatabase:[self database]];
                 [theResult setReturnDataAsStrings:YES];
                 if ([mySQLConnection queryErrored]) {
                     [fh writeData:[[NSString stringWithFormat:@"MySQL said: %@", [mySQLConnection lastErrorMessage]] dataUsingEncoding:NSUTF8StringEncoding]];
@@ -5988,30 +5991,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark - SPPrintController
 
 /**
- * WebView delegate method.
- */
-- (void)webView:(WebView *)sender didFinishLoadForFrame:(WebFrame *)frame {
-
-
-    NSPrintOperation *op = [SPPrintUtility preparePrintOperationWithView:[[[printWebView mainFrame] frameView] documentView] printView:printWebView];
-
-    /* -endTask has to be called first, since the toolbar caches the item enabled state before starting a sheet,
-     * disables all items and restores the cached state after the sheet ends. Because the database chooser is disabled
-     * during tasks, launching the sheet before calling -endTask first would result in the following flow:
-     * - toolbar item caches database chooser state as disabled (because of the active task)
-     * - sheet is shown
-     * - endTask reenables database chooser (has no effect because of the open sheet)
-     * - user dismisses sheet after some time
-     * - toolbar item restores cached state and disables database chooser again
-     * => Inconsistent UI: database chooser disabled when it should actually be enabled
-     */
-    if ([self isWorking]) [self endTask];
-
-    [op runOperationModalForWindow:[self.parentWindowController window] delegate:self didRunSelector:nil contextInfo:nil];
-}
-
-/**
- * Loads the print document interface. The actual printing is done in the doneLoading delegate.
+ * Starts generating the print document. The actual printing runs once the
+ * generated HTML has been rendered offscreen.
  */
 - (void)printDocument {
     // Only display warning for the 'Table Content' view
@@ -6069,13 +6050,30 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 }
 
 /**
- * Loads the supplied HTML string in the print WebView.
+ * Renders the supplied HTML string in an offscreen web view and runs the
+ * resulting print operation once loading finishes.
  */
 - (void)loadPrintWebViewWithHTMLString:(NSString *)HTMLString
 {
-    [[printWebView mainFrame] loadHTMLString:HTMLString baseURL:nil];
+    if (!printRenderer) printRenderer = [[SAHTMLPrintRenderer alloc] init];
 
+    [printRenderer printHTMLString:HTMLString completionHandler:^(NSPrintOperation *op) {
+        /* -endTask has to be called first, since the toolbar caches the item enabled state before starting a sheet,
+         * disables all items and restores the cached state after the sheet ends. Because the database chooser is disabled
+         * during tasks, launching the sheet before calling -endTask first would result in the following flow:
+         * - toolbar item caches database chooser state as disabled (because of the active task)
+         * - sheet is shown
+         * - endTask reenables database chooser (has no effect because of the open sheet)
+         * - user dismisses sheet after some time
+         * - toolbar item restores cached state and disables database chooser again
+         * => Inconsistent UI: database chooser disabled when it should actually be enabled
+         */
+        if ([self isWorking]) [self endTask];
 
+        if (!op) return;
+
+        [op runOperationModalForWindow:[self.parentWindowController window] delegate:self didRunSelector:nil contextInfo:nil];
+    }];
 }
 
 /**
@@ -6232,7 +6230,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [engine setObject:[[extendedTableInfoInstance onMainThread] tableInformationForPrinting] forKey:@"i"];
 
         [printData setObject:heading forKey:@"heading"];
-        [printData setObject:[[NSUnarchiver unarchiveObjectWithData:[prefs objectForKey:SPCustomQueryEditorFont]] fontName] forKey:@"font"];
+        NSFont *printFont = [SAArchiving fontFromData:[prefs objectForKey:SPCustomQueryEditorFont]]
+            ?: [NSFont userFixedPitchFontOfSize:[NSFont systemFontSize]]
+            ?: [NSFont systemFontOfSize:[NSFont systemFontSize]];
+        [printData setObject:[printFont fontName] forKey:@"font"];
 
         NSString *HTMLString = [engine processTemplateInFileAtPath:[[NSBundle mainBundle] pathForResource:SPHTMLTableInfoPrintTemplate ofType:@"html"] withVariables:printData];
 
@@ -6341,7 +6342,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
             // #2924: The connection controller doesn't retain its delegate (us), but it may outlive us (e.g. when running a bg thread)
             [connectionController setDelegate:nil];
-            [printWebView setFrameLoadDelegate:nil];
+            [printRenderer invalidate];
         }
     }
 }

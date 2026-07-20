@@ -57,6 +57,7 @@
 @property (nonatomic, strong) SPMySQLConnection *connection;
 
 - (NSArray *)createTableSyntaxFromView:(NSString *)tableName withSyntaxResult:(NSArray *)syntaxResult;
+- (NSArray *)createTableSyntaxFromView:(NSString *)tableName fromDatabase:(NSString *)databaseName withSyntaxResult:(NSArray *)syntaxResult;
 - (NSString *) tableEncoding;
 - (NSString *) tableCreateSyntax;
 - (NSArray *) columns;
@@ -77,6 +78,7 @@
 - (NSDictionary *) informationForTable:(NSString *)tableName fromDatabase:(NSString *)database;
 - (BOOL) updateInformationForCurrentView;
 - (NSDictionary *) informationForView:(NSString *)viewName;
+- (NSDictionary *) informationForView:(NSString *)viewName fromDatabase:(NSString *)database;
 - (BOOL) updateStatusInformationForCurrentTable;
 - (BOOL) updateTriggersForCurrentTable;
 - (BOOL) updateAccurateNumberOfRowsForCurrentTableForcingUpdate:(BOOL)alwaysUpdate;

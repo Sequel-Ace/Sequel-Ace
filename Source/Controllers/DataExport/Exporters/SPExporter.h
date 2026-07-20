@@ -59,6 +59,7 @@
 {	
 	SPMySQLConnection *connection;
 	SPServerSupport *serverSupport;
+	NSString *databaseName;
 	
 	double exportProgressValue;
 	double exportMaxProgress;
@@ -85,6 +86,11 @@
  * @property serverSupport Information about the features supported by this mysql version
  */
 @property(readwrite, strong) SPServerSupport *serverSupport;
+
+/**
+ * @property databaseName Immutable database context captured when the export is created
+ */
+@property(readwrite, copy) NSString *databaseName;
 
 /**
  * @property exportProgressValue The export's current progress value

@@ -10,6 +10,11 @@ import Foundation
 
 enum SPCustomQuerySQLClassifier {
 
+    private struct CommentStrippingResult {
+        let sql: String
+        let hasIndeterminateExecutableComment: Bool
+    }
+
     private static let mutatingExplainAnalyzeStatements: Set<String> = [
         "UPDATE",
         "DELETE",
@@ -26,7 +31,13 @@ enum SPCustomQuerySQLClassifier {
     static func isQueryExplainable(_ query: String?) -> Bool {
         guard let query = query, !query.isEmpty else { return false }
 
-        var trimmed = stripSQLComments(query).trimmingCharacters(in: .whitespacesAndNewlines)
+        let strippingResult = stripSQLCommentsWithMetadata(query)
+        // Without server context, a gated body may execute or disappear and
+        // expose a different leading statement. Do not guess which form can
+        // safely be passed to EXPLAIN.
+        guard !strippingResult.hasIndeterminateExecutableComment else { return false }
+
+        var trimmed = strippingResult.sql.trimmingCharacters(in: .whitespacesAndNewlines)
         while trimmed.hasPrefix("(") {
             trimmed = String(trimmed.dropFirst()).trimmingCharacters(in: .whitespacesAndNewlines)
         }
@@ -36,10 +47,23 @@ enum SPCustomQuerySQLClassifier {
         return ["SELECT", "WITH"].contains { hasLeadingSQLKeyword($0, in: upper, allowBare: false) }
     }
 
-    static func isQuerySafeWithoutDestructiveWarning(_ query: String?) -> Bool {
+    static func isQuerySafeWithoutDestructiveWarning(
+        _ query: String?,
+        serverVersion: Int? = nil,
+        serverIsMariaDB: Bool = false
+    ) -> Bool {
         guard let query = query, !query.isEmpty else { return false }
 
-        var trimmed = stripSQLComments(query).trimmingCharacters(in: .whitespacesAndNewlines)
+        let strippingResult = stripSQLCommentsWithMetadata(
+            query,
+            serverVersion: serverVersion,
+            serverIsMariaDB: serverIsMariaDB
+        )
+        // Both the executed and ignored forms must be safe. When the active
+        // form is unknown, require the destructive-query confirmation.
+        guard !strippingResult.hasIndeterminateExecutableComment else { return false }
+
+        var trimmed = strippingResult.sql.trimmingCharacters(in: .whitespacesAndNewlines)
         // Unwrap leading parentheses so `(SELECT ...)` is treated the same as
         // `SELECT ...`, matching isQueryExplainable's behaviour.
         while trimmed.hasPrefix("(") {
@@ -60,18 +84,185 @@ enum SPCustomQuerySQLClassifier {
         return false
     }
 
-    /// Replace every MySQL comment with a single space. Comments are replaced
-    /// so adjacent tokens stay separated, e.g. `SELECT/*c*/1` becomes
-    /// `SELECT 1` rather than `SELECT1`. The `--` form follows MySQL's rule
-    /// that the second dash must be followed by whitespace/control to count
-    /// as a comment, so `SELECT--1` is left intact as double negation.
-    static func stripSQLComments(_ source: String) -> String {
-        var result = source
-        let opts: NSString.CompareOptions = [.regularExpression]
-        result = result.replacingOccurrences(of: "--[\\s][^\n]*", with: " ", options: opts)
-        result = result.replacingOccurrences(of: "#[^\n]*", with: " ", options: opts)
-        result = result.replacingOccurrences(of: "/\\*(.|\n)*?\\*/", with: " ", options: opts)
-        return result
+    /// Replace ordinary MySQL comments with a single space while preserving
+    /// executable comment bodies. With server context, version and MariaDB
+    /// gates are applied before preserving a body. Comments are replaced so
+    /// adjacent tokens stay separated, e.g. `SELECT/*c*/1` becomes `SELECT 1`.
+    /// The `--` form follows MySQL's whitespace/control rule, and comment
+    /// markers inside strings or quoted identifiers are preserved. Keep these
+    /// lexical rules mirrored in SPMySQLFramework's SADatabaseAssertion.
+    static func stripSQLComments(
+        _ source: String,
+        serverVersion: Int? = nil,
+        serverIsMariaDB: Bool = false
+    ) -> String {
+        stripSQLCommentsWithMetadata(
+            source,
+            serverVersion: serverVersion,
+            serverIsMariaDB: serverIsMariaDB
+        ).sql
+    }
+
+    private static func stripSQLCommentsWithMetadata(
+        _ source: String,
+        serverVersion: Int? = nil,
+        serverIsMariaDB: Bool = false
+    ) -> CommentStrippingResult {
+        let characters: [Character] = source.map { $0 }
+        var result = ""
+        var hasIndeterminateExecutableComment = false
+        var index = 0
+        var quote: Character?
+
+        while index < characters.count {
+            let character = characters[index]
+
+            if let activeQuote = quote {
+                result.append(character)
+
+                if character == "\\", activeQuote != "`", index + 1 < characters.count {
+                    index += 1
+                    result.append(characters[index])
+                } else if character == activeQuote {
+                    if index + 1 < characters.count, characters[index + 1] == activeQuote {
+                        index += 1
+                        result.append(characters[index])
+                    } else {
+                        quote = nil
+                    }
+                }
+
+                index += 1
+                continue
+            }
+
+            if character == "'" || character == "\"" || character == "`" {
+                quote = character
+                result.append(character)
+                index += 1
+                continue
+            }
+
+            if character == "#" {
+                result.append(" ")
+                index += 1
+                while index < characters.count, characters[index] != "\n" {
+                    index += 1
+                }
+                continue
+            }
+
+            if character == "-",
+               index + 1 < characters.count,
+               characters[index + 1] == "-",
+               (index + 2 == characters.count || isMySQLCommentWhitespace(characters[index + 2])) {
+                result.append(" ")
+                index += 2
+                while index < characters.count, characters[index] != "\n" {
+                    index += 1
+                }
+                continue
+            }
+
+            if character == "/", index + 1 < characters.count, characters[index + 1] == "*" {
+                var executableContentStart: Int?
+                var isMariaDBOnlyComment = false
+                if index + 2 < characters.count, characters[index + 2] == "!" {
+                    executableContentStart = index + 3
+                } else if index + 3 < characters.count,
+                          (characters[index + 2] == "M" || characters[index + 2] == "m"),
+                          characters[index + 3] == "!" {
+                    executableContentStart = index + 4
+                    isMariaDBOnlyComment = true
+                }
+
+                var closingIndex = index + 2
+                while closingIndex + 1 < characters.count,
+                      !(characters[closingIndex] == "*" && characters[closingIndex + 1] == "/") {
+                    closingIndex += 1
+                }
+                let hasClosingMarker = closingIndex + 1 < characters.count
+                let contentEnd = hasClosingMarker ? closingIndex : characters.count
+
+                result.append(" ")
+                if var contentStart = executableContentStart {
+                    let versionStart = contentStart
+                    while contentStart < contentEnd, isASCIIDigit(characters[contentStart]) {
+                        contentStart += 1
+                    }
+                    let hasVersionGate = contentStart > versionStart
+                    let requiredVersion = hasVersionGate
+                        ? Int(String(characters[versionStart..<contentStart]))
+                        : nil
+                    if serverVersion == nil,
+                       hasVersionGate || (isMariaDBOnlyComment && !serverIsMariaDB) {
+                        hasIndeterminateExecutableComment = true
+                    }
+                    if shouldPreserveExecutableComment(
+                        requiredVersion: requiredVersion,
+                        hasVersionGate: hasVersionGate,
+                        isMariaDBOnlyComment: isMariaDBOnlyComment,
+                        serverVersion: serverVersion,
+                        serverIsMariaDB: serverIsMariaDB
+                    ), contentStart < contentEnd {
+                        let nestedResult = stripSQLCommentsWithMetadata(
+                            String(characters[contentStart..<contentEnd]),
+                            serverVersion: serverVersion,
+                            serverIsMariaDB: serverIsMariaDB
+                        )
+                        result.append(nestedResult.sql)
+                        hasIndeterminateExecutableComment = hasIndeterminateExecutableComment
+                            || nestedResult.hasIndeterminateExecutableComment
+                    }
+                    result.append(" ")
+                }
+
+                index = hasClosingMarker ? closingIndex + 2 : characters.count
+                continue
+            }
+
+            result.append(character)
+            index += 1
+        }
+
+        return CommentStrippingResult(
+            sql: result,
+            hasIndeterminateExecutableComment: hasIndeterminateExecutableComment
+        )
+    }
+
+    private static func isMySQLCommentWhitespace(_ character: Character) -> Bool {
+        character.unicodeScalars.allSatisfy { $0.value <= 0x20 }
+    }
+
+    private static func isASCIIDigit(_ character: Character) -> Bool {
+        character.unicodeScalars.count == 1 && character.unicodeScalars.allSatisfy { (48...57).contains($0.value) }
+    }
+
+    private static func shouldPreserveExecutableComment(
+        requiredVersion: Int?,
+        hasVersionGate: Bool,
+        isMariaDBOnlyComment: Bool,
+        serverVersion: Int?,
+        serverIsMariaDB: Bool
+    ) -> Bool {
+        // Without connection context, preserve every executable body for
+        // inspection. The stripping metadata makes classifiers reject gates
+        // whose executed-versus-ignored state cannot be determined.
+        guard let serverVersion else { return true }
+        if isMariaDBOnlyComment && !serverIsMariaDB { return false }
+        if hasVersionGate && requiredVersion == nil { return false }
+        if let requiredVersion, requiredVersion > serverVersion { return false }
+
+        // MariaDB intentionally ignores MySQL 5.7+ version-gated comments in
+        // this range; /*M! ... */ remains available for MariaDB-specific SQL.
+        if serverIsMariaDB,
+           !isMariaDBOnlyComment,
+           let requiredVersion,
+           (50_700...99_999).contains(requiredVersion) {
+            return false
+        }
+        return true
     }
 
     private static func hasLeadingSQLKeyword(_ keyword: String, in upper: String, allowBare: Bool = true) -> Bool {
@@ -134,6 +325,157 @@ enum SPCustomQuerySQLClassifier {
             default:
                 return
             }
+        }
+    }
+}
+
+@objc final class SASQLDatabaseContext: NSObject {
+
+    private static let identifierPattern = #"(`(?:``|[^`])*`|"(?:""|[^"])*"|[^\s;]+)"#
+    private static let identifierSeparator = #"(?:\s+|(?=[`"]))"#
+    private static let useRegex = makeRegex(
+        pattern: "(?is)^\\s*USE\(identifierSeparator)\(identifierPattern)\\s*;?\\s*$"
+    )
+    private static let dropDatabaseRegex = makeRegex(
+        pattern: "(?is)^\\s*DROP\\s+(?:DATABASE|SCHEMA)\(identifierSeparator)(?:IF\\s+EXISTS\(identifierSeparator))?\(identifierPattern)\\s*;?\\s*$"
+    )
+
+    @objc(databaseNameChangedFrom:to:)
+    static func databaseNameChanged(from currentDatabase: String?, to updatedDatabase: String?) -> Bool {
+        currentDatabase != updatedDatabase
+    }
+
+    @objc(requiresDatabaseNameCaseSensitivityLookupForQuery:currentDatabase:serverVersion:serverIsMariaDB:)
+    static func requiresDatabaseNameCaseSensitivityLookup(
+        for query: String,
+        currentDatabase: String?,
+        serverVersion: Int,
+        serverIsMariaDB: Bool
+    ) -> Bool {
+        guard let currentDatabase,
+              queryCouldChangeDatabaseContext(query) else {
+            return false
+        }
+
+        let queryWithoutComments = SPCustomQuerySQLClassifier.stripSQLComments(
+            query,
+            serverVersion: serverVersion,
+            serverIsMariaDB: serverIsMariaDB
+        )
+        guard let droppedDatabase = databaseName(matchedBy: dropDatabaseRegex, in: queryWithoutComments),
+              droppedDatabase != currentDatabase else {
+            return false
+        }
+
+        // Exact matches are dropped under every lower_case_table_names mode,
+        // and clearly distinct names never affect the current database. Only
+        // a case-only difference needs the server setting to disambiguate.
+        return droppedDatabase.caseInsensitiveCompare(currentDatabase) == .orderedSame
+    }
+
+    @objc(databaseNameAfterSuccessfulQuery:currentDatabase:databaseNamesAreCaseSensitive:serverVersion:serverIsMariaDB:)
+    static func databaseName(
+        afterSuccessfulQuery query: String,
+        currentDatabase: String?,
+        databaseNamesAreCaseSensitive: Bool,
+        serverVersion: Int,
+        serverIsMariaDB: Bool
+    ) -> String? {
+        // Keep this prefix check and executable-comment behavior in sync with
+        // SADatabaseAssertion in SPMySQLFramework. Ordinary statements must
+        // return here before the comment stripper allocates a Character array.
+        guard queryCouldChangeDatabaseContext(query) else {
+            return currentDatabase
+        }
+
+        let queryWithoutComments = SPCustomQuerySQLClassifier.stripSQLComments(
+            query,
+            serverVersion: serverVersion,
+            serverIsMariaDB: serverIsMariaDB
+        )
+
+        if let selectedDatabase = databaseName(matchedBy: useRegex, in: queryWithoutComments) {
+            return selectedDatabase
+        }
+
+        if let droppedDatabase = databaseName(matchedBy: dropDatabaseRegex, in: queryWithoutComments),
+           let currentDatabase {
+            let namesMatch = droppedDatabase == currentDatabase
+                || (!databaseNamesAreCaseSensitive && droppedDatabase.caseInsensitiveCompare(currentDatabase) == .orderedSame)
+            if namesMatch {
+                return nil
+            }
+        }
+
+        return currentDatabase
+    }
+
+    static func queryCouldChangeDatabaseContext(_ query: String) -> Bool {
+        guard let start = query.firstIndex(where: { !$0.isWhitespace }) else {
+            return false
+        }
+
+        let suffix = query[start...]
+        if suffix.hasPrefix("#") || suffix.hasPrefix("--") || suffix.hasPrefix("/*") {
+            return true
+        }
+
+        return hasLeadingKeyword("USE", in: query, at: start)
+            || hasLeadingKeyword("DROP", in: query, at: start)
+    }
+
+    private static func databaseName(matchedBy regex: NSRegularExpression, in query: String) -> String? {
+        let range = NSRange(query.startIndex..<query.endIndex, in: query)
+        guard let match = regex.firstMatch(in: query, range: range),
+              let captureRange = Range(match.range(at: 1), in: query) else {
+            return nil
+        }
+
+        let identifier = String(query[captureRange])
+        guard identifier.count >= 2 else { return identifier }
+
+        if identifier.hasPrefix("`"), identifier.hasSuffix("`") {
+            return String(identifier.dropFirst().dropLast()).replacingOccurrences(of: "``", with: "`")
+        }
+
+        if identifier.hasPrefix("\""), identifier.hasSuffix("\"") {
+            return String(identifier.dropFirst().dropLast()).replacingOccurrences(of: "\"\"", with: "\"")
+        }
+
+        return identifier
+    }
+
+    private static func hasLeadingKeyword(
+        _ keyword: String,
+        in query: String,
+        at start: String.Index
+    ) -> Bool {
+        var queryIndex = start
+        for keywordCharacter in keyword {
+            guard queryIndex < query.endIndex,
+                  query[queryIndex].lowercased() == keywordCharacter.lowercased() else {
+                return false
+            }
+            query.formIndex(after: &queryIndex)
+        }
+
+        guard queryIndex < query.endIndex else {
+            return true
+        }
+        return !isIdentifierCharacter(query[queryIndex])
+    }
+
+    private static func isIdentifierCharacter(_ character: Character) -> Bool {
+        character == "_" || character == "$" || character.unicodeScalars.allSatisfy {
+            CharacterSet.alphanumerics.contains($0)
+        }
+    }
+
+    private static func makeRegex(pattern: String) -> NSRegularExpression {
+        do {
+            return try NSRegularExpression(pattern: pattern)
+        } catch {
+            preconditionFailure("Invalid SQL database-context regular expression '\(pattern)': \(error)")
         }
     }
 }

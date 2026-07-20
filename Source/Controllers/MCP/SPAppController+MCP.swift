@@ -265,16 +265,65 @@ extension SPAppController: SPMCPDataSource {
                 guard let conn = c, conn.isConnected() else { continue }
                 var info: [String: Any] = [:]
                 info["id"] = mcpDocumentID(doc)
-                let displayName = doc.displayName() ?? ""
-                info["name"] = displayName.isEmpty ? (doc.host() ?? "") : displayName
-                if let host = doc.host(), !host.isEmpty { info["host"] = host }
+                let name = doc.name()
+                info["name"] = name.isEmpty ? doc.host() : name
+                let host = doc.host()
+                if !host.isEmpty { info["host"] = host }
                 if let db = doc.database(), !db.isEmpty { info["database"] = db }
                 info["active"] = (front != nil && doc == front)
+                if let favorite = self.mcpFavoriteInfo(for: doc) {
+                    info["favoriteName"] = favorite.name
+                    info["favoritePath"] = favorite.path
+                }
                 result.append(info)
             }
         }
         if Thread.isMainThread { collect() } else { DispatchQueue.main.sync(execute: collect) }
         return result
+    }
+
+    // MARK: - SPMCPDataSource: favorite metadata
+
+    // The favorite a document connected from, or nil for ad-hoc/quick connections
+    // and for favorites that are no longer in the tree. Must run on the main thread.
+    private func mcpFavoriteInfo(for doc: SPDatabaseDocument) -> (name: String, path: String)? {
+        guard let favoriteID = doc.connectionController().connectionKeychainID, !favoriteID.isEmpty else {
+            return nil
+        }
+
+        let root = SPFavoritesController.shared().favoritesTree
+        // favoritesTree is a synthetic root whose first child is the top-level
+        // "Favorites" container; neither is a real folder in the path.
+        let topContainer = root?.children?.first as? SPTreeNode
+
+        guard let node = mcpFavoriteNode(withID: favoriteID, in: root),
+              let favorite = (node.representedObject as? SPFavoriteNode)?.nodeFavorite,
+              let name = favorite[SPFavoriteNameKey] as? String, !name.isEmpty else {
+            return nil
+        }
+
+        var groups: [String] = []
+        var ancestor = node.parent as? SPTreeNode
+        while let group = ancestor, group.isGroup, group !== topContainer, group !== root {
+            if let groupName = (group.representedObject as? SPGroupNode)?.nodeName, !groupName.isEmpty {
+                groups.insert(groupName, at: 0)
+            }
+            ancestor = group.parent as? SPTreeNode
+        }
+
+        return (name, SPMCPFavorite.pathString(groups: groups, favoriteName: name))
+    }
+
+    // Finds the favorite leaf node whose id matches, searching the favorites tree.
+    private func mcpFavoriteNode(withID favoriteID: String, in root: SPTreeNode?) -> SPTreeNode? {
+        guard let root = root else { return nil }
+        for case let node as SPTreeNode in root.allChildLeafs() {
+            guard let favorite = (node.representedObject as? SPFavoriteNode)?.nodeFavorite else { continue }
+            if SPMCPFavorite.idString(favorite[SPFavoriteIDKey]) == favoriteID {
+                return node
+            }
+        }
+        return nil
     }
 
     // MARK: - SPMCPDataSource: schema

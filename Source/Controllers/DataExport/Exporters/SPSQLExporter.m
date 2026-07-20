@@ -294,7 +294,7 @@
             SPTableType tableType = SPTableTypeTable;
             // Determine whether this table is a table or a view via the CREATE TABLE command, and keep the create table syntax
             {
-                SPMySQLResult *queryResult = [connection queryString:[NSString stringWithFormat:@"SHOW CREATE TABLE %@", [tableName backtickQuotedString]]];
+                SPMySQLResult *queryResult = [connection queryString:[NSString stringWithFormat:@"SHOW CREATE TABLE %@", [tableName backtickQuotedString]] assertingDatabase:[self sqlDatabaseName]];
 
                 [queryResult setReturnDataAsStrings:YES];
 
@@ -358,7 +358,7 @@
             // Add the table content if required
             if (sqlOutputIncludeContent && (tableType == SPTableTypeTable)) {
                 // Retrieve the table details via the data class, and use it to build an array containing column numeric status
-                NSDictionary *tableDetails = [NSDictionary dictionaryWithDictionary:[sqlTableDataInstance informationForTable:tableName fromDatabase:nil]];
+                NSDictionary *tableDetails = [NSDictionary dictionaryWithDictionary:[sqlTableDataInstance informationForTable:tableName fromDatabase:[self sqlDatabaseName]]];
 
                 NSUInteger colCount = [[tableDetails objectForKey:@"columns"] count];
                 NSUInteger colCountRetained = colCount;
@@ -435,7 +435,7 @@
                 }
 
                 // Retrieve the number of rows in the table for progress bar drawing
-                NSArray *rowArray = [[connection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [tableName backtickQuotedString]]] getRowAsArray];
+                NSArray *rowArray = [[connection queryString:[NSString stringWithFormat:@"SELECT COUNT(1) FROM %@", [tableName backtickQuotedString]] assertingDatabase:[self sqlDatabaseName]] getRowAsArray];
 
                 if ([connection queryErrored] || ![rowArray count]) {
                     [errors appendFormat:@"%@\n", [connection lastErrorMessage]];
@@ -449,7 +449,7 @@
 
                 if (rowCount) {
                     // Set up a result set in streaming mode
-                    SPMySQLStreamingResult *streamingResult = [connection streamingQueryString:[NSString stringWithFormat:@"SELECT %@ FROM %@", [queryColumnDetails componentsJoinedByString:@", "], [tableName backtickQuotedString]] useLowMemoryBlockingStreaming:([self exportUsingLowMemoryBlockingStreaming])];
+                    SPMySQLStreamingResult *streamingResult = [connection streamingQueryString:[NSString stringWithFormat:@"SELECT %@ FROM %@", [queryColumnDetails componentsJoinedByString:@", "], [tableName backtickQuotedString]] useLowMemoryBlockingStreaming:([self exportUsingLowMemoryBlockingStreaming]) assertingDatabase:[self sqlDatabaseName]];
 
                     // Inform the delegate that we are about to start writing data for the current table
                     [delegate performSelectorOnMainThread:@selector(sqlExportProcessWillBeginWritingData:) withObject:self waitUntilDone:NO];
@@ -632,7 +632,7 @@
 
             // Add triggers if the structure export was enabled
             if (sqlOutputIncludeStructure) {
-                SPMySQLResult *queryResult = [connection queryString:[NSString stringWithFormat:@"/*!50003 SHOW TRIGGERS WHERE `Table` = %@ */", [tableName tickQuotedString]]];
+                SPMySQLResult *queryResult = [connection queryString:[NSString stringWithFormat:@"/*!50003 SHOW TRIGGERS WHERE `Table` = %@ */", [tableName tickQuotedString]] assertingDatabase:[self sqlDatabaseName]];
 
                 [queryResult setReturnDataAsStrings:YES];
 
@@ -746,7 +746,7 @@
 
         // Retrieve the definitions
         SPMySQLResult *queryResult = [connection queryString:[NSString stringWithFormat:@"/*!50003 SHOW %@ STATUS WHERE `Db` = %@ */", procedureType,
-                                                              [[self sqlDatabaseName] tickQuotedString]]];
+                                                              [[self sqlDatabaseName] tickQuotedString]] assertingDatabase:[self sqlDatabaseName]];
 
         [queryResult setReturnDataAsStrings:YES];
 
@@ -828,7 +828,7 @@
                                                 [[procedureDefiner safeObjectAtIndex:1] backtickQuotedString]];
 
                     SPMySQLResult *createProcedureResult = [connection queryString:[NSString stringWithFormat:@"/*!50003 SHOW CREATE %@ %@ */", procedureType,
-                                                                                    [procedureName backtickQuotedString]]];
+                                                                                    [procedureName backtickQuotedString]] assertingDatabase:[self sqlDatabaseName]];
                     [createProcedureResult setReturnDataAsStrings:YES];
                     if ([connection queryErrored]) {
                         [errors appendFormat:@"%@\n", [connection lastErrorMessage]];
@@ -942,7 +942,7 @@
     NSMutableString *placeholderSyntax;
 
     // Get structured information for the view via the SPTableData parsers
-    NSDictionary *viewInformation = [sqlTableDataInstance informationForView:viewName];
+    NSDictionary *viewInformation = [sqlTableDataInstance informationForView:viewName fromDatabase:[self sqlDatabaseName]];
 
     if (!viewInformation) return nil;
 

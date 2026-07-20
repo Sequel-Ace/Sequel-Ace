@@ -36,6 +36,7 @@
 
 @synthesize connection;
 @synthesize serverSupport = serverSupport;
+@synthesize databaseName;
 @synthesize exportProgressValue;
 @synthesize exportProcessIsRunning;
 @synthesize exportUsingLowMemoryBlockingStreaming;
