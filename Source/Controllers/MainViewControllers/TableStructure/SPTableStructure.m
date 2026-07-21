@@ -2208,6 +2208,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			// If type is BLOB or TEXT reset DEFAULT since these field types don't allow a default
 			if ([[currentRow objectForKey:@"type"] hasSuffix:@"TEXT"] ||
 				[[currentRow objectForKey:@"type"] hasSuffix:@"BLOB"] ||
+				[[currentRow objectForKey:@"type"] hasPrefix:@"INET"] ||
 				[[currentRow objectForKey:@"type"] isEqualToString:@"JSON"] ||
 				[fieldValidation isFieldTypeGeometry:[currentRow objectForKey:@"type"]] ||
 				([fieldValidation isFieldTypeDate:[currentRow objectForKey:@"type"]] && ![[currentRow objectForKey:@"type"] isEqualToString:@"YEAR"]))
