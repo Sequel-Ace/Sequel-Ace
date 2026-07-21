@@ -28,6 +28,7 @@
 //
 //  More info at <https://github.com/sequelpro/sequelpro>
 
+@class SADatabaseScopedValueCache;
 @class SPServerSupport;
 @class SPMySQLConnection;
 
@@ -43,8 +44,8 @@
 {
 	NSString *characterSetEncoding;
 	NSString *defaultCollationForCharacterSet;
-	NSString *defaultCharacterSetEncoding;
-	NSString *defaultCollation;
+	SADatabaseScopedValueCache *defaultCharacterSetCache;
+	SADatabaseScopedValueCache *defaultCollationCache;
 	NSString *serverDefaultCharacterSetEncoding;
 	NSString *serverDefaultCollation;
 	NSString *defaultStorageEngine;
@@ -80,8 +81,8 @@
 - (NSArray *)getDatabaseStorageEngines;
 - (NSArray *)getDatabaseCharacterSetEncodings;
 
-- (NSString *)getDatabaseDefaultCharacterSet;
-- (NSString *)getDatabaseDefaultCollation;
+- (NSString *)getDatabaseDefaultCharacterSetForDatabase:(NSString *)databaseName;
+- (NSString *)getDatabaseDefaultCollationForDatabase:(NSString *)databaseName;
 - (NSString *)getDatabaseDefaultStorageEngine;
 
 - (NSString *)getServerDefaultCharacterSet;

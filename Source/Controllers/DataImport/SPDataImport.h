@@ -126,7 +126,7 @@ typedef enum {
 - (void)importSQLFile:(NSString *)filename;
 - (void)startSQLImportProcessWithFile:(NSString *)filename;
 - (void)importCSVFile:(NSString *)filename;
-- (BOOL)buildFieldMappingArrayWithData:(NSArray *)importData isPreview:(BOOL)dataIsPreviewData ofSoureFile:(NSString*)filename;
+- (BOOL)buildFieldMappingArrayWithData:(NSArray *)importData isPreview:(BOOL)dataIsPreviewData ofSoureFile:(NSString*)filename databaseName:(NSString *)databaseName;
 
 - (NSString *)mappedValueStringForRowArray:(NSArray *)csvRowArray;
 - (NSString *)mappedUpdateSetStatementStringForRowArray:(NSArray *)csvRowArray;

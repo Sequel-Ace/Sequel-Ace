@@ -1,9 +1,10 @@
 //
-//  SPFavoriteNode.h
-//  sequel-pro
+//  SPMCPFavorite.swift
+//  Sequel Ace
 //
-//  Created by Stuart Connolly (stuconnolly.com) on November 8, 2010.
-//  Copyright (c) 2010 Stuart Connolly. All rights reserved.
+//  Pure helpers for describing the favorite a connection was opened from,
+//  used by the MCP list_connections tool.
+//  Copyright (c) 2024 Sequel-Ace. All rights reserved.
 //
 //  Permission is hereby granted, free of charge, to any person
 //  obtaining a copy of this software and associated documentation
@@ -26,38 +27,27 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 //  OTHER DEALINGS IN THE SOFTWARE.
 //
-//  More info at <https://github.com/sequelpro/sequelpro>
 
-#import "SPNamedNode.h"
+import Foundation
 
-NS_ASSUME_NONNULL_BEGIN
+enum SPMCPFavorite {
 
-/**
- * @class SPFavoriteNode SPFavoriteNode.h
- *
- * @author Stuart Connolly http://stuconnolly.com/
- *
- * Tree node that represents a connection favorite.
- */
-@interface SPFavoriteNode : NSObject <NSCopying, NSCoding, SPNamedNode>
-{	
-	NSMutableDictionary *nodeFavorite;
+    /// Joins ancestor group names (outermost first) and the favorite name into a
+    /// path like "Group/Subgroup/Favorite". Empty group names are dropped.
+    static func pathString(groups: [String], favoriteName: String) -> String {
+        return (groups.filter { !$0.isEmpty } + [favoriteName]).joined(separator: "/")
+    }
+
+    /// Normalizes a favorite id, which the favorites plist stores as a number but
+    /// the live connection carries as a string, to a string for comparison.
+    static func idString(_ value: Any?) -> String? {
+        switch value {
+        case let number as NSNumber:
+            return number.stringValue
+        case let string as String:
+            return string.isEmpty ? nil : string
+        default:
+            return nil
+        }
+    }
 }
-
-/**
- * @property nodeFavorite The actual favorite dictionary
- */
-@property (readwrite, strong, nullable) NSMutableDictionary *nodeFavorite;
-
-- (instancetype)initWithDictionary:(NSMutableDictionary *)dictionary;
-
-+ (SPFavoriteNode *)favoriteNodeWithDictionary:(NSMutableDictionary *)dictionary;
-
-@end
-
-// Swift extension methods (implemented in SAConnectionInfo+ConnectionString.swift)
-@interface SPFavoriteNode (ConnectionString)
-- (NSString * _Nullable)toConnectionString:(BOOL)includePassword;
-@end
-
-NS_ASSUME_NONNULL_END

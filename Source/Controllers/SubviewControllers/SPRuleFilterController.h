@@ -34,6 +34,8 @@
 @class SPContentFilterManager;
 @class SPRuleFilterDropBox;
 
+NS_ASSUME_NONNULL_BEGIN
+
 NSString * const SPRuleFilterHeightChangedNotification;
 
 @interface SPRuleFilterController : NSObject {
@@ -88,7 +90,7 @@ NSString * const SPRuleFilterHeightChangedNotification;
  *
  * MUST BE CALLED ON THE UI THREAD!
  */
-- (void)setColumns:(NSArray *)dataColumns;
+- (void)setColumns:(nullable NSArray *)dataColumns;
 
 /**
  * Converts the current filter expression displayed in the UI into an
@@ -103,7 +105,7 @@ NSString * const SPRuleFilterHeightChangedNotification;
  *
  * MUST BE CALLED ON THE UI THREAD!
  */
-- (NSString *)sqlWhereExpressionWithBinary:(BOOL)isBINARY error:(NSError **)err;
+- (nullable NSString *)sqlWhereExpressionWithBinary:(BOOL)isBINARY error:(NSError **)err;
 
 /**
  * Returns the current filter configuration in a serialized form that can be exported and
@@ -123,7 +125,7 @@ NSString * const SPRuleFilterHeightChangedNotification;
  *
  * MUST BE CALLED ON THE UI THREAD!
  */
-- (void)restoreSerializedFilters:(NSDictionary *)serialized;
+- (void)restoreSerializedFilters:(nullable NSDictionary *)serialized;
 
 /**
  * Create a serialized filter from a given column, operator and operand.
@@ -230,10 +232,12 @@ NSString * const SPRuleFilterHeightChangedNotification;
  *
  * SHOULD be called on the UI thread, or results may be inconsistent!
  */
-@property (unsafe_unretained, nonatomic) id target;
-@property (assign, nonatomic) SEL action;
+@property (unsafe_unretained, nonatomic, nullable) id target;
+@property (assign, nonatomic, nullable) SEL action;
 
 - (BOOL)isEnabled;
 - (void)setEnabled:(BOOL)enabled;
 
 @end
+
+NS_ASSUME_NONNULL_END

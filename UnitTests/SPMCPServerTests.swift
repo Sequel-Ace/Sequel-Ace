@@ -391,3 +391,70 @@ final class SPMCPReadOnlyGuardTests: XCTestCase {
         }
     }
 }
+
+final class SPMCPServerRouteTests: XCTestCase {
+
+    func testStreamableHTTPRoute() {
+        XCTAssertEqual(SPMCPHTTP.route(method: "POST", path: "/mcp"), .streamableHTTP)
+    }
+
+    func testGetOnMCPPathIsMethodNotAllowed() {
+        XCTAssertEqual(SPMCPHTTP.route(method: "GET", path: "/mcp"), .methodNotAllowed)
+    }
+
+    func testNonPostOnMCPPathIsMethodNotAllowed() {
+        XCTAssertEqual(SPMCPHTTP.route(method: "HEAD", path: "/mcp"), .methodNotAllowed)
+        XCTAssertEqual(SPMCPHTTP.route(method: "PUT", path: "/mcp"), .methodNotAllowed)
+    }
+
+    func testSSERoute() {
+        XCTAssertEqual(SPMCPHTTP.route(method: "GET", path: "/sse"), .sse)
+    }
+
+    func testMessageRoute() {
+        XCTAssertEqual(SPMCPHTTP.route(method: "POST", path: "/message"), .message)
+    }
+
+    func testHealthRoute() {
+        XCTAssertEqual(SPMCPHTTP.route(method: "GET", path: "/health"), .health)
+    }
+
+    func testUnknownPathIsNotFound() {
+        XCTAssertEqual(SPMCPHTTP.route(method: "GET", path: "/nope"), .notFound)
+    }
+}
+
+final class SPMCPFavoriteTests: XCTestCase {
+
+    func testPathStringWithNestedGroups() {
+        XCTAssertEqual(
+            SPMCPFavorite.pathString(groups: ["Production", "EU"], favoriteName: "main-db"),
+            "Production/EU/main-db"
+        )
+    }
+
+    func testPathStringWithNoGroupsIsJustTheName() {
+        XCTAssertEqual(SPMCPFavorite.pathString(groups: [], favoriteName: "First"), "First")
+    }
+
+    func testPathStringDropsEmptyGroupNames() {
+        XCTAssertEqual(
+            SPMCPFavorite.pathString(groups: ["", "Team", ""], favoriteName: "db"),
+            "Team/db"
+        )
+    }
+
+    func testIDStringFromNumber() {
+        XCTAssertEqual(SPMCPFavorite.idString(NSNumber(value: 42)), "42")
+    }
+
+    func testIDStringFromString() {
+        XCTAssertEqual(SPMCPFavorite.idString("42"), "42")
+    }
+
+    func testIDStringIsNilForEmptyOrMissing() {
+        XCTAssertNil(SPMCPFavorite.idString(""))
+        XCTAssertNil(SPMCPFavorite.idString(nil))
+        XCTAssertNil(SPMCPFavorite.idString(Date()))
+    }
+}

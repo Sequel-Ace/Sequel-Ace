@@ -1,3 +1,32 @@
+## [5.3.1](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%225.3.1+%28*%29%22&expanded=true)
+
+### Added
+
+
+### Fixed
+
+
+### Changed
+- Increment build version ([a86256123](https://github.com/Sequel-Ace/Sequel-Ace/commit/a86256123c32651e839ae067d3a5c015fc9097d3))
+- Increment app patch version ([a9e4d4799](https://github.com/Sequel-Ace/Sequel-Ace/commit/a9e4d479901aa2eef971210cd5fece852b130076))
+- Clarify MCP endpoint transports: 405 for GET /mcp and note the SSE endpoint ([164adbf4b](https://github.com/Sequel-Ace/Sequel-Ace/commit/164adbf4bbbe35c165aa911e578bbf43c9e36824), [#2499](https://github.com/Sequel-Ace/Sequel-Ace/pull/2499))
+- Assert selected database atomically for queries ([e32475046](https://github.com/Sequel-Ace/Sequel-Ace/commit/e3247504680b363eeb2df7e350b6618a5194ed17), [#2490](https://github.com/Sequel-Ace/Sequel-Ace/pull/2490))
+- Enrich MCP list_connections with favorite name and path ([15580e31e](https://github.com/Sequel-Ace/Sequel-Ace/commit/15580e31e73e681993827a55cfe46e8947e58206), [#2500](https://github.com/Sequel-Ace/Sequel-Ace/pull/2500))
+- Vault: replace credentials path field with a Vault mount field + role dropdown ([91b6f5ad7](https://github.com/Sequel-Ace/Sequel-Ace/commit/91b6f5ad74ccd76e55e0fc540fae8eca71fadbca), [#2480](https://github.com/Sequel-Ace/Sequel-Ace/pull/2480))
+- Modernization: nullability audit of SPDatabaseDocument.h (warnings plan step 3) ([8ef657142](https://github.com/Sequel-Ace/Sequel-Ace/commit/8ef657142b828721905c1277142516425d371663), [#2498](https://github.com/Sequel-Ace/Sequel-Ace/pull/2498))
+- Modernization: rename ivar-shadowing locals (warnings plan step 2) ([f9ded72cb](https://github.com/Sequel-Ace/Sequel-Ace/commit/f9ded72cb889154d9414213472651e11c7962d60), [#2496](https://github.com/Sequel-Ace/Sequel-Ace/pull/2496))
+- Modernization: migrate database document printing from WebView to WKWebView ([54fac1aa3](https://github.com/Sequel-Ace/Sequel-Ace/commit/54fac1aa316139c70bc066d271295f59b8e0d3a6), [#2484](https://github.com/Sequel-Ace/Sequel-Ace/pull/2484))
+- Restore Keychain password handoff for SSH connections ([fe4a3076d](https://github.com/Sequel-Ace/Sequel-Ace/commit/fe4a3076d1c0220276169d2f9f1b839364282a1d), [#2491](https://github.com/Sequel-Ace/Sequel-Ace/pull/2491))
+- Modernization: warning hygiene sweep (warnings plan step 1) ([b567b715c](https://github.com/Sequel-Ace/Sequel-Ace/commit/b567b715c257f23ff031dc83ad235045fea000b8), [#2486](https://github.com/Sequel-Ace/Sequel-Ace/pull/2486))
+- Rename agents.md to AGENTS.md and expand it into a real agent guide ([48e2e3cda](https://github.com/Sequel-Ace/Sequel-Ace/commit/48e2e3cdaacd60587f29164797a969972835acd9), [#2485](https://github.com/Sequel-Ace/Sequel-Ace/pull/2485))
+
+### Removed
+
+
+### Infra
+- Bump excon from 0.112.0 to 1.5.0 ([87b0262e6](https://github.com/Sequel-Ace/Sequel-Ace/commit/87b0262e6d95722bc763b27fa54bbf7f58374d8b), [#2492](https://github.com/Sequel-Ace/Sequel-Ace/pull/2492))
+- Bump faraday from 1.10.5 to 1.10.6 ([13a475bae](https://github.com/Sequel-Ace/Sequel-Ace/commit/13a475bae7555c76928365567de062e99248bba9), [#2481](https://github.com/Sequel-Ace/Sequel-Ace/pull/2481))
+
 ## [5.3.0](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%225.3.0+%28*%29%22&expanded=true)
 
 ### Added
