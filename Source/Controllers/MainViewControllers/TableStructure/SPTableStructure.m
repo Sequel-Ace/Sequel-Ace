@@ -2517,6 +2517,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		else if ([[tableColumn identifier] isEqualToString:@"length"]) {
 			[aCell setEnabled:([rowType hasSuffix:@"TEXT"] ||
 							   [rowType hasSuffix:@"BLOB"] ||
+							   [rowType hasPrefix:@"INET"] ||
 							   [rowType isEqualToString:@"JSON"] ||
 							   ([fieldValidation isFieldTypeDate:rowType] && ![[tableDocumentInstance serverSupport] supportsFractionalSeconds] && ![rowType isEqualToString:@"YEAR"]) ||
 							   [fieldValidation isFieldTypeGeometry:rowType]) ? NO : YES];
