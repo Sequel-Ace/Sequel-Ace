@@ -7,8 +7,8 @@
 
 
 ### Changed
-- Increment build version ([a86256123](https://github.com/Sequel-Ace/Sequel-Ace/commit/a86256123c32651e839ae067d3a5c015fc9097d3))
-- Increment app patch version ([a9e4d4799](https://github.com/Sequel-Ace/Sequel-Ace/commit/a9e4d479901aa2eef971210cd5fece852b130076))
+- Increment build version ([c71550bd1](https://github.com/Sequel-Ace/Sequel-Ace/commit/c71550bd10d2018dfef8ade7b68ec064c557d493))
+- Prepare release ([48510cf4c](https://github.com/Sequel-Ace/Sequel-Ace/commit/48510cf4c4ba831e7445d82238c049741cfe9d52), [#2502](https://github.com/Sequel-Ace/Sequel-Ace/pull/2502))
 - Clarify MCP endpoint transports: 405 for GET /mcp and note the SSE endpoint ([164adbf4b](https://github.com/Sequel-Ace/Sequel-Ace/commit/164adbf4bbbe35c165aa911e578bbf43c9e36824), [#2499](https://github.com/Sequel-Ace/Sequel-Ace/pull/2499))
 - Assert selected database atomically for queries ([e32475046](https://github.com/Sequel-Ace/Sequel-Ace/commit/e3247504680b363eeb2df7e350b6618a5194ed17), [#2490](https://github.com/Sequel-Ace/Sequel-Ace/pull/2490))
 - Enrich MCP list_connections with favorite name and path ([15580e31e](https://github.com/Sequel-Ace/Sequel-Ace/commit/15580e31e73e681993827a55cfe46e8947e58206), [#2500](https://github.com/Sequel-Ace/Sequel-Ace/pull/2500))
