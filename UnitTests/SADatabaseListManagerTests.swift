@@ -299,3 +299,161 @@ final class SADatabaseListManagerTests: XCTestCase {
         XCTAssertEqual(popup.titleOfSelectedItem, "mysql")
     }
 }
+
+final class SATableListResultParserTests: XCTestCase {
+
+    func testEmptyResponseProducesNoEntries() {
+        let result = SATableListResultParser.parse(
+            rows: [],
+            fieldNames: [],
+            displayTableComments: false
+        )
+
+        XCTAssertTrue(result.isEmpty)
+    }
+
+    func testParsesMySQLShowFullTablesResponse() {
+        let result = SATableListResultParser.parse(
+            rows: [
+                ["accounts", "BASE TABLE"],
+                ["active_accounts", "VIEW"],
+            ],
+            fieldNames: ["Tables_in_app", "Table_type"],
+            displayTableComments: false
+        )
+
+        XCTAssertEqual(result.map(\.name), ["accounts", "active_accounts"])
+        XCTAssertEqual(result.map(\.comment), ["", ""])
+        XCTAssertEqual(result.map(\.isView), [false, true])
+    }
+
+    func testParsesMariaDBShowFullTablesResponseIncludingSequence() {
+        let result = SATableListResultParser.parse(
+            rows: [
+                ["orders", "BASE TABLE"],
+                ["order_summary", "VIEW"],
+                ["order_sequence", "SEQUENCE"],
+            ],
+            fieldNames: ["Tables_in_shop", "Table_type"],
+            displayTableComments: false
+        )
+
+        XCTAssertEqual(result.map(\.name), ["orders", "order_summary", "order_sequence"])
+        XCTAssertEqual(result.map(\.isView), [false, true, false])
+    }
+
+    func testParsesPolarDBXResponseWithoutDependingOnColumnLabels() {
+        let result = SATableListResultParser.parse(
+            rows: [
+                ["logical_orders", "BASE TABLE"],
+                ["logical_order_summary", "VIEW"],
+            ],
+            fieldNames: ["TABLES_IN_AGENT_ADMIN_TEST", "TABLE_TYPE"],
+            displayTableComments: false
+        )
+
+        XCTAssertEqual(result.map(\.name), ["logical_orders", "logical_order_summary"])
+        XCTAssertEqual(result.map(\.isView), [false, true])
+        XCTAssertFalse(result.map(\.name).contains("..."))
+    }
+
+    func testParsesLegacySingleColumnShowTablesResponse() {
+        let result = SATableListResultParser.parse(
+            rows: [["legacy_table"]],
+            fieldNames: ["Tables_in_legacy"],
+            displayTableComments: false
+        )
+
+        XCTAssertEqual(result.map(\.name), ["legacy_table"])
+        XCTAssertEqual(result.map(\.comment), [""])
+        XCTAssertEqual(result.map(\.isView), [false])
+    }
+
+    func testParsesMySQLShowTableStatusResponse() {
+        let fieldNames = [
+            "Name", "Engine", "Version", "Row_format", "Rows",
+            "Avg_row_length", "Data_length", "Max_data_length",
+            "Index_length", "Data_free", "Auto_increment", "Create_time",
+            "Update_time", "Check_time", "Collation", "Checksum",
+            "Create_options", "Comment",
+        ]
+        let rows: [NSArray] = [
+            ["accounts", "InnoDB", "10", "Dynamic", "42", "390", "16384", "0", "0", "0", "43", "2026-07-17 10:00:00", NSNull(), NSNull(), "utf8mb4_0900_ai_ci", NSNull(), "", "application table"],
+            ["active_accounts", NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), "VIEW"],
+        ]
+
+        let result = SATableListResultParser.parse(
+            rows: rows,
+            fieldNames: fieldNames,
+            displayTableComments: true
+        )
+
+        XCTAssertEqual(result.map(\.name), ["accounts", "active_accounts"])
+        XCTAssertEqual(result.map(\.comment), ["application table", "VIEW"])
+        XCTAssertEqual(result.map(\.isView), [false, true])
+    }
+
+    func testParsesMariaDBShowTableStatusWithExtensionColumns() {
+        let fieldNames = [
+            "Name", "Engine", "Version", "Row_format", "Rows",
+            "Avg_row_length", "Data_length", "Max_data_length",
+            "Index_length", "Data_free", "Auto_increment", "Create_time",
+            "Update_time", "Check_time", "Collation", "Checksum",
+            "Create_options", "Comment", "Max_index_length", "Temporary",
+        ]
+        let rows: [NSArray] = [
+            ["orders", "InnoDB", "10", "Dynamic", "12", "1365", "16384", "0", "0", "0", "13", "2026-07-17 10:00:00", NSNull(), NSNull(), "utf8mb4_general_ci", NSNull(), "", "application table", "0", "N"],
+            ["order_summary", NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), NSNull(), "VIEW", NSNull(), "N"],
+        ]
+
+        let result = SATableListResultParser.parse(
+            rows: rows,
+            fieldNames: fieldNames,
+            displayTableComments: true
+        )
+
+        XCTAssertEqual(result.map(\.name), ["orders", "order_summary"])
+        XCTAssertEqual(result.map(\.comment), ["application table", "VIEW"])
+        XCTAssertEqual(result.map(\.isView), [false, true])
+    }
+
+    func testLocatesCommentColumnCaseInsensitively() {
+        let result = SATableListResultParser.parse(
+            rows: [["summary", "VIEW", NSNull()]],
+            fieldNames: ["Name", "COMMENT", "Engine"],
+            displayTableComments: true
+        )
+
+        XCTAssertEqual(result.map(\.comment), ["VIEW"])
+        XCTAssertEqual(result.map(\.isView), [true])
+    }
+
+    func testDefaultsMissingOrNullCommentToEmptyString() {
+        let result = SATableListResultParser.parse(
+            rows: [
+                ["missing_comment"],
+                ["null_comment", NSNull()],
+            ],
+            fieldNames: ["Name", "Comment"],
+            displayTableComments: true
+        )
+
+        XCTAssertEqual(result.map(\.comment), ["", ""])
+        XCTAssertEqual(result.map(\.isView), [false, false])
+    }
+
+    func testPreservesLegacyPlaceholderForNullNameAndSkipsEmptyRows() {
+        let result = SATableListResultParser.parse(
+            rows: [
+                [NSNull(), "BASE TABLE"],
+                [],
+                ["valid_table", NSNull()],
+            ],
+            fieldNames: ["Tables_in_app", "Table_type"],
+            displayTableComments: false
+        )
+
+        XCTAssertEqual(result.map(\.name), ["...", "valid_table"])
+        XCTAssertEqual(result.map(\.isView), [false, false])
+    }
+}
