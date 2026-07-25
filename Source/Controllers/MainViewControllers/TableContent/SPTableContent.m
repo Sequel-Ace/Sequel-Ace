@@ -3252,10 +3252,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// now would risk a dealloc while it is still our parent on the stack:
 	(void)(fieldEditor), fieldEditor = nil;
 
+	// This callback only runs for values routed through the field editor sheet.
+	// Re-entering inline editing here makes AppKit lay out the full value before
+	// it can be redirected back to the sheet, which can crash for large text.
 	[[tableContentView window] makeFirstResponder:tableContentView];
-
-	if(row > -1 && column > -1)
-		[tableContentView editColumn:column row:row withEvent:nil select:YES];
 }
 
 - (void)saveViewCellValue:(id)anObject forTableColumn:(NSTableColumn *)aTableColumn row:(NSUInteger)rowIndex
