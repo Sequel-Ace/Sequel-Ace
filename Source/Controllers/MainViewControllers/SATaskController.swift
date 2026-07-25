@@ -50,12 +50,17 @@ import AppKit
         stateLock.unlock()
     }
 
-    /// Whether cancellation must keep reaching for a query that won admission
-    /// immediately before the cancellation request.
-    var cancellationRequiresQueryCancellation: Bool {
+    /// Cancels an admitted query while preventing it from completing its
+    /// transition to subsequent connection work. The cancellation closure
+    /// must not call back into this task.
+    fileprivate func cancelAdmittedQuery(_ cancellation: () -> Void) -> Bool {
         stateLock.lock()
         defer { stateLock.unlock() }
-        return cancellationRequested && queryIsAdmitted
+        guard cancellationRequested, queryIsAdmitted else {
+            return false
+        }
+        cancellation()
+        return true
     }
 
     /// Runs a query only while this task remains active and the preceding
@@ -363,22 +368,25 @@ import AppKit
     }
 
     private func requestQueryCancellation(retryingWhile fieldRemovalTask: SAFieldRemovalTask?) {
-        // The document cancels the running query (using the database-structure
-        // connection where available, for speed - no connection overhead).
-        delegate?.taskControllerDidRequestCancellation()
+        guard let fieldRemovalTask else {
+            delegate?.taskControllerDidRequestCancellation()
+            return
+        }
 
-        // Query admission and cancellation are serialized by the task's state
-        // lock. If the query won admission first but has not yet made the
-        // connection busy, keep retrying until cancellation reaches it or the
-        // operation returns. A query cannot be admitted after cancel() wins.
-        guard let fieldRemovalTask,
-              fieldRemovalTask.cancellationRequiresQueryCancellation else {
+        // Query admission, completion, and each cancellation attempt are
+        // serialized by the task's state lock. If the query won admission
+        // first but has not yet made the connection busy, keep retrying until
+        // cancellation reaches it or the operation returns. Holding the lock
+        // across the delegate call also prevents a queued retry from racing
+        // with the following schema-reload query.
+        guard fieldRemovalTask.cancelAdmittedQuery({
+            delegate?.taskControllerDidRequestCancellation()
+        }) else {
             return
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) { [weak self, weak fieldRemovalTask] in
-            guard let self, let fieldRemovalTask,
-                  fieldRemovalTask.cancellationRequiresQueryCancellation else {
+            guard let self, let fieldRemovalTask else {
                 return
             }
             self.requestQueryCancellation(retryingWhile: fieldRemovalTask)
