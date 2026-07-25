@@ -342,7 +342,32 @@ final class SATableListResultParserTests: XCTestCase {
         XCTAssertEqual(result.map(\.isView), [false, true, false])
     }
 
-    func testParsesPolarDBXResponseWithoutDependingOnColumnLabels() {
+    func testUsesShowFullTablesLabelsBeforeDocumentedPositions() {
+        let result = SATableListResultParser.parse(
+            rows: [
+                ["BASE TABLE", "accounts"],
+                ["VIEW", "active_accounts"],
+            ],
+            fieldNames: ["Table_type", "Tables_in_app"],
+            displayTableComments: false
+        )
+
+        XCTAssertEqual(result.map(\.name), ["accounts", "active_accounts"])
+        XCTAssertEqual(result.map(\.isView), [false, true])
+    }
+
+    func testUsesLegacyNameLabelBeforeDocumentedPositions() {
+        let result = SATableListResultParser.parse(
+            rows: [["VIEW", "legacy_summary"]],
+            fieldNames: ["Table_type", "NAME"],
+            displayTableComments: false
+        )
+
+        XCTAssertEqual(result.map(\.name), ["legacy_summary"])
+        XCTAssertEqual(result.map(\.isView), [true])
+    }
+
+    func testParsesPolarDBXResponseWithCaseInsensitiveColumnLabels() {
         let result = SATableListResultParser.parse(
             rows: [
                 ["logical_orders", "BASE TABLE"],
@@ -355,6 +380,20 @@ final class SATableListResultParserTests: XCTestCase {
         XCTAssertEqual(result.map(\.name), ["logical_orders", "logical_order_summary"])
         XCTAssertEqual(result.map(\.isView), [false, true])
         XCTAssertFalse(result.map(\.name).contains("..."))
+    }
+
+    func testFallsBackToDocumentedPositionsForNonStandardColumnLabels() {
+        let result = SATableListResultParser.parse(
+            rows: [
+                ["logical_orders", "BASE TABLE"],
+                ["logical_order_summary", "VIEW"],
+            ],
+            fieldNames: ["OBJECT_NAME", "OBJECT_KIND"],
+            displayTableComments: false
+        )
+
+        XCTAssertEqual(result.map(\.name), ["logical_orders", "logical_order_summary"])
+        XCTAssertEqual(result.map(\.isView), [false, true])
     }
 
     func testParsesLegacySingleColumnShowTablesResponse() {
@@ -426,6 +465,21 @@ final class SATableListResultParserTests: XCTestCase {
 
         XCTAssertEqual(result.map(\.comment), ["VIEW"])
         XCTAssertEqual(result.map(\.isView), [true])
+    }
+
+    func testUsesShowTableStatusLabelsBeforeDocumentedPositions() {
+        let result = SATableListResultParser.parse(
+            rows: [
+                ["InnoDB", "application table", "accounts"],
+                [NSNull(), "VIEW", "active_accounts"],
+            ],
+            fieldNames: ["Engine", "Comment", "Name"],
+            displayTableComments: true
+        )
+
+        XCTAssertEqual(result.map(\.name), ["accounts", "active_accounts"])
+        XCTAssertEqual(result.map(\.comment), ["application table", "VIEW"])
+        XCTAssertEqual(result.map(\.isView), [false, true])
     }
 
     func testDefaultsMissingOrNullCommentToEmptyString() {
