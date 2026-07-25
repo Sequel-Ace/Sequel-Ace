@@ -33,7 +33,9 @@ import AppKit
     @objc let field: String
     @objc let removesForeignKey: Bool
 
-    private let cancellationProgress = Progress(totalUnitCount: 1)
+    private let stateLock = NSLock()
+    private var cancellationRequested = false
+    private var queryIsAdmitted = false
 
     @objc(initWithField:removesForeignKey:)
     init(field: String, removesForeignKey: Bool) {
@@ -43,7 +45,17 @@ import AppKit
     }
 
     @objc func cancel() {
-        cancellationProgress.cancel()
+        stateLock.lock()
+        cancellationRequested = true
+        stateLock.unlock()
+    }
+
+    /// Whether cancellation must keep reaching for a query that won admission
+    /// immediately before the cancellation request.
+    var cancellationRequiresQueryCancellation: Bool {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return cancellationRequested && queryIsAdmitted
     }
 
     /// Runs a query only while this task remains active and the preceding
@@ -51,10 +63,19 @@ import AppKit
     @objc(runQueryIfAllowedAfterPreviousCancellation:operation:)
     func runQueryIfAllowed(afterPreviousCancellation queryWasCancelled: Bool,
                            operation: () -> Void) -> Bool {
-        guard !queryWasCancelled, !cancellationProgress.isCancelled else {
+        stateLock.lock()
+        guard !queryWasCancelled, !cancellationRequested else {
+            stateLock.unlock()
             return false
         }
+        queryIsAdmitted = true
+        stateLock.unlock()
 
+        defer {
+            stateLock.lock()
+            queryIsAdmitted = false
+            stateLock.unlock()
+        }
         operation()
         return true
     }
@@ -70,7 +91,8 @@ import AppKit
     /// Invoked when the user clicks the cancel button, after the per-task
     /// cancellation callback has recorded the request. The document cancels
     /// the running query (directly, or via the database-structure connection
-    /// for speed).
+    /// for speed). This may be invoked again while a field-removal query that
+    /// won admission concurrently with cancellation is still unwinding.
     func taskControllerDidRequestCancellation()
 }
 
@@ -335,9 +357,32 @@ import AppKit
             callbackObject.perform(callbackSelector)
         }
 
+        requestQueryCancellation(
+            retryingWhile: taskCancellationCallbackObject as? SAFieldRemovalTask
+        )
+    }
+
+    private func requestQueryCancellation(retryingWhile fieldRemovalTask: SAFieldRemovalTask?) {
         // The document cancels the running query (using the database-structure
         // connection where available, for speed - no connection overhead).
         delegate?.taskControllerDidRequestCancellation()
+
+        // Query admission and cancellation are serialized by the task's state
+        // lock. If the query won admission first but has not yet made the
+        // connection busy, keep retrying until cancellation reaches it or the
+        // operation returns. A query cannot be admitted after cancel() wins.
+        guard let fieldRemovalTask,
+              fieldRemovalTask.cancellationRequiresQueryCancellation else {
+            return
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) { [weak self, weak fieldRemovalTask] in
+            guard let self, let fieldRemovalTask,
+                  fieldRemovalTask.cancellationRequiresQueryCancellation else {
+                return
+            }
+            self.requestQueryCancellation(retryingWhile: fieldRemovalTask)
+        }
     }
 
     // MARK: - Query-execution timer
