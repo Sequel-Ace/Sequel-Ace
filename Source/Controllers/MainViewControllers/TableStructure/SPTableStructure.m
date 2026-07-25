@@ -258,7 +258,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		SPMySQLMultiPointType,
 		SPMySQLMultiLineStringType,
 		SPMySQLMultiPolygonType,
-		SPMySQLGeometryCollectionType];
+		SPMySQLGeometryCollectionType,
+		@"--------",
+		SPMySQLInet4Type,
+		SPMySQLInet6Type,
+	];
 
 	[fieldValidation setFieldTypes:typeSuggestions];
 	
@@ -1236,7 +1240,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				[queryString appendFormat:@"\n DEFAULT %@", defaultValue];
 			}
             // *CHAR, *TEXT and *ENUM must be wrapped with single or double quotes for empty string and other default value. Expression are provided as is. TIMESTAMP, DATETIME and DATE must always be wrapped in quotes.
-            else if ([theRowType hasSuffix:@"CHAR"] || [theRowType hasSuffix:@"TEXT"] || [theRowType hasSuffix:@"ENUM"] || [theRowType isInArray:@[@"TIMESTAMP",@"DATETIME",@"DATE"]]) {
+            else if ([theRowType hasSuffix:@"CHAR"] || [theRowType hasSuffix:@"TEXT"] || [theRowType hasSuffix:@"ENUM"] || [theRowType isInArray:@[@"TIMESTAMP",@"DATETIME",@"DATE",@"INET4",@"INET6"]]) {
                 // If default value is not an expresion or a string, add quotes.
                 if (!defaultValueIsExpression && !defaultValueIsString)
                     [queryString appendFormat:@"\n DEFAULT %@", [mySQLConnection escapeAndQuoteString:defaultValue]];
@@ -2204,6 +2208,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			// If type is BLOB or TEXT reset DEFAULT since these field types don't allow a default
 			if ([[currentRow objectForKey:@"type"] hasSuffix:@"TEXT"] ||
 				[[currentRow objectForKey:@"type"] hasSuffix:@"BLOB"] ||
+				[[currentRow objectForKey:@"type"] hasPrefix:@"INET"] ||
 				[[currentRow objectForKey:@"type"] isEqualToString:@"JSON"] ||
 				[fieldValidation isFieldTypeGeometry:[currentRow objectForKey:@"type"]] ||
 				([fieldValidation isFieldTypeDate:[currentRow objectForKey:@"type"]] && ![[currentRow objectForKey:@"type"] isEqualToString:@"YEAR"]))
@@ -2512,6 +2517,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		else if ([[tableColumn identifier] isEqualToString:@"length"]) {
 			[aCell setEnabled:([rowType hasSuffix:@"TEXT"] ||
 							   [rowType hasSuffix:@"BLOB"] ||
+							   [rowType hasPrefix:@"INET"] ||
 							   [rowType isEqualToString:@"JSON"] ||
 							   ([fieldValidation isFieldTypeDate:rowType] && ![[tableDocumentInstance serverSupport] supportsFractionalSeconds] && ![rowType isEqualToString:@"YEAR"]) ||
 							   [fieldValidation isFieldTypeGeometry:rowType]) ? NO : YES];

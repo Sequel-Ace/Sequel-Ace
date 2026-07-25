@@ -75,3 +75,5 @@ NSString * const SPMySQLMultiLineStringType    = @"MULTILINESTRING";
 NSString * const SPMySQLMultiPolygonType       = @"MULTIPOLYGON";
 NSString * const SPMySQLGeometryCollectionType = @"GEOMETRYCOLLECTION";
 NSString * const SPMySQLJsonType               = @"JSON";
+NSString * const SPMySQLInet4Type              = @"INET4";
+NSString * const SPMySQLInet6Type              = @"INET6";
