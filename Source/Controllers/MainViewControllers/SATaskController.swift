@@ -24,127 +24,6 @@
 
 import AppKit
 
-@objc enum SAFieldRemovalQueryResult: Int {
-    case succeeded
-    case cancelled
-    case failed
-}
-
-/// Immutable field-removal details plus sequencing and cancellation state.
-///
-/// `SPTableStructure` supplies thin bridges for its legacy query, error, and
-/// reload calls; this type owns the cross-thread removal orchestration.
-@objc final class SAFieldRemovalTask: NSObject {
-
-    @objc let field: String
-    @objc let foreignKeyName: String?
-    @objc let table: String
-    @objc let database: String
-
-    private let stateLock = NSLock()
-    private var cancellationRequested = false
-    private var queryIsAdmitted = false
-
-    @objc(initWithField:foreignKeyName:table:database:)
-    init(field: String, foreignKeyName: String?, table: String, database: String) {
-        self.field = field
-        self.foreignKeyName = foreignKeyName
-        self.table = table
-        self.database = database
-        super.init()
-    }
-
-    @objc func cancel() {
-        stateLock.lock()
-        cancellationRequested = true
-        stateLock.unlock()
-    }
-
-    /// Cancels an admitted query while preventing it from completing its
-    /// transition to subsequent connection work. The cancellation closure
-    /// must not call back into this task.
-    fileprivate func cancelAdmittedQuery(_ cancellation: () -> Void) -> Bool {
-        stateLock.lock()
-        defer { stateLock.unlock() }
-        guard cancellationRequested, queryIsAdmitted else {
-            return false
-        }
-        cancellation()
-        return true
-    }
-
-    /// Sequences the optional foreign-key removal and field removal while
-    /// keeping legacy controller operations behind focused callbacks.
-    @objc(runWithForeignKeyQuery:fieldQuery:foreignKeyFailure:fieldFailure:schemaRefresh:completion:)
-    func run(foreignKeyQuery: () -> SAFieldRemovalQueryResult,
-             fieldQuery: () -> SAFieldRemovalQueryResult,
-             foreignKeyFailure: () -> Void,
-             fieldFailure: () -> Void,
-             schemaRefresh: () -> Void,
-             completion: () -> Void) {
-        var previousQueryWasCancelled = false
-        var schemaMayHaveChanged = false
-
-        if foreignKeyName != nil,
-           let result = runQueryIfAllowed(afterPreviousCancellation: false,
-                                          operation: foreignKeyQuery) {
-            switch result {
-            case .succeeded:
-                schemaMayHaveChanged = true
-            case .cancelled:
-                previousQueryWasCancelled = true
-                schemaMayHaveChanged = true
-            case .failed:
-                foreignKeyFailure()
-            }
-        }
-
-        if let result = runQueryIfAllowed(
-            afterPreviousCancellation: previousQueryWasCancelled,
-            operation: fieldQuery
-        ) {
-            switch result {
-            case .succeeded, .cancelled:
-                schemaMayHaveChanged = true
-            case .failed:
-                fieldFailure()
-            }
-        }
-
-        if schemaMayHaveChanged {
-            schemaRefresh()
-        }
-
-        if Thread.isMainThread {
-            completion()
-        } else {
-            DispatchQueue.main.sync(execute: completion)
-        }
-    }
-
-    /// Runs a query only while this task remains active and the preceding
-    /// query, if any, was not cancelled.
-    private func runQueryIfAllowed(
-        afterPreviousCancellation queryWasCancelled: Bool,
-        operation: () -> SAFieldRemovalQueryResult
-    ) -> SAFieldRemovalQueryResult? {
-        stateLock.lock()
-        guard !queryWasCancelled, !cancellationRequested else {
-            stateLock.unlock()
-            return nil
-        }
-        queryIsAdmitted = true
-        stateLock.unlock()
-
-        defer {
-            stateLock.lock()
-            queryIsAdmitted = false
-            stateLock.unlock()
-        }
-        return operation()
-    }
-}
-
 /// Hooks the task controller needs back from its host document — things it
 /// cannot own because they belong to the document's wider lifecycle.
 @objc protocol SATaskControllerDelegate: AnyObject {
@@ -156,7 +35,8 @@ import AppKit
     /// cancellation callback has recorded the request. The document cancels
     /// the running query (directly, or via the database-structure connection
     /// for speed). This may be invoked again while a field-removal query that
-    /// won admission concurrently with cancellation is still unwinding.
+    /// won admission concurrently with cancellation is still unwinding; those
+    /// retries are delivered from the task's background cancellation queue.
     func taskControllerDidRequestCancellation()
 }
 
@@ -421,34 +301,12 @@ import AppKit
             callbackObject.perform(callbackSelector)
         }
 
-        requestQueryCancellation(
-            retryingWhile: taskCancellationCallbackObject as? SAFieldRemovalTask
-        )
-    }
-
-    private func requestQueryCancellation(retryingWhile fieldRemovalTask: SAFieldRemovalTask?) {
-        guard let fieldRemovalTask else {
-            delegate?.taskControllerDidRequestCancellation()
-            return
-        }
-
-        // Query admission, completion, and each cancellation attempt are
-        // serialized by the task's state lock. If the query won admission
-        // first but has not yet made the connection busy, keep retrying until
-        // cancellation reaches it or the operation returns. Holding the lock
-        // across the delegate call also prevents a queued retry from racing
-        // with the following schema-reload query.
-        guard fieldRemovalTask.cancelAdmittedQuery({
-            delegate?.taskControllerDidRequestCancellation()
-        }) else {
-            return
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) { [weak self, weak fieldRemovalTask] in
-            guard let self, let fieldRemovalTask else {
-                return
+        if let fieldRemovalTask = taskCancellationCallbackObject as? SAFieldRemovalTask {
+            fieldRemovalTask.requestQueryCancellation { [weak self] in
+                self?.delegate?.taskControllerDidRequestCancellation()
             }
-            self.requestQueryCancellation(retryingWhile: fieldRemovalTask)
+        } else {
+            delegate?.taskControllerDidRequestCancellation()
         }
     }
 
