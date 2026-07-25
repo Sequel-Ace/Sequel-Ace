@@ -688,6 +688,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 	BOOL hasForeignKey = NO;
 	NSString *referencedTable = @"";
+	NSString *foreignKeyName = nil;
 
 	// Check to see whether the user is attempting to remove a field that has foreign key constraints and thus
 	// would result in an error if not dropped before removing the field.
@@ -698,6 +699,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			if ([column isEqualToString:field]) {
 				hasForeignKey = YES;
 				referencedTable = [constraint objectForKey:@"ref_table"];
+				foreignKeyName = [constraint objectForKey:@"name"] ?: @"";
 				break;
 			}
 		}
@@ -714,7 +716,10 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		[self->tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Removing field...", @"removing field task status message")];
 
 		// Capture the AppKit selection before handing the operation to the background thread.
-		SAFieldRemovalTask *removalTask = [[SAFieldRemovalTask alloc] initWithField:field removesForeignKey:hasForeignKey];
+		SAFieldRemovalTask *removalTask = [[SAFieldRemovalTask alloc] initWithField:field
+																 foreignKeyName:foreignKeyName
+																		  table:self->selectedTable
+																	   database:[self->tableDocumentInstance database]];
 
 		if ([NSThread isMainThread]) {
 			[NSThread detachNewThreadWithName:SPCtxt(@"SPTableStructure field and key removal task", self->tableDocumentInstance)
@@ -1572,69 +1577,38 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 - (void)_removeFieldAndForeignKey:(SAFieldRemovalTask *)removalTask
 {
 	@autoreleasepool {
-		NSString *field = [removalTask field];
-		BOOL previousQueryWasCancelled = NO;
-		BOOL schemaMayHaveChanged = NO;
-
-		// Remove the foreign key before the field if required
-		if ([removalTask removesForeignKey]) {
-			NSString *relationName = @"";
-
-			// Get the foreign key name
-			for (NSDictionary *constraint in [self->tableDataInstance getConstraints])
-			{
-				for (NSString *column in [constraint safeObjectForKey:@"columns"])
-				{
-					if ([column isEqualToString:field]) {
-						relationName = [constraint safeObjectForKey:@"name"];
-						break;
-					}
-				}
+		SAFieldRemovalQueryResult (^queryResult)(void) = ^SAFieldRemovalQueryResult {
+			if ([self->mySQLConnection lastQueryWasCancelled]) {
+				return SAFieldRemovalQueryResultCancelled;
 			}
+			return [self->mySQLConnection queryErrored] ? SAFieldRemovalQueryResultFailed : SAFieldRemovalQueryResultSucceeded;
+		};
 
-			BOOL didRunForeignKeyQuery = [removalTask runQueryIfAllowedAfterPreviousCancellation:NO operation:^{
-				[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [self->selectedTable backtickQuotedString], [relationName backtickQuotedString]] assertingDatabase:[self->tableDocumentInstance database]];
-			}];
-
-			if (didRunForeignKeyQuery) {
-				previousQueryWasCancelled = [self->mySQLConnection lastQueryWasCancelled];
-				BOOL foreignKeyQueryErrored = [self->mySQLConnection queryErrored];
-
-				// Check for errors, but only if the query wasn't cancelled
-				if (foreignKeyQueryErrored && !previousQueryWasCancelled) {
-					NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
-					[errorDictionary setObject:NSLocalizedString(@"Unable to delete relation", @"error deleting relation message") forKey:@"title"];
-					[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@", @"error deleting relation informative message"), relationName, [self->mySQLConnection lastErrorMessage]] forKey:@"message"];
-					[[self onMainThread] showErrorSheetWith:errorDictionary];
-				}
-				else if (!foreignKeyQueryErrored) {
-					schemaMayHaveChanged = YES;
-				}
-			}
-		}
-
-		BOOL didRunFieldQuery = [removalTask runQueryIfAllowedAfterPreviousCancellation:previousQueryWasCancelled operation:^{
+		[removalTask runWithForeignKeyQuery:^SAFieldRemovalQueryResult {
+			[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@",
+																		   [[removalTask table] backtickQuotedString],
+																		   [[removalTask foreignKeyName] backtickQuotedString]]
+									 assertingDatabase:[removalTask database]];
+			return queryResult();
+		} fieldQuery:^SAFieldRemovalQueryResult {
 			[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP %@",
-																	[self->selectedTable backtickQuotedString], [field backtickQuotedString]] assertingDatabase:[self->tableDocumentInstance database]];
-		}];
-
-		if (didRunFieldQuery) {
-			// Check for errors, but only if the query wasn't cancelled
-			if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
-				NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
-				[errorDictionary setObject:NSLocalizedString(@"Error", @"error") forKey:@"title"];
-				[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"Couldn't delete field %@.\nMySQL said: %@", @"message of panel when field cannot be deleted"),
-																	  field,
-																	  [self->mySQLConnection lastErrorMessage]] forKey:@"message"];
-
-				[[self onMainThread] showErrorSheetWith:errorDictionary];
-			}
-			else {
-				schemaMayHaveChanged = YES;
-			}
-		}
-
-		if (schemaMayHaveChanged) {
+																	   [[removalTask table] backtickQuotedString],
+																	   [[removalTask field] backtickQuotedString]]
+									 assertingDatabase:[removalTask database]];
+			return queryResult();
+		} foreignKeyFailure:^{
+			NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
+			[errorDictionary setObject:NSLocalizedString(@"Unable to delete relation", @"error deleting relation message") forKey:@"title"];
+			[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@", @"error deleting relation informative message"), [removalTask foreignKeyName], [self->mySQLConnection lastErrorMessage]] forKey:@"message"];
+			[[self onMainThread] showErrorSheetWith:errorDictionary];
+		} fieldFailure:^{
+			NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
+			[errorDictionary setObject:NSLocalizedString(@"Error", @"error") forKey:@"title"];
+			[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"Couldn't delete field %@.\nMySQL said: %@", @"message of panel when field cannot be deleted"),
+																  [removalTask field],
+																  [self->mySQLConnection lastErrorMessage]] forKey:@"message"];
+			[[self onMainThread] showErrorSheetWith:errorDictionary];
+		} schemaRefresh:^{
 			[self->tableDataInstance resetAllData];
 
 			// Refresh relevant views
@@ -1642,15 +1616,13 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			[self->tableDocumentInstance setContentRequiresReload:YES];
 			[self->tableDocumentInstance setRelationsRequiresReload:YES];
 
-			[self loadTable:self->selectedTable];
-		}
-
-		SPMainQSync(^{
+			[self loadTable:[removalTask table]];
+		} completion:^{
 			[self->tableDocumentInstance endTask];
 
 			// Preserve focus on table for keyboard navigation
 			[[self->tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:self->tableSourceView];
-		});
+		}];
 	}
 }
 

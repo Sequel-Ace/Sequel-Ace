@@ -24,23 +24,33 @@
 
 import AppKit
 
-/// Immutable field-removal details plus task-scoped cancellation state.
+@objc enum SAFieldRemovalQueryResult: Int {
+    case succeeded
+    case cancelled
+    case failed
+}
+
+/// Immutable field-removal details plus sequencing and cancellation state.
 ///
-/// `SPTableStructure` remains responsible for its legacy query and reload
-/// calls; this type keeps the new cross-thread coordination in Swift.
+/// `SPTableStructure` supplies thin bridges for its legacy query, error, and
+/// reload calls; this type owns the cross-thread removal orchestration.
 @objc final class SAFieldRemovalTask: NSObject {
 
     @objc let field: String
-    @objc let removesForeignKey: Bool
+    @objc let foreignKeyName: String?
+    @objc let table: String
+    @objc let database: String
 
     private let stateLock = NSLock()
     private var cancellationRequested = false
     private var queryIsAdmitted = false
 
-    @objc(initWithField:removesForeignKey:)
-    init(field: String, removesForeignKey: Bool) {
+    @objc(initWithField:foreignKeyName:table:database:)
+    init(field: String, foreignKeyName: String?, table: String, database: String) {
         self.field = field
-        self.removesForeignKey = removesForeignKey
+        self.foreignKeyName = foreignKeyName
+        self.table = table
+        self.database = database
         super.init()
     }
 
@@ -63,15 +73,65 @@ import AppKit
         return true
     }
 
+    /// Sequences the optional foreign-key removal and field removal while
+    /// keeping legacy controller operations behind focused callbacks.
+    @objc(runWithForeignKeyQuery:fieldQuery:foreignKeyFailure:fieldFailure:schemaRefresh:completion:)
+    func run(foreignKeyQuery: () -> SAFieldRemovalQueryResult,
+             fieldQuery: () -> SAFieldRemovalQueryResult,
+             foreignKeyFailure: () -> Void,
+             fieldFailure: () -> Void,
+             schemaRefresh: () -> Void,
+             completion: () -> Void) {
+        var previousQueryWasCancelled = false
+        var schemaMayHaveChanged = false
+
+        if foreignKeyName != nil,
+           let result = runQueryIfAllowed(afterPreviousCancellation: false,
+                                          operation: foreignKeyQuery) {
+            switch result {
+            case .succeeded:
+                schemaMayHaveChanged = true
+            case .cancelled:
+                previousQueryWasCancelled = true
+                schemaMayHaveChanged = true
+            case .failed:
+                foreignKeyFailure()
+            }
+        }
+
+        if let result = runQueryIfAllowed(
+            afterPreviousCancellation: previousQueryWasCancelled,
+            operation: fieldQuery
+        ) {
+            switch result {
+            case .succeeded, .cancelled:
+                schemaMayHaveChanged = true
+            case .failed:
+                fieldFailure()
+            }
+        }
+
+        if schemaMayHaveChanged {
+            schemaRefresh()
+        }
+
+        if Thread.isMainThread {
+            completion()
+        } else {
+            DispatchQueue.main.sync(execute: completion)
+        }
+    }
+
     /// Runs a query only while this task remains active and the preceding
     /// query, if any, was not cancelled.
-    @objc(runQueryIfAllowedAfterPreviousCancellation:operation:)
-    func runQueryIfAllowed(afterPreviousCancellation queryWasCancelled: Bool,
-                           operation: () -> Void) -> Bool {
+    private func runQueryIfAllowed(
+        afterPreviousCancellation queryWasCancelled: Bool,
+        operation: () -> SAFieldRemovalQueryResult
+    ) -> SAFieldRemovalQueryResult? {
         stateLock.lock()
         guard !queryWasCancelled, !cancellationRequested else {
             stateLock.unlock()
-            return false
+            return nil
         }
         queryIsAdmitted = true
         stateLock.unlock()
@@ -81,8 +141,7 @@ import AppKit
             queryIsAdmitted = false
             stateLock.unlock()
         }
-        operation()
-        return true
+        return operation()
     }
 }
 
