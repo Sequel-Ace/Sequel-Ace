@@ -1574,6 +1574,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	@autoreleasepool {
 		NSString *field = [removalTask field];
 		BOOL previousQueryWasCancelled = NO;
+		BOOL schemaMayHaveChanged = NO;
 
 		// Remove the foreign key before the field if required
 		if ([removalTask removesForeignKey]) {
@@ -1597,13 +1598,17 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 
 			if (didRunForeignKeyQuery) {
 				previousQueryWasCancelled = [self->mySQLConnection lastQueryWasCancelled];
+				BOOL foreignKeyQueryErrored = [self->mySQLConnection queryErrored];
 
 				// Check for errors, but only if the query wasn't cancelled
-				if ([self->mySQLConnection queryErrored] && !previousQueryWasCancelled) {
+				if (foreignKeyQueryErrored && !previousQueryWasCancelled) {
 					NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
 					[errorDictionary setObject:NSLocalizedString(@"Unable to delete relation", @"error deleting relation message") forKey:@"title"];
 					[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"An error occurred while trying to delete the relation '%@'.\n\nMySQL said: %@", @"error deleting relation informative message"), relationName, [self->mySQLConnection lastErrorMessage]] forKey:@"message"];
 					[[self onMainThread] showErrorSheetWith:errorDictionary];
+				}
+				else if (!foreignKeyQueryErrored) {
+					schemaMayHaveChanged = YES;
 				}
 			}
 		}
@@ -1625,15 +1630,19 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 				[[self onMainThread] showErrorSheetWith:errorDictionary];
 			}
 			else {
-				[self->tableDataInstance resetAllData];
-
-				// Refresh relevant views
-				[self->tableDocumentInstance setStatusRequiresReload:YES];
-				[self->tableDocumentInstance setContentRequiresReload:YES];
-				[self->tableDocumentInstance setRelationsRequiresReload:YES];
-
-				[self loadTable:self->selectedTable];
+				schemaMayHaveChanged = YES;
 			}
+		}
+
+		if (schemaMayHaveChanged) {
+			[self->tableDataInstance resetAllData];
+
+			// Refresh relevant views
+			[self->tableDocumentInstance setStatusRequiresReload:YES];
+			[self->tableDocumentInstance setContentRequiresReload:YES];
+			[self->tableDocumentInstance setRelationsRequiresReload:YES];
+
+			[self loadTable:self->selectedTable];
 		}
 
 		SPMainQSync(^{
