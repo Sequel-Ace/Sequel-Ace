@@ -1576,6 +1576,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 {
 	@autoreleasepool {
 		NSString *field = [removalDetails objectForKey:@"field"];
+		BOOL shouldRemoveField = YES;
 
 		// Remove the foreign key before the field if required
 		if ([[removalDetails objectForKey:@"removeForeignKey"] boolValue]) {
@@ -1594,6 +1595,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			}
 
 			[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [self->selectedTable backtickQuotedString], [relationName backtickQuotedString]] assertingDatabase:[self->tableDocumentInstance database]];
+			shouldRemoveField = ![self->mySQLConnection lastQueryWasCancelled];
 
 			// Check for errors, but only if the query wasn't cancelled
 			if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
@@ -1604,29 +1606,31 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			}
 		}
 
-		// Remove field
-		[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP %@",
-																[self->selectedTable backtickQuotedString], [field backtickQuotedString]] assertingDatabase:[self->tableDocumentInstance database]];
+		if (shouldRemoveField) {
+			// Remove field
+			[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP %@",
+																	[self->selectedTable backtickQuotedString], [field backtickQuotedString]] assertingDatabase:[self->tableDocumentInstance database]];
 
-		// Check for errors, but only if the query wasn't cancelled
-		if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
-			NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
-			[errorDictionary setObject:NSLocalizedString(@"Error", @"error") forKey:@"title"];
-			[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"Couldn't delete field %@.\nMySQL said: %@", @"message of panel when field cannot be deleted"),
-																  field,
-																  [self->mySQLConnection lastErrorMessage]] forKey:@"message"];
+			// Check for errors, but only if the query wasn't cancelled
+			if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
+				NSMutableDictionary *errorDictionary = [NSMutableDictionary dictionary];
+				[errorDictionary setObject:NSLocalizedString(@"Error", @"error") forKey:@"title"];
+				[errorDictionary setObject:[NSString stringWithFormat:NSLocalizedString(@"Couldn't delete field %@.\nMySQL said: %@", @"message of panel when field cannot be deleted"),
+																	  field,
+																	  [self->mySQLConnection lastErrorMessage]] forKey:@"message"];
 
-			[[self onMainThread] showErrorSheetWith:errorDictionary];
-		}
-		else {
-			[self->tableDataInstance resetAllData];
+				[[self onMainThread] showErrorSheetWith:errorDictionary];
+			}
+			else {
+				[self->tableDataInstance resetAllData];
 
-			// Refresh relevant views
-			[self->tableDocumentInstance setStatusRequiresReload:YES];
-			[self->tableDocumentInstance setContentRequiresReload:YES];
-			[self->tableDocumentInstance setRelationsRequiresReload:YES];
+				// Refresh relevant views
+				[self->tableDocumentInstance setStatusRequiresReload:YES];
+				[self->tableDocumentInstance setContentRequiresReload:YES];
+				[self->tableDocumentInstance setRelationsRequiresReload:YES];
 
-			[self loadTable:self->selectedTable];
+				[self loadTable:self->selectedTable];
+			}
 		}
 
 		SPMainQSync(^{
