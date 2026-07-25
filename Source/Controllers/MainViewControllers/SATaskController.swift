@@ -24,6 +24,42 @@
 
 import AppKit
 
+/// Immutable field-removal details plus task-scoped cancellation state.
+///
+/// `SPTableStructure` remains responsible for its legacy query and reload
+/// calls; this type keeps the new cross-thread coordination in Swift.
+@objc final class SAFieldRemovalTask: NSObject {
+
+    @objc let field: String
+    @objc let removesForeignKey: Bool
+
+    private let cancellationProgress = Progress(totalUnitCount: 1)
+
+    @objc(initWithField:removesForeignKey:)
+    init(field: String, removesForeignKey: Bool) {
+        self.field = field
+        self.removesForeignKey = removesForeignKey
+        super.init()
+    }
+
+    @objc func cancel() {
+        cancellationProgress.cancel()
+    }
+
+    /// Runs a query only while this task remains active and the preceding
+    /// query, if any, was not cancelled.
+    @objc(runQueryIfAllowedAfterPreviousCancellation:operation:)
+    func runQueryIfAllowed(afterPreviousCancellation queryWasCancelled: Bool,
+                           operation: () -> Void) -> Bool {
+        guard !queryWasCancelled, !cancellationProgress.isCancelled else {
+            return false
+        }
+
+        operation()
+        return true
+    }
+}
+
 /// Hooks the task controller needs back from its host document — things it
 /// cannot own because they belong to the document's wider lifecycle.
 @objc protocol SATaskControllerDelegate: AnyObject {
