@@ -714,9 +714,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		[self->tableDocumentInstance startTaskWithDescription:NSLocalizedString(@"Removing field...", @"removing field task status message")];
 
 		// Capture the AppKit selection before handing the operation to the background thread.
+		NSProgress *cancellationToken = [NSProgress progressWithTotalUnitCount:1];
 		NSDictionary *removalDetails = @{
 			@"field": field,
-			@"removeForeignKey": [NSNumber numberWithBool:hasForeignKey]
+			@"removeForeignKey": [NSNumber numberWithBool:hasForeignKey],
+			@"cancellationToken": cancellationToken
 		};
 
 		if ([NSThread isMainThread]) {
@@ -726,8 +728,8 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 									   object:removalDetails];
 
 			[self->tableDocumentInstance enableTaskCancellationWithTitle:NSLocalizedString(@"Cancel", @"cancel button")
-													callbackObject:self
-												  callbackFunction:NULL];
+													callbackObject:cancellationToken
+												  callbackFunction:@selector(cancel)];
 		} else {
 			[self _removeFieldAndForeignKey:removalDetails];
 		}
@@ -1576,10 +1578,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 {
 	@autoreleasepool {
 		NSString *field = [removalDetails objectForKey:@"field"];
-		BOOL shouldRemoveField = YES;
+		NSProgress *cancellationToken = [removalDetails objectForKey:@"cancellationToken"];
+		BOOL shouldRemoveField = ![cancellationToken isCancelled];
 
 		// Remove the foreign key before the field if required
-		if ([[removalDetails objectForKey:@"removeForeignKey"] boolValue]) {
+		if ([[removalDetails objectForKey:@"removeForeignKey"] boolValue] && shouldRemoveField) {
 			NSString *relationName = @"";
 
 			// Get the foreign key name
@@ -1595,7 +1598,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			}
 
 			[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP FOREIGN KEY %@", [self->selectedTable backtickQuotedString], [relationName backtickQuotedString]] assertingDatabase:[self->tableDocumentInstance database]];
-			shouldRemoveField = ![self->mySQLConnection lastQueryWasCancelled];
+			shouldRemoveField = ![cancellationToken isCancelled] && ![self->mySQLConnection lastQueryWasCancelled];
 
 			// Check for errors, but only if the query wasn't cancelled
 			if ([self->mySQLConnection queryErrored] && ![self->mySQLConnection lastQueryWasCancelled]) {
@@ -1606,7 +1609,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 			}
 		}
 
-		if (shouldRemoveField) {
+		if (shouldRemoveField && ![cancellationToken isCancelled]) {
 			// Remove field
 			[self->mySQLConnection queryString:[NSString stringWithFormat:@"ALTER TABLE %@ DROP %@",
 																	[self->selectedTable backtickQuotedString], [field backtickQuotedString]] assertingDatabase:[self->tableDocumentInstance database]];
