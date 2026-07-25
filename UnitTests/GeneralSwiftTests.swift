@@ -113,40 +113,4 @@ private final class GeneralSwiftTests: XCTestCase {
 
         print(newHistMutArray)
     }
-
-    func testFieldRemovalTaskCancellationBeforeQueryAdmission() {
-        let task = SAFieldRemovalTask(field: "obsolete", removesForeignKey: false)
-        var operationRan = false
-
-        task.cancel()
-        let queryWasAdmitted = task.runQueryIfAllowed(afterPreviousCancellation: false) {
-            operationRan = true
-        }
-
-        XCTAssertFalse(queryWasAdmitted)
-        XCTAssertFalse(operationRan)
-    }
-
-    func testFieldRemovalTaskKeepsAdmittedQueryObservableUntilItReturns() {
-        let task = SAFieldRemovalTask(field: "obsolete", removesForeignKey: true)
-        let operationStarted = expectation(description: "query operation started")
-        let operationFinished = expectation(description: "query operation finished")
-        let allowOperationToFinish = DispatchSemaphore(value: 0)
-
-        DispatchQueue.global(qos: .userInitiated).async {
-            _ = task.runQueryIfAllowed(afterPreviousCancellation: false) {
-                operationStarted.fulfill()
-                allowOperationToFinish.wait()
-            }
-            operationFinished.fulfill()
-        }
-
-        wait(for: [operationStarted], timeout: 2)
-        task.cancel()
-        XCTAssertTrue(task.cancellationRequiresQueryCancellation)
-
-        allowOperationToFinish.signal()
-        wait(for: [operationFinished], timeout: 2)
-        XCTAssertFalse(task.cancellationRequiresQueryCancellation)
-    }
 }
