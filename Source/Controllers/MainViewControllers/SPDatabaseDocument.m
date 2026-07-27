@@ -3973,10 +3973,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         if (decryptdata != nil && [decryptdata length]) {
             NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingFromData:decryptdata error:nil];
             unarchiver.requiresSecureCoding = NO;
-            NSDictionary *decoded = (NSDictionary *)[unarchiver decodeObjectForKey:@"data"];
+            id decoded = [unarchiver decodeObjectForKey:@"data"];
             [unarchiver finishDecoding];
-            // Leave data nil on failure so the wrong-format/password alert below fires.
-            data = decoded ? [NSMutableDictionary dictionaryWithDictionary:decoded] : nil;
+            // Leave data nil on failure or a non-dictionary root so the
+            // wrong-format/password alert below fires.
+            data = [decoded isKindOfClass:[NSDictionary class]]
+                ? [NSMutableDictionary dictionaryWithDictionary:decoded]
+                : nil;
         }
         if (data == nil) {
             [NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file")] message:NSLocalizedString(@"Wrong data format or password.", @"wrong data format or password") callback:nil];
