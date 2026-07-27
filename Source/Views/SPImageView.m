@@ -31,6 +31,8 @@
 
 #import "SPImageView.h"
 
+#import "sequel-ace-Swift.h"
+
 @implementation SPImageView
 
 /**
@@ -88,26 +90,7 @@
 		NSData *pngData = nil;
 		NSPICTImageRep *draggedImage = [[NSPICTImageRep alloc] initWithData:[[sender draggingPasteboard] dataForType:@"NSPICTPboardType"]];
 		if (draggedImage) {
-			// Render the PICT into a bitmap-backed context; replaces the
-			// deprecated lockFocus + initWithFocusedViewRect: snapshot.
-			NSRect bounds = [draggedImage boundingBox];
-			NSBitmapImageRep *bitmapImageRep = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL
-			                                                                           pixelsWide:(NSInteger)ceil(bounds.size.width)
-			                                                                           pixelsHigh:(NSInteger)ceil(bounds.size.height)
-			                                                                        bitsPerSample:8
-			                                                                      samplesPerPixel:4
-			                                                                             hasAlpha:YES
-			                                                                             isPlanar:NO
-			                                                                       colorSpaceName:NSCalibratedRGBColorSpace
-			                                                                          bytesPerRow:0
-			                                                                         bitsPerPixel:0];
-			if (bitmapImageRep) {
-				[NSGraphicsContext saveGraphicsState];
-				[NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithBitmapImageRep:bitmapImageRep]];
-				[draggedImage drawInRect:NSMakeRect(0, 0, bounds.size.width, bounds.size.height)];
-				[NSGraphicsContext restoreGraphicsState];
-				pngData = [bitmapImageRep representationUsingType:NSBitmapImageFileTypePNG properties:@{}];
-			}
+			pngData = [SAImageRenderer pngDataForImageRep:draggedImage];
 		}
 		if (pngData) {
 			[delegateForUse processUpdatedImageData:pngData];
