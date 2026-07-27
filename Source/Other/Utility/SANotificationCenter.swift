@@ -26,8 +26,6 @@ import UserNotifications
 
     @objc static let shared = SANotificationCenter()
 
-    private var didRequestAuthorization = false
-
     /// Posts a banner + default sound notification. Safe to call from any
     /// thread. `body` may be nil for title-only notifications.
     @objc(postNotificationWithTitle:body:)
@@ -36,22 +34,23 @@ import UserNotifications
         // paths exercised from test runners don't trap.
         guard Bundle.main.bundleIdentifier != nil else { return }
 
-        DispatchQueue.main.async {
-            let center = UNUserNotificationCenter.current()
+        let content = UNMutableNotificationContent()
+        content.title = title
+        if let body, !body.isEmpty {
+            content.body = body
+        }
+        content.sound = .default
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
 
-            if !self.didRequestAuthorization {
-                self.didRequestAuthorization = true
-                center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
-            }
-
-            let content = UNMutableNotificationContent()
-            content.title = title
-            if let body, !body.isEmpty {
-                content.body = body
-            }
-            content.sound = .default
-
-            center.add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
+        // Deliver from the authorization completion: on the very first call
+        // this prompts and completes only after the user decides, so the
+        // triggering notification is delivered (not silently dropped) when
+        // permission is granted. On every later call it completes immediately
+        // with the stored status — the system never re-prompts.
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
+            guard granted else { return }
+            center.add(request)
         }
     }
 }
