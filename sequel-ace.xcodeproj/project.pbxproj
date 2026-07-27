@@ -286,6 +286,8 @@
 		51BC150125BE138700F1CDC9 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 51BC150025BE138700F1CDC9 /* SnapKit */; };
 		51BC150625BE13C400F1CDC9 /* NSViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */; };
 		51BE43D830174A8000AF389C /* SAKeyedArchiveCompatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BE43D730174A8000AF389C /* SAKeyedArchiveCompatTests.swift */; };
+		51BE43DD30174CC700AF389C /* SANotificationCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BE43DC30174CC700AF389C /* SANotificationCenter.swift */; };
+		51BE43DE30174CC700AF389C /* SANotificationCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BE43DC30174CC700AF389C /* SANotificationCenter.swift */; };
 		51C32B2E2FF6F90C007C2DD3 /* SAPrintUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C32B2D2FF6F90C007C2DD3 /* SAPrintUtility.swift */; };
 		51C397A12FF7BB0100C4C14A /* SAPrintUtilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C397A22FF7BB0100C4C14A /* SAPrintUtilityTests.swift */; };
 		51C397A32FF7BB0100C4C14A /* SAPrintUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C32B2D2FF6F90C007C2DD3 /* SAPrintUtility.swift */; };
@@ -1099,6 +1101,7 @@
 		51BC14F725BE135500F1CDC9 /* SPWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPWindowController.swift; sourceTree = "<group>"; };
 		51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSViewExtension.swift; sourceTree = "<group>"; };
 		51BE43D730174A8000AF389C /* SAKeyedArchiveCompatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAKeyedArchiveCompatTests.swift; sourceTree = "<group>"; };
+		51BE43DC30174CC700AF389C /* SANotificationCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SANotificationCenter.swift; sourceTree = "<group>"; };
 		51C04C98261E4CF5001F5554 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51C04C9D261E4DB6001F5554 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/Localizable.strings; sourceTree = "<group>"; };
 		51C32B2D2FF6F90C007C2DD3 /* SAPrintUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAPrintUtility.swift; sourceTree = "<group>"; };
@@ -2569,6 +2572,7 @@
 				5146ADF82F79B9EF00C4C14A /* SAConnectionService.swift */,
 				51C32B2D2FF6F90C007C2DD3 /* SAPrintUtility.swift */,
 				91D7AFC91F1CEBB3ED2242CC /* SADatabaseScopedValueCache.swift */,
+				51BE43DC30174CC700AF389C /* SANotificationCenter.swift */,
 			);
 			path = Utility;
 			sourceTree = "<group>";
@@ -3338,6 +3342,7 @@
 				17DB5F441555CA300046834B /* SPMutableArrayAdditions.m in Sources */,
 				5146E0482F7A640C00C4C14A /* SAConnectionInfoTests.swift in Sources */,
 				5AF0C4000000000000000003 /* SAConnectionInfo+Favorite.swift in Sources */,
+				51BE43DE30174CC700AF389C /* SANotificationCenter.swift in Sources */,
 				5AF0C4000000000000000012 /* SAConnectionInfoFavoriteTests.swift in Sources */,
 				5146E04A2F7A640C00C4C14A /* SAViewModeTests.swift in Sources */,
 				5146ADFD2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift in Sources */,
@@ -3441,6 +3446,7 @@
 				17E6415C0EF01EF6001BC333 /* SPTableStructure.m in Sources */,
 				1A8B582A25EEE15900DFC54A /* ByteCountFormatterExtension.swift in Sources */,
 				51C32B2E2FF6F90C007C2DD3 /* SAPrintUtility.swift in Sources */,
+				51BE43DD30174CC700AF389C /* SANotificationCenter.swift in Sources */,
 				1A071B8D254D983700246912 /* SPNSMutableDictionaryAdditions.m in Sources */,
 				50A9F8B119EAD4B90053E571 /* SPGotoDatabaseController.m in Sources */,
 				AA000001000000000000001B /* SAAboutView.swift in Sources */,
