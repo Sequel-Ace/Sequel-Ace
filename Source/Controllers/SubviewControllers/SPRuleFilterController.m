@@ -565,7 +565,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 			[check setTitle:NSLocalizedString(@"Enable Filter", @"table Content : rule filter editor : row : enable filter expression checkbox")];
 			[check setToolTip:NSLocalizedString(@"When unchecked this filter expression will not be applied", @"table Content : rule filter editor : row : enable filter expression checkbox : tooltip")];
 			// see +checkboxWithTitle:target:action: in 10.12+
-			[check setButtonType:NSSwitchButton];
+			[check setButtonType:NSButtonTypeSwitch];
 			[check setBezelStyle:NSBezelStyleRegularSquare];
 			[check setBordered:NO];
 			[check setImagePosition:NSImageOnly];

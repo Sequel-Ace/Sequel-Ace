@@ -75,7 +75,7 @@
 		NSData *pngData = nil;
 		NSBitmapImageRep *draggedImage = [[NSBitmapImageRep alloc] initWithData:[[sender draggingPasteboard] dataForType:@"NSTIFFPboardType"]];
 		if (draggedImage) {
-			pngData = [draggedImage representationUsingType:NSPNGFileType properties:@{}];
+			pngData = [draggedImage representationUsingType:NSBitmapImageFileTypePNG properties:@{}];
 		}
 		if (pngData) {
 			[delegateForUse processUpdatedImageData:pngData];
@@ -88,14 +88,26 @@
 		NSData *pngData = nil;
 		NSPICTImageRep *draggedImage = [[NSPICTImageRep alloc] initWithData:[[sender draggingPasteboard] dataForType:@"NSPICTPboardType"]];
 		if (draggedImage) {
-			NSImage *convertImage = [[NSImage alloc] initWithSize:[draggedImage size]];
-			[convertImage lockFocus];
-			[draggedImage drawInRect:[draggedImage boundingBox]];
-			NSBitmapImageRep *bitmapImageRep = [[NSBitmapImageRep alloc] initWithFocusedViewRect:[draggedImage boundingBox]];
+			// Render the PICT into a bitmap-backed context; replaces the
+			// deprecated lockFocus + initWithFocusedViewRect: snapshot.
+			NSRect bounds = [draggedImage boundingBox];
+			NSBitmapImageRep *bitmapImageRep = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL
+			                                                                           pixelsWide:(NSInteger)ceil(bounds.size.width)
+			                                                                           pixelsHigh:(NSInteger)ceil(bounds.size.height)
+			                                                                        bitsPerSample:8
+			                                                                      samplesPerPixel:4
+			                                                                             hasAlpha:YES
+			                                                                             isPlanar:NO
+			                                                                       colorSpaceName:NSCalibratedRGBColorSpace
+			                                                                          bytesPerRow:0
+			                                                                         bitsPerPixel:0];
 			if (bitmapImageRep) {
-				pngData = [bitmapImageRep representationUsingType:NSPNGFileType properties:@{}];
+				[NSGraphicsContext saveGraphicsState];
+				[NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithBitmapImageRep:bitmapImageRep]];
+				[draggedImage drawInRect:NSMakeRect(0, 0, bounds.size.width, bounds.size.height)];
+				[NSGraphicsContext restoreGraphicsState];
+				pngData = [bitmapImageRep representationUsingType:NSBitmapImageFileTypePNG properties:@{}];
 			}
-			[convertImage unlockFocus];
 		}
 		if (pngData) {
 			[delegateForUse processUpdatedImageData:pngData];

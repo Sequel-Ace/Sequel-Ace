@@ -1207,7 +1207,7 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	}
 
 	// This will scale the view to fit the page without centering it.
-	[[NSPrintInfo sharedPrintInfo] setHorizontalPagination:NSFitPagination];
+	[[NSPrintInfo sharedPrintInfo] setHorizontalPagination:NSPrintingPaginationModeFit];
 	[[NSPrintInfo sharedPrintInfo] setHorizontallyCentered:NO];
 	[[NSPrintInfo sharedPrintInfo] setVerticallyCentered:NO];
 
@@ -1306,8 +1306,8 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 
 	if (rtf)
 	{
-		[pb declareTypes:@[NSRTFPboardType] owner:self];
-		[pb setData:rtf forType:NSRTFPboardType];
+		[pb declareTypes:@[NSPasteboardTypeRTF] owner:self];
+		[pb setData:rtf forType:NSPasteboardTypeRTF];
 	}
 }
 

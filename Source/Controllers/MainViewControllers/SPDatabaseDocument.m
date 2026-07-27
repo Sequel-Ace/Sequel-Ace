@@ -3303,10 +3303,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         SPMainToolbarTableRelations,
         SPMainToolbarTableTriggers,
         SPMainToolbarUserManager,
-        NSToolbarCustomizeToolbarItemIdentifier,
         NSToolbarFlexibleSpaceItemIdentifier,
-        NSToolbarSpaceItemIdentifier,
-        NSToolbarSeparatorItemIdentifier
+        NSToolbarSpaceItemIdentifier
     ];
 }
 
