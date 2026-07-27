@@ -1093,10 +1093,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 	}
 
 	// Drag the array with schema paths
-	NSMutableData *arraydata = [[NSMutableData alloc] init];
-	NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:arraydata];
-	[archiver encodeObject:draggedItems forKey:@"itemdata"];
-	[archiver finishEncoding];
+	NSData *arraydata = [NSKeyedArchiver archivedDataWithRootObject:draggedItems requiringSecureCoding:YES error:nil];
 	[pboard setData:arraydata forType:SPNavigatorPasteboardDragType];
 
 	if([draggedItems count] == 1) {

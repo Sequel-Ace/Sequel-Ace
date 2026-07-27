@@ -3635,9 +3635,9 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 		NSUInteger characterIndex = [self characterIndexOfPoint:draggingLocation];
 		[self setSelectedRange:NSMakeRange(characterIndex,0)];
 
-		NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[pboard dataForType:SPNavigatorPasteboardDragType]];
-		NSArray *draggedItems = [[NSArray alloc] initWithArray:(NSArray *)[unarchiver decodeObjectForKey:@"itemdata"]];
-		[unarchiver finishDecoding];
+		NSArray *draggedItems = [NSKeyedUnarchiver unarchivedObjectOfClasses:[NSSet setWithObjects:[NSArray class], [NSString class], nil]
+		                                                             fromData:[pboard dataForType:SPNavigatorPasteboardDragType]
+		                                                                error:nil] ?: @[];
 
 		NSMutableString *dragString = [NSMutableString string];
 		NSMutableString *aPath = [NSMutableString string];

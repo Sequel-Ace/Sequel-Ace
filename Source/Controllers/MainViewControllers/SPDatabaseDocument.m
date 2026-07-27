@@ -2785,25 +2785,25 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     if (![[spfDocData_temp objectForKey:@"encrypted"] boolValue]) {
 
-        // Convert the content selection to encoded data
+        // Convert the content selection to encoded data. The non-secure keyed
+        // format (object under the "data" key) is the spf wire format older
+        // versions read and write — keep it byte-compatible.
         if ([[spfData objectForKey:@"session"] objectForKey:@"contentSelection"]) {
             NSMutableDictionary *sessionInfo = [NSMutableDictionary dictionaryWithDictionary:[spfData objectForKey:@"session"]];
-            NSMutableData *dataToEncode = [[NSMutableData alloc] init];
-            NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:dataToEncode];
+            NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initRequiringSecureCoding:NO];
             [archiver encodeObject:[sessionInfo objectForKey:@"contentSelection"] forKey:@"data"];
             [archiver finishEncoding];
-            [sessionInfo setObject:dataToEncode forKey:@"contentSelection"];
+            [sessionInfo setObject:[archiver encodedData] forKey:@"contentSelection"];
             [spfData setObject:sessionInfo forKey:@"session"];
         }
 
         [spfStructure setObject:spfData forKey:@"data"];
     }
     else {
-        NSMutableData *dataToEncrypt = [[NSMutableData alloc] init];
-        NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:dataToEncrypt];
+        NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initRequiringSecureCoding:NO];
         [archiver encodeObject:spfData forKey:@"data"];
         [archiver finishEncoding];
-        [spfStructure setObject:[dataToEncrypt dataEncryptedWithPassword:[spfDocData_temp objectForKey:@"e_string"]] forKey:@"data"];
+        [spfStructure setObject:[[archiver encodedData] dataEncryptedWithPassword:[spfDocData_temp objectForKey:@"e_string"]] forKey:@"data"];
     }
 
     // Convert to plist
@@ -3950,12 +3950,20 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if ([[spf objectForKey:@"data"] isKindOfClass:[NSDictionary class]])
         data = [NSMutableDictionary dictionaryWithDictionary:[spf objectForKey:@"data"]];
 
-    // If a content selection data key exists in the session, decode it
+    // If a content selection data key exists in the session, decode it.
+    // Existing spf files were written with non-secure keyed archiving, so the
+    // reader must keep accepting that format.
     if ([[[data objectForKey:@"session"] objectForKey:@"contentSelection"] isKindOfClass:[NSData class]]) {
         NSMutableDictionary *sessionInfo = [NSMutableDictionary dictionaryWithDictionary:[data objectForKey:@"session"]];
-        NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[sessionInfo objectForKey:@"contentSelection"]];
-        [sessionInfo setObject:[unarchiver decodeObjectForKey:@"data"] forKey:@"contentSelection"];
+        NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingFromData:[sessionInfo objectForKey:@"contentSelection"] error:nil];
+        unarchiver.requiresSecureCoding = NO;
+        id contentSelection = [unarchiver decodeObjectForKey:@"data"];
         [unarchiver finishDecoding];
+        if (contentSelection) {
+            [sessionInfo setObject:contentSelection forKey:@"contentSelection"];
+        } else {
+            [sessionInfo removeObjectForKey:@"contentSelection"];
+        }
         [data setObject:sessionInfo forKey:@"session"];
     }
 
@@ -3963,9 +3971,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         NSData *decryptdata = nil;
         decryptdata = [[NSMutableData alloc] initWithData:[(NSData *)[spf objectForKey:@"data"] dataDecryptedWithPassword:encryptpw]];
         if (decryptdata != nil && [decryptdata length]) {
-            NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:decryptdata];
-            data = [NSMutableDictionary dictionaryWithDictionary:(NSDictionary *)[unarchiver decodeObjectForKey:@"data"]];
+            NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingFromData:decryptdata error:nil];
+            unarchiver.requiresSecureCoding = NO;
+            NSDictionary *decoded = (NSDictionary *)[unarchiver decodeObjectForKey:@"data"];
             [unarchiver finishDecoding];
+            // Leave data nil on failure so the wrong-format/password alert below fires.
+            data = decoded ? [NSMutableDictionary dictionaryWithDictionary:decoded] : nil;
         }
         if (data == nil) {
             [NSAlert createWarningAlertWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Error while reading connection data file", @"error while reading connection data file")] message:NSLocalizedString(@"Wrong data format or password.", @"wrong data format or password") callback:nil];
