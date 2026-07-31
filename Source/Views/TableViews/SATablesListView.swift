@@ -20,6 +20,9 @@ import AppKit
     private var feedbackOverlay: NSVisualEffectView?
     private var feedbackLabel: NSTextField?
     private var feedbackHideTimer: Timer?
+    // Bumped on every show so a fade-out finishing late can tell its hide is
+    // stale and must not conceal feedback that was re-shown mid-animation.
+    private var feedbackVisibilityGeneration = 0
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -83,6 +86,8 @@ import AppKit
     private func showSearchFeedback(_ text: String, matched: Bool) {
         guard let overlay = ensureFeedbackOverlay(), let label = feedbackLabel else { return }
 
+        feedbackVisibilityGeneration += 1
+
         label.stringValue = text
         label.textColor = matched ? .labelColor : .systemRed
 
@@ -98,11 +103,14 @@ import AppKit
     private func hideSearchFeedback() {
         guard let overlay = feedbackOverlay, !overlay.isHidden else { return }
 
+        let visibilityGeneration = feedbackVisibilityGeneration
+
         NSAnimationContext.runAnimationGroup({ context in
             context.duration = 0.25
             overlay.animator().alphaValue = 0
-        }, completionHandler: {
-            overlay.isHidden = true
+        }, completionHandler: { [weak self, weak overlay] in
+            guard let self, self.feedbackVisibilityGeneration == visibilityGeneration else { return }
+            overlay?.isHidden = true
         })
     }
 
