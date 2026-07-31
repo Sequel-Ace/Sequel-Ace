@@ -28,15 +28,26 @@ import AppKit
     }
 
     override func keyDown(with event: NSEvent) {
-        if handleTypeAhead(event) {
+        // Escape cancels an in-progress search (keyCode 53, as in SPTableView),
+        // then keeps its default behaviour via super.
+        if event.keyCode == 53 {
+            cancelTypeAhead()
+        }
+        else if handleTypeAhead(event) {
             return
         }
         super.keyDown(with: event)
     }
 
+    private func cancelTypeAhead() {
+        typeAhead.reset()
+        feedbackHideTimer?.invalidate()
+        hideSearchFeedback()
+    }
+
     /// Returns true if the event was consumed as part of a type-ahead search.
     private func handleTypeAhead(_ event: NSEvent) -> Bool {
-        guard event.modifierFlags.intersection([.command, .control, .function]).isEmpty,
+        guard event.modifierFlags.isDisjoint(with: [.command, .control, .function]),
               let characters = event.characters,
               !characters.isEmpty,
               characters.unicodeScalars.allSatisfy({ isSearchableScalar($0) })
