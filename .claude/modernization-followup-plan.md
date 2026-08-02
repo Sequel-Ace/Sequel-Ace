@@ -1,5 +1,10 @@
 # Sequel Ace Modernization — Follow-up Plan
 
+> Sibling tracks (July 2026): the WebView/deprecation work and the build-warning
+> burn-down live in `.claude/warnings-elimination-plan.md` (steps 0-4 done:
+> print flows on WKWebView, hygiene sweep, ivar-shadow renames, nullability
+> audit, keyed-archiver migration). Agent ground rules live in `AGENTS.md`.
+
 ## What's been done (decoupling branch)
 
 32 commits, 28 files changed, +2630/-959 lines. PR: Sequel-Ace/Sequel-Ace#2375

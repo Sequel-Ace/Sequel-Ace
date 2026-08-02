@@ -286,6 +286,7 @@
 		51BC14F825BE135500F1CDC9 /* SPWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC14F725BE135500F1CDC9 /* SPWindowController.swift */; };
 		51BC150125BE138700F1CDC9 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 51BC150025BE138700F1CDC9 /* SnapKit */; };
 		51BC150625BE13C400F1CDC9 /* NSViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */; };
+		51BE43D830174A8000AF389C /* SAKeyedArchiveCompatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BE43D730174A8000AF389C /* SAKeyedArchiveCompatTests.swift */; };
 		51C32B2E2FF6F90C007C2DD3 /* SAPrintUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C32B2D2FF6F90C007C2DD3 /* SAPrintUtility.swift */; };
 		51C397A12FF7BB0100C4C14A /* SAPrintUtilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C397A22FF7BB0100C4C14A /* SAPrintUtilityTests.swift */; };
 		51C397A32FF7BB0100C4C14A /* SAPrintUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C32B2D2FF6F90C007C2DD3 /* SAPrintUtility.swift */; };
@@ -1101,6 +1102,7 @@
 		51BB84042FDE000200C4C14A /* SAForeignKeyReferenceRuleSupportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAForeignKeyReferenceRuleSupportTests.swift; sourceTree = "<group>"; };
 		51BC14F725BE135500F1CDC9 /* SPWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPWindowController.swift; sourceTree = "<group>"; };
 		51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSViewExtension.swift; sourceTree = "<group>"; };
+		51BE43D730174A8000AF389C /* SAKeyedArchiveCompatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAKeyedArchiveCompatTests.swift; sourceTree = "<group>"; };
 		51C04C98261E4CF5001F5554 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51C04C9D261E4DB6001F5554 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/Localizable.strings; sourceTree = "<group>"; };
 		51C32B2D2FF6F90C007C2DD3 /* SAPrintUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAPrintUtility.swift; sourceTree = "<group>"; };
@@ -2516,7 +2518,7 @@
 			path = MGTemplateEngine;
 			sourceTree = "<group>";
 		};
-		2A37F4AAFDCFA73011CA2CEA = {
+		2A37F4AAFDCFA73011CA2CEA /* sequel-pro */ = {
 			isa = PBXGroup;
 			children = (
 				518E02F227B91FBC007973E3 /* Entitlements */,
@@ -2636,6 +2638,7 @@
 				51EF3E6A2FDC251800EFFF09 /* SAConnectionFormModelTests.swift */,
 				51EA02522FDFF02C00DF6A7B /* SAArchivingTests.swift */,
 				51C397A22FF7BB0100C4C14A /* SAPrintUtilityTests.swift */,
+				51BE43D730174A8000AF389C /* SAKeyedArchiveCompatTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -3004,7 +3007,7 @@
 				cs,
 				eo,
 			);
-			mainGroup = 2A37F4AAFDCFA73011CA2CEA;
+			mainGroup = 2A37F4AAFDCFA73011CA2CEA /* sequel-pro */;
 			packageReferences = (
 				51D9527425AE2B5300574BEB /* XCRemoteSwiftPackageReference "fmdb" */,
 				51BC14FF25BE138700F1CDC9 /* XCRemoteSwiftPackageReference "SnapKit" */,
@@ -3265,6 +3268,7 @@
 				517BFF442F7DA38F00F6D812 /* SAConnectionServiceTests.swift in Sources */,
 				1A9498DE2551776D000BC793 /* DateFormatterExtension.swift in Sources */,
 				C812F06F0D4A95968C1B0154 /* SABundleVersionUpdater.swift in Sources */,
+				51BE43D830174A8000AF389C /* SAKeyedArchiveCompatTests.swift in Sources */,
 				B6E4019A9F1C4A8AA0B3D102 /* SALocalNetworkPermissionChecker.swift in Sources */,
 				51C6288C24D196E8006491E9 /* StringExtension.swift in Sources */,
 				1A8B53A52584650700526DED /* SPURLAdditions.m in Sources */,

@@ -588,10 +588,7 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 
 	[pboard declareTypes:pboardTypes owner:nil];
 
-	NSMutableData *indexdata = [[NSMutableData alloc] init];
-	NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:indexdata];
-	[archiver encodeObject:rows forKey:@"indexdata"];
-	[archiver finishEncoding];
+	NSData *indexdata = [NSKeyedArchiver archivedDataWithRootObject:rows requiringSecureCoding:YES error:nil];
 	[pboard setData:indexdata forType:SPContentFilterPasteboardDragType];
 
 	return YES;
@@ -624,9 +621,10 @@ static NSString *SPExportFilterAction = @"SPExportFilter";
 
 	if(row < 1) return NO;
 
-	NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:[[info draggingPasteboard] dataForType:SPContentFilterPasteboardDragType]];
-	NSIndexSet *draggedIndexes = [[NSIndexSet alloc] initWithIndexSet:(NSIndexSet *)[unarchiver decodeObjectForKey:@"indexdata"]];
-	[unarchiver finishDecoding];
+	NSIndexSet *draggedIndexes = [NSKeyedUnarchiver unarchivedObjectOfClass:[NSIndexSet class]
+	                                                               fromData:[[info draggingPasteboard] dataForType:SPContentFilterPasteboardDragType]
+	                                                                  error:nil];
+	if (!draggedIndexes) return NO;
 
 	// TODO: still rely on a NSArray but in the future rewrite it to use the NSIndexSet directly
 	NSMutableArray *draggedRows = [[NSMutableArray alloc] initWithCapacity:1];

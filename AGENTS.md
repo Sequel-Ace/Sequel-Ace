@@ -40,12 +40,17 @@ Deployment target is macOS 12+.
   `WebView` island is `SPHelpViewerController` (migration planned).
 - **Persisted-format compatibility:** favorites plist, `.spf` documents, and
   NSUserDefaults blobs written by old versions must stay readable. When
-  touching serialization (e.g. migrating the remaining deprecated
-  `NSKeyedArchiver initForWritingWithMutableData:` sites), prove old data
-  still decodes.
-- Known remaining deprecation groups (each deserves its own PR):
-  `NSUserNotification` → UserNotifications.framework (4 files), and the
-  deprecated `NSKeyedArchiver`/`NSKeyedUnarchiver` initializers listed above.
+  touching serialization, prove old data still decodes with a fixture test —
+  see `UnitTests/SAKeyedArchiveCompatTests.swift` for the pattern (embedded
+  legacy blob + wire-format assertion protecting old readers).
+- **Keyed archiving:** use `archivedDataWithRootObject:requiringSecureCoding:`
+  / `unarchivedObjectOfClass(es):fromData:` for session-local data (drag
+  pasteboards etc.); the `.spf` session paths in SPDatabaseDocument
+  deliberately use non-secure keyed archiving under the `"data"` key — that is
+  the cross-version wire format, don't "upgrade" it without a migration plan.
+- Known remaining deprecation group (deserves its own PR):
+  `NSUserNotification` → UserNotifications.framework (4 files). The wider
+  warning burn-down is tracked in `.claude/warnings-elimination-plan.md`.
 
 ## Repo layout (abridged)
 
