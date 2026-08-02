@@ -727,7 +727,9 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	if(row < 0) return NO; //why is that even a signed int when all "indexes" are unsigned!?
 	
 	NSPasteboard *pboard = [info draggingPasteboard];
-	NSArray *draggedItems = [NSKeyedUnarchiver unarchiveObjectWithData:[pboard dataForType:SPSSLCipherPboardTypeName]];
+	NSArray *draggedItems = [NSKeyedUnarchiver unarchivedObjectOfClasses:[NSSet setWithObjects:[NSArray class], [NSString class], nil]
+	                                                             fromData:[pboard dataForType:SPSSLCipherPboardTypeName]
+	                                                                error:nil];
 	
 	NSUInteger nextInsert = row;
 	for (NSString *item in draggedItems) {
@@ -771,7 +773,7 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 		[items addObject:[sslCiphers objectAtIndex:idx]];
 	}];
 	
-	NSData *arch = [NSKeyedArchiver archivedDataWithRootObject:items];
+	NSData *arch = [NSKeyedArchiver archivedDataWithRootObject:items requiringSecureCoding:YES error:nil];
 	[pboard declareTypes:@[SPSSLCipherPboardTypeName] owner:self];
 	[pboard setData:arch forType:SPSSLCipherPboardTypeName];
 	return YES;
