@@ -11,8 +11,8 @@ import XCTest
 
 // MARK: - Connection Info Parameter Mapping Tests
 
-/// Tests that SAConnectionInfoObjC correctly stores and retrieves all
-/// connection parameters that SAConnectionService will consume.
+/// Tests connection parameter storage and the pure Swift mappings that
+/// SAConnectionService consumes.
 final class SAConnectionInfoMappingTests: XCTestCase {
 
     func testTCPIPInfoSetup() {
@@ -62,18 +62,33 @@ final class SAConnectionInfoMappingTests: XCTestCase {
         XCTAssertEqual(info.sshPassword, "sshpass")
     }
 
-    func testEmptySSHPortDefersToSSHConfiguration() {
-        let info = SAConnectionInfoObjC()
-        info.sshPort = ""
+    func testBlankSSHPortDefersToSSHConfiguration() {
+        for sshPort in ["", " \n\t "] {
+            var info = SAConnectionInfo()
+            info.sshPort = sshPort
 
-        XCTAssertEqual(info.sshPortOverride, 0)
+            XCTAssertEqual(info.sshPortOverride, 0, "SSH port: \(sshPort.debugDescription)")
+        }
     }
 
-    func testExplicitSSHPortOverridesSSHConfiguration() {
-        let info = SAConnectionInfoObjC()
-        info.sshPort = "2222"
+    func testValidSSHPortOverridesSSHConfiguration() {
+        let ports = [("1", 1), ("2222", 2222), (" 2222 ", 2222), ("65535", 65535)]
 
-        XCTAssertEqual(info.sshPortOverride, 2222)
+        for (sshPort, expectedPort) in ports {
+            var info = SAConnectionInfo()
+            info.sshPort = sshPort
+
+            XCTAssertEqual(info.sshPortOverride, expectedPort, "SSH port: \(sshPort)")
+        }
+    }
+
+    func testInvalidSSHPortIsRejected() {
+        for sshPort in ["0", "-1", "65536", "not-a-port"] {
+            var info = SAConnectionInfo()
+            info.sshPort = sshPort
+
+            XCTAssertNil(info.sshPortOverride, "SSH port: \(sshPort)")
+        }
     }
 
     func testAWSIAMInfoSetup() {
