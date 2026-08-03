@@ -172,6 +172,18 @@ final class SARuleFilterVisibilityPolicyTests: XCTestCase {
     /// model and reapplies `visible`, but that must not create a new rule.
     func testReapplyingVisibleStateDoesNotAddStarterRule() {
         XCTAssertFalse(SARuleFilterVisibilityPolicy.shouldAddStarterRule(
+            visibilityWasApplied: true,
+            wasVisible: true,
+            willBeVisible: true,
+            editorIsEmpty: true
+        ))
+    }
+
+    /// The saved preference is desired state, not proof that visibility has
+    /// already been applied to a table after launch.
+    func testApplyingSavedVisiblePreferenceAddsStarterRule() {
+        XCTAssertTrue(SARuleFilterVisibilityPolicy.shouldAddStarterRule(
+            visibilityWasApplied: false,
             wasVisible: true,
             willBeVisible: true,
             editorIsEmpty: true
@@ -180,6 +192,7 @@ final class SARuleFilterVisibilityPolicyTests: XCTestCase {
 
     func testOpeningEmptyEditorAddsStarterRule() {
         XCTAssertTrue(SARuleFilterVisibilityPolicy.shouldAddStarterRule(
+            visibilityWasApplied: true,
             wasVisible: false,
             willBeVisible: true,
             editorIsEmpty: true
@@ -188,6 +201,7 @@ final class SARuleFilterVisibilityPolicyTests: XCTestCase {
 
     func testOpeningPopulatedEditorDoesNotAddStarterRule() {
         XCTAssertFalse(SARuleFilterVisibilityPolicy.shouldAddStarterRule(
+            visibilityWasApplied: true,
             wasVisible: false,
             willBeVisible: true,
             editorIsEmpty: false
@@ -196,6 +210,7 @@ final class SARuleFilterVisibilityPolicyTests: XCTestCase {
 
     func testHidingEditorDoesNotAddStarterRule() {
         XCTAssertFalse(SARuleFilterVisibilityPolicy.shouldAddStarterRule(
+            visibilityWasApplied: true,
             wasVisible: true,
             willBeVisible: false,
             editorIsEmpty: true

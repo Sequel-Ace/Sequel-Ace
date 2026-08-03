@@ -167,6 +167,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 		prefs = [NSUserDefaults standardUserDefaults];
 
 		showFilterRuleEditor = [prefs boolForKey:SPRuleFilterEditorLastVisibilityChoice];
+		ruleEditorVisibilityHasBeenApplied = NO;
 
 		usedQuery = @"";
 
@@ -1404,18 +1405,22 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 - (void)setRuleEditorVisible:(BOOL)show animate:(BOOL)animate
 {
+	BOOL visibilityWasApplied = ruleEditorVisibilityHasBeenApplied;
 	BOOL wasVisible = showFilterRuleEditor;
 	BOOL editorIsEmpty = [ruleFilterController isEmpty];
-	BOOL shouldAddStarterRule = [SARuleFilterVisibilityPolicy shouldAddStarterRuleWithWasVisible:wasVisible
-	                                                                                 willBeVisible:show
-	                                                                                 editorIsEmpty:editorIsEmpty];
+	BOOL shouldAddStarterRule = [SARuleFilterVisibilityPolicy shouldAddStarterRuleWithVisibilityWasApplied:visibilityWasApplied
+	                                                                                              wasVisible:wasVisible
+	                                                                                           willBeVisible:show
+	                                                                                           editorIsEmpty:editorIsEmpty];
+	showFilterRuleEditor = show;
+	ruleEditorVisibilityHasBeenApplied = YES;
 
 	// we can't change the state of the button here, because the mouse click already changed it
-	if((showFilterRuleEditor = show)) {
+	if(showFilterRuleEditor) {
 		[ruleFilterController setEnabled:YES];
-		// Only an actual hidden-to-visible transition should seed the editor.
-		// Table refreshes reapply the already-visible state after rebuilding
-		// columns; treating that as a fresh open inserts a spurious empty row.
+		// The first application of a saved visible preference and an actual
+		// hidden-to-visible transition should seed the editor. Table refreshes
+		// only reapply the already-visible state and must remain idempotent.
 		if(shouldAddStarterRule) {
 			[[ruleFilterController onMainThread] addFilterExpression];
 			// the sizing will be updated automatically by adding a row

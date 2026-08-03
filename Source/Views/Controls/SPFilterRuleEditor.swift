@@ -36,16 +36,19 @@ import Cocoa
 
 /// Keeps the rule editor's visibility setter free of model mutations when it
 /// is only reapplying an already-visible state during table reloads.
-@objcMembers public final class SARuleFilterVisibilityPolicy: NSObject {
-    /// A starter rule belongs to an explicit hidden-to-visible transition.
-    /// Reapplying `visible` while rebuilding the current table must be
-    /// idempotent, even when the transiently rebuilt rule model is empty.
+@objc public final class SARuleFilterVisibilityPolicy: NSObject {
+    /// A starter rule belongs to the first application of a saved visible
+    /// preference or an explicit hidden-to-visible transition. Reapplying
+    /// `visible` while rebuilding the current table must be idempotent, even
+    /// when the transiently rebuilt rule model is empty.
+    @objc(shouldAddStarterRuleWithVisibilityWasApplied:wasVisible:willBeVisible:editorIsEmpty:)
     public static func shouldAddStarterRule(
+        visibilityWasApplied: Bool,
         wasVisible: Bool,
         willBeVisible: Bool,
         editorIsEmpty: Bool
     ) -> Bool {
-        return !wasVisible && willBeVisible && editorIsEmpty
+        return (!visibilityWasApplied || !wasVisible) && willBeVisible && editorIsEmpty
     }
 }
 
