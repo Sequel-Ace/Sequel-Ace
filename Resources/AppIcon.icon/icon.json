@@ -43,8 +43,8 @@
       "layers" : [
         {
           "glass" : true,
-          "image-name" : "sequel-ace-logo 2.svg",
-          "name" : "sequel-ace-logo 2",
+          "image-name" : "sequel-ace-logo.svg",
+          "name" : "sequel-ace-logo",
           "position" : {
             "scale" : 1.22,
             "translation-in-points" : [
