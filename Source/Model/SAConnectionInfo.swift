@@ -357,6 +357,11 @@ struct SAConnectionInfo {
         set { info.sshPort = newValue }
     }
 
+    /// The explicit command-line port override, or zero to defer to the SSH configuration.
+    var sshPortOverride: Int {
+        Int(info.sshPort) ?? 0
+    }
+
     @objc var sshRemoteSocketPath: String {
         get { info.sshRemoteSocketPath }
         set { info.sshRemoteSocketPath = newValue }

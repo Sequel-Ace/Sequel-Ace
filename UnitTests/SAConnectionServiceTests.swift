@@ -62,6 +62,20 @@ final class SAConnectionInfoMappingTests: XCTestCase {
         XCTAssertEqual(info.sshPassword, "sshpass")
     }
 
+    func testEmptySSHPortDefersToSSHConfiguration() {
+        let info = SAConnectionInfoObjC()
+        info.sshPort = ""
+
+        XCTAssertEqual(info.sshPortOverride, 0)
+    }
+
+    func testExplicitSSHPortOverridesSSHConfiguration() {
+        let info = SAConnectionInfoObjC()
+        info.sshPort = "2222"
+
+        XCTAssertEqual(info.sshPortOverride, 2222)
+    }
+
     func testAWSIAMInfoSetup() {
         let info = SAConnectionInfoObjC()
         info.type = .awsIAM

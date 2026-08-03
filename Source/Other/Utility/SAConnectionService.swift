@@ -455,7 +455,7 @@ import Foundation
         attemptID: UInt64,
         completion: @escaping (SPSSHTunnel?, String?) -> Void
     ) {
-        let sshPort = Int(info.sshPort) ?? 22
+        let sshPort = info.sshPortOverride
         let remoteSocketPath = info.sshRemoteSocketPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let useRemoteSocket = !remoteSocketPath.isEmpty
         let mysqlPort = useRemoteSocket ? 0 : (Int(info.port) ?? 3306)
