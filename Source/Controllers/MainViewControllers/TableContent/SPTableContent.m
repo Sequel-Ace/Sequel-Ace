@@ -109,6 +109,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (void)filterRuleEditorPreferredSizeChanged:(NSNotification *)notification;
 - (void)contentViewSizeChanged:(NSNotification *)notification;
 - (void)setRuleEditorVisible:(BOOL)show animate:(BOOL)animate;
+- (void)setRuleEditorVisible:(BOOL)show animate:(BOOL)animate tableChanged:(BOOL)tableChanged;
 - (BOOL)_saveRowToTableWithQuery:(NSString*)queryString;
 - (void)_setViewBlankState;
 
@@ -405,6 +406,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	} else {
 		newTableName = [tableDetails objectForKey:@"name"];
 	}
+	BOOL tableChanged = ![selectedTable isEqualToString:newTableName];
 
 	// Ensure the pagination view hides itself if visible, after a tiny delay for smoothness
 	[self performSelector:@selector(setPaginationViewVisibility:) withObject:nil afterDelay:0.1];
@@ -414,7 +416,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 	// Check the supplied table name.  If it matches the old one, a reload is being performed;
 	// reload the data in-place to maintain table state if possible.
-	if ([selectedTable isEqualToString:newTableName]) {
+	if (!tableChanged) {
 		previousTableRowsCount = tableRowsCount;
 
 		// Store the column widths for later restoration
@@ -539,11 +541,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[ruleFilterController restoreSerializedFilters:filtersToRestore];
 	// hide/show the rule filter editor, based on its previous state (so that it stays visible when switching tables, if someone has enabled it and vice versa)
 	if (showFilterRuleEditor) {
-		[self setRuleEditorVisible:YES animate:YES];
+		[self setRuleEditorVisible:YES animate:YES tableChanged:tableChanged];
 		[toggleRuleFilterButton setState:NSControlStateValueOn];
 	}
 	else {
-		[self setRuleEditorVisible:NO animate:YES];
+		[self setRuleEditorVisible:NO animate:YES tableChanged:tableChanged];
 		[toggleRuleFilterButton setState:NSControlStateValueOff];
 	}
 	[ruleFilterController setEnabled:enableInteraction];
@@ -1405,12 +1407,18 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 - (void)setRuleEditorVisible:(BOOL)show animate:(BOOL)animate
 {
+	[self setRuleEditorVisible:show animate:animate tableChanged:NO];
+}
+
+- (void)setRuleEditorVisible:(BOOL)show animate:(BOOL)animate tableChanged:(BOOL)tableChanged
+{
 	BOOL visibilityWasApplied = ruleEditorVisibilityHasBeenApplied;
 	BOOL wasVisible = showFilterRuleEditor;
 	BOOL editorIsEmpty = [ruleFilterController isEmpty];
 	BOOL shouldAddStarterRule = [SARuleFilterVisibilityPolicy shouldAddStarterRuleWithVisibilityWasApplied:visibilityWasApplied
 	                                                                                              wasVisible:wasVisible
 	                                                                                           willBeVisible:show
+	                                                                                             tableChanged:tableChanged
 	                                                                                           editorIsEmpty:editorIsEmpty];
 	showFilterRuleEditor = show;
 	ruleEditorVisibilityHasBeenApplied = YES;
@@ -1418,8 +1426,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	// we can't change the state of the button here, because the mouse click already changed it
 	if(showFilterRuleEditor) {
 		[ruleFilterController setEnabled:YES];
-		// The first application of a saved visible preference and an actual
-		// hidden-to-visible transition should seed the editor. Table refreshes
+		// First application, an actual hidden-to-visible transition, and a
+		// switch to another table should seed the editor. Same-table refreshes
 		// only reapply the already-visible state and must remain idempotent.
 		if(shouldAddStarterRule) {
 			[[ruleFilterController onMainThread] addFilterExpression];

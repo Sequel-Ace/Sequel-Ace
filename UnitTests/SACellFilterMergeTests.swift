@@ -175,6 +175,17 @@ final class SARuleFilterVisibilityPolicyTests: XCTestCase {
             visibilityWasApplied: true,
             wasVisible: true,
             willBeVisible: true,
+            tableChanged: false,
+            editorIsEmpty: true
+        ))
+    }
+
+    func testSwitchingTablesWhileVisibleAddsStarterRule() {
+        XCTAssertTrue(SARuleFilterVisibilityPolicy.shouldAddStarterRule(
+            visibilityWasApplied: true,
+            wasVisible: true,
+            willBeVisible: true,
+            tableChanged: true,
             editorIsEmpty: true
         ))
     }
@@ -186,6 +197,7 @@ final class SARuleFilterVisibilityPolicyTests: XCTestCase {
             visibilityWasApplied: false,
             wasVisible: true,
             willBeVisible: true,
+            tableChanged: true,
             editorIsEmpty: true
         ))
     }
@@ -195,6 +207,7 @@ final class SARuleFilterVisibilityPolicyTests: XCTestCase {
             visibilityWasApplied: true,
             wasVisible: false,
             willBeVisible: true,
+            tableChanged: false,
             editorIsEmpty: true
         ))
     }
@@ -204,6 +217,7 @@ final class SARuleFilterVisibilityPolicyTests: XCTestCase {
             visibilityWasApplied: true,
             wasVisible: false,
             willBeVisible: true,
+            tableChanged: true,
             editorIsEmpty: false
         ))
     }
@@ -213,6 +227,7 @@ final class SARuleFilterVisibilityPolicyTests: XCTestCase {
             visibilityWasApplied: true,
             wasVisible: true,
             willBeVisible: false,
+            tableChanged: true,
             editorIsEmpty: true
         ))
     }
