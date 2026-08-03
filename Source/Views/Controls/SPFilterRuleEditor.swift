@@ -34,6 +34,21 @@ import Cocoa
     func addEmptyFilterRow()
 }
 
+/// Keeps the rule editor's visibility setter free of model mutations when it
+/// is only reapplying an already-visible state during table reloads.
+@objcMembers public final class SARuleFilterVisibilityPolicy: NSObject {
+    /// A starter rule belongs to an explicit hidden-to-visible transition.
+    /// Reapplying `visible` while rebuilding the current table must be
+    /// idempotent, even when the transiently rebuilt rule model is empty.
+    public static func shouldAddStarterRule(
+        wasVisible: Bool,
+        willBeVisible: Bool,
+        editorIsEmpty: Bool
+    ) -> Bool {
+        return !wasVisible && willBeVisible && editorIsEmpty
+    }
+}
+
 /// `NSRuleEditor` subclass that extends the content-tab filter with
 /// drag-and-drop support for the
 /// `SPCellValuePasteboard.pasteboardRowTypeRaw` payload. Dropping a

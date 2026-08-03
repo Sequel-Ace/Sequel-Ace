@@ -1404,11 +1404,19 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 - (void)setRuleEditorVisible:(BOOL)show animate:(BOOL)animate
 {
+	BOOL wasVisible = showFilterRuleEditor;
+	BOOL editorIsEmpty = [ruleFilterController isEmpty];
+	BOOL shouldAddStarterRule = [SARuleFilterVisibilityPolicy shouldAddStarterRuleWithWasVisible:wasVisible
+	                                                                                 willBeVisible:show
+	                                                                                 editorIsEmpty:editorIsEmpty];
+
 	// we can't change the state of the button here, because the mouse click already changed it
 	if((showFilterRuleEditor = show)) {
 		[ruleFilterController setEnabled:YES];
-		// if it was the user who enabled the filter (indicated by the animation) add an empty row by default
-		if([ruleFilterController isEmpty]) {
+		// Only an actual hidden-to-visible transition should seed the editor.
+		// Table refreshes reapply the already-visible state after rebuilding
+		// columns; treating that as a fresh open inserts a spurious empty row.
+		if(shouldAddStarterRule) {
 			[[ruleFilterController onMainThread] addFilterExpression];
 			// the sizing will be updated automatically by adding a row
 		}

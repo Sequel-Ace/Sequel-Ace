@@ -165,3 +165,40 @@ final class SACellFilterMergeTests: XCTestCase {
         return (filter["children"] as? [[String: Any]])?.map { $0 as NSDictionary }
     }
 }
+
+final class SARuleFilterVisibilityPolicyTests: XCTestCase {
+
+    /// Regression coverage for #2516: refreshing a table rebuilds the filter
+    /// model and reapplies `visible`, but that must not create a new rule.
+    func testReapplyingVisibleStateDoesNotAddStarterRule() {
+        XCTAssertFalse(SARuleFilterVisibilityPolicy.shouldAddStarterRule(
+            wasVisible: true,
+            willBeVisible: true,
+            editorIsEmpty: true
+        ))
+    }
+
+    func testOpeningEmptyEditorAddsStarterRule() {
+        XCTAssertTrue(SARuleFilterVisibilityPolicy.shouldAddStarterRule(
+            wasVisible: false,
+            willBeVisible: true,
+            editorIsEmpty: true
+        ))
+    }
+
+    func testOpeningPopulatedEditorDoesNotAddStarterRule() {
+        XCTAssertFalse(SARuleFilterVisibilityPolicy.shouldAddStarterRule(
+            wasVisible: false,
+            willBeVisible: true,
+            editorIsEmpty: false
+        ))
+    }
+
+    func testHidingEditorDoesNotAddStarterRule() {
+        XCTAssertFalse(SARuleFilterVisibilityPolicy.shouldAddStarterRule(
+            wasVisible: true,
+            willBeVisible: false,
+            editorIsEmpty: true
+        ))
+    }
+}
