@@ -202,6 +202,18 @@ final class SARuleFilterVisibilityPolicyTests: XCTestCase {
         ))
     }
 
+    /// Clearing the view invalidates the previous visibility application even
+    /// if the same table name is selected again afterward.
+    func testReselectingTableAfterBlankStateAddsStarterRule() {
+        XCTAssertTrue(SARuleFilterVisibilityPolicy.shouldAddStarterRule(
+            visibilityWasApplied: false,
+            wasVisible: true,
+            willBeVisible: true,
+            tableChanged: false,
+            editorIsEmpty: true
+        ))
+    }
+
     func testOpeningEmptyEditorAddsStarterRule() {
         XCTAssertTrue(SARuleFilterVisibilityPolicy.shouldAddStarterRule(
             visibilityWasApplied: true,

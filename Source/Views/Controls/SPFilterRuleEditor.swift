@@ -38,9 +38,10 @@ import Cocoa
 /// is only reapplying an already-visible state during table reloads.
 @objc public final class SARuleFilterVisibilityPolicy: NSObject {
     /// A starter rule belongs to the first application of a saved visible
-    /// preference, an explicit hidden-to-visible transition, or a switch to
-    /// another table. Reapplying `visible` while rebuilding the current table
-    /// must be idempotent, even when the transiently rebuilt model is empty.
+    /// preference (including after a blank-state reset), an explicit
+    /// hidden-to-visible transition, or a switch to another table. Reapplying
+    /// `visible` while rebuilding the current table must be idempotent, even
+    /// when the transiently rebuilt model is empty.
     @objc(shouldAddStarterRuleWithVisibilityWasApplied:wasVisible:willBeVisible:tableChanged:editorIsEmpty:)
     public static func shouldAddStarterRule(
         visibilityWasApplied: Bool,

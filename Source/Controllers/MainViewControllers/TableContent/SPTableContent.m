@@ -363,6 +363,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[toggleRuleFilterButton setEnabled:NO];
 	[toggleRuleFilterButton setState:NSControlStateValueOff];
 	[ruleFilterController setColumns:nil];
+	// The next valid table needs an initial visibility application even when it
+	// has the same name as the table whose model was just cleared.
+	ruleEditorVisibilityHasBeenApplied = NO;
 
 	// Disable pagination
 	[paginationPreviousButton setEnabled:NO];
