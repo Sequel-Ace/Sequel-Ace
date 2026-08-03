@@ -94,8 +94,12 @@ struct SAConnectionInfo {
     /// OpenSSH can resolve the port from its configuration; invalid values fail.
     var sshPortOverride: Int? {
         let trimmedPort = sshPort.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedPort.isEmpty else { return 0 }
-        guard let port = Int(trimmedPort), (1...65535).contains(port) else { return nil }
+        guard !trimmedPort.isEmpty else {
+            return 0
+        }
+        guard let port = Int(trimmedPort), (1...65535).contains(port) else {
+            return nil
+        }
         return port
     }
 
