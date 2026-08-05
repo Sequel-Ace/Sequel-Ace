@@ -238,18 +238,69 @@ private final class SARecordViewOverlayView: NSView {
     }
 }
 
+@objc final class SARecordViewToolbarSupport: NSObject {
+    private static let contentIdentifier = "SwitchToTableContentToolbarItemIdentifier"
+    private static let queryIdentifier = "SwitchToRunQueryToolbarItemIdentifier"
+    private static let migrationDefaultsKey = "SARecordViewToolbarItemMigrationV1"
+
+    @objc static var itemIdentifier: String {
+        "RecordViewToolbarItemIdentifier"
+    }
+
+    @objc(isEnabledForSelectedIdentifier:)
+    static func isEnabled(for selectedIdentifier: String?) -> Bool {
+        selectedIdentifier == contentIdentifier || selectedIdentifier == queryIdentifier
+    }
+
+    static func insertionIndex(in identifiers: [String]) -> Int {
+        identifiers.firstIndex(of: queryIdentifier).map { $0 + 1 } ?? identifiers.count
+    }
+
+    static func shouldAutoInsert(hasMigrated: Bool, containsItem: Bool) -> Bool {
+        !hasMigrated && !containsItem
+    }
+
+    @objc(makeToolbarItemWithTarget:)
+    static func makeToolbarItem(target: AnyObject) -> NSToolbarItem {
+        let item = NSToolbarItem(itemIdentifier: NSToolbarItem.Identifier(itemIdentifier))
+        item.label = NSLocalizedString("Record View", comment: "record view toolbar item label")
+        item.paletteLabel = item.label
+        item.toolTip = NSLocalizedString("Toggle Record View", comment: "record view toolbar item tooltip")
+        item.image = NSImage(systemSymbolName: "sidebar.right", accessibilityDescription: nil)
+            ?? NSImage(named: NSImage.Name("NSListViewTemplate"))
+        item.target = target
+        item.action = NSSelectorFromString("toggleRecordView:")
+        return item
+    }
+
+    @objc(installIfNeededInToolbar:defaults:)
+    static func installIfNeeded(in toolbar: NSToolbar, defaults: UserDefaults) {
+        let identifiers = toolbar.items.map { $0.itemIdentifier.rawValue }
+        let hasMigrated = defaults.bool(forKey: migrationDefaultsKey)
+
+        if shouldAutoInsert(hasMigrated: hasMigrated, containsItem: identifiers.contains(itemIdentifier)) {
+            toolbar.insertItem(
+                withItemIdentifier: NSToolbarItem.Identifier(itemIdentifier),
+                at: insertionIndex(in: identifiers)
+            )
+        }
+
+        if !hasMigrated {
+            defaults.set(true, forKey: migrationDefaultsKey)
+        }
+    }
+}
+
 @objc final class SARecordViewController: NSObject {
     private let model = SARecordViewModel()
     private lazy var hostingView = NSHostingView(rootView: SARecordView(model: model))
     private weak var overlayView: SARecordViewOverlayView?
 
-    @objc(installOverlayInView:resizingView:bottomInset:topInset:toggleButtonInView:buttonX:autosaveName:)
+    @objc(installOverlayInView:resizingView:bottomInset:topInset:autosaveName:)
     func installOverlay(in parentView: NSView,
                         resizing targetView: NSView,
                         bottomInset: CGFloat,
                         topInset: CGFloat,
-                        toggleButtonIn toolbarView: NSView,
-                        buttonX: CGFloat,
                         autosaveName: String) {
         let savedWidth = UserDefaults.standard.double(forKey: autosaveName)
         let width = min(savedWidth >= 240 ? savedWidth : 320, parentView.bounds.width)
@@ -279,30 +330,20 @@ private final class SARecordViewOverlayView: NSView {
         container.addSubview(resizeHandle, positioned: .above, relativeTo: nil)
         container.resizeHandle = resizeHandle
 
-        let button = NSButton(frame: NSRect(x: buttonX, y: 0, width: 25, height: 25))
-        button.isBordered = false
-        button.image = NSImage(systemSymbolName: "sidebar.right", accessibilityDescription: nil)
-            ?? NSImage(named: NSImage.Name("NSListViewTemplate"))
-        button.imagePosition = .imageOnly
-        button.setButtonType(.toggle)
-        button.toolTip = NSLocalizedString("Toggle Record View", comment: "record view toggle button tooltip")
-        button.setAccessibilityLabel(NSLocalizedString("Toggle Record View", comment: "record view toggle button accessibility label"))
-        button.target = self
-        button.action = #selector(toggleRecordView(_:))
-        button.autoresizingMask = [.maxXMargin, .maxYMargin]
-        toolbarView.addSubview(button)
-
         container.isHidden = true
         parentView.addSubview(container, positioned: .above, relativeTo: nil)
         overlayView = container
     }
 
-    @objc private func toggleRecordView(_ sender: NSButton) {
+    @objc var isVisible: Bool {
+        overlayView?.isHidden == false
+    }
+
+    @objc func toggle() {
         guard let overlayView else {
             return
         }
         overlayView.isHidden ? overlayView.show() : overlayView.hide()
-        sender.state = overlayView.isHidden ? .off : .on
     }
 
     @objc(updateWithFields:selectedRowCount:)

@@ -253,6 +253,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // Update the toolbar
     [self.parentWindowControllerWindow setToolbar:self.mainToolbar];
+    [SARecordViewToolbarSupport installIfNeededInToolbar:self.mainToolbar defaults:prefs];
 
     // The history controller needs to track toolbar item state - trigger setup.
     [spHistoryControllerInstance setupInterface];
@@ -3256,6 +3257,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [toolbarItem setTarget:self];
         [toolbarItem setAction:@selector(clearConsole:)];
 
+    } else if ([itemIdentifier isEqualToString:[SARecordViewToolbarSupport itemIdentifier]]) {
+        return [SARecordViewToolbarSupport makeToolbarItemWithTarget:self];
+
     } else if ([[SAViewModeHelper allToolbarIdentifiers] containsObject:itemIdentifier]) {
         // Use data-driven SAViewMode for view-switching toolbar items
         for (NSInteger i = 0; i <= SAViewModeTriggers; i++) {
@@ -3318,6 +3322,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         SPMainToolbarTableStructure,
         SPMainToolbarTableContent,
         SPMainToolbarCustomQuery,
+        [SARecordViewToolbarSupport itemIdentifier],
         SPMainToolbarTableInfo,
         SPMainToolbarTableRelations,
         SPMainToolbarTableTriggers,
@@ -3343,6 +3348,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         SPMainToolbarTableTriggers,
         SPMainToolbarTableInfo,
         SPMainToolbarCustomQuery,
+        [SARecordViewToolbarSupport itemIdentifier],
         NSToolbarSpaceItemIdentifier,
         SPMainToolbarHistoryNavigation,
         NSToolbarSpaceItemIdentifier,
@@ -3375,6 +3381,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if (!_isConnected || _isWorkingLevel) return NO;
 
     NSString *identifier = [toolbarItem itemIdentifier];
+
+    if ([identifier isEqualToString:[SARecordViewToolbarSupport itemIdentifier]]) {
+        return [SARecordViewToolbarSupport isEnabledForSelectedIdentifier:[self selectedToolbarItemIdentifier]];
+    }
 
     // Show console item
     if ([identifier isEqualToString:SPMainToolbarShowConsole]) {
@@ -5447,6 +5457,16 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (void)viewTriggers {
     [self switchToViewMode:SAViewModeTriggers];
+}
+
+- (void)toggleRecordView:(id)sender
+{
+    NSString *selectedIdentifier = [self selectedToolbarItemIdentifier];
+    if ([selectedIdentifier isEqualToString:SPMainToolbarTableContent]) {
+        [tableContentInstance toggleRecordView];
+    } else if ([selectedIdentifier isEqualToString:SPMainToolbarCustomQuery]) {
+        [customQueryInstance toggleRecordView];
+    }
 }
 
 /**

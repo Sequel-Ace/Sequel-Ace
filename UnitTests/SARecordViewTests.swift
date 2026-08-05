@@ -146,4 +146,58 @@ final class SARecordViewTests: XCTestCase {
 
         XCTAssertEqual(fields.map(\.id), [4, 1])
     }
+
+    func testControllerTogglesVisibilityWithoutLocalButton() {
+        let parent = NSView(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
+        let grid = NSView(frame: parent.bounds)
+        parent.addSubview(grid)
+        let controller = SARecordViewController()
+
+        controller.installOverlay(
+            in: parent,
+            resizing: grid,
+            bottomInset: 0,
+            topInset: 0,
+            autosaveName: "SARecordViewTestsWidth"
+        )
+
+        XCTAssertFalse(controller.isVisible)
+        controller.toggle()
+        XCTAssertTrue(controller.isVisible)
+        controller.toggle()
+        XCTAssertFalse(controller.isVisible)
+    }
+
+    func testToolbarIsEnabledOnlyForContentAndQuery() {
+        XCTAssertTrue(SARecordViewToolbarSupport.isEnabled(for: "SwitchToTableContentToolbarItemIdentifier"))
+        XCTAssertTrue(SARecordViewToolbarSupport.isEnabled(for: "SwitchToRunQueryToolbarItemIdentifier"))
+        XCTAssertFalse(SARecordViewToolbarSupport.isEnabled(for: "SwitchToTableStructureToolbarItemIdentifier"))
+        XCTAssertFalse(SARecordViewToolbarSupport.isEnabled(for: nil))
+    }
+
+    func testToolbarInsertionFollowsQueryItem() {
+        XCTAssertEqual(
+            SARecordViewToolbarSupport.insertionIndex(in: [
+                "SwitchToTableContentToolbarItemIdentifier",
+                "SwitchToRunQueryToolbarItemIdentifier",
+                "HistoryNavigationToolbarItemIdentifier"
+            ]),
+            2
+        )
+        XCTAssertEqual(SARecordViewToolbarSupport.insertionIndex(in: ["first", "second"]), 2)
+    }
+
+    func testToolbarMigrationOnlyInsertsOnceWhenMissing() {
+        XCTAssertTrue(SARecordViewToolbarSupport.shouldAutoInsert(hasMigrated: false, containsItem: false))
+        XCTAssertFalse(SARecordViewToolbarSupport.shouldAutoInsert(hasMigrated: false, containsItem: true))
+        XCTAssertFalse(SARecordViewToolbarSupport.shouldAutoInsert(hasMigrated: true, containsItem: false))
+    }
+
+    func testToolbarItemTargetsRecordViewAction() {
+        let item = SARecordViewToolbarSupport.makeToolbarItem(target: NSObject())
+
+        XCTAssertEqual(item.itemIdentifier.rawValue, "RecordViewToolbarItemIdentifier")
+        XCTAssertEqual(item.label, "Record View")
+        XCTAssertEqual(item.action.map(NSStringFromSelector), "toggleRecordView:")
+    }
 }

@@ -211,6 +211,7 @@
 // Interface setup
 - (void)updateQueryInteractionInterface;
 - (void)updateContextualRunInterface;
+- (void)toggleRecordView;
 
 // Query load actions
 - (void)initQueryLoadTimer;

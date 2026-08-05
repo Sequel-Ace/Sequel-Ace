@@ -3790,13 +3790,10 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 
     recordViewController = [[SARecordViewController alloc] init];
     NSView *queryResultPane = [customQueryScrollView superview];
-    NSView *queryResultToolbar = [[queryResultPane subviews] firstObject];
     [recordViewController installOverlayInView:queryResultPane
                                         resizingView:customQueryScrollView
                                         bottomInset:0
                                            topInset:23
-                                 toggleButtonInView:queryResultToolbar
-                                            buttonX:477
                                        autosaveName:@"SARecordViewQueryWidth"];
 
     __weak __typeof__(self) weakSelf = self;
@@ -3868,6 +3865,11 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     [prefs addObserver:self forKeyPath:SPDisplayTableViewColumnTypes options:NSKeyValueObservingOptionNew context:NULL];
     self.bracketHighlighter = [[SPBracketHighlighter alloc] initWithTextView:textView];
     self.bracketHighlighter.enabled = [prefs boolForKey:SPCustomQueryEnableBracketHighlighting];
+}
+
+- (void)toggleRecordView
+{
+    [recordViewController toggle];
 }
 
 #pragma mark -

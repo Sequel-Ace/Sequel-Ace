@@ -218,16 +218,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
     [self->tableContentView setFieldEditorSelectedRange:NSMakeRange(0,0)];
 
     recordViewController = [[SARecordViewController alloc] init];
-    NSRect columnFilterFrame = [columnFilterSearchField frame];
-    columnFilterFrame.origin.x += 30;
-    columnFilterFrame.size.width -= 30;
-    [columnFilterSearchField setFrame:columnFilterFrame];
-     [recordViewController installOverlayInView:tableContentContainer
+    [recordViewController installOverlayInView:tableContentContainer
                                          resizingView:[tableContentView enclosingScrollView]
                                          bottomInset:25
                                             topInset:0
-                                  toggleButtonInView:tableContentContainer
-                                             buttonX:180
                                         autosaveName:@"SARecordViewContentWidth"];
 
     __weak __typeof__(self) weakSelf = self;
@@ -312,6 +306,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
                                                  name:SPDocumentWillCloseNotification
                                                object:nil];
 
+}
+
+- (void)toggleRecordView
+{
+	[recordViewController toggle];
 }
 
 #pragma mark -

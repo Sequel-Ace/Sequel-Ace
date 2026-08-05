@@ -228,6 +228,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 - (NSString *)fieldListForQuery;
 - (void)updateNumberOfRows;
 - (void)autosizeColumns;
+- (void)toggleRecordView;
 - (BOOL)saveRowOnDeselect;
 - (void)sortTableTaskWithColumn:(NSTableColumn *)tableColumn;
 - (void)showErrorSheetWith:(NSArray *)error;
