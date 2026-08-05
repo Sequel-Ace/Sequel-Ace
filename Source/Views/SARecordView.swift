@@ -1,5 +1,5 @@
 //
-//  SARecordInspector.swift
+//  SARecordView.swift
 //  Sequel Ace
 //
 //  Copyright © 2026 Sequel-Ace. All rights reserved.
@@ -23,7 +23,7 @@ struct SARecordField: Identifiable, Equatable {
     }
 }
 
-final class SARecordInspectorModel: ObservableObject {
+final class SARecordViewModel: ObservableObject {
     @Published private(set) var selectedRowCount = 0
     @Published private(set) var fields: [SARecordField] = []
     @Published var searchText = ""
@@ -82,8 +82,8 @@ final class SARecordInspectorModel: ObservableObject {
     }
 }
 
-private struct SARecordInspectorView: View {
-    @ObservedObject var model: SARecordInspectorModel
+private struct SARecordView: View {
+    @ObservedObject var model: SARecordViewModel
     @FocusState private var focusedFieldID: SARecordField.ID?
 
     var body: some View {
@@ -103,7 +103,7 @@ private struct SARecordInspectorView: View {
     @ViewBuilder
     private var content: some View {
         if model.selectedRowCount == 0 {
-            emptyState("Select one row to inspect it", systemImage: "rectangle.and.hand.point.up.left")
+            emptyState("Select one row to view it", systemImage: "rectangle.and.hand.point.up.left")
         } else if model.selectedRowCount > 1 {
             emptyState("Select only one row", systemImage: "rectangle.stack")
         } else if model.fields.isEmpty {
@@ -166,8 +166,8 @@ private struct SARecordInspectorView: View {
     }
 }
 
-private final class SARecordInspectorResizeHandle: NSView {
-    weak var overlayView: SARecordInspectorOverlayView?
+private final class SARecordViewResizeHandle: NSView {
+    weak var overlayView: SARecordViewOverlayView?
 
     override func resetCursorRects() {
         addCursorRect(bounds, cursor: .resizeLeftRight)
@@ -178,12 +178,12 @@ private final class SARecordInspectorResizeHandle: NSView {
     }
 }
 
-private final class SARecordInspectorOverlayView: NSView {
+private final class SARecordViewOverlayView: NSView {
     weak var resizedView: NSView?
     weak var resizeHandle: NSView?
     var resizedViewRightInset: CGFloat = 0
     var widthDefaultsKey = ""
-    var inspectorWidth: CGFloat = 320
+    var recordViewWidth: CGFloat = 320
 
     override func mouseDown(with event: NSEvent) {
         guard let window else {
@@ -194,7 +194,7 @@ private final class SARecordInspectorOverlayView: NSView {
 
         while let next = window.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
             if next.type == .leftMouseUp {
-                UserDefaults.standard.set(inspectorWidth, forKey: widthDefaultsKey)
+                UserDefaults.standard.set(recordViewWidth, forKey: widthDefaultsKey)
                 return
             }
             resize(to: startWidth + startX - next.locationInWindow.x)
@@ -203,7 +203,7 @@ private final class SARecordInspectorOverlayView: NSView {
 
     func show() {
         isHidden = false
-        resize(to: inspectorWidth)
+        resize(to: recordViewWidth)
         if let resizeHandle {
             window?.invalidateCursorRects(for: resizeHandle)
         }
@@ -223,12 +223,12 @@ private final class SARecordInspectorOverlayView: NSView {
         guard let parent = superview, let resizedView else {
             return
         }
-        inspectorWidth = min(max(proposedWidth, 240), parent.bounds.width)
+        recordViewWidth = min(max(proposedWidth, 240), parent.bounds.width)
 
         frame = NSRect(
-            x: parent.bounds.width - inspectorWidth,
+            x: parent.bounds.width - recordViewWidth,
             y: frame.minY,
-            width: inspectorWidth,
+            width: recordViewWidth,
             height: frame.height
         )
 
@@ -238,10 +238,10 @@ private final class SARecordInspectorOverlayView: NSView {
     }
 }
 
-@objc final class SARecordInspectorController: NSObject {
-    private let model = SARecordInspectorModel()
-    private lazy var hostingView = NSHostingView(rootView: SARecordInspectorView(model: model))
-    private weak var overlayView: SARecordInspectorOverlayView?
+@objc final class SARecordViewController: NSObject {
+    private let model = SARecordViewModel()
+    private lazy var hostingView = NSHostingView(rootView: SARecordView(model: model))
+    private weak var overlayView: SARecordViewOverlayView?
 
     @objc(installOverlayInView:resizingView:bottomInset:topInset:toggleButtonInView:buttonX:autosaveName:)
     func installOverlay(in parentView: NSView,
@@ -253,7 +253,7 @@ private final class SARecordInspectorOverlayView: NSView {
                         autosaveName: String) {
         let savedWidth = UserDefaults.standard.double(forKey: autosaveName)
         let width = min(savedWidth >= 240 ? savedWidth : 320, parentView.bounds.width)
-        let container = SARecordInspectorOverlayView(frame: NSRect(
+        let container = SARecordViewOverlayView(frame: NSRect(
             x: parentView.bounds.width - width,
             y: bottomInset,
             width: width,
@@ -267,13 +267,13 @@ private final class SARecordInspectorOverlayView: NSView {
         container.resizedView = targetView
         container.resizedViewRightInset = parentView.bounds.width - targetView.frame.maxX
         container.widthDefaultsKey = autosaveName
-        container.inspectorWidth = width
+        container.recordViewWidth = width
 
         hostingView.frame = container.bounds
         hostingView.autoresizingMask = [.width, .height]
         container.addSubview(hostingView)
 
-        let resizeHandle = SARecordInspectorResizeHandle(frame: NSRect(x: 0, y: 0, width: 10, height: container.bounds.height))
+        let resizeHandle = SARecordViewResizeHandle(frame: NSRect(x: 0, y: 0, width: 10, height: container.bounds.height))
         resizeHandle.autoresizingMask = [.height]
         resizeHandle.overlayView = container
         container.addSubview(resizeHandle, positioned: .above, relativeTo: nil)
@@ -288,7 +288,7 @@ private final class SARecordInspectorOverlayView: NSView {
         button.toolTip = NSLocalizedString("Toggle Record View", comment: "record view toggle button tooltip")
         button.setAccessibilityLabel(NSLocalizedString("Toggle Record View", comment: "record view toggle button accessibility label"))
         button.target = self
-        button.action = #selector(toggleInspector(_:))
+        button.action = #selector(toggleRecordView(_:))
         button.autoresizingMask = [.maxXMargin, .maxYMargin]
         toolbarView.addSubview(button)
 
@@ -297,7 +297,7 @@ private final class SARecordInspectorOverlayView: NSView {
         overlayView = container
     }
 
-    @objc private func toggleInspector(_ sender: NSButton) {
+    @objc private func toggleRecordView(_ sender: NSButton) {
         guard let overlayView else {
             return
         }

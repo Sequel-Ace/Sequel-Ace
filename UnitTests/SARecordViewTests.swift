@@ -1,6 +1,6 @@
 import XCTest
 
-final class SARecordInspectorTests: XCTestCase {
+final class SARecordViewTests: XCTestCase {
 
     private let fields = [
         SARecordField(id: 0, name: "id", value: "42"),
@@ -9,7 +9,7 @@ final class SARecordInspectorTests: XCTestCase {
     ]
 
     func testKeepsFieldsOnlyForSingleSelection() {
-        let model = SARecordInspectorModel()
+        let model = SARecordViewModel()
 
         model.update(fields: fields, selectedRowCount: 0)
         XCTAssertEqual(model.selectedRowCount, 0)
@@ -25,7 +25,7 @@ final class SARecordInspectorTests: XCTestCase {
     }
 
     func testFiltersFieldNamesCaseInsensitively() {
-        let model = SARecordInspectorModel()
+        let model = SARecordViewModel()
         model.update(fields: fields, selectedRowCount: 1)
 
         model.searchText = " NAME "
@@ -34,7 +34,7 @@ final class SARecordInspectorTests: XCTestCase {
     }
 
     func testPreservesOrderAndDuplicateNames() {
-        let model = SARecordInspectorModel()
+        let model = SARecordViewModel()
         model.update(fields: fields, selectedRowCount: 1)
 
         XCTAssertEqual(model.visibleFields, fields)
@@ -42,7 +42,7 @@ final class SARecordInspectorTests: XCTestCase {
     }
 
     func testClearRemovesSelectionAndFilter() {
-        let model = SARecordInspectorModel()
+        let model = SARecordViewModel()
         model.update(fields: fields, selectedRowCount: 1)
         model.searchText = "id"
         model.selectedFieldID = 0
@@ -70,7 +70,7 @@ final class SARecordInspectorTests: XCTestCase {
     }
 
     func testBeginsAndCommitsInlineEdit() {
-        let model = SARecordInspectorModel()
+        let model = SARecordViewModel()
         let field = SARecordField(id: 2, name: "name", value: "Ada")
         var committed: (Int, String)?
         model.beginEditing = { $0 == 2 }
@@ -93,7 +93,7 @@ final class SARecordInspectorTests: XCTestCase {
     }
 
     func testRejectedEditNeverCreatesDraft() {
-        let model = SARecordInspectorModel()
+        let model = SARecordViewModel()
         model.beginEditing = { _ in false }
 
         model.requestEdit(SARecordField(id: 0, name: "generated", value: "42"))
@@ -103,7 +103,7 @@ final class SARecordInspectorTests: XCTestCase {
     }
 
     func testCancelAndSnapshotRefreshDiscardDraft() {
-        let model = SARecordInspectorModel()
+        let model = SARecordViewModel()
         let field = SARecordField(id: 0, name: "name", value: "Ada")
         model.beginEditing = { _ in true }
         model.requestEdit(field)
@@ -117,7 +117,7 @@ final class SARecordInspectorTests: XCTestCase {
     }
 
     func testFailedCommitKeepsDraftOpen() {
-        let model = SARecordInspectorModel()
+        let model = SARecordViewModel()
         let field = SARecordField(id: 0, name: "name", value: "Ada")
         model.beginEditing = { _ in true }
         model.commitEditing = { _, _ in false }
@@ -131,7 +131,7 @@ final class SARecordInspectorTests: XCTestCase {
     }
 
     func testControllerExposesObjectiveCEditingSelector() {
-        let controller = SARecordInspectorController()
+        let controller = SARecordViewController()
 
         XCTAssertTrue(
             controller.responds(to: NSSelectorFromString("setEditingHandlersWithBegin:commit:"))
@@ -139,7 +139,7 @@ final class SARecordInspectorTests: XCTestCase {
     }
 
     func testControllerUsesExplicitFieldIDsWithPositionalFallback() {
-        let fields = SARecordInspectorController.fields(from: [
+        let fields = SARecordViewController.fields(from: [
             ["id": 4, "name": "explicit", "value": "a"],
             ["name": "fallback", "value": "b"]
         ])
