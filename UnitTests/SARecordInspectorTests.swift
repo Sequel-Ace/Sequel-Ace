@@ -137,4 +137,13 @@ final class SARecordInspectorTests: XCTestCase {
             controller.responds(to: NSSelectorFromString("setEditingHandlersWithBegin:commit:"))
         )
     }
+
+    func testControllerUsesExplicitFieldIDsWithPositionalFallback() {
+        let fields = SARecordInspectorController.fields(from: [
+            ["id": 4, "name": "explicit", "value": "a"],
+            ["name": "fallback", "value": "b"]
+        ])
+
+        XCTAssertEqual(fields.map(\.id), [4, 1])
+    }
 }

@@ -104,6 +104,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 - (id)_resultDataItemAtRow:(NSInteger)row columnIndex:(NSUInteger)column preserveNULLs:(BOOL)preserveNULLs asPreview:(BOOL)asPreview;
 - (NSInteger)_recordInspectorSelectedRow;
 - (NSTableColumn *)_recordInspectorColumnAtIndex:(NSInteger)fieldIndex;
+- (NSString *)_recordInspectorStringForValue:(id)value tableColumn:(NSTableColumn *)tableColumn;
 - (void)_updateRecordInspector;
 - (void)_updateColumnHeadersForCurrentPreference;
 + (NSAttributedString *)columnHeaderAttributedStringForColumnDefinition:(NSDictionary *)columnDefinition showColumnTypes:(BOOL)showColumnTypes;
@@ -1111,7 +1112,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             [customQueryView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
             if (self.recordInspectorNeedsSelectionRestoreRefresh) {
                 self.recordInspectorNeedsSelectionRestoreRefresh = NO;
-                [recordInspectorController updateWithFields:@[] selectedRowCount:0];
+                SPMainQSync(^{
+                    [self->recordInspectorController updateWithFields:@[] selectedRowCount:0];
+                });
             }
             
             // Notify any listeners that the query has completed
@@ -2349,6 +2352,11 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             } else {
                 // otherwise, just update the data in the data storage
                 [resultData replaceObjectInRow:rowIndex column:[[aTableColumn identifier] intValue] withObject:anObject];
+                NSInteger visibleColumn = [customQueryView columnWithIdentifier:[aTableColumn identifier]];
+                if (visibleColumn >= 0) {
+                    [customQueryView reloadDataForRowIndexes:[NSIndexSet indexSetWithIndex:rowIndex]
+                                               columnIndexes:[NSIndexSet indexSetWithIndex:(NSUInteger)visibleColumn]];
+                }
                 [self _updateRecordInspector];
             }
         }
@@ -2403,6 +2411,11 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
                     } else {
                         // otherwise, just update the data in the data storage
                         [self->resultData replaceObjectInRow:rowIndex column:[[aTableColumn identifier] intValue] withObject:anObject];
+                        NSInteger visibleColumn = [self->customQueryView columnWithIdentifier:[aTableColumn identifier]];
+                        if (visibleColumn >= 0) {
+                            [self->customQueryView reloadDataForRowIndexes:[NSIndexSet indexSetWithIndex:rowIndex]
+                                                            columnIndexes:[NSIndexSet indexSetWithIndex:(NSUInteger)visibleColumn]];
+                        }
                         [self _updateRecordInspector];
                     }
                 }
@@ -3804,6 +3817,9 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         NSTableColumn *column = [strongSelf _recordInspectorColumnAtIndex:fieldIndex];
         if (row < 0 || !column) return NO;
 
+        NSInteger columnIndex = [[column identifier] integerValue];
+        if ([strongSelf->customQueryView shouldUseFieldEditorForRow:row column:columnIndex checkWithLock:NULL]) return NO;
+
         id objectValue = value;
         NSFormatter *formatter = [[column dataCell] formatter];
         if (formatter && ![formatter getObjectValue:&objectValue forString:value errorDescription:NULL]) {
@@ -3928,6 +3944,26 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     return [[customQueryView tableColumns] safeObjectAtIndex:(NSUInteger)fieldIndex];
 }
 
+- (NSString *)_recordInspectorStringForValue:(id)value tableColumn:(NSTableColumn *)tableColumn
+{
+    if ([value isKindOfClass:[SPMySQLGeometryData class]]) return [value wktString];
+    if ([value isNSNull]) return [prefs objectForKey:SPNullValue] ?: @"";
+    if ([value isSPNotLoaded]) return NSLocalizedString(@"(not loaded)", @"value shown for hidden blob and text fields");
+
+    NSFormatter *formatter = [[tableColumn dataCell] formatter];
+    if ([formatter isKindOfClass:[SABaseFormatter class]]) {
+        NSString *formatted = [(SABaseFormatter *)formatter stringForObjectValue:value];
+        if (formatted) return formatted;
+    }
+
+    if ([value isKindOfClass:[NSData class]]) {
+        NSString *stringValue = [(NSData *)value stringRepresentationUsingEncoding:[mySQLConnection stringEncoding]];
+        return stringValue ?: [value description];
+    }
+
+    return value ? [value description] : @"";
+}
+
 - (void)_updateRecordInspector
 {
     NSUInteger selectedCount = [customQueryView numberOfSelectedRows];
@@ -3945,20 +3981,19 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 
     NSArray<NSTableColumn *> *tableColumns = [customQueryView tableColumns];
     NSMutableArray *fields = [NSMutableArray arrayWithCapacity:[tableColumns count]];
-    for (NSTableColumn *tableColumn in tableColumns) {
+    for (NSUInteger fieldIndex = 0; fieldIndex < [tableColumns count]; fieldIndex++) {
+        NSTableColumn *tableColumn = [tableColumns objectAtIndex:fieldIndex];
         NSInteger columnIndex = [[tableColumn identifier] integerValue];
         if (columnIndex < 0) continue;
 
         NSDictionary *columnDefinition = [cqColumnDefinition safeObjectAtIndex:(NSUInteger)columnIndex];
         if (!columnDefinition || (NSUInteger)columnIndex >= [resultData columnCount]) continue;
 
-        id value = [self _resultDataItemAtRow:selectedRow
-                                  columnIndex:(NSUInteger)columnIndex
-                                preserveNULLs:NO
-                                    asPreview:NO];
+        id value = SPDataStorageObjectAtRowAndColumn(resultData, selectedRow, (NSUInteger)columnIndex);
         [fields addObject:@{
+            @"id": @(fieldIndex),
             @"name": columnDefinition[@"name"] ?: @"",
-            @"value": [value description] ?: @""
+            @"value": [self _recordInspectorStringForValue:value tableColumn:tableColumn]
         }];
     }
 

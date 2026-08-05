@@ -114,7 +114,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (BOOL)_saveRowToTableWithQuery:(NSString*)queryString;
 - (void)_setViewBlankState;
 - (void)_updateRecordInspector;
-- (NSString *)_recordInspectorStringForValue:(id)value columnIndex:(NSUInteger)columnIndex;
+- (NSString *)_recordInspectorStringForValue:(id)value tableColumn:(NSTableColumn *)tableColumn;
 - (NSInteger)_recordInspectorSelectedRow;
 - (NSTableColumn *)_recordInspectorColumnAtIndex:(NSInteger)fieldIndex;
 
@@ -248,6 +248,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
         NSTableColumn *column = [strongSelf _recordInspectorColumnAtIndex:fieldIndex];
         if (row < 0 || !column) return NO;
 
+        NSInteger columnIndex = [[column identifier] integerValue];
+        if ([strongSelf->tableContentView shouldUseFieldEditorForRow:row column:columnIndex checkWithLock:NULL]) return NO;
+
         id objectValue = value;
         NSFormatter *formatter = [[column dataCell] formatter];
         if (formatter && ![formatter getObjectValue:&objectValue forString:value errorDescription:NULL]) {
@@ -256,6 +259,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
         }
 
         [strongSelf tableView:strongSelf->tableContentView setObjectValue:objectValue forTableColumn:column row:row];
+        [strongSelf->tableContentView reloadDataForRowIndexes:[NSIndexSet indexSetWithIndex:row]
+                                                columnIndexes:[NSIndexSet indexSetWithIndex:(NSUInteger)fieldIndex]];
         return YES;
     }];
 
@@ -4226,6 +4231,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	NSIndexSet *selectedRowIndexes = [tableContentView selectedRowIndexes];
 	NSInteger selectedRow = [tableContentView selectedRow];
 	if (selectedRow < 0 || [selectedRowIndexes count] != 1) return -1;
+	if ((NSUInteger)selectedRow >= tableRowsCount) return -1;
 	return selectedRow;
 }
 
@@ -4257,7 +4263,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 	NSArray *visibleColumns = [tableContentView tableColumns];
 	NSMutableArray *fields = [NSMutableArray arrayWithCapacity:[visibleColumns count]];
-	for (NSTableColumn *tableColumn in visibleColumns) {
+	for (NSUInteger fieldIndex = 0; fieldIndex < [visibleColumns count]; fieldIndex++) {
+		NSTableColumn *tableColumn = [visibleColumns objectAtIndex:fieldIndex];
 		NSInteger storageIndex = [[tableColumn identifier] integerValue];
 		if (storageIndex < 0) continue;
 
@@ -4267,16 +4274,18 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		NSDictionary *columnDefinition = [dataColumns safeObjectAtIndex:columnIndex];
 		id value = [self _contentValueForTableColumn:columnIndex row:selectedRow asPreview:NO];
 		[fields addObject:@{
+			@"id": @(fieldIndex),
 			@"name": columnDefinition[@"name"] ?: [[tableColumn headerCell] stringValue] ?: @"",
-			@"value": [self _recordInspectorStringForValue:value columnIndex:columnIndex]
+			@"value": [self _recordInspectorStringForValue:value tableColumn:tableColumn]
 		}];
 	}
 
 	[recordInspectorController updateWithFields:fields selectedRowCount:1];
 }
 
-- (NSString *)_recordInspectorStringForValue:(id)value columnIndex:(NSUInteger)columnIndex
+- (NSString *)_recordInspectorStringForValue:(id)value tableColumn:(NSTableColumn *)tableColumn
 {
+	NSUInteger columnIndex = (NSUInteger)[[tableColumn identifier] integerValue];
 	if ([value isKindOfClass:[SPMySQLGeometryData class]]) {
 		return [value wktString];
 	}
@@ -4286,14 +4295,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	if ([value isSPNotLoaded]) {
 		return NSLocalizedString(@"(not loaded)", @"value shown for hidden blob and text fields");
 	}
-	for (NSTableColumn *tableColumn in [tableContentView tableColumns]) {
-		if ([[tableColumn identifier] integerValue] != columnIndex) continue;
-		NSFormatter *formatter = [[tableColumn dataCell] formatter];
-		if ([formatter isKindOfClass:[SABaseFormatter class]]) {
-			NSString *formatted = [(SABaseFormatter *)formatter stringForObjectValue:value];
-			if (formatted) return formatted;
-		}
-		break;
+	NSFormatter *formatter = [[tableColumn dataCell] formatter];
+	if ([formatter isKindOfClass:[SABaseFormatter class]]) {
+		NSString *formatted = [(SABaseFormatter *)formatter stringForObjectValue:value];
+		if (formatted) return formatted;
 	}
 	if ([value isKindOfClass:[NSData class]]) {
 		if ([self cellValueIsDisplayedAsHexForColumn:columnIndex]) {
