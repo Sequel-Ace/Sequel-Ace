@@ -3872,6 +3872,11 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     [recordViewController toggle];
 }
 
+- (BOOL)recordViewIsVisible
+{
+    return [recordViewController isVisible];
+}
+
 #pragma mark -
 #pragma mark Private API
 

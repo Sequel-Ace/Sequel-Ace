@@ -313,6 +313,11 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 	[recordViewController toggle];
 }
 
+- (BOOL)recordViewIsVisible
+{
+	return [recordViewController isVisible];
+}
+
 #pragma mark -
 #pragma mark Table loading methods and information
 

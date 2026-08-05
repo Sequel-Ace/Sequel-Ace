@@ -200,4 +200,9 @@ final class SARecordViewTests: XCTestCase {
         XCTAssertEqual(item.label, "Record View")
         XCTAssertEqual(item.action.map(NSStringFromSelector), "toggleRecordView:")
     }
+
+    func testRecordViewMenuTitleReflectsVisibility() {
+        XCTAssertEqual(SARecordViewToolbarSupport.menuTitle(isVisible: false), "Show Record View")
+        XCTAssertEqual(SARecordViewToolbarSupport.menuTitle(isVisible: true), "Hide Record View")
+    }
 }

@@ -2937,6 +2937,19 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         return _isConnected && databaseListIsSelectable;
     }
 
+    if (action == @selector(toggleRecordView:)) {
+        NSString *selectedIdentifier = [self selectedToolbarItemIdentifier];
+        BOOL enabled = _isConnected && !_isWorkingLevel && [SARecordViewToolbarSupport isEnabledForSelectedIdentifier:selectedIdentifier];
+        BOOL isVisible = NO;
+        if ([selectedIdentifier isEqualToString:SPMainToolbarTableContent]) {
+            isVisible = [tableContentInstance recordViewIsVisible];
+        } else if ([selectedIdentifier isEqualToString:SPMainToolbarCustomQuery]) {
+            isVisible = [customQueryInstance recordViewIsVisible];
+        }
+        [menuItem setTitle:[SARecordViewToolbarSupport menuTitleForVisibility:isVisible]];
+        return enabled;
+    }
+
     if (!_isConnected || _isWorkingLevel) {
         return action == @selector(terminate:);
     }

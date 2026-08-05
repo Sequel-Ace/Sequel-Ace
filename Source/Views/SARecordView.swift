@@ -252,6 +252,13 @@ private final class SARecordViewOverlayView: NSView {
         selectedIdentifier == contentIdentifier || selectedIdentifier == queryIdentifier
     }
 
+    @objc(menuTitleForVisibility:)
+    static func menuTitle(isVisible: Bool) -> String {
+        isVisible
+            ? NSLocalizedString("Hide Record View", comment: "hide record view menu item")
+            : NSLocalizedString("Show Record View", comment: "show record view menu item")
+    }
+
     static func insertionIndex(in identifiers: [String]) -> Int {
         identifiers.firstIndex(of: queryIdentifier).map { $0 + 1 } ?? identifiers.count
     }
