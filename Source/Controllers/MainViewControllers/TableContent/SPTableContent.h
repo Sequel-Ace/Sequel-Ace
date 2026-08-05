@@ -45,6 +45,7 @@
 @class SPTableStructure;
 @class SPRuleFilterController;
 @class SPFilterTableController;
+@class SARecordInspectorController;
 
 @class ContentPaginationViewController; //private
 
@@ -156,6 +157,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 	IBOutlet NSView *contentAreaContainer;
 	IBOutlet NSView *filterRuleEditorContainer;
 	IBOutlet NSView *tableContentContainer;
+	SARecordInspectorController *recordInspectorController;
 
 	BOOL showFilterRuleEditor;
 

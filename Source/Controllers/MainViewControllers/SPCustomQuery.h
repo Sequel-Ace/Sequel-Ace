@@ -48,6 +48,7 @@
 @class SPTextView;
 @class SPDatabaseDocument;
 @class SPTablesList;
+@class SARecordInspectorController;
 
 @class SPBracketHighlighter;
 
@@ -113,6 +114,7 @@
 	IBOutlet NSButton *queryInfoButton;
 	IBOutlet SPSplitView *queryInfoPaneSplitView;
 	IBOutlet SPSplitView *queryEditorSplitView;
+	SARecordInspectorController *recordInspectorController;
 
 	SPFieldEditorController *fieldEditor;
 	SPQueryFavoriteManager *favoritesManager;

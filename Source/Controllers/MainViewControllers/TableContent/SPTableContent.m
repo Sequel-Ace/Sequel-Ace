@@ -102,6 +102,8 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 @interface SPTableContent () <SATableHeaderViewDelegate>
 
+@property (assign, nonatomic) BOOL deferRecordInspectorRefreshUntilTableLoadCompletes;
+
 - (BOOL)cancelRowEditing;
 - (void)documentWillClose:(NSNotification *)notification;
 
@@ -111,6 +113,10 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (void)setRuleEditorVisible:(BOOL)show animate:(BOOL)animate;
 - (BOOL)_saveRowToTableWithQuery:(NSString*)queryString;
 - (void)_setViewBlankState;
+- (void)_updateRecordInspector;
+- (NSString *)_recordInspectorStringForValue:(id)value columnIndex:(NSUInteger)columnIndex;
+- (NSInteger)_recordInspectorSelectedRow;
+- (NSTableColumn *)_recordInspectorColumnAtIndex:(NSInteger)fieldIndex;
 
 #pragma mark - SPTableContentDataSource_Private_API
 
@@ -210,6 +216,48 @@ static void *TableContentKVOContext = &TableContentKVOContext;
     [self->paginationPopover setBehavior:NSPopoverBehaviorTransient];
 
     [self->tableContentView setFieldEditorSelectedRange:NSMakeRange(0,0)];
+
+    recordInspectorController = [[SARecordInspectorController alloc] init];
+    NSRect columnFilterFrame = [columnFilterSearchField frame];
+    columnFilterFrame.origin.x += 30;
+    columnFilterFrame.size.width -= 30;
+    [columnFilterSearchField setFrame:columnFilterFrame];
+     [recordInspectorController installOverlayInView:tableContentContainer
+                                         resizingView:[tableContentView enclosingScrollView]
+                                         bottomInset:25
+                                            topInset:0
+                                  toggleButtonInView:tableContentContainer
+                                             buttonX:180
+                                        autosaveName:@"SARecordInspectorContentWidth"];
+
+    __weak __typeof__(self) weakSelf = self;
+    [recordInspectorController setEditingHandlersWithBegin:^BOOL(NSInteger fieldIndex) {
+        SPTableContent *strongSelf = weakSelf;
+        if (!strongSelf) return NO;
+
+        NSInteger row = [strongSelf _recordInspectorSelectedRow];
+        NSTableColumn *column = [strongSelf _recordInspectorColumnAtIndex:fieldIndex];
+        if (row < 0 || !column) return NO;
+
+        return [strongSelf tableView:strongSelf->tableContentView shouldEditTableColumn:column row:row];
+    } commit:^BOOL(NSInteger fieldIndex, NSString *value) {
+        SPTableContent *strongSelf = weakSelf;
+        if (!strongSelf) return NO;
+
+        NSInteger row = [strongSelf _recordInspectorSelectedRow];
+        NSTableColumn *column = [strongSelf _recordInspectorColumnAtIndex:fieldIndex];
+        if (row < 0 || !column) return NO;
+
+        id objectValue = value;
+        NSFormatter *formatter = [[column dataCell] formatter];
+        if (formatter && ![formatter getObjectValue:&objectValue forString:value errorDescription:NULL]) {
+            NSBeep();
+            return NO;
+        }
+
+        [strongSelf tableView:strongSelf->tableContentView setObjectValue:objectValue forTableColumn:column row:row];
+        return YES;
+    }];
 
     if (self->columnFilterSearchField) {
         // Keep this control non-layer-backed to avoid expensive AppKit redraw paths on newer macOS versions.
@@ -753,6 +801,13 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
  */
 - (void) clearTableValues
 {
+	if ([NSThread isMainThread]) {
+		[recordInspectorController clear];
+	} else {
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[self->recordInspectorController clear];
+		});
+	}
 	pthread_mutex_lock(&tableValuesLock);
 	tableRowsCount = 0;
 	tableValues = [[SPDataStorage alloc] init];
@@ -978,6 +1033,13 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 	// Notify listenters that the query has finished
 	[[NSNotificationCenter defaultCenter] postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
+
+	if (self.deferRecordInspectorRefreshUntilTableLoadCompletes && !fullTableReloadRequired) {
+		self.deferRecordInspectorRefreshUntilTableLoadCompletes = NO;
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[self _updateRecordInspector];
+		});
+	}
 
 	if ([mySQLConnection queryErrored] && ![mySQLConnection lastQueryWasCancelled]) {
 		if(activeFilter == SPTableContentFilterSourceRuleFilter || activeFilter == SPTableContentFilterSourceNone) {
@@ -3244,6 +3306,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			// Otherwise, in tables, save back to the row store
 			} else {
 				[tableValues replaceObjectInRow:row column:[[theTableColumn identifier] integerValue] withObject:[data copy]];
+				[self _updateRecordInspector];
 			}
 		}
 	}
@@ -3366,6 +3429,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
+	self.deferRecordInspectorRefreshUntilTableLoadCompletes = YES;
 	[tableDocumentInstance endTask];
 
 	[self loadTableValues];
@@ -3869,6 +3933,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	[ruleFilterController setEnabled:(!![selectedTable length])];
 	[toggleRuleFilterButton setEnabled:(!![selectedTable length])];
 	tableRowsSelectable = YES;
+	if (!self.deferRecordInspectorRefreshUntilTableLoadCompletes) {
+		[self _updateRecordInspector];
+	}
 }
 
 //this method is called right before the UI objects are deallocated
@@ -3923,6 +3990,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		// Display binary data as Hex
 		else if ([keyPath isEqualToString:SPDisplayBinaryDataAsHex] && [tableContentView numberOfRows] > 0) {
 			[tableContentView reloadData];
+			[self _updateRecordInspector];
 		}
 		else if ([keyPath isEqualToString:SPDisplayTableViewColumnTypes]) {
             NSDictionary *tableDetails = [NSDictionary dictionaryWithObjectsAndKeys:
@@ -4118,6 +4186,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		else {
 			[tableValues replaceObjectInRow:rowIndex column:columnIndex withObject:@""];
 		}
+		[self _updateRecordInspector];
 	}
 }
 
@@ -4150,6 +4219,90 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 
 	return SPDataStorageObjectAtRowAndColumn(tableValues, rowIndex, columnIndex);
+}
+
+- (NSInteger)_recordInspectorSelectedRow
+{
+	NSIndexSet *selectedRowIndexes = [tableContentView selectedRowIndexes];
+	NSInteger selectedRow = [tableContentView selectedRow];
+	if (selectedRow < 0 || [selectedRowIndexes count] != 1) return -1;
+	return selectedRow;
+}
+
+- (NSTableColumn *)_recordInspectorColumnAtIndex:(NSInteger)fieldIndex
+{
+	if (fieldIndex < 0) return nil;
+	return [[tableContentView tableColumns] safeObjectAtIndex:(NSUInteger)fieldIndex];
+}
+
+- (void)_updateRecordInspector
+{
+	if (self.deferRecordInspectorRefreshUntilTableLoadCompletes) {
+		[recordInspectorController updateWithFields:@[] selectedRowCount:0];
+		return;
+	}
+
+	NSUInteger selectedCount = [tableContentView numberOfSelectedRows];
+	NSInteger selectedRow = [tableContentView selectedRow];
+
+	if (isWorking || selectedRow < 0 || (selectedCount == 1 && (NSUInteger)selectedRow >= tableRowsCount)) {
+		[recordInspectorController updateWithFields:@[] selectedRowCount:0];
+		return;
+	}
+
+	if (selectedCount != 1) {
+		[recordInspectorController updateWithFields:@[] selectedRowCount:selectedCount];
+		return;
+	}
+
+	NSArray *visibleColumns = [tableContentView tableColumns];
+	NSMutableArray *fields = [NSMutableArray arrayWithCapacity:[visibleColumns count]];
+	for (NSTableColumn *tableColumn in visibleColumns) {
+		NSInteger storageIndex = [[tableColumn identifier] integerValue];
+		if (storageIndex < 0) continue;
+
+		NSUInteger columnIndex = (NSUInteger)storageIndex;
+		if (columnIndex >= [dataColumns count] || columnIndex >= [tableValues columnCount]) continue;
+
+		NSDictionary *columnDefinition = [dataColumns safeObjectAtIndex:columnIndex];
+		id value = [self _contentValueForTableColumn:columnIndex row:selectedRow asPreview:NO];
+		[fields addObject:@{
+			@"name": columnDefinition[@"name"] ?: [[tableColumn headerCell] stringValue] ?: @"",
+			@"value": [self _recordInspectorStringForValue:value columnIndex:columnIndex]
+		}];
+	}
+
+	[recordInspectorController updateWithFields:fields selectedRowCount:1];
+}
+
+- (NSString *)_recordInspectorStringForValue:(id)value columnIndex:(NSUInteger)columnIndex
+{
+	if ([value isKindOfClass:[SPMySQLGeometryData class]]) {
+		return [value wktString];
+	}
+	if ([value isNSNull]) {
+		return [prefs objectForKey:SPNullValue] ?: @"";
+	}
+	if ([value isSPNotLoaded]) {
+		return NSLocalizedString(@"(not loaded)", @"value shown for hidden blob and text fields");
+	}
+	for (NSTableColumn *tableColumn in [tableContentView tableColumns]) {
+		if ([[tableColumn identifier] integerValue] != columnIndex) continue;
+		NSFormatter *formatter = [[tableColumn dataCell] formatter];
+		if ([formatter isKindOfClass:[SABaseFormatter class]]) {
+			NSString *formatted = [(SABaseFormatter *)formatter stringForObjectValue:value];
+			if (formatted) return formatted;
+		}
+		break;
+	}
+	if ([value isKindOfClass:[NSData class]]) {
+		if ([self cellValueIsDisplayedAsHexForColumn:columnIndex]) {
+			return [NSString stringWithFormat:@"0x%@", [(NSData *)value dataToHexString]];
+		}
+		NSString *stringValue = [(NSData *)value stringRepresentationUsingEncoding:[mySQLConnection stringEncoding]];
+		return stringValue ?: [value description];
+	}
+	return value ? [value description] : @"";
 }
 
 #pragma mark - SPTableContentFilter
@@ -4229,6 +4382,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	}
 
 	[self updateCountText];
+	[self _updateRecordInspector];
 
 	NSArray *triggeredCommands = [SPBundleManager.shared bundleCommandsForTrigger:SPBundleTriggerActionTableRowChanged];
 
@@ -4353,6 +4507,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 			[tableValues replaceObjectInRow:rowIndex column:[[tableContentView tableColumns] indexOfObject:tableColumn] withObject:[tempRow objectAtIndex:0]];
 			[tableContentView reloadData];
+			[self _updateRecordInspector];
 		}
 
         // Field is not editable if it is a generated columun.
@@ -4920,6 +5075,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
                                                                   colName:col.headerCell.stringValue
                                                                    format:format];
     [tableContentView reloadData];
+    [self _updateRecordInspector];
 }
 
 // Builds Menu with all display formats
