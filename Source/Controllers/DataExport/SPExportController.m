@@ -2665,7 +2665,7 @@ set_input:
 {
 	if (IS_TOKEN(representedObject)) return NSDefaultTokenStyle;
 
-	return NSPlainTextTokenStyle;
+	return NSTokenStyleNone;
 }
 
 - (BOOL)tokenField:(NSTokenField *)tokenField writeRepresentedObjects:(NSArray *)objects toPasteboard:(NSPasteboard *)pboard
