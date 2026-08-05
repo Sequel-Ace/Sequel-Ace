@@ -1100,8 +1100,6 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         
         [tableDocumentInstance setQueryMode:SPInterfaceQueryMode];
         
-        NSUserNotificationCenter *defaultUNC = [NSUserNotificationCenter defaultUserNotificationCenter];
-        
         // If no results were returned, redraw the empty table and post notifications before returning.
         if ( ![resultData count] ) {
             [customQueryView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
@@ -1110,12 +1108,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             [defaultNC postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
             
             // Perform the notification for query completion
-            NSUserNotification *notification = [[NSUserNotification alloc] init];
-            notification.title = @"Query Finished";
-            notification.informativeText=[[errorText onMainThread] string];
-            notification.soundName = NSUserNotificationDefaultSoundName;
-            
-            [defaultUNC deliverNotification:notification];
+            [SANotificationCenter.shared postNotificationWithTitle:@"Query Finished" body:[[errorText onMainThread] string]];
             
             // Set up the callback if present
             if ([taskArguments objectForKey:@"callback"]) {
@@ -1140,12 +1133,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         [defaultNC postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
         
         // Query finished notification
-        NSUserNotification *notification = [[NSUserNotification alloc] init];
-        notification.title = @"Query Finished";
-        notification.informativeText=[[errorText onMainThread] string];
-        notification.soundName = NSUserNotificationDefaultSoundName;
-        
-        [defaultUNC deliverNotification:notification];
+        [SANotificationCenter.shared postNotificationWithTitle:@"Query Finished" body:[[errorText onMainThread] string]];
         
         // Set up the callback if present
         if ([taskArguments objectForKey:@"callback"]) {
