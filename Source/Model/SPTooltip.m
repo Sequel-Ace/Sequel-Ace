@@ -269,12 +269,9 @@ static CGFloat slow_in_out (CGFloat t)
 	[self setHidesOnDeactivate:YES];
 	[self setIgnoresMouseEvents:YES];
 
-	WKPreferences *prefs = [WKPreferences new];
-	prefs.javaScriptEnabled = YES;
-	
 	/* Create a configuration for our preferences */
 	WKWebViewConfiguration *conf = [WKWebViewConfiguration new];
-	conf.preferences = prefs;
+	conf.defaultWebpagePreferences.allowsContentJavaScript = YES;
 	conf.applicationNameForUserAgent = @"SequelPro Tooltip";
 	
 	wkWebView = [[WKWebView alloc] initWithFrame:NSZeroRect configuration:conf];
