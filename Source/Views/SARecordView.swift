@@ -132,10 +132,13 @@ private struct SARecordView: View {
                                 }
                             }
                     } else {
-                        Text(field.previewValue)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        ZStack(alignment: .leading) {
+                            Color.clear
+                            Text(field.previewValue)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                        }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                             .contentShape(Rectangle())
                             .simultaneousGesture(
                                 TapGesture(count: 2).onEnded { model.requestEdit(field) }
