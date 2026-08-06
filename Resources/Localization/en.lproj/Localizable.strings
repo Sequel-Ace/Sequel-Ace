@@ -1578,9 +1578,6 @@
 /* hide console */
 "Hide Console" = "Hide Console";
 
-/* hide record view menu item */
-"Hide Record View" = "Hide Record View";
-
 /* hide navigator */
 "Hide Navigator" = "Hide Navigator";
 
@@ -2485,9 +2482,6 @@
 
 /* show console */
 "Show Console" = "Show Console";
-
-/* show record view menu item */
-"Show Record View" = "Show Record View";
 
 /* show create func syntax menu item */
 "Show Create Function Syntax..." = "Show Create Function Syntax...";

@@ -175,6 +175,7 @@ final class SARecordViewTests: XCTestCase {
         controller.installOverlay(
             in: parent,
             resizing: grid,
+            shortcutTableView: NSTableView(),
             bottomInset: 0,
             topInset: 0,
             autosaveName: "SARecordViewTestsWidth"
@@ -202,22 +203,28 @@ final class SARecordViewTests: XCTestCase {
         XCTAssertNil(SARecordViewToolbarSupport.hostIdentifier(forTabIndex: -1))
     }
 
-    func testToolbarInsertionFollowsQueryItem() {
-        XCTAssertEqual(
-            SARecordViewToolbarSupport.insertionIndex(in: [
-                "SwitchToTableContentToolbarItemIdentifier",
-                "SwitchToRunQueryToolbarItemIdentifier",
-                "HistoryNavigationToolbarItemIdentifier"
-            ]),
-            2
-        )
-        XCTAssertEqual(SARecordViewToolbarSupport.insertionIndex(in: ["first", "second"]), 2)
-    }
+    func testSpaceShortcutRequiresResultTableFocus() {
+        let table = NSTableView()
+        func spaceEvent(isRepeat: Bool) -> NSEvent {
+            NSEvent.keyEvent(
+                with: .keyDown,
+                location: .zero,
+                modifierFlags: [],
+                timestamp: 0,
+                windowNumber: 0,
+                context: nil,
+                characters: " ",
+                charactersIgnoringModifiers: " ",
+                isARepeat: isRepeat,
+                keyCode: 49
+            )!
+        }
+        let space = spaceEvent(isRepeat: false)
 
-    func testToolbarMigrationOnlyInsertsOnceWhenMissing() {
-        XCTAssertTrue(SARecordViewToolbarSupport.shouldAutoInsert(hasMigrated: false, containsItem: false))
-        XCTAssertFalse(SARecordViewToolbarSupport.shouldAutoInsert(hasMigrated: false, containsItem: true))
-        XCTAssertFalse(SARecordViewToolbarSupport.shouldAutoInsert(hasMigrated: true, containsItem: false))
+        XCTAssertTrue(SARecordViewToolbarSupport.shouldHandleSpace(space, firstResponder: table, tableView: table))
+        XCTAssertFalse(SARecordViewToolbarSupport.shouldHandleSpace(spaceEvent(isRepeat: true), firstResponder: table, tableView: table))
+        XCTAssertFalse(SARecordViewToolbarSupport.shouldHandleSpace(space, firstResponder: NSTextView(), tableView: table))
+        XCTAssertFalse(SARecordViewToolbarSupport.shouldHandleSpace(space, firstResponder: nil, tableView: table))
     }
 
     func testToolbarItemTargetsRecordViewAction() {
@@ -227,10 +234,5 @@ final class SARecordViewTests: XCTestCase {
         XCTAssertEqual(item.label, "Record View")
         XCTAssertEqual(item.action.map(NSStringFromSelector), "toggleRecordView:")
         XCTAssertNil(item.view)
-    }
-
-    func testRecordViewMenuTitleReflectsVisibility() {
-        XCTAssertEqual(SARecordViewToolbarSupport.menuTitle(isVisible: false), "Show Record View")
-        XCTAssertEqual(SARecordViewToolbarSupport.menuTitle(isVisible: true), "Hide Record View")
     }
 }

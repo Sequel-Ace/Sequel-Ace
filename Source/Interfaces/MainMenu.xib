@@ -536,11 +536,6 @@
                                     <action selector="viewQuery:" target="-1" id="503"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Show Record View" keyEquivalent="7" id="SA-RV-Menu">
-                                <connections>
-                                    <action selector="toggleRecordView:" target="-1" id="SA-RV-Action"/>
-                                </connections>
-                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="990"/>
                             <menuItem title="Back In History" keyEquivalent="" id="991">
                                 <modifierMask key="keyEquivalentModifierMask" control="YES" option="YES"/>

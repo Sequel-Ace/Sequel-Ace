@@ -253,7 +253,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
     // Update the toolbar
     [self.parentWindowControllerWindow setToolbar:self.mainToolbar];
-    [SARecordViewToolbarSupport installIfNeededInToolbar:self.mainToolbar defaults:prefs];
 
     // The history controller needs to track toolbar item state - trigger setup.
     [spHistoryControllerInstance setupInterface];
@@ -2937,19 +2936,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         return _isConnected && databaseListIsSelectable;
     }
 
-    if (action == @selector(toggleRecordView:)) {
-        NSString *hostIdentifier = [SARecordViewToolbarSupport hostIdentifierForTabIndex:[self currentlySelectedView]];
-        BOOL enabled = _isConnected && !_isWorkingLevel && (hostIdentifier != nil);
-        BOOL isVisible = NO;
-        if ([hostIdentifier isEqualToString:SPMainToolbarTableContent]) {
-            isVisible = [tableContentInstance recordViewIsVisible];
-        } else if ([hostIdentifier isEqualToString:SPMainToolbarCustomQuery]) {
-            isVisible = [customQueryInstance recordViewIsVisible];
-        }
-        [menuItem setTitle:[SARecordViewToolbarSupport menuTitleForVisibility:isVisible]];
-        return enabled;
-    }
-
     if (!_isConnected || _isWorkingLevel) {
         return action == @selector(terminate:);
     }
@@ -3361,7 +3347,6 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         SPMainToolbarTableTriggers,
         SPMainToolbarTableInfo,
         SPMainToolbarCustomQuery,
-        [SARecordViewToolbarSupport itemIdentifier],
         NSToolbarSpaceItemIdentifier,
         SPMainToolbarHistoryNavigation,
         NSToolbarSpaceItemIdentifier,

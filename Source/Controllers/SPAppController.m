@@ -546,11 +546,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         return YES;
     }
 
-    if (action == @selector(toggleRecordView:) && !self.tabManager.activeWindowController.databaseDocument) {
-        [menuItem setTitle:[SARecordViewToolbarSupport menuTitleForVisibility:NO]];
-        return NO;
-    }
-
     if (self.tabManager.activeWindowController.databaseDocument) {
         return [self.tabManager.activeWindowController.databaseDocument validateMenuItem:menuItem];
     }

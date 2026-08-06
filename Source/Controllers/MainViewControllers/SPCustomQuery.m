@@ -3792,6 +3792,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     NSView *queryResultPane = [customQueryScrollView superview];
     [recordViewController installOverlayInView:queryResultPane
                                         resizingView:customQueryScrollView
+                                   shortcutTableView:customQueryView
                                         bottomInset:0
                                            topInset:23
                                        autosaveName:@"SARecordViewQueryWidth"];
@@ -3870,11 +3871,6 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 - (void)toggleRecordView
 {
     [recordViewController toggle];
-}
-
-- (BOOL)recordViewIsVisible
-{
-    return [recordViewController isVisible];
 }
 
 #pragma mark -

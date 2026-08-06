@@ -212,7 +212,6 @@
 - (void)updateQueryInteractionInterface;
 - (void)updateContextualRunInterface;
 - (void)toggleRecordView;
-- (BOOL)recordViewIsVisible;
 
 // Query load actions
 - (void)initQueryLoadTimer;

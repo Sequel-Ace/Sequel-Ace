@@ -118,10 +118,6 @@ extension SPAppController {
         tabManager.activeWindowController?.databaseDocument.toggleNavigator()
     }
 
-    @IBAction func toggleRecordView(_ sender: Any) {
-        tabManager.activeWindowController?.databaseDocument.toggleRecordView(sender)
-    }
-
     // MARK: Database menu actions
 
     @IBAction func showGotoDatabase(_ sender: Any) {

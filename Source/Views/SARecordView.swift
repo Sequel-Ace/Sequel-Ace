@@ -278,7 +278,6 @@ private final class SARecordViewOverlayView: NSView {
 @objc final class SARecordViewToolbarSupport: NSObject {
     private static let contentIdentifier = "SwitchToTableContentToolbarItemIdentifier"
     private static let queryIdentifier = "SwitchToRunQueryToolbarItemIdentifier"
-    private static let migrationDefaultsKey = "SARecordViewToolbarItemMigrationV1"
 
     @objc static var itemIdentifier: String {
         "RecordViewToolbarItemIdentifier"
@@ -298,19 +297,13 @@ private final class SARecordViewOverlayView: NSView {
         }
     }
 
-    @objc(menuTitleForVisibility:)
-    static func menuTitle(isVisible: Bool) -> String {
-        isVisible
-            ? NSLocalizedString("Hide Record View", comment: "hide record view menu item")
-            : NSLocalizedString("Show Record View", comment: "show record view menu item")
-    }
-
-    static func insertionIndex(in identifiers: [String]) -> Int {
-        identifiers.firstIndex(of: queryIdentifier).map { $0 + 1 } ?? identifiers.count
-    }
-
-    static func shouldAutoInsert(hasMigrated: Bool, containsItem: Bool) -> Bool {
-        !hasMigrated && !containsItem
+    static func shouldHandleSpace(_ event: NSEvent, firstResponder: NSResponder?, tableView: NSTableView) -> Bool {
+        let modifiers: NSEvent.ModifierFlags = [.command, .control, .option, .shift]
+        return event.type == .keyDown
+            && event.keyCode == 49
+            && !event.isARepeat
+            && event.modifierFlags.intersection(modifiers).isEmpty
+            && firstResponder === tableView
     }
 
     @objc(makeToolbarItemWithTarget:)
@@ -325,36 +318,43 @@ private final class SARecordViewOverlayView: NSView {
         item.action = NSSelectorFromString("toggleRecordView:")
         return item
     }
-
-    @objc(installIfNeededInToolbar:defaults:)
-    static func installIfNeeded(in toolbar: NSToolbar, defaults: UserDefaults) {
-        let identifiers = toolbar.items.map { $0.itemIdentifier.rawValue }
-        let hasMigrated = defaults.bool(forKey: migrationDefaultsKey)
-
-        if shouldAutoInsert(hasMigrated: hasMigrated, containsItem: identifiers.contains(itemIdentifier)) {
-            toolbar.insertItem(
-                withItemIdentifier: NSToolbarItem.Identifier(itemIdentifier),
-                at: insertionIndex(in: identifiers)
-            )
-        }
-
-        if !hasMigrated {
-            defaults.set(true, forKey: migrationDefaultsKey)
-        }
-    }
 }
 
 @objc final class SARecordViewController: NSObject {
     private let model = SARecordViewModel()
     private lazy var hostingView = NSHostingView(rootView: SARecordView(model: model))
     private weak var overlayView: SARecordViewOverlayView?
+    private weak var shortcutTableView: NSTableView?
+    private var shortcutMonitor: Any?
 
-    @objc(installOverlayInView:resizingView:bottomInset:topInset:autosaveName:)
+    deinit {
+        if let shortcutMonitor {
+            NSEvent.removeMonitor(shortcutMonitor)
+        }
+    }
+
+    @objc(installOverlayInView:resizingView:shortcutTableView:bottomInset:topInset:autosaveName:)
     func installOverlay(in parentView: NSView,
                         resizing targetView: NSView,
+                        shortcutTableView: NSTableView,
                         bottomInset: CGFloat,
                         topInset: CGFloat,
                         autosaveName: String) {
+        self.shortcutTableView = shortcutTableView
+        shortcutMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self,
+                  let tableView = self.shortcutTableView,
+                  SARecordViewToolbarSupport.shouldHandleSpace(
+                    event,
+                    firstResponder: event.window?.firstResponder,
+                    tableView: tableView
+                  ) else {
+                return event
+            }
+            self.toggle()
+            return nil
+        }
+
         let savedWidth = UserDefaults.standard.double(forKey: autosaveName)
         let width = min(savedWidth >= 240 ? savedWidth : 320, parentView.bounds.width)
         let container = SARecordViewOverlayView(frame: NSRect(

@@ -220,6 +220,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
     recordViewController = [[SARecordViewController alloc] init];
     [recordViewController installOverlayInView:tableContentContainer
                                          resizingView:[tableContentView enclosingScrollView]
+                                    shortcutTableView:tableContentView
                                          bottomInset:25
                                             topInset:0
                                         autosaveName:@"SARecordViewContentWidth"];
@@ -311,11 +312,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 - (void)toggleRecordView
 {
 	[recordViewController toggle];
-}
-
-- (BOOL)recordViewIsVisible
-{
-	return [recordViewController isVisible];
 }
 
 #pragma mark -
