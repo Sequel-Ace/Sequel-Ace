@@ -137,9 +137,9 @@ private struct SARecordView: View {
                             .truncationMode(.tail)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .contentShape(Rectangle())
-                            .onTapGesture(count: 2) {
-                                model.requestEdit(field)
-                            }
+                            .simultaneousGesture(
+                                TapGesture(count: 2).onEnded { model.requestEdit(field) }
+                            )
                             .contextMenu {
                                 Button("Copy Value") {
                                     copy(field.value)
