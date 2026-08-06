@@ -115,6 +115,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 
 @property (readwrite, strong) NSMutableDictionary<NSNumber*,NSNumber*> *sortCount;
 @property (assign) BOOL recordViewNeedsSelectionRestoreRefresh;
+@property (assign) BOOL suppressRecordViewTaskRefresh;
 
 @end
 
@@ -2284,7 +2285,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     NSString *columnName = [columnDefinition objectForKey:@"org_name"];
     
     // Check if the IDstring identifies the current field bijectively and get the WHERE clause
-    NSArray *editStatus = [self fieldEditStatusForRow:rowIndex andColumn:[[aTableColumn identifier] integerValue]];
+    NSArray *editStatus = [self fieldEditStatusForRow:rowIndex andColumn:[customQueryView columnWithIdentifier:[aTableColumn identifier]]];
     fieldIDQueryString = [editStatus objectAtIndex:1];
     NSInteger numberOfPossibleUpdateRows = [[editStatus objectAtIndex:0] integerValue];
     
@@ -3391,7 +3392,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 - (void) endDocumentTaskForTab:(NSNotification *)aNotification
 {
     isWorking = NO;
-    if (!self.recordViewNeedsSelectionRestoreRefresh) {
+    if (!self.recordViewNeedsSelectionRestoreRefresh && !self.suppressRecordViewTaskRefresh) {
         [self _updateRecordView];
     }
     
@@ -3806,7 +3807,15 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
         NSTableColumn *column = [strongSelf _recordViewColumnAtIndex:fieldIndex];
         if (row < 0 || !column) return NO;
 
-        return [strongSelf tableView:strongSelf->customQueryView shouldEditTableColumn:column row:row];
+        if (![strongSelf tableView:strongSelf->customQueryView shouldEditTableColumn:column row:row]) return NO;
+        NSInteger columnIndex = [strongSelf->customQueryView columnWithIdentifier:[column identifier]];
+        return columnIndex >= 0 && [[strongSelf fieldEditStatusForRow:row andColumn:columnIndex][0] integerValue] == 1;
+    } validate:^NSString *(NSInteger fieldIndex, NSString *value) {
+        SPCustomQuery *strongSelf = weakSelf;
+        if (!strongSelf) return nil;
+
+        NSTableColumn *column = [strongSelf _recordViewColumnAtIndex:fieldIndex];
+        return column ? [SARecordViewEditSupport validateValue:value withFormatter:[[column dataCell] formatter]] : nil;
     } commit:^BOOL(NSInteger fieldIndex, NSString *value) {
         SPCustomQuery *strongSelf = weakSelf;
         if (!strongSelf) return NO;
@@ -3825,8 +3834,10 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
             return NO;
         }
 
+        strongSelf.suppressRecordViewTaskRefresh = YES;
         [strongSelf tableView:strongSelf->customQueryView setObjectValue:objectValue forTableColumn:column row:row];
-        return YES;
+        strongSelf.suppressRecordViewTaskRefresh = NO;
+        return NO;
     }];
     
     // Give the editor a small vertical inset so text is not flush against the top and bottom edges (#2236)
@@ -3928,9 +3939,8 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 
 - (NSInteger)_recordViewSelectedRow
 {
-    NSIndexSet *selectedRowIndexes = [customQueryView selectedRowIndexes];
     NSInteger selectedRow = [customQueryView selectedRow];
-    if (selectedRow < 0 || [selectedRowIndexes count] != 1) return -1;
+    if (selectedRow < 0 || [customQueryView numberOfSelectedRows] != 1) return -1;
 
     NSUInteger rowCount = 0;
     if (isWorking) pthread_mutex_lock(&resultDataLock);

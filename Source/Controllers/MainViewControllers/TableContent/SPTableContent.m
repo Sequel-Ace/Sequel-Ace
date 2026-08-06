@@ -103,6 +103,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 @interface SPTableContent () <SATableHeaderViewDelegate>
 
 @property (assign, nonatomic) BOOL deferRecordViewRefreshUntilTableLoadCompletes;
+@property (assign, nonatomic) BOOL suppressRecordViewTaskRefresh;
 
 - (BOOL)cancelRowEditing;
 - (void)documentWillClose:(NSNotification *)notification;
@@ -234,7 +235,16 @@ static void *TableContentKVOContext = &TableContentKVOContext;
         NSTableColumn *column = [strongSelf _recordViewColumnAtIndex:fieldIndex];
         if (row < 0 || !column) return NO;
 
-        return [strongSelf tableView:strongSelf->tableContentView shouldEditTableColumn:column row:row];
+        if (![strongSelf tableView:strongSelf->tableContentView shouldEditTableColumn:column row:row]) return NO;
+        if ([strongSelf->tablesListInstance tableType] != SPTableTypeView) return YES;
+        NSInteger columnIndex = [strongSelf->tableContentView columnWithIdentifier:[column identifier]];
+        return columnIndex >= 0 && [[strongSelf fieldEditStatusForRow:row andColumn:columnIndex][0] integerValue] == 1;
+    } validate:^NSString *(NSInteger fieldIndex, NSString *value) {
+        SPTableContent *strongSelf = weakSelf;
+        if (!strongSelf) return nil;
+
+        NSTableColumn *column = [strongSelf _recordViewColumnAtIndex:fieldIndex];
+        return column ? [SARecordViewEditSupport validateValue:value withFormatter:[[column dataCell] formatter]] : nil;
     } commit:^BOOL(NSInteger fieldIndex, NSString *value) {
         SPTableContent *strongSelf = weakSelf;
         if (!strongSelf) return NO;
@@ -246,17 +256,26 @@ static void *TableContentKVOContext = &TableContentKVOContext;
         NSInteger columnIndex = [[column identifier] integerValue];
         if ([strongSelf->tableContentView shouldUseFieldEditorForRow:row column:columnIndex checkWithLock:NULL]) return NO;
 
-        id objectValue = value;
         NSFormatter *formatter = [[column dataCell] formatter];
+        NSDictionary *columnDefinition = [strongSelf->dataColumns safeObjectAtIndex:columnIndex];
+        BOOL isNull = [value isEqualToString:[strongSelf->prefs objectForKey:SPNullValue]] && [[columnDefinition objectForKey:@"null"] boolValue];
+        if (!isNull && ![formatter isKindOfClass:[SABaseFormatter class]] && [strongSelf cellValueIsDisplayedAsHexForColumn:columnIndex] && ![NSData sp_dataWithHexString:value]) {
+            NSBeep();
+            return NO;
+        }
+
+        id objectValue = value;
         if (formatter && ![formatter getObjectValue:&objectValue forString:value errorDescription:NULL]) {
             NSBeep();
             return NO;
         }
 
+        strongSelf.suppressRecordViewTaskRefresh = YES;
         [strongSelf tableView:strongSelf->tableContentView setObjectValue:objectValue forTableColumn:column row:row];
+        strongSelf.suppressRecordViewTaskRefresh = NO;
         [strongSelf->tableContentView reloadDataForRowIndexes:[NSIndexSet indexSetWithIndex:row]
-                                                columnIndexes:[NSIndexSet indexSetWithIndex:(NSUInteger)fieldIndex]];
-        return YES;
+                                                 columnIndexes:[NSIndexSet indexSetWithIndex:(NSUInteger)fieldIndex]];
+        return NO;
     }];
 
     if (self->columnFilterSearchField) {
@@ -3354,7 +3373,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	[self storeCurrentDetailsForRestoration];
 
 	// Check if the IDstring identifies the current field bijectively and get the WHERE clause
-	NSArray *editStatus = [self fieldEditStatusForRow:rowIndex andColumn:[[aTableColumn identifier] integerValue]];
+	NSArray *editStatus = [self fieldEditStatusForRow:rowIndex andColumn:[tableContentView columnWithIdentifier:[aTableColumn identifier]]];
 	NSString *fieldIDQueryStr = [editStatus objectAtIndex:1];
 	NSInteger numberOfPossibleUpdateRows = [[editStatus objectAtIndex:0] integerValue];
 
@@ -3938,7 +3957,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	[ruleFilterController setEnabled:(!![selectedTable length])];
 	[toggleRuleFilterButton setEnabled:(!![selectedTable length])];
 	tableRowsSelectable = YES;
-	if (!self.deferRecordViewRefreshUntilTableLoadCompletes) {
+	if (!self.deferRecordViewRefreshUntilTableLoadCompletes && !self.suppressRecordViewTaskRefresh) {
 		[self _updateRecordView];
 	}
 }
@@ -4228,9 +4247,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 - (NSInteger)_recordViewSelectedRow
 {
-	NSIndexSet *selectedRowIndexes = [tableContentView selectedRowIndexes];
 	NSInteger selectedRow = [tableContentView selectedRow];
-	if (selectedRow < 0 || [selectedRowIndexes count] != 1) return -1;
+	if (selectedRow < 0 || [tableContentView numberOfSelectedRows] != 1) return -1;
 	if ((NSUInteger)selectedRow >= tableRowsCount) return -1;
 	return selectedRow;
 }

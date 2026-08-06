@@ -23,6 +23,40 @@ struct SARecordField: Identifiable, Equatable {
     }
 }
 
+@objc final class SARecordViewEditSupport: NSObject {
+    @objc(validateValue:withFormatter:)
+    static func validate(_ value: String, with formatter: Formatter?) -> String? {
+        guard let formatter else {
+            return value
+        }
+
+        if formatter is SABaseFormatter {
+            let pointer = UnsafeMutablePointer<NSString>.allocate(capacity: 1)
+            pointer.initialize(to: value as NSString)
+            defer {
+                pointer.deinitialize(count: 1)
+                pointer.deallocate()
+            }
+            let partialString = AutoreleasingUnsafeMutablePointer<NSString>(pointer)
+            let selection = NSRange(location: value.utf16.count, length: 0)
+            return formatter.isPartialStringValid(
+                partialString,
+                proposedSelectedRange: nil,
+                originalString: value,
+                originalSelectedRange: selection,
+                errorDescription: nil
+            ) ? pointer.pointee as String : nil
+        }
+
+        var replacement: NSString?
+        return formatter.isPartialStringValid(
+            value,
+            newEditingString: &replacement,
+            errorDescription: nil
+        ) ? value : replacement as String?
+    }
+}
+
 final class SARecordViewModel: ObservableObject {
     @Published private(set) var selectedRowCount = 0
     @Published private(set) var fields: [SARecordField] = []
@@ -33,6 +67,7 @@ final class SARecordViewModel: ObservableObject {
     @Published var editDraft = ""
 
     var beginEditing: ((Int) -> Bool)?
+    var validateEditing: ((Int, String) -> String?)?
     var commitEditing: ((Int, String) -> Bool)?
 
     var visibleFields: [SARecordField] {
@@ -51,17 +86,15 @@ final class SARecordViewModel: ObservableObject {
     }
 
     func clear() {
-        cancelEdit()
-        selectedRowCount = 0
-        fields = []
         searchText = ""
-        selectedFieldID = nil
+        update(fields: [], selectedRowCount: 0)
     }
 
     func requestEdit(_ field: SARecordField) {
         guard beginEditing?(field.id) == true else {
             return
         }
+        let field = fields.first { $0.id == field.id } ?? field
         editingFieldID = field.id
         focusedFieldID = field.id
         editDraft = field.value
@@ -73,6 +106,19 @@ final class SARecordViewModel: ObservableObject {
             return
         }
         cancelEdit()
+    }
+
+    func updateEditDraft(_ value: String) {
+        guard let fieldID = editingFieldID else {
+            return
+        }
+        guard let validateEditing else {
+            editDraft = value
+            return
+        }
+        if let value = validateEditing(fieldID, value) {
+            editDraft = value
+        }
     }
 
     func editorFocusChanged(_ fieldID: SARecordField.ID?) {
@@ -137,7 +183,10 @@ private struct SARecordView: View {
             }
             TableColumn("Value") { field in
                 if model.editingFieldID == field.id {
-                    TextField("Value", text: $model.editDraft)
+                    TextField("Value", text: Binding(
+                        get: { model.editDraft },
+                        set: model.updateEditDraft
+                    ))
                         .textFieldStyle(.plain)
                         .onSubmit(model.commitEdit)
                         .focused($focusedFieldID, equals: field.id)
@@ -279,14 +328,7 @@ private final class SARecordViewOverlayView: NSView {
     private static let contentIdentifier = "SwitchToTableContentToolbarItemIdentifier"
     private static let queryIdentifier = "SwitchToRunQueryToolbarItemIdentifier"
 
-    @objc static var itemIdentifier: String {
-        "RecordViewToolbarItemIdentifier"
-    }
-
-    @objc(isEnabledForSelectedIdentifier:)
-    static func isEnabled(for selectedIdentifier: String?) -> Bool {
-        selectedIdentifier == contentIdentifier || selectedIdentifier == queryIdentifier
-    }
+    @objc static let itemIdentifier = "RecordViewToolbarItemIdentifier"
 
     @objc(hostIdentifierForTabIndex:)
     static func hostIdentifier(forTabIndex index: Int) -> String? {
@@ -420,12 +462,14 @@ private final class SARecordViewOverlayView: NSView {
         model.clear()
     }
 
-    @objc(setEditingHandlersWithBegin:commit:)
+    @objc(setEditingHandlersWithBegin:validate:commit:)
     func setEditingHandlers(
         begin: @escaping (Int) -> Bool,
+        validate: @escaping (Int, String) -> String?,
         commit: @escaping (Int, String) -> Bool
     ) {
         model.beginEditing = begin
+        model.validateEditing = validate
         model.commitEditing = commit
     }
 }

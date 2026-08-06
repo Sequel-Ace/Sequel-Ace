@@ -121,6 +121,21 @@ final class SARecordViewTests: XCTestCase {
         XCTAssertEqual(model.editDraft, "")
     }
 
+    func testDeferredValueUsesSnapshotLoadedWhileBeginningEdit() {
+        let model = SARecordViewModel()
+        let unloaded = SARecordField(id: 0, name: "content", value: "(not loaded)")
+        let loaded = SARecordField(id: 0, name: "content", value: "real value")
+        model.update(fields: [unloaded], selectedRowCount: 1)
+        model.beginEditing = { _ in
+            model.update(fields: [loaded], selectedRowCount: 1)
+            return true
+        }
+
+        model.requestEdit(unloaded)
+
+        XCTAssertEqual(model.editDraft, "real value")
+    }
+
     func testCancelAndSnapshotRefreshDiscardDraft() {
         let model = SARecordViewModel()
         let field = SARecordField(id: 0, name: "name", value: "Ada")
@@ -149,11 +164,36 @@ final class SARecordViewTests: XCTestCase {
         XCTAssertEqual(model.editDraft, "invalid")
     }
 
+    func testDraftValidationAcceptsReplacementAndRejectsInvalidChange() {
+        let model = SARecordViewModel()
+        let field = SARecordField(id: 0, name: "name", value: "Ada")
+        model.beginEditing = { _ in true }
+        model.validateEditing = { _, value in
+            value == "invalid" ? nil : String(value.prefix(3))
+        }
+        model.requestEdit(field)
+
+        model.updateEditDraft("Grace")
+        XCTAssertEqual(model.editDraft, "Gra")
+
+        model.updateEditDraft("invalid")
+        XCTAssertEqual(model.editDraft, "Gra")
+    }
+
+    func testRecordViewValidationUsesSelectionAwareFormatterRules() {
+        let defaults = UserDefaults(suiteName: #function)!
+        defaults.set("NULL", forKey: "NullValue")
+        let formatter = SAUuidFormatter(userDefaults: defaults)
+
+        XCTAssertEqual(SARecordViewEditSupport.validate("01234567", with: formatter), "01234567")
+        XCTAssertNil(SARecordViewEditSupport.validate(String(repeating: "0", count: 33), with: formatter))
+    }
+
     func testControllerExposesObjectiveCEditingSelector() {
         let controller = SARecordViewController()
 
         XCTAssertTrue(
-            controller.responds(to: NSSelectorFromString("setEditingHandlersWithBegin:commit:"))
+            controller.responds(to: NSSelectorFromString("setEditingHandlersWithBegin:validate:commit:"))
         )
     }
 
@@ -186,13 +226,6 @@ final class SARecordViewTests: XCTestCase {
         XCTAssertTrue(controller.isVisible)
         controller.toggle()
         XCTAssertFalse(controller.isVisible)
-    }
-
-    func testToolbarIsEnabledOnlyForContentAndQuery() {
-        XCTAssertTrue(SARecordViewToolbarSupport.isEnabled(for: "SwitchToTableContentToolbarItemIdentifier"))
-        XCTAssertTrue(SARecordViewToolbarSupport.isEnabled(for: "SwitchToRunQueryToolbarItemIdentifier"))
-        XCTAssertFalse(SARecordViewToolbarSupport.isEnabled(for: "SwitchToTableStructureToolbarItemIdentifier"))
-        XCTAssertFalse(SARecordViewToolbarSupport.isEnabled(for: nil))
     }
 
     func testToolbarHostIdentifierUsesActiveResultTab() {
