@@ -289,6 +289,15 @@ private final class SARecordViewOverlayView: NSView {
         selectedIdentifier == contentIdentifier || selectedIdentifier == queryIdentifier
     }
 
+    @objc(hostIdentifierForTabIndex:)
+    static func hostIdentifier(forTabIndex index: Int) -> String? {
+        switch index {
+        case 1: return contentIdentifier
+        case 2: return queryIdentifier
+        default: return nil
+        }
+    }
+
     @objc(menuTitleForVisibility:)
     static func menuTitle(isVisible: Bool) -> String {
         isVisible

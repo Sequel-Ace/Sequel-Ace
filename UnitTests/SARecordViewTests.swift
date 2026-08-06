@@ -194,6 +194,14 @@ final class SARecordViewTests: XCTestCase {
         XCTAssertFalse(SARecordViewToolbarSupport.isEnabled(for: nil))
     }
 
+    func testToolbarHostIdentifierUsesActiveResultTab() {
+        XCTAssertEqual(SARecordViewToolbarSupport.hostIdentifier(forTabIndex: 1), "SwitchToTableContentToolbarItemIdentifier")
+        XCTAssertEqual(SARecordViewToolbarSupport.hostIdentifier(forTabIndex: 2), "SwitchToRunQueryToolbarItemIdentifier")
+        XCTAssertNil(SARecordViewToolbarSupport.hostIdentifier(forTabIndex: 0))
+        XCTAssertNil(SARecordViewToolbarSupport.hostIdentifier(forTabIndex: 3))
+        XCTAssertNil(SARecordViewToolbarSupport.hostIdentifier(forTabIndex: -1))
+    }
+
     func testToolbarInsertionFollowsQueryItem() {
         XCTAssertEqual(
             SARecordViewToolbarSupport.insertionIndex(in: [
@@ -218,6 +226,7 @@ final class SARecordViewTests: XCTestCase {
         XCTAssertEqual(item.itemIdentifier.rawValue, "RecordViewToolbarItemIdentifier")
         XCTAssertEqual(item.label, "Record View")
         XCTAssertEqual(item.action.map(NSStringFromSelector), "toggleRecordView:")
+        XCTAssertNil(item.view)
     }
 
     func testRecordViewMenuTitleReflectsVisibility() {
