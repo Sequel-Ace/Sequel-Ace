@@ -113,48 +113,76 @@ private struct SARecordView: View {
             emptyState("Select only one row", systemImage: "rectangle.stack")
         } else if model.fields.isEmpty {
             emptyState("This record has no fields", systemImage: "list.bullet.rectangle")
-        } else {
-            Table(model.visibleFields, selection: $model.selectedFieldID) {
-                TableColumn("Field") { field in
-                    Text(field.name)
-                        .help(field.name)
-                }
-                TableColumn("Value") { field in
-                    if model.editingFieldID == field.id {
-                        TextField("Value", text: $model.editDraft)
-                            .textFieldStyle(.plain)
-                            .onSubmit(model.commitEdit)
-                            .focused($focusedFieldID, equals: field.id)
-                            .onExitCommand(perform: model.cancelEdit)
-                            .onAppear {
-                                DispatchQueue.main.async {
-                                    focusedFieldID = field.id
-                                }
-                            }
-                    } else {
-                        ZStack(alignment: .leading) {
-                            Color.clear
-                            Text(field.previewValue)
-                                .lineLimit(1)
-                                .truncationMode(.tail)
-                        }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                            .contentShape(Rectangle())
-                            .simultaneousGesture(
-                                TapGesture(count: 2).onEnded { model.requestEdit(field) }
-                            )
-                            .contextMenu {
-                                Button("Copy Value") {
-                                    copy(field.value)
-                                }
-                                Button("Edit Value") {
-                                    model.requestEdit(field)
-                                }
-                            }
+        } else if #available(macOS 13.0, *) {
+            recordFieldsTable
+                .contextMenu(forSelectionType: SARecordField.ID.self) { selection in
+                    if let field = field(id: selection.first) {
+                        fieldMenu(field)
                     }
+                } primaryAction: { selection in
+                    if let field = field(id: selection.first) {
+                        model.requestEdit(field)
+                    }
+                }
+        } else {
+            recordFieldsTable
+        }
+    }
+
+    private var recordFieldsTable: some View {
+        Table(model.visibleFields, selection: $model.selectedFieldID) {
+            TableColumn("Field") { field in
+                Text(field.name)
+                    .help(field.name)
+            }
+            TableColumn("Value") { field in
+                if model.editingFieldID == field.id {
+                    TextField("Value", text: $model.editDraft)
+                        .textFieldStyle(.plain)
+                        .onSubmit(model.commitEdit)
+                        .focused($focusedFieldID, equals: field.id)
+                        .onExitCommand(perform: model.cancelEdit)
+                        .onAppear {
+                            DispatchQueue.main.async {
+                                focusedFieldID = field.id
+                            }
+                        }
+                } else if #available(macOS 13.0, *) {
+                    Text(field.previewValue)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                } else {
+                    ZStack(alignment: .leading) {
+                        Color.clear
+                        Text(field.previewValue)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                        .simultaneousGesture(
+                            TapGesture(count: 2).onEnded { model.requestEdit(field) }
+                        )
+                        .contextMenu {
+                            fieldMenu(field)
+                        }
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private func fieldMenu(_ field: SARecordField) -> some View {
+        Button("Copy Value") {
+            copy(field.value)
+        }
+        Button("Edit Value") {
+            model.requestEdit(field)
+        }
+    }
+
+    private func field(id: SARecordField.ID?) -> SARecordField? {
+        model.visibleFields.first { $0.id == id }
     }
 
     private func emptyState(_ title: LocalizedStringKey, systemImage: String) -> some View {
