@@ -48,6 +48,7 @@
 @class SPTextView;
 @class SPDatabaseDocument;
 @class SPTablesList;
+@class SARecordViewController;
 
 @class SPBracketHighlighter;
 
@@ -113,6 +114,7 @@
 	IBOutlet NSButton *queryInfoButton;
 	IBOutlet SPSplitView *queryInfoPaneSplitView;
 	IBOutlet SPSplitView *queryEditorSplitView;
+	SARecordViewController *recordViewController;
 
 	SPFieldEditorController *fieldEditor;
 	SPQueryFavoriteManager *favoritesManager;
@@ -209,6 +211,7 @@
 // Interface setup
 - (void)updateQueryInteractionInterface;
 - (void)updateContextualRunInterface;
+- (void)toggleRecordView;
 
 // Query load actions
 - (void)initQueryLoadTimer;

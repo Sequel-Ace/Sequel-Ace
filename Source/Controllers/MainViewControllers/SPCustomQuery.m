@@ -102,6 +102,10 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 @interface SPCustomQuery ()
 
 - (id)_resultDataItemAtRow:(NSInteger)row columnIndex:(NSUInteger)column preserveNULLs:(BOOL)preserveNULLs asPreview:(BOOL)asPreview;
+- (NSInteger)_recordViewSelectedRow;
+- (NSTableColumn *)_recordViewColumnAtIndex:(NSInteger)fieldIndex;
+- (NSString *)_recordViewStringForValue:(id)value tableColumn:(NSTableColumn *)tableColumn;
+- (void)_updateRecordView;
 - (void)_updateColumnHeadersForCurrentPreference;
 + (NSAttributedString *)columnHeaderAttributedStringForColumnDefinition:(NSDictionary *)columnDefinition showColumnTypes:(BOOL)showColumnTypes;
 - (void)documentWillClose:(NSNotification *)notification;
@@ -110,6 +114,8 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 - (void)helpWindowClosedByUser:(NSNotification *)notification;
 
 @property (readwrite, strong) NSMutableDictionary<NSNumber*,NSNumber*> *sortCount;
+@property (assign) BOOL recordViewNeedsSelectionRestoreRefresh;
+@property (assign) BOOL suppressRecordViewTaskRefresh;
 
 @end
 
@@ -1103,6 +1109,12 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         // If no results were returned, redraw the empty table and post notifications before returning.
         if ( ![resultData count] ) {
             [customQueryView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
+            if (self.recordViewNeedsSelectionRestoreRefresh) {
+                self.recordViewNeedsSelectionRestoreRefresh = NO;
+                SPMainQSync(^{
+                    [self->recordViewController updateWithFields:@[] selectedRowCount:0];
+                });
+            }
             
             // Notify any listeners that the query has completed
             [defaultNC postNotificationOnMainThreadWithName:@"SMySQLQueryHasBeenPerformed" object:tableDocumentInstance];
@@ -1152,6 +1164,10 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
             if (reloadingExistingResult) {
                 [[tableDocumentInstance parentWindowControllerWindow] makeFirstResponder:customQueryView];
             }
+            if (self.recordViewNeedsSelectionRestoreRefresh) {
+                [self _updateRecordView];
+                self.recordViewNeedsSelectionRestoreRefresh = NO;
+            }
         });
     }
 }
@@ -1162,6 +1178,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
  */
 - (void)updateResultStore:(SPMySQLStreamingResultStore *)theResultStore
 {
+    SPMainQSync(^{
+        [self->recordViewController clear];
+    });
     pthread_mutex_lock(&resultDataLock);
     // Remove all items from the table
     SPMainQSync(^{
@@ -1760,6 +1779,9 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     
     if ([resultData dataDownloaded]) {
         [self clearQueryLoadTimer];
+        if (!self.recordViewNeedsSelectionRestoreRefresh) {
+            [self _updateRecordView];
+        }
     }
     
     // Check whether a table update is required, based on whether new rows are
@@ -1912,6 +1934,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
  */
 - (void) updateTableView
 {
+    [recordViewController clear];
     NSArray *theColumns;
     NSTableColumn *theCol;
     BOOL showColumnTypes = [prefs boolForKey:SPDisplayTableViewColumnTypes];
@@ -2250,7 +2273,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     NSString *columnName = [columnDefinition objectForKey:@"org_name"];
     
     // Check if the IDstring identifies the current field bijectively and get the WHERE clause
-    NSArray *editStatus = [self fieldEditStatusForRow:rowIndex andColumn:[[aTableColumn identifier] integerValue]];
+    NSArray *editStatus = [self fieldEditStatusForRow:rowIndex andColumn:[customQueryView columnWithIdentifier:[aTableColumn identifier]]];
     fieldIDQueryString = [editStatus objectAtIndex:1];
     NSInteger numberOfPossibleUpdateRows = [[editStatus objectAtIndex:0] integerValue];
     
@@ -2310,12 +2333,20 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 
             // On success reload table data by executing the last query if reloading is enabled
             if ([prefs boolForKey:SPReloadAfterEditingRow]) {
+                [recordViewController clear];
+                self.recordViewNeedsSelectionRestoreRefresh = YES;
                 reloadingExistingResult = YES;
                 [self storeCurrentResultViewForRestoration];
                 [self performQueries:@[lastExecutedQuery] withCallback:NULL];
             } else {
                 // otherwise, just update the data in the data storage
                 [resultData replaceObjectInRow:rowIndex column:[[aTableColumn identifier] intValue] withObject:anObject];
+                NSInteger visibleColumn = [customQueryView columnWithIdentifier:[aTableColumn identifier]];
+                if (visibleColumn >= 0) {
+                    [customQueryView reloadDataForRowIndexes:[NSIndexSet indexSetWithIndex:rowIndex]
+                                               columnIndexes:[NSIndexSet indexSetWithIndex:(NSUInteger)visibleColumn]];
+                }
+                [self _updateRecordView];
             }
         }
         else{
@@ -2361,12 +2392,20 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 
                     // On success reload table data by executing the last query if reloading is enabled
                     if ([self->prefs boolForKey:SPReloadAfterEditingRow]) {
+                        [self->recordViewController clear];
+                        self.recordViewNeedsSelectionRestoreRefresh = YES;
                         self->reloadingExistingResult = YES;
                         [self storeCurrentResultViewForRestoration];
                         [self performQueries:@[self->lastExecutedQuery] withCallback:NULL];
                     } else {
                         // otherwise, just update the data in the data storage
                         [self->resultData replaceObjectInRow:rowIndex column:[[aTableColumn identifier] intValue] withObject:anObject];
+                        NSInteger visibleColumn = [self->customQueryView columnWithIdentifier:[aTableColumn identifier]];
+                        if (visibleColumn >= 0) {
+                            [self->customQueryView reloadDataForRowIndexes:[NSIndexSet indexSetWithIndex:rowIndex]
+                                                            columnIndexes:[NSIndexSet indexSetWithIndex:(NSUInteger)visibleColumn]];
+                        }
+                        [self _updateRecordView];
                     }
                 }
                                  cancelButtonHandler:^{
@@ -2880,6 +2919,8 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 {
     // Check our notification object is our table content view
     if ([aNotification object] != customQueryView) return;
+
+    [self _updateRecordView];
     
     NSArray *triggeredCommands = [SPBundleManager.shared bundleCommandsForTrigger:SPBundleTriggerActionTableRowChanged];
     for(NSString* cmdPath in triggeredCommands) {
@@ -3339,6 +3380,9 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 - (void) endDocumentTaskForTab:(NSNotification *)aNotification
 {
     isWorking = NO;
+    if (!self.recordViewNeedsSelectionRestoreRefresh && !self.suppressRecordViewTaskRefresh) {
+        [self _updateRecordView];
+    }
     
     // Only proceed if this view is selected.
     if (![[tableDocumentInstance selectedToolbarItemIdentifier] isEqualToString:SPMainToolbarCustomQuery])
@@ -3732,6 +3776,57 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     
     [queryInfoPaneSplitView setCollapsibleSubviewIndex:1];
     [queryInfoPaneSplitView setCollapsibleSubviewCollapsed:YES animate:NO];
+
+    recordViewController = [[SARecordViewController alloc] init];
+    NSView *queryResultPane = [customQueryScrollView superview];
+    [recordViewController installOverlayInView:queryResultPane
+                                        resizingView:customQueryScrollView
+                                   shortcutTableView:customQueryView
+                                        bottomInset:0
+                                           topInset:23
+                                       autosaveName:@"SARecordViewQueryWidth"];
+
+    __weak __typeof__(self) weakSelf = self;
+    [recordViewController setEditingHandlersWithBegin:^BOOL(NSInteger fieldIndex) {
+        SPCustomQuery *strongSelf = weakSelf;
+        if (!strongSelf) return NO;
+
+        NSInteger row = [strongSelf _recordViewSelectedRow];
+        NSTableColumn *column = [strongSelf _recordViewColumnAtIndex:fieldIndex];
+        if (row < 0 || !column) return NO;
+
+        if (![strongSelf tableView:strongSelf->customQueryView shouldEditTableColumn:column row:row]) return NO;
+        NSInteger columnIndex = [strongSelf->customQueryView columnWithIdentifier:[column identifier]];
+        return columnIndex >= 0 && [[strongSelf fieldEditStatusForRow:row andColumn:columnIndex][0] integerValue] == 1;
+    } validate:^NSString *(NSInteger fieldIndex, NSString *value) {
+        SPCustomQuery *strongSelf = weakSelf;
+        if (!strongSelf) return nil;
+
+        NSTableColumn *column = [strongSelf _recordViewColumnAtIndex:fieldIndex];
+        return column ? [SARecordViewEditSupport validateValue:value withFormatter:[[column dataCell] formatter]] : nil;
+    } commit:^BOOL(NSInteger fieldIndex, NSString *value) {
+        SPCustomQuery *strongSelf = weakSelf;
+        if (!strongSelf) return NO;
+
+        NSInteger row = [strongSelf _recordViewSelectedRow];
+        NSTableColumn *column = [strongSelf _recordViewColumnAtIndex:fieldIndex];
+        if (row < 0 || !column) return NO;
+
+        NSInteger columnIndex = [[column identifier] integerValue];
+        if ([strongSelf->customQueryView shouldUseFieldEditorForRow:row column:columnIndex checkWithLock:NULL]) return NO;
+
+        id objectValue = value;
+        NSFormatter *formatter = [[column dataCell] formatter];
+        if (formatter && ![formatter getObjectValue:&objectValue forString:value errorDescription:NULL]) {
+            NSBeep();
+            return NO;
+        }
+
+        strongSelf.suppressRecordViewTaskRefresh = YES;
+        [strongSelf tableView:strongSelf->customQueryView setObjectValue:objectValue forTableColumn:column row:row];
+        strongSelf.suppressRecordViewTaskRefresh = NO;
+        return NO;
+    }];
     
     // Give the editor a small vertical inset so text is not flush against the top and bottom edges (#2236)
     [textView setTextContainerInset:NSMakeSize(0.0f, 2.0f)];
@@ -3770,6 +3865,11 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     [prefs addObserver:self forKeyPath:SPDisplayTableViewColumnTypes options:NSKeyValueObservingOptionNew context:NULL];
     self.bracketHighlighter = [[SPBracketHighlighter alloc] initWithTextView:textView];
     self.bracketHighlighter.enabled = [prefs boolForKey:SPCustomQueryEnableBracketHighlighting];
+}
+
+- (void)toggleRecordView
+{
+    [recordViewController toggle];
 }
 
 #pragma mark -
@@ -3823,6 +3923,82 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     }
     
     return value;
+}
+
+- (NSInteger)_recordViewSelectedRow
+{
+    NSInteger selectedRow = [customQueryView selectedRow];
+    if (selectedRow < 0 || [customQueryView numberOfSelectedRows] != 1) return -1;
+
+    NSUInteger rowCount = 0;
+    if (isWorking) pthread_mutex_lock(&resultDataLock);
+    rowCount = [resultData count];
+    if (isWorking) pthread_mutex_unlock(&resultDataLock);
+
+    if ((NSUInteger)selectedRow >= rowCount) return -1;
+    return selectedRow;
+}
+
+- (NSTableColumn *)_recordViewColumnAtIndex:(NSInteger)fieldIndex
+{
+    if (fieldIndex < 0) return nil;
+    return [[customQueryView tableColumns] safeObjectAtIndex:(NSUInteger)fieldIndex];
+}
+
+- (NSString *)_recordViewStringForValue:(id)value tableColumn:(NSTableColumn *)tableColumn
+{
+    if ([value isKindOfClass:[SPMySQLGeometryData class]]) return [value wktString];
+    if ([value isNSNull]) return [prefs objectForKey:SPNullValue] ?: @"";
+    if ([value isSPNotLoaded]) return NSLocalizedString(@"(not loaded)", @"value shown for hidden blob and text fields");
+
+    NSFormatter *formatter = [[tableColumn dataCell] formatter];
+    if ([formatter isKindOfClass:[SABaseFormatter class]]) {
+        NSString *formatted = [(SABaseFormatter *)formatter stringForObjectValue:value];
+        if (formatted) return formatted;
+    }
+
+    if ([value isKindOfClass:[NSData class]]) {
+        NSString *stringValue = [(NSData *)value stringRepresentationUsingEncoding:[mySQLConnection stringEncoding]];
+        return stringValue ?: [value description];
+    }
+
+    return value ? [value description] : @"";
+}
+
+- (void)_updateRecordView
+{
+    NSUInteger selectedCount = [customQueryView numberOfSelectedRows];
+    NSInteger selectedRow = [customQueryView selectedRow];
+
+    if (isWorking || selectedRow < 0 || (selectedCount == 1 && (NSUInteger)selectedRow >= [resultData count])) {
+        [recordViewController updateWithFields:@[] selectedRowCount:0];
+        return;
+    }
+
+    if (selectedCount != 1) {
+        [recordViewController updateWithFields:@[] selectedRowCount:selectedCount];
+        return;
+    }
+
+    NSArray<NSTableColumn *> *tableColumns = [customQueryView tableColumns];
+    NSMutableArray *fields = [NSMutableArray arrayWithCapacity:[tableColumns count]];
+    for (NSUInteger fieldIndex = 0; fieldIndex < [tableColumns count]; fieldIndex++) {
+        NSTableColumn *tableColumn = [tableColumns objectAtIndex:fieldIndex];
+        NSInteger columnIndex = [[tableColumn identifier] integerValue];
+        if (columnIndex < 0) continue;
+
+        NSDictionary *columnDefinition = [cqColumnDefinition safeObjectAtIndex:(NSUInteger)columnIndex];
+        if (!columnDefinition || (NSUInteger)columnIndex >= [resultData columnCount]) continue;
+
+        id value = SPDataStorageObjectAtRowAndColumn(resultData, selectedRow, (NSUInteger)columnIndex);
+        [fields addObject:@{
+            @"id": @(fieldIndex),
+            @"name": columnDefinition[@"name"] ?: @"",
+            @"value": [self _recordViewStringForValue:value tableColumn:tableColumn]
+        }];
+    }
+
+    [recordViewController updateWithFields:fields selectedRowCount:1];
 }
 
 //this method is called right before the UI objects are deallocated

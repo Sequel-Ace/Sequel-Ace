@@ -1,0 +1,271 @@
+import XCTest
+
+final class SARecordViewTests: XCTestCase {
+
+    private let fields = [
+        SARecordField(id: 0, name: "id", value: "42"),
+        SARecordField(id: 1, name: "display_name", value: "Ada"),
+        SARecordField(id: 2, name: "display_name", value: "Lovelace")
+    ]
+
+    func testKeepsFieldsOnlyForSingleSelection() {
+        let model = SARecordViewModel()
+
+        model.update(fields: fields, selectedRowCount: 0)
+        XCTAssertEqual(model.selectedRowCount, 0)
+        XCTAssertEqual(model.fields, [])
+
+        model.update(fields: fields, selectedRowCount: 2)
+        XCTAssertEqual(model.selectedRowCount, 2)
+        XCTAssertEqual(model.fields, [])
+
+        model.update(fields: fields, selectedRowCount: 1)
+        XCTAssertEqual(model.selectedRowCount, 1)
+        XCTAssertEqual(model.fields, fields)
+    }
+
+    func testFiltersFieldNamesCaseInsensitively() {
+        let model = SARecordViewModel()
+        model.update(fields: fields, selectedRowCount: 1)
+
+        model.searchText = " NAME "
+
+        XCTAssertEqual(model.visibleFields.map(\.id), [1, 2])
+    }
+
+    func testPreservesOrderAndDuplicateNames() {
+        let model = SARecordViewModel()
+        model.update(fields: fields, selectedRowCount: 1)
+
+        XCTAssertEqual(model.visibleFields, fields)
+        XCTAssertEqual(model.visibleFields.map(\.value), ["42", "Ada", "Lovelace"])
+    }
+
+    func testClearRemovesSelectionAndFilter() {
+        let model = SARecordViewModel()
+        model.update(fields: fields, selectedRowCount: 1)
+        model.searchText = "id"
+        model.selectedFieldID = 0
+
+        model.clear()
+
+        XCTAssertEqual(model.selectedRowCount, 0)
+        XCTAssertEqual(model.fields, [])
+        XCTAssertEqual(model.searchText, "")
+        XCTAssertNil(model.selectedFieldID)
+    }
+
+    func testPreviewFlattensWhitespaceWithoutChangingValue() {
+        let field = SARecordField(id: 0, name: "content", value: "first\nsecond\tthird")
+
+        XCTAssertEqual(field.previewValue, "first second third")
+        XCTAssertEqual(field.value, "first\nsecond\tthird")
+    }
+
+    func testPreviewLimitsLongValues() {
+        let field = SARecordField(id: 0, name: "content", value: String(repeating: "x", count: 5_000))
+
+        XCTAssertEqual(field.previewValue.count, 4_097)
+        XCTAssertTrue(field.previewValue.hasSuffix("…"))
+    }
+
+    func testBeginsAndCommitsInlineEdit() {
+        let model = SARecordViewModel()
+        let field = SARecordField(id: 2, name: "name", value: "Ada")
+        var committed: (Int, String)?
+        model.beginEditing = { $0 == 2 }
+        model.commitEditing = { id, value in
+            committed = (id, value)
+            return true
+        }
+
+        model.requestEdit(field)
+        XCTAssertEqual(model.editingFieldID, 2)
+        XCTAssertEqual(model.focusedFieldID, 2)
+        XCTAssertEqual(model.editDraft, "Ada")
+
+        model.editDraft = "Grace"
+        model.commitEdit()
+
+        XCTAssertEqual(committed?.0, 2)
+        XCTAssertEqual(committed?.1, "Grace")
+        XCTAssertNil(model.editingFieldID)
+    }
+
+    func testLosingInlineEditorFocusCommitsEdit() {
+        let model = SARecordViewModel()
+        let field = SARecordField(id: 2, name: "name", value: "Ada")
+        var committed: (Int, String)?
+        model.beginEditing = { _ in true }
+        model.commitEditing = { id, value in
+            committed = (id, value)
+            return true
+        }
+        model.requestEdit(field)
+        model.editDraft = "Grace"
+
+        model.editorFocusChanged(nil)
+
+        XCTAssertEqual(committed?.0, 2)
+        XCTAssertEqual(committed?.1, "Grace")
+        XCTAssertNil(model.editingFieldID)
+    }
+
+    func testRejectedEditNeverCreatesDraft() {
+        let model = SARecordViewModel()
+        model.beginEditing = { _ in false }
+
+        model.requestEdit(SARecordField(id: 0, name: "generated", value: "42"))
+
+        XCTAssertNil(model.editingFieldID)
+        XCTAssertEqual(model.editDraft, "")
+    }
+
+    func testDeferredValueUsesSnapshotLoadedWhileBeginningEdit() {
+        let model = SARecordViewModel()
+        let unloaded = SARecordField(id: 0, name: "content", value: "(not loaded)")
+        let loaded = SARecordField(id: 0, name: "content", value: "real value")
+        model.update(fields: [unloaded], selectedRowCount: 1)
+        model.beginEditing = { _ in
+            model.update(fields: [loaded], selectedRowCount: 1)
+            return true
+        }
+
+        model.requestEdit(unloaded)
+
+        XCTAssertEqual(model.editDraft, "real value")
+    }
+
+    func testCancelAndSnapshotRefreshDiscardDraft() {
+        let model = SARecordViewModel()
+        let field = SARecordField(id: 0, name: "name", value: "Ada")
+        model.beginEditing = { _ in true }
+        model.requestEdit(field)
+        model.editDraft = "unsaved"
+
+        model.update(fields: [field], selectedRowCount: 1)
+
+        XCTAssertNil(model.editingFieldID)
+        XCTAssertNil(model.focusedFieldID)
+        XCTAssertEqual(model.editDraft, "")
+    }
+
+    func testFailedCommitKeepsDraftOpen() {
+        let model = SARecordViewModel()
+        let field = SARecordField(id: 0, name: "name", value: "Ada")
+        model.beginEditing = { _ in true }
+        model.commitEditing = { _, _ in false }
+        model.requestEdit(field)
+        model.editDraft = "invalid"
+
+        model.commitEdit()
+
+        XCTAssertEqual(model.editingFieldID, 0)
+        XCTAssertEqual(model.editDraft, "invalid")
+    }
+
+    func testDraftValidationAcceptsReplacementAndRejectsInvalidChange() {
+        let model = SARecordViewModel()
+        let field = SARecordField(id: 0, name: "name", value: "Ada")
+        model.beginEditing = { _ in true }
+        model.validateEditing = { _, value in
+            value == "invalid" ? nil : String(value.prefix(3))
+        }
+        model.requestEdit(field)
+
+        model.updateEditDraft("Grace")
+        XCTAssertEqual(model.editDraft, "Gra")
+
+        model.updateEditDraft("invalid")
+        XCTAssertEqual(model.editDraft, "Gra")
+    }
+
+    func testRecordViewValidationUsesSelectionAwareFormatterRules() {
+        let defaults = UserDefaults(suiteName: #function)!
+        defaults.set("NULL", forKey: "NullValue")
+        let formatter = SAUuidFormatter(userDefaults: defaults)
+
+        XCTAssertEqual(SARecordViewEditSupport.validate("01234567", with: formatter), "01234567")
+        XCTAssertNil(SARecordViewEditSupport.validate(String(repeating: "0", count: 33), with: formatter))
+    }
+
+    func testControllerExposesObjectiveCEditingSelector() {
+        let controller = SARecordViewController()
+
+        XCTAssertTrue(
+            controller.responds(to: NSSelectorFromString("setEditingHandlersWithBegin:validate:commit:"))
+        )
+    }
+
+    func testControllerUsesExplicitFieldIDsWithPositionalFallback() {
+        let fields = SARecordViewController.fields(from: [
+            ["id": 4, "name": "explicit", "value": "a"],
+            ["name": "fallback", "value": "b"]
+        ])
+
+        XCTAssertEqual(fields.map(\.id), [4, 1])
+    }
+
+    func testControllerTogglesVisibilityWithoutLocalButton() {
+        let parent = NSView(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
+        let grid = NSView(frame: parent.bounds)
+        parent.addSubview(grid)
+        let controller = SARecordViewController()
+
+        controller.installOverlay(
+            in: parent,
+            resizing: grid,
+            shortcutTableView: NSTableView(),
+            bottomInset: 0,
+            topInset: 0,
+            autosaveName: "SARecordViewTestsWidth"
+        )
+
+        XCTAssertFalse(controller.isVisible)
+        controller.toggle()
+        XCTAssertTrue(controller.isVisible)
+        controller.toggle()
+        XCTAssertFalse(controller.isVisible)
+    }
+
+    func testToolbarHostIdentifierUsesActiveResultTab() {
+        XCTAssertEqual(SARecordViewToolbarSupport.hostIdentifier(forTabIndex: 1), "SwitchToTableContentToolbarItemIdentifier")
+        XCTAssertEqual(SARecordViewToolbarSupport.hostIdentifier(forTabIndex: 2), "SwitchToRunQueryToolbarItemIdentifier")
+        XCTAssertNil(SARecordViewToolbarSupport.hostIdentifier(forTabIndex: 0))
+        XCTAssertNil(SARecordViewToolbarSupport.hostIdentifier(forTabIndex: 3))
+        XCTAssertNil(SARecordViewToolbarSupport.hostIdentifier(forTabIndex: -1))
+    }
+
+    func testSpaceShortcutRequiresResultTableFocus() {
+        let table = NSTableView()
+        func spaceEvent(isRepeat: Bool) -> NSEvent {
+            NSEvent.keyEvent(
+                with: .keyDown,
+                location: .zero,
+                modifierFlags: [],
+                timestamp: 0,
+                windowNumber: 0,
+                context: nil,
+                characters: " ",
+                charactersIgnoringModifiers: " ",
+                isARepeat: isRepeat,
+                keyCode: 49
+            )!
+        }
+        let space = spaceEvent(isRepeat: false)
+
+        XCTAssertTrue(SARecordViewToolbarSupport.shouldHandleSpace(space, firstResponder: table, tableView: table))
+        XCTAssertFalse(SARecordViewToolbarSupport.shouldHandleSpace(spaceEvent(isRepeat: true), firstResponder: table, tableView: table))
+        XCTAssertFalse(SARecordViewToolbarSupport.shouldHandleSpace(space, firstResponder: NSTextView(), tableView: table))
+        XCTAssertFalse(SARecordViewToolbarSupport.shouldHandleSpace(space, firstResponder: nil, tableView: table))
+    }
+
+    func testToolbarItemTargetsRecordViewAction() {
+        let item = SARecordViewToolbarSupport.makeToolbarItem(target: NSObject())
+
+        XCTAssertEqual(item.itemIdentifier.rawValue, "RecordViewToolbarItemIdentifier")
+        XCTAssertEqual(item.label, "Record View")
+        XCTAssertEqual(item.action.map(NSStringFromSelector), "toggleRecordView:")
+        XCTAssertNil(item.view)
+    }
+}
