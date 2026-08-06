@@ -92,6 +92,25 @@ final class SARecordViewTests: XCTestCase {
         XCTAssertNil(model.editingFieldID)
     }
 
+    func testLosingInlineEditorFocusCommitsEdit() {
+        let model = SARecordViewModel()
+        let field = SARecordField(id: 2, name: "name", value: "Ada")
+        var committed: (Int, String)?
+        model.beginEditing = { _ in true }
+        model.commitEditing = { id, value in
+            committed = (id, value)
+            return true
+        }
+        model.requestEdit(field)
+        model.editDraft = "Grace"
+
+        model.editorFocusChanged(nil)
+
+        XCTAssertEqual(committed?.0, 2)
+        XCTAssertEqual(committed?.1, "Grace")
+        XCTAssertNil(model.editingFieldID)
+    }
+
     func testRejectedEditNeverCreatesDraft() {
         let model = SARecordViewModel()
         model.beginEditing = { _ in false }

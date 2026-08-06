@@ -75,6 +75,10 @@ final class SARecordViewModel: ObservableObject {
         cancelEdit()
     }
 
+    func editorFocusChanged(_ fieldID: SARecordField.ID?) {
+        if fieldID == nil { commitEdit() }
+    }
+
     func cancelEdit() {
         editingFieldID = nil
         focusedFieldID = nil
@@ -98,6 +102,7 @@ private struct SARecordView: View {
         .frame(minWidth: 240, idealWidth: 320)
         .background(Color(nsColor: .windowBackgroundColor))
         .onChange(of: model.focusedFieldID) { focusedFieldID = $0 }
+        .onChange(of: focusedFieldID) { model.editorFocusChanged($0) }
     }
 
     @ViewBuilder
