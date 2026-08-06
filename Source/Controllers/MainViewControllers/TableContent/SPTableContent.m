@@ -104,7 +104,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 @property (assign, nonatomic) BOOL deferRecordViewRefreshUntilTableLoadCompletes;
 @property (assign, nonatomic) BOOL suppressRecordViewTaskRefresh;
-@property (assign, nonatomic) BOOL recordViewHasPendingTableEdit;
 
 - (BOOL)cancelRowEditing;
 - (void)documentWillClose:(NSNotification *)notification;
@@ -272,7 +271,6 @@ static void *TableContentKVOContext = &TableContentKVOContext;
         }
 
         strongSelf.suppressRecordViewTaskRefresh = YES;
-        strongSelf.recordViewHasPendingTableEdit = [strongSelf->tablesListInstance tableType] == SPTableTypeTable;
         [strongSelf tableView:strongSelf->tableContentView setObjectValue:objectValue forTableColumn:column row:row];
         strongSelf.suppressRecordViewTaskRefresh = NO;
         [strongSelf->tableContentView reloadDataForRowIndexes:[NSIndexSet indexSetWithIndex:row]
@@ -2678,12 +2676,6 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			NSBeep();
 		}
 
-		if (self.recordViewHasPendingTableEdit) {
-			isSavingRow = NO;
-			[tableContentView selectRowIndexes:[NSIndexSet indexSetWithIndex:currentlyEditingRow] byExtendingSelection:NO];
-			return NO;
-		}
-
 		// If creating a new row, remove the row; otherwise revert the row contents
 		if (isEditingNewRow) {
 			tableRowsCount--;
@@ -2750,8 +2742,6 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         currentlyEditingRow = -1;
 
         isSavingRow = NO;
-		self.recordViewHasPendingTableEdit = NO;
-		[self _updateRecordView];
 		return YES;
 	} else { // Report errors which have occurred
 		[NSAlert createAlertWithTitle:NSLocalizedString(@"Unable to write row", @"Unable to write row error") message:[NSString stringWithFormat:NSLocalizedString(@"MySQL said:\n\n%@", @"message of panel when error while adding row to db"), [mySQLConnection lastErrorMessage]] primaryButtonTitle:NSLocalizedString(@"Edit row", @"Edit row button") secondaryButtonTitle:NSLocalizedString(@"Discard changes", @"discard changes button") primaryButtonHandler:^{
@@ -2908,8 +2898,6 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	if (!isEditingNewRow && [oldRow isEqualToArray:[tableValues rowContentsAtIndex:currentlyEditingRow]]) {
 		isEditingRow = NO;
 		currentlyEditingRow = -1;
-		self.recordViewHasPendingTableEdit = NO;
-		[self _updateRecordView];
 		return YES;
 	}
 	
@@ -2942,12 +2930,6 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			}
 							 cancelButtonHandler:^{
 				SPLog(@"Cancel pressed");
-				if (self.recordViewHasPendingTableEdit) {
-					self->isSavingRow = NO;
-					[self->tableContentView selectRowIndexes:[NSIndexSet indexSetWithIndex:self->currentlyEditingRow] byExtendingSelection:NO];
-					returnCode = NO;
-					return;
-				}
 				self->isEditingRow = NO;
                 self->isSavingRow = NO;
 				self->currentlyEditingRow = -1;
@@ -2961,7 +2943,6 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 			isEditingRow = NO;
             isSavingRow = NO;
 			currentlyEditingRow = -1;
-			self.recordViewHasPendingTableEdit = NO;
 			// reload
 			[self loadTableValues];
 			returnCode = YES;
@@ -2977,7 +2958,6 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
             isEditingRow = NO;
             isSavingRow = NO;
             currentlyEditingRow = -1;
-			self.recordViewHasPendingTableEdit = NO;
             // reload
             [self loadTableValues];
             returnCode = YES;
@@ -3042,9 +3022,6 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	isEditingRow = NO;
 	currentlyEditingRow = -1;
 	[tableContentView reloadData];
-	BOOL hadPendingRecordViewEdit = self.recordViewHasPendingTableEdit;
-	self.recordViewHasPendingTableEdit = NO;
-	if (hadPendingRecordViewEdit) [self _updateRecordView];
 	[[tableContentView window] makeFirstResponder:tableContentView];
 	return YES;
 }
@@ -4284,8 +4261,6 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 - (void)_updateRecordView
 {
-	if (self.recordViewHasPendingTableEdit) return;
-
 	if (self.deferRecordViewRefreshUntilTableLoadCompletes) {
 		[recordViewController updateWithFields:@[] selectedRowCount:0];
 		return;
