@@ -286,6 +286,11 @@
 		51BC150125BE138700F1CDC9 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 51BC150025BE138700F1CDC9 /* SnapKit */; };
 		51BC150625BE13C400F1CDC9 /* NSViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */; };
 		51BE43D830174A8000AF389C /* SAKeyedArchiveCompatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BE43D730174A8000AF389C /* SAKeyedArchiveCompatTests.swift */; };
+		51BE43DD30174CC700AF389C /* SANotificationCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BE43DC30174CC700AF389C /* SANotificationCenter.swift */; };
+		51BE43DE30174CC700AF389C /* SANotificationCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BE43DC30174CC700AF389C /* SANotificationCenter.swift */; };
+		51BE68DC3017550E00AF389C /* SAImageRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BE68DB3017550E00AF389C /* SAImageRenderer.swift */; };
+		51BE68DD3017550E00AF389C /* SAImageRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BE68DB3017550E00AF389C /* SAImageRenderer.swift */; };
+		51BE68E23017552B00AF389C /* SAImageRendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BE68E13017552B00AF389C /* SAImageRendererTests.swift */; };
 		51C32B2E2FF6F90C007C2DD3 /* SAPrintUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C32B2D2FF6F90C007C2DD3 /* SAPrintUtility.swift */; };
 		51C397A12FF7BB0100C4C14A /* SAPrintUtilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C397A22FF7BB0100C4C14A /* SAPrintUtilityTests.swift */; };
 		51C397A32FF7BB0100C4C14A /* SAPrintUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C32B2D2FF6F90C007C2DD3 /* SAPrintUtility.swift */; };
@@ -1102,6 +1107,9 @@
 		51BC14F725BE135500F1CDC9 /* SPWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPWindowController.swift; sourceTree = "<group>"; };
 		51BC150525BE13C400F1CDC9 /* NSViewExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSViewExtension.swift; sourceTree = "<group>"; };
 		51BE43D730174A8000AF389C /* SAKeyedArchiveCompatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAKeyedArchiveCompatTests.swift; sourceTree = "<group>"; };
+		51BE43DC30174CC700AF389C /* SANotificationCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SANotificationCenter.swift; sourceTree = "<group>"; };
+		51BE68DB3017550E00AF389C /* SAImageRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAImageRenderer.swift; sourceTree = "<group>"; };
+		51BE68E13017552B00AF389C /* SAImageRendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAImageRendererTests.swift; sourceTree = "<group>"; };
 		51C04C98261E4CF5001F5554 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51C04C9D261E4DB6001F5554 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/Localizable.strings; sourceTree = "<group>"; };
 		51C32B2D2FF6F90C007C2DD3 /* SAPrintUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAPrintUtility.swift; sourceTree = "<group>"; };
@@ -2575,6 +2583,8 @@
 				5146ADF82F79B9EF00C4C14A /* SAConnectionService.swift */,
 				51C32B2D2FF6F90C007C2DD3 /* SAPrintUtility.swift */,
 				91D7AFC91F1CEBB3ED2242CC /* SADatabaseScopedValueCache.swift */,
+				51BE43DC30174CC700AF389C /* SANotificationCenter.swift */,
+				51BE68DB3017550E00AF389C /* SAImageRenderer.swift */,
 			);
 			path = Utility;
 			sourceTree = "<group>";
@@ -2636,6 +2646,7 @@
 				51EA02522FDFF02C00DF6A7B /* SAArchivingTests.swift */,
 				51C397A22FF7BB0100C4C14A /* SAPrintUtilityTests.swift */,
 				51BE43D730174A8000AF389C /* SAKeyedArchiveCompatTests.swift */,
+				51BE68E13017552B00AF389C /* SAImageRendererTests.swift */,
 			);
 			name = Other;
 			sourceTree = "<group>";
@@ -3264,6 +3275,7 @@
 				502D21F81BA50966000D4CE7 /* SPDataAdditions.m in Sources */,
 				517BFF442F7DA38F00F6D812 /* SAConnectionServiceTests.swift in Sources */,
 				1A9498DE2551776D000BC793 /* DateFormatterExtension.swift in Sources */,
+				51BE68DD3017550E00AF389C /* SAImageRenderer.swift in Sources */,
 				C812F06F0D4A95968C1B0154 /* SABundleVersionUpdater.swift in Sources */,
 				51BE43D830174A8000AF389C /* SAKeyedArchiveCompatTests.swift in Sources */,
 				B6E4019A9F1C4A8AA0B3D102 /* SALocalNetworkPermissionChecker.swift in Sources */,
@@ -3347,12 +3359,14 @@
 				17DB5F441555CA300046834B /* SPMutableArrayAdditions.m in Sources */,
 				5146E0482F7A640C00C4C14A /* SAConnectionInfoTests.swift in Sources */,
 				5AF0C4000000000000000003 /* SAConnectionInfo+Favorite.swift in Sources */,
+				51BE43DE30174CC700AF389C /* SANotificationCenter.swift in Sources */,
 				5AF0C4000000000000000012 /* SAConnectionInfoFavoriteTests.swift in Sources */,
 				5146E04A2F7A640C00C4C14A /* SAViewModeTests.swift in Sources */,
 				5146ADFD2F7A519400C4C14A /* SPDatabaseDocument+ViewMode.swift in Sources */,
 				5146E0522F7A640C00C4C14A /* SADatabaseListManager.swift in Sources */,
 				5146E0532F7A640C00C4C14A /* SADatabaseListManagerTests.swift in Sources */,
 				C3A2875D9BB7411F87F05EA2 /* SPCustomQuerySQLClassifier.swift in Sources */,
+				51BE68E23017552B00AF389C /* SAImageRendererTests.swift in Sources */,
 				C3A2875D9BB7411F87F05EA3 /* SPCustomQuerySQLClassifierTests.swift in Sources */,
 				CF0000052F8C000600C4C14A /* SACellFilterOperator.swift in Sources */,
 				CF00000D2F8C000600C4C14A /* SACellFilterMerge.swift in Sources */,
@@ -3436,6 +3450,7 @@
 				C3A2875D9BB7411F87F05EA0 /* SPCustomQuery+Explain.swift in Sources */,
 				C3A2875D9BB7411F87F05EA1 /* SPCustomQuerySQLClassifier.swift in Sources */,
 				CF0000032F8C000600C4C14A /* SACellFilterOperator.swift in Sources */,
+				51BE68DC3017550E00AF389C /* SAImageRenderer.swift in Sources */,
 				CF00000B2F8C000600C4C14A /* SACellFilterMerge.swift in Sources */,
 				CF00000E2F8C000600C4C14A /* SACellFilterAction.swift in Sources */,
 				CF0000102F8C000600C4C14A /* SACellFilterMenuBuilder.swift in Sources */,
@@ -3450,6 +3465,7 @@
 				17E6415C0EF01EF6001BC333 /* SPTableStructure.m in Sources */,
 				1A8B582A25EEE15900DFC54A /* ByteCountFormatterExtension.swift in Sources */,
 				51C32B2E2FF6F90C007C2DD3 /* SAPrintUtility.swift in Sources */,
+				51BE43DD30174CC700AF389C /* SANotificationCenter.swift in Sources */,
 				1A071B8D254D983700246912 /* SPNSMutableDictionaryAdditions.m in Sources */,
 				50A9F8B119EAD4B90053E571 /* SPGotoDatabaseController.m in Sources */,
 				AA000001000000000000001B /* SAAboutView.swift in Sources */,

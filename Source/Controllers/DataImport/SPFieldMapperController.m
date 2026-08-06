@@ -130,8 +130,7 @@ static NSUInteger SPSourceColumnTypeInteger     = 1;
 	// Ask HansJB for more info.
 	NSPathControl *pc = [[NSPathControl alloc] initWithFrame:NSZeroRect];
 	[pc setURL:[NSURL fileURLWithPath:sourcePath]];
-	if([pc pathComponentCells])
-		[fileSourcePath setPathComponentCells:[pc pathComponentCells]];
+	[fileSourcePath setPathItems:[pc pathItems]];
 	[fileSourcePath setDoubleAction:@selector(goBackToFileChooserFromPathControl:)];
 
 	[onupdateTextView setDelegate:theDelegate];

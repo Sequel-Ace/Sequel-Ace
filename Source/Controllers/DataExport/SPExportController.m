@@ -364,12 +364,7 @@ static inline void SetOnOff(NSNumber *ref,id obj);
 - (void)displayExportFinishedNotification
 {
 	// Export finished notification
-	NSUserNotification *notification = [[NSUserNotification alloc] init];
-	notification.title = @"Export Finished";
-	notification.informativeText=[NSString stringWithFormat:NSLocalizedString(@"Finished exporting to %@", @"description for finished exporting notification"), exportFilename];
-	notification.soundName = NSUserNotificationDefaultSoundName;
-
-	[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+	[SANotificationCenter.shared postNotificationWithTitle:@"Export Finished" body:[NSString stringWithFormat:NSLocalizedString(@"Finished exporting to %@", @"description for finished exporting notification"), exportFilename]];
 }
 
 #pragma mark -
@@ -2670,7 +2665,7 @@ set_input:
 {
 	if (IS_TOKEN(representedObject)) return NSDefaultTokenStyle;
 
-	return NSPlainTextTokenStyle;
+	return NSTokenStyleNone;
 }
 
 - (BOOL)tokenField:(NSTokenField *)tokenField writeRepresentedObjects:(NSArray *)objects toPasteboard:(NSPasteboard *)pboard
