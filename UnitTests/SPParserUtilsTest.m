@@ -34,10 +34,13 @@
 #import <XCTest/XCTest.h>
 
 #include "SPParserUtils.h"
+#include <stdlib.h>
+#include <string.h>
 
 @interface SPParserUtilsTest : XCTestCase
 
 - (void)testUtf8strlen;
+- (void)testUtf8strlenShortHeapAllocatedStrings;
 
 @end
 
@@ -82,6 +85,45 @@
 	const char *decompSeq = "\xC3\xA4 - a\xCC\x88"; // ä - ä
 	NSString *decompString = [NSString stringWithCString:decompSeq encoding:NSUTF8StringEncoding];
 	XCTAssertEqual(utf8strlen(decompSeq), [decompString length], @"\"LATIN SMALL LETTER A WITH DIAERESIS\" vs. \"LATIN SMALL LETTER A\" + \"COMBINING DIAERESIS\"");
+}
+
+// Heap-allocated short strings reproduce issue #792: the old SWAR inner loop
+// performed an 8-byte word load + a 256-byte prefetch that read past the end of
+// a buffer shorter than 8 bytes. Under AddressSanitizer those reads abort with
+// heap-buffer-overflow. The byte-wise implementation never reads past the NUL.
+// NOTE: strdup() is used (not string literals) because ASan only instruments the
+// heap redzone of a malloc'd buffer; literal strings share a read-only section.
+- (void)testUtf8strlenShortHeapAllocatedStrings {
+	// Lengths 0..7 byte — every length below the 8-byte word read must be safe.
+	// "selec" (5 bytes) is the exact reproducer from the issue report.
+	NSArray<NSString *> *ascii = @[
+		@"", @"a", @"ab", @"abc", @"abcd", @"selec", @"abcdef", @"abcdefg"
+	];
+	for (NSString *str in ascii) {
+		const char *cStr = [str UTF8String];   // NUL-terminated
+		char *heap = strdup(cStr);             // heap copy -> ASan-tracked
+		NSUInteger expected = [str length];
+		size_t actual = utf8strlen(heap);
+		XCTAssertEqual(actual, expected, @"ASCII len %tu (heap)", [str length]);
+		free(heap);
+	}
+
+	// Short multibyte strings on the heap: still must not over-read, and the
+	// 4-byte correction (NSString surrogate-pair parity) must hold.
+	NSArray<NSString *> *multi = @[
+		@"ä",                       // ä  (2-byte)          -> NSString length 1
+		@"こ",                       // こ (3-byte)          -> NSString length 1
+		@"\U0001F34F",              // 🍏 (4-byte, non-BMP) -> NSString length 2
+		@"\U0001F34F\U0001F34B"     // 🍏🍋                   -> NSString length 4
+	];
+	for (NSString *str in multi) {
+		const char *cStr = [str UTF8String];
+		char *heap = strdup(cStr);
+		NSUInteger expected = [str length];
+		size_t actual = utf8strlen(heap);
+		XCTAssertEqual(actual, expected, @"multibyte (heap): %@", str);
+		free(heap);
+	}
 }
 
 @end
