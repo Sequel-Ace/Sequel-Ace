@@ -28,6 +28,7 @@
 			<string>ANALYZE TABLE</string>
 			<string>AND</string>
 			<string>ANY</string>
+			<string>ARIA</string>
 			<string>AS</string>
 			<string>ASC</string>
 			<string>ASCII</string>
@@ -47,6 +48,7 @@
 			<string>BINARY</string>
 			<string>BINLOG</string>
 			<string>BIT</string>
+			<string>BLACKHOLE</string>
 			<string>BLOB</string>
 			<string>BOOL</string>
 			<string>BOOLEAN</string>
@@ -83,6 +85,7 @@
 			<string>COLUMN</string>
 			<string>COLUMN_NAME</string>
 			<string>COLUMNS</string>
+			<string>COLUMNSTORE</string>
 			<string>COLUMN_FORMAT</string>
 			<string>COMMENT</string>
 			<string>COMMIT</string>
@@ -92,6 +95,7 @@
 			<string>COMPRESSED</string>
 			<string>CONCURRENT</string>
 			<string>CONDITION</string>
+			<string>CONNECT</string>
 			<string>CONNECTION</string>
 			<string>CONSISTENT</string>
 			<string>CONSTRAINT</string>
@@ -118,6 +122,7 @@
 			<string>CREATE USER</string>
 			<string>CREATE VIEW</string>
 			<string>CROSS</string>
+			<string>CSV</string>
 			<string>CUBE</string>
 			<string>CURRENT_DATE</string>
 			<string>CURRENT_TIME</string>
@@ -373,6 +378,7 @@
 			<string>MULTIPOINT</string>
 			<string>MULTIPOLYGON</string>
 			<string>MUTEX</string>
+			<string>MYISAM</string>
 			<string>MYSQL_ERRNO</string>
 			<string>NAME</string>
 			<string>NAMES</string>
@@ -481,6 +487,7 @@
 			<string>REVOKE</string>
 			<string>RIGHT</string>
 			<string>RLIKE</string>
+			<string>ROCKSDB</string>
 			<string>ROLLBACK</string>
 			<string>ROLLUP</string>
 			<string>ROUTINE</string>
@@ -502,6 +509,7 @@
 			<string>SELECT DISTINCT</string>
 			<string>SENSITIVE</string>
 			<string>SEPARATOR</string>
+			<string>SEQUENCE</string>
 			<string>SERIAL</string>
 			<string>SERIALIZABLE</string>
 			<string>SERVER</string>
@@ -575,6 +583,7 @@
 			<string>SOUNDS</string>
 			<string>SPATIAL</string>
 			<string>SPECIFIC</string>
+			<string>SPIDER</string>
 			<string>SQL_AUTO_IS_NULL</string>
 			<string>SQL_BIG_RESULT</string>
 			<string>SQL_BIG_SELECTS</string>
