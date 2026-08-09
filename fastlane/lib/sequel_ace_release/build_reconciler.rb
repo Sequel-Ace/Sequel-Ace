@@ -14,7 +14,11 @@ module SequelAceRelease
       end
     end
 
-    def reconcile(source_build:, highest_tag_build:, highest_asc_build:, cloud_next_build:, cloud_runs:, source_tagged:, source_is_release_tip: true)
+    def reconcile(
+      source_build:, highest_tag_build:, highest_asc_build:, cloud_next_build:,
+      cloud_runs:, source_tagged:, source_is_release_tip: true,
+      expected_target_build: nil
+    )
       source = positive_integer(source_build, "source build")
       tag = nonnegative_integer(highest_tag_build, "highest tag build")
       asc = nonnegative_integer(highest_asc_build, "highest App Store Connect build")
@@ -37,13 +41,13 @@ module SequelAceRelease
                 "Production Xcode Cloud already consumed or advanced beyond source build #{source}: " \
                 "#{consumed_at_or_after_source.sort.join(', ')}"
         end
-        return Result.new(
+        return validate_expected_target!(Result.new(
           target_build: source,
           observed_cloud_next_build: observed_cloud_next,
           baseline: baseline,
           reason: "resume_after_merge",
           skipped_runs: []
-        )
+        ), expected_target_build)
       end
 
       if observed_cloud_next < baseline
@@ -82,16 +86,29 @@ module SequelAceRelease
         evidence
       end
 
-      Result.new(
+      validate_expected_target!(Result.new(
         target_build: cloud_next,
         observed_cloud_next_build: observed_cloud_next,
         baseline: baseline,
         reason: skipped.empty? ? "normal_increment" : "self_healed_cloud_burns",
         skipped_runs: skipped
-      )
+      ), expected_target_build)
     end
 
     private
+
+    def validate_expected_target!(result, expected)
+      return result if expected.nil?
+
+      expected_build = positive_integer(expected, "expected target build")
+      unless result.target_build == expected_build
+        raise ValidationError,
+              "Production Xcode Cloud target advanced from #{expected_build} to #{result.target_build}; " \
+              "abort before merging or tagging"
+      end
+
+      result
+    end
 
     def positive_integer(value, label)
       integer = Integer(value)

@@ -163,6 +163,30 @@ class BuildReconcilerTest < Minitest::Test
     end
   end
 
+  def test_pre_merge_reconciliation_aborts_if_cloud_advanced_the_target
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      reconcile(
+        cloud_next_build: 20_105,
+        expected_target_build: 20_105,
+        cloud_runs: [{
+          "id" => "run-5",
+          "number" => 20_105,
+          "completion_status" => "FAILED",
+          "source_commit" => "a" * 40
+        }]
+      )
+    end
+
+    assert_includes error.message, "advanced from 20105 to 20106"
+    assert_includes error.message, "abort before merging or tagging"
+  end
+
+  def test_pre_merge_reconciliation_accepts_the_unchanged_target
+    result = reconcile(expected_target_build: 20_105)
+
+    assert_equal 20_105, result.target_build
+  end
+
   def test_alpha_numbers_are_not_an_input
     method_parameters = @reconciler.method(:reconcile).parameters.map(&:last)
     refute_includes method_parameters, :alpha_build

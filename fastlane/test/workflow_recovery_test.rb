@@ -24,6 +24,36 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes workflow[cleanup_step..], "steps.cleanup_app_token.outputs.token || github.token"
   end
 
+  def test_cloud_target_is_reconciled_again_after_checks_and_before_merge_or_tag
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    wait_step = workflow.index("- name: Wait for exact-head release PR checks")
+    fresh_token = workflow.index("- name: Refresh release App token before merging")
+    reconcile_again = workflow.index("- name: Revalidate Production Cloud build immediately before merge or tag")
+    merge_step = workflow.index("- name: Recheck and merge the release PR")
+    tag_step = workflow.index("- name: Create the tag-backed GitHub prerelease")
+
+    assert_operator wait_step, :<, fresh_token
+    assert_operator fresh_token, :<, reconcile_again
+    assert_operator reconcile_again, :<, merge_step
+    assert_operator merge_step, :<, tag_step
+    assert_includes workflow[reconcile_again...merge_step], "--expected-target-build"
+    assert_includes workflow[reconcile_again...merge_step], "mv pre-merge-reconciliation.json reconciliation.json"
+  end
+
+  def test_cancelled_release_runs_branch_and_prerelease_recovery
+    release = File.read(repo_path(".github/workflows/release.yml"))
+    cleanup_token = release[/\s+if: .*\n\s+id: cleanup_app_token/, 0]
+    cleanup_step = release.split("- name: Reconcile a failed release branch", 2).fetch(1).lines.first(2).join
+    prerelease_step = release.split("- name: Preserve an explanatory failed prerelease", 2).fetch(1).lines.first(2).join
+    alpha = File.read(repo_path(".github/workflows/release_alpha_retry.yml"))
+    alpha_step = alpha.split("- name: Preserve Alpha retry failure evidence", 2).fetch(1).lines.first(2).join
+
+    assert_includes cleanup_token, "failure() || cancelled()"
+    assert_includes cleanup_step, "failure() || cancelled()"
+    assert_includes prerelease_step, "failure() || cancelled()"
+    assert_includes alpha_step, "failure() || cancelled()"
+  end
+
   def test_transient_workflow_evidence_cannot_pollute_release_commit_paths
     release = File.read(repo_path(".github/workflows/release.yml"))
     release_exclusion = release.index("- name: Exclude transient release evidence from git status")

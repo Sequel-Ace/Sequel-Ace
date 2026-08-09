@@ -255,7 +255,7 @@ jobs:
           } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Preserve Alpha retry failure evidence
-        if: failure()
+        if: failure() || cancelled()
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}

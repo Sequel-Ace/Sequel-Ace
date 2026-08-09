@@ -160,6 +160,7 @@ module SequelAceRelease
         value.on("--highest-tag-build BUILD", Integer) { |item| options[:highest_tag_build] = item }
         value.on("--highest-asc-build BUILD", Integer) { |item| options[:highest_asc_build] = item }
         value.on("--cloud-next-build BUILD", Integer) { |item| options[:cloud_next_build] = item }
+        value.on("--expected-target-build BUILD", Integer) { |item| options[:expected_target_build] = item }
         value.on("--cloud-runs FILE") { |item| options[:cloud_runs] = read_json(item) }
         value.on("--workflow-id ID") { |item| options[:workflow_id] = item }
         value.on("--source-tagged") { options[:source_tagged] = true }
@@ -189,7 +190,8 @@ module SequelAceRelease
         cloud_next_build: options[:cloud_next_build],
         cloud_runs: runs,
         source_tagged: source_tagged,
-        source_is_release_tip: git.head_changes_all?(required_release_paths)
+        source_is_release_tip: git.head_changes_all?(required_release_paths),
+        expected_target_build: options[:expected_target_build]
       )
       emit(result.to_h.merge("production_cloud_runs" => runs), options[:output])
     end

@@ -313,6 +313,25 @@ jobs:
           owner: Sequel-Ace
           repositories: Sequel-Ace
 
+      - name: Revalidate Production Cloud build immediately before merge or tag
+        run: |
+          set -euo pipefail
+          source_build="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("current_source").fetch("build")' release-plan.json)"
+          bundle exec ruby fastlane/bin/sa-release reconcile-build \
+            --source-build "${source_build}" \
+            --cloud-next-build "${{ inputs.production_cloud_next_build }}" \
+            --workflow-id "${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}" \
+            --expected-target-build "${{ steps.reconcile.outputs.build }}" \
+            --output pre-merge-reconciliation.json
+          mv pre-merge-reconciliation.json reconciliation.json
+          bundle exec ruby -I fastlane/lib -rsequel_ace_release -rjson <<'RUBY'
+          reconciliation = JSON.parse(File.read("reconciliation.json"))
+          manifest = SequelAceRelease::Manifest.read("manifest.json")
+          manifest.with(
+            "skipped_production_builds" => reconciliation.fetch("skipped_production_builds", [])
+          ).write("manifest.json")
+          RUBY
+
       - name: Recheck and merge the release PR
         if: steps.release_context.outputs.resume_without_pr != 'true'
         id: merge
@@ -537,7 +556,7 @@ jobs:
           } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Refresh release App token for failure cleanup
-        if: failure() && steps.release_context.outputs.branch != ''
+        if: (failure() || cancelled()) && steps.release_context.outputs.branch != ''
         id: cleanup_app_token
         continue-on-error: true
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
@@ -548,7 +567,7 @@ jobs:
           repositories: Sequel-Ace
 
       - name: Reconcile a failed release branch
-        if: failure() && steps.release_context.outputs.branch != ''
+        if: (failure() || cancelled()) && steps.release_context.outputs.branch != ''
         continue-on-error: true
         env:
           SA_GITHUB_TOKEN: ${{ steps.cleanup_app_token.outputs.token || github.token }}
@@ -569,7 +588,7 @@ jobs:
             --output branch-cleanup.json
 
       - name: Preserve an explanatory failed prerelease
-        if: failure() && steps.release_context.outputs.tag != ''
+        if: (failure() || cancelled()) && steps.release_context.outputs.tag != ''
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}

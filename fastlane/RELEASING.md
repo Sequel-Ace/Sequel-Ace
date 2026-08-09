@@ -208,6 +208,11 @@ build, and UI-observed Cloud next number `N`:
 - Stop: `N` regresses, an intervening Production run is absent, histories
   conflict, or the eventual Cloud build does not exactly match the tag/build.
 
+After release-PR checks finish, the workflow performs the same reconciliation
+again immediately before merge or recovered tag creation. If the target moved,
+it aborts before either transition, closes the exact PR, and deletes only its
+verified release branch; a fresh plan must use the newly reconciled number.
+
 Alpha numbers never enter this calculation. A failed Alpha-only beta build may
 be rerun against the same tag through
 `.github/workflows/release_alpha_retry.yml`. That workflow reuses the successful
@@ -255,6 +260,8 @@ prerelease.
   child of frozen main and byte-exact allowlisted file blobs from GitHub's
   [compare-commits API](https://docs.github.com/en/rest/commits/commits#compare-two-commits)
   before cleanup, so a retry is not stranded by a stale deterministic branch.
+- The same exact branch/PR and prerelease recovery steps run for a GitHub
+  cancellation, preventing an operator cancel from stranding generated state.
 - Once Alpha-only recovery has verified and archived both beta artifacts, a
   later release-body or handoff failure records its workflow evidence without
   downgrading the durable `archived` manifest to `failed`.
