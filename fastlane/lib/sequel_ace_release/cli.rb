@@ -37,6 +37,7 @@ module SequelAceRelease
       when "finalize" then finalize(argv)
       when "github-prepare-pr" then github_prepare_pr(argv)
       when "github-cleanup-branch" then github_cleanup_branch(argv)
+      when "github-wait-checks" then github_wait_checks(argv)
       when "github-merge-pr" then github_merge_pr(argv)
       when "github-create-release" then github_create_release(argv)
       when "github-upload-asset" then github_upload_asset(argv)
@@ -319,6 +320,32 @@ module SequelAceRelease
       end
 
       raise ValidationError, "no Cloud artifact passed verification (#{failures.join('; ')})"
+    end
+
+    def github_wait_checks(arguments)
+      options = { timeout: 7_200 }
+      parser = OptionParser.new do |value|
+        value.banner = "Usage: sa-release github-wait-checks --head-sha SHA --required-check NAME"
+        value.on("--head-sha SHA") { |item| options[:head_sha] = item }
+        value.on("--required-check NAME") { |item| (options[:required_checks] ||= []) << item }
+        value.on("--require-all-checks") { options[:require_all_checks] = true }
+        value.on("--timeout SECONDS", Integer) { |item| options[:timeout] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end
+      parser.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :head_sha, :required_checks)
+
+      runs = github_client.wait_for_checks(
+        commit_sha: options[:head_sha],
+        required_names: options[:required_checks],
+        timeout_seconds: options[:timeout],
+        require_all: options[:require_all_checks] == true
+      )
+      emit({
+        "head_sha" => options[:head_sha],
+        "checks" => runs.map { |run| run.slice("id", "name", "status", "conclusion", "started_at", "completed_at") }
+      }, options[:output])
     end
 
     def github_merge_pr(arguments)
@@ -780,11 +807,12 @@ module SequelAceRelease
     end
 
     def finalize(arguments)
-      options = {}
+      options = { validate_only: false }
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release finalize --manifest FILE --confirm 'FINALIZE TAG'"
+        value.banner = "Usage: sa-release finalize --manifest FILE --confirm 'FINALIZE TAG' [--validate-only]"
         value.on("--manifest FILE") { |item| options[:manifest] = item }
         value.on("--confirm TEXT") { |item| options[:confirm] = item }
+        value.on("--validate-only") { options[:validate_only] = true }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
@@ -810,20 +838,40 @@ module SequelAceRelease
       client = github_client
       release = client.release_by_tag(data.fetch("tag"))
       verify_release_assets!(release, data)
-      if release["prerelease"] == true || release["name"] != ReleaseNaming.new(
+      final_title = ReleaseNaming.new(
         channel: "production",
         version: data.fetch("target_version"),
         build: data.fetch("canonical_build"),
         iteration: data.fetch("iteration")
       ).final_title
+      transition_required = release["prerelease"] == true || release["name"] != final_title
+      evidence = {
+        "release_id" => release.fetch("id"),
+        "tag" => data.fetch("tag"),
+        "app_store_state" => "READY_FOR_DISTRIBUTION",
+        "current_title" => release["name"],
+        "current_prerelease" => release["prerelease"],
+        "target_title" => final_title,
+        "target_latest" => true,
+        "transition_required" => transition_required
+      }
+      if options[:validate_only]
+        return emit(evidence.merge("github_transition" => "durably_validated_before_public_transition"), options[:output])
+      end
+
+      if transition_required
         release = client.update_release(
           id: release.fetch("id"),
-          title: "#{data.fetch('target_version')} (#{data.fetch('canonical_build')})",
+          title: final_title,
           prerelease: false,
           make_latest: true
         )
       end
-      emit({ "release" => release, "app_store_state" => "READY_FOR_DISTRIBUTION" }, options[:output])
+      emit(evidence.merge(
+        "github_transition" => "complete",
+        "final_title" => release["name"],
+        "final_prerelease" => release["prerelease"]
+      ), options[:output])
     end
 
     def github_client(optional: false)
@@ -1045,7 +1093,8 @@ module SequelAceRelease
           finalize                   Finalize a GitHub prerelease after App Store release
           github-prepare-pr          Create a verified GitHub App release commit and PR
           github-cleanup-branch      Close and delete an exact failed release branch
-          github-merge-pr            Wait for exact-head checks and merge the release PR
+          github-wait-checks         Wait for exact-head release PR checks
+          github-merge-pr            Recheck and merge the release PR
           github-create-release      Create the tag-backed GitHub prerelease
           github-upload-asset        Upload a verified zip to the prerelease
           wait-cloud                 Wait for an exact Xcode Cloud build

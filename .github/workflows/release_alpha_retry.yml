@@ -264,12 +264,11 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -f retry-archive/manifest.json ]]; then
-            ruby -rjson -e 'File.write("alpha-retry-failure-evidence.json", JSON.pretty_generate({"alpha_retry_failure" => {"workflow_url" => ENV.fetch("RUN_URL")}}) + "\n")'
-            bundle exec ruby fastlane/bin/sa-release update-manifest \
+            bundle exec ruby fastlane/bin/sa-release record-failure \
               --manifest retry-archive/manifest.json \
-              --state failed \
-              --merge alpha-retry-failure-evidence.json >/dev/null
-            cp alpha-retry-failure-evidence.json retry-archive/
+              --workflow-url "${RUN_URL}" \
+              --output alpha-retry-failure-disposition.json
+            cp alpha-retry-failure-disposition.json retry-archive/
             archive_ref="${GHCR_REPOSITORY}:beta-${BETA_TAG#beta/}"
             Scripts/archive-release-to-ghcr.sh push "${archive_ref}" retry-archive > alpha-retry-failed-archive-evidence.json || \
               echo "Could not refresh the private archive with Alpha retry failure state." >&2

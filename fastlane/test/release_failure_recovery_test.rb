@@ -89,6 +89,17 @@ class ReleaseFailureRecoveryTest < Minitest::Test
     assert_equal "version-id", result.manifest.to_h.dig("asc_ids", "version_id")
   end
 
+  def test_archived_beta_failure_preserves_the_durable_artifact_checkpoint
+    result = recorder.record(
+      manifest: manifest(state: "archived", channel: "beta"),
+      workflow_url: workflow_url
+    )
+
+    assert_equal "archived", result.manifest.to_h.fetch("state")
+    assert_equal false, result.preserve_release_body
+    assert_equal workflow_url, result.manifest.to_h.dig("failure", "workflow_url")
+  end
+
   def test_reconciled_submission_recovers_an_archived_manifest
     result = recorder.record(
       manifest: manifest(state: "archived"),
@@ -173,10 +184,10 @@ class ReleaseFailureRecoveryTest < Minitest::Test
 
   private
 
-  def manifest(state: "archived")
-    release_approval = approval
+  def manifest(state: "archived", channel: "production")
+    release_approval = approval(channel: channel)
     naming = SequelAceRelease::ReleaseNaming.new(
-      channel: "production", version: "5.3.2", build: 20_105, iteration: 1
+      channel: channel, version: "5.3.2", build: 20_105, iteration: 1
     )
     SequelAceRelease::Manifest.create(
       approval: release_approval,

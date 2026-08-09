@@ -94,9 +94,10 @@ jobs:
             if bundle exec ruby fastlane/bin/sa-release finalize \
               --manifest "${work_directory}/manifest.json" \
               --confirm "FINALIZE ${release_tag}" \
-              --output "${work_directory}/finalization.json" 2> "${work_directory}/pending.log"; then
+              --validate-only \
+              --output "${work_directory}/finalization-validation.json" 2> "${work_directory}/pending.log"; then
               ruby -rjson -e 'File.write(ARGV.fetch(1), JSON.pretty_generate({"finalization" => JSON.parse(File.read(ARGV.fetch(0)))}) + "\n")' \
-                "${work_directory}/finalization.json" \
+                "${work_directory}/finalization-validation.json" \
                 "${work_directory}/finalization-evidence.json"
               bundle exec ruby fastlane/bin/sa-release update-manifest \
                 --manifest "${work_directory}/manifest.json" \
@@ -105,8 +106,16 @@ jobs:
               live_archive_evidence="$(mktemp -t sequel-ace-live-archive-evidence)"
               Scripts/archive-release-to-ghcr.sh push "${archive_ref}" "${work_directory}" > "${live_archive_evidence}"
               /bin/rm -f "${live_archive_evidence}"
-              echo "Finalized ${release_tag}."
-              finalized=$((finalized + 1))
+              if bundle exec ruby fastlane/bin/sa-release finalize \
+                --manifest "${work_directory}/manifest.json" \
+                --confirm "FINALIZE ${release_tag}" \
+                --output "${work_directory}/finalization.json" 2> "${work_directory}/pending.log"; then
+                echo "Finalized ${release_tag}."
+                finalized=$((finalized + 1))
+              else
+                echo "Pending ${release_tag}: $(head -n 1 "${work_directory}/pending.log")"
+                pending=$((pending + 1))
+              fi
             else
               echo "Pending ${release_tag}: $(head -n 1 "${work_directory}/pending.log")"
               pending=$((pending + 1))

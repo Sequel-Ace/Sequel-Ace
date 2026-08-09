@@ -3,6 +3,7 @@
 module SequelAceRelease
   class FailureRecorder
     FINALIZABLE_STATES = %w[submitted live].freeze
+    DURABLE_BETA_STATES = %w[archived].freeze
     SUBMISSION_FIELDS = %w[
       version_id build_id app_store_state scheduled_release_at phased_release_state
     ].freeze
@@ -29,6 +30,10 @@ module SequelAceRelease
         validate_submission!(current, submission)
         updates["asc_ids"] = submission.slice(*SUBMISSION_FIELDS)
         target_state = "submitted" unless target_state == "live"
+      elsif current.fetch("channel") == "beta" && DURABLE_BETA_STATES.include?(target_state)
+        # Artifact recovery is already durable. Record the later workflow
+        # failure without erasing the successful archived checkpoint.
+        target_state = "archived"
       elsif !FINALIZABLE_STATES.include?(target_state)
         target_state = "failed"
       end

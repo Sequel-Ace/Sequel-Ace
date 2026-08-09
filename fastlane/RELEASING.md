@@ -78,6 +78,12 @@ The shared HTTP transport automatically retries read-only `GET` requests only.
 It never replays `POST`, `PATCH`, `PUT`, or `DELETE` mutations after a server or
 network failure because their remote outcome may be ambiguous.
 
+Long release-PR check polling uses the job-scoped `GITHUB_TOKEN`. The workflow
+mints a fresh release App installation token immediately before the bypass
+merge and independently refreshes it for failure cleanup. This prevents the
+one-hour App-token lifetime from stranding a PR or deterministic release branch
+during the two-hour check window.
+
 ## One-time Apple setup
 
 Create a dedicated App Store Connect user with App Manager access only to:
@@ -223,7 +229,9 @@ prerelease.
 - The hourly finalizer changes the GitHub title, prerelease flag, and latest flag
   only after the exact ASC version is `READY_FOR_DISTRIBUTION`, the exact build
   remains selected, phased release is `ACTIVE` or `COMPLETE`, and public asset
-  checksums match the private manifest.
+  checksums match the private manifest. It first records that live validation
+  in the private archive, and only then performs the public GitHub transition;
+  an archive failure therefore leaves the prerelease discoverable for retry.
 - A failure after App Store submission preserves `submitted` or `live` state
   and never edits the checksum-protected GitHub release body. If submission had
   an ambiguous response, cleanup reads back the exact ASC version and build
@@ -235,6 +243,9 @@ prerelease.
   branch only when its head still matches that exact commit (or the frozen main
   SHA when commit creation did not finish), so a retry is not stranded by a
   stale deterministic branch.
+- Once Alpha-only recovery has verified and archived both beta artifacts, a
+  later release-body or handoff failure records its workflow evidence without
+  downgrading the durable `archived` manifest to `failed`.
 
 ## Feasibility gate
 

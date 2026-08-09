@@ -267,11 +267,34 @@ jobs:
             --output release-pr.json
           ruby -rjson -e 'value = JSON.parse(File.read("release-pr.json")); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("number=#{value.dig("pull_request", "number")}"); file.puts("head_sha=#{value.dig("commit", "sha")}"); file.puts("branch=#{value.dig("naming", "branch")}"); file.puts("tag=#{value.dig("naming", "tag")}"); file.puts("ghcr_tag=#{value.dig("naming", "ghcr_tag")}"); file.puts("production_asset=#{value.dig("naming", "public_artifacts", 0)}"); file.puts("alpha_asset=#{value.dig("naming", "public_artifacts", 1)}") if value.dig("naming", "public_artifacts", 1) }'
 
-      - name: Wait for exact-head checks and merge the release PR
+      - name: Wait for exact-head release PR checks
+        if: steps.release_context.outputs.resume_without_pr != 'true'
+        env:
+          SA_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          bundle exec ruby fastlane/bin/sa-release github-wait-checks \
+            --head-sha "${{ steps.release_pr.outputs.head_sha }}" \
+            --required-check "Run Tests" \
+            --required-check "Release Tool Tests" \
+            --require-all-checks \
+            --output release-checks.json
+
+      - name: Refresh release App token before merging
+        if: steps.release_context.outputs.resume_without_pr != 'true'
+        id: merge_app_token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ secrets.SA_RELEASE_GITHUB_APP_ID }}
+          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: Sequel-Ace
+          repositories: Sequel-Ace
+
+      - name: Recheck and merge the release PR
         if: steps.release_context.outputs.resume_without_pr != 'true'
         id: merge
         env:
-          SA_GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
+          SA_GITHUB_TOKEN: ${{ steps.merge_app_token.outputs.token }}
         run: |
           set -euo pipefail
           bundle exec ruby fastlane/bin/sa-release github-merge-pr \
@@ -281,9 +304,10 @@ jobs:
             --required-check "Run Tests" \
             --required-check "Release Tool Tests" \
             --require-all-checks \
+            --timeout 120 \
             --output merge.json
           ruby -rjson -e 'value = JSON.parse(File.read("merge.json")); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("sha=#{value.fetch("sha")}") }'
-          ruby -rjson -e 'File.write("merge-evidence.json", JSON.pretty_generate({"github_merge" => JSON.parse(File.read("merge.json"))}) + "\n")'
+          ruby -rjson -e 'File.write("merge-evidence.json", JSON.pretty_generate({"release_checks" => JSON.parse(File.read("release-checks.json")), "github_merge" => JSON.parse(File.read("merge.json"))}) + "\n")'
 
       - name: Resolve the exact release target commit
         id: release_target
@@ -300,7 +324,7 @@ jobs:
           else
             sha = ENV.fetch("MERGED_SHA")
             raise "release merge did not return a commit SHA" if sha.empty?
-            evidence = { "github_merge" => JSON.parse(File.read("merge.json")) }
+            evidence = JSON.parse(File.read("merge-evidence.json"))
           end
           evidence["release_commit_sha"] = sha
           File.write("release-target-evidence.json", JSON.pretty_generate(evidence) + "\n")
@@ -314,7 +338,7 @@ jobs:
       - name: Create the tag-backed GitHub prerelease
         id: prerelease
         env:
-          SA_GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
+          SA_GITHUB_TOKEN: ${{ steps.merge_app_token.outputs.token || steps.app_token.outputs.token }}
         run: |
           set -euo pipefail
           bundle exec ruby fastlane/bin/sa-release github-create-release \
@@ -489,11 +513,22 @@ jobs:
             fi
           } >> "${GITHUB_STEP_SUMMARY}"
 
+      - name: Refresh release App token for failure cleanup
+        if: failure() && steps.release_context.outputs.branch != ''
+        id: cleanup_app_token
+        continue-on-error: true
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ secrets.SA_RELEASE_GITHUB_APP_ID }}
+          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: Sequel-Ace
+          repositories: Sequel-Ace
+
       - name: Reconcile a failed release branch
         if: failure() && steps.release_context.outputs.branch != ''
         continue-on-error: true
         env:
-          SA_GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
+          SA_GITHUB_TOKEN: ${{ steps.cleanup_app_token.outputs.token || github.token }}
           RELEASE_BRANCH: ${{ steps.release_context.outputs.branch }}
           FROZEN_MAIN_SHA: ${{ inputs.expected_main_sha }}
         run: |
