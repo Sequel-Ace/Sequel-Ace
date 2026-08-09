@@ -147,6 +147,8 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes authorization, "id: authorization"
     assert_includes authorization, 'echo "authorized=true" >> "${GITHUB_OUTPUT}"'
     assert_includes validation, 'file.puts("validated=true")'
+    assert_operator validation.index("archive_ref ="), :<, validation.index('file.puts("validated=true")')
+    assert_operator validation.index("naming.public_artifacts"), :<, validation.index('file.puts("validated=true")')
     assert_includes failure_header, "steps.authorization.outputs.authorized == 'true'"
     assert_includes failure_header, "steps.release.outputs.validated == 'true'"
   end

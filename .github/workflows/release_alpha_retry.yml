@@ -114,10 +114,22 @@ jobs:
           archive_ref="${GHCR_REPOSITORY}:beta-${version}-${build}"
           Scripts/archive-release-to-ghcr.sh pull "${archive_ref}" retry-archive
           bundle exec ruby -Ifastlane/lib -rsequel_ace_release -rjson <<'RUBY'
-          manifest = JSON.parse(File.read("retry-archive/manifest.json"))
+          manifest = SequelAceRelease::Manifest.read("retry-archive/manifest.json").to_h
           expected_tag = ENV.fetch("BETA_TAG")
           expected_commit = ENV.fetch("EXPECTED_COMMIT")
-          raise SequelAceRelease::ValidationError, "archive is not the requested beta" unless manifest["channel"] == "beta" && manifest["tag"] == expected_tag
+          version = manifest.fetch("target_version")
+          build = manifest.fetch("canonical_build")
+          naming = SequelAceRelease::ReleaseNaming.new(
+            channel: "beta",
+            version: version,
+            build: build,
+            iteration: manifest.fetch("iteration")
+          )
+          unless manifest["channel"] == "beta" && manifest["tag"] == expected_tag &&
+                 manifest["tag"] == naming.tag && manifest["title"] == naming.title &&
+                 manifest["artifact_names"] == naming.public_artifacts
+            raise SequelAceRelease::ValidationError, "archive is not the requested canonical beta"
+          end
           raise SequelAceRelease::ValidationError, "archive release commit does not match" unless manifest["release_commit_sha"] == expected_commit
           client = SequelAceRelease::GitHubClient.new(token: ENV.fetch("SA_GITHUB_TOKEN"))
           raise SequelAceRelease::ValidationError, "beta tag moved" unless client.ref_sha("tags/#{expected_tag}") == expected_commit
@@ -126,13 +138,16 @@ jobs:
           raise SequelAceRelease::ValidationError, "beta release title changed" unless release["name"] == manifest["title"]
           artifacts = manifest.fetch("artifact_names")
           raise SequelAceRelease::ValidationError, "beta manifest must name two artifacts" unless artifacts.length == 2
+          production_asset = artifacts.fetch(0)
+          alpha_asset = artifacts.fetch(1)
+          archive_ref = "#{ENV.fetch('GHCR_REPOSITORY')}:beta-#{version}-#{build}"
           File.open(ENV.fetch("GITHUB_OUTPUT"), "a") do |file|
+            file.puts("version=#{version}")
+            file.puts("build=#{build}")
+            file.puts("production_asset=#{production_asset}")
+            file.puts("alpha_asset=#{alpha_asset}")
+            file.puts("archive_ref=#{archive_ref}")
             file.puts("validated=true")
-            file.puts("version=#{manifest.fetch('target_version')}")
-            file.puts("build=#{manifest.fetch('canonical_build')}")
-            file.puts("production_asset=#{artifacts.fetch(0)}")
-            file.puts("alpha_asset=#{artifacts.fetch(1)}")
-            file.puts("archive_ref=#{ENV.fetch('GHCR_REPOSITORY')}:beta-#{manifest.fetch('target_version')}-#{manifest.fetch('canonical_build')}")
           end
           RUBY
 

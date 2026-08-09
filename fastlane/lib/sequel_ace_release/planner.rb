@@ -2,6 +2,8 @@
 
 module SequelAceRelease
   class Planner
+    AUTOMATED_RELEASE_TITLE = /\APrepare \d+\.\d+\.\d+ \([1-9]\d*\) release\z/.freeze
+
     def initialize(git: GitRepository.new, github: nil, version_files: VersionFiles.new)
       @git = git
       @github = github
@@ -11,12 +13,14 @@ module SequelAceRelease
     def plan(channel:, target_version: nil, base_tag: nil, main_ref: "HEAD", app_store_notes: nil, observed_cloud_next_build: nil)
       Config.validate_channel!(channel)
       main_sha = @git.sha(main_ref)
+      release_notes_head_ref = resolve_release_notes_head_ref(main_ref)
+      release_notes_head_sha = @git.sha(release_notes_head_ref)
       release_catalog = @github ? @github.releases : []
       stable = base_tag || select_base_tag(channel, target_version, release_catalog)
       raise ValidationError, "could not determine a prior release tag" if stable.to_s.empty?
 
       base_sha = @git.sha(stable)
-      changes = @git.changes(base_ref: stable, head_ref: main_ref)
+      changes = @git.changes(base_ref: stable, head_ref: release_notes_head_ref)
       raise ValidationError, "there are no changes since #{stable}" if changes.empty?
 
       notes = Notes.new(changes: changes)
@@ -35,7 +39,7 @@ module SequelAceRelease
       release_body = notes.github_body(
         app_store_notes: human_notes,
         base_tag: stable,
-        head_ref: main_sha,
+        head_ref: release_notes_head_sha,
         contributors: contributors
       )
       release_notes_sha256 = notes.sha256(release_body)
@@ -58,6 +62,7 @@ module SequelAceRelease
         "base_tag" => stable,
         "base_sha" => base_sha,
         "main_sha" => main_sha,
+        "release_notes_head_sha" => release_notes_head_sha,
         "recommended_bump" => recommended_bump,
         "recommended_version" => recommendation,
         "target_version" => chosen_version,
@@ -72,6 +77,21 @@ module SequelAceRelease
     end
 
     private
+
+    def resolve_release_notes_head_ref(main_ref)
+      return main_ref unless @git.respond_to?(:parents)
+
+      parents = @git.parents(main_ref)
+      return main_ref unless parents.length == 2
+
+      merge_changes = @git.changes(base_ref: parents.first, head_ref: main_ref)
+      return main_ref unless merge_changes.length == 1
+
+      change = merge_changes.first
+      return main_ref unless change.pr_number && change.title.to_s.match?(AUTOMATED_RELEASE_TITLE)
+
+      parents.first
+    end
 
     def select_base_tag(channel, target_version, releases)
       parsed = releases.filter_map do |release|

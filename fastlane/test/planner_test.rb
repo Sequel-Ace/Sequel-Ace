@@ -14,6 +14,10 @@ class PlannerTest < Minitest::Test
       release_changes
     end
 
+    def parents(_ref)
+      []
+    end
+
     def latest_release_tag(channel:)
       raise unless channel == "production"
 
@@ -58,6 +62,62 @@ class PlannerTest < Minitest::Test
     assert_equal plan.fetch("iteration"), plan.dig("approval", "release_iteration")
     assert plan.fetch("github_release_body").start_with?("## App Store Release Notes")
     assert SequelAceRelease::Approval.from_hash(plan.fetch("approval")).verify!(plan.dig("approval", "sha256"))
+  end
+
+  def test_merged_release_recovery_reuses_the_original_preparation_base_for_notes
+    product_change = SequelAceRelease::GitRepository::Change.new(
+      sha: "c" * 40,
+      title: "Fix release behavior",
+      category: "fixed",
+      pr_number: 2500,
+      author_name: "Contributor"
+    )
+    release_change = SequelAceRelease::GitRepository::Change.new(
+      sha: "d" * 40,
+      title: "Prepare 5.3.2 (20105) release",
+      category: "changed",
+      pr_number: 2501,
+      author_name: "sequel-ace-release[bot]"
+    )
+    git = Object.new
+    git.define_singleton_method(:sha) do |ref|
+      {
+        "production/5.3.1-20104" => "b" * 40,
+        "release-merge" => "d" * 40,
+        "pre-release-main" => "a" * 40
+      }.fetch(ref)
+    end
+    git.define_singleton_method(:parents) do |ref|
+      raise unless ref == "release-merge"
+
+      ["pre-release-main", "release-bot-commit"]
+    end
+    git.define_singleton_method(:changes) do |base_ref:, head_ref:|
+      case [base_ref, head_ref]
+      when ["pre-release-main", "release-merge"] then [release_change]
+      when ["production/5.3.1-20104", "pre-release-main"] then [product_change]
+      else raise "unexpected comparison #{base_ref}...#{head_ref}"
+      end
+    end
+    planner = SequelAceRelease::Planner.new(
+      git: git,
+      version_files: FakeVersions.new({ "version" => "5.3.2", "build" => 20_105 })
+    )
+
+    plan = planner.plan(
+      channel: "production",
+      target_version: "5.3.2",
+      base_tag: "production/5.3.1-20104",
+      main_ref: "release-merge",
+      app_store_notes: "A focused fix.",
+      observed_cloud_next_build: 20_105
+    )
+
+    assert_equal "d" * 40, plan.fetch("main_sha")
+    assert_equal "a" * 40, plan.fetch("release_notes_head_sha")
+    assert_includes plan.fetch("github_release_body"), "Fix release behavior"
+    assert_includes plan.fetch("github_release_body"), "production/5.3.1-20104...#{'a' * 40}"
+    refute_includes plan.fetch("github_release_body"), "Prepare 5.3.2"
   end
 
   def test_a_new_prerelease_iteration_invalidates_the_approved_plan

@@ -213,6 +213,9 @@ build, and UI-observed Cloud next number `N`:
   version file and `CHANGELOG.md`, reuse it. Unrelated commits may have advanced
   `main`; the recovery approval must be planned against the exact release
   commit, and `mode=resume` is the only mode allowed to start from that ancestor.
+  When that commit is the generated release-PR merge, the planner uses its
+  first parent as the release-notes comparison head, reproducing the original
+  change range instead of listing the release-preparation PR itself.
   Before any recovery mutation and again immediately before tagging, GitHub must
   prove that exact commit is still an ancestor of live `main` and that no
   protected release file changed after it.

@@ -26,6 +26,11 @@ module SequelAceRelease
       git("rev-parse", "#{ref}^{commit}").strip
     end
 
+    def parents(ref = "HEAD")
+      resolved = sha(ref)
+      git("rev-list", "--parents", "-n", "1", resolved).split.drop(1)
+    end
+
     def branch
       git("branch", "--show-current").strip
     end
