@@ -39,6 +39,25 @@ class ArtifactVerifierTest < Minitest::Test
     end
   end
 
+  class LaunchRunner
+    attr_reader :commands
+
+    def initialize
+      @commands = []
+      @pgrep_results = [false, true, false]
+    end
+
+    def run(*command, **_options)
+      @commands << command
+      success = command.first == "/usr/bin/pgrep" ? @pgrep_results.shift : true
+      SequelAceRelease::CommandRunner::Result.new(
+        stdout: "",
+        stderr: "",
+        status: FakeStatus.new(success)
+      )
+    end
+  end
+
   FakeStatus = Struct.new(:success?)
 
   def test_verifies_expected_artifact_contract
@@ -92,6 +111,28 @@ class ArtifactVerifierTest < Minitest::Test
       end
       assert_includes error.message, "checksum"
     end
+  end
+
+  def test_launch_passes_the_process_name_as_data_instead_of_script_source
+    runner = LaunchRunner.new
+    verifier = SequelAceRelease::ArtifactVerifier.new(runner: runner)
+    process_name = 'Sequel Ace\\"; Application("Finder").quit(); //'
+
+    verifier.stub(:sleep, nil) do
+      verifier.send(:launch_and_quit, Pathname.new("/tmp/Sequel Ace.app"), process_name)
+    end
+
+    osascript = runner.commands.find { |command| command.first == "/usr/bin/osascript" }
+    assert_equal(
+      [
+        "/usr/bin/osascript",
+        "-l", "JavaScript",
+        "-e", "function run(argv) { Application(argv[0]).quit(); }",
+        process_name
+      ],
+      osascript
+    )
+    refute_includes osascript.fetch(4), process_name
   end
 
   private

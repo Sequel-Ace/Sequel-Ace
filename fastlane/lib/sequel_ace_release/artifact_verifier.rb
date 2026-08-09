@@ -118,8 +118,12 @@ module SequelAceRelease
       running = @runner.run("/usr/bin/pgrep", "-x", process_name, allow_failure: true)
       raise ValidationError, "artifact did not remain running after launch" unless running.status.success?
 
-      escaped = process_name.gsub('"', '\\"')
-      @runner.run("/usr/bin/osascript", "-e", "tell application \"#{escaped}\" to quit")
+      @runner.run(
+        "/usr/bin/osascript",
+        "-l", "JavaScript",
+        "-e", "function run(argv) { Application(argv[0]).quit(); }",
+        process_name
+      )
       deadline = Time.now + 20
       loop do
         stopped = !@runner.run("/usr/bin/pgrep", "-x", process_name, allow_failure: true).status.success?
