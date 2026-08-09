@@ -6,18 +6,19 @@ module SequelAceRelease
   class Approval
     POLICY = "authoritative-production-cloud-next".freeze
     REQUIRED_KEYS = %w[
-      channel target_version main_sha previous_tag app_store_notes
+      channel target_version main_sha previous_tag base_sha app_store_notes
       observed_production_cloud_next_build build_policy
     ].freeze
 
     attr_reader :payload
 
-    def initialize(channel:, target_version:, main_sha:, previous_tag:, app_store_notes:, observed_production_cloud_next_build:, build_policy: POLICY)
+    def initialize(channel:, target_version:, main_sha:, previous_tag:, base_sha:, app_store_notes:, observed_production_cloud_next_build:, build_policy: POLICY)
       @payload = {
         "channel" => Config.validate_channel!(channel),
         "target_version" => Version.validate!(target_version),
-        "main_sha" => validate_sha!(main_sha),
+        "main_sha" => validate_sha!(main_sha, "main"),
         "previous_tag" => validate_tag!(previous_tag),
+        "base_sha" => validate_sha!(base_sha, "base"),
         "app_store_notes" => validate_notes!(app_store_notes),
         "observed_production_cloud_next_build" => validate_build!(observed_production_cloud_next_build),
         "build_policy" => build_policy
@@ -50,10 +51,10 @@ module SequelAceRelease
 
     private
 
-    def validate_sha!(value)
+    def validate_sha!(value, label)
       return value if value.to_s.match?(/\A[0-9a-f]{40,64}\z/i)
 
-      raise ValidationError, "main SHA is malformed"
+      raise ValidationError, "#{label} SHA is malformed"
     end
 
     def validate_tag!(value)

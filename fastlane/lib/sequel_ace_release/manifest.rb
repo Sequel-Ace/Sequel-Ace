@@ -18,12 +18,17 @@ module SequelAceRelease
     end
 
     def self.create(approval:, naming:, base_sha:, canonical_build:, skipped_production_builds: [], release_notes_sha256:, state: "planned")
+      approved_base_sha = approval.payload.fetch("base_sha")
+      unless base_sha == approved_base_sha
+        raise ValidationError, "release base SHA does not match the immutable approval"
+      end
+
       new(
         "schema_version" => Config::SCHEMA_VERSION,
         "channel" => approval.payload.fetch("channel"),
         "target_version" => approval.payload.fetch("target_version"),
         "base_tag" => approval.payload.fetch("previous_tag"),
-        "base_sha" => base_sha,
+        "base_sha" => approved_base_sha,
         "main_sha" => approval.payload.fetch("main_sha"),
         "iteration" => naming.iteration,
         "observed_production_cloud_next_build" => approval.payload.fetch("observed_production_cloud_next_build"),

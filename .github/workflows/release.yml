@@ -597,6 +597,8 @@ jobs:
               elif [[ "${APP_STORE_OUTCOME}" == "failure" || "${APP_STORE_OUTCOME}" == "cancelled" ]]; then
                 bundle exec ruby fastlane/bin/sa-release reconcile-submission \
                   --manifest manifest.json \
+                  --wait-seconds 900 \
+                  --poll-interval 15 \
                   --output reconciled-submission.json
                 submission_confirmed="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("submitted")' reconciled-submission.json)"
                 if [[ "${submission_confirmed}" == "true" ]]; then

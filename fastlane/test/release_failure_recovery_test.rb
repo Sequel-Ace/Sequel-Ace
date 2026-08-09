@@ -23,6 +23,31 @@ class ReleaseFailureRecoveryTest < Minitest::Test
     end
   end
 
+  class SequencedAppStoreClient
+    attr_reader :version_reads
+
+    def initialize(versions:, selected_build: nil)
+      @versions = versions
+      @selected_build = selected_build
+      @version_reads = 0
+    end
+
+    def app_store_version(app_id:, version:)
+      raise "wrong app" unless app_id == SequelAceRelease::Config::PRODUCTION_APP_ID
+      raise "wrong version" unless version == "5.3.2"
+
+      value = @versions.fetch([@version_reads, @versions.length - 1].min)
+      @version_reads += 1
+      value
+    end
+
+    def selected_build(version_id:)
+      raise "wrong version id" unless version_id == "version-id"
+
+      @selected_build
+    end
+  end
+
   def test_reconciles_the_exact_submitted_version_and_build
     reconciler = SequelAceRelease::SubmissionReconciler.new(
       client: AppStoreClient.new(
@@ -65,6 +90,44 @@ class ReleaseFailureRecoveryTest < Minitest::Test
 
     error = assert_raises(SequelAceRelease::ValidationError) { reconciler.reconcile(manifest) }
     assert_includes error.message, "does not match"
+  end
+
+  def test_polls_an_ambiguous_submission_until_the_exact_build_is_submitted
+    now = 0.0
+    sleeps = []
+    client = SequencedAppStoreClient.new(
+      versions: [app_store_version("PREPARE_FOR_SUBMISSION"), app_store_version("WAITING_FOR_REVIEW")],
+      selected_build: selected_build(20_105)
+    )
+    reconciler = SequelAceRelease::SubmissionReconciler.new(
+      client: client,
+      clock: -> { now },
+      sleeper: ->(seconds) { sleeps << seconds; now += seconds }
+    )
+
+    result = reconciler.reconcile(manifest, timeout_seconds: 30, interval_seconds: 5)
+
+    assert_equal true, result.fetch("submitted")
+    assert_equal 2, result.fetch("poll_attempts")
+    assert_equal false, result.fetch("polling_timed_out")
+    assert_equal [5.0], sleeps
+  end
+
+  def test_reports_timeout_only_after_bounded_submission_polling
+    now = 0.0
+    client = SequencedAppStoreClient.new(versions: [app_store_version("PREPARE_FOR_SUBMISSION")])
+    reconciler = SequelAceRelease::SubmissionReconciler.new(
+      client: client,
+      clock: -> { now },
+      sleeper: ->(seconds) { now += seconds }
+    )
+
+    result = reconciler.reconcile(manifest, timeout_seconds: 10, interval_seconds: 5)
+
+    assert_equal false, result.fetch("submitted")
+    assert_equal true, result.fetch("polling_timed_out")
+    assert_equal 3, result.fetch("poll_attempts")
+    assert_equal 3, client.version_reads
   end
 
   def test_unsubmitted_failure_becomes_failed_and_can_explain_the_prerelease

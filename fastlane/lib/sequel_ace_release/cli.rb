@@ -645,6 +645,7 @@ module SequelAceRelease
         target_version: version,
         main_sha: data.fetch("main_sha"),
         previous_tag: data.fetch("base_tag"),
+        base_sha: data.fetch("base_sha"),
         app_store_notes: notes,
         observed_production_cloud_next_build: data.fetch("observed_production_cloud_next_build")
       )
@@ -778,17 +779,23 @@ module SequelAceRelease
     end
 
     def reconcile_submission(arguments)
-      options = {}
+      options = { wait_seconds: 0, poll_interval: 15 }
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release reconcile-submission --manifest FILE"
+        value.banner = "Usage: sa-release reconcile-submission --manifest FILE [--wait-seconds SECONDS] [--poll-interval SECONDS]"
         value.on("--manifest FILE") { |item| options[:manifest] = item }
+        value.on("--wait-seconds SECONDS", Integer) { |item| options[:wait_seconds] = item }
+        value.on("--poll-interval SECONDS", Integer) { |item| options[:poll_interval] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
       reject_arguments!(arguments)
       require_options!(options, :manifest)
       manifest = Manifest.read(options[:manifest])
-      result = SubmissionReconciler.new(client: app_store_client).reconcile(manifest)
+      result = SubmissionReconciler.new(client: app_store_client).reconcile(
+        manifest,
+        timeout_seconds: options[:wait_seconds],
+        interval_seconds: options[:poll_interval]
+      )
       emit(result, options[:output])
     end
 

@@ -8,11 +8,40 @@ module SequelAceRelease
       READY_FOR_DISTRIBUTION ACCEPTED
     ].freeze
 
-    def initialize(client:)
+    def initialize(
+      client:,
+      clock: -> { Process.clock_gettime(Process::CLOCK_MONOTONIC) },
+      sleeper: ->(seconds) { sleep(seconds) }
+    )
       @client = client
+      @clock = clock
+      @sleeper = sleeper
     end
 
-    def reconcile(manifest)
+    def reconcile(manifest, timeout_seconds: 0, interval_seconds: 15)
+      timeout = numeric_duration(timeout_seconds, "submission reconciliation timeout", allow_zero: true)
+      interval = numeric_duration(interval_seconds, "submission reconciliation poll interval", allow_zero: false)
+      return reconcile_once(manifest) if timeout.zero?
+
+      deadline = @clock.call + timeout
+      attempts = 0
+      loop do
+        attempts += 1
+        result = reconcile_once(manifest)
+        return result.merge("poll_attempts" => attempts, "polling_timed_out" => false) if result.fetch("submitted")
+
+        remaining = deadline - @clock.call
+        if remaining <= 0
+          return result.merge("poll_attempts" => attempts, "polling_timed_out" => true)
+        end
+
+        @sleeper.call([interval, remaining].min)
+      end
+    end
+
+    private
+
+    def reconcile_once(manifest)
       data = manifest.to_h
       raise ValidationError, "App Store submission reconciliation is production-only" unless data["channel"] == "production"
 
@@ -26,7 +55,7 @@ module SequelAceRelease
       return not_submitted("state_not_submitted", version: version, state: state) unless SUBMITTED_STATES.include?(state)
 
       selected_build = @client.selected_build(version_id: version.fetch("id"))
-      raise ValidationError, "submitted App Store version has no selected build" unless selected_build
+      return not_submitted("selected_build_not_found", version: version, state: state) unless selected_build
 
       actual_build = selected_build.dig("attributes", "version").to_s
       expected_build = data.fetch("canonical_build").to_s
@@ -43,7 +72,15 @@ module SequelAceRelease
       }
     end
 
-    private
+    def numeric_duration(value, label, allow_zero:)
+      duration = Float(value)
+      valid = duration.finite? && (allow_zero ? !duration.negative? : duration.positive?)
+      raise ValidationError, "#{label} must be #{allow_zero ? 'nonnegative' : 'positive'}" unless valid
+
+      duration
+    rescue ArgumentError, TypeError
+      raise ValidationError, "#{label} must be numeric"
+    end
 
     def not_submitted(reason, version: nil, state: nil)
       {

@@ -15,10 +15,36 @@ class ApprovalManifestTest < Minitest::Test
     refute_equal release_approval.sha256, changed_build.sha256
     assert_raises(SequelAceRelease::ValidationError) { changed_build.verify!(release_approval.sha256) }
 
+    changed_base = approval(base_sha: "d" * 40)
+    refute_equal release_approval.sha256, changed_base.sha256
+    assert_raises(SequelAceRelease::ValidationError) { changed_base.verify!(release_approval.sha256) }
+
     missing_build = release_approval.to_h.reject { |key, _| %w[sha256 observed_production_cloud_next_build].include?(key) }
     assert_raises(SequelAceRelease::ValidationError) do
       SequelAceRelease::Approval.from_hash(missing_build)
     end
+
+    missing_base = release_approval.to_h.reject { |key, _| %w[sha256 base_sha].include?(key) }
+    assert_raises(SequelAceRelease::ValidationError) do
+      SequelAceRelease::Approval.from_hash(missing_base)
+    end
+  end
+
+  def test_manifest_rejects_a_base_sha_outside_the_approval
+    naming = SequelAceRelease::ReleaseNaming.new(
+      channel: "production", version: "5.3.2", build: 20_105, iteration: 1
+    )
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      SequelAceRelease::Manifest.create(
+        approval: approval,
+        naming: naming,
+        base_sha: "e" * 40,
+        canonical_build: 20_105,
+        release_notes_sha256: "c" * 64
+      )
+    end
+    assert_includes error.message, "immutable approval"
   end
 
   def test_manifest_round_trip

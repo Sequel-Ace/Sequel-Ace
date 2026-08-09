@@ -39,6 +39,19 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes feasibility[feasibility_exclusion...feasibility_probe], "/feasibility/"
   end
 
+  def test_ambiguous_app_store_submission_is_polled_before_failure_recording
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    failure_step = workflow.split("- name: Preserve an explanatory failed prerelease", 2).fetch(1)
+    reconcile = failure_step.index("reconcile-submission")
+    record = failure_step.index("record-failure")
+
+    refute_nil reconcile
+    refute_nil record
+    assert_operator reconcile, :<, record
+    assert_includes failure_step[reconcile...record], "--wait-seconds 900"
+    assert_includes failure_step[reconcile...record], "--poll-interval 15"
+  end
+
   def test_finalizer_archives_live_validation_before_the_public_transition
     workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
     validation = workflow.index("--validate-only")

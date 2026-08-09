@@ -150,6 +150,11 @@ Submission is deliberately split:
    and phased release.
 4. Only then does `submit_app_store_release` submit for review.
 
+If submission returns ambiguously, failure recovery polls the exact version and
+selected build for up to 15 minutes before recording a pre-submission failure.
+An observed submitted state is accepted only when its selected build still
+matches the canonical Production build.
+
 ## Planning and approval
 
 Fetch `main` and tags, then run a read-only plan. The notes file contains only
@@ -174,11 +179,12 @@ Major is never recommended automatically. A later beta for an already chosen
 semantic version recommends keeping that version while comparing only with the
 preceding beta.
 
-The approval hash includes the exact UI-observed Production Cloud next build
-as well as the authoritative-Cloud-next policy. Changing that observation,
-main SHA, notes, base tag, channel, or semantic version requires a new plan and
-approval. Runtime reconciliation may advance beyond the approved observation
-only when every consumed Production number has the required Cloud-run evidence.
+The approval hash includes the exact UI-observed Production Cloud next build,
+the resolved commit behind the comparison tag, and the authoritative-Cloud-next
+policy. Changing that observation, main SHA, notes, base tag or its resolved
+commit, channel, or semantic version requires a new plan and approval. Runtime
+reconciliation may advance beyond the approved observation only when every
+consumed Production number has the required Cloud-run evidence.
 
 After Jason confirms the intended PR set is merged and approves the plan, use
 the private Codex skill to dispatch `.github/workflows/release.yml` with the

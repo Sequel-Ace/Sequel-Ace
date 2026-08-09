@@ -36,6 +36,7 @@ module SequelAceRelease
         target_version: chosen_version,
         main_sha: main_sha,
         previous_tag: stable,
+        base_sha: base_sha,
         app_store_notes: human_notes,
         observed_production_cloud_next_build: observed_cloud_next_build
       )

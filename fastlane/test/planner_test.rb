@@ -53,6 +53,7 @@ class PlannerTest < Minitest::Test
     assert_equal "5.4.0", plan.fetch("recommended_version")
     assert_equal 20_105, plan.fetch("observed_production_cloud_next_build")
     assert_equal 20_105, plan.dig("approval", "observed_production_cloud_next_build")
+    assert_equal "b" * 40, plan.dig("approval", "base_sha")
     assert plan.fetch("github_release_body").start_with?("## App Store Release Notes")
     assert SequelAceRelease::Approval.from_hash(plan.fetch("approval")).verify!(plan.dig("approval", "sha256"))
   end
