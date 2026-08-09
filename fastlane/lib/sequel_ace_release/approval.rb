@@ -20,7 +20,7 @@ module SequelAceRelease
       app_store_notes:, release_notes_sha256:,
       observed_production_cloud_next_build:, build_policy: POLICY
     )
-      @payload = {
+      @payload = immutable_copy(
         "channel" => Config.validate_channel!(channel),
         "target_version" => Version.validate!(target_version),
         "main_sha" => validate_sha!(main_sha, "main"),
@@ -33,7 +33,7 @@ module SequelAceRelease
         "release_notes_sha256" => validate_digest!(release_notes_sha256),
         "observed_production_cloud_next_build" => validate_build!(observed_production_cloud_next_build),
         "build_policy" => build_policy
-      }
+      )
       raise ValidationError, "unsupported build policy" unless build_policy == POLICY
     end
 
@@ -61,6 +61,21 @@ module SequelAceRelease
     end
 
     private
+
+    def immutable_copy(value)
+      case value
+      when Hash
+        value.each_with_object({}) do |(key, item), copy|
+          copy[immutable_copy(key)] = immutable_copy(item)
+        end.freeze
+      when Array
+        value.map { |item| immutable_copy(item) }.freeze
+      when String
+        value.dup.freeze
+      else
+        value.freeze
+      end
+    end
 
     def validate_sha!(value, label)
       return value.to_s.downcase if Config.valid_git_sha?(value)

@@ -84,6 +84,19 @@ class ApprovalManifestTest < Minitest::Test
     end
   end
 
+  def test_validated_approval_payload_cannot_be_mutated
+    source_notes = +"A focused release note."
+    release_approval = approval(app_store_notes: source_notes)
+    payload = release_approval.payload
+
+    assert payload.frozen?
+    assert payload.fetch("app_store_notes").frozen?
+    refute source_notes.frozen?
+    assert_raises(FrozenError) { payload["channel"] = "beta" }
+    assert_raises(FrozenError) { payload.fetch("app_store_notes").replace("changed") }
+    assert release_approval.verify!(release_approval.sha256)
+  end
+
   def test_manifest_rejects_a_base_sha_outside_the_approval
     naming = SequelAceRelease::ReleaseNaming.new(
       channel: "production", version: "5.3.2", build: 20_105, iteration: 1
