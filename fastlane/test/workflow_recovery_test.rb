@@ -36,8 +36,15 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_operator fresh_token, :<, reconcile_again
     assert_operator reconcile_again, :<, merge_step
     assert_operator merge_step, :<, tag_step
-    assert_includes workflow[reconcile_again...merge_step], "--expected-target-build"
-    assert_includes workflow[reconcile_again...merge_step], "mv pre-merge-reconciliation.json reconciliation.json"
+    final_gate = workflow[reconcile_again...merge_step]
+    tag_refresh = final_gate.index("git fetch --force --prune")
+    base_revalidation = final_gate.index("refreshed_base_sha")
+    reconciliation = final_gate.index("sa-release reconcile-build")
+    assert_operator tag_refresh, :<, base_revalidation
+    assert_operator base_revalidation, :<, reconciliation
+    assert_includes final_gate, "APPROVED_BASE_SHA"
+    assert_includes final_gate, "--expected-target-build"
+    assert_includes final_gate, "mv pre-merge-reconciliation.json reconciliation.json"
   end
 
   def test_cancelled_release_runs_branch_and_prerelease_recovery

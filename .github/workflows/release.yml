@@ -349,8 +349,17 @@ jobs:
           repositories: Sequel-Ace
 
       - name: Revalidate Production Cloud build immediately before merge or tag
+        env:
+          PREVIOUS_TAG: ${{ inputs.previous_tag }}
+          APPROVED_BASE_SHA: ${{ steps.plan.outputs.base_sha }}
         run: |
           set -euo pipefail
+          git fetch --force --prune --no-recurse-submodules origin '+refs/tags/*:refs/tags/*'
+          refreshed_base_sha="$(git rev-parse "${PREVIOUS_TAG}^{commit}")"
+          [[ "${refreshed_base_sha}" == "${APPROVED_BASE_SHA}" ]] || {
+            echo "Approved comparison tag moved while release checks ran." >&2
+            exit 1
+          }
           source_build="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("current_source").fetch("build")' release-plan.json)"
           bundle exec ruby fastlane/bin/sa-release reconcile-build \
             --source-build "${source_build}" \

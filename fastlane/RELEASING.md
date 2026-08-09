@@ -223,9 +223,12 @@ build, and UI-observed Cloud next number `N`:
   conflict, or the eventual Cloud build does not exactly match the tag/build.
 
 After release-PR checks finish, the workflow performs the same reconciliation
-again immediately before merge or recovered tag creation. If the target moved,
-it aborts before either transition, closes the exact PR, and deletes only its
-verified release branch; a fresh plan must use the newly reconciled number.
+again immediately before merge or recovered tag creation. It first force/prune
+refreshes the remote tag namespace and proves the approved comparison tag still
+resolves to its approved SHA, so a newly claimed build or moved tag is included
+in the final reconciliation. If the target moved, it aborts before either
+transition, closes the exact PR, and deletes only its verified release branch;
+a fresh plan must use the newly reconciled number.
 
 Alpha numbers never enter this calculation. A failed Alpha-only beta build may
 be rerun against the same tag through
