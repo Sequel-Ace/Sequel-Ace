@@ -165,6 +165,12 @@ Major is never recommended automatically. A later beta for an already chosen
 semantic version recommends keeping that version while comparing only with the
 preceding beta.
 
+The approval hash includes the exact UI-observed Production Cloud next build
+as well as the authoritative-Cloud-next policy. Changing that observation,
+main SHA, notes, base tag, channel, or semantic version requires a new plan and
+approval. Runtime reconciliation may advance beyond the approved observation
+only when every consumed Production number has the required Cloud-run evidence.
+
 After Jason confirms the intended PR set is merged and approves the plan, use
 the private Codex skill to dispatch `.github/workflows/release.yml` with the
 plan's immutable values and exact approval hash. Base64-encode the approved
@@ -224,6 +230,11 @@ prerelease.
   before deciding whether the release failed. The finalizer also accepts the
   last durable `archived` manifest so a failed post-submission GHCR refresh can
   self-heal through the same exact Apple and artifact checks.
+- A failure before prerelease creation persists the verified release commit
+  before opening the PR. Cleanup closes any open PR and deletes the generated
+  branch only when its head still matches that exact commit (or the frozen main
+  SHA when commit creation did not finish), so a retry is not stranded by a
+  stale deterministic branch.
 
 ## Feasibility gate
 

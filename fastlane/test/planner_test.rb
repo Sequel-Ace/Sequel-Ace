@@ -52,6 +52,7 @@ class PlannerTest < Minitest::Test
     assert_equal "minor", plan.fetch("recommended_bump")
     assert_equal "5.4.0", plan.fetch("recommended_version")
     assert_equal 20_105, plan.fetch("observed_production_cloud_next_build")
+    assert_equal 20_105, plan.dig("approval", "observed_production_cloud_next_build")
     assert plan.fetch("github_release_body").start_with?("## App Store Release Notes")
     assert SequelAceRelease::Approval.from_hash(plan.fetch("approval")).verify!(plan.dig("approval", "sha256"))
   end
@@ -84,7 +85,12 @@ class PlannerTest < Minitest::Test
       version_files: FakeVersions.new({ "version" => "5.4.0", "build" => 20_105 })
     )
 
-    plan = planner.plan(channel: "beta", target_version: "5.4.0", main_ref: "main")
+    plan = planner.plan(
+      channel: "beta",
+      target_version: "5.4.0",
+      main_ref: "main",
+      observed_cloud_next_build: 20_106
+    )
     assert_equal "beta/5.4.0-20105", plan.fetch("base_tag")
     assert_equal "same", plan.fetch("recommended_bump")
     assert_equal "5.4.0", plan.fetch("recommended_version")

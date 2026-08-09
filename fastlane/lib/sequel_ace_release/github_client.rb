@@ -216,6 +216,47 @@ module SequelAceRelease
       true
     end
 
+    def cleanup_release_branch(branch:, expected_sha:)
+      raise ValidationError, "release branch must begin with prepare-release/" unless branch.start_with?("prepare-release/")
+      unless expected_sha.to_s.match?(/\A[0-9a-f]{40,64}\z/i)
+        raise ValidationError, "expected release branch SHA is malformed"
+      end
+
+      begin
+        actual_sha = ref_sha("heads/#{branch}")
+      rescue APIError => e
+        raise unless e.message.include?("HTTP 404")
+
+        return { "branch" => branch, "deleted" => false, "reason" => "already_absent" }
+      end
+      unless actual_sha == expected_sha
+        raise ValidationError, "release branch head changed before cleanup (expected #{expected_sha}, found #{actual_sha})"
+      end
+
+      pulls = open_pull_requests_for_branch(branch)
+      mismatched = pulls.reject do |pull|
+        pull.dig("head", "ref") == branch && pull.dig("head", "sha") == expected_sha
+      end
+      unless mismatched.empty?
+        raise ValidationError, "release branch PR head changed before cleanup"
+      end
+      pulls.each do |pull|
+        request!("PATCH", "/repos/#{@repository}/pulls/#{Integer(pull.fetch('number'))}", body: { "state" => "closed" })
+      end
+
+      rechecked_sha = ref_sha("heads/#{branch}")
+      unless rechecked_sha == expected_sha
+        raise ValidationError, "release branch head changed during cleanup (expected #{expected_sha}, found #{rechecked_sha})"
+      end
+      delete_branch(branch)
+      {
+        "branch" => branch,
+        "sha" => expected_sha,
+        "closed_pull_requests" => pulls.map { |pull| Integer(pull.fetch("number")) },
+        "deleted" => true
+      }
+    end
+
     def create_release(tag:, target_sha:, title:, body:)
       request!("POST", "/repos/#{@repository}/releases", body: {
         "tag_name" => tag,
@@ -333,6 +374,16 @@ module SequelAceRelease
       return if allowed.include?(path)
 
       raise ValidationError, "release preparation changed an unauthorized path: #{path}"
+    end
+
+    def open_pull_requests_for_branch(branch)
+      owner = @repository.split("/", 2).first
+      response = @transport.request("GET", "/repos/#{@repository}/pulls", query: {
+        "state" => "open",
+        "head" => "#{owner}:#{branch}",
+        "per_page" => 100
+      })
+      Array(ensure_response!(response, [200]))
     end
   end
 end

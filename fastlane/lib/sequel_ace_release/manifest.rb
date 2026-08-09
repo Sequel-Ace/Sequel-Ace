@@ -6,7 +6,7 @@ module SequelAceRelease
   class Manifest
     REQUIRED = %w[
       schema_version channel target_version base_tag base_sha main_sha iteration
-      canonical_build skipped_production_builds tag title artifact_names
+      observed_production_cloud_next_build canonical_build skipped_production_builds tag title artifact_names
       release_notes_sha256 cloud_build_ids asc_ids verification state
     ].freeze
 
@@ -26,6 +26,7 @@ module SequelAceRelease
         "base_sha" => base_sha,
         "main_sha" => approval.payload.fetch("main_sha"),
         "iteration" => naming.iteration,
+        "observed_production_cloud_next_build" => approval.payload.fetch("observed_production_cloud_next_build"),
         "canonical_build" => canonical_build,
         "skipped_production_builds" => skipped_production_builds,
         "tag" => naming.tag,

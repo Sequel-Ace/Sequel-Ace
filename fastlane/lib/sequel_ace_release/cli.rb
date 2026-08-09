@@ -36,6 +36,7 @@ module SequelAceRelease
       when "submit" then submit(argv)
       when "finalize" then finalize(argv)
       when "github-prepare-pr" then github_prepare_pr(argv)
+      when "github-cleanup-branch" then github_cleanup_branch(argv)
       when "github-merge-pr" then github_merge_pr(argv)
       when "github-create-release" then github_create_release(argv)
       when "github-upload-asset" then github_upload_asset(argv)
@@ -97,6 +98,7 @@ module SequelAceRelease
       end
       parser.parse!(arguments)
       reject_arguments!(arguments)
+      require_options!(options, :observed_cloud_next_build)
 
       github = github_client(optional: true)
       result = Planner.new(github: github).plan(**options.slice(
@@ -249,12 +251,32 @@ module SequelAceRelease
         repository_root: Config.repo_root,
         changed_paths: paths
       )
+      recovery = { "naming" => naming.to_h, "commit" => commit, "pull_request" => nil }
+      File.write(options[:output], CanonicalJSON.pretty(recovery)) if options[:output]
       pull = github_client.create_pull_request(
         branch: naming.branch,
         title: "#changed Prepare #{naming.version} (#{naming.build}) release",
         body: release_pull_request_body(naming, options[:release_body])
       )
       emit({ "naming" => naming.to_h, "commit" => commit, "pull_request" => pull }, options[:output])
+    end
+
+    def github_cleanup_branch(arguments)
+      options = {}
+      parser = OptionParser.new do |value|
+        value.banner = "Usage: sa-release github-cleanup-branch --branch BRANCH --expected-sha SHA"
+        value.on("--branch BRANCH") { |item| options[:branch] = item }
+        value.on("--expected-sha SHA") { |item| options[:expected_sha] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end
+      parser.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :branch, :expected_sha)
+      result = github_client.cleanup_release_branch(
+        branch: options[:branch],
+        expected_sha: options[:expected_sha]
+      )
+      emit(result, options[:output])
     end
 
     def verify_artifact_set(arguments)
@@ -587,7 +609,8 @@ module SequelAceRelease
         target_version: version,
         main_sha: data.fetch("main_sha"),
         previous_tag: data.fetch("base_tag"),
-        app_store_notes: notes
+        app_store_notes: notes,
+        observed_production_cloud_next_build: data.fetch("observed_production_cloud_next_build")
       )
       schedule_threshold = Time.now + (72 * 60 * 60) + SUBMISSION_SCHEDULE_SAFETY_SECONDS
       scheduled = options[:schedule_at] || default_schedule_time(Time.now + SUBMISSION_SCHEDULE_SAFETY_SECONDS)
@@ -1021,6 +1044,7 @@ module SequelAceRelease
           submit                     Stage, validate, and submit a production App Store version
           finalize                   Finalize a GitHub prerelease after App Store release
           github-prepare-pr          Create a verified GitHub App release commit and PR
+          github-cleanup-branch      Close and delete an exact failed release branch
           github-merge-pr            Wait for exact-head checks and merge the release PR
           github-create-release      Create the tag-backed GitHub prerelease
           github-upload-asset        Upload a verified zip to the prerelease

@@ -5,17 +5,21 @@ require "digest"
 module SequelAceRelease
   class Approval
     POLICY = "authoritative-production-cloud-next".freeze
-    REQUIRED_KEYS = %w[channel target_version main_sha previous_tag app_store_notes build_policy].freeze
+    REQUIRED_KEYS = %w[
+      channel target_version main_sha previous_tag app_store_notes
+      observed_production_cloud_next_build build_policy
+    ].freeze
 
     attr_reader :payload
 
-    def initialize(channel:, target_version:, main_sha:, previous_tag:, app_store_notes:, build_policy: POLICY)
+    def initialize(channel:, target_version:, main_sha:, previous_tag:, app_store_notes:, observed_production_cloud_next_build:, build_policy: POLICY)
       @payload = {
         "channel" => Config.validate_channel!(channel),
         "target_version" => Version.validate!(target_version),
         "main_sha" => validate_sha!(main_sha),
         "previous_tag" => validate_tag!(previous_tag),
         "app_store_notes" => validate_notes!(app_store_notes),
+        "observed_production_cloud_next_build" => validate_build!(observed_production_cloud_next_build),
         "build_policy" => build_policy
       }
       raise ValidationError, "unsupported build policy" unless build_policy == POLICY
@@ -64,6 +68,15 @@ module SequelAceRelease
       raise ValidationError, "App Store release notes exceed Apple's 4,000 character limit" if notes.length > 4_000
 
       notes
+    end
+
+    def validate_build!(value)
+      build = Integer(value)
+      raise ValidationError, "observed Production Cloud next build must be positive" unless build.positive?
+
+      build
+    rescue ArgumentError, TypeError
+      raise ValidationError, "observed Production Cloud next build must be an integer"
     end
 
     def secure_compare(left, right)

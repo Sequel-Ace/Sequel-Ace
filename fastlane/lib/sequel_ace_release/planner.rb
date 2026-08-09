@@ -36,7 +36,8 @@ module SequelAceRelease
         target_version: chosen_version,
         main_sha: main_sha,
         previous_tag: stable,
-        app_store_notes: human_notes
+        app_store_notes: human_notes,
+        observed_production_cloud_next_build: observed_cloud_next_build
       )
       contributors = contributor_map(changes)
       release_body = notes.github_body(
@@ -58,7 +59,7 @@ module SequelAceRelease
         "recommended_version" => recommendation,
         "target_version" => chosen_version,
         "iteration" => iteration,
-        "observed_production_cloud_next_build" => observed_cloud_next_build && Integer(observed_cloud_next_build),
+        "observed_production_cloud_next_build" => approval.payload.fetch("observed_production_cloud_next_build"),
         "changes" => changes.map(&:to_h),
         "app_store_notes" => human_notes,
         "github_release_body" => release_body,

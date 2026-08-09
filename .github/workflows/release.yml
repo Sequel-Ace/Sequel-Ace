@@ -489,20 +489,42 @@ jobs:
             fi
           } >> "${GITHUB_STEP_SUMMARY}"
 
+      - name: Reconcile a failed release branch
+        if: failure() && steps.release_context.outputs.branch != ''
+        continue-on-error: true
+        env:
+          SA_GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
+          RELEASE_BRANCH: ${{ steps.release_context.outputs.branch }}
+          FROZEN_MAIN_SHA: ${{ inputs.expected_main_sha }}
+        run: |
+          set -euo pipefail
+          expected_sha="${FROZEN_MAIN_SHA}"
+          if [[ -f release-pr.json ]]; then
+            expected_sha="$(ruby -rjson -e 'value = JSON.parse(File.read(ARGV.fetch(0))); puts(value.dig("commit", "sha") || ARGV.fetch(1))' release-pr.json "${FROZEN_MAIN_SHA}")"
+          fi
+          bundle exec ruby fastlane/bin/sa-release github-cleanup-branch \
+            --branch "${RELEASE_BRANCH}" \
+            --expected-sha "${expected_sha}" \
+            --output branch-cleanup.json
+
       - name: Preserve an explanatory failed prerelease
-        if: failure() && steps.prerelease.outputs.tag != ''
+        if: failure() && steps.release_context.outputs.tag != ''
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
           GHCR_TOKEN: ${{ github.token }}
           GHCR_USERNAME: ${{ github.actor }}
           ARCHIVE_REFERENCE: ${{ steps.initial_archive.outputs.reference }}
-          FAILED_TAG: ${{ steps.prerelease.outputs.tag }}
+          FAILED_TAG: ${{ steps.release_context.outputs.tag }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           RELEASE_CHANNEL: ${{ inputs.channel }}
           APP_STORE_OUTCOME: ${{ steps.app_store.outcome }}
         run: |
           set -euo pipefail
+          if ! gh release view "${FAILED_TAG}" --json body --jq .body > failed-release-body.md; then
+            echo "No tag-backed prerelease exists to annotate."
+            exit 0
+          fi
           preserve_release_body=false
           if [[ -f manifest.json && -d release-archive ]]; then
             current_state="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("state")' manifest.json)"
@@ -553,7 +575,6 @@ jobs:
             } >> "${GITHUB_STEP_SUMMARY}"
             exit 0
           fi
-          gh release view "${FAILED_TAG}" --json body --jq .body > failed-release-body.md
           {
             echo
             echo "---"

@@ -10,6 +10,15 @@ class ApprovalManifestTest < Minitest::Test
     changed = approval(app_store_notes: "Different notes")
     refute_equal release_approval.sha256, changed.sha256
     assert_raises(SequelAceRelease::ValidationError) { changed.verify!(release_approval.sha256) }
+
+    changed_build = approval(observed_production_cloud_next_build: 20_106)
+    refute_equal release_approval.sha256, changed_build.sha256
+    assert_raises(SequelAceRelease::ValidationError) { changed_build.verify!(release_approval.sha256) }
+
+    missing_build = release_approval.to_h.reject { |key, _| %w[sha256 observed_production_cloud_next_build].include?(key) }
+    assert_raises(SequelAceRelease::ValidationError) do
+      SequelAceRelease::Approval.from_hash(missing_build)
+    end
   end
 
   def test_manifest_round_trip
@@ -31,6 +40,7 @@ class ApprovalManifestTest < Minitest::Test
       loaded = SequelAceRelease::Manifest.read(path)
       assert_equal manifest.to_h, loaded.to_h
       assert_equal "planned", loaded.to_h.fetch("state")
+      assert_equal 20_105, loaded.to_h.fetch("observed_production_cloud_next_build")
     end
   end
 

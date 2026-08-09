@@ -124,6 +124,53 @@ class ReleaseFailureRecoveryTest < Minitest::Test
     assert_includes error.message, "not confirmed"
   end
 
+  def test_prepare_pr_persists_commit_evidence_before_pr_creation
+    release_approval = approval
+    commit_sha = "d" * 40
+    git = Object.new
+    git.define_singleton_method(:sha) { release_approval.payload.fetch("main_sha") }
+    changed_paths = (
+      SequelAceRelease::Config::PROJECT_FILES.keys +
+      SequelAceRelease::Config::PLIST_FILES +
+      ["CHANGELOG.md"]
+    ).map { |path| { "status" => " M", "path" => path } }
+    git.define_singleton_method(:changed_paths) { changed_paths }
+    github = Object.new
+    github.define_singleton_method(:create_bot_commit) do |**_options|
+      { "sha" => commit_sha, "verification" => { "verified" => true } }
+    end
+    github.define_singleton_method(:create_pull_request) do |**_options|
+      raise SequelAceRelease::APIError, "simulated PR creation failure"
+    end
+
+    Dir.mktmpdir do |directory|
+      approval_path = File.join(directory, "approval.json")
+      body_path = File.join(directory, "release-body.md")
+      output_path = File.join(directory, "release-pr.json")
+      File.write(approval_path, SequelAceRelease::CanonicalJSON.pretty(release_approval.to_h))
+      File.write(body_path, "## App Store Release Notes\n\nA focused release note.\n")
+      cli = SequelAceRelease::CLI.new(out: StringIO.new, err: StringIO.new, env: {})
+
+      status = SequelAceRelease::GitRepository.stub(:new, git) do
+        cli.stub(:github_client, github) do
+          cli.run([
+            "github-prepare-pr",
+            "--approval", approval_path,
+            "--approval-sha", release_approval.sha256,
+            "--build", "20105",
+            "--release-body", body_path,
+            "--output", output_path
+          ])
+        end
+      end
+
+      assert_equal 1, status
+      recovery = JSON.parse(File.read(output_path))
+      assert_equal commit_sha, recovery.dig("commit", "sha")
+      assert_nil recovery["pull_request"]
+    end
+  end
+
   private
 
   def manifest(state: "archived")

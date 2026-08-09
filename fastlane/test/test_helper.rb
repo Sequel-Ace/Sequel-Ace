@@ -38,7 +38,8 @@ module ReleaseTestHelpers
       target_version: "5.3.2",
       main_sha: "a" * 40,
       previous_tag: "production/5.3.1-20104",
-      app_store_notes: "A focused release note."
+      app_store_notes: "A focused release note.",
+      observed_production_cloud_next_build: 20_105
     }.merge(overrides))
   end
 

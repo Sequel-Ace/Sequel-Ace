@@ -146,6 +146,64 @@ class GitHubClientTest < Minitest::Test
     end
   end
 
+  def test_cleans_up_only_the_exact_failed_release_branch_and_pull_request
+    expected_sha = "c" * 40
+    branch = "prepare-release/5.3.2-20105-1"
+    transport = FakeTransport.new([
+      http_response(body: { "object" => { "sha" => expected_sha } }),
+      http_response(body: [{
+        "number" => 123,
+        "head" => { "ref" => branch, "sha" => expected_sha }
+      }]),
+      http_response(body: { "number" => 123, "state" => "closed" }),
+      http_response(body: { "object" => { "sha" => expected_sha } }),
+      http_response(status: 204, body: nil)
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    result = client.cleanup_release_branch(branch: branch, expected_sha: expected_sha)
+
+    assert_equal true, result.fetch("deleted")
+    assert_equal [123], result.fetch("closed_pull_requests")
+    pull_query = transport.requests[1]
+    assert_equal "GET", pull_query.fetch(:method)
+    assert_equal "Sequel-Ace:#{branch}", pull_query.dig(:query, "head")
+    assert_equal "closed", transport.requests[2].dig(:body, "state")
+    assert_equal "DELETE", transport.requests.last.fetch(:method)
+  end
+
+  def test_release_branch_cleanup_rejects_a_changed_head_without_mutation
+    transport = FakeTransport.new([
+      http_response(body: { "object" => { "sha" => "d" * 40 } })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      client.cleanup_release_branch(
+        branch: "prepare-release/5.3.2-20105-1",
+        expected_sha: "c" * 40
+      )
+    end
+
+    assert_includes error.message, "head changed"
+    assert_equal ["GET"], transport.requests.map { |request| request.fetch(:method) }
+  end
+
+  def test_release_branch_cleanup_is_idempotent_when_the_branch_is_absent
+    transport = FakeTransport.new([
+      http_response(status: 404, body: { "message" => "Not Found" })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    result = client.cleanup_release_branch(
+      branch: "prepare-release/5.3.2-20105-1",
+      expected_sha: "c" * 40
+    )
+
+    assert_equal false, result.fetch("deleted")
+    assert_equal "already_absent", result.fetch("reason")
+  end
+
   def test_only_labels_an_author_new_when_their_first_merged_pr_is_in_this_release
     transport = FakeTransport.new([
       http_response(body: { "number" => 2500, "user" => { "login" => "new-person" } }),
