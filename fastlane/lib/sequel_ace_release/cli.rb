@@ -649,6 +649,7 @@ module SequelAceRelease
         previous_tag: data.fetch("base_tag"),
         base_sha: data.fetch("base_sha"),
         app_store_notes: notes,
+        release_notes_sha256: data.fetch("release_notes_sha256"),
         observed_production_cloud_next_build: data.fetch("observed_production_cloud_next_build")
       )
       schedule_threshold = Time.now + (72 * 60 * 60) + SUBMISSION_SCHEDULE_SAFETY_SECONDS

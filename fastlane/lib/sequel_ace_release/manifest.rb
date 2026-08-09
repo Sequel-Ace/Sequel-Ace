@@ -22,6 +22,10 @@ module SequelAceRelease
       unless base_sha == approved_base_sha
         raise ValidationError, "release base SHA does not match the immutable approval"
       end
+      approved_release_notes_sha256 = approval.payload.fetch("release_notes_sha256")
+      unless release_notes_sha256 == approved_release_notes_sha256
+        raise ValidationError, "GitHub release body does not match the immutable approval"
+      end
 
       new(
         "schema_version" => Config::SCHEMA_VERSION,
@@ -37,7 +41,7 @@ module SequelAceRelease
         "tag" => naming.tag,
         "title" => naming.title,
         "artifact_names" => naming.public_artifacts,
-        "release_notes_sha256" => release_notes_sha256,
+        "release_notes_sha256" => approved_release_notes_sha256,
         "cloud_build_ids" => {},
         "asc_ids" => {},
         "verification" => {},
@@ -75,6 +79,9 @@ module SequelAceRelease
       Version.validate!(data["target_version"])
       raise ValidationError, "invalid manifest state" unless Config::MANIFEST_STATES.include?(data["state"])
       raise ValidationError, "canonical build must be positive" unless Integer(data["canonical_build"]).positive?
+      unless data["release_notes_sha256"].to_s.match?(/\A[0-9a-f]{64}\z/)
+        raise ValidationError, "release notes SHA-256 is malformed"
+      end
     rescue ArgumentError, TypeError
       raise ValidationError, "canonical build must be an integer"
     end

@@ -88,7 +88,7 @@ class FinalizationAssetsTest < Minitest::Test
       channel: "production", version: "5.3.2", build: 20_105, iteration: 1
     )
     SequelAceRelease::Manifest.create(
-      approval: approval,
+      approval: approval(release_notes_sha256: Digest::SHA256.hexdigest(@body)),
       naming: naming,
       base_sha: "b" * 40,
       canonical_build: 20_105,

@@ -31,6 +31,14 @@ module SequelAceRelease
       end
       human_notes = app_store_notes.to_s.strip
       human_notes = notes.app_store_draft if human_notes.empty?
+      contributors = contributor_map(changes)
+      release_body = notes.github_body(
+        app_store_notes: human_notes,
+        base_tag: stable,
+        head_ref: main_sha,
+        contributors: contributors
+      )
+      release_notes_sha256 = notes.sha256(release_body)
       approval = Approval.new(
         channel: channel,
         target_version: chosen_version,
@@ -38,14 +46,8 @@ module SequelAceRelease
         previous_tag: stable,
         base_sha: base_sha,
         app_store_notes: human_notes,
+        release_notes_sha256: release_notes_sha256,
         observed_production_cloud_next_build: observed_cloud_next_build
-      )
-      contributors = contributor_map(changes)
-      release_body = notes.github_body(
-        app_store_notes: human_notes,
-        base_tag: stable,
-        head_ref: main_sha,
-        contributors: contributors
       )
       iteration = next_iteration(channel, chosen_version, release_catalog)
 
@@ -64,7 +66,7 @@ module SequelAceRelease
         "changes" => changes.map(&:to_h),
         "app_store_notes" => human_notes,
         "github_release_body" => release_body,
-        "release_notes_sha256" => notes.sha256(release_body),
+        "release_notes_sha256" => release_notes_sha256,
         "approval" => approval.to_h
       }.compact
     end

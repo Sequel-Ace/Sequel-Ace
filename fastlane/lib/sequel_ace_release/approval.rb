@@ -6,13 +6,17 @@ module SequelAceRelease
   class Approval
     POLICY = "authoritative-production-cloud-next".freeze
     REQUIRED_KEYS = %w[
-      channel target_version main_sha previous_tag base_sha app_store_notes
+      channel target_version main_sha previous_tag base_sha app_store_notes release_notes_sha256
       observed_production_cloud_next_build build_policy
     ].freeze
 
     attr_reader :payload
 
-    def initialize(channel:, target_version:, main_sha:, previous_tag:, base_sha:, app_store_notes:, observed_production_cloud_next_build:, build_policy: POLICY)
+    def initialize(
+      channel:, target_version:, main_sha:, previous_tag:, base_sha:,
+      app_store_notes:, release_notes_sha256:,
+      observed_production_cloud_next_build:, build_policy: POLICY
+    )
       @payload = {
         "channel" => Config.validate_channel!(channel),
         "target_version" => Version.validate!(target_version),
@@ -20,6 +24,7 @@ module SequelAceRelease
         "previous_tag" => validate_tag!(previous_tag),
         "base_sha" => validate_sha!(base_sha, "base"),
         "app_store_notes" => validate_notes!(app_store_notes),
+        "release_notes_sha256" => validate_digest!(release_notes_sha256),
         "observed_production_cloud_next_build" => validate_build!(observed_production_cloud_next_build),
         "build_policy" => build_policy
       }
@@ -69,6 +74,12 @@ module SequelAceRelease
       raise ValidationError, "App Store release notes exceed Apple's 4,000 character limit" if notes.length > 4_000
 
       notes
+    end
+
+    def validate_digest!(value)
+      return value if value.to_s.match?(/\A[0-9a-f]{64}\z/)
+
+      raise ValidationError, "GitHub release-body SHA-256 is malformed"
     end
 
     def validate_build!(value)

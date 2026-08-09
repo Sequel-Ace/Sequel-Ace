@@ -19,6 +19,12 @@ class ApprovalManifestTest < Minitest::Test
     refute_equal release_approval.sha256, changed_base.sha256
     assert_raises(SequelAceRelease::ValidationError) { changed_base.verify!(release_approval.sha256) }
 
+    changed_release_body = approval(release_notes_sha256: "d" * 64)
+    refute_equal release_approval.sha256, changed_release_body.sha256
+    assert_raises(SequelAceRelease::ValidationError) do
+      changed_release_body.verify!(release_approval.sha256)
+    end
+
     missing_build = release_approval.to_h.reject { |key, _| %w[sha256 observed_production_cloud_next_build].include?(key) }
     assert_raises(SequelAceRelease::ValidationError) do
       SequelAceRelease::Approval.from_hash(missing_build)
@@ -27,6 +33,11 @@ class ApprovalManifestTest < Minitest::Test
     missing_base = release_approval.to_h.reject { |key, _| %w[sha256 base_sha].include?(key) }
     assert_raises(SequelAceRelease::ValidationError) do
       SequelAceRelease::Approval.from_hash(missing_base)
+    end
+
+    missing_body = release_approval.to_h.reject { |key, _| %w[sha256 release_notes_sha256].include?(key) }
+    assert_raises(SequelAceRelease::ValidationError) do
+      SequelAceRelease::Approval.from_hash(missing_body)
     end
   end
 
@@ -45,6 +56,23 @@ class ApprovalManifestTest < Minitest::Test
       )
     end
     assert_includes error.message, "immutable approval"
+  end
+
+  def test_manifest_rejects_a_release_body_outside_the_approval
+    naming = SequelAceRelease::ReleaseNaming.new(
+      channel: "production", version: "5.3.2", build: 20_105, iteration: 1
+    )
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      SequelAceRelease::Manifest.create(
+        approval: approval,
+        naming: naming,
+        base_sha: "b" * 40,
+        canonical_build: 20_105,
+        release_notes_sha256: "e" * 64
+      )
+    end
+    assert_includes error.message, "release body does not match"
   end
 
   def test_manifest_round_trip
