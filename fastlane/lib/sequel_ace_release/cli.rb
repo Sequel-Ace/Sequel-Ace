@@ -649,6 +649,7 @@ module SequelAceRelease
         main_sha: data.fetch("main_sha"),
         previous_tag: data.fetch("base_tag"),
         base_sha: data.fetch("base_sha"),
+        release_iteration: data.fetch("iteration"),
         app_store_notes: notes,
         release_notes_sha256: data.fetch("release_notes_sha256"),
         observed_production_cloud_next_build: data.fetch("observed_production_cloud_next_build")
@@ -856,6 +857,12 @@ module SequelAceRelease
       )
 
       client = github_client
+      archived_commit = data.fetch("release_commit_sha")
+      current_tag_commit = client.ref_sha("tags/#{data.fetch('tag')}")
+      unless current_tag_commit == archived_commit
+        raise ValidationError,
+              "release tag moved after archival (expected #{archived_commit}, found #{current_tag_commit})"
+      end
       release = client.release_by_tag(data.fetch("tag"))
       verify_release_assets!(release, data)
       final_title = ReleaseNaming.new(
@@ -868,6 +875,7 @@ module SequelAceRelease
       evidence = {
         "release_id" => release.fetch("id"),
         "tag" => data.fetch("tag"),
+        "release_commit_sha" => archived_commit,
         "app_store_state" => "READY_FOR_DISTRIBUTION",
         "current_title" => release["name"],
         "current_prerelease" => release["prerelease"],

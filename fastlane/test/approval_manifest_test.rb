@@ -25,6 +25,12 @@ class ApprovalManifestTest < Minitest::Test
       changed_release_body.verify!(release_approval.sha256)
     end
 
+    changed_iteration = approval(release_iteration: 2)
+    refute_equal release_approval.sha256, changed_iteration.sha256
+    assert_raises(SequelAceRelease::ValidationError) do
+      changed_iteration.verify!(release_approval.sha256)
+    end
+
     missing_build = release_approval.to_h.reject { |key, _| %w[sha256 observed_production_cloud_next_build].include?(key) }
     assert_raises(SequelAceRelease::ValidationError) do
       SequelAceRelease::Approval.from_hash(missing_build)
@@ -38,6 +44,11 @@ class ApprovalManifestTest < Minitest::Test
     missing_body = release_approval.to_h.reject { |key, _| %w[sha256 release_notes_sha256].include?(key) }
     assert_raises(SequelAceRelease::ValidationError) do
       SequelAceRelease::Approval.from_hash(missing_body)
+    end
+
+    missing_iteration = release_approval.to_h.reject { |key, _| %w[sha256 release_iteration].include?(key) }
+    assert_raises(SequelAceRelease::ValidationError) do
+      SequelAceRelease::Approval.from_hash(missing_iteration)
     end
   end
 
@@ -75,6 +86,23 @@ class ApprovalManifestTest < Minitest::Test
     assert_includes error.message, "release body does not match"
   end
 
+  def test_manifest_rejects_an_iteration_outside_the_approval
+    naming = SequelAceRelease::ReleaseNaming.new(
+      channel: "production", version: "5.3.2", build: 20_105, iteration: 2
+    )
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      SequelAceRelease::Manifest.create(
+        approval: approval,
+        naming: naming,
+        base_sha: "b" * 40,
+        canonical_build: 20_105,
+        release_notes_sha256: "c" * 64
+      )
+    end
+    assert_includes error.message, "iteration does not match"
+  end
+
   def test_manifest_round_trip
     release_approval = approval
     naming = SequelAceRelease::ReleaseNaming.new(
@@ -87,6 +115,9 @@ class ApprovalManifestTest < Minitest::Test
       canonical_build: 20_105,
       release_notes_sha256: "c" * 64
     )
+    assert_raises(SequelAceRelease::ValidationError) do
+      SequelAceRelease::Manifest.new(manifest.to_h.merge("release_commit_sha" => "not-a-sha"))
+    end
 
     Dir.mktmpdir do |directory|
       path = File.join(directory, "manifest.json")

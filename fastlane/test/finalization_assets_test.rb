@@ -44,6 +44,7 @@ class FinalizationAssetsTest < Minitest::Test
     end
     release_data = release
     github = Object.new
+    github.define_singleton_method(:ref_sha) { |_ref| "d" * 40 }
     github.define_singleton_method(:release_by_tag) { |_tag| release_data }
     github.define_singleton_method(:update_release) { |**_options| raise "validate-only mutated GitHub" }
 
@@ -68,6 +69,36 @@ class FinalizationAssetsTest < Minitest::Test
       assert_equal "durably_validated_before_public_transition", evidence.fetch("github_transition")
       assert_equal true, evidence.fetch("transition_required")
       assert_equal "5.3.2 (20105)", evidence.fetch("target_title")
+      assert_equal "d" * 40, evidence.fetch("release_commit_sha")
+    end
+  end
+
+  def test_finalization_rejects_a_tag_moved_after_archival
+    live_snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    app_store = Object.new
+    app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
+    github = Object.new
+    github.define_singleton_method(:ref_sha) { |_ref| "e" * 40 }
+    github.define_singleton_method(:release_by_tag) { |_tag| raise "moved tag reached release mutation path" }
+
+    Dir.mktmpdir do |directory|
+      manifest_path = File.join(directory, "manifest.json")
+      release_manifest.write(manifest_path)
+      error = StringIO.new
+      cli = SequelAceRelease::CLI.new(out: StringIO.new, err: error, env: {})
+      status = cli.stub(:app_store_client, app_store) do
+        cli.stub(:github_client, github) do
+          cli.run([
+            "finalize",
+            "--manifest", manifest_path,
+            "--confirm", "FINALIZE production/5.3.2-20105",
+            "--validate-only"
+          ])
+        end
+      end
+
+      assert_equal 1, status
+      assert_includes error.string, "release tag moved after archival"
     end
   end
 
@@ -94,7 +125,10 @@ class FinalizationAssetsTest < Minitest::Test
       canonical_build: 20_105,
       release_notes_sha256: Digest::SHA256.hexdigest(@body),
       state: "submitted"
-    ).with("verification" => manifest.fetch("verification"))
+    ).with(
+      "release_commit_sha" => "d" * 40,
+      "verification" => manifest.fetch("verification")
+    )
   end
 
   def manifest

@@ -55,8 +55,53 @@ class PlannerTest < Minitest::Test
     assert_equal 20_105, plan.dig("approval", "observed_production_cloud_next_build")
     assert_equal "b" * 40, plan.dig("approval", "base_sha")
     assert_equal plan.fetch("release_notes_sha256"), plan.dig("approval", "release_notes_sha256")
+    assert_equal plan.fetch("iteration"), plan.dig("approval", "release_iteration")
     assert plan.fetch("github_release_body").start_with?("## App Store Release Notes")
     assert SequelAceRelease::Approval.from_hash(plan.fetch("approval")).verify!(plan.dig("approval", "sha256"))
+  end
+
+  def test_a_new_prerelease_iteration_invalidates_the_approved_plan
+    change = SequelAceRelease::GitRepository::Change.new(
+      sha: "c" * 40,
+      title: "Fix release behavior",
+      category: "fixed"
+    )
+    no_releases = Object.new
+    no_releases.define_singleton_method(:releases) { [] }
+    no_releases.define_singleton_method(:new_contributors) { |_numbers| {} }
+    existing_candidate = Object.new
+    existing_candidate.define_singleton_method(:releases) do
+      [{
+        "tag_name" => "production/5.3.2-20105",
+        "name" => "5.3.2 (20105) - Release Candidate 1",
+        "prerelease" => true,
+        "draft" => false,
+        "published_at" => "2026-08-09T18:00:00Z"
+      }]
+    end
+    existing_candidate.define_singleton_method(:new_contributors) { |_numbers| {} }
+    arguments = {
+      channel: "production",
+      target_version: "5.3.2",
+      base_tag: "production/5.3.1-20104",
+      main_ref: "main",
+      app_store_notes: "A focused fix.",
+      observed_cloud_next_build: 20_105
+    }
+    versions = FakeVersions.new({ "version" => "5.3.1", "build" => 20_104 })
+    approved = SequelAceRelease::Planner.new(
+      git: FakeGit.new([change]), github: no_releases, version_files: versions
+    ).plan(**arguments)
+    regenerated = SequelAceRelease::Planner.new(
+      git: FakeGit.new([change]), github: existing_candidate, version_files: versions
+    ).plan(**arguments)
+
+    assert_equal 1, approved.fetch("iteration")
+    assert_equal 2, regenerated.fetch("iteration")
+    refute_equal approved.dig("approval", "sha256"), regenerated.dig("approval", "sha256")
+    assert_raises(SequelAceRelease::ValidationError) do
+      SequelAceRelease::Approval.from_hash(regenerated.fetch("approval")).verify!(approved.dig("approval", "sha256"))
+    end
   end
 
   def test_contributor_enrichment_changes_invalidate_the_approved_release_body

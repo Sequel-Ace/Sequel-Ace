@@ -26,6 +26,10 @@ module SequelAceRelease
       unless release_notes_sha256 == approved_release_notes_sha256
         raise ValidationError, "GitHub release body does not match the immutable approval"
       end
+      approved_iteration = approval.payload.fetch("release_iteration")
+      unless naming.iteration == approved_iteration
+        raise ValidationError, "release iteration does not match the immutable approval"
+      end
 
       new(
         "schema_version" => Config::SCHEMA_VERSION,
@@ -34,7 +38,7 @@ module SequelAceRelease
         "base_tag" => approval.payload.fetch("previous_tag"),
         "base_sha" => approved_base_sha,
         "main_sha" => approval.payload.fetch("main_sha"),
-        "iteration" => naming.iteration,
+        "iteration" => approved_iteration,
         "observed_production_cloud_next_build" => approval.payload.fetch("observed_production_cloud_next_build"),
         "canonical_build" => canonical_build,
         "skipped_production_builds" => skipped_production_builds,
@@ -78,12 +82,21 @@ module SequelAceRelease
       Config.validate_channel!(data["channel"])
       Version.validate!(data["target_version"])
       raise ValidationError, "invalid manifest state" unless Config::MANIFEST_STATES.include?(data["state"])
-      raise ValidationError, "canonical build must be positive" unless Integer(data["canonical_build"]).positive?
+      validate_positive_integer!(data["canonical_build"], "canonical build")
+      validate_positive_integer!(data["iteration"], "release iteration")
       unless data["release_notes_sha256"].to_s.match?(/\A[0-9a-f]{64}\z/)
         raise ValidationError, "release notes SHA-256 is malformed"
       end
+      if data.key?("release_commit_sha") && !data["release_commit_sha"].to_s.match?(/\A[0-9a-f]{40,64}\z/i)
+        raise ValidationError, "release commit SHA is malformed"
+      end
+    end
+
+    def validate_positive_integer!(value, label)
+      integer = Integer(value)
+      raise ValidationError, "#{label} must be positive" unless integer.positive?
     rescue ArgumentError, TypeError
-      raise ValidationError, "canonical build must be an integer"
+      raise ValidationError, "#{label} must be an integer"
     end
   end
 end

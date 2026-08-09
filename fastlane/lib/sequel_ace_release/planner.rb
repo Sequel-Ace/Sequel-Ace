@@ -39,18 +39,18 @@ module SequelAceRelease
         contributors: contributors
       )
       release_notes_sha256 = notes.sha256(release_body)
+      iteration = next_iteration(channel, chosen_version, release_catalog)
       approval = Approval.new(
         channel: channel,
         target_version: chosen_version,
         main_sha: main_sha,
         previous_tag: stable,
         base_sha: base_sha,
+        release_iteration: iteration,
         app_store_notes: human_notes,
         release_notes_sha256: release_notes_sha256,
         observed_production_cloud_next_build: observed_cloud_next_build
       )
-      iteration = next_iteration(channel, chosen_version, release_catalog)
-
       {
         "schema_version" => Config::SCHEMA_VERSION,
         "channel" => channel,

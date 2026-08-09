@@ -6,14 +6,15 @@ module SequelAceRelease
   class Approval
     POLICY = "authoritative-production-cloud-next".freeze
     REQUIRED_KEYS = %w[
-      channel target_version main_sha previous_tag base_sha app_store_notes release_notes_sha256
+      channel target_version main_sha previous_tag base_sha release_iteration
+      app_store_notes release_notes_sha256
       observed_production_cloud_next_build build_policy
     ].freeze
 
     attr_reader :payload
 
     def initialize(
-      channel:, target_version:, main_sha:, previous_tag:, base_sha:,
+      channel:, target_version:, main_sha:, previous_tag:, base_sha:, release_iteration:,
       app_store_notes:, release_notes_sha256:,
       observed_production_cloud_next_build:, build_policy: POLICY
     )
@@ -23,6 +24,7 @@ module SequelAceRelease
         "main_sha" => validate_sha!(main_sha, "main"),
         "previous_tag" => validate_tag!(previous_tag),
         "base_sha" => validate_sha!(base_sha, "base"),
+        "release_iteration" => validate_iteration!(release_iteration),
         "app_store_notes" => validate_notes!(app_store_notes),
         "release_notes_sha256" => validate_digest!(release_notes_sha256),
         "observed_production_cloud_next_build" => validate_build!(observed_production_cloud_next_build),
@@ -80,6 +82,15 @@ module SequelAceRelease
       return value if value.to_s.match?(/\A[0-9a-f]{64}\z/)
 
       raise ValidationError, "GitHub release-body SHA-256 is malformed"
+    end
+
+    def validate_iteration!(value)
+      iteration = Integer(value)
+      raise ValidationError, "release iteration must be positive" unless iteration.positive?
+
+      iteration
+    rescue ArgumentError, TypeError
+      raise ValidationError, "release iteration must be an integer"
     end
 
     def validate_build!(value)

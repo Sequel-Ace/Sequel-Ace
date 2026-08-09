@@ -184,11 +184,12 @@ preceding beta.
 
 The approval hash includes the exact UI-observed Production Cloud next build,
 the resolved commit behind the comparison tag, the complete generated GitHub
-release-body digest, and the authoritative-Cloud-next policy. Changing that
-observation, main SHA, App Store notes, generated GitHub body, base tag or its
-resolved commit, channel, or semantic version requires a new plan and approval.
-Runtime reconciliation may advance beyond the approved observation only when
-every consumed Production number has the required Cloud-run evidence.
+release-body digest, planned RC/beta iteration, and the
+authoritative-Cloud-next policy. Changing that observation, main SHA, App Store
+notes, generated GitHub body, release iteration, base tag or its resolved
+commit, channel, or semantic version requires a new plan and approval. Runtime
+reconciliation may advance beyond the approved observation only when every
+consumed Production number has the required Cloud-run evidence.
 
 After Jason confirms the intended PR set is merged and approves the plan, use
 the private Codex skill to dispatch `.github/workflows/release.yml` with the
@@ -250,6 +251,9 @@ prerelease.
   checksums match the private manifest. It first records that live validation
   in the private archive, and only then performs the public GitHub transition;
   an archive failure therefore leaves the prerelease discoverable for retry.
+- Finalization also resolves the current production tag and requires it to
+  equal the archived release commit; a moved or recreated tag cannot become
+  latest.
 - A failure after App Store submission preserves `submitted` or `live` state
   and never edits the checksum-protected GitHub release body. If submission had
   an ambiguous response, cleanup reads back the exact ASC version and build
