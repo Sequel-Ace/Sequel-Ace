@@ -198,8 +198,10 @@ App Store notes without line wrapping.
 
 ## Build-number reconciliation
 
-For source `S`, highest Production release tag, highest relevant Production ASC
-build, and UI-observed Cloud next number `N`:
+For source `S`, highest canonical build from a Production or Beta tag, highest
+relevant Production ASC build, and UI-observed Cloud next number `N` (both tag
+channels trigger the Production workflow; only Alpha artifact builds are
+informational):
 
 - Normal: `N` is one above the reconciled baseline.
 - Self-healing: the observed `N` is a lower bound. If API-visible Production

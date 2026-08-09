@@ -27,7 +27,7 @@ module SequelAceRelease
       tag = nonnegative_integer(highest_tag_build, "highest tag build")
       asc = nonnegative_integer(highest_asc_build, "highest App Store Connect build")
       observed_cloud_next = positive_integer(cloud_next_build, "Xcode Cloud next build")
-      raise ValidationError, "Production release tag build #{tag} is ahead of source build #{source}" if tag > source
+      raise ValidationError, "canonical release tag build #{tag} is ahead of source build #{source}" if tag > source
 
       baseline = [source, tag, asc].max
       indexed_runs = Array(cloud_runs).each_with_object({}) do |run, result|

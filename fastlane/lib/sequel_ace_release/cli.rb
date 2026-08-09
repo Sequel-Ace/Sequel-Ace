@@ -175,7 +175,8 @@ module SequelAceRelease
 
       git = GitRepository.new
       source_build = options[:source_build] || VersionFiles.new.current.fetch("build")
-      highest_tag = options[:highest_tag_build] || highest_build_from_tags(git.tags("production/*"))
+      canonical_tags = git.tags("production/*") + git.tags("beta/*")
+      highest_tag = options[:highest_tag_build] || highest_build_from_tags(canonical_tags)
       asc_client = nil
       if options[:workflow_id] || !options.key?(:highest_asc_build)
         asc_client = app_store_client
@@ -977,7 +978,7 @@ module SequelAceRelease
     end
 
     def highest_build_from_tags(tags)
-      tags.filter_map { |tag| tag[%r{\Aproduction/\d+\.\d+\.\d+-(\d+)\z}, 1]&.to_i }.max || 0
+      tags.filter_map { |tag| tag[%r{\A(?:production|beta)/\d+\.\d+\.\d+-(\d+)\z}, 1]&.to_i }.max || 0
     end
 
     def release_pull_request_body(naming, release_body)
