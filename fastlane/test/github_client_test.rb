@@ -38,16 +38,24 @@ class GitHubClientTest < Minitest::Test
     assert_equal "/repos/Sequel-Ace/Sequel-Ace/git/ref/heads/main", transport.requests.first[:path]
   end
 
-  def test_creates_only_a_verified_bot_commit_without_author_fields
+  def test_creates_only_a_github_signed_bot_commit_without_identity_overrides
     responses = [
-      http_response(body: { "tree" => { "sha" => "base-tree" } }),
-      http_response(status: 201, body: { "sha" => "blob-sha" }),
-      http_response(status: 201, body: { "sha" => "tree-sha" }),
-      http_response(status: 201, body: {
-        "sha" => "commit-sha",
-        "verification" => { "verified" => true, "reason" => "valid" }
-      }),
-      http_response(status: 201, body: { "ref" => "refs/heads/prepare-release/5.3.2-20105-rc1" })
+      http_response(status: 201, body: { "ref" => "refs/heads/prepare-release/5.3.2-20105-rc1" }),
+      http_response(body: {
+        "data" => {
+          "createCommitOnBranch" => {
+            "commit" => {
+              "oid" => "commit-sha",
+              "url" => "https://github.com/Sequel-Ace/Sequel-Ace/commit/commit-sha",
+              "signature" => {
+                "isValid" => true,
+                "state" => "VALID",
+                "wasSignedByGitHub" => true
+              }
+            }
+          }
+        }
+      })
     ]
     transport = FakeTransport.new(responses)
     client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
@@ -63,22 +71,40 @@ class GitHubClientTest < Minitest::Test
         changed_paths: [{ "status" => " M", "path" => "CHANGELOG.md" }]
       )
       assert_equal "commit-sha", commit.fetch("sha")
+      assert_equal true, commit.dig("verification", "was_signed_by_github")
     end
 
-    commit_request = transport.requests.find { |request| request[:path].end_with?("/git/commits") }
-    refute commit_request[:body].key?("author")
-    refute commit_request[:body].key?("committer")
-    refute commit_request[:body].key?("signature")
+    ref_request, commit_request = transport.requests
+    assert_equal "/repos/Sequel-Ace/Sequel-Ace/git/refs", ref_request[:path]
+    assert_equal "a" * 40, ref_request.dig(:body, "sha")
+    assert_equal "/graphql", commit_request[:path]
+    input = commit_request.dig(:body, "variables", "input")
+    assert_equal "a" * 40, input.fetch("expectedHeadOid")
+    assert_equal "prepare-release/5.3.2-20105-rc1", input.dig("branch", "branchName")
+    assert_equal "release notes", Base64.strict_decode64(input.dig("fileChanges", "additions", 0, "contents"))
+    refute input.key?("author")
+    refute input.key?("committer")
+    refute input.key?("signature")
+    refute transport.requests.any? { |request| request[:path].end_with?("/git/commits") }
   end
 
-  def test_unverified_bot_commit_aborts_before_branch_creation
+  def test_unverified_bot_commit_is_rejected_after_github_creates_the_branch
     responses = [
-      http_response(body: { "tree" => { "sha" => "base-tree" } }),
-      http_response(status: 201, body: { "sha" => "blob-sha" }),
-      http_response(status: 201, body: { "sha" => "tree-sha" }),
-      http_response(status: 201, body: {
-        "sha" => "commit-sha",
-        "verification" => { "verified" => false, "reason" => "unsigned" }
+      http_response(status: 201, body: { "ref" => "refs/heads/prepare-release/5.3.2-20105-rc1" }),
+      http_response(body: {
+        "data" => {
+          "createCommitOnBranch" => {
+            "commit" => {
+              "oid" => "commit-sha",
+              "url" => "https://github.com/Sequel-Ace/Sequel-Ace/commit/commit-sha",
+              "signature" => {
+                "isValid" => false,
+                "state" => "UNSIGNED",
+                "wasSignedByGitHub" => false
+              }
+            }
+          }
+        }
       })
     ]
     transport = FakeTransport.new(responses)
@@ -96,7 +122,8 @@ class GitHubClientTest < Minitest::Test
         )
       end
     end
-    refute transport.requests.any? { |request| request[:path].end_with?("/git/refs") }
+    assert_equal ["/repos/Sequel-Ace/Sequel-Ace/git/refs", "/graphql"], transport.requests.map { |request| request[:path] }
+    refute transport.requests.any? { |request| request[:path].end_with?("/git/commits") }
   end
 
   def test_unauthorized_preparation_path_aborts

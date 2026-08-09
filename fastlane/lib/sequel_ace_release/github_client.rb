@@ -8,6 +8,21 @@ module SequelAceRelease
   class GitHubClient
     API_URL = "https://api.github.com/"
     UPLOAD_URL = "https://uploads.github.com/"
+    CREATE_COMMIT_MUTATION = <<~GRAPHQL.freeze
+      mutation CreateReleaseCommit($input: CreateCommitOnBranchInput!) {
+        createCommitOnBranch(input: $input) {
+          commit {
+            oid
+            url
+            signature {
+              isValid
+              state
+              wasSignedByGitHub
+            }
+          }
+        }
+      }
+    GRAPHQL
 
     def initialize(token:, repository: Config::REPOSITORY, transport: nil)
       raise ValidationError, "GitHub token is required" if token.to_s.empty?
@@ -80,41 +95,53 @@ module SequelAceRelease
       raise ValidationError, "release branch must begin with prepare-release/" unless branch.start_with?("prepare-release/")
       raise ValidationError, "release preparation produced no changes" if changed_paths.empty?
 
-      base_commit = request!("GET", "/repos/#{@repository}/git/commits/#{base_sha}")
-      entries = changed_paths.map do |change|
+      additions = []
+      deletions = []
+      changed_paths.each do |change|
         path = change.fetch("path")
         validate_release_path!(path)
         if change.fetch("status").include?("D")
-          { "path" => path, "mode" => "100644", "type" => "blob", "sha" => nil }
+          deletions << { "path" => path }
         else
           bytes = File.binread(File.join(repository_root, path))
-          blob = request!("POST", "/repos/#{@repository}/git/blobs", body: {
-            "content" => Base64.strict_encode64(bytes),
-            "encoding" => "base64"
-          })
-          { "path" => path, "mode" => "100644", "type" => "blob", "sha" => blob.fetch("sha") }
+          additions << { "path" => path, "contents" => Base64.strict_encode64(bytes) }
         end
-      end
-
-      tree = request!("POST", "/repos/#{@repository}/git/trees", body: {
-        "base_tree" => base_commit.fetch("tree").fetch("sha"),
-        "tree" => entries
-      })
-      commit = request!("POST", "/repos/#{@repository}/git/commits", body: {
-        "message" => message,
-        "tree" => tree.fetch("sha"),
-        "parents" => [base_sha]
-      })
-      verification = commit.fetch("verification", {})
-      unless verification["verified"] == true
-        raise ValidationError, "GitHub did not verify the release bot commit: #{verification['reason'] || 'unknown reason'}"
       end
 
       request!("POST", "/repos/#{@repository}/git/refs", body: {
         "ref" => "refs/heads/#{branch}",
-        "sha" => commit.fetch("sha")
+        "sha" => base_sha
       })
-      commit
+      file_changes = {}
+      file_changes["additions"] = additions unless additions.empty?
+      file_changes["deletions"] = deletions unless deletions.empty?
+      data = graphql!(CREATE_COMMIT_MUTATION, {
+        "input" => {
+          "branch" => {
+            "repositoryNameWithOwner" => @repository,
+            "branchName" => branch
+          },
+          "expectedHeadOid" => base_sha,
+          "fileChanges" => file_changes,
+          "message" => { "headline" => message }
+        }
+      })
+      created = data.fetch("createCommitOnBranch").fetch("commit")
+      signature = created.fetch("signature", {}) || {}
+      verified = signature["isValid"] == true && signature["wasSignedByGitHub"] == true && signature["state"] == "VALID"
+      unless verified
+        raise ValidationError, "GitHub did not verify the release bot commit: #{signature['state'] || 'missing signature'}"
+      end
+
+      {
+        "sha" => created.fetch("oid"),
+        "html_url" => created.fetch("url"),
+        "verification" => {
+          "verified" => true,
+          "reason" => "valid",
+          "was_signed_by_github" => true
+        }
+      }
     end
 
     def create_pull_request(branch:, title:, body:, base: "main")
@@ -259,6 +286,30 @@ module SequelAceRelease
     def request!(method, path, body: nil, expected: nil)
       response = @transport.request(method, path, body: body, headers: body.nil? ? {} : { "Content-Type" => "application/json" })
       ensure_response!(response, expected || success_codes(method))
+    end
+
+    def graphql!(query, variables)
+      response = @transport.request(
+        "POST",
+        "/graphql",
+        body: { "query" => query, "variables" => variables },
+        headers: { "Content-Type" => "application/json" }
+      )
+      body = ensure_response!(response, [200])
+      raise APIError, "GitHub GraphQL API returned a malformed response" unless body.is_a?(Hash)
+
+      errors = Array(body["errors"])
+      unless errors.empty?
+        messages = errors.filter_map { |error| error["message"] if error.is_a?(Hash) }
+        raise APIError, "GitHub GraphQL API returned errors#{messages.empty? ? '' : ": #{messages.join('; ')}"}"
+      end
+
+      data = body.fetch("data")
+      raise APIError, "GitHub GraphQL API returned a malformed response" unless data.is_a?(Hash)
+
+      data
+    rescue KeyError
+      raise APIError, "GitHub GraphQL API returned a malformed response"
     end
 
     def ensure_response!(response, expected)

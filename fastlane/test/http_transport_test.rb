@@ -69,4 +69,33 @@ class HTTPTransportTest < Minitest::Test
     assert_equal({ "recovered" => true }, response.body)
     assert_equal 2, transport.attempts
   end
+
+  def test_does_not_retry_a_post_after_a_retryable_server_response
+    transport = SequenceTransport.new([
+      NetResponse.new("503", '{"message":"temporarily unavailable"}', {}),
+      NetResponse.new("201", '{"created":true}', {})
+    ])
+
+    response = transport.request("POST", "/resource", body: { "name" => "release" })
+    assert_equal 503, response.status
+    assert_equal 1, transport.attempts
+  end
+
+  def test_does_not_replay_a_patch_after_an_ambiguous_network_failure
+    transport = SequenceTransport.new([
+      -> { raise Errno::ECONNRESET },
+      NetResponse.new("200", '{"updated":true}', {})
+    ])
+    def transport.perform(*_arguments)
+      @attempts += 1
+      value = @responses.shift || raise("missing response fixture")
+      value.respond_to?(:call) ? value.call : value
+    end
+
+    error = assert_raises(SequelAceRelease::APIError) do
+      transport.request("PATCH", "/resource", body: { "state" => "submitted" })
+    end
+    assert_includes error.message, "after 1 attempts"
+    assert_equal 1, transport.attempts
+  end
 end

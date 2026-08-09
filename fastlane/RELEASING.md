@@ -65,11 +65,18 @@ or creates a GitHub release.
 8. Confirm the GHCR package is private and linked to this repository. The
    feasibility workflow verifies this again before enabling publishing.
 
-The GitHub App commit is created through the Git data API without custom author
-or committer fields. GitHub must report its signature as verified before the PR
-is opened. See GitHub's documentation for
+The GitHub App first creates the release branch at the frozen base SHA, then
+uses GraphQL `createCommitOnBranch` to make the complete release commit without
+custom author, committer, or signature fields. GitHub documents that commits
+created by this mutation are automatically signed; the tool requires a valid
+GitHub-generated signature before the PR is opened. See GitHub's documentation
+for [`createCommitOnBranch`](https://docs.github.com/en/graphql/reference/mutations#createcommitonbranch),
 [GitHub App workflow authentication](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/making-authenticated-api-requests-with-a-github-app-in-a-github-actions-workflow)
 and [bot signature verification](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification#signature-verification-for-bots).
+
+The shared HTTP transport automatically retries read-only `GET` requests only.
+It never replays `POST`, `PATCH`, `PUT`, or `DELETE` mutations after a server or
+network failure because their remote outcome may be ambiguous.
 
 ## One-time Apple setup
 

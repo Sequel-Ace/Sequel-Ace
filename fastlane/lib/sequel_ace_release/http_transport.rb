@@ -8,6 +8,7 @@ module SequelAceRelease
   class HTTPTransport
     Response = Struct.new(:status, :headers, :body, keyword_init: true)
     RETRYABLE = [429, 500, 502, 503, 504].freeze
+    RETRYABLE_METHODS = %w[GET].freeze
 
     def initialize(base_url:, default_headers: {}, max_attempts: 4)
       @base_url = base_url
@@ -17,20 +18,22 @@ module SequelAceRelease
 
     def request(method, path, query: nil, body: nil, headers: {})
       uri = build_uri(path, query)
+      normalized_method = method.to_s.upcase
+      retryable_request = RETRYABLE_METHODS.include?(normalized_method)
       attempt = 0
       loop do
         attempt += 1
         begin
-          response = perform(method, uri, body, @default_headers.merge(headers))
+          response = perform(normalized_method, uri, body, @default_headers.merge(headers))
         rescue Timeout::Error, Errno::ECONNRESET, Errno::ECONNREFUSED => error
-          if attempt >= @max_attempts
+          unless retryable_request && attempt < @max_attempts
             raise APIError, "API request failed after #{attempt} attempts: #{error.class}"
           end
           sleep([attempt, 5].min)
           next
         end
         parsed = parse_body(response.body)
-        unless RETRYABLE.include?(response.code.to_i) && attempt < @max_attempts
+        unless retryable_request && RETRYABLE.include?(response.code.to_i) && attempt < @max_attempts
           return Response.new(status: response.code.to_i, headers: response.to_hash, body: parsed)
         end
 
