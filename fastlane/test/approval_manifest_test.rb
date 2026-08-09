@@ -19,6 +19,15 @@ class ApprovalManifestTest < Minitest::Test
     refute_equal release_approval.sha256, changed_base.sha256
     assert_raises(SequelAceRelease::ValidationError) { changed_base.verify!(release_approval.sha256) }
 
+    changed_changelog_base = approval(
+      changelog_base_tag: "production/5.3.0-20103",
+      changelog_base_sha: "e" * 40
+    )
+    refute_equal release_approval.sha256, changed_changelog_base.sha256
+    assert_raises(SequelAceRelease::ValidationError) do
+      changed_changelog_base.verify!(release_approval.sha256)
+    end
+
     changed_release_body = approval(release_notes_sha256: "d" * 64)
     refute_equal release_approval.sha256, changed_release_body.sha256
     assert_raises(SequelAceRelease::ValidationError) do
@@ -39,6 +48,13 @@ class ApprovalManifestTest < Minitest::Test
     missing_base = release_approval.to_h.reject { |key, _| %w[sha256 base_sha].include?(key) }
     assert_raises(SequelAceRelease::ValidationError) do
       SequelAceRelease::Approval.from_hash(missing_base)
+    end
+
+    missing_changelog_base = release_approval.to_h.reject do |key, _|
+      %w[sha256 changelog_base_tag changelog_base_sha].include?(key)
+    end
+    assert_raises(SequelAceRelease::ValidationError) do
+      SequelAceRelease::Approval.from_hash(missing_changelog_base)
     end
 
     missing_body = release_approval.to_h.reject { |key, _| %w[sha256 release_notes_sha256].include?(key) }
@@ -126,6 +142,8 @@ class ApprovalManifestTest < Minitest::Test
       assert_equal manifest.to_h, loaded.to_h
       assert_equal "planned", loaded.to_h.fetch("state")
       assert_equal 20_105, loaded.to_h.fetch("observed_production_cloud_next_build")
+      assert_equal "production/5.3.1-20104", loaded.to_h.fetch("changelog_base_tag")
+      assert_equal "b" * 40, loaded.to_h.fetch("changelog_base_sha")
     end
   end
 

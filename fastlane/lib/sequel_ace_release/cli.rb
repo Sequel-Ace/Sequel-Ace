@@ -117,17 +117,24 @@ module SequelAceRelease
     def prepare(arguments)
       options = {}
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release prepare --version VERSION --build BUILD --base-tag TAG [options]"
+        value.banner = "Usage: sa-release prepare --version VERSION --build BUILD --base-tag TAG --changelog-base-tag TAG [options]"
         value.on("--version VERSION") { |item| options[:version] = item }
         value.on("--build BUILD", Integer) { |item| options[:build] = item }
         value.on("--channel CHANNEL") { |item| options[:channel] = item }
         value.on("--base-tag TAG") { |item| options[:base_tag] = item }
+        value.on("--expected-base-sha SHA") { |item| options[:expected_base_sha] = item }
+        value.on("--changelog-base-tag TAG") { |item| options[:changelog_base_tag] = item }
+        value.on("--expected-changelog-base-sha SHA") { |item| options[:expected_changelog_base_sha] = item }
         value.on("--expected-main-sha SHA") { |item| options[:expected_main_sha] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
       reject_arguments!(arguments)
-      require_options!(options, :version, :build, :channel, :base_tag)
+      require_options!(
+        options,
+        :version, :build, :channel, :base_tag, :expected_base_sha,
+        :changelog_base_tag, :expected_changelog_base_sha
+      )
       Config.validate_channel!(options[:channel])
 
       git = GitRepository.new
@@ -136,13 +143,20 @@ module SequelAceRelease
       if options[:expected_main_sha] && current_sha != options[:expected_main_sha]
         raise ValidationError, "HEAD #{current_sha} does not match frozen main #{options[:expected_main_sha]}"
       end
-      raise ValidationError, "base tag does not resolve" if git.sha(options[:base_tag]).empty?
+      resolved_base_sha = git.sha(options[:base_tag])
+      unless resolved_base_sha == options[:expected_base_sha]
+        raise ValidationError, "comparison tag does not match its approved SHA"
+      end
+      resolved_changelog_base_sha = git.sha(options[:changelog_base_tag])
+      unless resolved_changelog_base_sha == options[:expected_changelog_base_sha]
+        raise ValidationError, "changelog base tag does not match its approved SHA"
+      end
 
       version_result = VersionFiles.new.update!(version: options[:version], build: options[:build])
       @runner.run(
         Config.repo_root.join("Scripts/generate-changelog.sh"),
         options[:version],
-        env: { "RANGE_START" => options[:base_tag], "RANGE_END" => current_sha }
+        env: { "RANGE_START" => options[:changelog_base_tag], "RANGE_END" => current_sha }
       )
       changed_paths = git.changed_paths
       validate_preparation_paths!(changed_paths)
@@ -150,6 +164,9 @@ module SequelAceRelease
         "channel" => options[:channel],
         "head_sha" => current_sha,
         "base_tag" => options[:base_tag],
+        "base_sha" => resolved_base_sha,
+        "changelog_base_tag" => options[:changelog_base_tag],
+        "changelog_base_sha" => resolved_changelog_base_sha,
         "versions" => version_result,
         "changed_paths" => changed_paths
       }, options[:output])
@@ -669,6 +686,8 @@ module SequelAceRelease
         main_sha: data.fetch("main_sha"),
         previous_tag: data.fetch("base_tag"),
         base_sha: data.fetch("base_sha"),
+        changelog_base_tag: data.fetch("changelog_base_tag"),
+        changelog_base_sha: data.fetch("changelog_base_sha"),
         release_iteration: data.fetch("iteration"),
         app_store_notes: notes,
         release_notes_sha256: data.fetch("release_notes_sha256"),

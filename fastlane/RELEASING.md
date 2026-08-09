@@ -180,13 +180,16 @@ notes, GitHub body, observed Cloud number, and approval SHA-256. Patch is the
 default for fixes and infrastructure. Any `#added` change recommends minor.
 Major is never recommended automatically. A later beta for an already chosen
 semantic version recommends keeping that version while comparing only with the
-preceding beta.
+preceding beta. Its changelog is still regenerated cumulatively from the latest
+finalized Production release tag that is an ancestor of that beta, so a later
+beta cannot replace the version section with only its incremental changes.
 
 The approval hash includes the exact UI-observed Production Cloud next build,
-the resolved commit behind the comparison tag, the complete generated GitHub
-release-body digest, planned RC/beta iteration, and the
+the resolved commits behind both the release-note comparison tag and cumulative
+changelog base tag, the complete generated GitHub release-body digest, planned
+RC/beta iteration, and the
 authoritative-Cloud-next policy. Changing that observation, main SHA, App Store
-notes, generated GitHub body, release iteration, base tag or its resolved
+notes, generated GitHub body, release iteration, either base tag or its resolved
 commit, channel, or semantic version requires a new plan and approval. Runtime
 reconciliation may advance beyond the approved observation only when every
 consumed Production number has the required Cloud-run evidence.

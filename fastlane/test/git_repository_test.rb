@@ -52,6 +52,29 @@ class GitRepositoryTest < Minitest::Test
     end
   end
 
+  def test_checks_release_tag_ancestry
+    Dir.mktmpdir do |directory|
+      git(directory, "init", "--initial-branch=main")
+      git(directory, "config", "user.name", "Release Test")
+      git(directory, "config", "user.email", "release@example.invalid")
+      File.write(File.join(directory, "README.md"), "stable\n")
+      commit_all(directory, "stable release")
+      git(directory, "tag", "production/5.3.1-20104")
+
+      File.write(File.join(directory, "README.md"), "beta\n")
+      commit_all(directory, "first beta")
+      git(directory, "tag", "beta/5.4.0-20105")
+
+      File.write(File.join(directory, "README.md"), "later production\n")
+      commit_all(directory, "unrelated later production")
+      git(directory, "tag", "production/5.3.9-20106")
+
+      repository = SequelAceRelease::GitRepository.new(root: directory)
+      assert repository.ancestor?("production/5.3.1-20104", "beta/5.4.0-20105")
+      refute repository.ancestor?("production/5.3.9-20106", "beta/5.4.0-20105")
+    end
+  end
+
   private
 
   def commit_all(directory, message)

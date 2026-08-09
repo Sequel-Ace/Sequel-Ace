@@ -196,7 +196,7 @@ jobs:
             --observed-cloud-next-build "${{ inputs.production_cloud_next_build }}" \
             --expected-approval-sha "${{ inputs.approval_sha256 }}" \
             --output release-plan.json
-          ruby -rjson -e 'plan = JSON.parse(File.read("release-plan.json")); File.write("approval.json", JSON.pretty_generate(plan.fetch("approval")) + "\n"); File.write("release-body.md", plan.fetch("github_release_body")); output = ENV.fetch("GITHUB_OUTPUT"); File.open(output, "a") { |file| file.puts("iteration=#{plan.fetch("iteration")}"); file.puts("base_sha=#{plan.fetch("base_sha")}") }'
+          ruby -rjson -e 'plan = JSON.parse(File.read("release-plan.json")); File.write("approval.json", JSON.pretty_generate(plan.fetch("approval")) + "\n"); File.write("release-body.md", plan.fetch("github_release_body")); output = ENV.fetch("GITHUB_OUTPUT"); File.open(output, "a") { |file| file.puts("iteration=#{plan.fetch("iteration")}"); file.puts("base_sha=#{plan.fetch("base_sha")}"); file.puts("changelog_base_tag=#{plan.fetch("changelog_base_tag")}"); file.puts("changelog_base_sha=#{plan.fetch("changelog_base_sha")}") }'
 
       - name: Reconcile the authoritative Production Cloud build
         id: reconcile
@@ -305,6 +305,9 @@ jobs:
             --build "${{ steps.reconcile.outputs.build }}" \
             --channel "${{ inputs.channel }}" \
             --base-tag "${{ inputs.previous_tag }}" \
+            --expected-base-sha "${{ steps.plan.outputs.base_sha }}" \
+            --changelog-base-tag "${{ steps.plan.outputs.changelog_base_tag }}" \
+            --expected-changelog-base-sha "${{ steps.plan.outputs.changelog_base_sha }}" \
             --expected-main-sha "${{ inputs.expected_main_sha }}" \
             --output preparation.json
           bundle exec ruby fastlane/bin/sa-release update-manifest --manifest manifest.json --state prepared >/dev/null
@@ -352,12 +355,19 @@ jobs:
         env:
           PREVIOUS_TAG: ${{ inputs.previous_tag }}
           APPROVED_BASE_SHA: ${{ steps.plan.outputs.base_sha }}
+          CHANGELOG_BASE_TAG: ${{ steps.plan.outputs.changelog_base_tag }}
+          APPROVED_CHANGELOG_BASE_SHA: ${{ steps.plan.outputs.changelog_base_sha }}
         run: |
           set -euo pipefail
           git fetch --force --prune --no-recurse-submodules origin '+refs/tags/*:refs/tags/*'
           refreshed_base_sha="$(git rev-parse "${PREVIOUS_TAG}^{commit}")"
           [[ "${refreshed_base_sha}" == "${APPROVED_BASE_SHA}" ]] || {
             echo "Approved comparison tag moved while release checks ran." >&2
+            exit 1
+          }
+          refreshed_changelog_base_sha="$(git rev-parse "${CHANGELOG_BASE_TAG}^{commit}")"
+          [[ "${refreshed_changelog_base_sha}" == "${APPROVED_CHANGELOG_BASE_SHA}" ]] || {
+            echo "Approved cumulative changelog base tag moved while release checks ran." >&2
             exit 1
           }
           source_build="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("current_source").fetch("build")' release-plan.json)"

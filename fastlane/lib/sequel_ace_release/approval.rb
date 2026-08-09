@@ -6,7 +6,8 @@ module SequelAceRelease
   class Approval
     POLICY = "authoritative-production-cloud-next".freeze
     REQUIRED_KEYS = %w[
-      channel target_version main_sha previous_tag base_sha release_iteration
+      channel target_version main_sha previous_tag base_sha
+      changelog_base_tag changelog_base_sha release_iteration
       app_store_notes release_notes_sha256
       observed_production_cloud_next_build build_policy
     ].freeze
@@ -14,7 +15,8 @@ module SequelAceRelease
     attr_reader :payload
 
     def initialize(
-      channel:, target_version:, main_sha:, previous_tag:, base_sha:, release_iteration:,
+      channel:, target_version:, main_sha:, previous_tag:, base_sha:,
+      changelog_base_tag:, changelog_base_sha:, release_iteration:,
       app_store_notes:, release_notes_sha256:,
       observed_production_cloud_next_build:, build_policy: POLICY
     )
@@ -22,8 +24,10 @@ module SequelAceRelease
         "channel" => Config.validate_channel!(channel),
         "target_version" => Version.validate!(target_version),
         "main_sha" => validate_sha!(main_sha, "main"),
-        "previous_tag" => validate_tag!(previous_tag),
+        "previous_tag" => validate_tag!(previous_tag, "previous"),
         "base_sha" => validate_sha!(base_sha, "base"),
+        "changelog_base_tag" => validate_tag!(changelog_base_tag, "changelog base"),
+        "changelog_base_sha" => validate_sha!(changelog_base_sha, "changelog base"),
         "release_iteration" => validate_iteration!(release_iteration),
         "app_store_notes" => validate_notes!(app_store_notes),
         "release_notes_sha256" => validate_digest!(release_notes_sha256),
@@ -64,10 +68,10 @@ module SequelAceRelease
       raise ValidationError, "#{label} SHA is malformed"
     end
 
-    def validate_tag!(value)
+    def validate_tag!(value, label)
       return value if value.to_s.match?(%r{\A(?:production|beta)/\d+\.\d+\.\d+-\d+\z})
 
-      raise ValidationError, "previous tag is malformed"
+      raise ValidationError, "#{label} tag is malformed"
     end
 
     def validate_notes!(value)

@@ -58,6 +58,8 @@ class PlannerTest < Minitest::Test
     assert_equal 20_105, plan.fetch("observed_production_cloud_next_build")
     assert_equal 20_105, plan.dig("approval", "observed_production_cloud_next_build")
     assert_equal "b" * 40, plan.dig("approval", "base_sha")
+    assert_equal "production/5.3.1-20104", plan.fetch("changelog_base_tag")
+    assert_equal "b" * 40, plan.dig("approval", "changelog_base_sha")
     assert_equal plan.fetch("release_notes_sha256"), plan.dig("approval", "release_notes_sha256")
     assert_equal plan.fetch("iteration"), plan.dig("approval", "release_iteration")
     assert plan.fetch("github_release_body").start_with?("## App Store Release Notes")
@@ -212,8 +214,25 @@ class PlannerTest < Minitest::Test
       author_name: "Contributor"
     )
     git = Object.new
-    git.define_singleton_method(:sha) { |ref| ref.start_with?("beta/") ? "b" * 40 : "a" * 40 }
-    git.define_singleton_method(:changes) { |base_ref:, head_ref:| [change] }
+    git.define_singleton_method(:sha) do |ref|
+      if ref.start_with?("beta/")
+        "b" * 40
+      elsif ref.start_with?("production/")
+        "c" * 40
+      else
+        "a" * 40
+      end
+    end
+    git.define_singleton_method(:changes) do |base_ref:, head_ref:|
+      raise unless base_ref == "beta/5.4.0-20105" && head_ref == "main"
+
+      [change]
+    end
+    git.define_singleton_method(:ancestor?) do |ancestor_ref, descendant_ref|
+      raise unless descendant_ref == "beta/5.4.0-20105"
+
+      ancestor_ref == "production/5.3.1-20104"
+    end
     github = Object.new
     github.define_singleton_method(:releases) do
       [{
@@ -222,6 +241,24 @@ class PlannerTest < Minitest::Test
         "prerelease" => true,
         "draft" => false,
         "published_at" => "2026-08-01T16:00:00Z"
+      }, {
+        "tag_name" => "production/5.3.1-20104",
+        "name" => "5.3.1 (20104)",
+        "prerelease" => false,
+        "draft" => false,
+        "published_at" => "2026-07-01T16:00:00Z"
+      }, {
+        "tag_name" => "production/5.3.2-20106",
+        "name" => "5.3.2 (20106) - Release Candidate 1",
+        "prerelease" => true,
+        "draft" => false,
+        "published_at" => "2026-07-15T16:00:00Z"
+      }, {
+        "tag_name" => "production/5.3.3-20107",
+        "name" => "5.3.3 (20107)",
+        "prerelease" => false,
+        "draft" => false,
+        "published_at" => "2026-08-02T16:00:00Z"
       }]
     end
     github.define_singleton_method(:new_contributors) { |_numbers| {} }
@@ -238,6 +275,11 @@ class PlannerTest < Minitest::Test
       observed_cloud_next_build: 20_106
     )
     assert_equal "beta/5.4.0-20105", plan.fetch("base_tag")
+    assert_equal "b" * 40, plan.fetch("base_sha")
+    assert_equal "production/5.3.1-20104", plan.fetch("changelog_base_tag")
+    assert_equal "c" * 40, plan.fetch("changelog_base_sha")
+    assert_equal "production/5.3.1-20104", plan.dig("approval", "changelog_base_tag")
+    assert_includes plan.fetch("github_release_body"), "beta/5.4.0-20105...#{'a' * 40}"
     assert_equal "same", plan.fetch("recommended_bump")
     assert_equal "5.4.0", plan.fetch("recommended_version")
     assert_equal 2, plan.fetch("iteration")

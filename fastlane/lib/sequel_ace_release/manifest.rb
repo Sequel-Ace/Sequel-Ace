@@ -5,7 +5,8 @@ require "time"
 module SequelAceRelease
   class Manifest
     REQUIRED = %w[
-      schema_version channel target_version base_tag base_sha main_sha iteration
+      schema_version channel target_version base_tag base_sha
+      changelog_base_tag changelog_base_sha main_sha iteration
       observed_production_cloud_next_build canonical_build skipped_production_builds tag title artifact_names
       release_notes_sha256 cloud_build_ids asc_ids verification state
     ].freeze
@@ -37,6 +38,8 @@ module SequelAceRelease
         "target_version" => approval.payload.fetch("target_version"),
         "base_tag" => approval.payload.fetch("previous_tag"),
         "base_sha" => approved_base_sha,
+        "changelog_base_tag" => approval.payload.fetch("changelog_base_tag"),
+        "changelog_base_sha" => approval.payload.fetch("changelog_base_sha"),
         "main_sha" => approval.payload.fetch("main_sha"),
         "iteration" => approved_iteration,
         "observed_production_cloud_next_build" => approval.payload.fetch("observed_production_cloud_next_build"),
@@ -81,6 +84,16 @@ module SequelAceRelease
 
       Config.validate_channel!(data["channel"])
       Version.validate!(data["target_version"])
+      %w[base_tag changelog_base_tag].each do |key|
+        unless data[key].to_s.match?(%r{\A(?:production|beta)/\d+\.\d+\.\d+-\d+\z})
+          raise ValidationError, "#{key.tr('_', ' ')} is malformed"
+        end
+      end
+      %w[base_sha changelog_base_sha main_sha].each do |key|
+        unless data[key].to_s.match?(/\A[0-9a-f]{40,64}\z/i)
+          raise ValidationError, "#{key.tr('_', ' ')} is malformed"
+        end
+      end
       raise ValidationError, "invalid manifest state" unless Config::MANIFEST_STATES.include?(data["state"])
       validate_positive_integer!(data["canonical_build"], "canonical build")
       validate_positive_integer!(data["iteration"], "release iteration")

@@ -39,12 +39,26 @@ class WorkflowRecoveryTest < Minitest::Test
     final_gate = workflow[reconcile_again...merge_step]
     tag_refresh = final_gate.index("git fetch --force --prune")
     base_revalidation = final_gate.index("refreshed_base_sha")
+    changelog_base_revalidation = final_gate.index("refreshed_changelog_base_sha")
     reconciliation = final_gate.index("sa-release reconcile-build")
     assert_operator tag_refresh, :<, base_revalidation
-    assert_operator base_revalidation, :<, reconciliation
+    assert_operator base_revalidation, :<, changelog_base_revalidation
+    assert_operator changelog_base_revalidation, :<, reconciliation
     assert_includes final_gate, "APPROVED_BASE_SHA"
+    assert_includes final_gate, "APPROVED_CHANGELOG_BASE_SHA"
     assert_includes final_gate, "--expected-target-build"
     assert_includes final_gate, "mv pre-merge-reconciliation.json reconciliation.json"
+  end
+
+  def test_release_preparation_uses_the_approved_cumulative_changelog_base
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    preparation = workflow.split("- name: Prepare explicit release files", 2).fetch(1)
+                          .split("- name: Create verified release bot commit and PR", 2).first
+
+    assert_includes preparation, '--base-tag "${{ inputs.previous_tag }}"'
+    assert_includes preparation, '--expected-base-sha "${{ steps.plan.outputs.base_sha }}"'
+    assert_includes preparation, '--changelog-base-tag "${{ steps.plan.outputs.changelog_base_tag }}"'
+    assert_includes preparation, '--expected-changelog-base-sha "${{ steps.plan.outputs.changelog_base_sha }}"'
   end
 
   def test_cancelled_release_runs_branch_and_prerelease_recovery

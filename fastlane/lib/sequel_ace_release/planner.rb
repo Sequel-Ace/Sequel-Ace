@@ -33,6 +33,15 @@ module SequelAceRelease
       if !later_beta && !Version.compare(chosen_version, base_version).positive?
         raise ValidationError, "target version #{chosen_version} must be newer than #{base_version}"
       end
+      changelog_base_tag = if later_beta
+                             select_changelog_base_tag(stable, chosen_version, release_catalog)
+                           else
+                             stable
+                           end
+      if changelog_base_tag.to_s.empty?
+        raise ValidationError, "could not determine the Production ancestor for the cumulative changelog"
+      end
+      changelog_base_sha = @git.sha(changelog_base_tag)
       human_notes = app_store_notes.to_s.strip
       human_notes = notes.app_store_draft if human_notes.empty?
       contributors = contributor_map(changes)
@@ -50,6 +59,8 @@ module SequelAceRelease
         main_sha: main_sha,
         previous_tag: stable,
         base_sha: base_sha,
+        changelog_base_tag: changelog_base_tag,
+        changelog_base_sha: changelog_base_sha,
         release_iteration: iteration,
         app_store_notes: human_notes,
         release_notes_sha256: release_notes_sha256,
@@ -61,6 +72,8 @@ module SequelAceRelease
         "current_source" => @version_files.current,
         "base_tag" => stable,
         "base_sha" => base_sha,
+        "changelog_base_tag" => changelog_base_tag,
+        "changelog_base_sha" => changelog_base_sha,
         "main_sha" => main_sha,
         "release_notes_head_sha" => release_notes_head_sha,
         "recommended_bump" => recommended_bump,
@@ -94,7 +107,35 @@ module SequelAceRelease
     end
 
     def select_base_tag(channel, target_version, releases)
-      parsed = releases.filter_map do |release|
+      parsed = parsed_releases(releases)
+
+      if channel == "beta" && target_version
+        beta = parsed.select { |item| item[:channel] == "beta" && item[:version] == target_version }
+                     .max_by { |item| [item[:build], item[:published_at]] }
+        return beta[:tag] if beta
+      end
+
+      production = parsed.select { |item| item[:channel] == "production" && !item[:prerelease] }
+                         .max_by { |item| [Version.parts(item[:version]), item[:build], item[:published_at]] }
+      return production[:tag] if production
+
+      @git.latest_release_tag(channel: "production")
+    end
+
+    def select_changelog_base_tag(beta_tag, target_version, releases)
+      stable_ancestors = parsed_releases(releases).select do |item|
+        item[:channel] == "production" &&
+          !item[:prerelease] &&
+          Version.compare(item[:version], target_version).negative? &&
+          @git.ancestor?(item[:tag], beta_tag)
+      end
+      stable_ancestors.max_by do |item|
+        [Version.parts(item[:version]), item[:build], item[:published_at]]
+      end&.fetch(:tag, nil)
+    end
+
+    def parsed_releases(releases)
+      releases.filter_map do |release|
         next if release["draft"] == true
 
         tag = release["tag_name"]
@@ -110,18 +151,6 @@ module SequelAceRelease
           published_at: release["published_at"].to_s
         }
       end
-
-      if channel == "beta" && target_version
-        beta = parsed.select { |item| item[:channel] == "beta" && item[:version] == target_version }
-                     .max_by { |item| [item[:build], item[:published_at]] }
-        return beta[:tag] if beta
-      end
-
-      production = parsed.select { |item| item[:channel] == "production" && !item[:prerelease] }
-                         .max_by { |item| [Version.parts(item[:version]), item[:build], item[:published_at]] }
-      return production[:tag] if production
-
-      @git.latest_release_tag(channel: "production")
     end
 
     def contributor_map(changes)

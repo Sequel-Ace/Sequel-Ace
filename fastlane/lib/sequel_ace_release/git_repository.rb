@@ -65,6 +65,19 @@ module SequelAceRelease
       parsed.max_by { |(_, version, build)| [Version.parts(version), build] }&.first
     end
 
+    def ancestor?(ancestor_ref, descendant_ref)
+      sha(ancestor_ref)
+      sha(descendant_ref)
+      result = @runner.run(
+        "git", "merge-base", "--is-ancestor", ancestor_ref, descendant_ref,
+        chdir: @root, allow_failure: true
+      )
+      return true if result.status.success?
+      return false if result.status.exitstatus == 1
+
+      raise CommandError, "could not validate release-tag ancestry: #{result.stderr.strip}"
+    end
+
     def changed_paths
       output = git("status", "--porcelain=v1", "-z")
       output.split("\0").filter_map do |entry|
