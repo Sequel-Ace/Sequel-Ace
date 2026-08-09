@@ -209,7 +209,13 @@ build, and UI-observed Cloud next number `N`:
   the manifest records each run's ID, status, and source.
 - Resume after merge: if source already equals `N`, has no tag, and Cloud has
   not consumed it, ASC has no conflicting build, and the release-preparation
-  merge is still at `main` HEAD, reuse it.
+  commit remains the newest first-parent commit that changed every protected
+  version file and `CHANGELOG.md`, reuse it. Unrelated commits may have advanced
+  `main`; the recovery approval must be planned against the exact release
+  commit, and `mode=resume` is the only mode allowed to start from that ancestor.
+  Before any recovery mutation and again immediately before tagging, GitHub must
+  prove that exact commit is still an ancestor of live `main` and that no
+  protected release file changed after it.
 - Stop: `N` regresses, an intervening Production run is absent, histories
   conflict, or the eventual Cloud build does not exactly match the tag/build.
 
@@ -223,7 +229,9 @@ be rerun against the same tag through
 `.github/workflows/release_alpha_retry.yml`. That workflow reuses the successful
 Production run, starts or reuses only an Alpha run, requires both artifacts to
 verify, and refreshes the same private archive without advancing source, tag,
-or canonical build. A failed Production build consumes its number; an
+or canonical build. Its failure handler cannot edit the release or archive
+unless dispatcher authorization and exact archived tag/commit validation both
+completed successfully. A failed Production build consumes its number; an
 explicitly authorized `resume` creates a new RC/build and preserves the old
 prerelease.
 

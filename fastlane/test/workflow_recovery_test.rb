@@ -136,6 +136,51 @@ class WorkflowRecoveryTest < Minitest::Test
     refute_includes failure_step, "--state failed"
   end
 
+  def test_alpha_failure_cannot_mutate_until_authorization_and_archive_validation_succeed
+    workflow = File.read(repo_path(".github/workflows/release_alpha_retry.yml"))
+    authorization = workflow.split("- name: Enforce narrow Alpha-retry authorization", 2).fetch(1)
+                            .split("- name: Mint repository-scoped release App token", 2).first
+    validation = workflow.split("- name: Pull and validate the preserved beta release state", 2).fetch(1)
+                         .split("- name: Reuse or start one Alpha-only Xcode Cloud retry", 2).first
+    failure_header = workflow.split("- name: Preserve Alpha retry failure evidence", 2).fetch(1).lines.first(2).join
+
+    assert_includes authorization, "id: authorization"
+    assert_includes authorization, 'echo "authorized=true" >> "${GITHUB_OUTPUT}"'
+    assert_includes validation, 'file.puts("validated=true")'
+    assert_includes failure_header, "steps.authorization.outputs.authorized == 'true'"
+    assert_includes failure_header, "steps.release.outputs.validated == 'true'"
+  end
+
+  def test_merged_but_untagged_recovery_validates_and_targets_the_exact_release_ancestor
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    context = workflow.index("- name: Resolve naming and the merged-but-untagged recovery path")
+    validation = workflow.index("- name: Validate the recovered release target against live main")
+    branch_cleanup = workflow.index("- name: Delete a recovered merged release branch")
+    release_target = workflow.index("- name: Resolve the exact release target commit")
+    prerelease = workflow.index("- name: Create the tag-backed GitHub prerelease")
+
+    assert_operator context, :<, validation
+    assert_operator validation, :<, branch_cleanup
+    assert_operator branch_cleanup, :<, release_target
+    assert_operator release_target, :<, prerelease
+    assert_includes workflow[context...validation], "source_release_commit_sha"
+    assert_includes workflow[validation...branch_cleanup], "github-validate-release-target"
+    assert_includes workflow[release_target...prerelease], 'SOURCE_RELEASE_COMMIT_SHA: ${{ steps.release_context.outputs.source_release_commit_sha }}'
+    assert_includes workflow[release_target...prerelease], 'File.read("release-target-validation.json")'
+  end
+
+  def test_only_merged_but_untagged_resume_may_start_from_an_ancestor_of_dispatch_main
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    authorization = workflow.split("- name: Enforce release authorization", 2).fetch(1)
+                            .split("- name: Mint repository-scoped release App token", 2).first
+    context = workflow.split("- name: Resolve naming and the merged-but-untagged recovery path", 2).fetch(1)
+                      .split("- name: Validate the recovered release target against live main", 2).first
+
+    assert_includes authorization, '"${RELEASE_MODE}" != "resume"'
+    assert_includes context, "dispatch_main_advanced && !resume_without_pr"
+    assert_includes context, 'source_release_commit_sha == ENV.fetch("APPROVED_MAIN_SHA")'
+  end
+
   private
 
   def repo_path(relative_path)

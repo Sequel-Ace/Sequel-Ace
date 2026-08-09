@@ -2,21 +2,25 @@
 
 module SequelAceRelease
   class BuildReconciler
-    Result = Struct.new(:target_build, :observed_cloud_next_build, :baseline, :reason, :skipped_runs, keyword_init: true) do
+    Result = Struct.new(
+      :target_build, :observed_cloud_next_build, :baseline, :reason,
+      :skipped_runs, :source_release_commit_sha, keyword_init: true
+    ) do
       def to_h
         {
           "target_build" => target_build,
           "observed_cloud_next_build" => observed_cloud_next_build,
           "baseline" => baseline,
           "reason" => reason,
-          "skipped_production_builds" => skipped_runs
-        }
+          "skipped_production_builds" => skipped_runs,
+          "source_release_commit_sha" => source_release_commit_sha
+        }.compact
       end
     end
 
     def reconcile(
       source_build:, highest_tag_build:, highest_asc_build:, cloud_next_build:,
-      cloud_runs:, source_tagged:, source_is_release_tip: true,
+      cloud_runs:, source_tagged:, source_release_commit_sha: nil,
       expected_target_build: nil
     )
       source = positive_integer(source_build, "source build")
@@ -32,9 +36,7 @@ module SequelAceRelease
       end
 
       if observed_cloud_next == source && !source_tagged && source > [tag, asc].max
-        unless source_is_release_tip
-          raise ValidationError, "merged-but-untagged recovery requires the release preparation merge to remain at main HEAD"
-        end
+        release_commit = validate_commit_sha!(source_release_commit_sha)
         consumed_at_or_after_source = indexed_runs.keys.select { |number| number >= source }
         unless consumed_at_or_after_source.empty?
           raise ValidationError,
@@ -46,7 +48,8 @@ module SequelAceRelease
           observed_cloud_next_build: observed_cloud_next,
           baseline: baseline,
           reason: "resume_after_merge",
-          skipped_runs: []
+          skipped_runs: [],
+          source_release_commit_sha: release_commit
         ), expected_target_build)
       end
 
@@ -96,6 +99,13 @@ module SequelAceRelease
     end
 
     private
+
+    def validate_commit_sha!(value)
+      return value if value.to_s.match?(/\A[0-9a-f]{40,64}\z/i)
+
+      raise ValidationError,
+            "merged-but-untagged recovery requires an exact release preparation commit on main's first-parent history"
+    end
 
     def validate_expected_target!(result, expected)
       return result if expected.nil?

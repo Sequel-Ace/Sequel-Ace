@@ -47,6 +47,7 @@ jobs:
       GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
     steps:
       - name: Enforce narrow Alpha-retry authorization
+        id: authorization
         env:
           RELEASE_ACTOR: ${{ github.actor }}
           RELEASE_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
@@ -66,6 +67,7 @@ jobs:
           [[ "${EXPECTED_COMMIT}" =~ ^[0-9a-f]{40,64}$ ]] || { echo "Malformed expected commit." >&2; exit 1; }
           [[ "${FAILED_ALPHA_RUN_ID}" =~ ^[A-Za-z0-9-]+$ ]] || { echo "Malformed Alpha run ID." >&2; exit 1; }
           [[ "${CONFIRMATION}" == "RETRY ALPHA ${BETA_TAG}" ]] || { echo "Typed confirmation does not match." >&2; exit 1; }
+          echo "authorized=true" >> "${GITHUB_OUTPUT}"
 
       - name: Mint repository-scoped release App token
         id: app_token
@@ -125,6 +127,7 @@ jobs:
           artifacts = manifest.fetch("artifact_names")
           raise SequelAceRelease::ValidationError, "beta manifest must name two artifacts" unless artifacts.length == 2
           File.open(ENV.fetch("GITHUB_OUTPUT"), "a") do |file|
+            file.puts("validated=true")
             file.puts("version=#{manifest.fetch('target_version')}")
             file.puts("build=#{manifest.fetch('canonical_build')}")
             file.puts("production_asset=#{artifacts.fetch(0)}")
@@ -257,7 +260,7 @@ jobs:
           } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Preserve Alpha retry failure evidence
-        if: failure() || cancelled()
+        if: (failure() || cancelled()) && steps.authorization.outputs.authorized == 'true' && steps.release.outputs.validated == 'true'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}

@@ -8,6 +8,7 @@ class DeploymentGuardTest < Minitest::Test
     @valid = {
       actor: "Jason-Morcos",
       triggering_actor: "Jason-Morcos",
+      mode: "start",
       ref: "refs/heads/main",
       current_sha: "a" * 40,
       expected_sha: "a" * 40,
@@ -27,10 +28,11 @@ class DeploymentGuardTest < Minitest::Test
   end
 
   def test_rejects_actor_ref_main_movement_and_confirmation_changes
-    %i[actor triggering_actor ref expected_sha confirmation enabled].each do |field|
+    %i[actor triggering_actor mode ref expected_sha confirmation enabled].each do |field|
       invalid = @valid.merge(field => {
         actor: "someone-else",
         triggering_actor: "someone-else",
+        mode: "invalid",
         ref: "refs/heads/release",
         expected_sha: "b" * 40,
         confirmation: "RELEASE production 5.3.2 ",
@@ -57,5 +59,22 @@ class DeploymentGuardTest < Minitest::Test
 
     assert_equal "Jason-Morcos", result.fetch("actor")
     assert_equal "Kaspik", result.fetch("triggering_actor")
+  end
+
+  def test_resume_provisionally_allows_an_older_approved_sha_for_later_ancestry_validation
+    result = @guard.validate!(**@valid.merge(
+      mode: "resume",
+      current_sha: "b" * 40
+    ))
+
+    assert_equal true, result.fetch("requires_release_ancestor_validation")
+    assert_equal "a" * 40, result.fetch("approved_main_sha")
+    assert_equal "b" * 40, result.fetch("dispatch_main_sha")
+  end
+
+  def test_start_still_rejects_an_advanced_main
+    assert_raises(SequelAceRelease::ValidationError) do
+      @guard.validate!(**@valid.merge(current_sha: "b" * 40))
+    end
   end
 end

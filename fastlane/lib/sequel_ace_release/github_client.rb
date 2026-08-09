@@ -315,6 +315,57 @@ module SequelAceRelease
       })
     end
 
+    def validate_release_target!(target_sha:, protected_paths:)
+      validate_commit_sha!(target_sha, "release target SHA")
+      current_main = ref_sha
+      validate_commit_sha!(current_main, "current main SHA")
+      return {
+        "target_sha" => target_sha,
+        "current_main_sha" => current_main,
+        "main_commits_after_target" => 0,
+        "protected_paths_changed_after_target" => []
+      } if current_main == target_sha
+
+      comparison = request!("GET", "/repos/#{@repository}/compare/#{target_sha}...#{current_main}")
+      unless comparison.is_a?(Hash)
+        raise ValidationError, "GitHub returned malformed release-target ancestry evidence"
+      end
+      ancestor = comparison["status"] == "ahead" && comparison["behind_by"] == 0 &&
+                 comparison.dig("merge_base_commit", "sha") == target_sha
+      unless ancestor
+        raise ValidationError, "release target is no longer an ancestor of current main"
+      end
+
+      files = comparison["files"]
+      unless files.is_a?(Array)
+        raise ValidationError, "GitHub returned malformed release-target file evidence"
+      end
+      if files.length >= 300
+        raise ValidationError, "release target comparison is too large to prove protected paths unchanged"
+      end
+      changed = files.flat_map do |file|
+        unless file.is_a?(Hash) && file["filename"].is_a?(String) && !file["filename"].empty?
+          raise ValidationError, "GitHub returned malformed release-target file evidence"
+        end
+
+        [file["filename"], file["previous_filename"]].compact
+      end
+      protected_changes = Array(protected_paths) & changed
+      unless protected_changes.empty?
+        raise ValidationError,
+              "release files changed after the target commit: #{protected_changes.sort.join(', ')}"
+      end
+
+      {
+        "target_sha" => target_sha,
+        "current_main_sha" => current_main,
+        "main_commits_after_target" => Integer(comparison.fetch("ahead_by")),
+        "protected_paths_changed_after_target" => protected_changes
+      }
+    rescue ArgumentError, TypeError, KeyError
+      raise ValidationError, "GitHub returned malformed release-target ancestry evidence"
+    end
+
     def update_release(id:, title:, prerelease:, make_latest:)
       request!("PATCH", "/repos/#{@repository}/releases/#{Integer(id)}", body: {
         "name" => title,

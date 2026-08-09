@@ -80,6 +80,7 @@ jobs:
           RELEASE_REF: ${{ github.ref }}
           RELEASE_SHA: ${{ github.sha }}
           EXPECTED_SHA: ${{ inputs.expected_main_sha }}
+          RELEASE_MODE: ${{ inputs.mode }}
           CHANNEL: ${{ inputs.channel }}
           VERSION: ${{ inputs.version }}
           CLOUD_NEXT_BUILD: ${{ inputs.production_cloud_next_build }}
@@ -92,7 +93,11 @@ jobs:
           [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized release actor." >&2; exit 1; }
           [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized release rerun initiator." >&2; exit 1; }
           [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Releases must be dispatched from main." >&2; exit 1; }
-          [[ "${RELEASE_SHA}" == "${EXPECTED_SHA}" ]] || { echo "main changed after release approval." >&2; exit 1; }
+          [[ "${RELEASE_MODE}" == "start" || "${RELEASE_MODE}" == "resume" ]] || { echo "Invalid release mode." >&2; exit 1; }
+          if [[ "${RELEASE_SHA}" != "${EXPECTED_SHA}" && "${RELEASE_MODE}" != "resume" ]]; then
+            echo "main changed after release approval." >&2
+            exit 1
+          fi
           [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Malformed semantic version." >&2; exit 1; }
           [[ "${CLOUD_NEXT_BUILD}" =~ ^[1-9][0-9]*$ ]] || { echo "Malformed Xcode Cloud next build." >&2; exit 1; }
           [[ "${PREVIOUS_TAG}" =~ ^(production|beta)/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || { echo "Malformed prior release tag." >&2; exit 1; }
@@ -133,6 +138,7 @@ jobs:
             /merge.json \
             /merge-evidence.json \
             /release-target-evidence.json \
+            /release-target-validation.json \
             /prerelease.json \
             /release-evidence.json \
             /branch-cleanup.json \
@@ -149,6 +155,7 @@ jobs:
         env:
           GUARD_ACTOR: ${{ github.actor }}
           GUARD_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+          GUARD_MODE: ${{ inputs.mode }}
           GUARD_REF: ${{ github.ref }}
           GUARD_CURRENT_SHA: ${{ github.sha }}
           GUARD_EXPECTED_SHA: ${{ inputs.expected_main_sha }}
@@ -162,6 +169,7 @@ jobs:
           bundle exec ruby fastlane/bin/sa-release guard \
             --actor "${GUARD_ACTOR}" \
             --triggering-actor "${GUARD_TRIGGERING_ACTOR}" \
+            --mode "${GUARD_MODE}" \
             --ref "${GUARD_REF}" \
             --current-sha "${GUARD_CURRENT_SHA}" \
             --expected-sha "${GUARD_EXPECTED_SHA}" \
@@ -198,7 +206,7 @@ jobs:
             --cloud-next-build "${{ inputs.production_cloud_next_build }}" \
             --workflow-id "${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}" \
             --output reconciliation.json
-          ruby -rjson -e 'value = JSON.parse(File.read("reconciliation.json")); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("build=#{value.fetch("target_build")}"); file.puts("reason=#{value.fetch("reason")}") }'
+          ruby -rjson -e 'value = JSON.parse(File.read("reconciliation.json")); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("build=#{value.fetch("target_build")}"); file.puts("reason=#{value.fetch("reason")}"); file.puts("source_release_commit_sha=#{value["source_release_commit_sha"]}") if value["source_release_commit_sha"] }'
 
       - name: Create the initial release manifest
         run: |
@@ -216,6 +224,9 @@ jobs:
         env:
           RELEASE_MODE: ${{ inputs.mode }}
           RECONCILIATION_REASON: ${{ steps.reconcile.outputs.reason }}
+          SOURCE_RELEASE_COMMIT_SHA: ${{ steps.reconcile.outputs.source_release_commit_sha }}
+          DISPATCH_MAIN_SHA: ${{ github.sha }}
+          APPROVED_MAIN_SHA: ${{ inputs.expected_main_sha }}
           EXPECTED_VERSION: ${{ inputs.version }}
           EXPECTED_BUILD: ${{ steps.reconcile.outputs.build }}
         run: |
@@ -229,8 +240,17 @@ jobs:
             iteration: manifest.fetch("iteration")
           )
           resume_without_pr = ENV.fetch("RECONCILIATION_REASON") == "resume_after_merge"
+          dispatch_main_advanced = ENV.fetch("DISPATCH_MAIN_SHA") != ENV.fetch("APPROVED_MAIN_SHA")
+          if dispatch_main_advanced && !resume_without_pr
+            raise SequelAceRelease::ValidationError, "an advanced main is allowed only for merged-but-untagged recovery"
+          end
           if resume_without_pr
             raise SequelAceRelease::ValidationError, "merged-but-untagged recovery requires mode=resume" unless ENV.fetch("RELEASE_MODE") == "resume"
+            source_release_commit_sha = ENV.fetch("SOURCE_RELEASE_COMMIT_SHA")
+            unless source_release_commit_sha.match?(/\A[0-9a-f]{40,64}\z/i)
+              raise SequelAceRelease::ValidationError, "merged-but-untagged recovery is missing its exact release commit"
+            end
+            raise SequelAceRelease::ValidationError, "approved recovery SHA is not the release commit" unless source_release_commit_sha == ENV.fetch("APPROVED_MAIN_SHA")
             current = SequelAceRelease::VersionFiles.new.current
             expected = { "version" => ENV.fetch("EXPECTED_VERSION"), "build" => Integer(ENV.fetch("EXPECTED_BUILD")) }
             raise SequelAceRelease::ValidationError, "merged release source does not match #{expected}" unless current == expected
@@ -241,6 +261,7 @@ jobs:
           artifacts = manifest.fetch("artifact_names")
           File.open(ENV.fetch("GITHUB_OUTPUT"), "a") do |file|
             file.puts("resume_without_pr=#{resume_without_pr}")
+            file.puts("source_release_commit_sha=#{source_release_commit_sha}") if resume_without_pr
             file.puts("tag=#{manifest.fetch('tag')}")
             file.puts("ghcr_tag=#{manifest.fetch('tag').tr('/', '-')}")
             file.puts("branch=#{naming.branch}")
@@ -248,6 +269,16 @@ jobs:
             file.puts("alpha_asset=#{artifacts.fetch(1)}") if artifacts[1]
           end
           RUBY
+
+      - name: Validate the recovered release target against live main
+        if: steps.release_context.outputs.resume_without_pr == 'true'
+        env:
+          SA_GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
+        run: |
+          set -euo pipefail
+          bundle exec ruby fastlane/bin/sa-release github-validate-release-target \
+            --target-sha "${{ steps.release_context.outputs.source_release_commit_sha }}" \
+            --output release-target-validation.json
 
       - name: Delete a recovered merged release branch
         if: steps.release_context.outputs.resume_without_pr == 'true'
@@ -360,13 +391,14 @@ jobs:
         env:
           RESUME_WITHOUT_PR: ${{ steps.release_context.outputs.resume_without_pr }}
           MERGED_SHA: ${{ steps.merge.outputs.sha }}
-          FROZEN_MAIN_SHA: ${{ inputs.expected_main_sha }}
+          SOURCE_RELEASE_COMMIT_SHA: ${{ steps.release_context.outputs.source_release_commit_sha }}
         run: |
           set -euo pipefail
           ruby -rjson <<'RUBY'
           if ENV.fetch("RESUME_WITHOUT_PR") == "true"
-            sha = ENV.fetch("FROZEN_MAIN_SHA")
-            evidence = { "release_recovery" => { "reason" => "resume_after_merge", "source_sha" => sha } }
+            sha = ENV.fetch("SOURCE_RELEASE_COMMIT_SHA")
+            validation = JSON.parse(File.read("release-target-validation.json"))
+            evidence = { "release_recovery" => { "reason" => "resume_after_merge", "source_sha" => sha, "live_main_validation" => validation } }
           else
             sha = ENV.fetch("MERGED_SHA")
             raise "release merge did not return a commit SHA" if sha.empty?

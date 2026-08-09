@@ -39,6 +39,7 @@ module SequelAceRelease
       when "github-cleanup-branch" then github_cleanup_branch(argv)
       when "github-wait-checks" then github_wait_checks(argv)
       when "github-merge-pr" then github_merge_pr(argv)
+      when "github-validate-release-target" then github_validate_release_target(argv)
       when "github-create-release" then github_create_release(argv)
       when "github-upload-asset" then github_upload_asset(argv)
       when "wait-cloud" then wait_cloud(argv)
@@ -65,9 +66,10 @@ module SequelAceRelease
     def guard(arguments)
       options = {}
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release guard --actor LOGIN --triggering-actor LOGIN --ref REF --current-sha SHA --expected-sha SHA --channel CHANNEL --version VERSION --cloud-next-build BUILD --confirmation TEXT --enabled VALUE"
+        value.banner = "Usage: sa-release guard --actor LOGIN --triggering-actor LOGIN --mode MODE --ref REF --current-sha SHA --expected-sha SHA --channel CHANNEL --version VERSION --cloud-next-build BUILD --confirmation TEXT --enabled VALUE"
         value.on("--actor LOGIN") { |item| options[:actor] = item }
         value.on("--triggering-actor LOGIN") { |item| options[:triggering_actor] = item }
+        value.on("--mode MODE") { |item| options[:mode] = item }
         value.on("--ref REF") { |item| options[:ref] = item }
         value.on("--current-sha SHA") { |item| options[:current_sha] = item }
         value.on("--expected-sha SHA") { |item| options[:expected_sha] = item }
@@ -80,7 +82,7 @@ module SequelAceRelease
       end
       parser.parse!(arguments)
       reject_arguments!(arguments)
-      require_options!(options, :actor, :triggering_actor, :ref, :current_sha, :expected_sha, :channel, :version, :cloud_next_build, :confirmation, :enabled)
+      require_options!(options, :actor, :triggering_actor, :mode, :ref, :current_sha, :expected_sha, :channel, :version, :cloud_next_build, :confirmation, :enabled)
       output = options.delete(:output)
       emit(DeploymentGuard.new.validate!(**options), output)
     end
@@ -182,7 +184,7 @@ module SequelAceRelease
       highest_asc = options.fetch(:highest_asc_build) { asc_client.highest_app_build(Config::PRODUCTION_APP_ID) }
       source_tags = git.tags("production/*-#{source_build}") + git.tags("beta/*-#{source_build}")
       source_tagged = options.fetch(:source_tagged, false) || source_tags.any?
-      required_release_paths = Config::PROJECT_FILES.keys + Config::PLIST_FILES + ["CHANGELOG.md"]
+      source_release_commit_sha = git.latest_commit_changing_all(release_paths)
 
       result = BuildReconciler.new.reconcile(
         source_build: source_build,
@@ -191,7 +193,7 @@ module SequelAceRelease
         cloud_next_build: options[:cloud_next_build],
         cloud_runs: runs,
         source_tagged: source_tagged,
-        source_is_release_tip: git.head_changes_all?(required_release_paths),
+        source_release_commit_sha: source_release_commit_sha,
         expected_target_build: options[:expected_target_build]
       )
       emit(result.to_h.merge("production_cloud_runs" => runs), options[:output])
@@ -411,17 +413,34 @@ module SequelAceRelease
       require_options!(options, :channel, :version, :build, :target_sha, :body)
       naming = ReleaseNaming.new(**options.slice(:channel, :version, :build, :iteration))
       client = github_client
-      current_main = client.ref_sha
-      unless current_main == options[:target_sha]
-        raise ValidationError, "main changed before release tagging (expected #{options[:target_sha]}, found #{current_main})"
-      end
+      target_validation = client.validate_release_target!(
+        target_sha: options[:target_sha],
+        protected_paths: release_paths
+      )
       release = client.create_release(
         tag: naming.tag,
         target_sha: options[:target_sha],
         title: naming.title,
         body: options[:body]
       )
-      emit({ "naming" => naming.to_h, "release" => release }, options[:output])
+      emit({ "naming" => naming.to_h, "target_validation" => target_validation, "release" => release }, options[:output])
+    end
+
+    def github_validate_release_target(arguments)
+      options = {}
+      parser = OptionParser.new do |value|
+        value.banner = "Usage: sa-release github-validate-release-target --target-sha SHA"
+        value.on("--target-sha SHA") { |item| options[:target_sha] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end
+      parser.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :target_sha)
+      result = github_client.validate_release_target!(
+        target_sha: options[:target_sha],
+        protected_paths: release_paths
+      )
+      emit(result, options[:output])
     end
 
     def github_upload_asset(arguments)
@@ -944,13 +963,17 @@ module SequelAceRelease
     end
 
     def validate_preparation_paths!(paths)
-      allowed = Config::PROJECT_FILES.keys + Config::PLIST_FILES + ["CHANGELOG.md"]
+      allowed = release_paths
       changed = paths.map { |entry| entry.fetch("path") }
       unexpected = changed - allowed
       raise ValidationError, "release preparation changed unauthorized paths: #{unexpected.join(', ')}" unless unexpected.empty?
       raise ValidationError, "release preparation did not update CHANGELOG.md" unless changed.include?("CHANGELOG.md")
       missing = (Config::PROJECT_FILES.keys + Config::PLIST_FILES) - changed
       raise ValidationError, "release preparation did not update required version files: #{missing.join(', ')}" unless missing.empty?
+    end
+
+    def release_paths
+      Config::PROJECT_FILES.keys + Config::PLIST_FILES + ["CHANGELOG.md"]
     end
 
     def highest_build_from_tags(tags)
@@ -1123,6 +1146,8 @@ module SequelAceRelease
           github-cleanup-branch      Close and delete an exact failed release branch
           github-wait-checks         Wait for exact-head release PR checks
           github-merge-pr            Recheck and merge the release PR
+          github-validate-release-target
+                                     Prove a release commit remains an unchanged main ancestor
           github-create-release      Create the tag-backed GitHub prerelease
           github-upload-asset        Upload a verified zip to the prerelease
           wait-cloud                 Wait for an exact Xcode Cloud build

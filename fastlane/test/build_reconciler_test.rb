@@ -57,10 +57,16 @@ class BuildReconcilerTest < Minitest::Test
   end
 
   def test_resume_after_merged_release_pr_does_not_bump_again
-    result = reconcile(source_build: 20_105, cloud_next_build: 20_105, source_tagged: false)
+    result = reconcile(
+      source_build: 20_105,
+      cloud_next_build: 20_105,
+      source_tagged: false,
+      source_release_commit_sha: "d" * 40
+    )
 
     assert_equal "resume_after_merge", result.reason
     assert_equal 20_105, result.target_build
+    assert_equal "d" * 40, result.source_release_commit_sha
   end
 
   def test_resume_after_merge_aborts_if_cloud_already_consumed_the_source_build
@@ -69,6 +75,7 @@ class BuildReconcilerTest < Minitest::Test
         source_build: 20_105,
         cloud_next_build: 20_105,
         source_tagged: false,
+        source_release_commit_sha: "d" * 40,
         cloud_runs: [{ "id" => "run-5", "number" => 20_105 }]
       )
     end
@@ -81,6 +88,7 @@ class BuildReconcilerTest < Minitest::Test
         source_build: 20_105,
         cloud_next_build: 20_105,
         source_tagged: false,
+        source_release_commit_sha: "d" * 40,
         cloud_runs: [{ "id" => "run-6", "number" => 20_106 }]
       )
     end
@@ -93,22 +101,29 @@ class BuildReconcilerTest < Minitest::Test
         source_build: 20_105,
         highest_asc_build: 20_105,
         cloud_next_build: 20_105,
-        source_tagged: false
+        source_tagged: false,
+        source_release_commit_sha: "d" * 40
       )
     end
     assert_includes error.message, "must be greater than reconciled baseline"
   end
 
-  def test_resume_after_merge_aborts_if_other_changes_landed_after_the_release_merge
+  def test_resume_after_merge_requires_an_exact_release_commit
     error = assert_raises(SequelAceRelease::ValidationError) do
-      reconcile(
-        source_build: 20_105,
-        cloud_next_build: 20_105,
-        source_tagged: false,
-        source_is_release_tip: false
-      )
+      reconcile(source_build: 20_105, cloud_next_build: 20_105, source_tagged: false)
     end
-    assert_includes error.message, "main HEAD"
+    assert_includes error.message, "exact release preparation commit"
+  end
+
+  def test_resume_after_merge_accepts_a_release_commit_that_is_an_unchanged_main_ancestor
+    result = reconcile(
+      source_build: 20_105,
+      cloud_next_build: 20_105,
+      source_tagged: false,
+      source_release_commit_sha: "e" * 40
+    )
+
+    assert_equal "e" * 40, result.to_h.fetch("source_release_commit_sha")
   end
 
   def test_incomplete_burn_evidence_aborts

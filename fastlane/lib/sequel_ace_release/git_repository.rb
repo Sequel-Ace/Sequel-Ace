@@ -71,9 +71,25 @@ module SequelAceRelease
       end
     end
 
+    def latest_commit_changing_all(paths, head_ref: "HEAD")
+      required = Array(paths).map(&:to_s).reject(&:empty?).uniq
+      raise ValidationError, "release paths must not be empty" if required.empty?
+
+      commits = required.map do |path|
+        git("log", "-1", "--first-parent", "--format=%H", head_ref, "--", path).strip
+      end
+      return nil if commits.any?(&:empty?) || commits.uniq.length != 1
+
+      candidate = commits.first
+      changed = git("diff-tree", "--no-commit-id", "--name-only", "-r", "-m", candidate)
+                .lines.map(&:strip).reject(&:empty?).uniq
+      return nil unless (required - changed).empty?
+
+      candidate
+    end
+
     def head_changes_all?(paths)
-      changed = git("diff-tree", "--no-commit-id", "--name-only", "-r", "-m", "HEAD").lines.map(&:strip).reject(&:empty?)
-      (Array(paths) - changed).empty?
+      latest_commit_changing_all(paths) == sha
     end
 
     def changes(base_ref:, head_ref: "HEAD")

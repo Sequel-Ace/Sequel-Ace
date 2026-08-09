@@ -38,6 +38,135 @@ class GitHubClientTest < Minitest::Test
     assert_equal "/repos/Sequel-Ace/Sequel-Ace/git/ref/heads/main", transport.requests.first[:path]
   end
 
+  def test_accepts_an_exact_release_target_that_remains_an_unchanged_main_ancestor
+    target_sha = "a" * 40
+    current_main = "b" * 40
+    transport = FakeTransport.new([
+      http_response(body: { "object" => { "sha" => current_main } }),
+      http_response(body: {
+        "status" => "ahead",
+        "ahead_by" => 2,
+        "behind_by" => 0,
+        "merge_base_commit" => { "sha" => target_sha },
+        "files" => [{ "filename" => "README.md" }]
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    result = client.validate_release_target!(
+      target_sha: target_sha,
+      protected_paths: ["CHANGELOG.md", "Info.plist"]
+    )
+
+    assert_equal current_main, result.fetch("current_main_sha")
+    assert_equal 2, result.fetch("main_commits_after_target")
+    assert_equal "/repos/Sequel-Ace/Sequel-Ace/compare/#{target_sha}...#{current_main}", transport.requests.last[:path]
+  end
+
+  def test_rejects_a_release_target_if_a_protected_file_changed_after_it
+    target_sha = "a" * 40
+    current_main = "b" * 40
+    transport = FakeTransport.new([
+      http_response(body: { "object" => { "sha" => current_main } }),
+      http_response(body: {
+        "status" => "ahead",
+        "ahead_by" => 1,
+        "behind_by" => 0,
+        "merge_base_commit" => { "sha" => target_sha },
+        "files" => [{ "filename" => "CHANGELOG.md" }]
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      client.validate_release_target!(target_sha: target_sha, protected_paths: ["CHANGELOG.md"])
+    end
+    assert_includes error.message, "CHANGELOG.md"
+  end
+
+  def test_rejects_a_release_target_if_a_protected_file_was_renamed_after_it
+    target_sha = "a" * 40
+    current_main = "b" * 40
+    transport = FakeTransport.new([
+      http_response(body: { "object" => { "sha" => current_main } }),
+      http_response(body: {
+        "status" => "ahead",
+        "ahead_by" => 1,
+        "behind_by" => 0,
+        "merge_base_commit" => { "sha" => target_sha },
+        "files" => [{ "filename" => "OLD_CHANGELOG.md", "previous_filename" => "CHANGELOG.md" }]
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      client.validate_release_target!(target_sha: target_sha, protected_paths: ["CHANGELOG.md"])
+    end
+    assert_includes error.message, "CHANGELOG.md"
+  end
+
+  def test_rejects_a_release_target_that_is_not_on_current_main
+    target_sha = "a" * 40
+    current_main = "b" * 40
+    transport = FakeTransport.new([
+      http_response(body: { "object" => { "sha" => current_main } }),
+      http_response(body: {
+        "status" => "diverged",
+        "ahead_by" => 1,
+        "behind_by" => 1,
+        "merge_base_commit" => { "sha" => "c" * 40 },
+        "files" => []
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      client.validate_release_target!(target_sha: target_sha, protected_paths: ["CHANGELOG.md"])
+    end
+    assert_includes error.message, "no longer an ancestor"
+  end
+
+  def test_rejects_a_truncated_release_target_comparison
+    target_sha = "a" * 40
+    current_main = "b" * 40
+    transport = FakeTransport.new([
+      http_response(body: { "object" => { "sha" => current_main } }),
+      http_response(body: {
+        "status" => "ahead",
+        "ahead_by" => 1,
+        "behind_by" => 0,
+        "merge_base_commit" => { "sha" => target_sha },
+        "files" => Array.new(300) { |index| { "filename" => "file-#{index}" } }
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      client.validate_release_target!(target_sha: target_sha, protected_paths: ["CHANGELOG.md"])
+    end
+    assert_includes error.message, "too large"
+  end
+
+  def test_rejects_release_target_ancestry_without_file_evidence
+    target_sha = "a" * 40
+    current_main = "b" * 40
+    transport = FakeTransport.new([
+      http_response(body: { "object" => { "sha" => current_main } }),
+      http_response(body: {
+        "status" => "ahead",
+        "ahead_by" => 1,
+        "behind_by" => 0,
+        "merge_base_commit" => { "sha" => target_sha }
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      client.validate_release_target!(target_sha: target_sha, protected_paths: ["CHANGELOG.md"])
+    end
+    assert_includes error.message, "file evidence"
+  end
+
   def test_creates_only_a_github_signed_bot_commit_without_identity_overrides
     created_sha = "c" * 40
     responses = [
