@@ -263,19 +263,28 @@ module SequelAceRelease
     end
 
     def github_cleanup_branch(arguments)
-      options = {}
+      options = { reconcile_prepared_tree: false }
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release github-cleanup-branch --branch BRANCH --expected-sha SHA"
+        value.banner = "Usage: sa-release github-cleanup-branch --branch BRANCH --expected-sha SHA [--base-sha SHA --reconcile-prepared-tree]"
         value.on("--branch BRANCH") { |item| options[:branch] = item }
         value.on("--expected-sha SHA") { |item| options[:expected_sha] = item }
+        value.on("--base-sha SHA") { |item| options[:base_sha] = item }
+        value.on("--reconcile-prepared-tree") { options[:reconcile_prepared_tree] = true }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
       reject_arguments!(arguments)
       require_options!(options, :branch, :expected_sha)
+      if options[:reconcile_prepared_tree] && options[:base_sha].to_s.empty?
+        raise OptionParser::MissingArgument, "base-sha"
+      end
+      git = GitRepository.new if options[:reconcile_prepared_tree]
       result = github_client.cleanup_release_branch(
         branch: options[:branch],
-        expected_sha: options[:expected_sha]
+        expected_sha: options[:expected_sha],
+        base_sha: options[:base_sha],
+        repository_root: options[:reconcile_prepared_tree] ? Config.repo_root : nil,
+        changed_paths: git&.changed_paths
       )
       emit(result, options[:output])
     end

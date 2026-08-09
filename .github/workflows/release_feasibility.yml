@@ -33,6 +33,7 @@ jobs:
       GHCR_TOKEN: ${{ github.token }}
       GHCR_USERNAME: ${{ github.actor }}
       GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
+      PROBE_BRANCH: prepare-release/feasibility-probe-${{ github.run_id }}
     steps:
       - name: Enforce feasibility-test authorization
         env:
@@ -47,15 +48,6 @@ jobs:
           [[ "${RELEASE_ENABLED}" == "false" ]] || { echo "Set SA_RELEASE_AUTOMATION_ENABLED=false before running feasibility." >&2; exit 1; }
           [[ "${ALPHA_BUILD_RUN_ID}" =~ ^[A-Za-z0-9-]+$ ]] || { echo "Malformed Alpha build-run ID." >&2; exit 1; }
 
-      - name: Mint repository-scoped release App token
-        id: app_token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
-        with:
-          app-id: ${{ secrets.SA_RELEASE_GITHUB_APP_ID }}
-          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
-          owner: Sequel-Ace
-          repositories: Sequel-Ace
-
       - name: Check out release tooling
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -63,6 +55,12 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: false
+
+      - name: Exclude transient feasibility evidence from git status
+        run: |
+          set -euo pipefail
+          exclude_file="$(git rev-parse --git-path info/exclude)"
+          printf '%s\n' /feasibility/ >> "${exclude_file}"
 
       - name: Set up Ruby and locked gems
         uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
@@ -138,20 +136,24 @@ jobs:
             --output-zip feasibility/Sequel-Ace-alpha-feasibility.zip \
             --output feasibility/alpha-verification.json
 
-      - name: Prove GitHub App verified commits and PR checks
+      - name: Mint a fresh release App token for the GitHub probe
+        id: probe_app_token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ secrets.SA_RELEASE_GITHUB_APP_ID }}
+          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: Sequel-Ace
+          repositories: Sequel-Ace
+
+      - name: Create the verified GitHub App commit and disposable PR
+        id: github_probe
         env:
-          GH_TOKEN: ${{ steps.app_token.outputs.token }}
-          SA_GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
-          PROBE_BRANCH: prepare-release/feasibility-probe-${{ github.run_id }}
+          GH_TOKEN: ${{ steps.probe_app_token.outputs.token }}
+          SA_GITHUB_TOKEN: ${{ steps.probe_app_token.outputs.token }}
         run: |
           set -euo pipefail
-          cleanup() {
-            gh pr close "${PROBE_BRANCH}" --delete-branch >/dev/null 2>&1 || true
-            encoded_branch="$(ruby -ruri -e 'puts URI.encode_www_form_component(ARGV.fetch(0))' "${PROBE_BRANCH}")"
-            gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${encoded_branch}" >/dev/null 2>&1 || true
-          }
-          trap cleanup EXIT
           base_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq .object.sha)"
+          printf '%s\n' "${base_sha}" > feasibility/github-app-probe-base.txt
           BASE_SHA="${base_sha}" bundle exec ruby -Ifastlane/lib -rsequel_ace_release -rjson <<'RUBY'
           File.open("CHANGELOG.md", "a") { |file| file.puts("\n<!-- release automation feasibility run #{ENV.fetch('GITHUB_RUN_ID')} -->") }
           client = SequelAceRelease::GitHubClient.new(token: ENV.fetch("SA_GITHUB_TOKEN"))
@@ -162,26 +164,59 @@ jobs:
             repository_root: SequelAceRelease::Config.repo_root,
             changed_paths: [{ "status" => " M", "path" => "CHANGELOG.md" }]
           )
+          evidence_path = "feasibility/github-app-probe.json"
+          File.write(evidence_path, SequelAceRelease::CanonicalJSON.pretty({ "commit" => commit, "pull_request" => nil }))
           pull = client.create_pull_request(
             branch: ENV.fetch("PROBE_BRANCH"),
             title: "#infra Probe release App CI behavior",
             body: "Disposable release-automation feasibility probe. It will never be merged."
           )
-          File.write("feasibility/github-app-probe.json", SequelAceRelease::CanonicalJSON.pretty({ "commit" => commit, "pull_request" => pull }))
+          File.write(evidence_path, SequelAceRelease::CanonicalJSON.pretty({ "commit" => commit, "pull_request" => pull }))
           RUBY
           commit_sha="$(ruby -rjson -e 'puts JSON.parse(File.read("feasibility/github-app-probe.json")).dig("commit", "sha")')"
-          pr_url="$(ruby -rjson -e 'puts JSON.parse(File.read("feasibility/github-app-probe.json")).dig("pull_request", "html_url")')"
-          bundle exec ruby -Ifastlane/lib -rsequel_ace_release -e '
-            SequelAceRelease::GitHubClient.new(token: ENV.fetch("SA_GITHUB_TOKEN")).wait_for_checks(
-              commit_sha: ARGV.fetch(0),
-              required_names: ["Run Tests", "Release Tool Tests"],
-              timeout_seconds: 7_200,
-              interval_seconds: 20,
-              require_all: true
-            )
-          ' "${commit_sha}"
-          gh pr close "${pr_url}" --delete-branch
-          trap - EXIT
+          echo "commit_sha=${commit_sha}" >> "${GITHUB_OUTPUT}"
+
+      - name: Wait for exact-head feasibility PR checks
+        env:
+          SA_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          bundle exec ruby fastlane/bin/sa-release github-wait-checks \
+            --head-sha "${{ steps.github_probe.outputs.commit_sha }}" \
+            --required-check "Run Tests" \
+            --required-check "Release Tool Tests" \
+            --require-all-checks \
+            --output feasibility/github-app-probe-checks.json
+
+      - name: Refresh release App token for probe cleanup
+        if: always()
+        id: probe_cleanup_token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ secrets.SA_RELEASE_GITHUB_APP_ID }}
+          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: Sequel-Ace
+          repositories: Sequel-Ace
+
+      - name: Close and delete only the exact feasibility probe
+        if: always()
+        env:
+          SA_GITHUB_TOKEN: ${{ steps.probe_cleanup_token.outputs.token || github.token }}
+        run: |
+          set -euo pipefail
+          [[ -f feasibility/github-app-probe-base.txt ]] || exit 0
+          base_sha="$(tr -d '\r\n' < feasibility/github-app-probe-base.txt)"
+          expected_sha="${base_sha}"
+          reconcile_arguments=(--base-sha "${base_sha}" --reconcile-prepared-tree)
+          if [[ -f feasibility/github-app-probe.json ]]; then
+            expected_sha="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).dig("commit", "sha") || ARGV.fetch(1)' feasibility/github-app-probe.json "${base_sha}")"
+            reconcile_arguments=()
+          fi
+          bundle exec ruby fastlane/bin/sa-release github-cleanup-branch \
+            --branch "${PROBE_BRANCH}" \
+            --expected-sha "${expected_sha}" \
+            "${reconcile_arguments[@]}" \
+            --output feasibility/github-app-probe-cleanup.json
 
       - name: Prove private GHCR round trip and visibility
         env:

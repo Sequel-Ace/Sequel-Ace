@@ -114,6 +114,29 @@ jobs:
           fetch-tags: true
           persist-credentials: false
 
+      - name: Exclude transient release evidence from git status
+        run: |
+          set -euo pipefail
+          exclude_file="$(git rev-parse --git-path info/exclude)"
+          printf '%s\n' \
+            /app-store-notes.txt \
+            /release-plan.json \
+            /approval.json \
+            /release-body.md \
+            /reconciliation.json \
+            /manifest.json \
+            /preparation.json \
+            /release-pr.json \
+            /release-checks.json \
+            /merge.json \
+            /merge-evidence.json \
+            /release-target-evidence.json \
+            /prerelease.json \
+            /release-evidence.json \
+            /branch-cleanup.json \
+            /release-archive/ \
+            /artifacts/ >> "${exclude_file}"
+
       - name: Set up Ruby and locked gems
         uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
         with:
@@ -534,12 +557,15 @@ jobs:
         run: |
           set -euo pipefail
           expected_sha="${FROZEN_MAIN_SHA}"
+          reconcile_arguments=(--base-sha "${FROZEN_MAIN_SHA}" --reconcile-prepared-tree)
           if [[ -f release-pr.json ]]; then
             expected_sha="$(ruby -rjson -e 'value = JSON.parse(File.read(ARGV.fetch(0))); puts(value.dig("commit", "sha") || ARGV.fetch(1))' release-pr.json "${FROZEN_MAIN_SHA}")"
+            reconcile_arguments=()
           fi
           bundle exec ruby fastlane/bin/sa-release github-cleanup-branch \
             --branch "${RELEASE_BRANCH}" \
             --expected-sha "${expected_sha}" \
+            "${reconcile_arguments[@]}" \
             --output branch-cleanup.json
 
       - name: Preserve an explanatory failed prerelease

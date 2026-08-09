@@ -23,6 +23,28 @@ module SequelAceRelease
         }
       }
     GRAPHQL
+    INSPECT_COMMIT_QUERY = <<~GRAPHQL.freeze
+      query InspectReleaseCommit($owner: String!, $name: String!, $oid: GitObjectID!) {
+        repository(owner: $owner, name: $name) {
+          object(oid: $oid) {
+            ... on Commit {
+              oid
+              url
+              parents(first: 2) {
+                nodes {
+                  oid
+                }
+              }
+              signature {
+                isValid
+                state
+                wasSignedByGitHub
+              }
+            }
+          }
+        }
+      }
+    GRAPHQL
 
     def initialize(token:, repository: Config::REPOSITORY, transport: nil)
       raise ValidationError, "GitHub token is required" if token.to_s.empty?
@@ -108,40 +130,50 @@ module SequelAceRelease
         end
       end
 
-      request!("POST", "/repos/#{@repository}/git/refs", body: {
-        "ref" => "refs/heads/#{branch}",
-        "sha" => base_sha
-      })
+      begin
+        request!("POST", "/repos/#{@repository}/git/refs", body: {
+          "ref" => "refs/heads/#{branch}",
+          "sha" => base_sha
+        })
+      rescue APIError => creation_error
+        begin
+          raise creation_error unless ref_sha("heads/#{branch}") == base_sha
+        rescue APIError
+          raise creation_error
+        end
+      end
       file_changes = {}
       file_changes["additions"] = additions unless additions.empty?
       file_changes["deletions"] = deletions unless deletions.empty?
-      data = graphql!(CREATE_COMMIT_MUTATION, {
-        "input" => {
-          "branch" => {
-            "repositoryNameWithOwner" => @repository,
-            "branchName" => branch
-          },
-          "expectedHeadOid" => base_sha,
-          "fileChanges" => file_changes,
-          "message" => { "headline" => message }
-        }
-      })
-      created = data.fetch("createCommitOnBranch").fetch("commit")
-      signature = created.fetch("signature", {}) || {}
-      verified = signature["isValid"] == true && signature["wasSignedByGitHub"] == true && signature["state"] == "VALID"
-      unless verified
-        raise ValidationError, "GitHub did not verify the release bot commit: #{signature['state'] || 'missing signature'}"
+      begin
+        data = graphql!(CREATE_COMMIT_MUTATION, {
+          "input" => {
+            "branch" => {
+              "repositoryNameWithOwner" => @repository,
+              "branchName" => branch
+            },
+            "expectedHeadOid" => base_sha,
+            "fileChanges" => file_changes,
+            "message" => { "headline" => message }
+          }
+        })
+        created = data.fetch("createCommitOnBranch").fetch("commit")
+        verified_commit_evidence(created)
+      rescue APIError, KeyError, ValidationError => mutation_error
+        begin
+          inspect_generated_commit!(
+            branch: branch,
+            base_sha: base_sha,
+            repository_root: repository_root,
+            changed_paths: changed_paths,
+            require_github_signature: true
+          )
+        rescue Error, KeyError => reconciliation_error
+          raise ValidationError,
+                "GitHub release commit outcome is ambiguous: #{mutation_error.message}; " \
+                "remote reconciliation failed: #{reconciliation_error.message}"
+        end
       end
-
-      {
-        "sha" => created.fetch("oid"),
-        "html_url" => created.fetch("url"),
-        "verification" => {
-          "verified" => true,
-          "reason" => "valid",
-          "was_signed_by_github" => true
-        }
-      }
     end
 
     def create_pull_request(branch:, title:, body:, base: "main")
@@ -216,7 +248,7 @@ module SequelAceRelease
       true
     end
 
-    def cleanup_release_branch(branch:, expected_sha:)
+    def cleanup_release_branch(branch:, expected_sha:, base_sha: nil, repository_root: nil, changed_paths: nil)
       raise ValidationError, "release branch must begin with prepare-release/" unless branch.start_with?("prepare-release/")
       unless expected_sha.to_s.match?(/\A[0-9a-f]{40,64}\z/i)
         raise ValidationError, "expected release branch SHA is malformed"
@@ -229,13 +261,25 @@ module SequelAceRelease
 
         return { "branch" => branch, "deleted" => false, "reason" => "already_absent" }
       end
+      reconciliation = nil
+      cleanup_sha = expected_sha
       unless actual_sha == expected_sha
-        raise ValidationError, "release branch head changed before cleanup (expected #{expected_sha}, found #{actual_sha})"
+        unless base_sha && repository_root && changed_paths
+          raise ValidationError, "release branch head changed before cleanup (expected #{expected_sha}, found #{actual_sha})"
+        end
+        reconciliation = inspect_generated_commit!(
+          branch: branch,
+          base_sha: base_sha,
+          repository_root: repository_root,
+          changed_paths: changed_paths,
+          require_github_signature: false
+        )
+        cleanup_sha = reconciliation.fetch("sha")
       end
 
       pulls = open_pull_requests_for_branch(branch)
       mismatched = pulls.reject do |pull|
-        pull.dig("head", "ref") == branch && pull.dig("head", "sha") == expected_sha
+        pull.dig("head", "ref") == branch && pull.dig("head", "sha") == cleanup_sha
       end
       unless mismatched.empty?
         raise ValidationError, "release branch PR head changed before cleanup"
@@ -245,13 +289,15 @@ module SequelAceRelease
       end
 
       rechecked_sha = ref_sha("heads/#{branch}")
-      unless rechecked_sha == expected_sha
-        raise ValidationError, "release branch head changed during cleanup (expected #{expected_sha}, found #{rechecked_sha})"
+      unless rechecked_sha == cleanup_sha
+        raise ValidationError, "release branch head changed during cleanup (expected #{cleanup_sha}, found #{rechecked_sha})"
       end
       delete_branch(branch)
       {
         "branch" => branch,
-        "sha" => expected_sha,
+        "sha" => cleanup_sha,
+        "reconciled_generated_commit" => !reconciliation.nil?,
+        "commit_verification" => reconciliation && reconciliation["verification"],
         "closed_pull_requests" => pulls.map { |pull| Integer(pull.fetch("number")) },
         "deleted" => true
       }
@@ -307,6 +353,121 @@ module SequelAceRelease
     end
 
     private
+
+    def verified_commit_evidence(commit)
+      validate_commit_sha!(commit.fetch("oid"), "created release commit SHA")
+      signature = commit.fetch("signature", {}) || {}
+      verified = github_signature_valid?(signature)
+      unless verified
+        raise ValidationError, "GitHub did not verify the release bot commit: #{signature['state'] || 'missing signature'}"
+      end
+
+      {
+        "sha" => commit.fetch("oid"),
+        "html_url" => commit.fetch("url"),
+        "verification" => {
+          "verified" => true,
+          "reason" => "valid",
+          "was_signed_by_github" => true
+        }
+      }
+    end
+
+    def inspect_generated_commit!(branch:, base_sha:, repository_root:, changed_paths:, require_github_signature:)
+      validate_commit_sha!(base_sha, "release base SHA")
+      actual_sha = ref_sha("heads/#{branch}")
+      validate_commit_sha!(actual_sha, "release branch SHA")
+      raise ValidationError, "release branch did not advance beyond its base" if actual_sha == base_sha
+
+      owner, name = @repository.split("/", 2)
+      data = graphql!(INSPECT_COMMIT_QUERY, {
+        "owner" => owner,
+        "name" => name,
+        "oid" => actual_sha
+      })
+      commit = data.dig("repository", "object")
+      unless commit.is_a?(Hash) && commit["oid"] == actual_sha
+        raise ValidationError, "GitHub could not resolve the generated release commit"
+      end
+      parents = Array(commit.dig("parents", "nodes")).map { |parent| parent["oid"] }
+      unless parents == [base_sha]
+        raise ValidationError, "generated release commit does not have the frozen main as its only parent"
+      end
+
+      signature = commit["signature"] || {}
+      signature_valid = github_signature_valid?(signature)
+      if require_github_signature && !signature_valid
+        raise ValidationError, "GitHub did not verify the reconciled release bot commit: #{signature['state'] || 'missing signature'}"
+      end
+
+      comparison = request!("GET", "/repos/#{@repository}/compare/#{base_sha}...#{actual_sha}")
+      commits = Array(comparison["commits"]).map { |value| value["sha"] }
+      topology_valid = comparison["status"] == "ahead" && comparison["ahead_by"] == 1 &&
+                       comparison["behind_by"] == 0 && comparison["total_commits"] == 1 &&
+                       comparison.dig("merge_base_commit", "sha") == base_sha && commits == [actual_sha]
+      raise ValidationError, "generated release branch is not exactly one commit above frozen main" unless topology_valid
+
+      expected_files = expected_release_files(repository_root, changed_paths)
+      actual_files = Array(comparison["files"]).each_with_object({}) do |file, result|
+        result[file.fetch("filename")] = file
+      end
+      unless actual_files.keys.sort == expected_files.keys.sort
+        raise ValidationError, "generated release commit changed unexpected files"
+      end
+      expected_files.each do |path, expected|
+        actual = actual_files.fetch(path)
+        unless actual["status"] == expected.fetch("status")
+          raise ValidationError, "generated release commit has an unexpected status for #{path}"
+        end
+        next if expected["sha"].nil?
+
+        unless actual["sha"] == expected.fetch("sha")
+          raise ValidationError, "generated release commit content does not match #{path}"
+        end
+      end
+
+      {
+        "sha" => actual_sha,
+        "html_url" => commit["url"],
+        "verification" => {
+          "verified" => signature_valid,
+          "reason" => signature["state"].to_s.downcase,
+          "was_signed_by_github" => signature["wasSignedByGitHub"] == true
+        },
+        "reconciled" => true
+      }
+    end
+
+    def expected_release_files(repository_root, changed_paths)
+      Array(changed_paths).each_with_object({}) do |change, result|
+        path = change.fetch("path")
+        validate_release_path!(path)
+        raise ValidationError, "release preparation listed #{path} more than once" if result.key?(path)
+
+        local_status = change.fetch("status")
+        if local_status.include?("D")
+          result[path] = { "status" => "removed", "sha" => nil }
+        else
+          remote_status = local_status.include?("?") || local_status.include?("A") ? "added" : "modified"
+          bytes = File.binread(File.join(repository_root, path))
+          result[path] = { "status" => remote_status, "sha" => git_blob_sha(bytes) }
+        end
+      end
+    end
+
+    def git_blob_sha(bytes)
+      Digest::SHA1.hexdigest("blob #{bytes.bytesize}\0".b + bytes.b)
+    end
+
+    def github_signature_valid?(signature)
+      signature["isValid"] == true && signature["wasSignedByGitHub"] == true && signature["state"] == "VALID"
+    end
+
+    def validate_commit_sha!(value, label)
+      return if value.to_s.match?(/\A[0-9a-f]{40,64}\z/i)
+
+      raise ValidationError, "#{label} is malformed"
+    end
 
     def paginate(path, query, data_key: nil)
       values = []

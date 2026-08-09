@@ -28,6 +28,9 @@ or creates a GitHub release.
 - A failed tag or prerelease is preserved. Never delete, move, or reuse it.
 - Secrets, App Review credentials, private-key material, and full sensitive ASC
   responses must never be written to a manifest or workflow log.
+- Hosted workflows put their transient JSON/evidence paths in the checkout's
+  private git exclude file, so only the allowlisted version files and changelog
+  can enter a generated release commit.
 
 ## One-time GitHub setup
 
@@ -78,11 +81,11 @@ The shared HTTP transport automatically retries read-only `GET` requests only.
 It never replays `POST`, `PATCH`, `PUT`, or `DELETE` mutations after a server or
 network failure because their remote outcome may be ambiguous.
 
-Long release-PR check polling uses the job-scoped `GITHUB_TOKEN`. The workflow
-mints a fresh release App installation token immediately before the bypass
-merge and independently refreshes it for failure cleanup. This prevents the
-one-hour App-token lifetime from stranding a PR or deterministic release branch
-during the two-hour check window.
+Long release-PR and feasibility-probe check polling uses the job-scoped
+`GITHUB_TOKEN`. Each workflow mints a fresh release App installation token
+immediately before an App-only mutation and independently refreshes it for
+failure cleanup. This prevents the one-hour App-token lifetime from stranding a
+PR or deterministic release branch during the two-hour check window.
 
 ## One-time Apple setup
 
@@ -241,8 +244,11 @@ prerelease.
 - A failure before prerelease creation persists the verified release commit
   before opening the PR. Cleanup closes any open PR and deletes the generated
   branch only when its head still matches that exact commit (or the frozen main
-  SHA when commit creation did not finish), so a retry is not stranded by a
-  stale deterministic branch.
+  SHA when commit creation did not finish). If GitHub accepted the commit but
+  its mutation response was lost, read-only reconciliation requires exactly one
+  child of frozen main and byte-exact allowlisted file blobs from GitHub's
+  [compare-commits API](https://docs.github.com/en/rest/commits/commits#compare-two-commits)
+  before cleanup, so a retry is not stranded by a stale deterministic branch.
 - Once Alpha-only recovery has verified and archived both beta artifacts, a
   later release-body or handoff failure records its workflow evidence without
   downgrading the durable `archived` manifest to `failed`.

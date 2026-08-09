@@ -39,14 +39,15 @@ class GitHubClientTest < Minitest::Test
   end
 
   def test_creates_only_a_github_signed_bot_commit_without_identity_overrides
+    created_sha = "c" * 40
     responses = [
       http_response(status: 201, body: { "ref" => "refs/heads/prepare-release/5.3.2-20105-rc1" }),
       http_response(body: {
         "data" => {
           "createCommitOnBranch" => {
             "commit" => {
-              "oid" => "commit-sha",
-              "url" => "https://github.com/Sequel-Ace/Sequel-Ace/commit/commit-sha",
+              "oid" => created_sha,
+              "url" => "https://github.com/Sequel-Ace/Sequel-Ace/commit/#{created_sha}",
               "signature" => {
                 "isValid" => true,
                 "state" => "VALID",
@@ -70,7 +71,7 @@ class GitHubClientTest < Minitest::Test
         repository_root: directory,
         changed_paths: [{ "status" => " M", "path" => "CHANGELOG.md" }]
       )
-      assert_equal "commit-sha", commit.fetch("sha")
+      assert_equal created_sha, commit.fetch("sha")
       assert_equal true, commit.dig("verification", "was_signed_by_github")
     end
 
@@ -88,15 +89,63 @@ class GitHubClientTest < Minitest::Test
     refute transport.requests.any? { |request| request[:path].end_with?("/git/commits") }
   end
 
+  def test_reconciles_a_github_accepted_commit_when_the_mutation_response_is_lost
+    base_sha = "a" * 40
+    created_sha = "c" * 40
+    contents = "release notes"
+    transport = FakeTransport.new([
+      http_response(status: 201, body: { "ref" => "refs/heads/prepare-release/5.3.2-20105-rc1" }),
+      http_response(status: 502, body: { "message" => "upstream response lost" }),
+      http_response(body: { "object" => { "sha" => created_sha } }),
+      inspected_commit_response(sha: created_sha, parent: base_sha),
+      comparison_response(base_sha: base_sha, head_sha: created_sha, contents: contents)
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    Dir.mktmpdir do |directory|
+      File.write(File.join(directory, "CHANGELOG.md"), contents)
+      commit = client.create_bot_commit(
+        base_sha: base_sha,
+        branch: "prepare-release/5.3.2-20105-rc1",
+        message: "Prepare release #changed",
+        repository_root: directory,
+        changed_paths: [{ "status" => " M", "path" => "CHANGELOG.md" }]
+      )
+
+      assert_equal created_sha, commit.fetch("sha")
+      assert_equal true, commit.fetch("reconciled")
+      assert_equal true, commit.dig("verification", "was_signed_by_github")
+    end
+    assert_equal ["POST", "POST", "GET", "POST", "GET"], transport.requests.map { |request| request.fetch(:method) }
+  end
+
   def test_unverified_bot_commit_is_rejected_after_github_creates_the_branch
+    created_sha = "c" * 40
     responses = [
       http_response(status: 201, body: { "ref" => "refs/heads/prepare-release/5.3.2-20105-rc1" }),
       http_response(body: {
         "data" => {
           "createCommitOnBranch" => {
             "commit" => {
-              "oid" => "commit-sha",
-              "url" => "https://github.com/Sequel-Ace/Sequel-Ace/commit/commit-sha",
+              "oid" => created_sha,
+              "url" => "https://github.com/Sequel-Ace/Sequel-Ace/commit/#{created_sha}",
+              "signature" => {
+                "isValid" => false,
+                "state" => "UNSIGNED",
+                "wasSignedByGitHub" => false
+              }
+            }
+          }
+        }
+      }),
+      http_response(body: { "object" => { "sha" => created_sha } }),
+      http_response(body: {
+        "data" => {
+          "repository" => {
+            "object" => {
+              "oid" => created_sha,
+              "url" => "https://github.com/Sequel-Ace/Sequel-Ace/commit/#{created_sha}",
+              "parents" => { "nodes" => [{ "oid" => "a" * 40 }] },
               "signature" => {
                 "isValid" => false,
                 "state" => "UNSIGNED",
@@ -122,7 +171,12 @@ class GitHubClientTest < Minitest::Test
         )
       end
     end
-    assert_equal ["/repos/Sequel-Ace/Sequel-Ace/git/refs", "/graphql"], transport.requests.map { |request| request[:path] }
+    assert_equal [
+      "/repos/Sequel-Ace/Sequel-Ace/git/refs",
+      "/graphql",
+      "/repos/Sequel-Ace/Sequel-Ace/git/ref/heads/prepare-release/5.3.2-20105-rc1",
+      "/graphql"
+    ], transport.requests.map { |request| request[:path] }
     refute transport.requests.any? { |request| request[:path].end_with?("/git/commits") }
   end
 
@@ -170,6 +224,67 @@ class GitHubClientTest < Minitest::Test
     assert_equal "Sequel-Ace:#{branch}", pull_query.dig(:query, "head")
     assert_equal "closed", transport.requests[2].dig(:body, "state")
     assert_equal "DELETE", transport.requests.last.fetch(:method)
+  end
+
+  def test_cleanup_reconciles_an_unpersisted_generated_commit_by_parent_and_content
+    base_sha = "a" * 40
+    created_sha = "c" * 40
+    branch = "prepare-release/5.3.2-20105-1"
+    contents = "release notes"
+    transport = FakeTransport.new([
+      http_response(body: { "object" => { "sha" => created_sha } }),
+      http_response(body: { "object" => { "sha" => created_sha } }),
+      inspected_commit_response(sha: created_sha, parent: base_sha, signed: false),
+      comparison_response(base_sha: base_sha, head_sha: created_sha, contents: contents),
+      http_response(body: []),
+      http_response(body: { "object" => { "sha" => created_sha } }),
+      http_response(status: 204, body: nil)
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    Dir.mktmpdir do |directory|
+      File.write(File.join(directory, "CHANGELOG.md"), contents)
+      result = client.cleanup_release_branch(
+        branch: branch,
+        expected_sha: base_sha,
+        base_sha: base_sha,
+        repository_root: directory,
+        changed_paths: [{ "status" => " M", "path" => "CHANGELOG.md" }]
+      )
+
+      assert_equal true, result.fetch("deleted")
+      assert_equal true, result.fetch("reconciled_generated_commit")
+      assert_equal created_sha, result.fetch("sha")
+      assert_equal false, result.dig("commit_verification", "verified")
+    end
+    assert_equal "DELETE", transport.requests.last.fetch(:method)
+  end
+
+  def test_cleanup_rejects_a_generated_commit_with_different_content
+    base_sha = "a" * 40
+    created_sha = "c" * 40
+    transport = FakeTransport.new([
+      http_response(body: { "object" => { "sha" => created_sha } }),
+      http_response(body: { "object" => { "sha" => created_sha } }),
+      inspected_commit_response(sha: created_sha, parent: base_sha),
+      comparison_response(base_sha: base_sha, head_sha: created_sha, contents: "different contents")
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    Dir.mktmpdir do |directory|
+      File.write(File.join(directory, "CHANGELOG.md"), "approved contents")
+      error = assert_raises(SequelAceRelease::ValidationError) do
+        client.cleanup_release_branch(
+          branch: "prepare-release/5.3.2-20105-1",
+          expected_sha: base_sha,
+          base_sha: base_sha,
+          repository_root: directory,
+          changed_paths: [{ "status" => " M", "path" => "CHANGELOG.md" }]
+        )
+      end
+      assert_includes error.message, "content does not match"
+    end
+    refute transport.requests.any? { |request| request.fetch(:method) == "DELETE" }
   end
 
   def test_release_branch_cleanup_rejects_a_changed_head_without_mutation
@@ -318,5 +433,42 @@ class GitHubClientTest < Minitest::Test
         client.upload_release_asset(release: release, path: path)
       end
     end
+  end
+
+  private
+
+  def inspected_commit_response(sha:, parent:, signed: true)
+    http_response(body: {
+      "data" => {
+        "repository" => {
+          "object" => {
+            "oid" => sha,
+            "url" => "https://github.com/Sequel-Ace/Sequel-Ace/commit/#{sha}",
+            "parents" => { "nodes" => [{ "oid" => parent }] },
+            "signature" => {
+              "isValid" => signed,
+              "state" => signed ? "VALID" : "UNSIGNED",
+              "wasSignedByGitHub" => signed
+            }
+          }
+        }
+      }
+    })
+  end
+
+  def comparison_response(base_sha:, head_sha:, contents:)
+    http_response(body: {
+      "status" => "ahead",
+      "ahead_by" => 1,
+      "behind_by" => 0,
+      "total_commits" => 1,
+      "merge_base_commit" => { "sha" => base_sha },
+      "commits" => [{ "sha" => head_sha }],
+      "files" => [{
+        "filename" => "CHANGELOG.md",
+        "status" => "modified",
+        "sha" => Digest::SHA1.hexdigest("blob #{contents.bytesize}\0".b + contents.b)
+      }]
+    })
   end
 end
