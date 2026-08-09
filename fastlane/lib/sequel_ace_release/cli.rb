@@ -8,11 +8,7 @@ require "optparse"
 module SequelAceRelease
   class CLI
     SUBMISSION_SCHEDULE_SAFETY_SECONDS = 15 * 60
-    SUBMITTED_APP_STORE_STATES = %w[
-      WAITING_FOR_REVIEW IN_REVIEW PENDING_APPLE_RELEASE
-      PENDING_DEVELOPER_RELEASE PROCESSING_FOR_DISTRIBUTION
-      READY_FOR_DISTRIBUTION ACCEPTED
-    ].freeze
+    SUBMITTED_APP_STORE_STATES = SubmissionReconciler::SUBMITTED_STATES
     FAILED_APP_STORE_STATES = %w[
       DEVELOPER_REJECTED INVALID_BINARY METADATA_REJECTED REJECTED
     ].freeze
@@ -48,6 +44,8 @@ module SequelAceRelease
       when "retry-alpha" then retry_alpha(argv)
       when "create-manifest" then create_manifest(argv)
       when "update-manifest" then update_manifest(argv)
+      when "reconcile-submission" then reconcile_submission(argv)
+      when "record-failure" then record_failure(argv)
       when "version" then emit("version" => SequelAceRelease::VERSION)
       when nil, "help", "--help", "-h"
         @out.puts(help)
@@ -720,6 +718,44 @@ module SequelAceRelease
       emit(updated.to_h)
     end
 
+    def reconcile_submission(arguments)
+      options = {}
+      parser = OptionParser.new do |value|
+        value.banner = "Usage: sa-release reconcile-submission --manifest FILE"
+        value.on("--manifest FILE") { |item| options[:manifest] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end
+      parser.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :manifest)
+      manifest = Manifest.read(options[:manifest])
+      result = SubmissionReconciler.new(client: app_store_client).reconcile(manifest)
+      emit(result, options[:output])
+    end
+
+    def record_failure(arguments)
+      options = {}
+      parser = OptionParser.new do |value|
+        value.banner = "Usage: sa-release record-failure --manifest FILE --workflow-url URL [--submission FILE]"
+        value.on("--manifest FILE") { |item| options[:manifest] = item }
+        value.on("--workflow-url URL") { |item| options[:workflow_url] = item }
+        value.on("--submission FILE") { |item| options[:submission] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end
+      parser.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :manifest, :workflow_url)
+      manifest = Manifest.read(options[:manifest])
+      submission = read_json(options[:submission]) if options[:submission]
+      result = FailureRecorder.new.record(
+        manifest: manifest,
+        workflow_url: options[:workflow_url],
+        submission: submission
+      )
+      result.manifest.write(options[:manifest])
+      emit(result.to_h, options[:output])
+    end
+
     def finalize(arguments)
       options = {}
       parser = OptionParser.new do |value|
@@ -993,6 +1029,8 @@ module SequelAceRelease
           retry-alpha                Reuse or start an Alpha-only retry for a failed beta run
           create-manifest            Create the versioned non-secret release manifest
           update-manifest            Advance a manifest with redacted run evidence
+          reconcile-submission       Read back an ambiguous production App Store submission
+          record-failure             Preserve finalizable state while recording a failed run
       HELP
     end
   end

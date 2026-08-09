@@ -218,6 +218,12 @@ prerelease.
   only after the exact ASC version is `READY_FOR_DISTRIBUTION`, the exact build
   remains selected, phased release is `ACTIVE` or `COMPLETE`, and public asset
   checksums match the private manifest.
+- A failure after App Store submission preserves `submitted` or `live` state
+  and never edits the checksum-protected GitHub release body. If submission had
+  an ambiguous response, cleanup reads back the exact ASC version and build
+  before deciding whether the release failed. The finalizer also accepts the
+  last durable `archived` manifest so a failed post-submission GHCR refresh can
+  self-heal through the same exact Apple and artifact checks.
 
 ## Feasibility gate
 
@@ -228,8 +234,9 @@ It must prove:
 1. The hosted Mac downloads, verifies, opens, and quits 5.3.1 (20104).
 2. The limited Apple key reads both apps and both Cloud workflows.
 3. The exact Alpha run exposes a downloadable Moballo-signed notarized artifact.
-4. A disposable GitHub App PR uses the same Git-data commit path as a release,
-   has a verified bot commit and green checks, then closes without merge.
+4. A disposable GitHub App PR uses the same GitHub-signed GraphQL commit path
+   as a release, has a verified bot commit and green checks, then closes without
+   merge.
 5. A private GHCR push/pull has matching checksums and private visibility.
 
 The workflow refuses to start unless `SA_RELEASE_AUTOMATION_ENABLED` is already

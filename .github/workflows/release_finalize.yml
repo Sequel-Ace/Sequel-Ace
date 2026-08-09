@@ -85,7 +85,7 @@ jobs:
               continue
             fi
             state="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("state")' "${work_directory}/manifest.json")"
-            if [[ "${state}" != "submitted" && "${state}" != "live" ]]; then
+            if [[ "${state}" != "archived" && "${state}" != "submitted" && "${state}" != "live" ]]; then
               echo "Pending ${release_tag}: manifest state is ${state}."
               pending=$((pending + 1))
               rm -rf "${work_directory}"

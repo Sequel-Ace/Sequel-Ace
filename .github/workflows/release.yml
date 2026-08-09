@@ -499,19 +499,59 @@ jobs:
           ARCHIVE_REFERENCE: ${{ steps.initial_archive.outputs.reference }}
           FAILED_TAG: ${{ steps.prerelease.outputs.tag }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RELEASE_CHANNEL: ${{ inputs.channel }}
+          APP_STORE_OUTCOME: ${{ steps.app_store.outcome }}
         run: |
           set -euo pipefail
+          preserve_release_body=false
           if [[ -f manifest.json && -d release-archive ]]; then
-            ruby -rjson -e 'File.write("failure-evidence.json", JSON.pretty_generate({"failure" => {"workflow_url" => ENV.fetch("RUN_URL")}}) + "\n")'
-            bundle exec ruby fastlane/bin/sa-release update-manifest \
-              --manifest manifest.json \
-              --state failed \
-              --merge failure-evidence.json >/dev/null
-            cp manifest.json failure-evidence.json release-archive/
+            current_state="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("state")' manifest.json)"
+            submission_file=""
+            if [[ "${current_state}" != "submitted" && "${current_state}" != "live" && "${RELEASE_CHANNEL}" == "production" ]]; then
+              if [[ "${APP_STORE_OUTCOME}" == "success" ]]; then
+                [[ -f app-store-submission.json ]] || { echo "Successful App Store step has no submission evidence." >&2; exit 1; }
+                submission_file="app-store-submission.json"
+              elif [[ "${APP_STORE_OUTCOME}" == "failure" || "${APP_STORE_OUTCOME}" == "cancelled" ]]; then
+                bundle exec ruby fastlane/bin/sa-release reconcile-submission \
+                  --manifest manifest.json \
+                  --output reconciled-submission.json
+                submission_confirmed="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("submitted")' reconciled-submission.json)"
+                if [[ "${submission_confirmed}" == "true" ]]; then
+                  submission_file="reconciled-submission.json"
+                fi
+              fi
+            fi
+            record_failure_command=(
+              bundle exec ruby fastlane/bin/sa-release record-failure
+              --manifest manifest.json
+              --workflow-url "${RUN_URL}"
+            )
+            if [[ -n "${submission_file}" ]]; then
+              record_failure_command+=(--submission "${submission_file}")
+            fi
+            record_failure_command+=(--output failure-disposition.json)
+            "${record_failure_command[@]}"
+            cp manifest.json failure-disposition.json release-archive/
+            if [[ -f app-store-submission.json ]]; then
+              cp app-store-submission.json release-archive/
+            fi
+            if [[ -f reconciled-submission.json ]]; then
+              cp reconciled-submission.json release-archive/
+            fi
+            preserve_release_body="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("preserve_release_body")' failure-disposition.json)"
             if [[ -n "${ARCHIVE_REFERENCE}" ]]; then
               Scripts/archive-release-to-ghcr.sh push "${ARCHIVE_REFERENCE}" release-archive > failed-archive-evidence.json || \
                 echo "Could not refresh the private archive with failure state." >&2
             fi
+          fi
+          if [[ "${preserve_release_body}" == "true" ]]; then
+            {
+              echo "### Post-submission workflow failure"
+              echo "- The exact App Store submission remains finalizable."
+              echo "- The checksum-protected GitHub release body was left unchanged."
+              echo "- Failure evidence: ${RUN_URL}"
+            } >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
           fi
           gh release view "${FAILED_TAG}" --json body --jq .body > failed-release-body.md
           {
