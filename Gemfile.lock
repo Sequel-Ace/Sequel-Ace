@@ -179,6 +179,7 @@ GEM
     logger (1.7.0)
     mini_magick (4.13.2)
     mini_mime (1.1.5)
+    minitest (5.27.0)
     multi_json (1.20.1)
     multipart-post (2.4.1)
     mutex_m (0.3.0)
@@ -244,6 +245,7 @@ DEPENDENCIES
   csv
   fastlane (~> 2.232)
   logger
+  minitest (~> 5.25)
   mutex_m
   rake (~> 13)
 

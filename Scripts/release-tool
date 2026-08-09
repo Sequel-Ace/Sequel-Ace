@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+script_directory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repository_root="$(cd "${script_directory}/.." && pwd)"
+
+if [[ -x /opt/homebrew/bin/ruby && -x /opt/homebrew/bin/bundle ]]; then
+  export PATH="/opt/homebrew/bin:${PATH}"
+  exec /opt/homebrew/bin/bundle exec /opt/homebrew/bin/ruby "${repository_root}/fastlane/bin/sa-release" "$@"
+fi
+
+command -v ruby >/dev/null 2>&1 || { echo "Ruby is required" >&2; exit 69; }
+command -v bundle >/dev/null 2>&1 || { echo "Bundler is required" >&2; exit 69; }
+exec bundle exec ruby "${repository_root}/fastlane/bin/sa-release" "$@"
