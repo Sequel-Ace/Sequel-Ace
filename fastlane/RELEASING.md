@@ -45,7 +45,10 @@ or creates a GitHub release.
    removed.
 4. Create environment `sequel-ace-release`, restrict its deployment branch to
    `main`, and do not add a routine second approval.
-5. Add environment secrets:
+5. Restrict every manual dispatch and rerun to `Jason-Morcos` or `Kaspik`.
+   The workflows validate both GitHub's original `actor` and the current
+   `triggering_actor`; scheduled finalizer reruns validate the latter as well.
+6. Add environment secrets:
 
    | Name | Value |
    | --- | --- |
@@ -55,7 +58,7 @@ or creates a GitHub release.
    | `SA_ASC_PRIVATE_KEY` | Base64-encoded `.p8` bytes |
    | `SA_ASC_ISSUER_ID` | Omit or leave empty for an individual key |
 
-6. Add repository variables:
+7. Add repository variables:
 
    | Name | Initial value |
    | --- | --- |
@@ -64,8 +67,8 @@ or creates a GitHub release.
    | `SA_ALPHA_CLOUD_WORKFLOW_ID` | Alpha Xcode Cloud workflow ID |
    | `SA_GHCR_ARCHIVE` | `ghcr.io/sequel-ace/sequel-ace-release-archive` |
 
-7. Require both `Run Tests` and `Release Tool Tests` on `main`.
-8. Confirm the GHCR package is private and linked to this repository. The
+8. Require both `Run Tests` and `Release Tool Tests` on `main`.
+9. Confirm the GHCR package is private and linked to this repository. The
    feasibility workflow verifies this again before enabling publishing.
 
 The GitHub App first creates the release branch at the frozen base SHA, then

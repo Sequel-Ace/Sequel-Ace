@@ -38,12 +38,14 @@ jobs:
       - name: Enforce feasibility-test authorization
         env:
           RELEASE_ACTOR: ${{ github.actor }}
+          RELEASE_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
           RELEASE_REF: ${{ github.ref }}
           RELEASE_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}
           ALPHA_BUILD_RUN_ID: ${{ inputs.alpha_build_run_id }}
         run: |
           set -euo pipefail
           [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized release actor." >&2; exit 1; }
+          [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized feasibility rerun initiator." >&2; exit 1; }
           [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Feasibility must run from main." >&2; exit 1; }
           [[ "${RELEASE_ENABLED}" == "false" ]] || { echo "Set SA_RELEASE_AUTOMATION_ENABLED=false before running feasibility." >&2; exit 1; }
           [[ "${ALPHA_BUILD_RUN_ID}" =~ ^[A-Za-z0-9-]+$ ]] || { echo "Malformed Alpha build-run ID." >&2; exit 1; }

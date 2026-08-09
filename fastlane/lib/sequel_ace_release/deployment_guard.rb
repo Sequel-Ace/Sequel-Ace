@@ -2,11 +2,17 @@
 
 module SequelAceRelease
   class DeploymentGuard
-    def validate!(actor:, ref:, current_sha:, expected_sha:, channel:, version:, cloud_next_build:, confirmation:, enabled:)
+    def validate!(
+      actor:, triggering_actor:, ref:, current_sha:, expected_sha:, channel:,
+      version:, cloud_next_build:, confirmation:, enabled:
+    )
       Config.validate_channel!(channel)
       Version.validate!(version)
       raise ValidationError, "release publishing is disabled" unless enabled.to_s == "true"
       raise ValidationError, "unauthorized release actor" unless Config::AUTHORIZED_ACTORS.include?(actor)
+      unless Config::AUTHORIZED_ACTORS.include?(triggering_actor)
+        raise ValidationError, "unauthorized release triggering actor"
+      end
       raise ValidationError, "releases must be dispatched from main" unless ref == "refs/heads/main"
       raise ValidationError, "current main SHA is malformed" unless current_sha.to_s.match?(/\A[0-9a-f]{40,64}\z/i)
       raise ValidationError, "frozen main SHA is malformed" unless expected_sha.to_s.match?(/\A[0-9a-f]{40,64}\z/i)
@@ -20,6 +26,7 @@ module SequelAceRelease
 
       {
         "actor" => actor,
+        "triggering_actor" => triggering_actor,
         "ref" => ref,
         "main_sha" => current_sha,
         "channel" => channel,

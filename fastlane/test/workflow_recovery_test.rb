@@ -54,6 +54,23 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes alpha_step, "failure() || cancelled()"
   end
 
+  def test_mutating_workflows_authorize_the_rerun_initiator
+    release = File.read(repo_path(".github/workflows/release.yml"))
+    assert_operator release.scan("github.triggering_actor").length, :>=, 2
+    assert_includes release, '--triggering-actor "${GUARD_TRIGGERING_ACTOR}"'
+    assert_includes release, "Unauthorized release rerun initiator."
+
+    {
+      ".github/workflows/release_alpha_retry.yml" => "Unauthorized release rerun initiator.",
+      ".github/workflows/release_feasibility.yml" => "Unauthorized feasibility rerun initiator.",
+      ".github/workflows/release_finalize.yml" => "Unauthorized scheduled-finalizer rerun initiator."
+    }.each do |path, rejection|
+      workflow = File.read(repo_path(path))
+      assert_includes workflow, "github.triggering_actor"
+      assert_includes workflow, rejection
+    end
+  end
+
   def test_transient_workflow_evidence_cannot_pollute_release_commit_paths
     release = File.read(repo_path(".github/workflows/release.yml"))
     release_exclusion = release.index("- name: Exclude transient release evidence from git status")

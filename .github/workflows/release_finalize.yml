@@ -34,6 +34,8 @@ jobs:
           RELEASE_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}
           RELEASE_EVENT: ${{ github.event_name }}
           RELEASE_ACTOR: ${{ github.actor }}
+          RELEASE_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+          RELEASE_RUN_ATTEMPT: ${{ github.run_attempt }}
           RELEASE_REF: ${{ github.ref }}
         run: |
           set -euo pipefail
@@ -41,6 +43,9 @@ jobs:
           [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Finalization must run from main." >&2; exit 1; }
           if [[ "${RELEASE_EVENT}" == "workflow_dispatch" ]]; then
             [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized finalizer actor." >&2; exit 1; }
+            [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized finalizer initiator." >&2; exit 1; }
+          elif [[ "${RELEASE_RUN_ATTEMPT}" != "1" ]]; then
+            [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized scheduled-finalizer rerun initiator." >&2; exit 1; }
           fi
 
       - name: Check out release tooling

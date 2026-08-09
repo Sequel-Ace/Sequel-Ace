@@ -65,8 +65,9 @@ module SequelAceRelease
     def guard(arguments)
       options = {}
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release guard --actor LOGIN --ref REF --current-sha SHA --expected-sha SHA --channel CHANNEL --version VERSION --cloud-next-build BUILD --confirmation TEXT --enabled VALUE"
+        value.banner = "Usage: sa-release guard --actor LOGIN --triggering-actor LOGIN --ref REF --current-sha SHA --expected-sha SHA --channel CHANNEL --version VERSION --cloud-next-build BUILD --confirmation TEXT --enabled VALUE"
         value.on("--actor LOGIN") { |item| options[:actor] = item }
+        value.on("--triggering-actor LOGIN") { |item| options[:triggering_actor] = item }
         value.on("--ref REF") { |item| options[:ref] = item }
         value.on("--current-sha SHA") { |item| options[:current_sha] = item }
         value.on("--expected-sha SHA") { |item| options[:expected_sha] = item }
@@ -79,7 +80,7 @@ module SequelAceRelease
       end
       parser.parse!(arguments)
       reject_arguments!(arguments)
-      require_options!(options, :actor, :ref, :current_sha, :expected_sha, :channel, :version, :cloud_next_build, :confirmation, :enabled)
+      require_options!(options, :actor, :triggering_actor, :ref, :current_sha, :expected_sha, :channel, :version, :cloud_next_build, :confirmation, :enabled)
       output = options.delete(:output)
       emit(DeploymentGuard.new.validate!(**options), output)
     end

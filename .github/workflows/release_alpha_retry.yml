@@ -49,6 +49,7 @@ jobs:
       - name: Enforce narrow Alpha-retry authorization
         env:
           RELEASE_ACTOR: ${{ github.actor }}
+          RELEASE_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
           RELEASE_REF: ${{ github.ref }}
           RELEASE_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}
           BETA_TAG: ${{ inputs.beta_tag }}
@@ -59,6 +60,7 @@ jobs:
           set -euo pipefail
           [[ "${RELEASE_ENABLED}" == "true" ]] || { echo "Release publishing is disabled." >&2; exit 1; }
           [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized release actor." >&2; exit 1; }
+          [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized release rerun initiator." >&2; exit 1; }
           [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Alpha retry must be dispatched from main." >&2; exit 1; }
           [[ "${BETA_TAG}" =~ ^beta/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || { echo "Malformed beta tag." >&2; exit 1; }
           [[ "${EXPECTED_COMMIT}" =~ ^[0-9a-f]{40,64}$ ]] || { echo "Malformed expected commit." >&2; exit 1; }

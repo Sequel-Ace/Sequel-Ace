@@ -76,6 +76,7 @@ jobs:
         env:
           RELEASE_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}
           RELEASE_ACTOR: ${{ github.actor }}
+          RELEASE_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
           RELEASE_REF: ${{ github.ref }}
           RELEASE_SHA: ${{ github.sha }}
           EXPECTED_SHA: ${{ inputs.expected_main_sha }}
@@ -89,6 +90,7 @@ jobs:
           set -euo pipefail
           [[ "${RELEASE_ENABLED}" == "true" ]] || { echo "Release publishing is disabled until every feasibility gate passes." >&2; exit 1; }
           [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized release actor." >&2; exit 1; }
+          [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized release rerun initiator." >&2; exit 1; }
           [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Releases must be dispatched from main." >&2; exit 1; }
           [[ "${RELEASE_SHA}" == "${EXPECTED_SHA}" ]] || { echo "main changed after release approval." >&2; exit 1; }
           [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Malformed semantic version." >&2; exit 1; }
@@ -146,6 +148,7 @@ jobs:
       - name: Recheck release authorization with the tested guard
         env:
           GUARD_ACTOR: ${{ github.actor }}
+          GUARD_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
           GUARD_REF: ${{ github.ref }}
           GUARD_CURRENT_SHA: ${{ github.sha }}
           GUARD_EXPECTED_SHA: ${{ inputs.expected_main_sha }}
@@ -158,6 +161,7 @@ jobs:
           set -euo pipefail
           bundle exec ruby fastlane/bin/sa-release guard \
             --actor "${GUARD_ACTOR}" \
+            --triggering-actor "${GUARD_TRIGGERING_ACTOR}" \
             --ref "${GUARD_REF}" \
             --current-sha "${GUARD_CURRENT_SHA}" \
             --expected-sha "${GUARD_EXPECTED_SHA}" \
