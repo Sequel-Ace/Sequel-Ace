@@ -74,10 +74,16 @@ import Foundation
 
     static func mysqlOnlineHelpURL(forTopic topic: String?, documentID: Int) -> URL? {
         let searchString = topic ?? ""
-        let urlString = "https://dev.mysql.com/doc/search/?d=\(documentID)&p=1&q=\(searchString)"
-            .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
+        // `urlQueryAllowed` leaves the query delimiters `&`, `=`, `+`, `?`, `#`
+        // unescaped, so a topic containing any of them would be spliced into the
+        // URL structure (truncating/mangling the `q` value). Remove them before
+        // percent-encoding the topic — same approach as mariaDBOnlineHelpURL.
+        var queryAllowedCharacters = CharacterSet.urlQueryAllowed
+        queryAllowedCharacters.remove(charactersIn: "&=+?#")
+        let encodedSearchString = searchString.addingPercentEncoding(withAllowedCharacters: queryAllowedCharacters) ?? ""
+        let urlString = "https://dev.mysql.com/doc/search/?d=\(documentID)&p=1&q=\(encodedSearchString)"
 
-        guard let urlString, !urlString.isEmpty else {
+        guard urlString.isNotEmpty else {
             return nil
         }
 

@@ -47,6 +47,33 @@ final class SAHelpViewerOnlineURLBuilderTests: XCTestCase {
         XCTAssertEqual(url?.absoluteString, "https://dev.mysql.com/doc/search/?d=515&p=1&q=CREATE%20TABLE")
     }
 
+    func testMySQLOnlineHelpURLPercentEncodesQueryDelimitersInTopic() {
+        // Topics containing query delimiters (`&`, `=`, `+`) must be percent-encoded
+        // so they survive as the `q` value instead of being spliced into the URL
+        // structure — regression: a bare `&`/`=` truncated the query, `+` read as a space.
+        let combined = SAHelpViewerOnlineURLBuilder.onlineHelpURL(
+            forTopic: "a&b=c+d",
+            serverVersionString: "8.4.0",
+            mysqlMajorVersion: 8,
+            mysqlMinorVersion: 4,
+            mysqlReleaseVersion: 0
+        )
+        XCTAssertEqual(combined?.absoluteString, "https://dev.mysql.com/doc/search/?d=371&p=1&q=a%26b%3Dc%2Bd")
+
+        let plusOnly = SAHelpViewerOnlineURLBuilder.mysqlOnlineHelpURL(forTopic: "a+b", documentID: 12)
+        XCTAssertEqual(plusOnly?.absoluteString, "https://dev.mysql.com/doc/search/?d=12&p=1&q=a%2Bb")
+
+        // A topic mixing a space with a delimiter: the space still encodes to `%20`
+        // alongside the now-escaped delimiter.
+        let withSpace = SAHelpViewerOnlineURLBuilder.mysqlOnlineHelpURL(forTopic: "GRANT & REVOKE", documentID: 201)
+        XCTAssertEqual(withSpace?.absoluteString, "https://dev.mysql.com/doc/search/?d=201&p=1&q=GRANT%20%26%20REVOKE")
+
+        // Round-trip: the escaped value must parse back as a single `q` item equal to
+        // the original topic — i.e. the delimiter did not split the query.
+        let parsed = URLComponents(url: URL(string: combined?.absoluteString ?? "")!, resolvingAgainstBaseURL: false)
+        XCTAssertEqual(parsed?.queryItems?.first { $0.name == "q" }?.value, "a&b=c+d")
+    }
+
     func testMariaDBVersionDetectionUsesCachedVersionString() {
         XCTAssertTrue(SAHelpViewerOnlineURLBuilder.isMariaDBServerVersion("10.11.8-MariaDB"))
         XCTAssertTrue(SAHelpViewerOnlineURLBuilder.isMariaDBServerVersion("11.4.5-mariadb-ubu2404"))
