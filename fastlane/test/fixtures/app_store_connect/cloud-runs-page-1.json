@@ -1,0 +1,19 @@
+{
+  "data": [
+    {
+      "type": "ciBuildRuns",
+      "id": "run-redacted-20105",
+      "attributes": {
+        "number": 20105,
+        "executionProgress": "COMPLETE",
+        "completionStatus": "FAILED",
+        "sourceCommit": {
+          "commitSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    }
+  ],
+  "links": {
+    "next": "https://api.appstoreconnect.apple.com/v1/ciWorkflows/workflow-redacted/buildRuns?cursor=redacted"
+  }
+}
