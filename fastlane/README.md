@@ -15,53 +15,29 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 ## Mac
 
-### mac prepare_release
+### mac prepare_release_files
 
 ```sh
-[bundle exec] fastlane mac prepare_release
+[bundle exec] fastlane mac prepare_release_files
 ```
 
-Creates new branch prepare_release, updates strings, increments build version, generates changelog, creates a PR.
+Set an explicit release version/build and regenerate the changelog; never commits or pushes
 
-### mac prepare_release_bump_patch_version
+### mac stage_app_store_release
 
 ```sh
-[bundle exec] fastlane mac prepare_release_bump_patch_version
+[bundle exec] fastlane mac stage_app_store_release
 ```
 
-Creates new branch prepare_release, increments app patch version, updates strings, increments build version, generates changelog, creates a PR.
+Create/update production metadata without submitting it for review
 
-### mac prepare_beta_release_bump_version
+### mac submit_app_store_release
 
 ```sh
-[bundle exec] fastlane mac prepare_beta_release_bump_version
+[bundle exec] fastlane mac submit_app_store_release
 ```
 
-Creates new branch prepare_release, updates strings, increments app version, increments build version, generates changelog, creates a PR.
-
-### mac prepare_beta_release_bump_patch_version
-
-```sh
-[bundle exec] fastlane mac prepare_beta_release_bump_patch_version
-```
-
-Creates new branch prepare_release, updates strings, increments app patch version, increments build version, generates changelog, creates a PR.
-
-### mac prepare_beta_release
-
-```sh
-[bundle exec] fastlane mac prepare_beta_release
-```
-
-Creates new branch prepare_release, updates strings, increments build version, generates changelog, creates a PR.
-
-### mac generate_changelog
-
-```sh
-[bundle exec] fastlane mac generate_changelog
-```
-
-Creates new branch changelog, generates changelog, creates a PR.
+Submit the exact already-staged production version/build for review
 
 ### mac generate_changelog_locally
 
@@ -69,7 +45,55 @@ Creates new branch changelog, generates changelog, creates a PR.
 [bundle exec] fastlane mac generate_changelog_locally
 ```
 
-Generates changelog only.
+Generate the changelog locally without any git side effects
+
+### mac prepare_release
+
+```sh
+[bundle exec] fastlane mac prepare_release
+```
+
+Retired unsafe release lane
+
+### mac prepare_release_bump_patch_version
+
+```sh
+[bundle exec] fastlane mac prepare_release_bump_patch_version
+```
+
+Retired unsafe release lane
+
+### mac prepare_beta_release_bump_version
+
+```sh
+[bundle exec] fastlane mac prepare_beta_release_bump_version
+```
+
+Retired unsafe release lane
+
+### mac prepare_beta_release_bump_patch_version
+
+```sh
+[bundle exec] fastlane mac prepare_beta_release_bump_patch_version
+```
+
+Retired unsafe release lane
+
+### mac prepare_beta_release
+
+```sh
+[bundle exec] fastlane mac prepare_beta_release
+```
+
+Retired unsafe release lane
+
+### mac generate_changelog
+
+```sh
+[bundle exec] fastlane mac generate_changelog
+```
+
+Retired unsafe release lane
 
 ### mac increment_build_version
 
@@ -77,7 +101,7 @@ Generates changelog only.
 [bundle exec] fastlane mac increment_build_version
 ```
 
-Increase build number
+Retired unsafe release lane
 
 ### mac increment_app_version
 
@@ -85,7 +109,7 @@ Increase build number
 [bundle exec] fastlane mac increment_app_version
 ```
 
-Increase app version
+Retired unsafe release lane
 
 ### mac increment_app_patch_version
 
@@ -93,7 +117,7 @@ Increase app version
 [bundle exec] fastlane mac increment_app_patch_version
 ```
 
-Increase app patch version
+Retired unsafe release lane
 
 ----
 

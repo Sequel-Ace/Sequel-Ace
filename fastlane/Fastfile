@@ -1,246 +1,144 @@
 # By Jakub Kaspar 21/11/2020
 # Copyright © 2020 Sequel-Ace. All rights reserved.
 
-# Fastlane Constants
+# Fastlane is intentionally a thin adapter around the infrastructure-only Ruby
+# release tool. Branches, commits, pushes, pull requests, build-number choice,
+# and GitHub releases are controlled by the guarded GitHub workflows.
+
+require "rbconfig"
+
 default_platform :mac
 fastlane_version "2.232.1"
 
-GITHUB_REPO = "Sequel-Ace/Sequel-Ace"
-PROJECT_NAME = "sequel-ace.xcodeproj"
-QK_PROJECT_NAME = "Frameworks/QueryKit/QueryKit.xcodeproj"
-SPMYSQL_PROJECT_NAME = "Frameworks/SPMySQLFramework/SPMySQLFramework.xcodeproj"
-TARGET_NAME = "Sequel Ace"
+PRODUCTION_BUNDLE_ID = "com.sequel-ace.sequel-ace"
+PRODUCTION_LOCALE = "en-US"
+
+def required_option!(options, name)
+  value = options[name]
+  UI.user_error!("Missing required option #{name}") if value.to_s.empty?
+  value
+end
+
+def require_release_automation_enabled!
+  return if ENV["SA_RELEASE_AUTOMATION_ENABLED"] == "true"
+
+  UI.user_error!("Release publishing is disabled until every feasibility gate passes")
+end
+
+def release_api_key
+  key_id = ENV["SA_ASC_KEY_ID"]
+  private_key = ENV["SA_ASC_PRIVATE_KEY"]
+  UI.user_error!("SA_ASC_KEY_ID is required") if key_id.to_s.empty?
+  UI.user_error!("SA_ASC_PRIVATE_KEY is required") if private_key.to_s.empty?
+
+  app_store_connect_api_key(
+    key_id: key_id,
+    issuer_id: ENV["SA_ASC_ISSUER_ID"].to_s.empty? ? nil : ENV["SA_ASC_ISSUER_ID"],
+    key_content: private_key,
+    is_key_content_base64: ENV["SA_ASC_PRIVATE_KEY_BASE64"] == "1",
+    in_house: false
+  )
+end
 
 platform :mac do
+  desc "Set an explicit release version/build and regenerate the changelog; never commits or pushes"
+  lane :prepare_release_files do |options|
+    version = required_option!(options, :version)
+    build = required_option!(options, :build)
+    channel = required_option!(options, :channel)
+    base_tag = required_option!(options, :base_tag)
+    expected_base_sha = required_option!(options, :expected_base_sha)
+    changelog_base_tag = required_option!(options, :changelog_base_tag)
+    expected_changelog_base_sha = required_option!(options, :expected_changelog_base_sha)
+    command = [
+      RbConfig.ruby,
+      File.expand_path("bin/sa-release", __dir__),
+      "prepare",
+      "--version", version,
+      "--build", build,
+      "--channel", channel,
+      "--base-tag", base_tag,
+      "--expected-base-sha", expected_base_sha,
+      "--changelog-base-tag", changelog_base_tag,
+      "--expected-changelog-base-sha", expected_changelog_base_sha
+    ]
+    command.concat(["--expected-main-sha", options[:expected_main_sha]]) unless options[:expected_main_sha].to_s.empty?
+    sh(*command)
+  end
 
-   ############################## Overrides ##############################
+  desc "Create/update production metadata without submitting it for review"
+  lane :stage_app_store_release do |options|
+    require_release_automation_enabled!
+    version = required_option!(options, :version)
+    build = required_option!(options, :build)
+    release_notes = File.read(required_option!(options, :release_notes_file)).strip
+    promotional_text = File.read(required_option!(options, :promotional_text_file)).strip
+    auto_release_date = Integer(required_option!(options, :auto_release_date), 10)
+    UI.user_error!("App Store release notes must not be empty") if release_notes.empty?
+    UI.user_error!("Promotional Text must not be empty") if promotional_text.empty?
 
-   before_all do
-   end
+    upload_to_app_store(
+      api_key: release_api_key,
+      app_identifier: PRODUCTION_BUNDLE_ID,
+      platform: "osx",
+      app_version: version,
+      build_number: build,
+      release_notes: { PRODUCTION_LOCALE => release_notes },
+      promotional_text: { PRODUCTION_LOCALE => promotional_text },
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      submit_for_review: false,
+      auto_release_date: auto_release_date,
+      phased_release: true,
+      reset_ratings: false,
+      force: true,
+      run_precheck_before_submit: false
+    )
+  end
 
-   after_all do |lane|
-      clean_build_artifacts
-   end
+  desc "Submit the exact already-staged production version/build for review"
+  lane :submit_app_store_release do |options|
+    require_release_automation_enabled!
+    version = required_option!(options, :version)
+    build = required_option!(options, :build)
 
-   error do |lane, exception|
-      clean_build_artifacts
-   end
+    upload_to_app_store(
+      api_key: release_api_key,
+      app_identifier: PRODUCTION_BUNDLE_ID,
+      platform: "osx",
+      app_version: version,
+      build_number: build,
+      skip_binary_upload: true,
+      skip_metadata: true,
+      skip_screenshots: true,
+      submit_for_review: true,
+      phased_release: true,
+      reset_ratings: false,
+      force: true,
+      run_precheck_before_submit: false
+    )
+  end
 
-   desc "Creates new branch prepare_release, updates strings, increments build version, generates changelog, creates a PR."
-   lane :prepare_release do |options|
-   
-      # Checkout to prepare release branch
-      sh "git checkout -b prepare_release"
-      ensure_git_branch(
-         branch: 'prepare_release'
-      )
-      sh "git push -u origin prepare_release"
-      
-      increment_build_version
-      changelog = generate_changelog_locally
+  desc "Generate the changelog locally without any git side effects"
+  lane :generate_changelog_locally do |options|
+    version = required_option!(options, :version)
+    sh(File.expand_path("../Scripts/generate-changelog.sh", __dir__), version)
+  end
 
-      # Commit and push changelog changes
-      sh "git commit -am 'Changelog updates'"
-      sh "git push -u origin prepare_release"
-
-      # Create Pull request to master
-      create_pull_request(
-         api_token: ENV['GITHUB_TOKEN'],
-         repo: GITHUB_REPO,
-         base: "main",
-         title: "Prepare release",
-         body: changelog
-      )
-   end
-
-   desc "Creates new branch prepare_release, increments app patch version, updates strings, increments build version, generates changelog, creates a PR."
-   lane :prepare_release_bump_patch_version do |options|
-   
-      # Checkout to prepare release branch
-      sh "git checkout -b prepare_release"
-      ensure_git_branch(
-         branch: 'prepare_release'
-      )
-      sh "git push -u origin prepare_release"
-      
-      increment_app_patch_version
-      increment_build_version
-      
-      changelog = generate_changelog_locally
-
-      # Commit and push changelog changes
-      sh "git commit -am 'Changelog updates'"
-      sh "git push -u origin prepare_release"
-
-      # Create Pull request to master
-      create_pull_request(
-         api_token: ENV['GITHUB_TOKEN'],
-         repo: GITHUB_REPO,
-         base: "main",
-         title: "Prepare release",
-         body: changelog
-      )
-   end
-
-   desc "Creates new branch prepare_release, updates strings, increments app version, increments build version, generates changelog, creates a PR."
-   lane :prepare_beta_release_bump_version do |options|
-
-      # Checkout to prepare release branch
-      sh "git checkout -b prepare_release"
-      ensure_git_branch(
-         branch: 'prepare_release'
-      )
-      sh "git push -u origin prepare_release"
-
-      increment_app_version
-      increment_build_version
-      
-      changelog = generate_changelog_locally
-      
-      sh "git push -u origin prepare_release"
-
-      # Create Pull request to master
-      create_pull_request(
-         api_token: ENV['GITHUB_TOKEN'],
-         repo: GITHUB_REPO,
-         base: "main",
-         title: "Prepare Beta release",
-         body: changelog
-      )
-
-      reset_git_repo(
-         skip_clean: true,
-         force: true,
-         files: [
-            "CHANGELOG.md"
-         ]
-      )
-   end
-
-   desc "Creates new branch prepare_release, updates strings, increments app patch version, increments build version, generates changelog, creates a PR."
-   lane :prepare_beta_release_bump_patch_version do |options|
-
-      # Checkout to prepare release branch
-      sh "git checkout -b prepare_release"
-      ensure_git_branch(
-         branch: 'prepare_release'
-      )
-      sh "git push -u origin prepare_release"
-
-      increment_app_patch_version
-      increment_build_version
-      
-      changelog = generate_changelog_locally
-      
-      sh "git push -u origin prepare_release"
-
-      # Create Pull request to master
-      create_pull_request(
-         api_token: ENV['GITHUB_TOKEN'],
-         repo: GITHUB_REPO,
-         base: "main",
-         title: "Prepare Beta release",
-         body: changelog
-      )
-
-      reset_git_repo(
-         skip_clean: true,
-         force: true,
-         files: [
-            "CHANGELOG.md"
-         ]
-      )
-   end
-
-   desc "Creates new branch prepare_release, updates strings, increments build version, generates changelog, creates a PR."
-   lane :prepare_beta_release do |options|
-
-      # Checkout to prepare release branch
-      sh "git checkout -b prepare_release"
-      ensure_git_branch(
-         branch: 'prepare_release'
-      )
-      sh "git push -u origin prepare_release"
-      
-      increment_build_version
-      
-      changelog = generate_changelog_locally
-      
-      sh "git push -u origin prepare_release"
-
-      # Create Pull request to master
-      create_pull_request(
-         api_token: ENV['GITHUB_TOKEN'],
-         repo: GITHUB_REPO,
-         base: "main",
-         title: "Prepare Beta release",
-         body: changelog
-      )
-
-      reset_git_repo(
-         skip_clean: true,
-         force: true,
-         files: [
-            "CHANGELOG.md"
-         ]
-      )
-   end
-
-   ############################## XCode ##############################
-
-   desc "Creates new branch changelog, generates changelog, creates a PR."
-   lane :generate_changelog do |options|
-
-      # Checkout to changelog branch
-      sh "git checkout -b changelog"
-      ensure_git_branch(
-         branch: 'changelog'
-      )
-      
-      changelog = generate_changelog_locally
-
-      # Commit and push changelog changes
-      sh "git commit -am 'Changelog updates'"
-      sh "git push -u origin changelog"
-
-      # Create Pull request to master
-      create_pull_request(
-         api_token: ENV['GITHUB_TOKEN'],
-         repo: GITHUB_REPO,
-         base: "main",
-         title: "Changelog",
-         body: changelog
-      )
-   end
-
-   desc "Generates changelog only."
-   lane :generate_changelog_locally do |options|
-      version = get_version_number(xcodeproj: PROJECT_NAME, target: TARGET_NAME)
-      sh "../Scripts/generate-changelog.sh #{version}"
-   end
-
-   desc "Increase build number"
-   lane :increment_build_version do |options|
-      # Bump build number
-      increment_build_number(xcodeproj: PROJECT_NAME)
-      increment_build_number(xcodeproj: QK_PROJECT_NAME)
-      increment_build_number(xcodeproj: SPMYSQL_PROJECT_NAME)
-      sh "git add -A && git commit -m 'Increment build version'"
-   end
-
-   desc "Increase app version"
-   lane :increment_app_version do |options|
-      increment_version_number(xcodeproj: PROJECT_NAME, bump_type: "minor")
-      increment_version_number(xcodeproj: QK_PROJECT_NAME, bump_type: "minor")
-      increment_version_number(xcodeproj: SPMYSQL_PROJECT_NAME, bump_type: "minor")
-      sh "git add -A && git commit -m 'Increment app version'"
-   end
-
-   desc "Increase app patch version"
-   lane :increment_app_patch_version do |options|
-      increment_version_number(xcodeproj: PROJECT_NAME, bump_type: "patch")
-      increment_version_number(xcodeproj: QK_PROJECT_NAME, bump_type: "patch")
-      increment_version_number(xcodeproj: SPMYSQL_PROJECT_NAME, bump_type: "patch")
-      sh "git add -A && git commit -m 'Increment app patch version'"
-   end
+  %i[
+    prepare_release
+    prepare_release_bump_patch_version
+    prepare_beta_release_bump_version
+    prepare_beta_release_bump_patch_version
+    prepare_beta_release
+    generate_changelog
+    increment_build_version
+    increment_app_version
+    increment_app_patch_version
+  ].each do |unsafe_lane|
+    desc "Retired unsafe release lane"
+    lane unsafe_lane do
+      UI.user_error!("#{unsafe_lane} was retired. Use fastlane/bin/sa-release plan and the guarded release workflow.")
+    end
+  end
 end
