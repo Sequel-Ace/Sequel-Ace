@@ -89,7 +89,12 @@ jobs:
               rm -rf "${work_directory}"
               continue
             fi
-            state="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("state")' "${work_directory}/manifest.json")"
+            if ! state="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("state")' "${work_directory}/manifest.json" 2>/dev/null)"; then
+              echo "Pending ${release_tag}: private release archive has no readable manifest state."
+              pending=$((pending + 1))
+              rm -rf "${work_directory}"
+              continue
+            fi
             if [[ "${state}" != "archived" && "${state}" != "submitted" && "${state}" != "live" ]]; then
               echo "Pending ${release_tag}: manifest state is ${state}."
               pending=$((pending + 1))

@@ -16,6 +16,10 @@ module SequelAceRelease
         redacted_indexes.include?(index) ? "[REDACTED]" : shell_safe_display(part.to_s)
       end.join(" ")
       detail = stderr.strip.empty? ? stdout.strip : stderr.strip
+      redacted_indexes.filter_map { |index| command[index]&.to_s }
+                      .reject(&:empty?)
+                      .sort_by { |value| -value.bytesize }
+                      .each { |value| detail = detail.gsub(value, "[REDACTED]") }
       raise CommandError, "command failed (#{status.exitstatus}): #{rendered}\n#{detail}"
     end
 

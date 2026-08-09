@@ -75,6 +75,24 @@ class GitRepositoryTest < Minitest::Test
     end
   end
 
+  def test_changed_paths_consumes_the_original_path_for_a_rename
+    Dir.mktmpdir do |directory|
+      git(directory, "init", "--initial-branch=main")
+      git(directory, "config", "user.name", "Release Test")
+      git(directory, "config", "user.email", "release@example.invalid")
+      File.write(File.join(directory, "old-name.txt"), "fixture\n")
+      commit_all(directory, "initial file")
+      git(directory, "mv", "old-name.txt", "new-name.txt")
+
+      paths = SequelAceRelease::GitRepository.new(root: directory).changed_paths
+      assert_equal [{
+        "status" => "R ",
+        "path" => "new-name.txt",
+        "original_path" => "old-name.txt"
+      }], paths
+    end
+  end
+
   private
 
   def commit_all(directory, message)

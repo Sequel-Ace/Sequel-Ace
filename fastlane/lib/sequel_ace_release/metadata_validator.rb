@@ -93,7 +93,7 @@ module SequelAceRelease
       actual = Time.parse(attributes.fetch("earliestReleaseDate"))
       minimum = minimum_release_time.is_a?(Time) ? minimum_release_time : Time.parse(minimum_release_time.to_s)
       raise ValidationError, "scheduled release is earlier than the approved minimum" if actual < minimum
-    rescue KeyError, ArgumentError
+    rescue KeyError, ArgumentError, TypeError
       raise ValidationError, "scheduled release date is missing or malformed"
     end
 

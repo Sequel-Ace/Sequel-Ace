@@ -56,7 +56,7 @@ module SequelAceRelease
     def latest_release_tag(channel: "production", before_version: nil)
       Config.validate_channel!(channel)
       parsed = tags("#{channel}/*").filter_map do |tag|
-        match = tag.match(%r{\A#{Regexp.escape(channel)}/(\d+\.\d+\.\d+)-(\d+)\z})
+        match = tag.match(%r{\A#{Regexp.escape(channel)}/(\d+\.\d+\.\d+)-([1-9]\d*)\z})
         next unless match
         next if before_version && !Version.compare(match[1], before_version).negative?
 
@@ -80,13 +80,16 @@ module SequelAceRelease
 
     def changed_paths
       output = git("status", "--porcelain=v1", "-z")
-      output.split("\0").filter_map do |entry|
-        next if entry.empty?
-
+      entries = output.split("\0").reject(&:empty?)
+      results = []
+      until entries.empty?
+        entry = entries.shift
         status = entry[0, 2]
         path = entry[3..]
-        { "status" => status, "path" => path }
+        original_path = entries.shift if status.start_with?("R", "C")
+        results << { "status" => status, "path" => path, "original_path" => original_path }.compact
       end
+      results
     end
 
     def latest_commit_changing_all(paths, head_ref: "HEAD")

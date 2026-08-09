@@ -247,6 +247,41 @@ class AppStoreConnectClientTest < Minitest::Test
     assert_equal({ "type" => "builds", "id" => "build-id" }, request[:body].fetch("data"))
   end
 
+  def test_metadata_snapshot_passes_version_ids_as_keywords
+    key = OpenSSL::PKey::EC.generate("prime256v1")
+    client = SequelAceRelease::AppStoreConnectClient.new(
+      key_id: "KEY123",
+      private_key: key.to_pem,
+      transport: FakeTransport.new([])
+    )
+    client.define_singleton_method(:app_store_version) do |app_id:, version:|
+      raise unless app_id == "1518036000" && version == "5.3.2"
+
+      { "id" => "version-id" }
+    end
+    client.define_singleton_method(:localization) do |version_id:, locale: SequelAceRelease::Config::LOCALE|
+      raise unless version_id == "version-id" && locale == "en-US"
+
+      { "id" => "localization-id" }
+    end
+    client.define_singleton_method(:screenshot_sets) do |localization_id:|
+      raise unless localization_id == "localization-id"
+
+      []
+    end
+    %i[review_detail phased_release selected_build reset_ratings_request].each do |method|
+      client.define_singleton_method(method) do |version_id:|
+        raise unless version_id == "version-id"
+
+        { "id" => method.to_s }
+      end
+    end
+
+    snapshot = client.metadata_snapshot(app_id: "1518036000", version: "5.3.2")
+    assert_equal "review_detail", snapshot.dig("review_detail", "id")
+    assert_equal "selected_build", snapshot.dig("selected_build", "id")
+  end
+
   def test_find_build_filters_by_both_marketing_version_and_build_number
     key = OpenSSL::PKey::EC.generate("prime256v1")
     transport = FakeTransport.new([

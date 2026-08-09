@@ -85,12 +85,12 @@ module SequelAceRelease
       Config.validate_channel!(data["channel"])
       Version.validate!(data["target_version"])
       %w[base_tag changelog_base_tag].each do |key|
-        unless data[key].to_s.match?(%r{\A(?:production|beta)/\d+\.\d+\.\d+-\d+\z})
+        unless data[key].to_s.match?(%r{\A(?:production|beta)/\d+\.\d+\.\d+-[1-9]\d*\z})
           raise ValidationError, "#{key.tr('_', ' ')} is malformed"
         end
       end
       %w[base_sha changelog_base_sha main_sha].each do |key|
-        unless data[key].to_s.match?(/\A[0-9a-f]{40,64}\z/i)
+        unless Config.valid_git_sha?(data[key])
           raise ValidationError, "#{key.tr('_', ' ')} is malformed"
         end
       end
@@ -100,7 +100,7 @@ module SequelAceRelease
       unless data["release_notes_sha256"].to_s.match?(/\A[0-9a-f]{64}\z/)
         raise ValidationError, "release notes SHA-256 is malformed"
       end
-      if data.key?("release_commit_sha") && !data["release_commit_sha"].to_s.match?(/\A[0-9a-f]{40,64}\z/i)
+      if data.key?("release_commit_sha") && !Config.valid_git_sha?(data["release_commit_sha"])
         raise ValidationError, "release commit SHA is malformed"
       end
     end

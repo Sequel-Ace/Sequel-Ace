@@ -24,7 +24,10 @@ module SequelAceRelease
       raise ValidationError, "there are no changes since #{stable}" if changes.empty?
 
       notes = Notes.new(changes: changes)
-      base_version = stable[%r{/(\d+\.\d+\.\d+)-}, 1]
+      base_match = stable.match(%r{\A(?:production|beta)/(\d+\.\d+\.\d+)-([1-9]\d*)\z})
+      raise ValidationError, "base tag #{stable} is malformed" unless base_match
+
+      base_version = base_match[1]
       later_beta = channel == "beta" && target_version && stable.start_with?("beta/#{target_version}-")
       recommended_bump = later_beta ? "same" : notes.recommended_bump
       recommendation = later_beta ? target_version : Version.bump(base_version, recommended_bump)
@@ -139,7 +142,7 @@ module SequelAceRelease
         next if release["draft"] == true
 
         tag = release["tag_name"]
-        match = tag.to_s.match(%r{\A(production|beta)/(\d+\.\d+\.\d+)-(\d+)\z})
+        match = tag.to_s.match(%r{\A(production|beta)/(\d+\.\d+\.\d+)-([1-9]\d*)\z})
         next unless match
 
         {
@@ -165,7 +168,7 @@ module SequelAceRelease
     def next_iteration(channel, version, releases)
       matching = releases.filter_map do |release|
         tag = release["tag_name"].to_s
-        match = tag.match(%r{\A#{Regexp.escape(channel)}/#{Regexp.escape(version)}-(\d+)\z})
+        match = tag.match(%r{\A#{Regexp.escape(channel)}/#{Regexp.escape(version)}-([1-9]\d*)\z})
         next unless match
         next unless release["prerelease"] == true
 

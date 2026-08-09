@@ -77,4 +77,14 @@ class DeploymentGuardTest < Minitest::Test
       @guard.validate!(**@valid.merge(current_sha: "b" * 40))
     end
   end
+
+  def test_sha_validation_accepts_only_git_object_id_lengths
+    assert @guard.validate!(**@valid.merge(
+      current_sha: "A" * 64,
+      expected_sha: "a" * 64
+    ))
+    assert_raises(SequelAceRelease::ValidationError) do
+      @guard.validate!(**@valid.merge(current_sha: "a" * 41, expected_sha: "a" * 41))
+    end
+  end
 end

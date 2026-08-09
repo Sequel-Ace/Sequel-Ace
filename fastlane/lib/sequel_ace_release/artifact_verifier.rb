@@ -14,7 +14,7 @@ module SequelAceRelease
       Config.validate_channel!(channel)
       Version.validate!(version)
       raise ValidationError, "build is required unless --any-build is used" if build.nil? && !any_build
-      expected_build = build && Integer(build).to_s
+      expected_build = build && positive_build!(build, "expected artifact build").to_s
       source = Pathname.new(path).expand_path
       raise ValidationError, "artifact does not exist: #{source}" unless source.exist?
       artifact_digest = sha256(source)
@@ -32,6 +32,7 @@ module SequelAceRelease
         bundle_id = plist(info, "CFBundleIdentifier")
         actual_version = plist(info, "CFBundleShortVersionString")
         actual_build = plist(info, "CFBundleVersion")
+        actual_build_number = positive_build!(actual_build, "artifact build")
         executable_name = plist(info, "CFBundleExecutable")
         executable = app.join("Contents/MacOS", executable_name)
 
@@ -66,7 +67,7 @@ module SequelAceRelease
           "app_name" => app.basename.to_s,
           "bundle_id" => bundle_id,
           "version" => actual_version,
-          "build" => Integer(actual_build),
+          "build" => actual_build_number,
           "architectures" => architectures,
           "team_id" => team,
           "authorities" => authorities,
@@ -76,8 +77,6 @@ module SequelAceRelease
           "launched" => launch
         }.compact
       end
-    rescue ArgumentError, TypeError
-      raise ValidationError, "artifact build must be an integer"
     end
 
     private
@@ -151,10 +150,22 @@ module SequelAceRelease
       Dir.glob(path.join("**/*"), File::FNM_DOTMATCH).sort.each do |entry|
         next unless File.file?(entry)
 
-        digest << entry.delete_prefix(path.to_s)
+        relative_path = entry.delete_prefix(path.to_s).b
+        digest << [relative_path.bytesize].pack("Q>")
+        digest << relative_path
+        digest << [File.size(entry)].pack("Q>")
         File.open(entry, "rb") { |file| digest << file.read(1024 * 1024) until file.eof? }
       end
       digest.hexdigest
+    end
+
+    def positive_build!(value, label)
+      build = Integer(value)
+      raise ValidationError, "#{label} must be positive" unless build.positive?
+
+      build
+    rescue ArgumentError, TypeError
+      raise ValidationError, "#{label} must be an integer"
     end
   end
 end

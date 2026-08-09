@@ -101,7 +101,7 @@ module SequelAceRelease
     private
 
     def validate_commit_sha!(value)
-      return value if value.to_s.match?(/\A[0-9a-f]{40,64}\z/i)
+      return value.to_s.downcase if Config.valid_git_sha?(value)
 
       raise ValidationError,
             "merged-but-untagged recovery requires an exact release preparation commit on main's first-parent history"

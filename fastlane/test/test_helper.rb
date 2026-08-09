@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 require "minitest/autorun"
+require "base64"
+require "digest"
+require "json"
 require "tmpdir"
 require "fileutils"
 require "stringio"

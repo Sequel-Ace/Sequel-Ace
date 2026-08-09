@@ -70,6 +70,30 @@ class HTTPTransportTest < Minitest::Test
     assert_equal 2, transport.attempts
   end
 
+  def test_retries_common_hosted_runner_network_failures
+    errors = [
+      SocketError.new("DNS unavailable"),
+      OpenSSL::SSL::SSLError.new("TLS interrupted"),
+      Errno::EPIPE.new,
+      Errno::EHOSTUNREACH.new
+    ]
+    errors.each do |network_error|
+      transport = SequenceTransport.new([
+        -> { raise network_error },
+        NetResponse.new("200", '{"recovered":true}', {})
+      ])
+      def transport.perform(*_arguments)
+        @attempts += 1
+        value = @responses.shift || raise("missing response fixture")
+        value.respond_to?(:call) ? value.call : value
+      end
+
+      response = transport.request("GET", "/resource")
+      assert_equal({ "recovered" => true }, response.body, network_error.class.name)
+      assert_equal 2, transport.attempts, network_error.class.name
+    end
+  end
+
   def test_does_not_retry_a_post_after_a_retryable_server_response
     transport = SequenceTransport.new([
       NetResponse.new("503", '{"message":"temporarily unavailable"}', {}),

@@ -29,7 +29,11 @@ module SequelAceRelease
 
     def update!(version:, build:)
       Version.validate!(version)
-      build_number = Integer(build)
+      build_number = begin
+        Integer(build)
+      rescue ArgumentError, TypeError
+        raise ValidationError, "build must be an integer"
+      end
       raise ValidationError, "build must be positive" unless build_number.positive?
 
       before = current
@@ -46,8 +50,6 @@ module SequelAceRelease
       raise ValidationError, "version preparation did not converge on #{expected_after}" unless after == expected_after
 
       { "before" => before, "after" => after }
-    rescue ArgumentError, TypeError
-      raise ValidationError, "build must be an integer"
     end
 
     private

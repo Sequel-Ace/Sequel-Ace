@@ -15,13 +15,20 @@ module SequelAceRelease
       end
       raise ValidationError, "release mode must be start or resume" unless %w[start resume].include?(mode)
       raise ValidationError, "releases must be dispatched from main" unless ref == "refs/heads/main"
-      raise ValidationError, "current main SHA is malformed" unless current_sha.to_s.match?(/\A[0-9a-f]{40,64}\z/i)
-      raise ValidationError, "frozen main SHA is malformed" unless expected_sha.to_s.match?(/\A[0-9a-f]{40,64}\z/i)
+      raise ValidationError, "current main SHA is malformed" unless Config.valid_git_sha?(current_sha)
+      raise ValidationError, "frozen main SHA is malformed" unless Config.valid_git_sha?(expected_sha)
+      current_sha = current_sha.to_s.downcase
+      expected_sha = expected_sha.to_s.downcase
+      cloud_build = begin
+        Integer(cloud_next_build)
+      rescue ArgumentError, TypeError
+        raise ValidationError, "Xcode Cloud next build must be an integer"
+      end
       main_advanced = current_sha != expected_sha
       if main_advanced && mode != "resume"
         raise ValidationError, "main changed after release approval"
       end
-      raise ValidationError, "Xcode Cloud next build must be positive" unless Integer(cloud_next_build).positive?
+      raise ValidationError, "Xcode Cloud next build must be positive" unless cloud_build.positive?
 
       expected_confirmation = "RELEASE #{channel} #{version}"
       unless confirmation == expected_confirmation
@@ -38,10 +45,8 @@ module SequelAceRelease
         "requires_release_ancestor_validation" => main_advanced,
         "channel" => channel,
         "version" => version,
-        "cloud_next_build" => Integer(cloud_next_build)
+        "cloud_next_build" => cloud_build
       }
-    rescue ArgumentError, TypeError
-      raise ValidationError, "Xcode Cloud next build must be an integer"
     end
   end
 end

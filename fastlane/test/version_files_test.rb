@@ -30,6 +30,18 @@ class VersionFilesTest < Minitest::Test
     end
   end
 
+  def test_invalid_requested_build_has_a_specific_validation_error
+    Dir.mktmpdir do |directory|
+      root = Pathname.new(directory)
+      create_fixture_tree(root)
+
+      error = assert_raises(SequelAceRelease::ValidationError) do
+        SequelAceRelease::VersionFiles.new(root: root).update!(version: "5.3.2", build: "not-a-build")
+      end
+      assert_equal "build must be an integer", error.message
+    end
+  end
+
   private
 
   def create_fixture_tree(root)

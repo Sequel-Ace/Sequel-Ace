@@ -182,6 +182,30 @@ class ReleaseFailureRecoveryTest < Minitest::Test
     refute result.manifest.to_h.fetch("asc_ids").key?("reason")
   end
 
+  def test_reconciled_submission_preserves_existing_app_store_evidence
+    existing = manifest(state: "archived").with(
+      "asc_ids" => {
+        "scheduled_release_at" => "2026-08-12T16:00:00Z",
+        "phased_release_state" => "INACTIVE"
+      }
+    )
+    result = recorder.record(
+      manifest: existing,
+      workflow_url: workflow_url,
+      submission: {
+        "submitted" => true,
+        "version_id" => "version-id",
+        "build_id" => "build-id",
+        "app_store_state" => "WAITING_FOR_REVIEW"
+      }
+    )
+
+    evidence = result.manifest.to_h.fetch("asc_ids")
+    assert_equal "version-id", evidence.fetch("version_id")
+    assert_equal "2026-08-12T16:00:00Z", evidence.fetch("scheduled_release_at")
+    assert_equal "INACTIVE", evidence.fetch("phased_release_state")
+  end
+
   def test_rejects_unconfirmed_submission_evidence
     error = assert_raises(SequelAceRelease::ValidationError) do
       recorder.record(

@@ -58,6 +58,10 @@ or creates a GitHub release.
    | `SA_ASC_PRIVATE_KEY` | Base64-encoded `.p8` bytes |
    | `SA_ASC_ISSUER_ID` | Omit or leave empty for an individual key |
 
+   The workflows set the non-secret environment flag
+   `SA_ASC_PRIVATE_KEY_BASE64=1` so `SA_ASC_PRIVATE_KEY` is decoded before use.
+   Set the same flag for any guarded local fallback that uses the encoded key.
+
 7. Add repository variables:
 
    | Name | Initial value |
@@ -141,7 +145,9 @@ Fastlane, owns the next Production build number.
 `app_store_connect_api_key` receives the individual key with a nil issuer.
 `upload_to_app_store` uses platform `osx`, the exact semantic version and build,
 `skip_binary_upload: true`, `skip_screenshots: true`, seven-day phased release,
-and `reset_ratings: false`.
+and `reset_ratings: false`. Both mutating Fastlane lanes independently require
+`SA_RELEASE_AUTOMATION_ENABLED=true`, so invoking Fastlane directly cannot
+bypass the feasibility gate.
 
 Submission is deliberately split:
 
@@ -270,6 +276,8 @@ prerelease.
   checksums match the private manifest. It first records that live validation
   in the private archive, and only then performs the public GitHub transition;
   an archive failure therefore leaves the prerelease discoverable for retry.
+  A missing or malformed manifest marks only that release pending; the hourly
+  poll continues examining the other production prereleases.
 - Finalization also resolves the current production tag and requires it to
   equal the archived release commit; a moved or recreated tag cannot become
   latest.
@@ -278,7 +286,9 @@ prerelease.
   an ambiguous response, cleanup reads back the exact ASC version and build
   before deciding whether the release failed. The finalizer also accepts the
   last durable `archived` manifest so a failed post-submission GHCR refresh can
-  self-heal through the same exact Apple and artifact checks.
+  self-heal through the same exact Apple and artifact checks. If reconciliation
+  itself fails or returns malformed evidence, cleanup continues recording and
+  archiving the remaining failure evidence.
 - A failure before prerelease creation persists the verified release commit
   before opening the PR. Cleanup closes any open PR and deletes the generated
   branch only when its head still matches that exact commit (or the frozen main

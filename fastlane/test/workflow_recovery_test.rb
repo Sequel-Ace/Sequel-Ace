@@ -118,6 +118,56 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_operator reconcile, :<, record
     assert_includes failure_step[reconcile...record], "--wait-seconds 900"
     assert_includes failure_step[reconcile...record], "--poll-interval 15"
+    assert_includes failure_step, "if bundle exec ruby fastlane/bin/sa-release reconcile-submission"
+    assert_includes failure_step[reconcile...record], 'if submission_confirmed="$(ruby -rjson'
+    assert_includes failure_step[reconcile...record], "Submission reconciliation failed"
+  end
+
+  def test_cleanup_array_expansion_is_safe_under_macos_bash_nounset
+    safe_expansion = '${reconcile_arguments[@]+"${reconcile_arguments[@]}"}'
+    assert_includes File.read(repo_path(".github/workflows/release.yml")), safe_expansion
+    assert_includes File.read(repo_path(".github/workflows/release_feasibility.yml")), safe_expansion
+
+    assert system(
+      "/bin/bash", "-c",
+      'set -u; reconcile_arguments=(); printf "%s" ${reconcile_arguments[@]+"${reconcile_arguments[@]}"}'
+    )
+  end
+
+  def test_finalizer_continues_when_an_archive_manifest_is_unreadable
+    workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
+    assert_includes workflow, 'if ! state="$(ruby -rjson'
+    assert_includes workflow, "private release archive has no readable manifest state"
+    assert_includes workflow, "pending=$((pending + 1))"
+    assert_includes workflow, "continue"
+  end
+
+  def test_pr_jobs_do_not_persist_the_checkout_token
+    workflow = File.read(repo_path(".github/workflows/ci_pr_tests.yml"))
+    assert_equal 2, workflow.scan("persist-credentials: false").length
+  end
+
+  def test_fastlane_app_store_mutations_require_the_release_gate
+    fastfile = File.read(repo_path("fastlane/Fastfile"))
+    stage_lane = fastfile.split("lane :stage_app_store_release", 2).fetch(1)
+                         .split("lane :submit_app_store_release", 2).first
+    submit_lane = fastfile.split("lane :submit_app_store_release", 2).fetch(1)
+                          .split("lane :generate_changelog_locally", 2).first
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+
+    assert_includes stage_lane, "require_release_automation_enabled!"
+    assert_includes submit_lane, "require_release_automation_enabled!"
+    assert_includes workflow, "SA_RELEASE_AUTOMATION_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}"
+  end
+
+  def test_fastlane_prepare_adapter_passes_both_approved_bases
+    fastfile = File.read(repo_path("fastlane/Fastfile"))
+    prepare_lane = fastfile.split("lane :prepare_release_files", 2).fetch(1)
+                           .split("lane :stage_app_store_release", 2).first
+
+    assert_includes prepare_lane, '"--expected-base-sha", expected_base_sha'
+    assert_includes prepare_lane, '"--changelog-base-tag", changelog_base_tag'
+    assert_includes prepare_lane, '"--expected-changelog-base-sha", expected_changelog_base_sha'
   end
 
   def test_finalizer_archives_live_validation_before_the_public_transition

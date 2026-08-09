@@ -217,7 +217,7 @@ jobs:
           bundle exec ruby fastlane/bin/sa-release github-cleanup-branch \
             --branch "${PROBE_BRANCH}" \
             --expected-sha "${expected_sha}" \
-            "${reconcile_arguments[@]}" \
+            ${reconcile_arguments[@]+"${reconcile_arguments[@]}"} \
             --output feasibility/github-app-probe-cleanup.json
 
       - name: Prove private GHCR round trip and visibility

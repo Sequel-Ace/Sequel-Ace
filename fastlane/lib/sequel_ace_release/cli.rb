@@ -984,8 +984,13 @@ module SequelAceRelease
 
     def validate_preparation_paths!(paths)
       allowed = release_paths
+      renamed_or_copied = paths.select { |entry| entry.fetch("status").start_with?("R", "C") }
+      unless renamed_or_copied.empty?
+        raise ValidationError, "release preparation must not rename or copy release files"
+      end
       changed = paths.map { |entry| entry.fetch("path") }
-      unexpected = changed - allowed
+      original = paths.filter_map { |entry| entry["original_path"] }
+      unexpected = (changed + original).uniq - allowed
       raise ValidationError, "release preparation changed unauthorized paths: #{unexpected.join(', ')}" unless unexpected.empty?
       raise ValidationError, "release preparation did not update CHANGELOG.md" unless changed.include?("CHANGELOG.md")
       missing = (Config::PROJECT_FILES.keys + Config::PLIST_FILES) - changed
@@ -997,7 +1002,7 @@ module SequelAceRelease
     end
 
     def highest_build_from_tags(tags)
-      tags.filter_map { |tag| tag[%r{\A(?:production|beta)/\d+\.\d+\.\d+-(\d+)\z}, 1]&.to_i }.max || 0
+      tags.filter_map { |tag| tag[%r{\A(?:production|beta)/\d+\.\d+\.\d+-([1-9]\d*)\z}, 1]&.to_i }.max || 0
     end
 
     def release_pull_request_body(naming, release_body)
@@ -1005,7 +1010,7 @@ module SequelAceRelease
         ## Changes:
         - Prepare #{naming.channel} release #{naming.version} (#{naming.build}).
         - Set the explicit Xcode Cloud-authoritative build number in every versioned project and plist.
-        - Regenerate the changelog from the previous release tag.
+        - Regenerate the changelog from the approved cumulative changelog base.
 
         ## Closes following issues:
         - Closes: N/A

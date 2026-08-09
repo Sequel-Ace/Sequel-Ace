@@ -19,6 +19,12 @@ def required_option!(options, name)
   value
 end
 
+def require_release_automation_enabled!
+  return if ENV["SA_RELEASE_AUTOMATION_ENABLED"] == "true"
+
+  UI.user_error!("Release publishing is disabled until every feasibility gate passes")
+end
+
 def release_api_key
   key_id = ENV["SA_ASC_KEY_ID"]
   private_key = ENV["SA_ASC_PRIVATE_KEY"]
@@ -41,6 +47,9 @@ platform :mac do
     build = required_option!(options, :build)
     channel = required_option!(options, :channel)
     base_tag = required_option!(options, :base_tag)
+    expected_base_sha = required_option!(options, :expected_base_sha)
+    changelog_base_tag = required_option!(options, :changelog_base_tag)
+    expected_changelog_base_sha = required_option!(options, :expected_changelog_base_sha)
     command = [
       RbConfig.ruby,
       File.expand_path("bin/sa-release", __dir__),
@@ -48,7 +57,10 @@ platform :mac do
       "--version", version,
       "--build", build,
       "--channel", channel,
-      "--base-tag", base_tag
+      "--base-tag", base_tag,
+      "--expected-base-sha", expected_base_sha,
+      "--changelog-base-tag", changelog_base_tag,
+      "--expected-changelog-base-sha", expected_changelog_base_sha
     ]
     command.concat(["--expected-main-sha", options[:expected_main_sha]]) unless options[:expected_main_sha].to_s.empty?
     sh(*command)
@@ -56,6 +68,7 @@ platform :mac do
 
   desc "Create/update production metadata without submitting it for review"
   lane :stage_app_store_release do |options|
+    require_release_automation_enabled!
     version = required_option!(options, :version)
     build = required_option!(options, :build)
     release_notes = File.read(required_option!(options, :release_notes_file)).strip
@@ -85,6 +98,7 @@ platform :mac do
 
   desc "Submit the exact already-staged production version/build for review"
   lane :submit_app_store_release do |options|
+    require_release_automation_enabled!
     version = required_option!(options, :version)
     build = required_option!(options, :build)
 

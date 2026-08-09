@@ -68,6 +68,22 @@ class ApprovalManifestTest < Minitest::Test
     end
   end
 
+  def test_approval_normalizes_valid_git_shas_and_rejects_invalid_lengths
+    uppercase = approval(
+      main_sha: "A" * 40,
+      base_sha: "B" * 40,
+      changelog_base_sha: "B" * 40
+    )
+    lowercase = approval
+
+    assert_equal lowercase.payload.fetch("main_sha"), uppercase.payload.fetch("main_sha")
+    assert_equal lowercase.sha256, uppercase.sha256
+    assert_raises(SequelAceRelease::ValidationError) { approval(main_sha: "a" * 41) }
+    assert_raises(SequelAceRelease::ValidationError) do
+      approval(previous_tag: "production/5.3.1-0")
+    end
+  end
+
   def test_manifest_rejects_a_base_sha_outside_the_approval
     naming = SequelAceRelease::ReleaseNaming.new(
       channel: "production", version: "5.3.2", build: 20_105, iteration: 1

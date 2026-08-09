@@ -135,6 +135,21 @@ class ArtifactVerifierTest < Minitest::Test
     refute_includes osascript.fetch(4), process_name
   end
 
+  def test_directory_digest_has_unambiguous_path_and_content_boundaries
+    verifier = SequelAceRelease::ArtifactVerifier.new
+    Dir.mktmpdir do |first_directory|
+      Dir.mktmpdir do |second_directory|
+        File.write(File.join(first_directory, "a"), "bc")
+        File.write(File.join(second_directory, "ab"), "c")
+
+        refute_equal(
+          verifier.send(:sha256, Pathname.new(first_directory)),
+          verifier.send(:sha256, Pathname.new(second_directory))
+        )
+      end
+    end
+  end
+
   private
 
   def with_app

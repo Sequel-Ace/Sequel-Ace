@@ -222,10 +222,10 @@ module SequelAceRelease
         "version" => version_resource,
         "localization" => localization_resource,
         "screenshot_sets" => screenshot_sets(localization_id: localization_resource.fetch("id")),
-        "review_detail" => review_detail(version_resource.fetch("id")),
-        "phased_release" => phased_release(version_resource.fetch("id")),
-        "selected_build" => selected_build(version_resource.fetch("id")),
-        "reset_ratings_request" => reset_ratings_request(version_resource.fetch("id"))
+        "review_detail" => review_detail(version_id: version_resource.fetch("id")),
+        "phased_release" => phased_release(version_id: version_resource.fetch("id")),
+        "selected_build" => selected_build(version_id: version_resource.fetch("id")),
+        "reset_ratings_request" => reset_ratings_request(version_id: version_resource.fetch("id"))
       }
     end
 

@@ -305,4 +305,30 @@ class PlannerTest < Minitest::Test
       )
     end
   end
+
+  def test_malformed_explicit_base_tag_fails_with_a_clear_validation_error
+    change = SequelAceRelease::GitRepository::Change.new(
+      sha: "c" * 40,
+      title: "Fix a crash",
+      category: "fixed"
+    )
+    git = Object.new
+    git.define_singleton_method(:sha) { |_ref| "a" * 40 }
+    git.define_singleton_method(:changes) { |**_arguments| [change] }
+    git.define_singleton_method(:parents) { |_ref| [] }
+    planner = SequelAceRelease::Planner.new(
+      git: git,
+      version_files: FakeVersions.new({ "version" => "5.3.1", "build" => 20_104 })
+    )
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      planner.plan(
+        channel: "production",
+        base_tag: "production/not-a-release",
+        main_ref: "main",
+        observed_cloud_next_build: 20_105
+      )
+    end
+    assert_includes error.message, "base tag production/not-a-release is malformed"
+  end
 end

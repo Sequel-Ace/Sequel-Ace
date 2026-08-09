@@ -2,6 +2,8 @@
 
 require "json"
 require "net/http"
+require "openssl"
+require "socket"
 require "uri"
 
 module SequelAceRelease
@@ -9,6 +11,15 @@ module SequelAceRelease
     Response = Struct.new(:status, :headers, :body, keyword_init: true)
     RETRYABLE = [429, 500, 502, 503, 504].freeze
     RETRYABLE_METHODS = %w[GET].freeze
+    NETWORK_ERRORS = [
+      Timeout::Error,
+      SocketError,
+      OpenSSL::SSL::SSLError,
+      Errno::ECONNRESET,
+      Errno::ECONNREFUSED,
+      Errno::EPIPE,
+      Errno::EHOSTUNREACH
+    ].freeze
 
     def initialize(base_url:, default_headers: {}, max_attempts: 4)
       @base_url = base_url
@@ -25,7 +36,7 @@ module SequelAceRelease
         attempt += 1
         begin
           response = perform(normalized_method, uri, body, @default_headers.merge(headers))
-        rescue Timeout::Error, Errno::ECONNRESET, Errno::ECONNREFUSED => error
+        rescue *NETWORK_ERRORS => error
           unless retryable_request && attempt < @max_attempts
             raise APIError, "API request failed after #{attempt} attempts: #{error.class}"
           end

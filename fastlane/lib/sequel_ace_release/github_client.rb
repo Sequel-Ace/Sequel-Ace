@@ -250,9 +250,10 @@ module SequelAceRelease
 
     def cleanup_release_branch(branch:, expected_sha:, base_sha: nil, repository_root: nil, changed_paths: nil)
       raise ValidationError, "release branch must begin with prepare-release/" unless branch.start_with?("prepare-release/")
-      unless expected_sha.to_s.match?(/\A[0-9a-f]{40,64}\z/i)
+      unless Config.valid_git_sha?(expected_sha)
         raise ValidationError, "expected release branch SHA is malformed"
       end
+      expected_sha = expected_sha.to_s.downcase
 
       begin
         actual_sha = ref_sha("heads/#{branch}")
@@ -515,7 +516,7 @@ module SequelAceRelease
     end
 
     def validate_commit_sha!(value, label)
-      return if value.to_s.match?(/\A[0-9a-f]{40,64}\z/i)
+      return if Config.valid_git_sha?(value)
 
       raise ValidationError, "#{label} is malformed"
     end

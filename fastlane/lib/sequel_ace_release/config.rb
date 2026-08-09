@@ -14,6 +14,7 @@ module SequelAceRelease
     LOCALE = "en-US"
     EXPECTED_SCREENSHOT_COUNT = 10
     SCHEMA_VERSION = 1
+    GIT_SHA_PATTERN = /\A(?:[0-9a-f]{40}|[0-9a-f]{64})\z/i.freeze
     AUTHORIZED_ACTORS = %w[Jason-Morcos Kaspik].freeze
     CHANNELS = %w[production beta].freeze
     MANIFEST_STATES = %w[
@@ -47,6 +48,10 @@ module SequelAceRelease
       return channel if CHANNELS.include?(channel)
 
       raise ValidationError, "channel must be one of: #{CHANNELS.join(', ')}"
+    end
+
+    def valid_git_sha?(value)
+      value.to_s.match?(GIT_SHA_PATTERN)
     end
 
     def app_id(channel)

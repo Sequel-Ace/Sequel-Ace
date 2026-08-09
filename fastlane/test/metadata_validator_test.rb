@@ -82,6 +82,20 @@ class MetadataValidatorTest < Minitest::Test
     assert_includes error.message, "contactEmail"
   end
 
+  def test_null_release_date_is_reported_as_validation_failure
+    snapshot = metadata_snapshot
+    snapshot["version"]["attributes"]["earliestReleaseDate"] = nil
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      @validator.validate!(
+        snapshot: snapshot,
+        expected_build: 20_105,
+        minimum_release_time: @minimum
+      )
+    end
+    assert_includes error.message, "missing or malformed"
+  end
+
   def test_live_gate_requires_distribution_and_active_phase
     assert @validator.validate!(
       snapshot: metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE"),

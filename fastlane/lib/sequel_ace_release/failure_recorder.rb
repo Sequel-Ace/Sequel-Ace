@@ -28,7 +28,7 @@ module SequelAceRelease
       }
       if submission
         validate_submission!(current, submission)
-        updates["asc_ids"] = submission.slice(*SUBMISSION_FIELDS)
+        updates["asc_ids"] = current.fetch("asc_ids", {}).merge(submission.slice(*SUBMISSION_FIELDS))
         target_state = "submitted" unless target_state == "live"
       elsif current.fetch("channel") == "beta" && DURABLE_BETA_STATES.include?(target_state)
         # Artifact recovery is already durable. Record the later workflow
