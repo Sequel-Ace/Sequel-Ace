@@ -156,6 +156,14 @@ module SequelAceRelease
         raise ValidationError, "launched process does not belong to the verified artifact"
       end
       verify_translocated_app!(observed_executable, executable) unless observed_executable == executable.realpath
+      current_executable = owned_process_executable(
+        process_command(process_id),
+        app: app,
+        expected_executable: executable
+      )
+      unless current_executable == observed_executable
+        raise ValidationError, "launched process identity changed before graceful termination"
+      end
       owned_process = true
 
       # Apple Events can block indefinitely on Automation consent in hosted runners.

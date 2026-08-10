@@ -50,13 +50,14 @@ class ArtifactVerifierTest < Minitest::Test
     def initialize(
       pgrep_results: [[false, ""], [true, "4242\n"]],
       process_command: Pathname.new("/bin/echo").realpath.to_s,
+      process_commands: nil,
       kill_zero_results: [[false, ""]],
       signature_text: "Authority=Developer ID Application: Moballo, LLC (NKQ4HJ66PX)\nTeamIdentifier=#{SequelAceRelease::Config::TEAM_ID}\n"
     )
       @commands = []
       @options = []
       @pgrep_results = pgrep_results
-      @process_command = process_command
+      @process_commands = Array(process_commands || process_command)
       @kill_zero_results = kill_zero_results
       @signature_text = signature_text
     end
@@ -67,7 +68,8 @@ class ArtifactVerifierTest < Minitest::Test
       success, stdout = if command.first == "/usr/bin/pgrep"
                           @pgrep_results.shift
                         elsif command.first == "/bin/ps"
-                          [true, "#{@process_command}\n"]
+                          process_command = @process_commands.length > 1 ? @process_commands.shift : @process_commands.first
+                          [true, "#{process_command}\n"]
                         elsif command.first == "/bin/kill" && command[1] == "-0"
                           @kill_zero_results.shift
                         elsif command.first == "/usr/bin/codesign" && command.include?("-d")
@@ -267,6 +269,30 @@ class ArtifactVerifierTest < Minitest::Test
     assert_rejects_translocated_signature(signature, "Moballo Developer ID Application")
   end
 
+  def test_launch_revalidates_a_translocated_process_before_signaling
+    with_app do |app|
+      with_translocated_copy(app) do |translocated_executable|
+        runner = LaunchRunner.new(
+          process_commands: [
+            translocated_executable.realpath.to_s,
+            "/Applications/Unrelated.app/Contents/MacOS/Sequel Ace"
+          ]
+        )
+        verifier = SequelAceRelease::ArtifactVerifier.new(runner: runner)
+
+        error = assert_raises(SequelAceRelease::ValidationError) do
+          verifier.stub(:sleep, nil) do
+            verifier.send(:launch_and_quit, app, app.join("Contents/MacOS/Sequel Ace"))
+          end
+        end
+
+        assert_includes error.message, "identity changed before graceful termination"
+        assert_equal 2, runner.commands.count { |command| command.first == "/bin/ps" }
+        refute runner.commands.any? { |command| command.first == "/bin/kill" }
+      end
+    end
+  end
+
   def test_launch_force_terminates_the_verified_pid_after_the_graceful_timeout
     runner = LaunchRunner.new(kill_zero_results: [[true, ""], [false, ""]])
     verifier = SequelAceRelease::ArtifactVerifier.new(runner: runner)
@@ -287,7 +313,7 @@ class ArtifactVerifierTest < Minitest::Test
     assert_includes error.message, "did not quit cleanly"
     assert_includes runner.commands, ["/bin/kill", "-TERM", "4242"]
     assert_includes runner.commands, ["/bin/kill", "-KILL", "4242"]
-    assert_equal 2, runner.commands.count { |command| command.first == "/bin/ps" }
+    assert_equal 3, runner.commands.count { |command| command.first == "/bin/ps" }
     assert_equal 2, runner.commands.count { |command| command[0, 2] == ["/bin/kill", "-0"] }
   end
 
