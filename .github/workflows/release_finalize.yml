@@ -16,6 +16,7 @@ jobs:
     name: Find production prereleases to finalize
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    environment: sequel-ace-release
     permissions:
       contents: read
     outputs:

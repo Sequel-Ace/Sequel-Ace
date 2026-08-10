@@ -163,6 +163,7 @@ class WorkflowRecoveryTest < Minitest::Test
     finalizer = workflow.split("  finalize:", 2).fetch(1)
 
     assert_includes discovery, "runs-on: ubuntu-latest"
+    assert_includes discovery, "environment: sequel-ace-release"
     assert_includes discovery, 'if [[ "${RELEASE_ENABLED}" != "true" ]]'
     assert_includes discovery, "the scheduled finalizer did no work"
     assert_includes discovery, "has_candidates=false"
@@ -240,8 +241,9 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes reconcile, 'SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}'
 
     finalizer = File.read(repo_path(".github/workflows/release_finalize.yml"))
-    finalizer_job_env = finalizer.split("environment: sequel-ace-release", 2).fetch(1)
-                                 .split("steps:", 2).first
+    finalizer_job = finalizer.split("  finalize:", 2).fetch(1)
+    finalizer_job_env = finalizer_job.split("environment: sequel-ace-release", 2).fetch(1)
+                                     .split("steps:", 2).first
     refute_includes finalizer_job_env, "SA_ASC_KEY_ID"
     refute_includes finalizer_job_env, "SA_ASC_PRIVATE_KEY"
     refute_includes finalizer_job_env, "GHCR_TOKEN"
