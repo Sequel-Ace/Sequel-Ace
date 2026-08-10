@@ -3,6 +3,51 @@
 require "test_helper"
 
 class CommandRunnerTest < Minitest::Test
+  def test_can_spawn_a_long_running_gui_process_without_waiting
+    process_id = nil
+    started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+    Dir.mktmpdir do |directory|
+      executable = File.join(directory, "long running ; child")
+      File.write(executable, "#!#{RbConfig.ruby}\nsleep 10\n")
+      File.chmod(0o700, executable)
+
+      begin
+        process_id = SequelAceRelease::CommandRunner.new.spawn(executable)
+        elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at
+
+        assert_operator process_id, :>, 0
+        assert_operator elapsed, :<, 2
+        assert Process.kill(0, process_id)
+      ensure
+        begin
+          Process.kill("TERM", process_id) if process_id
+        rescue Errno::ESRCH
+          # The child already exited and was reaped by the detached waiter.
+        end
+      end
+    end
+  end
+
+  def test_spawn_requires_a_command
+    assert_raises(ArgumentError) { SequelAceRelease::CommandRunner.new.spawn }
+  end
+
+  def test_spawn_wraps_system_call_failures_without_exposing_the_command
+    Dir.mktmpdir do |directory|
+      missing_command = File.join(directory, "missing-spawn-command-secret-value")
+
+      error = assert_raises(SequelAceRelease::CommandError) do
+        SequelAceRelease::CommandRunner.new.spawn(missing_command)
+      end
+
+      assert_includes error.message, "Errno::ENOENT"
+      assert_includes error.message, "errno"
+      refute_includes error.message, missing_command
+      refute_includes error.message, "secret-value"
+    end
+  end
+
   def test_can_run_a_gui_launcher_without_capture_pipes
     child_pid = nil
     pid_path = nil

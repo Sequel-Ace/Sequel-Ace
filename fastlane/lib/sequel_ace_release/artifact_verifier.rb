@@ -132,20 +132,13 @@ module SequelAceRelease
       existing = @runner.run("/usr/bin/pgrep", "-x", process_name, allow_failure: true)
       raise ValidationError, "#{process_name} is already running; refusing to quit an unrelated process" if existing.status.success?
 
-      # A GUI app can inherit capture pipes from `open`, keeping Open3 blocked
-      # for the app's entire lifetime. The launch itself produces no evidence;
-      # process identity and liveness are verified independently below.
-      @runner.run("/usr/bin/open", "-n", app, discard_output: true)
+      # LaunchServices can keep `open` alive for the GUI app's entire lifetime
+      # on hosted runners. Spawn the already-verified executable directly so
+      # launch is asynchronous and its exact process identity is known.
+      process_id = @runner.spawn(executable, chdir: app.parent).to_s
+      raise ValidationError, "launched artifact returned an invalid process identifier" unless process_id.match?(/\A[1-9]\d*\z/)
       started = true
       sleep(5)
-      running = @runner.run("/usr/bin/pgrep", "-x", process_name, allow_failure: true)
-      raise ValidationError, "artifact did not remain running after launch" unless running.status.success?
-
-      process_ids = running.stdout.lines.map(&:strip).reject(&:empty?)
-      raise ValidationError, "expected exactly one launched artifact process, found #{process_ids.length}" unless process_ids.length == 1
-
-      process_id = process_ids.first
-      raise ValidationError, "launched artifact returned an invalid process identifier" unless process_id.match?(/\A[1-9]\d*\z/)
 
       observed_executable = owned_process_executable(
         process_command(process_id),

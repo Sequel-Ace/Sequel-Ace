@@ -45,21 +45,31 @@ class ArtifactVerifierTest < Minitest::Test
   end
 
   class LaunchRunner
-    attr_reader :commands, :options
+    attr_reader :commands, :options, :spawn_commands, :spawn_options
 
     def initialize(
-      pgrep_results: [[false, ""], [true, "4242\n"]],
+      pgrep_results: [[false, ""]],
       process_command: Pathname.new("/bin/echo").realpath.to_s,
       process_commands: nil,
       kill_zero_results: [[false, ""]],
+      spawn_pid: 4242,
       signature_text: "Authority=Developer ID Application: Moballo, LLC (NKQ4HJ66PX)\nTeamIdentifier=#{SequelAceRelease::Config::TEAM_ID}\n"
     )
       @commands = []
       @options = []
+      @spawn_commands = []
+      @spawn_options = []
       @pgrep_results = pgrep_results
       @process_commands = Array(process_commands || process_command)
       @kill_zero_results = kill_zero_results
+      @spawn_pid = spawn_pid
       @signature_text = signature_text
+    end
+
+    def spawn(*command, **options)
+      @spawn_commands << command
+      @spawn_options << options
+      @spawn_pid
     end
 
     def run(*command, **options)
@@ -215,8 +225,9 @@ class ArtifactVerifierTest < Minitest::Test
     assert_includes runner.commands, ["/usr/bin/pgrep", "-x", "echo"]
     assert_includes runner.commands, ["/bin/ps", "-ww", "-p", "4242", "-o", "command="]
     assert_includes runner.commands, ["/bin/kill", "-0", "4242"]
-    open_index = runner.commands.index(["/usr/bin/open", "-n", Pathname.new("/tmp/Sequel Ace.app")])
-    assert_equal true, runner.options.fetch(open_index).fetch(:discard_output)
+    assert_includes runner.spawn_commands, [Pathname.new("/bin/echo")]
+    assert_equal Pathname.new("/tmp"), runner.spawn_options.first.fetch(:chdir)
+    refute runner.commands.any? { |command| command.first == "/usr/bin/open" }
     refute runner.commands.any? { |command| command.first == "/usr/bin/pkill" }
     refute runner.commands.any? { |command| command.first == "/usr/bin/osascript" }
   end
@@ -320,8 +331,8 @@ class ArtifactVerifierTest < Minitest::Test
     assert_equal 2, runner.commands.count { |command| command[0, 2] == ["/bin/kill", "-0"] }
   end
 
-  def test_launch_refuses_to_terminate_when_more_than_one_process_matches
-    runner = LaunchRunner.new(pgrep_results: [[false, ""], [true, "4242\n4243\n"]])
+  def test_launch_refuses_to_start_when_the_executable_is_already_running
+    runner = LaunchRunner.new(pgrep_results: [[true, "4242\n"]])
     verifier = SequelAceRelease::ArtifactVerifier.new(runner: runner)
 
     error = assert_raises(SequelAceRelease::ValidationError) do
@@ -334,7 +345,26 @@ class ArtifactVerifierTest < Minitest::Test
       end
     end
 
-    assert_includes error.message, "exactly one"
+    assert_includes error.message, "already running"
+    assert_empty runner.spawn_commands
+    refute runner.commands.any? { |command| command.first == "/bin/kill" }
+  end
+
+  def test_launch_rejects_an_invalid_spawned_process_identifier
+    runner = LaunchRunner.new(spawn_pid: 0)
+    verifier = SequelAceRelease::ArtifactVerifier.new(runner: runner)
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      verifier.stub(:sleep, nil) do
+        verifier.send(
+          :launch_and_quit,
+          Pathname.new("/tmp/Sequel Ace.app"),
+          Pathname.new("/bin/echo")
+        )
+      end
+    end
+
+    assert_includes error.message, "invalid process identifier"
     refute runner.commands.any? { |command| command.first == "/bin/kill" }
   end
 
