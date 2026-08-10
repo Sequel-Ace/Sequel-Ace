@@ -658,7 +658,7 @@ jobs:
             echo "- Build reconciliation: \`${{ steps.reconcile.outputs.reason }}\`"
             echo "- Private archive: \`${{ steps.archive.outputs.reference }}\`"
             if [[ "${{ inputs.channel }}" == "production" ]]; then
-              echo "- App Store submission staged and submitted; the version-state webhook will wake the finalizer when Apple reports live distribution."
+              echo "- App Store submission staged and submitted; the six-hour finalizer poll will publish GitHub after Apple reports live distribution."
             else
               echo "- Beta completed with Production and Alpha artifacts; no customer App Store version was created."
             fi

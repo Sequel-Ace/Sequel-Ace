@@ -249,28 +249,6 @@ module SequelAceRelease
       true
     end
 
-    def dispatch_workflow(workflow:, ref:, inputs:)
-      unless workflow.to_s.match?(/\A[A-Za-z0-9._-]{1,255}\z/)
-        raise ValidationError, "workflow dispatch target is malformed"
-      end
-      unless ref.to_s.match?(/\A[A-Za-z0-9._\/-]{1,255}\z/)
-        raise ValidationError, "workflow dispatch ref is malformed"
-      end
-      valid_inputs = inputs.is_a?(Hash) && inputs.length <= 25 && inputs.all? do |key, value|
-        key.to_s.match?(/\A[A-Za-z0-9_-]{1,100}\z/) && value.is_a?(String)
-      end
-      raise ValidationError, "workflow dispatch inputs are malformed" unless valid_inputs
-
-      body = { "ref" => ref, "inputs" => inputs }
-      if JSON.generate(body).bytesize > 65_535
-        raise ValidationError, "workflow dispatch payload exceeds GitHub's size limit"
-      end
-
-      encoded_workflow = URI.encode_www_form_component(workflow)
-      request!("POST", "/repos/#{@repository}/actions/workflows/#{encoded_workflow}/dispatches", body: body)
-      true
-    end
-
     def cleanup_release_branch(branch:, expected_sha:, base_sha: nil, repository_root: nil, changed_paths: nil)
       raise ValidationError, "release branch must begin with prepare-release/" unless branch.start_with?("prepare-release/")
       unless Config.valid_git_sha?(expected_sha)

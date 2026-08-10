@@ -84,7 +84,7 @@ class WorkflowRecoveryTest < Minitest::Test
     {
       ".github/workflows/release_alpha_retry.yml" => "Unauthorized release rerun initiator.",
       ".github/workflows/release_feasibility.yml" => "Unauthorized feasibility rerun initiator.",
-      ".github/workflows/release_finalize.yml" => "Unauthorized event-finalizer rerun initiator."
+      ".github/workflows/release_finalize.yml" => "Unauthorized finalizer rerun initiator."
     }.each do |path, rejection|
       workflow = File.read(repo_path(path))
       assert_includes workflow, "github.triggering_actor"
@@ -142,20 +142,36 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes workflow, "continue"
   end
 
-  def test_finalizer_is_event_driven_with_an_authorized_manual_fallback
+  def test_finalizer_polls_every_six_hours_with_an_authorized_manual_fallback
     workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
 
-    refute_includes workflow, "schedule:"
+    assert_includes workflow, "schedule:"
+    assert_includes workflow, 'cron: "17 */6 * * *"'
     refute_includes workflow, "repository_dispatch:"
     assert_includes workflow, "workflow_dispatch:"
-    assert_includes workflow, "SA_WEBHOOK_GITHUB_APP_BOT"
-    assert_includes workflow, "EVENT_APP_ID: ${{ inputs.app_id }}"
-    assert_includes workflow, '"${EVENT_APP_ID}" == "1518036000"'
-    assert_includes workflow, '"${EVENT_NEW_VALUE}" == "READY_FOR_DISTRIBUTION"'
-    assert_includes workflow, '"${RELEASE_ACTOR}" == "${WEBHOOK_APP_BOT}"'
-    assert_includes workflow, "Manual recovery must not provide webhook-only inputs"
-    assert_includes workflow, "App Store finalization event is too old"
-    assert_includes workflow, "The exact event-triggered release remains pending"
+    assert_includes workflow, 'RELEASE_EVENT: ${{ github.event_name }}'
+    assert_includes workflow, '"${RELEASE_EVENT}" == "workflow_dispatch"'
+    assert_includes workflow, "Unauthorized scheduled-finalizer rerun initiator."
+    assert_includes workflow, "scheduled six-hour poll"
+    refute_includes workflow, "SA_WEBHOOK_GITHUB_APP_BOT"
+    refute_includes workflow, "EVENT_APP_ID"
+  end
+
+  def test_scheduled_finalizer_skips_expensive_work_when_disabled_or_empty
+    workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
+    discovery = workflow.split("  discover:", 2).fetch(1).split("  finalize:", 2).first
+    finalizer = workflow.split("  finalize:", 2).fetch(1)
+
+    assert_includes discovery, "runs-on: ubuntu-latest"
+    assert_includes discovery, "environment: sequel-ace-release"
+    assert_includes discovery, 'if [[ "${RELEASE_ENABLED}" != "true" ]]'
+    assert_includes discovery, "the scheduled finalizer did no work"
+    assert_includes discovery, "has_candidates=false"
+    assert_includes discovery, "gh release list"
+    assert_includes finalizer, "needs: discover"
+    assert_includes finalizer, "needs.discover.outputs.enabled == 'true'"
+    assert_includes finalizer, "needs.discover.outputs.has_candidates == 'true'"
+    assert_includes finalizer, "Verify Production App Store Connect access"
   end
 
   def test_finalizer_executes_the_immutable_event_revision
@@ -225,18 +241,19 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes reconcile, 'SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}'
 
     finalizer = File.read(repo_path(".github/workflows/release_finalize.yml"))
-    finalizer_job_env = finalizer.split("environment: sequel-ace-release", 2).fetch(1)
-                                 .split("steps:", 2).first
+    finalizer_job = finalizer.split("  finalize:", 2).fetch(1)
+    finalizer_job_env = finalizer_job.split("environment: sequel-ace-release", 2).fetch(1)
+                                     .split("steps:", 2).first
     refute_includes finalizer_job_env, "SA_ASC_KEY_ID"
     refute_includes finalizer_job_env, "SA_ASC_PRIVATE_KEY"
     refute_includes finalizer_job_env, "GHCR_TOKEN"
     refute_includes finalizer_job_env, "SA_GITHUB_TOKEN"
     assert_includes finalizer_job_env, 'SA_ASC_REQUIRE_ISSUER: "1"'
 
-    event = finalizer.split("- name: Resolve the exact App Store version event", 2).fetch(1)
-                     .split("- name: Finalize only exact App Store-live releases", 2).first
-    assert_includes event, 'SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}'
-    assert_includes event, 'SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}'
+    access = finalizer.split("- name: Verify Production App Store Connect access", 2).fetch(1)
+                      .split("- name: Finalize only exact App Store-live releases", 2).first
+    assert_includes access, 'SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}'
+    assert_includes access, 'SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}'
 
     finalize = finalizer.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
     assert_includes finalize, 'GHCR_TOKEN: ${{ github.token }}'
@@ -255,23 +272,24 @@ class WorkflowRecoveryTest < Minitest::Test
     end
   end
 
-  def test_finalizer_resolves_and_matches_the_exact_event_version_and_build
+  def test_finalizer_discovers_only_production_prereleases
     workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
-    resolution = workflow.index("sa-release resolve-app-store-version")
-    exact_tag = workflow.index('release_tag="production/${SA_FINALIZE_EVENT_VERSION}-${SA_FINALIZE_EVENT_BUILD}"')
-    version_identity = workflow.index('"${manifest_version_id}" == "${SA_FINALIZE_EVENT_VERSION_ID}"')
-    build_identity = workflow.index('"${manifest_build_id}" == "${SA_FINALIZE_EVENT_BUILD_ID}"')
-    validation = workflow.index("--validate-only")
+    discovery = workflow.split("  discover:", 2).fetch(1).split("  finalize:", 2).first
+    execution = workflow.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
 
-    assert resolution
-    assert exact_tag
-    assert version_identity
-    assert build_identity
-    assert validation
-    assert_operator resolution, :<, exact_tag
-    assert_operator exact_tag, :<, version_identity
-    assert_operator version_identity, :<, build_identity
-    assert_operator build_identity, :<, validation
+    [discovery, execution].each do |step|
+      listing = step.index("gh release list")
+      prerelease_filter = step.index(".isPrerelease == true")
+      production_filter = step.index('startsWith("production/")') || step.index('startswith("production/")')
+
+      assert listing
+      assert prerelease_filter
+      assert production_filter
+      assert_operator listing, :<, prerelease_filter
+      assert_operator prerelease_filter, :<, production_filter
+    end
+    assert_operator execution.index('startswith("production/")'), :<, execution.index("--validate-only")
+    refute_includes workflow, "resolve-app-store-version"
   end
 
   def test_pr_jobs_do_not_persist_the_checkout_token
