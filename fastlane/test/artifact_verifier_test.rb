@@ -314,6 +314,9 @@ class ArtifactVerifierTest < Minitest::Test
     assert_includes runner.commands, ["/bin/kill", "-TERM", "4242"]
     assert_includes runner.commands, ["/bin/kill", "-KILL", "4242"]
     assert_equal 3, runner.commands.count { |command| command.first == "/bin/ps" }
+    final_identity_check = runner.commands.rindex(["/bin/ps", "-ww", "-p", "4242", "-o", "command="])
+    forced_termination = runner.commands.index(["/bin/kill", "-KILL", "4242"])
+    assert_operator final_identity_check, :<, forced_termination
     assert_equal 2, runner.commands.count { |command| command[0, 2] == ["/bin/kill", "-0"] }
   end
 
