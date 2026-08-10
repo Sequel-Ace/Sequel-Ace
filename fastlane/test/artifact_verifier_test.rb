@@ -360,7 +360,7 @@ class ArtifactVerifierTest < Minitest::Test
         end
 
         assert_includes error.message, expected_error
-        refute runner.commands.any? { |command| command[0, 2] == ["/bin/kill", "-TERM"] }
+        refute runner.commands.any? { |command| command.first == "/bin/kill" }
       end
     end
   end
