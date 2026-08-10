@@ -90,6 +90,48 @@ class AppStoreConnectClientTest < Minitest::Test
     assert_equal "/v1/apps/1518036000", transport.requests.first.fetch(:path)
   end
 
+  def test_lists_app_store_versions_through_the_app_scoped_endpoint
+    key = OpenSSL::PKey::EC.generate("prime256v1")
+    transport = FakeTransport.new([
+      http_response(body: {
+        "data" => [{ "id" => "version-id", "type" => "appStoreVersions" }],
+        "links" => { "next" => nil }
+      })
+    ])
+    client = SequelAceRelease::AppStoreConnectClient.new(
+      key_id: "KEY123",
+      private_key: key.to_pem,
+      transport: transport
+    )
+
+    assert_equal "version-id", client.app_store_versions(app_id: "1518036000").first.fetch("id")
+    request = transport.requests.first
+    assert_equal "/v1/apps/1518036000/appStoreVersions", request.fetch(:path)
+    assert_equal "MAC_OS", request.fetch(:query).fetch("filter[platform]")
+    refute request.fetch(:query).key?("filter[app]")
+  end
+
+  def test_finds_an_exact_app_store_version_through_the_app_scoped_endpoint
+    key = OpenSSL::PKey::EC.generate("prime256v1")
+    transport = FakeTransport.new([
+      http_response(body: {
+        "data" => [{ "id" => "version-id", "type" => "appStoreVersions" }],
+        "links" => { "next" => nil }
+      })
+    ])
+    client = SequelAceRelease::AppStoreConnectClient.new(
+      key_id: "KEY123",
+      private_key: key.to_pem,
+      transport: transport
+    )
+
+    assert_equal "version-id", client.app_store_version(app_id: "1518036000", version: "5.3.2").fetch("id")
+    request = transport.requests.first
+    assert_equal "/v1/apps/1518036000/appStoreVersions", request.fetch(:path)
+    assert_equal "5.3.2", request.fetch(:query).fetch("filter[versionString]")
+    refute request.fetch(:query).key?("filter[app]")
+  end
+
   def test_reads_detailed_cloud_run_workflow_commit_and_tag
     key = OpenSSL::PKey::EC.generate("prime256v1")
     transport = FakeTransport.new([
