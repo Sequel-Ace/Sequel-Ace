@@ -3,6 +3,66 @@
 require "test_helper"
 
 class CommandRunnerTest < Minitest::Test
+  def test_can_run_a_gui_launcher_without_capture_pipes
+    child_pid = nil
+    pid_path = nil
+    result = nil
+    runner_thread = nil
+
+    Dir.mktmpdir do |directory|
+      begin
+        pid_path = File.join(directory, "inherited-stream-child.pid")
+        launcher = <<~'RUBY'
+          child_pid = fork do
+            $stdout.write("inherited output")
+            $stderr.write("inherited error")
+            sleep 5
+          end
+          File.write(ARGV.fetch(0), child_pid)
+        RUBY
+
+        runner_thread = Thread.new do
+          SequelAceRelease::CommandRunner.new.run(
+            RbConfig.ruby,
+            "-e",
+            launcher,
+            pid_path,
+            discard_output: true
+          )
+        end
+        runner_thread.report_on_exception = false
+        deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 2
+        sleep(0.01) until File.file?(pid_path) || Process.clock_gettime(Process::CLOCK_MONOTONIC) >= deadline
+        assert File.file?(pid_path), "launcher did not record its descendant"
+        child_pid = Integer(File.read(pid_path))
+        assert runner_thread.join(2), "launcher waited for a descendant holding inherited streams"
+        result = runner_thread.value
+      ensure
+        child_pid ||= Integer(File.read(pid_path)) if pid_path && File.file?(pid_path)
+        begin
+          Process.kill("TERM", child_pid) if child_pid
+        rescue Errno::ESRCH
+          # The child already exited and was reaped by the operating system.
+        end
+        runner_thread&.join(2)
+      end
+    end
+
+    assert result.status.success?
+    assert_empty result.stdout
+    assert_empty result.stderr
+  end
+
+  def test_discard_output_rejects_stdin_data
+    assert_raises(ArgumentError) do
+      SequelAceRelease::CommandRunner.new.run(
+        "/usr/bin/true",
+        discard_output: true,
+        stdin_data: "unexpected"
+      )
+    end
+  end
+
   def test_explicitly_redacts_signed_download_urls_from_failures
     signed_url = "https://download.example.invalid/artifact?signature=secret-value"
     error = assert_raises(SequelAceRelease::CommandError) do
