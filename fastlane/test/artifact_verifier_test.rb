@@ -50,13 +50,15 @@ class ArtifactVerifierTest < Minitest::Test
     def initialize(
       pgrep_results: [[false, ""], [true, "4242\n"]],
       process_command: Pathname.new("/bin/echo").realpath.to_s,
-      kill_zero_results: [[false, ""]]
+      kill_zero_results: [[false, ""]],
+      signature_text: "Authority=Developer ID Application: Moballo, LLC (NKQ4HJ66PX)\nTeamIdentifier=#{SequelAceRelease::Config::TEAM_ID}\n"
     )
       @commands = []
       @options = []
       @pgrep_results = pgrep_results
       @process_command = process_command
       @kill_zero_results = kill_zero_results
+      @signature_text = signature_text
     end
 
     def run(*command, **options)
@@ -69,7 +71,7 @@ class ArtifactVerifierTest < Minitest::Test
                         elsif command.first == "/bin/kill" && command[1] == "-0"
                           @kill_zero_results.shift
                         elsif command.first == "/usr/bin/codesign" && command.include?("-d")
-                          [true, "Authority=Developer ID Application: Moballo, LLC (NKQ4HJ66PX)\nTeamIdentifier=#{SequelAceRelease::Config::TEAM_ID}\n"]
+                          [true, @signature_text]
                         else
                           [true, ""]
                         end
@@ -253,6 +255,18 @@ class ArtifactVerifierTest < Minitest::Test
     end
   end
 
+  def test_launch_rejects_an_app_translocation_signed_by_another_team
+    signature = "Authority=Developer ID Application: Moballo, LLC (NKQ4HJ66PX)\nTeamIdentifier=WRONGTEAM\n"
+
+    assert_rejects_translocated_signature(signature, "TeamIdentifier WRONGTEAM")
+  end
+
+  def test_launch_rejects_an_app_translocation_without_a_moballo_developer_id_authority
+    signature = "Authority=Apple Root CA\nTeamIdentifier=#{SequelAceRelease::Config::TEAM_ID}\n"
+
+    assert_rejects_translocated_signature(signature, "Moballo Developer ID Application")
+  end
+
   def test_launch_force_terminates_the_verified_pid_after_the_graceful_timeout
     runner = LaunchRunner.new(kill_zero_results: [[true, ""], [false, ""]])
     verifier = SequelAceRelease::ArtifactVerifier.new(runner: runner)
@@ -329,6 +343,27 @@ class ArtifactVerifierTest < Minitest::Test
   end
 
   private
+
+  def assert_rejects_translocated_signature(signature, expected_error)
+    with_app do |app|
+      with_translocated_copy(app) do |translocated_executable|
+        runner = LaunchRunner.new(
+          process_command: translocated_executable.realpath.to_s,
+          signature_text: signature
+        )
+        verifier = SequelAceRelease::ArtifactVerifier.new(runner: runner)
+
+        error = assert_raises(SequelAceRelease::ValidationError) do
+          verifier.stub(:sleep, nil) do
+            verifier.send(:launch_and_quit, app, app.join("Contents/MacOS/Sequel Ace"))
+          end
+        end
+
+        assert_includes error.message, expected_error
+        refute runner.commands.any? { |command| command[0, 2] == ["/bin/kill", "-TERM"] }
+      end
+    end
+  end
 
   def with_app
     Dir.mktmpdir do |directory|
