@@ -6,6 +6,9 @@ require "tmpdir"
 
 module SequelAceRelease
   class ArtifactVerifier
+    GRACEFUL_QUIT_TIMEOUT_SECONDS = 20
+    FORCED_QUIT_TIMEOUT_SECONDS = 5
+
     def initialize(runner: CommandRunner.new)
       @runner = runner
     end
@@ -130,21 +133,23 @@ module SequelAceRelease
       process_id = process_ids.first
       raise ValidationError, "launched artifact returned an invalid process identifier" unless process_id.match?(/\A[1-9]\d*\z/)
 
-      command = @runner.run("/bin/ps", "-p", process_id, "-o", "command=").stdout.strip
       expected_command = executable.realpath.to_s
-      unless command == expected_command || command.start_with?("#{expected_command} ")
+      unless process_command_matches?(process_command(process_id), expected_command)
         raise ValidationError, "launched process does not belong to the verified artifact"
       end
       owned_process = true
 
       # Apple Events can block indefinitely on Automation consent in hosted runners.
-      termination_sent = true
       @runner.run("/bin/kill", "-TERM", process_id)
-      deadline = Time.now + 20
+      termination_sent = true
+      deadline = Time.now + GRACEFUL_QUIT_TIMEOUT_SECONDS
       loop do
         stopped = !@runner.run("/bin/kill", "-0", process_id, allow_failure: true).status.success?
         return if stopped
-        raise ValidationError, "artifact did not quit cleanly" if Time.now >= deadline
+        if Time.now >= deadline
+          force_terminate!(process_id, expected_command)
+          raise ValidationError, "artifact did not quit cleanly"
+        end
 
         sleep(1)
       end
@@ -152,6 +157,42 @@ module SequelAceRelease
       if started && owned_process && !termination_sent
         @runner.run("/bin/kill", "-TERM", process_id, allow_failure: true)
       end
+    end
+
+    def force_terminate!(process_id, expected_command)
+      command = process_command(process_id)
+      return unless command
+      unless process_command_matches?(command, expected_command)
+        raise ValidationError, "launched process identity changed before forced termination"
+      end
+
+      @runner.run("/bin/kill", "-KILL", process_id)
+      deadline = Time.now + FORCED_QUIT_TIMEOUT_SECONDS
+      loop do
+        stopped = !@runner.run("/bin/kill", "-0", process_id, allow_failure: true).status.success?
+        return if stopped
+        if Time.now >= deadline
+          current_command = process_command(process_id)
+          return unless current_command
+          unless process_command_matches?(current_command, expected_command)
+            raise ValidationError, "launched process identity changed after forced termination"
+          end
+          raise ValidationError, "artifact remained running after forced termination"
+        end
+
+        sleep(1)
+      end
+    end
+
+    def process_command(process_id)
+      result = @runner.run("/bin/ps", "-p", process_id, "-o", "command=", allow_failure: true)
+      return nil unless result.status.success?
+
+      result.stdout.strip
+    end
+
+    def process_command_matches?(command, expected_command)
+      command && (command == expected_command || command.start_with?("#{expected_command} "))
     end
 
     def package(app, output_zip)

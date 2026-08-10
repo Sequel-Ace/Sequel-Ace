@@ -179,10 +179,10 @@ deliveries cannot enqueue another run. An
 ambiguous dispatch failure stays consumed and requires the authorized manual
 recovery path.
 
-The relay mints a repository-selected installation token requesting only
-Actions write. It also fails closed unless GitHub reports that both the App
-installation and minted token have exactly Actions write plus implicit Metadata
-read, select only this repository, and subscribe to no events. It then
+The relay mints a repository-selected installation token requesting exactly
+Actions write plus Metadata read. It also fails closed unless GitHub reports
+that both the App installation and minted token have that exact permission set,
+select only this repository, and subscribe to no events. It then
 dispatches `release_finalize.yml` on `main`. GitHub documents that this exact
 endpoint accepts GitHub App installation tokens with Actions write. See Apple's
 [webhook configuration](https://developer.apple.com/documentation/appstoreconnectapi/configuring-webhook-notifications)

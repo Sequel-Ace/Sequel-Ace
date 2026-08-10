@@ -125,6 +125,7 @@ jobs:
         id: event
         env:
           EVENT_TIMESTAMP: ${{ inputs.timestamp }}
+          EVENT_VERSION_ID: ${{ steps.authorization.outputs.event_version_id }}
           SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
           SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
           SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
@@ -139,7 +140,7 @@ jobs:
           '
           bundle exec ruby fastlane/bin/sa-release resolve-app-store-version \
             --app-id "1518036000" \
-            --version-id "${{ steps.authorization.outputs.event_version_id }}" \
+            --version-id "${EVENT_VERSION_ID}" \
             --output finalization-event.json
           ruby -rjson -e '
             event = JSON.parse(File.read(ARGV.fetch(0)))

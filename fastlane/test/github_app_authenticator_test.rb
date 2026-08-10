@@ -26,7 +26,7 @@ class GitHubAppAuthenticatorTest < Minitest::Test
     assert_equal "/repos/Sequel-Ace/Sequel-Ace/installation", lookup.fetch(:path)
     assert_equal "/app/installations/42/access_tokens", creation.fetch(:path)
     assert_equal ["Sequel-Ace"], creation.dig(:body, "repositories")
-    assert_equal({ "actions" => "write" }, creation.dig(:body, "permissions"))
+    assert_equal({ "actions" => "write", "metadata" => "read" }, creation.dig(:body, "permissions"))
     refute creation.dig(:body, "permissions").key?("contents")
     refute creation.dig(:body, "permissions").key?("pull_requests")
 

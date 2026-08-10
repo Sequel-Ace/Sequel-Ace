@@ -59,7 +59,7 @@ module SequelAceRelease
           "/app/installations/#{installation_id}/access_tokens",
           body: {
             "repositories" => [repository_name],
-            "permissions" => { "actions" => "write" }
+            "permissions" => RELAY_PERMISSIONS
           },
           headers: authorization.merge("Content-Type" => "application/json")
         ),
@@ -88,7 +88,7 @@ module SequelAceRelease
       raise ValidationError, "GitHub App private key is not an RSA private key" unless key.private?
 
       key
-    rescue OpenSSL::PKey::PKeyError, OpenSSL::PKey::RSAError
+    rescue OpenSSL::PKey::PKeyError
       raise ValidationError, "GitHub App private key is invalid"
     end
 

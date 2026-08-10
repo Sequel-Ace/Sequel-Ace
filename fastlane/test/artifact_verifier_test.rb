@@ -4,7 +4,10 @@ require "test_helper"
 
 class ArtifactVerifierTest < Minitest::Test
   class FakeArtifactRunner
+    attr_reader :commands
+
     def initialize(team: SequelAceRelease::Config::TEAM_ID, architectures: "arm64 x86_64", fail_stapler: false, executable: "Sequel Ace")
+      @commands = []
       @team = team
       @architectures = architectures
       @fail_stapler = fail_stapler
@@ -12,6 +15,7 @@ class ArtifactVerifierTest < Minitest::Test
     end
 
     def run(*command, **_options)
+      @commands << command
       stdout = ""
       stderr = ""
       case command.first
@@ -130,12 +134,14 @@ class ArtifactVerifierTest < Minitest::Test
 
   def test_malformed_executable_name_aborts_before_launch_or_process_lookup
     with_app do |app|
+      runner = FakeArtifactRunner.new(executable: "../Unrelated")
       error = assert_raises(SequelAceRelease::ValidationError) do
         SequelAceRelease::ArtifactVerifier.new(
-          runner: FakeArtifactRunner.new(executable: "../Unrelated")
+          runner: runner
         ).verify(path: app, version: "5.3.2", build: 20_105, channel: "production", launch: true)
       end
       assert_includes error.message, "executable name"
+      refute runner.commands.any? { |command| %w[/usr/bin/open /usr/bin/pgrep /bin/ps /bin/kill].include?(command.first) }
     end
   end
 
@@ -154,6 +160,30 @@ class ArtifactVerifierTest < Minitest::Test
     assert_includes runner.commands, ["/bin/kill", "-0", "4242"]
     refute runner.commands.any? { |command| command.first == "/usr/bin/pkill" }
     refute runner.commands.any? { |command| command.first == "/usr/bin/osascript" }
+  end
+
+  def test_launch_force_terminates_the_verified_pid_after_the_graceful_timeout
+    runner = LaunchRunner.new(kill_zero_results: [[true, ""], [false, ""]])
+    verifier = SequelAceRelease::ArtifactVerifier.new(runner: runner)
+    times = [Time.at(0), Time.at(20), Time.at(20)]
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      Time.stub(:now, -> { times.shift || Time.at(25) }) do
+        verifier.stub(:sleep, nil) do
+          verifier.send(
+            :launch_and_quit,
+            Pathname.new("/tmp/Sequel Ace.app"),
+            Pathname.new("/bin/echo")
+          )
+        end
+      end
+    end
+
+    assert_includes error.message, "did not quit cleanly"
+    assert_includes runner.commands, ["/bin/kill", "-TERM", "4242"]
+    assert_includes runner.commands, ["/bin/kill", "-KILL", "4242"]
+    assert_equal 2, runner.commands.count { |command| command.first == "/bin/ps" }
+    assert_equal 2, runner.commands.count { |command| command[0, 2] == ["/bin/kill", "-0"] }
   end
 
   def test_launch_refuses_to_terminate_when_more_than_one_process_matches
