@@ -38,40 +38,6 @@ class GitHubClientTest < Minitest::Test
     assert_equal "/repos/Sequel-Ace/Sequel-Ace/git/ref/heads/main", transport.requests.first[:path]
   end
 
-  def test_dispatches_a_bounded_workflow_to_main
-    transport = FakeTransport.new([http_response(status: 200, body: { "workflow_run_id" => 42 })])
-    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
-    inputs = {
-      "app_id" => "1518036000",
-      "version_id" => "version-id",
-      "new_value" => "READY_FOR_DISTRIBUTION"
-    }
-
-    assert client.dispatch_workflow(
-      workflow: "release_finalize.yml",
-      ref: "main",
-      inputs: inputs
-    )
-    request = transport.requests.first
-    assert_equal "POST", request.fetch(:method)
-    assert_equal "/repos/Sequel-Ace/Sequel-Ace/actions/workflows/release_finalize.yml/dispatches", request.fetch(:path)
-    assert_equal "main", request.dig(:body, "ref")
-    assert_equal inputs, request.dig(:body, "inputs")
-  end
-
-  def test_rejects_an_oversized_workflow_dispatch_before_network_access
-    client = SequelAceRelease::GitHubClient.new(token: "token", transport: FakeTransport.new([]))
-
-    error = assert_raises(SequelAceRelease::ValidationError) do
-      client.dispatch_workflow(
-        workflow: "release_finalize.yml",
-        ref: "main",
-        inputs: { "value" => "x" * 65_536 }
-      )
-    end
-    assert_includes error.message, "size limit"
-  end
-
   def test_accepts_an_exact_release_target_that_remains_an_unchanged_main_ancestor
     target_sha = "a" * 40
     current_main = "b" * 40

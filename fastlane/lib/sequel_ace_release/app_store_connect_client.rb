@@ -145,50 +145,6 @@ module SequelAceRelease
       }).first
     end
 
-    def app_store_version_by_id(app_id:, version_id:)
-      unless version_id.to_s.match?(/\A[A-Za-z0-9._:-]{1,255}\z/)
-        raise ValidationError, "App Store version ID is malformed"
-      end
-
-      resource = response_data("GET", "/v1/appStoreVersions/#{version_id}")
-      unless resource.is_a?(Hash) && resource["id"] == version_id
-        raise ValidationError, "App Store Connect returned a mismatched version resource"
-      end
-      version = Version.validate!(resource.dig("attributes", "versionString"))
-      unless resource.dig("attributes", "platform") == "MAC_OS"
-        raise ValidationError, "App Store Connect returned malformed macOS version evidence"
-      end
-
-      filtered = app_store_version(app_id: app_id, version: version)
-      unless filtered.is_a?(Hash) && filtered["id"] == version_id
-        raise ValidationError, "App Store version does not belong to the expected app"
-      end
-
-      resource
-    end
-
-    def finalization_event_target(app_id:, version_id:)
-      resource = app_store_version_by_id(app_id: app_id, version_id: version_id)
-      build_resource = selected_build(version_id: version_id)
-      unless build_resource.is_a?(Hash) && build_resource["id"].to_s.match?(/\A[A-Za-z0-9._:-]{1,255}\z/)
-        raise ValidationError, "App Store version event has no selected build"
-      end
-      build = Integer(build_resource.dig("attributes", "version"), 10)
-      raise ValidationError, "App Store version event selected build is malformed" unless build.positive?
-
-      {
-        "app_id" => app_id,
-        "version_id" => resource.fetch("id"),
-        "version" => resource.dig("attributes", "versionString"),
-        "platform" => resource.dig("attributes", "platform"),
-        "state" => app_version_state(resource),
-        "build_id" => build_resource.fetch("id"),
-        "build" => build
-      }
-    rescue ArgumentError, TypeError
-      raise ValidationError, "App Store version event selected build is malformed"
-    end
-
     def app_store_versions(app_id:)
       paginate("/v1/appStoreVersions", {
         "filter[app]" => app_id,
