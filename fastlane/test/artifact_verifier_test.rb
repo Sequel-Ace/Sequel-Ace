@@ -145,6 +145,55 @@ class ArtifactVerifierTest < Minitest::Test
     end
   end
 
+  def test_executable_symlink_outside_the_bundle_aborts_before_process_control
+    with_app do |app|
+      executable = app.join("Contents/MacOS/Sequel Ace")
+      outside_executable = app.parent.join("outside-executable")
+      outside_executable.write("fixture")
+      executable.delete
+      File.symlink(outside_executable, executable)
+      runner = FakeArtifactRunner.new
+
+      error = assert_raises(SequelAceRelease::ValidationError) do
+        SequelAceRelease::ArtifactVerifier.new(runner: runner).verify(
+          path: app,
+          version: "5.3.2",
+          build: 20_105,
+          channel: "production",
+          launch: true
+        )
+      end
+
+      assert_includes error.message, "symbolic link"
+      refute runner.commands.any? { |command| %w[/usr/bin/lipo /usr/bin/open /usr/bin/pgrep /bin/ps /bin/kill].include?(command.first) }
+    end
+  end
+
+  def test_symlinked_executable_directory_outside_the_bundle_is_rejected
+    Dir.mktmpdir do |directory|
+      app = Pathname.new(directory).join("Sequel Ace.app")
+      FileUtils.mkdir_p(app.join("Contents"))
+      app.join("Contents/Info.plist").write("fixture")
+      outside_directory = Pathname.new(directory).join("outside-macos")
+      FileUtils.mkdir_p(outside_directory)
+      outside_directory.join("Sequel Ace").write("fixture")
+      File.symlink(outside_directory, app.join("Contents/MacOS"))
+      runner = FakeArtifactRunner.new
+
+      error = assert_raises(SequelAceRelease::ValidationError) do
+        SequelAceRelease::ArtifactVerifier.new(runner: runner).verify(
+          path: app,
+          version: "5.3.2",
+          build: 20_105,
+          channel: "production"
+        )
+      end
+
+      assert_includes error.message, "outside Contents/MacOS"
+      refute runner.commands.any? { |command| command.first == "/usr/bin/lipo" }
+    end
+  end
+
   def test_launch_terminates_the_exact_observed_process_without_apple_events
     runner = LaunchRunner.new
     verifier = SequelAceRelease::ArtifactVerifier.new(runner: runner)

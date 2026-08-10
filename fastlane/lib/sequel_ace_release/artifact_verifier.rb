@@ -40,7 +40,6 @@ module SequelAceRelease
         unless executable_name.match?(/\A[A-Za-z0-9 ._-]{1,128}\z/)
           raise ValidationError, "artifact executable name is malformed"
         end
-        executable = app.join("Contents/MacOS", executable_name)
 
         expected_bundle_id = Config.bundle_id(channel)
         raise ValidationError, "bundle identifier #{bundle_id} does not match #{expected_bundle_id}" unless bundle_id == expected_bundle_id
@@ -48,7 +47,7 @@ module SequelAceRelease
         if !any_build && actual_build != expected_build
           raise ValidationError, "artifact build #{actual_build} does not match #{expected_build}"
         end
-        raise ValidationError, "artifact executable is missing" unless executable.file?
+        executable = validated_executable(app, executable_name)
 
         architectures = @runner.run("/usr/bin/lipo", "-archs", executable).stdout.split.sort
         missing_architectures = %w[arm64 x86_64] - architectures
@@ -86,6 +85,23 @@ module SequelAceRelease
     end
 
     private
+
+    def validated_executable(app, executable_name)
+      executable = app.join("Contents/MacOS", executable_name)
+      unless executable.file? && !executable.symlink?
+        raise ValidationError, "artifact executable must be a regular file, not a symbolic link"
+      end
+
+      expected_directory = app.realpath.join("Contents/MacOS")
+      resolved_executable = executable.realpath
+      unless resolved_executable.dirname == expected_directory
+        raise ValidationError, "artifact executable resolves outside Contents/MacOS"
+      end
+
+      resolved_executable
+    rescue Errno::EACCES, Errno::ELOOP, Errno::ENOENT, Errno::ENOTDIR
+      raise ValidationError, "artifact executable could not be resolved safely"
+    end
 
     def locate_app(source, temporary_directory)
       search_root = if source.directory?
