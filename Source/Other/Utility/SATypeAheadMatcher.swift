@@ -65,7 +65,9 @@ import Foundation
     @objc(bestMatchForPattern:inCandidates:)
     static func bestMatch(for pattern: String, in candidates: [String]) -> Int {
         let foldedPattern = folded(pattern)
-        guard !foldedPattern.isEmpty else { return NSNotFound }
+        guard !foldedPattern.isEmpty else {
+            return NSNotFound
+        }
 
         var substringMatch = NSNotFound
         var subsequenceMatch = NSNotFound
@@ -97,7 +99,9 @@ import Foundation
         var nextWanted = patternIterator.next()
 
         for character in candidate {
-            guard let wanted = nextWanted else { return true }
+            guard let wanted = nextWanted else {
+                return true
+            }
             if character == wanted {
                 nextWanted = patternIterator.next()
             }

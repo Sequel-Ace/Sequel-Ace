@@ -15,7 +15,14 @@ import AppKit
 /// character subsequence — see SATypeAheadMatcher.
 @objc(SATablesListView) final class SATablesListView: SPTableView {
 
-    private let typeAhead = SATypeAheadMatcher(resetInterval: 0.3)
+    private static let typeAheadResetInterval: TimeInterval = 0.3
+
+    private let typeAhead = SATypeAheadMatcher(resetInterval: SATablesListView.typeAheadResetInterval)
+
+    // Selecting a row starts loading its table, so the selection is only
+    // committed once the sequence settles (see commitPendingSelection).
+    private var pendingSelectionRow = NSNotFound
+    private var pendingSelectionTimer: Timer?
 
     private var feedbackOverlay: NSVisualEffectView?
     private var feedbackLabel: NSTextField?
@@ -44,6 +51,8 @@ import AppKit
 
     private func cancelTypeAhead() {
         typeAhead.reset()
+        pendingSelectionTimer?.invalidate()
+        pendingSelectionRow = NSNotFound
         feedbackHideTimer?.invalidate()
         hideSearchFeedback()
     }
@@ -64,11 +73,23 @@ import AppKit
             return false
         }
 
-        let row = typeAhead.bestMatch(appending: characters, candidates: selectableRowTitles(), atTime: event.timestamp)
+        let row = typeAhead.bestMatch(appending: characters, candidates: searchableRowTitles(), atTime: event.timestamp)
 
         if row != NSNotFound {
-            selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+            pendingSelectionRow = row
             scrollRowToVisible(row)
+        }
+
+        // Selecting a row synchronously starts loading its table, and while
+        // that load runs no row is selectable — an immediate selection would
+        // block the characters still to come from refining the match.
+        // Deferring the commit until the sequence settles also loads only the
+        // final match instead of every intermediate one.
+        if pendingSelectionRow != NSNotFound {
+            pendingSelectionTimer?.invalidate()
+            pendingSelectionTimer = Timer.scheduledTimer(withTimeInterval: Self.typeAheadResetInterval, repeats: false) { [weak self] _ in
+                self?.commitPendingSelection()
+            }
         }
 
         showSearchFeedback(typeAhead.currentSearchString, matched: row != NSNotFound)
@@ -78,13 +99,31 @@ import AppKit
         return true
     }
 
+    private func commitPendingSelection() {
+        let row = pendingSelectionRow
+        pendingSelectionRow = NSNotFound
+
+        // Respect the delegate's gating (e.g. selection is disallowed while
+        // the document is running a task), as a user-initiated selection would.
+        guard row != NSNotFound, row < numberOfRows,
+              delegate?.tableView?(self, shouldSelectRow: row) ?? true
+        else {
+            return
+        }
+
+        selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        scrollRowToVisible(row)
+    }
+
     // MARK: - Search feedback overlay
 
     /// Shows the accumulated search string in a translucent badge pinned to
     /// the bottom of the list; it fades out shortly after typing stops. An
     /// unmatched search string is shown in red.
     private func showSearchFeedback(_ text: String, matched: Bool) {
-        guard let overlay = ensureFeedbackOverlay(), let label = feedbackLabel else { return }
+        guard let overlay = ensureFeedbackOverlay(), let label = feedbackLabel else {
+            return
+        }
 
         feedbackVisibilityGeneration += 1
 
@@ -101,7 +140,9 @@ import AppKit
     }
 
     private func hideSearchFeedback() {
-        guard let overlay = feedbackOverlay, !overlay.isHidden else { return }
+        guard let overlay = feedbackOverlay, !overlay.isHidden else {
+            return
+        }
 
         let visibilityGeneration = feedbackVisibilityGeneration
 
@@ -109,7 +150,9 @@ import AppKit
             context.duration = 0.25
             overlay.animator().alphaValue = 0
         }, completionHandler: { [weak self, weak overlay] in
-            guard let self, self.feedbackVisibilityGeneration == visibilityGeneration else { return }
+            guard let self, self.feedbackVisibilityGeneration == visibilityGeneration else {
+                return
+            }
             overlay?.isHidden = true
         })
     }
@@ -117,11 +160,15 @@ import AppKit
     /// Builds the badge lazily and pins it over the bottom edge of the
     /// enclosing scroll view, so it stays put while the list scrolls.
     private func ensureFeedbackOverlay() -> NSVisualEffectView? {
-        if let feedbackOverlay { return feedbackOverlay }
+        if let feedbackOverlay {
+            return feedbackOverlay
+        }
 
-        guard let scrollView = enclosingScrollView, let host = scrollView.superview else { return nil }
+        guard let scrollView = enclosingScrollView, let host = scrollView.superview else {
+            return nil
+        }
 
-        let overlay = NSVisualEffectView()
+        let overlay = SAClickThroughVisualEffectView()
         overlay.translatesAutoresizingMaskIntoConstraints = false
         overlay.material = .hudWindow
         overlay.blendingMode = .withinWindow
@@ -167,25 +214,43 @@ import AppKit
     private func isSearchableScalar(_ scalar: Unicode.Scalar) -> Bool {
         // Control characters (return, escape, tab, delete, …) and function
         // keys (arrows, F-keys — U+F700 range) keep their default behaviour.
-        if scalar.value < 0x20 || scalar.value == 0x7F { return false }
-        if (0xF700...0xF8FF).contains(scalar.value) { return false }
+        if scalar.value < 0x20 || scalar.value == 0x7F {
+            return false
+        }
+        if (0xF700...0xF8FF).contains(scalar.value) {
+            return false
+        }
         return true
     }
 
-    /// Row titles indexed by row; rows that must not be selected (group
+    /// Row titles indexed by row; rows that can never hold a table (group
     /// headers, placeholders) are represented as empty strings, which never
-    /// match a non-empty search string.
-    private func selectableRowTitles() -> [String] {
-        guard let dataSource, let delegate else { return [] }
+    /// match a non-empty search string. Built from the stable group-row
+    /// metadata rather than shouldSelectRow: the latter reports every row as
+    /// unselectable while a load task runs, which would empty the candidate
+    /// list mid-sequence.
+    private func searchableRowTitles() -> [String] {
+        guard let dataSource, let delegate else {
+            return []
+        }
         let column = tableColumns.first
 
         return (0..<numberOfRows).map { row in
-            guard delegate.tableView?(self, shouldSelectRow: row) ?? true,
+            guard !(delegate.tableView?(self, isGroupRow: row) ?? false),
                   let title = dataSource.tableView?(self, objectValueFor: column, row: row) as? String
             else {
                 return ""
             }
             return title
         }
+    }
+}
+
+/// The search badge is purely informational; without this override the
+/// visual-effect view would swallow clicks meant for the rows beneath it.
+private final class SAClickThroughVisualEffectView: NSVisualEffectView {
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
     }
 }
