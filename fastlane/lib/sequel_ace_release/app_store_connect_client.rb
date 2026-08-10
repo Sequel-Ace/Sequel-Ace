@@ -137,8 +137,7 @@ module SequelAceRelease
     end
 
     def app_store_version(app_id:, version:)
-      paginate("/v1/appStoreVersions", {
-        "filter[app]" => app_id,
+      paginate("/v1/apps/#{app_id}/appStoreVersions", {
         "filter[platform]" => "MAC_OS",
         "filter[versionString]" => version,
         "limit" => 10
@@ -146,8 +145,7 @@ module SequelAceRelease
     end
 
     def app_store_versions(app_id:)
-      paginate("/v1/appStoreVersions", {
-        "filter[app]" => app_id,
+      paginate("/v1/apps/#{app_id}/appStoreVersions", {
         "filter[platform]" => "MAC_OS",
         "limit" => 200
       })
