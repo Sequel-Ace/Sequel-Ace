@@ -27,13 +27,17 @@ end
 
 def release_api_key
   key_id = ENV["SA_ASC_KEY_ID"]
+  issuer_id = ENV["SA_ASC_ISSUER_ID"]
   private_key = ENV["SA_ASC_PRIVATE_KEY"]
   UI.user_error!("SA_ASC_KEY_ID is required") if key_id.to_s.empty?
+  if ENV["SA_ASC_REQUIRE_ISSUER"] == "1" && issuer_id.to_s.empty?
+    UI.user_error!("SA_ASC_ISSUER_ID is required for the configured Team API key")
+  end
   UI.user_error!("SA_ASC_PRIVATE_KEY is required") if private_key.to_s.empty?
 
   app_store_connect_api_key(
     key_id: key_id,
-    issuer_id: ENV["SA_ASC_ISSUER_ID"].to_s.empty? ? nil : ENV["SA_ASC_ISSUER_ID"],
+    issuer_id: issuer_id.to_s.empty? ? nil : issuer_id,
     key_content: private_key,
     is_key_content_base64: ENV["SA_ASC_PRIVATE_KEY_BASE64"] == "1",
     in_house: false

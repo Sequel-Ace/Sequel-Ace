@@ -1,9 +1,36 @@
 name: Finalize Live Releases
 
 on:
-  schedule:
-    - cron: "17 * * * *"
   workflow_dispatch:
+    inputs:
+      app_id:
+        description: Verified webhook Production app ID; leave blank for manual recovery
+        required: false
+        type: string
+      event_id:
+        description: Verified App Store webhook event ID
+        required: false
+        type: string
+      event_type:
+        description: Verified App Store webhook event type
+        required: false
+        type: string
+      version_id:
+        description: Verified App Store version ID
+        required: false
+        type: string
+      new_value:
+        description: Verified new App Store version state
+        required: false
+        type: string
+      old_value:
+        description: Verified prior App Store version state
+        required: false
+        type: string
+      timestamp:
+        description: Verified App Store webhook timestamp
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -20,38 +47,57 @@ jobs:
     timeout-minutes: 30
     environment: sequel-ace-release
     env:
-      SA_GITHUB_TOKEN: ${{ github.token }}
-      SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
-      SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
-      SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
-      SA_ASC_PRIVATE_KEY_BASE64: "1"
-      GHCR_TOKEN: ${{ github.token }}
-      GHCR_USERNAME: ${{ github.actor }}
+      SA_ASC_REQUIRE_ISSUER: "1"
       GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
     steps:
       - name: Enforce finalizer authorization and rollout state
+        id: authorization
         env:
           RELEASE_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}
-          RELEASE_EVENT: ${{ github.event_name }}
+          WEBHOOK_APP_BOT: ${{ vars.SA_WEBHOOK_GITHUB_APP_BOT }}
           RELEASE_ACTOR: ${{ github.actor }}
           RELEASE_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
           RELEASE_RUN_ATTEMPT: ${{ github.run_attempt }}
           RELEASE_REF: ${{ github.ref }}
+          EVENT_APP_ID: ${{ inputs.app_id }}
+          EVENT_ID: ${{ inputs.event_id }}
+          EVENT_TYPE: ${{ inputs.event_type }}
+          EVENT_VERSION_ID: ${{ inputs.version_id }}
+          EVENT_NEW_VALUE: ${{ inputs.new_value }}
+          EVENT_OLD_VALUE: ${{ inputs.old_value }}
+          EVENT_TIMESTAMP: ${{ inputs.timestamp }}
         run: |
           set -euo pipefail
           [[ "${RELEASE_ENABLED}" == "true" ]] || { echo "Release publishing is disabled." >&2; exit 1; }
           [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Finalization must run from main." >&2; exit 1; }
-          if [[ "${RELEASE_EVENT}" == "workflow_dispatch" ]]; then
-            [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized finalizer actor." >&2; exit 1; }
+          if [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]]; then
             [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized finalizer initiator." >&2; exit 1; }
-          elif [[ "${RELEASE_RUN_ATTEMPT}" != "1" ]]; then
-            [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized scheduled-finalizer rerun initiator." >&2; exit 1; }
+            [[ -z "${EVENT_APP_ID}${EVENT_ID}${EVENT_TYPE}${EVENT_VERSION_ID}${EVENT_NEW_VALUE}${EVENT_OLD_VALUE}${EVENT_TIMESTAMP}" ]] || { echo "Manual recovery must not provide webhook-only inputs." >&2; exit 1; }
+            echo "event_mode=false" >> "${GITHUB_OUTPUT}"
+          elif [[ -n "${WEBHOOK_APP_BOT}" && "${RELEASE_ACTOR}" == "${WEBHOOK_APP_BOT}" ]]; then
+            if [[ "${RELEASE_RUN_ATTEMPT}" == "1" ]]; then
+              [[ "${RELEASE_TRIGGERING_ACTOR}" == "${RELEASE_ACTOR}" ]] || { echo "Unexpected initial finalization event initiator." >&2; exit 1; }
+            else
+              [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized event-finalizer rerun initiator." >&2; exit 1; }
+            fi
+            [[ "${EVENT_APP_ID}" == "1518036000" ]] || { echo "Finalization event targeted the wrong App Store app." >&2; exit 1; }
+            [[ "${EVENT_TYPE}" == "appStoreVersionAppVersionStateUpdated" ]] || { echo "Finalization event type is invalid." >&2; exit 1; }
+            [[ "${EVENT_NEW_VALUE}" == "READY_FOR_DISTRIBUTION" ]] || { echo "Finalization event is not a live-state transition." >&2; exit 1; }
+            [[ "${EVENT_ID}" =~ ^[A-Za-z0-9._:-]{1,255}$ ]] || { echo "Finalization event ID is malformed." >&2; exit 1; }
+            [[ "${EVENT_VERSION_ID}" =~ ^[A-Za-z0-9._:-]{1,255}$ ]] || { echo "Finalization App Store version ID is malformed." >&2; exit 1; }
+            [[ "${EVENT_OLD_VALUE}" =~ ^[A-Z][A-Z0-9_]{0,127}$ ]] || { echo "Finalization previous state is malformed." >&2; exit 1; }
+            [[ -n "${EVENT_TIMESTAMP}" ]] || { echo "Finalization event timestamp is missing." >&2; exit 1; }
+            echo "event_mode=true" >> "${GITHUB_OUTPUT}"
+            echo "event_version_id=${EVENT_VERSION_ID}" >> "${GITHUB_OUTPUT}"
+          else
+            echo "Unauthorized finalizer actor." >&2
+            exit 1
           fi
 
       - name: Check out release tooling
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: main
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Set up Ruby and locked gems
@@ -60,17 +106,78 @@ jobs:
           ruby-version: "3.3"
           bundler-cache: true
 
-      - name: Install OCI archive client
+      - name: Install checksum-pinned ORAS on Apple silicon
+        if: runner.arch == 'ARM64'
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_darwin_arm64.tar.gz
+          checksum: f33fc12753c54172b0d0d19eaa0318d3f90fe9b094d96e8b259c881713c92e1c
+
+      - name: Install checksum-pinned ORAS on Intel
+        if: runner.arch == 'X64'
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_darwin_amd64.tar.gz
+          checksum: aeb684d8c24c18dce28fd1f7326636e4782b573108e244a93d4b1c4a5ec50f48
+
+      - name: Resolve the exact App Store version event
+        if: steps.authorization.outputs.event_mode == 'true'
+        id: event
+        env:
+          EVENT_TIMESTAMP: ${{ inputs.timestamp }}
+          EVENT_VERSION_ID: ${{ steps.authorization.outputs.event_version_id }}
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
         run: |
           set -euo pipefail
-          command -v oras >/dev/null 2>&1 || brew install oras
+          ruby -rtime -e '
+            event_time = Time.iso8601(ENV.fetch("EVENT_TIMESTAMP"))
+            now = Time.now
+            abort("App Store finalization event is too old") if event_time < now - (24 * 60 * 60)
+            abort("App Store finalization event timestamp is in the future") if event_time > now + (5 * 60)
+          '
+          bundle exec ruby fastlane/bin/sa-release resolve-app-store-version \
+            --app-id "1518036000" \
+            --version-id "${EVENT_VERSION_ID}" \
+            --output finalization-event.json
+          ruby -rjson -e '
+            event = JSON.parse(File.read(ARGV.fetch(0)))
+            abort("App Store event does not resolve to a live macOS version") unless event["platform"] == "MAC_OS" && event["state"] == "READY_FOR_DISTRIBUTION"
+            abort("App Store event version is malformed") unless event.fetch("version").match?(/\A\d+\.\d+\.\d+\z/)
+            abort("App Store event build is malformed") unless event.fetch("build").is_a?(Integer) && event.fetch("build").positive?
+            File.open(ENV.fetch("GITHUB_OUTPUT"), "a") do |output|
+              output.puts("version=#{event.fetch("version")}")
+              output.puts("build=#{event.fetch("build")}")
+              output.puts("build_id=#{event.fetch("build_id")}")
+            end
+          ' finalization-event.json
 
       - name: Finalize only exact App Store-live releases
         env:
           GH_TOKEN: ${{ github.token }}
+          SA_GITHUB_TOKEN: ${{ github.token }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
+          SA_FINALIZE_EVENT_MODE: ${{ steps.authorization.outputs.event_mode }}
+          SA_FINALIZE_EVENT_VERSION_ID: ${{ steps.authorization.outputs.event_version_id }}
+          SA_FINALIZE_EVENT_VERSION: ${{ steps.event.outputs.version }}
+          SA_FINALIZE_EVENT_BUILD: ${{ steps.event.outputs.build }}
+          SA_FINALIZE_EVENT_BUILD_ID: ${{ steps.event.outputs.build_id }}
         run: |
           set -euo pipefail
-          gh release list --limit 100 --json tagName,isPrerelease --jq '.[] | select(.isPrerelease == true and (.tagName | startswith("production/"))) | .tagName' > production-prereleases.txt
+          if [[ "${SA_FINALIZE_EVENT_MODE}" == "true" ]]; then
+            release_tag="production/${SA_FINALIZE_EVENT_VERSION}-${SA_FINALIZE_EVENT_BUILD}"
+            gh release view "${release_tag}" --json tagName >/dev/null
+            printf '%s\n' "${release_tag}" > production-prereleases.txt
+          else
+            gh release list --limit 100 --json tagName,isPrerelease --jq '.[] | select(.isPrerelease == true and (.tagName | startswith("production/"))) | .tagName' > production-prereleases.txt
+          fi
           finalized=0
           pending=0
           while IFS= read -r release_tag; do
@@ -100,6 +207,16 @@ jobs:
               pending=$((pending + 1))
               rm -rf "${work_directory}"
               continue
+            fi
+            if [[ "${SA_FINALIZE_EVENT_MODE}" == "true" ]]; then
+              if ! manifest_version_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).dig("asc_ids", "version_id")' "${work_directory}/manifest.json" 2>/dev/null)" || \
+                 ! manifest_build_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).dig("asc_ids", "build_id")' "${work_directory}/manifest.json" 2>/dev/null)"; then
+                echo "Finalization event does not match readable archived App Store identities." >&2
+                rm -rf "${work_directory}"
+                exit 1
+              fi
+              [[ "${manifest_version_id}" == "${SA_FINALIZE_EVENT_VERSION_ID}" ]] || { echo "Finalization event App Store version does not match the archive." >&2; rm -rf "${work_directory}"; exit 1; }
+              [[ "${manifest_build_id}" == "${SA_FINALIZE_EVENT_BUILD_ID}" ]] || { echo "Finalization event App Store build does not match the archive." >&2; rm -rf "${work_directory}"; exit 1; }
             fi
             if bundle exec ruby fastlane/bin/sa-release finalize \
               --manifest "${work_directory}/manifest.json" \
@@ -133,7 +250,16 @@ jobs:
             rm -rf "${work_directory}"
           done < production-prereleases.txt
           {
-            echo "### App Store finalization poll"
+            echo "### App Store finalization event"
             echo "- Finalized: ${finalized}"
             echo "- Still pending or blocked: ${pending}"
+            if [[ "${SA_FINALIZE_EVENT_MODE}" == "true" ]]; then
+              echo "- Trigger: verified App Store version-state webhook"
+            else
+              echo "- Trigger: authorized manual recovery"
+            fi
           } >> "${GITHUB_STEP_SUMMARY}"
+          if [[ "${SA_FINALIZE_EVENT_MODE}" == "true" && "${pending}" != "0" ]]; then
+            echo "The exact event-triggered release remains pending; rerun this workflow after resolving the reported gate." >&2
+            exit 1
+          fi

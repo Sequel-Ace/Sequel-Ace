@@ -6,6 +6,9 @@ require "tmpdir"
 
 module SequelAceRelease
   class ArtifactVerifier
+    GRACEFUL_QUIT_TIMEOUT_SECONDS = 20
+    FORCED_QUIT_TIMEOUT_SECONDS = 5
+
     def initialize(runner: CommandRunner.new)
       @runner = runner
     end
@@ -34,7 +37,9 @@ module SequelAceRelease
         actual_build = plist(info, "CFBundleVersion")
         actual_build_number = positive_build!(actual_build, "artifact build")
         executable_name = plist(info, "CFBundleExecutable")
-        executable = app.join("Contents/MacOS", executable_name)
+        unless executable_name.match?(/\A[A-Za-z0-9 ._-]{1,128}\z/)
+          raise ValidationError, "artifact executable name is malformed"
+        end
 
         expected_bundle_id = Config.bundle_id(channel)
         raise ValidationError, "bundle identifier #{bundle_id} does not match #{expected_bundle_id}" unless bundle_id == expected_bundle_id
@@ -42,7 +47,7 @@ module SequelAceRelease
         if !any_build && actual_build != expected_build
           raise ValidationError, "artifact build #{actual_build} does not match #{expected_build}"
         end
-        raise ValidationError, "artifact executable is missing" unless executable.file?
+        executable = validated_executable(app, executable_name)
 
         architectures = @runner.run("/usr/bin/lipo", "-archs", executable).stdout.split.sort
         missing_architectures = %w[arm64 x86_64] - architectures
@@ -60,7 +65,7 @@ module SequelAceRelease
 
         @runner.run("/usr/bin/xcrun", "stapler", "validate", app)
         @runner.run("/usr/sbin/spctl", "--assess", "--type", "execute", "--verbose=4", app)
-        launch_and_quit(app, executable_name) if launch
+        launch_and_quit(app, executable) if launch
         package(app, output_zip) if output_zip
 
         {
@@ -80,6 +85,23 @@ module SequelAceRelease
     end
 
     private
+
+    def validated_executable(app, executable_name)
+      executable = app.join("Contents/MacOS", executable_name)
+      unless executable.file? && !executable.symlink?
+        raise ValidationError, "artifact executable must be a regular file, not a symbolic link"
+      end
+
+      expected_directory = app.realpath.join("Contents/MacOS")
+      resolved_executable = executable.realpath
+      unless resolved_executable.dirname == expected_directory
+        raise ValidationError, "artifact executable resolves outside Contents/MacOS"
+      end
+
+      resolved_executable
+    rescue Errno::EACCES, Errno::ELOOP, Errno::ENOENT, Errno::ENOTDIR
+      raise ValidationError, "artifact executable could not be resolved safely"
+    end
 
     def locate_app(source, temporary_directory)
       search_root = if source.directory?
@@ -106,8 +128,12 @@ module SequelAceRelease
       @runner.run("/usr/bin/plutil", "-extract", key, "raw", "-o", "-", path).stdout.strip
     end
 
-    def launch_and_quit(app, process_name)
+    def launch_and_quit(app, executable)
       started = false
+      owned_process = false
+      termination_sent = false
+      process_id = nil
+      process_name = executable.basename.to_s
       existing = @runner.run("/usr/bin/pgrep", "-x", process_name, allow_failure: true)
       raise ValidationError, "#{process_name} is already running; refusing to quit an unrelated process" if existing.status.success?
 
@@ -117,22 +143,72 @@ module SequelAceRelease
       running = @runner.run("/usr/bin/pgrep", "-x", process_name, allow_failure: true)
       raise ValidationError, "artifact did not remain running after launch" unless running.status.success?
 
-      @runner.run(
-        "/usr/bin/osascript",
-        "-l", "JavaScript",
-        "-e", "function run(argv) { Application(argv[0]).quit(); }",
-        process_name
-      )
-      deadline = Time.now + 20
+      process_ids = running.stdout.lines.map(&:strip).reject(&:empty?)
+      raise ValidationError, "expected exactly one launched artifact process, found #{process_ids.length}" unless process_ids.length == 1
+
+      process_id = process_ids.first
+      raise ValidationError, "launched artifact returned an invalid process identifier" unless process_id.match?(/\A[1-9]\d*\z/)
+
+      expected_command = executable.realpath.to_s
+      unless process_command_matches?(process_command(process_id), expected_command)
+        raise ValidationError, "launched process does not belong to the verified artifact"
+      end
+      owned_process = true
+
+      # Apple Events can block indefinitely on Automation consent in hosted runners.
+      @runner.run("/bin/kill", "-TERM", process_id)
+      termination_sent = true
+      deadline = Time.now + GRACEFUL_QUIT_TIMEOUT_SECONDS
       loop do
-        stopped = !@runner.run("/usr/bin/pgrep", "-x", process_name, allow_failure: true).status.success?
+        stopped = !@runner.run("/bin/kill", "-0", process_id, allow_failure: true).status.success?
         return if stopped
-        raise ValidationError, "artifact did not quit cleanly" if Time.now >= deadline
+        if Time.now >= deadline
+          force_terminate!(process_id, expected_command)
+          raise ValidationError, "artifact did not quit cleanly"
+        end
 
         sleep(1)
       end
     ensure
-      @runner.run("/usr/bin/pkill", "-TERM", "-x", process_name, allow_failure: true) if process_name && started
+      if started && owned_process && !termination_sent
+        @runner.run("/bin/kill", "-TERM", process_id, allow_failure: true)
+      end
+    end
+
+    def force_terminate!(process_id, expected_command)
+      command = process_command(process_id)
+      return unless command
+      unless process_command_matches?(command, expected_command)
+        raise ValidationError, "launched process identity changed before forced termination"
+      end
+
+      @runner.run("/bin/kill", "-KILL", process_id)
+      deadline = Time.now + FORCED_QUIT_TIMEOUT_SECONDS
+      loop do
+        stopped = !@runner.run("/bin/kill", "-0", process_id, allow_failure: true).status.success?
+        return if stopped
+        if Time.now >= deadline
+          current_command = process_command(process_id)
+          return unless current_command
+          unless process_command_matches?(current_command, expected_command)
+            raise ValidationError, "launched process identity changed after forced termination"
+          end
+          raise ValidationError, "artifact remained running after forced termination"
+        end
+
+        sleep(1)
+      end
+    end
+
+    def process_command(process_id)
+      result = @runner.run("/bin/ps", "-p", process_id, "-o", "command=", allow_failure: true)
+      return nil unless result.status.success?
+
+      result.stdout.strip
+    end
+
+    def process_command_matches?(command, expected_command)
+      command && (command == expected_command || command.start_with?("#{expected_command} "))
     end
 
     def package(app, output_zip)
