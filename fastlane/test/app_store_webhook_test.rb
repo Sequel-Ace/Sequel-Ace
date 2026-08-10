@@ -109,6 +109,44 @@ class AppStoreWebhookTest < Minitest::Test
     end
   end
 
+  def test_event_ledger_atomically_replaces_data_while_retaining_a_stable_lock
+    Dir.mktmpdir do |directory|
+      path = File.join(directory, "events.jsonl")
+      lock_path = "#{path}.lock"
+      ledger = SequelAceRelease::WebhookEventLedger.new(path: path)
+
+      assert_equal true, ledger.claim(event_id: "first-event", fingerprint: "a" * 64)
+      first_ledger_inode = File.stat(path).ino
+      lock_inode = File.stat(lock_path).ino
+
+      assert_equal true, ledger.claim(event_id: "second-event", fingerprint: "b" * 64)
+      refute_equal first_ledger_inode, File.stat(path).ino
+      assert_equal lock_inode, File.stat(lock_path).ino
+      assert_equal 0, File.stat(path).mode & 0o077
+      assert_equal 0, File.stat(lock_path).mode & 0o077
+    end
+  end
+
+  def test_event_ledger_preserves_the_previous_file_if_atomic_install_fails
+    Dir.mktmpdir do |directory|
+      path = File.join(directory, "events.jsonl")
+      ledger = SequelAceRelease::WebhookEventLedger.new(path: path)
+      ledger.claim(event_id: "first-event", fingerprint: "a" * 64)
+      original = File.binread(path)
+
+      File.stub(:rename, ->(*) { raise Errno::EIO }) do
+        assert_raises(Errno::EIO) do
+          ledger.claim(event_id: "second-event", fingerprint: "b" * 64)
+        end
+      end
+
+      assert_equal original, File.binread(path)
+      assert_equal false, ledger.claim(event_id: "first-event", fingerprint: "a" * 64)
+      assert_equal true, ledger.claim(event_id: "second-event", fingerprint: "b" * 64)
+      assert_empty Dir.glob("#{path}.tmp.*")
+    end
+  end
+
   private
 
   def verifier

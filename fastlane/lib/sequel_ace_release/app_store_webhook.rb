@@ -2,6 +2,7 @@
 
 require "json"
 require "openssl"
+require "securerandom"
 require "time"
 
 module SequelAceRelease
@@ -126,6 +127,7 @@ module SequelAceRelease
       raise ValidationError, "App Store webhook event ledger path is required" if path.to_s.empty?
 
       @path = File.expand_path(path)
+      @lock_path = "#{@path}.lock"
       @clock = clock
     end
 
@@ -141,16 +143,8 @@ module SequelAceRelease
         raise ValidationError, "App Store webhook event fingerprint is malformed"
       end
 
-      flags = File::RDWR | File::CREAT
-      flags |= File::NOFOLLOW if File.const_defined?(:NOFOLLOW)
-      File.open(@path, flags, 0o600) do |file|
-        raise ValidationError, "App Store webhook event ledger is not a regular file" unless file.stat.file?
-        unless (file.stat.mode & 0o077).zero?
-          raise ValidationError, "App Store webhook event ledger permissions must be 0600 or stricter"
-        end
-        raise ValidationError, "could not lock App Store webhook event ledger" unless file.flock(File::LOCK_EX)
-
-        entries = read_entries(file)
+      with_lock do
+        entries = read_entries
         cutoff = @clock.call - RETENTION_SECONDS
         entries.select! { |entry| Time.iso8601(entry.fetch("claimed_at")) >= cutoff }
         existing = entries.find { |entry| entry.fetch("event_id") == event_id }
@@ -172,11 +166,7 @@ module SequelAceRelease
         if serialized.bytesize > MAX_LEDGER_BYTES
           raise ValidationError, "App Store webhook event ledger exceeds the size limit"
         end
-        file.rewind
-        file.write(serialized)
-        file.truncate(file.pos)
-        file.flush
-        file.fsync
+        replace_atomically(serialized)
         true
       end
     rescue Errno::ELOOP
@@ -187,9 +177,24 @@ module SequelAceRelease
 
     private
 
-    def read_entries(file)
-      file.rewind
-      contents = file.read(MAX_LEDGER_BYTES + 1) || ""
+    def with_lock
+      flags = File::RDWR | File::CREAT
+      flags |= File::NOFOLLOW if File.const_defined?(:NOFOLLOW)
+      File.open(@lock_path, flags, 0o600) do |file|
+        validate_private_regular_file!(file, "lock")
+        raise ValidationError, "could not lock App Store webhook event ledger" unless file.flock(File::LOCK_EX)
+
+        yield
+      end
+    end
+
+    def read_entries
+      flags = File::RDONLY
+      flags |= File::NOFOLLOW if File.const_defined?(:NOFOLLOW)
+      contents = File.open(@path, flags) do |file|
+        validate_private_regular_file!(file, "ledger")
+        file.read(MAX_LEDGER_BYTES + 1) || ""
+      end
       raise ValidationError, "App Store webhook event ledger exceeds the size limit" if contents.bytesize > MAX_LEDGER_BYTES
       return [] if contents.empty?
 
@@ -203,8 +208,63 @@ module SequelAceRelease
         Time.iso8601(entry.fetch("claimed_at"))
         entry
       end
+    rescue Errno::ENOENT
+      []
     rescue JSON::ParserError, KeyError, ArgumentError
       raise ValidationError, "App Store webhook event ledger is malformed"
+    end
+
+    def replace_atomically(serialized)
+      temporary_path, temporary_file = create_temporary_file
+      begin
+        file = temporary_file
+        validate_private_regular_file!(file, "temporary ledger")
+        file.write(serialized)
+        file.flush
+        file.fsync
+      ensure
+        temporary_file.close unless temporary_file.closed?
+      end
+
+      validate_destination!
+      File.rename(temporary_path, @path)
+      temporary_path = nil
+      File.open(File.dirname(@path), File::RDONLY) { |directory| directory.fsync }
+    ensure
+      File.unlink(temporary_path) if temporary_path && File.exist?(temporary_path)
+    end
+
+    def create_temporary_file
+      flags = File::WRONLY | File::CREAT | File::EXCL
+      flags |= File::NOFOLLOW if File.const_defined?(:NOFOLLOW)
+      10.times do
+        candidate = "#{@path}.tmp.#{Process.pid}.#{SecureRandom.hex(8)}"
+        begin
+          return [candidate, File.open(candidate, flags, 0o600)]
+        rescue Errno::EEXIST
+          next
+        end
+      end
+      raise ValidationError, "could not allocate App Store webhook event ledger temporary file"
+    end
+
+    def validate_destination!
+      stat = File.lstat(@path)
+      raise ValidationError, "App Store webhook event ledger is not a regular file" unless stat.file?
+      unless (stat.mode & 0o077).zero?
+        raise ValidationError, "App Store webhook event ledger permissions must be 0600 or stricter"
+      end
+    rescue Errno::ENOENT
+      nil
+    end
+
+    def validate_private_regular_file!(file, label)
+      unless file.stat.file?
+        raise ValidationError, "App Store webhook event ledger #{label} is not a regular file"
+      end
+      unless (file.stat.mode & 0o077).zero?
+        raise ValidationError, "App Store webhook event ledger #{label} permissions must be 0600 or stricter"
+      end
     end
   end
 end

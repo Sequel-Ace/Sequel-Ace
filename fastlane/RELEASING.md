@@ -144,8 +144,9 @@ HTTPS relay has been deployed and its secret is stored outside this repository.
 Subscribe it to App Store version state updates. Configure the HTTPS ingress to
 reject request bodies larger than 1 MiB before buffering or writing them. The
 relay also needs a durable local event ledger on persistent storage, owned by
-the relay user with mode `0600`. It must pass the raw request body, Apple's
-`x-apple-signature` header, and that ledger path to:
+the relay user with mode `0600`. The relay creates a mode-`0600` `.lock` sidecar
+at the same path; persist both files together. It must pass the raw request body,
+Apple's `x-apple-signature` header, and that ledger path to:
 
 ```sh
 export SA_ASC_WEBHOOK_SIGNATURE='<exact x-apple-signature header>'
@@ -171,8 +172,10 @@ log, repository variable, or webhook response. The Ruby verifier reads at most
 1 MiB plus one byte, authenticates the exact raw bytes with HMAC-SHA256,
 ignores valid pings and non-live transitions, and rejects state events older
 than 24 hours or more than five minutes in the future. Before making a network
-request it atomically consumes each event ID and signed-body fingerprint in the
-durable ledger, so duplicate deliveries cannot enqueue another run. An
+request it holds the stable sidecar lock, fsyncs a complete replacement, and
+atomically installs each event ID and signed-body fingerprint in the durable
+ledger, so a crash cannot expose a partially rewritten file and duplicate
+deliveries cannot enqueue another run. An
 ambiguous dispatch failure stays consumed and requires the authorized manual
 recovery path.
 
