@@ -128,6 +128,7 @@ class AppStoreConnectClientTest < Minitest::Test
     assert_equal "version-id", client.app_store_version(app_id: "1518036000", version: "5.3.2").fetch("id")
     request = transport.requests.first
     assert_equal "/v1/apps/1518036000/appStoreVersions", request.fetch(:path)
+    assert_equal "MAC_OS", request.fetch(:query).fetch("filter[platform]")
     assert_equal "5.3.2", request.fetch(:query).fetch("filter[versionString]")
     refute request.fetch(:query).key?("filter[app]")
   end
