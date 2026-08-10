@@ -6,6 +6,23 @@ module SequelAceRelease
   class CommandRunner
     Result = Struct.new(:stdout, :stderr, :status, keyword_init: true)
 
+    def spawn(*command, chdir: Config.repo_root, env: {})
+      raise ArgumentError, "command is required" if command.empty?
+
+      program, *arguments = command.map(&:to_s)
+      process_id = Process.spawn(
+        env,
+        [program, program],
+        *arguments,
+        chdir: chdir.to_s,
+        in: File::NULL,
+        out: File::NULL,
+        err: File::NULL
+      )
+      Process.detach(process_id)
+      process_id
+    end
+
     def run(*command, chdir: Config.repo_root, env: {}, allow_failure: false, stdin_data: nil, redact_arguments: [], discard_output: false)
       if discard_output
         raise ArgumentError, "stdin_data cannot be combined with discard_output" unless stdin_data.nil?
