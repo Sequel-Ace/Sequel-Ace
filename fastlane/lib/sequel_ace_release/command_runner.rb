@@ -21,6 +21,8 @@ module SequelAceRelease
       )
       Process.detach(process_id)
       process_id
+    rescue SystemCallError => e
+      raise CommandError, "command could not be started (#{e.class.name}, errno #{e.errno})"
     end
 
     def run(*command, chdir: Config.repo_root, env: {}, allow_failure: false, stdin_data: nil, redact_arguments: [], discard_output: false)

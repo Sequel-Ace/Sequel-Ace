@@ -33,6 +33,19 @@ class CommandRunnerTest < Minitest::Test
     assert_raises(ArgumentError) { SequelAceRelease::CommandRunner.new.spawn }
   end
 
+  def test_spawn_wraps_system_call_failures_without_exposing_the_command
+    missing_command = File.join(Dir.tmpdir, "missing-spawn-command-secret-value")
+
+    error = assert_raises(SequelAceRelease::CommandError) do
+      SequelAceRelease::CommandRunner.new.spawn(missing_command)
+    end
+
+    assert_includes error.message, "Errno::ENOENT"
+    assert_includes error.message, "errno"
+    refute_includes error.message, missing_command
+    refute_includes error.message, "secret-value"
+  end
+
   def test_can_run_a_gui_launcher_without_capture_pipes
     child_pid = nil
     pid_path = nil
