@@ -45,7 +45,7 @@ class ArtifactVerifierTest < Minitest::Test
   end
 
   class LaunchRunner
-    attr_reader :commands
+    attr_reader :commands, :options
 
     def initialize(
       pgrep_results: [[false, ""], [true, "4242\n"]],
@@ -53,19 +53,23 @@ class ArtifactVerifierTest < Minitest::Test
       kill_zero_results: [[false, ""]]
     )
       @commands = []
+      @options = []
       @pgrep_results = pgrep_results
       @process_command = process_command
       @kill_zero_results = kill_zero_results
     end
 
-    def run(*command, **_options)
+    def run(*command, **options)
       @commands << command
+      @options << options
       success, stdout = if command.first == "/usr/bin/pgrep"
                           @pgrep_results.shift
                         elsif command.first == "/bin/ps"
                           [true, "#{@process_command}\n"]
                         elsif command.first == "/bin/kill" && command[1] == "-0"
                           @kill_zero_results.shift
+                        elsif command.first == "/usr/bin/codesign" && command.include?("-d")
+                          [true, "Authority=Developer ID Application: Moballo, LLC (NKQ4HJ66PX)\nTeamIdentifier=#{SequelAceRelease::Config::TEAM_ID}\n"]
                         else
                           [true, ""]
                         end
@@ -205,10 +209,48 @@ class ArtifactVerifierTest < Minitest::Test
 
     assert_includes runner.commands, ["/bin/kill", "-TERM", "4242"]
     assert_includes runner.commands, ["/usr/bin/pgrep", "-x", "echo"]
-    assert_includes runner.commands, ["/bin/ps", "-p", "4242", "-o", "command="]
+    assert_includes runner.commands, ["/bin/ps", "-ww", "-p", "4242", "-o", "command="]
     assert_includes runner.commands, ["/bin/kill", "-0", "4242"]
+    open_index = runner.commands.index(["/usr/bin/open", "-n", Pathname.new("/tmp/Sequel Ace.app")])
+    assert_equal true, runner.options.fetch(open_index).fetch(:discard_output)
     refute runner.commands.any? { |command| command.first == "/usr/bin/pkill" }
     refute runner.commands.any? { |command| command.first == "/usr/bin/osascript" }
+  end
+
+  def test_launch_accepts_a_matching_signed_app_translocation
+    with_app do |app|
+      with_translocated_copy(app) do |translocated_executable|
+        runner = LaunchRunner.new(process_command: translocated_executable.realpath.to_s)
+        verifier = SequelAceRelease::ArtifactVerifier.new(runner: runner)
+
+        verifier.stub(:sleep, nil) do
+          verifier.send(:launch_and_quit, app, app.join("Contents/MacOS/Sequel Ace"))
+        end
+
+        assert_includes runner.commands, ["/bin/kill", "-TERM", "4242"]
+        assert runner.commands.any? { |command|
+          command[0, 5] == ["/usr/bin/codesign", "--verify", "--deep", "--strict", "--verbose=2"]
+        }
+      end
+    end
+  end
+
+  def test_launch_rejects_an_app_translocation_with_a_different_executable
+    with_app do |app|
+      with_translocated_copy(app, contents: "different fixture") do |translocated_executable|
+        runner = LaunchRunner.new(process_command: translocated_executable.realpath.to_s)
+        verifier = SequelAceRelease::ArtifactVerifier.new(runner: runner)
+
+        error = assert_raises(SequelAceRelease::ValidationError) do
+          verifier.stub(:sleep, nil) do
+            verifier.send(:launch_and_quit, app, app.join("Contents/MacOS/Sequel Ace"))
+          end
+        end
+
+        assert_includes error.message, "does not belong"
+        refute runner.commands.any? { |command| command.first == "/bin/kill" }
+      end
+    end
   end
 
   def test_launch_force_terminates_the_verified_pid_after_the_graceful_timeout
@@ -296,5 +338,16 @@ class ArtifactVerifierTest < Minitest::Test
       app.join("Contents/MacOS/Sequel Ace").write("fixture")
       yield app
     end
+  end
+
+  def with_translocated_copy(app, contents: nil)
+    uuid = "01234567-89AB-CDEF-0123-456789ABCDEF"
+    root = Pathname.new(Dir.tmpdir).join("AppTranslocation", uuid)
+    executable = root.join("d", app.basename, "Contents/MacOS/Sequel Ace")
+    FileUtils.mkdir_p(executable.dirname)
+    executable.binwrite(contents || app.join("Contents/MacOS/Sequel Ace").binread)
+    yield executable
+  ensure
+    FileUtils.rm_rf(root) if root
   end
 end

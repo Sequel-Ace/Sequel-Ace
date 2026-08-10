@@ -3,6 +3,29 @@
 require "test_helper"
 
 class CommandRunnerTest < Minitest::Test
+  def test_can_run_a_gui_launcher_without_capture_pipes
+    result = SequelAceRelease::CommandRunner.new.run(
+      RbConfig.ruby,
+      "-e",
+      '$stdout.write("captured output"); $stderr.write("captured error")',
+      discard_output: true
+    )
+
+    assert result.status.success?
+    assert_empty result.stdout
+    assert_empty result.stderr
+  end
+
+  def test_discard_output_rejects_stdin_data
+    assert_raises(ArgumentError) do
+      SequelAceRelease::CommandRunner.new.run(
+        "/usr/bin/true",
+        discard_output: true,
+        stdin_data: "unexpected"
+      )
+    end
+  end
+
   def test_explicitly_redacts_signed_download_urls_from_failures
     signed_url = "https://download.example.invalid/artifact?signature=secret-value"
     error = assert_raises(SequelAceRelease::CommandError) do

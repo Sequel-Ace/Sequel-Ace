@@ -52,7 +52,6 @@ or creates a GitHub release.
 
    | Name | Value |
    | --- | --- |
-   | `SA_RELEASE_GITHUB_APP_ID` | Dedicated App ID |
    | `SA_RELEASE_GITHUB_APP_PRIVATE_KEY` | Dedicated App PEM |
    | `SA_ASC_KEY_ID` | Dedicated Team ASC key ID with the App Manager role |
    | `SA_ASC_PRIVATE_KEY` | Base64-encoded `.p8` bytes |
@@ -68,10 +67,11 @@ or creates a GitHub release.
    environment. Never copy it to the public App Store webhook relay; that relay
    uses the separate, non-bypass App described below.
 
-7. Add repository variables:
+7. Add protected release-environment variables:
 
    | Name | Initial value |
    | --- | --- |
+   | `SA_RELEASE_GITHUB_APP_CLIENT_ID` | Dedicated release App client ID |
    | `SA_RELEASE_AUTOMATION_ENABLED` | `false` |
    | `SA_WEBHOOK_GITHUB_APP_BOT` | Exact separate webhook-relay App bot login, including `[bot]` |
    | `SA_PRODUCTION_CLOUD_WORKFLOW_ID` | Production Xcode Cloud workflow ID |
@@ -132,8 +132,15 @@ Notarize post-action or the configured **Next Build Number** setting:
 
 - **Production:** scheme `Sequel Ace Release`; start on `production/*` and
   `beta/*` tags; add the built-in Notarize post-action.
-- **Alpha:** scheme `Sequel Ace Beta`; remove the every-`main` trigger; start on
-  `beta/*` tags; add the built-in Notarize post-action.
+- **Alpha:** scheme `Sequel Ace Beta`; remove the every-push-to-`main` trigger;
+  retain manual `main`, schedule `main` nightly at 03:00
+  `America/Los_Angeles`, and start on `beta/*` tags; add the built-in Notarize
+  post-action and internal TestFlight distribution.
+
+Nightly and manual Alpha builds are tester-only App Store Connect deliveries.
+They never create or update a GitHub release and their build numbers remain
+informational. The `beta/*` trigger remains separate because a public beta
+requires both its Production and Alpha artifacts.
 
 After saving both workflows, manually start only Alpha from the current `main`
 commit. Record that Alpha build-run ID for the feasibility workflow. Do not
