@@ -274,14 +274,18 @@ class WorkflowRecoveryTest < Minitest::Test
 
   def test_finalizer_discovers_only_production_prereleases
     workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
-    discovery = workflow.index("gh release list")
-    production_filter = workflow.index('startsWith("production/")') || workflow.index('startswith("production/")')
-    validation = workflow.rindex("--validate-only")
+    discovery = workflow.split("  discover:", 2).fetch(1).split("  finalize:", 2).first
+    execution = workflow.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
 
-    assert discovery
-    assert production_filter
-    assert validation
-    assert_operator discovery, :<, validation
+    [discovery, execution].each do |step|
+      listing = step.index("gh release list")
+      production_filter = step.index('startsWith("production/")') || step.index('startswith("production/")')
+
+      assert listing
+      assert production_filter
+      assert_operator listing, :<, production_filter
+    end
+    assert_operator execution.index('startswith("production/")'), :<, execution.index("--validate-only")
     refute_includes workflow, "resolve-app-store-version"
   end
 
