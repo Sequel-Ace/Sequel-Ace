@@ -40,6 +40,41 @@ class AppStoreConnectClientTest < Minitest::Test
     assert_equal "-number", transport.requests.first.dig(:query, "sort")
   end
 
+  def test_team_key_jwt_uses_the_required_issuer_without_an_individual_subject
+    key = OpenSSL::PKey::EC.generate("prime256v1")
+    transport = FakeTransport.new([
+      http_response(body: { "data" => [], "links" => { "next" => nil } })
+    ])
+    client = SequelAceRelease::AppStoreConnectClient.new(
+      key_id: "TEAMKEY",
+      issuer_id: "team-issuer-id",
+      private_key: key.to_pem,
+      transport: transport,
+      clock: -> { Time.at(1_700_000_000) }
+    )
+
+    assert_empty client.workflow_runs("workflow-id")
+    token = transport.requests.first.dig(:headers, "Authorization").delete_prefix("Bearer ")
+    payload, header = JWT.decode(token, nil, false)
+    assert_equal "team-issuer-id", payload.fetch("iss")
+    refute payload.key?("sub")
+    assert_equal "appstoreconnect-v1", payload.fetch("aud")
+    assert_equal "TEAMKEY", header.fetch("kid")
+  end
+
+  def test_team_key_environment_fails_closed_when_the_issuer_is_missing
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      SequelAceRelease::AppStoreConnectClient.from_env({
+        "SA_ASC_KEY_ID" => "TEAMKEY",
+        "SA_ASC_PRIVATE_KEY" => "redacted-key",
+        "SA_ASC_REQUIRE_ISSUER" => "1"
+      })
+    end
+
+    assert_includes error.message, "issuer ID is required"
+    refute_includes error.message, "redacted-key"
+  end
+
   def test_reads_an_exact_app_resource
     key = OpenSSL::PKey::EC.generate("prime256v1")
     transport = FakeTransport.new([
@@ -53,6 +88,87 @@ class AppStoreConnectClientTest < Minitest::Test
 
     assert_equal "1518036000", client.app("1518036000").fetch("id")
     assert_equal "/v1/apps/1518036000", transport.requests.first.fetch(:path)
+  end
+
+  def test_resolves_a_version_id_only_when_it_belongs_to_the_expected_macos_app
+    key = OpenSSL::PKey::EC.generate("prime256v1")
+    version = {
+      "id" => "version-id",
+      "type" => "appStoreVersions",
+      "attributes" => {
+        "versionString" => "5.3.2",
+        "platform" => "MAC_OS",
+        "appVersionState" => "READY_FOR_DISTRIBUTION"
+      }
+    }
+    transport = FakeTransport.new([
+      http_response(body: { "data" => version }),
+      http_response(body: { "data" => [version], "links" => { "next" => nil } })
+    ])
+    client = SequelAceRelease::AppStoreConnectClient.new(
+      key_id: "KEY123",
+      private_key: key.to_pem,
+      transport: transport
+    )
+
+    result = client.app_store_version_by_id(app_id: "1518036000", version_id: "version-id")
+    assert_equal "5.3.2", result.dig("attributes", "versionString")
+    assert_equal "/v1/appStoreVersions/version-id", transport.requests.first.fetch(:path)
+    assert_equal "1518036000", transport.requests.last.dig(:query, "filter[app]")
+  end
+
+  def test_rejects_a_version_id_that_does_not_filter_back_to_the_expected_app
+    key = OpenSSL::PKey::EC.generate("prime256v1")
+    version = {
+      "id" => "version-id",
+      "attributes" => { "versionString" => "5.3.2", "platform" => "MAC_OS" }
+    }
+    transport = FakeTransport.new([
+      http_response(body: { "data" => version }),
+      http_response(body: { "data" => [], "links" => { "next" => nil } })
+    ])
+    client = SequelAceRelease::AppStoreConnectClient.new(
+      key_id: "KEY123",
+      private_key: key.to_pem,
+      transport: transport
+    )
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      client.app_store_version_by_id(app_id: "1518036000", version_id: "version-id")
+    end
+    assert_includes error.message, "expected app"
+  end
+
+  def test_resolves_the_exact_version_and_selected_build_for_a_finalization_event
+    key = OpenSSL::PKey::EC.generate("prime256v1")
+    client = SequelAceRelease::AppStoreConnectClient.new(
+      key_id: "KEY123",
+      private_key: key.to_pem,
+      transport: FakeTransport.new([])
+    )
+    client.define_singleton_method(:app_store_version_by_id) do |app_id:, version_id:|
+      raise unless app_id == "1518036000" && version_id == "version-id"
+
+      {
+        "id" => "version-id",
+        "attributes" => {
+          "versionString" => "5.3.2",
+          "platform" => "MAC_OS",
+          "appVersionState" => "READY_FOR_DISTRIBUTION"
+        }
+      }
+    end
+    client.define_singleton_method(:selected_build) do |version_id:|
+      raise unless version_id == "version-id"
+
+      { "id" => "build-id", "attributes" => { "version" => "20105" } }
+    end
+
+    result = client.finalization_event_target(app_id: "1518036000", version_id: "version-id")
+    assert_equal "5.3.2", result.fetch("version")
+    assert_equal 20_105, result.fetch("build")
+    assert_equal "build-id", result.fetch("build_id")
+    assert_equal "READY_FOR_DISTRIBUTION", result.fetch("state")
   end
 
   def test_reads_detailed_cloud_run_workflow_commit_and_tag

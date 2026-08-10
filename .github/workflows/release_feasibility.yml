@@ -26,12 +26,7 @@ jobs:
     timeout-minutes: 180
     environment: sequel-ace-release
     env:
-      SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
-      SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
-      SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
-      SA_ASC_PRIVATE_KEY_BASE64: "1"
-      GHCR_TOKEN: ${{ github.token }}
-      GHCR_USERNAME: ${{ github.actor }}
+      SA_ASC_REQUIRE_ISSUER: "1"
       GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
       PROBE_BRANCH: prepare-release/feasibility-probe-${{ github.run_id }}
     steps:
@@ -53,7 +48,7 @@ jobs:
       - name: Check out release tooling
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: main
+          ref: ${{ github.sha }}
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: false
@@ -69,6 +64,20 @@ jobs:
         with:
           ruby-version: "3.3"
           bundler-cache: true
+
+      - name: Install checksum-pinned ORAS on Apple silicon
+        if: runner.arch == 'ARM64'
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_darwin_arm64.tar.gz
+          checksum: f33fc12753c54172b0d0d19eaa0318d3f90fe9b094d96e8b259c881713c92e1c
+
+      - name: Install checksum-pinned ORAS on Intel
+        if: runner.arch == 'X64'
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_darwin_amd64.tar.gz
+          checksum: aeb684d8c24c18dce28fd1f7326636e4782b573108e244a93d4b1c4a5ec50f48
 
       - name: Run release-tool unit tests
         run: bundle exec rake -f fastlane/Rakefile test
@@ -110,8 +119,17 @@ jobs:
         env:
           SA_PRODUCTION_WORKFLOW_ID: ${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}
           SA_ALPHA_WORKFLOW_ID: ${{ vars.SA_ALPHA_CLOUD_WORKFLOW_ID }}
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
 
       - name: Download and verify the real Alpha notarization artifact
+        env:
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
         run: |
           set -euo pipefail
           current_version="$(bundle exec ruby -Ifastlane/lib -rsequel_ace_release -e 'puts SequelAceRelease::VersionFiles.new.current.fetch("version")')"
@@ -154,7 +172,7 @@ jobs:
           SA_GITHUB_TOKEN: ${{ steps.probe_app_token.outputs.token }}
         run: |
           set -euo pipefail
-          base_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq .object.sha)"
+          base_sha="$(git rev-parse HEAD)"
           printf '%s\n' "${base_sha}" > feasibility/github-app-probe-base.txt
           BASE_SHA="${base_sha}" bundle exec ruby -Ifastlane/lib -rsequel_ace_release -rjson <<'RUBY'
           File.open("CHANGELOG.md", "a") { |file| file.puts("\n<!-- release automation feasibility run #{ENV.fetch('GITHUB_RUN_ID')} -->") }
@@ -223,9 +241,10 @@ jobs:
       - name: Prove private GHCR round trip and visibility
         env:
           GH_TOKEN: ${{ github.token }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
         run: |
           set -euo pipefail
-          command -v oras >/dev/null 2>&1 || brew install oras
           mkdir -p feasibility/ghcr-probe
           printf '{"schema_version":1,"probe_run":"%s"}\n' "${GITHUB_RUN_ID}" > feasibility/ghcr-probe/manifest.json
           probe_ref="${GHCR_REPOSITORY}:feasibility-${GITHUB_RUN_ID}"

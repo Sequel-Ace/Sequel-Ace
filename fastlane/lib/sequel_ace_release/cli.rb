@@ -2,6 +2,7 @@
 
 require "base64"
 require "date"
+require "digest"
 require "fileutils"
 require "optparse"
 
@@ -35,6 +36,8 @@ module SequelAceRelease
       when "verify-artifact-set" then verify_artifact_set(argv)
       when "submit" then submit(argv)
       when "finalize" then finalize(argv)
+      when "relay-webhook" then relay_webhook(argv)
+      when "resolve-app-store-version" then resolve_app_store_version(argv)
       when "github-prepare-pr" then github_prepare_pr(argv)
       when "github-cleanup-branch" then github_cleanup_branch(argv)
       when "github-wait-checks" then github_wait_checks(argv)
@@ -866,6 +869,78 @@ module SequelAceRelease
       emit(result.to_h, options[:output])
     end
 
+    def relay_webhook(arguments)
+      options = {}
+      parser = OptionParser.new do |value|
+        value.banner = "Usage: sa-release relay-webhook --payload FILE --app-id APP_ID --event-ledger FILE [--output FILE]"
+        value.on("--payload FILE") { |item| options[:payload] = item }
+        value.on("--app-id APP_ID") { |item| options[:app_id] = item }
+        value.on("--event-ledger FILE") { |item| options[:event_ledger] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end
+      parser.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :payload, :app_id)
+      unless options[:app_id] == Config::PRODUCTION_APP_ID
+        raise ValidationError, "webhook relay accepts only the Production App Store app"
+      end
+      require_options!(options, :event_ledger)
+
+      body = File.binread(options[:payload], AppStoreWebhook::MAX_BODY_BYTES + 1)
+      result = AppStoreWebhook.new(secret: @env["SA_ASC_WEBHOOK_SECRET"]).verify_and_classify(
+        body: body,
+        signature: @env["SA_ASC_WEBHOOK_SIGNATURE"]
+      )
+      evidence = result.merge(
+        "app_id" => options[:app_id],
+        "workflow_dispatch" => "not_required"
+      )
+      if result.fetch("dispatch")
+        claimed = WebhookEventLedger.new(path: options[:event_ledger]).claim(
+          event_id: result.fetch("event_id"),
+          fingerprint: Digest::SHA256.hexdigest(body)
+        )
+        unless claimed
+          evidence["workflow_dispatch"] = "duplicate_ignored"
+          return emit(evidence, options[:output])
+        end
+
+        token = GitHubAppAuthenticator.from_env(@env).installation_token
+        inputs = result.slice(
+          "event_id", "event_type", "version_id", "new_value", "old_value", "timestamp"
+        ).merge("app_id" => options[:app_id])
+        GitHubClient.new(token: token).dispatch_workflow(
+          workflow: "release_finalize.yml",
+          ref: "main",
+          inputs: inputs
+        )
+        evidence["workflow_dispatch"] = "sent"
+      end
+      emit(evidence, options[:output])
+    end
+
+    def resolve_app_store_version(arguments)
+      options = {}
+      parser = OptionParser.new do |value|
+        value.banner = "Usage: sa-release resolve-app-store-version --app-id APP_ID --version-id VERSION_ID [--output FILE]"
+        value.on("--app-id APP_ID") { |item| options[:app_id] = item }
+        value.on("--version-id VERSION_ID") { |item| options[:version_id] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end
+      parser.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :app_id, :version_id)
+      unless options[:app_id] == Config::PRODUCTION_APP_ID
+        raise ValidationError, "finalization events accept only the Production App Store app"
+      end
+
+      result = app_store_client.finalization_event_target(
+        app_id: options[:app_id],
+        version_id: options[:version_id]
+      )
+      emit(result, options[:output])
+    end
+
     def finalize(arguments)
       options = { validate_only: false }
       parser = OptionParser.new do |value|
@@ -885,7 +960,8 @@ module SequelAceRelease
       expected_confirmation = "FINALIZE #{data.fetch('tag')}"
       raise ValidationError, "finalization confirmation must be exactly #{expected_confirmation.inspect}" unless options[:confirm] == expected_confirmation
 
-      snapshot = app_store_client.metadata_snapshot(
+      apple = app_store_client
+      snapshot = apple.metadata_snapshot(
         app_id: Config::PRODUCTION_APP_ID,
         version: data.fetch("target_version")
       )
@@ -894,6 +970,10 @@ module SequelAceRelease
         expected_build: data.fetch("canonical_build"),
         require_live: true
       )
+      latest = apple.latest_released_version(app_id: Config::PRODUCTION_APP_ID)
+      unless latest.is_a?(Hash) && latest["id"] == snapshot.dig("version", "id")
+        raise ValidationError, "App Store version is not the latest released Production version"
+      end
 
       client = github_client
       archived_commit = data.fetch("release_commit_sha")
@@ -1167,6 +1247,8 @@ module SequelAceRelease
           verify-artifact-set        Find and verify the distributable app in a Cloud artifact set
           submit                     Stage, validate, and submit a production App Store version
           finalize                   Finalize a GitHub prerelease after App Store release
+          relay-webhook              Verify an Apple webhook and relay an exact ready event to GitHub
+          resolve-app-store-version  Resolve and validate an exact Production App Store version event
           github-prepare-pr          Create a verified GitHub App release commit and PR
           github-cleanup-branch      Close and delete an exact failed release branch
           github-wait-checks         Wait for exact-head release PR checks

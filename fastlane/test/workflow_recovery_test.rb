@@ -84,7 +84,7 @@ class WorkflowRecoveryTest < Minitest::Test
     {
       ".github/workflows/release_alpha_retry.yml" => "Unauthorized release rerun initiator.",
       ".github/workflows/release_feasibility.yml" => "Unauthorized feasibility rerun initiator.",
-      ".github/workflows/release_finalize.yml" => "Unauthorized scheduled-finalizer rerun initiator."
+      ".github/workflows/release_finalize.yml" => "Unauthorized event-finalizer rerun initiator."
     }.each do |path, rejection|
       workflow = File.read(repo_path(path))
       assert_includes workflow, "github.triggering_actor"
@@ -142,6 +142,138 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes workflow, "continue"
   end
 
+  def test_finalizer_is_event_driven_with_an_authorized_manual_fallback
+    workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
+
+    refute_includes workflow, "schedule:"
+    refute_includes workflow, "repository_dispatch:"
+    assert_includes workflow, "workflow_dispatch:"
+    assert_includes workflow, "SA_WEBHOOK_GITHUB_APP_BOT"
+    assert_includes workflow, "EVENT_APP_ID: ${{ inputs.app_id }}"
+    assert_includes workflow, '"${EVENT_APP_ID}" == "1518036000"'
+    assert_includes workflow, '"${EVENT_NEW_VALUE}" == "READY_FOR_DISTRIBUTION"'
+    assert_includes workflow, '"${RELEASE_ACTOR}" == "${WEBHOOK_APP_BOT}"'
+    assert_includes workflow, "Manual recovery must not provide webhook-only inputs"
+    assert_includes workflow, "App Store finalization event is too old"
+    assert_includes workflow, "The exact event-triggered release remains pending"
+  end
+
+  def test_finalizer_executes_the_immutable_event_revision
+    workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
+    checkout = workflow.split("- name: Check out release tooling", 2).fetch(1)
+                       .split("- name: Set up Ruby and locked gems", 2).first
+
+    assert_includes checkout, 'ref: ${{ github.sha }}'
+    refute_includes checkout, "ref: main"
+  end
+
+  def test_release_checkout_is_preceded_by_a_complete_sha_ancestry_proof
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    authorization = workflow.index("- name: Enforce release authorization")
+    ancestry = workflow.index("- name: Prove the frozen release SHA is on dispatch main")
+    app_token = workflow.index("- name: Mint repository-scoped release App token")
+    checkout = workflow.index("- name: Check out the frozen main commit")
+    proof = workflow[ancestry...app_token]
+
+    assert_operator authorization, :<, ancestry
+    assert_operator ancestry, :<, app_token
+    assert_operator app_token, :<, checkout
+    assert_includes workflow[authorization...ancestry], '[[ "${EXPECTED_SHA}" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]'
+    assert_includes proof, '/compare/${EXPECTED_SHA}...${DISPATCH_SHA}'
+    assert_includes proof, '"${comparison_status}" == "identical" || "${comparison_status}" == "ahead"'
+  end
+
+  def test_release_workflows_use_commit_and_checksum_pinned_oras
+    action = "oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d"
+    arm64_checksum = "f33fc12753c54172b0d0d19eaa0318d3f90fe9b094d96e8b259c881713c92e1c"
+    amd64_checksum = "aeb684d8c24c18dce28fd1f7326636e4782b573108e244a93d4b1c4a5ec50f48"
+
+    %w[release.yml release_alpha_retry.yml release_feasibility.yml release_finalize.yml].each do |filename|
+      workflow = File.read(repo_path(".github/workflows/#{filename}"))
+
+      assert_equal 2, workflow.scan(action).length
+      assert_includes workflow, "oras_1.3.3_darwin_arm64.tar.gz"
+      assert_includes workflow, arm64_checksum
+      assert_includes workflow, "oras_1.3.3_darwin_amd64.tar.gz"
+      assert_includes workflow, amd64_checksum
+      refute_includes workflow, "brew install oras"
+    end
+  end
+
+  def test_supporting_release_workflows_execute_the_dispatch_revision
+    %w[release_alpha_retry.yml release_feasibility.yml].each do |filename|
+      workflow = File.read(repo_path(".github/workflows/#{filename}"))
+      checkout = workflow.split("- name: Check out release tooling", 2).fetch(1)
+                         .split("- name: Set up Ruby and locked gems", 2).first
+
+      assert_includes checkout, 'ref: ${{ github.sha }}'
+      refute_includes checkout, "ref: main"
+    end
+  end
+
+  def test_apple_and_archive_credentials_are_scoped_to_consuming_steps
+    release = File.read(repo_path(".github/workflows/release.yml"))
+    release_job_env = release.split("environment: sequel-ace-release", 2).fetch(1)
+                             .split("steps:", 2).first
+    refute_includes release_job_env, "SA_ASC_KEY_ID"
+    refute_includes release_job_env, "SA_ASC_PRIVATE_KEY"
+    assert_includes release_job_env, 'SA_ASC_REQUIRE_ISSUER: "1"'
+
+    reconcile = release.split("- name: Reconcile the authoritative Production Cloud build", 2).fetch(1)
+                       .split("- name: Create the initial release manifest", 2).first
+    assert_includes reconcile, 'SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}'
+    assert_includes reconcile, 'SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}'
+
+    finalizer = File.read(repo_path(".github/workflows/release_finalize.yml"))
+    finalizer_job_env = finalizer.split("environment: sequel-ace-release", 2).fetch(1)
+                                 .split("steps:", 2).first
+    refute_includes finalizer_job_env, "SA_ASC_KEY_ID"
+    refute_includes finalizer_job_env, "SA_ASC_PRIVATE_KEY"
+    refute_includes finalizer_job_env, "GHCR_TOKEN"
+    refute_includes finalizer_job_env, "SA_GITHUB_TOKEN"
+    assert_includes finalizer_job_env, 'SA_ASC_REQUIRE_ISSUER: "1"'
+
+    event = finalizer.split("- name: Resolve the exact App Store version event", 2).fetch(1)
+                     .split("- name: Finalize only exact App Store-live releases", 2).first
+    assert_includes event, 'SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}'
+    assert_includes event, 'SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}'
+
+    finalize = finalizer.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
+    assert_includes finalize, 'GHCR_TOKEN: ${{ github.token }}'
+    assert_includes finalize, 'SA_GITHUB_TOKEN: ${{ github.token }}'
+    assert_includes finalize, 'SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}'
+
+    %w[release_alpha_retry.yml release_feasibility.yml].each do |filename|
+      workflow = File.read(repo_path(".github/workflows/#{filename}"))
+      job_env = workflow.split("environment: sequel-ace-release", 2).fetch(1)
+                        .split("steps:", 2).first
+
+      refute_includes job_env, "SA_ASC_KEY_ID"
+      refute_includes job_env, "SA_ASC_PRIVATE_KEY"
+      refute_includes job_env, "GHCR_TOKEN"
+      assert_includes job_env, 'SA_ASC_REQUIRE_ISSUER: "1"'
+    end
+  end
+
+  def test_finalizer_resolves_and_matches_the_exact_event_version_and_build
+    workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
+    resolution = workflow.index("sa-release resolve-app-store-version")
+    exact_tag = workflow.index('release_tag="production/${SA_FINALIZE_EVENT_VERSION}-${SA_FINALIZE_EVENT_BUILD}"')
+    version_identity = workflow.index('"${manifest_version_id}" == "${SA_FINALIZE_EVENT_VERSION_ID}"')
+    build_identity = workflow.index('"${manifest_build_id}" == "${SA_FINALIZE_EVENT_BUILD_ID}"')
+    validation = workflow.index("--validate-only")
+
+    assert resolution
+    assert exact_tag
+    assert version_identity
+    assert build_identity
+    assert validation
+    assert_operator resolution, :<, exact_tag
+    assert_operator exact_tag, :<, version_identity
+    assert_operator version_identity, :<, build_identity
+    assert_operator build_identity, :<, validation
+  end
+
   def test_pr_jobs_do_not_persist_the_checkout_token
     workflow = File.read(repo_path(".github/workflows/ci_pr_tests.yml"))
     assert_equal 2, workflow.scan("persist-credentials: false").length
@@ -157,6 +289,8 @@ class WorkflowRecoveryTest < Minitest::Test
 
     assert_includes stage_lane, "require_release_automation_enabled!"
     assert_includes submit_lane, "require_release_automation_enabled!"
+    assert_includes fastfile, 'ENV["SA_ASC_REQUIRE_ISSUER"] == "1"'
+    assert_includes fastfile, "SA_ASC_ISSUER_ID is required for the configured Team API key"
     assert_includes workflow, "SA_RELEASE_AUTOMATION_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}"
   end
 
@@ -250,6 +384,8 @@ class WorkflowRecoveryTest < Minitest::Test
                       .split("- name: Validate the recovered release target against live main", 2).first
 
     assert_includes authorization, '"${RELEASE_MODE}" != "resume"'
+    assert_includes authorization, "Prove the frozen release SHA is on dispatch main"
+    assert_includes authorization, '/compare/${EXPECTED_SHA}...${DISPATCH_SHA}'
     assert_includes context, "dispatch_main_advanced && !resume_without_pr"
     assert_includes context, 'source_release_commit_sha == ENV.fetch("APPROVED_MAIN_SHA")'
   end

@@ -42,6 +42,11 @@ class FinalizationAssetsTest < Minitest::Test
 
       live_snapshot
     end
+    app_store.define_singleton_method(:latest_released_version) do |app_id:|
+      raise "wrong app" unless app_id == SequelAceRelease::Config::PRODUCTION_APP_ID
+
+      live_snapshot.fetch("version")
+    end
     release_data = release
     github = Object.new
     github.define_singleton_method(:ref_sha) { |_ref| "d" * 40 }
@@ -77,6 +82,7 @@ class FinalizationAssetsTest < Minitest::Test
     live_snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
     app_store = Object.new
     app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
+    app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
     github = Object.new
     github.define_singleton_method(:ref_sha) { |_ref| "e" * 40 }
     github.define_singleton_method(:release_by_tag) { |_tag| raise "moved tag reached release mutation path" }
@@ -99,6 +105,40 @@ class FinalizationAssetsTest < Minitest::Test
 
       assert_equal 1, status
       assert_includes error.string, "release tag moved after archival"
+    end
+  end
+
+  def test_finalization_rejects_an_older_live_app_store_version
+    live_snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    app_store = Object.new
+    app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
+    app_store.define_singleton_method(:latest_released_version) do |**_options|
+      {
+        "id" => "newer-version-id",
+        "attributes" => { "versionString" => "5.3.3", "appVersionState" => "READY_FOR_DISTRIBUTION" }
+      }
+    end
+    github = Object.new
+    github.define_singleton_method(:ref_sha) { |_ref| raise "stale version reached GitHub" }
+
+    Dir.mktmpdir do |directory|
+      manifest_path = File.join(directory, "manifest.json")
+      release_manifest.write(manifest_path)
+      error = StringIO.new
+      cli = SequelAceRelease::CLI.new(out: StringIO.new, err: error, env: {})
+      status = cli.stub(:app_store_client, app_store) do
+        cli.stub(:github_client, github) do
+          cli.run([
+            "finalize",
+            "--manifest", manifest_path,
+            "--confirm", "FINALIZE production/5.3.2-20105",
+            "--validate-only"
+          ])
+        end
+      end
+
+      assert_equal 1, status
+      assert_includes error.string, "not the latest released"
     end
   end
 

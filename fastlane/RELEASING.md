@@ -47,26 +47,33 @@ or creates a GitHub release.
    `main`, and do not add a routine second approval.
 5. Restrict every manual dispatch and rerun to `Jason-Morcos` or `Kaspik`.
    The workflows validate both GitHub's original `actor` and the current
-   `triggering_actor`; scheduled finalizer reruns validate the latter as well.
+   `triggering_actor`; event-finalizer reruns validate the latter as well.
 6. Add environment secrets:
 
    | Name | Value |
    | --- | --- |
    | `SA_RELEASE_GITHUB_APP_ID` | Dedicated App ID |
    | `SA_RELEASE_GITHUB_APP_PRIVATE_KEY` | Dedicated App PEM |
-   | `SA_ASC_KEY_ID` | Limited individual ASC key ID |
+   | `SA_ASC_KEY_ID` | Dedicated Team ASC key ID with the App Manager role |
    | `SA_ASC_PRIVATE_KEY` | Base64-encoded `.p8` bytes |
-   | `SA_ASC_ISSUER_ID` | Omit or leave empty for an individual key |
+   | `SA_ASC_ISSUER_ID` | Team API issuer ID shown on App Store Connect's Integrations page |
 
    The workflows set the non-secret environment flag
-   `SA_ASC_PRIVATE_KEY_BASE64=1` so `SA_ASC_PRIVATE_KEY` is decoded before use.
-   Set the same flag for any guarded local fallback that uses the encoded key.
+   `SA_ASC_PRIVATE_KEY_BASE64=1` so `SA_ASC_PRIVATE_KEY` is decoded before use,
+   and `SA_ASC_REQUIRE_ISSUER=1` so a missing Team issuer fails closed instead
+   of being interpreted as an individual key. Set both flags for any guarded
+   local fallback that uses the encoded Team key.
+
+   The release App private key must remain exclusive to this protected
+   environment. Never copy it to the public App Store webhook relay; that relay
+   uses the separate, non-bypass App described below.
 
 7. Add repository variables:
 
    | Name | Initial value |
    | --- | --- |
    | `SA_RELEASE_AUTOMATION_ENABLED` | `false` |
+   | `SA_WEBHOOK_GITHUB_APP_BOT` | Exact separate webhook-relay App bot login, including `[bot]` |
    | `SA_PRODUCTION_CLOUD_WORKFLOW_ID` | Production Xcode Cloud workflow ID |
    | `SA_ALPHA_CLOUD_WORKFLOW_ID` | Alpha Xcode Cloud workflow ID |
    | `SA_GHCR_ARCHIVE` | `ghcr.io/sequel-ace/sequel-ace-release-archive` |
@@ -94,15 +101,33 @@ immediately before an App-only mutation and independently refreshes it for
 failure cleanup. This prevents the one-hour App-token lifetime from stranding a
 PR or deterministic release branch during the two-hour check window.
 
+Release starts require the frozen SHA to equal the workflow-dispatch `main`
+SHA. Resume runs may use an older frozen SHA only after GitHub's compare API
+proves that complete object ID is an ancestor of dispatch `main`; this proof
+happens before any caller-selected commit is checked out or executed. The
+event-driven finalizer checks out the immutable event SHA rather than resolving
+the mutable `main` branch after authorization.
+
+All release workflows that use the private archive install ORAS 1.3.3 through
+`oras-project/setup-oras` v2.0.1 pinned to commit
+`1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d`. The Darwin arm64 and amd64
+download URLs and their upstream SHA-256 checksums are explicit in the workflow;
+do not replace this with an unpinned package-manager install.
+
 ## One-time Apple setup
 
-Create a dedicated App Store Connect user with App Manager access only to:
+Create a dedicated **Team API key** with the App Manager role from App Store
+Connect's Users and Access > Integrations page. A Team key is intentionally
+team-wide and cannot be limited to only these two apps, so its scope is broader
+than the previously planned individual-user key. The guarded workflows are
+hard-coded to operate on only:
 
 - Production app `1518036000`
 - Alpha app `1594104035`
 
-Create an individual API key for that user. Keep its issuer unset. Configure
-Xcode Cloud in the UI because the public API does not expose the built-in
+Store the key ID, issuer ID, and one-time private-key download only in the
+protected release environment. Configure Xcode Cloud in the UI because the
+public API does not expose the built-in
 Notarize post-action or the configured **Next Build Number** setting:
 
 - **Production:** scheme `Sequel Ace Release`; start on `production/*` and
@@ -113,6 +138,66 @@ Notarize post-action or the configured **Next Build Number** setting:
 After saving both workflows, manually start only Alpha from the current `main`
 commit. Record that Alpha build-run ID for the feasibility workflow. Do not
 manually start Production during setup.
+
+Configure one Production-app App Store Connect webhook only after a public
+HTTPS relay has been deployed and its secret is stored outside this repository.
+Subscribe it to App Store version state updates. Configure the HTTPS ingress to
+reject request bodies larger than 1 MiB before buffering or writing them. The
+relay also needs a durable local event ledger on persistent storage, owned by
+the relay user with mode `0600`. It must pass the raw request body, Apple's
+`x-apple-signature` header, and that ledger path to:
+
+```sh
+export SA_ASC_WEBHOOK_SIGNATURE='<exact x-apple-signature header>'
+bundle exec ruby fastlane/bin/sa-release relay-webhook \
+  --payload /absolute/path/to/raw-request-body.json \
+  --app-id 1518036000 \
+  --event-ledger /persistent/private/app-store-events.jsonl
+```
+
+Create a **second** GitHub App for this relay and install it only on
+`Sequel-Ace/Sequel-Ace`. Grant it Actions read/write and Metadata read only. Do
+not grant Contents, Pull requests, Checks, Workflows, or any organization
+permission; do not subscribe it to events; and never add it to a branch or
+ruleset bypass list. Put its exact bot login in the repository variable
+`SA_WEBHOOK_GITHUB_APP_BOT`.
+
+The relay runtime needs `SA_ASC_WEBHOOK_SECRET`,
+`SA_WEBHOOK_GITHUB_APP_ID`, and `SA_WEBHOOK_GITHUB_APP_PRIVATE_KEY`; set
+`SA_WEBHOOK_GITHUB_APP_PRIVATE_KEY_BASE64=1` only if that PEM is stored as
+strict base64. The powerful release App key must not be present on this host.
+These values belong in the relay host's secret store, never in a file, image,
+log, repository variable, or webhook response. The Ruby verifier reads at most
+1 MiB plus one byte, authenticates the exact raw bytes with HMAC-SHA256,
+ignores valid pings and non-live transitions, and rejects state events older
+than 24 hours or more than five minutes in the future. Before making a network
+request it atomically consumes each event ID and signed-body fingerprint in the
+durable ledger, so duplicate deliveries cannot enqueue another run. An
+ambiguous dispatch failure stays consumed and requires the authorized manual
+recovery path.
+
+The relay mints a repository-selected installation token requesting only
+Actions write. It also fails closed unless GitHub reports that both the App
+installation and minted token have exactly Actions write plus implicit Metadata
+read, select only this repository, and subscribe to no events. It then
+dispatches `release_finalize.yml` on `main`. GitHub documents that this exact
+endpoint accepts GitHub App installation tokens with Actions write. See Apple's
+[webhook configuration](https://developer.apple.com/documentation/appstoreconnectapi/configuring-webhook-notifications)
+and [webhook management](https://developer.apple.com/help/app-store-connect/manage-your-team/manage-webhooks)
+documentation and GitHub's
+[workflow-dispatch endpoint](https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-event).
+
+The webhook is only a wake-up signal. The workflow independently resolves the
+event's exact Production App Store version and selected build, requires the
+corresponding `production/<version>-<build>` tag, matches both ASC IDs to the
+private manifest, and repeats all live-state, tag, build, phased-release, and
+checksum validation before changing GitHub. It also requires the event version
+to remain Apple's latest released Production version before GitHub can mark it
+latest. Duplicate valid events inside the delivery window are therefore
+suppressed by the relay ledger, while stale replays fail. A direct attempt to
+invoke the finalizer must still authenticate as either the separate relay App
+bot with every exact event field or an authorized human performing manual
+recovery. There is no scheduled polling.
 
 Apple’s documented API exposes every Xcode Cloud build run and its assigned
 number, but not the configured next number. Therefore the planner reads the
@@ -142,7 +227,7 @@ the known project/plist locations itself and verifies their exact shape. No
 implicit increment is permitted. This matters because Xcode Cloud, not
 Fastlane, owns the next Production build number.
 
-`app_store_connect_api_key` receives the individual key with a nil issuer.
+`app_store_connect_api_key` receives the Team key with its required issuer ID.
 `upload_to_app_store` uses platform `osx`, the exact semantic version and build,
 `skip_binary_upload: true`, `skip_screenshots: true`, seven-day phased release,
 and `reset_ratings: false`. Both mutating Fastlane lanes independently require
@@ -270,14 +355,16 @@ prerelease.
   screenshots, keeps ratings, enables seven-day phased release, and schedules
   the first 09:00 America/Los_Angeles instant at least 72 hours away.
 - Beta never creates a customer App Store version.
-- The hourly finalizer changes the GitHub title, prerelease flag, and latest flag
-  only after the exact ASC version is `READY_FOR_DISTRIBUTION`, the exact build
-  remains selected, phased release is `ACTIVE` or `COMPLETE`, and public asset
-  checksums match the private manifest. It first records that live validation
-  in the private archive, and only then performs the public GitHub transition;
-  an archive failure therefore leaves the prerelease discoverable for retry.
-  A missing or malformed manifest marks only that release pending; the hourly
-  poll continues examining the other production prereleases.
+- The event-driven finalizer changes the GitHub title, prerelease flag, and
+  latest flag only after the exact ASC version is `READY_FOR_DISTRIBUTION`, the
+  exact version remains Apple's latest released Production version, the exact
+  build remains selected, phased release is `ACTIVE` or `COMPLETE`, and public
+  asset checksums match the private manifest. It first records that live
+  validation in the private archive, and only then performs the public GitHub
+  transition; an archive failure therefore leaves the prerelease discoverable
+  for an authorized manual retry. Webhook events target one exact Production
+  tag; manual recovery continues examining other production prereleases when
+  one archive is missing or malformed.
 - Finalization also resolves the current production tag and requires it to
   equal the archived release commit; a moved or recreated tag cannot become
   latest.
@@ -310,18 +397,24 @@ App, API key, Cloud triggers, Notarize actions, and manual Alpha run are ready.
 It must prove:
 
 1. The hosted Mac downloads, verifies, opens, and quits 5.3.1 (20104).
-2. The limited Apple key reads both apps and both Cloud workflows.
+2. The Team Apple key reads both apps and both Cloud workflows.
 3. The exact Alpha run exposes a downloadable Moballo-signed notarized artifact.
 4. A disposable GitHub App PR uses the same GitHub-signed GraphQL commit path
    as a release, has a verified bot commit and green checks, then closes without
    merge.
 5. A private GHCR push/pull has matching checksums and private visibility.
+6. The separately installed webhook App reports only Actions write plus
+   Metadata read, selected-repository installation, and no event subscriptions;
+   the deployed relay accepts Apple's signed ping without dispatch, persists
+   its mode-0600 ledger across restart, and suppresses a duplicate signed test
+   event. A controlled relay workflow dispatch while publishing is disabled
+   must identify the relay bot correctly and stop at the disabled-release gate.
 
 The workflow refuses to start unless `SA_RELEASE_AUTOMATION_ENABLED` is already
 `false`, and it does not enable publishing itself. After every gate passes and
-the GitHub/Xcode Cloud UI configuration is reviewed, manually change the
-variable to `true`. This keeps a failed or partial feasibility run incapable of
-enabling releases.
+the GitHub/Xcode Cloud UI configuration and the manual relay checks above are
+reviewed, manually change the variable to `true`. This keeps a failed or
+partial feasibility run incapable of enabling releases.
 
 ## Local fallback
 

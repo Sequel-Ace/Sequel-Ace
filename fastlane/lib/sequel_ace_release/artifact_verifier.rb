@@ -34,6 +34,9 @@ module SequelAceRelease
         actual_build = plist(info, "CFBundleVersion")
         actual_build_number = positive_build!(actual_build, "artifact build")
         executable_name = plist(info, "CFBundleExecutable")
+        unless executable_name.match?(/\A[A-Za-z0-9 ._-]{1,128}\z/)
+          raise ValidationError, "artifact executable name is malformed"
+        end
         executable = app.join("Contents/MacOS", executable_name)
 
         expected_bundle_id = Config.bundle_id(channel)
@@ -60,7 +63,7 @@ module SequelAceRelease
 
         @runner.run("/usr/bin/xcrun", "stapler", "validate", app)
         @runner.run("/usr/sbin/spctl", "--assess", "--type", "execute", "--verbose=4", app)
-        launch_and_quit(app, executable_name) if launch
+        launch_and_quit(app, executable) if launch
         package(app, output_zip) if output_zip
 
         {
@@ -106,8 +109,12 @@ module SequelAceRelease
       @runner.run("/usr/bin/plutil", "-extract", key, "raw", "-o", "-", path).stdout.strip
     end
 
-    def launch_and_quit(app, process_name)
+    def launch_and_quit(app, executable)
       started = false
+      owned_process = false
+      termination_sent = false
+      process_id = nil
+      process_name = executable.basename.to_s
       existing = @runner.run("/usr/bin/pgrep", "-x", process_name, allow_failure: true)
       raise ValidationError, "#{process_name} is already running; refusing to quit an unrelated process" if existing.status.success?
 
@@ -117,22 +124,34 @@ module SequelAceRelease
       running = @runner.run("/usr/bin/pgrep", "-x", process_name, allow_failure: true)
       raise ValidationError, "artifact did not remain running after launch" unless running.status.success?
 
-      @runner.run(
-        "/usr/bin/osascript",
-        "-l", "JavaScript",
-        "-e", "function run(argv) { Application(argv[0]).quit(); }",
-        process_name
-      )
+      process_ids = running.stdout.lines.map(&:strip).reject(&:empty?)
+      raise ValidationError, "expected exactly one launched artifact process, found #{process_ids.length}" unless process_ids.length == 1
+
+      process_id = process_ids.first
+      raise ValidationError, "launched artifact returned an invalid process identifier" unless process_id.match?(/\A[1-9]\d*\z/)
+
+      command = @runner.run("/bin/ps", "-p", process_id, "-o", "command=").stdout.strip
+      expected_command = executable.realpath.to_s
+      unless command == expected_command || command.start_with?("#{expected_command} ")
+        raise ValidationError, "launched process does not belong to the verified artifact"
+      end
+      owned_process = true
+
+      # Apple Events can block indefinitely on Automation consent in hosted runners.
+      termination_sent = true
+      @runner.run("/bin/kill", "-TERM", process_id)
       deadline = Time.now + 20
       loop do
-        stopped = !@runner.run("/usr/bin/pgrep", "-x", process_name, allow_failure: true).status.success?
+        stopped = !@runner.run("/bin/kill", "-0", process_id, allow_failure: true).status.success?
         return if stopped
         raise ValidationError, "artifact did not quit cleanly" if Time.now >= deadline
 
         sleep(1)
       end
     ensure
-      @runner.run("/usr/bin/pkill", "-TERM", "-x", process_name, allow_failure: true) if process_name && started
+      if started && owned_process && !termination_sent
+        @runner.run("/bin/kill", "-TERM", process_id, allow_failure: true)
+      end
     end
 
     def package(app, output_zip)

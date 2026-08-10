@@ -38,12 +38,7 @@ jobs:
     timeout-minutes: 300
     environment: sequel-ace-release
     env:
-      SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
-      SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
-      SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
-      SA_ASC_PRIVATE_KEY_BASE64: "1"
-      GHCR_TOKEN: ${{ github.token }}
-      GHCR_USERNAME: ${{ github.actor }}
+      SA_ASC_REQUIRE_ISSUER: "1"
       GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
     steps:
       - name: Enforce narrow Alpha-retry authorization
@@ -64,7 +59,7 @@ jobs:
           [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized release rerun initiator." >&2; exit 1; }
           [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Alpha retry must be dispatched from main." >&2; exit 1; }
           [[ "${BETA_TAG}" =~ ^beta/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || { echo "Malformed beta tag." >&2; exit 1; }
-          [[ "${EXPECTED_COMMIT}" =~ ^[0-9a-f]{40,64}$ ]] || { echo "Malformed expected commit." >&2; exit 1; }
+          [[ "${EXPECTED_COMMIT}" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]] || { echo "Malformed expected commit." >&2; exit 1; }
           [[ "${FAILED_ALPHA_RUN_ID}" =~ ^[A-Za-z0-9-]+$ ]] || { echo "Malformed Alpha run ID." >&2; exit 1; }
           [[ "${CONFIRMATION}" == "RETRY ALPHA ${BETA_TAG}" ]] || { echo "Typed confirmation does not match." >&2; exit 1; }
           echo "authorized=true" >> "${GITHUB_OUTPUT}"
@@ -81,7 +76,7 @@ jobs:
       - name: Check out release tooling
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: main
+          ref: ${{ github.sha }}
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: false
@@ -92,15 +87,26 @@ jobs:
           ruby-version: "3.3"
           bundler-cache: true
 
-      - name: Install OCI archive client
-        run: |
-          set -euo pipefail
-          command -v oras >/dev/null 2>&1 || brew install oras
+      - name: Install checksum-pinned ORAS on Apple silicon
+        if: runner.arch == 'ARM64'
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_darwin_arm64.tar.gz
+          checksum: f33fc12753c54172b0d0d19eaa0318d3f90fe9b094d96e8b259c881713c92e1c
+
+      - name: Install checksum-pinned ORAS on Intel
+        if: runner.arch == 'X64'
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_darwin_amd64.tar.gz
+          checksum: aeb684d8c24c18dce28fd1f7326636e4782b573108e244a93d4b1c4a5ec50f48
 
       - name: Pull and validate the preserved beta release state
         id: release
         env:
           SA_GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
           BETA_TAG: ${{ inputs.beta_tag }}
           EXPECTED_COMMIT: ${{ inputs.expected_commit }}
         run: |
@@ -153,6 +159,11 @@ jobs:
 
       - name: Reuse or start one Alpha-only Xcode Cloud retry
         id: alpha_retry
+        env:
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
         run: |
           set -euo pipefail
           bundle exec ruby fastlane/bin/sa-release retry-alpha \
@@ -165,6 +176,11 @@ jobs:
 
       - name: Resolve the existing exact Production build
         id: production_cloud
+        env:
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
         run: |
           set -euo pipefail
           bundle exec ruby fastlane/bin/sa-release wait-cloud \
@@ -179,6 +195,11 @@ jobs:
 
       - name: Wait for the exact Alpha retry run
         id: alpha_cloud
+        env:
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
         run: |
           set -euo pipefail
           bundle exec ruby fastlane/bin/sa-release wait-cloud \
@@ -193,6 +214,11 @@ jobs:
           ruby -rjson -e 'value = JSON.parse(File.read("alpha-cloud-run.json")); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("id=#{value.fetch("id")}"); file.puts("build=#{value.fetch("app_build")}") }'
 
       - name: Download both exact Cloud artifact sets
+        env:
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
         run: |
           set -euo pipefail
           bundle exec ruby fastlane/bin/sa-release download-cloud-artifacts \
@@ -238,6 +264,9 @@ jobs:
             --file "retry-artifacts/public/${{ steps.release.outputs.alpha_asset }}" >/dev/null
 
       - name: Refresh and verify the private beta archive
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
         run: |
           set -euo pipefail
           ruby -rjson -e 'verification = {"production" => JSON.parse(File.read("production-verification.json")), "alpha" => JSON.parse(File.read("alpha-verification.json"))}; cloud = {"production" => JSON.parse(File.read("production-cloud-run.json")).fetch("id"), "alpha" => JSON.parse(File.read("alpha-cloud-run.json")).fetch("id")}; File.write("retry-evidence.json", JSON.pretty_generate({"verification" => verification, "cloud_build_ids" => cloud, "alpha_retry" => JSON.parse(File.read("alpha-retry.json"))}) + "\n")'
@@ -279,6 +308,8 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
           BETA_TAG: ${{ inputs.beta_tag }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
