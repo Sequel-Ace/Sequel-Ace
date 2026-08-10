@@ -279,11 +279,14 @@ class WorkflowRecoveryTest < Minitest::Test
 
     [discovery, execution].each do |step|
       listing = step.index("gh release list")
+      prerelease_filter = step.index(".isPrerelease == true")
       production_filter = step.index('startsWith("production/")') || step.index('startswith("production/")')
 
       assert listing
+      assert prerelease_filter
       assert production_filter
-      assert_operator listing, :<, production_filter
+      assert_operator listing, :<, prerelease_filter
+      assert_operator prerelease_filter, :<, production_filter
     end
     assert_operator execution.index('startswith("production/")'), :<, execution.index("--validate-only")
     refute_includes workflow, "resolve-app-store-version"
