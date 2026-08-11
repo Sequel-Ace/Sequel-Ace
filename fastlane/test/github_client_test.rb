@@ -38,6 +38,16 @@ class GitHubClientTest < Minitest::Test
     assert_equal "/repos/Sequel-Ace/Sequel-Ace/git/ref/heads/main", transport.requests.first[:path]
   end
 
+  def test_reads_githubs_authoritative_latest_release
+    transport = FakeTransport.new([
+      http_response(body: { "id" => 100, "tag_name" => "production/5.3.2-20105" })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    assert_equal 100, client.latest_release.fetch("id")
+    assert_equal "/repos/Sequel-Ace/Sequel-Ace/releases/latest", transport.requests.first[:path]
+  end
+
   def test_accepts_an_exact_release_target_that_remains_an_unchanged_main_ancestor
     target_sha = "a" * 40
     current_main = "b" * 40
@@ -556,12 +566,132 @@ class GitHubClientTest < Minitest::Test
         "assets" => [{ "id" => 200, "name" => File.basename(path), "digest" => "sha256:#{digest}" }]
       }
 
-      assert_equal 200, client.upload_release_asset(release: release, path: path).fetch("id")
+      assert_equal 200, client.upload_release_asset(
+        release: release,
+        path: path,
+        expected_sha256: digest
+      ).fetch("id")
       release["assets"].first["digest"] = "sha256:#{'0' * 64}"
-      assert_raises(SequelAceRelease::ValidationError) do
-        client.upload_release_asset(release: release, path: path)
+      assert_raises(SequelAceRelease::IntegrityError) do
+        client.upload_release_asset(release: release, path: path, expected_sha256: digest)
       end
     end
+  end
+
+  def test_new_asset_upload_requires_github_to_return_the_exact_name_and_digest
+    Dir.mktmpdir do |directory|
+      path = File.join(directory, "Sequel-Ace-5.3.2.zip")
+      File.binwrite(path, "verified zip bytes")
+      digest = Digest::SHA256.file(path).hexdigest
+      upload_transport = FakeTransport.new([
+        http_response(status: 201, body: {
+          "id" => 200,
+          "name" => File.basename(path),
+          "digest" => "sha256:#{digest}"
+        })
+      ])
+      client = SequelAceRelease::GitHubClient.new(
+        token: "token",
+        transport: FakeTransport.new([]),
+        upload_transport: upload_transport
+      )
+
+      uploaded = client.upload_release_asset(
+        release: { "id" => 100, "assets" => [] },
+        path: path,
+        expected_sha256: digest
+      )
+
+      assert_equal 200, uploaded.fetch("id")
+      assert_equal({ "name" => File.basename(path) }, upload_transport.requests.first[:query])
+    end
+  end
+
+  def test_new_asset_upload_rejects_a_mismatched_server_digest
+    Dir.mktmpdir do |directory|
+      path = File.join(directory, "Sequel-Ace-5.3.2.zip")
+      File.binwrite(path, "verified zip bytes")
+      digest = Digest::SHA256.file(path).hexdigest
+      upload_transport = FakeTransport.new([
+        http_response(status: 201, body: {
+          "id" => 200,
+          "name" => File.basename(path),
+          "digest" => "sha256:#{'0' * 64}"
+        })
+      ])
+      client = SequelAceRelease::GitHubClient.new(
+        token: "token",
+        transport: FakeTransport.new([]),
+        upload_transport: upload_transport
+      )
+
+      assert_raises(SequelAceRelease::IntegrityError) do
+        client.upload_release_asset(
+          release: { "id" => 100, "assets" => [] },
+          path: path,
+          expected_sha256: digest
+        )
+      end
+    end
+  end
+
+  def test_asset_upload_rejects_bytes_that_do_not_match_the_manifest_checksum
+    Dir.mktmpdir do |directory|
+      path = File.join(directory, "Sequel-Ace-5.3.2.zip")
+      File.binwrite(path, "different zip bytes")
+      upload_transport = FakeTransport.new([])
+      client = SequelAceRelease::GitHubClient.new(
+        token: "token",
+        transport: FakeTransport.new([]),
+        upload_transport: upload_transport
+      )
+
+      assert_raises(SequelAceRelease::IntegrityError) do
+        client.upload_release_asset(
+          release: { "id" => 100, "assets" => [] },
+          path: path,
+          expected_sha256: Digest::SHA256.hexdigest("approved zip bytes")
+        )
+      end
+      assert_empty upload_transport.requests
+    end
+  end
+
+  def test_asset_upload_rejects_a_symlink_even_when_its_target_checksum_matches
+    Dir.mktmpdir do |directory|
+      target = File.join(directory, "approved.zip")
+      path = File.join(directory, "Sequel-Ace-5.3.2.zip")
+      File.binwrite(target, "approved zip bytes")
+      File.symlink(target, path)
+      client = SequelAceRelease::GitHubClient.new(token: "token", transport: FakeTransport.new([]))
+
+      assert_raises(SequelAceRelease::IntegrityError) do
+        client.upload_release_asset(
+          release: { "id" => 100, "assets" => [] },
+          path: path,
+          expected_sha256: Digest::SHA256.file(target).hexdigest
+        )
+      end
+    end
+  end
+
+  def test_finalization_update_explicitly_clears_draft_and_marks_latest
+    transport = FakeTransport.new([
+      http_response(body: { "id" => 100 })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    client.update_release(id: 100, title: "5.3.2 (20105)", prerelease: false, make_latest: true)
+
+    assert_equal(
+      {
+        "name" => "5.3.2 (20105)",
+        "draft" => false,
+        "prerelease" => false,
+        "make_latest" => "true"
+      },
+      transport.requests.first.fetch(:body)
+    )
   end
 
   private

@@ -34,8 +34,8 @@ concurrency:
 jobs:
   retry:
     name: Retry only the informational Alpha build
-    runs-on: macos-15
-    timeout-minutes: 300
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
     environment: sequel-ace-release
     env:
       SA_ASC_REQUIRE_ISSUER: "1"
@@ -87,19 +87,11 @@ jobs:
           ruby-version: "3.3"
           bundler-cache: true
 
-      - name: Install checksum-pinned ORAS on Apple silicon
-        if: runner.arch == 'ARM64'
+      - name: Install checksum-pinned ORAS on Linux
         uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
         with:
-          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_darwin_arm64.tar.gz
-          checksum: f33fc12753c54172b0d0d19eaa0318d3f90fe9b094d96e8b259c881713c92e1c
-
-      - name: Install checksum-pinned ORAS on Intel
-        if: runner.arch == 'X64'
-        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
-        with:
-          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_darwin_amd64.tar.gz
-          checksum: aeb684d8c24c18dce28fd1f7326636e4782b573108e244a93d4b1c4a5ec50f48
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz
+          checksum: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
 
       - name: Pull and validate the preserved beta release state
         id: release
@@ -137,11 +129,41 @@ jobs:
             raise SequelAceRelease::ValidationError, "archive is not the requested canonical beta"
           end
           raise SequelAceRelease::ValidationError, "archive release commit does not match" unless manifest["release_commit_sha"] == expected_commit
+          failure = manifest.fetch("failure", {})
+          unless manifest.fetch("state") == "failed" && failure["component"] == "alpha" &&
+                 failure["cloud_run_id"].to_s.match?(/\A[A-Za-z0-9-]+\z/)
+            raise SequelAceRelease::ValidationError,
+                  "archive does not record a valid durable failed Alpha run"
+          end
           client = SequelAceRelease::GitHubClient.new(token: ENV.fetch("SA_GITHUB_TOKEN"))
           raise SequelAceRelease::ValidationError, "beta tag moved" unless client.ref_sha("tags/#{expected_tag}") == expected_commit
+          client.validate_release_target!(
+            target_sha: expected_commit,
+            protected_paths: SequelAceRelease::PublishHandoff::RELEASE_PATHS
+          )
           release = client.release_by_tag(expected_tag)
           raise SequelAceRelease::ValidationError, "beta release must remain a prerelease" unless release["prerelease"] == true
           raise SequelAceRelease::ValidationError, "beta release title changed" unless release["name"] == manifest["title"]
+          unless release.dig("author", "login") == SequelAceRelease::PublishHandoff::RELEASE_APP_LOGIN
+            raise SequelAceRelease::ValidationError, "beta release was not authored by the dedicated release App"
+          end
+          approved_body = release.fetch("body", "").to_s
+          loop do
+            pattern = SequelAceRelease::PublishHandoff::ALPHA_RECOVERY_SUFFIXES.find do |candidate|
+              approved_body.match?(candidate)
+            end
+            break unless pattern
+
+            approved_body = approved_body.sub(pattern, "")
+          end
+          unless Digest::SHA256.hexdigest(approved_body) == manifest.fetch("release_notes_sha256")
+            raise SequelAceRelease::ValidationError, "beta release notes do not match the archived approval"
+          end
+          approved_notes = SequelAceRelease::Notes.app_store_notes_from_github_body(approved_body)
+          archived_notes = File.read("retry-archive/app-store-notes.txt").strip
+          unless approved_notes == archived_notes
+            raise SequelAceRelease::ValidationError, "App Store notes do not match the approved GitHub release section"
+          end
           artifacts = manifest.fetch("artifact_names")
           raise SequelAceRelease::ValidationError, "beta manifest must name two artifacts" unless artifacts.length == 2
           production_asset = artifacts.fetch(0)
@@ -153,9 +175,29 @@ jobs:
             file.puts("production_asset=#{production_asset}")
             file.puts("alpha_asset=#{alpha_asset}")
             file.puts("archive_ref=#{archive_ref}")
+            file.puts("archived_failed_alpha_run_id=#{failure.fetch('cloud_run_id')}")
             file.puts("validated=true")
           end
           RUBY
+
+      - name: Resolve the existing exact Production build without waiting
+        id: production_cloud
+        env:
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
+        run: |
+          set -euo pipefail
+          bundle exec ruby fastlane/bin/sa-release cloud-status \
+            --workflow-id "${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}" \
+            --app-id "1518036000" \
+            --version "${{ steps.release.outputs.version }}" \
+            --tag "${{ inputs.beta_tag }}" \
+            --build "${{ steps.release.outputs.build }}" \
+            --commit "${{ inputs.expected_commit }}" \
+            --output production-cloud-run.json
+          ruby -rjson -e 'value = JSON.parse(File.read("production-cloud-run.json")); raise "Production Cloud run is not ready" unless value.fetch("readiness") == "ready"; File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("id=#{value.fetch("id")}") }'
 
       - name: Reuse or start one Alpha-only Xcode Cloud retry
         id: alpha_retry
@@ -174,160 +216,49 @@ jobs:
             --output alpha-retry.json
           ruby -rjson -e 'value = JSON.parse(File.read("alpha-retry.json")); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("id=#{value.fetch("id")}") }'
 
-      - name: Resolve the existing exact Production build
-        id: production_cloud
+      - name: Archive the exact Alpha retry handoff
         env:
-          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
-          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
-          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
-          SA_ASC_PRIVATE_KEY_BASE64: "1"
-        run: |
-          set -euo pipefail
-          bundle exec ruby fastlane/bin/sa-release wait-cloud \
-            --workflow-id "${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}" \
-            --app-id "1518036000" \
-            --version "${{ steps.release.outputs.version }}" \
-            --tag "${{ inputs.beta_tag }}" \
-            --build "${{ steps.release.outputs.build }}" \
-            --commit "${{ inputs.expected_commit }}" \
-            --output production-cloud-run.json
-          ruby -rjson -e 'value = JSON.parse(File.read("production-cloud-run.json")); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("id=#{value.fetch("id")}") }'
-
-      - name: Wait for the exact Alpha retry run
-        id: alpha_cloud
-        env:
-          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
-          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
-          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
-          SA_ASC_PRIVATE_KEY_BASE64: "1"
-        run: |
-          set -euo pipefail
-          bundle exec ruby fastlane/bin/sa-release wait-cloud \
-            --workflow-id "${{ vars.SA_ALPHA_CLOUD_WORKFLOW_ID }}" \
-            --app-id "1594104035" \
-            --version "${{ steps.release.outputs.version }}" \
-            --tag "${{ inputs.beta_tag }}" \
-            --run-id "${{ steps.alpha_retry.outputs.id }}" \
-            --allow-any-build \
-            --commit "${{ inputs.expected_commit }}" \
-            --output alpha-cloud-run.json
-          ruby -rjson -e 'value = JSON.parse(File.read("alpha-cloud-run.json")); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("id=#{value.fetch("id")}"); file.puts("build=#{value.fetch("app_build")}") }'
-
-      - name: Download both exact Cloud artifact sets
-        env:
-          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
-          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
-          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
-          SA_ASC_PRIVATE_KEY_BASE64: "1"
-        run: |
-          set -euo pipefail
-          bundle exec ruby fastlane/bin/sa-release download-cloud-artifacts \
-            --run-id "${{ steps.production_cloud.outputs.id }}" \
-            --output-directory retry-artifacts/cloud-production \
-            --output production-artifacts.json
-          bundle exec ruby fastlane/bin/sa-release download-cloud-artifacts \
-            --run-id "${{ steps.alpha_cloud.outputs.id }}" \
-            --output-directory retry-artifacts/cloud-alpha \
-            --output alpha-artifacts.json
-
-      - name: Verify, launch, quit, and package both beta apps
-        run: |
-          set -euo pipefail
-          mkdir -p retry-artifacts/public
-          bundle exec ruby fastlane/bin/sa-release verify-artifact-set \
-            --index production-artifacts.json \
-            --version "${{ steps.release.outputs.version }}" \
-            --build "${{ steps.release.outputs.build }}" \
-            --channel production \
-            --launch \
-            --output-zip "retry-artifacts/public/${{ steps.release.outputs.production_asset }}" \
-            --output production-verification.json
-          bundle exec ruby fastlane/bin/sa-release verify-artifact-set \
-            --index alpha-artifacts.json \
-            --version "${{ steps.release.outputs.version }}" \
-            --any-build \
-            --channel beta \
-            --launch \
-            --output-zip "retry-artifacts/public/${{ steps.release.outputs.alpha_asset }}" \
-            --output alpha-verification.json
-
-      - name: Attach both checksum-idempotent public artifacts
-        env:
-          SA_GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          bundle exec ruby fastlane/bin/sa-release github-upload-asset \
-            --tag "${{ inputs.beta_tag }}" \
-            --file "retry-artifacts/public/${{ steps.release.outputs.production_asset }}" >/dev/null
-          bundle exec ruby fastlane/bin/sa-release github-upload-asset \
-            --tag "${{ inputs.beta_tag }}" \
-            --file "retry-artifacts/public/${{ steps.release.outputs.alpha_asset }}" >/dev/null
-
-      - name: Refresh and verify the private beta archive
-        env:
+          ARCHIVED_FAILED_ALPHA_RUN_ID: ${{ steps.release.outputs.archived_failed_alpha_run_id }}
+          AUTHORIZED_FAILED_ALPHA_RUN_ID: ${{ inputs.failed_alpha_run_id }}
           GHCR_TOKEN: ${{ github.token }}
           GHCR_USERNAME: ${{ github.actor }}
         run: |
           set -euo pipefail
-          ruby -rjson -e 'verification = {"production" => JSON.parse(File.read("production-verification.json")), "alpha" => JSON.parse(File.read("alpha-verification.json"))}; cloud = {"production" => JSON.parse(File.read("production-cloud-run.json")).fetch("id"), "alpha" => JSON.parse(File.read("alpha-cloud-run.json")).fetch("id")}; File.write("retry-evidence.json", JSON.pretty_generate({"verification" => verification, "cloud_build_ids" => cloud, "alpha_retry" => JSON.parse(File.read("alpha-retry.json"))}) + "\n")'
+          ruby -rjson -e 'production = JSON.parse(File.read("production-cloud-run.json")); alpha_retry = JSON.parse(File.read("alpha-retry.json")); predecessor = {"durable_failed_run_id" => ENV.fetch("ARCHIVED_FAILED_ALPHA_RUN_ID"), "authorized_failed_run_id" => ENV.fetch("AUTHORIZED_FAILED_ALPHA_RUN_ID")}; File.write("retry-evidence.json", JSON.pretty_generate({"cloud_build_ids" => {"production" => production.fetch("id"), "alpha" => alpha_retry.fetch("id")}, "alpha_retry" => alpha_retry, "alpha_retry_predecessor" => predecessor}) + "\n")'
           bundle exec ruby fastlane/bin/sa-release update-manifest \
             --manifest retry-archive/manifest.json \
-            --state artifacts_verified \
+            --state cloud_running \
             --merge retry-evidence.json >/dev/null
-          /usr/bin/ditto retry-artifacts retry-archive/artifacts
-          cp production-cloud-run.json alpha-cloud-run.json production-artifacts.json alpha-artifacts.json production-verification.json alpha-verification.json alpha-retry.json retry-evidence.json retry-archive/
-          bundle exec ruby fastlane/bin/sa-release update-manifest --manifest retry-archive/manifest.json --state archived >/dev/null
+          cp production-cloud-run.json alpha-retry.json retry-evidence.json retry-archive/
           Scripts/archive-release-to-ghcr.sh push "${{ steps.release.outputs.archive_ref }}" retry-archive > retry-archive-evidence.json
 
-      - name: Append successful Alpha recovery evidence without erasing failure history
-        env:
-          GH_TOKEN: ${{ github.token }}
-          BETA_TAG: ${{ inputs.beta_tag }}
-          ALPHA_RUN_ID: ${{ steps.alpha_cloud.outputs.id }}
-        run: |
-          set -euo pipefail
-          gh release view "${BETA_TAG}" --json body --jq .body > recovered-release-body.md
-          {
-            echo
-            echo "Alpha artifact recovery succeeded in Xcode Cloud run ${ALPHA_RUN_ID}; both beta artifacts are verified and archived."
-          } >> recovered-release-body.md
-          gh release edit "${BETA_TAG}" --prerelease --latest=false --notes-file recovered-release-body.md
-
-      - name: Record Alpha retry handoff
+      - name: Record asynchronous Alpha retry handoff
         run: |
           {
             echo "### Alpha-only beta recovery"
             echo "- Tag: \`${{ inputs.beta_tag }}\` (unchanged)"
             echo "- Production build: \`${{ steps.release.outputs.build }}\` (unchanged)"
-            echo "- Informational Alpha build: \`${{ steps.alpha_cloud.outputs.build }}\`"
+            echo "- Exact Alpha retry run: \`${{ steps.alpha_retry.outputs.id }}\`"
             echo "- Private archive: \`${{ steps.release.outputs.archive_ref }}\`"
+            echo "- This runner is complete; Release Artifact Publisher will attach both artifacts only after the retry is notarized and ready."
           } >> "${GITHUB_STEP_SUMMARY}"
 
-      - name: Preserve Alpha retry failure evidence
+      - name: Document transient Alpha retry failure without replacing the handoff
         if: (failure() || cancelled()) && steps.authorization.outputs.authorized == 'true' && steps.release.outputs.validated == 'true'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
-          GHCR_TOKEN: ${{ github.token }}
-          GHCR_USERNAME: ${{ github.actor }}
           BETA_TAG: ${{ inputs.beta_tag }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
-          if [[ -f retry-archive/manifest.json ]]; then
-            bundle exec ruby fastlane/bin/sa-release record-failure \
-              --manifest retry-archive/manifest.json \
-              --workflow-url "${RUN_URL}" \
-              --output alpha-retry-failure-disposition.json
-            cp alpha-retry-failure-disposition.json retry-archive/
-            archive_ref="${GHCR_REPOSITORY}:beta-${BETA_TAG#beta/}"
-            Scripts/archive-release-to-ghcr.sh push "${archive_ref}" retry-archive > alpha-retry-failed-archive-evidence.json || \
-              echo "Could not refresh the private archive with Alpha retry failure state." >&2
-          fi
           gh release view "${BETA_TAG}" --json body --jq .body > retry-failed-release-body.md
-          {
-            echo
-            echo "Alpha-only recovery attempt stopped; the beta tag and existing artifacts were not replaced."
-            echo "Workflow evidence: ${RUN_URL}"
-          } >> retry-failed-release-body.md
-          gh release edit "${BETA_TAG}" --prerelease --latest=false --notes-file retry-failed-release-body.md
+          if ! grep -Fq "Workflow evidence: ${RUN_URL}" retry-failed-release-body.md; then
+            {
+              echo
+              echo "Alpha-only recovery attempt stopped; the beta tag and existing artifacts were not replaced."
+              echo "Workflow evidence: ${RUN_URL}"
+            } >> retry-failed-release-body.md
+            gh release edit "${BETA_TAG}" --prerelease --latest=false --notes-file retry-failed-release-body.md
+          fi
+          echo "The exact durable failed-Alpha handoff was left unchanged so a later authorized retry can reuse it." >> "${GITHUB_STEP_SUMMARY}"

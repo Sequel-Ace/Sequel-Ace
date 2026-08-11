@@ -86,7 +86,7 @@ jobs:
     name: Finalize live production prereleases
     needs: discover
     if: needs.discover.outputs.enabled == 'true' && needs.discover.outputs.has_candidates == 'true'
-    runs-on: macos-15
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: sequel-ace-release
     permissions:
@@ -117,19 +117,11 @@ jobs:
           ruby-version: "3.3"
           bundler-cache: true
 
-      - name: Install checksum-pinned ORAS on Apple silicon
-        if: runner.arch == 'ARM64'
+      - name: Install checksum-pinned ORAS on Linux
         uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
         with:
-          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_darwin_arm64.tar.gz
-          checksum: f33fc12753c54172b0d0d19eaa0318d3f90fe9b094d96e8b259c881713c92e1c
-
-      - name: Install checksum-pinned ORAS on Intel
-        if: runner.arch == 'X64'
-        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
-        with:
-          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_darwin_amd64.tar.gz
-          checksum: aeb684d8c24c18dce28fd1f7326636e4782b573108e244a93d4b1c4a5ec50f48
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz
+          checksum: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
 
       - name: Verify Production App Store Connect access
         env:
@@ -170,55 +162,57 @@ jobs:
             version="${BASH_REMATCH[1]}"
             build="${BASH_REMATCH[2]}"
             archive_ref="${GHCR_REPOSITORY}:production-${version}-${build}"
-            work_directory="$(mktemp -d -t sequel-ace-finalize)"
-            if ! Scripts/archive-release-to-ghcr.sh pull "${archive_ref}" "${work_directory}"; then
+            archive_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-finalize-archive.XXXXXX")"
+            state_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-finalize-state.XXXXXX")"
+            if ! Scripts/archive-release-to-ghcr.sh pull "${archive_ref}" "${archive_directory}"; then
               echo "Pending ${release_tag}: private release archive is unavailable."
               pending=$((pending + 1))
-              rm -rf "${work_directory}"
+              rm -rf "${archive_directory}" "${state_directory}"
               continue
             fi
-            if ! state="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("state")' "${work_directory}/manifest.json" 2>/dev/null)"; then
+            if ! state="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("state")' "${archive_directory}/manifest.json" 2>/dev/null)"; then
               echo "Pending ${release_tag}: private release archive has no readable manifest state."
               pending=$((pending + 1))
-              rm -rf "${work_directory}"
+              rm -rf "${archive_directory}" "${state_directory}"
               continue
             fi
             if [[ "${state}" != "archived" && "${state}" != "submitted" && "${state}" != "live" ]]; then
               echo "Pending ${release_tag}: manifest state is ${state}."
               pending=$((pending + 1))
-              rm -rf "${work_directory}"
+              rm -rf "${archive_directory}" "${state_directory}"
               continue
             fi
             if bundle exec ruby fastlane/bin/sa-release finalize \
-              --manifest "${work_directory}/manifest.json" \
+              --manifest "${archive_directory}/manifest.json" \
               --confirm "FINALIZE ${release_tag}" \
               --validate-only \
-              --output "${work_directory}/finalization-validation.json" 2> "${work_directory}/pending.log"; then
+              --output "${state_directory}/finalization-validation.json" 2> "${state_directory}/pending.log"; then
               ruby -rjson -e 'File.write(ARGV.fetch(1), JSON.pretty_generate({"finalization" => JSON.parse(File.read(ARGV.fetch(0)))}) + "\n")' \
-                "${work_directory}/finalization-validation.json" \
-                "${work_directory}/finalization-evidence.json"
+                "${state_directory}/finalization-validation.json" \
+                "${state_directory}/finalization-evidence.json"
               bundle exec ruby fastlane/bin/sa-release update-manifest \
-                --manifest "${work_directory}/manifest.json" \
+                --manifest "${archive_directory}/manifest.json" \
                 --state live \
-                --merge "${work_directory}/finalization-evidence.json" >/dev/null
-              live_archive_evidence="$(mktemp -t sequel-ace-live-archive-evidence)"
-              Scripts/archive-release-to-ghcr.sh push "${archive_ref}" "${work_directory}" > "${live_archive_evidence}"
+                --merge "${state_directory}/finalization-evidence.json" >/dev/null
+              cp "${state_directory}/finalization-validation.json" "${state_directory}/finalization-evidence.json" "${archive_directory}/"
+              live_archive_evidence="$(mktemp "${RUNNER_TEMP}/sequel-ace-live-archive-evidence.XXXXXX")"
+              Scripts/archive-release-to-ghcr.sh push "${archive_ref}" "${archive_directory}" > "${live_archive_evidence}"
               /bin/rm -f "${live_archive_evidence}"
               if bundle exec ruby fastlane/bin/sa-release finalize \
-                --manifest "${work_directory}/manifest.json" \
+                --manifest "${archive_directory}/manifest.json" \
                 --confirm "FINALIZE ${release_tag}" \
-                --output "${work_directory}/finalization.json" 2> "${work_directory}/pending.log"; then
+                --output "${state_directory}/finalization.json" 2> "${state_directory}/pending.log"; then
                 echo "Finalized ${release_tag}."
                 finalized=$((finalized + 1))
               else
-                echo "Pending ${release_tag}: $(head -n 1 "${work_directory}/pending.log")"
+                echo "Pending ${release_tag}: $(head -n 1 "${state_directory}/pending.log")"
                 pending=$((pending + 1))
               fi
             else
-              echo "Pending ${release_tag}: $(head -n 1 "${work_directory}/pending.log")"
+              echo "Pending ${release_tag}: $(head -n 1 "${state_directory}/pending.log")"
               pending=$((pending + 1))
             fi
-            rm -rf "${work_directory}"
+            rm -rf "${archive_directory}" "${state_directory}"
           done < production-prereleases.txt
           {
             echo "### App Store finalization check"
