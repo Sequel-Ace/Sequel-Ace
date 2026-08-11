@@ -432,6 +432,13 @@ preserves the old prerelease.
 
 Run `.github/workflows/release_feasibility.yml` after the GitHub environment,
 App, API key, Cloud triggers, Notarize actions, and manual Alpha run are ready.
+Dispatch it with both the exact Alpha build-run ID and the full source commit
+SHA reported for that run. The pinned Alpha source may equal current `main` or
+be an ancestor of it; setup and unrelated app PRs can land while a one-time
+notarization probe is processing. The workflow proves that ancestry, then
+still requires the run's exact workflow/source identity and verifies the
+downloaded artifact against the version at current `main`. Do not burn another
+Alpha build merely to refresh this one-time evidence to a newer commit.
 It must prove:
 
 1. The hosted Mac downloads, verifies, opens, and quits 5.3.1 (20104).
