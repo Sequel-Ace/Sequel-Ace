@@ -47,7 +47,7 @@ module SequelAceRelease
       }
     GRAPHQL
 
-    def initialize(token:, repository: Config::REPOSITORY, transport: nil)
+    def initialize(token:, repository: Config::REPOSITORY, transport: nil, upload_transport: nil)
       raise ValidationError, "GitHub token is required" if token.to_s.empty?
 
       @token = token
@@ -61,6 +61,7 @@ module SequelAceRelease
           "User-Agent" => "sequel-ace-release-tool"
         }
       )
+      @upload_transport = upload_transport
     end
 
     def releases
@@ -75,6 +76,10 @@ module SequelAceRelease
 
     def release_by_tag(tag)
       request!("GET", "/repos/#{@repository}/releases/tags/#{URI.encode_www_form_component(tag)}")
+    end
+
+    def latest_release
+      request!("GET", "/repos/#{@repository}/releases/latest")
     end
 
     def pull_request(number)
@@ -371,22 +376,41 @@ module SequelAceRelease
     def update_release(id:, title:, prerelease:, make_latest:)
       request!("PATCH", "/repos/#{@repository}/releases/#{Integer(id)}", body: {
         "name" => title,
+        "draft" => false,
         "prerelease" => prerelease,
         "make_latest" => make_latest ? "true" : "false"
       })
     end
 
-    def upload_release_asset(release:, path:, name: File.basename(path))
-      bytes = File.binread(path)
+    def upload_release_asset(release:, path:, expected_sha256:, name: File.basename(path))
+      expected_digest = expected_sha256.to_s.downcase
+      unless expected_digest.match?(/\A[0-9a-f]{64}\z/)
+        raise IntegrityError, "release asset #{name} has a malformed expected checksum"
+      end
+      unless File.basename(path) == name
+        raise IntegrityError, "release asset name #{name} does not match the local file"
+      end
+
+      open_flags = File::RDONLY
+      open_flags |= File::NOFOLLOW if File.const_defined?(:NOFOLLOW)
+      bytes = File.open(path, open_flags) do |file|
+        raise IntegrityError, "release asset #{name} is not a regular file" unless file.stat.file?
+
+        file.binmode
+        file.read
+      end
       digest = Digest::SHA256.hexdigest(bytes)
+      unless digest == expected_digest
+        raise IntegrityError, "release asset #{name} does not match its manifest checksum"
+      end
       existing = Array(release["assets"]).find { |asset| asset["name"] == name }
       if existing
-        existing_digest = existing["digest"].to_s.delete_prefix("sha256:")
-        raise ValidationError, "release asset #{name} already exists with a different checksum" unless existing_digest == digest
+        existing_digest = existing["digest"].to_s.delete_prefix("sha256:").downcase
+        raise IntegrityError, "release asset #{name} already exists with a different checksum" unless existing_digest == digest
 
         return existing
       end
-      transport = HTTPTransport.new(
+      transport = @upload_transport || HTTPTransport.new(
         base_url: UPLOAD_URL,
         default_headers: {
           "Accept" => "application/vnd.github+json",
@@ -402,7 +426,18 @@ module SequelAceRelease
         query: { "name" => name },
         body: bytes
       )
-      ensure_response!(response, [201])
+      uploaded = ensure_response!(response, [201])
+      unless uploaded.is_a?(Hash) && uploaded["name"] == name
+        raise IntegrityError, "GitHub returned a different release asset identity"
+      end
+      uploaded_digest = uploaded["digest"].to_s.delete_prefix("sha256:").downcase
+      unless uploaded_digest == digest
+        raise IntegrityError, "GitHub returned a different checksum for release asset #{name}"
+      end
+
+      uploaded
+    rescue Errno::ELOOP, Errno::ENOENT, Errno::EACCES, Errno::EISDIR => e
+      raise IntegrityError, "release asset #{name} is not a readable regular file: #{e.class}"
     end
 
     private

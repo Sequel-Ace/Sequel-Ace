@@ -51,6 +51,7 @@ class FinalizationAssetsTest < Minitest::Test
     github = Object.new
     github.define_singleton_method(:ref_sha) { |_ref| "d" * 40 }
     github.define_singleton_method(:release_by_tag) { |_tag| release_data }
+    github.define_singleton_method(:latest_release) { { "id" => 99, "tag_name" => "production/5.3.1-20104" } }
     github.define_singleton_method(:update_release) { |**_options| raise "validate-only mutated GitHub" }
 
     Dir.mktmpdir do |directory|
@@ -88,9 +89,14 @@ class FinalizationAssetsTest < Minitest::Test
     github = Object.new
     github.define_singleton_method(:ref_sha) { |_ref| "d" * 40 }
     github.define_singleton_method(:release_by_tag) { |_tag| release_data }
+    github.define_singleton_method(:latest_release) { release_data }
     github.define_singleton_method(:update_release) do |**options|
       update_options = options
-      release_data.merge("name" => options.fetch(:title), "prerelease" => options.fetch(:prerelease))
+      release_data = release_data.merge(
+        "name" => options.fetch(:title),
+        "draft" => false,
+        "prerelease" => options.fetch(:prerelease)
+      )
     end
 
     Dir.mktmpdir do |directory|
@@ -183,16 +189,131 @@ class FinalizationAssetsTest < Minitest::Test
     end
   end
 
+  def test_finalization_reasserts_latest_for_an_already_final_looking_release
+    live_snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    app_store = Object.new
+    app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
+    app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
+    release_data = release.merge("name" => "5.3.2 (20105)", "prerelease" => false)
+    updates = 0
+    github = Object.new
+    github.define_singleton_method(:ref_sha) { |_ref| "d" * 40 }
+    github.define_singleton_method(:release_by_tag) { |_tag| release_data }
+    github.define_singleton_method(:latest_release) do
+      updates.zero? ? { "id" => 99, "tag_name" => "production/5.3.1-20104" } : release_data
+    end
+    github.define_singleton_method(:update_release) do |**options|
+      updates += 1
+      release_data = release_data.merge(
+        "name" => options.fetch(:title), "draft" => false, "prerelease" => options.fetch(:prerelease)
+      )
+    end
+
+    status = run_finalizer(app_store: app_store, github: github)
+
+    assert_equal 0, status
+    assert_equal 1, updates
+  end
+
+  def test_finalization_treats_a_missing_current_latest_release_as_not_latest
+    live_snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    app_store = Object.new
+    app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
+    app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
+    release_data = release
+    updates = 0
+    github = Object.new
+    github.define_singleton_method(:ref_sha) { |_ref| "d" * 40 }
+    github.define_singleton_method(:release_by_tag) { |_tag| release_data }
+    github.define_singleton_method(:latest_release) do
+      if updates.zero?
+        raise SequelAceRelease::APIError, "GitHub API returned HTTP 404"
+      end
+
+      release_data
+    end
+    github.define_singleton_method(:update_release) do |**options|
+      updates += 1
+      release_data = release_data.merge(
+        "name" => options.fetch(:title), "draft" => false, "prerelease" => options.fetch(:prerelease)
+      )
+    end
+
+    status = run_finalizer(app_store: app_store, github: github)
+
+    assert_equal 0, status
+    assert_equal 1, updates
+  end
+
+  def test_finalization_rejects_a_draft_or_non_app_release
+    live_snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    app_store = Object.new
+    app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
+    app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
+
+    [release.merge("draft" => true), release.merge("author" => { "login" => "Jason-Morcos" })].each do |candidate|
+      github = Object.new
+      github.define_singleton_method(:ref_sha) { |_ref| "d" * 40 }
+      github.define_singleton_method(:release_by_tag) { |_tag| candidate }
+
+      assert_equal 1, run_finalizer(app_store: app_store, github: github)
+    end
+  end
+
+  def test_finalization_fails_if_latest_readback_does_not_match
+    live_snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    app_store = Object.new
+    app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
+    app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
+    release_data = release
+    latest_reads = 0
+    github = Object.new
+    github.define_singleton_method(:ref_sha) { |_ref| "d" * 40 }
+    github.define_singleton_method(:release_by_tag) { |_tag| release_data }
+    github.define_singleton_method(:update_release) do |**options|
+      release_data = release_data.merge(
+        "name" => options.fetch(:title), "draft" => false, "prerelease" => options.fetch(:prerelease)
+      )
+    end
+    github.define_singleton_method(:latest_release) do
+      latest_reads += 1
+      { "id" => 99, "tag_name" => "production/5.3.1-20104", "name" => "5.3.1", "draft" => false, "prerelease" => false }
+    end
+
+    assert_equal 1, run_finalizer(app_store: app_store, github: github)
+    assert_equal 2, latest_reads
+  end
+
   private
 
   def release
     {
       "id" => 100,
+      "tag_name" => "production/5.3.2-20105",
       "name" => "5.3.2 (20105) - Release Candidate 1",
+      "draft" => false,
       "prerelease" => true,
       "body" => @body,
+      "author" => { "login" => SequelAceRelease::PublishHandoff::RELEASE_APP_LOGIN },
       "assets" => [{ "name" => "Sequel-Ace-5.3.2.zip", "digest" => "sha256:#{@digest}" }]
     }
+  end
+
+  def run_finalizer(app_store:, github:)
+    Dir.mktmpdir do |directory|
+      manifest_path = File.join(directory, "manifest.json")
+      release_manifest.write(manifest_path)
+      cli = SequelAceRelease::CLI.new(out: StringIO.new, err: StringIO.new, env: {})
+      cli.stub(:app_store_client, app_store) do
+        cli.stub(:github_client, github) do
+          cli.run([
+            "finalize",
+            "--manifest", manifest_path,
+            "--confirm", "FINALIZE production/5.3.2-20105"
+          ])
+        end
+      end
+    end
   end
 
   def release_manifest
