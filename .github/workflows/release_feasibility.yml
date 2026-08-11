@@ -255,6 +255,7 @@ jobs:
             --output feasibility/github-app-probe-cleanup.json
 
       - name: Prove private GHCR round trip and visibility
+        id: ghcr_probe
         env:
           GH_TOKEN: ${{ github.token }}
           GHCR_TOKEN: ${{ github.token }}
@@ -268,6 +269,17 @@ jobs:
           package_name="${GHCR_REPOSITORY#ghcr.io/sequel-ace/}"
           visibility="$(gh api "orgs/Sequel-Ace/packages/container/${package_name}" --jq .visibility)"
           [[ "${visibility}" == "private" ]] || { echo "GHCR release archive package is not private." >&2; exit 1; }
+
+      - name: Delete the exact GHCR feasibility probe
+        if: ${{ always() && steps.ghcr_probe.outcome != 'skipped' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          probe_ref="${GHCR_REPOSITORY}:feasibility-${GITHUB_RUN_ID}"
+          package_name="${GHCR_REPOSITORY#ghcr.io/sequel-ace/}"
           probe_tag="feasibility-${GITHUB_RUN_ID}"
           oras manifest delete --force "${probe_ref}"
           remaining_probe_versions="$(

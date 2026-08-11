@@ -602,14 +602,20 @@ class WorkflowRecoveryTest < Minitest::Test
   def test_feasibility_fails_closed_unless_the_exact_ghcr_probe_tag_is_deleted
     workflow = File.read(repo_path(".github/workflows/release_feasibility.yml"))
     probe = workflow.split("- name: Prove private GHCR round trip and visibility", 2).fetch(1)
-                    .split("- name: Confirm publishing remains disabled after all gates pass", 2).first
+                    .split("- name: Delete the exact GHCR feasibility probe", 2).first
+    cleanup = workflow.split("- name: Delete the exact GHCR feasibility probe", 2).fetch(1)
+                      .split("- name: Confirm publishing remains disabled after all gates pass", 2).first
 
-    assert_includes probe, 'probe_tag="feasibility-${GITHUB_RUN_ID}"'
-    assert_includes probe, 'oras manifest delete --force "${probe_ref}"'
-    assert_includes probe, 'gh api --paginate --slurp "orgs/Sequel-Ace/packages/container/${package_name}/versions?per_page=100"'
-    assert_includes probe, 'map(select(any(.metadata.container.tags[]?; . == \"${probe_tag}\")))'
-    assert_includes probe, '[[ -z "${remaining_probe_versions}" ]]'
-    refute_includes probe, 'oras manifest delete "${probe_ref}" >/dev/null 2>&1 || true'
+    assert_includes probe, "id: ghcr_probe"
+    refute_includes probe, "oras manifest delete"
+    assert_includes cleanup, "if: ${{ always() && steps.ghcr_probe.outcome != 'skipped' }}"
+    assert_includes cleanup, 'probe_ref="${GHCR_REPOSITORY}:feasibility-${GITHUB_RUN_ID}"'
+    assert_includes cleanup, 'probe_tag="feasibility-${GITHUB_RUN_ID}"'
+    assert_includes cleanup, 'oras manifest delete --force "${probe_ref}"'
+    assert_includes cleanup, 'gh api --paginate --slurp "orgs/Sequel-Ace/packages/container/${package_name}/versions?per_page=100"'
+    assert_includes cleanup, 'map(select(any(.metadata.container.tags[]?; . == \"${probe_tag}\")))'
+    assert_includes cleanup, '[[ -z "${remaining_probe_versions}" ]]'
+    refute_includes cleanup, 'oras manifest delete "${probe_ref}" >/dev/null 2>&1 || true'
   end
 
   def test_feasibility_binds_a_reusable_alpha_run_to_an_explicit_ancestor_sha
