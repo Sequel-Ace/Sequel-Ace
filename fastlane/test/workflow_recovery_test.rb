@@ -612,7 +612,7 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes cleanup, 'probe_ref="${GHCR_REPOSITORY}:feasibility-${GITHUB_RUN_ID}"'
     assert_includes cleanup, 'probe_tag="feasibility-${GITHUB_RUN_ID}"'
     assert_includes cleanup, 'package_endpoint="orgs/Sequel-Ace/packages/container/${package_name}"'
-    assert_includes cleanup, 'package_versions_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-feasibility-package-versions.XXXXXX.json")"'
+    assert_includes cleanup, 'package_versions_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-feasibility-package-versions.json.XXXXXX")"'
     assert_includes cleanup, "| jq -sc 'sort_by(.id)'"
     assert_includes cleanup, %q!package_version_count="$(jq -r 'length' "${package_versions_file}")"!
     assert_includes cleanup, "probe_version_rows=\"$("
@@ -620,6 +620,8 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes cleanup, "IFS=$'\\t' read -r probe_version_id probe_version_tags"
     assert_includes cleanup, '"${probe_version_tags}" == "${probe_tag}"'
     assert_includes cleanup, '"${package_version_count}" -eq 1'
+    assert_includes cleanup, 'confirmed_versions_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-feasibility-confirmed-versions.json.XXXXXX")"'
+    refute_includes cleanup, "XXXXXX.json"
     assert_includes cleanup, 'cmp -s "${package_versions_file}" "${confirmed_versions_file}"'
     assert_includes cleanup, "GHCR package versions changed before whole-package probe cleanup."
     assert_includes cleanup, 'gh api --method DELETE'

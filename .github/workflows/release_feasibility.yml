@@ -282,7 +282,7 @@ jobs:
           package_name="${GHCR_REPOSITORY#ghcr.io/sequel-ace/}"
           probe_tag="feasibility-${GITHUB_RUN_ID}"
           package_endpoint="orgs/Sequel-Ace/packages/container/${package_name}"
-          package_versions_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-feasibility-package-versions.XXXXXX.json")"
+          package_versions_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-feasibility-package-versions.json.XXXXXX")"
           gh api --paginate "${package_endpoint}/versions?per_page=100" \
             --jq '.[] | {id, tags: (.metadata.container.tags | sort)}' \
             | jq -sc 'sort_by(.id)' > "${package_versions_file}"
@@ -307,7 +307,7 @@ jobs:
           }
           deleted_entire_package=0
           if [[ "${package_version_count}" -eq 1 ]]; then
-            confirmed_versions_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-feasibility-confirmed-versions.XXXXXX.json")"
+            confirmed_versions_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-feasibility-confirmed-versions.json.XXXXXX")"
             gh api --paginate "${package_endpoint}/versions?per_page=100" \
               --jq '.[] | {id, tags: (.metadata.container.tags | sort)}' \
               | jq -sc 'sort_by(.id)' > "${confirmed_versions_file}"
