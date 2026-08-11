@@ -268,7 +268,16 @@ jobs:
           package_name="${GHCR_REPOSITORY#ghcr.io/sequel-ace/}"
           visibility="$(gh api "orgs/Sequel-Ace/packages/container/${package_name}" --jq .visibility)"
           [[ "${visibility}" == "private" ]] || { echo "GHCR release archive package is not private." >&2; exit 1; }
-          oras manifest delete "${probe_ref}" >/dev/null 2>&1 || true
+          probe_tag="feasibility-${GITHUB_RUN_ID}"
+          oras manifest delete --force "${probe_ref}"
+          remaining_probe_versions="$(
+            gh api --paginate --slurp "orgs/Sequel-Ace/packages/container/${package_name}/versions?per_page=100" \
+              --jq "map(.[]) | map(select(any(.metadata.container.tags[]?; . == \"${probe_tag}\"))) | .[].id"
+          )"
+          [[ -z "${remaining_probe_versions}" ]] || {
+            echo "GHCR feasibility probe tag still exists after deletion." >&2
+            exit 1
+          }
 
       - name: Confirm publishing remains disabled after all gates pass
         run: |

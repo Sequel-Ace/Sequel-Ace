@@ -449,6 +449,10 @@ It must prove:
    merge.
 5. A private GHCR push/pull has matching checksums and private visibility.
 
+The GHCR probe is cleanup-sensitive: its exact tag is force-deleted without an
+interactive prompt, and the workflow fails unless a paginated package API
+read-back proves that tag is gone.
+
 The workflow refuses to start unless `SA_RELEASE_AUTOMATION_ENABLED` is already
 `false`, and it does not enable publishing itself. After every gate passes and
 the GitHub/Xcode Cloud UI configuration is reviewed, manually change the

@@ -599,6 +599,19 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes workflow[cleanup_probe..], "steps.probe_cleanup_token.outputs.token || github.token"
   end
 
+  def test_feasibility_fails_closed_unless_the_exact_ghcr_probe_tag_is_deleted
+    workflow = File.read(repo_path(".github/workflows/release_feasibility.yml"))
+    probe = workflow.split("- name: Prove private GHCR round trip and visibility", 2).fetch(1)
+                    .split("- name: Confirm publishing remains disabled after all gates pass", 2).first
+
+    assert_includes probe, 'probe_tag="feasibility-${GITHUB_RUN_ID}"'
+    assert_includes probe, 'oras manifest delete --force "${probe_ref}"'
+    assert_includes probe, 'gh api --paginate --slurp "orgs/Sequel-Ace/packages/container/${package_name}/versions?per_page=100"'
+    assert_includes probe, 'map(select(any(.metadata.container.tags[]?; . == \"${probe_tag}\")))'
+    assert_includes probe, '[[ -z "${remaining_probe_versions}" ]]'
+    refute_includes probe, 'oras manifest delete "${probe_ref}" >/dev/null 2>&1 || true'
+  end
+
   def test_feasibility_binds_a_reusable_alpha_run_to_an_explicit_ancestor_sha
     workflow = File.read(repo_path(".github/workflows/release_feasibility.yml"))
     source_input = workflow.split("      alpha_source_sha:", 2).fetch(1)
