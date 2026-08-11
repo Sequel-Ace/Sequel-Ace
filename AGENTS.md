@@ -53,7 +53,7 @@ Deployment target is macOS 12+.
   `NSUserNotification` API. The wider warning burn-down (remaining: AppKit
   deprecation batch, Swift 6 readiness, old drag-API delegate methods, and
   the deferred SecKeychain/NSConnection projects) is tracked in
-  `.claude/warnings-elimination-plan.md`.
+  `docs/development/warnings-elimination-plan.md`.
 
 ## Repo layout (abridged)
 
@@ -64,7 +64,7 @@ Deployment target is macOS 12+.
 - `UnitTests/` — the "Unit Tests" target's sources
 - `Frameworks/SPMySQLFramework/` — the MySQL wire-protocol framework (separate
   Xcode project, its own tests)
-- `.claude/modernization-followup-plan.md` — the detailed modernization
+- `docs/development/modernization-followup-plan.md` — the detailed modernization
   roadmap: what's done (with rationale), what's next, and known sharp edges.
   Read it before starting refactoring work.
 

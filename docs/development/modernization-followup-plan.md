@@ -1,8 +1,8 @@
 # Sequel Ace Modernization — Follow-up Plan
 
 > **Revised 2026-08-11.** Sibling tracks: the build-warning burn-down lives in
-> `.claude/warnings-elimination-plan.md` (steps 0-5 + 7 merged; 413 -> ~195),
-> the help-viewer rewrite plan in `.claude/help-viewer-rewrite-plan.md`
+> `docs/development/warnings-elimination-plan.md` (steps 0-5 + 7 merged; 413 -> ~195),
+> the help-viewer rewrite plan in `docs/development/help-viewer-rewrite-plan.md`
 > (recon done, ready to execute), agent ground rules in `AGENTS.md`.
 
 ## State of the world (August 2026 revision)
@@ -481,7 +481,7 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
 ## Recommended order (August 2026 revision)
 
 1. **Help viewer WKWebView rewrite** — plan ready in
-   `.claude/help-viewer-rewrite-plan.md`; retires the last legacy WebView
+   `docs/development/help-viewer-rewrite-plan.md`; retires the last legacy WebView
    (~20 warnings) and the WebKit-deprecation story ends.
 2. **C2b — extend SAConnectionFormModel/View to all connection types**
    (socket, SSH, AWS IAM, Vault + SSL options, colour, time zone). Scope grew
