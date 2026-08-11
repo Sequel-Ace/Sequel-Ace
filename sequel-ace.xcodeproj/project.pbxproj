@@ -211,6 +211,7 @@
 		50A9F8B119EAD4B90053E571 /* SPGotoDatabaseController.m in Sources */ = {isa = PBXBuildFile; fileRef = 50A9F8B019EAD4B90053E571 /* SPGotoDatabaseController.m */; };
 		50D3C3521A77135F00B5429C /* SPParserUtils.c in Sources */ = {isa = PBXBuildFile; fileRef = 50D3C3501A77135F00B5429C /* SPParserUtils.c */; };
 		50D3C35C1A771C4C00B5429C /* SPParserUtilsTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 50D3C35B1A771C4C00B5429C /* SPParserUtilsTest.m */; };
+		794358DD6B1C4070943C021B /* SAEditorTokensTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAE8AEB5768B402AAF04C961 /* SAEditorTokensTests.swift */; };
 		50D3C35D1A77217800B5429C /* SPParserUtils.c in Sources */ = {isa = PBXBuildFile; fileRef = 50D3C3501A77135F00B5429C /* SPParserUtils.c */; };
 		50E217B318174246009D3580 /* SPColorSelectorView.m in Sources */ = {isa = PBXBuildFile; fileRef = 50E217B218174246009D3580 /* SPColorSelectorView.m */; };
 		50E217B618174280009D3580 /* SPFavoriteColorSupport.m in Sources */ = {isa = PBXBuildFile; fileRef = 50E217B518174280009D3580 /* SPFavoriteColorSupport.m */; };
@@ -530,6 +531,7 @@
 		BC878A71121A836F00AE5066 /* SPColorWellCell.m in Sources */ = {isa = PBXBuildFile; fileRef = BC878A70121A836F00AE5066 /* SPColorWellCell.m */; };
 		BC8C8532100E0A8000D7A129 /* SPTableView.m in Sources */ = {isa = PBXBuildFile; fileRef = BC8C8531100E0A8000D7A129 /* SPTableView.m */; };
 		BC962D661144EACA006170BD /* CompletionTokens.plist in Resources */ = {isa = PBXBuildFile; fileRef = BC962D651144EACA006170BD /* CompletionTokens.plist */; };
+		A946E44AA14C458182205CFF /* CompletionTokens.plist in Resources */ = {isa = PBXBuildFile; fileRef = BC962D651144EACA006170BD /* CompletionTokens.plist */; };
 		BC9F0881100FCF2C00A80D32 /* SPFieldEditorController.m in Sources */ = {isa = PBXBuildFile; fileRef = BC9F0880100FCF2C00A80D32 /* SPFieldEditorController.m */; };
 		BCA6271C1031B9D40047E5D5 /* SPTooltip.m in Sources */ = {isa = PBXBuildFile; fileRef = BCA6271B1031B9D40047E5D5 /* SPTooltip.m */; };
 		BCD0AD490FBBFC340066EA5C /* SPSQLTokenizer.l in Sources */ = {isa = PBXBuildFile; fileRef = BCD0AD480FBBFC340066EA5C /* SPSQLTokenizer.l */; };
@@ -1041,6 +1043,7 @@
 		50D3C3501A77135F00B5429C /* SPParserUtils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = SPParserUtils.c; sourceTree = "<group>"; };
 		50D3C3511A77135F00B5429C /* SPParserUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPParserUtils.h; sourceTree = "<group>"; };
 		50D3C35B1A771C4C00B5429C /* SPParserUtilsTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPParserUtilsTest.m; sourceTree = "<group>"; };
+		CAE8AEB5768B402AAF04C961 /* SAEditorTokensTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAEditorTokensTests.swift; sourceTree = "<group>"; };
 		50E217B118174246009D3580 /* SPColorSelectorView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPColorSelectorView.h; sourceTree = "<group>"; };
 		50E217B218174246009D3580 /* SPColorSelectorView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPColorSelectorView.m; sourceTree = "<group>"; };
 		50E217B418174280009D3580 /* SPFavoriteColorSupport.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPFavoriteColorSupport.h; sourceTree = "<group>"; };
@@ -2597,6 +2600,7 @@
 				1AB0688D24A355B500E2AAC2 /* fixtures */,
 				1A4152ED25AF530F00B17249 /* GeneralSwiftTests.swift */,
 				50D3C35B1A771C4C00B5429C /* SPParserUtilsTest.m */,
+				CAE8AEB5768B402AAF04C961 /* SAEditorTokensTests.swift */,
 				5147B0152F8D000100C4C14A /* SPCSVParserTests.m */,
 				503B02CE1AE95C2C0060CAB1 /* SPTableFilterParserTest.m */,
 				50837F731E50DCD4004FAE8A /* SPJSONFormatterTests.m */,
@@ -3095,6 +3099,7 @@
 				1AB068B124A355CC00E2AAC2 /* client-key-crlf.pem in Resources */,
 				CF0000082F8C000600C4C14A /* ContentFilters.plist in Resources */,
 				C0D3A0012F8D000100000001 /* PreferenceDefaults.plist in Resources */,
+				A946E44AA14C458182205CFF /* CompletionTokens.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3403,6 +3408,7 @@
 				5147B0182F8D000100C4C14A /* SPNotLoaded.m in Sources */,
 				1717FA401558313A0065C036 /* RegexKitLite.m in Sources */,
 				50D3C35C1A771C4C00B5429C /* SPParserUtilsTest.m in Sources */,
+				794358DD6B1C4070943C021B /* SAEditorTokensTests.swift in Sources */,
 				1AE6C1CD25B07E9500880D73 /* SPFunctionsTests.m in Sources */,
 				1A9A40D525875EC9009F0E71 /* NSMutableArray-MultipleSort.m in Sources */,
 				51AA84052FDE000100C4C14A /* SAAutoIncrementRuleSupportTests.swift in Sources */,
