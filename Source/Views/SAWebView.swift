@@ -44,6 +44,14 @@ final class SAWebViewModel: NSObject, ObservableObject {
     /// Extra context-menu items appended after WebKit's default ones.
     var contextMenuItems: (() -> [NSMenuItem])?
 
+    /// Last chance to rewrite the context menu (prune WebKit's default items, insert
+    /// items at the top); runs after `contextMenuItems` have been appended.
+    var customizeContextMenu: ((NSMenu) -> Void)?
+
+    /// First chance at navigation decisions: return a policy to decide the action,
+    /// or nil to fall through to the built-in handling.
+    var decideNavigationPolicy: ((WKNavigationAction) -> WKNavigationActionPolicy?)?
+
     /// First chance at key events; return true when handled.
     var handleKeyDown: ((NSEvent) -> Bool)?
 
@@ -95,7 +103,30 @@ final class SAWebViewModel: NSObject, ObservableObject {
     func goBack() { webView?.goBack() }
     func goForward() { webView?.goForward() }
 
+    // MARK: - Find in page (replaces WebView's searchFor:direction:caseSensitive:wrap:)
+
+    func find(_ string: String, forward: Bool, completion: @escaping (Bool) -> Void) {
+        guard let webView = webView else {
+            completion(false)
+            return
+        }
+
+        let configuration = WKFindConfiguration()
+        configuration.backwards = !forward
+        configuration.caseSensitive = false
+        configuration.wraps = true
+
+        webView.find(string, configuration: configuration) { result in
+            completion(result.matchFound)
+        }
+    }
+
     // MARK: - Document access
+
+    /// Runs a script in the page, ignoring its result (theme hooks and the like).
+    func evaluateJavaScript(_ script: String) {
+        webView?.evaluateJavaScript(script)
+    }
 
     /// Fetches the current document's outer HTML (View Source / Save Page As).
     func fetchOuterHTML(completion: @escaping (String?) -> Void) {
@@ -128,9 +159,10 @@ struct SAWebView: NSViewRepresentable {
 
     @ObservedObject var model: SAWebViewModel
 
-    /// External configuration for child windows created via
-    /// `webView(_:createWebViewWith:for:windowFeatures:)`, which must use the
-    /// configuration WebKit supplies.
+    /// Configuration to build the web view with, replacing the default one. Used for
+    /// child windows created via `webView(_:createWebViewWith:for:windowFeatures:)`,
+    /// which must use the configuration WebKit supplies, and by hosts that install
+    /// their own user scripts (the help viewer's selection bridge).
     var externalConfiguration: WKWebViewConfiguration?
 
     func makeCoordinator() -> Coordinator {
@@ -146,6 +178,7 @@ struct SAWebView: NSViewRepresentable {
 
         let model = self.model
         webView.contextMenuItems = { model.contextMenuItems?() ?? [] }
+        webView.customizeMenu = { menu in model.customizeContextMenu?(menu) }
         webView.keyDownHandler = { event in model.handleKeyDown?(event) ?? false }
 
         model.attach(webView)
@@ -188,6 +221,11 @@ struct SAWebView: NSViewRepresentable {
         // MARK: Navigation policy (ports the legacy policy delegate)
 
         func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+            if let policy = model.decideNavigationPolicy?(navigationAction) {
+                decisionHandler(policy)
+                return
+            }
+
             guard let url = navigationAction.request.url else {
                 decisionHandler(.allow)
                 return
@@ -302,16 +340,20 @@ struct SAWebView: NSViewRepresentable {
 final class SAWKWebView: WKWebView {
 
     var contextMenuItems: (() -> [NSMenuItem])?
+    var customizeMenu: ((NSMenu) -> Void)?
     var keyDownHandler: ((NSEvent) -> Bool)?
 
     override func willOpenMenu(_ menu: NSMenu, with event: NSEvent) {
         super.willOpenMenu(menu, with: event)
-        guard let items = contextMenuItems?(), !items.isEmpty else { return }
 
-        menu.addItem(.separator())
-        for item in items {
-            menu.addItem(item)
+        if let items = contextMenuItems?(), !items.isEmpty {
+            menu.addItem(.separator())
+            for item in items {
+                menu.addItem(item)
+            }
         }
+
+        customizeMenu?(menu)
     }
 
     override func keyDown(with event: NSEvent) {

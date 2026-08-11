@@ -36,8 +36,8 @@ Deployment target is macOS 12+.
   `NSKeyedUnarchiver`, so removing the fallback silently wipes user settings.
 - **Web content:** never use legacy WebKit (`WebView`). Use `WKWebView` — via
   `SAWebView` (SwiftUI `NSViewRepresentable` wrapper) for embedded views, and
-  `SAPrintUtility` / `SAHTMLPrintRenderer` for print flows. The last legacy
-  `WebView` island is `SPHelpViewerController` (migration planned).
+  `SAPrintUtility` / `SAHTMLPrintRenderer` for print flows. No legacy `WebView`
+  remains: the last island, the MySQL help viewer, is now `SAHelpViewer*`.
 - **Persisted-format compatibility:** favorites plist, `.spf` documents, and
   NSUserDefaults blobs written by old versions must stay readable. When
   touching serialization, prove old data still decodes with a fixture test —

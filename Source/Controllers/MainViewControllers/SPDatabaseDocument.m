@@ -79,7 +79,6 @@
 #import "SPFavoritesOutlineView.h"
 #import "SPSSHTunnel.h"
 #import "SPHelpViewerClient.h"
-#import "SPHelpViewerController.h"
 #import "SPBundleManager.h"
 
 #import "sequel-ace-Swift.h"
