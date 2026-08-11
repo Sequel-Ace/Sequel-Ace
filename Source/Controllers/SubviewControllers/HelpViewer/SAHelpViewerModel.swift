@@ -53,10 +53,20 @@ final class SAHelpViewerModel: ObservableObject {
     /// keystroke, because that target searches incrementally.
     static let historyCapacity = 20
 
-    /// Scheme of the synthetic base URL WebKit assigns to `loadHTMLString(_:baseURL: nil)`
-    /// documents. Relative links in the generated help HTML resolve against it, which
-    /// is how a clicked topic link is recognised as an internal lookup.
-    static let internalHelpScheme = "applewebdata"
+    /// Scheme of the base URL the generated help HTML is loaded with. Topic links in
+    /// that HTML are relative (`<a href='SELECT'>`), so they resolve against this base
+    /// and a clicked link arrives as `sequelace-help://help/SELECT` — which is how the
+    /// policy recognises an internal lookup.
+    ///
+    /// The base URL must be explicit: the legacy `applewebdata://` URLs came from
+    /// WebView's synthetic base and from hand-made `WebHistoryItem`s, whereas WKWebView
+    /// loads a nil-base document as `about:blank`, against which a relative href
+    /// resolves to a scheme-less relative URL that no policy could route.
+    /// Nothing ever loads this scheme — the policy always cancels the navigation.
+    static let internalHelpScheme = "sequelace-help"
+
+    /// Base URL the help HTML is rendered with. See `internalHelpScheme`.
+    static let internalHelpBaseURL = URL(string: "\(internalHelpScheme)://help/")
 
     /// Schemes a clicked link may be opened with in the user's browser. The help HTML
     /// is generated from server-supplied text, so anything else (`file:`, `javascript:`,
@@ -163,8 +173,10 @@ final class SAHelpViewerModel: ObservableObject {
         if url.scheme == internalHelpScheme {
             // `lastPathComponent` is percent-decoded, so topics with spaces
             // ("ALTER TABLE") arrive as typed in the help HTML.
-            let term = url.lastPathComponent
-            return term.isEmpty ? .deny : .lookupTerm(term)
+            let term = url.absoluteURL.lastPathComponent
+            // "/" is what the bare base URL yields (an empty or root-relative href).
+            guard !term.isEmpty, term != "/" else { return .deny }
+            return .lookupTerm(term)
         }
 
         guard let scheme = url.scheme?.lowercased(), Self.externallyOpenableSchemes.contains(scheme) else {
@@ -216,7 +228,7 @@ final class SAHelpViewerModel: ObservableObject {
         "WKMenuItemIdentifierOpenLinkInNewWindow",
         "WKMenuItemIdentifierOpenMediaInNewWindow",
         "WKMenuItemIdentifierPaste",
-        "WKMenuItemIdentifierReload",
+        "WKMenuItemIdentifierReload"
     ]
 
     /// Menu items WebKit only offers when the click was on a live link; their
@@ -225,7 +237,7 @@ final class SAHelpViewerModel: ObservableObject {
         "WKMenuItemIdentifierCopyLink",
         "WKMenuItemIdentifierDownloadLinkedFile",
         "WKMenuItemIdentifierOpenLink",
-        "WKMenuItemIdentifierOpenLinkInNewWindow",
+        "WKMenuItemIdentifierOpenLinkInNewWindow"
     ]
 
     /// Legacy parity: the two "Search in …" items are offered for a selection,

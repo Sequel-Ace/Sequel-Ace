@@ -124,15 +124,36 @@ final class SAHelpViewerModelTests: XCTestCase {
     // MARK: - Navigation policy matrix
 
     func testInternalLinkClickLooksUpTheTerm() {
-        let url = URL(string: "applewebdata://5F9C7B0E-0000-0000-0000-000000000000/SELECT")
+        let url = URL(string: "sequelace-help://help/SELECT")
 
         XCTAssertEqual(SAHelpViewerModel.policy(for: url, kind: .linkActivated), .lookupTerm("SELECT"))
     }
 
     func testInternalLinkTermIsPercentDecoded() {
-        let url = URL(string: "applewebdata://5F9C7B0E-0000-0000-0000-000000000000/ALTER%20TABLE")
+        let url = URL(string: "sequelace-help://help/ALTER%20TABLE")
 
         XCTAssertEqual(SAHelpViewerModel.policy(for: url, kind: .linkActivated), .lookupTerm("ALTER TABLE"))
+    }
+
+    /// The policy only recognises internal links because the help HTML is loaded with
+    /// `internalHelpBaseURL`: topic links in it are relative (`<a href='SELECT'>`), so
+    /// they reach the delegate resolved against that base. With a nil base URL WebKit
+    /// would load the document as `about:blank` and deliver a scheme-less relative URL,
+    /// which is `.deny` — i.e. every topic link would be dead.
+    func testRelativeTopicLinksResolveAgainstTheBaseURLAndLookUpTheTerm() {
+        let baseURL = SAHelpViewerModel.internalHelpBaseURL
+        XCTAssertEqual(baseURL?.scheme, SAHelpViewerModel.internalHelpScheme)
+
+        let resolved = URL(string: "ALTER%20TABLE", relativeTo: baseURL)?.absoluteURL
+        XCTAssertEqual(SAHelpViewerModel.policy(for: resolved, kind: .linkActivated), .lookupTerm("ALTER TABLE"))
+
+        // Unresolved (what a nil base URL would produce) routes nowhere.
+        let unresolved = URL(string: "ALTER%20TABLE")
+        XCTAssertEqual(SAHelpViewerModel.policy(for: unresolved, kind: .linkActivated), .deny)
+    }
+
+    func testInternalBaseURLItselfIsNotATerm() {
+        XCTAssertEqual(SAHelpViewerModel.policy(for: SAHelpViewerModel.internalHelpBaseURL, kind: .linkActivated), .deny)
     }
 
     func testWebLinkClickOpensExternally() {
@@ -217,7 +238,7 @@ final class SAHelpViewerModelTests: XCTestCase {
             "WKMenuItemIdentifierReload",
             "WKMenuItemIdentifierPaste",
             "WKMenuItemIdentifierGoBack",
-            "WKMenuItemIdentifierGoForward",
+            "WKMenuItemIdentifierGoForward"
         ] {
             XCTAssertTrue(SAHelpViewerModel.prunedContextMenuIdentifiers.contains(identifier), identifier)
         }

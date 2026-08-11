@@ -15,16 +15,19 @@ final class SAWebViewModel: NSObject, ObservableObject {
 
     @Published private(set) var pageTitle: String = ""
 
-    /// HTML most recently loaded via `loadHTMLString(_:)`; reload re-displays it,
-    /// matching the legacy controller's `initialHTMLSourceString` behavior.
+    /// HTML most recently loaded via `loadHTMLString(_:baseURL:)`; reload re-displays
+    /// it, matching the legacy controller's `initialHTMLSourceString` behavior.
     private(set) var initialHTMLString: String = ""
+
+    /// Base URL the current HTML was loaded with; relative links resolve against it.
+    private(set) var initialBaseURL: URL?
 
     private(set) weak var webView: WKWebView?
     private var titleObservation: NSKeyValueObservation?
     private var pendingLoad: Load?
 
     private enum Load {
-        case html(String)
+        case html(String, URL?)
         case request(URLRequest)
     }
 
@@ -57,9 +60,14 @@ final class SAWebViewModel: NSObject, ObservableObject {
 
     // MARK: - Loading
 
-    func loadHTMLString(_ html: String) {
+    /// Loads HTML. Pass a `baseURL` when the document contains relative links that
+    /// have to resolve to a recognisable URL: with a nil base URL WebKit loads the
+    /// document as `about:blank`, and a relative href then arrives at the navigation
+    /// delegate as a scheme-less relative URL.
+    func loadHTMLString(_ html: String, baseURL: URL? = nil) {
         initialHTMLString = html
-        perform(.html(html))
+        initialBaseURL = baseURL
+        perform(.html(html, baseURL))
     }
 
     func load(_ request: URLRequest) {
@@ -67,7 +75,7 @@ final class SAWebViewModel: NSObject, ObservableObject {
     }
 
     func reloadInitialHTMLString() {
-        perform(.html(initialHTMLString))
+        perform(.html(initialHTMLString, initialBaseURL))
     }
 
     private func perform(_ load: Load) {
@@ -76,8 +84,8 @@ final class SAWebViewModel: NSObject, ObservableObject {
             return
         }
         switch load {
-        case .html(let html):
-            webView.loadHTMLString(html, baseURL: nil)
+        case .html(let html, let baseURL):
+            webView.loadHTMLString(html, baseURL: baseURL)
         case .request(let request):
             webView.load(request)
         }

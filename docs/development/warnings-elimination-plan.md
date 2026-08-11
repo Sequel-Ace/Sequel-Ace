@@ -128,6 +128,14 @@ Execution notes:
   `customizeMenu` hook, and `SAWebViewModel` grew `decideNavigationPolicy`,
   `find(_:forward:)` (WKFindConfiguration) and `evaluateJavaScript` — all three
   reusable by future WKWebView hosts.
+- ⚠️ **The plan's `applewebdata://` recon fact does not carry over to WKWebView.**
+  Those URLs came from WebView's synthetic base plus the hand-made
+  `WebHistoryItem`s; WKWebView loads a `baseURL: nil` document as `about:blank`,
+  and a relative topic link (`<a href='SELECT'>`) then reaches the delegate as a
+  *scheme-less relative* URL. Caught in review (Codex), verified with a
+  standalone WKWebView probe, fixed by rendering with an explicit
+  `sequelace-help://help/` base URL — nothing ever loads that scheme, the policy
+  always cancels. A unit test pins the resolution so the coupling can't rot.
 - Menu pruning matches WebKit's `WKMenuItemIdentifier…` values as **literal
   strings**: those constants exist in the WebKit binary but not in the public
   SDK headers, so linking them would mean adopting SPI. Unknown items are left
@@ -138,7 +146,7 @@ Execution notes:
   server-supplied text, and the legacy code handed any scheme to NSWorkspace),
   and re-visiting the currently displayed term no longer pushes a duplicate
   history entry.
-- 22 unit tests in `SAHelpViewerModelTests` (history incl. the 20-entry
+- 24 unit tests in `SAHelpViewerModelTests` (history incl. the 20-entry
   eviction, navigation-policy matrix, title, theme hook, context-menu rules,
   key equivalents). Full suite: 882 tests, 0 failures.
 - ⚠️ Not verified against a live server: the manual checklist in the rewrite

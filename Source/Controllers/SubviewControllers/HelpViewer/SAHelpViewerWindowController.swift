@@ -118,7 +118,7 @@ final class SAHelpViewerWindowController: NSWindowController, NSWindowDelegate {
             term = SPHelpViewerSearchTOC
         }
 
-        let helpString = dataSource?.htmlHelpContents(forSearch: term, autoHelp: autoHelp) ?? ""
+        let helpString = dataSource?.htmlHelpContents(forSearchString: term, autoHelp: autoHelp) ?? ""
 
         // init the Help window if not visible
         if window?.isVisible != true {
@@ -134,7 +134,7 @@ final class SAHelpViewerWindowController: NSWindowController, NSWindowDelegate {
             model.visit(term)
         }
 
-        webViewModel.loadHTMLString(helpString)
+        webViewModel.loadHTMLString(helpString, baseURL: SAHelpViewerModel.internalHelpBaseURL)
     }
 
     // MARK: - Actions
@@ -181,7 +181,10 @@ final class SAHelpViewerWindowController: NSWindowController, NSWindowDelegate {
 
     /// Shows the help for the text selected in the web view.
     @objc private func showHelpForWebViewSelection(_ sender: Any?) {
-        showHelp(for: model.selectedText, addToHistory: true, calledByAutoHelp: false)
+        // Trimmed like the online-docs action: the selection goes into a
+        // `HELP '<term>'` query, where stray whitespace changes the result.
+        let searchString = model.selectedText.trimmingCharacters(in: .whitespacesAndNewlines)
+        showHelp(for: searchString, addToHistory: true, calledByAutoHelp: false)
     }
 
     /// Shows MySQL's online documentation for the text selected in the web view.

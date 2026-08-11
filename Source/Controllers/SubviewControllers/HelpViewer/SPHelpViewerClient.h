@@ -63,7 +63,10 @@ extern NSString * const SPUserClosedHelpViewerNotification;
  * The implementation has to handle the magic search string SPHelpViewerSearchTOC to
  * return a table of contents document.
  */
-- (NSString *)HTMLHelpContentsForSearchString:(NSString *)searchString autoHelp:(BOOL)autoHelp;
+// Spelled out for Swift: the importer would otherwise drop the "String" suffix
+// and expose this as htmlHelpContents(forSearch:autoHelp:).
+- (NSString *)HTMLHelpContentsForSearchString:(NSString *)searchString autoHelp:(BOOL)autoHelp
+    NS_SWIFT_NAME(htmlHelpContents(forSearchString:autoHelp:));
 
 @end
 
