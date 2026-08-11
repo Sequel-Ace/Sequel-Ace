@@ -455,7 +455,16 @@ import Foundation
         attemptID: UInt64,
         completion: @escaping (SPSSHTunnel?, String?) -> Void
     ) {
-        let sshPort = Int(info.sshPort) ?? 22
+        guard let sshPort = info.info.sshPortOverride else {
+            completion(
+                nil,
+                NSLocalizedString(
+                    "Enter an SSH port between 1 and 65535, or leave it blank to use the SSH configuration.",
+                    comment: "Invalid SSH port error"
+                )
+            )
+            return
+        }
         let remoteSocketPath = info.sshRemoteSocketPath.trimmingCharacters(in: .whitespacesAndNewlines)
         let useRemoteSocket = !remoteSocketPath.isEmpty
         let mysqlPort = useRemoteSocket ? 0 : (Int(info.port) ?? 3306)

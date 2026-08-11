@@ -80,7 +80,7 @@ import OSLog
             self.Log.debug("urlRequest: \(urlRequest)")
         }
         .validate() // check response code etc
-        .responseJSON { [self] response in
+        .responseData { [self] response in
             switch response.result {
             case .success:
                 Log.info("Validation Successful")
@@ -91,9 +91,7 @@ import OSLog
                         return
                     }
 
-                    let json = try JSONSerialization.jsonObject(with: responseData, options: JSONSerialization.ReadingOptions())
-                    let jsonData = try JSONSerialization.data(withJSONObject: json, options: .fragmentsAllowed)
-                    let gitHub = try GitHub(data: jsonData)
+                    let gitHub = try GitHub(data: responseData)
 
                     var releasesArray = gitHub.sorted(by: { (element0: GitHubElement, element1: GitHubElement) -> Bool in
                         element0 > element1
