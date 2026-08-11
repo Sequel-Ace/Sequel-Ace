@@ -605,6 +605,35 @@ class WorkflowRecoveryTest < Minitest::Test
                     .split("- name: Delete the exact GHCR feasibility probe", 2).first
     cleanup = workflow.split("- name: Delete the exact GHCR feasibility probe", 2).fetch(1)
                       .split("- name: Confirm publishing remains disabled after all gates pass", 2).first
+    branch_marker = 'if [[ "${package_version_count}" -eq 1 ]]; then'
+    snapshot_index = cleanup.index('package_versions_file="$(mktemp')
+    initial_inventory_index = cleanup.index('gh api --paginate "${package_endpoint}/versions?per_page=100"', snapshot_index)
+    branch_index = cleanup.index(branch_marker)
+    readback_index = cleanup.index('package_readback_headers="$(gh api --include --silent "${package_endpoint}" 2>&1)"')
+
+    refute_nil snapshot_index
+    refute_nil initial_inventory_index
+    refute_nil branch_index
+    refute_nil readback_index
+    assert_operator snapshot_index, :<, initial_inventory_index
+    assert_operator initial_inventory_index, :<, branch_index
+    assert_operator branch_index, :<, readback_index
+
+    deletion_branches = cleanup[branch_index...readback_index]
+    sole_version_branch, version_branch_with_end = deletion_branches.split("\n          else\n", 2)
+    version_branch = version_branch_with_end.split("\n          fi\n", 2).first
+    delete_targets = lambda do |branch|
+      branch.lines
+            .map(&:strip)
+            .select { |line| line.start_with?('"${package_endpoint}') }
+            .map { |line| line.sub(/\s+\\\z/, "") }
+    end
+
+    assert_equal ['"${package_endpoint}"'], delete_targets.call(sole_version_branch)
+    assert_equal ['"${package_endpoint}/versions/${probe_version_id}"'], delete_targets.call(version_branch)
+    assert_operator sole_version_branch.index('gh api --paginate "${package_endpoint}/versions?per_page=100"'),
+                    :<,
+                    sole_version_branch.index("gh api --method DELETE")
 
     assert_includes probe, "id: ghcr_probe"
     refute_includes probe, "oras manifest delete"
@@ -624,9 +653,6 @@ class WorkflowRecoveryTest < Minitest::Test
     refute_includes cleanup, "XXXXXX.json"
     assert_includes cleanup, 'cmp -s "${package_versions_file}" "${confirmed_versions_file}"'
     assert_includes cleanup, "GHCR package versions changed before whole-package probe cleanup."
-    assert_includes cleanup, 'gh api --method DELETE'
-    assert_includes cleanup, '"${package_endpoint}"'
-    assert_includes cleanup, '"${package_endpoint}/versions/${probe_version_id}"'
     assert_includes cleanup, 'deleted_entire_package=1'
     assert_includes cleanup, 'package_readback_headers="$(gh api --include --silent "${package_endpoint}" 2>&1)"'
     assert_includes cleanup, %q!package_readback_status="$(awk 'NR == 1 { print $2 }' <<< "${package_readback_headers}")"!
