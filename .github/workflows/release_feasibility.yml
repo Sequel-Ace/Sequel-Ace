@@ -64,11 +64,13 @@ jobs:
         run: |
           set -euo pipefail
           current_sha="$(git rev-parse HEAD)"
-          git cat-file -e "${ALPHA_SOURCE_SHA}^{commit}"
-          git merge-base --is-ancestor "${ALPHA_SOURCE_SHA}" "${current_sha}" || {
+          canonical_alpha_source_sha="$(git rev-parse --verify "${ALPHA_SOURCE_SHA}^{commit}")"
+          [[ "${canonical_alpha_source_sha}" =~ ^[0-9a-f]{40}$ ]] || { echo "Git returned a malformed canonical Alpha source commit SHA." >&2; exit 1; }
+          git merge-base --is-ancestor "${canonical_alpha_source_sha}" "${current_sha}" || {
             echo "Pinned Alpha source commit is not an ancestor of current main." >&2
             exit 1
           }
+          printf 'ALPHA_SOURCE_SHA=%s\n' "${canonical_alpha_source_sha}" >> "${GITHUB_ENV}"
 
       - name: Exclude transient feasibility evidence from git status
         run: |
