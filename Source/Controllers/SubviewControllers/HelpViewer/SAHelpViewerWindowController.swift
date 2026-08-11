@@ -134,6 +134,9 @@ final class SAHelpViewerWindowController: NSWindowController, NSWindowDelegate {
             model.visit(term)
         }
 
+        // The selection belongs to the document being replaced.
+        model.clearSelection()
+
         webViewModel.loadHTMLString(helpString, baseURL: SAHelpViewerModel.internalHelpBaseURL)
     }
 

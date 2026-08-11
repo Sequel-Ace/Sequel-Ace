@@ -91,6 +91,18 @@ final class SAHelpViewerModel: ObservableObject {
         focusSearchFieldRequest += 1
     }
 
+    /// Drops the cached selection; call this whenever a new document is loaded.
+    ///
+    /// A fresh document starts with an empty selection, but nothing guarantees a
+    /// `selectionchange` event for that — the listener belongs to the document being
+    /// replaced. Without this reset the previous topic's selection would keep driving
+    /// the next page's context menu, offering "Search in MySQL Help" for text that is
+    /// no longer on screen. The legacy controller could not go stale that way: it read
+    /// `selectedDOMRange` live each time the menu opened.
+    func clearSelection() {
+        selectedText = ""
+    }
+
     // MARK: - Term history
 
     /// Visited help terms, oldest first. The legacy controller kept synthetic

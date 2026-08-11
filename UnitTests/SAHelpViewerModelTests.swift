@@ -216,6 +216,26 @@ final class SAHelpViewerModelTests: XCTestCase {
         XCTAssertFalse(SAHelpViewerModel.offersSelectionSearchItems(selectedText: "  \n ", menuItemIdentifiers: ["WKMenuItemIdentifierCopy"]))
     }
 
+    /// Loading a new topic must drop the cached selection, or the previous page's
+    /// selection would still offer (and search for) text that is no longer displayed.
+    func testClearingTheSelectionWithdrawsTheSelectionSearchItems() {
+        let model = SAHelpViewerModel()
+        model.selectedText = "SELECT"
+
+        XCTAssertTrue(SAHelpViewerModel.offersSelectionSearchItems(
+            selectedText: model.selectedText,
+            menuItemIdentifiers: []
+        ))
+
+        model.clearSelection()
+
+        XCTAssertEqual(model.selectedText, "")
+        XCTAssertFalse(SAHelpViewerModel.offersSelectionSearchItems(
+            selectedText: model.selectedText,
+            menuItemIdentifiers: []
+        ))
+    }
+
     func testSelectionSearchItemsAreSuppressedOnALiveLink() {
         XCTAssertFalse(SAHelpViewerModel.offersSelectionSearchItems(
             selectedText: "SELECT",

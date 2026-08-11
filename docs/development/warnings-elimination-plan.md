@@ -146,7 +146,7 @@ Execution notes:
   server-supplied text, and the legacy code handed any scheme to NSWorkspace),
   and re-visiting the currently displayed term no longer pushes a duplicate
   history entry.
-- 24 unit tests in `SAHelpViewerModelTests` (history incl. the 20-entry
+- 25 unit tests in `SAHelpViewerModelTests` (history incl. the 20-entry
   eviction, navigation-policy matrix, title, theme hook, context-menu rules,
   key equivalents). Full suite: 882 tests, 0 failures.
 - ⚠️ Not verified against a live server: the manual checklist in the rewrite
