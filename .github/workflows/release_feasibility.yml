@@ -1,0 +1,260 @@
+name: Release Automation Feasibility
+
+on:
+  workflow_dispatch:
+    inputs:
+      alpha_build_run_id:
+        description: Exact manually-started Alpha-only Xcode Cloud build run ID after Notarize is configured
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  checks: read
+  contents: write
+  packages: write
+  pull-requests: write
+
+concurrency:
+  group: sequel-ace-release
+  cancel-in-progress: false
+
+jobs:
+  feasibility:
+    name: Prove hosted release capabilities
+    runs-on: macos-15
+    timeout-minutes: 180
+    environment: sequel-ace-release
+    env:
+      SA_ASC_REQUIRE_ISSUER: "1"
+      GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
+      PROBE_BRANCH: prepare-release/feasibility-probe-${{ github.run_id }}
+    steps:
+      - name: Enforce feasibility-test authorization
+        env:
+          RELEASE_ACTOR: ${{ github.actor }}
+          RELEASE_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+          RELEASE_REF: ${{ github.ref }}
+          RELEASE_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}
+          ALPHA_BUILD_RUN_ID: ${{ inputs.alpha_build_run_id }}
+        run: |
+          set -euo pipefail
+          [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized release actor." >&2; exit 1; }
+          [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized feasibility rerun initiator." >&2; exit 1; }
+          [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Feasibility must run from main." >&2; exit 1; }
+          [[ "${RELEASE_ENABLED}" == "false" ]] || { echo "Set SA_RELEASE_AUTOMATION_ENABLED=false before running feasibility." >&2; exit 1; }
+          [[ "${ALPHA_BUILD_RUN_ID}" =~ ^[A-Za-z0-9-]+$ ]] || { echo "Malformed Alpha build-run ID." >&2; exit 1; }
+
+      - name: Check out release tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Exclude transient feasibility evidence from git status
+        run: |
+          set -euo pipefail
+          exclude_file="$(git rev-parse --git-path info/exclude)"
+          printf '%s\n' /feasibility/ >> "${exclude_file}"
+
+      - name: Set up Ruby and locked gems
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Install checksum-pinned ORAS on Apple silicon
+        if: runner.arch == 'ARM64'
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_darwin_arm64.tar.gz
+          checksum: f33fc12753c54172b0d0d19eaa0318d3f90fe9b094d96e8b259c881713c92e1c
+
+      - name: Install checksum-pinned ORAS on Intel
+        if: runner.arch == 'X64'
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_darwin_amd64.tar.gz
+          checksum: aeb684d8c24c18dce28fd1f7326636e4782b573108e244a93d4b1c4a5ec50f48
+
+      - name: Run release-tool unit tests
+        run: bundle exec rake -f fastlane/Rakefile test
+
+      - name: Verify and launch the current public production artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p feasibility/current-release
+          gh release download production/5.3.1-20104 \
+            --pattern Sequel-Ace-5.3.1.zip \
+            --dir feasibility/current-release
+          bundle exec ruby fastlane/bin/sa-release verify-artifact \
+            --artifact feasibility/current-release/Sequel-Ace-5.3.1.zip \
+            --version 5.3.1 \
+            --build 20104 \
+            --channel production \
+            --launch \
+            --output feasibility/current-release-verification.json
+
+      - name: Verify limited App Store Connect and Xcode Cloud read access
+        run: |
+          set -euo pipefail
+          bundle exec ruby -Ifastlane/lib -rsequel_ace_release -e '
+            client = SequelAceRelease::AppStoreConnectClient.from_env
+            production_app = client.app(SequelAceRelease::Config::PRODUCTION_APP_ID)
+            alpha_app = client.app(SequelAceRelease::Config::ALPHA_APP_ID)
+            evidence = {
+              "production_app_id" => production_app.fetch("id"),
+              "alpha_app_id" => alpha_app.fetch("id"),
+              "production_versions" => client.app_store_versions(app_id: SequelAceRelease::Config::PRODUCTION_APP_ID).length,
+              "alpha_versions" => client.app_store_versions(app_id: SequelAceRelease::Config::ALPHA_APP_ID).length,
+              "production_cloud_runs" => client.workflow_runs(ENV.fetch("SA_PRODUCTION_WORKFLOW_ID")).length,
+              "alpha_cloud_runs" => client.workflow_runs(ENV.fetch("SA_ALPHA_WORKFLOW_ID")).length
+            }
+            File.write("feasibility/apple-read-evidence.json", SequelAceRelease::CanonicalJSON.pretty(evidence))
+          '
+        env:
+          SA_PRODUCTION_WORKFLOW_ID: ${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}
+          SA_ALPHA_WORKFLOW_ID: ${{ vars.SA_ALPHA_CLOUD_WORKFLOW_ID }}
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
+
+      - name: Download and verify the real Alpha notarization artifact
+        env:
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
+        run: |
+          set -euo pipefail
+          current_version="$(bundle exec ruby -Ifastlane/lib -rsequel_ace_release -e 'puts SequelAceRelease::VersionFiles.new.current.fetch("version")')"
+          current_sha="$(git rev-parse HEAD)"
+          bundle exec ruby -Ifastlane/lib -rsequel_ace_release -e '
+            client = SequelAceRelease::AppStoreConnectClient.from_env
+            run = client.build_run(ARGV.fetch(0))
+            raise SequelAceRelease::ValidationError, "Alpha run is not part of the configured Alpha workflow" unless run["workflow_id"] == ARGV.fetch(1)
+            raise SequelAceRelease::ValidationError, "Alpha run did not succeed" unless run["execution_progress"] == "COMPLETE" && run["completion_status"] == "SUCCEEDED"
+            commits = [run["source_commit"], run["destination_commit"]].compact
+            raise SequelAceRelease::ValidationError, "Alpha run does not match checked-out main" unless commits.include?(ARGV.fetch(2))
+            File.write("feasibility/alpha-cloud-run.json", SequelAceRelease::CanonicalJSON.pretty(run))
+          ' "${{ inputs.alpha_build_run_id }}" "${{ vars.SA_ALPHA_CLOUD_WORKFLOW_ID }}" "${current_sha}"
+          bundle exec ruby fastlane/bin/sa-release download-cloud-artifacts \
+            --run-id "${{ inputs.alpha_build_run_id }}" \
+            --output-directory feasibility/alpha-cloud \
+            --output feasibility/alpha-artifacts.json
+          bundle exec ruby fastlane/bin/sa-release verify-artifact-set \
+            --index feasibility/alpha-artifacts.json \
+            --version "${current_version}" \
+            --any-build \
+            --channel beta \
+            --launch \
+            --output-zip feasibility/Sequel-Ace-alpha-feasibility.zip \
+            --output feasibility/alpha-verification.json
+
+      - name: Mint a fresh release App token for the GitHub probe
+        id: probe_app_token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: Sequel-Ace
+          repositories: Sequel-Ace
+
+      - name: Create the verified GitHub App commit and disposable PR
+        id: github_probe
+        env:
+          GH_TOKEN: ${{ steps.probe_app_token.outputs.token }}
+          SA_GITHUB_TOKEN: ${{ steps.probe_app_token.outputs.token }}
+        run: |
+          set -euo pipefail
+          base_sha="$(git rev-parse HEAD)"
+          printf '%s\n' "${base_sha}" > feasibility/github-app-probe-base.txt
+          BASE_SHA="${base_sha}" bundle exec ruby -Ifastlane/lib -rsequel_ace_release -rjson <<'RUBY'
+          File.open("CHANGELOG.md", "a") { |file| file.puts("\n<!-- release automation feasibility run #{ENV.fetch('GITHUB_RUN_ID')} -->") }
+          client = SequelAceRelease::GitHubClient.new(token: ENV.fetch("SA_GITHUB_TOKEN"))
+          commit = client.create_bot_commit(
+            base_sha: ENV.fetch("BASE_SHA"),
+            branch: ENV.fetch("PROBE_BRANCH"),
+            message: "Probe release App commit verification #infra",
+            repository_root: SequelAceRelease::Config.repo_root,
+            changed_paths: [{ "status" => " M", "path" => "CHANGELOG.md" }]
+          )
+          evidence_path = "feasibility/github-app-probe.json"
+          File.write(evidence_path, SequelAceRelease::CanonicalJSON.pretty({ "commit" => commit, "pull_request" => nil }))
+          pull = client.create_pull_request(
+            branch: ENV.fetch("PROBE_BRANCH"),
+            title: "#infra Probe release App CI behavior",
+            body: "Disposable release-automation feasibility probe. It will never be merged."
+          )
+          File.write(evidence_path, SequelAceRelease::CanonicalJSON.pretty({ "commit" => commit, "pull_request" => pull }))
+          RUBY
+          commit_sha="$(ruby -rjson -e 'puts JSON.parse(File.read("feasibility/github-app-probe.json")).dig("commit", "sha")')"
+          echo "commit_sha=${commit_sha}" >> "${GITHUB_OUTPUT}"
+
+      - name: Wait for exact-head feasibility PR checks
+        env:
+          SA_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          bundle exec ruby fastlane/bin/sa-release github-wait-checks \
+            --head-sha "${{ steps.github_probe.outputs.commit_sha }}" \
+            --required-check "Run Tests" \
+            --required-check "Release Tool Tests" \
+            --require-all-checks \
+            --output feasibility/github-app-probe-checks.json
+
+      - name: Refresh release App token for probe cleanup
+        if: always()
+        id: probe_cleanup_token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: Sequel-Ace
+          repositories: Sequel-Ace
+
+      - name: Close and delete only the exact feasibility probe
+        if: always()
+        env:
+          SA_GITHUB_TOKEN: ${{ steps.probe_cleanup_token.outputs.token || github.token }}
+        run: |
+          set -euo pipefail
+          [[ -f feasibility/github-app-probe-base.txt ]] || exit 0
+          base_sha="$(tr -d '\r\n' < feasibility/github-app-probe-base.txt)"
+          expected_sha="${base_sha}"
+          reconcile_arguments=(--base-sha "${base_sha}" --reconcile-prepared-tree)
+          if [[ -f feasibility/github-app-probe.json ]]; then
+            expected_sha="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).dig("commit", "sha") || ARGV.fetch(1)' feasibility/github-app-probe.json "${base_sha}")"
+            reconcile_arguments=()
+          fi
+          bundle exec ruby fastlane/bin/sa-release github-cleanup-branch \
+            --branch "${PROBE_BRANCH}" \
+            --expected-sha "${expected_sha}" \
+            ${reconcile_arguments[@]+"${reconcile_arguments[@]}"} \
+            --output feasibility/github-app-probe-cleanup.json
+
+      - name: Prove private GHCR round trip and visibility
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          mkdir -p feasibility/ghcr-probe
+          printf '{"schema_version":1,"probe_run":"%s"}\n' "${GITHUB_RUN_ID}" > feasibility/ghcr-probe/manifest.json
+          probe_ref="${GHCR_REPOSITORY}:feasibility-${GITHUB_RUN_ID}"
+          Scripts/archive-release-to-ghcr.sh push "${probe_ref}" feasibility/ghcr-probe > feasibility/ghcr-evidence.json
+          package_name="${GHCR_REPOSITORY#ghcr.io/sequel-ace/}"
+          visibility="$(gh api "orgs/Sequel-Ace/packages/container/${package_name}" --jq .visibility)"
+          [[ "${visibility}" == "private" ]] || { echo "GHCR release archive package is not private." >&2; exit 1; }
+          oras manifest delete "${probe_ref}" >/dev/null 2>&1 || true
+
+      - name: Confirm publishing remains disabled after all gates pass
+        run: |
+          set -euo pipefail
+          echo "All automated gates passed. Publishing is still disabled; after reviewing the Xcode Cloud and GitHub UI setup, manually set SA_RELEASE_AUTOMATION_ENABLED=true." >> "${GITHUB_STEP_SUMMARY}"

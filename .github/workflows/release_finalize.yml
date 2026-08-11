@@ -1,0 +1,268 @@
+name: Finalize Live Releases
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Optional exact production tag for authorized recovery
+        required: false
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: sequel-ace-release
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    name: Find production prereleases to finalize
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: sequel-ace-release
+    permissions:
+      contents: read
+    outputs:
+      enabled: ${{ steps.discovery.outputs.enabled }}
+      has_candidates: ${{ steps.discovery.outputs.has_candidates }}
+      trigger: ${{ steps.discovery.outputs.trigger }}
+    steps:
+      - name: Authorize and discover finalization candidates
+        id: discovery
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ACTOR: ${{ github.actor }}
+          RELEASE_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}
+          RELEASE_EVENT: ${{ github.event_name }}
+          RELEASE_REF: ${{ github.ref }}
+          REQUESTED_TAG: ${{ inputs.release_tag }}
+          RELEASE_RUN_ATTEMPT: ${{ github.run_attempt }}
+          RELEASE_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+        run: |
+          set -euo pipefail
+          [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Finalization must run from main." >&2; exit 1; }
+          case "${RELEASE_EVENT}" in
+            workflow_dispatch)
+              [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized finalizer actor." >&2; exit 1; }
+              [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized finalizer rerun initiator." >&2; exit 1; }
+              if [[ -n "${REQUESTED_TAG}" && ! "${REQUESTED_TAG}" =~ ^production/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]]; then
+                echo "Malformed requested production tag." >&2
+                exit 1
+              fi
+              trigger="authorized manual recovery"
+              ;;
+            schedule)
+              if [[ "${RELEASE_RUN_ATTEMPT}" != "1" ]]; then
+                [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized scheduled-finalizer rerun initiator." >&2; exit 1; }
+              fi
+              trigger="scheduled six-hour poll"
+              ;;
+            *)
+              echo "Unsupported finalizer event." >&2
+              exit 1
+              ;;
+          esac
+          echo "trigger=${trigger}" >> "${GITHUB_OUTPUT}"
+
+          if [[ "${RELEASE_ENABLED}" != "true" ]]; then
+            if [[ "${RELEASE_EVENT}" == "workflow_dispatch" ]]; then
+              echo "Release publishing is disabled." >&2
+              exit 1
+            fi
+            echo "enabled=false" >> "${GITHUB_OUTPUT}"
+            echo "has_candidates=false" >> "${GITHUB_OUTPUT}"
+            echo "Release publishing is disabled; the scheduled finalizer did no work." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+          echo "enabled=true" >> "${GITHUB_OUTPUT}"
+
+          if [[ -n "${REQUESTED_TAG}" ]]; then
+            candidates="$(gh release view "${REQUESTED_TAG}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --json tagName,author \
+              --jq 'select(.author.login == "sequel-ace-release-automation[bot]") | .tagName')"
+            [[ "${candidates}" == "${REQUESTED_TAG}" ]] || { echo "Requested release is not owned by the release App." >&2; exit 1; }
+          else
+            candidates="$(gh release list \
+              --repo "${GITHUB_REPOSITORY}" \
+              --limit 100 \
+              --json tagName,isPrerelease \
+              --jq '.[] | select(.isPrerelease == true and (.tagName | startswith("production/"))) | .tagName')"
+          fi
+          if [[ -n "${candidates}" ]]; then
+            candidate_count="$(printf '%s\n' "${candidates}" | awk 'NF { count += 1 } END { print count + 0 }')"
+            echo "has_candidates=true" >> "${GITHUB_OUTPUT}"
+            echo "Found ${candidate_count} production prerelease candidate(s)." >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "has_candidates=false" >> "${GITHUB_OUTPUT}"
+            echo "No production prereleases require finalization." >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+  finalize:
+    name: Finalize live production prereleases
+    needs: discover
+    if: needs.discover.outputs.enabled == 'true' && needs.discover.outputs.has_candidates == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: sequel-ace-release
+    permissions:
+      contents: write
+      packages: write
+    env:
+      SA_ASC_REQUIRE_ISSUER: "1"
+      GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
+    steps:
+      - name: Revalidate finalizer rollout state
+        env:
+          RELEASE_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}
+          RELEASE_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          [[ "${RELEASE_ENABLED}" == "true" ]] || { echo "Release publishing is disabled." >&2; exit 1; }
+          [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Finalization must run from main." >&2; exit 1; }
+
+      - name: Check out release tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Ruby and locked gems
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Install checksum-pinned ORAS on Linux
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz
+          checksum: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
+
+      - name: Verify Production App Store Connect access
+        env:
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
+        run: |
+          set -euo pipefail
+          bundle exec ruby -Ifastlane/lib -rsequel_ace_release -e '
+            client = SequelAceRelease::AppStoreConnectClient.from_env
+            app = client.app(SequelAceRelease::Config::PRODUCTION_APP_ID)
+            abort("App Store Connect returned the wrong Production app") unless app.fetch("id") == SequelAceRelease::Config::PRODUCTION_APP_ID
+          '
+
+      - name: Finalize only exact App Store-live releases
+        env:
+          FINALIZER_TRIGGER: ${{ needs.discover.outputs.trigger }}
+          GH_TOKEN: ${{ github.token }}
+          SA_GITHUB_TOKEN: ${{ github.token }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
+          REQUESTED_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${REQUESTED_TAG}" ]]; then
+            printf '%s\n' "${REQUESTED_TAG}" > production-candidates.txt
+          else
+            gh release list --limit 100 --json tagName,isPrerelease --jq '.[] | select(.isPrerelease == true and (.tagName | startswith("production/"))) | .tagName' > production-candidates.txt
+          fi
+          finalized=0
+          pending=0
+          while IFS= read -r release_tag; do
+            [[ -n "${release_tag}" ]] || continue
+            if [[ ! "${release_tag}" =~ ^production/([0-9]+\.[0-9]+\.[0-9]+)-([0-9]+)$ ]]; then
+              echo "Skipping malformed production tag: ${release_tag}" >&2
+              continue
+            fi
+            version="${BASH_REMATCH[1]}"
+            build="${BASH_REMATCH[2]}"
+            archive_ref="${GHCR_REPOSITORY}:production-${version}-${build}"
+            archive_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-finalize-archive.XXXXXX")"
+            state_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-finalize-state.XXXXXX")"
+            if ! Scripts/archive-release-to-ghcr.sh pull "${archive_ref}" "${archive_directory}"; then
+              echo "Pending ${release_tag}: private release archive is unavailable."
+              pending=$((pending + 1))
+              rm -rf "${archive_directory}" "${state_directory}"
+              continue
+            fi
+            if ! state="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("state")' "${archive_directory}/manifest.json" 2>/dev/null)"; then
+              echo "Pending ${release_tag}: private release archive has no readable manifest state."
+              pending=$((pending + 1))
+              rm -rf "${archive_directory}" "${state_directory}"
+              continue
+            fi
+            if [[ "${state}" != "archived" && "${state}" != "submitted" && "${state}" != "finalizing" && "${state}" != "live" ]]; then
+              echo "Pending ${release_tag}: manifest state is ${state}."
+              pending=$((pending + 1))
+              rm -rf "${archive_directory}" "${state_directory}"
+              continue
+            fi
+            if bundle exec ruby fastlane/bin/sa-release finalize \
+              --manifest "${archive_directory}/manifest.json" \
+              --confirm "FINALIZE ${release_tag}" \
+              --validate-only \
+              --output "${state_directory}/finalization-validation.json" 2> "${state_directory}/pending.log"; then
+              ruby -rjson -e 'File.write(ARGV.fetch(1), JSON.pretty_generate({"finalization" => JSON.parse(File.read(ARGV.fetch(0)))}) + "\n")' \
+                "${state_directory}/finalization-validation.json" \
+                "${state_directory}/finalization-evidence.json"
+              bundle exec ruby fastlane/bin/sa-release update-manifest \
+                --manifest "${archive_directory}/manifest.json" \
+                --state finalizing \
+                --merge "${state_directory}/finalization-evidence.json" >/dev/null
+              cp "${state_directory}/finalization-validation.json" "${state_directory}/finalization-evidence.json" "${archive_directory}/"
+              finalizing_archive_evidence="$(mktemp "${RUNNER_TEMP}/sequel-ace-finalizing-archive-evidence.XXXXXX")"
+              if ! Scripts/archive-release-to-ghcr.sh push "${archive_ref}" "${archive_directory}" > "${finalizing_archive_evidence}"; then
+                echo "Pending ${release_tag}: could not archive finalization validation."
+                pending=$((pending + 1))
+                /bin/rm -f "${finalizing_archive_evidence}"
+                rm -rf "${archive_directory}" "${state_directory}"
+                continue
+              fi
+              /bin/rm -f "${finalizing_archive_evidence}"
+              if bundle exec ruby fastlane/bin/sa-release finalize \
+                --manifest "${archive_directory}/manifest.json" \
+                --confirm "FINALIZE ${release_tag}" \
+                --output "${state_directory}/finalization.json" 2> "${state_directory}/pending.log"; then
+                ruby -rjson -e 'File.write(ARGV.fetch(1), JSON.pretty_generate({"finalization" => JSON.parse(File.read(ARGV.fetch(0)))}) + "\n")' \
+                  "${state_directory}/finalization.json" \
+                  "${state_directory}/finalization-evidence.json"
+                bundle exec ruby fastlane/bin/sa-release update-manifest \
+                  --manifest "${archive_directory}/manifest.json" \
+                  --state live \
+                  --merge "${state_directory}/finalization-evidence.json" >/dev/null
+                cp "${state_directory}/finalization.json" "${state_directory}/finalization-evidence.json" "${archive_directory}/"
+                live_archive_evidence="$(mktemp "${RUNNER_TEMP}/sequel-ace-live-archive-evidence.XXXXXX")"
+                if ! Scripts/archive-release-to-ghcr.sh push "${archive_ref}" "${archive_directory}" > "${live_archive_evidence}"; then
+                  echo "Pending ${release_tag}: GitHub is finalized but the live archive refresh failed."
+                  pending=$((pending + 1))
+                  /bin/rm -f "${live_archive_evidence}"
+                  rm -rf "${archive_directory}" "${state_directory}"
+                  continue
+                fi
+                /bin/rm -f "${live_archive_evidence}"
+                echo "Finalized ${release_tag}."
+                finalized=$((finalized + 1))
+              else
+                echo "Pending ${release_tag}: $(head -n 1 "${state_directory}/pending.log")"
+                pending=$((pending + 1))
+              fi
+            else
+              echo "Pending ${release_tag}: $(head -n 1 "${state_directory}/pending.log")"
+              pending=$((pending + 1))
+            fi
+            rm -rf "${archive_directory}" "${state_directory}"
+          done < production-candidates.txt
+          {
+            echo "### App Store finalization check"
+            echo "- Finalized: ${finalized}"
+            echo "- Still pending or blocked: ${pending}"
+            echo "- Trigger: ${FINALIZER_TRIGGER}"
+          } >> "${GITHUB_STEP_SUMMARY}"
