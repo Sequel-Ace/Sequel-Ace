@@ -31,6 +31,8 @@
 
 #import "SPImageView.h"
 
+#import "sequel-ace-Swift.h"
+
 @implementation SPImageView
 
 /**
@@ -75,7 +77,7 @@
 		NSData *pngData = nil;
 		NSBitmapImageRep *draggedImage = [[NSBitmapImageRep alloc] initWithData:[[sender draggingPasteboard] dataForType:@"NSTIFFPboardType"]];
 		if (draggedImage) {
-			pngData = [draggedImage representationUsingType:NSPNGFileType properties:@{}];
+			pngData = [draggedImage representationUsingType:NSBitmapImageFileTypePNG properties:@{}];
 		}
 		if (pngData) {
 			[delegateForUse processUpdatedImageData:pngData];
@@ -88,14 +90,7 @@
 		NSData *pngData = nil;
 		NSPICTImageRep *draggedImage = [[NSPICTImageRep alloc] initWithData:[[sender draggingPasteboard] dataForType:@"NSPICTPboardType"]];
 		if (draggedImage) {
-			NSImage *convertImage = [[NSImage alloc] initWithSize:[draggedImage size]];
-			[convertImage lockFocus];
-			[draggedImage drawInRect:[draggedImage boundingBox]];
-			NSBitmapImageRep *bitmapImageRep = [[NSBitmapImageRep alloc] initWithFocusedViewRect:[draggedImage boundingBox]];
-			if (bitmapImageRep) {
-				pngData = [bitmapImageRep representationUsingType:NSPNGFileType properties:@{}];
-			}
-			[convertImage unlockFocus];
+			pngData = [SAImageRenderer pngDataForImageRep:draggedImage];
 		}
 		if (pngData) {
 			[delegateForUse processUpdatedImageData:pngData];

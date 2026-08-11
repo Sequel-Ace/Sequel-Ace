@@ -48,9 +48,12 @@ Deployment target is macOS 12+.
   pasteboards etc.); the `.spf` session paths in SPDatabaseDocument
   deliberately use non-secure keyed archiving under the `"data"` key — that is
   the cross-version wire format, don't "upgrade" it without a migration plan.
-- Known remaining deprecation group (deserves its own PR):
-  `NSUserNotification` → UserNotifications.framework (4 files). The wider
-  warning burn-down is tracked in `.claude/warnings-elimination-plan.md`.
+- **User notifications:** post via `SANotificationCenter`
+  (`Source/Other/Utility/SANotificationCenter.swift`), never the deprecated
+  `NSUserNotification` API. The wider warning burn-down (remaining: AppKit
+  deprecation batch, Swift 6 readiness, old drag-API delegate methods, and
+  the deferred SecKeychain/NSConnection projects) is tracked in
+  `.claude/warnings-elimination-plan.md`.
 
 ## Repo layout (abridged)
 
