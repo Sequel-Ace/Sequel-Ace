@@ -161,11 +161,21 @@ jobs:
             /release-archive/ \
             /artifacts/ >> "${exclude_file}"
 
+      - name: Keep Bundler configuration outside the tracked worktree
+        run: |
+          set -euo pipefail
+          bundle_config_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-bundle-config.XXXXXX")"
+          cp .bundle/config "${bundle_config_directory}/config"
+          printf 'BUNDLE_APP_CONFIG=%s\n' "${bundle_config_directory}" >> "${GITHUB_ENV}"
+
       - name: Set up Ruby and locked gems
         uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
+
+      - name: Verify Bundler left tracked configuration unchanged
+        run: git diff --exit-code -- .bundle/config
 
       - name: Install checksum-pinned ORAS on Linux
         uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1

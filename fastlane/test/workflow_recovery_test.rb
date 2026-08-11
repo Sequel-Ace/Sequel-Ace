@@ -112,6 +112,25 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes feasibility[feasibility_exclusion...feasibility_probe], "/feasibility/"
   end
 
+  def test_release_keeps_bundler_configuration_outside_the_tracked_worktree
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    external_config = workflow.index("- name: Keep Bundler configuration outside the tracked worktree")
+    ruby_setup = workflow.index("- name: Set up Ruby and locked gems")
+    config_check = workflow.index("- name: Verify Bundler left tracked configuration unchanged")
+    preparation = workflow.index("- name: Prepare explicit release files")
+
+    assert_operator external_config, :<, ruby_setup
+    assert_operator ruby_setup, :<, config_check
+    assert_operator config_check, :<, preparation
+
+    setup = workflow[external_config...ruby_setup]
+    assert_includes setup, 'mktemp -d "${RUNNER_TEMP}/sequel-ace-bundle-config.XXXXXX"'
+    assert_includes setup, 'cp .bundle/config "${bundle_config_directory}/config"'
+    assert_includes setup, 'BUNDLE_APP_CONFIG=%s'
+    assert_includes setup, '>> "${GITHUB_ENV}"'
+    assert_includes workflow[config_check...preparation], "git diff --exit-code -- .bundle/config"
+  end
+
   def test_ambiguous_app_store_submission_is_polled_before_failure_recording
     workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
     recovery = workflow.split("  recover_publish_failure:", 2).fetch(1)
