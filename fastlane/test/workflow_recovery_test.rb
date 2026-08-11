@@ -601,15 +601,24 @@ class WorkflowRecoveryTest < Minitest::Test
 
   def test_feasibility_binds_a_reusable_alpha_run_to_an_explicit_ancestor_sha
     workflow = File.read(repo_path(".github/workflows/release_feasibility.yml"))
+    source_input = workflow.split("      alpha_source_sha:", 2).fetch(1)
+                           .split("\n\npermissions:", 2).first
+    artifact_step = workflow.split("- name: Download and verify the real Alpha notarization artifact", 2).fetch(1)
+                            .split("- name: Mint a fresh release App token for the GitHub probe", 2).first
 
-    assert_includes workflow, "alpha_source_sha:"
+    assert_includes source_input, "required: true"
+    assert_includes source_input, "type: string"
     assert_includes workflow, 'ALPHA_BUILD_RUN_ID: ${{ inputs.alpha_build_run_id }}'
     assert_includes workflow, 'ALPHA_SOURCE_SHA: ${{ inputs.alpha_source_sha }}'
+    assert_includes workflow, 'SA_ALPHA_WORKFLOW_ID: ${{ vars.SA_ALPHA_CLOUD_WORKFLOW_ID }}'
     assert_includes workflow, '[[ "${ALPHA_SOURCE_SHA}" =~ ^[0-9a-fA-F]{40}$ ]]'
     assert_includes workflow, 'git merge-base --is-ancestor "${ALPHA_SOURCE_SHA}" "${current_sha}"'
-    assert_includes workflow, '"${ALPHA_BUILD_RUN_ID}" "${{ vars.SA_ALPHA_CLOUD_WORKFLOW_ID }}" "${ALPHA_SOURCE_SHA}"'
+    assert_includes artifact_step, 'run["source_commit"] == ARGV.fetch(2)'
+    assert_includes artifact_step, '"${ALPHA_BUILD_RUN_ID}" "${SA_ALPHA_WORKFLOW_ID}" "${ALPHA_SOURCE_SHA}"'
+    assert_includes artifact_step, '--run-id "${ALPHA_BUILD_RUN_ID}"'
     assert_includes workflow, "Alpha run does not match the pinned source commit"
-    refute_includes workflow, '--run-id "${{ inputs.alpha_build_run_id }}"'
+    refute_includes artifact_step, '${{ vars.SA_ALPHA_CLOUD_WORKFLOW_ID }}'
+    refute_includes artifact_step, '--run-id "${{ inputs.alpha_build_run_id }}"'
   end
 
   def test_alpha_retry_failure_leaves_the_exact_durable_handoff_unchanged

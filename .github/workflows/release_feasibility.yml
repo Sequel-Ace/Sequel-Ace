@@ -33,6 +33,7 @@ jobs:
       SA_ASC_REQUIRE_ISSUER: "1"
       ALPHA_BUILD_RUN_ID: ${{ inputs.alpha_build_run_id }}
       ALPHA_SOURCE_SHA: ${{ inputs.alpha_source_sha }}
+      SA_ALPHA_WORKFLOW_ID: ${{ vars.SA_ALPHA_CLOUD_WORKFLOW_ID }}
       GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
       PROBE_BRANCH: prepare-release/feasibility-probe-${{ github.run_id }}
     steps:
@@ -134,7 +135,6 @@ jobs:
           '
         env:
           SA_PRODUCTION_WORKFLOW_ID: ${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}
-          SA_ALPHA_WORKFLOW_ID: ${{ vars.SA_ALPHA_CLOUD_WORKFLOW_ID }}
           SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
           SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
           SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
@@ -154,10 +154,9 @@ jobs:
             run = client.build_run(ARGV.fetch(0))
             raise SequelAceRelease::ValidationError, "Alpha run is not part of the configured Alpha workflow" unless run["workflow_id"] == ARGV.fetch(1)
             raise SequelAceRelease::ValidationError, "Alpha run did not succeed" unless run["execution_progress"] == "COMPLETE" && run["completion_status"] == "SUCCEEDED"
-            commits = [run["source_commit"], run["destination_commit"]].compact
-            raise SequelAceRelease::ValidationError, "Alpha run does not match the pinned source commit" unless commits.include?(ARGV.fetch(2))
+            raise SequelAceRelease::ValidationError, "Alpha run does not match the pinned source commit" unless run["source_commit"] == ARGV.fetch(2)
             File.write("feasibility/alpha-cloud-run.json", SequelAceRelease::CanonicalJSON.pretty(run))
-          ' "${ALPHA_BUILD_RUN_ID}" "${{ vars.SA_ALPHA_CLOUD_WORKFLOW_ID }}" "${ALPHA_SOURCE_SHA}"
+          ' "${ALPHA_BUILD_RUN_ID}" "${SA_ALPHA_WORKFLOW_ID}" "${ALPHA_SOURCE_SHA}"
           bundle exec ruby fastlane/bin/sa-release download-cloud-artifacts \
             --run-id "${ALPHA_BUILD_RUN_ID}" \
             --output-directory feasibility/alpha-cloud \
