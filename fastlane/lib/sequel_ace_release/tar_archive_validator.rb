@@ -10,6 +10,8 @@ module SequelAceRelease
     MAX_METADATA_BYTES = 1_048_576
     MAX_MEMBERS = 250_000
     MAX_PATH_BYTES = 4_096
+    READ_CHUNK_BYTES = 65_536
+    REQUIRED_TRAILING_TAR_BYTES = 512
     STRUCTURAL_PAX_KEYS = %w[hdrcharset size].freeze
     Entry = Struct.new(:path, :type, :link_target, keyword_init: true)
 
@@ -71,6 +73,7 @@ module SequelAceRelease
             end
           end
         end
+        validate_archive_termination!(gzip)
       end
 
       if pending_pax || pending_long_name || pending_long_link
@@ -78,6 +81,25 @@ module SequelAceRelease
       end
 
       entries
+    end
+
+    def validate_archive_termination!(gzip)
+      trailing_tar_bytes = 0
+      while (chunk = gzip.read(READ_CHUNK_BYTES))
+        trailing_tar_bytes += chunk.bytesize
+        unless chunk.count("\0") == chunk.bytesize
+          integrity_error!("Release archive contains nonzero data after its tar terminator")
+        end
+      end
+      if trailing_tar_bytes < REQUIRED_TRAILING_TAR_BYTES
+        integrity_error!("Release archive does not contain a complete tar terminator")
+      end
+
+      trailing_compressed = gzip.unused.to_s.b
+      trailing_compressed << gzip.to_io.read.to_s.b
+      unless trailing_compressed.empty?
+        integrity_error!("Release archive contains trailing or concatenated gzip data")
+      end
     end
 
     def build_entry(raw_path, typeflag, raw_link)

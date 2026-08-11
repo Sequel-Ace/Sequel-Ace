@@ -111,7 +111,36 @@ class TarArchiveValidatorTest < Minitest::Test
     assert_includes error.message, "unsupported structural PAX metadata"
   end
 
+  def test_rejects_a_concatenated_gzip_stream_after_an_unterminated_tar
+    error = assert_concatenated_archive_invalid(first_terminated: false)
+
+    assert_includes error.message, "complete tar terminator"
+  end
+
+  def test_rejects_a_concatenated_gzip_stream_after_a_complete_tar
+    error = assert_concatenated_archive_invalid(first_terminated: true)
+
+    assert_includes error.message, "trailing or concatenated gzip data"
+  end
+
   private
+
+  def assert_concatenated_archive_invalid(first_terminated:)
+    captured = nil
+    Dir.mktmpdir do |directory|
+      first = File.join(directory, "first.tar.gz")
+      second = File.join(directory, "second.tar.gz")
+      archive = File.join(directory, "release.tar.gz")
+      write_archive(first, [file("manifest.json", "{}\n")], terminator: first_terminated)
+      write_archive(second, [file("hidden-after-first-stream", "unsafe\n")])
+      File.binwrite(archive, File.binread(first) + File.binread(second))
+
+      captured = assert_raises(SequelAceRelease::IntegrityError) do
+        SequelAceRelease::TarArchiveValidator.new.validate!(archive)
+      end
+    end
+    captured
+  end
 
   def assert_invalid(*entries)
     captured = nil
@@ -131,7 +160,7 @@ class TarArchiveValidatorTest < Minitest::Test
     end
   end
 
-  def write_archive(path, entries)
+  def write_archive(path, entries, terminator: true)
     Zlib::GzipWriter.open(path) do |gzip|
       entries.each do |entry|
         data = entry.fetch(:data)
@@ -147,7 +176,7 @@ class TarArchiveValidatorTest < Minitest::Test
         gzip.write(data)
         gzip.write("\0" * ((512 - (data.bytesize % 512)) % 512))
       end
-      gzip.write("\0" * 1_024)
+      gzip.write("\0" * 1_024) if terminator
     end
   end
 
