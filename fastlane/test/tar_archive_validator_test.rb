@@ -123,6 +123,24 @@ class TarArchiveValidatorTest < Minitest::Test
     assert_includes error.message, "trailing or concatenated gzip data"
   end
 
+  def test_rejects_an_excessive_compressed_zero_suffix
+    captured = nil
+    Dir.mktmpdir do |directory|
+      archive = File.join(directory, "release.tar.gz")
+      write_archive(
+        archive,
+        [file("manifest.json", "{}\n")],
+        trailing_zero_bytes: SequelAceRelease::TarArchiveValidator::MAX_TRAILING_TAR_BYTES + 1_024
+      )
+
+      captured = assert_raises(SequelAceRelease::IntegrityError) do
+        SequelAceRelease::TarArchiveValidator.new.validate!(archive)
+      end
+    end
+
+    assert_includes captured.message, "excessive data after its tar terminator"
+  end
+
   private
 
   def assert_concatenated_archive_invalid(first_terminated:)
@@ -160,7 +178,7 @@ class TarArchiveValidatorTest < Minitest::Test
     end
   end
 
-  def write_archive(path, entries, terminator: true)
+  def write_archive(path, entries, terminator: true, trailing_zero_bytes: nil)
     Zlib::GzipWriter.open(path) do |gzip|
       entries.each do |entry|
         data = entry.fetch(:data)
@@ -176,7 +194,8 @@ class TarArchiveValidatorTest < Minitest::Test
         gzip.write(data)
         gzip.write("\0" * ((512 - (data.bytesize % 512)) % 512))
       end
-      gzip.write("\0" * 1_024) if terminator
+      zero_bytes = trailing_zero_bytes || (terminator ? 1_024 : 0)
+      gzip.write("\0" * zero_bytes)
     end
   end
 

@@ -10,6 +10,7 @@ module SequelAceRelease
     MAX_METADATA_BYTES = 1_048_576
     MAX_MEMBERS = 250_000
     MAX_PATH_BYTES = 4_096
+    MAX_TRAILING_TAR_BYTES = 1_048_576
     READ_CHUNK_BYTES = 65_536
     REQUIRED_TRAILING_TAR_BYTES = 512
     STRUCTURAL_PAX_KEYS = %w[hdrcharset size].freeze
@@ -87,6 +88,9 @@ module SequelAceRelease
       trailing_tar_bytes = 0
       while (chunk = gzip.read(READ_CHUNK_BYTES))
         trailing_tar_bytes += chunk.bytesize
+        if trailing_tar_bytes > MAX_TRAILING_TAR_BYTES
+          integrity_error!("Release archive contains excessive data after its tar terminator")
+        end
         unless chunk.count("\0") == chunk.bytesize
           integrity_error!("Release archive contains nonzero data after its tar terminator")
         end
@@ -95,9 +99,10 @@ module SequelAceRelease
         integrity_error!("Release archive does not contain a complete tar terminator")
       end
 
-      trailing_compressed = gzip.unused.to_s.b
-      trailing_compressed << gzip.to_io.read.to_s.b
-      unless trailing_compressed.empty?
+      unless gzip.unused.to_s.b.empty?
+        integrity_error!("Release archive contains trailing or concatenated gzip data")
+      end
+      unless gzip.to_io.read(1).to_s.b.empty?
         integrity_error!("Release archive contains trailing or concatenated gzip data")
       end
     end
