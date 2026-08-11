@@ -18,8 +18,8 @@ Landed since this plan was written:
   pinned by SAKeyedArchiveCompatTests), AppKit deprecation batch 3,
   SPDatabaseDocument.h nullability audit.
 - **Community/parallel work**: MCP server (SPMCPServer + HTTP + pref pane),
-  Vault auth (SAVault* + VaultAuthManager), AWS IAM/SSO, cell-filter suite
-  (SACellFilter*), SAHelpViewerOnlineURLBuilder (+tests), connection-string
+  Vault auth (`SAVault*` + VaultAuthManager), AWS IAM/SSO, cell-filter suite
+  (`SACellFilter*`), SAHelpViewerOnlineURLBuilder (+tests), connection-string
   import + duplicate detection, PHP-serialized field editor support.
 - **C3 scaffolding exists but is hollow**: SAConnectionWindowController (221
   lines), SAConnectionViewCoordinator, and a "New Connection Window" menu item
@@ -495,7 +495,7 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
    landing in the XIB).
 4. **SPConnectionController re-containment**: extract the freshly-added
    import/duplicate-detection logic (mostly pure dictionary work, see the
-   candidate*/detail*/imported* naming from the shadow-rename pass) into
+   `candidate*`/`detail*`/`imported*` naming from the shadow-rename pass) into
    tested Swift. Best done while the code is young.
 5. **Warnings remainder** (steps 8-9 + deferred SecKeychain/NSConnection/
    OpenSSL — see warnings plan). Step 8 (Swift 6 concurrency, 2 sites) is a

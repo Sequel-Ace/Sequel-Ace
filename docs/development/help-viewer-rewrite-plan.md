@@ -12,7 +12,9 @@ stack (#2509-#2511) merges.
   policy delegate intercepts `WebNavigationTypeBackForward` to re-render via
   `showHelpFor:… addToHistory:NO`. Every render is `loadHTMLString`. So the
   WKWebView port needs only a plain term-stack (array + index) — no
-  `WKBackForwardList` gymnastics.
+  `WKBackForwardList` gymnastics. **The legacy list is capped at 20 entries**
+  (`setCapacity:20` in `windowDidLoad`, SPHelpViewerController.m:98) — the
+  model must evict the oldest entry past 20, or history becomes unbounded.
 - **Three help targets** (segmented control): MySQL (HELP lookup via data
   source), Page (find-in-page), Web (online docs via data source →
   `SAHelpViewerOnlineURLBuilder`, already on main + tested).
@@ -39,7 +41,12 @@ stack (#2509-#2511) merges.
 
 1. **`SAHelpViewerModel`** (ObservableObject; pure parts test-eligible)
    - term history: `[String]` + index, `goBack/goForward/canGoBack/canGoForward`,
-     `visit(term:)` — unit-testable without AppKit
+     `visit(term:)`, **capacity 20 with oldest-entry eviction** (legacy
+     parity) — unit-testable without AppKit
+   - **pure navigation-policy function** `policy(for: URL?, type:)` returning
+     an enum (`.lookupTerm(String)` / `.openExternally(URL)` / `.allow` /
+     `.deny`) so the decidePolicy matrix is unit-testable; the
+     WKNavigationDelegate just executes the returned decision
    - `helpTarget` enum (mysql/page/web) + "sends whole search string" rule
    - window-title composition from page title — unit-testable
 2. **`SAHelpViewerView`** (SwiftUI): search field + target segmented control +
@@ -79,8 +86,11 @@ stack (#2509-#2511) merges.
 ## Tests
 
 - `SAHelpViewerModelTests`: history push/back/forward/truncate-on-new-visit,
-  no-dupe-adjacent behavior parity, target/sends-whole-string rule, title
-  composition. (Model file must stay free of project ObjC types.)
+  **20-entry capacity eviction**, no-dupe-adjacent behavior parity,
+  target/sends-whole-string rule, title composition, and the
+  **navigation-policy matrix** (`applewebdata://` link → term lookup, http(s)
+  link → external open, `.other` → allow, everything else → deny). (Model
+  file must stay free of project ObjC types.)
 - URL routing already covered by `SAHelpViewerOnlineURLBuilderTests` on main.
 
 ## Manual verification checklist (needs a live MySQL connection)

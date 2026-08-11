@@ -50,7 +50,7 @@ a call-site guard. ~16 warnings total.
 
 Executed as scripted per-method renames (quoted strings and selector keywords
 protected) so all uses within a scope moved together. Naming scheme by value
-origin: favorite* / detail* / candidate* / new* / imported*, plus
+origin: `favorite*`, `detail*`, `candidate*`, `new*`, and `imported*`, plus
 dataColumnDefinitions in SPCopyTable. 50 warnings → 0; 76/76 line-for-line.
 
 - **SPConnectionController.m** (~47): locals named `host`, `user`, `password`,
@@ -95,21 +95,6 @@ safe. The `.spf` session read/write kept the exact non-secure keyed
 round-trip, wire-format pin for old readers, garbage rejection). Failure
 paths hardened: nil decodes now degrade gracefully instead of throwing.
 
-Migrate deprecated `initForWritingWithMutableData:` /
-`initForReadingWithData:` / `archivedDataWithRootObject:` /
-`unarchiveObjectWithData:`:
-
-- In-memory / pasteboard round-trips (clean swaps, follow the
-  SPFilterTableController #2447 pattern):
-  SPQueryFavoriteManager.m:671/707 (favorites drag),
-  SPContentFilterManager.m:592 (filter drag),
-  SPNavigatorController.m:1097, SPTextView.m:3638,
-  SPNetworkPreferencePane.m:730/774 (cipher list drag).
-- **Persisted paths — needs decode-compat proof**: SPDatabaseDocument.m:2800
-  region (spf session data + encrypted spf documents). Old `.spf`/`.spfs`
-  files written with non-secure keyed archives MUST still open; add a
-  round-trip + legacy-fixture test before switching the writer.
-
 ## Step 5 — NSUserNotification → UserNotifications.framework — ✅ Done
 
 New `SANotificationCenter` (Source/Other/Utility/, app target) replaces all
@@ -121,22 +106,13 @@ lazily on first post (permission prompt appears in context); a
 bundle-identifier guard keeps test runners from trapping. User-visible change:
 first notification asks for permission — release-notes worthy.
 
-- New Swift `SANotificationCenter` (SA prefix) wrapping `UNUserNotificationCenter`:
-  lazy authorization request, banner+sound post, click-to-focus-window parity
-  (check who is `NSUserNotificationCenter.delegate` today — likely
-  SPAppController — and port that behavior).
-- Call sites: SPDatabaseDocument.m (~490, ~1550, ~1959, ~2126),
-  SPCustomQuery.m (~1063-1103), SPDataImport.m (708, 1217),
-  SPExportController.m (365).
-- User-visible change (permission prompt on first notification) → own PR,
-  manual verification, release-notes worthy.
-
 ## Step 6 — Help viewer WKWebView migration (roadmap "PR B") — ~20 warnings
 
-- Rewrite SPHelpViewerController(+Client) on WKWebView/SwiftUI hosting
-  pattern; hand-rolled history stack (loadHTMLString doesn't populate
-  backForwardList), WKWebView find API, JS selection bridge; reuse
-  `SAHelpViewerOnlineURLBuilder` (already on main, tested).
+- Rewrite `SPHelpViewerController` (only — `SPHelpViewerClient` stays ObjC
+  with minimal edits) per `docs/development/help-viewer-rewrite-plan.md`:
+  term-history model (capped at 20 entries, matching the legacy
+  `backForwardList` capacity), WKWebView find API, JS selection bridge;
+  reuse `SAHelpViewerOnlineURLBuilder` (already on main, tested).
 - Kills all remaining WebView/WebPolicyDelegate/WebUIDelegate/WebHistoryItem/
   WebMenuItemTag* warnings. After this + Step 0, **legacy WebKit is gone**
   from the codebase.
