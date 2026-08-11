@@ -281,7 +281,24 @@ jobs:
           probe_ref="${GHCR_REPOSITORY}:feasibility-${GITHUB_RUN_ID}"
           package_name="${GHCR_REPOSITORY#ghcr.io/sequel-ace/}"
           probe_tag="feasibility-${GITHUB_RUN_ID}"
-          oras manifest delete --force "${probe_ref}"
+          probe_version_rows="$(
+            gh api --paginate "orgs/Sequel-Ace/packages/container/${package_name}/versions?per_page=100" \
+              --jq ".[] | select(any(.metadata.container.tags[]?; . == \"${probe_tag}\")) | [.id, (.metadata.container.tags | sort | join(\",\"))] | @tsv"
+          )"
+          [[ -n "${probe_version_rows}" && "${probe_version_rows}" != *$'\n'* ]] || {
+            echo "Expected exactly one GHCR package version for the feasibility probe tag." >&2
+            exit 1
+          }
+          IFS=$'\t' read -r probe_version_id probe_version_tags <<< "${probe_version_rows}"
+          [[ "${probe_version_id}" =~ ^[0-9]+$ && "${probe_version_tags}" == "${probe_tag}" ]] || {
+            echo "Refusing to delete a GHCR package version that is not exclusive to the feasibility probe tag." >&2
+            exit 1
+          }
+          gh api --method DELETE \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "orgs/Sequel-Ace/packages/container/${package_name}/versions/${probe_version_id}" \
+            --silent
           remaining_probe_versions="$(
             gh api --paginate --slurp "orgs/Sequel-Ace/packages/container/${package_name}/versions?per_page=100" \
               --jq "map(.[]) | map(select(any(.metadata.container.tags[]?; . == \"${probe_tag}\"))) | .[].id"
