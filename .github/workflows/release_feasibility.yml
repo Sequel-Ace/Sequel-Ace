@@ -299,10 +299,24 @@ jobs:
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "orgs/Sequel-Ace/packages/container/${package_name}/versions/${probe_version_id}" \
             --silent
-          remaining_probe_versions="$(
-            gh api --paginate "orgs/Sequel-Ace/packages/container/${package_name}/versions?per_page=100" \
-              --jq ".[] | select(any(.metadata.container.tags[]?; . == \"${probe_tag}\")) | .id"
-          )"
+          package_endpoint="orgs/Sequel-Ace/packages/container/${package_name}"
+          set +e
+          package_readback_headers="$(gh api --include --silent "${package_endpoint}" 2>&1)"
+          package_readback_exit=$?
+          set -e
+          package_readback_status="$(awk 'NR == 1 { print $2 }' <<< "${package_readback_headers}")"
+          if [[ "${package_readback_exit}" -eq 0 && "${package_readback_status}" == "200" ]]; then
+            remaining_probe_versions="$(
+              gh api --paginate "${package_endpoint}/versions?per_page=100" \
+                --jq ".[] | select(any(.metadata.container.tags[]?; . == \"${probe_tag}\")) | .id"
+            )"
+          elif [[ "${package_readback_exit}" -ne 0 && "${package_readback_status}" == "404" ]]; then
+            # Deleting the package's final version removes the empty package.
+            remaining_probe_versions=""
+          else
+            echo "Unexpected GHCR package read-back status ${package_readback_status:-unavailable}." >&2
+            exit 1
+          fi
           [[ -z "${remaining_probe_versions}" ]] || {
             echo "GHCR feasibility probe tag still exists after deletion." >&2
             exit 1
