@@ -255,6 +255,7 @@ jobs:
             --output feasibility/github-app-probe-cleanup.json
 
       - name: Prove private GHCR round trip and visibility
+        id: ghcr_probe
         env:
           GH_TOKEN: ${{ github.token }}
           GHCR_TOKEN: ${{ github.token }}
@@ -268,7 +269,27 @@ jobs:
           package_name="${GHCR_REPOSITORY#ghcr.io/sequel-ace/}"
           visibility="$(gh api "orgs/Sequel-Ace/packages/container/${package_name}" --jq .visibility)"
           [[ "${visibility}" == "private" ]] || { echo "GHCR release archive package is not private." >&2; exit 1; }
-          oras manifest delete "${probe_ref}" >/dev/null 2>&1 || true
+
+      - name: Delete the exact GHCR feasibility probe
+        if: ${{ always() && steps.ghcr_probe.outcome != 'skipped' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          probe_ref="${GHCR_REPOSITORY}:feasibility-${GITHUB_RUN_ID}"
+          package_name="${GHCR_REPOSITORY#ghcr.io/sequel-ace/}"
+          probe_tag="feasibility-${GITHUB_RUN_ID}"
+          oras manifest delete --force "${probe_ref}"
+          remaining_probe_versions="$(
+            gh api --paginate --slurp "orgs/Sequel-Ace/packages/container/${package_name}/versions?per_page=100" \
+              --jq "map(.[]) | map(select(any(.metadata.container.tags[]?; . == \"${probe_tag}\"))) | .[].id"
+          )"
+          [[ -z "${remaining_probe_versions}" ]] || {
+            echo "GHCR feasibility probe tag still exists after deletion." >&2
+            exit 1
+          }
 
       - name: Confirm publishing remains disabled after all gates pass
         run: |
