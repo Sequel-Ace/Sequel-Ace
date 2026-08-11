@@ -453,8 +453,11 @@ The GHCR probe is cleanup-sensitive: after the probe step is attempted, a
 separate unconditional cleanup step finds exactly one package version carrying
 only the run-specific tag and deletes it through GitHub's Packages REST API.
 The workflow preserves any earlier failure and also fails unless a paginated
-package API read-back proves that tag is gone. Do not use the OCI registry
-manifest-delete operation; GHCR reports that operation as unsupported.
+package API read-back proves that tag is gone. When the probe was the package's
+final version, GitHub removes the now-empty package; an exact `404` read-back
+after the successful version DELETE is therefore also accepted. Every other
+read-back failure remains fatal. Do not use the OCI registry manifest-delete
+operation; GHCR reports that operation as unsupported.
 
 The workflow refuses to start unless `SA_RELEASE_AUTOMATION_ENABLED` is already
 `false`, and it does not enable publishing itself. After every gate passes and
