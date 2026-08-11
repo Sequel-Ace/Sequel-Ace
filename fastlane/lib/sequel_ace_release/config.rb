@@ -19,7 +19,7 @@ module SequelAceRelease
     CHANNELS = %w[production beta].freeze
     MANIFEST_STATES = %w[
       planned prepared pull_request_open merged prerelease_created
-      cloud_running artifacts_verified archived submitted live failed
+      cloud_running artifacts_verified archived submitted finalizing live failed
     ].freeze
 
     PROJECT_FILES = {

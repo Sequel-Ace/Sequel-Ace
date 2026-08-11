@@ -215,6 +215,36 @@ class FinalizationAssetsTest < Minitest::Test
     assert_equal 1, updates
   end
 
+  def test_finalization_treats_a_missing_current_latest_release_as_not_latest
+    live_snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    app_store = Object.new
+    app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
+    app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
+    release_data = release
+    updates = 0
+    github = Object.new
+    github.define_singleton_method(:ref_sha) { |_ref| "d" * 40 }
+    github.define_singleton_method(:release_by_tag) { |_tag| release_data }
+    github.define_singleton_method(:latest_release) do
+      if updates.zero?
+        raise SequelAceRelease::APIError, "GitHub API returned HTTP 404"
+      end
+
+      release_data
+    end
+    github.define_singleton_method(:update_release) do |**options|
+      updates += 1
+      release_data = release_data.merge(
+        "name" => options.fetch(:title), "draft" => false, "prerelease" => options.fetch(:prerelease)
+      )
+    end
+
+    status = run_finalizer(app_store: app_store, github: github)
+
+    assert_equal 0, status
+    assert_equal 1, updates
+  end
+
   def test_finalization_rejects_a_draft_or_non_app_release
     live_snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
     app_store = Object.new

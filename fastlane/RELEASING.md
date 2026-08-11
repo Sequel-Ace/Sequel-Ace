@@ -385,14 +385,18 @@ preserves the old prerelease.
   latest flag only after the exact ASC version is `READY_FOR_DISTRIBUTION`, the
   exact version remains Apple's latest released Production version, the exact
   build remains selected, phased release is `ACTIVE` or `COMPLETE`, and public
-  asset checksums match the private manifest. It first records that live
-  validation in the private archive, and only then performs the public GitHub
+  asset checksums match the private manifest. It first records that validation
+  under the active `finalizing` state in the private archive, and only then performs the public GitHub
   transition; an archive failure therefore leaves the prerelease discoverable
   for the next scheduled check or an authorized manual retry. Each run continues
   examining other production prereleases when one archive is missing or
   malformed. Finalization outputs and logs stay outside the pulled archive; only
-  the validated evidence files and updated regular manifest are copied back
-  before the durable archive checkpoint.
+  the validated evidence files and updated regular manifest are copied back.
+  After the public transition succeeds, the finalizer records `live` and pushes
+  that read-back evidence to the private archive. If that last archive refresh
+  fails after GitHub has already transitioned, an authorized manual finalizer
+  run can name the exact production tag and idempotently repair the `live`
+  checkpoint; scheduled runs continue scanning prereleases only.
 - The public transition always explicitly sends `draft: false`,
   `prerelease: false`, and `make_latest: true`, even when the title and
   prerelease flag already look final. It then re-reads both the exact release

@@ -56,10 +56,10 @@ class PublishHandoffTest < Minitest::Test
   end
 
   def test_completed_or_failed_handoffs_are_not_reprocessed
-    %w[submitted live failed].each do |state|
+    %w[submitted finalizing live failed].each do |state|
       manifest = release_manifest(state: state)
       release = release_for(manifest)
-      if %w[submitted live].include?(state)
+      if %w[submitted finalizing live].include?(state)
         release = release.merge("assets" => release_assets(manifest))
       end
       result = validate(manifest, release: release)
@@ -223,6 +223,38 @@ class PublishHandoffTest < Minitest::Test
     assert_includes error.message, "durable failed run"
   end
 
+  def test_alpha_recovery_binds_a_newer_authorized_failure_to_the_retry_evidence
+    manifest = with_alpha_retry(release_manifest(channel: "beta")).with(
+      "alpha_retry_predecessor" => {
+        "durable_failed_run_id" => "failed-run-id",
+        "authorized_failed_run_id" => "newer-failed-run-id"
+      }
+    )
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      validate(manifest, release: release_for(manifest))
+    end
+
+    assert_includes error.message, "authorized failed run"
+  end
+
+  def test_alpha_recovery_allows_a_newer_authorized_failure_than_the_durable_checkpoint
+    original = with_alpha_retry(release_manifest(channel: "beta"))
+    manifest = original.with(
+      "alpha_retry" => original.to_h.fetch("alpha_retry").merge(
+        "retried_failed_run_id" => "newer-failed-run-id"
+      ),
+      "alpha_retry_predecessor" => {
+        "durable_failed_run_id" => "failed-run-id",
+        "authorized_failed_run_id" => "newer-failed-run-id"
+      }
+    )
+
+    result = validate(manifest, release: release_for(manifest))
+
+    assert result.fetch("alpha_recovery")
+  end
+
   def test_archived_handoff_requires_every_expected_public_asset
     manifest = release_manifest(state: "archived")
 
@@ -311,6 +343,7 @@ class PublishHandoffTest < Minitest::Test
       "workflow_id" => "alpha-workflow-id",
       "git_reference" => manifest.to_h.fetch("tag"),
       "source_commit" => manifest.to_h.fetch("release_commit_sha"),
+      "retried_failed_run_id" => "failed-run-id",
       "reused_existing_retry" => false
     }
     manifest.with(
@@ -325,7 +358,7 @@ class PublishHandoffTest < Minitest::Test
   end
 
   def durable_state?(state)
-    %w[archived submitted live].include?(state)
+    %w[archived submitted finalizing live].include?(state)
   end
 
   def verification_for(manifest)

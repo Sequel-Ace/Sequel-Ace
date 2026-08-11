@@ -100,6 +100,10 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_operator release_exclusion, :<, release_plan
     assert_includes release[release_exclusion...release_plan], "/release-plan.json"
     assert_includes release[release_exclusion...release_plan], "/manifest.json"
+    overlap = release.split("- name: Refuse overlapping asynchronous release handoffs", 2).fetch(1)
+                     .split("- name: Recheck release authorization with the tested guard", 2).first
+    assert_includes overlap, 'prereleases_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-existing-prereleases.XXXXXX")"'
+    refute_includes overlap, "> existing-release-prereleases.txt"
 
     feasibility = File.read(repo_path(".github/workflows/release_feasibility.yml"))
     feasibility_exclusion = feasibility.index("- name: Exclude transient feasibility evidence from git status")
@@ -162,7 +166,7 @@ class WorkflowRecoveryTest < Minitest::Test
     gate = workflow[overlap...approval]
 
     assert_operator overlap, :<, approval
-    assert_includes gate, "%w[cloud_running artifacts_verified archived submitted]"
+    assert_includes gate, "%w[cloud_running artifacts_verified archived submitted finalizing]"
     assert_includes gate, "%w[cloud_running artifacts_verified]"
     assert_includes gate, "ReleaseNaming.new"
     assert_includes gate, "still has an active asynchronous handoff"
@@ -193,6 +197,42 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes discovery, '--output "${state_directory}/production-status.json"'
     assert_includes discovery, '--output "${state_directory}/alpha-status.json"'
     refute_includes discovery, '--output "${archive_directory}/'
+  end
+
+  def test_publisher_skips_unreadable_scheduled_candidates_but_fails_an_explicit_recovery
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    discovery = workflow.split("- name: Inspect exact Cloud runs once", 2).fetch(1)
+                        .split("  cloud_failure:", 2).first
+
+    assert_includes discovery, 'if [[ -n "${REQUESTED_TAG}" ]]'
+    assert_includes discovery, "Requested release \${release_tag} has no readable private handoff archive."
+    assert_includes discovery, "it was skipped."
+    assert_includes discovery, "unreadable=$((unreadable + 1))"
+    assert_includes discovery, "candidate archive(s) were unreadable and require investigation."
+    skipped = discovery.index("it was skipped.")
+    assert_operator skipped, :<, discovery.index("continue", skipped)
+  end
+
+  def test_publisher_shell_uses_environment_indirection_for_external_values
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    download = workflow.split("- name: Download exact Xcode Cloud artifacts", 2).fetch(1)
+                       .split("- name: Verify, launch, quit, and package distributable apps", 2).first
+    verify = workflow.split("- name: Verify, launch, quit, and package distributable apps", 2).fetch(1)
+                     .split("- name: Attach checksum-idempotent verified public artifacts", 2).first
+    attach = workflow.split("- name: Attach checksum-idempotent verified public artifacts", 2).fetch(1)
+                     .split("- name: Archive verified artifacts privately", 2).first
+
+    assert_includes download, '--run-id "${PRODUCTION_RUN_ID}"'
+    assert_includes download, '--run-id "${ALPHA_RUN_ID}"'
+    assert_includes verify, '--output-zip "artifacts/public/${PRODUCTION_ASSET}"'
+    assert_includes verify, '--output-zip "artifacts/public/${ALPHA_ASSET}"'
+    assert_includes attach, '--tag "${RELEASE_TAG}"'
+    assert_includes attach, '--file "artifacts/public/${PRODUCTION_ASSET}"'
+    assert_includes attach, '--file "artifacts/public/${ALPHA_ASSET}"'
+    [download, verify, attach].each do |step|
+      run_body = step.split("run: |", 2).fetch(1)
+      refute_includes run_body, "${{"
+    end
   end
 
   def test_transient_publisher_failures_leave_the_remote_handoff_retryable
@@ -278,6 +318,16 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes workflow, "continue"
   end
 
+  def test_finalizer_treats_archive_refresh_failures_as_pending
+    workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
+
+    assert_includes workflow, 'if ! Scripts/archive-release-to-ghcr.sh push "${archive_ref}" "${archive_directory}" > "${finalizing_archive_evidence}"; then'
+    assert_includes workflow, "could not archive finalization validation"
+    assert_includes workflow, "GitHub is finalized but the live archive refresh failed"
+    assert_operator workflow.scan("pending=$((pending + 1))").length, :>=, 6
+    assert_operator workflow.scan("continue").length, :>=, 5
+  end
+
   def test_finalizer_polls_every_six_hours_with_an_authorized_manual_fallback
     workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
 
@@ -285,12 +335,28 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes workflow, 'cron: "17 */6 * * *"'
     refute_includes workflow, "repository_dispatch:"
     assert_includes workflow, "workflow_dispatch:"
+    assert_includes workflow, "Optional exact production tag for authorized recovery"
+    assert_includes workflow, 'REQUESTED_TAG: ${{ inputs.release_tag }}'
+    assert_includes workflow, "Malformed requested production tag."
     assert_includes workflow, 'RELEASE_EVENT: ${{ github.event_name }}'
     assert_includes workflow, '"${RELEASE_EVENT}" == "workflow_dispatch"'
     assert_includes workflow, "Unauthorized scheduled-finalizer rerun initiator."
     assert_includes workflow, "scheduled six-hour poll"
     refute_includes workflow, "SA_WEBHOOK_GITHUB_APP_BOT"
     refute_includes workflow, "EVENT_APP_ID"
+  end
+
+  def test_manual_finalizer_can_repair_the_exact_post_transition_archive
+    workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
+    discovery = workflow.split("  discover:", 2).fetch(1).split("  finalize:", 2).first
+    execution = workflow.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
+
+    assert_includes discovery, 'gh release view "${REQUESTED_TAG}"'
+    assert_includes discovery, 'select(.author.login == "sequel-ace-release-automation[bot]")'
+    assert_includes execution, 'printf \'%s\\n\' "${REQUESTED_TAG}" > production-candidates.txt'
+    assert_includes execution, "GitHub is finalized but the live archive refresh failed"
+    assert_includes execution, "--state finalizing"
+    assert_includes execution, "--state live"
   end
 
   def test_scheduled_finalizer_skips_expensive_work_when_disabled_or_empty
@@ -487,14 +553,21 @@ class WorkflowRecoveryTest < Minitest::Test
   def test_finalizer_archives_live_validation_before_the_public_transition
     workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
     validation = workflow.index("--validate-only")
+    finalizing = workflow.index("--state finalizing")
     archive = workflow.index('Scripts/archive-release-to-ghcr.sh push "${archive_ref}"')
     public_transition = workflow.index('--output "${state_directory}/finalization.json"')
+    live = workflow.index("--state live")
 
     assert validation
+    assert finalizing
     assert archive
     assert public_transition
+    assert live
+    assert_operator validation, :<, finalizing
+    assert_operator finalizing, :<, archive
     assert_operator validation, :<, archive
     assert_operator archive, :<, public_transition
+    assert_operator public_transition, :<, live
   end
 
   def test_finalizer_keeps_generated_state_outside_the_pulled_archive
@@ -572,6 +645,7 @@ class WorkflowRecoveryTest < Minitest::Test
                       .split("- name: Record asynchronous Alpha retry handoff", 2).first
     assert_includes archive, 'ARCHIVED_FAILED_ALPHA_RUN_ID: ${{ steps.release.outputs.archived_failed_alpha_run_id }}'
     assert_includes archive, 'AUTHORIZED_FAILED_ALPHA_RUN_ID: ${{ inputs.failed_alpha_run_id }}'
+    assert_includes archive, 'alpha_retry.fetch("retried_failed_run_id") == authorized'
     assert_includes archive, '"alpha_retry_predecessor" => predecessor'
   end
 

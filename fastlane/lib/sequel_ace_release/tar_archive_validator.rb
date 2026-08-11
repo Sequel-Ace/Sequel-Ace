@@ -257,6 +257,9 @@ module SequelAceRelease
         end
 
         value_start = space - offset + 1
+        if value_start >= length
+          integrity_error!("Release archive contains malformed PAX record length")
+        end
         payload = record.byteslice(value_start, length - value_start - 1)
         key, value = payload.split("=", 2)
         if key.nil? || key.empty? || value.nil?

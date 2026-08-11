@@ -27,7 +27,7 @@ class CloudRunStatusTest < Minitest::Test
   def test_reports_a_missing_exact_run_as_pending_without_sleeping
     client = Client.new(run: nil)
 
-    result = inspect(client)
+    result = readiness_for(client)
 
     assert_equal "pending", result.fetch("readiness")
     assert_equal "run_not_found", result.fetch("reason")
@@ -39,7 +39,7 @@ class CloudRunStatusTest < Minitest::Test
   def test_reports_an_in_progress_run_as_pending_without_reading_builds
     client = Client.new(run: cloud_run("RUNNING", nil))
 
-    result = inspect(client)
+    result = readiness_for(client)
 
     assert_equal "pending", result.fetch("readiness")
     assert_equal "run_in_progress", result.fetch("reason")
@@ -50,7 +50,7 @@ class CloudRunStatusTest < Minitest::Test
   def test_reports_a_completed_unsuccessful_run_as_failed
     client = Client.new(run: cloud_run("COMPLETE", "FAILED"))
 
-    result = inspect(client)
+    result = readiness_for(client)
 
     assert_equal "failed", result.fetch("readiness")
     assert_equal "cloud_run_failed", result.fetch("reason")
@@ -70,7 +70,7 @@ class CloudRunStatusTest < Minitest::Test
       }]
     )
 
-    result = inspect(client)
+    result = readiness_for(client)
 
     assert_equal "ready", result.fetch("readiness")
     assert_equal "exact_build_ready", result.fetch("reason")
@@ -82,7 +82,7 @@ class CloudRunStatusTest < Minitest::Test
   def test_keeps_a_succeeded_run_pending_while_its_app_store_build_is_unavailable
     client = Client.new(run: cloud_run("COMPLETE", "SUCCEEDED"), builds: [])
 
-    result = inspect(client)
+    result = readiness_for(client)
 
     assert_equal "pending", result.fetch("readiness")
     assert_equal "app_store_build_not_ready", result.fetch("reason")
@@ -94,7 +94,7 @@ class CloudRunStatusTest < Minitest::Test
       builds: SequelAceRelease::APIError.new("App Store Connect API returned HTTP 404")
     )
 
-    result = inspect(client)
+    result = readiness_for(client)
 
     assert_equal "pending", result.fetch("readiness")
     assert_equal "app_store_build_not_ready", result.fetch("reason")
@@ -112,7 +112,7 @@ class CloudRunStatusTest < Minitest::Test
       }]
     )
 
-    error = assert_raises(SequelAceRelease::ValidationError) { inspect(client) }
+    error = assert_raises(SequelAceRelease::ValidationError) { readiness_for(client) }
     assert_includes error.message, "does not contain the expected MAC_OS app version/build"
   end
 
@@ -128,22 +128,49 @@ class CloudRunStatusTest < Minitest::Test
       }]
     )
 
-    error = assert_raises(SequelAceRelease::ValidationError) { inspect(client) }
+    error = assert_raises(SequelAceRelease::ValidationError) { readiness_for(client) }
 
     assert_includes error.message, "MAC_OS"
   end
 
+  def test_treats_an_empty_requested_run_id_as_discovery
+    client = Client.new(run: cloud_run("RUNNING", nil))
+
+    readiness_for(client, run_id: "")
+
+    assert_nil client.find_arguments.fetch(:run_id)
+  end
+
+  def test_rejects_a_cloud_run_without_a_valid_id
+    client = Client.new(run: cloud_run("RUNNING", nil).merge("id" => ""))
+
+    error = assert_raises(SequelAceRelease::ValidationError) { readiness_for(client) }
+
+    assert_includes error.message, "malformed build-run ID"
+  end
+
+  def test_rejects_a_malformed_requested_run_id_before_api_lookup
+    client = Client.new(run: cloud_run("RUNNING", nil))
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      readiness_for(client, run_id: "not valid")
+    end
+
+    assert_includes error.message, "requested Xcode Cloud build-run ID is malformed"
+    assert_nil client.find_arguments
+  end
+
   private
 
-  def inspect(client)
-    SequelAceRelease::CloudRunStatus.new(client: client).inspect(
+  def readiness_for(client, run_id: "run-id")
+    SequelAceRelease::CloudRunStatus.new(client: client).readiness(
       workflow_id: "workflow-id",
       app_id: "1518036000",
       version: "5.3.2",
       tag: "production/5.3.2-20105",
       build: 20_105,
       commit: "a" * 40,
-      run_id: "run-id"
+      run_id: run_id
     )
   end
 

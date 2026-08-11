@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "17 */6 * * *"
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Optional exact production tag for authorized recovery
+        required: false
+        type: string
 
 permissions: {}
 
@@ -32,6 +37,7 @@ jobs:
           RELEASE_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}
           RELEASE_EVENT: ${{ github.event_name }}
           RELEASE_REF: ${{ github.ref }}
+          REQUESTED_TAG: ${{ inputs.release_tag }}
           RELEASE_RUN_ATTEMPT: ${{ github.run_attempt }}
           RELEASE_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
         run: |
@@ -41,6 +47,10 @@ jobs:
             workflow_dispatch)
               [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized finalizer actor." >&2; exit 1; }
               [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized finalizer rerun initiator." >&2; exit 1; }
+              if [[ -n "${REQUESTED_TAG}" && ! "${REQUESTED_TAG}" =~ ^production/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]]; then
+                echo "Malformed requested production tag." >&2
+                exit 1
+              fi
               trigger="authorized manual recovery"
               ;;
             schedule)
@@ -68,11 +78,19 @@ jobs:
           fi
           echo "enabled=true" >> "${GITHUB_OUTPUT}"
 
-          candidates="$(gh release list \
-            --repo "${GITHUB_REPOSITORY}" \
-            --limit 100 \
-            --json tagName,isPrerelease \
-            --jq '.[] | select(.isPrerelease == true and (.tagName | startswith("production/"))) | .tagName')"
+          if [[ -n "${REQUESTED_TAG}" ]]; then
+            candidates="$(gh release view "${REQUESTED_TAG}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --json tagName,author \
+              --jq 'select(.author.login == "sequel-ace-release-automation[bot]") | .tagName')"
+            [[ "${candidates}" == "${REQUESTED_TAG}" ]] || { echo "Requested release is not owned by the release App." >&2; exit 1; }
+          else
+            candidates="$(gh release list \
+              --repo "${GITHUB_REPOSITORY}" \
+              --limit 100 \
+              --json tagName,isPrerelease \
+              --jq '.[] | select(.isPrerelease == true and (.tagName | startswith("production/"))) | .tagName')"
+          fi
           if [[ -n "${candidates}" ]]; then
             candidate_count="$(printf '%s\n' "${candidates}" | awk 'NF { count += 1 } END { print count + 0 }')"
             echo "has_candidates=true" >> "${GITHUB_OUTPUT}"
@@ -148,9 +166,14 @@ jobs:
           SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
           SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
           SA_ASC_PRIVATE_KEY_BASE64: "1"
+          REQUESTED_TAG: ${{ inputs.release_tag }}
         run: |
           set -euo pipefail
-          gh release list --limit 100 --json tagName,isPrerelease --jq '.[] | select(.isPrerelease == true and (.tagName | startswith("production/"))) | .tagName' > production-prereleases.txt
+          if [[ -n "${REQUESTED_TAG}" ]]; then
+            printf '%s\n' "${REQUESTED_TAG}" > production-candidates.txt
+          else
+            gh release list --limit 100 --json tagName,isPrerelease --jq '.[] | select(.isPrerelease == true and (.tagName | startswith("production/"))) | .tagName' > production-candidates.txt
+          fi
           finalized=0
           pending=0
           while IFS= read -r release_tag; do
@@ -176,7 +199,7 @@ jobs:
               rm -rf "${archive_directory}" "${state_directory}"
               continue
             fi
-            if [[ "${state}" != "archived" && "${state}" != "submitted" && "${state}" != "live" ]]; then
+            if [[ "${state}" != "archived" && "${state}" != "submitted" && "${state}" != "finalizing" && "${state}" != "live" ]]; then
               echo "Pending ${release_tag}: manifest state is ${state}."
               pending=$((pending + 1))
               rm -rf "${archive_directory}" "${state_directory}"
@@ -192,16 +215,39 @@ jobs:
                 "${state_directory}/finalization-evidence.json"
               bundle exec ruby fastlane/bin/sa-release update-manifest \
                 --manifest "${archive_directory}/manifest.json" \
-                --state live \
+                --state finalizing \
                 --merge "${state_directory}/finalization-evidence.json" >/dev/null
               cp "${state_directory}/finalization-validation.json" "${state_directory}/finalization-evidence.json" "${archive_directory}/"
-              live_archive_evidence="$(mktemp "${RUNNER_TEMP}/sequel-ace-live-archive-evidence.XXXXXX")"
-              Scripts/archive-release-to-ghcr.sh push "${archive_ref}" "${archive_directory}" > "${live_archive_evidence}"
-              /bin/rm -f "${live_archive_evidence}"
+              finalizing_archive_evidence="$(mktemp "${RUNNER_TEMP}/sequel-ace-finalizing-archive-evidence.XXXXXX")"
+              if ! Scripts/archive-release-to-ghcr.sh push "${archive_ref}" "${archive_directory}" > "${finalizing_archive_evidence}"; then
+                echo "Pending ${release_tag}: could not archive finalization validation."
+                pending=$((pending + 1))
+                /bin/rm -f "${finalizing_archive_evidence}"
+                rm -rf "${archive_directory}" "${state_directory}"
+                continue
+              fi
+              /bin/rm -f "${finalizing_archive_evidence}"
               if bundle exec ruby fastlane/bin/sa-release finalize \
                 --manifest "${archive_directory}/manifest.json" \
                 --confirm "FINALIZE ${release_tag}" \
                 --output "${state_directory}/finalization.json" 2> "${state_directory}/pending.log"; then
+                ruby -rjson -e 'File.write(ARGV.fetch(1), JSON.pretty_generate({"finalization" => JSON.parse(File.read(ARGV.fetch(0)))}) + "\n")' \
+                  "${state_directory}/finalization.json" \
+                  "${state_directory}/finalization-evidence.json"
+                bundle exec ruby fastlane/bin/sa-release update-manifest \
+                  --manifest "${archive_directory}/manifest.json" \
+                  --state live \
+                  --merge "${state_directory}/finalization-evidence.json" >/dev/null
+                cp "${state_directory}/finalization.json" "${state_directory}/finalization-evidence.json" "${archive_directory}/"
+                live_archive_evidence="$(mktemp "${RUNNER_TEMP}/sequel-ace-live-archive-evidence.XXXXXX")"
+                if ! Scripts/archive-release-to-ghcr.sh push "${archive_ref}" "${archive_directory}" > "${live_archive_evidence}"; then
+                  echo "Pending ${release_tag}: GitHub is finalized but the live archive refresh failed."
+                  pending=$((pending + 1))
+                  /bin/rm -f "${live_archive_evidence}"
+                  rm -rf "${archive_directory}" "${state_directory}"
+                  continue
+                fi
+                /bin/rm -f "${live_archive_evidence}"
                 echo "Finalized ${release_tag}."
                 finalized=$((finalized + 1))
               else
@@ -213,7 +259,7 @@ jobs:
               pending=$((pending + 1))
             fi
             rm -rf "${archive_directory}" "${state_directory}"
-          done < production-prereleases.txt
+          done < production-candidates.txt
           {
             echo "### App Store finalization check"
             echo "- Finalized: ${finalized}"

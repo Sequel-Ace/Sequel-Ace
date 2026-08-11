@@ -181,9 +181,10 @@ jobs:
           GHCR_USERNAME: ${{ github.actor }}
         run: |
           set -euo pipefail
+          prereleases_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-existing-prereleases.XXXXXX")"
           gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
             --jq '.[] | select(.prerelease == true and .author.login == "sequel-ace-release-automation[bot]" and (.tag_name | test("^(production|beta)/[0-9]+\\.[0-9]+\\.[0-9]+-[1-9][0-9]*$"))) | .tag_name' \
-            > existing-release-prereleases.txt
+            > "${prereleases_file}"
           while IFS= read -r release_tag; do
             [[ -n "${release_tag}" ]] || continue
             work_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-overlap-check.XXXXXX")"
@@ -200,7 +201,7 @@ jobs:
               raise SequelAceRelease::ValidationError, "archive identity is not canonical" unless naming.tag == manifest.fetch("tag") && naming.title == manifest.fetch("title") && naming.public_artifacts == manifest.fetch("artifact_names")
               state = manifest.fetch("state")
               channel = manifest.fetch("channel")
-              active = channel == "production" ? %w[cloud_running artifacts_verified archived submitted].include?(state) : %w[cloud_running artifacts_verified].include?(state)
+              active = channel == "production" ? %w[cloud_running artifacts_verified archived submitted finalizing].include?(state) : %w[cloud_running artifacts_verified].include?(state)
               puts active
             ' "${work_directory}/manifest.json" "${release_tag}")"
             if [[ "${active}" == "true" ]]; then
@@ -209,7 +210,7 @@ jobs:
               exit 1
             fi
             rm -rf "${work_directory}"
-          done < existing-release-prereleases.txt
+          done < "${prereleases_file}"
 
       - name: Recheck release authorization with the tested guard
         env:

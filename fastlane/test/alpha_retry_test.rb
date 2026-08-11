@@ -44,7 +44,9 @@ class AlphaRetryTest < Minitest::Test
 
     assert_equal 0, status
     assert_equal "reference-id", app_store.started_reference
-    assert_equal "retry-c", JSON.parse(output.string).fetch("id")
+    evidence = JSON.parse(output.string)
+    assert_equal "retry-c", evidence.fetch("id")
+    assert_equal "failed-b", evidence.fetch("retried_failed_run_id")
   end
 
   def test_a_different_newer_failed_run_requires_its_own_authorization

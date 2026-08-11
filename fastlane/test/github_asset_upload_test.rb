@@ -61,6 +61,54 @@ class GitHubAssetUploadTest < Minitest::Test
     end
   end
 
+  def test_creates_the_integrity_marker_parent_directory
+    Dir.mktmpdir do |directory|
+      asset = File.join(directory, "Sequel-Ace-5.3.2.zip")
+      marker = File.join(directory, "nested", "terminal-marker")
+      File.binwrite(asset, "verified bytes")
+      manifest_path, notes_path, release_data, release_commit = write_handoff(directory)
+      cli = SequelAceRelease::CLI.new(out: StringIO.new, err: StringIO.new, env: {})
+      client = Client.new(
+        SequelAceRelease::IntegrityError.new("checksum mismatch"),
+        release: release_data,
+        release_commit: release_commit
+      )
+
+      status = cli.stub(:github_client, client) do
+        cli.run(upload_arguments(asset, marker, manifest_path, notes_path))
+      end
+
+      assert_equal 1, status
+      assert_equal "release asset checksum mismatch\n", File.read(marker)
+    end
+  end
+
+  def test_marker_write_failure_does_not_replace_the_integrity_error
+    Dir.mktmpdir do |directory|
+      asset = File.join(directory, "Sequel-Ace-5.3.2.zip")
+      marker_parent = File.join(directory, "not-a-directory")
+      marker = File.join(marker_parent, "terminal-marker")
+      File.binwrite(asset, "verified bytes")
+      File.write(marker_parent, "blocking file\n")
+      manifest_path, notes_path, release_data, release_commit = write_handoff(directory)
+      error = StringIO.new
+      cli = SequelAceRelease::CLI.new(out: StringIO.new, err: error, env: {})
+      client = Client.new(
+        SequelAceRelease::IntegrityError.new("checksum mismatch"),
+        release: release_data,
+        release_commit: release_commit
+      )
+
+      status = cli.stub(:github_client, client) do
+        cli.run(upload_arguments(asset, marker, manifest_path, notes_path))
+      end
+
+      assert_equal 1, status
+      assert_includes error.string, "could not write integrity failure marker"
+      assert_includes error.string, "checksum mismatch"
+    end
+  end
+
   def test_does_not_mark_a_transient_upload_api_failure_as_terminal
     Dir.mktmpdir do |directory|
       asset = File.join(directory, "Sequel-Ace-5.3.2.zip")
@@ -118,6 +166,28 @@ class GitHubAssetUploadTest < Minitest::Test
       assert_equal 1, status
       assert_nil client.upload_arguments
       assert_equal "release asset checksum mismatch\n", File.read(marker)
+    end
+  end
+
+  def test_missing_asset_is_not_misreported_as_a_checksum_conflict
+    Dir.mktmpdir do |directory|
+      asset = File.join(directory, "Sequel-Ace-5.3.2.zip")
+      marker = File.join(directory, "terminal-marker")
+      File.binwrite(asset, "verified bytes")
+      manifest_path, notes_path, release_data, release_commit = write_handoff(directory)
+      File.delete(asset)
+      error = StringIO.new
+      cli = SequelAceRelease::CLI.new(out: StringIO.new, err: error, env: {})
+      client = Client.new(nil, release: release_data, release_commit: release_commit)
+
+      status = cli.stub(:github_client, client) do
+        cli.run(upload_arguments(asset, marker, manifest_path, notes_path))
+      end
+
+      assert_equal 1, status
+      assert_includes error.string, "not readable: Errno::ENOENT"
+      refute_path_exists marker
+      assert_nil client.upload_arguments
     end
   end
 

@@ -3,20 +3,29 @@
 module SequelAceRelease
   class CloudRunStatus
     READINESS_STATES = %w[pending ready failed].freeze
+    RUN_ID_PATTERN = /\A[A-Za-z0-9-]+\z/.freeze
 
     def initialize(client:)
       @client = client
     end
 
-    def inspect(workflow_id:, app_id:, version:, tag:, commit:, build: nil, run_id: nil)
+    def readiness(workflow_id:, app_id:, version:, tag:, commit:, build: nil, run_id: nil)
+      requested_run_id = run_id.to_s.empty? ? nil : run_id
+      if requested_run_id && !requested_run_id.to_s.match?(RUN_ID_PATTERN)
+        raise ValidationError, "requested Xcode Cloud build-run ID is malformed"
+      end
       run = @client.find_cloud_run(
         workflow_id: workflow_id,
         build: build,
         commit: commit,
         tag: tag,
-        run_id: run_id
+        run_id: requested_run_id
       )
       return pending("run_not_found") unless run
+
+      unless run["id"].to_s.match?(RUN_ID_PATTERN)
+        raise ValidationError, "Xcode Cloud returned a malformed build-run ID"
+      end
 
       unless run["execution_progress"] == "COMPLETE"
         return run.merge("readiness" => "pending", "reason" => "run_in_progress")

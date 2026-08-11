@@ -469,7 +469,6 @@ module SequelAceRelease
       parser = OptionParser.new do |value|
         value.banner = "Usage: sa-release github-upload-asset --tag TAG --file FILE --manifest FILE --notes FILE [--name NAME] [--integrity-failure-marker FILE]"
         value.on("--tag TAG") { |item| options[:tag] = item }
-        value.on("--run-id ID") { |item| options[:run_id] = item }
         value.on("--file FILE") { |item| options[:file] = item }
         value.on("--manifest FILE") { |item| options[:manifest] = item }
         value.on("--notes FILE") { |item| options[:notes] = item }
@@ -507,7 +506,7 @@ module SequelAceRelease
           expected_sha256: expected_sha256
         )
       rescue IntegrityError
-        File.write(options[:integrity_failure_marker], "release asset checksum mismatch\n") if options[:integrity_failure_marker]
+        write_integrity_failure_marker(options[:integrity_failure_marker])
         raise
       end
       emit(response, options[:output])
@@ -533,7 +532,7 @@ module SequelAceRelease
       raise OptionParser::MissingArgument, "build" if options[:build].nil? && !options[:allow_any_build]
       Version.validate!(options[:version])
 
-      result = CloudRunStatus.new(client: app_store_client).inspect(**options.slice(
+      result = CloudRunStatus.new(client: app_store_client).readiness(**options.slice(
         :workflow_id, :app_id, :version, :tag, :build, :run_id, :commit
       ))
       emit(result, options[:output])
@@ -585,7 +584,7 @@ module SequelAceRelease
       inspector = CloudRunStatus.new(client: app_store_client)
       deadline = Time.now + options[:timeout]
       loop do
-        result = inspector.inspect(**options.slice(
+        result = inspector.readiness(**options.slice(
           :workflow_id, :app_id, :version, :tag, :build, :run_id, :commit
         ))
         if result.fetch("readiness") == "ready"
@@ -686,7 +685,10 @@ module SequelAceRelease
         if latest["execution_progress"] == "COMPLETE" && latest["completion_status"] != "SUCCEEDED"
           raise ValidationError, "a newer unsuccessful Alpha run exists; authorize that exact run ID"
         end
-        return emit(latest.merge("reused_existing_retry" => true), options[:output])
+        return emit(latest.merge(
+          "retried_failed_run_id" => failed.fetch("id"),
+          "reused_existing_retry" => true
+        ), options[:output])
       end
 
       reference_id = failed["git_reference_id"]
@@ -700,6 +702,7 @@ module SequelAceRelease
         "workflow_id" => options[:workflow_id],
         "git_reference" => options[:tag],
         "source_commit" => options[:commit],
+        "retried_failed_run_id" => failed.fetch("id"),
         "reused_existing_retry" => false
       }, options[:output])
     end
@@ -972,8 +975,15 @@ module SequelAceRelease
         build: data.fetch("canonical_build"),
         iteration: data.fetch("iteration")
       ).final_title
-      current_latest = client.latest_release
-      currently_latest = current_latest["id"] == release["id"] && current_latest["tag_name"] == data.fetch("tag")
+      current_latest = begin
+        client.latest_release
+      rescue APIError => error
+        raise unless error.message.include?("HTTP 404")
+
+        nil
+      end
+      currently_latest = !current_latest.nil? && current_latest["id"] == release["id"] &&
+                         current_latest["tag_name"] == data.fetch("tag")
       transition_required = release["prerelease"] != false || release["name"] != final_title || !currently_latest
       evidence = {
         "release_id" => release.fetch("id"),
@@ -1279,8 +1289,19 @@ module SequelAceRelease
       end
 
       digest
-    rescue Errno::ENOENT, Errno::EACCES, KeyError, TypeError
+    rescue Errno::ENOENT, Errno::EACCES => error
+      raise ValidationError, "release asset #{name} is not readable: #{error.class}"
+    rescue KeyError, TypeError
       raise IntegrityError, "release asset verification evidence is malformed"
+    end
+
+    def write_integrity_failure_marker(path)
+      return unless path
+
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, "release asset checksum mismatch\n")
+    rescue SystemCallError => error
+      @err.puts("release tool warning: could not write integrity failure marker (#{error.class})")
     end
 
     def help

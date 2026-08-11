@@ -224,7 +224,7 @@ jobs:
           GHCR_USERNAME: ${{ github.actor }}
         run: |
           set -euo pipefail
-          ruby -rjson -e 'production = JSON.parse(File.read("production-cloud-run.json")); alpha_retry = JSON.parse(File.read("alpha-retry.json")); predecessor = {"durable_failed_run_id" => ENV.fetch("ARCHIVED_FAILED_ALPHA_RUN_ID"), "authorized_failed_run_id" => ENV.fetch("AUTHORIZED_FAILED_ALPHA_RUN_ID")}; File.write("retry-evidence.json", JSON.pretty_generate({"cloud_build_ids" => {"production" => production.fetch("id"), "alpha" => alpha_retry.fetch("id")}, "alpha_retry" => alpha_retry, "alpha_retry_predecessor" => predecessor}) + "\n")'
+          ruby -rjson -e 'production = JSON.parse(File.read("production-cloud-run.json")); alpha_retry = JSON.parse(File.read("alpha-retry.json")); authorized = ENV.fetch("AUTHORIZED_FAILED_ALPHA_RUN_ID"); raise "Alpha retry evidence does not match the authorized failed run" unless alpha_retry.fetch("retried_failed_run_id") == authorized; predecessor = {"durable_failed_run_id" => ENV.fetch("ARCHIVED_FAILED_ALPHA_RUN_ID"), "authorized_failed_run_id" => authorized}; File.write("retry-evidence.json", JSON.pretty_generate({"cloud_build_ids" => {"production" => production.fetch("id"), "alpha" => alpha_retry.fetch("id")}, "alpha_retry" => alpha_retry, "alpha_retry_predecessor" => predecessor}) + "\n")'
           bundle exec ruby fastlane/bin/sa-release update-manifest \
             --manifest retry-archive/manifest.json \
             --state cloud_running \

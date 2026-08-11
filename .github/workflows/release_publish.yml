@@ -164,6 +164,7 @@ jobs:
           fi
 
           selected_action="none"
+          unreadable=0
           while IFS=$'\t' read -r _created_at release_tag; do
             [[ -n "${release_tag}" ]] || continue
             archive_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-publish-archive.XXXXXX")"
@@ -171,8 +172,13 @@ jobs:
             archive_ref="${GHCR_REPOSITORY}:${release_tag//\//-}"
             if ! Scripts/archive-release-to-ghcr.sh pull "${archive_ref}" "${archive_directory}" >/dev/null 2>&1; then
               rm -rf "${archive_directory}" "${state_directory}"
-              echo "Automated release ${release_tag} has no readable private handoff archive." >&2
-              exit 1
+              if [[ -n "${REQUESTED_TAG}" ]]; then
+                echo "Requested release ${release_tag} has no readable private handoff archive." >&2
+                exit 1
+              fi
+              unreadable=$((unreadable + 1))
+              echo "Automated release ${release_tag} has no readable private handoff archive; it was skipped." >> "${GITHUB_STEP_SUMMARY}"
+              continue
             fi
 
             bundle exec ruby fastlane/bin/sa-release validate-publish-handoff \
@@ -267,6 +273,9 @@ jobs:
           if [[ "${selected_action}" == "none" ]]; then
             echo "action=none" >> "${GITHUB_OUTPUT}"
             echo "No release artifact continuation is ready." >> "${GITHUB_STEP_SUMMARY}"
+          fi
+          if [[ "${unreadable}" -gt 0 ]]; then
+            echo "${unreadable} candidate archive(s) were unreadable and require investigation." >> "${GITHUB_STEP_SUMMARY}"
           fi
 
   cloud_failure:
@@ -495,6 +504,9 @@ jobs:
       - name: Download exact Xcode Cloud artifacts
         if: steps.context.outputs.state != 'archived'
         env:
+          ALPHA_RUN_ID: ${{ steps.cloud.outputs.alpha_run_id }}
+          PRODUCTION_RUN_ID: ${{ steps.cloud.outputs.production_run_id }}
+          RELEASE_CHANNEL: ${{ needs.discover.outputs.channel }}
           SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
           SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
           SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
@@ -502,12 +514,12 @@ jobs:
         run: |
           set -euo pipefail
           bundle exec ruby fastlane/bin/sa-release download-cloud-artifacts \
-            --run-id "${{ steps.cloud.outputs.production_run_id }}" \
+            --run-id "${PRODUCTION_RUN_ID}" \
             --output-directory artifacts/cloud-production \
             --output production-artifacts.json
-          if [[ "${{ needs.discover.outputs.channel }}" == "beta" ]]; then
+          if [[ "${RELEASE_CHANNEL}" == "beta" ]]; then
             bundle exec ruby fastlane/bin/sa-release download-cloud-artifacts \
-              --run-id "${{ steps.cloud.outputs.alpha_run_id }}" \
+              --run-id "${ALPHA_RUN_ID}" \
               --output-directory artifacts/cloud-alpha \
               --output alpha-artifacts.json
           fi
@@ -515,6 +527,8 @@ jobs:
       - name: Verify, launch, quit, and package distributable apps
         if: steps.context.outputs.state != 'archived'
         env:
+          ALPHA_ASSET: ${{ steps.context.outputs.alpha_asset }}
+          PRODUCTION_ASSET: ${{ steps.context.outputs.production_asset }}
           RELEASE_BUILD: ${{ needs.discover.outputs.build }}
           RELEASE_CHANNEL: ${{ needs.discover.outputs.channel }}
           RELEASE_VERSION: ${{ needs.discover.outputs.version }}
@@ -527,7 +541,7 @@ jobs:
               --build "${RELEASE_BUILD}" \
               --channel production \
               --launch \
-              --output-zip "artifacts/public/${{ steps.context.outputs.production_asset }}" \
+              --output-zip "artifacts/public/${PRODUCTION_ASSET}" \
               --output production-verification.json; then
             touch terminal-artifact-verification-failure
             exit 1
@@ -539,7 +553,7 @@ jobs:
                 --any-build \
                 --channel beta \
                 --launch \
-                --output-zip "artifacts/public/${{ steps.context.outputs.alpha_asset }}" \
+                --output-zip "artifacts/public/${ALPHA_ASSET}" \
                 --output alpha-verification.json; then
               touch terminal-artifact-verification-failure
               exit 1
@@ -554,19 +568,23 @@ jobs:
       - name: Attach checksum-idempotent verified public artifacts
         if: steps.context.outputs.state != 'archived'
         env:
+          ALPHA_ASSET: ${{ steps.context.outputs.alpha_asset }}
+          PRODUCTION_ASSET: ${{ steps.context.outputs.production_asset }}
+          RELEASE_CHANNEL: ${{ needs.discover.outputs.channel }}
+          RELEASE_TAG: ${{ needs.discover.outputs.tag }}
           SA_GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           bundle exec ruby fastlane/bin/sa-release github-upload-asset \
-            --tag "${{ needs.discover.outputs.tag }}" \
-            --file "artifacts/public/${{ steps.context.outputs.production_asset }}" \
+            --tag "${RELEASE_TAG}" \
+            --file "artifacts/public/${PRODUCTION_ASSET}" \
             --manifest release-archive/manifest.json \
             --notes release-archive/app-store-notes.txt \
             --integrity-failure-marker terminal-artifact-verification-failure >/dev/null
-          if [[ "${{ needs.discover.outputs.channel }}" == "beta" ]]; then
+          if [[ "${RELEASE_CHANNEL}" == "beta" ]]; then
             bundle exec ruby fastlane/bin/sa-release github-upload-asset \
-              --tag "${{ needs.discover.outputs.tag }}" \
-              --file "artifacts/public/${{ steps.context.outputs.alpha_asset }}" \
+              --tag "${RELEASE_TAG}" \
+              --file "artifacts/public/${ALPHA_ASSET}" \
               --manifest release-archive/manifest.json \
               --notes release-archive/app-store-notes.txt \
               --integrity-failure-marker terminal-artifact-verification-failure >/dev/null
@@ -774,11 +792,12 @@ jobs:
           ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
           GHCR_TOKEN: ${{ github.token }}
           GHCR_USERNAME: ${{ github.actor }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
           bundle exec ruby fastlane/bin/sa-release record-failure \
             --manifest release-archive/manifest.json \
-            --workflow-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --workflow-url "${RUN_URL}" \
             --submission reconciled-submission.json \
             --output submission-recovery.json
           cp reconciled-submission.json submission-recovery.json release-archive/

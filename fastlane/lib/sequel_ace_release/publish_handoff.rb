@@ -63,7 +63,7 @@ module SequelAceRelease
       end
 
       state = data.fetch("state")
-      if %w[archived submitted live].include?(state)
+      if %w[archived submitted finalizing live].include?(state)
         missing_assets = expected_assets - actual_assets
         unless missing_assets.empty?
           raise ValidationError, "archived release is missing artifacts: #{missing_assets.join(', ')}"
@@ -126,7 +126,7 @@ module SequelAceRelease
         raise ValidationError, "Alpha recovery evidence predecessor does not match the durable failed run"
       end
 
-      required = %w[id workflow_id git_reference reused_existing_retry]
+      required = %w[id workflow_id git_reference retried_failed_run_id reused_existing_retry]
       missing = required.select { |key| !retry_data.key?(key) }
       unless missing.empty?
         raise ValidationError, "Alpha recovery evidence is missing: #{missing.join(', ')}"
@@ -134,6 +134,9 @@ module SequelAceRelease
       unless retry_data.fetch("id").to_s.match?(/\A[A-Za-z0-9-]+\z/) &&
              retry_data.fetch("workflow_id").to_s.match?(/\A[A-Za-z0-9-]+\z/)
         raise ValidationError, "Alpha recovery run identity is malformed"
+      end
+      unless retry_data.fetch("retried_failed_run_id") == authorized_failed_id
+        raise ValidationError, "Alpha recovery evidence does not match the authorized failed run"
       end
       unless retry_data.fetch("reused_existing_retry") == true || retry_data.fetch("reused_existing_retry") == false
         raise ValidationError, "Alpha recovery reuse evidence is malformed"
