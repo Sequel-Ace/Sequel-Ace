@@ -617,8 +617,9 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes cleanup, '"${probe_version_tags}" == "${probe_tag}"'
     assert_includes cleanup, 'gh api --method DELETE'
     assert_includes cleanup, '"orgs/Sequel-Ace/packages/container/${package_name}/versions/${probe_version_id}"'
-    assert_includes cleanup, 'gh api --paginate --slurp "orgs/Sequel-Ace/packages/container/${package_name}/versions?per_page=100"'
-    assert_includes cleanup, 'map(select(any(.metadata.container.tags[]?; . == \"${probe_tag}\")))'
+    assert_includes cleanup, 'gh api --paginate "orgs/Sequel-Ace/packages/container/${package_name}/versions?per_page=100"'
+    assert_includes cleanup, '.[] | select(any(.metadata.container.tags[]?; . == \"${probe_tag}\")) | .id'
+    refute_includes cleanup, "--slurp"
     assert_includes cleanup, '[[ -z "${remaining_probe_versions}" ]]'
     refute_includes cleanup, "oras manifest delete"
   end

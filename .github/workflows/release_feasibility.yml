@@ -300,8 +300,8 @@ jobs:
             "orgs/Sequel-Ace/packages/container/${package_name}/versions/${probe_version_id}" \
             --silent
           remaining_probe_versions="$(
-            gh api --paginate --slurp "orgs/Sequel-Ace/packages/container/${package_name}/versions?per_page=100" \
-              --jq "map(.[]) | map(select(any(.metadata.container.tags[]?; . == \"${probe_tag}\"))) | .[].id"
+            gh api --paginate "orgs/Sequel-Ace/packages/container/${package_name}/versions?per_page=100" \
+              --jq ".[] | select(any(.metadata.container.tags[]?; . == \"${probe_tag}\")) | .id"
           )"
           [[ -z "${remaining_probe_versions}" ]] || {
             echo "GHCR feasibility probe tag still exists after deletion." >&2
