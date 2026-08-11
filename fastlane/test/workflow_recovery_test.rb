@@ -611,21 +611,29 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes cleanup, "if: ${{ always() && steps.ghcr_probe.outcome != 'skipped' }}"
     assert_includes cleanup, 'probe_ref="${GHCR_REPOSITORY}:feasibility-${GITHUB_RUN_ID}"'
     assert_includes cleanup, 'probe_tag="feasibility-${GITHUB_RUN_ID}"'
+    assert_includes cleanup, 'package_endpoint="orgs/Sequel-Ace/packages/container/${package_name}"'
+    assert_includes cleanup, 'package_versions_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-feasibility-package-versions.XXXXXX.json")"'
+    assert_includes cleanup, "| jq -sc 'sort_by(.id)'"
+    assert_includes cleanup, %q!package_version_count="$(jq -r 'length' "${package_versions_file}")"!
     assert_includes cleanup, "probe_version_rows=\"$("
     assert_includes cleanup, "Expected exactly one GHCR package version for the feasibility probe tag."
     assert_includes cleanup, "IFS=$'\\t' read -r probe_version_id probe_version_tags"
     assert_includes cleanup, '"${probe_version_tags}" == "${probe_tag}"'
+    assert_includes cleanup, '"${package_version_count}" -eq 1'
+    assert_includes cleanup, 'cmp -s "${package_versions_file}" "${confirmed_versions_file}"'
+    assert_includes cleanup, "GHCR package versions changed before whole-package probe cleanup."
     assert_includes cleanup, 'gh api --method DELETE'
-    assert_includes cleanup, '"orgs/Sequel-Ace/packages/container/${package_name}/versions/${probe_version_id}"'
-    assert_includes cleanup, 'package_endpoint="orgs/Sequel-Ace/packages/container/${package_name}"'
+    assert_includes cleanup, '"${package_endpoint}"'
+    assert_includes cleanup, '"${package_endpoint}/versions/${probe_version_id}"'
+    assert_includes cleanup, 'deleted_entire_package=1'
     assert_includes cleanup, 'package_readback_headers="$(gh api --include --silent "${package_endpoint}" 2>&1)"'
     assert_includes cleanup, %q!package_readback_status="$(awk 'NR == 1 { print $2 }' <<< "${package_readback_headers}")"!
-    assert_includes cleanup, '"${package_readback_exit}" -eq 0 && "${package_readback_status}" == "200"'
+    assert_includes cleanup, '"${deleted_entire_package}" -eq 1 && "${package_readback_exit}" -ne 0 && "${package_readback_status}" == "404"'
+    assert_includes cleanup, '"${deleted_entire_package}" -eq 0 && "${package_readback_exit}" -eq 0 && "${package_readback_status}" == "200"'
     assert_includes cleanup, 'gh api --paginate "${package_endpoint}/versions?per_page=100"'
     assert_includes cleanup, '.[] | select(any(.metadata.container.tags[]?; . == \"${probe_tag}\")) | .id'
-    assert_includes cleanup, '"${package_readback_exit}" -ne 0 && "${package_readback_status}" == "404"'
     assert_includes cleanup, 'remaining_probe_versions=""'
-    assert_includes cleanup, 'Unexpected GHCR package read-back status ${package_readback_status:-unavailable}.'
+    assert_includes cleanup, 'Unexpected GHCR package read-back after probe cleanup (whole_package=${deleted_entire_package}, status=${package_readback_status:-unavailable}).'
     refute_includes cleanup, "--slurp"
     assert_includes cleanup, '[[ -z "${remaining_probe_versions}" ]]'
     refute_includes cleanup, "oras manifest delete"
