@@ -48,17 +48,18 @@ final class SAHelpViewerOnlineURLBuilderTests: XCTestCase {
     }
 
     func testMySQLOnlineHelpURLPercentEncodesQueryDelimitersInTopic() {
-        // Topics containing query delimiters (`&`, `=`, `+`) must be percent-encoded
-        // so they survive as the `q` value instead of being spliced into the URL
-        // structure — regression: a bare `&`/`=` truncated the query, `+` read as a space.
+        // Topics containing query delimiters (`&`, `=`, `+`, `?`, `#`) must be
+        // percent-encoded so they survive as the `q` value instead of being spliced
+        // into the URL structure — regression: a bare `&`/`=` truncated the query,
+        // `+` read as a space, `?`/`#` opened a query/fragment.
         let combined = SAHelpViewerOnlineURLBuilder.onlineHelpURL(
-            forTopic: "a&b=c+d",
+            forTopic: "a&b=c+d?e#f",
             serverVersionString: "8.4.0",
             mysqlMajorVersion: 8,
             mysqlMinorVersion: 4,
             mysqlReleaseVersion: 0
         )
-        XCTAssertEqual(combined?.absoluteString, "https://dev.mysql.com/doc/search/?d=371&p=1&q=a%26b%3Dc%2Bd")
+        XCTAssertEqual(combined?.absoluteString, "https://dev.mysql.com/doc/search/?d=371&p=1&q=a%26b%3Dc%2Bd%3Fe%23f")
 
         let plusOnly = SAHelpViewerOnlineURLBuilder.mysqlOnlineHelpURL(forTopic: "a+b", documentID: 12)
         XCTAssertEqual(plusOnly?.absoluteString, "https://dev.mysql.com/doc/search/?d=12&p=1&q=a%2Bb")
@@ -69,9 +70,13 @@ final class SAHelpViewerOnlineURLBuilderTests: XCTestCase {
         XCTAssertEqual(withSpace?.absoluteString, "https://dev.mysql.com/doc/search/?d=201&p=1&q=GRANT%20%26%20REVOKE")
 
         // Round-trip: the escaped value must parse back as a single `q` item equal to
-        // the original topic — i.e. the delimiter did not split the query.
-        let parsed = URLComponents(url: URL(string: combined?.absoluteString ?? "")!, resolvingAgainstBaseURL: false)
-        XCTAssertEqual(parsed?.queryItems?.first { $0.name == "q" }?.value, "a&b=c+d")
+        // the original topic — i.e. the delimiters did not split the query.
+        guard let combined else {
+            XCTFail("Expected a MySQL help URL for the delimiter topic")
+            return
+        }
+        let parsed = URLComponents(url: combined, resolvingAgainstBaseURL: false)
+        XCTAssertEqual(parsed?.queryItems?.first { $0.name == "q" }?.value, "a&b=c+d?e#f")
     }
 
     func testMariaDBVersionDetectionUsesCachedVersionString() {
