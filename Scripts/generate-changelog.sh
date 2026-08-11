@@ -168,6 +168,11 @@ build_entries() {
 
     title="$(sanitize_message "${title}")"
     [[ -z "${title}" ]] && continue
+    # Cumulative beta ranges cross prior generated release commits. Keep that
+    # bookkeeping out of the user-facing version section.
+    if [[ "${title}" =~ ^Prepare[[:space:]][0-9]+\.[0-9]+\.[0-9]+[[:space:]]\([0-9]+\)[[:space:]]release$ ]]; then
+      continue
+    fi
 
     category="$(classify_subject "${title}")"
     short_hash="${commit_hash:0:9}"
