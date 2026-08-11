@@ -7,6 +7,10 @@ on:
         description: Exact manually-started Alpha-only Xcode Cloud build run ID after Notarize is configured
         required: true
         type: string
+      alpha_source_sha:
+        description: Exact full source commit SHA used by that Alpha build; it must still be an ancestor of main
+        required: true
+        type: string
 
 permissions:
   actions: read
@@ -27,6 +31,8 @@ jobs:
     environment: sequel-ace-release
     env:
       SA_ASC_REQUIRE_ISSUER: "1"
+      ALPHA_BUILD_RUN_ID: ${{ inputs.alpha_build_run_id }}
+      ALPHA_SOURCE_SHA: ${{ inputs.alpha_source_sha }}
       GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
       PROBE_BRANCH: prepare-release/feasibility-probe-${{ github.run_id }}
     steps:
@@ -36,7 +42,6 @@ jobs:
           RELEASE_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
           RELEASE_REF: ${{ github.ref }}
           RELEASE_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}
-          ALPHA_BUILD_RUN_ID: ${{ inputs.alpha_build_run_id }}
         run: |
           set -euo pipefail
           [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized release actor." >&2; exit 1; }
@@ -44,6 +49,7 @@ jobs:
           [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Feasibility must run from main." >&2; exit 1; }
           [[ "${RELEASE_ENABLED}" == "false" ]] || { echo "Set SA_RELEASE_AUTOMATION_ENABLED=false before running feasibility." >&2; exit 1; }
           [[ "${ALPHA_BUILD_RUN_ID}" =~ ^[A-Za-z0-9-]+$ ]] || { echo "Malformed Alpha build-run ID." >&2; exit 1; }
+          [[ "${ALPHA_SOURCE_SHA}" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "Malformed Alpha source commit SHA." >&2; exit 1; }
 
       - name: Check out release tooling
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -52,6 +58,16 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: false
+
+      - name: Validate the pinned Alpha source ancestry
+        run: |
+          set -euo pipefail
+          current_sha="$(git rev-parse HEAD)"
+          git cat-file -e "${ALPHA_SOURCE_SHA}^{commit}"
+          git merge-base --is-ancestor "${ALPHA_SOURCE_SHA}" "${current_sha}" || {
+            echo "Pinned Alpha source commit is not an ancestor of current main." >&2
+            exit 1
+          }
 
       - name: Exclude transient feasibility evidence from git status
         run: |
@@ -133,18 +149,17 @@ jobs:
         run: |
           set -euo pipefail
           current_version="$(bundle exec ruby -Ifastlane/lib -rsequel_ace_release -e 'puts SequelAceRelease::VersionFiles.new.current.fetch("version")')"
-          current_sha="$(git rev-parse HEAD)"
           bundle exec ruby -Ifastlane/lib -rsequel_ace_release -e '
             client = SequelAceRelease::AppStoreConnectClient.from_env
             run = client.build_run(ARGV.fetch(0))
             raise SequelAceRelease::ValidationError, "Alpha run is not part of the configured Alpha workflow" unless run["workflow_id"] == ARGV.fetch(1)
             raise SequelAceRelease::ValidationError, "Alpha run did not succeed" unless run["execution_progress"] == "COMPLETE" && run["completion_status"] == "SUCCEEDED"
             commits = [run["source_commit"], run["destination_commit"]].compact
-            raise SequelAceRelease::ValidationError, "Alpha run does not match checked-out main" unless commits.include?(ARGV.fetch(2))
+            raise SequelAceRelease::ValidationError, "Alpha run does not match the pinned source commit" unless commits.include?(ARGV.fetch(2))
             File.write("feasibility/alpha-cloud-run.json", SequelAceRelease::CanonicalJSON.pretty(run))
-          ' "${{ inputs.alpha_build_run_id }}" "${{ vars.SA_ALPHA_CLOUD_WORKFLOW_ID }}" "${current_sha}"
+          ' "${ALPHA_BUILD_RUN_ID}" "${{ vars.SA_ALPHA_CLOUD_WORKFLOW_ID }}" "${ALPHA_SOURCE_SHA}"
           bundle exec ruby fastlane/bin/sa-release download-cloud-artifacts \
-            --run-id "${{ inputs.alpha_build_run_id }}" \
+            --run-id "${ALPHA_BUILD_RUN_ID}" \
             --output-directory feasibility/alpha-cloud \
             --output feasibility/alpha-artifacts.json
           bundle exec ruby fastlane/bin/sa-release verify-artifact-set \
