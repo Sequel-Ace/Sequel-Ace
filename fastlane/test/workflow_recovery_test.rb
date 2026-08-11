@@ -599,7 +599,7 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes workflow[cleanup_probe..], "steps.probe_cleanup_token.outputs.token || github.token"
   end
 
-  def test_feasibility_fails_closed_unless_the_exact_ghcr_probe_tag_is_deleted
+  def test_feasibility_fails_closed_unless_the_exact_ghcr_probe_version_is_deleted_via_rest
     workflow = File.read(repo_path(".github/workflows/release_feasibility.yml"))
     probe = workflow.split("- name: Prove private GHCR round trip and visibility", 2).fetch(1)
                     .split("- name: Delete the exact GHCR feasibility probe", 2).first
@@ -611,11 +611,17 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes cleanup, "if: ${{ always() && steps.ghcr_probe.outcome != 'skipped' }}"
     assert_includes cleanup, 'probe_ref="${GHCR_REPOSITORY}:feasibility-${GITHUB_RUN_ID}"'
     assert_includes cleanup, 'probe_tag="feasibility-${GITHUB_RUN_ID}"'
-    assert_includes cleanup, 'oras manifest delete --force "${probe_ref}"'
-    assert_includes cleanup, 'gh api --paginate --slurp "orgs/Sequel-Ace/packages/container/${package_name}/versions?per_page=100"'
-    assert_includes cleanup, 'map(select(any(.metadata.container.tags[]?; . == \"${probe_tag}\")))'
+    assert_includes cleanup, "probe_version_rows=\"$("
+    assert_includes cleanup, "Expected exactly one GHCR package version for the feasibility probe tag."
+    assert_includes cleanup, "IFS=$'\\t' read -r probe_version_id probe_version_tags"
+    assert_includes cleanup, '"${probe_version_tags}" == "${probe_tag}"'
+    assert_includes cleanup, 'gh api --method DELETE'
+    assert_includes cleanup, '"orgs/Sequel-Ace/packages/container/${package_name}/versions/${probe_version_id}"'
+    assert_includes cleanup, 'gh api --paginate "orgs/Sequel-Ace/packages/container/${package_name}/versions?per_page=100"'
+    assert_includes cleanup, '.[] | select(any(.metadata.container.tags[]?; . == \"${probe_tag}\")) | .id'
+    refute_includes cleanup, "--slurp"
     assert_includes cleanup, '[[ -z "${remaining_probe_versions}" ]]'
-    refute_includes cleanup, 'oras manifest delete "${probe_ref}" >/dev/null 2>&1 || true'
+    refute_includes cleanup, "oras manifest delete"
   end
 
   def test_feasibility_binds_a_reusable_alpha_run_to_an_explicit_ancestor_sha
