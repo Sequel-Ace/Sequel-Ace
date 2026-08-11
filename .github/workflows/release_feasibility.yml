@@ -281,9 +281,16 @@ jobs:
           probe_ref="${GHCR_REPOSITORY}:feasibility-${GITHUB_RUN_ID}"
           package_name="${GHCR_REPOSITORY#ghcr.io/sequel-ace/}"
           probe_tag="feasibility-${GITHUB_RUN_ID}"
+          package_endpoint="orgs/Sequel-Ace/packages/container/${package_name}"
+          package_versions_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-feasibility-package-versions.json.XXXXXX")"
+          gh api --paginate "${package_endpoint}/versions?per_page=100" \
+            --jq '.[] | {id, tags: (.metadata.container.tags | sort)}' \
+            | jq -sc 'sort_by(.id)' > "${package_versions_file}"
+          package_version_count="$(jq -r 'length' "${package_versions_file}")"
           probe_version_rows="$(
-            gh api --paginate "orgs/Sequel-Ace/packages/container/${package_name}/versions?per_page=100" \
-              --jq ".[] | select(any(.metadata.container.tags[]?; . == \"${probe_tag}\")) | [.id, (.metadata.container.tags | sort | join(\",\"))] | @tsv"
+            jq -r --arg probe_tag "${probe_tag}" \
+              '.[] | select(any(.tags[]?; . == $probe_tag)) | [.id, (.tags | join(","))] | @tsv' \
+              "${package_versions_file}"
           )"
           [[ -n "${probe_version_rows}" && "${probe_version_rows}" != *$'\n'* ]] || {
             echo "Expected exactly one GHCR package version for the feasibility probe tag." >&2
@@ -294,27 +301,47 @@ jobs:
             echo "Refusing to delete a GHCR package version that is not exclusive to the feasibility probe tag." >&2
             exit 1
           }
-          gh api --method DELETE \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "orgs/Sequel-Ace/packages/container/${package_name}/versions/${probe_version_id}" \
-            --silent
-          package_endpoint="orgs/Sequel-Ace/packages/container/${package_name}"
+          [[ "${package_version_count}" =~ ^[1-9][0-9]*$ ]] || {
+            echo "Expected at least one GHCR package version before probe cleanup." >&2
+            exit 1
+          }
+          deleted_entire_package=0
+          if [[ "${package_version_count}" -eq 1 ]]; then
+            confirmed_versions_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-feasibility-confirmed-versions.json.XXXXXX")"
+            gh api --paginate "${package_endpoint}/versions?per_page=100" \
+              --jq '.[] | {id, tags: (.metadata.container.tags | sort)}' \
+              | jq -sc 'sort_by(.id)' > "${confirmed_versions_file}"
+            cmp -s "${package_versions_file}" "${confirmed_versions_file}" || {
+              echo "GHCR package versions changed before whole-package probe cleanup." >&2
+              exit 1
+            }
+            gh api --method DELETE \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "${package_endpoint}" \
+              --silent
+            deleted_entire_package=1
+          else
+            gh api --method DELETE \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "${package_endpoint}/versions/${probe_version_id}" \
+              --silent
+          fi
           set +e
           package_readback_headers="$(gh api --include --silent "${package_endpoint}" 2>&1)"
           package_readback_exit=$?
           set -e
           package_readback_status="$(awk 'NR == 1 { print $2 }' <<< "${package_readback_headers}")"
-          if [[ "${package_readback_exit}" -eq 0 && "${package_readback_status}" == "200" ]]; then
+          if [[ "${deleted_entire_package}" -eq 1 && "${package_readback_exit}" -ne 0 && "${package_readback_status}" == "404" ]]; then
+            remaining_probe_versions=""
+          elif [[ "${deleted_entire_package}" -eq 0 && "${package_readback_exit}" -eq 0 && "${package_readback_status}" == "200" ]]; then
             remaining_probe_versions="$(
               gh api --paginate "${package_endpoint}/versions?per_page=100" \
                 --jq ".[] | select(any(.metadata.container.tags[]?; . == \"${probe_tag}\")) | .id"
             )"
-          elif [[ "${package_readback_exit}" -ne 0 && "${package_readback_status}" == "404" ]]; then
-            # Deleting the package's final version removes the empty package.
-            remaining_probe_versions=""
           else
-            echo "Unexpected GHCR package read-back status ${package_readback_status:-unavailable}." >&2
+            echo "Unexpected GHCR package read-back after probe cleanup (whole_package=${deleted_entire_package}, status=${package_readback_status:-unavailable})." >&2
             exit 1
           fi
           [[ -z "${remaining_probe_versions}" ]] || {
