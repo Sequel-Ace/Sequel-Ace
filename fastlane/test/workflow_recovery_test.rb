@@ -126,9 +126,8 @@ class WorkflowRecoveryTest < Minitest::Test
     setup = workflow[external_config...ruby_setup]
     assert_includes setup, 'mktemp -d "${RUNNER_TEMP}/sequel-ace-bundle-config.XXXXXX"'
     assert_includes setup, 'cp .bundle/config "${bundle_config_directory}/config"'
-    assert_includes setup, 'BUNDLE_APP_CONFIG=%s'
-    assert_includes setup, '>> "${GITHUB_ENV}"'
-    assert_includes workflow[config_check...preparation], "git diff --exit-code -- .bundle/config"
+    assert_includes setup, %q(printf 'BUNDLE_APP_CONFIG=%s\n' "${bundle_config_directory}" >> "${GITHUB_ENV}")
+    assert_includes workflow[config_check...preparation], "git diff --quiet -- .bundle/config"
   end
 
   def test_ambiguous_app_store_submission_is_polled_before_failure_recording
