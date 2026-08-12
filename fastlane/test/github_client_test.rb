@@ -641,6 +641,41 @@ class GitHubClientTest < Minitest::Test
     assert_equal "DELETE", transport.requests.last.fetch(:method)
   end
 
+  def test_delete_branch_can_treat_githubs_exact_missing_reference_response_as_absent
+    branch = "prepare-release/5.4.0-20109-2"
+    transport = FakeTransport.new([
+      http_response(status: 422, body: { "message" => "Reference does not exist" })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    assert_equal false, client.delete_branch(branch, allow_absent: true)
+    request = transport.requests.fetch(0)
+    assert_equal "DELETE", request.fetch(:method)
+    assert_equal "/repos/Sequel-Ace/Sequel-Ace/git/refs/heads/prepare-release%2F5.4.0-20109-2", request.fetch(:path)
+  end
+
+  def test_delete_branch_remains_strict_by_default_for_an_absent_reference
+    branch = "prepare-release/5.4.0-20109-2"
+    transport = FakeTransport.new([
+      http_response(status: 422, body: { "message" => "Reference does not exist" })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    assert_raises(SequelAceRelease::APIError) { client.delete_branch(branch) }
+  end
+
+  def test_delete_branch_does_not_hide_other_unprocessable_responses
+    transport = FakeTransport.new([
+      http_response(status: 422, body: { "message" => "Validation Failed" })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    error = assert_raises(SequelAceRelease::APIError) do
+      client.delete_branch("prepare-release/5.4.0-20109-2", allow_absent: true)
+    end
+    assert_includes error.message, "HTTP 422: Validation Failed"
+  end
+
   def test_cleanup_reconciles_an_unpersisted_generated_commit_by_parent_and_content
     base_sha = "a" * 40
     created_sha = "c" * 40

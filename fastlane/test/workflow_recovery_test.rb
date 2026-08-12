@@ -75,6 +75,15 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes alpha_step, "failure() || cancelled()"
   end
 
+  def test_tag_only_recovery_treats_an_already_deleted_release_branch_as_absent
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    cleanup = workflow.split("- name: Delete a recovered merged release branch", 2).fetch(1)
+                      .split("- name: Prepare explicit release files", 2).first
+
+    assert_includes cleanup, "client.delete_branch(ENV.fetch(\"RELEASE_BRANCH\"), allow_absent: true)"
+    refute_includes cleanup, "HTTP 404"
+  end
+
   def test_mutating_workflows_authorize_the_rerun_initiator
     release = File.read(repo_path(".github/workflows/release.yml"))
     assert_operator release.scan("github.triggering_actor").length, :>=, 2
@@ -408,7 +417,7 @@ class WorkflowRecoveryTest < Minitest::Test
     authorization = workflow.index("- name: Enforce release authorization")
     ancestry = workflow.index("- name: Prove the frozen release SHA is on dispatch main")
     app_token = workflow.index("- name: Mint repository-scoped release App token")
-    checkout = workflow.index("- name: Check out the frozen main commit")
+    checkout = workflow.index("- name: Check out immutable dispatch tooling")
     proof = workflow[ancestry...app_token]
 
     assert_operator authorization, :<, ancestry
@@ -417,6 +426,18 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes workflow[authorization...ancestry], '[[ "${EXPECTED_SHA}" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]'
     assert_includes proof, '/compare/${EXPECTED_SHA}...${DISPATCH_SHA}'
     assert_includes proof, '"${comparison_status}" == "identical" || "${comparison_status}" == "ahead"'
+  end
+
+  def test_exact_resume_executes_trusted_current_tooling_but_keeps_the_release_plan_frozen
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    checkout = workflow.split("- name: Check out immutable dispatch tooling", 2).fetch(1)
+                       .split("- name: Exclude transient release evidence from git status", 2).first
+    plan = workflow.split("- name: Decode and validate the approved plan", 2).fetch(1)
+                   .split("- name: Reconcile the authoritative Production Cloud build", 2).first
+
+    assert_includes checkout, 'ref: ${{ github.sha }}'
+    refute_includes checkout, 'ref: ${{ inputs.expected_main_sha }}'
+    assert_includes plan, '--main-ref "${{ inputs.expected_main_sha }}"'
   end
 
   def test_release_workflows_use_commit_and_checksum_pinned_oras

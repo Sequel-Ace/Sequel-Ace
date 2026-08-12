@@ -331,6 +331,11 @@ informational):
   version file and `CHANGELOG.md`, reuse it. Unrelated commits may have advanced
   `main`; the recovery approval must be planned against the exact release
   commit, and `mode=resume` is the only mode allowed to start from that ancestor.
+  The recovery job executes the immutable workflow/tooling revision at the
+  authenticated dispatch SHA on protected `main`, so a recovery-only fix can be
+  used without changing the frozen release approval. Planning, build
+  reconciliation, protected-file validation, and the eventual tag target stay
+  pinned to the exact approved release commit.
   When that commit is the generated release-PR merge, the planner uses its
   first parent as the release-notes comparison head, reproducing the original
   change range instead of listing the release-preparation PR itself.

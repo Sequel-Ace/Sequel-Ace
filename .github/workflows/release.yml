@@ -129,10 +129,13 @@ jobs:
           owner: Sequel-Ace
           repositories: Sequel-Ace
 
-      - name: Check out the frozen main commit
+      - name: Check out immutable dispatch tooling
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: ${{ inputs.expected_main_sha }}
+          # New-release authorization requires this revision to equal the frozen
+          # approved SHA. Recovery first proves that the frozen SHA is its
+          # ancestor, then keeps the plan and release target pinned below.
+          ref: ${{ github.sha }}
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: false
@@ -378,11 +381,7 @@ jobs:
           set -euo pipefail
           bundle exec ruby -Ifastlane/lib -rsequel_ace_release -e '
             client = SequelAceRelease::GitHubClient.new(token: ENV.fetch("SA_GITHUB_TOKEN"))
-            begin
-              client.delete_branch(ENV.fetch("RELEASE_BRANCH"))
-            rescue SequelAceRelease::APIError => error
-              raise unless error.message.include?("HTTP 404")
-            end
+            client.delete_branch(ENV.fetch("RELEASE_BRANCH"), allow_absent: true)
           '
 
       - name: Prepare explicit release files
