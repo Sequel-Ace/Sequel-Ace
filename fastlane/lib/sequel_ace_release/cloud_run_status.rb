@@ -14,6 +14,7 @@ module SequelAceRelease
       if requested_run_id && !requested_run_id.to_s.match?(RUN_ID_PATTERN)
         raise ValidationError, "requested Xcode Cloud build-run ID is malformed"
       end
+      expected_build = build.nil? ? nil : positive_integer(build, "expected Production build")
       run = @client.find_cloud_run(
         workflow_id: workflow_id,
         commit: commit,
@@ -26,8 +27,7 @@ module SequelAceRelease
         raise ValidationError, "Xcode Cloud returned a malformed build-run ID"
       end
 
-      if build
-        expected_build = positive_integer(build, "expected Production build")
+      if expected_build
         assigned_build = positive_integer(run["number"], "assigned Production build")
         if assigned_build != expected_build
           direction = assigned_build > expected_build ? "advanced" : "regressed"
@@ -61,7 +61,7 @@ module SequelAceRelease
         next false unless candidate["app_id"] == app_id
         next false unless candidate["version"] == version
         next false unless candidate["platform"] == "MAC_OS"
-        next false if build && candidate["build"] != build
+        next false if expected_build && candidate["build"] != expected_build
 
         true
       end

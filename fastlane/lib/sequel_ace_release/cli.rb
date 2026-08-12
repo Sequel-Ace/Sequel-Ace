@@ -275,12 +275,13 @@ module SequelAceRelease
         raise ValidationError, "advanced release PR base requires validated forward-recovery evidence" unless options[:recovery_evidence]
 
         recovery = read_json(options[:recovery_evidence])
-        unless recovery["predecessor_release_commit_sha"] == expected_sha &&
-               recovery["approval_sha256"] == options[:approval_sha] &&
-               recovery["expected_recovery_build"].is_a?(Integer) &&
-               recovery["expected_recovery_build"] <= options[:build]
-          raise ValidationError, "forward-recovery evidence does not match the requested release PR"
-        end
+        validate_forward_recovery_pr_evidence!(
+          recovery,
+          approval: approval,
+          approval_sha: options[:approval_sha],
+          expected_sha: expected_sha,
+          requested_build: options[:build]
+        )
       end
       raise ValidationError, "release PR is not based on the frozen main SHA" unless git.sha == expected_sha
 
@@ -1143,6 +1144,20 @@ module SequelAceRelease
 
     def read_json(path)
       JSON.parse(File.read(path))
+    end
+
+    def validate_forward_recovery_pr_evidence!(recovery, approval:, approval_sha:, expected_sha:, requested_build:)
+      failed_build = recovery["failed_expected_build"]
+      expected_predecessor_tag = if failed_build.is_a?(Integer) && failed_build.positive?
+                                   "#{approval.payload.fetch('channel')}/#{approval.payload.fetch('target_version')}-#{failed_build}"
+                                 end
+      valid = recovery["predecessor_release_commit_sha"] == expected_sha &&
+              recovery["predecessor_tag"] == expected_predecessor_tag &&
+              recovery["approval_sha256"] == approval_sha &&
+              recovery["expected_recovery_build"].is_a?(Integer) &&
+              recovery["expected_recovery_build"].positive? &&
+              recovery["expected_recovery_build"] <= requested_build
+      raise ValidationError, "forward-recovery evidence does not match the requested release PR" unless valid
     end
 
     def approval_from_file(path)

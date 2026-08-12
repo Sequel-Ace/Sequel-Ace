@@ -12,7 +12,8 @@ module SequelAceRelease
       raise ValidationError, "release mode must be start or resume" unless %w[start resume].include?(mode)
       automated_recovery = actor == Config::ACTIONS_BOT && triggering_actor == Config::ACTIONS_BOT
       if automated_recovery
-        unless mode == "resume" && recovery_tag.to_s.match?(%r{\A(?:production|beta)/\d+\.\d+\.\d+-[1-9]\d*\z})
+        expected_recovery_tag = %r{\A#{Regexp.escape(channel)}/#{Regexp.escape(version)}-[1-9]\d*\z}
+        unless mode == "resume" && recovery_tag.to_s.match?(expected_recovery_tag)
           raise ValidationError, "automated recovery requires resume mode and an exact predecessor tag"
         end
       else

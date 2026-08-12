@@ -66,6 +66,41 @@ class ForwardBuildRecoveryTest < Minitest::Test
     assert_includes error.message, "number-advance"
   end
 
+  def test_rejects_a_recovery_build_that_is_not_assigned_plus_one
+    changed = manifest.with(
+      "failure" => manifest.to_h.fetch("failure").merge("recovery_build" => 20_120)
+    )
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      validator.validate(**arguments.merge(manifest: changed))
+    end
+    assert_includes error.message, "inconsistent"
+  end
+
+  def test_rejects_an_approval_hash_that_does_not_match
+    assert_raises(SequelAceRelease::ValidationError) do
+      validator.validate(**arguments.merge(approval_sha: "f" * 64))
+    end
+  end
+
+  def test_rejects_a_missing_failure_record_with_the_specific_recovery_error
+    changed = manifest.to_h.reject { |key, _value| key == "failure" }
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      validator.validate(**arguments.merge(manifest: SequelAceRelease::Manifest.new(changed)))
+    end
+    assert_includes error.message, "number-advance failure"
+  end
+
+  def test_reports_only_an_invalid_recovery_count_as_a_count_error
+    changed = manifest.with("forward_build_recovery" => { "count" => "invalid" })
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      validator.validate(**arguments.merge(manifest: changed))
+    end
+    assert_includes error.message, "count must be an integer"
+  end
+
   def test_rejects_recovery_after_main_or_release_assets_change
     assert_raises(SequelAceRelease::ValidationError) do
       validator.validate(**arguments.merge(current_sha: "e" * 40))

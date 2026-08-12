@@ -36,6 +36,17 @@ class CloudRunStatusTest < Minitest::Test
     assert_equal "production/5.3.2-20105", client.find_arguments.fetch(:tag)
   end
 
+  def test_rejects_an_invalid_expected_build_before_api_lookup
+    client = Client.new(run: nil)
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      readiness_for(client, build: "not-a-build")
+    end
+
+    assert_includes error.message, "expected Production build must be an integer"
+    assert_nil client.find_arguments
+  end
+
   def test_reports_an_in_progress_run_as_pending_without_reading_builds
     client = Client.new(run: cloud_run("RUNNING", nil))
 
@@ -102,6 +113,24 @@ class CloudRunStatusTest < Minitest::Test
     assert_equal "app-store-build-id", result.fetch("app_store_build_id")
     assert_equal 20_105, result.fetch("app_build")
     assert_equal "run-id", client.build_run_id
+  end
+
+  def test_normalizes_a_string_expected_build_for_every_comparison
+    client = Client.new(
+      run: cloud_run("COMPLETE", "SUCCEEDED"),
+      builds: [{
+        "id" => "app-store-build-id",
+        "app_id" => "1518036000",
+        "version" => "5.3.2",
+        "platform" => "MAC_OS",
+        "build" => 20_105
+      }]
+    )
+
+    result = readiness_for(client, build: "20105")
+
+    assert_equal "ready", result.fetch("readiness")
+    assert_equal 20_105, result.fetch("app_build")
   end
 
   def test_keeps_a_succeeded_run_pending_while_its_app_store_build_is_unavailable
@@ -187,13 +216,13 @@ class CloudRunStatusTest < Minitest::Test
 
   private
 
-  def readiness_for(client, run_id: "run-id")
+  def readiness_for(client, run_id: "run-id", build: 20_105)
     SequelAceRelease::CloudRunStatus.new(client: client).readiness(
       workflow_id: "workflow-id",
       app_id: "1518036000",
       version: "5.3.2",
       tag: "production/5.3.2-20105",
-      build: 20_105,
+      build: build,
       commit: "a" * 40,
       run_id: run_id
     )

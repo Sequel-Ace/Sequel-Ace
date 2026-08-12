@@ -170,7 +170,7 @@ class BuildReconcilerTest < Minitest::Test
       )
     end
 
-    assert_includes error.message, "advanced from 20105 to 20106"
+    assert_includes error.message, "changed from expected 20105 to 20106"
     assert_includes error.message, "abort before merging or tagging"
   end
 

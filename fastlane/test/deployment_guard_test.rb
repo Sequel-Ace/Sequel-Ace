@@ -114,4 +114,34 @@ class DeploymentGuardTest < Minitest::Test
       ))
     end
   end
+
+  def test_a_single_bot_identity_cannot_claim_automatic_recovery
+    [
+      { actor: "github-actions[bot]", triggering_actor: "Jason-Morcos" },
+      { actor: "Jason-Morcos", triggering_actor: "github-actions[bot]" }
+    ].each do |actors|
+      assert_raises(SequelAceRelease::ValidationError, actors.inspect) do
+        @guard.validate!(**@valid.merge(actors).merge(
+          mode: "resume",
+          recovery_tag: "production/5.3.2-20105"
+        ))
+      end
+    end
+  end
+
+  def test_automatic_recovery_requires_resume_and_the_approved_release_identity
+    [
+      { mode: "start", recovery_tag: "production/5.3.2-20105" },
+      { mode: "resume", recovery_tag: "production/5.3.2-0" },
+      { mode: "resume", recovery_tag: "beta/5.3.2-20105" },
+      { mode: "resume", recovery_tag: "production/5.4.0-20105" }
+    ].each do |overrides|
+      assert_raises(SequelAceRelease::ValidationError, overrides.inspect) do
+        @guard.validate!(**@valid.merge(
+          actor: "github-actions[bot]",
+          triggering_actor: "github-actions[bot]"
+        ).merge(overrides))
+      end
+    end
+  end
 end

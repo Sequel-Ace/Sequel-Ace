@@ -16,6 +16,10 @@ module SequelAceRelease
       canonical_build production_build_evidence skipped_production_builds tag title artifact_names
       release_notes_sha256 cloud_build_ids asc_ids verification state
     ].freeze
+    REQUIRED_BY_SCHEMA = {
+      1 => REQUIRED_V1,
+      2 => REQUIRED_V2
+    }.freeze
 
     attr_reader :data
 
@@ -84,15 +88,12 @@ module SequelAceRelease
 
     def validate!
       schema = Integer(data["schema_version"])
-      required = case schema
-                 when 1 then REQUIRED_V1
-                 when Config::SCHEMA_VERSION then REQUIRED_V2
-                 else
-                   raise ValidationError, "unsupported manifest schema"
-                 end
+      required = REQUIRED_BY_SCHEMA[schema]
+      raise ValidationError, "unsupported manifest schema" unless required
+
       missing = required - data.keys
       raise ValidationError, "manifest is missing: #{missing.join(', ')}" unless missing.empty?
-      if schema == Config::SCHEMA_VERSION
+      if schema == 2
         unless data["build_policy"] == Approval::POLICY
           raise ValidationError, "unsupported manifest build policy"
         end

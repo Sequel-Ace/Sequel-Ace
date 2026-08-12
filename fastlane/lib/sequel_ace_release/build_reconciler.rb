@@ -238,7 +238,7 @@ module SequelAceRelease
       expected_build = positive_integer(expected, "expected target build")
       unless result.target_build == expected_build
         raise ValidationError,
-              "API-derived Production build advanced from #{expected_build} to #{result.target_build}; " \
+              "API-derived Production build changed from expected #{expected_build} to #{result.target_build}; " \
               "abort before merging or tagging"
       end
 

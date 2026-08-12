@@ -27,7 +27,7 @@ module SequelAceRelease
         previous_tag: previous_tag
       )
 
-      failure = data.fetch("failure")
+      failure = data["failure"]
       unless failure.is_a?(Hash) && failure["reason"] == "cloud_build_number_advanced"
         raise ValidationError, "forward recovery requires a durable Production Cloud number-advance failure"
       end
@@ -41,7 +41,11 @@ module SequelAceRelease
         raise ValidationError, "forward recovery is missing the exact mismatched Cloud run"
       end
 
-      predecessor_count = Integer(data.dig("forward_build_recovery", "count") || 0)
+      predecessor_count = begin
+        Integer(data.dig("forward_build_recovery", "count") || 0)
+      rescue ArgumentError, TypeError
+        raise ValidationError, "forward recovery count must be an integer"
+      end
       recovery_count = predecessor_count + 1
       if recovery_count > MAX_AUTOMATIC_RECOVERIES
         raise ValidationError,
@@ -60,8 +64,6 @@ module SequelAceRelease
         "count" => recovery_count,
         "approval_sha256" => approval_sha
       }
-    rescue ArgumentError, TypeError
-      raise ValidationError, "forward recovery count must be an integer"
     end
 
     private
