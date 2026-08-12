@@ -180,6 +180,8 @@ jobs:
           private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
           owner: Sequel-Ace
           repositories: Sequel-Ace
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Create the verified GitHub App commit and disposable PR
         id: github_probe
@@ -233,6 +235,8 @@ jobs:
           private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
           owner: Sequel-Ace
           repositories: Sequel-Ace
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Close and delete only the exact feasibility probe
         if: always()

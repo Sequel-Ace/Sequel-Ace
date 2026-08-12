@@ -24,6 +24,164 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes workflow[cleanup_step..], "steps.cleanup_app_token.outputs.token || github.token"
   end
 
+  def test_only_exact_release_mutations_request_workflows_write
+    branch_permissions = [
+      ["permission-actions", "read"],
+      ["permission-checks", "read"],
+      ["permission-contents", "write"],
+      ["permission-pull-requests", "write"]
+    ]
+    cleanup_permissions = [
+      ["permission-contents", "write"],
+      ["permission-pull-requests", "write"]
+    ]
+    release_mutation_permissions = [
+      ["permission-contents", "write"],
+      ["permission-workflows", "write"]
+    ]
+    expected_permissions = {
+      ".github/workflows/release.yml:Mint repository-scoped release App token" => branch_permissions,
+      ".github/workflows/release.yml:Refresh release App token before merging" => branch_permissions,
+      ".github/workflows/release.yml:Mint exact-target release mutation token" => release_mutation_permissions,
+      ".github/workflows/release.yml:Refresh release App token for failure cleanup" => cleanup_permissions,
+      ".github/workflows/release.yml:Mint release mutation token for failure annotation" => release_mutation_permissions,
+      ".github/workflows/release_alpha_retry.yml:Mint repository-scoped release App token" => [["permission-contents", "read"]],
+      ".github/workflows/release_alpha_retry.yml:Mint release mutation token for failure annotation" => release_mutation_permissions,
+      ".github/workflows/release_feasibility.yml:Mint a fresh release App token for the GitHub probe" => cleanup_permissions,
+      ".github/workflows/release_feasibility.yml:Refresh release App token for probe cleanup" => cleanup_permissions,
+      ".github/workflows/release_finalize.yml:Mint exact-target release mutation token" => release_mutation_permissions,
+      ".github/workflows/release_publish.yml:Mint release mutation token for Cloud failure annotation" => release_mutation_permissions,
+      ".github/workflows/release_publish.yml:Mint release mutation token for Alpha recovery annotation" => release_mutation_permissions,
+      ".github/workflows/release_publish.yml:Mint release mutation token for terminal failure annotation" => release_mutation_permissions
+    }
+    observed_steps = []
+
+    %w[
+      release.yml
+      release_alpha_retry.yml
+      release_feasibility.yml
+      release_finalize.yml
+      release_publish.yml
+    ].each do |filename|
+      path = ".github/workflows/#{filename}"
+      workflow = File.read(repo_path(path))
+      token_steps = workflow.split(/(?=^      - name: )/).select do |step|
+        step.include?("actions/create-github-app-token@")
+      end
+      refute_empty token_steps
+
+      token_steps.each do |step|
+        name = step.match(/^- name: (.+)$/)&.captures&.first ||
+               step.match(/^      - name: (.+)$/)&.captures&.first
+        refute_nil name
+        label = "#{path}:#{name}"
+        observed_steps << label
+        permissions = step.lines.filter_map do |line|
+          match = line.match(/^\s+(permission-[a-z-]+):\s+(\S+)\s*$/)
+          [match[1], match[2]] if match
+        end
+        assert_equal expected_permissions.fetch(label).sort, permissions.sort,
+                     "#{label} must request exactly its allowlisted App permissions"
+      end
+    end
+
+    assert_equal expected_permissions.keys.sort, observed_steps.sort
+  end
+
+  def test_optional_release_annotations_cannot_block_durable_state
+    release = File.read(repo_path(".github/workflows/release.yml"))
+    release_token = release.split("- name: Mint release mutation token for failure annotation", 2).fetch(1)
+                           .split("- name: Preserve an explanatory failed prerelease", 2).first
+    release_failure = release.split("- name: Preserve an explanatory failed prerelease", 2).fetch(1)
+    assert_includes release_token, "continue-on-error: true"
+    assert_includes release_failure, '[[ -z "${RELEASE_MUTATION_TOKEN}" ]]'
+    assert_operator release_failure.index("archive-release-to-ghcr.sh push"), :<,
+                    release_failure.index('[[ -z "${RELEASE_MUTATION_TOKEN}" ]]')
+
+    alpha = File.read(repo_path(".github/workflows/release_alpha_retry.yml"))
+    alpha_token = alpha.split("- name: Mint release mutation token for failure annotation", 2).fetch(1)
+                       .split("- name: Document transient Alpha retry failure", 2).first
+    alpha_failure = alpha.split("- name: Document transient Alpha retry failure", 2).fetch(1)
+    assert_includes alpha_token, "continue-on-error: true"
+    assert_includes alpha_failure, '[[ -z "${RELEASE_MUTATION_TOKEN}" ]]'
+
+    publisher = File.read(repo_path(".github/workflows/release_publish.yml"))
+    cloud_token = publisher.split("- name: Mint release mutation token for Cloud failure annotation", 2).fetch(1)
+                           .split("- name: Authenticate and preserve the failed Cloud handoff", 2).first
+    cloud_failure = publisher.split("- name: Authenticate and preserve the failed Cloud handoff", 2).fetch(1)
+                             .split("  publish:", 2).first
+    assert_includes cloud_token, "continue-on-error: true"
+    assert_operator cloud_failure.index("archive-release-to-ghcr.sh push"), :<,
+                    cloud_failure.index('[[ -z "${RELEASE_MUTATION_TOKEN}" ]]')
+
+    alpha_archive = publisher.index("- name: Refresh the private archive with submission evidence")
+    alpha_token_index = publisher.index("- name: Mint release mutation token for Alpha recovery annotation")
+    alpha_token = publisher[alpha_token_index...publisher.index("- name: Append successful Alpha recovery evidence")]
+    alpha_annotation = publisher.split("- name: Append successful Alpha recovery evidence", 2).fetch(1)
+    assert_operator alpha_archive, :<, alpha_token_index
+    assert_includes alpha_token, "continue-on-error: true"
+    assert_includes alpha_annotation, '[[ -z "${RELEASE_MUTATION_TOKEN}" ]]'
+
+    terminal_token = publisher.split("- name: Mint release mutation token for terminal failure annotation", 2).fetch(1)
+                              .split("- name: Preserve terminal artifact-verification failure", 2).first
+    terminal_failure = publisher.split("- name: Preserve terminal artifact-verification failure", 2).fetch(1)
+                                .split("- name: Preserve retryable state", 2).first
+    assert_includes terminal_token, "continue-on-error: true"
+    assert_operator terminal_failure.index("archive-release-to-ghcr.sh push"), :<,
+                    terminal_failure.index('[[ -z "${RELEASE_MUTATION_TOKEN}" ]]')
+
+    exact_create_token = release.split("- name: Mint exact-target release mutation token", 2).fetch(1)
+                                .split("- name: Create the tag-backed GitHub prerelease", 2).first
+    finalizer = File.read(repo_path(".github/workflows/release_finalize.yml"))
+    exact_finalize_token = finalizer.split("- name: Mint exact-target release mutation token", 2).fetch(1)
+                                    .split("- name: Finalize only exact App Store-live releases", 2).first
+    refute_includes exact_create_token, "continue-on-error: true"
+    refute_includes exact_finalize_token, "continue-on-error: true"
+  end
+
+  def test_optional_release_annotations_cannot_recreate_a_missing_tag_from_main
+    expected_targets = {
+      "release.yml" => {
+        events: [[:verify, "FAILED_TAG"], [:edit, "FAILED_TAG"], [:verify, "FAILED_TAG"]],
+        source: 'RELEASE_COMMIT: ${{ steps.release_target.outputs.sha || steps.release_context.outputs.source_release_commit_sha }}'
+      },
+      "release_alpha_retry.yml" => {
+        events: [[:verify, "BETA_TAG"], [:edit, "BETA_TAG"], [:verify, "BETA_TAG"]],
+        source: 'RELEASE_COMMIT: ${{ inputs.expected_commit }}'
+      },
+      "release_publish.yml" => {
+        events: [
+          [:verify, "EXPECTED_TAG"], [:edit, "EXPECTED_TAG"], [:verify, "EXPECTED_TAG"],
+          [:verify, "BETA_TAG"], [:edit, "BETA_TAG"], [:verify, "BETA_TAG"],
+          [:verify, "FAILED_TAG"], [:edit, "FAILED_TAG"], [:verify, "FAILED_TAG"]
+        ],
+        source: 'RELEASE_COMMIT: ${{ needs.discover.outputs.commit }}'
+      }
+    }
+
+    expected_targets.each do |filename, expected|
+      workflow = File.read(repo_path(".github/workflows/#{filename}"))
+      lines = workflow.lines
+      edits = workflow.lines.grep(/gh release edit/)
+      expected_edits = expected.fetch(:events).count { |event| event.first == :edit }
+
+      assert_equal expected_edits, edits.length
+      assert_equal Array.new(expected_edits, '--verify-tag --target "${RELEASE_COMMIT}"'),
+                   edits.map { |line| line[/--verify-tag --target "\$\{RELEASE_COMMIT\}"/] }
+      assert_equal expected_edits, workflow.scan(expected.fetch(:source)).length
+      mutation_events = lines.each_with_index.filter_map do |line, index|
+        if line.include?("github-verify-release-tag")
+          tag = lines.fetch(index + 1)[/--tag "\$\{([A-Z_]+)\}"/, 1]
+          assert_equal '--target-sha "${RELEASE_COMMIT}" >/dev/null', lines.fetch(index + 2).strip
+          [:verify, tag]
+        elsif line.include?("gh release edit")
+          [:edit, line[/gh release edit "\$\{([A-Z_]+)\}"/, 1]]
+        end
+      end
+      assert_equal expected.fetch(:events), mutation_events
+    end
+  end
+
   def test_cloud_target_is_reconciled_again_after_checks_and_before_merge_or_tag
     workflow = File.read(repo_path(".github/workflows/release.yml"))
     wait_step = workflow.index("- name: Wait for exact-head release PR checks")
@@ -518,13 +676,14 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes finalizer_job_env, 'SA_ASC_REQUIRE_ISSUER: "1"'
 
     access = finalizer.split("- name: Verify Production App Store Connect access", 2).fetch(1)
-                      .split("- name: Finalize only exact App Store-live releases", 2).first
+                      .split("- name: Mint exact-target release mutation token", 2).first
     assert_includes access, 'SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}'
     assert_includes access, 'SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}'
 
     finalize = finalizer.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
     assert_includes finalize, 'GHCR_TOKEN: ${{ github.token }}'
-    assert_includes finalize, 'SA_GITHUB_TOKEN: ${{ github.token }}'
+    github_token_assignments = finalize.scan(/^\s+SA_GITHUB_TOKEN:\s+(.+)$/).flatten
+    assert_equal ['${{ steps.release_mutation_token.outputs.token }}'], github_token_assignments
     assert_includes finalize, 'SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}'
 
     %w[release_alpha_retry.yml release_feasibility.yml].each do |filename|

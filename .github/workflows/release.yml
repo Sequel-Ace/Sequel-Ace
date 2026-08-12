@@ -128,6 +128,10 @@ jobs:
           private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
           owner: Sequel-Ace
           repositories: Sequel-Ace
+          permission-actions: read
+          permission-checks: read
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Check out immutable dispatch tooling
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -438,6 +442,10 @@ jobs:
           private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
           owner: Sequel-Ace
           repositories: Sequel-Ace
+          permission-actions: read
+          permission-checks: read
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Revalidate Production Cloud build immediately before merge or tag
         env:
@@ -537,10 +545,21 @@ jobs:
             --state merged \
             --merge release-target-evidence.json >/dev/null
 
+      - name: Mint exact-target release mutation token
+        id: release_mutation_token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: Sequel-Ace
+          repositories: Sequel-Ace
+          permission-contents: write
+          permission-workflows: write
+
       - name: Create the tag-backed GitHub prerelease
         id: prerelease
         env:
-          SA_GITHUB_TOKEN: ${{ steps.merge_app_token.outputs.token || steps.app_token.outputs.token }}
+          SA_GITHUB_TOKEN: ${{ steps.release_mutation_token.outputs.token }}
         run: |
           set -euo pipefail
           bundle exec ruby fastlane/bin/sa-release github-create-release \
@@ -592,6 +611,8 @@ jobs:
           private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
           owner: Sequel-Ace
           repositories: Sequel-Ace
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Reconcile a failed release branch
         if: (failure() || cancelled()) && steps.release_context.outputs.branch != ''
@@ -614,22 +635,32 @@ jobs:
             ${reconcile_arguments[@]+"${reconcile_arguments[@]}"} \
             --output branch-cleanup.json
 
+      - name: Mint release mutation token for failure annotation
+        if: (failure() || cancelled()) && steps.release_context.outputs.tag != ''
+        id: failure_release_token
+        continue-on-error: true
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: Sequel-Ace
+          repositories: Sequel-Ace
+          permission-contents: write
+          permission-workflows: write
+
       - name: Preserve an explanatory failed prerelease
         if: (failure() || cancelled()) && steps.release_context.outputs.tag != ''
         continue-on-error: true
         env:
-          GH_TOKEN: ${{ github.token }}
           GHCR_TOKEN: ${{ github.token }}
           GHCR_USERNAME: ${{ github.actor }}
           ARCHIVE_REFERENCE: ${{ steps.initial_archive.outputs.reference }}
           FAILED_TAG: ${{ steps.release_context.outputs.tag }}
+          RELEASE_COMMIT: ${{ steps.release_target.outputs.sha || steps.release_context.outputs.source_release_commit_sha }}
+          RELEASE_MUTATION_TOKEN: ${{ steps.failure_release_token.outputs.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
-          if ! gh release view "${FAILED_TAG}" --json body --jq .body > failed-release-body.md; then
-            echo "No tag-backed prerelease exists to annotate."
-            exit 0
-          fi
           preserve_release_body=false
           if [[ -f manifest.json && -d release-archive ]]; then
             bundle exec ruby fastlane/bin/sa-release record-failure \
@@ -652,10 +683,29 @@ jobs:
             } >> "${GITHUB_STEP_SUMMARY}"
             exit 0
           fi
+          if [[ -z "${RELEASE_MUTATION_TOKEN}" ]]; then
+            echo "Failure state was preserved without a GitHub release annotation because the narrow mutation token was unavailable." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+          if [[ ! "${RELEASE_COMMIT}" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]; then
+            echo "Failure state was preserved without a GitHub release annotation because the exact release commit was unavailable." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+          export GH_TOKEN="${RELEASE_MUTATION_TOKEN}"
+          if ! gh release view "${FAILED_TAG}" --json body --jq .body > failed-release-body.md; then
+            echo "No tag-backed prerelease exists to annotate."
+            exit 0
+          fi
+          bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
+            --tag "${FAILED_TAG}" \
+            --target-sha "${RELEASE_COMMIT}" >/dev/null
           {
             echo
             echo "---"
             echo "Automated release processing stopped. The tag and prerelease are intentionally preserved."
             echo "Workflow evidence: ${RUN_URL}"
           } >> failed-release-body.md
-          gh release edit "${FAILED_TAG}" --prerelease --latest=false --notes-file failed-release-body.md
+          gh release edit "${FAILED_TAG}" --verify-tag --target "${RELEASE_COMMIT}" --prerelease --latest=false --notes-file failed-release-body.md
+          bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
+            --tag "${FAILED_TAG}" \
+            --target-sha "${RELEASE_COMMIT}" >/dev/null

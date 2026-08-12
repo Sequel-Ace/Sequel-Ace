@@ -407,6 +407,11 @@ module SequelAceRelease
       validate_release_tag_response!(created, expected_ref: expected_ref, target_sha: target_sha, created: true)
     end
 
+    def validate_release_tag(tag:, target_sha:)
+      validate_commit_sha!(target_sha, "release target SHA")
+      validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+    end
+
     def validate_release_target!(target_sha:, protected_paths:)
       validate_commit_sha!(target_sha, "release target SHA")
       current_main = ref_sha
@@ -458,8 +463,11 @@ module SequelAceRelease
       raise ValidationError, "GitHub returned malformed release-target ancestry evidence"
     end
 
-    def update_release(id:, title:, prerelease:, make_latest:)
+    def update_release(id:, tag:, target_sha:, title:, prerelease:, make_latest:)
+      validate_commit_sha!(target_sha, "release target SHA")
       request!("PATCH", "/repos/#{@repository}/releases/#{Integer(id)}", body: {
+        "tag_name" => tag,
+        "target_commitish" => target_sha,
         "name" => title,
         "draft" => false,
         "prerelease" => prerelease,
