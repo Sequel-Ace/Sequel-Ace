@@ -82,6 +82,15 @@ class GitHubClientTest < Minitest::Test
     assert_equal "/repos/Sequel-Ace/Sequel-Ace/git/refs", transport.requests.fetch(1).fetch(:path)
     assert_equal({ "ref" => "refs/tags/#{tag}", "sha" => target_sha }, transport.requests.fetch(1).fetch(:body))
     assert_equal "/repos/Sequel-Ace/Sequel-Ace/releases", transport.requests.fetch(5).fetch(:path)
+    assert_equal({
+      "tag_name" => tag,
+      "target_commitish" => target_sha,
+      "name" => "5.4.0",
+      "body" => "Notes",
+      "draft" => false,
+      "prerelease" => true,
+      "make_latest" => "false"
+    }, transport.requests.fetch(5).fetch(:body))
   end
 
   def test_reuses_only_an_exact_existing_prerelease
@@ -277,13 +286,32 @@ class GitHubClientTest < Minitest::Test
     assert_equal ["GET", "POST", "GET"], transport.requests.map { |request| request.fetch(:method) }
   end
 
-  def test_rejects_a_conflicting_or_annotated_release_tag_before_publishing
+  def test_rejects_an_annotated_release_tag_before_publishing
     target_sha = "a" * 40
     tag = "production/5.4.0-20105"
     transport = FakeTransport.new([
       http_response(body: {
         "ref" => "refs/tags/#{tag}",
         "object" => { "type" => "tag", "sha" => "b" * 40 }
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    error = assert_raises(SequelAceRelease::IntegrityError) do
+      client.create_or_validate_release_tag(tag: tag, target_sha: target_sha)
+    end
+
+    assert_includes error.message, "exact release commit"
+    assert_equal 1, transport.requests.length
+  end
+
+  def test_rejects_a_conflicting_lightweight_release_tag_before_publishing
+    target_sha = "a" * 40
+    tag = "production/5.4.0-20105"
+    transport = FakeTransport.new([
+      http_response(body: {
+        "ref" => "refs/tags/#{tag}",
+        "object" => { "type" => "commit", "sha" => "b" * 40 }
       })
     ])
     client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
