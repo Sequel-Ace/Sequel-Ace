@@ -53,14 +53,16 @@ struct SAHelpViewerView: View {
                 Image(systemName: "chevron.left")
             }
             .disabled(!model.canGoBack)
-            .help(NSLocalizedString("Show the previous page", comment: "help viewer : back button tooltip"))
+            .accessibilityLabel(Self.backTitle)
+            .help(Self.backTitle)
 
             Button {
                 onNavigate(.tableOfContents)
             } label: {
                 Image(systemName: "list.bullet")
             }
-            .help(NSLocalizedString("MySQL Table of Contents", comment: "help viewer : table of contents button tooltip"))
+            .accessibilityLabel(Self.tableOfContentsTitle)
+            .help(Self.tableOfContentsTitle)
 
             Button {
                 onNavigate(.forward)
@@ -68,7 +70,8 @@ struct SAHelpViewerView: View {
                 Image(systemName: "chevron.right")
             }
             .disabled(!model.canGoForward)
-            .help(NSLocalizedString("Show the next page", comment: "help viewer : forward button tooltip"))
+            .accessibilityLabel(Self.forwardTitle)
+            .help(Self.forwardTitle)
         }
         .frame(width: 104)
     }
@@ -76,6 +79,7 @@ struct SAHelpViewerView: View {
     private var searchField: some View {
         SAHelpSearchField(
             text: $model.searchString,
+            placeholder: model.target.searchFieldPlaceholder,
             sendsWholeSearchString: model.target.sendsWholeSearchString,
             focusRequest: model.focusSearchFieldRequest,
             onSubmit: onSubmitSearch
@@ -92,7 +96,15 @@ struct SAHelpViewerView: View {
         .pickerStyle(.segmented)
         .labelsHidden()
         .frame(width: 152)
+        // The legacy XIB explained this control with per-segment tooltips; SwiftUI
+        // has no per-segment equivalent, so one tooltip covers all three.
+        .accessibilityLabel(NSLocalizedString("Search target", comment: "help viewer : search target selector accessibility label"))
+        .help(SAHelpTarget.selectorHelpText)
     }
+
+    private static let backTitle = NSLocalizedString("Show the previous page", comment: "help viewer : back button tooltip")
+    private static let tableOfContentsTitle = NSLocalizedString("MySQL Table of Contents", comment: "help viewer : table of contents button tooltip")
+    private static let forwardTitle = NSLocalizedString("Show the next page", comment: "help viewer : forward button tooltip")
 }
 
 /// NSSearchField wrapper: SwiftUI has no equivalent of `sendsWholeSearchString`,
@@ -101,6 +113,8 @@ struct SAHelpViewerView: View {
 struct SAHelpSearchField: NSViewRepresentable {
 
     @Binding var text: String
+    /// Names the current search target, tying the field to the target selector.
+    var placeholder: String
     var sendsWholeSearchString: Bool
     /// Changing this value moves the keyboard focus into the field and selects its text.
     var focusRequest: Int
@@ -114,7 +128,7 @@ struct SAHelpSearchField: NSViewRepresentable {
         let searchField = NSSearchField()
         searchField.controlSize = .small
         searchField.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
-        searchField.placeholderString = NSLocalizedString("Search", comment: "help viewer : search field placeholder")
+        searchField.placeholderString = placeholder
         searchField.delegate = context.coordinator
         searchField.target = context.coordinator
         searchField.action = #selector(Coordinator.searchFieldAction(_:))
@@ -126,6 +140,9 @@ struct SAHelpSearchField: NSViewRepresentable {
 
         if nsView.stringValue != text {
             nsView.stringValue = text
+        }
+        if nsView.placeholderString != placeholder {
+            nsView.placeholderString = placeholder
         }
         (nsView.cell as? NSSearchFieldCell)?.sendsWholeSearchString = sendsWholeSearchString
 

@@ -114,6 +114,18 @@ final class SAHelpViewerModelTests: XCTestCase {
         XCTAssertTrue(SAHelpTarget.web.sendsWholeSearchString)
     }
 
+    /// The placeholder is what ties the search field to the target selector, so each
+    /// target has to name itself distinctly.
+    func testEachTargetNamesItselfInTheSearchFieldPlaceholder() {
+        let placeholders = SAHelpTarget.allCases.map(\.searchFieldPlaceholder)
+
+        XCTAssertEqual(Set(placeholders).count, SAHelpTarget.allCases.count)
+        for placeholder in placeholders {
+            XCTAssertFalse(placeholder.isEmpty)
+        }
+        XCTAssertFalse(SAHelpTarget.selectorHelpText.isEmpty)
+    }
+
     func testHelpTargetRawValuesMatchTheSegmentOrder() {
         XCTAssertEqual(SAHelpTarget.allCases.map(\.rawValue), [0, 1, 2])
         XCTAssertEqual(SAHelpTarget(rawValue: 0), .mysql)

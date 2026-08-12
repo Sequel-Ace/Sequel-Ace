@@ -23,6 +23,29 @@ enum SAHelpTarget: Int, CaseIterable {
     var sendsWholeSearchString: Bool {
         self != .mysql
     }
+
+    /// Placeholder naming what the search field will search. Switching the target
+    /// visibly rewrites the field, which is what ties the two controls together —
+    /// the segmented control on its own reads as an unrelated mode switch.
+    var searchFieldPlaceholder: String {
+        switch self {
+        case .mysql:
+            return NSLocalizedString("Search MySQL Help", comment: "help viewer : search field placeholder : mysql help")
+        case .page:
+            return NSLocalizedString("Search This Page", comment: "help viewer : search field placeholder : current page")
+        case .web:
+            return NSLocalizedString("Search Online Docs", comment: "help viewer : search field placeholder : online documentation")
+        }
+    }
+
+    /// Tooltip for the target selector, carrying the shortcuts the legacy XIB put
+    /// on the individual segments (SwiftUI has no per-segment tooltip).
+    static var selectorHelpText: String {
+        NSLocalizedString(
+            "Choose what the search field searches: MySQL Help (⇧⌘M), the current page (⇧⌘P), or the online documentation (⇧⌘W)",
+            comment: "help viewer : search target selector tooltip"
+        )
+    }
 }
 
 /// The decision the navigation policy makes for a single navigation action. The
