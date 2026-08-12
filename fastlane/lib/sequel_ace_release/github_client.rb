@@ -324,40 +324,53 @@ module SequelAceRelease
 
     def create_or_validate_release(tag:, target_sha:, title:, body:)
       validate_commit_sha!(target_sha, "release target SHA")
+      validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+
+      existing = nil
       begin
         existing = release_by_tag(tag)
-        return validate_release_response!(
+      rescue APIError => error
+        raise unless error.message.include?("HTTP 404")
+      end
+      if existing
+        validated = validate_release_response!(
           existing,
           tag: tag,
           title: title,
           body: body,
           created: false
         )
-      rescue APIError => error
-        raise unless error.message.include?("HTTP 404")
+        validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+        return validated
       end
 
+      validate_exact_release_tag!(tag: tag, target_sha: target_sha)
       begin
         created = create_release(tag: tag, target_sha: target_sha, title: title, body: body)
       rescue APIError => creation_error
         # GitHub can accept the write while the client loses the response. Read
         # the canonical tag endpoint before surfacing the original error so a
         # retry cannot create or misclassify a second release.
+        validate_exact_release_tag!(tag: tag, target_sha: target_sha)
         begin
           existing = release_by_tag(tag)
-          return validate_release_response!(
-            existing,
-            tag: tag,
-            title: title,
-            body: body,
-            created: false
-          )
         rescue APIError
           raise creation_error
         end
+        validated = validate_release_response!(
+          existing,
+          tag: tag,
+          title: title,
+          body: body,
+          created: false
+        )
+        validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+        return validated
       end
 
-      validate_release_response!(created, tag: tag, title: title, body: body, created: true)
+      validated = validate_release_response!(created, tag: tag, title: title, body: body, created: true)
+      validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+      validated
     end
 
     def create_or_validate_release_tag(tag:, target_sha:)
@@ -504,6 +517,12 @@ module SequelAceRelease
     end
 
     private
+
+    def validate_exact_release_tag!(tag:, target_sha:)
+      expected_ref = "refs/tags/#{tag}"
+      response = request!("GET", "/repos/#{@repository}/git/ref/tags/#{URI.encode_www_form_component(tag)}")
+      validate_release_tag_response!(response, expected_ref: expected_ref, target_sha: target_sha, created: false)
+    end
 
     def validate_release_tag_response!(response, expected_ref:, target_sha:, created:)
       unless response.is_a?(Hash) && response["ref"] == expected_ref &&

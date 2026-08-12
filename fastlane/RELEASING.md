@@ -133,7 +133,9 @@ the tag-change event Xcode Cloud needs. An existing tag is reusable only when
 it is a lightweight ref that resolves directly to the exact release commit.
 Prerelease creation is idempotent: an existing release is reused only when its
 tag, title, body, draft flag, and prerelease flag exactly match the approved
-release. If explicit tag creation succeeds but GitHub has no release behind
+release. The direct-commit tag ref is revalidated immediately before and after
+both prerelease creation and reuse so a moved tag cannot be accepted. If
+explicit tag creation succeeds but GitHub has no release behind
 that tag, a newly approved `mode=resume` plan against the exact release commit
 reuses the same canonical build. The recovery validates the missing release
 and, if Cloud already consumed the tag, binds the exact Production workflow,
