@@ -43,19 +43,16 @@ class WorkflowRecoveryTest < Minitest::Test
       ".github/workflows/release.yml:Mint repository-scoped release App token" => branch_permissions,
       ".github/workflows/release.yml:Refresh release App token before merging" => branch_permissions,
       ".github/workflows/release.yml:Mint exact-target release mutation token" => release_mutation_permissions,
-      ".github/workflows/release.yml:Mint release App token for artifact wake state" => [],
       ".github/workflows/release.yml:Refresh release App token for failure cleanup" => cleanup_permissions,
       ".github/workflows/release.yml:Mint release mutation token for failure annotation" => release_mutation_permissions,
       ".github/workflows/release_alpha_retry.yml:Mint repository-scoped release App token" => [["permission-contents", "read"]],
-      ".github/workflows/release_alpha_retry.yml:Mint release App token for artifact wake state" => [],
       ".github/workflows/release_alpha_retry.yml:Mint release mutation token for failure annotation" => release_mutation_permissions,
       ".github/workflows/release_feasibility.yml:Mint a fresh release App token for the GitHub probe" => cleanup_permissions,
       ".github/workflows/release_feasibility.yml:Refresh release App token for probe cleanup" => cleanup_permissions,
       ".github/workflows/release_finalize.yml:Mint exact-target release mutation token" => release_mutation_permissions,
       ".github/workflows/release_publish.yml:Mint release mutation token for Cloud failure annotation" => release_mutation_permissions,
       ".github/workflows/release_publish.yml:Mint release mutation token for Alpha recovery annotation" => release_mutation_permissions,
-      ".github/workflows/release_publish.yml:Mint release mutation token for terminal failure annotation" => release_mutation_permissions,
-      ".github/workflows/release_publish.yml:Mint release App token for artifact wake state" => []
+      ".github/workflows/release_publish.yml:Mint release mutation token for terminal failure annotation" => release_mutation_permissions
     }
     observed_steps = []
 
@@ -145,24 +142,30 @@ class WorkflowRecoveryTest < Minitest::Test
     refute_includes exact_finalize_token, "continue-on-error: true"
   end
 
-  def test_artifact_wake_tokens_are_repository_scoped_and_used_only_by_the_state_adapter
+  def test_artifact_wake_adapter_mints_only_an_exact_repository_variables_token
     {
       ".github/workflows/release.yml" => "Arm event-driven artifact publication for the exact handoff",
       ".github/workflows/release_alpha_retry.yml" => "Arm event-driven artifact publication for the exact Alpha retry",
       ".github/workflows/release_publish.yml" => "Clear only the exact settled handoff"
     }.each do |path, consumer_name|
       workflow = File.read(repo_path(path))
-      token = workflow.split("- name: Mint release App token for artifact wake state", 2).fetch(1)
-                      .split("- name: #{consumer_name}", 2).first
       consumer = workflow.split("- name: #{consumer_name}", 2).fetch(1)
                          .split(/^\s{6}- name: /, 2).first
 
-      assert_includes token, "owner: Sequel-Ace"
-      assert_includes token, "repositories: Sequel-Ace"
-      refute_match(/permission-[a-z-]+:/, token)
+      refute_includes workflow, "Mint release App token for artifact wake state"
       assert_includes consumer, "Scripts/release-artifact-wake-state.sh"
-      assert_includes consumer, "steps.artifact_state_token.outputs.token"
+      assert_includes consumer, "GITHUB_REPOSITORY_ID: ${{ github.repository_id }}"
+      assert_includes consumer, "SA_RELEASE_GITHUB_APP_CLIENT_ID"
+      assert_includes consumer, "SA_RELEASE_GITHUB_APP_PRIVATE_KEY"
+      refute_includes consumer, "GH_TOKEN:"
     end
+
+    adapter = File.read(repo_path("Scripts/release-artifact-wake-state.sh"))
+    assert_includes adapter, 'permissions:{actions_variables:"write"}'
+    assert_includes adapter, 'repository_ids:[$id]'
+    assert_includes adapter, '.permissions.actions_variables == "write"'
+    assert_includes adapter, '.repositories | type == "array" and length == 1'
+    assert_includes adapter, "--method DELETE installation/token"
   end
 
   def test_optional_release_annotations_cannot_recreate_a_missing_tag_from_main
@@ -260,6 +263,12 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes recovery_job, '"mode" => "resume"'
     assert_includes recovery_job, '"recovery_tag" => recovery.fetch("predecessor_tag")'
     assert_includes recovery_job, '"approval_sha256" => approval.fetch("sha256")'
+    recovery_validation = recovery_job.split("- name: Revalidate the durable failure and dispatch the next RC", 2).fetch(1)
+    assert_includes recovery_validation, 'RELEASE_CHANNEL: ${{ needs.discover.outputs.channel }}'
+    assert_includes recovery_validation, 'RELEASE_VERSION: ${{ needs.discover.outputs.version }}'
+    run_body = recovery_validation.split("run: |", 2).fetch(1)
+    refute_includes run_body, '${{ needs.discover.outputs.channel }}'
+    refute_includes run_body, '${{ needs.discover.outputs.version }}'
 
     assert_includes release, 'RELEASE_ACTOR: ${{ github.actor }}'
     assert_includes release, '"${RELEASE_ACTOR}" == "github-actions[bot]"'
@@ -286,9 +295,11 @@ class WorkflowRecoveryTest < Minitest::Test
     release = File.read(repo_path(".github/workflows/release.yml"))
     cleanup_token = release[/\s+if: .*\n\s+id: cleanup_app_token/, 0]
     cleanup_step = release.split("- name: Reconcile a failed release branch", 2).fetch(1).lines.first(2).join
-    prerelease_step = release.split("- name: Preserve an explanatory failed prerelease", 2).fetch(1).lines.first(2).join
+    prerelease_step = release.split("- name: Preserve an explanatory failed prerelease", 2).fetch(1)
+                             .split("continue-on-error:", 2).first
     alpha = File.read(repo_path(".github/workflows/release_alpha_retry.yml"))
-    alpha_step = alpha.split("- name: Document transient Alpha retry failure without replacing the handoff", 2).fetch(1).lines.first(2).join
+    alpha_step = alpha.split("- name: Document transient Alpha retry failure without replacing the handoff", 2).fetch(1)
+                      .split("continue-on-error:", 2).first
 
     assert_includes cleanup_token, "failure() || cancelled()"
     assert_includes cleanup_step, "failure() || cancelled()"
@@ -474,8 +485,10 @@ class WorkflowRecoveryTest < Minitest::Test
 
     assert_includes settlement, "needs.discover.outputs.action == 'settled'"
     assert_includes settlement, "needs.cloud_failure.result == 'success'"
+    assert_includes settlement, "needs.discover.outputs.failure_reason != 'cloud_build_number_advanced'"
     assert_includes settlement, "needs.publish.result == 'success'"
     assert_includes settlement, "needs.recover_publish_failure.outputs.polling_needed == 'false'"
+    assert_includes settlement, "permissions:\n      contents: read"
     assert_includes settlement, 'release-artifact-wake-state.sh clear "${SETTLED_TAG}"'
     refute_includes settlement, "needs.discover.outputs.action == 'pending'"
 
@@ -484,6 +497,47 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes recovery, "polling_needed: ${{ steps.polling.outputs.polling_needed }}"
     assert_includes recovery, 'echo "polling_needed=false"'
     assert_includes recovery, 'echo "polling_needed=true"'
+  end
+
+  def test_forward_recovery_keeps_the_predecessor_armed_until_the_child_handoff_replaces_it
+    release = File.read(repo_path(".github/workflows/release.yml"))
+    arm = release.split("- name: Arm event-driven artifact publication for the exact handoff", 2).fetch(1)
+                 .split("- name: Preserve a recoverable handoff", 2).first
+    publisher = File.read(repo_path(".github/workflows/release_publish.yml"))
+    settlement = publisher.split("  settle_artifact_wake_state:", 2).fetch(1)
+
+    assert_includes arm, 'EXPECTED_PREDECESSOR_TAG: ${{ inputs.recovery_tag }}'
+    assert_includes arm, 'arguments+=("${EXPECTED_PREDECESSOR_TAG}")'
+    assert_includes arm, 'release-artifact-wake-state.sh "${arguments[@]}"'
+    assert_includes settlement, "failure_reason != 'cloud_build_number_advanced'"
+  end
+
+  def test_wake_state_failures_preserve_the_durable_cloud_running_handoff
+    release = File.read(repo_path(".github/workflows/release.yml"))
+    release_arm = release.split("- name: Arm event-driven artifact publication for the exact handoff", 2).fetch(1)
+                         .split("- name: Preserve a recoverable handoff", 2).first
+    release_recovery = release.split("- name: Preserve a recoverable handoff when wake-state arming fails", 2).fetch(1)
+                              .split("- name: Record asynchronous Cloud handoff", 2).first
+
+    assert_includes release_arm, "id: artifact_wake"
+    assert_includes release_recovery, "steps.initial_archive.outcome == 'success'"
+    assert_includes release_recovery, "steps.artifact_wake.outcome == 'failure'"
+    assert_includes release_recovery, "remains \\`cloud_running\\`"
+    assert_includes release, "steps.initial_archive.outcome != 'success' || steps.artifact_wake.outcome != 'failure'"
+    refute_includes release_recovery, "record-failure"
+
+    alpha = File.read(repo_path(".github/workflows/release_alpha_retry.yml"))
+    alpha_arm = alpha.split("- name: Arm event-driven artifact publication for the exact Alpha retry", 2).fetch(1)
+                     .split("- name: Preserve a recoverable Alpha handoff", 2).first
+    alpha_recovery = alpha.split("- name: Preserve a recoverable Alpha handoff when wake-state arming fails", 2).fetch(1)
+                          .split("- name: Record asynchronous Alpha retry handoff", 2).first
+    assert_includes alpha, "id: retry_archive"
+    assert_includes alpha_arm, "id: artifact_wake"
+    assert_includes alpha_recovery, "steps.retry_archive.outcome == 'success'"
+    assert_includes alpha_recovery, "steps.artifact_wake.outcome == 'failure'"
+    assert_includes alpha_recovery, "remains \\`cloud_running\\`"
+    assert_includes alpha, "steps.retry_archive.outcome != 'success' || steps.artifact_wake.outcome != 'failure'"
+    refute_includes alpha_recovery, "record-failure"
   end
 
   def test_publisher_never_inspects_alpha_until_production_is_ready
@@ -1060,7 +1114,8 @@ class WorkflowRecoveryTest < Minitest::Test
                             .split("- name: Mint repository-scoped release App token", 2).first
     validation = workflow.split("- name: Pull and validate the preserved beta release state", 2).fetch(1)
                          .split("- name: Reuse or start one Alpha-only Xcode Cloud retry", 2).first
-    failure_header = workflow.split("- name: Document transient Alpha retry failure without replacing the handoff", 2).fetch(1).lines.first(2).join
+    failure_header = workflow.split("- name: Document transient Alpha retry failure without replacing the handoff", 2).fetch(1)
+                             .split("continue-on-error:", 2).first
 
     assert_includes authorization, "id: authorization"
     assert_includes authorization, 'echo "authorized=true" >> "${GITHUB_OUTPUT}"'

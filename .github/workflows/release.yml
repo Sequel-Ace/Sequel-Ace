@@ -667,23 +667,34 @@ jobs:
           Scripts/archive-release-to-ghcr.sh push "${reference}" release-archive > initial-archive-evidence.json
           echo "reference=${reference}" >> "${GITHUB_OUTPUT}"
 
-      # create-github-app-token does not yet expose GitHub's Variables permission
-      # as a narrow input. This repository-only token inherits the release App's
-      # minimal installed permissions and is passed only to the state adapter.
-      - name: Mint release App token for artifact wake state
-        id: artifact_state_token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
-          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
-          owner: Sequel-Ace
-          repositories: Sequel-Ace
-
       - name: Arm event-driven artifact publication for the exact handoff
+        id: artifact_wake
         env:
-          GH_TOKEN: ${{ steps.artifact_state_token.outputs.token }}
+          EXPECTED_PREDECESSOR_TAG: ${{ inputs.recovery_tag }}
+          GITHUB_REPOSITORY_ID: ${{ github.repository_id }}
           RELEASE_TAG: ${{ steps.prerelease.outputs.tag }}
-        run: Scripts/release-artifact-wake-state.sh arm "${RELEASE_TAG}"
+          SA_RELEASE_GITHUB_APP_CLIENT_ID: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          SA_RELEASE_GITHUB_APP_PRIVATE_KEY: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          arguments=(arm "${RELEASE_TAG}")
+          if [[ -n "${EXPECTED_PREDECESSOR_TAG}" ]]; then
+            arguments+=("${EXPECTED_PREDECESSOR_TAG}")
+          fi
+          Scripts/release-artifact-wake-state.sh "${arguments[@]}"
+
+      - name: Preserve a recoverable handoff when wake-state arming fails
+        if: failure() && steps.initial_archive.outcome == 'success' && steps.artifact_wake.outcome == 'failure'
+        env:
+          ARCHIVE_REFERENCE: ${{ steps.initial_archive.outputs.reference }}
+          RELEASE_TAG: ${{ steps.prerelease.outputs.tag }}
+        run: |
+          {
+            echo "### Artifact wake-state recovery required"
+            echo "- The exact \`${RELEASE_TAG}\` handoff remains \`cloud_running\` in \`${ARCHIVE_REFERENCE}\`."
+            echo "- The prerelease and archive were not marked terminal or replaced."
+            echo "- Retry the release workflow or manually dispatch Release Artifact Publisher for this exact tag; its live Cloud and archive gates remain authoritative."
+          } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Record asynchronous Cloud handoff
         run: |
@@ -731,7 +742,10 @@ jobs:
             --output branch-cleanup.json
 
       - name: Mint release mutation token for failure annotation
-        if: (failure() || cancelled()) && steps.release_context.outputs.tag != ''
+        if: >-
+          (failure() || cancelled()) &&
+          steps.release_context.outputs.tag != '' &&
+          (steps.initial_archive.outcome != 'success' || steps.artifact_wake.outcome != 'failure')
         id: failure_release_token
         continue-on-error: true
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -744,7 +758,10 @@ jobs:
           permission-workflows: write
 
       - name: Preserve an explanatory failed prerelease
-        if: (failure() || cancelled()) && steps.release_context.outputs.tag != ''
+        if: >-
+          (failure() || cancelled()) &&
+          steps.release_context.outputs.tag != '' &&
+          (steps.initial_archive.outcome != 'success' || steps.artifact_wake.outcome != 'failure')
         continue-on-error: true
         env:
           GHCR_TOKEN: ${{ github.token }}

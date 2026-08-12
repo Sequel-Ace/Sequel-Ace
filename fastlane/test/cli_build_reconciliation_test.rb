@@ -41,6 +41,17 @@ class CliBuildReconciliationTest < Minitest::Test
         )
       end
     end
+
+    assert_raises(SequelAceRelease::ValidationError) do
+      cli.send(
+        :validate_forward_recovery_pr_evidence!,
+        evidence.merge("expected_recovery_build" => 20_112),
+        approval: release_approval,
+        approval_sha: approval_sha,
+        expected_sha: expected_sha,
+        requested_build: 20_113
+      )
+    end
   end
 
   def test_canonical_tag_baseline_includes_production_and_beta_tags

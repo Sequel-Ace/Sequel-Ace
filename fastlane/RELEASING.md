@@ -110,15 +110,15 @@ Long release-PR and feasibility-probe check polling uses the job-scoped
 `GITHUB_TOKEN`. Each workflow mints a fresh release App installation token
 immediately before an App-only mutation and independently refreshes it for
 failure cleanup. Every token explicitly requests only the permissions needed by
-that mutation, except the short-lived repository-only wake-state token:
-`actions/create-github-app-token` 3.2.0 does not expose GitHub's newer Variables
-permission as a narrow input, so that token inherits only the release App's
-minimal installed repository permissions and is passed to one fixed adapter
-step. In particular, Workflows write is absent from branch, PR, check, and
-cleanup tokens and is present only on fresh tokens used for exact-target GitHub
-release mutations. This prevents both unnecessary privilege reuse and the
-one-hour App-token lifetime from stranding a PR or deterministic release branch
-during the two-hour check window. See GitHub's
+that mutation. Because `actions/create-github-app-token` 3.2.0 does not expose
+GitHub's Variables permission, the fixed wake-state adapter directly requests a
+short-lived installation token limited to this repository ID and exactly
+`actions_variables: write`, verifies the returned repository and permission
+set, and revokes the token after use. In particular, Workflows write is absent
+from branch, PR, check, cleanup, and wake-state tokens and is present only on
+fresh tokens used for exact-target GitHub release mutations. This prevents both
+unnecessary privilege reuse and the one-hour App-token lifetime from stranding
+a PR or deterministic release branch during the two-hour check window. See GitHub's
 [repository-variable API](https://docs.github.com/en/rest/actions/variables#update-a-repository-variable).
 
 Release starts require the frozen SHA to equal the workflow-dispatch `main`
@@ -185,7 +185,12 @@ tag. Idle schedules and unrelated Xcode Cloud checks therefore allocate no
 runner and never download ORAS. The release or Alpha-retry workflow arms the
 variable only after its immutable handoff is in private GHCR; terminal or
 successful processing clears only that same tag, while transient failures leave
-it armed. The Linux job performs one exact Cloud-status read and exits; it
+it armed. A forward-RC child replaces its exact predecessor tag in one guarded
+write only after the new `cloud_running` archive is durable; the predecessor is
+not cleared if forward dispatch fails. The state adapter retries transient API
+failures. If arming still fails after the durable archive exists, failure
+cleanup preserves that discoverable `cloud_running` handoff and prerelease for
+an exact manual publisher dispatch instead of marking it terminal. The Linux job performs one exact Cloud-status read and exits; it
 starts the protected GitHub-hosted `macos-15` verification job only after every
 required Production and Alpha run is complete and related to the expected app
 build. Authorized manual recovery requires

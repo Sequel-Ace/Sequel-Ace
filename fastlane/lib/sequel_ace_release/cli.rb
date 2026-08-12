@@ -1156,7 +1156,7 @@ module SequelAceRelease
               recovery["approval_sha256"] == approval_sha &&
               recovery["expected_recovery_build"].is_a?(Integer) &&
               recovery["expected_recovery_build"].positive? &&
-              recovery["expected_recovery_build"] <= requested_build
+              recovery["expected_recovery_build"] == requested_build
       raise ValidationError, "forward-recovery evidence does not match the requested release PR" unless valid
     end
 

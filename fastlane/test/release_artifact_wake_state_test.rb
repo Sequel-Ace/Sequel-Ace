@@ -27,6 +27,43 @@ class ReleaseArtifactWakeStateTest < Minitest::Test
     end
   end
 
+  def test_arm_atomically_replaces_the_exact_predecessor_for_a_forward_recovery
+    recovery_tag = "production/5.4.0-20111"
+    with_fake_github(PRODUCTION_TAG) do |run, state|
+      stdout, stderr, status = run.call("arm", recovery_tag, PRODUCTION_TAG)
+
+      assert_predicate status, :success?, stderr
+      assert_includes stdout, "Atomically forwarding artifact wake state"
+      assert_equal recovery_tag, File.read(state).strip
+    end
+  end
+
+  def test_forward_replacement_requires_the_live_exact_predecessor
+    recovery_tag = "production/5.4.0-20111"
+    with_fake_github("production/5.4.0-20110") do |run, state|
+      _stdout, stderr, status = run.call("arm", recovery_tag, PRODUCTION_TAG)
+
+      refute_predicate status, :success?
+      assert_includes stderr, "refusing to replace it"
+      assert_equal "production/5.4.0-20110", File.read(state).strip
+    end
+  end
+
+  def test_forward_replacement_cannot_change_release_identity_or_move_backward
+    with_fake_github(PRODUCTION_TAG) do |run, state|
+      [
+        "beta/5.4.0-20111",
+        "production/5.4.1-20111",
+        "production/5.4.0-20108"
+      ].each do |candidate|
+        _stdout, _stderr, status = run.call("arm", candidate, PRODUCTION_TAG)
+
+        refute_predicate status, :success?, candidate
+        assert_equal PRODUCTION_TAG, File.read(state).strip
+      end
+    end
+  end
+
   def test_clear_is_compare_and_set
     with_fake_github(PRODUCTION_TAG) do |run, state|
       _stdout, stderr, status = run.call("clear", PRODUCTION_TAG)
@@ -57,22 +94,53 @@ class ReleaseArtifactWakeStateTest < Minitest::Test
     end
   end
 
+  def test_workflow_credentials_mint_and_revoke_an_exact_repository_variables_token
+    with_fake_github("none", provided_token: false) do |run, state, log|
+      _stdout, stderr, status = run.call("arm", PRODUCTION_TAG)
+
+      assert_predicate status, :success?, stderr
+      assert_equal PRODUCTION_TAG, File.read(state).strip
+      api_log = File.read(log)
+      assert_includes api_log, "repos/Sequel-Ace/Sequel-Ace/installation"
+      assert_includes api_log, "app/installations/123/access_tokens"
+      assert_includes api_log, '"repository_ids":[12345]'
+      assert_includes api_log, '"actions_variables":"write"'
+      assert_includes api_log, "--method DELETE installation/token"
+    end
+  end
+
   private
 
   def repo_path(relative_path)
     File.expand_path("../..", __dir__) + "/#{relative_path}"
   end
 
-  def with_fake_github(initial_value)
+  def with_fake_github(initial_value, provided_token: true)
     Dir.mktmpdir("sequel-ace-wake-state-test") do |directory|
       bin_directory = File.join(directory, "bin")
       state_path = File.join(directory, "state")
+      log_path = File.join(directory, "api-log")
       FileUtils.mkdir_p(bin_directory)
       File.write(state_path, "#{initial_value}\n")
+      File.write(log_path, "")
       gh_path = File.join(bin_directory, "gh")
       File.write(gh_path, <<~'SH')
         #!/bin/bash
         set -euo pipefail
+        printf '%s\n' "$*" >> "${FAKE_GH_LOG}"
+        if [[ " $* " == *" app/installations/123/access_tokens "* ]]; then
+          payload="$(cat)"
+          printf '%s\n' "${payload}" >> "${FAKE_GH_LOG}"
+          printf '%s\n' '{"token":"generated-test-token","permissions":{"actions_variables":"write","metadata":"read"},"repositories":[{"id":12345}]}'
+          exit 0
+        fi
+        if [[ " $* " == *" --method DELETE installation/token "* ]]; then
+          exit 0
+        fi
+        if [[ " $* " == *" repos/Sequel-Ace/Sequel-Ace/installation "* ]]; then
+          printf '%s\n' '{"id":123}'
+          exit 0
+        fi
         if [[ " $* " == *" --method PATCH "* ]]; then
           for argument in "$@"; do
             if [[ "${argument}" == value=* ]]; then
@@ -86,17 +154,36 @@ class ReleaseArtifactWakeStateTest < Minitest::Test
         cat "${FAKE_GH_STATE}"
       SH
       FileUtils.chmod(0o755, gh_path)
+      openssl_path = File.join(bin_directory, "openssl")
+      File.write(openssl_path, <<~'SH')
+        #!/bin/bash
+        set -euo pipefail
+        cat >/dev/null
+        printf 'encoded'
+      SH
+      FileUtils.chmod(0o755, openssl_path)
 
-      runner = lambda do |operation, tag|
+      runner = lambda do |operation, tag, predecessor = nil|
         environment = {
           "FAKE_GH_STATE" => state_path,
-          "GH_TOKEN" => "test-token",
+          "FAKE_GH_LOG" => log_path,
           "GITHUB_REPOSITORY" => "Sequel-Ace/Sequel-Ace",
           "PATH" => "#{bin_directory}:#{ENV.fetch('PATH')}"
         }
-        Open3.capture3(environment, repo_path("Scripts/release-artifact-wake-state.sh"), operation, tag)
+        if provided_token
+          environment["GH_TOKEN"] = "test-token"
+        else
+          environment.merge!(
+            "GITHUB_REPOSITORY_ID" => "12345",
+            "SA_RELEASE_GITHUB_APP_CLIENT_ID" => "Iv1.test-client",
+            "SA_RELEASE_GITHUB_APP_PRIVATE_KEY" => "test-private-key"
+          )
+        end
+        arguments = [repo_path("Scripts/release-artifact-wake-state.sh"), operation, tag]
+        arguments << predecessor if predecessor
+        Open3.capture3(environment, *arguments)
       end
-      yield runner, state_path
+      yield runner, state_path, log_path
     end
   end
 end

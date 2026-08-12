@@ -517,6 +517,8 @@ jobs:
         env:
           ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
           EXPECTED_TAG: ${{ needs.discover.outputs.tag }}
+          RELEASE_CHANNEL: ${{ needs.discover.outputs.channel }}
+          RELEASE_VERSION: ${{ needs.discover.outputs.version }}
           GHCR_TOKEN: ${{ github.token }}
           GHCR_USERNAME: ${{ github.actor }}
           GH_TOKEN: ${{ github.token }}
@@ -532,8 +534,8 @@ jobs:
             --release-body recovery-archive/release-body.md \
             --tag "${EXPECTED_TAG}" \
             --current-sha "${GITHUB_SHA}" \
-            --channel "${{ needs.discover.outputs.channel }}" \
-            --version "${{ needs.discover.outputs.version }}" \
+            --channel "${RELEASE_CHANNEL}" \
+            --version "${RELEASE_VERSION}" \
             --previous-tag "$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("previous_tag")' recovery-archive/approval.json)" \
             --output forward-recovery.json
 
@@ -1139,7 +1141,11 @@ jobs:
       needs.discover.outputs.tag != '' &&
       (
         needs.discover.outputs.action == 'settled' ||
-        (needs.discover.outputs.action == 'fail' && needs.cloud_failure.result == 'success') ||
+        (
+          needs.discover.outputs.action == 'fail' &&
+          needs.discover.outputs.failure_reason != 'cloud_build_number_advanced' &&
+          needs.cloud_failure.result == 'success'
+        ) ||
         (needs.discover.outputs.action == 'publish' && needs.publish.result == 'success') ||
         (
           needs.discover.outputs.action == 'publish' &&
@@ -1150,7 +1156,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     environment: sequel-ace-release
-    permissions: {}
+    permissions:
+      contents: read
     steps:
       - name: Check out immutable release tooling
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -1158,20 +1165,10 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: false
 
-      # create-github-app-token does not yet expose GitHub's Variables permission
-      # as a narrow input. This repository-only token inherits the release App's
-      # minimal installed permissions and is passed only to the state adapter.
-      - name: Mint release App token for artifact wake state
-        id: artifact_state_token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
-          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
-          owner: Sequel-Ace
-          repositories: Sequel-Ace
-
       - name: Clear only the exact settled handoff
         env:
-          GH_TOKEN: ${{ steps.artifact_state_token.outputs.token }}
+          GITHUB_REPOSITORY_ID: ${{ github.repository_id }}
+          SA_RELEASE_GITHUB_APP_CLIENT_ID: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          SA_RELEASE_GITHUB_APP_PRIVATE_KEY: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
           SETTLED_TAG: ${{ needs.discover.outputs.tag }}
         run: Scripts/release-artifact-wake-state.sh clear "${SETTLED_TAG}"
