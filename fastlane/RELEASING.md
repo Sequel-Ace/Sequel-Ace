@@ -126,6 +126,11 @@ package-manager install.
 `.github/workflows/release.yml` deliberately stops after the exact merge, tag,
 prerelease, and `cloud_running` manifest have been pushed to private GHCR. It
 does not keep a macOS runner alive while Xcode Cloud builds or Apple notarizes.
+The release tool creates and verifies the lightweight Git tag through GitHub's
+Git-reference API before it publishes the prerelease. Do not let the Releases
+API synthesize a missing tag: that path can publish a release without emitting
+the tag-change event Xcode Cloud needs. An existing tag is reusable only when
+it is a lightweight ref that resolves directly to the exact release commit.
 `.github/workflows/release_publish.yml` runs immediately after a successful
 handoff and at minutes 11 and 41 each hour. Its Linux job performs one exact
 Cloud-status read and exits; it starts the protected macOS verification job only
@@ -162,7 +167,8 @@ public API does not expose the built-in
 Notarize post-action or the configured **Next Build Number** setting:
 
 - **Production:** scheme `Sequel Ace Release`; start on `production/*` and
-  `beta/*` tags; add the built-in Notarize post-action.
+  `beta/*` tags; allow manual starts for only those same tag prefixes (not
+  branches or pull requests); add the built-in Notarize post-action.
 - **Alpha:** scheme `Sequel Ace Beta`; remove the every-push-to-`main` trigger;
   retain manual `main`, schedule `main` nightly at 03:00
   `America/Los_Angeles`, and start on `beta/*` tags; add the built-in Notarize
@@ -176,6 +182,13 @@ requires both its Production and Alpha artifacts.
 After saving both workflows, manually start only Alpha from the current `main`
 commit. Record that Alpha build-run ID for the feasibility workflow. Do not
 manually start Production during setup.
+
+When changing Xcode Cloud start conditions through the App Store Connect API,
+read the complete workflow first and send every start-condition field that must
+remain enabled in the same update. Apple treats those attributes as a set; a
+partial update that supplies only `manualTagStartCondition` can clear the
+existing `tagStartCondition`. Always read back both conditions before creating
+a release tag.
 
 `.github/workflows/release_finalize.yml` checks for Production prereleases at
 minute 17 every six hours and also supports an authorized manual recovery run.

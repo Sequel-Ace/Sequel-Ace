@@ -438,13 +438,17 @@ module SequelAceRelease
         target_sha: options[:target_sha],
         protected_paths: release_paths
       )
+      tag = client.create_or_validate_release_tag(
+        tag: naming.tag,
+        target_sha: options[:target_sha]
+      )
       release = client.create_release(
         tag: naming.tag,
         target_sha: options[:target_sha],
         title: naming.title,
         body: options[:body]
       )
-      emit({ "naming" => naming.to_h, "target_validation" => target_validation, "release" => release }, options[:output])
+      emit({ "naming" => naming.to_h, "target_validation" => target_validation, "tag" => tag, "release" => release }, options[:output])
     end
 
     def github_validate_release_target(arguments)

@@ -322,6 +322,31 @@ module SequelAceRelease
       })
     end
 
+    def create_or_validate_release_tag(tag:, target_sha:)
+      validate_commit_sha!(target_sha, "release target SHA")
+      expected_ref = "refs/tags/#{tag}"
+
+      begin
+        existing = request!("GET", "/repos/#{@repository}/git/ref/tags/#{URI.encode_www_form_component(tag)}")
+        return validate_release_tag_response!(existing, expected_ref: expected_ref, target_sha: target_sha, created: false)
+      rescue APIError => error
+        raise unless error.message.include?("HTTP 404")
+      end
+
+      begin
+        created = request!("POST", "/repos/#{@repository}/git/refs", body: {
+          "ref" => expected_ref,
+          "sha" => target_sha
+        })
+      rescue APIError => error
+        raise unless error.message.include?("HTTP 422")
+
+        raced = request!("GET", "/repos/#{@repository}/git/ref/tags/#{URI.encode_www_form_component(tag)}")
+        return validate_release_tag_response!(raced, expected_ref: expected_ref, target_sha: target_sha, created: false)
+      end
+      validate_release_tag_response!(created, expected_ref: expected_ref, target_sha: target_sha, created: true)
+    end
+
     def validate_release_target!(target_sha:, protected_paths:)
       validate_commit_sha!(target_sha, "release target SHA")
       current_main = ref_sha
@@ -441,6 +466,15 @@ module SequelAceRelease
     end
 
     private
+
+    def validate_release_tag_response!(response, expected_ref:, target_sha:, created:)
+      unless response.is_a?(Hash) && response["ref"] == expected_ref &&
+             response.dig("object", "type") == "commit" && response.dig("object", "sha") == target_sha
+        raise IntegrityError, "release tag does not resolve directly to the exact release commit"
+      end
+
+      response.merge("created" => created)
+    end
 
     def verified_commit_evidence(commit)
       validate_commit_sha!(commit.fetch("oid"), "created release commit SHA")

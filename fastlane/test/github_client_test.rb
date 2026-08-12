@@ -48,6 +48,85 @@ class GitHubClientTest < Minitest::Test
     assert_equal "/repos/Sequel-Ace/Sequel-Ace/releases/latest", transport.requests.first[:path]
   end
 
+  def test_creates_the_lightweight_release_tag_before_publishing_the_release
+    target_sha = "a" * 40
+    tag = "production/5.4.0-20105"
+    transport = FakeTransport.new([
+      http_response(status: 404, body: { "message" => "Not Found" }),
+      http_response(body: {
+        "ref" => "refs/tags/#{tag}",
+        "object" => { "type" => "commit", "sha" => target_sha }
+      }),
+      http_response(body: { "id" => 100, "tag_name" => tag })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    tag_result = client.create_or_validate_release_tag(tag: tag, target_sha: target_sha)
+    release = client.create_release(tag: tag, target_sha: target_sha, title: "5.4.0", body: "Notes")
+
+    assert_equal true, tag_result.fetch("created")
+    assert_equal tag, release.fetch("tag_name")
+    assert_equal ["GET", "POST", "POST"], transport.requests.map { |request| request.fetch(:method) }
+    assert_equal "/repos/Sequel-Ace/Sequel-Ace/git/refs", transport.requests.fetch(1).fetch(:path)
+    assert_equal({ "ref" => "refs/tags/#{tag}", "sha" => target_sha }, transport.requests.fetch(1).fetch(:body))
+    assert_equal "/repos/Sequel-Ace/Sequel-Ace/releases", transport.requests.fetch(2).fetch(:path)
+  end
+
+  def test_reuses_only_an_existing_lightweight_tag_at_the_exact_release_commit
+    target_sha = "a" * 40
+    tag = "production/5.4.0-20105"
+    transport = FakeTransport.new([
+      http_response(body: {
+        "ref" => "refs/tags/#{tag}",
+        "object" => { "type" => "commit", "sha" => target_sha }
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    result = client.create_or_validate_release_tag(tag: tag, target_sha: target_sha)
+
+    assert_equal false, result.fetch("created")
+    assert_equal ["GET"], transport.requests.map { |request| request.fetch(:method) }
+  end
+
+  def test_validates_the_winning_tag_when_creation_races_another_request
+    target_sha = "a" * 40
+    tag = "production/5.4.0-20105"
+    transport = FakeTransport.new([
+      http_response(status: 404, body: { "message" => "Not Found" }),
+      http_response(status: 422, body: { "message" => "Reference already exists" }),
+      http_response(body: {
+        "ref" => "refs/tags/#{tag}",
+        "object" => { "type" => "commit", "sha" => target_sha }
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    result = client.create_or_validate_release_tag(tag: tag, target_sha: target_sha)
+
+    assert_equal false, result.fetch("created")
+    assert_equal ["GET", "POST", "GET"], transport.requests.map { |request| request.fetch(:method) }
+  end
+
+  def test_rejects_a_conflicting_or_annotated_release_tag_before_publishing
+    target_sha = "a" * 40
+    tag = "production/5.4.0-20105"
+    transport = FakeTransport.new([
+      http_response(body: {
+        "ref" => "refs/tags/#{tag}",
+        "object" => { "type" => "tag", "sha" => "b" * 40 }
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    error = assert_raises(SequelAceRelease::IntegrityError) do
+      client.create_or_validate_release_tag(tag: tag, target_sha: target_sha)
+    end
+
+    assert_includes error.message, "exact release commit"
+    assert_equal 1, transport.requests.length
+  end
+
   def test_accepts_an_exact_release_target_that_remains_an_unchanged_main_ancestor
     target_sha = "a" * 40
     current_main = "b" * 40
