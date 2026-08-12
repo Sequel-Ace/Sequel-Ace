@@ -1,3 +1,45 @@
+## [5.4.0](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%225.4.0+%28*%29%22&expanded=true)
+
+### Added
+- Add macOS Liquid Glass app icon (including darkmode icon) ([8df0527ed](https://github.com/Sequel-Ace/Sequel-Ace/commit/8df0527edcb8273b316cdc8a8553d37175416b81), [#2429](https://github.com/Sequel-Ace/Sequel-Ace/pull/2429))
+- Add guarded release automation ([1216a6a14](https://github.com/Sequel-Ace/Sequel-Ace/commit/1216a6a14dc478385cbd5de6816e413848aa78e3), [#2524](https://github.com/Sequel-Ace/Sequel-Ace/pull/2524))
+
+### Fixed
+- Prevent table refresh from adding empty filter rows ([534d8cdf7](https://github.com/Sequel-Ace/Sequel-Ace/commit/534d8cdf765f148f93cc19b453c361c93dab08ef), [#2519](https://github.com/Sequel-Ace/Sequel-Ace/pull/2519))
+- Prevent hosted release artifact launch hangs ([a6f8fa92a](https://github.com/Sequel-Ace/Sequel-Ace/commit/a6f8fa92af1c020b421a026b4b8e63f4ffd5475f), [#2529](https://github.com/Sequel-Ace/Sequel-Ace/pull/2529))
+- Fix release feasibility launch verification ([72d49461a](https://github.com/Sequel-Ace/Sequel-Ace/commit/72d49461a1cef644ede54a963c58069fa0ceb575), [#2527](https://github.com/Sequel-Ace/Sequel-Ace/pull/2527))
+- Prevent large field editor close crashes ([a430efbbe](https://github.com/Sequel-Ace/Sequel-Ace/commit/a430efbbeb3cdb7c6ef0e7f7c2ee1562db770da0), [#2507](https://github.com/Sequel-Ace/Sequel-Ace/pull/2507))
+
+### Changed
+- Make changelog temp files portable ([be6a77fdb](https://github.com/Sequel-Ace/Sequel-Ace/commit/be6a77fdb97e7889d6797df6afd8572c745d5f2e), [#2546](https://github.com/Sequel-Ace/Sequel-Ace/pull/2546))
+- Keep release Bundler config outside worktree ([e7c2da3aa](https://github.com/Sequel-Ace/Sequel-Ace/commit/e7c2da3aa266889c2c69093f680476463bbe8eb2), [#2545](https://github.com/Sequel-Ace/Sequel-Ace/pull/2545))
+- Clean up sole GHCR feasibility probe ([59b89b266](https://github.com/Sequel-Ace/Sequel-Ace/commit/59b89b266fe57729d4310a1433edaf0d186f14a2), [#2543](https://github.com/Sequel-Ace/Sequel-Ace/pull/2543))
+- Keyword highlighting and autocomplete for non-InnoDB storage engines ([3661f4036](https://github.com/Sequel-Ace/Sequel-Ace/commit/3661f4036a0a56bbbc308d554edc5737fbe7d735), [#2521](https://github.com/Sequel-Ace/Sequel-Ace/pull/2521))
+- Percent-encode the MySQL online-help topic in the search URL ([4b87655f6](https://github.com/Sequel-Ace/Sequel-Ace/commit/4b87655f66ffe542e62e175851eb48ea4188f4f4), [#2523](https://github.com/Sequel-Ace/Sequel-Ace/pull/2523))
+- Revise modernization plan and move planning docs into the repo ([59c6b50d8](https://github.com/Sequel-Ace/Sequel-Ace/commit/59c6b50d897a5b288bb300637c77ca16fbd824f6), [#2540](https://github.com/Sequel-Ace/Sequel-Ace/pull/2540))
+- Handle empty GHCR probe cleanup ([e039992ae](https://github.com/Sequel-Ace/Sequel-Ace/commit/e039992ae52efe4ff2e2641add9a54c57811c3d6), [#2539](https://github.com/Sequel-Ace/Sequel-Ace/pull/2539))
+- Fail closed on GHCR feasibility probe cleanup ([82050c4a8](https://github.com/Sequel-Ace/Sequel-Ace/commit/82050c4a87a109d33147a926a8b15993216d8e5e), [#2535](https://github.com/Sequel-Ace/Sequel-Ace/pull/2535))
+- Reuse pinned Alpha run for feasibility ([4f0e6e230](https://github.com/Sequel-Ace/Sequel-Ace/commit/4f0e6e230c7dd2cd4efcf532701f15f2c1d07c38), [#2533](https://github.com/Sequel-Ace/Sequel-Ace/pull/2533))
+- Preserve SSH config port when field is empty ([32dd5cf8a](https://github.com/Sequel-Ace/Sequel-Ace/commit/32dd5cf8a7d60688af08a85a841700633dcebd1b), [#2517](https://github.com/Sequel-Ace/Sequel-Ace/pull/2517))
+- Make release artifact publishing asynchronous ([9e7737b5b](https://github.com/Sequel-Ace/Sequel-Ace/commit/9e7737b5bd6fa2568db03720271dfe7ad077a4c9), [#2532](https://github.com/Sequel-Ace/Sequel-Ace/pull/2532))
+- Update PR tests to macOS 26 ARM64 ([56678b137](https://github.com/Sequel-Ace/Sequel-Ace/commit/56678b13775602c09ab183158c2782f9dc3955ab), [#2518](https://github.com/Sequel-Ace/Sequel-Ace/pull/2518))
+- Use app-scoped App Store version reads ([1782e02a1](https://github.com/Sequel-Ace/Sequel-Ace/commit/1782e02a1e71916712c19ae2c6a896a0ad53f32c), [#2530](https://github.com/Sequel-Ace/Sequel-Ace/pull/2530))
+- Restore scheduled release finalization ([5c8e32c58](https://github.com/Sequel-Ace/Sequel-Ace/commit/5c8e32c58c1e214e39ae34d9d9d3396a716d5b80), [#2528](https://github.com/Sequel-Ace/Sequel-Ace/pull/2528))
+- Make release finalization event-driven and harden release workflows ([c0c00ac3c](https://github.com/Sequel-Ace/Sequel-Ace/commit/c0c00ac3ca726f4f8a487c36fd62761c84427226), [#2526](https://github.com/Sequel-Ace/Sequel-Ace/pull/2526))
+- build(deps): bump actions/create-github-app-token from 2.2.2 to 3.2.0 ([f1d04173d](https://github.com/Sequel-Ace/Sequel-Ace/commit/f1d04173d96ae6d017763afe2fad486cbc665f97), [#2525](https://github.com/Sequel-Ace/Sequel-Ace/pull/2525))
+- Modernization: AppKit deprecation batch 3 (warnings plan step 7) ([8f8697df3](https://github.com/Sequel-Ace/Sequel-Ace/commit/8f8697df389ace7f213159cc99d367da5eed34c7), [#2511](https://github.com/Sequel-Ace/Sequel-Ace/pull/2511))
+- Modernization: SANotificationCenter replaces NSUserNotification (warnings plan step 5) ([bafb56b0c](https://github.com/Sequel-Ace/Sequel-Ace/commit/bafb56b0cd41beec7efb5b6e75571c2e090c30c7), [#2510](https://github.com/Sequel-Ace/Sequel-Ace/pull/2510))
+- Parse table list rows independently of column labels ([ad49e0c13](https://github.com/Sequel-Ace/Sequel-Ace/commit/ad49e0c13ba898bb6f6fafb663149769207689fb), [#2494](https://github.com/Sequel-Ace/Sequel-Ace/pull/2494))
+- Modernization: migrate deprecated keyed-archiver initializers (warnings plan step 4) ([cd10f0a5a](https://github.com/Sequel-Ace/Sequel-Ace/commit/cd10f0a5a10217df13f52ec9c22bfd17202acfc7), [#2509](https://github.com/Sequel-Ace/Sequel-Ace/pull/2509))
+- Keep long-running column removal responsive ([2ff664597](https://github.com/Sequel-Ace/Sequel-Ace/commit/2ff66459798ba47e5da18eee36cb89180ab899a2), [#2506](https://github.com/Sequel-Ace/Sequel-Ace/pull/2506))
+- build(deps): bump json from 2.19.3 to 2.19.9 ([e84b56c63](https://github.com/Sequel-Ace/Sequel-Ace/commit/e84b56c631e743149252a21cdd08f45b2e66ff82), [#2508](https://github.com/Sequel-Ace/Sequel-Ace/pull/2508))
+
+### Removed
+- Delete GHCR feasibility probes through Packages API ([2f3600d16](https://github.com/Sequel-Ace/Sequel-Ace/commit/2f3600d160fdd1a3a91c9a0449400ec49cfd9248), [#2537](https://github.com/Sequel-Ace/Sequel-Ace/pull/2537))
+
+### Infra
+- chore: add xcodecloud manifest for CI configuration ([ded4b43df](https://github.com/Sequel-Ace/Sequel-Ace/commit/ded4b43df6c4a115f410f57225d4733146761d3e))
+
 ## [5.3.1](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%225.3.1+%28*%29%22&expanded=true)
 
 ### Added
