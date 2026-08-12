@@ -249,8 +249,17 @@ module SequelAceRelease
       response
     end
 
-    def delete_branch(branch)
-      request!("DELETE", "/repos/#{@repository}/git/refs/heads/#{URI.encode_www_form_component(branch)}", expected: [204])
+    def delete_branch(branch, allow_absent: false)
+      response = @transport.request(
+        "DELETE",
+        "/repos/#{@repository}/git/refs/heads/#{URI.encode_www_form_component(branch)}"
+      )
+      if allow_absent && response.status == 422 && response.body.is_a?(Hash) &&
+         response.body["message"] == "Reference does not exist"
+        return false
+      end
+
+      ensure_response!(response, [204])
       true
     end
 
