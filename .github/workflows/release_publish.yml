@@ -309,6 +309,18 @@ jobs:
           url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz
           checksum: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
 
+      - name: Mint release mutation token for Cloud failure annotation
+        id: failure_release_token
+        continue-on-error: true
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: Sequel-Ace
+          repositories: Sequel-Ace
+          permission-contents: write
+          permission-workflows: write
+
       - name: Authenticate and preserve the failed Cloud handoff
         env:
           ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
@@ -317,7 +329,8 @@ jobs:
           FAILED_RUN_ID: ${{ needs.discover.outputs.failed_component == 'production' && needs.discover.outputs.production_run_id || needs.discover.outputs.alpha_run_id }}
           GHCR_TOKEN: ${{ github.token }}
           GHCR_USERNAME: ${{ github.actor }}
-          GH_TOKEN: ${{ github.token }}
+          RELEASE_COMMIT: ${{ needs.discover.outputs.commit }}
+          RELEASE_MUTATION_TOKEN: ${{ steps.failure_release_token.outputs.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           SA_GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -343,15 +356,26 @@ jobs:
           RUBY
           cp failure-disposition.json release-archive/
           Scripts/archive-release-to-ghcr.sh push "${ARCHIVE_REFERENCE}" release-archive > failed-archive-evidence.json
+          echo "Exact ${FAILED_COMPONENT} Xcode Cloud run ${FAILED_RUN_ID} completed unsuccessfully; no Mac runner was started." >> "${GITHUB_STEP_SUMMARY}"
+          if [[ -z "${RELEASE_MUTATION_TOKEN}" ]]; then
+            echo "Private failure evidence was preserved; GitHub annotation was skipped because the narrow mutation token was unavailable." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+          export GH_TOKEN="${RELEASE_MUTATION_TOKEN}"
           gh release view "${EXPECTED_TAG}" --json body --jq .body > failed-release-body.md
+          bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
+            --tag "${EXPECTED_TAG}" \
+            --target-sha "${RELEASE_COMMIT}" >/dev/null
           {
             echo
             echo "---"
             echo "Automated release artifact processing stopped. The tag and prerelease are intentionally preserved."
             echo "Workflow evidence: ${RUN_URL}"
           } >> failed-release-body.md
-          gh release edit "${EXPECTED_TAG}" --prerelease --latest=false --notes-file failed-release-body.md
-          echo "Exact ${FAILED_COMPONENT} Xcode Cloud run ${FAILED_RUN_ID} completed unsuccessfully; no Mac runner was started." >> "${GITHUB_STEP_SUMMARY}"
+          gh release edit "${EXPECTED_TAG}" --verify-tag --target "${RELEASE_COMMIT}" --prerelease --latest=false --notes-file failed-release-body.md
+          bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
+            --tag "${EXPECTED_TAG}" \
+            --target-sha "${RELEASE_COMMIT}" >/dev/null
 
   publish:
     name: Verify and publish ready release artifacts
@@ -655,23 +679,48 @@ jobs:
           cp app-store-submission.json release-archive/
           Scripts/archive-release-to-ghcr.sh push "${ARCHIVE_REFERENCE}" release-archive > final-archive-evidence.json
 
+      - name: Mint release mutation token for Alpha recovery annotation
+        if: needs.discover.outputs.channel == 'beta' && steps.context.outputs.alpha_recovery == 'true'
+        id: alpha_recovery_release_token
+        continue-on-error: true
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: Sequel-Ace
+          repositories: Sequel-Ace
+          permission-contents: write
+          permission-workflows: write
+
       - name: Append successful Alpha recovery evidence
         if: needs.discover.outputs.channel == 'beta' && steps.context.outputs.alpha_recovery == 'true'
         continue-on-error: true
         env:
           ALPHA_RUN_ID: ${{ steps.cloud.outputs.alpha_run_id }}
           BETA_TAG: ${{ needs.discover.outputs.tag }}
-          GH_TOKEN: ${{ github.token }}
+          RELEASE_COMMIT: ${{ needs.discover.outputs.commit }}
+          RELEASE_MUTATION_TOKEN: ${{ steps.alpha_recovery_release_token.outputs.token }}
         run: |
           set -euo pipefail
+          if [[ -z "${RELEASE_MUTATION_TOKEN}" ]]; then
+            echo "Alpha recovery artifacts are durable; GitHub annotation was skipped because the narrow mutation token was unavailable." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+          export GH_TOKEN="${RELEASE_MUTATION_TOKEN}"
           marker="Alpha artifact recovery succeeded in Xcode Cloud run ${ALPHA_RUN_ID}."
           gh release view "${BETA_TAG}" --json body --jq .body > recovered-release-body.md
           if ! grep -Fq "${marker}" recovered-release-body.md; then
+            bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
+              --tag "${BETA_TAG}" \
+              --target-sha "${RELEASE_COMMIT}" >/dev/null
             {
               echo
               echo "${marker} Both beta artifacts are verified and archived."
             } >> recovered-release-body.md
-            gh release edit "${BETA_TAG}" --prerelease --latest=false --notes-file recovered-release-body.md
+            gh release edit "${BETA_TAG}" --verify-tag --target "${RELEASE_COMMIT}" --prerelease --latest=false --notes-file recovered-release-body.md
+            bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
+              --tag "${BETA_TAG}" \
+              --target-sha "${RELEASE_COMMIT}" >/dev/null
           fi
 
       - name: Record successful artifact handoff
@@ -804,6 +853,19 @@ jobs:
           Scripts/archive-release-to-ghcr.sh push "${ARCHIVE_REFERENCE}" release-archive > submission-archive-evidence.json
           echo "The exact App Store submission was confirmed and archived; finalization remains eligible." >> "${GITHUB_STEP_SUMMARY}"
 
+      - name: Mint release mutation token for terminal failure annotation
+        if: always() && steps.submission.outputs.submitted != 'true' && needs.publish.outputs.terminal_failure == 'artifact_verification'
+        id: failure_release_token
+        continue-on-error: true
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: Sequel-Ace
+          repositories: Sequel-Ace
+          permission-contents: write
+          permission-workflows: write
+
       - name: Preserve terminal artifact-verification failure
         if: always() && steps.submission.outputs.submitted != 'true' && needs.publish.outputs.terminal_failure == 'artifact_verification'
         env:
@@ -811,7 +873,8 @@ jobs:
           FAILED_TAG: ${{ needs.discover.outputs.tag }}
           GHCR_TOKEN: ${{ github.token }}
           GHCR_USERNAME: ${{ github.actor }}
-          GH_TOKEN: ${{ github.token }}
+          RELEASE_COMMIT: ${{ needs.discover.outputs.commit }}
+          RELEASE_MUTATION_TOKEN: ${{ steps.failure_release_token.outputs.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
@@ -821,14 +884,25 @@ jobs:
             --output failure-disposition.json
           cp failure-disposition.json release-archive/
           Scripts/archive-release-to-ghcr.sh push "${ARCHIVE_REFERENCE}" release-archive > failed-archive-evidence.json
+          if [[ -z "${RELEASE_MUTATION_TOKEN}" ]]; then
+            echo "Private terminal-failure evidence was preserved; GitHub annotation was skipped because the narrow mutation token was unavailable." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+          export GH_TOKEN="${RELEASE_MUTATION_TOKEN}"
           gh release view "${FAILED_TAG}" --json body --jq .body > failed-release-body.md
+          bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
+            --tag "${FAILED_TAG}" \
+            --target-sha "${RELEASE_COMMIT}" >/dev/null
           {
             echo
             echo "---"
             echo "Automated release artifact processing stopped. The tag and prerelease are intentionally preserved."
             echo "Workflow evidence: ${RUN_URL}"
           } >> failed-release-body.md
-          gh release edit "${FAILED_TAG}" --prerelease --latest=false --notes-file failed-release-body.md
+          gh release edit "${FAILED_TAG}" --verify-tag --target "${RELEASE_COMMIT}" --prerelease --latest=false --notes-file failed-release-body.md
+          bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
+            --tag "${FAILED_TAG}" \
+            --target-sha "${RELEASE_COMMIT}" >/dev/null
 
       - name: Preserve retryable state after a transient publisher failure
         if: always() && steps.submission.outputs.submitted != 'true' && needs.publish.outputs.terminal_failure != 'artifact_verification'

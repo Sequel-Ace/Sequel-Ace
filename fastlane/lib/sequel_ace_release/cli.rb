@@ -41,6 +41,7 @@ module SequelAceRelease
       when "github-wait-checks" then github_wait_checks(argv)
       when "github-merge-pr" then github_merge_pr(argv)
       when "github-validate-release-target" then github_validate_release_target(argv)
+      when "github-verify-release-tag" then github_verify_release_tag(argv)
       when "github-create-release" then github_create_release(argv)
       when "github-upload-asset" then github_upload_asset(argv)
       when "validate-publish-handoff" then validate_publish_handoff(argv)
@@ -476,6 +477,24 @@ module SequelAceRelease
       result = github_client.validate_release_target!(
         target_sha: options[:target_sha],
         protected_paths: release_paths
+      )
+      emit(result, options[:output])
+    end
+
+    def github_verify_release_tag(arguments)
+      options = {}
+      parser = OptionParser.new do |value|
+        value.banner = "Usage: sa-release github-verify-release-tag --tag TAG --target-sha SHA"
+        value.on("--tag TAG") { |item| options[:tag] = item }
+        value.on("--target-sha SHA") { |item| options[:target_sha] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end
+      parser.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :tag, :target_sha)
+      result = github_client.validate_release_tag(
+        tag: options[:tag],
+        target_sha: options[:target_sha]
       )
       emit(result, options[:output])
     end
@@ -1020,10 +1039,17 @@ module SequelAceRelease
 
       client.update_release(
         id: release.fetch("id"),
+        tag: data.fetch("tag"),
+        target_sha: archived_commit,
         title: final_title,
         prerelease: false,
         make_latest: true
       )
+      finalized_tag_commit = client.ref_sha("tags/#{data.fetch('tag')}")
+      unless finalized_tag_commit == archived_commit
+        raise ValidationError,
+              "release tag moved during finalization (expected #{archived_commit}, found #{finalized_tag_commit})"
+      end
       release = client.release_by_tag(data.fetch("tag"))
       unless release["id"] == evidence.fetch("release_id") && release["tag_name"] == data.fetch("tag") &&
              release["name"] == final_title && release["draft"] == false && release["prerelease"] == false &&
@@ -1372,6 +1398,7 @@ module SequelAceRelease
           github-merge-pr            Recheck and merge the release PR
           github-validate-release-target
                                      Prove a release commit remains an unchanged main ancestor
+          github-verify-release-tag   Prove a release tag still names the exact release commit
           github-create-release      Create the tag-backed GitHub prerelease
           github-upload-asset        Upload a verified zip to the prerelease
           validate-publish-handoff   Validate an archived prerelease continuation

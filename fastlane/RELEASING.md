@@ -37,8 +37,11 @@ or creates a GitHub release.
 1. Create a dedicated GitHub App owned by the Sequel Ace organization and
    install it only on `Sequel-Ace/Sequel-Ace`.
 2. Grant repository permissions: Contents read/write, Pull requests read/write,
-   Actions read, Checks read, and Metadata read. Do not grant organization-wide
-   access or subscribe it to events.
+   Actions read, Checks read, Metadata read, and Workflows read/write. Do not
+   grant organization-wide access or subscribe it to events. GitHub requires
+   Workflows write when creating or updating a release whose target commit has
+   workflow files that differ from current `main`; workflows request it only in
+   fresh, repository-scoped tokens used for those exact release mutations.
 3. Add the App as the release PR bypass actor. Keep required status checks in
    force. If the repository cannot separately enforce checks for a bypass
    actor, the workflow's exact-head check gate is mandatory and must not be
@@ -96,8 +99,12 @@ network failure because their remote outcome may be ambiguous.
 Long release-PR and feasibility-probe check polling uses the job-scoped
 `GITHUB_TOKEN`. Each workflow mints a fresh release App installation token
 immediately before an App-only mutation and independently refreshes it for
-failure cleanup. This prevents the one-hour App-token lifetime from stranding a
-PR or deterministic release branch during the two-hour check window.
+failure cleanup. Every token explicitly requests only the permissions needed by
+that mutation. In particular, Workflows write is absent from branch, PR, check,
+and cleanup tokens and is present only on the fresh token used to create or
+update an exact-target GitHub release. This prevents both unnecessary privilege
+reuse and the one-hour App-token lifetime from stranding a PR or deterministic
+release branch during the two-hour check window.
 
 Release starts require the frozen SHA to equal the workflow-dispatch `main`
 SHA. Resume runs may use an older frozen SHA only after GitHub's compare API
@@ -131,6 +138,16 @@ Git-reference API before it publishes the prerelease. Do not let the Releases
 API synthesize a missing tag: that path can publish a release without emitting
 the tag-change event Xcode Cloud needs. An existing tag is reusable only when
 it is a lightweight ref that resolves directly to the exact release commit.
+The subsequent Releases API request repeats the complete approved commit as
+`target_commitish`, even when the tag already exists. This atomically binds the
+mutation to the approved target if the tag disappears between validation and
+the request. GitHub requires Contents write plus Workflows write when that
+target's workflow files differ from current `main`; the workflow mints a fresh,
+narrow token for this one mutation. The same narrowly scoped token pattern is
+used for later release-body updates and finalization. See GitHub's
+[Create a release](https://docs.github.com/en/rest/releases/releases#create-a-release)
+and [Update a release](https://docs.github.com/en/rest/releases/releases#update-a-release)
+permission and `target_commitish` rules.
 Prerelease creation is idempotent: an existing release is reused only when its
 tag, title, body, draft flag, and prerelease flag exactly match the approved
 release. The direct-commit tag ref is revalidated immediately before and after
@@ -397,6 +414,10 @@ preserves the old prerelease.
   or launch verification failures are also terminal. Network, runner, download,
   upload, registry, and API failures leave the remote manifest and release body
   unchanged so a later short publisher check can retry the same exact tag.
+- Optional GitHub failure/recovery annotations verify that the remote tag names
+  the exact archived release commit both before and after the edit, require the
+  tag to exist, and send that commit as their target. An absent or moved tag
+  therefore fails closed instead of being recreated from current `main`.
 - The complete Cloud artifacts, dSYMs, zips, checksums, notes, and redacted
   manifest are pushed to the private GHCR OCI archive and pulled back for
   checksum verification using GitHub's
@@ -420,12 +441,16 @@ preserves the old prerelease.
   exact version remains Apple's latest released Production version, the exact
   build remains selected, phased release is `ACTIVE` or `COMPLETE`, and public
   asset checksums match the private manifest. It first records that validation
-  under the active `finalizing` state in the private archive, and only then performs the public GitHub
-  transition; an archive failure therefore leaves the prerelease discoverable
-  for the next scheduled check or an authorized manual retry. Each run continues
-  examining other production prereleases when one archive is missing or
-  malformed. Finalization outputs and logs stay outside the pulled archive; only
-  the validated evidence files and updated regular manifest are copied back.
+  under the active `finalizing` state in the private archive, and only then
+  performs the public GitHub transition; an archive failure therefore leaves the
+  prerelease discoverable for the next scheduled check or an authorized manual
+  retry. The GitHub update repeats both the exact tag and archived release
+  commit, then revalidates the tag ref before accepting the release readback, so
+  a deleted or moved tag cannot redirect the transition to current `main`.
+  Each run continues examining other production prereleases when one archive is
+  missing or malformed. Finalization outputs and logs stay outside the pulled
+  archive; only the validated evidence files and updated regular manifest are
+  copied back.
   After the public transition succeeds, the finalizer records `live` and pushes
   that read-back evidence to the private archive. If that last archive refresh
   fails after GitHub has already transitioned, an authorized manual finalizer

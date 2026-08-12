@@ -116,6 +116,8 @@ class FinalizationAssetsTest < Minitest::Test
       assert_equal(
         {
           id: 100,
+          tag: "production/5.3.2-20105",
+          target_sha: "d" * 40,
           title: "5.3.2 (20105)",
           prerelease: false,
           make_latest: true
@@ -123,6 +125,45 @@ class FinalizationAssetsTest < Minitest::Test
         update_options
       )
     end
+  end
+
+  def test_finalization_rechecks_the_tag_after_the_public_transition
+    live_snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    app_store = Object.new
+    app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
+    app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
+    release_data = release
+    events = []
+    github = Object.new
+    github.define_singleton_method(:ref_sha) do |ref|
+      events << [:ref_sha, ref]
+      events.count { |event| event.first == :ref_sha } == 1 ? "d" * 40 : "e" * 40
+    end
+    github.define_singleton_method(:release_by_tag) { |_tag| release_data }
+    github.define_singleton_method(:latest_release) { { "id" => 99, "tag_name" => "production/5.3.1-20104" } }
+    github.define_singleton_method(:update_release) do |**options|
+      events << [:update_release, options]
+      release_data = release_data.merge(
+        "name" => options.fetch(:title), "draft" => false, "prerelease" => options.fetch(:prerelease)
+      )
+    end
+
+    assert_equal 1, run_finalizer(app_store: app_store, github: github)
+    assert_equal(
+      [
+        [:ref_sha, "tags/production/5.3.2-20105"],
+        [:update_release, {
+          id: 100,
+          tag: "production/5.3.2-20105",
+          target_sha: "d" * 40,
+          title: "5.3.2 (20105)",
+          prerelease: false,
+          make_latest: true
+        }],
+        [:ref_sha, "tags/production/5.3.2-20105"]
+      ],
+      events
+    )
   end
 
   def test_finalization_rejects_a_tag_moved_after_archival
