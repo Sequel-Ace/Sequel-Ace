@@ -398,6 +398,31 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_operator skipped, :<, discovery.index("continue", skipped)
   end
 
+  def test_publisher_skips_locally_ineligible_scheduled_candidates_but_fails_an_explicit_recovery
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    discovery = workflow.split("- name: Inspect exact Cloud runs once", 2).fetch(1)
+                        .split("  cloud_failure:", 2).first
+    local_gate = discovery.index('locally_eligible="$(bundle exec ruby -Ifastlane/lib -rsequel_ace_release')
+    requested = discovery.index('if [[ -n "${REQUESTED_TAG}" ]]', local_gate)
+    ineligible = discovery.index("ineligible=$((ineligible + 1))", requested)
+    continuation = discovery.index("continue", ineligible)
+    live_validation = discovery.index("bundle exec ruby fastlane/bin/sa-release validate-publish-handoff", continuation)
+
+    assert local_gate
+    assert requested
+    assert ineligible
+    assert continuation
+    assert live_validation
+    assert_operator local_gate, :<, requested
+    assert_operator requested, :<, ineligible
+    assert_operator ineligible, :<, continuation
+    assert_operator continuation, :<, live_validation
+    assert_includes discovery, "Requested release \${release_tag} is not eligible for artifact publication."
+    assert_includes discovery, "preserved ineligible handoff(s) were skipped."
+    assert_includes discovery, "PublishHandoff::ELIGIBLE_STATES"
+    refute_includes discovery, "if ! bundle exec ruby fastlane/bin/sa-release validate-publish-handoff"
+  end
+
   def test_publisher_shell_uses_environment_indirection_for_external_values
     workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
     download = workflow.split("- name: Download exact Xcode Cloud artifacts", 2).fetch(1)
@@ -639,6 +664,11 @@ class WorkflowRecoveryTest < Minitest::Test
     refute_includes workflow, "ref: main"
     assert_includes workflow, 'SOURCE_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}'
     assert_includes workflow, '[[ "${SOURCE_HEAD_BRANCH}" == "main" ]]'
+    assert_includes workflow, 'SOURCE_WORKFLOW_PATH: ${{ github.event.workflow_run.path }}'
+    assert_includes workflow, '"${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release.yml"'
+    assert_includes workflow, '"${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release_alpha_retry.yml"'
+    refute_includes workflow, "github.event.workflow_run.name"
+    refute_includes workflow, 'SOURCE_WORKFLOW: ${{'
   end
 
   def test_supporting_release_workflows_execute_the_dispatch_revision
