@@ -57,19 +57,96 @@ class GitHubClientTest < Minitest::Test
         "ref" => "refs/tags/#{tag}",
         "object" => { "type" => "commit", "sha" => target_sha }
       }),
-      http_response(body: { "id" => 100, "tag_name" => tag })
+      http_response(status: 404, body: { "message" => "Not Found" }),
+      http_response(body: {
+        "id" => 100,
+        "tag_name" => tag,
+        "name" => "5.4.0",
+        "body" => "Notes",
+        "draft" => false,
+        "prerelease" => true
+      })
     ])
     client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
 
     tag_result = client.create_or_validate_release_tag(tag: tag, target_sha: target_sha)
-    release = client.create_release(tag: tag, target_sha: target_sha, title: "5.4.0", body: "Notes")
+    release = client.create_or_validate_release(tag: tag, target_sha: target_sha, title: "5.4.0", body: "Notes")
 
     assert_equal true, tag_result.fetch("created")
+    assert_equal true, release.fetch("created")
     assert_equal tag, release.fetch("tag_name")
-    assert_equal ["GET", "POST", "POST"], transport.requests.map { |request| request.fetch(:method) }
+    assert_equal ["GET", "POST", "GET", "POST"], transport.requests.map { |request| request.fetch(:method) }
     assert_equal "/repos/Sequel-Ace/Sequel-Ace/git/refs", transport.requests.fetch(1).fetch(:path)
     assert_equal({ "ref" => "refs/tags/#{tag}", "sha" => target_sha }, transport.requests.fetch(1).fetch(:body))
-    assert_equal "/repos/Sequel-Ace/Sequel-Ace/releases", transport.requests.fetch(2).fetch(:path)
+    assert_equal "/repos/Sequel-Ace/Sequel-Ace/releases", transport.requests.fetch(3).fetch(:path)
+  end
+
+  def test_reuses_only_an_exact_existing_prerelease
+    target_sha = "a" * 40
+    tag = "production/5.4.0-20105"
+    transport = FakeTransport.new([
+      http_response(body: {
+        "id" => 100,
+        "tag_name" => tag,
+        "name" => "5.4.0",
+        "body" => "Notes",
+        "draft" => false,
+        "prerelease" => true
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    release = client.create_or_validate_release(tag: tag, target_sha: target_sha, title: "5.4.0", body: "Notes")
+
+    assert_equal false, release.fetch("created")
+    assert_equal ["GET"], transport.requests.map { |request| request.fetch(:method) }
+  end
+
+  def test_recovers_when_github_accepts_release_but_the_create_response_is_lost
+    target_sha = "a" * 40
+    tag = "production/5.4.0-20105"
+    exact_release = {
+      "id" => 100,
+      "tag_name" => tag,
+      "name" => "5.4.0",
+      "body" => "Notes",
+      "draft" => false,
+      "prerelease" => true
+    }
+    transport = FakeTransport.new([
+      http_response(status: 404, body: { "message" => "Not Found" }),
+      http_response(status: 502, body: { "message" => "Bad Gateway" }),
+      http_response(body: exact_release)
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    release = client.create_or_validate_release(tag: tag, target_sha: target_sha, title: "5.4.0", body: "Notes")
+
+    assert_equal false, release.fetch("created")
+    assert_equal ["GET", "POST", "GET"], transport.requests.map { |request| request.fetch(:method) }
+  end
+
+  def test_rejects_an_existing_release_with_different_approved_content
+    target_sha = "a" * 40
+    tag = "production/5.4.0-20105"
+    transport = FakeTransport.new([
+      http_response(body: {
+        "id" => 100,
+        "tag_name" => tag,
+        "name" => "5.4.0",
+        "body" => "Different notes",
+        "draft" => false,
+        "prerelease" => true
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    error = assert_raises(SequelAceRelease::IntegrityError) do
+      client.create_or_validate_release(tag: tag, target_sha: target_sha, title: "5.4.0", body: "Notes")
+    end
+
+    assert_includes error.message, "exact approved prerelease"
+    assert_equal 1, transport.requests.length
   end
 
   def test_reuses_only_an_existing_lightweight_tag_at_the_exact_release_commit

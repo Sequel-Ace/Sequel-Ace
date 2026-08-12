@@ -322,6 +322,44 @@ module SequelAceRelease
       })
     end
 
+    def create_or_validate_release(tag:, target_sha:, title:, body:)
+      validate_commit_sha!(target_sha, "release target SHA")
+      begin
+        existing = release_by_tag(tag)
+        return validate_release_response!(
+          existing,
+          tag: tag,
+          title: title,
+          body: body,
+          created: false
+        )
+      rescue APIError => error
+        raise unless error.message.include?("HTTP 404")
+      end
+
+      begin
+        created = create_release(tag: tag, target_sha: target_sha, title: title, body: body)
+      rescue APIError => creation_error
+        # GitHub can accept the write while the client loses the response. Read
+        # the canonical tag endpoint before surfacing the original error so a
+        # retry cannot create or misclassify a second release.
+        begin
+          existing = release_by_tag(tag)
+          return validate_release_response!(
+            existing,
+            tag: tag,
+            title: title,
+            body: body,
+            created: false
+          )
+        rescue APIError
+          raise creation_error
+        end
+      end
+
+      validate_release_response!(created, tag: tag, title: title, body: body, created: true)
+    end
+
     def create_or_validate_release_tag(tag:, target_sha:)
       validate_commit_sha!(target_sha, "release target SHA")
       expected_ref = "refs/tags/#{tag}"
@@ -471,6 +509,22 @@ module SequelAceRelease
       unless response.is_a?(Hash) && response["ref"] == expected_ref &&
              response.dig("object", "type") == "commit" && response.dig("object", "sha") == target_sha
         raise IntegrityError, "release tag does not resolve directly to the exact release commit"
+      end
+
+      response.merge("created" => created)
+    end
+
+    def validate_release_response!(response, tag:, title:, body:, created:)
+      expected = {
+        "tag_name" => tag,
+        "name" => title,
+        "body" => body,
+        "draft" => false,
+        "prerelease" => true
+      }
+      actual = expected.keys.to_h { |key| [key, response[key]] } if response.is_a?(Hash)
+      unless response.is_a?(Hash) && response["id"].is_a?(Integer) && response["id"].positive? && actual == expected
+        raise IntegrityError, "GitHub release does not match the exact approved prerelease"
       end
 
       response.merge("created" => created)

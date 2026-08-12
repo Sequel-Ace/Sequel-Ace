@@ -131,6 +131,13 @@ Git-reference API before it publishes the prerelease. Do not let the Releases
 API synthesize a missing tag: that path can publish a release without emitting
 the tag-change event Xcode Cloud needs. An existing tag is reusable only when
 it is a lightweight ref that resolves directly to the exact release commit.
+Prerelease creation is idempotent: an existing release is reused only when its
+tag, title, body, draft flag, and prerelease flag exactly match the approved
+release. If explicit tag creation succeeds but GitHub has no release behind
+that tag, a newly approved `mode=resume` plan against the exact release commit
+reuses the same canonical build. The recovery validates the missing release
+and, if Cloud already consumed the tag, binds the exact Production workflow,
+tag, commit, and run before recreating the prerelease; it never bumps or retags.
 `.github/workflows/release_publish.yml` runs immediately after a successful
 handoff and at minutes 11 and 41 each hour. Its Linux job performs one exact
 Cloud-status read and exits; it starts the protected macOS verification job only
@@ -328,6 +335,13 @@ informational):
   Before any recovery mutation and again immediately before tagging, GitHub must
   prove that exact commit is still an ancestor of live `main` and that no
   protected release file changed after it.
+- Resume after tag: if the exact lightweight release tag resolves to the newest
+  release-preparation commit but its GitHub release is absent, `mode=resume`
+  reuses the source build. Cloud may either still report that build as next or
+  have exactly one run for it; the latter must identify the Production
+  workflow, exact tag, exact commit, and no later Production run. Any existing
+  GitHub release, mismatched tag/run, App Store build ahead of source, or Cloud
+  advancement beyond that one exact run aborts recovery.
 - Stop: `N` regresses, an intervening Production run is absent, histories
   conflict, or the eventual Cloud build does not exactly match the tag/build.
 

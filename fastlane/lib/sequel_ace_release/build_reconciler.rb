@@ -21,7 +21,8 @@ module SequelAceRelease
     def reconcile(
       source_build:, highest_tag_build:, highest_asc_build:, cloud_next_build:,
       cloud_runs:, source_tagged:, source_release_commit_sha: nil,
-      expected_target_build: nil
+      expected_target_build: nil, recover_release_tag: nil,
+      production_workflow_id: nil
     )
       source = positive_integer(source_build, "source build")
       tag = nonnegative_integer(highest_tag_build, "highest tag build")
@@ -33,6 +34,20 @@ module SequelAceRelease
       indexed_runs = Array(cloud_runs).each_with_object({}) do |run, result|
         number = integer_or_nil(run["number"] || run[:number])
         result[number] = stringify_keys(run) if number
+      end
+
+      if recover_release_tag
+        return validate_expected_target!(recover_tagged_release(
+          source: source,
+          tag: tag,
+          asc: asc,
+          observed_cloud_next: observed_cloud_next,
+          indexed_runs: indexed_runs,
+          source_tagged: source_tagged,
+          source_release_commit_sha: source_release_commit_sha,
+          recover_release_tag: recover_release_tag,
+          production_workflow_id: production_workflow_id
+        ), expected_target_build)
       end
 
       if observed_cloud_next == source && !source_tagged && source > [tag, asc].max
@@ -99,6 +114,64 @@ module SequelAceRelease
     end
 
     private
+
+    def recover_tagged_release(
+      source:, tag:, asc:, observed_cloud_next:, indexed_runs:, source_tagged:,
+      source_release_commit_sha:, recover_release_tag:, production_workflow_id:
+    )
+      release_commit = validate_commit_sha!(source_release_commit_sha)
+      unless recover_release_tag.to_s.match?(%r{\A(?:production|beta)/\d+\.\d+\.\d+-#{source}\z})
+        raise ValidationError, "tag-only recovery does not match source build #{source}"
+      end
+      raise ValidationError, "tag-only recovery requires the exact canonical source tag" unless source_tagged && tag == source
+      if asc > source
+        raise ValidationError, "App Store Connect build #{asc} is ahead of tag-only recovery build #{source}"
+      end
+      unless production_workflow_id.to_s.match?(/\A[0-9A-F-]{36}\z/i)
+        raise ValidationError, "tag-only recovery requires the exact Production workflow ID"
+      end
+      if observed_cloud_next < source || observed_cloud_next > source + 1
+        raise ValidationError,
+              "Xcode Cloud next build #{observed_cloud_next} is incompatible with tag-only recovery build #{source}"
+      end
+
+      later_runs = indexed_runs.keys.select { |number| number > source }
+      unless later_runs.empty?
+        raise ValidationError,
+              "Production Xcode Cloud advanced beyond tag-only recovery build #{source}: #{later_runs.sort.join(', ')}"
+      end
+
+      source_run = indexed_runs[source]
+      if asc == source && source_run.nil?
+        raise ValidationError,
+              "App Store Connect build #{source} has no exact Production run for tag-only recovery"
+      end
+      if source_run
+        required = %w[id execution_progress source_commit git_reference workflow_id]
+        missing = required.select { |key| source_run[key].to_s.empty? }
+        unless missing.empty?
+          raise ValidationError,
+                "Production Xcode Cloud build #{source} is missing tag-only recovery evidence: #{missing.join(', ')}"
+        end
+        unless source_run["source_commit"].to_s.downcase == release_commit &&
+               source_run["git_reference"] == recover_release_tag &&
+               source_run["workflow_id"] == production_workflow_id
+          raise ValidationError, "Production Xcode Cloud build #{source} does not match the tag-only recovery identity"
+        end
+      elsif observed_cloud_next != source
+        raise ValidationError,
+              "Xcode Cloud advanced past tag-only recovery build #{source} without its exact Production run"
+      end
+
+      Result.new(
+        target_build: source,
+        observed_cloud_next_build: observed_cloud_next,
+        baseline: source,
+        reason: "resume_after_tag",
+        skipped_runs: [],
+        source_release_commit_sha: release_commit
+      )
+    end
 
     def validate_commit_sha!(value)
       return value.to_s.downcase if Config.valid_git_sha?(value)

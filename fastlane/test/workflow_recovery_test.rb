@@ -803,6 +803,20 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes context, 'source_release_commit_sha == ENV.fetch("APPROVED_MAIN_SHA")'
   end
 
+  def test_tag_without_release_resume_is_reconciled_before_skipping_the_pr
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    context = workflow.split("- name: Resolve naming and the merged-but-untagged recovery path", 2).fetch(1)
+                      .split("- name: Validate the recovered release target against live main", 2).first
+    target = workflow.split("- name: Resolve the exact release target commit", 2).fetch(1)
+                     .split("- name: Create the tag-backed GitHub prerelease", 2).first
+
+    assert_equal 2, workflow.scan('--recover-release-channel "${RELEASE_CHANNEL}"').length
+    assert_equal 2, workflow.scan('--recover-release-version "${RELEASE_VERSION}"').length
+    assert_equal 2, workflow.scan('"${recovery_args[@]}"').length
+    assert_includes context, "%w[resume_after_merge resume_after_tag].include?(recovery_reason)"
+    assert_includes target, 'ENV.fetch("RECONCILIATION_REASON")'
+  end
+
   private
 
   def repo_path(relative_path)

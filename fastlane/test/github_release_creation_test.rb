@@ -30,7 +30,7 @@ class GitHubReleaseCreationTest < Minitest::Test
       }
     end
 
-    def create_release(tag:, target_sha:, title:, body:)
+    def create_or_validate_release(tag:, target_sha:, title:, body:)
       raise "tag was not created first" unless @events == %i[validate_target create_tag]
       raise "wrong tag" unless tag == "production/5.4.0-20105"
       raise "wrong target" unless target_sha == "a" * 40
@@ -38,7 +38,7 @@ class GitHubReleaseCreationTest < Minitest::Test
       raise "wrong body" unless body == "Approved notes"
 
       @events << :publish_release
-      { "id" => 100, "tag_name" => tag }
+      { "id" => 100, "tag_name" => tag, "created" => true }
     end
   end
 
