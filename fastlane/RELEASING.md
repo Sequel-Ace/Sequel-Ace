@@ -163,6 +163,13 @@ Cloud-status read and exits; it starts the protected macOS verification job only
 after every required Production and Alpha run is complete and related to the
 expected app build. Authorized manual recovery requires
 `PUBLISH ARTIFACTS <tag>`. Pending checks are successful no-ops, not timeouts.
+The immediate continuation authenticates its source by the immutable workflow
+path from the `workflow_run` payload; GitHub's `workflow_run.name` contains the
+dynamic `run-name` and is not an authorization identity. Scheduled discovery
+locally parses each validated archive and skips terminal or otherwise ineligible
+states before making live API calls, then continues to newer candidates. An
+explicitly requested ineligible tag fails. Every eligible handoff still receives
+strict live validation, and any API or transport failure stops discovery.
 Production is always resolved first; a pending Production run prevents an Alpha
 result from deciding the beta's fate. A completed unsuccessful Cloud run is
 recorded by a separate Ubuntu job, so failure handling never allocates a Mac.

@@ -64,7 +64,7 @@ jobs:
           SOURCE_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
           SOURCE_EVENT: ${{ github.event.workflow_run.event }}
           SOURCE_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
-          SOURCE_WORKFLOW: ${{ github.event.workflow_run.name }}
+          SOURCE_WORKFLOW_PATH: ${{ github.event.workflow_run.path }}
         run: |
           set -euo pipefail
           [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Artifact publication must run from main." >&2; exit 1; }
@@ -88,7 +88,7 @@ jobs:
                 echo "The source workflow did not succeed; no artifact continuation was attempted." >> "${GITHUB_STEP_SUMMARY}"
                 exit 0
               fi
-              [[ "${SOURCE_WORKFLOW}" == "Release" || "${SOURCE_WORKFLOW}" == "Retry Alpha Beta Artifact" ]] || { echo "Unexpected source workflow." >&2; exit 1; }
+              [[ "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release.yml" || "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release_alpha_retry.yml" ]] || { echo "Unexpected source workflow path." >&2; exit 1; }
               [[ "${SOURCE_EVENT}" == "workflow_dispatch" ]] || { echo "Artifact handoffs must originate from an authorized manual workflow." >&2; exit 1; }
               [[ "${SOURCE_HEAD_BRANCH}" == "main" ]] || { echo "Artifact handoff source was not main." >&2; exit 1; }
               [[ "${SOURCE_ACTOR}" == "Jason-Morcos" || "${SOURCE_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized source workflow actor." >&2; exit 1; }
@@ -165,6 +165,7 @@ jobs:
 
           selected_action="none"
           unreadable=0
+          ineligible=0
           while IFS=$'\t' read -r _created_at release_tag; do
             [[ -n "${release_tag}" ]] || continue
             archive_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-publish-archive.XXXXXX")"
@@ -178,6 +179,22 @@ jobs:
               fi
               unreadable=$((unreadable + 1))
               echo "Automated release ${release_tag} has no readable private handoff archive; it was skipped." >> "${GITHUB_STEP_SUMMARY}"
+              continue
+            fi
+
+            locally_eligible="$(bundle exec ruby -Ifastlane/lib -rsequel_ace_release -e '
+              data = SequelAceRelease::Manifest.read(ARGV.fetch(0)).to_h
+              raise SequelAceRelease::ValidationError, "archive tag does not match the candidate" unless data.fetch("tag") == ARGV.fetch(1)
+              puts SequelAceRelease::PublishHandoff::ELIGIBLE_STATES.fetch(data.fetch("channel")).include?(data.fetch("state"))
+            ' "${archive_directory}/manifest.json" "${release_tag}")"
+            if [[ "${locally_eligible}" != "true" ]]; then
+              rm -rf "${archive_directory}" "${state_directory}"
+              if [[ -n "${REQUESTED_TAG}" ]]; then
+                echo "Requested release ${release_tag} is not eligible for artifact publication." >&2
+                exit 1
+              fi
+              ineligible=$((ineligible + 1))
+              echo "Automated release ${release_tag} is in a preserved ineligible state; it was skipped." >> "${GITHUB_STEP_SUMMARY}"
               continue
             fi
 
@@ -276,6 +293,9 @@ jobs:
           fi
           if [[ "${unreadable}" -gt 0 ]]; then
             echo "${unreadable} candidate archive(s) were unreadable and require investigation." >> "${GITHUB_STEP_SUMMARY}"
+          fi
+          if [[ "${ineligible}" -gt 0 ]]; then
+            echo "${ineligible} preserved ineligible handoff(s) were skipped." >> "${GITHUB_STEP_SUMMARY}"
           fi
 
   cloud_failure:
