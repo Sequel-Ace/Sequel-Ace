@@ -15,8 +15,12 @@ or creates a GitHub release.
 
 ## Safety model
 
-- `main` is frozen at the approved SHA. Any movement requires a new plan.
-- Only `Jason-Morcos` and `Kaspik` may dispatch a release.
+- `main` is frozen at the approved SHA. Any movement requires a new plan except
+  the tool's own failed release-preparation merge during a validated automatic
+  forward-build recovery.
+- Only `Jason-Morcos` and `Kaspik` may initiate a release. The Actions bot may
+  dispatch only a chained `mode=resume` recovery authenticated against the
+  failed release's private archive and original approval.
 - The typed confirmation is `RELEASE <channel> <version>`.
 - `SA_RELEASE_AUTOMATION_ENABLED` remains `false` until every feasibility gate
   passes.
@@ -171,8 +175,11 @@ states before making live API calls, then continues to newer candidates. An
 explicitly requested ineligible tag fails. Every eligible handoff still receives
 strict live validation, and any API or transport failure stops discovery.
 Production is always resolved first; a pending Production run prevents an Alpha
-result from deciding the beta's fate. A completed unsuccessful Cloud run is
-recorded by a separate Ubuntu job, so failure handling never allocates a Mac.
+result from deciding the beta's fate. A completed unsuccessful Cloud run or an
+assigned Production build-number mismatch is recorded by a separate Ubuntu job,
+so failure handling never allocates a Mac. A higher assignment may dispatch the
+bounded forward-only RC recovery described below; a lower assignment is
+terminal.
 
 Every asynchronous continuation requires the exact release App author
 `sequel-ace-release-automation[bot]`, proves that the tagged commit remains on
@@ -196,8 +203,8 @@ hard-coded to operate on only:
 
 Store the key ID, issuer ID, and one-time private-key download only in the
 protected release environment. Configure Xcode Cloud in the UI because the
-public API does not expose the built-in
-Notarize post-action or the configured **Next Build Number** setting:
+public API does not expose the built-in Notarize post-action. The release
+process does not read or trust the UI's configured **Next Build Number**:
 
 - **Production:** scheme `Sequel Ace Release`; start on `production/*` and
   `beta/*` tags; allow manual starts for only those same tag prefixes (not
@@ -242,11 +249,13 @@ webhook endpoint, relay secret store, durable event ledger, or second GitHub App
 is required.
 
 Apple’s documented API exposes every Xcode Cloud build run and its assigned
-number, but not the configured next number. Therefore the planner reads the
-Production **Next Build Number** from the signed-in App Store Connect UI. The
-deployment receives that exact observation and reconciles it against source,
-tags, App Store builds, and every API-visible intervening Production run. A
-missing run or regressing value stops the release.
+number, but not the configured next number. The deployment therefore derives
+the expected Production build as one greater than the highest build observed
+across canonical tags, the Production app in App Store Connect, and Production
+workflow runs. It never accepts a caller-entered or UI-observed build number.
+If the exact tagged run is assigned a higher number anyway, that authenticated
+run proves the Cloud counter jumped and can never move backward. The failed RC
+is preserved and a new RC advances to at least the assigned number plus one.
 
 The API client follows Apple's documented
 [Xcode Cloud build-run endpoint](https://developer.apple.com/documentation/appstoreconnectapi/get-v1-ciworkflows-_id_-buildruns)
@@ -305,28 +314,29 @@ Scripts/release-tool plan \
   --base-tag production/5.3.1-20104 \
   --main-ref origin/main \
   --app-store-notes /absolute/path/to/app-store-notes.txt \
-  --observed-cloud-next-build 20105 \
   --output /absolute/path/to/release-plan.json
 ```
 
 Review the recommended SemVer, frozen SHA, complete change list, App Store
-notes, GitHub body, observed Cloud number, and approval SHA-256. Patch is the
-default for fixes and infrastructure. Any `#added` change recommends minor.
+notes, GitHub body, forward-only build policy, and approval SHA-256. The exact
+candidate build is derived later inside the protected workflow using the Team
+App Store Connect key. Patch is the default for fixes and infrastructure. Any
+`#added` change recommends minor.
 Major is never recommended automatically. A later beta for an already chosen
 semantic version recommends keeping that version while comparing only with the
 preceding beta. Its changelog is still regenerated cumulatively from the latest
 finalized Production release tag that is an ancestor of that beta, so a later
 beta cannot replace the version section with only its incremental changes.
 
-The approval hash includes the exact UI-observed Production Cloud next build,
-the resolved commits behind both the release-note comparison tag and cumulative
-changelog base tag, the complete generated GitHub release-body digest, planned
-RC/beta iteration, and the
-authoritative-Cloud-next policy. Changing that observation, main SHA, App Store
-notes, generated GitHub body, release iteration, either base tag or its resolved
-commit, channel, or semantic version requires a new plan and approval. Runtime
-reconciliation may advance beyond the approved observation only when every
-consumed Production number has the required Cloud-run evidence.
+The approval hash includes the resolved commits behind both the release-note
+comparison tag and cumulative changelog base tag, the complete generated GitHub
+release-body digest, and the
+`highest-observed-production-build-plus-one-forward-only-v1` policy. Changing
+the frozen main SHA, App Store notes, generated GitHub body, either base tag or
+its resolved commit, channel, semantic version, or build policy requires a new
+plan and approval. The RC/beta iteration is runtime naming state rather than an
+approved product input, so an authenticated forward recovery can create RC 2
+without weakening or regenerating the original approval.
 
 After Jason confirms the intended PR set is merged and approves the plan, use
 the private Codex skill to dispatch `.github/workflows/release.yml` with the
@@ -338,19 +348,37 @@ pending.
 
 ## Build-number reconciliation
 
-For source `S`, highest canonical build from a Production or Beta tag, highest
-relevant Production ASC build, and UI-observed Cloud next number `N` (both tag
-channels trigger the Production workflow; only Alpha artifact builds are
-informational):
+For source `S`, let `H` be the highest build observed across canonical
+Production/Beta tags, the Production app's App Store Connect builds, and the
+Production workflow's API-visible runs. Both tag channels trigger the
+Production workflow; Alpha artifact numbers are never included.
 
-- Normal: `N` is one above the reconciled baseline.
-- Self-healing: the observed `N` is a lower bound. If API-visible Production
-  runs consumed `N` (or later contiguous numbers) after planning, execution
-  advances to one past the highest consumed number. Every number between the
-  baseline and the resulting target must have exact Production run evidence;
-  the manifest records each run's ID, status, and source.
-- Resume after merge: if source already equals `N`, has no tag, and Cloud has
-  not consumed it, ASC has no conflicting build, and the release-preparation
+- Normal: the protected Ruby reconciler derives the explicit candidate as
+  `H + 1`. Fastlane lanes never calculate or increment it, and workflow inputs
+  cannot override it.
+- Forward self-healing: if source or a prior failed RC is behind `H`, advance to
+  `H + 1`. The manifest records all source values, the highest exact Cloud run,
+  the expected target, actual consumed runs, and any unassigned gap made
+  permanently unusable by a later Cloud assignment or Production ASC build.
+- Result verification: the publisher finds the exact run by workflow, tag, and
+  commit before comparing its assigned number with the canonical tag build. A
+  match continues normally. A lower assigned number is a fatal regression and
+  can never trigger recovery. A higher number immediately becomes durable
+  forward-jump evidence; the current tag and prerelease remain failed and
+  immutable.
+- Automatic RC recovery: after durable failure evidence is archived, a
+  short-lived Ubuntu job revalidates the failed tag, release-App author, empty
+  asset set, unchanged release commit at current `main`, immutable body/notes,
+  original approval hash, and `assigned > expected`. Only then may the job's
+  narrowly scoped `GITHUB_TOKEN` (`actions: write`) dispatch `Release` in
+  `mode=resume`. GitHub documents that
+  [`workflow_dispatch` triggered by `GITHUB_TOKEN` creates a new run](https://docs.github.com/en/actions/concepts/security/github_token#when-github_token-triggers-workflow-runs).
+  The chained run recalculates `H + 1`, creates
+  a new release PR and RC iteration, and carries predecessor evidence forward.
+  Recovery is capped at three chained attempts to prevent an uncontrolled
+  loop. It never deletes, retags, or reuses the failed RC.
+- Resume after merge: if source already equals `H + 1`, has no tag, and Cloud
+  has not consumed it, ASC has no conflicting build, and the release-preparation
   commit remains the newest first-parent commit that changed every protected
   version file and `CHANGELOG.md`, reuse it. Unrelated commits may have advanced
   `main`; the recovery approval must be planned against the exact release
@@ -373,16 +401,19 @@ informational):
   workflow, exact tag, exact commit, and no later Production run. Any existing
   GitHub release, mismatched tag/run, App Store build ahead of source, or Cloud
   advancement beyond that one exact run aborts recovery.
-- Stop: `N` regresses, an intervening Production run is absent, histories
-  conflict, or the eventual Cloud build does not exactly match the tag/build.
+- Stop: source is ahead of `H + 1`, histories conflict, an exact tagged run is
+  assigned below its canonical build, the recovery chain is malformed, main
+  changes after the failed release commit, assets already exist, or the bounded
+  recovery limit is reached.
 
 After release-PR checks finish, the workflow performs the same reconciliation
 again immediately before merge or recovered tag creation. It first force/prune
 refreshes the remote tag namespace and proves the approved comparison tag still
 resolves to its approved SHA, so a newly claimed build or moved tag is included
 in the final reconciliation. If the target moved, it aborts before either
-transition, closes the exact PR, and deletes only its verified release branch;
-a fresh plan must use the newly reconciled number.
+transition, closes the exact PR, and deletes only its verified release branch.
+The original approval remains valid for a later authenticated forward recovery;
+unrelated changes to `main` still require a fresh plan.
 
 Alpha numbers never enter this calculation. A failed Alpha-only beta build may
 be rerun against the same tag through
@@ -398,8 +429,9 @@ fails, the next authorized attempt can select its exact newer failed run while
 preserving the older durable run as predecessor evidence. The successful
 handoff records both IDs after independently validating the selected run's
 workflow, tag, commit, and terminal failure. A failed Production build consumes
-its number; an explicitly authorized `resume` creates a new RC/build and
-preserves the old prerelease.
+its number. Ordinary build failures remain preserved for an explicitly
+authorized resume; only a proven higher-number assignment receives the bounded
+automatic RC recovery described above.
 
 ## Artifacts, App Store submission, and finalization
 
@@ -417,7 +449,10 @@ preserves the old prerelease.
   handoff), then downloads, verifies, launches, packages, and uploads on macOS
   only when the exact notarized run is ready.
 - Completed unsuccessful Cloud runs are terminal and are recorded on Ubuntu.
-  Architecture, signing, notarization, stapling, Gatekeeper, bundle metadata,
+  An exact Production run with a different assigned number is also classified
+  there before completion: higher invokes the authenticated forward-recovery
+  path, while lower remains terminal. Architecture, signing, notarization,
+  stapling, Gatekeeper, bundle metadata,
   or launch verification failures are also terminal. Network, runner, download,
   upload, registry, and API failures leave the remote manifest and release body
   unchanged so a later short publisher check can retry the same exact tag.

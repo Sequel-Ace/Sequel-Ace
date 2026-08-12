@@ -231,12 +231,11 @@ module SequelAceRelease
       }
     end
 
-    def find_cloud_run(workflow_id:, build: nil, commit: nil, tag: nil, run_id: nil)
+    def find_cloud_run(workflow_id:, commit: nil, tag: nil, run_id: nil)
       candidates = if run_id
                      [build_run(run_id)]
                    else
                      workflow_runs(workflow_id).filter_map do |item|
-                       next if build && item["number"] != Integer(build)
                        next if commit && ![item["source_commit"], item["destination_commit"]].compact.include?(commit)
 
                        build_run(item.fetch("id"))
@@ -244,7 +243,6 @@ module SequelAceRelease
                    end
       candidates.find do |run|
         next false unless run["workflow_id"] == workflow_id
-        next false if build && run["number"] != Integer(build)
         next false if commit && ![run["source_commit"], run["destination_commit"]].compact.include?(commit)
         next false if tag && run["git_reference"] != tag
 

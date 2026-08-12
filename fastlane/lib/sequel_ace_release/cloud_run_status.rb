@@ -16,7 +16,6 @@ module SequelAceRelease
       end
       run = @client.find_cloud_run(
         workflow_id: workflow_id,
-        build: build,
         commit: commit,
         tag: tag,
         run_id: requested_run_id
@@ -25,6 +24,22 @@ module SequelAceRelease
 
       unless run["id"].to_s.match?(RUN_ID_PATTERN)
         raise ValidationError, "Xcode Cloud returned a malformed build-run ID"
+      end
+
+      if build
+        expected_build = positive_integer(build, "expected Production build")
+        assigned_build = positive_integer(run["number"], "assigned Production build")
+        if assigned_build != expected_build
+          direction = assigned_build > expected_build ? "advanced" : "regressed"
+          result = run.merge(
+            "readiness" => "failed",
+            "reason" => "cloud_build_number_#{direction}",
+            "expected_build" => expected_build,
+            "assigned_build" => assigned_build
+          )
+          result["recovery_build"] = assigned_build + 1 if direction == "advanced"
+          return result
+        end
       end
 
       unless run["execution_progress"] == "COMPLETE"
@@ -73,6 +88,15 @@ module SequelAceRelease
 
     def pending(reason)
       { "readiness" => "pending", "reason" => reason }
+    end
+
+    def positive_integer(value, label)
+      integer = Integer(value)
+      raise ValidationError, "#{label} must be positive" unless integer.positive?
+
+      integer
+    rescue ArgumentError, TypeError
+      raise ValidationError, "#{label} must be an integer"
     end
   end
 end

@@ -113,6 +113,9 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes cloud_token, "continue-on-error: true"
     assert_operator cloud_failure.index("archive-release-to-ghcr.sh push"), :<,
                     cloud_failure.index('[[ -z "${RELEASE_MUTATION_TOKEN}" ]]')
+    assert_includes cloud_failure, "the optional GitHub annotation failed and will not block forward recovery"
+    assert_operator cloud_failure.index("archive-release-to-ghcr.sh push"), :<,
+                    cloud_failure.index("if ! (")
 
     alpha_archive = publisher.index("- name: Refresh the private archive with submission evidence")
     alpha_token_index = publisher.index("- name: Mint release mutation token for Alpha recovery annotation")
@@ -206,6 +209,43 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes final_gate, "APPROVED_CHANGELOG_BASE_SHA"
     assert_includes final_gate, "--expected-target-build"
     assert_includes final_gate, "mv pre-merge-reconciliation.json reconciliation.json"
+  end
+
+  def test_release_build_is_api_derived_without_a_ui_number_input
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+
+    refute_includes workflow, "production_cloud_next_build"
+    refute_includes workflow, "--cloud-next-build"
+    refute_includes workflow, "--observed-cloud-next-build"
+    assert_equal 2, workflow.scan("sa-release reconcile-build").length
+    assert_includes workflow, '--workflow-id "${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}"'
+    assert_includes workflow, '"production_build_evidence" => reconciliation.fetch("production_build_evidence")'
+  end
+
+  def test_a_higher_assigned_number_dispatches_only_a_validated_forward_recovery
+    release = File.read(repo_path(".github/workflows/release.yml"))
+    publisher = File.read(repo_path(".github/workflows/release_publish.yml"))
+
+    assert_includes publisher, 'failure_reason == \'cloud_build_number_advanced\''
+    refute_includes publisher, 'failure_reason == \'cloud_build_number_regressed\' &&'
+    recovery_job = publisher.split("  forward_build_recovery:", 2).fetch(1)
+                            .split("  publish:", 2).first
+    assert_includes recovery_job, "actions: write"
+    assert_includes recovery_job, "validate-forward-recovery"
+    assert_operator recovery_job.index("validate-forward-recovery"), :<,
+                    recovery_job.index("actions/workflows/release.yml/dispatches")
+    assert_includes recovery_job, '"mode" => "resume"'
+    assert_includes recovery_job, '"recovery_tag" => recovery.fetch("predecessor_tag")'
+    assert_includes recovery_job, '"approval_sha256" => approval.fetch("sha256")'
+
+    assert_includes release, 'RELEASE_ACTOR: ${{ github.actor }}'
+    assert_includes release, '"${RELEASE_ACTOR}" == "github-actions[bot]"'
+    assert_includes release, "validate-forward-recovery"
+    assert_includes release, 'reconciliation.fetch("production_cloud_runs").find'
+    assert_includes release, 'run.fetch("id") == recovery.fetch("cloud_run_id")'
+    assert_includes release, 'exact_run.fetch("number") == recovery.fetch("cloud_assigned_build")'
+    assert_includes release, '--base-sha "${{ steps.recovery.outputs.operational_main_sha }}"'
+    assert_includes release, "forward_build_recovery"
   end
 
   def test_release_preparation_uses_the_approved_cumulative_changelog_base
@@ -648,7 +688,7 @@ class WorkflowRecoveryTest < Minitest::Test
     refute_includes feasibility, "brew install oras"
 
     publisher = File.read(repo_path(".github/workflows/release_publish.yml"))
-    assert_equal 5, publisher.scan(action).length
+    assert_equal 6, publisher.scan(action).length
     assert_includes publisher, "oras_1.3.3_linux_amd64.tar.gz"
     assert_includes publisher, linux_checksum
     assert_includes publisher, "oras_1.3.3_darwin_arm64.tar.gz"
@@ -660,7 +700,7 @@ class WorkflowRecoveryTest < Minitest::Test
 
   def test_publisher_executes_the_immutable_event_revision
     workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
-    assert_equal 4, workflow.scan('ref: ${{ github.sha }}').length
+    assert_equal 5, workflow.scan('ref: ${{ github.sha }}').length
     refute_includes workflow, "ref: main"
     assert_includes workflow, 'SOURCE_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}'
     assert_includes workflow, '[[ "${SOURCE_HEAD_BRANCH}" == "main" ]]'

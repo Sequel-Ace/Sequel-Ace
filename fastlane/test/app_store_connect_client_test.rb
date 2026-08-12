@@ -199,7 +199,6 @@ class AppStoreConnectClientTest < Minitest::Test
     run = client.find_cloud_run(
       workflow_id: "workflow-id",
       run_id: "run-id",
-      build: 20_105,
       commit: "a" * 40,
       tag: "production/5.3.2-20105"
     )

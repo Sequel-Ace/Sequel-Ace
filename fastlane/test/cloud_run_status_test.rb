@@ -47,6 +47,31 @@ class CloudRunStatusTest < Minitest::Test
     assert_nil client.build_run_id
   end
 
+  def test_reports_a_higher_assigned_number_as_forward_recovery_without_waiting
+    client = Client.new(run: cloud_run("RUNNING", nil).merge("number" => 20_112))
+
+    result = readiness_for(client)
+
+    assert_equal "failed", result.fetch("readiness")
+    assert_equal "cloud_build_number_advanced", result.fetch("reason")
+    assert_equal 20_105, result.fetch("expected_build")
+    assert_equal 20_112, result.fetch("assigned_build")
+    assert_equal 20_113, result.fetch("recovery_build")
+    assert_nil client.build_run_id
+    refute client.find_arguments.key?(:build)
+  end
+
+  def test_reports_a_lower_assigned_number_as_a_fatal_regression
+    client = Client.new(run: cloud_run("RUNNING", nil).merge("number" => 20_104))
+
+    result = readiness_for(client)
+
+    assert_equal "failed", result.fetch("readiness")
+    assert_equal "cloud_build_number_regressed", result.fetch("reason")
+    refute result.key?("recovery_build")
+    assert_nil client.build_run_id
+  end
+
   def test_reports_a_completed_unsuccessful_run_as_failed
     client = Client.new(run: cloud_run("COMPLETE", "FAILED"))
 

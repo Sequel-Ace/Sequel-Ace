@@ -14,7 +14,6 @@ class DeploymentGuardTest < Minitest::Test
       expected_sha: "a" * 40,
       channel: "production",
       version: "5.3.2",
-      cloud_next_build: 20_105,
       confirmation: "RELEASE production 5.3.2",
       enabled: "true"
     }
@@ -24,7 +23,7 @@ class DeploymentGuardTest < Minitest::Test
     result = @guard.validate!(**@valid)
     assert_equal "Jason-Morcos", result.fetch("actor")
     assert_equal "Jason-Morcos", result.fetch("triggering_actor")
-    assert_equal 20_105, result.fetch("cloud_next_build")
+    assert_equal false, result.fetch("automated_recovery")
   end
 
   def test_rejects_actor_ref_main_movement_and_confirmation_changes
@@ -85,6 +84,34 @@ class DeploymentGuardTest < Minitest::Test
     ))
     assert_raises(SequelAceRelease::ValidationError) do
       @guard.validate!(**@valid.merge(current_sha: "a" * 41, expected_sha: "a" * 41))
+    end
+  end
+
+  def test_actions_bot_is_allowed_only_for_an_exact_automatic_recovery
+    result = @guard.validate!(**@valid.merge(
+      actor: "github-actions[bot]",
+      triggering_actor: "github-actions[bot]",
+      mode: "resume",
+      recovery_tag: "production/5.3.2-20105"
+    ))
+
+    assert_equal true, result.fetch("automated_recovery")
+    assert_equal "production/5.3.2-20105", result.fetch("recovery_tag")
+    assert_raises(SequelAceRelease::ValidationError) do
+      @guard.validate!(**@valid.merge(
+        actor: "github-actions[bot]",
+        triggering_actor: "github-actions[bot]",
+        mode: "resume"
+      ))
+    end
+  end
+
+  def test_human_dispatch_cannot_forge_automatic_recovery
+    assert_raises(SequelAceRelease::ValidationError) do
+      @guard.validate!(**@valid.merge(
+        mode: "resume",
+        recovery_tag: "production/5.3.2-20105"
+      ))
     end
   end
 end

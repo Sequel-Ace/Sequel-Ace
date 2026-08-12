@@ -28,8 +28,7 @@ class CliBuildReconciliationTest < Minitest::Test
       cli.run([
         "reconcile-build",
         "--source-build", "20105",
-        "--highest-asc-build", "20104",
-        "--cloud-next-build", "20106"
+        "--highest-asc-build", "20104"
       ])
     end
 
