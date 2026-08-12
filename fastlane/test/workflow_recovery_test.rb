@@ -512,7 +512,7 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes settlement, "failure_reason != 'cloud_build_number_advanced'"
   end
 
-  def test_wake_state_failures_preserve_the_durable_cloud_running_handoff
+  def test_unsuccessful_or_cancelled_wake_state_steps_preserve_the_durable_cloud_running_handoff
     release = File.read(repo_path(".github/workflows/release.yml"))
     release_arm = release.split("- name: Arm event-driven artifact publication for the exact handoff", 2).fetch(1)
                          .split("- name: Preserve a recoverable handoff", 2).first
@@ -520,10 +520,12 @@ class WorkflowRecoveryTest < Minitest::Test
                               .split("- name: Record asynchronous Cloud handoff", 2).first
 
     assert_includes release_arm, "id: artifact_wake"
+    assert_includes release_recovery, "failure() || cancelled()"
     assert_includes release_recovery, "steps.initial_archive.outcome == 'success'"
-    assert_includes release_recovery, "steps.artifact_wake.outcome == 'failure'"
+    assert_includes release_recovery, "steps.artifact_wake.outcome != 'success'"
     assert_includes release_recovery, "remains \\`cloud_running\\`"
-    assert_includes release, "steps.initial_archive.outcome != 'success' || steps.artifact_wake.outcome != 'failure'"
+    assert_includes release, "steps.initial_archive.outcome != 'success' || steps.artifact_wake.outcome == 'success'"
+    refute_includes release, "steps.artifact_wake.outcome == 'failure'"
     refute_includes release_recovery, "record-failure"
 
     alpha = File.read(repo_path(".github/workflows/release_alpha_retry.yml"))
@@ -533,10 +535,12 @@ class WorkflowRecoveryTest < Minitest::Test
                           .split("- name: Record asynchronous Alpha retry handoff", 2).first
     assert_includes alpha, "id: retry_archive"
     assert_includes alpha_arm, "id: artifact_wake"
+    assert_includes alpha_recovery, "failure() || cancelled()"
     assert_includes alpha_recovery, "steps.retry_archive.outcome == 'success'"
-    assert_includes alpha_recovery, "steps.artifact_wake.outcome == 'failure'"
+    assert_includes alpha_recovery, "steps.artifact_wake.outcome != 'success'"
     assert_includes alpha_recovery, "remains \\`cloud_running\\`"
-    assert_includes alpha, "steps.retry_archive.outcome != 'success' || steps.artifact_wake.outcome != 'failure'"
+    assert_includes alpha, "steps.retry_archive.outcome != 'success' || steps.artifact_wake.outcome == 'success'"
+    refute_includes alpha, "steps.artifact_wake.outcome == 'failure'"
     refute_includes alpha_recovery, "record-failure"
   end
 

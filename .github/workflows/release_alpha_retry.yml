@@ -244,7 +244,10 @@ jobs:
         run: Scripts/release-artifact-wake-state.sh arm "${RELEASE_TAG}"
 
       - name: Preserve a recoverable Alpha handoff when wake-state arming fails
-        if: failure() && steps.retry_archive.outcome == 'success' && steps.artifact_wake.outcome == 'failure'
+        if: >-
+          (failure() || cancelled()) &&
+          steps.retry_archive.outcome == 'success' &&
+          steps.artifact_wake.outcome != 'success'
         env:
           ARCHIVE_REFERENCE: ${{ steps.release.outputs.archive_ref }}
           RELEASE_TAG: ${{ inputs.beta_tag }}
@@ -272,7 +275,7 @@ jobs:
           (failure() || cancelled()) &&
           steps.authorization.outputs.authorized == 'true' &&
           steps.release.outputs.validated == 'true' &&
-          (steps.retry_archive.outcome != 'success' || steps.artifact_wake.outcome != 'failure')
+          (steps.retry_archive.outcome != 'success' || steps.artifact_wake.outcome == 'success')
         id: failure_release_token
         continue-on-error: true
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -289,7 +292,7 @@ jobs:
           (failure() || cancelled()) &&
           steps.authorization.outputs.authorized == 'true' &&
           steps.release.outputs.validated == 'true' &&
-          (steps.retry_archive.outcome != 'success' || steps.artifact_wake.outcome != 'failure')
+          (steps.retry_archive.outcome != 'success' || steps.artifact_wake.outcome == 'success')
         continue-on-error: true
         env:
           BETA_TAG: ${{ inputs.beta_tag }}

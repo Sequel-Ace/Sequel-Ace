@@ -188,7 +188,7 @@ successful processing clears only that same tag, while transient failures leave
 it armed. A forward-RC child replaces its exact predecessor tag in one guarded
 write only after the new `cloud_running` archive is durable; the predecessor is
 not cleared if forward dispatch fails. The state adapter retries transient API
-failures. If arming still fails after the durable archive exists, failure
+failures. If arming fails or is cancelled after the durable archive exists,
 cleanup preserves that discoverable `cloud_running` handoff and prerelease for
 an exact manual publisher dispatch instead of marking it terminal. The Linux job performs one exact Cloud-status read and exits; it
 starts the protected GitHub-hosted `macos-15` verification job only after every

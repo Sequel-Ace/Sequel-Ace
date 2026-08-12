@@ -684,7 +684,10 @@ jobs:
           Scripts/release-artifact-wake-state.sh "${arguments[@]}"
 
       - name: Preserve a recoverable handoff when wake-state arming fails
-        if: failure() && steps.initial_archive.outcome == 'success' && steps.artifact_wake.outcome == 'failure'
+        if: >-
+          (failure() || cancelled()) &&
+          steps.initial_archive.outcome == 'success' &&
+          steps.artifact_wake.outcome != 'success'
         env:
           ARCHIVE_REFERENCE: ${{ steps.initial_archive.outputs.reference }}
           RELEASE_TAG: ${{ steps.prerelease.outputs.tag }}
@@ -745,7 +748,7 @@ jobs:
         if: >-
           (failure() || cancelled()) &&
           steps.release_context.outputs.tag != '' &&
-          (steps.initial_archive.outcome != 'success' || steps.artifact_wake.outcome != 'failure')
+          (steps.initial_archive.outcome != 'success' || steps.artifact_wake.outcome == 'success')
         id: failure_release_token
         continue-on-error: true
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -761,7 +764,7 @@ jobs:
         if: >-
           (failure() || cancelled()) &&
           steps.release_context.outputs.tag != '' &&
-          (steps.initial_archive.outcome != 'success' || steps.artifact_wake.outcome != 'failure')
+          (steps.initial_archive.outcome != 'success' || steps.artifact_wake.outcome == 'success')
         continue-on-error: true
         env:
           GHCR_TOKEN: ${{ github.token }}
