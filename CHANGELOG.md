@@ -11,6 +11,7 @@
 - Prevent large field editor close crashes ([a430efbbe](https://github.com/Sequel-Ace/Sequel-Ace/commit/a430efbbeb3cdb7c6ef0e7f7c2ee1562db770da0), [#2507](https://github.com/Sequel-Ace/Sequel-Ace/pull/2507))
 
 ### Changed
+- Ensure release tags trigger Xcode Cloud ([981596fad](https://github.com/Sequel-Ace/Sequel-Ace/commit/981596fad8648f8bd2d6fbd4b90fb81e454d15b9), [#2549](https://github.com/Sequel-Ace/Sequel-Ace/pull/2549))
 - Make changelog temp files portable ([be6a77fdb](https://github.com/Sequel-Ace/Sequel-Ace/commit/be6a77fdb97e7889d6797df6afd8572c745d5f2e), [#2546](https://github.com/Sequel-Ace/Sequel-Ace/pull/2546))
 - Keep release Bundler config outside worktree ([e7c2da3aa](https://github.com/Sequel-Ace/Sequel-Ace/commit/e7c2da3aa266889c2c69093f680476463bbe8eb2), [#2545](https://github.com/Sequel-Ace/Sequel-Ace/pull/2545))
 - Clean up sole GHCR feasibility probe ([59b89b266](https://github.com/Sequel-Ace/Sequel-Ace/commit/59b89b266fe57729d4310a1433edaf0d186f14a2), [#2543](https://github.com/Sequel-Ace/Sequel-Ace/pull/2543))
