@@ -106,9 +106,19 @@ mint_exact_repository_token()
 
 	local installation_json
 	installation_json="$(retry_command api_as_token "${app_jwt}" "repos/${GITHUB_REPOSITORY}/installation")"
-	readonly installation_id="$(jq -er '.id | select(type == "number" and . > 0)' <<< "${installation_json}")"
-	readonly installation_token_request="$(jq -cn --argjson id "${GITHUB_REPOSITORY_ID}" \
-		'{repository_ids:[$id],permissions:{actions_variables:"write"}}')"
+	local parsed_installation_id
+	parsed_installation_id="$(jq -er '.id | select(type == "number" and . > 0)' <<< "${installation_json}")" || {
+		echo "GitHub did not return a valid repository installation ID." >&2
+		exit 1
+	}
+	readonly installation_id="${parsed_installation_id}"
+	local parsed_installation_token_request
+	parsed_installation_token_request="$(jq -cn --argjson id "${GITHUB_REPOSITORY_ID}" \
+		'{repository_ids:[$id],permissions:{actions_variables:"write"}}')" || {
+		echo "Could not construct the narrow installation-token request." >&2
+		exit 1
+	}
+	readonly installation_token_request="${parsed_installation_token_request}"
 
 	local response
 	response="$(retry_command request_installation_token)"

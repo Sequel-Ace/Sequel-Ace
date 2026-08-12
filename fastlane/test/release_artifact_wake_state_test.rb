@@ -109,13 +109,24 @@ class ReleaseArtifactWakeStateTest < Minitest::Test
     end
   end
 
+  def test_workflow_credentials_reject_a_missing_installation_id_before_token_creation
+    with_fake_github("none", provided_token: false, installation_response: "{}") do |run, state, log|
+      _stdout, stderr, status = run.call("arm", PRODUCTION_TAG)
+
+      refute_predicate status, :success?
+      assert_includes stderr, "valid repository installation ID"
+      assert_equal "none", File.read(state).strip
+      refute_includes File.read(log), "access_tokens"
+    end
+  end
+
   private
 
   def repo_path(relative_path)
     File.expand_path("../..", __dir__) + "/#{relative_path}"
   end
 
-  def with_fake_github(initial_value, provided_token: true)
+  def with_fake_github(initial_value, provided_token: true, installation_response: '{"id":123}')
     Dir.mktmpdir("sequel-ace-wake-state-test") do |directory|
       bin_directory = File.join(directory, "bin")
       state_path = File.join(directory, "state")
@@ -138,7 +149,7 @@ class ReleaseArtifactWakeStateTest < Minitest::Test
           exit 0
         fi
         if [[ " $* " == *" repos/Sequel-Ace/Sequel-Ace/installation "* ]]; then
-          printf '%s\n' '{"id":123}'
+          printf '%s\n' "${FAKE_INSTALLATION_RESPONSE}"
           exit 0
         fi
         if [[ " $* " == *" --method PATCH "* ]]; then
@@ -168,6 +179,7 @@ class ReleaseArtifactWakeStateTest < Minitest::Test
           "FAKE_GH_STATE" => state_path,
           "FAKE_GH_LOG" => log_path,
           "GITHUB_REPOSITORY" => "Sequel-Ace/Sequel-Ace",
+          "FAKE_INSTALLATION_RESPONSE" => installation_response,
           "PATH" => "#{bin_directory}:#{ENV.fetch('PATH')}"
         }
         if provided_token
