@@ -187,6 +187,8 @@ module SequelAceRelease
         value.on("--cloud-runs FILE") { |item| options[:cloud_runs] = read_json(item) }
         value.on("--workflow-id ID") { |item| options[:workflow_id] = item }
         value.on("--source-tagged") { options[:source_tagged] = true }
+        value.on("--recover-release-channel CHANNEL") { |item| options[:recover_release_channel] = item }
+        value.on("--recover-release-version VERSION") { |item| options[:recover_release_version] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
@@ -206,6 +208,14 @@ module SequelAceRelease
       source_tags = git.tags("production/*-#{source_build}") + git.tags("beta/*-#{source_build}")
       source_tagged = options.fetch(:source_tagged, false) || source_tags.any?
       source_release_commit_sha = git.latest_commit_changing_all(release_paths)
+      recovery_tag = recover_release_tag(
+        options: options,
+        git: git,
+        source_build: source_build,
+        source_release_commit_sha: source_release_commit_sha,
+        runs: runs,
+        app_store_client: asc_client
+      )
 
       result = BuildReconciler.new.reconcile(
         source_build: source_build,
@@ -215,7 +225,9 @@ module SequelAceRelease
         cloud_runs: runs,
         source_tagged: source_tagged,
         source_release_commit_sha: source_release_commit_sha,
-        expected_target_build: options[:expected_target_build]
+        expected_target_build: options[:expected_target_build],
+        recover_release_tag: recovery_tag,
+        production_workflow_id: options[:workflow_id]
       )
       emit(result.to_h.merge("production_cloud_runs" => runs), options[:output])
     end
@@ -438,13 +450,17 @@ module SequelAceRelease
         target_sha: options[:target_sha],
         protected_paths: release_paths
       )
-      release = client.create_release(
+      tag = client.create_or_validate_release_tag(
+        tag: naming.tag,
+        target_sha: options[:target_sha]
+      )
+      release = client.create_or_validate_release(
         tag: naming.tag,
         target_sha: options[:target_sha],
         title: naming.title,
         body: options[:body]
       )
-      emit({ "naming" => naming.to_h, "target_validation" => target_validation, "release" => release }, options[:output])
+      emit({ "naming" => naming.to_h, "target_validation" => target_validation, "tag" => tag, "release" => release }, options[:output])
     end
 
     def github_validate_release_target(arguments)
@@ -1105,6 +1121,39 @@ module SequelAceRelease
 
     def highest_build_from_tags(tags)
       tags.filter_map { |tag| tag[%r{\A(?:production|beta)/\d+\.\d+\.\d+-([1-9]\d*)\z}, 1]&.to_i }.max || 0
+    end
+
+    def recover_release_tag(options:, git:, source_build:, source_release_commit_sha:, runs:, app_store_client:)
+      channel = options[:recover_release_channel]
+      version = options[:recover_release_version]
+      return nil if channel.nil? && version.nil?
+      if channel.to_s.empty? || version.to_s.empty?
+        raise ValidationError, "tag-only recovery requires both release channel and version"
+      end
+
+      naming = ReleaseNaming.new(channel: channel, version: version, build: source_build, iteration: 1)
+      tag = naming.tag
+      return nil unless git.tag_exists?(tag)
+      unless Config.valid_git_sha?(source_release_commit_sha) && git.sha("refs/tags/#{tag}") == source_release_commit_sha
+        raise IntegrityError, "tag-only recovery tag does not resolve to the exact release preparation commit"
+      end
+
+      begin
+        github_client.release_by_tag(tag)
+        return nil
+      rescue APIError => error
+        raise unless error.message.include?("HTTP 404")
+      end
+      if options[:workflow_id].to_s.empty? || app_store_client.nil?
+        raise ValidationError, "tag-only recovery requires Production Xcode Cloud access"
+      end
+
+      run = Array(runs).find { |candidate| candidate["number"].to_i == source_build }
+      if run
+        details = app_store_client.build_run(run.fetch("id"))
+        run.replace(run.merge(details))
+      end
+      tag
     end
 
     def release_pull_request_body(naming, release_body)

@@ -36,4 +36,76 @@ class CliBuildReconciliationTest < Minitest::Test
     assert_equal 1, status
     assert_includes error.string, "canonical release tag build 20106 is ahead of source build 20105"
   end
+
+  def test_tag_only_recovery_validates_the_missing_release_and_enriches_its_cloud_run
+    commit = "a" * 40
+    tag = "production/5.4.0-20105"
+    git = Object.new
+    git.define_singleton_method(:tag_exists?) { |candidate| candidate == tag }
+    git.define_singleton_method(:sha) { |_ref| commit }
+    github = Object.new
+    github.define_singleton_method(:release_by_tag) do |_candidate|
+      raise SequelAceRelease::APIError, "GitHub API returned HTTP 404: Not Found"
+    end
+    apple = Object.new
+    apple.define_singleton_method(:build_run) do |run_id|
+      raise "wrong run" unless run_id == "run-20105"
+
+      {
+        "workflow_id" => "DB2243BC-F641-472D-995E-3C9198C235DE",
+        "git_reference" => tag,
+        "source_commit" => commit
+      }
+    end
+    runs = [{ "id" => "run-20105", "number" => 20_105 }]
+    cli = SequelAceRelease::CLI.new(out: StringIO.new, err: StringIO.new, env: {})
+
+    recovered = cli.stub(:github_client, github) do
+      cli.send(
+        :recover_release_tag,
+        options: {
+          recover_release_channel: "production",
+          recover_release_version: "5.4.0",
+          workflow_id: "DB2243BC-F641-472D-995E-3C9198C235DE"
+        },
+        git: git,
+        source_build: 20_105,
+        source_release_commit_sha: commit,
+        runs: runs,
+        app_store_client: apple
+      )
+    end
+
+    assert_equal tag, recovered
+    assert_equal tag, runs.first.fetch("git_reference")
+    assert_equal commit, runs.first.fetch("source_commit")
+  end
+
+  def test_tag_only_recovery_is_not_selected_when_the_prerelease_exists
+    commit = "a" * 40
+    git = Object.new
+    git.define_singleton_method(:tag_exists?) { |_candidate| true }
+    git.define_singleton_method(:sha) { |_ref| commit }
+    github = Object.new
+    github.define_singleton_method(:release_by_tag) { |_candidate| { "id" => 100 } }
+    cli = SequelAceRelease::CLI.new(out: StringIO.new, err: StringIO.new, env: {})
+
+    recovered = cli.stub(:github_client, github) do
+      cli.send(
+        :recover_release_tag,
+        options: {
+          recover_release_channel: "production",
+          recover_release_version: "5.4.0",
+          workflow_id: "DB2243BC-F641-472D-995E-3C9198C235DE"
+        },
+        git: git,
+        source_build: 20_105,
+        source_release_commit_sha: commit,
+        runs: [],
+        app_store_client: Object.new
+      )
+    end
+
+    assert_nil recovered
+  end
 end

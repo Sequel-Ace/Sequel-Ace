@@ -155,6 +155,106 @@ class BuildReconcilerTest < Minitest::Test
     assert_equal "normal_increment", result.reason
   end
 
+  def test_tag_only_recovery_reuses_the_source_build_before_cloud_consumes_it
+    result = reconcile(
+      source_build: 20_105,
+      highest_tag_build: 20_105,
+      highest_asc_build: 20_104,
+      cloud_next_build: 20_105,
+      source_tagged: true,
+      source_release_commit_sha: "a" * 40,
+      recover_release_tag: "production/5.4.0-20105",
+      production_workflow_id: "DB2243BC-F641-472D-995E-3C9198C235DE"
+    )
+
+    assert_equal 20_105, result.target_build
+    assert_equal "resume_after_tag", result.reason
+    assert_equal "a" * 40, result.source_release_commit_sha
+  end
+
+  def test_tag_only_recovery_reuses_the_exact_consumed_cloud_run
+    result = reconcile(
+      source_build: 20_105,
+      highest_tag_build: 20_105,
+      highest_asc_build: 20_105,
+      cloud_next_build: 20_106,
+      source_tagged: true,
+      source_release_commit_sha: "a" * 40,
+      recover_release_tag: "production/5.4.0-20105",
+      production_workflow_id: "DB2243BC-F641-472D-995E-3C9198C235DE",
+      cloud_runs: [{
+        "id" => "run-20105",
+        "number" => 20_105,
+        "execution_progress" => "COMPLETE",
+        "completion_status" => "SUCCEEDED",
+        "source_commit" => "a" * 40,
+        "git_reference" => "production/5.4.0-20105",
+        "workflow_id" => "DB2243BC-F641-472D-995E-3C9198C235DE"
+      }]
+    )
+
+    assert_equal 20_105, result.target_build
+    assert_equal "resume_after_tag", result.reason
+  end
+
+  def test_tag_only_recovery_rejects_cloud_advancement_without_the_exact_run
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      reconcile(
+        source_build: 20_105,
+        highest_tag_build: 20_105,
+        cloud_next_build: 20_106,
+        source_tagged: true,
+        source_release_commit_sha: "a" * 40,
+        recover_release_tag: "production/5.4.0-20105",
+        production_workflow_id: "DB2243BC-F641-472D-995E-3C9198C235DE"
+      )
+    end
+
+    assert_includes error.message, "without its exact Production run"
+  end
+
+  def test_tag_only_recovery_rejects_an_app_store_build_without_the_exact_run
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      reconcile(
+        source_build: 20_105,
+        highest_tag_build: 20_105,
+        highest_asc_build: 20_105,
+        cloud_next_build: 20_105,
+        source_tagged: true,
+        source_release_commit_sha: "a" * 40,
+        recover_release_tag: "production/5.4.0-20105",
+        production_workflow_id: "DB2243BC-F641-472D-995E-3C9198C235DE"
+      )
+    end
+
+    assert_includes error.message, "has no exact Production run"
+  end
+
+  def test_tag_only_recovery_rejects_a_mismatched_cloud_identity
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      reconcile(
+        source_build: 20_105,
+        highest_tag_build: 20_105,
+        cloud_next_build: 20_106,
+        source_tagged: true,
+        source_release_commit_sha: "a" * 40,
+        recover_release_tag: "production/5.4.0-20105",
+        production_workflow_id: "DB2243BC-F641-472D-995E-3C9198C235DE",
+        cloud_runs: [{
+          "id" => "run-20105",
+          "number" => 20_105,
+          "execution_progress" => "COMPLETE",
+          "completion_status" => "SUCCEEDED",
+          "source_commit" => "b" * 40,
+          "git_reference" => "production/5.4.0-20105",
+          "workflow_id" => "DB2243BC-F641-472D-995E-3C9198C235DE"
+        }]
+      )
+    end
+
+    assert_includes error.message, "does not match the tag-only recovery identity"
+  end
+
   def test_regression_aborts
     assert_raises(SequelAceRelease::ValidationError) do
       reconcile(source_build: 20_105, cloud_next_build: 20_104)
