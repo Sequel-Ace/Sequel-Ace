@@ -667,6 +667,24 @@ jobs:
           Scripts/archive-release-to-ghcr.sh push "${reference}" release-archive > initial-archive-evidence.json
           echo "reference=${reference}" >> "${GITHUB_OUTPUT}"
 
+      # create-github-app-token does not yet expose GitHub's Variables permission
+      # as a narrow input. This repository-only token inherits the release App's
+      # minimal installed permissions and is passed only to the state adapter.
+      - name: Mint release App token for artifact wake state
+        id: artifact_state_token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: Sequel-Ace
+          repositories: Sequel-Ace
+
+      - name: Arm event-driven artifact publication for the exact handoff
+        env:
+          GH_TOKEN: ${{ steps.artifact_state_token.outputs.token }}
+          RELEASE_TAG: ${{ steps.prerelease.outputs.tag }}
+        run: Scripts/release-artifact-wake-state.sh arm "${RELEASE_TAG}"
+
       - name: Record asynchronous Cloud handoff
         run: |
           {
@@ -675,7 +693,7 @@ jobs:
             echo "- Production build: \`${{ steps.reconcile.outputs.build }}\`"
             echo "- Build reconciliation: \`${{ steps.reconcile.outputs.reason }}\`"
             echo "- Private handoff archive: \`${{ steps.initial_archive.outputs.reference }}\`"
-            echo "- This runner is complete; Release Artifact Publisher will inspect Cloud without a long-lived runner and attach only notarized, verified artifacts."
+            echo "- This runner is complete; Xcode Cloud completion checks will wake Release Artifact Publisher, with a gated schedule as recovery only."
           } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Refresh release App token for failure cleanup

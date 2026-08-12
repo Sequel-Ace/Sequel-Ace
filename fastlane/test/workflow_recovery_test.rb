@@ -43,16 +43,19 @@ class WorkflowRecoveryTest < Minitest::Test
       ".github/workflows/release.yml:Mint repository-scoped release App token" => branch_permissions,
       ".github/workflows/release.yml:Refresh release App token before merging" => branch_permissions,
       ".github/workflows/release.yml:Mint exact-target release mutation token" => release_mutation_permissions,
+      ".github/workflows/release.yml:Mint release App token for artifact wake state" => [],
       ".github/workflows/release.yml:Refresh release App token for failure cleanup" => cleanup_permissions,
       ".github/workflows/release.yml:Mint release mutation token for failure annotation" => release_mutation_permissions,
       ".github/workflows/release_alpha_retry.yml:Mint repository-scoped release App token" => [["permission-contents", "read"]],
+      ".github/workflows/release_alpha_retry.yml:Mint release App token for artifact wake state" => [],
       ".github/workflows/release_alpha_retry.yml:Mint release mutation token for failure annotation" => release_mutation_permissions,
       ".github/workflows/release_feasibility.yml:Mint a fresh release App token for the GitHub probe" => cleanup_permissions,
       ".github/workflows/release_feasibility.yml:Refresh release App token for probe cleanup" => cleanup_permissions,
       ".github/workflows/release_finalize.yml:Mint exact-target release mutation token" => release_mutation_permissions,
       ".github/workflows/release_publish.yml:Mint release mutation token for Cloud failure annotation" => release_mutation_permissions,
       ".github/workflows/release_publish.yml:Mint release mutation token for Alpha recovery annotation" => release_mutation_permissions,
-      ".github/workflows/release_publish.yml:Mint release mutation token for terminal failure annotation" => release_mutation_permissions
+      ".github/workflows/release_publish.yml:Mint release mutation token for terminal failure annotation" => release_mutation_permissions,
+      ".github/workflows/release_publish.yml:Mint release App token for artifact wake state" => []
     }
     observed_steps = []
 
@@ -140,6 +143,26 @@ class WorkflowRecoveryTest < Minitest::Test
                                     .split("- name: Finalize only exact App Store-live releases", 2).first
     refute_includes exact_create_token, "continue-on-error: true"
     refute_includes exact_finalize_token, "continue-on-error: true"
+  end
+
+  def test_artifact_wake_tokens_are_repository_scoped_and_used_only_by_the_state_adapter
+    {
+      ".github/workflows/release.yml" => "Arm event-driven artifact publication for the exact handoff",
+      ".github/workflows/release_alpha_retry.yml" => "Arm event-driven artifact publication for the exact Alpha retry",
+      ".github/workflows/release_publish.yml" => "Clear only the exact settled handoff"
+    }.each do |path, consumer_name|
+      workflow = File.read(repo_path(path))
+      token = workflow.split("- name: Mint release App token for artifact wake state", 2).fetch(1)
+                      .split("- name: #{consumer_name}", 2).first
+      consumer = workflow.split("- name: #{consumer_name}", 2).fetch(1)
+                         .split(/^\s{6}- name: /, 2).first
+
+      assert_includes token, "owner: Sequel-Ace"
+      assert_includes token, "repositories: Sequel-Ace"
+      refute_match(/permission-[a-z-]+:/, token)
+      assert_includes consumer, "Scripts/release-artifact-wake-state.sh"
+      assert_includes consumer, "steps.artifact_state_token.outputs.token"
+    end
   end
 
   def test_optional_release_annotations_cannot_recreate_a_missing_tag_from_main
@@ -366,8 +389,19 @@ class WorkflowRecoveryTest < Minitest::Test
     end
     assert_includes release, "Durably archive the release identity before Cloud runs"
     assert_includes alpha_retry, "Archive the exact Alpha retry handoff"
+    assert_operator release.index("Durably archive the release identity before Cloud runs"), :<,
+                    release.index("Arm event-driven artifact publication for the exact handoff")
+    assert_operator alpha_retry.index("Archive the exact Alpha retry handoff"), :<,
+                    alpha_retry.index("Arm event-driven artifact publication for the exact Alpha retry")
     assert_includes publisher, 'cron: "11,41 * * * *"'
+    assert_includes publisher, "check_run:"
+    assert_includes publisher, "types:\n      - completed"
+    assert_includes publisher, "status: {}"
     assert_includes publisher, "workflow_run:"
+    assert_includes publisher, "SA_RELEASE_PENDING_ARTIFACT_TAG"
+    assert_includes publisher, "github.event.check_run.app.slug == 'xcode-cloud'"
+    assert_includes publisher, "github.event.check_run.app.id == 117084"
+    assert_includes publisher, "github.event_name == 'status'"
     assert_includes publisher, "runs-on: ubuntu-latest"
     assert_includes publisher, "sa-release cloud-status"
     refute_includes publisher, "sa-release wait-cloud"
@@ -379,6 +413,9 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes publish_job, "runs-on: macos-15"
     assert_includes cloud_failure, "if: needs.discover.outputs.action == 'fail'"
     assert_includes cloud_failure, "runs-on: ubuntu-latest"
+    assert_includes publisher, "selected_action=\"pending\""
+    assert_includes publisher, "settle_artifact_wake_state:"
+    assert_includes publisher, "release-artifact-wake-state.sh clear"
     production_gate = alpha_retry.index("- name: Resolve the existing exact Production build without waiting")
     retry_mutation = alpha_retry.index("- name: Reuse or start one Alpha-only Xcode Cloud retry")
     assert_operator production_gate, :<, retry_mutation
@@ -398,6 +435,55 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes gate, '.author.login == "sequel-ace-release-automation[bot]"'
     assert_includes gate, "has unreadable private handoff state; refusing to overlap it"
     refute_includes gate, "if Scripts/archive-release-to-ghcr.sh pull"
+  end
+
+  def test_publisher_uses_authenticated_xcode_checks_with_a_variable_gated_recovery_poll
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    discovery_job = workflow.split("  discover:", 2).fetch(1).split("  cloud_failure:", 2).first
+    authorization = discovery_job.split("- name: Authorize the asynchronous publisher", 2).fetch(1)
+                                 .split("- name: Check out immutable release tooling", 2).first
+    candidate = discovery_job.split("- name: Inspect exact Cloud runs once", 2).fetch(1)
+
+    assert_includes discovery_job, "github.event_name == 'workflow_dispatch'"
+    assert_includes discovery_job, "startsWith(vars.SA_RELEASE_PENDING_ARTIFACT_TAG, 'production/')"
+    assert_includes discovery_job, "startsWith(vars.SA_RELEASE_PENDING_ARTIFACT_TAG, 'beta/')"
+    assert_includes discovery_job, "github.event.check_run.app.slug == 'xcode-cloud'"
+    assert_includes discovery_job, "github.event.check_run.app.id == 117084"
+    assert_includes discovery_job, "github.event_name == 'status'"
+    assert_includes discovery_job, "github.event.context == 'Sequel Ace | Sequel Ace Release'"
+    assert_includes discovery_job, "github.event.context == 'Sequel Ace Beta | Sequel Ace Beta'"
+    assert_includes discovery_job, "checks: read"
+    assert_includes authorization, '[[ "${SOURCE_CHECK_APP_ID}" == "117084" && "${SOURCE_CHECK_APP_SLUG}" == "xcode-cloud" ]]'
+    assert_includes authorization, "Sequel Ace | Sequel Ace Release | Archive - macOS"
+    assert_includes authorization, "Sequel Ace Beta | Sequel Ace Beta | Archive - macOS"
+    assert_includes authorization, '[[ "${SOURCE_CHECK_STATUS}" == "completed" && -n "${SOURCE_CHECK_CONCLUSION}" ]]'
+    assert_includes authorization, '[[ "${SOURCE_STATUS_STATE}" == "success" || "${SOURCE_STATUS_STATE}" == "failure" || "${SOURCE_STATUS_STATE}" == "error" ]]'
+    assert_includes authorization, "/apps/1518036000/ci/builds/"
+    assert_includes authorization, "/apps/1594104035/ci/builds/"
+    assert_includes authorization, 'commits/${SOURCE_STATUS_SHA}/check-runs?per_page=100'
+    assert_includes authorization, '.app.id == 117084 and .app.slug == \"xcode-cloud\"'
+    assert_includes authorization, '[[ "${matching_check_count}" -ge 1 ]]'
+    assert_includes candidate, 'release_tag="${REQUESTED_TAG:-${PENDING_TAG}}"'
+    refute_includes candidate, "releases?per_page=100"
+    refute_includes candidate, "while IFS="
+  end
+
+  def test_artifact_wake_state_is_cleared_only_after_durable_settlement
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    settlement = workflow.split("  settle_artifact_wake_state:", 2).fetch(1)
+
+    assert_includes settlement, "needs.discover.outputs.action == 'settled'"
+    assert_includes settlement, "needs.cloud_failure.result == 'success'"
+    assert_includes settlement, "needs.publish.result == 'success'"
+    assert_includes settlement, "needs.recover_publish_failure.outputs.polling_needed == 'false'"
+    assert_includes settlement, 'release-artifact-wake-state.sh clear "${SETTLED_TAG}"'
+    refute_includes settlement, "needs.discover.outputs.action == 'pending'"
+
+    recovery = workflow.split("  recover_publish_failure:", 2).fetch(1)
+                       .split("  settle_artifact_wake_state:", 2).first
+    assert_includes recovery, "polling_needed: ${{ steps.polling.outputs.polling_needed }}"
+    assert_includes recovery, 'echo "polling_needed=false"'
+    assert_includes recovery, 'echo "polling_needed=true"'
   end
 
   def test_publisher_never_inspects_alpha_until_production_is_ready
@@ -424,41 +510,38 @@ class WorkflowRecoveryTest < Minitest::Test
     refute_includes discovery, '--output "${archive_directory}/'
   end
 
-  def test_publisher_skips_unreadable_scheduled_candidates_but_fails_an_explicit_recovery
+  def test_publisher_keeps_the_exact_wake_state_armed_when_its_archive_is_unreadable
     workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
     discovery = workflow.split("- name: Inspect exact Cloud runs once", 2).fetch(1)
                         .split("  cloud_failure:", 2).first
 
-    assert_includes discovery, 'if [[ -n "${REQUESTED_TAG}" ]]'
-    assert_includes discovery, "Requested release \${release_tag} has no readable private handoff archive."
-    assert_includes discovery, "it was skipped."
-    assert_includes discovery, "unreadable=$((unreadable + 1))"
-    assert_includes discovery, "candidate archive(s) were unreadable and require investigation."
-    skipped = discovery.index("it was skipped.")
-    assert_operator skipped, :<, discovery.index("continue", skipped)
+    assert_includes discovery, 'if ! Scripts/archive-release-to-ghcr.sh pull "${archive_ref}" "${archive_directory}"'
+    assert_includes discovery, "has no readable private handoff archive; recovery remains armed."
+    refute_includes discovery, "it was skipped."
+    refute_includes discovery, "unreadable=$((unreadable + 1))"
   end
 
-  def test_publisher_skips_locally_ineligible_scheduled_candidates_but_fails_an_explicit_recovery
+  def test_publisher_settles_a_locally_terminal_wake_tag_but_fails_an_explicit_recovery
     workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
     discovery = workflow.split("- name: Inspect exact Cloud runs once", 2).fetch(1)
                         .split("  cloud_failure:", 2).first
     local_gate = discovery.index('locally_eligible="$(bundle exec ruby -Ifastlane/lib -rsequel_ace_release')
     requested = discovery.index('if [[ -n "${REQUESTED_TAG}" ]]', local_gate)
-    ineligible = discovery.index("ineligible=$((ineligible + 1))", requested)
-    continuation = discovery.index("continue", ineligible)
-    live_validation = discovery.index("bundle exec ruby fastlane/bin/sa-release validate-publish-handoff", continuation)
+    settled = discovery.index('echo "action=settled"', requested)
+    terminal_exit = discovery.index("exit 0", settled)
+    live_validation = discovery.index("bundle exec ruby fastlane/bin/sa-release validate-publish-handoff", terminal_exit)
 
     assert local_gate
     assert requested
-    assert ineligible
-    assert continuation
+    assert settled
+    assert terminal_exit
     assert live_validation
     assert_operator local_gate, :<, requested
-    assert_operator requested, :<, ineligible
-    assert_operator ineligible, :<, continuation
-    assert_operator continuation, :<, live_validation
+    assert_operator requested, :<, settled
+    assert_operator settled, :<, terminal_exit
+    assert_operator terminal_exit, :<, live_validation
     assert_includes discovery, "Requested release \${release_tag} is not eligible for artifact publication."
-    assert_includes discovery, "preserved ineligible handoff(s) were skipped."
+    assert_includes discovery, "recovery wake state can be cleared."
     assert_includes discovery, "PublishHandoff::ELIGIBLE_STATES"
     refute_includes discovery, "if ! bundle exec ruby fastlane/bin/sa-release validate-publish-handoff"
   end
@@ -497,7 +580,7 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_operator workflow.scan("--integrity-failure-marker terminal-artifact-verification-failure").length, :==, 2
     refute_includes transient, "sa-release record-failure"
     refute_includes transient, "archive-release-to-ghcr.sh push"
-    assert_includes transient, "left unchanged so the next short check can retry safely"
+    assert_includes transient, "left unchanged so the next event or gated recovery check can retry safely"
   end
 
   def test_publisher_revalidates_every_exact_identity_before_artifact_writes
@@ -700,7 +783,7 @@ class WorkflowRecoveryTest < Minitest::Test
 
   def test_publisher_executes_the_immutable_event_revision
     workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
-    assert_equal 5, workflow.scan('ref: ${{ github.sha }}').length
+    assert_equal 6, workflow.scan('ref: ${{ github.sha }}').length
     refute_includes workflow, "ref: main"
     assert_includes workflow, 'SOURCE_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}'
     assert_includes workflow, '[[ "${SOURCE_HEAD_BRANCH}" == "main" ]]'
@@ -1019,6 +1102,17 @@ class WorkflowRecoveryTest < Minitest::Test
 
     publisher = File.read(repo_path(".github/workflows/release_publish.yml"))
     assert_equal 1, publisher.scan("runs-on: macos-15").length
+
+    ci = File.read(repo_path(".github/workflows/ci_pr_tests.yml"))
+    assert_equal 1, ci.scan("runs-on: macos-26").length
+    assert_equal 1, ci.scan("runs-on: macos-15").length
+    assert_includes ci, "GitHub-hosted public-repository runner label"
+
+    Dir.glob(repo_path(".github/workflows/*.{yml,yaml}")).each do |path|
+      workflow = File.read(path)
+      refute_match(/runs-on:\s*(?:\[[^\]]*)?self-hosted/, workflow,
+                   "#{File.basename(path)} must not allocate a private self-hosted runner")
+    end
   end
 
   def test_merged_but_untagged_recovery_validates_and_targets_the_exact_release_ancestor

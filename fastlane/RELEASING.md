@@ -41,8 +41,10 @@ or creates a GitHub release.
 1. Create a dedicated GitHub App owned by the Sequel Ace organization and
    install it only on `Sequel-Ace/Sequel-Ace`.
 2. Grant repository permissions: Contents read/write, Pull requests read/write,
-   Actions read, Checks read, Metadata read, and Workflows read/write. Do not
-   grant organization-wide access or subscribe it to events. GitHub requires
+   Actions read, Checks read, Metadata read, Variables read/write, and Workflows
+   read/write. Do not grant organization-wide access or subscribe it to events.
+   Variables write is used only to arm or clear the exact non-secret artifact
+   handoff tag. GitHub requires
    Workflows write when creating or updating a release whose target commit has
    workflow files that differ from current `main`; workflows request it only in
    fresh, repository-scoped tokens used for those exact release mutations.
@@ -83,8 +85,12 @@ or creates a GitHub release.
    | `SA_ALPHA_CLOUD_WORKFLOW_ID` | Alpha Xcode Cloud workflow ID |
    | `SA_GHCR_ARCHIVE` | `ghcr.io/sequel-ace/sequel-ace-release-archive` |
 
-8. Require both `Run Tests` and `Release Tool Tests` on `main`.
-9. Confirm the GHCR package is private and linked to this repository. The
+8. Add repository variable `SA_RELEASE_PENDING_ARTIFACT_TAG` with initial value
+   `none`. It must be repository-scoped, rather than environment-scoped, because
+   GitHub evaluates the scheduled publisher's job condition before opening the
+   protected environment.
+9. Require both `Run Tests` and `Release Tool Tests` on `main`.
+10. Confirm the GHCR package is private and linked to this repository. The
    feasibility workflow verifies this again before enabling publishing.
 
 The GitHub App first creates the release branch at the frozen base SHA, then
@@ -104,11 +110,16 @@ Long release-PR and feasibility-probe check polling uses the job-scoped
 `GITHUB_TOKEN`. Each workflow mints a fresh release App installation token
 immediately before an App-only mutation and independently refreshes it for
 failure cleanup. Every token explicitly requests only the permissions needed by
-that mutation. In particular, Workflows write is absent from branch, PR, check,
-and cleanup tokens and is present only on the fresh token used to create or
-update an exact-target GitHub release. This prevents both unnecessary privilege
-reuse and the one-hour App-token lifetime from stranding a PR or deterministic
-release branch during the two-hour check window.
+that mutation, except the short-lived repository-only wake-state token:
+`actions/create-github-app-token` 3.2.0 does not expose GitHub's newer Variables
+permission as a narrow input, so that token inherits only the release App's
+minimal installed repository permissions and is passed to one fixed adapter
+step. In particular, Workflows write is absent from branch, PR, check, and
+cleanup tokens and is present only on fresh tokens used for exact-target GitHub
+release mutations. This prevents both unnecessary privilege reuse and the
+one-hour App-token lifetime from stranding a PR or deterministic release branch
+during the two-hour check window. See GitHub's
+[repository-variable API](https://docs.github.com/en/rest/actions/variables#update-a-repository-variable).
 
 Release starts require the frozen SHA to equal the workflow-dispatch `main`
 SHA. Resume runs may use an older frozen SHA only after GitHub's compare API
@@ -162,18 +173,36 @@ reuses the same canonical build. The recovery validates the missing release
 and, if Cloud already consumed the tag, binds the exact Production workflow,
 tag, commit, and run before recreating the prerelease; it never bumps or retags.
 `.github/workflows/release_publish.yml` runs immediately after a successful
-handoff and at minutes 11 and 41 each hour. Its Linux job performs one exact
-Cloud-status read and exits; it starts the protected macOS verification job only
-after every required Production and Alpha run is complete and related to the
-expected app build. Authorized manual recovery requires
+handoff and when Xcode Cloud posts either its authenticated Archive check or
+terminal workflow commit status. It treats both only as wake-ups and still
+validates the exact private handoff against App Store Connect. GitHub's native
+[`check_run: completed` and `status` events](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows)
+supply this connection; no webhook or relay is required. A schedule at minutes
+11 and 41 is retained only as lost-event or
+post-notarization recovery, and its Ubuntu job is created only while repository
+variable `SA_RELEASE_PENDING_ARTIFACT_TAG` contains one exact production or beta
+tag. Idle schedules and unrelated Xcode Cloud checks therefore allocate no
+runner and never download ORAS. The release or Alpha-retry workflow arms the
+variable only after its immutable handoff is in private GHCR; terminal or
+successful processing clears only that same tag, while transient failures leave
+it armed. The Linux job performs one exact Cloud-status read and exits; it
+starts the protected GitHub-hosted `macos-15` verification job only after every
+required Production and Alpha run is complete and related to the expected app
+build. Authorized manual recovery requires
 `PUBLISH ARTIFACTS <tag>`. Pending checks are successful no-ops, not timeouts.
 The immediate continuation authenticates its source by the immutable workflow
 path from the `workflow_run` payload; GitHub's `workflow_run.name` contains the
-dynamic `run-name` and is not an authorization identity. Scheduled discovery
-locally parses each validated archive and skips terminal or otherwise ineligible
-states before making live API calls, then continues to newer candidates. An
+dynamic `run-name` and is not an authorization identity. Xcode Cloud check
+wake-ups require GitHub App ID `117084`, slug `xcode-cloud`, a terminal check,
+an exact known Archive-check name, and a valid head SHA. The later workflow
+status wake-up requires a terminal state, exact workflow context, matching
+Production or Alpha App Store Connect target URL, valid SHA, and at least one
+matching completed Archive check from the authenticated Xcode Cloud App.
+Scheduled and
+event discovery inspect only the exact tag held in the repository variable. An
 explicitly requested ineligible tag fails. Every eligible handoff still receives
-strict live validation, and any API or transport failure stops discovery.
+strict live validation, and any API or transport failure stops discovery while
+leaving recovery armed.
 Production is always resolved first; a pending Production run prevents an Alpha
 result from deciding the beta's fate. A completed unsuccessful Cloud run or an
 assigned Production build-number mismatch is recorded by a separate Ubuntu job,
@@ -444,10 +473,11 @@ automatic RC recovery described above.
   evidence.
 - Public names are generated by `ReleaseNaming`; do not rename them manually.
 - The release and Alpha-retry workflows never poll Cloud to completion. They
-  archive an immutable handoff and release their macOS runners. The artifact
-  publisher checks once on Linux every 30 minutes (and immediately after a
-  handoff), then downloads, verifies, launches, packages, and uploads on macOS
-  only when the exact notarized run is ready.
+  archive an immutable handoff and release their Ubuntu runners. Xcode Cloud's
+  authenticated GitHub check or terminal workflow status wakes the publisher; the
+  repository-variable-gated 30-minute schedule is recovery only. The publisher
+  checks once on Linux, then downloads, verifies, launches, packages, and
+  uploads on GitHub-hosted macOS only when the exact notarized run is ready.
 - Completed unsuccessful Cloud runs are terminal and are recorded on Ubuntu.
   An exact Production run with a different assigned number is also classified
   there before completion: higher invokes the authenticated forward-recovery
@@ -455,7 +485,8 @@ automatic RC recovery described above.
   stapling, Gatekeeper, bundle metadata,
   or launch verification failures are also terminal. Network, runner, download,
   upload, registry, and API failures leave the remote manifest and release body
-  unchanged so a later short publisher check can retry the same exact tag.
+  unchanged and leave the exact wake tag armed so the next Xcode event or short
+  recovery check can retry it.
 - Optional GitHub failure/recovery annotations verify that the remote tag names
   the exact archived release commit both before and after the edit, require the
   tag to exist, and send that commit as their target. An absent or moved tag
