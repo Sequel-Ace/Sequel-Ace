@@ -93,20 +93,18 @@ jobs:
                 .tagName')"
             [[ "${candidates}" == "${REQUESTED_TAG}" ]] || { echo "Requested release does not have authorized publisher provenance." >&2; exit 1; }
           else
-            candidates="$(gh release list \
-              --repo "${GITHUB_REPOSITORY}" \
-              --limit 100 \
-              --json tagName,isPrerelease,author,createdAt \
+            candidates="$(gh api --paginate \
+              "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
               --jq '.[] |
-                select(.isPrerelease == true and (.tagName | test("^production/[0-9]+\\.[0-9]+\\.[0-9]+-[1-9][0-9]*$"))) |
-                (.tagName | capture("-(?<build>[1-9][0-9]*)$").build | tonumber) as $build |
-                (.createdAt | fromdateiso8601) as $created |
+                select(.draft == false and .prerelease == true and (.tag_name | test("^production/[0-9]+\\.[0-9]+\\.[0-9]+-[1-9][0-9]*$"))) |
+                (.tag_name | capture("-(?<build>[1-9][0-9]*)$").build | tonumber) as $build |
+                (.created_at | fromdateiso8601) as $created |
                 select(
-                  ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and .tagName == "production/5.4.0-20105") or
+                  ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and .tag_name == "production/5.4.0-20105") or
                   (.author.login == "Jason-Morcos" and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601)) or
                   ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and $build >= 20109 and $created >= ("2027-08-14T00:00:00Z" | fromdateiso8601))
                 ) |
-                .tagName')"
+                .tag_name')"
           fi
           if [[ -n "${candidates}" ]]; then
             candidate_count="$(printf '%s\n' "${candidates}" | awk 'NF { count += 1 } END { print count + 0 }')"

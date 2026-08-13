@@ -815,7 +815,11 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes discovery, 'if [[ "${RELEASE_ENABLED}" != "true" ]]'
     assert_includes discovery, "the scheduled finalizer did no work"
     assert_includes discovery, "has_candidates=false"
-    assert_includes discovery, "gh release list"
+    assert_includes discovery, "gh api --paginate"
+    assert_includes discovery, 'repos/${GITHUB_REPOSITORY}/releases?per_page=100'
+    assert_includes discovery, ".author.login"
+    refute_includes discovery, "gh release list"
+    refute_includes discovery, "--json tagName,isPrerelease,author,createdAt"
     assert_includes finalizer, "needs: discover"
     assert_includes finalizer, "needs.discover.outputs.enabled == 'true'"
     assert_includes finalizer, "needs.discover.outputs.has_candidates == 'true'"
@@ -969,19 +973,24 @@ class WorkflowRecoveryTest < Minitest::Test
     discovery = workflow.split("  discover:", 2).fetch(1).split("  finalize:", 2).first
     execution = workflow.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
 
-    [discovery, execution].each do |step|
-      listing = step.index("gh release list")
-      prerelease_filter = step.index(".isPrerelease == true")
-      production_filter = step.index('test("^production/') ||
-                          step.index('startsWith("production/")') ||
-                          step.index('startswith("production/")')
+    discovery_listing = discovery.index("gh api --paginate")
+    discovery_prerelease_filter = discovery.index(".prerelease == true")
+    discovery_production_filter = discovery.index('.tag_name | test("^production/')
+    assert discovery_listing
+    assert discovery_prerelease_filter
+    assert discovery_production_filter
+    assert_operator discovery_listing, :<, discovery_prerelease_filter
+    assert_operator discovery_prerelease_filter, :<, discovery_production_filter
+    assert_includes discovery, ".draft == false"
 
-      assert listing
-      assert prerelease_filter
-      assert production_filter
-      assert_operator listing, :<, prerelease_filter
-      assert_operator prerelease_filter, :<, production_filter
-    end
+    execution_listing = execution.index("gh release list")
+    execution_prerelease_filter = execution.index(".isPrerelease == true")
+    execution_production_filter = execution.index('startswith("production/")')
+    assert execution_listing
+    assert execution_prerelease_filter
+    assert execution_production_filter
+    assert_operator execution_listing, :<, execution_prerelease_filter
+    assert_operator execution_prerelease_filter, :<, execution_production_filter
     assert_operator execution.index('startswith("production/")'), :<, execution.index("--validate-only")
     refute_includes workflow, "resolve-app-store-version"
   end
