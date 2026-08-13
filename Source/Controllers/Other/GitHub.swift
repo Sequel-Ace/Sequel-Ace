@@ -8,6 +8,11 @@
 
 import Foundation
 
+enum SAGitHubReleaseAppVariant {
+    case production
+    case beta
+}
+
 /// The subset of a GitHub release that the in-app update check uses.
 ///
 /// GitHub adds fields over time and release authors may be users, bots, or
@@ -61,7 +66,7 @@ struct SAGitHubRelease: Decodable, Comparable {
     }
 
     func matchesInstalledBuild(named installedBuildName: String) -> Bool {
-        if name.hasPrefix(installedBuildName) {
+        if name == installedBuildName || name.hasPrefix("\(installedBuildName) ") {
             return true
         }
 
@@ -70,15 +75,76 @@ struct SAGitHubRelease: Decodable, Comparable {
             .replacingOccurrences(of: ")", with: "")
         return tagName.split(separator: "/").last.map(String.init) == tagBuildName
     }
+
+    func compatibleAppZip(for variant: SAGitHubReleaseAppVariant) -> SAGitHubReleaseAsset? {
+        let appZips = assets.filter(\.isAppZip)
+
+        guard appZips.count > 1 else {
+            return inferredAppVariant == variant ? appZips.first : nil
+        }
+
+        let alphaAppZips = appZips.filter(\.isAlphaAppZip)
+        if alphaAppZips.isNotEmpty {
+            // Canonical beta releases suffix the beta-bundle artifact with "-alpha".
+            let matchingAppZips = variant == .beta ? alphaAppZips : appZips.filter { !$0.isAlphaAppZip }
+            return Self.onlyAsset(in: matchingAppZips)
+        }
+
+        let betaAppZips = appZips.filter(\.isBetaNamedAppZip)
+        let productionAppZips = appZips.filter { !$0.isBetaNamedAppZip }
+        guard betaAppZips.isNotEmpty, productionAppZips.isNotEmpty else {
+            return nil
+        }
+
+        return Self.onlyAsset(in: variant == .beta ? betaAppZips : productionAppZips)
+    }
+
+    private var inferredAppVariant: SAGitHubReleaseAppVariant {
+        switch tagName.split(separator: "/").first {
+        case "beta":
+            return .beta
+        case "production":
+            return .production
+        default:
+            return prerelease ? .beta : .production
+        }
+    }
+
+    private static func onlyAsset(in assets: [SAGitHubReleaseAsset]) -> SAGitHubReleaseAsset? {
+        assets.count == 1 ? assets[0] : nil
+    }
 }
 
 struct SAGitHubReleaseAsset: Decodable {
+    let name: String
     let size: Int
     let browserDownloadURL: String
 
     enum CodingKeys: String, CodingKey {
+        case name
         case size
         case browserDownloadURL = "browser_download_url"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
+        size = try container.decodeIfPresent(Int.self, forKey: .size) ?? 0
+        browserDownloadURL = try container.decodeIfPresent(String.self, forKey: .browserDownloadURL) ?? ""
+    }
+
+    fileprivate var isAppZip: Bool {
+        let normalizedName = name.lowercased()
+        let hasAppPrefix = normalizedName.hasPrefix("sequel-ace-") || normalizedName.hasPrefix("sequelace-")
+        return hasAppPrefix && normalizedName.hasSuffix(".zip") && size > 0 && browserDownloadURL.isNotEmpty
+    }
+
+    fileprivate var isAlphaAppZip: Bool {
+        name.lowercased().dropLast(4).contains("-alpha")
+    }
+
+    fileprivate var isBetaNamedAppZip: Bool {
+        name.lowercased().dropLast(4).contains("-beta")
     }
 }
 

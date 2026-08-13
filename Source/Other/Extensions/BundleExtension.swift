@@ -35,6 +35,7 @@ import Foundation
     }
 
     public var isMASVersion: Bool {
+        // macOS App Store and TestFlight builds both carry a readable app receipt.
         guard
             let receiptURL: URL = appStoreReceiptURL
         else {
@@ -64,13 +65,14 @@ import Foundation
     public func checkForNewVersion(isFromMenuCheck: Bool) {
 
         if isMASVersion == false {
+            let isBetaBuild = isSnapshotBuild
             GitHubReleaseManager.setup(GitHubReleaseManager.Config(user: "Sequel-Ace",
                                                                    project: "Sequel-Ace",
                                                                    includeDraft: false,
-                                                                   includePrerelease: isSnapshotBuild ? true : false))
+                                                                   includePrerelease: isBetaBuild,
+                                                                   appVariant: isBetaBuild ? .beta : .production))
 
-            GitHubReleaseManager.sharedInstance.isFromMenuCheck = isFromMenuCheck
-            GitHubReleaseManager.sharedInstance.checkRelease(name: versionString)
+            GitHubReleaseManager.sharedInstance.checkRelease(name: versionString, isUserInitiated: isFromMenuCheck)
         }
     }
 

@@ -20,6 +20,7 @@ import OSLog
     private var project: String
     private var includeDraft: Bool
     private var includePrerelease: Bool
+    private var appVariant: SAGitHubReleaseAppVariant
     private var progressViewController: ProgressViewController?
     private var progressWindowController: ProgressWindowController?
     private var download: DownloadRequest?
@@ -30,13 +31,13 @@ import OSLog
     private var releases: [SAGitHubRelease] = []
     private let Log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "github")
     private let manager = NetworkReachabilityManager(host: "www.google.com")
-    public var isFromMenuCheck: Bool = false
 
     struct Config {
         var user: String
         var project: String
         var includeDraft: Bool = false
         var includePrerelease: Bool = false
+        var appVariant: SAGitHubReleaseAppVariant = .production
     }
 
     private static var config: Config?
@@ -55,6 +56,7 @@ import OSLog
         project = config.project
         includeDraft = config.includeDraft
         includePrerelease = config.includePrerelease
+        appVariant = config.appVariant
 
         Log.debug("GitHubReleaseManager init")
 
@@ -62,13 +64,11 @@ import OSLog
 
     }
 
-    public func checkRelease(name: String) {
+    public func checkRelease(name: String, isUserInitiated: Bool) {
         if name.count == 0 {
             Log.error("name not valid")
             return
         }
-
-        let isUserInitiated = isFromMenuCheck
 
         Log.debug("checkRelease: \(name)")
 
@@ -122,6 +122,9 @@ import OSLog
                         releasesArray.removeAll(where: { $0.prerelease == true })
                     }
 
+                    Log.debug("removing releases without a compatible app zip")
+                    releasesArray.removeAll(where: { $0.compatibleAppZip(for: appVariant) == nil })
+
                     Log.debug("releasesArray count: \(releasesArray.count)")
 
                     releases = releasesArray
@@ -164,7 +167,7 @@ import OSLog
 
             case let .failure(error):
                 Log.error("Error GitHub Failure: \(error.localizedDescription)")
-                if (manager?.isReachable == false) {
+                if manager?.isReachable == false {
                     Log.error("manager?.isReachable == false")
                 }
                 displayRequestFailureIfNeeded(error: error.underlyingError ?? error,
@@ -192,7 +195,6 @@ import OSLog
         let prefs: UserDefaults = UserDefaults.standard
         var localURL: URL
         let message: String
-        var asset: SAGitHubReleaseAsset?
 
         if isUserInitiated == false && prefs.string(forKey: SPSkipNewReleaseAvailable) == availableReleaseName {
             Log.debug("The user has opted out of more alerts regarding this version")
@@ -211,8 +213,9 @@ import OSLog
 
         localURL = url
 
-        if let availableAsset = availableRelease?.assets.first(where: { $0.browserDownloadURL.count > 0 }) {
-            asset = availableAsset
+        guard let asset = availableRelease?.compatibleAppZip(for: appVariant) else {
+            Log.error("release has no compatible app zip")
+            return false
         }
 
         message = NSLocalizedString("Version %@ is available. You are currently running %@",
@@ -227,9 +230,7 @@ import OSLog
         alert.alertStyle = .informational
         alert.addButton(withTitle: NSLocalizedString("View", comment: "View button")).tag = GitHubReleaseManager.NSModalResponseView.rawValue
 
-        if asset != nil {
-            alert.addButton(withTitle: NSLocalizedString("Download", comment: "Download new version")).tag = GitHubReleaseManager.NSModalResponseDownload.rawValue
-        }
+        alert.addButton(withTitle: NSLocalizedString("Download", comment: "Download new version")).tag = GitHubReleaseManager.NSModalResponseDownload.rawValue
         alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "cancel button")).tag = NSApplication.ModalResponse.cancel.rawValue
 
         alert.beginSheetModal(for: mainWindow) { [self] (returnCode: NSApplication.ModalResponse) -> Void in
@@ -246,7 +247,7 @@ import OSLog
                 NSWorkspace.shared.open(localURL)
             case GitHubReleaseManager.NSModalResponseDownload:
                 self.Log.debug("user clicked download")
-                self.downloadNewRelease(asset: asset!) // already checked that this is not nil
+                self.downloadNewRelease(asset: asset)
             case NSApplication.ModalResponse.cancel:
                 self.Log.debug("user clicked cancel")
             default:
