@@ -59,6 +59,17 @@ struct SAGitHubRelease: Decodable, Comparable {
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode([SAGitHubRelease].self, from: data)
     }
+
+    func matchesInstalledBuild(named installedBuildName: String) -> Bool {
+        if name.hasPrefix(installedBuildName) {
+            return true
+        }
+
+        let tagBuildName = installedBuildName
+            .replacingOccurrences(of: " (", with: "-")
+            .replacingOccurrences(of: ")", with: "")
+        return tagName.split(separator: "/").last.map(String.init) == tagBuildName
+    }
 }
 
 struct SAGitHubReleaseAsset: Decodable {
@@ -106,7 +117,7 @@ enum SAGitHubReleaseErrorPolicy {
         .internationalRoamingOff,
         .callIsActive,
         .dataNotAllowed,
-        .cannotLoadFromNetwork,
+        .cannotLoadFromNetwork
     ]
 
     private static let ephemeralHTTPStatusCodes: Set<Int> = [403, 408, 425, 429]

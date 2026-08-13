@@ -68,6 +68,8 @@ import OSLog
             return
         }
 
+        let isUserInitiated = isFromMenuCheck
+
         Log.debug("checkRelease: \(name)")
 
         let urlStr = GitHubReleaseManager.githubURLStr.format(user, project)
@@ -99,7 +101,7 @@ import OSLog
 
                     Log.debug("releasesArray count: \(releasesArray.count)")
 
-                    if let currentReleaseTmp = releasesArray.first(where: { $0.name.hasPrefix(name) == true}) {
+                    if let currentReleaseTmp = releasesArray.first(where: { $0.matchesInstalledBuild(named: name) }) {
                         currentRelease = currentReleaseTmp
                         guard let currentReleaseName = currentRelease?.name else {
                             return
@@ -142,10 +144,10 @@ import OSLog
                     if availableReleaseTmp > currentReleaseTmp {
                         availableReleaseName = availableReleaseTmp.name
                         Log.info("Found availableRelease: \(availableReleaseName)")
-                        _ = self.displayNewReleaseAvailableAlert()
+                        _ = self.displayNewReleaseAvailableAlert(isUserInitiated: isUserInitiated)
                     }
                     else {
-                        if isFromMenuCheck == false {
+                        if isUserInitiated == false {
                             Log.debug("From startup check, not menu check, so not showing no newer release alert")
                         }
                         else{
@@ -155,7 +157,9 @@ import OSLog
                     }
                 } catch {
                     Log.error("Error GitHub Exception: \(error.localizedDescription)")
-                    displayRequestFailureIfNeeded(error: error, statusCode: response.response?.statusCode)
+                    displayRequestFailureIfNeeded(error: error,
+                                                  statusCode: response.response?.statusCode,
+                                                  isUserInitiated: isUserInitiated)
                 }
 
             case let .failure(error):
@@ -163,13 +167,15 @@ import OSLog
                 if (manager?.isReachable == false) {
                     Log.error("manager?.isReachable == false")
                 }
-                displayRequestFailureIfNeeded(error: error.underlyingError ?? error, statusCode: response.response?.statusCode)
+                displayRequestFailureIfNeeded(error: error.underlyingError ?? error,
+                                              statusCode: response.response?.statusCode,
+                                              isUserInitiated: isUserInitiated)
             }
         }
     }
 
-    private func displayRequestFailureIfNeeded(error: Error, statusCode: Int?) {
-        guard SAGitHubReleaseErrorPolicy.shouldPresentError(isUserInitiated: isFromMenuCheck,
+    private func displayRequestFailureIfNeeded(error: Error, statusCode: Int?, isUserInitiated: Bool) {
+        guard SAGitHubReleaseErrorPolicy.shouldPresentError(isUserInitiated: isUserInitiated,
                                                            statusCode: statusCode,
                                                            underlyingError: error) else {
             Log.info("Ignoring non-actionable GitHub release check failure")
@@ -180,7 +186,7 @@ import OSLog
                                    message: error.localizedDescription)
     }
 
-    private func displayNewReleaseAvailableAlert() -> Bool {
+    private func displayNewReleaseAvailableAlert(isUserInitiated: Bool) -> Bool {
         Log.debug("displayNewReleaseAvailableAlert")
 
         let prefs: UserDefaults = UserDefaults.standard
@@ -188,7 +194,7 @@ import OSLog
         let message: String
         var asset: SAGitHubReleaseAsset?
 
-        if isFromMenuCheck == false && prefs.string(forKey: SPSkipNewReleaseAvailable) == availableReleaseName {
+        if isUserInitiated == false && prefs.string(forKey: SPSkipNewReleaseAvailable) == availableReleaseName {
             Log.debug("The user has opted out of more alerts regarding this version")
             return false
         }
@@ -215,7 +221,7 @@ import OSLog
         let alert = NSAlert()
         alert.messageText = NSLocalizedString("A new version is available", comment: "A new version is available")
         alert.informativeText = message
-        if isFromMenuCheck == false {
+        if isUserInitiated == false {
             alert.showsSuppressionButton = true
         }
         alert.alertStyle = .informational

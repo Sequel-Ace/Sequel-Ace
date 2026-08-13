@@ -96,6 +96,8 @@ final class SAGitHubReleaseTests: XCTestCase {
 
         XCTAssertEqual(release.name, release.tagName)
         XCTAssertEqual(release.publishedAt.timeIntervalSince1970, 1_786_579_200)
+        XCTAssertTrue(release.matchesInstalledBuild(named: "5.4.0 (20110)"))
+        XCTAssertFalse(release.matchesInstalledBuild(named: "5.4.0 (20111)"))
     }
 
     func testBackgroundAndEphemeralFailuresAreSilent() {
