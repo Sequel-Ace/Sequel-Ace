@@ -29,6 +29,7 @@ import OSLog
     private var currentRelease: SAGitHubRelease?
     private var availableRelease: SAGitHubRelease?
     private var releases: [SAGitHubRelease] = []
+    private var settlingRetry: DispatchWorkItem?
     private let Log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "github")
     private let manager = NetworkReachabilityManager(host: "www.google.com")
 
@@ -70,6 +71,8 @@ import OSLog
             return
         }
 
+        settlingRetry?.cancel()
+        settlingRetry = nil
         currentReleaseName = name
         availableReleaseName = ""
         currentRelease = nil
@@ -170,11 +173,33 @@ import OSLog
                         releasesArray.removeAll(where: { $0.prerelease == true })
                     }
 
+                    let now = Date()
+                    if let retryDelay = SAGitHubReleaseSettlingPolicy.retryDelay(
+                        at: now,
+                        currentRelease: currentRelease,
+                        candidateReleases: releasesArray
+                    ) {
+                        scheduleSettlingRetry(after: retryDelay,
+                                             installedBuildName: installedBuildName,
+                                             installedReleaseTag: installedReleaseTag)
+                        return
+                    }
+
                     Log.debug("removing releases without a compatible app zip")
                     releasesArray.removeAll(where: { $0.compatibleAppZip(for: appVariant) == nil })
 
+                    if let retryDelay = SAGitHubReleaseSettlingPolicy.retryDelay(
+                        at: now,
+                        currentRelease: currentRelease,
+                        candidateReleases: releasesArray
+                    ) {
+                        scheduleSettlingRetry(after: retryDelay,
+                                             installedBuildName: installedBuildName,
+                                             installedReleaseTag: installedReleaseTag)
+                        return
+                    }
+
                     Log.debug("removing releases whose assets are still settling")
-                    let now = Date()
                     releasesArray.removeAll(where: { $0.isSettled(at: now) == false })
 
                     Log.debug("releasesArray count: \(releasesArray.count)")
@@ -227,6 +252,21 @@ import OSLog
                                               isUserInitiated: isUserInitiated)
             }
         }
+    }
+
+    private func scheduleSettlingRetry(
+        after delay: TimeInterval,
+        installedBuildName: String,
+        installedReleaseTag: String?
+    ) {
+        Log.info("A newer GitHub release is still settling; retrying in \(delay) seconds")
+        let retry = DispatchWorkItem { [weak self] in
+            self?.checkRelease(name: installedBuildName,
+                               installedReleaseTag: installedReleaseTag,
+                               isUserInitiated: false)
+        }
+        settlingRetry = retry
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: retry)
     }
 
     private func displayRequestFailureIfNeeded(error: Error, statusCode: Int?, isUserInitiated: Bool) {

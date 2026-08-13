@@ -181,14 +181,37 @@ struct SAGitHubRelease: Decodable, Comparable {
         })
     }
 
-    func isSettled(at date: Date) -> Bool {
+    func settlingTimeRemaining(at date: Date) -> TimeInterval? {
         let latestAssetChange = assets.compactMap(\.lastModifiedAt).max()
         let latestReleaseChange = latestAssetChange.map { max(publishedAt, $0) } ?? publishedAt
-        return date.timeIntervalSince(latestReleaseChange) >= Self.settlingInterval
+        let remaining = Self.settlingInterval - date.timeIntervalSince(latestReleaseChange)
+        return remaining > 0 ? remaining : nil
+    }
+
+    func isSettled(at date: Date) -> Bool {
+        settlingTimeRemaining(at: date) == nil
     }
 
     private var tagIdentity: SAGitHubReleaseTagIdentity? {
         SAGitHubReleaseTagIdentity(tagName)
+    }
+}
+
+enum SAGitHubReleaseSettlingPolicy {
+    static func retryDelay(
+        at date: Date,
+        currentRelease: SAGitHubRelease?,
+        candidateReleases: [SAGitHubRelease]
+    ) -> TimeInterval? {
+        guard
+            let currentRelease,
+            let newestRelease = candidateReleases.max(),
+            newestRelease > currentRelease
+        else {
+            return nil
+        }
+
+        return newestRelease.settlingTimeRemaining(at: date)
     }
 }
 

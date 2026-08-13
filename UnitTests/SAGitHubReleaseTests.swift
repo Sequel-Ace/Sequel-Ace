@@ -291,9 +291,74 @@ final class SAGitHubReleaseTests: XCTestCase {
         XCTAssertFalse(release.isSettled(at: newestAssetChange.addingTimeInterval(
             SAGitHubRelease.settlingInterval - 1
         )))
+        XCTAssertEqual(release.settlingTimeRemaining(at: newestAssetChange.addingTimeInterval(
+            SAGitHubRelease.settlingInterval - 1
+        )), 1)
         XCTAssertTrue(release.isSettled(at: newestAssetChange.addingTimeInterval(
             SAGitHubRelease.settlingInterval
         )))
+        XCTAssertNil(release.settlingTimeRemaining(at: newestAssetChange.addingTimeInterval(
+            SAGitHubRelease.settlingInterval
+        )))
+    }
+
+    func testSettlingPolicyRetriesOnlyForTheNewestCandidateUpdate() throws {
+        let data = Data(
+            #"""
+            [
+              {
+                "tag_name": "production/5.4.0-20109",
+                "name": "5.4.0 (20109)",
+                "html_url": "https://example.com/current",
+                "draft": false,
+                "prerelease": false,
+                "published_at": "2026-08-13T00:00:00Z",
+                "assets": [
+                  {
+                    "name": "Sequel-Ace-5.4.0.zip",
+                    "size": 100,
+                    "browser_download_url": "https://example.com/current.zip"
+                  }
+                ]
+              },
+              {
+                "tag_name": "production/5.5.0-20111",
+                "name": "5.5.0 (20111)",
+                "html_url": "https://example.com/update",
+                "draft": false,
+                "prerelease": false,
+                "published_at": "2026-08-13T01:00:00Z",
+                "assets": [
+                  {
+                    "name": "Sequel-Ace-5.5.0.zip",
+                    "size": 100,
+                    "browser_download_url": "https://example.com/update.zip"
+                  }
+                ]
+              }
+            ]
+            """#.utf8
+        )
+        let releases = try SAGitHubRelease.decodeList(from: data)
+        let currentRelease = releases[0]
+        let updateRelease = releases[1]
+        let publishedAt = updateRelease.publishedAt
+
+        XCTAssertEqual(SAGitHubReleaseSettlingPolicy.retryDelay(
+            at: publishedAt,
+            currentRelease: currentRelease,
+            candidateReleases: [currentRelease, updateRelease]
+        ), SAGitHubRelease.settlingInterval)
+        XCTAssertNil(SAGitHubReleaseSettlingPolicy.retryDelay(
+            at: publishedAt.addingTimeInterval(SAGitHubRelease.settlingInterval),
+            currentRelease: currentRelease,
+            candidateReleases: [currentRelease, updateRelease]
+        ))
+        XCTAssertNil(SAGitHubReleaseSettlingPolicy.retryDelay(
+            at: publishedAt,
+            currentRelease: currentRelease,
+            candidateReleases: [currentRelease]
+        ))
     }
 
     func testMissingReleaseStateDefaultsFailClosed() throws {
