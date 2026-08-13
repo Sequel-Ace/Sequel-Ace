@@ -62,6 +62,20 @@ import Foundation
         return "%@ (%@)".format(version, build)
     }
 
+    public var githubReleaseTag: String? {
+        guard
+            // Keep the key in sync with SequelAceRelease::Config::RELEASE_TAG_PLIST_KEY.
+            let value = object(forInfoDictionaryKey: "SAGitHubReleaseTag") as? String,
+            let version,
+            let identity = SAGitHubReleaseTagIdentity(value),
+            identity.version == version
+        else {
+            return nil
+        }
+
+        return value
+    }
+
     public func checkForNewVersion(isFromMenuCheck: Bool) {
 
         if isMASVersion == false {
@@ -72,7 +86,9 @@ import Foundation
                                                                    includePrerelease: isBetaBuild,
                                                                    appVariant: isBetaBuild ? .beta : .production))
 
-            GitHubReleaseManager.sharedInstance.checkRelease(name: versionString, isUserInitiated: isFromMenuCheck)
+            GitHubReleaseManager.sharedInstance.checkRelease(name: versionString,
+                                                             installedReleaseTag: githubReleaseTag,
+                                                             isUserInitiated: isFromMenuCheck)
         }
     }
 

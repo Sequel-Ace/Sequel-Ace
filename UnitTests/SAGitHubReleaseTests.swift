@@ -170,10 +170,193 @@ final class SAGitHubReleaseTests: XCTestCase {
         XCTAssertEqual(canonicalBetaRelease.compatibleAppZip(for: .beta)?.name,
                        "Sequel-Ace-5.4.0-beta3-alpha.zip")
         XCTAssertTrue(canonicalBetaRelease.matchesInstalledBuild(named: "5.4.0 (20110)"))
+        XCTAssertTrue(canonicalBetaRelease.matchesInstalledBuild(named: "5.4.0 (30576)",
+                                                                 releaseTag: "beta/5.4.0-20110"))
+        XCTAssertFalse(canonicalBetaRelease.matchesInstalledBuild(named: "5.4.0 (30576)",
+                                                                  releaseTag: "beta/5.4.0-20111"))
         XCTAssertEqual(explicitlyMixedRelease.compatibleAppZip(for: .production)?.name,
                        "Sequel-Ace-5.5.0.zip")
         XCTAssertEqual(explicitlyMixedRelease.compatibleAppZip(for: .beta)?.name,
                        "Sequel-Ace-5.5.0-beta.zip")
+    }
+
+    func testCanonicalBetaSelectsAvailableVariantWhileLegacyBetaAllowsOne() throws {
+        let data = Data(
+            #"""
+            [
+              {
+                "tag_name": "beta/5.4.0-20110",
+                "name": "A title chosen by a release admin",
+                "html_url": "https://example.com/canonical-beta",
+                "draft": false,
+                "prerelease": true,
+                "created_at": "2026-08-13T00:00:00Z",
+                "published_at": "2026-08-13T00:00:00Z",
+                "assets": [
+                  {
+                    "name": "Sequel-Ace-5.4.0-beta1.zip",
+                    "size": 100,
+                    "browser_download_url": "https://example.com/production.zip"
+                  }
+                ]
+              },
+              {
+                "tag_name": "beta/5.3.0-20101",
+                "name": "5.3.0 (20101) Beta 1",
+                "html_url": "https://example.com/legacy-beta",
+                "draft": false,
+                "prerelease": true,
+                "created_at": "2026-06-08T00:00:00Z",
+                "published_at": "2026-06-08T00:00:00Z",
+                "assets": [
+                  {
+                    "name": "Sequel-Ace-5.3.0-beta1.zip",
+                    "size": 100,
+                    "browser_download_url": "https://example.com/legacy-beta.zip"
+                  }
+                ]
+              },
+              {
+                "tag_name": "beta/5.4.1-20111",
+                "name": "Another title chosen by a release bot",
+                "html_url": "https://example.com/canonical-alpha",
+                "draft": false,
+                "prerelease": true,
+                "created_at": "2026-08-14T00:00:00Z",
+                "published_at": "2026-08-14T00:00:00Z",
+                "assets": [
+                  {
+                    "name": "Sequel-Ace-5.4.1-beta2-alpha.zip",
+                    "size": 100,
+                    "browser_download_url": "https://example.com/alpha.zip"
+                  }
+                ]
+              }
+            ]
+            """#.utf8
+        )
+
+        let releases = try SAGitHubRelease.decodeList(from: data)
+        let partiallyUploadedCanonicalBeta = try XCTUnwrap(releases.first)
+        let legacyBeta = releases[1]
+        let alphaOnlyCanonicalBeta = try XCTUnwrap(releases.last)
+
+        XCTAssertEqual(partiallyUploadedCanonicalBeta.compatibleAppZip(for: .production)?.name,
+                       "Sequel-Ace-5.4.0-beta1.zip")
+        XCTAssertNil(partiallyUploadedCanonicalBeta.compatibleAppZip(for: .beta))
+        XCTAssertNil(legacyBeta.compatibleAppZip(for: .production))
+        XCTAssertEqual(legacyBeta.compatibleAppZip(for: .beta)?.name,
+                       "Sequel-Ace-5.3.0-beta1.zip")
+        XCTAssertNil(alphaOnlyCanonicalBeta.compatibleAppZip(for: .production))
+        XCTAssertEqual(alphaOnlyCanonicalBeta.compatibleAppZip(for: .beta)?.name,
+                       "Sequel-Ace-5.4.1-beta2-alpha.zip")
+    }
+
+    func testReleaseSettlesAfterNewestAssetChange() throws {
+        let data = Data(
+            #"""
+            [
+              {
+                "tag_name": "production/5.5.0-20111",
+                "name": "5.5.0 (20111)",
+                "html_url": "https://example.com/release",
+                "draft": false,
+                "prerelease": false,
+                "created_at": "2026-08-13T00:00:00Z",
+                "published_at": "2026-08-13T00:00:00Z",
+                "assets": [
+                  {
+                    "name": "Sequel-Ace-5.5.0.zip",
+                    "size": 100,
+                    "browser_download_url": "https://example.com/release.zip",
+                    "created_at": "2026-08-13T01:00:00Z",
+                    "updated_at": "2026-08-13T01:05:00Z"
+                  }
+                ]
+              }
+            ]
+            """#.utf8
+        )
+        let release = try XCTUnwrap(SAGitHubRelease.decodeList(from: data).first)
+        let calendar = Calendar(identifier: .gregorian)
+        let newestAssetChange = try XCTUnwrap(calendar.date(from: DateComponents(
+            timeZone: TimeZone(secondsFromGMT: 0),
+            year: 2026,
+            month: 8,
+            day: 13,
+            hour: 1,
+            minute: 5
+        )))
+
+        XCTAssertFalse(release.isSettled(at: newestAssetChange.addingTimeInterval(
+            SAGitHubRelease.settlingInterval - 1
+        )))
+        XCTAssertTrue(release.isSettled(at: newestAssetChange.addingTimeInterval(
+            SAGitHubRelease.settlingInterval
+        )))
+    }
+
+    func testMissingReleaseStateDefaultsFailClosed() throws {
+        let data = Data(
+            #"""
+            [
+              {
+                "tag_name": "production/5.5.0-20111",
+                "name": "5.5.0 (20111)",
+                "html_url": "https://example.com/missing-state",
+                "created_at": "2026-08-14T00:00:00Z",
+                "published_at": "2026-08-14T00:00:00Z",
+                "assets": []
+              },
+              {
+                "tag_name": "production/5.5.0-20112",
+                "name": "5.5.0 (20112)",
+                "html_url": "https://example.com/null-state",
+                "draft": null,
+                "prerelease": null,
+                "created_at": "2026-08-15T00:00:00Z",
+                "published_at": "2026-08-15T00:00:00Z",
+                "assets": []
+              }
+            ]
+            """#.utf8
+        )
+
+        for release in try SAGitHubRelease.decodeList(from: data) {
+            XCTAssertTrue(release.draft)
+            XCTAssertTrue(release.prerelease)
+        }
+    }
+
+    func testPaginationContinuesPastThirtyReleasesUntilInstalledTagIsFound() throws {
+        let fixture: [[String: Any]] = (1...31).map { index in
+            let isInstalledRelease = index == 31
+            return [
+                "tag_name": isInstalledRelease ? "production/2.0.0-1000" : "production/5.0.\(index)-\(20000 + index)",
+                "name": isInstalledRelease ? "2.0.0 (1000)" : "5.0.\(index) (\(20000 + index))",
+                "html_url": "https://example.com/release-\(index)",
+                "draft": false,
+                "prerelease": false,
+                "created_at": "2026-08-13T00:00:00Z",
+                "published_at": "2026-08-13T00:00:00Z",
+                "assets": []
+            ]
+        }
+        let releases = try SAGitHubRelease.decodeList(from: JSONSerialization.data(withJSONObject: fixture))
+        let firstPage = Array(releases.prefix(30))
+        let linkHeader = "<https://api.github.com/repos/Sequel-Ace/Sequel-Ace/releases?per_page=100&page=2>; rel=\"next\", <https://api.github.com/repos/Sequel-Ace/Sequel-Ace/releases?per_page=100&page=2>; rel=\"last\""
+
+        XCTAssertEqual(
+            SAGitHubReleasePagination.nextPageURL(from: linkHeader,
+                                                  releases: firstPage,
+                                                  installedBuildName: "2.0.0 (1000)",
+                                                  installedReleaseTag: "production/2.0.0-1000")?.absoluteString,
+            "https://api.github.com/repos/Sequel-Ace/Sequel-Ace/releases?per_page=100&page=2"
+        )
+        XCTAssertNil(SAGitHubReleasePagination.nextPageURL(from: linkHeader,
+                                                           releases: releases,
+                                                           installedBuildName: "2.0.0 (9999)",
+                                                           installedReleaseTag: "production/2.0.0-1000"))
     }
 
     func testBackgroundAndEphemeralFailuresAreSilent() {

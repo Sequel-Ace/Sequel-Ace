@@ -13,7 +13,7 @@ module SequelAceRelease
       @runner = runner
     end
 
-    def verify(path:, version:, build: nil, channel:, launch: false, output_zip: nil, any_build: false, expected_sha256: nil)
+    def verify(path:, version:, build: nil, channel:, launch: false, output_zip: nil, any_build: false, expected_sha256: nil, release_tag: nil)
       Config.validate_channel!(channel)
       Version.validate!(version)
       raise ValidationError, "build is required unless --any-build is used" if build.nil? && !any_build
@@ -35,6 +35,7 @@ module SequelAceRelease
         bundle_id = plist(info, "CFBundleIdentifier")
         actual_version = plist(info, "CFBundleShortVersionString")
         actual_build = plist(info, "CFBundleVersion")
+        actual_release_tag = plist(info, Config::RELEASE_TAG_PLIST_KEY) if release_tag
         actual_build_number = positive_build!(actual_build, "artifact build")
         executable_name = plist(info, "CFBundleExecutable")
         unless executable_name.match?(/\A[A-Za-z0-9 ._-]{1,128}\z/)
@@ -46,6 +47,9 @@ module SequelAceRelease
         raise ValidationError, "artifact version #{actual_version} does not match #{version}" unless actual_version == version
         if !any_build && actual_build != expected_build
           raise ValidationError, "artifact build #{actual_build} does not match #{expected_build}"
+        end
+        if release_tag && actual_release_tag != release_tag
+          raise ValidationError, "artifact release tag #{actual_release_tag} does not match #{release_tag}"
         end
         executable = validated_executable(app, executable_name)
 
@@ -68,6 +72,7 @@ module SequelAceRelease
           "bundle_id" => bundle_id,
           "version" => actual_version,
           "build" => actual_build_number,
+          "release_tag" => actual_release_tag,
           "architectures" => architectures,
           "team_id" => team,
           "authorities" => authorities,

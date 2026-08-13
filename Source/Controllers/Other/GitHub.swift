@@ -13,12 +13,39 @@ enum SAGitHubReleaseAppVariant {
     case beta
 }
 
+struct SAGitHubReleaseTagIdentity {
+    let channel: String
+    let version: String
+    let build: Int
+
+    init?(_ value: String) {
+        let channelAndValue = value.split(separator: "/", omittingEmptySubsequences: false)
+        guard
+            channelAndValue.count == 2,
+            channelAndValue[0] == "production" || channelAndValue[0] == "beta",
+            let buildSeparator = channelAndValue[1].lastIndex(of: "-"),
+            buildSeparator != channelAndValue[1].startIndex,
+            let build = Int(channelAndValue[1][channelAndValue[1].index(after: buildSeparator)...]),
+            build > 0
+        else {
+            return nil
+        }
+
+        channel = String(channelAndValue[0])
+        version = String(channelAndValue[1][..<buildSeparator])
+        self.build = build
+    }
+}
+
 /// The subset of a GitHub release that the in-app update check uses.
 ///
 /// GitHub adds fields over time and release authors may be users, bots, or
 /// GitHub Apps. Decoding only the values used by the update flow keeps those
 /// unrelated API details from invalidating the entire releases response.
 struct SAGitHubRelease: Decodable, Comparable {
+    private static let canonicalBetaArtifactNamingMinimumBuild = 20_110
+    static let settlingInterval: TimeInterval = 15 * 60
+
     let tagName: String
     let name: String
     let htmlURL: String
@@ -52,8 +79,9 @@ struct SAGitHubRelease: Decodable, Comparable {
         tagName = try container.decode(String.self, forKey: .tagName)
         name = try container.decodeIfPresent(String.self, forKey: .name) ?? tagName
         htmlURL = try container.decode(String.self, forKey: .htmlURL)
-        draft = try container.decodeIfPresent(Bool.self, forKey: .draft) ?? false
-        prerelease = try container.decodeIfPresent(Bool.self, forKey: .prerelease) ?? false
+        // Missing release-state gates must never make a partial response look public.
+        draft = try container.decodeIfPresent(Bool.self, forKey: .draft) ?? true
+        prerelease = try container.decodeIfPresent(Bool.self, forKey: .prerelease) ?? true
         publishedAt = try container.decodeIfPresent(Date.self, forKey: .publishedAt)
             ?? container.decode(Date.self, forKey: .createdAt)
         assets = try container.decodeIfPresent([SAGitHubReleaseAsset].self, forKey: .assets) ?? []
@@ -65,7 +93,11 @@ struct SAGitHubRelease: Decodable, Comparable {
         return try decoder.decode([SAGitHubRelease].self, from: data)
     }
 
-    func matchesInstalledBuild(named installedBuildName: String) -> Bool {
+    func matchesInstalledBuild(named installedBuildName: String, releaseTag: String? = nil) -> Bool {
+        if let releaseTag {
+            return tagName == releaseTag
+        }
+
         if name == installedBuildName || name.hasPrefix("\(installedBuildName) ") {
             return true
         }
@@ -78,6 +110,10 @@ struct SAGitHubRelease: Decodable, Comparable {
 
     func compatibleAppZip(for variant: SAGitHubReleaseAppVariant) -> SAGitHubReleaseAsset? {
         let appZips = assets.filter(\.isAppZip)
+
+        if usesCanonicalBetaArtifactNaming {
+            return canonicalBetaAsset(for: variant, in: appZips)
+        }
 
         guard appZips.count > 1 else {
             return inferredAppVariant == variant ? appZips.first : nil
@@ -113,17 +149,103 @@ struct SAGitHubRelease: Decodable, Comparable {
     private static func onlyAsset(in assets: [SAGitHubReleaseAsset]) -> SAGitHubReleaseAsset? {
         assets.count == 1 ? assets[0] : nil
     }
+
+    private var usesCanonicalBetaArtifactNaming: Bool {
+        guard let tagIdentity else {
+            return false
+        }
+
+        // Builds before the guarded release workflow used less predictable beta ZIP names.
+        return tagIdentity.channel == "beta" && tagIdentity.build >= Self.canonicalBetaArtifactNamingMinimumBuild
+    }
+
+    private func canonicalBetaAsset(
+        for variant: SAGitHubReleaseAppVariant,
+        in appZips: [SAGitHubReleaseAsset]
+    ) -> SAGitHubReleaseAsset? {
+        guard let tagIdentity, tagIdentity.channel == "beta" else {
+            return nil
+        }
+
+        let prefix = "Sequel-Ace-\(tagIdentity.version)-beta"
+        let suffix = variant == .beta ? "-alpha.zip" : ".zip"
+        return Self.onlyAsset(in: appZips.filter { asset in
+            guard asset.name.hasPrefix(prefix), asset.name.hasSuffix(suffix) else {
+                return false
+            }
+
+            let iterationStart = asset.name.index(asset.name.startIndex, offsetBy: prefix.count)
+            let iterationEnd = asset.name.index(asset.name.endIndex, offsetBy: -suffix.count)
+            return iterationStart < iterationEnd
+                && Int(asset.name[iterationStart..<iterationEnd]).map { $0 > 0 } == true
+        })
+    }
+
+    func isSettled(at date: Date) -> Bool {
+        let latestAssetChange = assets.compactMap(\.lastModifiedAt).max()
+        let latestReleaseChange = latestAssetChange.map { max(publishedAt, $0) } ?? publishedAt
+        return date.timeIntervalSince(latestReleaseChange) >= Self.settlingInterval
+    }
+
+    private var tagIdentity: SAGitHubReleaseTagIdentity? {
+        SAGitHubReleaseTagIdentity(tagName)
+    }
+}
+
+enum SAGitHubReleasePagination {
+    static let pageSize = 100
+
+    static func nextPageURL(
+        from linkHeader: String?,
+        releases: [SAGitHubRelease],
+        installedBuildName: String,
+        installedReleaseTag: String?
+    ) -> URL? {
+        guard
+            releases.contains(where: {
+                $0.matchesInstalledBuild(named: installedBuildName, releaseTag: installedReleaseTag)
+            }) == false,
+            let linkHeader
+        else {
+            return nil
+        }
+
+        for link in linkHeader.split(separator: ",") {
+            let components = link.split(separator: ";").map {
+                $0.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            guard
+                components.dropFirst().contains("rel=\"next\""),
+                let value = components.first,
+                value.hasPrefix("<"),
+                value.hasSuffix(">"),
+                let url = URL(string: String(value.dropFirst().dropLast())),
+                url.scheme == "https",
+                url.host == "api.github.com"
+            else {
+                continue
+            }
+
+            return url
+        }
+
+        return nil
+    }
 }
 
 struct SAGitHubReleaseAsset: Decodable {
     let name: String
     let size: Int
     let browserDownloadURL: String
+    let createdAt: Date?
+    let updatedAt: Date?
 
     enum CodingKeys: String, CodingKey {
         case name
         case size
         case browserDownloadURL = "browser_download_url"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
     }
 
     init(from decoder: Decoder) throws {
@@ -131,6 +253,8 @@ struct SAGitHubReleaseAsset: Decodable {
         name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
         size = try container.decodeIfPresent(Int.self, forKey: .size) ?? 0
         browserDownloadURL = try container.decodeIfPresent(String.self, forKey: .browserDownloadURL) ?? ""
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt)
+        updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt)
     }
 
     fileprivate var isAppZip: Bool {
@@ -145,6 +269,10 @@ struct SAGitHubReleaseAsset: Decodable {
 
     fileprivate var isBetaNamedAppZip: Bool {
         name.lowercased().dropLast(4).contains("-beta")
+    }
+
+    fileprivate var lastModifiedAt: Date? {
+        updatedAt ?? createdAt
     }
 }
 

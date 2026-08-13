@@ -6,12 +6,19 @@ class ArtifactVerifierTest < Minitest::Test
   class FakeArtifactRunner
     attr_reader :commands
 
-    def initialize(team: SequelAceRelease::Config::TEAM_ID, architectures: "arm64 x86_64", fail_stapler: false, executable: "Sequel Ace")
+    def initialize(
+      team: SequelAceRelease::Config::TEAM_ID,
+      architectures: "arm64 x86_64",
+      fail_stapler: false,
+      executable: "Sequel Ace",
+      release_tag: "production/5.3.2-20105"
+    )
       @commands = []
       @team = team
       @architectures = architectures
       @fail_stapler = fail_stapler
       @executable = executable
+      @release_tag = release_tag
     end
 
     def run(*command, **_options)
@@ -25,6 +32,7 @@ class ArtifactVerifierTest < Minitest::Test
           "CFBundleIdentifier" => "com.sequel-ace.sequel-ace",
           "CFBundleShortVersionString" => "5.3.2",
           "CFBundleVersion" => "20105",
+          SequelAceRelease::Config::RELEASE_TAG_PLIST_KEY => @release_tag,
           "CFBundleExecutable" => @executable
         }.fetch(key)
       when "/usr/bin/lipo"
@@ -107,6 +115,30 @@ class ArtifactVerifierTest < Minitest::Test
       )
       assert_equal %w[arm64 x86_64], result.fetch("architectures")
       assert_equal SequelAceRelease::Config::TEAM_ID, result.fetch("team_id")
+    end
+  end
+
+  def test_verifies_embedded_canonical_release_tag
+    with_app do |app|
+      result = SequelAceRelease::ArtifactVerifier.new(runner: FakeArtifactRunner.new).verify(
+        path: app,
+        version: "5.3.2",
+        build: 20_105,
+        channel: "production",
+        release_tag: "production/5.3.2-20105"
+      )
+      assert_equal "production/5.3.2-20105", result.fetch("release_tag")
+
+      error = assert_raises(SequelAceRelease::ValidationError) do
+        SequelAceRelease::ArtifactVerifier.new(runner: FakeArtifactRunner.new).verify(
+          path: app,
+          version: "5.3.2",
+          build: 20_105,
+          channel: "production",
+          release_tag: "beta/5.3.2-20105"
+        )
+      end
+      assert_includes error.message, "release tag"
     end
   end
 

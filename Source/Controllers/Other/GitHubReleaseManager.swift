@@ -64,20 +64,48 @@ import OSLog
 
     }
 
-    public func checkRelease(name: String, isUserInitiated: Bool) {
+    public func checkRelease(name: String, installedReleaseTag: String?, isUserInitiated: Bool) {
         if name.count == 0 {
             Log.error("name not valid")
             return
         }
 
+        currentReleaseName = name
+        availableReleaseName = ""
+        currentRelease = nil
+        availableRelease = nil
+        releases = []
+
         Log.debug("checkRelease: \(name)")
 
         let urlStr = GitHubReleaseManager.githubURLStr.format(user, project)
+            + "?per_page=\(SAGitHubReleasePagination.pageSize)"
 
         Log.debug("GitHubReleaseManager.config = \(String(describing: GitHubReleaseManager.config))")
         Log.debug("urlStr = \(urlStr)")
 
-        AF.request(urlStr) { urlRequest in
+        guard let url = URL(string: urlStr) else {
+            Log.error("urlStr not valid")
+            return
+        }
+
+        requestReleasePage(at: url,
+                           accumulatedReleases: [],
+                           pagesFetched: 0,
+                           installedBuildName: name,
+                           installedReleaseTag: installedReleaseTag,
+                           isUserInitiated: isUserInitiated)
+    }
+
+    private func requestReleasePage(
+        at url: URL,
+        accumulatedReleases: [SAGitHubRelease],
+        pagesFetched: Int,
+        installedBuildName: String,
+        installedReleaseTag: String?,
+        isUserInitiated: Bool
+    ) {
+        AF.request(url) { urlRequest in
             urlRequest.timeoutInterval = 60
             self.Log.debug("urlRequest: \(urlRequest)")
         }
@@ -93,7 +121,25 @@ import OSLog
                         return
                     }
 
-                    let gitHub = try SAGitHubRelease.decodeList(from: responseData)
+                    let page = try SAGitHubRelease.decodeList(from: responseData)
+                    let gitHub = accumulatedReleases + page
+                    let fetchedPageCount = pagesFetched + 1
+
+                    if let nextPageURL = SAGitHubReleasePagination.nextPageURL(
+                        from: response.response?.value(forHTTPHeaderField: "Link"),
+                        releases: gitHub,
+                        installedBuildName: installedBuildName,
+                        installedReleaseTag: installedReleaseTag
+                    ) {
+                        Log.debug("requesting GitHub release page \(fetchedPageCount + 1)")
+                        requestReleasePage(at: nextPageURL,
+                                           accumulatedReleases: gitHub,
+                                           pagesFetched: fetchedPageCount,
+                                           installedBuildName: installedBuildName,
+                                           installedReleaseTag: installedReleaseTag,
+                                           isUserInitiated: isUserInitiated)
+                        return
+                    }
 
                     var releasesArray = gitHub.sorted(by: { (element0: SAGitHubRelease, element1: SAGitHubRelease) -> Bool in
                         element0 > element1
@@ -101,7 +147,9 @@ import OSLog
 
                     Log.debug("releasesArray count: \(releasesArray.count)")
 
-                    if let currentReleaseTmp = releasesArray.first(where: { $0.matchesInstalledBuild(named: name) }) {
+                    if let currentReleaseTmp = releasesArray.first(where: {
+                        $0.matchesInstalledBuild(named: installedBuildName, releaseTag: installedReleaseTag)
+                    }) {
                         currentRelease = currentReleaseTmp
                         guard let currentReleaseName = currentRelease?.name else {
                             return
@@ -124,6 +172,10 @@ import OSLog
 
                     Log.debug("removing releases without a compatible app zip")
                     releasesArray.removeAll(where: { $0.compatibleAppZip(for: appVariant) == nil })
+
+                    Log.debug("removing releases whose assets are still settling")
+                    let now = Date()
+                    releasesArray.removeAll(where: { $0.isSettled(at: now) == false })
 
                     Log.debug("releasesArray count: \(releasesArray.count)")
 
