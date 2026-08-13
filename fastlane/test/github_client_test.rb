@@ -48,6 +48,95 @@ class GitHubClientTest < Minitest::Test
     assert_equal "/repos/Sequel-Ace/Sequel-Ace/releases/latest", transport.requests.first[:path]
   end
 
+  def test_validates_the_exact_release_publisher_identity_and_repository_access
+    transport = FakeTransport.new([
+      http_response(body: { "login" => "Jason-Morcos" }),
+      http_response(body: {
+        "full_name" => "Sequel-Ace/Sequel-Ace",
+        "permissions" => { "push" => true }
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    result = client.validate_release_publisher!(expected_login: "Jason-Morcos")
+
+    assert_equal "Jason-Morcos", result.fetch("login")
+    assert_equal true, result.fetch("push_access")
+    assert_equal ["/user", "/repos/Sequel-Ace/Sequel-Ace"], transport.requests.map { |request| request.fetch(:path) }
+  end
+
+  def test_rejects_a_publisher_credential_for_another_account
+    transport = FakeTransport.new([
+      http_response(body: { "login" => "Kaspik" })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      client.validate_release_publisher!(expected_login: "Jason-Morcos")
+    end
+
+    assert_includes error.message, "does not belong to Jason-Morcos"
+    assert_equal ["/user"], transport.requests.map { |request| request.fetch(:path) }
+  end
+
+  def test_rejects_a_publisher_credential_without_exact_repository_push_access
+    transport = FakeTransport.new([
+      http_response(body: { "login" => "Jason-Morcos" }),
+      http_response(body: {
+        "full_name" => "Sequel-Ace/Sequel-Ace",
+        "permissions" => { "push" => false }
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      client.validate_release_publisher!(expected_login: "Jason-Morcos")
+    end
+
+    assert_includes error.message, "lacks exact repository push access"
+  end
+
+  def test_validates_the_exact_release_app_installation_and_repository_access
+    transport = FakeTransport.new([
+      http_response(body: {
+        "app_id" => 4_541_115,
+        "app_slug" => "sequel-ace-release-automation",
+        "account" => { "login" => "Sequel-Ace" }
+      }),
+      http_response(body: {
+        "full_name" => "Sequel-Ace/Sequel-Ace",
+        "permissions" => { "push" => true }
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    result = client.validate_release_app_publisher!(expected_app_id: 4_541_115)
+
+    assert_equal "sequel-ace-release-automation[bot]", result.fetch("login")
+    assert_equal 4_541_115, result.fetch("app_id")
+    assert_equal true, result.fetch("push_access")
+    assert_equal ["/installation", "/repos/Sequel-Ace/Sequel-Ace"],
+                 transport.requests.map { |request| request.fetch(:path) }
+  end
+
+  def test_rejects_a_release_app_token_for_another_installation
+    transport = FakeTransport.new([
+      http_response(body: {
+        "app_id" => 999,
+        "app_slug" => "another-app",
+        "account" => { "login" => "Sequel-Ace" }
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      client.validate_release_app_publisher!(expected_app_id: 4_541_115)
+    end
+
+    assert_includes error.message, "exact installation"
+    assert_equal ["/installation"], transport.requests.map { |request| request.fetch(:path) }
+  end
+
   def test_creates_the_lightweight_release_tag_before_publishing_the_release
     target_sha = "a" * 40
     tag = "production/5.4.0-20105"
@@ -66,14 +155,15 @@ class GitHubClientTest < Minitest::Test
         "name" => "5.4.0",
         "body" => "Notes",
         "draft" => false,
-        "prerelease" => true
+        "prerelease" => true,
+        "author" => { "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN }
       }),
       http_response(body: release_tag_response(tag, target_sha))
     ])
     client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
 
     tag_result = client.create_or_validate_release_tag(tag: tag, target_sha: target_sha)
-    release = client.create_or_validate_release(tag: tag, target_sha: target_sha, title: "5.4.0", body: "Notes")
+    release = create_or_validate_release(client, tag: tag, target_sha: target_sha)
 
     assert_equal true, tag_result.fetch("created")
     assert_equal true, release.fetch("created")
@@ -104,16 +194,41 @@ class GitHubClientTest < Minitest::Test
         "name" => "5.4.0",
         "body" => "Notes",
         "draft" => false,
-        "prerelease" => true
+        "prerelease" => true,
+        "author" => { "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN }
       }),
       http_response(body: release_tag_response(tag, target_sha))
     ])
     client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
 
-    release = client.create_or_validate_release(tag: tag, target_sha: target_sha, title: "5.4.0", body: "Notes")
+    release = create_or_validate_release(client, tag: tag, target_sha: target_sha)
 
     assert_equal false, release.fetch("created")
     assert_equal ["GET", "GET", "GET"], transport.requests.map { |request| request.fetch(:method) }
+  end
+
+  def test_rejects_an_existing_prerelease_created_by_another_identity
+    target_sha = "a" * 40
+    tag = "production/5.4.0-20109"
+    transport = FakeTransport.new([
+      http_response(body: release_tag_response(tag, target_sha)),
+      http_response(body: {
+        "id" => 100,
+        "tag_name" => tag,
+        "name" => "5.4.0",
+        "body" => "Notes",
+        "draft" => false,
+        "prerelease" => true,
+        "author" => { "login" => SequelAceRelease::ReleasePublisher::LEGACY_APP_LOGIN }
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    error = assert_raises(SequelAceRelease::IntegrityError) do
+      create_or_validate_release(client, tag: tag, target_sha: target_sha)
+    end
+
+    assert_includes error.message, "exact approved prerelease"
   end
 
   def test_recovers_when_github_accepts_release_but_the_create_response_is_lost
@@ -125,7 +240,8 @@ class GitHubClientTest < Minitest::Test
       "name" => "5.4.0",
       "body" => "Notes",
       "draft" => false,
-      "prerelease" => true
+      "prerelease" => true,
+      "author" => { "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN }
     }
     transport = FakeTransport.new([
       http_response(body: release_tag_response(tag, target_sha)),
@@ -138,7 +254,7 @@ class GitHubClientTest < Minitest::Test
     ])
     client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
 
-    release = client.create_or_validate_release(tag: tag, target_sha: target_sha, title: "5.4.0", body: "Notes")
+    release = create_or_validate_release(client, tag: tag, target_sha: target_sha)
 
     assert_equal false, release.fetch("created")
     assert_equal ["GET", "GET", "GET", "POST", "GET", "GET", "GET"], transport.requests.map { |request| request.fetch(:method) }
@@ -153,7 +269,8 @@ class GitHubClientTest < Minitest::Test
       "name" => "5.4.0",
       "body" => "Notes",
       "draft" => false,
-      "prerelease" => true
+      "prerelease" => true,
+      "author" => { "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN }
     }
     transport = FakeTransport.new([
       http_response(body: release_tag_response(tag, target_sha)),
@@ -167,7 +284,7 @@ class GitHubClientTest < Minitest::Test
     client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
 
     error = assert_raises(SequelAceRelease::IntegrityError) do
-      client.create_or_validate_release(tag: tag, target_sha: target_sha, title: "5.4.0", body: "Notes")
+      create_or_validate_release(client, tag: tag, target_sha: target_sha)
     end
 
     assert_includes error.message, "exact release commit"
@@ -185,13 +302,14 @@ class GitHubClientTest < Minitest::Test
         "name" => "5.4.0",
         "body" => "Different notes",
         "draft" => false,
-        "prerelease" => true
+        "prerelease" => true,
+        "author" => { "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN }
       })
     ])
     client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
 
     error = assert_raises(SequelAceRelease::IntegrityError) do
-      client.create_or_validate_release(tag: tag, target_sha: target_sha, title: "5.4.0", body: "Notes")
+      create_or_validate_release(client, tag: tag, target_sha: target_sha)
     end
 
     assert_includes error.message, "exact approved prerelease"
@@ -209,14 +327,15 @@ class GitHubClientTest < Minitest::Test
         "name" => "5.4.0",
         "body" => "Notes",
         "draft" => false,
-        "prerelease" => true
+        "prerelease" => true,
+        "author" => { "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN }
       }),
       http_response(body: release_tag_response(tag, "b" * 40))
     ])
     client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
 
     error = assert_raises(SequelAceRelease::IntegrityError) do
-      client.create_or_validate_release(tag: tag, target_sha: target_sha, title: "5.4.0", body: "Notes")
+      create_or_validate_release(client, tag: tag, target_sha: target_sha)
     end
 
     assert_includes error.message, "exact release commit"
@@ -236,14 +355,15 @@ class GitHubClientTest < Minitest::Test
         "name" => "5.4.0",
         "body" => "Notes",
         "draft" => false,
-        "prerelease" => true
+        "prerelease" => true,
+        "author" => { "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN }
       }),
       http_response(body: release_tag_response(tag, "b" * 40))
     ])
     client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
 
     error = assert_raises(SequelAceRelease::IntegrityError) do
-      client.create_or_validate_release(tag: tag, target_sha: target_sha, title: "5.4.0", body: "Notes")
+      create_or_validate_release(client, tag: tag, target_sha: target_sha)
     end
 
     assert_includes error.message, "exact release commit"
@@ -1045,6 +1165,16 @@ class GitHubClientTest < Minitest::Test
   end
 
   private
+
+  def create_or_validate_release(client, tag:, target_sha:)
+    client.create_or_validate_release(
+      tag: tag,
+      target_sha: target_sha,
+      title: "5.4.0",
+      body: "Notes",
+      expected_author_login: SequelAceRelease::ReleasePublisher::USER_LOGIN
+    )
+  end
 
   def release_tag_response(tag, sha)
     {

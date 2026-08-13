@@ -82,6 +82,54 @@ module SequelAceRelease
       request!("GET", "/repos/#{@repository}/releases/latest")
     end
 
+    def validate_release_publisher!(expected_login:)
+      unless expected_login.to_s.match?(/\A[A-Za-z0-9-]+\z/)
+        raise ValidationError, "expected GitHub release publisher is malformed"
+      end
+
+      user = request!("GET", "/user")
+      unless user.is_a?(Hash) && user["login"] == expected_login
+        raise ValidationError, "GitHub release publisher credential does not belong to #{expected_login}"
+      end
+      repository = request!("GET", "/repos/#{@repository}")
+      unless repository.is_a?(Hash) && repository["full_name"] == @repository &&
+             repository.dig("permissions", "push") == true
+        raise ValidationError, "GitHub release publisher credential lacks exact repository push access"
+      end
+
+      {
+        "login" => expected_login,
+        "repository" => @repository,
+        "push_access" => true
+      }
+    end
+
+    def validate_release_app_publisher!(expected_app_id:)
+      unless expected_app_id.is_a?(Integer) && expected_app_id.positive?
+        raise ValidationError, "expected GitHub release App ID is malformed"
+      end
+
+      installation = request!("GET", "/installation")
+      app_slug = installation["app_slug"] if installation.is_a?(Hash)
+      unless installation.is_a?(Hash) && installation["app_id"] == expected_app_id &&
+             app_slug.to_s.match?(/\A[a-z0-9-]+\z/) &&
+             installation.dig("account", "login") == Config::REPOSITORY_OWNER
+        raise ValidationError, "GitHub release App token does not match the exact installation"
+      end
+      repository = request!("GET", "/repos/#{@repository}")
+      unless repository.is_a?(Hash) && repository["full_name"] == @repository &&
+             repository.dig("permissions", "push") == true
+        raise ValidationError, "GitHub release App token lacks exact repository push access"
+      end
+
+      {
+        "login" => "#{app_slug}[bot]",
+        "app_id" => expected_app_id,
+        "repository" => @repository,
+        "push_access" => true
+      }
+    end
+
     def pull_request(number)
       request!("GET", "/repos/#{@repository}/pulls/#{Integer(number)}")
     end
@@ -331,7 +379,7 @@ module SequelAceRelease
       })
     end
 
-    def create_or_validate_release(tag:, target_sha:, title:, body:)
+    def create_or_validate_release(tag:, target_sha:, title:, body:, expected_author_login:)
       validate_commit_sha!(target_sha, "release target SHA")
       validate_exact_release_tag!(tag: tag, target_sha: target_sha)
 
@@ -347,6 +395,7 @@ module SequelAceRelease
           tag: tag,
           title: title,
           body: body,
+          expected_author_login: expected_author_login,
           created: false
         )
         validate_exact_release_tag!(tag: tag, target_sha: target_sha)
@@ -371,13 +420,21 @@ module SequelAceRelease
           tag: tag,
           title: title,
           body: body,
+          expected_author_login: expected_author_login,
           created: false
         )
         validate_exact_release_tag!(tag: tag, target_sha: target_sha)
         return validated
       end
 
-      validated = validate_release_response!(created, tag: tag, title: title, body: body, created: true)
+      validated = validate_release_response!(
+        created,
+        tag: tag,
+        title: title,
+        body: body,
+        expected_author_login: expected_author_login,
+        created: true
+      )
       validate_exact_release_tag!(tag: tag, target_sha: target_sha)
       validated
     end
@@ -550,15 +607,18 @@ module SequelAceRelease
       response.merge("created" => created)
     end
 
-    def validate_release_response!(response, tag:, title:, body:, created:)
+    def validate_release_response!(response, tag:, title:, body:, expected_author_login:, created:)
       expected = {
         "tag_name" => tag,
         "name" => title,
         "body" => body,
         "draft" => false,
-        "prerelease" => true
+        "prerelease" => true,
+        "author_login" => expected_author_login
       }
-      actual = expected.keys.to_h { |key| [key, response[key]] } if response.is_a?(Hash)
+      actual = expected.keys.to_h do |key|
+        [key, key == "author_login" ? response.dig("author", "login") : response[key]]
+      end if response.is_a?(Hash)
       unless response.is_a?(Hash) && response["id"].is_a?(Integer) && response["id"].positive? && actual == expected
         raise IntegrityError, "GitHub release does not match the exact approved prerelease"
       end

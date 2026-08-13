@@ -42,7 +42,7 @@ class WorkflowRecoveryTest < Minitest::Test
     expected_permissions = {
       ".github/workflows/release.yml:Mint repository-scoped release App token" => branch_permissions,
       ".github/workflows/release.yml:Refresh release App token before merging" => branch_permissions,
-      ".github/workflows/release.yml:Mint exact-target release mutation token" => release_mutation_permissions,
+      ".github/workflows/release.yml:Mint exact-target release tag token" => release_mutation_permissions,
       ".github/workflows/release.yml:Refresh release App token for failure cleanup" => cleanup_permissions,
       ".github/workflows/release.yml:Mint release mutation token for failure annotation" => release_mutation_permissions,
       ".github/workflows/release_alpha_retry.yml:Mint repository-scoped release App token" => [["permission-contents", "read"]],
@@ -133,13 +133,30 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_operator terminal_failure.index("archive-release-to-ghcr.sh push"), :<,
                     terminal_failure.index('[[ -z "${RELEASE_MUTATION_TOKEN}" ]]')
 
-    exact_create_token = release.split("- name: Mint exact-target release mutation token", 2).fetch(1)
+    exact_create_token = release.split("- name: Mint exact-target release tag token", 2).fetch(1)
                                 .split("- name: Create the tag-backed GitHub prerelease", 2).first
     finalizer = File.read(repo_path(".github/workflows/release_finalize.yml"))
     exact_finalize_token = finalizer.split("- name: Mint exact-target release mutation token", 2).fetch(1)
                                     .split("- name: Finalize only exact App Store-live releases", 2).first
     refute_includes exact_create_token, "continue-on-error: true"
     refute_includes exact_finalize_token, "continue-on-error: true"
+  end
+
+  def test_user_publisher_credential_is_scoped_only_to_initial_release_creation
+    release = File.read(repo_path(".github/workflows/release.yml"))
+    creation = release.split("- name: Create the tag-backed GitHub prerelease", 2).fetch(1)
+                      .split("- name: Durably archive the release identity before Cloud runs", 2).first
+
+    assert_equal 1, release.scan(/^\s+SA_RELEASE_GITHUB_PUBLISHER_TOKEN:/).length
+    assert_equal 1, release.scan(/secrets\.SA_RELEASE_GITHUB_PUBLISHER_TOKEN/).length
+    assert_includes creation,
+                    'SA_RELEASE_GITHUB_PUBLISHER_TOKEN: ${{ secrets.SA_RELEASE_GITHUB_PUBLISHER_TOKEN }}'
+    assert_includes creation, 'SA_GITHUB_TOKEN: ${{ steps.release_mutation_token.outputs.token }}'
+
+    %w[release_alpha_retry.yml release_finalize.yml release_publish.yml release_feasibility.yml].each do |filename|
+      refute_includes File.read(repo_path(".github/workflows/#{filename}")),
+                      "SA_RELEASE_GITHUB_PUBLISHER_TOKEN"
+    end
   end
 
   def test_artifact_wake_adapter_mints_only_an_exact_repository_variables_token
@@ -443,7 +460,8 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes gate, "%w[cloud_running artifacts_verified]"
     assert_includes gate, "ReleaseNaming.new"
     assert_includes gate, "still has an active asynchronous handoff"
-    assert_includes gate, '.author.login == "sequel-ace-release-automation[bot]"'
+    assert_includes gate, "ReleasePublisher.authorized?"
+    assert_includes gate, "release_author"
     assert_includes gate, "has unreadable private handoff state; refusing to overlap it"
     refute_includes gate, "if Scripts/archive-release-to-ghcr.sh pull"
   end
@@ -743,7 +761,14 @@ class WorkflowRecoveryTest < Minitest::Test
     execution = workflow.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
 
     assert_includes discovery, 'gh release view "${REQUESTED_TAG}"'
-    assert_includes discovery, 'select(.author.login == "sequel-ace-release-automation[bot]")'
+    assert_includes discovery, '.author.login == "sequel-ace-release-automation[bot]"'
+    assert_includes discovery, '.author.login == "sequel-ace-releases[bot]"'
+    assert_includes discovery, '.author.login == "Jason-Morcos"'
+    assert_includes discovery, '.tagName == "production/5.4.0-20105"'
+    assert_includes discovery, '--json tagName,author,createdAt'
+    assert_includes discovery, '(.createdAt | fromdateiso8601) as $created'
+    assert_includes discovery, '(.author.login == "Jason-Morcos" and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601))'
+    assert_includes discovery, '$build >= 20109 and $created >= ("2027-08-14T00:00:00Z" | fromdateiso8601)'
     assert_includes execution, 'printf \'%s\\n\' "${REQUESTED_TAG}" > production-candidates.txt'
     assert_includes execution, "GitHub is finalized but the live archive refresh failed"
     assert_includes execution, "--state finalizing"
@@ -917,7 +942,9 @@ class WorkflowRecoveryTest < Minitest::Test
     [discovery, execution].each do |step|
       listing = step.index("gh release list")
       prerelease_filter = step.index(".isPrerelease == true")
-      production_filter = step.index('startsWith("production/")') || step.index('startswith("production/")')
+      production_filter = step.index('test("^production/') ||
+                          step.index('startsWith("production/")') ||
+                          step.index('startswith("production/")')
 
       assert listing
       assert prerelease_filter

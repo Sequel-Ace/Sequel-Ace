@@ -14,14 +14,15 @@ module SequelAceRelease
       DEVELOPER_REJECTED INVALID_BINARY METADATA_REJECTED REJECTED
     ].freeze
 
-    def self.run(argv, out: $stdout, err: $stderr, env: ENV)
-      new(out: out, err: err, env: env).run(argv)
+    def self.run(argv, out: $stdout, err: $stderr, env: ENV, clock: -> { Time.now.utc })
+      new(out: out, err: err, env: env, clock: clock).run(argv)
     end
 
-    def initialize(out:, err:, env:)
+    def initialize(out:, err:, env:, clock: -> { Time.now.utc })
       @out = out
       @err = err
       @env = env
+      @clock = clock
       @runner = CommandRunner.new
     end
 
@@ -455,22 +456,48 @@ module SequelAceRelease
       reject_arguments!(arguments)
       require_options!(options, :channel, :version, :build, :target_sha, :body)
       naming = ReleaseNaming.new(**options.slice(:channel, :version, :build, :iteration))
+      publication_time = @clock.call.utc
+      publication_mode = ReleasePublisher.active_mode(at: publication_time)
       client = github_client
       target_validation = client.validate_release_target!(
         target_sha: options[:target_sha],
         protected_paths: release_paths
       )
+      if publication_mode == :user
+        publisher = github_user_publisher_client
+        expected_publisher = ReleasePublisher::USER_LOGIN
+        publisher_validation = publisher.validate_release_publisher!(expected_login: expected_publisher)
+      else
+        publisher = client
+        publisher_validation = publisher.validate_release_app_publisher!(
+          expected_app_id: ReleasePublisher::RELEASE_APP_ID
+        )
+        expected_publisher = publisher_validation.fetch("login")
+      end
+      ReleasePublisher.validate!(tag: naming.tag, login: expected_publisher, at: publication_time)
       tag = client.create_or_validate_release_tag(
         tag: naming.tag,
         target_sha: options[:target_sha]
       )
-      release = client.create_or_validate_release(
+      release = publisher.create_or_validate_release(
         tag: naming.tag,
         target_sha: options[:target_sha],
         title: naming.title,
-        body: options[:body]
+        body: options[:body],
+        expected_author_login: expected_publisher
       )
-      emit({ "naming" => naming.to_h, "target_validation" => target_validation, "tag" => tag, "release" => release }, options[:output])
+      ReleasePublisher.validate!(
+        tag: naming.tag,
+        login: release.dig("author", "login"),
+        created_at: release["created_at"]
+      )
+      emit({
+        "naming" => naming.to_h,
+        "target_validation" => target_validation,
+        "publisher_validation" => publisher_validation,
+        "tag" => tag,
+        "release" => release
+      }, options[:output])
     end
 
     def github_validate_release_target(arguments)
@@ -1036,9 +1063,11 @@ module SequelAceRelease
       unless release["tag_name"] == data.fetch("tag") && release["draft"] == false
         raise ValidationError, "GitHub release identity is not publishable"
       end
-      unless release.dig("author", "login") == PublishHandoff::RELEASE_APP_LOGIN
-        raise ValidationError, "release was not authored by the dedicated release App"
-      end
+      ReleasePublisher.validate!(
+        tag: data.fetch("tag"),
+        login: release.dig("author", "login"),
+        created_at: release["created_at"]
+      )
       verify_release_assets!(release, data)
       final_title = ReleaseNaming.new(
         channel: "production",
@@ -1089,7 +1118,11 @@ module SequelAceRelease
       release = client.release_by_tag(data.fetch("tag"))
       unless release["id"] == evidence.fetch("release_id") && release["tag_name"] == data.fetch("tag") &&
              release["name"] == final_title && release["draft"] == false && release["prerelease"] == false &&
-             release.dig("author", "login") == PublishHandoff::RELEASE_APP_LOGIN
+             ReleasePublisher.authorized?(
+               tag: data.fetch("tag"),
+               login: release.dig("author", "login"),
+               created_at: release["created_at"]
+             )
         raise ValidationError, "GitHub finalization readback did not match the requested release"
       end
       verify_release_assets!(release, data)
@@ -1125,6 +1158,13 @@ module SequelAceRelease
       token = @env["SA_GITHUB_TOKEN"] || @env["GH_TOKEN"] || @env["GITHUB_TOKEN"]
       return nil if optional && token.to_s.empty?
 
+      GitHubClient.new(token: token)
+    end
+
+    def github_user_publisher_client
+      token = ReleasePublisher.validate_user_publisher_token!(
+        @env["SA_RELEASE_GITHUB_PUBLISHER_TOKEN"]
+      )
       GitHubClient.new(token: token)
     end
 
