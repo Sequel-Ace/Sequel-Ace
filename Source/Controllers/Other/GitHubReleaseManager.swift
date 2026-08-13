@@ -30,6 +30,7 @@ import OSLog
     private var availableRelease: SAGitHubRelease?
     private var releases: [SAGitHubRelease] = []
     private var settlingRetry: DispatchWorkItem?
+    private var checkTracker = SAGitHubReleaseCheckTracker()
     private let Log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "github")
     private let manager = NetworkReachabilityManager(host: "www.google.com")
 
@@ -66,11 +67,12 @@ import OSLog
     }
 
     public func checkRelease(name: String, installedReleaseTag: String?, isUserInitiated: Bool) {
-        if name.count == 0 {
+        if name.isEmpty {
             Log.error("name not valid")
             return
         }
 
+        let checkID = checkTracker.begin()
         settlingRetry?.cancel()
         settlingRetry = nil
         currentReleaseName = name
@@ -95,6 +97,7 @@ import OSLog
         requestReleasePage(at: url,
                            accumulatedReleases: [],
                            pagesFetched: 0,
+                           checkID: checkID,
                            installedBuildName: name,
                            installedReleaseTag: installedReleaseTag,
                            isUserInitiated: isUserInitiated)
@@ -104,6 +107,7 @@ import OSLog
         at url: URL,
         accumulatedReleases: [SAGitHubRelease],
         pagesFetched: Int,
+        checkID: UUID,
         installedBuildName: String,
         installedReleaseTag: String?,
         isUserInitiated: Bool
@@ -114,6 +118,11 @@ import OSLog
         }
         .validate() // check response code etc
         .responseData { [self] response in
+            guard checkTracker.isCurrent(checkID) else {
+                Log.debug("Ignoring a superseded GitHub release check response")
+                return
+            }
+
             switch response.result {
             case .success:
                 Log.info("Validation Successful")
@@ -138,6 +147,7 @@ import OSLog
                         requestReleasePage(at: nextPageURL,
                                            accumulatedReleases: gitHub,
                                            pagesFetched: fetchedPageCount,
+                                           checkID: checkID,
                                            installedBuildName: installedBuildName,
                                            installedReleaseTag: installedReleaseTag,
                                            isUserInitiated: isUserInitiated)

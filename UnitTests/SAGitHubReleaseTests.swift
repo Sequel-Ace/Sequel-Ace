@@ -361,6 +361,18 @@ final class SAGitHubReleaseTests: XCTestCase {
         ))
     }
 
+    func testStartingAReleaseCheckSupersedesThePreviousCheck() {
+        var tracker = SAGitHubReleaseCheckTracker()
+        let firstCheck = tracker.begin()
+
+        XCTAssertTrue(tracker.isCurrent(firstCheck))
+
+        let secondCheck = tracker.begin()
+
+        XCTAssertFalse(tracker.isCurrent(firstCheck))
+        XCTAssertTrue(tracker.isCurrent(secondCheck))
+    }
+
     func testMissingReleaseStateDefaultsFailClosed() throws {
         let data = Data(
             #"""

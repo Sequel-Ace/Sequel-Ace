@@ -215,6 +215,20 @@ enum SAGitHubReleaseSettlingPolicy {
     }
 }
 
+struct SAGitHubReleaseCheckTracker {
+    private var currentID: UUID?
+
+    mutating func begin() -> UUID {
+        let id = UUID()
+        currentID = id
+        return id
+    }
+
+    func isCurrent(_ id: UUID) -> Bool {
+        currentID == id
+    }
+}
+
 enum SAGitHubReleasePagination {
     static let pageSize = 100
 
