@@ -404,7 +404,7 @@ module SequelAceRelease
       })
     end
 
-    def create_or_validate_release(tag:, target_sha:, title:, body:, expected_author_login:)
+    def create_or_validate_release(tag:, target_sha:, title:, body:, expected_author_login:, before_create: nil)
       validate_commit_sha!(target_sha, "release target SHA")
       validate_exact_release_tag!(tag: tag, target_sha: target_sha)
 
@@ -422,6 +422,7 @@ module SequelAceRelease
       end
 
       validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+      before_create&.call
       begin
         created = create_release(tag: tag, target_sha: target_sha, title: title, body: body)
       rescue APIError => creation_error

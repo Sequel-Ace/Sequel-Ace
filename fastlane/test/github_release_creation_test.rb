@@ -75,7 +75,7 @@ class GitHubReleaseCreationTest < Minitest::Test
       release.merge("created" => false)
     end
 
-    def create_or_validate_release(tag:, target_sha:, title:, body:, expected_author_login:)
+    def create_or_validate_release(tag:, target_sha:, title:, body:, expected_author_login:, before_create: nil)
       expected_events = if expected_author_login == SequelAceRelease::ReleasePublisher::USER_LOGIN
                           %i[validate_target find_release validate_publisher create_tag]
                         else
@@ -93,6 +93,7 @@ class GitHubReleaseCreationTest < Minitest::Test
         raise "wrong release author"
       end
 
+      before_create&.call
       @events << :publish_release
       created_at = if expected_author_login == SequelAceRelease::ReleasePublisher::USER_LOGIN
                      "2026-08-13T00:00:00Z"
@@ -320,6 +321,43 @@ class GitHubReleaseCreationTest < Minitest::Test
 
     assert_equal %i[validate_target find_release], client.events
     assert_includes error.string, "cutoff safety window"
+  end
+
+  def test_create_release_rechecks_the_epoch_at_the_write_boundary
+    client = Client.new
+    error = StringIO.new
+    cutoff = SequelAceRelease::ReleasePublisher::USER_PUBLISHER_CUTOFF
+    before_window = cutoff - SequelAceRelease::ReleasePublisher::USER_PUBLISHER_SAFETY_WINDOW - 1
+    clock_values = [before_window, before_window, cutoff]
+    cli = SequelAceRelease::CLI.new(
+      out: StringIO.new,
+      err: error,
+      env: {},
+      clock: -> { clock_values.shift || cutoff }
+    )
+
+    Dir.mktmpdir do |directory|
+      body = File.join(directory, "release-body.md")
+      File.write(body, "Approved notes")
+      status = cli.stub(:github_client, client) do
+        cli.stub(:github_user_publisher_client, client) do
+          cli.run([
+            "github-create-release",
+            "--channel", "production",
+            "--version", "5.4.0",
+            "--build", "20109",
+            "--iteration", "1",
+            "--target-sha", "a" * 40,
+            "--body", body
+          ])
+        end
+      end
+
+      assert_equal 1, status
+    end
+
+    assert_equal %i[validate_target find_release validate_publisher create_tag], client.events
+    assert_includes error.string, "publisher epoch changed before creation"
   end
 
   def test_cli_verifies_the_exact_existing_release_tag

@@ -509,15 +509,17 @@ module SequelAceRelease
           tag: naming.tag,
           target_sha: options[:target_sha]
         )
-        unless ReleasePublisher.active_mode(at: @clock.call.utc) == publication_mode
-          raise ValidationError, "GitHub release publisher epoch changed before creation"
-        end
         release = publisher.create_or_validate_release(
           tag: naming.tag,
           target_sha: options[:target_sha],
           title: naming.title,
           body: options[:body],
-          expected_author_login: expected_publisher
+          expected_author_login: expected_publisher,
+          before_create: lambda do
+            unless ReleasePublisher.active_mode(at: @clock.call.utc) == publication_mode
+              raise ValidationError, "GitHub release publisher epoch changed before creation"
+            end
+          end
         )
       end
       ReleasePublisher.validate!(

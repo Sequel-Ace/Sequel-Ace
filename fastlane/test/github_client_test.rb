@@ -413,6 +413,31 @@ class GitHubClientTest < Minitest::Test
     assert_equal ["GET", "GET", "GET", "POST", "GET"], transport.requests.map { |request| request.fetch(:method) }
   end
 
+  def test_calls_the_write_guard_immediately_before_creating_a_new_release
+    target_sha = "a" * 40
+    tag = "production/5.4.0-20105"
+    transport = FakeTransport.new([
+      http_response(body: release_tag_response(tag, target_sha)),
+      http_response(status: 404, body: { "message" => "Not Found" }),
+      http_response(body: release_tag_response(tag, target_sha))
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      client.create_or_validate_release(
+        tag: tag,
+        target_sha: target_sha,
+        title: "5.4.0",
+        body: "Notes",
+        expected_author_login: SequelAceRelease::ReleasePublisher::USER_LOGIN,
+        before_create: -> { raise SequelAceRelease::ValidationError, "write boundary reached" }
+      )
+    end
+
+    assert_equal "write boundary reached", error.message
+    assert_equal ["GET", "GET", "GET"], transport.requests.map { |request| request.fetch(:method) }
+  end
+
   def test_reuses_only_an_existing_lightweight_tag_at_the_exact_release_commit
     target_sha = "a" * 40
     tag = "production/5.4.0-20105"
