@@ -3,6 +3,10 @@ name: Release Artifact Publisher
 run-name: "Publish ready release artifacts by @${{ github.actor }}"
 
 on:
+  check_run:
+    types:
+      - completed
+  status: {}
   schedule:
     - cron: "11,41 * * * *"
   workflow_run:
@@ -31,10 +35,30 @@ concurrency:
 jobs:
   discover:
     name: Inspect Cloud readiness without holding a Mac runner
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        (startsWith(vars.SA_RELEASE_PENDING_ARTIFACT_TAG, 'production/') || startsWith(vars.SA_RELEASE_PENDING_ARTIFACT_TAG, 'beta/')) &&
+        (
+          github.event_name == 'schedule' ||
+          github.event_name == 'workflow_run' ||
+          (
+            github.event_name == 'check_run' &&
+            github.event.check_run.app.slug == 'xcode-cloud' &&
+            github.event.check_run.app.id == 117084
+          ) ||
+          (
+            github.event_name == 'status' &&
+            (github.event.state == 'success' || github.event.state == 'failure' || github.event.state == 'error') &&
+            (github.event.context == 'Sequel Ace | Sequel Ace Release' || github.event.context == 'Sequel Ace Beta | Sequel Ace Beta')
+          )
+        )
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: sequel-ace-release
     permissions:
+      checks: read
       contents: read
       packages: read
     outputs:
@@ -48,14 +72,19 @@ jobs:
       production_run_id: ${{ steps.candidate.outputs.production_run_id }}
       alpha_run_id: ${{ steps.candidate.outputs.alpha_run_id }}
       failed_component: ${{ steps.candidate.outputs.failed_component }}
+      failure_reason: ${{ steps.candidate.outputs.failure_reason }}
+      assigned_build: ${{ steps.candidate.outputs.assigned_build }}
+      recovery_build: ${{ steps.candidate.outputs.recovery_build }}
     steps:
       - name: Authorize the asynchronous publisher
         id: authorization
         env:
+          GH_TOKEN: ${{ github.token }}
           RELEASE_ACTOR: ${{ github.actor }}
           RELEASE_CONFIRMATION: ${{ inputs.confirmation }}
           RELEASE_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}
           RELEASE_EVENT: ${{ github.event_name }}
+          RELEASE_PENDING_TAG: ${{ vars.SA_RELEASE_PENDING_ARTIFACT_TAG }}
           RELEASE_REF: ${{ github.ref }}
           RELEASE_RUN_ATTEMPT: ${{ github.run_attempt }}
           RELEASE_TAG: ${{ inputs.release_tag }}
@@ -65,6 +94,16 @@ jobs:
           SOURCE_EVENT: ${{ github.event.workflow_run.event }}
           SOURCE_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
           SOURCE_WORKFLOW_PATH: ${{ github.event.workflow_run.path }}
+          SOURCE_CHECK_APP_ID: ${{ github.event.check_run.app.id }}
+          SOURCE_CHECK_APP_SLUG: ${{ github.event.check_run.app.slug }}
+          SOURCE_CHECK_CONCLUSION: ${{ github.event.check_run.conclusion }}
+          SOURCE_CHECK_HEAD_SHA: ${{ github.event.check_run.head_sha }}
+          SOURCE_CHECK_NAME: ${{ github.event.check_run.name }}
+          SOURCE_CHECK_STATUS: ${{ github.event.check_run.status }}
+          SOURCE_STATUS_CONTEXT: ${{ github.event.context }}
+          SOURCE_STATUS_SHA: ${{ github.event.sha }}
+          SOURCE_STATUS_STATE: ${{ github.event.state }}
+          SOURCE_STATUS_TARGET_URL: ${{ github.event.target_url }}
         run: |
           set -euo pipefail
           [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Artifact publication must run from main." >&2; exit 1; }
@@ -77,12 +116,46 @@ jobs:
               trigger="authorized manual recovery"
               ;;
             schedule)
+              [[ "${RELEASE_PENDING_TAG}" =~ ^(production|beta)/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || { echo "Scheduled publisher has no exact pending artifact tag." >&2; exit 1; }
               if [[ "${RELEASE_RUN_ATTEMPT}" != "1" ]]; then
                 [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized scheduled-publisher rerun initiator." >&2; exit 1; }
               fi
-              trigger="scheduled thirty-minute check"
+              trigger="scheduled recovery check for ${RELEASE_PENDING_TAG}"
+              ;;
+            check_run)
+              [[ "${RELEASE_PENDING_TAG}" =~ ^(production|beta)/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || { echo "Xcode Cloud wake-up has no exact pending artifact tag." >&2; exit 1; }
+              [[ "${SOURCE_CHECK_APP_ID}" == "117084" && "${SOURCE_CHECK_APP_SLUG}" == "xcode-cloud" ]] || { echo "Artifact wake-up did not originate from the Xcode Cloud GitHub App." >&2; exit 1; }
+              [[ "${SOURCE_CHECK_STATUS}" == "completed" && -n "${SOURCE_CHECK_CONCLUSION}" ]] || { echo "Xcode Cloud check is not terminal." >&2; exit 1; }
+              [[ "${SOURCE_CHECK_HEAD_SHA}" =~ ^[0-9a-f]{40}$ ]] || { echo "Xcode Cloud check has a malformed head SHA." >&2; exit 1; }
+              [[ "${SOURCE_CHECK_NAME}" == "Sequel Ace | Sequel Ace Release | Archive - macOS" || "${SOURCE_CHECK_NAME}" == "Sequel Ace Beta | Sequel Ace Beta | Archive - macOS" ]] || { echo "Unexpected Xcode Cloud check identity." >&2; exit 1; }
+              trigger="completed Xcode Cloud check ${SOURCE_CHECK_NAME} for ${SOURCE_CHECK_HEAD_SHA}"
+              ;;
+            status)
+              [[ "${RELEASE_PENDING_TAG}" =~ ^(production|beta)/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || { echo "Xcode Cloud status wake-up has no exact pending artifact tag." >&2; exit 1; }
+              [[ "${SOURCE_STATUS_STATE}" == "success" || "${SOURCE_STATUS_STATE}" == "failure" || "${SOURCE_STATUS_STATE}" == "error" ]] || { echo "Xcode Cloud commit status is not terminal." >&2; exit 1; }
+              [[ "${SOURCE_STATUS_SHA}" =~ ^[0-9a-f]{40}$ ]] || { echo "Xcode Cloud commit status has a malformed SHA." >&2; exit 1; }
+              case "${SOURCE_STATUS_CONTEXT}" in
+                "Sequel Ace | Sequel Ace Release")
+                  [[ "${SOURCE_STATUS_TARGET_URL}" =~ ^https://appstoreconnect\.apple\.com/teams/[0-9a-f-]+/apps/1518036000/ci/builds/[0-9a-f-]+$ ]] || { echo "Production Xcode Cloud status has an unexpected target." >&2; exit 1; }
+                  expected_check_name="Sequel Ace | Sequel Ace Release | Archive - macOS"
+                  ;;
+                "Sequel Ace Beta | Sequel Ace Beta")
+                  [[ "${SOURCE_STATUS_TARGET_URL}" =~ ^https://appstoreconnect\.apple\.com/teams/[0-9a-f-]+/apps/1594104035/ci/builds/[0-9a-f-]+$ ]] || { echo "Alpha Xcode Cloud status has an unexpected target." >&2; exit 1; }
+                  expected_check_name="Sequel Ace Beta | Sequel Ace Beta | Archive - macOS"
+                  ;;
+                *)
+                  echo "Unexpected Xcode Cloud commit-status identity." >&2
+                  exit 1
+                  ;;
+              esac
+              matching_check_count="$(gh api -H "Accept: application/vnd.github+json" \
+                "repos/${GITHUB_REPOSITORY}/commits/${SOURCE_STATUS_SHA}/check-runs?per_page=100" \
+                --jq ".check_runs | map(select(.app.id == 117084 and .app.slug == \"xcode-cloud\" and .name == \"${expected_check_name}\" and .status == \"completed\")) | length")"
+              [[ "${matching_check_count}" -ge 1 ]] || { echo "Xcode Cloud workflow status has no authenticated Archive check." >&2; exit 1; }
+              trigger="terminal Xcode Cloud status ${SOURCE_STATUS_CONTEXT} for ${SOURCE_STATUS_SHA}"
               ;;
             workflow_run)
+              [[ "${RELEASE_PENDING_TAG}" =~ ^(production|beta)/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || { echo "Release handoff has no exact pending artifact tag." >&2; exit 1; }
               if [[ "${SOURCE_CONCLUSION}" != "success" ]]; then
                 echo "enabled=false" >> "${GITHUB_OUTPUT}"
                 echo "The source workflow did not succeed; no artifact continuation was attempted." >> "${GITHUB_STEP_SUMMARY}"
@@ -91,7 +164,11 @@ jobs:
               [[ "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release.yml" || "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release_alpha_retry.yml" ]] || { echo "Unexpected source workflow path." >&2; exit 1; }
               [[ "${SOURCE_EVENT}" == "workflow_dispatch" ]] || { echo "Artifact handoffs must originate from an authorized manual workflow." >&2; exit 1; }
               [[ "${SOURCE_HEAD_BRANCH}" == "main" ]] || { echo "Artifact handoff source was not main." >&2; exit 1; }
-              [[ "${SOURCE_ACTOR}" == "Jason-Morcos" || "${SOURCE_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized source workflow actor." >&2; exit 1; }
+              if [[ "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release.yml" && "${SOURCE_ACTOR}" == "github-actions[bot]" ]]; then
+                : # The release workflow independently authenticates the archived recovery chain.
+              else
+                [[ "${SOURCE_ACTOR}" == "Jason-Morcos" || "${SOURCE_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized source workflow actor." >&2; exit 1; }
+              fi
               if [[ "${RELEASE_RUN_ATTEMPT}" != "1" ]]; then
                 [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized handoff-publisher rerun initiator." >&2; exit 1; }
               fi
@@ -143,6 +220,7 @@ jobs:
           GHCR_TOKEN: ${{ github.token }}
           GHCR_USERNAME: ${{ github.actor }}
           GH_TOKEN: ${{ github.token }}
+          PENDING_TAG: ${{ vars.SA_RELEASE_PENDING_ARTIFACT_TAG }}
           REQUESTED_TAG: ${{ inputs.release_tag }}
           SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
           SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
@@ -154,152 +232,128 @@ jobs:
           SA_PRODUCTION_WORKFLOW_ID: ${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}
         run: |
           set -euo pipefail
-          candidates_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-publish-candidates.XXXXXX")"
-          if [[ -n "${REQUESTED_TAG}" ]]; then
-            printf '0000-00-00T00:00:00Z\t%s\n' "${REQUESTED_TAG}" > "${candidates_file}"
-          else
-            gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
-              --jq '.[] | select(.prerelease == true and .author.login == "sequel-ace-release-automation[bot]" and (.tag_name | test("^(production|beta)/[0-9]+\\.[0-9]+\\.[0-9]+-[1-9][0-9]*$"))) | [.created_at, .tag_name] | @tsv' \
-              | sort > "${candidates_file}"
+          release_tag="${REQUESTED_TAG:-${PENDING_TAG}}"
+          [[ "${release_tag}" =~ ^(production|beta)/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || { echo "No exact artifact handoff tag was selected." >&2; exit 1; }
+          archive_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-publish-archive.XXXXXX")"
+          state_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-publish-state.XXXXXX")"
+          archive_ref="${GHCR_REPOSITORY}:${release_tag//\//-}"
+          trap 'rm -rf "${archive_directory}" "${state_directory}"' EXIT
+          if ! Scripts/archive-release-to-ghcr.sh pull "${archive_ref}" "${archive_directory}" >/dev/null; then
+            echo "Exact release ${release_tag} has no readable private handoff archive; recovery remains armed." >&2
+            exit 1
           fi
 
-          selected_action="none"
-          unreadable=0
-          ineligible=0
-          while IFS=$'\t' read -r _created_at release_tag; do
-            [[ -n "${release_tag}" ]] || continue
-            archive_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-publish-archive.XXXXXX")"
-            state_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-publish-state.XXXXXX")"
-            archive_ref="${GHCR_REPOSITORY}:${release_tag//\//-}"
-            if ! Scripts/archive-release-to-ghcr.sh pull "${archive_ref}" "${archive_directory}" >/dev/null 2>&1; then
-              rm -rf "${archive_directory}" "${state_directory}"
-              if [[ -n "${REQUESTED_TAG}" ]]; then
-                echo "Requested release ${release_tag} has no readable private handoff archive." >&2
-                exit 1
-              fi
-              unreadable=$((unreadable + 1))
-              echo "Automated release ${release_tag} has no readable private handoff archive; it was skipped." >> "${GITHUB_STEP_SUMMARY}"
-              continue
+          locally_eligible="$(bundle exec ruby -Ifastlane/lib -rsequel_ace_release -e '
+            data = SequelAceRelease::Manifest.read(ARGV.fetch(0)).to_h
+            raise SequelAceRelease::ValidationError, "archive tag does not match the candidate" unless data.fetch("tag") == ARGV.fetch(1)
+            puts SequelAceRelease::PublishHandoff::ELIGIBLE_STATES.fetch(data.fetch("channel")).include?(data.fetch("state"))
+          ' "${archive_directory}/manifest.json" "${release_tag}")"
+          if [[ "${locally_eligible}" != "true" ]]; then
+            if [[ -n "${REQUESTED_TAG}" ]]; then
+              echo "Requested release ${release_tag} is not eligible for artifact publication." >&2
+              exit 1
             fi
+            {
+              echo "action=settled"
+              echo "tag=${release_tag}"
+            } >> "${GITHUB_OUTPUT}"
+            echo "The exact handoff ${release_tag} is already terminal; its recovery wake state can be cleared." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
 
-            locally_eligible="$(bundle exec ruby -Ifastlane/lib -rsequel_ace_release -e '
-              data = SequelAceRelease::Manifest.read(ARGV.fetch(0)).to_h
-              raise SequelAceRelease::ValidationError, "archive tag does not match the candidate" unless data.fetch("tag") == ARGV.fetch(1)
-              puts SequelAceRelease::PublishHandoff::ELIGIBLE_STATES.fetch(data.fetch("channel")).include?(data.fetch("state"))
-            ' "${archive_directory}/manifest.json" "${release_tag}")"
-            if [[ "${locally_eligible}" != "true" ]]; then
-              rm -rf "${archive_directory}" "${state_directory}"
-              if [[ -n "${REQUESTED_TAG}" ]]; then
-                echo "Requested release ${release_tag} is not eligible for artifact publication." >&2
-                exit 1
-              fi
-              ineligible=$((ineligible + 1))
-              echo "Automated release ${release_tag} is in a preserved ineligible state; it was skipped." >> "${GITHUB_STEP_SUMMARY}"
-              continue
-            fi
+          bundle exec ruby fastlane/bin/sa-release validate-publish-handoff \
+            --manifest "${archive_directory}/manifest.json" \
+            --tag "${release_tag}" \
+            --notes "${archive_directory}/app-store-notes.txt" \
+            --output "${state_directory}/context.json"
+          eligible="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("eligible")' "${state_directory}/context.json")"
+          [[ "${eligible}" == "true" ]] || { echo "The exact handoff failed live eligibility validation." >&2; exit 1; }
 
-            bundle exec ruby fastlane/bin/sa-release validate-publish-handoff \
-              --manifest "${archive_directory}/manifest.json" \
-              --tag "${release_tag}" \
-              --notes "${archive_directory}/app-store-notes.txt" \
-              --output "${state_directory}/context.json"
-            eligible="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("eligible")' "${state_directory}/context.json")"
-            if [[ "${eligible}" != "true" ]]; then
-              rm -rf "${archive_directory}" "${state_directory}"
-              continue
-            fi
+          channel="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("channel")' "${state_directory}/context.json")"
+          version="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("version")' "${state_directory}/context.json")"
+          build="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("build")' "${state_directory}/context.json")"
+          commit="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("release_commit_sha")' "${state_directory}/context.json")"
+          production_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("cloud_build_ids", {}).fetch("production", "")' "${state_directory}/context.json")"
+          production_arguments=(
+            --workflow-id "${SA_PRODUCTION_WORKFLOW_ID}"
+            --app-id "1518036000"
+            --version "${version}"
+            --tag "${release_tag}"
+            --build "${build}"
+            --commit "${commit}"
+          )
+          if [[ -n "${production_run_id}" ]]; then
+            production_arguments+=(--run-id "${production_run_id}")
+          fi
+          bundle exec ruby fastlane/bin/sa-release cloud-status \
+            "${production_arguments[@]}" \
+            --output "${state_directory}/production-status.json"
+          production_readiness="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("readiness")' "${state_directory}/production-status.json")"
+          production_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("id", "")' "${state_directory}/production-status.json")"
+          production_reason="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("reason", "")' "${state_directory}/production-status.json")"
+          assigned_build="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("assigned_build", "")' "${state_directory}/production-status.json")"
+          recovery_build="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("recovery_build", "")' "${state_directory}/production-status.json")"
 
-            channel="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("channel")' "${state_directory}/context.json")"
-            version="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("version")' "${state_directory}/context.json")"
-            build="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("build")' "${state_directory}/context.json")"
-            commit="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("release_commit_sha")' "${state_directory}/context.json")"
-            production_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("cloud_build_ids", {}).fetch("production", "")' "${state_directory}/context.json")"
-            production_arguments=(
-              --workflow-id "${SA_PRODUCTION_WORKFLOW_ID}"
-              --app-id "1518036000"
+          alpha_readiness="not_required"
+          alpha_run_id=""
+          if [[ "${channel}" == "beta" && "${production_readiness}" == "ready" ]]; then
+            alpha_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("cloud_build_ids", {}).fetch("alpha", "")' "${state_directory}/context.json")"
+            alpha_arguments=(
+              --workflow-id "${SA_ALPHA_WORKFLOW_ID}"
+              --app-id "1594104035"
               --version "${version}"
               --tag "${release_tag}"
-              --build "${build}"
+              --allow-any-build
               --commit "${commit}"
             )
-            if [[ -n "${production_run_id}" ]]; then
-              production_arguments+=(--run-id "${production_run_id}")
+            if [[ -n "${alpha_run_id}" ]]; then
+              alpha_arguments+=(--run-id "${alpha_run_id}")
             fi
             bundle exec ruby fastlane/bin/sa-release cloud-status \
-              "${production_arguments[@]}" \
-              --output "${state_directory}/production-status.json"
-            production_readiness="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("readiness")' "${state_directory}/production-status.json")"
-            production_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("id", "")' "${state_directory}/production-status.json")"
+              "${alpha_arguments[@]}" \
+              --output "${state_directory}/alpha-status.json"
+            alpha_readiness="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("readiness")' "${state_directory}/alpha-status.json")"
+            alpha_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("id", "")' "${state_directory}/alpha-status.json")"
+          fi
 
-            alpha_readiness="not_required"
-            alpha_run_id=""
-            if [[ "${channel}" == "beta" && "${production_readiness}" == "ready" ]]; then
-              alpha_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("cloud_build_ids", {}).fetch("alpha", "")' "${state_directory}/context.json")"
-              alpha_arguments=(
-                --workflow-id "${SA_ALPHA_WORKFLOW_ID}"
-                --app-id "1594104035"
-                --version "${version}"
-                --tag "${release_tag}"
-                --allow-any-build
-                --commit "${commit}"
-              )
-              if [[ -n "${alpha_run_id}" ]]; then
-                alpha_arguments+=(--run-id "${alpha_run_id}")
-              fi
-              bundle exec ruby fastlane/bin/sa-release cloud-status \
-                "${alpha_arguments[@]}" \
-                --output "${state_directory}/alpha-status.json"
-              alpha_readiness="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("readiness")' "${state_directory}/alpha-status.json")"
-              alpha_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("id", "")' "${state_directory}/alpha-status.json")"
-            fi
-
-            failed_component=""
-            if [[ "${production_readiness}" == "failed" ]]; then
-              failed_component="production"
-              selected_action="fail"
-            elif [[ "${production_readiness}" == "ready" && "${alpha_readiness}" == "failed" ]]; then
-              failed_component="alpha"
-              selected_action="fail"
-            elif [[ "${production_readiness}" == "ready" && ( "${alpha_readiness}" == "ready" || "${alpha_readiness}" == "not_required" ) ]]; then
-              selected_action="publish"
-            else
-              {
-                echo "Pending ${release_tag}: Production ${production_readiness}, Alpha ${alpha_readiness}."
-                echo "No runner will wait; the next short check will inspect the same exact run."
-              } >> "${GITHUB_STEP_SUMMARY}"
-              rm -rf "${archive_directory}" "${state_directory}"
-              break
-            fi
-
+          failed_component=""
+          failure_reason=""
+          if [[ "${production_readiness}" == "failed" ]]; then
+            failed_component="production"
+            failure_reason="${production_reason}"
+            selected_action="fail"
+          elif [[ "${production_readiness}" == "ready" && "${alpha_readiness}" == "failed" ]]; then
+            failed_component="alpha"
+            failure_reason="cloud_run_failed"
+            selected_action="fail"
+          elif [[ "${production_readiness}" == "ready" && ( "${alpha_readiness}" == "ready" || "${alpha_readiness}" == "not_required" ) ]]; then
+            selected_action="publish"
+          else
+            selected_action="pending"
             {
-              echo "action=${selected_action}"
-              echo "tag=${release_tag}"
-              echo "channel=${channel}"
-              echo "version=${version}"
-              echo "build=${build}"
-              echo "commit=${commit}"
-              echo "archive_ref=${archive_ref}"
-              echo "production_run_id=${production_run_id}"
-              echo "alpha_run_id=${alpha_run_id}"
-              echo "failed_component=${failed_component}"
-            } >> "${GITHUB_OUTPUT}"
-            rm -rf "${archive_directory}" "${state_directory}"
-            break
-          done < "${candidates_file}"
+              echo "Pending ${release_tag}: Production ${production_readiness}, Alpha ${alpha_readiness}."
+              echo "No runner will wait; Xcode Cloud check events or the gated recovery schedule will inspect this exact handoff again."
+            } >> "${GITHUB_STEP_SUMMARY}"
+          fi
 
-          if [[ "${selected_action}" == "none" ]]; then
-            echo "action=none" >> "${GITHUB_OUTPUT}"
-            echo "No release artifact continuation is ready." >> "${GITHUB_STEP_SUMMARY}"
-          fi
-          if [[ "${unreadable}" -gt 0 ]]; then
-            echo "${unreadable} candidate archive(s) were unreadable and require investigation." >> "${GITHUB_STEP_SUMMARY}"
-          fi
-          if [[ "${ineligible}" -gt 0 ]]; then
-            echo "${ineligible} preserved ineligible handoff(s) were skipped." >> "${GITHUB_STEP_SUMMARY}"
-          fi
+          {
+            echo "action=${selected_action}"
+            echo "tag=${release_tag}"
+            echo "channel=${channel}"
+            echo "version=${version}"
+            echo "build=${build}"
+            echo "commit=${commit}"
+            echo "archive_ref=${archive_ref}"
+            echo "production_run_id=${production_run_id}"
+            echo "alpha_run_id=${alpha_run_id}"
+            echo "failed_component=${failed_component}"
+            echo "failure_reason=${failure_reason}"
+            echo "assigned_build=${assigned_build}"
+            echo "recovery_build=${recovery_build}"
+          } >> "${GITHUB_OUTPUT}"
 
   cloud_failure:
-    name: Preserve a completed unsuccessful Cloud run
+    name: Preserve a terminal Cloud failure or build-number mismatch
     needs: discover
     if: needs.discover.outputs.action == 'fail'
     runs-on: ubuntu-latest
@@ -347,6 +401,10 @@ jobs:
           EXPECTED_TAG: ${{ needs.discover.outputs.tag }}
           FAILED_COMPONENT: ${{ needs.discover.outputs.failed_component }}
           FAILED_RUN_ID: ${{ needs.discover.outputs.failed_component == 'production' && needs.discover.outputs.production_run_id || needs.discover.outputs.alpha_run_id }}
+          FAILURE_REASON: ${{ needs.discover.outputs.failure_reason }}
+          EXPECTED_BUILD: ${{ needs.discover.outputs.build }}
+          ASSIGNED_BUILD: ${{ needs.discover.outputs.assigned_build }}
+          RECOVERY_BUILD: ${{ needs.discover.outputs.recovery_build }}
           GHCR_TOKEN: ${{ github.token }}
           GHCR_USERNAME: ${{ github.actor }}
           RELEASE_COMMIT: ${{ needs.discover.outputs.commit }}
@@ -370,37 +428,150 @@ jobs:
           manifest = SequelAceRelease::Manifest.read(path)
           failure = manifest.to_h.fetch("failure").merge(
             "component" => ENV.fetch("FAILED_COMPONENT"),
-            "cloud_run_id" => ENV.fetch("FAILED_RUN_ID")
+            "cloud_run_id" => ENV.fetch("FAILED_RUN_ID"),
+            "reason" => ENV.fetch("FAILURE_REASON")
           )
+          if %w[cloud_build_number_advanced cloud_build_number_regressed].include?(failure.fetch("reason"))
+            failure["expected_build"] = Integer(ENV.fetch("EXPECTED_BUILD"))
+            failure["assigned_build"] = Integer(ENV.fetch("ASSIGNED_BUILD"))
+          end
+          if failure.fetch("reason") == "cloud_build_number_advanced"
+            failure["recovery_build"] = Integer(ENV.fetch("RECOVERY_BUILD"))
+          end
           manifest.with("failure" => failure).write(path)
           RUBY
           cp failure-disposition.json release-archive/
           Scripts/archive-release-to-ghcr.sh push "${ARCHIVE_REFERENCE}" release-archive > failed-archive-evidence.json
-          echo "Exact ${FAILED_COMPONENT} Xcode Cloud run ${FAILED_RUN_ID} completed unsuccessfully; no Mac runner was started." >> "${GITHUB_STEP_SUMMARY}"
+          if [[ "${FAILURE_REASON}" == "cloud_build_number_advanced" ]]; then
+            echo "Production Cloud assigned ${ASSIGNED_BUILD} instead of ${EXPECTED_BUILD}; the failed RC was preserved and recovery may advance to ${RECOVERY_BUILD}." >> "${GITHUB_STEP_SUMMARY}"
+          elif [[ "${FAILURE_REASON}" == "cloud_build_number_regressed" ]]; then
+            echo "Production Cloud assigned ${ASSIGNED_BUILD} below expected ${EXPECTED_BUILD}; the release stopped without backward recovery." >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "Exact ${FAILED_COMPONENT} Xcode Cloud run ${FAILED_RUN_ID} completed unsuccessfully; no Mac runner was started." >> "${GITHUB_STEP_SUMMARY}"
+          fi
           if [[ -z "${RELEASE_MUTATION_TOKEN}" ]]; then
             echo "Private failure evidence was preserved; GitHub annotation was skipped because the narrow mutation token was unavailable." >> "${GITHUB_STEP_SUMMARY}"
             exit 0
           fi
-          export GH_TOKEN="${RELEASE_MUTATION_TOKEN}"
-          gh release view "${EXPECTED_TAG}" --json body --jq .body > failed-release-body.md
-          bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
+          if ! (
+            set -euo pipefail
+            export GH_TOKEN="${RELEASE_MUTATION_TOKEN}"
+            gh release view "${EXPECTED_TAG}" --json body --jq .body > failed-release-body.md
+            bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
+              --tag "${EXPECTED_TAG}" \
+              --target-sha "${RELEASE_COMMIT}" >/dev/null
+            {
+              echo
+              echo "---"
+              echo "Automated release artifact processing stopped. The tag and prerelease are intentionally preserved."
+              echo "Workflow evidence: ${RUN_URL}"
+            } >> failed-release-body.md
+            gh release edit "${EXPECTED_TAG}" --verify-tag --target "${RELEASE_COMMIT}" --prerelease --latest=false --notes-file failed-release-body.md
+            bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
+              --tag "${EXPECTED_TAG}" \
+              --target-sha "${RELEASE_COMMIT}" >/dev/null
+          ); then
+            echo "Private failure evidence was preserved; the optional GitHub annotation failed and will not block forward recovery." >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+  forward_build_recovery:
+    name: Dispatch a verified forward-only RC recovery
+    needs:
+      - discover
+      - cloud_failure
+    if: >-
+      always() &&
+      needs.discover.outputs.action == 'fail' &&
+      needs.discover.outputs.failed_component == 'production' &&
+      needs.discover.outputs.failure_reason == 'cloud_build_number_advanced' &&
+      needs.cloud_failure.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: sequel-ace-release
+    permissions:
+      actions: write
+      contents: read
+      packages: read
+    env:
+      GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
+    steps:
+      - name: Check out immutable release tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Ruby and locked gems
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Install checksum-pinned ORAS on Linux
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz
+          checksum: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
+
+      - name: Revalidate the durable failure and dispatch the next RC
+        env:
+          ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
+          EXPECTED_TAG: ${{ needs.discover.outputs.tag }}
+          RELEASE_CHANNEL: ${{ needs.discover.outputs.channel }}
+          RELEASE_VERSION: ${{ needs.discover.outputs.version }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+          GH_TOKEN: ${{ github.token }}
+          SA_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          Scripts/archive-release-to-ghcr.sh pull "${ARCHIVE_REFERENCE}" recovery-archive
+          approval_sha="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("sha256")' recovery-archive/approval.json)"
+          bundle exec ruby fastlane/bin/sa-release validate-forward-recovery \
+            --manifest recovery-archive/manifest.json \
+            --approval recovery-archive/approval.json \
+            --approval-sha "${approval_sha}" \
+            --release-body recovery-archive/release-body.md \
             --tag "${EXPECTED_TAG}" \
-            --target-sha "${RELEASE_COMMIT}" >/dev/null
+            --current-sha "${GITHUB_SHA}" \
+            --channel "${RELEASE_CHANNEL}" \
+            --version "${RELEASE_VERSION}" \
+            --previous-tag "$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("previous_tag")' recovery-archive/approval.json)" \
+            --output forward-recovery.json
+
+          ruby -rjson -rbase64 <<'RUBY'
+          approval = JSON.parse(File.read("recovery-archive/approval.json"))
+          recovery = JSON.parse(File.read("forward-recovery.json"))
+          inputs = {
+            "mode" => "resume",
+            "channel" => approval.fetch("channel"),
+            "version" => approval.fetch("target_version"),
+            "expected_main_sha" => approval.fetch("main_sha"),
+            "previous_tag" => approval.fetch("previous_tag"),
+            "recovery_tag" => recovery.fetch("predecessor_tag"),
+            "app_store_notes_b64" => Base64.strict_encode64(File.binread("recovery-archive/app-store-notes.txt")),
+            "approval_sha256" => approval.fetch("sha256"),
+            "confirmation" => "RELEASE #{approval.fetch('channel')} #{approval.fetch('target_version')}"
+          }
+          File.write("workflow-dispatch.json", JSON.generate({ "ref" => "main", "inputs" => inputs }))
+          RUBY
+          gh api \
+            --method POST \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/release.yml/dispatches" \
+            --input workflow-dispatch.json
           {
-            echo
-            echo "---"
-            echo "Automated release artifact processing stopped. The tag and prerelease are intentionally preserved."
-            echo "Workflow evidence: ${RUN_URL}"
-          } >> failed-release-body.md
-          gh release edit "${EXPECTED_TAG}" --verify-tag --target "${RELEASE_COMMIT}" --prerelease --latest=false --notes-file failed-release-body.md
-          bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
-            --tag "${EXPECTED_TAG}" \
-            --target-sha "${RELEASE_COMMIT}" >/dev/null
+            echo "### Forward-only build recovery"
+            echo "- Preserved predecessor: ${EXPECTED_TAG}"
+            echo "- Cloud-assigned build: $(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("cloud_assigned_build")' forward-recovery.json)"
+            echo "- Next RC floor: $(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("expected_recovery_build")' forward-recovery.json)"
+            echo "- The Release workflow was dispatched from main with the original immutable approval."
+          } >> "${GITHUB_STEP_SUMMARY}"
 
   publish:
     name: Verify and publish ready release artifacts
     needs: discover
     if: needs.discover.outputs.action == 'publish'
+    # GitHub-hosted macOS; private Moballo runners are intentionally out of scope.
     runs-on: macos-15
     timeout-minutes: 90
     environment: sequel-ace-release
@@ -802,6 +973,8 @@ jobs:
     env:
       GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
       SA_ASC_REQUIRE_ISSUER: "1"
+    outputs:
+      polling_needed: ${{ steps.polling.outputs.polling_needed }}
     steps:
       - name: Check out immutable release tooling
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -856,6 +1029,7 @@ jobs:
           echo "submitted=${submitted}" >> "${GITHUB_OUTPUT}"
 
       - name: Preserve confirmed submission evidence
+        id: confirmed_submission
         if: steps.submission.outputs.submitted == 'true'
         env:
           ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
@@ -887,6 +1061,7 @@ jobs:
           permission-workflows: write
 
       - name: Preserve terminal artifact-verification failure
+        id: terminal_failure
         if: always() && steps.submission.outputs.submitted != 'true' && needs.publish.outputs.terminal_failure == 'artifact_verification'
         env:
           ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
@@ -931,5 +1106,69 @@ jobs:
         run: |
           {
             echo "Publisher failure for ${FAILED_TAG} was not a completed Cloud or artifact-integrity failure."
-            echo "The private handoff and GitHub release were left unchanged so the next short check can retry safely."
+            echo "The private handoff and GitHub release were left unchanged so the next event or gated recovery check can retry safely."
           } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Classify whether artifact recovery must remain armed
+        id: polling
+        if: always()
+        env:
+          CONFIRMED_SUBMISSION_OUTCOME: ${{ steps.confirmed_submission.outcome }}
+          SUBMITTED: ${{ steps.submission.outputs.submitted }}
+          TERMINAL_FAILURE: ${{ needs.publish.outputs.terminal_failure }}
+          TERMINAL_PRESERVATION_OUTCOME: ${{ steps.terminal_failure.outcome }}
+        run: |
+          set -euo pipefail
+          if [[ "${SUBMITTED}" == "true" && "${CONFIRMED_SUBMISSION_OUTCOME}" == "success" ]]; then
+            echo "polling_needed=false" >> "${GITHUB_OUTPUT}"
+          elif [[ "${TERMINAL_FAILURE}" == "artifact_verification" && "${TERMINAL_PRESERVATION_OUTCOME}" == "success" ]]; then
+            echo "polling_needed=false" >> "${GITHUB_OUTPUT}"
+          else
+            echo "polling_needed=true" >> "${GITHUB_OUTPUT}"
+          fi
+
+  settle_artifact_wake_state:
+    name: Clear settled artifact wake state
+    needs:
+      - discover
+      - cloud_failure
+      - forward_build_recovery
+      - publish
+      - recover_publish_failure
+    if: >-
+      always() &&
+      needs.discover.result == 'success' &&
+      needs.discover.outputs.tag != '' &&
+      (
+        needs.discover.outputs.action == 'settled' ||
+        (
+          needs.discover.outputs.action == 'fail' &&
+          needs.discover.outputs.failure_reason != 'cloud_build_number_advanced' &&
+          needs.cloud_failure.result == 'success'
+        ) ||
+        (needs.discover.outputs.action == 'publish' && needs.publish.result == 'success') ||
+        (
+          needs.discover.outputs.action == 'publish' &&
+          needs.recover_publish_failure.result == 'success' &&
+          needs.recover_publish_failure.outputs.polling_needed == 'false'
+        )
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: sequel-ace-release
+    permissions:
+      contents: read
+    steps:
+      - name: Check out immutable release tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Clear only the exact settled handoff
+        env:
+          GITHUB_REPOSITORY_ID: ${{ github.repository_id }}
+          SA_RELEASE_GITHUB_APP_CLIENT_ID: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          SA_RELEASE_GITHUB_APP_PRIVATE_KEY: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          SETTLED_TAG: ${{ needs.discover.outputs.tag }}
+        run: Scripts/release-artifact-wake-state.sh clear "${SETTLED_TAG}"

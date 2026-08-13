@@ -11,10 +11,6 @@ class ApprovalManifestTest < Minitest::Test
     refute_equal release_approval.sha256, changed.sha256
     assert_raises(SequelAceRelease::ValidationError) { changed.verify!(release_approval.sha256) }
 
-    changed_build = approval(observed_production_cloud_next_build: 20_106)
-    refute_equal release_approval.sha256, changed_build.sha256
-    assert_raises(SequelAceRelease::ValidationError) { changed_build.verify!(release_approval.sha256) }
-
     changed_base = approval(base_sha: "d" * 40)
     refute_equal release_approval.sha256, changed_base.sha256
     assert_raises(SequelAceRelease::ValidationError) { changed_base.verify!(release_approval.sha256) }
@@ -34,15 +30,9 @@ class ApprovalManifestTest < Minitest::Test
       changed_release_body.verify!(release_approval.sha256)
     end
 
-    changed_iteration = approval(release_iteration: 2)
-    refute_equal release_approval.sha256, changed_iteration.sha256
+    changed_policy = release_approval.to_h.merge("build_policy" => "different-policy").reject { |key, _| key == "sha256" }
     assert_raises(SequelAceRelease::ValidationError) do
-      changed_iteration.verify!(release_approval.sha256)
-    end
-
-    missing_build = release_approval.to_h.reject { |key, _| %w[sha256 observed_production_cloud_next_build].include?(key) }
-    assert_raises(SequelAceRelease::ValidationError) do
-      SequelAceRelease::Approval.from_hash(missing_build)
+      SequelAceRelease::Approval.from_hash(changed_policy)
     end
 
     missing_base = release_approval.to_h.reject { |key, _| %w[sha256 base_sha].include?(key) }
@@ -62,10 +52,6 @@ class ApprovalManifestTest < Minitest::Test
       SequelAceRelease::Approval.from_hash(missing_body)
     end
 
-    missing_iteration = release_approval.to_h.reject { |key, _| %w[sha256 release_iteration].include?(key) }
-    assert_raises(SequelAceRelease::ValidationError) do
-      SequelAceRelease::Approval.from_hash(missing_iteration)
-    end
   end
 
   def test_approval_normalizes_valid_git_shas_and_rejects_invalid_lengths
@@ -108,6 +94,7 @@ class ApprovalManifestTest < Minitest::Test
         naming: naming,
         base_sha: "e" * 40,
         canonical_build: 20_105,
+        production_build_evidence: production_build_evidence,
         release_notes_sha256: "c" * 64
       )
     end
@@ -125,27 +112,27 @@ class ApprovalManifestTest < Minitest::Test
         naming: naming,
         base_sha: "b" * 40,
         canonical_build: 20_105,
+        production_build_evidence: production_build_evidence,
         release_notes_sha256: "e" * 64
       )
     end
     assert_includes error.message, "release body does not match"
   end
 
-  def test_manifest_rejects_an_iteration_outside_the_approval
+  def test_manifest_allows_runtime_iteration_to_advance_without_changing_approval
     naming = SequelAceRelease::ReleaseNaming.new(
       channel: "production", version: "5.3.2", build: 20_105, iteration: 2
     )
 
-    error = assert_raises(SequelAceRelease::ValidationError) do
-      SequelAceRelease::Manifest.create(
-        approval: approval,
-        naming: naming,
-        base_sha: "b" * 40,
-        canonical_build: 20_105,
-        release_notes_sha256: "c" * 64
-      )
-    end
-    assert_includes error.message, "iteration does not match"
+    manifest = SequelAceRelease::Manifest.create(
+      approval: approval,
+      naming: naming,
+      base_sha: "b" * 40,
+      canonical_build: 20_105,
+      production_build_evidence: production_build_evidence,
+      release_notes_sha256: "c" * 64
+    )
+    assert_equal 2, manifest.to_h.fetch("iteration")
   end
 
   def test_manifest_round_trip
@@ -158,6 +145,7 @@ class ApprovalManifestTest < Minitest::Test
       naming: naming,
       base_sha: "b" * 40,
       canonical_build: 20_105,
+      production_build_evidence: production_build_evidence,
       release_notes_sha256: "c" * 64
     )
     assert_raises(SequelAceRelease::ValidationError) do
@@ -170,7 +158,8 @@ class ApprovalManifestTest < Minitest::Test
       loaded = SequelAceRelease::Manifest.read(path)
       assert_equal manifest.to_h, loaded.to_h
       assert_equal "planned", loaded.to_h.fetch("state")
-      assert_equal 20_105, loaded.to_h.fetch("observed_production_cloud_next_build")
+      assert_equal SequelAceRelease::Approval::POLICY, loaded.to_h.fetch("build_policy")
+      assert_equal 20_105, loaded.to_h.dig("production_build_evidence", "expected_next_build")
       assert_equal "production/5.3.1-20104", loaded.to_h.fetch("changelog_base_tag")
       assert_equal "b" * 40, loaded.to_h.fetch("changelog_base_sha")
     end
@@ -180,6 +169,26 @@ class ApprovalManifestTest < Minitest::Test
     assert_raises(SequelAceRelease::ValidationError) do
       approval(app_store_notes: "x" * 4_001)
     end
+  end
+
+  def test_schema_one_archives_remain_readable_during_an_in_flight_upgrade
+    naming = SequelAceRelease::ReleaseNaming.new(
+      channel: "production", version: "5.3.2", build: 20_105, iteration: 1
+    )
+    current = SequelAceRelease::Manifest.create(
+      approval: approval,
+      naming: naming,
+      base_sha: "b" * 40,
+      canonical_build: 20_105,
+      production_build_evidence: production_build_evidence,
+      release_notes_sha256: "c" * 64
+    ).to_h
+    legacy = current.merge(
+      "schema_version" => 1,
+      "observed_production_cloud_next_build" => 20_105
+    ).reject { |key, _| %w[build_policy production_build_evidence].include?(key) }
+
+    assert_equal legacy, SequelAceRelease::Manifest.new(legacy).to_h
   end
 
   def test_finalization_integrity_requires_the_archived_body_and_asset_checksum
@@ -206,5 +215,19 @@ class ApprovalManifestTest < Minitest::Test
     assert_raises(SequelAceRelease::ValidationError) do
       cli.send(:verify_release_assets!, release, manifest)
     end
+  end
+
+  private
+
+  def production_build_evidence
+    {
+      "policy" => SequelAceRelease::Approval::POLICY,
+      "source_build" => 20_104,
+      "highest_tag_build" => 20_104,
+      "highest_asc_build" => 20_104,
+      "highest_cloud_build" => 20_104,
+      "highest_observed_build" => 20_104,
+      "expected_next_build" => 20_105
+    }
   end
 end

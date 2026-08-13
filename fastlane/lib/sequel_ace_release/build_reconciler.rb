@@ -3,15 +3,15 @@
 module SequelAceRelease
   class BuildReconciler
     Result = Struct.new(
-      :target_build, :observed_cloud_next_build, :baseline, :reason,
-      :skipped_runs, :source_release_commit_sha, keyword_init: true
+      :target_build, :baseline, :reason, :skipped_runs,
+      :production_build_evidence, :source_release_commit_sha, keyword_init: true
     ) do
       def to_h
         {
           "target_build" => target_build,
-          "observed_cloud_next_build" => observed_cloud_next_build,
           "baseline" => baseline,
           "reason" => reason,
+          "production_build_evidence" => production_build_evidence,
           "skipped_production_builds" => skipped_runs,
           "source_release_commit_sha" => source_release_commit_sha
         }.compact
@@ -19,105 +19,93 @@ module SequelAceRelease
     end
 
     def reconcile(
-      source_build:, highest_tag_build:, highest_asc_build:, cloud_next_build:,
-      cloud_runs:, source_tagged:, source_release_commit_sha: nil,
-      expected_target_build: nil, recover_release_tag: nil,
-      production_workflow_id: nil
+      source_build:, highest_tag_build:, highest_asc_build:, cloud_runs:,
+      source_tagged:, source_release_commit_sha: nil, expected_target_build: nil,
+      recover_release_tag: nil, production_workflow_id: nil
     )
       source = positive_integer(source_build, "source build")
       tag = nonnegative_integer(highest_tag_build, "highest tag build")
       asc = nonnegative_integer(highest_asc_build, "highest App Store Connect build")
-      observed_cloud_next = positive_integer(cloud_next_build, "Xcode Cloud next build")
       raise ValidationError, "canonical release tag build #{tag} is ahead of source build #{source}" if tag > source
 
-      baseline = [source, tag, asc].max
-      indexed_runs = Array(cloud_runs).each_with_object({}) do |run, result|
-        number = integer_or_nil(run["number"] || run[:number])
-        result[number] = stringify_keys(run) if number
-      end
+      indexed_runs = index_runs(cloud_runs)
+      highest_cloud_run = indexed_runs.values.max_by { |run| run.fetch("number") }
+      highest_cloud = highest_cloud_run&.fetch("number") || 0
+      consumed_baseline = [tag, asc, highest_cloud].max
+      expected_next = consumed_baseline + 1
+      evidence = build_evidence(
+        source: source,
+        tag: tag,
+        asc: asc,
+        highest_cloud_run: highest_cloud_run,
+        consumed_baseline: consumed_baseline,
+        expected_next: expected_next
+      )
 
       if recover_release_tag
         return validate_expected_target!(recover_tagged_release(
           source: source,
           tag: tag,
           asc: asc,
-          observed_cloud_next: observed_cloud_next,
           indexed_runs: indexed_runs,
           source_tagged: source_tagged,
           source_release_commit_sha: source_release_commit_sha,
           recover_release_tag: recover_release_tag,
-          production_workflow_id: production_workflow_id
+          production_workflow_id: production_workflow_id,
+          evidence: evidence
         ), expected_target_build)
       end
 
-      if observed_cloud_next == source && !source_tagged && source > [tag, asc].max
+      if source == expected_next && !source_tagged
         release_commit = validate_commit_sha!(source_release_commit_sha)
-        consumed_at_or_after_source = indexed_runs.keys.select { |number| number >= source }
-        unless consumed_at_or_after_source.empty?
-          raise ValidationError,
-                "Production Xcode Cloud already consumed or advanced beyond source build #{source}: " \
-                "#{consumed_at_or_after_source.sort.join(', ')}"
-        end
         return validate_expected_target!(Result.new(
           target_build: source,
-          observed_cloud_next_build: observed_cloud_next,
-          baseline: baseline,
+          baseline: consumed_baseline,
           reason: "resume_after_merge",
-          skipped_runs: [],
+          skipped_runs: skipped_build_evidence(
+            from: [tag, source - 1].min,
+            to: source,
+            indexed_runs: indexed_runs,
+            highest_asc_build: asc
+          ),
+          production_build_evidence: evidence,
           source_release_commit_sha: release_commit
         ), expected_target_build)
       end
 
-      if observed_cloud_next < baseline
-        raise ValidationError, "Xcode Cloud next build #{observed_cloud_next} regressed below reconciled baseline #{baseline}"
+      if source > expected_next
+        raise ValidationError,
+              "source build #{source} is ahead of API-derived Production build #{expected_next}; " \
+              "the forward-only history cannot be reconciled"
       end
 
-      # The configured next number is not exposed by Apple's public API. The
-      # UI-observed value is therefore a lower bound at execution time: if a
-      # Production run consumed it after approval, exact workflow-run evidence
-      # advances the target. The contiguous-gap checks below still refuse any
-      # unexplained jump.
-      highest_consumed = indexed_runs.keys.max
-      cloud_next = [observed_cloud_next, highest_consumed && highest_consumed + 1].compact.max
-      if cloud_next <= baseline
-        raise ValidationError, "Xcode Cloud next build #{cloud_next} must be greater than reconciled baseline #{baseline}"
-      end
-
-      skipped_numbers = ((baseline + 1)...cloud_next).to_a
-      unexplained = skipped_numbers.reject { |number| indexed_runs.key?(number) }
-      unless unexplained.empty?
-        raise ValidationError, "unexplained Production Xcode Cloud build gap: #{unexplained.join(', ')}"
-      end
-
-      skipped = skipped_numbers.map do |number|
-        run = indexed_runs.fetch(number)
-        evidence = {
-          "number" => number,
-          "id" => run["id"],
-          "completion_status" => run["completion_status"] || run["completionStatus"],
-          "source_commit" => run["source_commit"] || run["sourceCommit"]
-        }
-        missing = evidence.select { |key, value| key != "number" && value.to_s.empty? }.keys
-        unless missing.empty?
-          raise ValidationError, "Production Xcode Cloud build #{number} is missing burn evidence: #{missing.join(', ')}"
-        end
-        evidence
-      end
+      local_baseline = [source, tag].max
+      skipped = skipped_build_evidence(
+        from: local_baseline,
+        to: expected_next,
+        indexed_runs: indexed_runs,
+        highest_asc_build: asc
+      )
+      reason = if expected_next == local_baseline + 1
+                 "normal_increment"
+               else
+                 "self_healed_forward_jump"
+               end
 
       validate_expected_target!(Result.new(
-        target_build: cloud_next,
-        observed_cloud_next_build: observed_cloud_next,
-        baseline: baseline,
-        reason: skipped.empty? ? "normal_increment" : "self_healed_cloud_burns",
-        skipped_runs: skipped
+        target_build: expected_next,
+        baseline: consumed_baseline,
+        reason: reason,
+        skipped_runs: skipped,
+        production_build_evidence: evidence
       ), expected_target_build)
     end
 
     private
 
     def recover_tagged_release(
-      source:, tag:, asc:, observed_cloud_next:, indexed_runs:, source_tagged:,
-      source_release_commit_sha:, recover_release_tag:, production_workflow_id:
+      source:, tag:, asc:, indexed_runs:, source_tagged:, source_release_commit_sha:,
+      recover_release_tag:, production_workflow_id:, evidence:
     )
       release_commit = validate_commit_sha!(source_release_commit_sha)
       unless recover_release_tag.to_s.match?(%r{\A(?:production|beta)/\d+\.\d+\.\d+-#{source}\z})
@@ -129,10 +117,6 @@ module SequelAceRelease
       end
       unless production_workflow_id.to_s.match?(/\A[0-9A-F-]{36}\z/i)
         raise ValidationError, "tag-only recovery requires the exact Production workflow ID"
-      end
-      if observed_cloud_next < source || observed_cloud_next > source + 1
-        raise ValidationError,
-              "Xcode Cloud next build #{observed_cloud_next} is incompatible with tag-only recovery build #{source}"
       end
 
       later_runs = indexed_runs.keys.select { |number| number > source }
@@ -158,19 +142,87 @@ module SequelAceRelease
                source_run["workflow_id"] == production_workflow_id
           raise ValidationError, "Production Xcode Cloud build #{source} does not match the tag-only recovery identity"
         end
-      elsif observed_cloud_next != source
-        raise ValidationError,
-              "Xcode Cloud advanced past tag-only recovery build #{source} without its exact Production run"
       end
 
       Result.new(
         target_build: source,
-        observed_cloud_next_build: observed_cloud_next,
         baseline: source,
         reason: "resume_after_tag",
         skipped_runs: [],
+        production_build_evidence: evidence,
         source_release_commit_sha: release_commit
       )
+    end
+
+    def index_runs(cloud_runs)
+      Array(cloud_runs).each_with_object({}) do |raw_run, result|
+        run = stringify_keys(raw_run)
+        number = positive_integer(run["number"], "Production Xcode Cloud run number")
+        unless run["id"].to_s.match?(/\A[A-Za-z0-9-]+\z/)
+          raise ValidationError, "Production Xcode Cloud build #{number} has a malformed run ID"
+        end
+        if result.key?(number)
+          raise ValidationError, "Production Xcode Cloud returned duplicate build number #{number}"
+        end
+
+        result[number] = run.merge("number" => number)
+      end
+    end
+
+    def build_evidence(source:, tag:, asc:, highest_cloud_run:, consumed_baseline:, expected_next:)
+      {
+        "policy" => Approval::POLICY,
+        "source_build" => source,
+        "highest_tag_build" => tag,
+        "highest_asc_build" => asc,
+        "highest_cloud_build" => highest_cloud_run&.fetch("number") || 0,
+        "highest_observed_build" => consumed_baseline,
+        "expected_next_build" => expected_next,
+        "highest_cloud_run" => run_evidence(highest_cloud_run)
+      }.compact
+    end
+
+    def skipped_build_evidence(from:, to:, indexed_runs:, highest_asc_build:)
+      ((from + 1)...to).map do |number|
+        if indexed_runs.key?(number)
+          run_evidence(indexed_runs.fetch(number)).merge(
+            "number" => number,
+            "reason" => "production_cloud_run"
+          )
+        else
+          later_run = indexed_runs.values.select { |run| run.fetch("number") > number }
+                                  .min_by { |run| run.fetch("number") }
+          if later_run
+            {
+              "number" => number,
+              "reason" => "production_cloud_counter_jump",
+              "evidenced_by_run_id" => later_run.fetch("id"),
+              "evidenced_by_build" => later_run.fetch("number")
+            }
+          elsif highest_asc_build >= number
+            {
+              "number" => number,
+              "reason" => "app_store_connect_counter_floor",
+              "evidenced_by_build" => highest_asc_build
+            }
+          else
+            raise ValidationError, "unexplained Production build gap: #{number}"
+          end
+        end
+      end
+    end
+
+    def run_evidence(run)
+      return nil unless run
+
+      {
+        "id" => run.fetch("id"),
+        "number" => run.fetch("number"),
+        "execution_progress" => run["execution_progress"] || run["executionProgress"],
+        "completion_status" => run["completion_status"] || run["completionStatus"],
+        "source_commit" => run["source_commit"] || run["sourceCommit"],
+        "destination_commit" => run["destination_commit"] || run["destinationCommit"]
+      }.compact
     end
 
     def validate_commit_sha!(value)
@@ -186,7 +238,7 @@ module SequelAceRelease
       expected_build = positive_integer(expected, "expected target build")
       unless result.target_build == expected_build
         raise ValidationError,
-              "Production Xcode Cloud target advanced from #{expected_build} to #{result.target_build}; " \
+              "API-derived Production build changed from expected #{expected_build} to #{result.target_build}; " \
               "abort before merging or tagging"
       end
 
@@ -209,12 +261,6 @@ module SequelAceRelease
       integer
     rescue ArgumentError, TypeError
       raise ValidationError, "#{label} must be an integer"
-    end
-
-    def integer_or_nil(value)
-      Integer(value)
-    rescue ArgumentError, TypeError
-      nil
     end
 
     def stringify_keys(value)

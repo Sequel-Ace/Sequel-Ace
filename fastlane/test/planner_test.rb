@@ -49,19 +49,18 @@ class PlannerTest < Minitest::Test
       target_version: "5.4.0",
       base_tag: "production/5.3.1-20104",
       main_ref: "main",
-      app_store_notes: "New connection diagnostics.",
-      observed_cloud_next_build: 20_105
+      app_store_notes: "New connection diagnostics."
     )
 
     assert_equal "minor", plan.fetch("recommended_bump")
     assert_equal "5.4.0", plan.fetch("recommended_version")
-    assert_equal 20_105, plan.fetch("observed_production_cloud_next_build")
-    assert_equal 20_105, plan.dig("approval", "observed_production_cloud_next_build")
+    assert_equal SequelAceRelease::Approval::POLICY, plan.fetch("build_policy")
+    assert_equal SequelAceRelease::Approval::POLICY, plan.dig("approval", "build_policy")
     assert_equal "b" * 40, plan.dig("approval", "base_sha")
     assert_equal "production/5.3.1-20104", plan.fetch("changelog_base_tag")
     assert_equal "b" * 40, plan.dig("approval", "changelog_base_sha")
     assert_equal plan.fetch("release_notes_sha256"), plan.dig("approval", "release_notes_sha256")
-    assert_equal plan.fetch("iteration"), plan.dig("approval", "release_iteration")
+    refute plan.fetch("approval").key?("release_iteration")
     assert plan.fetch("github_release_body").start_with?("## App Store Release Notes")
     assert SequelAceRelease::Approval.from_hash(plan.fetch("approval")).verify!(plan.dig("approval", "sha256"))
   end
@@ -111,8 +110,7 @@ class PlannerTest < Minitest::Test
       target_version: "5.3.2",
       base_tag: "production/5.3.1-20104",
       main_ref: "release-merge",
-      app_store_notes: "A focused fix.",
-      observed_cloud_next_build: 20_105
+      app_store_notes: "A focused fix."
     )
 
     assert_equal "d" * 40, plan.fetch("main_sha")
@@ -122,7 +120,7 @@ class PlannerTest < Minitest::Test
     refute_includes plan.fetch("github_release_body"), "Prepare 5.3.2"
   end
 
-  def test_a_new_prerelease_iteration_invalidates_the_approved_plan
+  def test_a_new_prerelease_iteration_preserves_the_approved_release_inputs
     change = SequelAceRelease::GitRepository::Change.new(
       sha: "c" * 40,
       title: "Fix release behavior",
@@ -147,8 +145,7 @@ class PlannerTest < Minitest::Test
       target_version: "5.3.2",
       base_tag: "production/5.3.1-20104",
       main_ref: "main",
-      app_store_notes: "A focused fix.",
-      observed_cloud_next_build: 20_105
+      app_store_notes: "A focused fix."
     }
     versions = FakeVersions.new({ "version" => "5.3.1", "build" => 20_104 })
     approved = SequelAceRelease::Planner.new(
@@ -160,10 +157,9 @@ class PlannerTest < Minitest::Test
 
     assert_equal 1, approved.fetch("iteration")
     assert_equal 2, regenerated.fetch("iteration")
-    refute_equal approved.dig("approval", "sha256"), regenerated.dig("approval", "sha256")
-    assert_raises(SequelAceRelease::ValidationError) do
-      SequelAceRelease::Approval.from_hash(regenerated.fetch("approval")).verify!(approved.dig("approval", "sha256"))
-    end
+    assert_equal approved.dig("approval", "sha256"), regenerated.dig("approval", "sha256")
+    assert SequelAceRelease::Approval.from_hash(regenerated.fetch("approval"))
+                     .verify!(approved.dig("approval", "sha256"))
   end
 
   def test_contributor_enrichment_changes_invalidate_the_approved_release_body
@@ -187,8 +183,7 @@ class PlannerTest < Minitest::Test
       target_version: "5.3.2",
       base_tag: "production/5.3.1-20104",
       main_ref: "main",
-      app_store_notes: "A focused fix.",
-      observed_cloud_next_build: 20_105
+      app_store_notes: "A focused fix."
     }
     versions = FakeVersions.new({ "version" => "5.3.1", "build" => 20_104 })
     approved = SequelAceRelease::Planner.new(
@@ -271,8 +266,7 @@ class PlannerTest < Minitest::Test
     plan = planner.plan(
       channel: "beta",
       target_version: "5.4.0",
-      main_ref: "main",
-      observed_cloud_next_build: 20_106
+      main_ref: "main"
     )
     assert_equal "beta/5.4.0-20105", plan.fetch("base_tag")
     assert_equal "b" * 40, plan.fetch("base_sha")
@@ -325,8 +319,7 @@ class PlannerTest < Minitest::Test
       planner.plan(
         channel: "production",
         base_tag: "production/not-a-release",
-        main_ref: "main",
-        observed_cloud_next_build: 20_105
+        main_ref: "main"
       )
     end
     assert_includes error.message, "base tag production/not-a-release is malformed"

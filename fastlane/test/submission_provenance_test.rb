@@ -126,6 +126,7 @@ class SubmissionProvenanceTest < Minitest::Test
       naming: naming,
       base_sha: "b" * 40,
       canonical_build: 20_105,
+      production_build_evidence: production_build_evidence,
       release_notes_sha256: Digest::SHA256.hexdigest(BODY),
       state: "archived"
     ).with(

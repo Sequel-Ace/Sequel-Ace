@@ -218,6 +218,7 @@ jobs:
           ruby -rjson -e 'value = JSON.parse(File.read("alpha-retry.json")); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("id=#{value.fetch("id")}") }'
 
       - name: Archive the exact Alpha retry handoff
+        id: retry_archive
         env:
           ARCHIVED_FAILED_ALPHA_RUN_ID: ${{ steps.release.outputs.archived_failed_alpha_run_id }}
           AUTHORIZED_FAILED_ALPHA_RUN_ID: ${{ inputs.failed_alpha_run_id }}
@@ -233,6 +234,31 @@ jobs:
           cp production-cloud-run.json alpha-retry.json retry-evidence.json retry-archive/
           Scripts/archive-release-to-ghcr.sh push "${{ steps.release.outputs.archive_ref }}" retry-archive > retry-archive-evidence.json
 
+      - name: Arm event-driven artifact publication for the exact Alpha retry
+        id: artifact_wake
+        env:
+          GITHUB_REPOSITORY_ID: ${{ github.repository_id }}
+          RELEASE_TAG: ${{ inputs.beta_tag }}
+          SA_RELEASE_GITHUB_APP_CLIENT_ID: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          SA_RELEASE_GITHUB_APP_PRIVATE_KEY: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+        run: Scripts/release-artifact-wake-state.sh arm "${RELEASE_TAG}"
+
+      - name: Preserve a recoverable Alpha handoff when wake-state arming fails
+        if: >-
+          (failure() || cancelled()) &&
+          steps.retry_archive.outcome == 'success' &&
+          steps.artifact_wake.outcome != 'success'
+        env:
+          ARCHIVE_REFERENCE: ${{ steps.release.outputs.archive_ref }}
+          RELEASE_TAG: ${{ inputs.beta_tag }}
+        run: |
+          {
+            echo "### Alpha artifact wake-state recovery required"
+            echo "- The exact \`${RELEASE_TAG}\` retry handoff remains \`cloud_running\` in \`${ARCHIVE_REFERENCE}\`."
+            echo "- The existing beta prerelease and durable archive were not marked terminal or replaced."
+            echo "- Retry this workflow or manually dispatch Release Artifact Publisher for this exact tag."
+          } >> "${GITHUB_STEP_SUMMARY}"
+
       - name: Record asynchronous Alpha retry handoff
         run: |
           {
@@ -241,11 +267,15 @@ jobs:
             echo "- Production build: \`${{ steps.release.outputs.build }}\` (unchanged)"
             echo "- Exact Alpha retry run: \`${{ steps.alpha_retry.outputs.id }}\`"
             echo "- Private archive: \`${{ steps.release.outputs.archive_ref }}\`"
-            echo "- This runner is complete; Release Artifact Publisher will attach both artifacts only after the retry is notarized and ready."
+            echo "- This runner is complete; Xcode Cloud completion checks will wake Release Artifact Publisher, with a gated schedule as recovery only."
           } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Mint release mutation token for failure annotation
-        if: (failure() || cancelled()) && steps.authorization.outputs.authorized == 'true' && steps.release.outputs.validated == 'true'
+        if: >-
+          (failure() || cancelled()) &&
+          steps.authorization.outputs.authorized == 'true' &&
+          steps.release.outputs.validated == 'true' &&
+          (steps.retry_archive.outcome != 'success' || steps.artifact_wake.outcome == 'success')
         id: failure_release_token
         continue-on-error: true
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -258,7 +288,11 @@ jobs:
           permission-workflows: write
 
       - name: Document transient Alpha retry failure without replacing the handoff
-        if: (failure() || cancelled()) && steps.authorization.outputs.authorized == 'true' && steps.release.outputs.validated == 'true'
+        if: >-
+          (failure() || cancelled()) &&
+          steps.authorization.outputs.authorized == 'true' &&
+          steps.release.outputs.validated == 'true' &&
+          (steps.retry_archive.outcome != 'success' || steps.artifact_wake.outcome == 'success')
         continue-on-error: true
         env:
           BETA_TAG: ${{ inputs.beta_tag }}

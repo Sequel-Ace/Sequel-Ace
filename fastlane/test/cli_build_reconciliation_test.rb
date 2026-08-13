@@ -3,6 +3,57 @@
 require "test_helper"
 
 class CliBuildReconciliationTest < Minitest::Test
+  def test_forward_recovery_pr_evidence_is_bound_to_the_approved_release_identity
+    release_approval = approval
+    approval_sha = release_approval.sha256
+    expected_sha = "d" * 40
+    evidence = {
+      "predecessor_tag" => "production/5.3.2-20105",
+      "predecessor_release_commit_sha" => expected_sha,
+      "failed_expected_build" => 20_105,
+      "expected_recovery_build" => 20_113,
+      "approval_sha256" => approval_sha
+    }
+    cli = SequelAceRelease::CLI.new(out: StringIO.new, err: StringIO.new, env: {})
+
+    cli.send(
+      :validate_forward_recovery_pr_evidence!,
+      evidence,
+      approval: release_approval,
+      approval_sha: approval_sha,
+      expected_sha: expected_sha,
+      requested_build: 20_113
+    )
+
+    [
+      evidence.merge("predecessor_tag" => "beta/5.3.2-20105"),
+      evidence.merge("predecessor_tag" => "production/5.4.0-20105"),
+      evidence.merge("predecessor_tag" => "production/5.3.2-20106")
+    ].each do |mismatch|
+      assert_raises(SequelAceRelease::ValidationError, mismatch.fetch("predecessor_tag")) do
+        cli.send(
+          :validate_forward_recovery_pr_evidence!,
+          mismatch,
+          approval: release_approval,
+          approval_sha: approval_sha,
+          expected_sha: expected_sha,
+          requested_build: 20_113
+        )
+      end
+    end
+
+    assert_raises(SequelAceRelease::ValidationError) do
+      cli.send(
+        :validate_forward_recovery_pr_evidence!,
+        evidence.merge("expected_recovery_build" => 20_112),
+        approval: release_approval,
+        approval_sha: approval_sha,
+        expected_sha: expected_sha,
+        requested_build: 20_113
+      )
+    end
+  end
+
   def test_canonical_tag_baseline_includes_production_and_beta_tags
     cli = SequelAceRelease::CLI.new(out: StringIO.new, err: StringIO.new, env: {})
     tags = [
@@ -28,8 +79,7 @@ class CliBuildReconciliationTest < Minitest::Test
       cli.run([
         "reconcile-build",
         "--source-build", "20105",
-        "--highest-asc-build", "20104",
-        "--cloud-next-build", "20106"
+        "--highest-asc-build", "20104"
       ])
     end
 

@@ -13,9 +13,10 @@ module SequelAceRelease
     TEAM_ID = "NKQ4HJ66PX"
     LOCALE = "en-US"
     EXPECTED_SCREENSHOT_COUNT = 10
-    SCHEMA_VERSION = 1
+    SCHEMA_VERSION = 2
     GIT_SHA_PATTERN = /\A(?:[0-9a-f]{40}|[0-9a-f]{64})\z/i.freeze
     AUTHORIZED_ACTORS = %w[Jason-Morcos Kaspik].freeze
+    ACTIONS_BOT = "github-actions[bot]".freeze
     CHANNELS = %w[production beta].freeze
     MANIFEST_STATES = %w[
       planned prepared pull_request_open merged prerelease_created

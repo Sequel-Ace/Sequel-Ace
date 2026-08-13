@@ -31,9 +31,10 @@ on:
         description: Exact comparison tag from the approved plan
         required: true
         type: string
-      production_cloud_next_build:
-        description: Next Build Number observed in Production Xcode Cloud settings
-        required: true
+      recovery_tag:
+        description: Internal exact predecessor tag for automatic forward-only recovery
+        required: false
+        default: ""
         type: string
       app_store_notes_b64:
         description: Base64-encoded approved App Store notes
@@ -81,15 +82,21 @@ jobs:
           RELEASE_MODE: ${{ inputs.mode }}
           CHANNEL: ${{ inputs.channel }}
           VERSION: ${{ inputs.version }}
-          CLOUD_NEXT_BUILD: ${{ inputs.production_cloud_next_build }}
+          RECOVERY_TAG: ${{ inputs.recovery_tag }}
           PREVIOUS_TAG: ${{ inputs.previous_tag }}
           APPROVAL_SHA: ${{ inputs.approval_sha256 }}
           CONFIRMATION: ${{ inputs.confirmation }}
         run: |
           set -euo pipefail
           [[ "${RELEASE_ENABLED}" == "true" ]] || { echo "Release publishing is disabled until every feasibility gate passes." >&2; exit 1; }
-          [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized release actor." >&2; exit 1; }
-          [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized release rerun initiator." >&2; exit 1; }
+          if [[ "${RELEASE_ACTOR}" == "github-actions[bot]" && "${RELEASE_TRIGGERING_ACTOR}" == "github-actions[bot]" ]]; then
+            [[ "${RELEASE_MODE}" == "resume" ]] || { echo "Automated build recovery must use resume mode." >&2; exit 1; }
+            [[ "${RECOVERY_TAG}" =~ ^(production|beta)/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || { echo "Automated build recovery requires an exact predecessor tag." >&2; exit 1; }
+          else
+            [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized release actor." >&2; exit 1; }
+            [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized release rerun initiator." >&2; exit 1; }
+            [[ -z "${RECOVERY_TAG}" ]] || { echo "Human release dispatches cannot supply internal recovery state." >&2; exit 1; }
+          fi
           [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Releases must be dispatched from main." >&2; exit 1; }
           [[ "${RELEASE_MODE}" == "start" || "${RELEASE_MODE}" == "resume" ]] || { echo "Invalid release mode." >&2; exit 1; }
           [[ "${EXPECTED_SHA}" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]] || { echo "Frozen main SHA must be a complete lowercase object ID." >&2; exit 1; }
@@ -99,7 +106,6 @@ jobs:
             exit 1
           fi
           [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Malformed semantic version." >&2; exit 1; }
-          [[ "${CLOUD_NEXT_BUILD}" =~ ^[1-9][0-9]*$ ]] || { echo "Malformed Xcode Cloud next build." >&2; exit 1; }
           [[ "${PREVIOUS_TAG}" =~ ^(production|beta)/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || { echo "Malformed prior release tag." >&2; exit 1; }
           [[ "${APPROVAL_SHA}" =~ ^[0-9a-f]{64}$ ]] || { echo "Malformed approval hash." >&2; exit 1; }
           [[ "${CONFIRMATION}" == "RELEASE ${CHANNEL} ${VERSION}" ]] || { echo "Typed confirmation does not match." >&2; exit 1; }
@@ -165,6 +171,9 @@ jobs:
             /prerelease.json \
             /release-evidence.json \
             /branch-cleanup.json \
+            /forward-recovery.json \
+            /forward-recovery-merge.json \
+            /recovery-archive/ \
             /release-archive/ \
             /artifacts/ >> "${exclude_file}"
 
@@ -189,6 +198,46 @@ jobs:
         with:
           url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz
           checksum: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
+
+      - name: Validate an automatic forward-only build recovery
+        id: recovery
+        env:
+          APPROVAL_SHA: ${{ inputs.approval_sha256 }}
+          GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+          RECOVERY_TAG: ${{ inputs.recovery_tag }}
+          SA_GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
+        run: |
+          set -euo pipefail
+          echo "operational_main_sha=${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+          if [[ -z "${RECOVERY_TAG}" ]]; then
+            echo "active=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          archive_ref="${GHCR_REPOSITORY}:${RECOVERY_TAG//\//-}"
+          Scripts/archive-release-to-ghcr.sh pull "${archive_ref}" recovery-archive
+          bundle exec ruby fastlane/bin/sa-release validate-forward-recovery \
+            --manifest recovery-archive/manifest.json \
+            --approval recovery-archive/approval.json \
+            --approval-sha "${APPROVAL_SHA}" \
+            --release-body recovery-archive/release-body.md \
+            --tag "${RECOVERY_TAG}" \
+            --current-sha "${GITHUB_SHA}" \
+            --channel "${{ inputs.channel }}" \
+            --version "${{ inputs.version }}" \
+            --previous-tag "${{ inputs.previous_tag }}" \
+            --output forward-recovery.json
+          echo "active=true" >> "${GITHUB_OUTPUT}"
+          ruby -rjson -e '
+            recovery = JSON.parse(File.read("forward-recovery.json"))
+            File.open(ENV.fetch("GITHUB_OUTPUT"), "a") do |file|
+              file.puts("predecessor_tag=#{recovery.fetch("predecessor_tag")}")
+              file.puts("expected_recovery_build=#{recovery.fetch("expected_recovery_build")}")
+              file.puts("count=#{recovery.fetch("count")}")
+            end
+          '
 
       - name: Refuse overlapping asynchronous release handoffs
         env:
@@ -239,7 +288,7 @@ jobs:
           GUARD_EXPECTED_SHA: ${{ inputs.expected_main_sha }}
           GUARD_CHANNEL: ${{ inputs.channel }}
           GUARD_VERSION: ${{ inputs.version }}
-          GUARD_CLOUD_NEXT_BUILD: ${{ inputs.production_cloud_next_build }}
+          GUARD_RECOVERY_TAG: ${{ inputs.recovery_tag }}
           GUARD_CONFIRMATION: ${{ inputs.confirmation }}
           GUARD_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}
         run: |
@@ -253,7 +302,7 @@ jobs:
             --expected-sha "${GUARD_EXPECTED_SHA}" \
             --channel "${GUARD_CHANNEL}" \
             --version "${GUARD_VERSION}" \
-            --cloud-next-build "${GUARD_CLOUD_NEXT_BUILD}" \
+            --recovery-tag "${GUARD_RECOVERY_TAG}" \
             --confirmation "${GUARD_CONFIRMATION}" \
             --enabled "${GUARD_ENABLED}" >/dev/null
 
@@ -271,7 +320,6 @@ jobs:
             --base-tag "${{ inputs.previous_tag }}" \
             --main-ref "${{ inputs.expected_main_sha }}" \
             --app-store-notes app-store-notes.txt \
-            --observed-cloud-next-build "${{ inputs.production_cloud_next_build }}" \
             --expected-approval-sha "${{ inputs.approval_sha256 }}" \
             --output release-plan.json
           ruby -rjson -e 'plan = JSON.parse(File.read("release-plan.json")); File.write("approval.json", JSON.pretty_generate(plan.fetch("approval")) + "\n"); File.binwrite("app-store-notes.txt", plan.fetch("approval").fetch("app_store_notes")); File.write("release-body.md", plan.fetch("github_release_body")); output = ENV.fetch("GITHUB_OUTPUT"); File.open(output, "a") { |file| file.puts("iteration=#{plan.fetch("iteration")}"); file.puts("base_sha=#{plan.fetch("base_sha")}"); file.puts("changelog_base_tag=#{plan.fetch("changelog_base_tag")}"); file.puts("changelog_base_sha=#{plan.fetch("changelog_base_sha")}") }'
@@ -297,10 +345,24 @@ jobs:
             )
           fi
           bundle exec ruby fastlane/bin/sa-release reconcile-build \
-            --cloud-next-build "${{ inputs.production_cloud_next_build }}" \
             --workflow-id "${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}" \
             "${recovery_args[@]}" \
             --output reconciliation.json
+          if [[ "${{ steps.recovery.outputs.active }}" == "true" ]]; then
+            ruby -rjson -e '
+              reconciliation = JSON.parse(File.read("reconciliation.json"))
+              recovery = JSON.parse(File.read("forward-recovery.json"))
+              target = reconciliation.fetch("target_build")
+              floor = recovery.fetch("expected_recovery_build")
+              raise "API-derived recovery build #{target} regressed below authorized floor #{floor}" if target < floor
+              exact_run = reconciliation.fetch("production_cloud_runs").find do |run|
+                run.fetch("id") == recovery.fetch("cloud_run_id")
+              end
+              unless exact_run && exact_run.fetch("number") == recovery.fetch("cloud_assigned_build")
+                raise "forward recovery Cloud run is missing from the live Production workflow history"
+              end
+            '
+          fi
           ruby -rjson -e 'value = JSON.parse(File.read("reconciliation.json")); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("build=#{value.fetch("target_build")}"); file.puts("reason=#{value.fetch("reason")}"); file.puts("source_release_commit_sha=#{value["source_release_commit_sha"]}") if value["source_release_commit_sha"] }'
 
       - name: Create the initial release manifest
@@ -313,10 +375,18 @@ jobs:
             --release-plan release-plan.json \
             --base-sha "${{ steps.plan.outputs.base_sha }}" \
             --output manifest.json
+          if [[ "${{ steps.recovery.outputs.active }}" == "true" ]]; then
+            ruby -rjson -e 'File.write("forward-recovery-merge.json", JSON.pretty_generate({"forward_build_recovery" => JSON.parse(File.read("forward-recovery.json"))}) + "\n")'
+            bundle exec ruby fastlane/bin/sa-release update-manifest \
+              --manifest manifest.json \
+              --state planned \
+              --merge forward-recovery-merge.json >/dev/null
+          fi
 
       - name: Resolve naming and the merged-but-untagged recovery path
         id: release_context
         env:
+          FORWARD_BUILD_RECOVERY: ${{ steps.recovery.outputs.active }}
           RELEASE_MODE: ${{ inputs.mode }}
           RECONCILIATION_REASON: ${{ steps.reconcile.outputs.reason }}
           SOURCE_RELEASE_COMMIT_SHA: ${{ steps.reconcile.outputs.source_release_commit_sha }}
@@ -337,7 +407,8 @@ jobs:
           recovery_reason = ENV.fetch("RECONCILIATION_REASON")
           resume_without_pr = %w[resume_after_merge resume_after_tag].include?(recovery_reason)
           dispatch_main_advanced = ENV.fetch("DISPATCH_MAIN_SHA") != ENV.fetch("APPROVED_MAIN_SHA")
-          if dispatch_main_advanced && !resume_without_pr
+          forward_build_recovery = ENV.fetch("FORWARD_BUILD_RECOVERY") == "true"
+          if dispatch_main_advanced && !resume_without_pr && !forward_build_recovery
             raise SequelAceRelease::ValidationError, "an advanced main is allowed only for exact release recovery"
           end
           if resume_without_pr
@@ -400,7 +471,7 @@ jobs:
             --expected-base-sha "${{ steps.plan.outputs.base_sha }}" \
             --changelog-base-tag "${{ steps.plan.outputs.changelog_base_tag }}" \
             --expected-changelog-base-sha "${{ steps.plan.outputs.changelog_base_sha }}" \
-            --expected-main-sha "${{ inputs.expected_main_sha }}" \
+            --expected-main-sha "${{ steps.recovery.outputs.operational_main_sha }}" \
             --output preparation.json
           bundle exec ruby fastlane/bin/sa-release update-manifest --manifest manifest.json --state prepared >/dev/null
 
@@ -411,12 +482,18 @@ jobs:
           SA_GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
         run: |
           set -euo pipefail
+          recovery_arguments=()
+          if [[ "${{ steps.recovery.outputs.active }}" == "true" ]]; then
+            recovery_arguments+=(--recovery-evidence forward-recovery.json)
+          fi
           bundle exec ruby fastlane/bin/sa-release github-prepare-pr \
             --approval approval.json \
             --approval-sha "${{ inputs.approval_sha256 }}" \
             --build "${{ steps.reconcile.outputs.build }}" \
             --iteration "${{ steps.plan.outputs.iteration }}" \
             --release-body release-body.md \
+            --base-sha "${{ steps.recovery.outputs.operational_main_sha }}" \
+            "${recovery_arguments[@]}" \
             --output release-pr.json
           ruby -rjson -e 'value = JSON.parse(File.read("release-pr.json")); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("number=#{value.dig("pull_request", "number")}"); file.puts("head_sha=#{value.dig("commit", "sha")}"); file.puts("branch=#{value.dig("naming", "branch")}"); file.puts("tag=#{value.dig("naming", "tag")}"); file.puts("ghcr_tag=#{value.dig("naming", "ghcr_tag")}"); file.puts("production_asset=#{value.dig("naming", "public_artifacts", 0)}"); file.puts("alpha_asset=#{value.dig("naming", "public_artifacts", 1)}") if value.dig("naming", "public_artifacts", 1) }'
 
@@ -484,7 +561,6 @@ jobs:
           fi
           bundle exec ruby fastlane/bin/sa-release reconcile-build \
             --source-build "${source_build}" \
-            --cloud-next-build "${{ inputs.production_cloud_next_build }}" \
             --workflow-id "${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}" \
             --expected-target-build "${{ steps.reconcile.outputs.build }}" \
             "${recovery_args[@]}" \
@@ -494,6 +570,7 @@ jobs:
           reconciliation = JSON.parse(File.read("reconciliation.json"))
           manifest = SequelAceRelease::Manifest.read("manifest.json")
           manifest.with(
+            "production_build_evidence" => reconciliation.fetch("production_build_evidence"),
             "skipped_production_builds" => reconciliation.fetch("skipped_production_builds", [])
           ).write("manifest.json")
           RUBY
@@ -508,7 +585,7 @@ jobs:
           bundle exec ruby fastlane/bin/sa-release github-merge-pr \
             --pr "${{ steps.release_pr.outputs.number }}" \
             --head-sha "${{ steps.release_pr.outputs.head_sha }}" \
-            --expected-base-sha "${{ inputs.expected_main_sha }}" \
+            --expected-base-sha "${{ steps.recovery.outputs.operational_main_sha }}" \
             --required-check "Run Tests" \
             --required-check "Release Tool Tests" \
             --require-all-checks \
@@ -590,6 +667,38 @@ jobs:
           Scripts/archive-release-to-ghcr.sh push "${reference}" release-archive > initial-archive-evidence.json
           echo "reference=${reference}" >> "${GITHUB_OUTPUT}"
 
+      - name: Arm event-driven artifact publication for the exact handoff
+        id: artifact_wake
+        env:
+          EXPECTED_PREDECESSOR_TAG: ${{ inputs.recovery_tag }}
+          GITHUB_REPOSITORY_ID: ${{ github.repository_id }}
+          RELEASE_TAG: ${{ steps.prerelease.outputs.tag }}
+          SA_RELEASE_GITHUB_APP_CLIENT_ID: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          SA_RELEASE_GITHUB_APP_PRIVATE_KEY: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          arguments=(arm "${RELEASE_TAG}")
+          if [[ -n "${EXPECTED_PREDECESSOR_TAG}" ]]; then
+            arguments+=("${EXPECTED_PREDECESSOR_TAG}")
+          fi
+          Scripts/release-artifact-wake-state.sh "${arguments[@]}"
+
+      - name: Preserve a recoverable handoff when wake-state arming fails
+        if: >-
+          (failure() || cancelled()) &&
+          steps.initial_archive.outcome == 'success' &&
+          steps.artifact_wake.outcome != 'success'
+        env:
+          ARCHIVE_REFERENCE: ${{ steps.initial_archive.outputs.reference }}
+          RELEASE_TAG: ${{ steps.prerelease.outputs.tag }}
+        run: |
+          {
+            echo "### Artifact wake-state recovery required"
+            echo "- The exact \`${RELEASE_TAG}\` handoff remains \`cloud_running\` in \`${ARCHIVE_REFERENCE}\`."
+            echo "- The prerelease and archive were not marked terminal or replaced."
+            echo "- Retry the release workflow or manually dispatch Release Artifact Publisher for this exact tag; its live Cloud and archive gates remain authoritative."
+          } >> "${GITHUB_STEP_SUMMARY}"
+
       - name: Record asynchronous Cloud handoff
         run: |
           {
@@ -598,7 +707,7 @@ jobs:
             echo "- Production build: \`${{ steps.reconcile.outputs.build }}\`"
             echo "- Build reconciliation: \`${{ steps.reconcile.outputs.reason }}\`"
             echo "- Private handoff archive: \`${{ steps.initial_archive.outputs.reference }}\`"
-            echo "- This runner is complete; Release Artifact Publisher will inspect Cloud without a long-lived runner and attach only notarized, verified artifacts."
+            echo "- This runner is complete; Xcode Cloud completion checks will wake Release Artifact Publisher, with a gated schedule as recovery only."
           } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Refresh release App token for failure cleanup
@@ -620,7 +729,7 @@ jobs:
         env:
           SA_GITHUB_TOKEN: ${{ steps.cleanup_app_token.outputs.token || github.token }}
           RELEASE_BRANCH: ${{ steps.release_context.outputs.branch }}
-          FROZEN_MAIN_SHA: ${{ inputs.expected_main_sha }}
+          FROZEN_MAIN_SHA: ${{ steps.recovery.outputs.operational_main_sha }}
         run: |
           set -euo pipefail
           expected_sha="${FROZEN_MAIN_SHA}"
@@ -636,7 +745,10 @@ jobs:
             --output branch-cleanup.json
 
       - name: Mint release mutation token for failure annotation
-        if: (failure() || cancelled()) && steps.release_context.outputs.tag != ''
+        if: >-
+          (failure() || cancelled()) &&
+          steps.release_context.outputs.tag != '' &&
+          (steps.initial_archive.outcome != 'success' || steps.artifact_wake.outcome == 'success')
         id: failure_release_token
         continue-on-error: true
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -649,7 +761,10 @@ jobs:
           permission-workflows: write
 
       - name: Preserve an explanatory failed prerelease
-        if: (failure() || cancelled()) && steps.release_context.outputs.tag != ''
+        if: >-
+          (failure() || cancelled()) &&
+          steps.release_context.outputs.tag != '' &&
+          (steps.initial_archive.outcome != 'success' || steps.artifact_wake.outcome == 'success')
         continue-on-error: true
         env:
           GHCR_TOKEN: ${{ github.token }}

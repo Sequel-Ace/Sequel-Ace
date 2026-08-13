@@ -8,6 +8,8 @@ permissions:
 jobs:
   tests:
     name: Run Tests
+    # This is a GitHub-hosted public-repository runner label. Do not route OSS CI
+    # through a private runner group or a self-hosted label.
     runs-on: macos-26
     steps:
     - name: Checkout the Git repository
@@ -22,6 +24,7 @@ jobs:
 
   release_tools:
     name: Release Tool Tests
+    # Keep release-infrastructure CI on GitHub-hosted macOS as well.
     runs-on: macos-15
     steps:
     - name: Checkout the Git repository
