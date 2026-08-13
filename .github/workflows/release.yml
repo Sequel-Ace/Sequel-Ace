@@ -657,14 +657,19 @@ jobs:
         env:
           SA_GITHUB_TOKEN: ${{ steps.release_mutation_token.outputs.token }}
           SA_RELEASE_GITHUB_PUBLISHER_TOKEN: ${{ secrets.SA_RELEASE_GITHUB_PUBLISHER_TOKEN }}
+          RELEASE_CHANNEL: ${{ inputs.channel }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_BUILD: ${{ steps.reconcile.outputs.build }}
+          RELEASE_ITERATION: ${{ steps.plan.outputs.iteration }}
+          RELEASE_TARGET_SHA: ${{ steps.release_target.outputs.sha }}
         run: |
           set -euo pipefail
           bundle exec ruby fastlane/bin/sa-release github-create-release \
-            --channel "${{ inputs.channel }}" \
-            --version "${{ inputs.version }}" \
-            --build "${{ steps.reconcile.outputs.build }}" \
-            --iteration "${{ steps.plan.outputs.iteration }}" \
-            --target-sha "${{ steps.release_target.outputs.sha }}" \
+            --channel "${RELEASE_CHANNEL}" \
+            --version "${RELEASE_VERSION}" \
+            --build "${RELEASE_BUILD}" \
+            --iteration "${RELEASE_ITERATION}" \
+            --target-sha "${RELEASE_TARGET_SHA}" \
             --body release-body.md \
             --output prerelease.json
 
@@ -678,14 +683,19 @@ jobs:
           SA_RELEASE_GITHUB_APP_CLIENT_ID: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
           SA_RELEASE_GITHUB_APP_INSTALLATION_ID: ${{ steps.release_mutation_token.outputs.installation-id }}
           SA_RELEASE_GITHUB_APP_SLUG: ${{ steps.release_mutation_token.outputs.app-slug }}
+          RELEASE_CHANNEL: ${{ inputs.channel }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_BUILD: ${{ steps.reconcile.outputs.build }}
+          RELEASE_ITERATION: ${{ steps.plan.outputs.iteration }}
+          RELEASE_TARGET_SHA: ${{ steps.release_target.outputs.sha }}
         run: |
           set -euo pipefail
           bundle exec ruby fastlane/bin/sa-release github-create-release \
-            --channel "${{ inputs.channel }}" \
-            --version "${{ inputs.version }}" \
-            --build "${{ steps.reconcile.outputs.build }}" \
-            --iteration "${{ steps.plan.outputs.iteration }}" \
-            --target-sha "${{ steps.release_target.outputs.sha }}" \
+            --channel "${RELEASE_CHANNEL}" \
+            --version "${RELEASE_VERSION}" \
+            --build "${RELEASE_BUILD}" \
+            --iteration "${RELEASE_ITERATION}" \
+            --target-sha "${RELEASE_TARGET_SHA}" \
             --body release-body.md \
             --output prerelease.json
 

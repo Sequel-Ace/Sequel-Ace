@@ -128,7 +128,7 @@ class GitHubClientTest < Minitest::Test
                  transport.requests.map { |request| request.fetch(:path) }
   end
 
-  def test_rejects_a_release_app_token_for_another_installation
+  def test_rejects_a_token_for_another_release_app
     transport = FakeTransport.new([
       http_response(body: {
         "id" => 999,

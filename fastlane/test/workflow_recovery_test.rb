@@ -168,6 +168,16 @@ class WorkflowRecoveryTest < Minitest::Test
                     'SA_RELEASE_GITHUB_APP_INSTALLATION_ID: ${{ steps.release_mutation_token.outputs.installation-id }}'
     assert_includes app_creation,
                     'SA_RELEASE_GITHUB_APP_SLUG: ${{ steps.release_mutation_token.outputs.app-slug }}'
+    [user_creation, app_creation].each do |creation|
+      %w[CHANNEL VERSION BUILD ITERATION TARGET_SHA].each do |name|
+        assert_includes creation, "RELEASE_#{name}: " + '${{'
+      end
+      creation_run = creation.split("run: |", 2).fetch(1)
+      refute_includes creation_run, '${{'
+      %w[CHANNEL VERSION BUILD ITERATION TARGET_SHA].each do |name|
+        assert_includes creation_run, '"${RELEASE_' + name + '}"'
+      end
+    end
     archive = release.split("- name: Durably archive the release identity before Cloud runs", 2).fetch(1)
                      .split("- name: Arm event-driven artifact publication for the exact handoff", 2).first
     assert_includes archive, "release-publisher.json"
