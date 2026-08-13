@@ -168,6 +168,7 @@ jobs:
             /merge-evidence.json \
             /release-target-evidence.json \
             /release-target-validation.json \
+            /release-publisher.json \
             /prerelease.json \
             /release-evidence.json \
             /branch-cleanup.json \
@@ -638,8 +639,21 @@ jobs:
           permission-contents: write
           permission-workflows: write
 
-      - name: Create the tag-backed GitHub prerelease
-        id: prerelease
+      - name: Select the initial GitHub release publisher without loading the PAT
+        id: release_publisher
+        env:
+          RELEASE_TAG: ${{ inputs.channel }}/${{ inputs.version }}-${{ steps.reconcile.outputs.build }}
+          SA_GITHUB_TOKEN: ${{ steps.release_mutation_token.outputs.token }}
+        run: |
+          set -euo pipefail
+          bundle exec ruby fastlane/bin/sa-release github-release-publisher-mode \
+            --tag "${RELEASE_TAG}" \
+            --output release-publisher.json
+          ruby -rjson -e 'value = JSON.parse(File.read("release-publisher.json")); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("mode=#{value.fetch("mode")}") }'
+
+      - name: Create the tag-backed GitHub prerelease as Jason-Morcos
+        if: steps.release_publisher.outputs.mode == 'user'
+        id: prerelease_user
         env:
           SA_GITHUB_TOKEN: ${{ steps.release_mutation_token.outputs.token }}
           SA_RELEASE_GITHUB_PUBLISHER_TOKEN: ${{ secrets.SA_RELEASE_GITHUB_PUBLISHER_TOKEN }}
@@ -653,6 +667,32 @@ jobs:
             --target-sha "${{ steps.release_target.outputs.sha }}" \
             --body release-body.md \
             --output prerelease.json
+
+      - name: Create or recover the tag-backed GitHub prerelease with the release App
+        if: >-
+          steps.release_publisher.outputs.mode == 'app' ||
+          steps.release_publisher.outputs.mode == 'existing'
+        id: prerelease_app
+        env:
+          SA_GITHUB_TOKEN: ${{ steps.release_mutation_token.outputs.token }}
+          SA_RELEASE_GITHUB_APP_CLIENT_ID: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          SA_RELEASE_GITHUB_APP_INSTALLATION_ID: ${{ steps.release_mutation_token.outputs.installation-id }}
+          SA_RELEASE_GITHUB_APP_SLUG: ${{ steps.release_mutation_token.outputs.app-slug }}
+        run: |
+          set -euo pipefail
+          bundle exec ruby fastlane/bin/sa-release github-create-release \
+            --channel "${{ inputs.channel }}" \
+            --version "${{ inputs.version }}" \
+            --build "${{ steps.reconcile.outputs.build }}" \
+            --iteration "${{ steps.plan.outputs.iteration }}" \
+            --target-sha "${{ steps.release_target.outputs.sha }}" \
+            --body release-body.md \
+            --output prerelease.json
+
+      - name: Record the exact GitHub prerelease identity
+        id: prerelease
+        run: |
+          set -euo pipefail
           ruby -rjson -e 'value = JSON.parse(File.read("prerelease.json")); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("id=#{value.dig("release", "id")}"); file.puts("tag=#{value.dig("naming", "tag")}") }'
           ruby -rjson -e 'value = JSON.parse(File.read("prerelease.json")); File.write("release-evidence.json", JSON.pretty_generate({"github_release_id" => value.dig("release", "id"), "github_release_author" => value.dig("release", "author", "login")}) + "\n")'
           bundle exec ruby fastlane/bin/sa-release update-manifest --manifest manifest.json --state prerelease_created --merge release-evidence.json >/dev/null
@@ -668,7 +708,7 @@ jobs:
           bundle exec ruby fastlane/bin/sa-release update-manifest --manifest manifest.json --state cloud_running >/dev/null
           mkdir -p release-archive
           cp manifest.json release-plan.json approval.json app-store-notes.txt release-body.md reconciliation.json release-archive/
-          cp prerelease.json release-target-evidence.json release-evidence.json release-archive/
+          cp prerelease.json release-publisher.json release-target-evidence.json release-evidence.json release-archive/
           reference="${GHCR_REPOSITORY}:${{ steps.release_context.outputs.ghcr_tag }}"
           Scripts/archive-release-to-ghcr.sh push "${reference}" release-archive > initial-archive-evidence.json
           echo "reference=${reference}" >> "${GITHUB_OUTPUT}"

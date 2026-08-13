@@ -13,14 +13,23 @@ module SequelAceRelease
     RELEASE_APP_LOGINS = RELEASE_APP_SLUGS.map { |slug| "#{slug}[bot]" }.freeze
     RELEASE_APP_LOGIN = RELEASE_APP_LOGINS.first
     USER_PUBLISHER_CUTOFF = Time.utc(2027, 8, 14).freeze
+    USER_PUBLISHER_SAFETY_WINDOW = 15 * 60
     LEGACY_APP_LOGIN = RELEASE_APP_LOGIN
     LEGACY_APP_TAG = "production/5.4.0-20105".freeze
     TAG_PATTERN = %r{\A(?:production|beta)/\d+\.\d+\.\d+-([1-9]\d*)\z}.freeze
+    ZONED_TIMESTAMP_PATTERN = /(?:Z|[+-]\d{2}:\d{2})\z/.freeze
 
     module_function
 
     def active_mode(at: Time.now.utc)
-      publication_time(at) < USER_PUBLISHER_CUTOFF ? :user : :app
+      current_time = publication_time(at)
+      return :app if current_time >= USER_PUBLISHER_CUTOFF
+      if current_time >= USER_PUBLISHER_CUTOFF - USER_PUBLISHER_SAFETY_WINDOW
+        raise ValidationError,
+              "new GitHub release creation is paused during the publisher cutoff safety window"
+      end
+
+      :user
     end
 
     def authorized?(tag:, login:, created_at: nil, at: Time.now.utc)
@@ -54,7 +63,9 @@ module SequelAceRelease
 
     def publication_time(value)
       return value.utc if value.is_a?(Time)
-      return Time.iso8601(value).utc if value.is_a?(String) && !value.empty?
+      if value.is_a?(String) && value.match?(ZONED_TIMESTAMP_PATTERN)
+        return Time.iso8601(value).utc
+      end
 
       raise ArgumentError, "GitHub release publication time is malformed"
     end

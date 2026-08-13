@@ -117,14 +117,18 @@ when the newest release is authored by an unfamiliar publishing identity. New
 releases therefore use a deliberately narrow compatibility bridge:
 
 - The release App validates the frozen target and creates the exact tag.
-- Only the initial `POST /releases` call receives
-  `SA_RELEASE_GITHUB_PUBLISHER_TOKEN`. Before that mutation, the tool reads
-  `/user` and the exact repository and requires `Jason-Morcos` plus write
-  access to `Sequel-Ace/Sequel-Ace`.
-- Before `2027-08-14T00:00:00Z`, the create response, and any idempotently
-  reused release, must report `author.login == Jason-Morcos`. The publisher
-  token is absent from every artifact, failure-recovery, App Store submission,
-  and finalization step.
+- A PAT-free selector first looks up the exact release tag with the short-lived
+  release App token. An existing prerelease is recovered by immutable author
+  and `created_at` provenance without loading the PAT, including across the
+  publisher cutoff.
+- Only the conditional step that may make the initial `POST /releases` call as
+  Jason receives `SA_RELEASE_GITHUB_PUBLISHER_TOKEN`. Before that mutation, the
+  tool reads `/user` and the exact repository and requires `Jason-Morcos` plus
+  write access to `Sequel-Ace/Sequel-Ace`.
+- Before `2027-08-14T00:00:00Z`, a newly created release must report
+  `author.login == Jason-Morcos`. The publisher token is absent from App-mode
+  creation, existing-release recovery, artifact publication, failure recovery,
+  App Store submission, and finalization.
 - The protected secret is a fine-grained personal access token owned by
   `Jason-Morcos`, limited to the single repository, with Contents read/write
   and no organization permissions. Metadata read access is implicit. The
@@ -138,15 +142,24 @@ Follow GitHub's
 when provisioning the protected secret. Never print, persist, or
 archive the token value.
 
-The PAT's organization-enforced 366-day expiration is August 14, 2027. That
-timestamp is also a fixed, tested publisher cutover—not an error fallback. A
-missing, revoked, or invalid PAT before the cutoff stops the release. At and
-after the cutoff, the workflow no longer reads the PAT and creates new releases
-with the same dedicated release GitHub App that already creates tags. It
-preflights the App's immutable ID `4541115`, exact Sequel Ace installation, and
-repository write access, then requires the release response author to match the
-App's live slug. This avoids both annual credential rotation and an accidental
-early bot transition.
+The PAT's organization-enforced 366-day expiration is August 14, 2027. The
+fixed, tested publisher cutoff is `2027-08-14T00:00:00Z`, not an error fallback.
+Fresh release creation is paused during the preceding 15-minute safety window
+(`2027-08-13T23:45:00Z` through the cutoff) so a user-authored request cannot
+cross the immutable author epoch while GitHub is accepting it. Exact existing
+prereleases remain recoverable throughout that window. Before the window, a
+missing, revoked, or invalid PAT stops the release; it never causes an early bot
+fallback. At and after the cutoff, the workflow's selected creation step does
+not receive or read the PAT and creates new releases with the same dedicated
+release GitHub App that already creates tags. It requires the pinned token
+action's `app-slug` and `installation-id` outputs, matches the live App record
+to immutable App ID `4541115` and the configured client ID, and requires the
+installation token to list exactly `Sequel-Ace/Sequel-Ace` with write access.
+It then requires the release response author to match the App's live slug. The
+output contract is documented by
+[`actions/create-github-app-token`](https://github.com/actions/create-github-app-token#outputs).
+This avoids both annual credential rotation and an accidental early bot
+transition.
 
 Release-author provenance is an immutable epoch, not a mutable allowlist:
 

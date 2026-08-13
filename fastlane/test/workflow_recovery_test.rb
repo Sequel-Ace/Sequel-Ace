@@ -134,7 +134,7 @@ class WorkflowRecoveryTest < Minitest::Test
                     terminal_failure.index('[[ -z "${RELEASE_MUTATION_TOKEN}" ]]')
 
     exact_create_token = release.split("- name: Mint exact-target release tag token", 2).fetch(1)
-                                .split("- name: Create the tag-backed GitHub prerelease", 2).first
+                                .split("- name: Select the initial GitHub release publisher", 2).first
     finalizer = File.read(repo_path(".github/workflows/release_finalize.yml"))
     exact_finalize_token = finalizer.split("- name: Mint exact-target release mutation token", 2).fetch(1)
                                     .split("- name: Finalize only exact App Store-live releases", 2).first
@@ -144,14 +144,33 @@ class WorkflowRecoveryTest < Minitest::Test
 
   def test_user_publisher_credential_is_scoped_only_to_initial_release_creation
     release = File.read(repo_path(".github/workflows/release.yml"))
-    creation = release.split("- name: Create the tag-backed GitHub prerelease", 2).fetch(1)
-                      .split("- name: Durably archive the release identity before Cloud runs", 2).first
+    selector = release.split("- name: Select the initial GitHub release publisher", 2).fetch(1)
+                      .split("- name: Create the tag-backed GitHub prerelease as Jason-Morcos", 2).first
+    user_creation = release.split("- name: Create the tag-backed GitHub prerelease as Jason-Morcos", 2).fetch(1)
+                           .split("- name: Create or recover the tag-backed GitHub prerelease with the release App", 2).first
+    app_creation = release.split("- name: Create or recover the tag-backed GitHub prerelease with the release App", 2).fetch(1)
+                          .split("- name: Record the exact GitHub prerelease identity", 2).first
 
     assert_equal 1, release.scan(/^\s+SA_RELEASE_GITHUB_PUBLISHER_TOKEN:/).length
     assert_equal 1, release.scan(/secrets\.SA_RELEASE_GITHUB_PUBLISHER_TOKEN/).length
-    assert_includes creation,
+    assert_includes user_creation,
                     'SA_RELEASE_GITHUB_PUBLISHER_TOKEN: ${{ secrets.SA_RELEASE_GITHUB_PUBLISHER_TOKEN }}'
-    assert_includes creation, 'SA_GITHUB_TOKEN: ${{ steps.release_mutation_token.outputs.token }}'
+    assert_includes user_creation, "if: steps.release_publisher.outputs.mode == 'user'"
+    assert_includes user_creation, 'SA_GITHUB_TOKEN: ${{ steps.release_mutation_token.outputs.token }}'
+    refute_includes selector, "SA_RELEASE_GITHUB_PUBLISHER_TOKEN"
+    assert_includes selector, "github-release-publisher-mode"
+    refute_includes app_creation, "SA_RELEASE_GITHUB_PUBLISHER_TOKEN"
+    assert_includes app_creation, "steps.release_publisher.outputs.mode == 'app'"
+    assert_includes app_creation, "steps.release_publisher.outputs.mode == 'existing'"
+    assert_includes app_creation,
+                    'SA_RELEASE_GITHUB_APP_CLIENT_ID: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}'
+    assert_includes app_creation,
+                    'SA_RELEASE_GITHUB_APP_INSTALLATION_ID: ${{ steps.release_mutation_token.outputs.installation-id }}'
+    assert_includes app_creation,
+                    'SA_RELEASE_GITHUB_APP_SLUG: ${{ steps.release_mutation_token.outputs.app-slug }}'
+    archive = release.split("- name: Durably archive the release identity before Cloud runs", 2).fetch(1)
+                     .split("- name: Arm event-driven artifact publication for the exact handoff", 2).first
+    assert_includes archive, "release-publisher.json"
 
     %w[release_alpha_retry.yml release_finalize.yml release_publish.yml release_feasibility.yml].each do |filename|
       refute_includes File.read(repo_path(".github/workflows/#{filename}")),
@@ -358,6 +377,7 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_operator release_exclusion, :<, release_plan
     assert_includes release[release_exclusion...release_plan], "/release-plan.json"
     assert_includes release[release_exclusion...release_plan], "/manifest.json"
+    assert_includes release[release_exclusion...release_plan], "/release-publisher.json"
     overlap = release.split("- name: Refuse overlapping asynchronous release handoffs", 2).fetch(1)
                      .split("- name: Recheck release authorization with the tested guard", 2).first
     assert_includes overlap, 'prereleases_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-existing-prereleases.XXXXXX")"'

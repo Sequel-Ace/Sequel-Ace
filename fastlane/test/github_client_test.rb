@@ -99,42 +99,85 @@ class GitHubClientTest < Minitest::Test
   def test_validates_the_exact_release_app_installation_and_repository_access
     transport = FakeTransport.new([
       http_response(body: {
-        "app_id" => 4_541_115,
-        "app_slug" => "sequel-ace-release-automation",
-        "account" => { "login" => "Sequel-Ace" }
+        "id" => 4_541_115,
+        "slug" => "sequel-ace-release-automation",
+        "client_id" => "Iv1.releaseclient"
       }),
       http_response(body: {
-        "full_name" => "Sequel-Ace/Sequel-Ace",
-        "permissions" => { "push" => true }
+        "total_count" => 1,
+        "repositories" => [{
+          "full_name" => "Sequel-Ace/Sequel-Ace",
+          "permissions" => { "push" => true }
+        }]
       })
     ])
     client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
 
-    result = client.validate_release_app_publisher!(expected_app_id: 4_541_115)
+    result = client.validate_release_app_publisher!(
+      expected_app_id: 4_541_115,
+      expected_client_id: "Iv1.releaseclient",
+      expected_app_slug: "sequel-ace-release-automation",
+      expected_installation_id: "12345"
+    )
 
     assert_equal "sequel-ace-release-automation[bot]", result.fetch("login")
     assert_equal 4_541_115, result.fetch("app_id")
+    assert_equal 12_345, result.fetch("installation_id")
     assert_equal true, result.fetch("push_access")
-    assert_equal ["/installation", "/repos/Sequel-Ace/Sequel-Ace"],
+    assert_equal ["/apps/sequel-ace-release-automation", "/installation/repositories?per_page=100"],
                  transport.requests.map { |request| request.fetch(:path) }
   end
 
   def test_rejects_a_release_app_token_for_another_installation
     transport = FakeTransport.new([
       http_response(body: {
-        "app_id" => 999,
-        "app_slug" => "another-app",
-        "account" => { "login" => "Sequel-Ace" }
+        "id" => 999,
+        "slug" => "sequel-ace-release-automation",
+        "client_id" => "Iv1.releaseclient"
       })
     ])
     client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
 
     error = assert_raises(SequelAceRelease::ValidationError) do
-      client.validate_release_app_publisher!(expected_app_id: 4_541_115)
+      client.validate_release_app_publisher!(
+        expected_app_id: 4_541_115,
+        expected_client_id: "Iv1.releaseclient",
+        expected_app_slug: "sequel-ace-release-automation",
+        expected_installation_id: "12345"
+      )
     end
 
-    assert_includes error.message, "exact installation"
-    assert_equal ["/installation"], transport.requests.map { |request| request.fetch(:path) }
+    assert_includes error.message, "configured App"
+    assert_equal ["/apps/sequel-ace-release-automation"], transport.requests.map { |request| request.fetch(:path) }
+  end
+
+  def test_rejects_a_release_app_token_with_more_than_the_exact_repository
+    transport = FakeTransport.new([
+      http_response(body: {
+        "id" => 4_541_115,
+        "slug" => "sequel-ace-release-automation",
+        "client_id" => "Iv1.releaseclient"
+      }),
+      http_response(body: {
+        "total_count" => 2,
+        "repositories" => [
+          { "full_name" => "Sequel-Ace/Sequel-Ace", "permissions" => { "push" => true } },
+          { "full_name" => "Sequel-Ace/Other", "permissions" => { "push" => true } }
+        ]
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      client.validate_release_app_publisher!(
+        expected_app_id: 4_541_115,
+        expected_client_id: "Iv1.releaseclient",
+        expected_app_slug: "sequel-ace-release-automation",
+        expected_installation_id: "12345"
+      )
+    end
+
+    assert_includes error.message, "exact writable repository"
   end
 
   def test_creates_the_lightweight_release_tag_before_publishing_the_release

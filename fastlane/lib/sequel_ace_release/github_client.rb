@@ -78,6 +78,14 @@ module SequelAceRelease
       request!("GET", "/repos/#{@repository}/releases/tags/#{URI.encode_www_form_component(tag)}")
     end
 
+    def release_by_tag_if_exists(tag)
+      release_by_tag(tag)
+    rescue APIError => error
+      raise unless error.message.include?("HTTP 404")
+
+      nil
+    end
+
     def latest_release
       request!("GET", "/repos/#{@repository}/releases/latest")
     end
@@ -104,27 +112,44 @@ module SequelAceRelease
       }
     end
 
-    def validate_release_app_publisher!(expected_app_id:)
+    def validate_release_app_publisher!(
+      expected_app_id:, expected_client_id:, expected_app_slug:, expected_installation_id:
+    )
       unless expected_app_id.is_a?(Integer) && expected_app_id.positive?
         raise ValidationError, "expected GitHub release App ID is malformed"
       end
-
-      installation = request!("GET", "/installation")
-      app_slug = installation["app_slug"] if installation.is_a?(Hash)
-      unless installation.is_a?(Hash) && installation["app_id"] == expected_app_id &&
-             app_slug.to_s.match?(/\A[a-z0-9-]+\z/) &&
-             installation.dig("account", "login") == Config::REPOSITORY_OWNER
-        raise ValidationError, "GitHub release App token does not match the exact installation"
+      unless expected_client_id.to_s.match?(/\AIv(?:1\.[A-Za-z0-9]+|23li[A-Za-z0-9]+)\z/)
+        raise ValidationError, "expected GitHub release App client ID is malformed"
       end
-      repository = request!("GET", "/repos/#{@repository}")
-      unless repository.is_a?(Hash) && repository["full_name"] == @repository &&
-             repository.dig("permissions", "push") == true
-        raise ValidationError, "GitHub release App token lacks exact repository push access"
+      unless expected_app_slug.to_s.match?(/\A[a-z0-9-]+\z/)
+        raise ValidationError, "expected GitHub release App slug is malformed"
+      end
+      installation_id = begin
+        Integer(expected_installation_id)
+      rescue ArgumentError, TypeError
+        raise ValidationError, "expected GitHub release App installation ID is malformed"
+      end
+      raise ValidationError, "expected GitHub release App installation ID is malformed" unless installation_id.positive?
+
+      app = request!("GET", "/apps/#{expected_app_slug}")
+      unless app.is_a?(Hash) && app["id"] == expected_app_id && app["slug"] == expected_app_slug &&
+             app["client_id"] == expected_client_id
+        raise ValidationError, "GitHub release App identity does not match the configured App"
+      end
+
+      inventory = request!("GET", "/installation/repositories?per_page=100")
+      repositories = inventory["repositories"] if inventory.is_a?(Hash)
+      unless inventory.is_a?(Hash) && inventory["total_count"] == 1 && repositories.is_a?(Array) &&
+             repositories.length == 1 && repositories.first["full_name"] == @repository &&
+             repositories.first.dig("permissions", "push") == true
+        raise ValidationError, "GitHub release App token is not restricted to the exact writable repository"
       end
 
       {
-        "login" => "#{app_slug}[bot]",
+        "login" => "#{expected_app_slug}[bot]",
         "app_id" => expected_app_id,
+        "client_id" => expected_client_id,
+        "installation_id" => installation_id,
         "repository" => @repository,
         "push_access" => true
       }
@@ -383,20 +408,14 @@ module SequelAceRelease
       validate_commit_sha!(target_sha, "release target SHA")
       validate_exact_release_tag!(tag: tag, target_sha: target_sha)
 
-      existing = nil
-      begin
-        existing = release_by_tag(tag)
-      rescue APIError => error
-        raise unless error.message.include?("HTTP 404")
-      end
+      existing = release_by_tag_if_exists(tag)
       if existing
-        validated = validate_release_response!(
-          existing,
+        validated = validate_existing_release_response(
+          release: existing,
           tag: tag,
           title: title,
           body: body,
-          expected_author_login: expected_author_login,
-          created: false
+          expected_author_login: expected_author_login
         )
         validate_exact_release_tag!(tag: tag, target_sha: target_sha)
         return validated
@@ -434,6 +453,20 @@ module SequelAceRelease
         body: body,
         expected_author_login: expected_author_login,
         created: true
+      )
+      validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+      validated
+    end
+
+    def validate_existing_release(release:, tag:, target_sha:, title:, body:, expected_author_login:)
+      validate_commit_sha!(target_sha, "release target SHA")
+      validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+      validated = validate_existing_release_response(
+        release: release,
+        tag: tag,
+        title: title,
+        body: body,
+        expected_author_login: expected_author_login
       )
       validate_exact_release_tag!(tag: tag, target_sha: target_sha)
       validated
@@ -591,6 +624,17 @@ module SequelAceRelease
     end
 
     private
+
+    def validate_existing_release_response(release:, tag:, title:, body:, expected_author_login:)
+      validate_release_response!(
+        release,
+        tag: tag,
+        title: title,
+        body: body,
+        expected_author_login: expected_author_login,
+        created: false
+      )
+    end
 
     def validate_exact_release_tag!(tag:, target_sha:)
       expected_ref = "refs/tags/#{tag}"
