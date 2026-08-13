@@ -1,9 +1,9 @@
 # Sequel Ace Modernization — Follow-up Plan
 
 > **Revised 2026-08-11.** Sibling tracks: the build-warning burn-down lives in
-> `docs/development/warnings-elimination-plan.md` (steps 0-5 + 7 merged; 413 -> ~195),
+> `docs/development/warnings-elimination-plan.md` (steps 0-7 merged; 413 -> ~180),
 > the help-viewer rewrite plan in `docs/development/help-viewer-rewrite-plan.md`
-> (recon done, ready to execute), agent ground rules in `AGENTS.md`.
+> (executed), agent ground rules in `AGENTS.md`.
 
 ## State of the world (August 2026 revision)
 
@@ -12,8 +12,9 @@ Landed since this plan was written:
 - **Phases A1-A4, D1-D3, B3, C1a/C1b, C2a**: done as detailed below.
 - **Modernization arcs completed** (see warnings plan for details):
   NSArchiver -> keyed archiving (SAArchiving, all call sites), WebView -> 
-  WKWebView for bundle output *and* all print flows (SAPrintUtility +
-  SAHTMLPrintRenderer + SAPrintAccessoryController), NSUserNotification ->
+  WKWebView for bundle output, all print flows (SAPrintUtility +
+  SAHTMLPrintRenderer + SAPrintAccessoryController) *and* the MySQL help viewer
+  (SAHelpViewer*) — no legacy WebKit left, NSUserNotification ->
   SANotificationCenter, keyed-archiver initializer migration (spf wire format
   pinned by SAKeyedArchiveCompatTests), AppKit deprecation batch 3,
   SPDatabaseDocument.h nullability audit.
@@ -480,9 +481,11 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
 
 ## Recommended order (August 2026 revision)
 
-1. **Help viewer WKWebView rewrite** — plan ready in
-   `docs/development/help-viewer-rewrite-plan.md`; retires the last legacy WebView
-   (~20 warnings) and the WebKit-deprecation story ends.
+1. ~~**Help viewer WKWebView rewrite**~~ — ✅ Done (warnings plan step 6).
+   `SAHelpViewerModel` / `SAHelpViewerView` / `SAHelpViewerWindowController`
+   replaced SPHelpViewerController + HelpViewer.xib; **legacy WebKit is now gone
+   from the codebase** (26 deprecation warnings retired). Execution notes in
+   `docs/development/warnings-elimination-plan.md`.
 2. **C2b — extend SAConnectionFormModel/View to all connection types**
    (socket, SSH, AWS IAM, Vault + SSL options, colour, time zone). Scope grew
    since June: Vault and AWS variants now exist and must be covered. Reuse

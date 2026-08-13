@@ -44,10 +44,8 @@ module ReleaseTestHelpers
       base_sha: "b" * 40,
       changelog_base_tag: "production/5.3.1-20104",
       changelog_base_sha: "b" * 40,
-      release_iteration: 1,
       app_store_notes: "A focused release note.",
-      release_notes_sha256: "c" * 64,
-      observed_production_cloud_next_build: 20_105
+      release_notes_sha256: "c" * 64
     }.merge(overrides))
   end
 
@@ -58,6 +56,19 @@ module ReleaseTestHelpers
         "attributes" => { "assetDeliveryState" => { "state" => "COMPLETE" } }
       }
     end
+  end
+
+  def production_build_evidence(target: 20_105)
+    highest = target - 1
+    {
+      "policy" => SequelAceRelease::Approval::POLICY,
+      "source_build" => highest,
+      "highest_tag_build" => highest,
+      "highest_asc_build" => highest,
+      "highest_cloud_build" => highest,
+      "highest_observed_build" => highest,
+      "expected_next_build" => target
+    }
   end
 
   def metadata_snapshot(build: 20_105, state: "PREPARE_FOR_SUBMISSION", phased_state: "INACTIVE")

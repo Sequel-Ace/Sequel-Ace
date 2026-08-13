@@ -41,9 +41,11 @@ module SequelAceRelease
       when "github-wait-checks" then github_wait_checks(argv)
       when "github-merge-pr" then github_merge_pr(argv)
       when "github-validate-release-target" then github_validate_release_target(argv)
+      when "github-verify-release-tag" then github_verify_release_tag(argv)
       when "github-create-release" then github_create_release(argv)
       when "github-upload-asset" then github_upload_asset(argv)
       when "validate-publish-handoff" then validate_publish_handoff(argv)
+      when "validate-forward-recovery" then validate_forward_recovery(argv)
       when "cloud-status" then cloud_status(argv)
       when "wait-cloud" then wait_cloud(argv)
       when "download-cloud-artifacts" then download_cloud_artifacts(argv)
@@ -69,7 +71,7 @@ module SequelAceRelease
     def guard(arguments)
       options = {}
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release guard --actor LOGIN --triggering-actor LOGIN --mode MODE --ref REF --current-sha SHA --expected-sha SHA --channel CHANNEL --version VERSION --cloud-next-build BUILD --confirmation TEXT --enabled VALUE"
+        value.banner = "Usage: sa-release guard --actor LOGIN --triggering-actor LOGIN --mode MODE --ref REF --current-sha SHA --expected-sha SHA --channel CHANNEL --version VERSION --confirmation TEXT --enabled VALUE"
         value.on("--actor LOGIN") { |item| options[:actor] = item }
         value.on("--triggering-actor LOGIN") { |item| options[:triggering_actor] = item }
         value.on("--mode MODE") { |item| options[:mode] = item }
@@ -78,14 +80,14 @@ module SequelAceRelease
         value.on("--expected-sha SHA") { |item| options[:expected_sha] = item }
         value.on("--channel CHANNEL") { |item| options[:channel] = item }
         value.on("--version VERSION") { |item| options[:version] = item }
-        value.on("--cloud-next-build BUILD", Integer) { |item| options[:cloud_next_build] = item }
+        value.on("--recovery-tag TAG") { |item| options[:recovery_tag] = item }
         value.on("--confirmation TEXT") { |item| options[:confirmation] = item }
         value.on("--enabled VALUE") { |item| options[:enabled] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
       reject_arguments!(arguments)
-      require_options!(options, :actor, :triggering_actor, :mode, :ref, :current_sha, :expected_sha, :channel, :version, :cloud_next_build, :confirmation, :enabled)
+      require_options!(options, :actor, :triggering_actor, :mode, :ref, :current_sha, :expected_sha, :channel, :version, :confirmation, :enabled)
       output = options.delete(:output)
       emit(DeploymentGuard.new.validate!(**options), output)
     end
@@ -99,17 +101,14 @@ module SequelAceRelease
         value.on("--base-tag TAG") { |item| options[:base_tag] = item }
         value.on("--main-ref REF") { |item| options[:main_ref] = item }
         value.on("--app-store-notes FILE") { |item| options[:app_store_notes] = File.read(item) }
-        value.on("--observed-cloud-next-build BUILD", Integer) { |item| options[:observed_cloud_next_build] = item }
         value.on("--expected-approval-sha SHA") { |item| options[:expected_approval_sha] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
       reject_arguments!(arguments)
-      require_options!(options, :observed_cloud_next_build)
-
       github = github_client(optional: true)
       result = Planner.new(github: github).plan(**options.slice(
-        :channel, :target_version, :base_tag, :main_ref, :app_store_notes, :observed_cloud_next_build
+        :channel, :target_version, :base_tag, :main_ref, :app_store_notes
       ))
       if options[:expected_approval_sha]
         Approval.from_hash(result.fetch("approval")).verify!(options[:expected_approval_sha])
@@ -178,21 +177,20 @@ module SequelAceRelease
     def reconcile_build(arguments)
       options = { cloud_runs: [] }
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release reconcile-build --cloud-next-build BUILD [options]"
+        value.banner = "Usage: sa-release reconcile-build [options]"
         value.on("--source-build BUILD", Integer) { |item| options[:source_build] = item }
         value.on("--highest-tag-build BUILD", Integer) { |item| options[:highest_tag_build] = item }
         value.on("--highest-asc-build BUILD", Integer) { |item| options[:highest_asc_build] = item }
-        value.on("--cloud-next-build BUILD", Integer) { |item| options[:cloud_next_build] = item }
         value.on("--expected-target-build BUILD", Integer) { |item| options[:expected_target_build] = item }
         value.on("--cloud-runs FILE") { |item| options[:cloud_runs] = read_json(item) }
         value.on("--workflow-id ID") { |item| options[:workflow_id] = item }
         value.on("--source-tagged") { options[:source_tagged] = true }
+        value.on("--recover-release-channel CHANNEL") { |item| options[:recover_release_channel] = item }
+        value.on("--recover-release-version VERSION") { |item| options[:recover_release_version] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
       reject_arguments!(arguments)
-      require_options!(options, :cloud_next_build)
-
       git = GitRepository.new
       source_build = options[:source_build] || VersionFiles.new.current.fetch("build")
       canonical_tags = git.tags("production/*") + git.tags("beta/*")
@@ -206,16 +204,25 @@ module SequelAceRelease
       source_tags = git.tags("production/*-#{source_build}") + git.tags("beta/*-#{source_build}")
       source_tagged = options.fetch(:source_tagged, false) || source_tags.any?
       source_release_commit_sha = git.latest_commit_changing_all(release_paths)
+      recovery_tag = recover_release_tag(
+        options: options,
+        git: git,
+        source_build: source_build,
+        source_release_commit_sha: source_release_commit_sha,
+        runs: runs,
+        app_store_client: asc_client
+      )
 
       result = BuildReconciler.new.reconcile(
         source_build: source_build,
         highest_tag_build: highest_tag,
         highest_asc_build: highest_asc,
-        cloud_next_build: options[:cloud_next_build],
         cloud_runs: runs,
         source_tagged: source_tagged,
         source_release_commit_sha: source_release_commit_sha,
-        expected_target_build: options[:expected_target_build]
+        expected_target_build: options[:expected_target_build],
+        recover_release_tag: recovery_tag,
+        production_workflow_id: options[:workflow_id]
       )
       emit(result.to_h.merge("production_cloud_runs" => runs), options[:output])
     end
@@ -251,6 +258,8 @@ module SequelAceRelease
         value.on("--build BUILD", Integer) { |item| options[:build] = item }
         value.on("--iteration NUMBER", Integer) { |item| options[:iteration] = item }
         value.on("--release-body FILE") { |item| options[:release_body] = File.read(item) }
+        value.on("--base-sha SHA") { |item| options[:base_sha] = item }
+        value.on("--recovery-evidence FILE") { |item| options[:recovery_evidence] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
@@ -260,7 +269,20 @@ module SequelAceRelease
       approval = approval_from_file(options[:approval_file])
       approval.verify!(options[:approval_sha])
       git = GitRepository.new
-      expected_sha = approval.payload.fetch("main_sha")
+      approved_sha = approval.payload.fetch("main_sha")
+      expected_sha = options[:base_sha] || approved_sha
+      if expected_sha != approved_sha
+        raise ValidationError, "advanced release PR base requires validated forward-recovery evidence" unless options[:recovery_evidence]
+
+        recovery = read_json(options[:recovery_evidence])
+        validate_forward_recovery_pr_evidence!(
+          recovery,
+          approval: approval,
+          approval_sha: options[:approval_sha],
+          expected_sha: expected_sha,
+          requested_build: options[:build]
+        )
+      end
       raise ValidationError, "release PR is not based on the frozen main SHA" unless git.sha == expected_sha
 
       naming = ReleaseNaming.new(
@@ -438,13 +460,17 @@ module SequelAceRelease
         target_sha: options[:target_sha],
         protected_paths: release_paths
       )
-      release = client.create_release(
+      tag = client.create_or_validate_release_tag(
+        tag: naming.tag,
+        target_sha: options[:target_sha]
+      )
+      release = client.create_or_validate_release(
         tag: naming.tag,
         target_sha: options[:target_sha],
         title: naming.title,
         body: options[:body]
       )
-      emit({ "naming" => naming.to_h, "target_validation" => target_validation, "release" => release }, options[:output])
+      emit({ "naming" => naming.to_h, "target_validation" => target_validation, "tag" => tag, "release" => release }, options[:output])
     end
 
     def github_validate_release_target(arguments)
@@ -460,6 +486,24 @@ module SequelAceRelease
       result = github_client.validate_release_target!(
         target_sha: options[:target_sha],
         protected_paths: release_paths
+      )
+      emit(result, options[:output])
+    end
+
+    def github_verify_release_tag(arguments)
+      options = {}
+      parser = OptionParser.new do |value|
+        value.banner = "Usage: sa-release github-verify-release-tag --tag TAG --target-sha SHA"
+        value.on("--tag TAG") { |item| options[:tag] = item }
+        value.on("--target-sha SHA") { |item| options[:target_sha] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end
+      parser.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :tag, :target_sha)
+      result = github_client.validate_release_tag(
+        tag: options[:tag],
+        target_sha: options[:target_sha]
       )
       emit(result, options[:output])
     end
@@ -555,6 +599,43 @@ module SequelAceRelease
         manifest: Manifest.read(options[:manifest]),
         tag: options[:tag],
         app_store_notes: File.read(options[:notes])
+      )
+      emit(result, options[:output])
+    end
+
+    def validate_forward_recovery(arguments)
+      options = {}
+      parser = OptionParser.new do |value|
+        value.banner = "Usage: sa-release validate-forward-recovery --manifest FILE --approval FILE --approval-sha SHA --release-body FILE --tag TAG --current-sha SHA --channel CHANNEL --version VERSION --previous-tag TAG"
+        value.on("--manifest FILE") { |item| options[:manifest] = item }
+        value.on("--approval FILE") { |item| options[:approval] = item }
+        value.on("--approval-sha SHA") { |item| options[:approval_sha] = item }
+        value.on("--release-body FILE") { |item| options[:release_body] = item }
+        value.on("--tag TAG") { |item| options[:tag] = item }
+        value.on("--current-sha SHA") { |item| options[:current_sha] = item }
+        value.on("--channel CHANNEL") { |item| options[:channel] = item }
+        value.on("--version VERSION") { |item| options[:version] = item }
+        value.on("--previous-tag TAG") { |item| options[:previous_tag] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end
+      parser.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(
+        options,
+        :manifest, :approval, :approval_sha, :release_body, :tag,
+        :current_sha, :channel, :version, :previous_tag
+      )
+
+      result = ForwardBuildRecovery.new(github: github_client).validate(
+        manifest: Manifest.read(options[:manifest]),
+        approval: approval_from_file(options[:approval]),
+        approval_sha: options[:approval_sha],
+        release_body: File.binread(options[:release_body]),
+        tag: options[:tag],
+        current_sha: options[:current_sha],
+        channel: options[:channel],
+        version: options[:version],
+        previous_tag: options[:previous_tag]
       )
       emit(result, options[:output])
     end
@@ -730,19 +811,8 @@ module SequelAceRelease
       raise ValidationError, "submission confirmation must be exactly #{expected_confirmation.inspect}" unless options[:confirm] == expected_confirmation
 
       notes = File.read(options[:notes]).strip
-      Approval.new(
-        channel: "production",
-        target_version: version,
-        main_sha: data.fetch("main_sha"),
-        previous_tag: data.fetch("base_tag"),
-        base_sha: data.fetch("base_sha"),
-        changelog_base_tag: data.fetch("changelog_base_tag"),
-        changelog_base_sha: data.fetch("changelog_base_sha"),
-        release_iteration: data.fetch("iteration"),
-        app_store_notes: notes,
-        release_notes_sha256: data.fetch("release_notes_sha256"),
-        observed_production_cloud_next_build: data.fetch("observed_production_cloud_next_build")
-      )
+      raise ValidationError, "App Store release notes must not be empty" if notes.empty?
+      raise ValidationError, "App Store release notes exceed Apple's 4,000 character limit" if notes.length > 4_000
       schedule_threshold = Time.now + (72 * 60 * 60) + SUBMISSION_SCHEDULE_SAFETY_SECONDS
       scheduled = options[:schedule_at] || default_schedule_time(Time.now + SUBMISSION_SCHEDULE_SAFETY_SECONDS)
       if scheduled < schedule_threshold
@@ -848,6 +918,7 @@ module SequelAceRelease
         naming: naming,
         base_sha: options[:base_sha],
         canonical_build: reconciliation.fetch("target_build"),
+        production_build_evidence: reconciliation.fetch("production_build_evidence"),
         skipped_production_builds: reconciliation.fetch("skipped_production_builds", []),
         release_notes_sha256: plan_data.fetch("release_notes_sha256")
       )
@@ -1004,10 +1075,17 @@ module SequelAceRelease
 
       client.update_release(
         id: release.fetch("id"),
+        tag: data.fetch("tag"),
+        target_sha: archived_commit,
         title: final_title,
         prerelease: false,
         make_latest: true
       )
+      finalized_tag_commit = client.ref_sha("tags/#{data.fetch('tag')}")
+      unless finalized_tag_commit == archived_commit
+        raise ValidationError,
+              "release tag moved during finalization (expected #{archived_commit}, found #{finalized_tag_commit})"
+      end
       release = client.release_by_tag(data.fetch("tag"))
       unless release["id"] == evidence.fetch("release_id") && release["tag_name"] == data.fetch("tag") &&
              release["name"] == final_title && release["draft"] == false && release["prerelease"] == false &&
@@ -1068,6 +1146,20 @@ module SequelAceRelease
       JSON.parse(File.read(path))
     end
 
+    def validate_forward_recovery_pr_evidence!(recovery, approval:, approval_sha:, expected_sha:, requested_build:)
+      failed_build = recovery["failed_expected_build"]
+      expected_predecessor_tag = if failed_build.is_a?(Integer) && failed_build.positive?
+                                   "#{approval.payload.fetch('channel')}/#{approval.payload.fetch('target_version')}-#{failed_build}"
+                                 end
+      valid = recovery["predecessor_release_commit_sha"] == expected_sha &&
+              recovery["predecessor_tag"] == expected_predecessor_tag &&
+              recovery["approval_sha256"] == approval_sha &&
+              recovery["expected_recovery_build"].is_a?(Integer) &&
+              recovery["expected_recovery_build"].positive? &&
+              recovery["expected_recovery_build"] == requested_build
+      raise ValidationError, "forward-recovery evidence does not match the requested release PR" unless valid
+    end
+
     def approval_from_file(path)
       value = read_json(path)
       value = value.fetch("approval") if value.key?("approval")
@@ -1105,6 +1197,39 @@ module SequelAceRelease
 
     def highest_build_from_tags(tags)
       tags.filter_map { |tag| tag[%r{\A(?:production|beta)/\d+\.\d+\.\d+-([1-9]\d*)\z}, 1]&.to_i }.max || 0
+    end
+
+    def recover_release_tag(options:, git:, source_build:, source_release_commit_sha:, runs:, app_store_client:)
+      channel = options[:recover_release_channel]
+      version = options[:recover_release_version]
+      return nil if channel.nil? && version.nil?
+      if channel.to_s.empty? || version.to_s.empty?
+        raise ValidationError, "tag-only recovery requires both release channel and version"
+      end
+
+      naming = ReleaseNaming.new(channel: channel, version: version, build: source_build, iteration: 1)
+      tag = naming.tag
+      return nil unless git.tag_exists?(tag)
+      unless Config.valid_git_sha?(source_release_commit_sha) && git.sha("refs/tags/#{tag}") == source_release_commit_sha
+        raise IntegrityError, "tag-only recovery tag does not resolve to the exact release preparation commit"
+      end
+
+      begin
+        github_client.release_by_tag(tag)
+        return nil
+      rescue APIError => error
+        raise unless error.message.include?("HTTP 404")
+      end
+      if options[:workflow_id].to_s.empty? || app_store_client.nil?
+        raise ValidationError, "tag-only recovery requires Production Xcode Cloud access"
+      end
+
+      run = Array(runs).find { |candidate| candidate["number"].to_i == source_build }
+      if run
+        details = app_store_client.build_run(run.fetch("id"))
+        run.replace(run.merge(details))
+      end
+      tag
     end
 
     def release_pull_request_body(naming, release_body)
@@ -1312,7 +1437,7 @@ module SequelAceRelease
           guard                      Enforce actor, ref, freeze, confirmation, and enable gates
           plan                       Create a read-only release plan and approval payload
           prepare                    Set explicit version/build values and regenerate CHANGELOG.md
-          reconcile-build            Validate Xcode Cloud's authoritative next production build
+          reconcile-build            Derive highest observed Production build plus one
           verify-artifact            Verify signing, notarization, architecture, metadata, and launch
           verify-artifact-set        Find and verify the distributable app in a Cloud artifact set
           submit                     Stage, validate, and submit a production App Store version
@@ -1323,9 +1448,11 @@ module SequelAceRelease
           github-merge-pr            Recheck and merge the release PR
           github-validate-release-target
                                      Prove a release commit remains an unchanged main ancestor
+          github-verify-release-tag   Prove a release tag still names the exact release commit
           github-create-release      Create the tag-backed GitHub prerelease
           github-upload-asset        Upload a verified zip to the prerelease
           validate-publish-handoff   Validate an archived prerelease continuation
+          validate-forward-recovery  Validate a preserved forward-only build mismatch
           cloud-status               Inspect an exact Xcode Cloud build without waiting
           wait-cloud                 Wait for an exact Xcode Cloud build
           download-cloud-artifacts   Download every artifact for an exact Cloud build run

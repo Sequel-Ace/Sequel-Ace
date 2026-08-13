@@ -22,9 +22,9 @@ if [[ ! -f "${CHANGELOG_FILE}" ]]; then
   exit 1
 fi
 
-temp_file="$(mktemp -t sequel-ace-changelog)"
-clean_changelog_file="$(mktemp -t sequel-ace-changelog-existing)"
-entries_file="$(mktemp -t sequel-ace-changelog-entries)"
+temp_file="$(mktemp "${TMPDIR:-/tmp}/sequel-ace-changelog.XXXXXX")"
+clean_changelog_file="$(mktemp "${TMPDIR:-/tmp}/sequel-ace-changelog-existing.XXXXXX")"
+entries_file="$(mktemp "${TMPDIR:-/tmp}/sequel-ace-changelog-entries.XXXXXX")"
 trap 'rm -f "${temp_file}" "${clean_changelog_file}" "${entries_file}"' EXIT
 
 find_last_release_ref() {

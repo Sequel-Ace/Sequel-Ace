@@ -155,11 +155,22 @@ jobs:
             abort("App Store Connect returned the wrong Production app") unless app.fetch("id") == SequelAceRelease::Config::PRODUCTION_APP_ID
           '
 
+      - name: Mint exact-target release mutation token
+        id: release_mutation_token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: Sequel-Ace
+          repositories: Sequel-Ace
+          permission-contents: write
+          permission-workflows: write
+
       - name: Finalize only exact App Store-live releases
         env:
           FINALIZER_TRIGGER: ${{ needs.discover.outputs.trigger }}
           GH_TOKEN: ${{ github.token }}
-          SA_GITHUB_TOKEN: ${{ github.token }}
+          SA_GITHUB_TOKEN: ${{ steps.release_mutation_token.outputs.token }}
           GHCR_TOKEN: ${{ github.token }}
           GHCR_USERNAME: ${{ github.actor }}
           SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}

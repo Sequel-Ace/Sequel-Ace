@@ -249,8 +249,17 @@ module SequelAceRelease
       response
     end
 
-    def delete_branch(branch)
-      request!("DELETE", "/repos/#{@repository}/git/refs/heads/#{URI.encode_www_form_component(branch)}", expected: [204])
+    def delete_branch(branch, allow_absent: false)
+      response = @transport.request(
+        "DELETE",
+        "/repos/#{@repository}/git/refs/heads/#{URI.encode_www_form_component(branch)}"
+      )
+      if allow_absent && response.status == 422 && response.body.is_a?(Hash) &&
+         response.body["message"] == "Reference does not exist"
+        return false
+      end
+
+      ensure_response!(response, [204])
       true
     end
 
@@ -322,6 +331,87 @@ module SequelAceRelease
       })
     end
 
+    def create_or_validate_release(tag:, target_sha:, title:, body:)
+      validate_commit_sha!(target_sha, "release target SHA")
+      validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+
+      existing = nil
+      begin
+        existing = release_by_tag(tag)
+      rescue APIError => error
+        raise unless error.message.include?("HTTP 404")
+      end
+      if existing
+        validated = validate_release_response!(
+          existing,
+          tag: tag,
+          title: title,
+          body: body,
+          created: false
+        )
+        validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+        return validated
+      end
+
+      validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+      begin
+        created = create_release(tag: tag, target_sha: target_sha, title: title, body: body)
+      rescue APIError => creation_error
+        # GitHub can accept the write while the client loses the response. Read
+        # the canonical tag endpoint before surfacing the original error so a
+        # retry cannot create or misclassify a second release.
+        validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+        begin
+          existing = release_by_tag(tag)
+        rescue APIError
+          raise creation_error
+        end
+        validated = validate_release_response!(
+          existing,
+          tag: tag,
+          title: title,
+          body: body,
+          created: false
+        )
+        validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+        return validated
+      end
+
+      validated = validate_release_response!(created, tag: tag, title: title, body: body, created: true)
+      validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+      validated
+    end
+
+    def create_or_validate_release_tag(tag:, target_sha:)
+      validate_commit_sha!(target_sha, "release target SHA")
+      expected_ref = "refs/tags/#{tag}"
+
+      begin
+        existing = request!("GET", "/repos/#{@repository}/git/ref/tags/#{URI.encode_www_form_component(tag)}")
+        return validate_release_tag_response!(existing, expected_ref: expected_ref, target_sha: target_sha, created: false)
+      rescue APIError => error
+        raise unless error.message.include?("HTTP 404")
+      end
+
+      begin
+        created = request!("POST", "/repos/#{@repository}/git/refs", body: {
+          "ref" => expected_ref,
+          "sha" => target_sha
+        })
+      rescue APIError => error
+        raise unless error.message.include?("HTTP 422")
+
+        raced = request!("GET", "/repos/#{@repository}/git/ref/tags/#{URI.encode_www_form_component(tag)}")
+        return validate_release_tag_response!(raced, expected_ref: expected_ref, target_sha: target_sha, created: false)
+      end
+      validate_release_tag_response!(created, expected_ref: expected_ref, target_sha: target_sha, created: true)
+    end
+
+    def validate_release_tag(tag:, target_sha:)
+      validate_commit_sha!(target_sha, "release target SHA")
+      validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+    end
+
     def validate_release_target!(target_sha:, protected_paths:)
       validate_commit_sha!(target_sha, "release target SHA")
       current_main = ref_sha
@@ -373,8 +463,11 @@ module SequelAceRelease
       raise ValidationError, "GitHub returned malformed release-target ancestry evidence"
     end
 
-    def update_release(id:, title:, prerelease:, make_latest:)
+    def update_release(id:, tag:, target_sha:, title:, prerelease:, make_latest:)
+      validate_commit_sha!(target_sha, "release target SHA")
       request!("PATCH", "/repos/#{@repository}/releases/#{Integer(id)}", body: {
+        "tag_name" => tag,
+        "target_commitish" => target_sha,
         "name" => title,
         "draft" => false,
         "prerelease" => prerelease,
@@ -441,6 +534,37 @@ module SequelAceRelease
     end
 
     private
+
+    def validate_exact_release_tag!(tag:, target_sha:)
+      expected_ref = "refs/tags/#{tag}"
+      response = request!("GET", "/repos/#{@repository}/git/ref/tags/#{URI.encode_www_form_component(tag)}")
+      validate_release_tag_response!(response, expected_ref: expected_ref, target_sha: target_sha, created: false)
+    end
+
+    def validate_release_tag_response!(response, expected_ref:, target_sha:, created:)
+      unless response.is_a?(Hash) && response["ref"] == expected_ref &&
+             response.dig("object", "type") == "commit" && response.dig("object", "sha") == target_sha
+        raise IntegrityError, "release tag does not resolve directly to the exact release commit"
+      end
+
+      response.merge("created" => created)
+    end
+
+    def validate_release_response!(response, tag:, title:, body:, created:)
+      expected = {
+        "tag_name" => tag,
+        "name" => title,
+        "body" => body,
+        "draft" => false,
+        "prerelease" => true
+      }
+      actual = expected.keys.to_h { |key| [key, response[key]] } if response.is_a?(Hash)
+      unless response.is_a?(Hash) && response["id"].is_a?(Integer) && response["id"].positive? && actual == expected
+        raise IntegrityError, "GitHub release does not match the exact approved prerelease"
+      end
+
+      response.merge("created" => created)
+    end
 
     def verified_commit_evidence(commit)
       validate_commit_sha!(commit.fetch("oid"), "created release commit SHA")

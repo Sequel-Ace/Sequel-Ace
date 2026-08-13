@@ -4,12 +4,22 @@ require "time"
 
 module SequelAceRelease
   class Manifest
-    REQUIRED = %w[
+    REQUIRED_V1 = %w[
       schema_version channel target_version base_tag base_sha
       changelog_base_tag changelog_base_sha main_sha iteration
       observed_production_cloud_next_build canonical_build skipped_production_builds tag title artifact_names
       release_notes_sha256 cloud_build_ids asc_ids verification state
     ].freeze
+    REQUIRED_V2 = %w[
+      schema_version channel target_version base_tag base_sha
+      changelog_base_tag changelog_base_sha main_sha iteration build_policy
+      canonical_build production_build_evidence skipped_production_builds tag title artifact_names
+      release_notes_sha256 cloud_build_ids asc_ids verification state
+    ].freeze
+    REQUIRED_BY_SCHEMA = {
+      1 => REQUIRED_V1,
+      2 => REQUIRED_V2
+    }.freeze
 
     attr_reader :data
 
@@ -18,7 +28,10 @@ module SequelAceRelease
       validate!
     end
 
-    def self.create(approval:, naming:, base_sha:, canonical_build:, skipped_production_builds: [], release_notes_sha256:, state: "planned")
+    def self.create(
+      approval:, naming:, base_sha:, canonical_build:, production_build_evidence:,
+      skipped_production_builds: [], release_notes_sha256:, state: "planned"
+    )
       approved_base_sha = approval.payload.fetch("base_sha")
       unless base_sha == approved_base_sha
         raise ValidationError, "release base SHA does not match the immutable approval"
@@ -27,11 +40,6 @@ module SequelAceRelease
       unless release_notes_sha256 == approved_release_notes_sha256
         raise ValidationError, "GitHub release body does not match the immutable approval"
       end
-      approved_iteration = approval.payload.fetch("release_iteration")
-      unless naming.iteration == approved_iteration
-        raise ValidationError, "release iteration does not match the immutable approval"
-      end
-
       new(
         "schema_version" => Config::SCHEMA_VERSION,
         "channel" => approval.payload.fetch("channel"),
@@ -41,9 +49,10 @@ module SequelAceRelease
         "changelog_base_tag" => approval.payload.fetch("changelog_base_tag"),
         "changelog_base_sha" => approval.payload.fetch("changelog_base_sha"),
         "main_sha" => approval.payload.fetch("main_sha"),
-        "iteration" => approved_iteration,
-        "observed_production_cloud_next_build" => approval.payload.fetch("observed_production_cloud_next_build"),
+        "iteration" => naming.iteration,
+        "build_policy" => approval.payload.fetch("build_policy"),
         "canonical_build" => canonical_build,
+        "production_build_evidence" => production_build_evidence,
         "skipped_production_builds" => skipped_production_builds,
         "tag" => naming.tag,
         "title" => naming.title,
@@ -78,9 +87,20 @@ module SequelAceRelease
     private
 
     def validate!
-      missing = REQUIRED - data.keys
+      schema = Integer(data["schema_version"])
+      required = REQUIRED_BY_SCHEMA[schema]
+      raise ValidationError, "unsupported manifest schema" unless required
+
+      missing = required - data.keys
       raise ValidationError, "manifest is missing: #{missing.join(', ')}" unless missing.empty?
-      raise ValidationError, "unsupported manifest schema" unless data["schema_version"] == Config::SCHEMA_VERSION
+      if schema == 2
+        unless data["build_policy"] == Approval::POLICY
+          raise ValidationError, "unsupported manifest build policy"
+        end
+        unless data["production_build_evidence"].is_a?(Hash)
+          raise ValidationError, "production build evidence must be an object"
+        end
+      end
 
       Config.validate_channel!(data["channel"])
       Version.validate!(data["target_version"])
@@ -103,6 +123,8 @@ module SequelAceRelease
       if data.key?("release_commit_sha") && !Config.valid_git_sha?(data["release_commit_sha"])
         raise ValidationError, "release commit SHA is malformed"
       end
+    rescue ArgumentError, TypeError
+      raise ValidationError, "manifest schema version must be an integer"
     end
 
     def validate_positive_integer!(value, label)

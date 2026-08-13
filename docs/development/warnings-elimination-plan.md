@@ -106,16 +106,52 @@ lazily on first post (permission prompt appears in context); a
 bundle-identifier guard keeps test runners from trapping. User-visible change:
 first notification asks for permission — release-notes worthy.
 
-## Step 6 — Help viewer WKWebView migration (roadmap "PR B") — ~20 warnings
+## Step 6 — Help viewer WKWebView migration (roadmap "PR B") — ✅ Done
 
-- Rewrite `SPHelpViewerController` (only — `SPHelpViewerClient` stays ObjC
-  with minimal edits) per `docs/development/help-viewer-rewrite-plan.md`:
-  term-history model (capped at 20 entries, matching the legacy
-  `backForwardList` capacity), WKWebView find API, JS selection bridge;
-  reuse `SAHelpViewerOnlineURLBuilder` (already on main, tested).
-- Kills all remaining WebView/WebPolicyDelegate/WebUIDelegate/WebHistoryItem/
-  WebMenuItemTag* warnings. After this + Step 0, **legacy WebKit is gone**
-  from the codebase.
+`SPHelpViewerController.m/.h` + `HelpViewer.xib` (~550 lines) replaced by three
+Swift files per `docs/development/help-viewer-rewrite-plan.md`:
+`SAHelpViewerModel` (state + pure decisions, app **and** Unit Tests target),
+`SAHelpViewerView` (SwiftUI), `SAHelpViewerWindowController` (`@objc final`
+NSWindowController + NSHostingView). **33 legacy WebKit warnings gone (unique;
+206 → 173 in a clean build) — legacy WebKit no longer exists in the codebase.**
+
+Execution notes:
+
+- The plan's estimate of "~20 warnings" was low: 33 unique (36 raw) came out,
+  because the `WebActionNavigationTypeKey` / `WebNavigationType*` constants
+  aren't matched by a `WebView|WebMenuItem` grep.
+- `SPHelpViewerClient` stayed ObjC as planned; it gained the two constants and
+  the `SPHelpViewerDataSource` protocol from the deleted controller header, and
+  is now exposed to Swift via the bridging header (the window controller is
+  app-target-only, so the test target is unaffected).
+- No new subclass was needed for the context menu: `SAWKWebView` grew a
+  `customizeMenu` hook, and `SAWebViewModel` grew `decideNavigationPolicy`,
+  `find(_:forward:)` (WKFindConfiguration) and `evaluateJavaScript` — all three
+  reusable by future WKWebView hosts.
+- ⚠️ **The plan's `applewebdata://` recon fact does not carry over to WKWebView.**
+  Those URLs came from WebView's synthetic base plus the hand-made
+  `WebHistoryItem`s; WKWebView loads a `baseURL: nil` document as `about:blank`,
+  and a relative topic link (`<a href='SELECT'>`) then reaches the delegate as a
+  *scheme-less relative* URL. Caught in review (Codex), verified with a
+  standalone WKWebView probe, fixed by rendering with an explicit
+  `sequelace-help://help/` base URL — nothing ever loads that scheme, the policy
+  always cancels. A unit test pins the resolution so the coupling can't rot.
+- Menu pruning matches WebKit's `WKMenuItemIdentifier…` values as **literal
+  strings**: those constants exist in the WebKit binary but not in the public
+  SDK headers, so linking them would mean adopting SPI. Unknown items are left
+  alone. WebKit's own Back/Forward items are pruned too — this window navigates
+  its own term history, so they would be dead.
+- Two deliberate behaviour changes, both noted in the PR: clicked links are
+  only opened externally for `http`/`https`/`ftp` (help HTML is generated from
+  server-supplied text, and the legacy code handed any scheme to NSWorkspace),
+  and re-visiting the currently displayed term no longer pushes a duplicate
+  history entry.
+- 25 unit tests in `SAHelpViewerModelTests` (history incl. the 20-entry
+  eviction, navigation-policy matrix, title, theme hook, context-menu rules,
+  key equivalents). Full suite: 882 tests, 0 failures.
+- ⚠️ Not verified against a live server: the manual checklist in the rewrite
+  plan (TOC, link routing, find-in-page, selection menu, dark-mode re-theme,
+  auto-help) still needs a pass against a real MySQL/MariaDB connection.
 
 ## Step 7 — Safe AppKit deprecation batch 3 — ✅ Done
 
@@ -193,8 +229,8 @@ drag-drop verification — slowest batch, do last of the mechanical ones.
 | 1-2 (hygiene + shadows) | ~340 |
 | 3 (nullability) | ~260 |
 | 4-5 (archiver + notifications) | ~225 |
-| 6 (help viewer) | ~205 |
-| 7-8 (AppKit batch + Swift 6) | ~185 |
+| 6 + 7 (help viewer + AppKit batch) | **173 (measured, clean build)** |
+| 8 (Swift 6) | ~170 |
 | 9 (deprecated delegate methods) | ~160* |
 
 \* Remainder is dominated by SPKeychain/NSConnection/linker (deferred) and
