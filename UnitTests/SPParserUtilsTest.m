@@ -36,11 +36,96 @@
 #include "SPParserUtils.h"
 #include <stdlib.h>
 #include <string.h>
+#include <setjmp.h>
+#include <signal.h>
+#include <mach/mach.h>
+#include <mach/thread_act.h>
+
+#if defined(__arm64__) || defined(__aarch64__)
+
+// Support for the over-read regression test below: run utf8strlen() with an
+// arm64 hardware watchpoint armed on the bytes that follow the NUL terminator
+// of the string under test, up to the end of the 8-byte word containing the
+// NUL. Those bytes are exactly what the old SWAR implementation of
+// utf8strlen() (GitHub issue #792) read past short buffers.
+
+static sigjmp_buf sUtf8TrapJmp;
+static volatile sig_atomic_t sUtf8TrapTripped;
+
+static void sUtf8TrapHandler(int sig, siginfo_t *si, void *ctx)
+{
+	(void)sig;
+	(void)si;
+	(void)ctx;
+	sUtf8TrapTripped = 1;
+	siglongjmp(sUtf8TrapJmp, 1);
+}
+
+// Calls utf8strlen(s) for a NUL-terminated string of `len` bytes that starts
+// at a 16-byte aligned address. Sets *tripped to YES if the function reads any
+// byte after the NUL terminator (within the word that contains the NUL).
+static size_t sUtf8strlenGuarded(const char *s, size_t len, BOOL *tripped)
+{
+	*tripped = NO;
+
+	// The 8-byte word that contains the NUL terminator.
+	uintptr_t nulWord = (uintptr_t)(s + len) & ~(uintptr_t)7;
+
+	// Byte-select mask for the bytes that follow the NUL inside that word.
+	uint32_t bas = 0;
+	for (size_t i = len + 1; (uintptr_t)(s + i) < nulWord + 8; i++) {
+		bas |= 1u << ((uintptr_t)(s + i) - nulWord);
+	}
+
+	// Arm watchpoint slot 0: DBGWCR = E (enable) | PAC = 0b11 (EL0 and EL1) |
+	// LSC = 0b01 (loads only) | BAS << 5 (watched bytes, numbered from the
+	// word address in DBGWVR). A watchpoint is per-thread, so only reads made
+	// by this thread (i.e. by utf8strlen() itself) can trip it.
+	arm_debug_state64_t state;
+	memset(&state, 0, sizeof(state));
+	state.__wvr[0] = (uint64_t)nulWord;
+	state.__wcr[0] = (bas == 0) ? 0 : (1u | (3u << 1) | (1u << 3) | (bas << 5));
+	kern_return_t kr = thread_set_state(mach_thread_self(), ARM_DEBUG_STATE64,
+	                                    (thread_state_t)&state, ARM_DEBUG_STATE64_COUNT);
+	if (kr != KERN_SUCCESS) {
+		// Could not arm the watchpoint (unexpected on macOS); degrade to a
+		// plain call so the value assertions below still run.
+		return utf8strlen(s);
+	}
+
+	struct sigaction sa;
+	struct sigaction oldSa;
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_sigaction = sUtf8TrapHandler;
+	sa.sa_flags = SA_SIGINFO;
+	sigemptyset(&sa.sa_mask);
+	sigaction(SIGTRAP, &sa, &oldSa);
+
+	sUtf8TrapTripped = 0;
+	size_t result;
+	if (sigsetjmp(sUtf8TrapJmp, 1) == 0) {
+		result = utf8strlen(s);
+	}
+	else {
+		// The watchpoint fired: a read of a byte past the NUL raised SIGTRAP.
+		*tripped = YES;
+		result = 0;
+	}
+
+	// Disarm the watchpoint and restore the previous SIGTRAP disposition.
+	memset(&state, 0, sizeof(state));
+	thread_set_state(mach_thread_self(), ARM_DEBUG_STATE64,
+	                 (thread_state_t)&state, ARM_DEBUG_STATE64_COUNT);
+	sigaction(SIGTRAP, &oldSa, NULL);
+	return result;
+}
+
+#endif /* __arm64__ */
 
 @interface SPParserUtilsTest : XCTestCase
 
 - (void)testUtf8strlen;
-- (void)testUtf8strlenShortHeapAllocatedStrings;
+- (void)testUtf8strlenShortStringsDoNotReadPastNul;
 
 @end
 
@@ -87,42 +172,51 @@
 	XCTAssertEqual(utf8strlen(decompSeq), [decompString length], @"\"LATIN SMALL LETTER A WITH DIAERESIS\" vs. \"LATIN SMALL LETTER A\" + \"COMBINING DIAERESIS\"");
 }
 
-// Heap-allocated short strings reproduce issue #792: the old SWAR inner loop
-// performed an 8-byte word load + a 256-byte prefetch that read past the end of
-// a buffer shorter than 8 bytes. Under AddressSanitizer those reads abort with
-// heap-buffer-overflow. The byte-wise implementation never reads past the NUL.
-// NOTE: strdup() is used (not string literals) because ASan only instruments the
-// heap redzone of a malloc'd buffer; literal strings share a read-only section.
-- (void)testUtf8strlenShortHeapAllocatedStrings {
-	// Lengths 0..7 byte — every length below the 8-byte word read must be safe.
-	// "selec" (5 bytes) is the exact reproducer from the issue report.
-	NSArray<NSString *> *ascii = @[
-		@"", @"a", @"ab", @"abc", @"abcd", @"selec", @"abcdef", @"abcdefg"
+// Regression test for issue #792. The old SWAR implementation of utf8strlen()
+// read one 8-byte word per iteration: whenever the NUL terminator did not fall
+// on the last byte of such a word, it also read the bytes following the NUL --
+// past the end of any buffer that ended at the NUL.
+//
+// Neither a value assertion nor AddressSanitizer can gate this under the
+// standard Unit Tests gate: the over-read bytes are never counted, and the
+// scheme runs without ASan, so the old code still returns the right value and
+// the test stays green. A guard page does not help either: the word load is
+// 8-byte aligned and page boundaries are multiples of 8, so an aligned load can
+// never cross into a protected page.
+//
+// What does gate it is an arm64 hardware watchpoint armed on exactly the bytes
+// after the NUL (loads only, see sUtf8strlenGuarded()): the old word load
+// touches them and raises SIGTRAP; the byte-wise implementation stops at the
+// NUL and never does. "selec" (5 bytes) is the reproducer from the issue.
+- (void)testUtf8strlenShortStringsDoNotReadPastNul {
+	NSArray<NSString *> *cases = @[
+		@"", @"a", @"ab", @"abc", @"abcd", @"selec", @"abcdef", @"abcdefg",
+		@"ä",                    // 2-byte UTF-8          -> NSString length 1
+		@"こ",                    // 3-byte UTF-8          -> NSString length 1
+		@"\U0001F34F",           // 4-byte UTF-8, non-BMP -> NSString length 2
+		@"\U0001F34F\U0001F34B"  // two of them           -> NSString length 4
 	];
-	for (NSString *str in ascii) {
-		const char *cStr = [str UTF8String];   // NUL-terminated
-		char *heap = strdup(cStr);             // heap copy -> ASan-tracked
-		NSUInteger expected = [str length];
-		size_t actual = utf8strlen(heap);
-		XCTAssertEqual(actual, expected, @"ASCII len %tu (heap)", [str length]);
-		free(heap);
-	}
-
-	// Short multibyte strings on the heap: still must not over-read, and the
-	// 4-byte correction (NSString surrogate-pair parity) must hold.
-	NSArray<NSString *> *multi = @[
-		@"ä",                       // ä  (2-byte)          -> NSString length 1
-		@"こ",                       // こ (3-byte)          -> NSString length 1
-		@"\U0001F34F",              // 🍏 (4-byte, non-BMP) -> NSString length 2
-		@"\U0001F34F\U0001F34B"     // 🍏🍋                   -> NSString length 4
-	];
-	for (NSString *str in multi) {
+	for (NSString *str in cases) {
 		const char *cStr = [str UTF8String];
-		char *heap = strdup(cStr);
-		NSUInteger expected = [str length];
-		size_t actual = utf8strlen(heap);
-		XCTAssertEqual(actual, expected, @"multibyte (heap): %@", str);
-		free(heap);
+		size_t len = strlen(cStr);
+		// Heap buffer with a poisoned tail; malloc() is 16-byte aligned, so the
+		// string starts word-aligned like the strings in issue #792 did.
+		char *buf = malloc(64);
+		memset(buf, 0xEE, 64);
+		memcpy(buf, cStr, len + 1);
+
+		BOOL tripped = NO;
+		size_t actual;
+#if defined(__arm64__) || defined(__aarch64__)
+		actual = sUtf8strlenGuarded(buf, len, &tripped);
+#else
+		// No hardware watchpoint support compiled in: still verify the values.
+		actual = utf8strlen(buf);
+#endif
+		free(buf);
+
+		XCTAssertEqual(actual, [str length], @"character count for \"%@\" (%zu bytes)", str, len);
+		XCTAssertFalse(tripped, @"utf8strlen() read past the NUL terminator of \"%@\" (%zu bytes) — issue #792 regression", str, len);
 	}
 }
 
