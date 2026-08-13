@@ -983,15 +983,19 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_operator discovery_prerelease_filter, :<, discovery_production_filter
     assert_includes discovery, ".draft == false"
 
-    execution_listing = execution.index("gh release list")
-    execution_prerelease_filter = execution.index(".isPrerelease == true")
-    execution_production_filter = execution.index('startswith("production/")')
+    execution_listing = execution.index("gh api --paginate")
+    execution_prerelease_filter = execution.index(".prerelease == true")
+    execution_production_filter = execution.index('.tag_name | test("^production/')
     assert execution_listing
     assert execution_prerelease_filter
     assert execution_production_filter
     assert_operator execution_listing, :<, execution_prerelease_filter
     assert_operator execution_prerelease_filter, :<, execution_production_filter
-    assert_operator execution.index('startswith("production/")'), :<, execution.index("--validate-only")
+    assert_includes execution, ".draft == false"
+    assert_includes execution, ".author.login"
+    assert_includes execution, 'repos/${GITHUB_REPOSITORY}/releases?per_page=100'
+    refute_includes execution, "gh release list"
+    assert_operator execution_production_filter, :<, execution.index("--validate-only")
     refute_includes workflow, "resolve-app-store-version"
   end
 
