@@ -42,7 +42,7 @@ class WorkflowRecoveryTest < Minitest::Test
     expected_permissions = {
       ".github/workflows/release.yml:Mint repository-scoped release App token" => branch_permissions,
       ".github/workflows/release.yml:Refresh release App token before merging" => branch_permissions,
-      ".github/workflows/release.yml:Mint exact-target release mutation token" => release_mutation_permissions,
+      ".github/workflows/release.yml:Mint exact-target release tag token" => release_mutation_permissions,
       ".github/workflows/release.yml:Refresh release App token for failure cleanup" => cleanup_permissions,
       ".github/workflows/release.yml:Mint release mutation token for failure annotation" => release_mutation_permissions,
       ".github/workflows/release_alpha_retry.yml:Mint repository-scoped release App token" => [["permission-contents", "read"]],
@@ -133,13 +133,59 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_operator terminal_failure.index("archive-release-to-ghcr.sh push"), :<,
                     terminal_failure.index('[[ -z "${RELEASE_MUTATION_TOKEN}" ]]')
 
-    exact_create_token = release.split("- name: Mint exact-target release mutation token", 2).fetch(1)
-                                .split("- name: Create the tag-backed GitHub prerelease", 2).first
+    exact_create_token = release.split("- name: Mint exact-target release tag token", 2).fetch(1)
+                                .split("- name: Select the initial GitHub release publisher", 2).first
     finalizer = File.read(repo_path(".github/workflows/release_finalize.yml"))
     exact_finalize_token = finalizer.split("- name: Mint exact-target release mutation token", 2).fetch(1)
                                     .split("- name: Finalize only exact App Store-live releases", 2).first
     refute_includes exact_create_token, "continue-on-error: true"
     refute_includes exact_finalize_token, "continue-on-error: true"
+  end
+
+  def test_user_publisher_credential_is_scoped_only_to_initial_release_creation
+    release = File.read(repo_path(".github/workflows/release.yml"))
+    selector = release.split("- name: Select the initial GitHub release publisher", 2).fetch(1)
+                      .split("- name: Create the tag-backed GitHub prerelease as Jason-Morcos", 2).first
+    user_creation = release.split("- name: Create the tag-backed GitHub prerelease as Jason-Morcos", 2).fetch(1)
+                           .split("- name: Create or recover the tag-backed GitHub prerelease with the release App", 2).first
+    app_creation = release.split("- name: Create or recover the tag-backed GitHub prerelease with the release App", 2).fetch(1)
+                          .split("- name: Record the exact GitHub prerelease identity", 2).first
+
+    assert_equal 1, release.scan(/^\s+SA_RELEASE_GITHUB_PUBLISHER_TOKEN:/).length
+    assert_equal 1, release.scan(/secrets\.SA_RELEASE_GITHUB_PUBLISHER_TOKEN/).length
+    assert_includes user_creation,
+                    'SA_RELEASE_GITHUB_PUBLISHER_TOKEN: ${{ secrets.SA_RELEASE_GITHUB_PUBLISHER_TOKEN }}'
+    assert_includes user_creation, "if: steps.release_publisher.outputs.mode == 'user'"
+    assert_includes user_creation, 'SA_GITHUB_TOKEN: ${{ steps.release_mutation_token.outputs.token }}'
+    refute_includes selector, "SA_RELEASE_GITHUB_PUBLISHER_TOKEN"
+    assert_includes selector, "github-release-publisher-mode"
+    refute_includes app_creation, "SA_RELEASE_GITHUB_PUBLISHER_TOKEN"
+    assert_includes app_creation, "steps.release_publisher.outputs.mode == 'app'"
+    assert_includes app_creation, "steps.release_publisher.outputs.mode == 'existing'"
+    assert_includes app_creation,
+                    'SA_RELEASE_GITHUB_APP_CLIENT_ID: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}'
+    assert_includes app_creation,
+                    'SA_RELEASE_GITHUB_APP_INSTALLATION_ID: ${{ steps.release_mutation_token.outputs.installation-id }}'
+    assert_includes app_creation,
+                    'SA_RELEASE_GITHUB_APP_SLUG: ${{ steps.release_mutation_token.outputs.app-slug }}'
+    [user_creation, app_creation].each do |creation|
+      %w[CHANNEL VERSION BUILD ITERATION TARGET_SHA].each do |name|
+        assert_includes creation, "RELEASE_#{name}: " + '${{'
+      end
+      creation_run = creation.split("run: |", 2).fetch(1)
+      refute_includes creation_run, '${{'
+      %w[CHANNEL VERSION BUILD ITERATION TARGET_SHA].each do |name|
+        assert_includes creation_run, '"${RELEASE_' + name + '}"'
+      end
+    end
+    archive = release.split("- name: Durably archive the release identity before Cloud runs", 2).fetch(1)
+                     .split("- name: Arm event-driven artifact publication for the exact handoff", 2).first
+    assert_includes archive, "release-publisher.json"
+
+    %w[release_alpha_retry.yml release_finalize.yml release_publish.yml release_feasibility.yml].each do |filename|
+      refute_includes File.read(repo_path(".github/workflows/#{filename}")),
+                      "SA_RELEASE_GITHUB_PUBLISHER_TOKEN"
+    end
   end
 
   def test_artifact_wake_adapter_mints_only_an_exact_repository_variables_token
@@ -341,6 +387,7 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_operator release_exclusion, :<, release_plan
     assert_includes release[release_exclusion...release_plan], "/release-plan.json"
     assert_includes release[release_exclusion...release_plan], "/manifest.json"
+    assert_includes release[release_exclusion...release_plan], "/release-publisher.json"
     overlap = release.split("- name: Refuse overlapping asynchronous release handoffs", 2).fetch(1)
                      .split("- name: Recheck release authorization with the tested guard", 2).first
     assert_includes overlap, 'prereleases_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-existing-prereleases.XXXXXX")"'
@@ -443,7 +490,8 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes gate, "%w[cloud_running artifacts_verified]"
     assert_includes gate, "ReleaseNaming.new"
     assert_includes gate, "still has an active asynchronous handoff"
-    assert_includes gate, '.author.login == "sequel-ace-release-automation[bot]"'
+    assert_includes gate, "ReleasePublisher.authorized?"
+    assert_includes gate, "release_author"
     assert_includes gate, "has unreadable private handoff state; refusing to overlap it"
     refute_includes gate, "if Scripts/archive-release-to-ghcr.sh pull"
   end
@@ -745,7 +793,14 @@ class WorkflowRecoveryTest < Minitest::Test
     execution = workflow.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
 
     assert_includes discovery, 'gh release view "${REQUESTED_TAG}"'
-    assert_includes discovery, 'select(.author.login == "sequel-ace-release-automation[bot]")'
+    assert_includes discovery, '.author.login == "sequel-ace-release-automation[bot]"'
+    assert_includes discovery, '.author.login == "sequel-ace-releases[bot]"'
+    assert_includes discovery, '.author.login == "Jason-Morcos"'
+    assert_includes discovery, '.tagName == "production/5.4.0-20105"'
+    assert_includes discovery, '--json tagName,author,createdAt'
+    assert_includes discovery, '(.createdAt | fromdateiso8601) as $created'
+    assert_includes discovery, '(.author.login == "Jason-Morcos" and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601))'
+    assert_includes discovery, '$build >= 20109 and $created >= ("2027-08-14T00:00:00Z" | fromdateiso8601)'
     assert_includes execution, 'printf \'%s\\n\' "${REQUESTED_TAG}" > production-candidates.txt'
     assert_includes execution, "GitHub is finalized but the live archive refresh failed"
     assert_includes execution, "--state finalizing"
@@ -762,7 +817,11 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes discovery, 'if [[ "${RELEASE_ENABLED}" != "true" ]]'
     assert_includes discovery, "the scheduled finalizer did no work"
     assert_includes discovery, "has_candidates=false"
-    assert_includes discovery, "gh release list"
+    assert_includes discovery, "gh api --paginate"
+    assert_includes discovery, 'repos/${GITHUB_REPOSITORY}/releases?per_page=100'
+    assert_includes discovery, ".author.login"
+    refute_includes discovery, "gh release list"
+    refute_includes discovery, "--json tagName,isPrerelease,author,createdAt"
     assert_includes finalizer, "needs: discover"
     assert_includes finalizer, "needs.discover.outputs.enabled == 'true'"
     assert_includes finalizer, "needs.discover.outputs.has_candidates == 'true'"
@@ -916,18 +975,29 @@ class WorkflowRecoveryTest < Minitest::Test
     discovery = workflow.split("  discover:", 2).fetch(1).split("  finalize:", 2).first
     execution = workflow.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
 
-    [discovery, execution].each do |step|
-      listing = step.index("gh release list")
-      prerelease_filter = step.index(".isPrerelease == true")
-      production_filter = step.index('startsWith("production/")') || step.index('startswith("production/")')
+    discovery_listing = discovery.index("gh api --paginate")
+    discovery_prerelease_filter = discovery.index(".prerelease == true")
+    discovery_production_filter = discovery.index('.tag_name | test("^production/')
+    assert discovery_listing
+    assert discovery_prerelease_filter
+    assert discovery_production_filter
+    assert_operator discovery_listing, :<, discovery_prerelease_filter
+    assert_operator discovery_prerelease_filter, :<, discovery_production_filter
+    assert_includes discovery, ".draft == false"
 
-      assert listing
-      assert prerelease_filter
-      assert production_filter
-      assert_operator listing, :<, prerelease_filter
-      assert_operator prerelease_filter, :<, production_filter
-    end
-    assert_operator execution.index('startswith("production/")'), :<, execution.index("--validate-only")
+    execution_listing = execution.index("gh api --paginate")
+    execution_prerelease_filter = execution.index(".prerelease == true")
+    execution_production_filter = execution.index('.tag_name | test("^production/')
+    assert execution_listing
+    assert execution_prerelease_filter
+    assert execution_production_filter
+    assert_operator execution_listing, :<, execution_prerelease_filter
+    assert_operator execution_prerelease_filter, :<, execution_production_filter
+    assert_includes execution, ".draft == false"
+    assert_includes execution, ".author.login"
+    assert_includes execution, 'repos/${GITHUB_REPOSITORY}/releases?per_page=100'
+    refute_includes execution, "gh release list"
+    assert_operator execution_production_filter, :<, execution.index("--validate-only")
     refute_includes workflow, "resolve-app-store-version"
   end
 

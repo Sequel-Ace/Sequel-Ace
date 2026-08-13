@@ -5,6 +5,7 @@ require "pathname"
 module SequelAceRelease
   module Config
     REPOSITORY = "Sequel-Ace/Sequel-Ace"
+    REPOSITORY_OWNER = "Sequel-Ace"
     REPOSITORY_URL = "https://github.com/#{REPOSITORY}"
     PRODUCTION_APP_ID = "1518036000"
     ALPHA_APP_ID = "1594104035"

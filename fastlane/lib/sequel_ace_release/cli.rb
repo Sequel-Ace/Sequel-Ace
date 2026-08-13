@@ -14,14 +14,15 @@ module SequelAceRelease
       DEVELOPER_REJECTED INVALID_BINARY METADATA_REJECTED REJECTED
     ].freeze
 
-    def self.run(argv, out: $stdout, err: $stderr, env: ENV)
-      new(out: out, err: err, env: env).run(argv)
+    def self.run(argv, out: $stdout, err: $stderr, env: ENV, clock: -> { Time.now.utc })
+      new(out: out, err: err, env: env, clock: clock).run(argv)
     end
 
-    def initialize(out:, err:, env:)
+    def initialize(out:, err:, env:, clock: -> { Time.now.utc })
       @out = out
       @err = err
       @env = env
+      @clock = clock
       @runner = CommandRunner.new
     end
 
@@ -42,6 +43,7 @@ module SequelAceRelease
       when "github-merge-pr" then github_merge_pr(argv)
       when "github-validate-release-target" then github_validate_release_target(argv)
       when "github-verify-release-tag" then github_verify_release_tag(argv)
+      when "github-release-publisher-mode" then github_release_publisher_mode(argv)
       when "github-create-release" then github_create_release(argv)
       when "github-upload-asset" then github_upload_asset(argv)
       when "validate-publish-handoff" then validate_publish_handoff(argv)
@@ -467,17 +469,108 @@ module SequelAceRelease
         target_sha: options[:target_sha],
         protected_paths: release_paths
       )
-      tag = client.create_or_validate_release_tag(
+      existing = client.release_by_tag_if_exists(naming.tag)
+      if existing
+        expected_publisher = ReleasePublisher.validate!(
+          tag: naming.tag,
+          login: existing.dig("author", "login"),
+          created_at: existing["created_at"]
+        )
+        publisher_validation = {
+          "login" => expected_publisher,
+          "mode" => "existing",
+          "repository" => Config::REPOSITORY
+        }
+        tag = client.validate_release_tag(
+          tag: naming.tag,
+          target_sha: options[:target_sha]
+        )
+        release = client.validate_existing_release(
+          release: existing,
+          tag: naming.tag,
+          target_sha: options[:target_sha],
+          title: naming.title,
+          body: options[:body],
+          expected_author_login: expected_publisher
+        )
+      else
+        publication_mode = ReleasePublisher.active_mode(at: @clock.call.utc)
+        if publication_mode == :user
+          publisher = github_user_publisher_client
+          expected_publisher = ReleasePublisher::USER_LOGIN
+          publisher_validation = publisher.validate_release_publisher!(expected_login: expected_publisher)
+        else
+          publisher = client
+          publisher_validation = publisher.validate_release_app_publisher!(
+            expected_app_id: ReleasePublisher::RELEASE_APP_ID,
+            expected_client_id: @env["SA_RELEASE_GITHUB_APP_CLIENT_ID"],
+            expected_app_slug: @env["SA_RELEASE_GITHUB_APP_SLUG"],
+            expected_installation_id: @env["SA_RELEASE_GITHUB_APP_INSTALLATION_ID"]
+          )
+          expected_publisher = publisher_validation.fetch("login")
+        end
+        unless ReleasePublisher.active_mode(at: @clock.call.utc) == publication_mode
+          raise ValidationError, "GitHub release publisher epoch changed during preflight"
+        end
+        tag = client.create_or_validate_release_tag(
+          tag: naming.tag,
+          target_sha: options[:target_sha]
+        )
+        release = publisher.create_or_validate_release(
+          tag: naming.tag,
+          target_sha: options[:target_sha],
+          title: naming.title,
+          body: options[:body],
+          expected_author_login: expected_publisher,
+          before_create: lambda do
+            unless ReleasePublisher.active_mode(at: @clock.call.utc) == publication_mode
+              raise ValidationError, "GitHub release publisher epoch changed before creation"
+            end
+          end
+        )
+      end
+      ReleasePublisher.validate!(
         tag: naming.tag,
-        target_sha: options[:target_sha]
+        login: release.dig("author", "login"),
+        created_at: release["created_at"]
       )
-      release = client.create_or_validate_release(
-        tag: naming.tag,
-        target_sha: options[:target_sha],
-        title: naming.title,
-        body: options[:body]
-      )
-      emit({ "naming" => naming.to_h, "target_validation" => target_validation, "tag" => tag, "release" => release }, options[:output])
+      emit({
+        "naming" => naming.to_h,
+        "target_validation" => target_validation,
+        "publisher_validation" => publisher_validation,
+        "tag" => tag,
+        "release" => release
+      }, options[:output])
+    end
+
+    def github_release_publisher_mode(arguments)
+      options = {}
+      parser = OptionParser.new do |value|
+        value.banner = "Usage: sa-release github-release-publisher-mode --tag TAG"
+        value.on("--tag TAG") { |item| options[:tag] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end
+      parser.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :tag)
+
+      existing = github_client.release_by_tag_if_exists(options[:tag])
+      mode = if existing
+               ReleasePublisher.validate!(
+                 tag: options[:tag],
+                 login: existing.dig("author", "login"),
+                 created_at: existing["created_at"]
+               )
+               :existing
+             else
+               ReleasePublisher.active_mode(at: @clock.call.utc)
+             end
+      emit({
+        "mode" => mode.to_s,
+        "cutoff" => ReleasePublisher::USER_PUBLISHER_CUTOFF.iso8601,
+        "safety_window_seconds" => ReleasePublisher::USER_PUBLISHER_SAFETY_WINDOW,
+        "existing_release_id" => existing && existing["id"]
+      }, options[:output])
     end
 
     def github_validate_release_target(arguments)
@@ -1043,9 +1136,11 @@ module SequelAceRelease
       unless release["tag_name"] == data.fetch("tag") && release["draft"] == false
         raise ValidationError, "GitHub release identity is not publishable"
       end
-      unless release.dig("author", "login") == PublishHandoff::RELEASE_APP_LOGIN
-        raise ValidationError, "release was not authored by the dedicated release App"
-      end
+      ReleasePublisher.validate!(
+        tag: data.fetch("tag"),
+        login: release.dig("author", "login"),
+        created_at: release["created_at"]
+      )
       verify_release_assets!(release, data)
       final_title = ReleaseNaming.new(
         channel: "production",
@@ -1096,7 +1191,11 @@ module SequelAceRelease
       release = client.release_by_tag(data.fetch("tag"))
       unless release["id"] == evidence.fetch("release_id") && release["tag_name"] == data.fetch("tag") &&
              release["name"] == final_title && release["draft"] == false && release["prerelease"] == false &&
-             release.dig("author", "login") == PublishHandoff::RELEASE_APP_LOGIN
+             ReleasePublisher.authorized?(
+               tag: data.fetch("tag"),
+               login: release.dig("author", "login"),
+               created_at: release["created_at"]
+             )
         raise ValidationError, "GitHub finalization readback did not match the requested release"
       end
       verify_release_assets!(release, data)
@@ -1132,6 +1231,13 @@ module SequelAceRelease
       token = @env["SA_GITHUB_TOKEN"] || @env["GH_TOKEN"] || @env["GITHUB_TOKEN"]
       return nil if optional && token.to_s.empty?
 
+      GitHubClient.new(token: token)
+    end
+
+    def github_user_publisher_client
+      token = ReleasePublisher.validate_user_publisher_token!(
+        @env["SA_RELEASE_GITHUB_PUBLISHER_TOKEN"]
+      )
       GitHubClient.new(token: token)
     end
 
@@ -1456,6 +1562,8 @@ module SequelAceRelease
           github-validate-release-target
                                      Prove a release commit remains an unchanged main ancestor
           github-verify-release-tag   Prove a release tag still names the exact release commit
+          github-release-publisher-mode
+                                     Select a PAT-free initial release publisher epoch
           github-create-release      Create the tag-backed GitHub prerelease
           github-upload-asset        Upload a verified zip to the prerelease
           validate-publish-handoff   Validate an archived prerelease continuation

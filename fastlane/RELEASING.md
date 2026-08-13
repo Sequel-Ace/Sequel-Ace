@@ -30,6 +30,10 @@ or creates a GitHub release.
   workflow still waits for the exact release commit's `Run Tests`,
   `Release Tool Tests`, and every other observed check to finish acceptably.
 - A failed tag or prerelease is preserved. Never delete, move, or reuse it.
+- New GitHub releases are temporarily created by `Jason-Morcos` for
+  compatibility with installed Sequel Ace versions affected by
+  [#2555](https://github.com/Sequel-Ace/Sequel-Ace/issues/2555). The dedicated
+  GitHub App still creates the tag and performs every later release mutation.
 - Secrets, App Review credentials, private-key material, and full sensitive ASC
   responses must never be written to a manifest or workflow log.
 - Hosted workflows put their transient JSON/evidence paths in the checkout's
@@ -62,6 +66,7 @@ or creates a GitHub release.
    | Name | Value |
    | --- | --- |
    | `SA_RELEASE_GITHUB_APP_PRIVATE_KEY` | Dedicated App PEM |
+   | `SA_RELEASE_GITHUB_PUBLISHER_TOKEN` | Fine-grained PAT owned by `Jason-Morcos`, selected-repository access to `Sequel-Ace/Sequel-Ace`, and Contents read/write only |
    | `SA_ASC_KEY_ID` | Dedicated Team ASC key ID with the App Manager role |
    | `SA_ASC_PRIVATE_KEY` | Base64-encoded `.p8` bytes |
    | `SA_ASC_ISSUER_ID` | Team API issuer ID shown on App Store Connect's Integrations page |
@@ -72,8 +77,10 @@ or creates a GitHub release.
    of being interpreted as an individual key. Set both flags for any guarded
    local fallback that uses the encoded Team key.
 
-   The release App private key must remain exclusive to this protected
-   environment.
+   The release App private key and publisher token must remain exclusive to
+   this protected environment. Do not copy the publisher token to either
+   release Mac. Both Macs plan and dispatch the same protected workflow, so
+   their local GitHub CLI OAuth sessions never become the release publisher.
 
 7. Add protected release-environment variables:
 
@@ -101,6 +108,80 @@ GitHub-generated signature before the PR is opened. See GitHub's documentation
 for [`createCommitOnBranch`](https://docs.github.com/en/graphql/reference/mutations#createcommitonbranch),
 [GitHub App workflow authentication](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/making-authenticated-api-requests-with-a-github-app-in-a-github-actions-workflow)
 and [bot signature verification](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification#signature-verification-for-bots).
+
+### Temporary release-publisher compatibility bridge
+
+Issue [#2555](https://github.com/Sequel-Ace/Sequel-Ace/issues/2555) showed that
+already-installed Sequel Ace versions can reject GitHub's releases response
+when the newest release is authored by an unfamiliar publishing identity. New
+releases therefore use a deliberately narrow compatibility bridge:
+
+- The release App validates the frozen target and creates the exact tag.
+- A PAT-free selector first looks up the exact release tag with the short-lived
+  release App token. An existing prerelease is recovered by immutable author
+  and `created_at` provenance without loading the PAT, including across the
+  publisher cutoff.
+- Only the conditional step that may make the initial `POST /releases` call as
+  Jason receives `SA_RELEASE_GITHUB_PUBLISHER_TOKEN`. Before that mutation, the
+  tool reads `/user` and the exact repository and requires `Jason-Morcos` plus
+  write access to `Sequel-Ace/Sequel-Ace`.
+- Before `2027-08-14T00:00:00Z`, a newly created release must report
+  `author.login == Jason-Morcos`. The publisher token is absent from App-mode
+  creation, existing-release recovery, artifact publication, failure recovery,
+  App Store submission, and finalization.
+- The protected secret is a fine-grained personal access token owned by
+  `Jason-Morcos`, limited to the single repository, with Contents read/write
+  and no organization permissions. Metadata read access is implicit. The
+  release tag already exists, so Workflows write remains only on the short-lived
+  GitHub App token that creates the tag.
+
+GitHub documents fine-grained-token support and the Contents write permission
+for [creating a release](https://docs.github.com/en/rest/releases/releases#create-a-release).
+Follow GitHub's
+[fine-grained PAT permission model](https://docs.github.com/en/rest/authentication/permissions-required-for-fine-grained-personal-access-tokens)
+when provisioning the protected secret. Never print, persist, or
+archive the token value.
+
+The PAT's organization-enforced 366-day expiration is August 14, 2027. The
+fixed, tested publisher cutoff is `2027-08-14T00:00:00Z`, not an error fallback.
+Fresh release creation is paused during the preceding 15-minute safety window
+(`2027-08-13T23:45:00Z` through the cutoff) so a user-authored request cannot
+cross the immutable author epoch while GitHub is accepting it. Exact existing
+prereleases remain recoverable throughout that window. Before the window, a
+missing, revoked, or invalid PAT stops the release; it never causes an early bot
+fallback. At and after the cutoff, the workflow's selected creation step does
+not receive or read the PAT and creates new releases with the same dedicated
+release GitHub App that already creates tags. It requires the pinned token
+action's `app-slug` and `installation-id` outputs, matches the live App record
+to immutable App ID `4541115` and the configured client ID, and requires the
+installation token to list exactly `Sequel-Ace/Sequel-Ace` with write access.
+It then requires the release response author to match the App's live slug. The
+output contract is documented by
+[`actions/create-github-app-token`](https://github.com/actions/create-github-app-token#outputs).
+This avoids both annual credential rotation and an accidental early bot
+transition.
+
+Release-author provenance is an immutable epoch, not a mutable allowlist:
+
+- `production/5.4.0-20105` is the one accepted legacy release authored by
+  `sequel-ace-release-automation[bot]`.
+- Canonical production build 20109 and later are currently required to be
+  authored by `Jason-Morcos` when their GitHub `created_at` timestamp is before
+  the cutoff; those historical releases remain verifiable afterward.
+- New releases created at or after the cutoff are authored by the dedicated
+  release App. Both its current `sequel-ace-release-automation[bot]` slug and a
+  future rename to `sequel-ace-releases[bot]` are recognized, while the stable
+  App ID is the authentication authority. Recovery and finalization validate
+  the immutable release creation timestamp rather than the current wall clock,
+  so an early bot-authored release cannot become eligible merely because the
+  cutoff date later arrives.
+
+This automatic August 2027 cutover supersedes the earlier approximate 2028
+target for removing Jason from publication. Do not renew the PAT. Remove the
+expired `SA_RELEASE_GITHUB_PUBLISHER_TOKEN` secret after readback proves a
+post-cutover bot-authored release, and retain every earlier provenance epoch so
+archived releases remain verifiable. Renaming the existing App to
+`sequel-ace-releases` is optional and must not create a second GitHub App.
 
 The shared HTTP transport automatically retries read-only `GET` requests only.
 It never replays `POST`, `PATCH`, `PUT`, or `DELETE` mutations after a server or
@@ -215,14 +296,14 @@ so failure handling never allocates a Mac. A higher assignment may dispatch the
 bounded forward-only RC recovery described below; a lower assignment is
 terminal.
 
-Every asynchronous continuation requires the exact release App author
-`sequel-ace-release-automation[bot]`, proves that the tagged commit remains on
-current `main` with no intervening release-file changes, and binds the private
-App Store notes to the fixed App Store section of the approved GitHub body.
-Archived continuations also compare every live GitHub asset digest with the
-verifier-produced SHA-256 in the private manifest. The release starter ignores
-legacy user-authored prereleases, but an unreadable App-authored handoff fails
-closed instead of allowing a second release to overlap it.
+Every asynchronous continuation requires an exact publisher provenance epoch,
+proves that the tagged commit remains on current `main` with no intervening
+release-file changes, and binds the private App Store notes to the fixed App
+Store section of the approved GitHub body. Archived continuations also compare
+every live GitHub asset digest with the verifier-produced SHA-256 in the
+private manifest. The release starter ignores releases outside the explicit
+epochs, but an unreadable authorized-publisher handoff fails closed instead of
+allowing a second release to overlap it.
 
 ## One-time Apple setup
 
@@ -510,9 +591,9 @@ automatic RC recovery described above.
   screenshots, keeps ratings, enables seven-day phased release, and schedules
   the first 09:00 America/Los_Angeles instant at least 72 hours away.
 - Immediately before every App Store metadata, build-selection, or review
-  mutation, submission revalidates the live GitHub tag, App-authored non-draft
-  prerelease, immutable body, exact public asset digests, and current-main
-  ancestry against the private archived manifest.
+  mutation, submission revalidates the live GitHub tag, authorized-publisher
+  non-draft prerelease, immutable body, exact public asset digests, and
+  current-main ancestry against the private archived manifest.
 - Beta never creates a customer App Store version.
 - The six-hour finalizer changes the GitHub title, prerelease flag, and
   latest flag only after the exact ASC version is `READY_FOR_DISTRIBUTION`, the
