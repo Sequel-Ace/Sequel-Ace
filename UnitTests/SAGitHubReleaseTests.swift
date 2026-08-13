@@ -312,7 +312,7 @@ final class SAGitHubReleaseTests: XCTestCase {
                 "html_url": "https://example.com/current",
                 "draft": false,
                 "prerelease": false,
-                "published_at": "2026-08-13T00:00:00Z",
+                "published_at": "2026-08-13T01:00:00Z",
                 "assets": [
                   {
                     "name": "Sequel-Ace-5.4.0.zip",
@@ -344,6 +344,8 @@ final class SAGitHubReleaseTests: XCTestCase {
         let updateRelease = releases[1]
         let publishedAt = updateRelease.publishedAt
 
+        XCTAssertNotEqual(currentRelease, updateRelease)
+        XCTAssertTrue(updateRelease > currentRelease)
         XCTAssertEqual(SAGitHubReleaseSettlingPolicy.retryDelay(
             at: publishedAt,
             currentRelease: currentRelease,

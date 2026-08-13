@@ -55,11 +55,24 @@ struct SAGitHubRelease: Decodable, Comparable {
     let assets: [SAGitHubReleaseAsset]
 
     static func < (lhs: SAGitHubRelease, rhs: SAGitHubRelease) -> Bool {
-        lhs.publishedAt < rhs.publishedAt
+        if lhs.publishedAt != rhs.publishedAt {
+            return lhs.publishedAt < rhs.publishedAt
+        }
+
+        if
+            let lhsIdentity = lhs.tagIdentity,
+            let rhsIdentity = rhs.tagIdentity,
+            lhsIdentity.channel == rhsIdentity.channel,
+            lhsIdentity.build != rhsIdentity.build
+        {
+            return lhsIdentity.build < rhsIdentity.build
+        }
+
+        return lhs.tagName < rhs.tagName
     }
 
     static func == (lhs: SAGitHubRelease, rhs: SAGitHubRelease) -> Bool {
-        lhs.publishedAt == rhs.publishedAt
+        lhs.publishedAt == rhs.publishedAt && lhs.tagName == rhs.tagName
     }
 
     enum CodingKeys: String, CodingKey {
