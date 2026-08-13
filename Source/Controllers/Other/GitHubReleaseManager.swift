@@ -25,9 +25,9 @@ import OSLog
     private var download: DownloadRequest?
     private var currentReleaseName: String = ""
     private var availableReleaseName: String = ""
-    private var currentRelease: GitHubElement?
-    private var availableRelease: GitHubElement?
-    private var releases: [GitHubElement] = []
+    private var currentRelease: SAGitHubRelease?
+    private var availableRelease: SAGitHubRelease?
+    private var releases: [SAGitHubRelease] = []
     private let Log = OSLog(subsystem: "com.sequel-ace.sequel-ace", category: "github")
     private let manager = NetworkReachabilityManager(host: "www.google.com")
     public var isFromMenuCheck: Bool = false
@@ -91,9 +91,9 @@ import OSLog
                         return
                     }
 
-                    let gitHub = try GitHub(data: responseData)
+                    let gitHub = try SAGitHubRelease.decodeList(from: responseData)
 
-                    var releasesArray = gitHub.sorted(by: { (element0: GitHubElement, element1: GitHubElement) -> Bool in
+                    var releasesArray = gitHub.sorted(by: { (element0: SAGitHubRelease, element1: SAGitHubRelease) -> Bool in
                         element0 > element1
                     })
 
@@ -155,17 +155,29 @@ import OSLog
                     }
                 } catch {
                     Log.error("Error GitHub Exception: \(error.localizedDescription)")
-                    NSAlert.createWarningAlert(title: NSLocalizedString("GitHub Request Failed", comment: "GitHub Request Failed"), message: error.localizedDescription)
+                    displayRequestFailureIfNeeded(error: error, statusCode: response.response?.statusCode)
                 }
 
             case let .failure(error):
                 Log.error("Error GitHub Failure: \(error.localizedDescription)")
-                NSAlert.createWarningAlert(title: NSLocalizedString("GitHub Request Failed", comment: "GitHub Request Failed"), message: error.localizedDescription)
                 if (manager?.isReachable == false) {
                     Log.error("manager?.isReachable == false")
                 }
+                displayRequestFailureIfNeeded(error: error.underlyingError ?? error, statusCode: response.response?.statusCode)
             }
         }
+    }
+
+    private func displayRequestFailureIfNeeded(error: Error, statusCode: Int?) {
+        guard SAGitHubReleaseErrorPolicy.shouldPresentError(isUserInitiated: isFromMenuCheck,
+                                                           statusCode: statusCode,
+                                                           underlyingError: error) else {
+            Log.info("Ignoring non-actionable GitHub release check failure")
+            return
+        }
+
+        NSAlert.createWarningAlert(title: NSLocalizedString("GitHub Request Failed", comment: "GitHub Request Failed"),
+                                   message: error.localizedDescription)
     }
 
     private func displayNewReleaseAvailableAlert() -> Bool {
@@ -174,7 +186,7 @@ import OSLog
         let prefs: UserDefaults = UserDefaults.standard
         var localURL: URL
         let message: String
-        var asset: Asset?
+        var asset: SAGitHubReleaseAsset?
 
         if isFromMenuCheck == false && prefs.string(forKey: SPSkipNewReleaseAvailable) == availableReleaseName {
             Log.debug("The user has opted out of more alerts regarding this version")
@@ -239,7 +251,7 @@ import OSLog
         return true
     }
 
-    private func downloadNewRelease(asset: Asset) {
+    private func downloadNewRelease(asset: SAGitHubReleaseAsset) {
         Log.debug("downloadNewRelease")
 
         Log.debug("asset.browserDownloadURL: \(asset.browserDownloadURL)")
