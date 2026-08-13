@@ -151,6 +151,50 @@ class GitHubClientTest < Minitest::Test
     assert_equal ["/apps/sequel-ace-release-automation"], transport.requests.map { |request| request.fetch(:path) }
   end
 
+  def test_rejects_an_unapproved_release_app_slug_before_any_api_request
+    transport = FakeTransport.new([])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      client.validate_release_app_publisher!(
+        expected_app_id: 4_541_115,
+        expected_client_id: "Iv1.releaseclient",
+        expected_app_slug: "unreviewed-release-publisher",
+        expected_installation_id: "12345"
+      )
+    end
+
+    assert_includes error.message, "not an authorized publisher"
+    assert_empty transport.requests
+  end
+
+  def test_accepts_the_documented_future_release_app_slug
+    transport = FakeTransport.new([
+      http_response(body: {
+        "id" => 4_541_115,
+        "slug" => "sequel-ace-releases",
+        "client_id" => "Iv1.releaseclient"
+      }),
+      http_response(body: {
+        "total_count" => 1,
+        "repositories" => [{
+          "full_name" => "Sequel-Ace/Sequel-Ace",
+          "permissions" => { "push" => true }
+        }]
+      })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    result = client.validate_release_app_publisher!(
+      expected_app_id: 4_541_115,
+      expected_client_id: "Iv1.releaseclient",
+      expected_app_slug: "sequel-ace-releases",
+      expected_installation_id: "12345"
+    )
+
+    assert_equal "sequel-ace-releases[bot]", result.fetch("login")
+  end
+
   def test_rejects_a_release_app_token_with_more_than_the_exact_repository
     transport = FakeTransport.new([
       http_response(body: {

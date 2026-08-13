@@ -124,6 +124,9 @@ module SequelAceRelease
       unless expected_app_slug.to_s.match?(/\A[a-z0-9-]+\z/)
         raise ValidationError, "expected GitHub release App slug is malformed"
       end
+      unless ReleasePublisher::RELEASE_APP_SLUGS.include?(expected_app_slug)
+        raise ValidationError, "GitHub release App slug is not an authorized publisher"
+      end
       installation_id = begin
         Integer(expected_installation_id)
       rescue ArgumentError, TypeError
