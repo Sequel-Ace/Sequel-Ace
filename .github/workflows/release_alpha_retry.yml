@@ -145,9 +145,11 @@ jobs:
           release = client.release_by_tag(expected_tag)
           raise SequelAceRelease::ValidationError, "beta release must remain a prerelease" unless release["prerelease"] == true
           raise SequelAceRelease::ValidationError, "beta release title changed" unless release["name"] == manifest["title"]
-          unless release.dig("author", "login") == SequelAceRelease::PublishHandoff::RELEASE_APP_LOGIN
-            raise SequelAceRelease::ValidationError, "beta release was not authored by the dedicated release App"
-          end
+          SequelAceRelease::ReleasePublisher.validate!(
+            tag: expected_tag,
+            login: release.dig("author", "login"),
+            created_at: release["created_at"]
+          )
           approved_body = release.fetch("body", "").to_s
           loop do
             pattern = SequelAceRelease::PublishHandoff::ALPHA_RECOVERY_SUFFIXES.find do |candidate|

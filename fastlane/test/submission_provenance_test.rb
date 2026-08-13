@@ -57,7 +57,7 @@ class SubmissionProvenanceTest < Minitest::Test
 
   def test_submit_revalidates_immediately_before_each_apple_mutation
     events = []
-    snapshot = metadata_snapshot(state: "WAITING_FOR_REVIEW", phased_state: "INACTIVE")
+    snapshot = metadata_snapshot(build: 20_109, state: "WAITING_FOR_REVIEW", phased_state: "INACTIVE")
     snapshot["version"]["attributes"]["earliestReleaseDate"] = (Time.now + (4 * 24 * 60 * 60)).utc.iso8601
     app_store = Object.new
     app_store.define_singleton_method(:latest_released_version) do |app_id:|
@@ -72,7 +72,7 @@ class SubmissionProvenanceTest < Minitest::Test
     end
     app_store.define_singleton_method(:find_build) do |app_id:, version:, build:|
       raise "wrong exact build" unless app_id == SequelAceRelease::Config::PRODUCTION_APP_ID &&
-                                       version == "5.3.2" && build == 20_105
+                                       version == "5.3.2" && build == 20_109
 
       { "id" => "build-id" }
     end
@@ -100,7 +100,7 @@ class SubmissionProvenanceTest < Minitest::Test
                       "submit",
                       "--manifest", manifest_path,
                       "--notes", notes_path,
-                      "--confirm", "SUBMIT 5.3.2 (20105)"
+                      "--confirm", "SUBMIT 5.3.2 (20109)"
                     ])
                   end
                 end
@@ -119,14 +119,14 @@ class SubmissionProvenanceTest < Minitest::Test
 
   def archived_manifest
     naming = SequelAceRelease::ReleaseNaming.new(
-      channel: "production", version: "5.3.2", build: 20_105, iteration: 1
+      channel: "production", version: "5.3.2", build: 20_109, iteration: 1
     )
     SequelAceRelease::Manifest.create(
       approval: approval(release_notes_sha256: Digest::SHA256.hexdigest(BODY)),
       naming: naming,
       base_sha: "b" * 40,
-      canonical_build: 20_105,
-      production_build_evidence: production_build_evidence,
+      canonical_build: 20_109,
+      production_build_evidence: production_build_evidence(target: 20_109),
       release_notes_sha256: Digest::SHA256.hexdigest(BODY),
       state: "archived"
     ).with(
@@ -148,7 +148,8 @@ class SubmissionProvenanceTest < Minitest::Test
       "draft" => false,
       "prerelease" => true,
       "body" => BODY,
-      "author" => { "login" => SequelAceRelease::PublishHandoff::RELEASE_APP_LOGIN },
+      "author" => { "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN },
+      "created_at" => "2026-08-13T00:00:00Z",
       "assets" => [{
         "name" => "Sequel-Ace-5.3.2.zip",
         "digest" => "sha256:#{'e' * 64}"

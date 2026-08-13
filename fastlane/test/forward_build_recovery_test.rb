@@ -33,8 +33,9 @@ class ForwardBuildRecoveryTest < Minitest::Test
         "tag_name" => tag,
         "draft" => false,
         "prerelease" => true,
-        "name" => "5.3.2 (20105) - Release Candidate 1",
-        "author" => { "login" => SequelAceRelease::PublishHandoff::RELEASE_APP_LOGIN },
+        "name" => "5.3.2 (20109) - Release Candidate 1",
+        "author" => { "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN },
+        "created_at" => "2026-08-13T00:00:00Z",
         "assets" => @assets
       }
     end
@@ -44,7 +45,7 @@ class ForwardBuildRecoveryTest < Minitest::Test
     github = GitHub.new
     result = validator(github).validate(**arguments)
 
-    assert_equal 20_105, result.fetch("failed_expected_build")
+    assert_equal 20_109, result.fetch("failed_expected_build")
     assert_equal 20_112, result.fetch("cloud_assigned_build")
     assert_equal 20_113, result.fetch("expected_recovery_build")
     assert_equal 1, result.fetch("count")
@@ -112,7 +113,7 @@ class ForwardBuildRecoveryTest < Minitest::Test
   end
 
   def test_rejects_a_noncanonical_archived_release_identity
-    changed = manifest.with("title" => "5.3.2 (20105) - Release Candidate 9")
+    changed = manifest.with("title" => "5.3.2 (20109) - Release Candidate 9")
 
     error = assert_raises(SequelAceRelease::ValidationError) do
       validator.validate(**arguments.merge(manifest: changed))
@@ -143,7 +144,7 @@ class ForwardBuildRecoveryTest < Minitest::Test
       approval: release_approval,
       approval_sha: release_approval.sha256,
       release_body: BODY,
-      tag: "production/5.3.2-20105",
+      tag: "production/5.3.2-20109",
       current_sha: "d" * 40,
       channel: "production",
       version: "5.3.2",
@@ -158,14 +159,14 @@ class ForwardBuildRecoveryTest < Minitest::Test
   def manifest
     @manifest ||= begin
       naming = SequelAceRelease::ReleaseNaming.new(
-        channel: "production", version: "5.3.2", build: 20_105, iteration: 1
+        channel: "production", version: "5.3.2", build: 20_109, iteration: 1
       )
       SequelAceRelease::Manifest.create(
         approval: release_approval,
         naming: naming,
         base_sha: "b" * 40,
-        canonical_build: 20_105,
-        production_build_evidence: production_build_evidence,
+        canonical_build: 20_109,
+        production_build_evidence: production_build_evidence(target: 20_109),
         release_notes_sha256: Digest::SHA256.hexdigest(BODY),
         state: "failed"
       ).with(
@@ -174,7 +175,7 @@ class ForwardBuildRecoveryTest < Minitest::Test
           "reason" => "cloud_build_number_advanced",
           "component" => "production",
           "cloud_run_id" => "run-20112",
-          "expected_build" => 20_105,
+          "expected_build" => 20_109,
           "assigned_build" => 20_112,
           "recovery_build" => 20_113
         }

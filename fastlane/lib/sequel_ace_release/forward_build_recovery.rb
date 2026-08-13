@@ -120,10 +120,14 @@ module SequelAceRelease
       )
       release = @github.release_by_tag(tag)
       unless release["tag_name"] == tag && release["draft"] == false && release["prerelease"] == true &&
-             release["name"] == data.fetch("title") &&
-             release.dig("author", "login") == PublishHandoff::RELEASE_APP_LOGIN
+             release["name"] == data.fetch("title")
         raise ValidationError, "failed GitHub prerelease identity changed"
       end
+      ReleasePublisher.validate!(
+        tag: tag,
+        login: release.dig("author", "login"),
+        created_at: release["created_at"]
+      )
       unless Array(release["assets"]).empty?
         raise ValidationError, "build-number recovery is unsafe after release assets were attached"
       end

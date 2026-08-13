@@ -55,6 +55,16 @@ class PublishHandoffTest < Minitest::Test
     end
   end
 
+  def test_the_single_legacy_bot_release_remains_recoverable
+    manifest = release_manifest(version: "5.4.0", build: 20_105)
+    release = release_for(manifest, author: SequelAceRelease::ReleasePublisher::LEGACY_APP_LOGIN)
+
+    result = validate(manifest, release: release)
+
+    assert_equal true, result.fetch("eligible")
+    assert_equal "production/5.4.0-20105", result.fetch("tag")
+  end
+
   def test_completed_or_failed_handoffs_are_not_reprocessed
     %w[submitted finalizing live failed].each do |state|
       manifest = release_manifest(state: state)
@@ -105,13 +115,13 @@ class PublishHandoffTest < Minitest::Test
     assert_includes error.message, "release notes"
   end
 
-  def test_rejects_a_release_not_authored_by_the_dedicated_app
+  def test_rejects_a_release_with_unauthorized_publisher_provenance
     manifest = release_manifest
-    release = release_for(manifest).merge("author" => { "login" => "Jason-Morcos" })
+    release = release_for(manifest).merge("author" => { "login" => "Kaspik" })
 
     error = assert_raises(SequelAceRelease::ValidationError) { validate(manifest, release: release) }
 
-    assert_includes error.message, "dedicated release App"
+    assert_includes error.message, "publisher is not authorized"
   end
 
   def test_rejects_a_draft_or_different_tag_release
@@ -301,23 +311,24 @@ class PublishHandoffTest < Minitest::Test
     )
   end
 
-  def release_manifest(state: "cloud_running", channel: "production")
+  def release_manifest(state: "cloud_running", channel: "production", version: "5.3.2", build: 20_109)
     release_approval = approval(
       channel: channel,
+      target_version: version,
       release_notes_sha256: Digest::SHA256.hexdigest(BODY)
     )
     naming = SequelAceRelease::ReleaseNaming.new(
       channel: channel,
-      version: "5.3.2",
-      build: 20_105,
+      version: version,
+      build: build,
       iteration: 1
     )
     SequelAceRelease::Manifest.create(
       approval: release_approval,
       naming: naming,
       base_sha: "b" * 40,
-      canonical_build: 20_105,
-      production_build_evidence: production_build_evidence,
+      canonical_build: build,
+      production_build_evidence: production_build_evidence(target: build),
       release_notes_sha256: Digest::SHA256.hexdigest(BODY),
       state: state
     ).with("release_commit_sha" => "d" * 40).then do |manifest|
@@ -325,7 +336,7 @@ class PublishHandoffTest < Minitest::Test
     end
   end
 
-  def release_for(manifest)
+  def release_for(manifest, author: SequelAceRelease::ReleasePublisher::USER_LOGIN)
     {
       "id" => 100,
       "tag_name" => manifest.to_h.fetch("tag"),
@@ -333,7 +344,8 @@ class PublishHandoffTest < Minitest::Test
       "draft" => false,
       "prerelease" => true,
       "body" => BODY,
-      "author" => { "login" => SequelAceRelease::PublishHandoff::RELEASE_APP_LOGIN },
+      "author" => { "login" => author },
+      "created_at" => "2026-08-13T00:00:00Z",
       "assets" => []
     }
   end

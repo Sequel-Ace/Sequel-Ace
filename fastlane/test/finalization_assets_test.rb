@@ -34,7 +34,7 @@ class FinalizationAssetsTest < Minitest::Test
   end
 
   def test_validate_only_does_not_make_the_public_github_transition
-    live_snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
     app_store = Object.new
     app_store.define_singleton_method(:metadata_snapshot) do |app_id:, version:|
       raise "wrong app" unless app_id == SequelAceRelease::Config::PRODUCTION_APP_ID
@@ -63,7 +63,7 @@ class FinalizationAssetsTest < Minitest::Test
           @cli.run([
             "finalize",
             "--manifest", manifest_path,
-            "--confirm", "FINALIZE production/5.3.2-20105",
+            "--confirm", "FINALIZE production/5.3.2-20109",
             "--validate-only",
             "--output", output_path
           ])
@@ -74,13 +74,13 @@ class FinalizationAssetsTest < Minitest::Test
       evidence = JSON.parse(File.read(output_path))
       assert_equal "durably_validated_before_public_transition", evidence.fetch("github_transition")
       assert_equal true, evidence.fetch("transition_required")
-      assert_equal "5.3.2 (20105)", evidence.fetch("target_title")
+      assert_equal "5.3.2 (20109)", evidence.fetch("target_title")
       assert_equal "d" * 40, evidence.fetch("release_commit_sha")
     end
   end
 
   def test_finalization_clears_prerelease_and_marks_release_latest
-    live_snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
     app_store = Object.new
     app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
     app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
@@ -107,7 +107,7 @@ class FinalizationAssetsTest < Minitest::Test
           @cli.run([
             "finalize",
             "--manifest", manifest_path,
-            "--confirm", "FINALIZE production/5.3.2-20105"
+            "--confirm", "FINALIZE production/5.3.2-20109"
           ])
         end
       end
@@ -116,9 +116,9 @@ class FinalizationAssetsTest < Minitest::Test
       assert_equal(
         {
           id: 100,
-          tag: "production/5.3.2-20105",
+          tag: "production/5.3.2-20109",
           target_sha: "d" * 40,
-          title: "5.3.2 (20105)",
+          title: "5.3.2 (20109)",
           prerelease: false,
           make_latest: true
         },
@@ -128,7 +128,7 @@ class FinalizationAssetsTest < Minitest::Test
   end
 
   def test_finalization_rechecks_the_tag_after_the_public_transition
-    live_snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
     app_store = Object.new
     app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
     app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
@@ -151,23 +151,23 @@ class FinalizationAssetsTest < Minitest::Test
     assert_equal 1, run_finalizer(app_store: app_store, github: github)
     assert_equal(
       [
-        [:ref_sha, "tags/production/5.3.2-20105"],
+        [:ref_sha, "tags/production/5.3.2-20109"],
         [:update_release, {
           id: 100,
-          tag: "production/5.3.2-20105",
+          tag: "production/5.3.2-20109",
           target_sha: "d" * 40,
-          title: "5.3.2 (20105)",
+          title: "5.3.2 (20109)",
           prerelease: false,
           make_latest: true
         }],
-        [:ref_sha, "tags/production/5.3.2-20105"]
+        [:ref_sha, "tags/production/5.3.2-20109"]
       ],
       events
     )
   end
 
   def test_finalization_rejects_a_tag_moved_after_archival
-    live_snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
     app_store = Object.new
     app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
     app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
@@ -185,7 +185,7 @@ class FinalizationAssetsTest < Minitest::Test
           cli.run([
             "finalize",
             "--manifest", manifest_path,
-            "--confirm", "FINALIZE production/5.3.2-20105",
+            "--confirm", "FINALIZE production/5.3.2-20109",
             "--validate-only"
           ])
         end
@@ -197,7 +197,7 @@ class FinalizationAssetsTest < Minitest::Test
   end
 
   def test_finalization_rejects_an_older_live_app_store_version
-    live_snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
     app_store = Object.new
     app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
     app_store.define_singleton_method(:latest_released_version) do |**_options|
@@ -219,7 +219,7 @@ class FinalizationAssetsTest < Minitest::Test
           cli.run([
             "finalize",
             "--manifest", manifest_path,
-            "--confirm", "FINALIZE production/5.3.2-20105",
+            "--confirm", "FINALIZE production/5.3.2-20109",
             "--validate-only"
           ])
         end
@@ -231,11 +231,11 @@ class FinalizationAssetsTest < Minitest::Test
   end
 
   def test_finalization_reasserts_latest_for_an_already_final_looking_release
-    live_snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
     app_store = Object.new
     app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
     app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
-    release_data = release.merge("name" => "5.3.2 (20105)", "prerelease" => false)
+    release_data = release.merge("name" => "5.3.2 (20109)", "prerelease" => false)
     updates = 0
     github = Object.new
     github.define_singleton_method(:ref_sha) { |_ref| "d" * 40 }
@@ -257,7 +257,7 @@ class FinalizationAssetsTest < Minitest::Test
   end
 
   def test_finalization_treats_a_missing_current_latest_release_as_not_latest
-    live_snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
     app_store = Object.new
     app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
     app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
@@ -286,13 +286,13 @@ class FinalizationAssetsTest < Minitest::Test
     assert_equal 1, updates
   end
 
-  def test_finalization_rejects_a_draft_or_non_app_release
-    live_snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+  def test_finalization_rejects_a_draft_or_unauthorized_publisher
+    live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
     app_store = Object.new
     app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
     app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
 
-    [release.merge("draft" => true), release.merge("author" => { "login" => "Jason-Morcos" })].each do |candidate|
+    [release.merge("draft" => true), release.merge("author" => { "login" => "Kaspik" })].each do |candidate|
       github = Object.new
       github.define_singleton_method(:ref_sha) { |_ref| "d" * 40 }
       github.define_singleton_method(:release_by_tag) { |_tag| candidate }
@@ -302,7 +302,7 @@ class FinalizationAssetsTest < Minitest::Test
   end
 
   def test_finalization_fails_if_latest_readback_does_not_match
-    live_snapshot = metadata_snapshot(state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
     app_store = Object.new
     app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
     app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
@@ -330,12 +330,13 @@ class FinalizationAssetsTest < Minitest::Test
   def release
     {
       "id" => 100,
-      "tag_name" => "production/5.3.2-20105",
-      "name" => "5.3.2 (20105) - Release Candidate 1",
+      "tag_name" => "production/5.3.2-20109",
+      "name" => "5.3.2 (20109) - Release Candidate 1",
       "draft" => false,
       "prerelease" => true,
       "body" => @body,
-      "author" => { "login" => SequelAceRelease::PublishHandoff::RELEASE_APP_LOGIN },
+      "author" => { "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN },
+      "created_at" => "2026-08-13T00:00:00Z",
       "assets" => [{ "name" => "Sequel-Ace-5.3.2.zip", "digest" => "sha256:#{@digest}" }]
     }
   end
@@ -350,7 +351,7 @@ class FinalizationAssetsTest < Minitest::Test
           cli.run([
             "finalize",
             "--manifest", manifest_path,
-            "--confirm", "FINALIZE production/5.3.2-20105"
+            "--confirm", "FINALIZE production/5.3.2-20109"
           ])
         end
       end
@@ -359,14 +360,14 @@ class FinalizationAssetsTest < Minitest::Test
 
   def release_manifest
     naming = SequelAceRelease::ReleaseNaming.new(
-      channel: "production", version: "5.3.2", build: 20_105, iteration: 1
+      channel: "production", version: "5.3.2", build: 20_109, iteration: 1
     )
     SequelAceRelease::Manifest.create(
       approval: approval(release_notes_sha256: Digest::SHA256.hexdigest(@body)),
       naming: naming,
       base_sha: "b" * 40,
-      canonical_build: 20_105,
-      production_build_evidence: production_build_evidence,
+      canonical_build: 20_109,
+      production_build_evidence: production_build_evidence(target: 20_109),
       release_notes_sha256: Digest::SHA256.hexdigest(@body),
       state: "submitted"
     ).with(

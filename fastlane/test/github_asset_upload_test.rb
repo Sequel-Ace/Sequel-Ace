@@ -237,7 +237,7 @@ class GitHubAssetUploadTest < Minitest::Test
   def upload_arguments(asset, marker, manifest, notes)
     arguments = [
       "github-upload-asset",
-      "--tag", "production/5.3.2-20105",
+      "--tag", "production/5.3.2-20109",
       "--file", asset,
       "--manifest", manifest,
       "--notes", notes
@@ -257,15 +257,15 @@ class GitHubAssetUploadTest < Minitest::Test
       - A tested change.
     BODY
     naming = SequelAceRelease::ReleaseNaming.new(
-      channel: "production", version: "5.3.2", build: 20_105, iteration: 1
+      channel: "production", version: "5.3.2", build: 20_109, iteration: 1
     )
     verification_path ||= File.join(directory, naming.public_artifacts.fetch(0))
     manifest = SequelAceRelease::Manifest.create(
       approval: approval(release_notes_sha256: Digest::SHA256.hexdigest(body)),
       naming: naming,
       base_sha: "b" * 40,
-      canonical_build: 20_105,
-      production_build_evidence: production_build_evidence,
+      canonical_build: 20_109,
+      production_build_evidence: production_build_evidence(target: 20_109),
       release_notes_sha256: Digest::SHA256.hexdigest(body),
       state: "artifacts_verified"
     ).with(
@@ -288,7 +288,8 @@ class GitHubAssetUploadTest < Minitest::Test
       "draft" => false,
       "prerelease" => true,
       "body" => body,
-      "author" => { "login" => SequelAceRelease::PublishHandoff::RELEASE_APP_LOGIN },
+      "author" => { "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN },
+      "created_at" => "2026-08-13T00:00:00Z",
       "assets" => []
     }
     [manifest_path, notes_path, release, "d" * 40]

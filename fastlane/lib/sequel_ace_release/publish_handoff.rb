@@ -4,7 +4,6 @@ require "digest"
 
 module SequelAceRelease
   class PublishHandoff
-    RELEASE_APP_LOGIN = "sequel-ace-release-automation[bot]".freeze
     RELEASE_PATHS = (Config::PROJECT_FILES.keys + Config::PLIST_FILES + ["CHANGELOG.md"]).freeze
     ACTIONS_RUN_URL = %r{https://github\.com/Sequel-Ace/Sequel-Ace/actions/runs/[1-9]\d*(?:/attempts/[1-9]\d*)?}.freeze
     ALPHA_RECOVERY_SUFFIXES = [
@@ -46,9 +45,11 @@ module SequelAceRelease
       raise ValidationError, "release must not be a draft" unless release["draft"] == false
       raise ValidationError, "release must remain a prerelease" unless release["prerelease"] == true
       raise ValidationError, "release title changed" unless release["name"] == data.fetch("title")
-      unless release.dig("author", "login") == RELEASE_APP_LOGIN
-        raise ValidationError, "release was not authored by the dedicated release App"
-      end
+      ReleasePublisher.validate!(
+        tag: tag,
+        login: release.dig("author", "login"),
+        created_at: release["created_at"]
+      )
       release_id = release["id"]
       unless release_id.is_a?(Integer) && release_id.positive?
         raise ValidationError, "release ID is malformed"
