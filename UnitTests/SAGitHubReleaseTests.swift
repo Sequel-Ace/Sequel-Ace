@@ -363,16 +363,55 @@ final class SAGitHubReleaseTests: XCTestCase {
         ))
     }
 
-    func testStartingAReleaseCheckSupersedesThePreviousCheck() {
+    func testUserInitiatedReleaseCheckTakesPriorityOverBackgroundChecks() throws {
         var tracker = SAGitHubReleaseCheckTracker()
-        let firstCheck = tracker.begin()
+        let backgroundCheck = try XCTUnwrap(tracker.begin(isUserInitiated: false))
+        let userCheck = try XCTUnwrap(tracker.begin(isUserInitiated: true))
 
-        XCTAssertTrue(tracker.isCurrent(firstCheck))
+        XCTAssertFalse(tracker.isCurrent(backgroundCheck))
+        XCTAssertTrue(tracker.isCurrent(userCheck))
+        XCTAssertNil(tracker.begin(isUserInitiated: false))
+        XCTAssertTrue(tracker.isCurrent(userCheck))
 
-        let secondCheck = tracker.begin()
+        tracker.finish(userCheck)
+        let nextBackgroundCheck = try XCTUnwrap(tracker.begin(isUserInitiated: false))
 
-        XCTAssertFalse(tracker.isCurrent(firstCheck))
-        XCTAssertTrue(tracker.isCurrent(secondCheck))
+        XCTAssertTrue(tracker.isCurrent(nextBackgroundCheck))
+    }
+
+    func testReleaseTagIdentityRequiresCanonicalGrammar() throws {
+        XCTAssertEqual(SAGitHubReleaseTagIdentity("production/5.4.0-20109")?.version, "5.4.0")
+        XCTAssertEqual(SAGitHubReleaseTagIdentity("beta/5.4.0-20110")?.build, 20_110)
+
+        for value in [
+            "beta/foo-20110",
+            "beta/5.4-20110",
+            "beta/5.4.0-rc1-20110",
+            "beta/5.4.0-020110",
+            "beta/5.4.0-0",
+            "nightly/5.4.0-20110"
+        ] {
+            XCTAssertNil(SAGitHubReleaseTagIdentity(value), value)
+        }
+
+        let invalidRelease = try XCTUnwrap(SAGitHubRelease.decodeList(from: Data(
+            #"""
+            [{
+              "tag_name": "beta/foo-20110",
+              "name": "Out-of-contract beta",
+              "html_url": "https://example.com/invalid",
+              "draft": false,
+              "prerelease": true,
+              "published_at": "2026-08-13T00:00:00Z",
+              "assets": [{
+                "name": "Sequel-Ace-foo-beta1-alpha.zip",
+                "size": 100,
+                "browser_download_url": "https://example.com/invalid.zip"
+              }]
+            }]
+            """#.utf8
+        )).first)
+        XCTAssertNil(invalidRelease.compatibleAppZip(for: .beta))
     }
 
     func testMissingReleaseStateDefaultsFailClosed() throws {
@@ -424,17 +463,38 @@ final class SAGitHubReleaseTests: XCTestCase {
         let releases = try SAGitHubRelease.decodeList(from: JSONSerialization.data(withJSONObject: fixture))
         let firstPage = Array(releases.prefix(30))
         let linkHeader = "<https://api.github.com/repos/Sequel-Ace/Sequel-Ace/releases?per_page=100&page=2>; rel=\"next\", <https://api.github.com/repos/Sequel-Ace/Sequel-Ace/releases?per_page=100&page=2>; rel=\"last\""
+        let firstPageURL = try XCTUnwrap(URL(
+            string: "https://api.github.com/repos/Sequel-Ace/Sequel-Ace/releases?per_page=100&page=1"
+        ))
 
         XCTAssertEqual(
             SAGitHubReleasePagination.nextPageURL(from: linkHeader,
+                                                  pagesFetched: 1,
+                                                  visitedPageURLs: [firstPageURL],
                                                   releases: firstPage,
                                                   installedBuildName: "2.0.0 (1000)",
                                                   installedReleaseTag: "production/2.0.0-1000")?.absoluteString,
             "https://api.github.com/repos/Sequel-Ace/Sequel-Ace/releases?per_page=100&page=2"
         )
         XCTAssertNil(SAGitHubReleasePagination.nextPageURL(from: linkHeader,
+                                                           pagesFetched: 2,
+                                                           visitedPageURLs: [],
                                                            releases: releases,
                                                            installedBuildName: "2.0.0 (9999)",
+                                                           installedReleaseTag: "production/2.0.0-1000"))
+
+        let cyclicLinkHeader = "<\(firstPageURL.absoluteString)>; rel=\"next\""
+        XCTAssertNil(SAGitHubReleasePagination.nextPageURL(from: cyclicLinkHeader,
+                                                           pagesFetched: 1,
+                                                           visitedPageURLs: [firstPageURL],
+                                                           releases: firstPage,
+                                                           installedBuildName: "2.0.0 (1000)",
+                                                           installedReleaseTag: "production/2.0.0-1000"))
+        XCTAssertNil(SAGitHubReleasePagination.nextPageURL(from: linkHeader,
+                                                           pagesFetched: SAGitHubReleasePagination.maximumPageCount,
+                                                           visitedPageURLs: [],
+                                                           releases: firstPage,
+                                                           installedBuildName: "2.0.0 (1000)",
                                                            installedReleaseTag: "production/2.0.0-1000"))
     }
 

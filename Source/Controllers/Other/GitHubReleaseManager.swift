@@ -72,7 +72,10 @@ import OSLog
             return
         }
 
-        let checkID = checkTracker.begin()
+        guard let checkID = checkTracker.begin(isUserInitiated: isUserInitiated) else {
+            Log.debug("Keeping the active user-initiated GitHub release check")
+            return
+        }
         settlingRetry?.cancel()
         settlingRetry = nil
         currentReleaseName = name
@@ -91,12 +94,14 @@ import OSLog
 
         guard let url = URL(string: urlStr) else {
             Log.error("urlStr not valid")
+            checkTracker.finish(checkID)
             return
         }
 
         requestReleasePage(at: url,
                            accumulatedReleases: [],
                            pagesFetched: 0,
+                           visitedPageURLs: [url],
                            checkID: checkID,
                            installedBuildName: name,
                            installedReleaseTag: installedReleaseTag,
@@ -107,6 +112,7 @@ import OSLog
         at url: URL,
         accumulatedReleases: [SAGitHubRelease],
         pagesFetched: Int,
+        visitedPageURLs: Set<URL>,
         checkID: UUID,
         installedBuildName: String,
         installedReleaseTag: String?,
@@ -121,6 +127,12 @@ import OSLog
             guard checkTracker.isCurrent(checkID) else {
                 Log.debug("Ignoring a superseded GitHub release check response")
                 return
+            }
+            var shouldFinishCheck = true
+            defer {
+                if shouldFinishCheck {
+                    checkTracker.finish(checkID)
+                }
             }
 
             switch response.result {
@@ -139,14 +151,18 @@ import OSLog
 
                     if let nextPageURL = SAGitHubReleasePagination.nextPageURL(
                         from: response.response?.value(forHTTPHeaderField: "Link"),
+                        pagesFetched: fetchedPageCount,
+                        visitedPageURLs: visitedPageURLs,
                         releases: gitHub,
                         installedBuildName: installedBuildName,
                         installedReleaseTag: installedReleaseTag
                     ) {
                         Log.debug("requesting GitHub release page \(fetchedPageCount + 1)")
+                        shouldFinishCheck = false
                         requestReleasePage(at: nextPageURL,
                                            accumulatedReleases: gitHub,
                                            pagesFetched: fetchedPageCount,
+                                           visitedPageURLs: visitedPageURLs.union([nextPageURL]),
                                            checkID: checkID,
                                            installedBuildName: installedBuildName,
                                            installedReleaseTag: installedReleaseTag,

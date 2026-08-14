@@ -25,15 +25,27 @@ struct SAGitHubReleaseTagIdentity {
             channelAndValue[0] == "production" || channelAndValue[0] == "beta",
             let buildSeparator = channelAndValue[1].lastIndex(of: "-"),
             buildSeparator != channelAndValue[1].startIndex,
+            Self.isASCIIDigits(channelAndValue[1][channelAndValue[1].index(after: buildSeparator)...]),
+            channelAndValue[1][channelAndValue[1].index(after: buildSeparator)] != "0",
             let build = Int(channelAndValue[1][channelAndValue[1].index(after: buildSeparator)...]),
             build > 0
         else {
             return nil
         }
 
+        let versionValue = channelAndValue[1][..<buildSeparator]
+        let versionComponents = versionValue.split(separator: ".", omittingEmptySubsequences: false)
+        guard versionComponents.count == 3, versionComponents.allSatisfy(Self.isASCIIDigits) else {
+            return nil
+        }
+
         channel = String(channelAndValue[0])
-        version = String(channelAndValue[1][..<buildSeparator])
+        version = String(versionValue)
         self.build = build
+    }
+
+    private static func isASCIIDigits<T: StringProtocol>(_ value: T) -> Bool {
+        value.isNotEmpty && value.allSatisfy { $0 >= "0" && $0 <= "9" }
     }
 }
 
@@ -124,6 +136,10 @@ struct SAGitHubRelease: Decodable, Comparable {
     func compatibleAppZip(for variant: SAGitHubReleaseAppVariant) -> SAGitHubReleaseAsset? {
         let appZips = assets.filter(\.isAppZip)
 
+        if usesReleaseChannelTag && tagIdentity == nil {
+            return nil
+        }
+
         if usesCanonicalBetaArtifactNaming {
             return canonicalBetaAsset(for: variant, in: appZips)
         }
@@ -172,6 +188,11 @@ struct SAGitHubRelease: Decodable, Comparable {
         return tagIdentity.channel == "beta" && tagIdentity.build >= Self.canonicalBetaArtifactNamingMinimumBuild
     }
 
+    private var usesReleaseChannelTag: Bool {
+        let channel = tagName.split(separator: "/", omittingEmptySubsequences: false).first
+        return channel == "production" || channel == "beta"
+    }
+
     private func canonicalBetaAsset(
         for variant: SAGitHubReleaseAppVariant,
         in appZips: [SAGitHubReleaseAsset]
@@ -182,6 +203,8 @@ struct SAGitHubRelease: Decodable, Comparable {
 
         let prefix = "Sequel-Ace-\(tagIdentity.version)-beta"
         let suffix = variant == .beta ? "-alpha.zip" : ".zip"
+        // Each installed variant needs only its own artifact; the shared settle
+        // window keeps an in-progress upload from reaching either updater.
         return Self.onlyAsset(in: appZips.filter { asset in
             guard asset.name.hasPrefix(prefix), asset.name.hasSuffix(suffix) else {
                 return false
@@ -230,28 +253,47 @@ enum SAGitHubReleaseSettlingPolicy {
 
 struct SAGitHubReleaseCheckTracker {
     private var currentID: UUID?
+    private var currentIsUserInitiated = false
 
-    mutating func begin() -> UUID {
+    mutating func begin(isUserInitiated: Bool) -> UUID? {
+        if currentIsUserInitiated && !isUserInitiated {
+            return nil
+        }
+
         let id = UUID()
         currentID = id
+        currentIsUserInitiated = isUserInitiated
         return id
     }
 
     func isCurrent(_ id: UUID) -> Bool {
         currentID == id
     }
+
+    mutating func finish(_ id: UUID) {
+        guard currentID == id else {
+            return
+        }
+
+        currentID = nil
+        currentIsUserInitiated = false
+    }
 }
 
 enum SAGitHubReleasePagination {
     static let pageSize = 100
+    static let maximumPageCount = 10
 
     static func nextPageURL(
         from linkHeader: String?,
+        pagesFetched: Int,
+        visitedPageURLs: Set<URL>,
         releases: [SAGitHubRelease],
         installedBuildName: String,
         installedReleaseTag: String?
     ) -> URL? {
         guard
+            pagesFetched < maximumPageCount,
             releases.contains(where: {
                 $0.matchesInstalledBuild(named: installedBuildName, releaseTag: installedReleaseTag)
             }) == false,
@@ -271,7 +313,8 @@ enum SAGitHubReleasePagination {
                 value.hasSuffix(">"),
                 let url = URL(string: String(value.dropFirst().dropLast())),
                 url.scheme == "https",
-                url.host == "api.github.com"
+                url.host == "api.github.com",
+                visitedPageURLs.contains(url) == false
             else {
                 continue
             }
