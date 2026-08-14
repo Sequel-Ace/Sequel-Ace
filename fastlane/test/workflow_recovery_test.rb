@@ -802,7 +802,9 @@ class WorkflowRecoveryTest < Minitest::Test
     refute_includes discovery, '.tag_name == "production/5.4.0-20105"'
     assert_includes discovery, 'requested_tag_encoded="$(jq -rn --arg value "${REQUESTED_TAG}" \'$value | @uri\')"'
     assert_includes discovery, '(.created_at | fromdateiso8601) as $created'
-    assert_includes manual_discovery, ".draft == false and .prerelease == true"
+    assert_includes manual_discovery, "Exact manual recovery deliberately accepts a finalized release"
+    assert_includes manual_discovery, ".draft == false"
+    refute_includes manual_discovery, ".prerelease == true"
     assert_includes discovery, '(.author.login == "Jason-Morcos" and .author.id == 10710367 and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601))'
     assert_includes discovery, '$build >= 20109 and $created >= ("2027-08-14T00:00:00Z" | fromdateiso8601)'
     assert_includes execution, 'printf \'%s\\n\' "${REQUESTED_TAG}" > production-candidates.txt'
