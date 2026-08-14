@@ -1,5 +1,9 @@
 import XCTest
 
+private final class SARecordViewTestTable: NSTableView {
+    override var acceptsFirstResponder: Bool { true }
+}
+
 final class SARecordViewTests: XCTestCase {
 
     private let fields = [
@@ -228,6 +232,41 @@ final class SARecordViewTests: XCTestCase {
         XCTAssertFalse(controller.isVisible)
     }
 
+    func testClosingRecordViewRestoresResultTableFocus() {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
+            styleMask: [],
+            backing: .buffered,
+            defer: false
+        )
+        let parent = NSView(frame: window.contentView!.bounds)
+        let grid = NSView(frame: parent.bounds)
+        let table = SARecordViewTestTable(frame: grid.bounds)
+        let recordFocus = NSTableView()
+        window.contentView = parent
+        parent.addSubview(grid)
+        parent.addSubview(recordFocus)
+        grid.addSubview(table)
+        let controller = SARecordViewController()
+        controller.installOverlay(
+            in: parent,
+            resizing: grid,
+            shortcutTableView: table,
+            bottomInset: 0,
+            topInset: 0,
+            autosaveName: "SARecordViewTestsFocusWidth"
+        )
+        controller.toggle()
+        XCTAssertTrue(window.makeFirstResponder(recordFocus))
+
+        controller.toggle()
+
+        XCTAssertTrue(
+            window.firstResponder === table,
+            "Expected result table, got \(String(describing: window.firstResponder))"
+        )
+    }
+
     func testToolbarHostIdentifierUsesActiveResultTab() {
         XCTAssertEqual(SARecordViewToolbarSupport.hostIdentifier(forTabIndex: 1), "SwitchToTableContentToolbarItemIdentifier")
         XCTAssertEqual(SARecordViewToolbarSupport.hostIdentifier(forTabIndex: 2), "SwitchToRunQueryToolbarItemIdentifier")
@@ -236,8 +275,13 @@ final class SARecordViewTests: XCTestCase {
         XCTAssertNil(SARecordViewToolbarSupport.hostIdentifier(forTabIndex: -1))
     }
 
-    func testSpaceShortcutRequiresResultTableFocus() {
+    func testSpaceShortcutAllowsResultTableAndRecordViewNonTextFocus() {
         let table = NSTableView()
+        let recordView = NSView()
+        let recordRow = NSView()
+        let filter = NSSearchField()
+        recordView.addSubview(recordRow)
+        recordView.addSubview(filter)
         func spaceEvent(isRepeat: Bool) -> NSEvent {
             NSEvent.keyEvent(
                 with: .keyDown,
@@ -254,10 +298,14 @@ final class SARecordViewTests: XCTestCase {
         }
         let space = spaceEvent(isRepeat: false)
 
-        XCTAssertTrue(SARecordViewToolbarSupport.shouldHandleSpace(space, firstResponder: table, tableView: table))
-        XCTAssertFalse(SARecordViewToolbarSupport.shouldHandleSpace(spaceEvent(isRepeat: true), firstResponder: table, tableView: table))
-        XCTAssertFalse(SARecordViewToolbarSupport.shouldHandleSpace(space, firstResponder: NSTextView(), tableView: table))
-        XCTAssertFalse(SARecordViewToolbarSupport.shouldHandleSpace(space, firstResponder: nil, tableView: table))
+        XCTAssertTrue(SARecordViewToolbarSupport.shouldHandleSpace(space, firstResponder: table, tableView: table, recordView: recordView))
+        XCTAssertTrue(SARecordViewToolbarSupport.shouldHandleSpace(space, firstResponder: recordView, tableView: table, recordView: recordView))
+        XCTAssertTrue(SARecordViewToolbarSupport.shouldHandleSpace(space, firstResponder: recordRow, tableView: table, recordView: recordView))
+        XCTAssertFalse(SARecordViewToolbarSupport.shouldHandleSpace(space, firstResponder: filter, tableView: table, recordView: recordView))
+        XCTAssertFalse(SARecordViewToolbarSupport.shouldHandleSpace(space, firstResponder: NSTextView(), tableView: table, recordView: recordView))
+        XCTAssertFalse(SARecordViewToolbarSupport.shouldHandleSpace(space, firstResponder: NSView(), tableView: table, recordView: recordView))
+        XCTAssertFalse(SARecordViewToolbarSupport.shouldHandleSpace(spaceEvent(isRepeat: true), firstResponder: table, tableView: table, recordView: recordView))
+        XCTAssertFalse(SARecordViewToolbarSupport.shouldHandleSpace(space, firstResponder: nil, tableView: table, recordView: recordView))
     }
 
     func testToolbarItemTargetsRecordViewAction() {

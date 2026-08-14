@@ -339,13 +339,27 @@ private final class SARecordViewOverlayView: NSView {
         }
     }
 
-    static func shouldHandleSpace(_ event: NSEvent, firstResponder: NSResponder?, tableView: NSTableView) -> Bool {
+    static func shouldHandleSpace(_ event: NSEvent,
+                                  firstResponder: NSResponder?,
+                                  tableView: NSTableView,
+                                  recordView: NSView) -> Bool {
         let modifiers: NSEvent.ModifierFlags = [.command, .control, .option, .shift]
-        return event.type == .keyDown
-            && event.keyCode == 49
-            && !event.isARepeat
-            && event.modifierFlags.intersection(modifiers).isEmpty
-            && firstResponder === tableView
+        guard event.type == .keyDown,
+              event.keyCode == 49,
+              !event.isARepeat,
+              event.modifierFlags.intersection(modifiers).isEmpty,
+              let firstResponder else {
+            return false
+        }
+        if firstResponder === tableView {
+            return true
+        }
+        guard !(firstResponder is NSTextField),
+              !(firstResponder is NSTextView),
+              let responderView = firstResponder as? NSView else {
+            return false
+        }
+        return responderView === recordView || responderView.isDescendant(of: recordView)
     }
 
     @objc(makeToolbarItemWithTarget:)
@@ -387,10 +401,11 @@ private final class SARecordViewOverlayView: NSView {
             guard let self,
                   let tableView = self.shortcutTableView,
                   SARecordViewToolbarSupport.shouldHandleSpace(
-                    event,
-                    firstResponder: event.window?.firstResponder,
-                    tableView: tableView
-                  ) else {
+                     event,
+                     firstResponder: event.window?.firstResponder,
+                     tableView: tableView,
+                     recordView: self.hostingView
+                   ) else {
                 return event
             }
             self.toggle()
@@ -438,7 +453,14 @@ private final class SARecordViewOverlayView: NSView {
         guard let overlayView else {
             return
         }
-        overlayView.isHidden ? overlayView.show() : overlayView.hide()
+        if overlayView.isHidden {
+            overlayView.show()
+        } else {
+            overlayView.hide()
+            if let shortcutTableView {
+                shortcutTableView.window?.makeFirstResponder(shortcutTableView)
+            }
+        }
     }
 
     @objc(updateWithFields:selectedRowCount:)
