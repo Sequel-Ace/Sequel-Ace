@@ -148,6 +148,7 @@ jobs:
           SequelAceRelease::ReleasePublisher.validate!(
             tag: expected_tag,
             login: release.dig("author", "login"),
+            id: release.dig("author", "id"),
             created_at: release["created_at"]
           )
           approved_body = release.fetch("body", "").to_s

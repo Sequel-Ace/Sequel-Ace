@@ -250,13 +250,13 @@ jobs:
           set -euo pipefail
           prereleases_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-existing-prereleases.XXXXXX")"
           gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
-            --jq '.[] | select(.prerelease == true and (.tag_name | test("^(production|beta)/[0-9]+\\.[0-9]+\\.[0-9]+-[1-9][0-9]*$"))) | [.tag_name, .author.login, .created_at] | @tsv' \
+            --jq '.[] | select(.prerelease == true and (.tag_name | test("^(production|beta)/[0-9]+\\.[0-9]+\\.[0-9]+-[1-9][0-9]*$"))) | [.tag_name, .author.login, (.author.id | tostring), .created_at] | @tsv' \
             > "${prereleases_file}"
-          while IFS=$'\t' read -r release_tag release_author release_created_at; do
-            [[ -n "${release_tag}" && -n "${release_author}" && -n "${release_created_at}" ]] || continue
+          while IFS=$'\t' read -r release_tag release_author release_author_id release_created_at; do
+            [[ -n "${release_tag}" && -n "${release_author}" && -n "${release_author_id}" && -n "${release_created_at}" ]] || continue
             if ! bundle exec ruby -I fastlane/lib -rsequel_ace_release -e \
-              'exit(SequelAceRelease::ReleasePublisher.authorized?(tag: ARGV.fetch(0), login: ARGV.fetch(1), created_at: ARGV.fetch(2)) ? 0 : 1)' \
-              "${release_tag}" "${release_author}" "${release_created_at}"; then
+              'author_id = Integer(ARGV.fetch(2), 10) rescue nil; exit(SequelAceRelease::ReleasePublisher.authorized?(tag: ARGV.fetch(0), login: ARGV.fetch(1), id: author_id, created_at: ARGV.fetch(3)) ? 0 : 1)' \
+              "${release_tag}" "${release_author}" "${release_author_id}" "${release_created_at}"; then
               continue
             fi
             work_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-overlap-check.XXXXXX")"
@@ -704,7 +704,7 @@ jobs:
         run: |
           set -euo pipefail
           ruby -rjson -e 'value = JSON.parse(File.read("prerelease.json")); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("id=#{value.dig("release", "id")}"); file.puts("tag=#{value.dig("naming", "tag")}") }'
-          ruby -rjson -e 'value = JSON.parse(File.read("prerelease.json")); File.write("release-evidence.json", JSON.pretty_generate({"github_release_id" => value.dig("release", "id"), "github_release_author" => value.dig("release", "author", "login")}) + "\n")'
+          ruby -rjson -e 'value = JSON.parse(File.read("prerelease.json")); File.write("release-evidence.json", JSON.pretty_generate({"github_release_id" => value.dig("release", "id"), "github_release_author" => value.dig("release", "author", "login"), "github_release_author_id" => value.dig("release", "author", "id")}) + "\n")'
           bundle exec ruby fastlane/bin/sa-release update-manifest --manifest manifest.json --state prerelease_created --merge release-evidence.json >/dev/null
 
       - name: Durably archive the release identity before Cloud runs

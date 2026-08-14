@@ -292,7 +292,15 @@ class FinalizationAssetsTest < Minitest::Test
     app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
     app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
 
-    [release.merge("draft" => true), release.merge("author" => { "login" => "Kaspik" })].each do |candidate|
+    candidates = [
+      release.merge("draft" => true),
+      release.merge("author" => { "login" => "Kaspik" }),
+      release.merge("author" => {
+        "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN,
+        "id" => SequelAceRelease::ReleasePublisher::USER_ID + 1
+      })
+    ]
+    candidates.each do |candidate|
       github = Object.new
       github.define_singleton_method(:ref_sha) { |_ref| "d" * 40 }
       github.define_singleton_method(:release_by_tag) { |_tag| candidate }
@@ -335,7 +343,10 @@ class FinalizationAssetsTest < Minitest::Test
       "draft" => false,
       "prerelease" => true,
       "body" => @body,
-      "author" => { "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN },
+      "author" => {
+        "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN,
+        "id" => SequelAceRelease::ReleasePublisher::USER_ID
+      },
       "created_at" => "2026-08-13T00:00:00Z",
       "assets" => [{ "name" => "Sequel-Ace-5.3.2.zip", "digest" => "sha256:#{@digest}" }]
     }

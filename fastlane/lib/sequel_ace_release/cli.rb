@@ -467,13 +467,16 @@ module SequelAceRelease
         expected_publisher = ReleasePublisher.validate!(
           tag: naming.tag,
           login: existing.dig("author", "login"),
+          id: existing.dig("author", "id"),
           created_at: existing["created_at"]
         )
+        expected_author_id = expected_publisher == ReleasePublisher::USER_LOGIN ? ReleasePublisher::USER_ID : nil
         publisher_validation = {
           "login" => expected_publisher,
+          "id" => expected_author_id,
           "mode" => "existing",
           "repository" => Config::REPOSITORY
-        }
+        }.compact
         tag = client.validate_release_tag(
           tag: naming.tag,
           target_sha: options[:target_sha]
@@ -484,14 +487,19 @@ module SequelAceRelease
           target_sha: options[:target_sha],
           title: naming.title,
           body: options[:body],
-          expected_author_login: expected_publisher
+          expected_author_login: expected_publisher,
+          expected_author_id: expected_author_id
         )
       else
         publication_mode = ReleasePublisher.active_mode(at: @clock.call.utc)
         if publication_mode == :user
           publisher = github_user_publisher_client
           expected_publisher = ReleasePublisher::USER_LOGIN
-          publisher_validation = publisher.validate_release_publisher!(expected_login: expected_publisher)
+          expected_author_id = ReleasePublisher::USER_ID
+          publisher_validation = publisher.validate_release_publisher!(
+            expected_login: expected_publisher,
+            expected_id: expected_author_id
+          )
         else
           publisher = client
           publisher_validation = publisher.validate_release_app_publisher!(
@@ -501,6 +509,7 @@ module SequelAceRelease
             expected_installation_id: @env["SA_RELEASE_GITHUB_APP_INSTALLATION_ID"]
           )
           expected_publisher = publisher_validation.fetch("login")
+          expected_author_id = nil
         end
         unless ReleasePublisher.active_mode(at: @clock.call.utc) == publication_mode
           raise ValidationError, "GitHub release publisher epoch changed during preflight"
@@ -515,6 +524,7 @@ module SequelAceRelease
           title: naming.title,
           body: options[:body],
           expected_author_login: expected_publisher,
+          expected_author_id: expected_author_id,
           before_create: lambda do
             unless ReleasePublisher.active_mode(at: @clock.call.utc) == publication_mode
               raise ValidationError, "GitHub release publisher epoch changed before creation"
@@ -525,6 +535,7 @@ module SequelAceRelease
       ReleasePublisher.validate!(
         tag: naming.tag,
         login: release.dig("author", "login"),
+        id: release.dig("author", "id"),
         created_at: release["created_at"]
       )
       emit({
@@ -552,6 +563,7 @@ module SequelAceRelease
                ReleasePublisher.validate!(
                  tag: options[:tag],
                  login: existing.dig("author", "login"),
+                 id: existing.dig("author", "id"),
                  created_at: existing["created_at"]
                )
                :existing
@@ -1132,6 +1144,7 @@ module SequelAceRelease
       ReleasePublisher.validate!(
         tag: data.fetch("tag"),
         login: release.dig("author", "login"),
+        id: release.dig("author", "id"),
         created_at: release["created_at"]
       )
       verify_release_assets!(release, data)
@@ -1187,6 +1200,7 @@ module SequelAceRelease
              ReleasePublisher.authorized?(
                tag: data.fetch("tag"),
                login: release.dig("author", "login"),
+               id: release.dig("author", "id"),
                created_at: release["created_at"]
              )
         raise ValidationError, "GitHub finalization readback did not match the requested release"

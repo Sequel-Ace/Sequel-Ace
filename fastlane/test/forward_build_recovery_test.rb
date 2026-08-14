@@ -34,7 +34,10 @@ class ForwardBuildRecoveryTest < Minitest::Test
         "draft" => false,
         "prerelease" => true,
         "name" => "5.3.2 (20109) - Release Candidate 1",
-        "author" => { "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN },
+        "author" => {
+          "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN,
+          "id" => SequelAceRelease::ReleasePublisher::USER_ID
+        },
         "created_at" => "2026-08-13T00:00:00Z",
         "assets" => @assets
       }

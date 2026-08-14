@@ -7,6 +7,7 @@ module SequelAceRelease
     # The user-publisher bridge ends before its repository-only PAT expires.
     # Historical publisher epochs remain accepted for archived releases.
     USER_LOGIN = "Jason-Morcos".freeze
+    USER_ID = 10_710_367
     CURRENT_MINIMUM_BUILD = 20_109
     RELEASE_APP_ID = 4_541_115
     RELEASE_APP_SLUGS = %w[sequel-ace-release-automation sequel-ace-releases].freeze
@@ -30,19 +31,20 @@ module SequelAceRelease
       :user
     end
 
-    def authorized?(tag:, login:, created_at: nil, at: Time.now.utc)
+    def authorized?(tag:, login:, id: nil, created_at: nil, at: Time.now.utc)
       build = tag.to_s[TAG_PATTERN, 1]&.to_i
       return false unless build
       release_created_at = publication_time(created_at || at)
-      (login == USER_LOGIN && build >= CURRENT_MINIMUM_BUILD && release_created_at < USER_PUBLISHER_CUTOFF) ||
+      (login == USER_LOGIN && id == USER_ID && build >= CURRENT_MINIMUM_BUILD &&
+        release_created_at < USER_PUBLISHER_CUTOFF) ||
         (RELEASE_APP_LOGINS.include?(login) && build >= CURRENT_MINIMUM_BUILD &&
           release_created_at >= USER_PUBLISHER_CUTOFF)
     rescue ArgumentError, TypeError
       false
     end
 
-    def validate!(tag:, login:, created_at: nil, at: Time.now.utc)
-      return login if authorized?(tag: tag, login: login, created_at: created_at, at: at)
+    def validate!(tag:, login:, id: nil, created_at: nil, at: Time.now.utc)
+      return login if authorized?(tag: tag, login: login, id: id, created_at: created_at, at: at)
 
       raise ValidationError, "GitHub release publisher is not authorized for #{tag}"
     end

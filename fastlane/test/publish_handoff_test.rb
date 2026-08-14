@@ -118,11 +118,18 @@ class PublishHandoffTest < Minitest::Test
 
   def test_rejects_a_release_with_unauthorized_publisher_provenance
     manifest = release_manifest
-    release = release_for(manifest).merge("author" => { "login" => "Kaspik" })
+    candidates = [
+      release_for(manifest).merge("author" => { "login" => "Kaspik" }),
+      release_for(manifest).merge("author" => {
+        "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN,
+        "id" => SequelAceRelease::ReleasePublisher::USER_ID + 1
+      })
+    ]
 
-    error = assert_raises(SequelAceRelease::ValidationError) { validate(manifest, release: release) }
-
-    assert_includes error.message, "publisher is not authorized"
+    candidates.each do |release|
+      error = assert_raises(SequelAceRelease::ValidationError) { validate(manifest, release: release) }
+      assert_includes error.message, "publisher is not authorized"
+    end
   end
 
   def test_rejects_a_draft_or_different_tag_release
@@ -338,6 +345,10 @@ class PublishHandoffTest < Minitest::Test
   end
 
   def release_for(manifest, author: SequelAceRelease::ReleasePublisher::USER_LOGIN)
+    author_data = { "login" => author }
+    if author == SequelAceRelease::ReleasePublisher::USER_LOGIN
+      author_data["id"] = SequelAceRelease::ReleasePublisher::USER_ID
+    end
     {
       "id" => 100,
       "tag_name" => manifest.to_h.fetch("tag"),
@@ -345,7 +356,7 @@ class PublishHandoffTest < Minitest::Test
       "draft" => false,
       "prerelease" => true,
       "body" => BODY,
-      "author" => { "login" => author },
+      "author" => author_data,
       "created_at" => "2026-08-13T00:00:00Z",
       "assets" => []
     }

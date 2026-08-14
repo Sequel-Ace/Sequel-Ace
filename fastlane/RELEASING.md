@@ -119,16 +119,18 @@ releases therefore use a deliberately narrow compatibility bridge:
 - The release App validates the frozen target and creates the exact tag.
 - A PAT-free selector first looks up the exact release tag with the short-lived
   release App token. An existing prerelease is recovered by immutable author
-  and `created_at` provenance without loading the PAT, including across the
-  publisher cutoff.
+  login, numeric ID, and `created_at` provenance without loading the PAT,
+  including across the publisher cutoff.
 - Only the conditional step that may make the initial `POST /releases` call as
   Jason receives `SA_RELEASE_GITHUB_PUBLISHER_TOKEN`. Before that mutation, the
-  tool reads `/user` and the exact repository and requires `Jason-Morcos` plus
-  write access to `Sequel-Ace/Sequel-Ace`.
+  tool reads `/user` and the exact repository and requires both
+  `login == Jason-Morcos` and stable numeric user ID `10710367`, plus write
+  access to `Sequel-Ace/Sequel-Ace`.
 - Before `2027-08-14T00:00:00Z`, a newly created release must report
-  `author.login == Jason-Morcos`. The publisher token is absent from App-mode
-  creation, existing-release recovery, artifact publication, failure recovery,
-  App Store submission, and finalization.
+  both `author.login == Jason-Morcos` and `author.id == 10710367`. The
+  publisher token is absent from App-mode creation, existing-release recovery,
+  artifact publication, failure recovery, App Store submission, and
+  finalization.
 - The protected secret is a fine-grained personal access token owned by
   `Jason-Morcos`, limited to the single repository, with Contents read/write
   and no organization permissions. Metadata read access is implicit. The
