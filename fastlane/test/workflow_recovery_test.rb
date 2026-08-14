@@ -665,6 +665,8 @@ class WorkflowRecoveryTest < Minitest::Test
 
     assert_includes download, '--run-id "${PRODUCTION_RUN_ID}"'
     assert_includes download, '--run-id "${ALPHA_RUN_ID}"'
+    assert_includes verify, 'RELEASE_TAG: ${{ needs.discover.outputs.tag }}'
+    assert_equal 2, verify.scan('--release-tag "${RELEASE_TAG}"').length
     assert_includes verify, '--output-zip "artifacts/public/${PRODUCTION_ASSET}"'
     assert_includes verify, '--output-zip "artifacts/public/${ALPHA_ASSET}"'
     assert_includes attach, '--tag "${RELEASE_TAG}"'

@@ -468,6 +468,8 @@
 		8AEAC27B5C5B866575ECDB62 /* TableSortHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEACD304316A0931DF8ED26 /* TableSortHelper.swift */; };
 		8AEACED018AABDD8CBB42877 /* TableSortHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEACADD4B36D9819ADC93DD /* TableSortHelperTests.swift */; };
 		8D15AC340486D014006FF6A4 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */; };
+		961210D2302E7233009A9A2A /* SAGitHubReleaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961210D1302E7233009A9A2A /* SAGitHubReleaseTests.swift */; };
+		961210D6302E7269009A9A2A /* GitHub.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A89557825D6DE860060CE72 /* GitHub.swift */; };
 		963DA1C72CACC71000B5A544 /* QuickLookUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 963DA1C22CACC6F000B5A544 /* QuickLookUI.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		963DA1C82CACC71B00B5A544 /* QuickLookUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 963DA1C22CACC6F000B5A544 /* QuickLookUI.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		964908C8249A77D00052FC4A /* ssh_config in Resources */ = {isa = PBXBuildFile; fileRef = 964908C4249A77CF0052FC4A /* ssh_config */; };
@@ -1320,6 +1322,7 @@
 		8D15AC370486D014006FF6A4 /* Sequel Ace.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Sequel Ace.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8F7D127BB5BCD94B0E794C5E /* SAHelpViewerWindowController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAHelpViewerWindowController.swift; sourceTree = "<group>"; };
 		91D7AFC91F1CEBB3ED2242CC /* SADatabaseScopedValueCache.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADatabaseScopedValueCache.swift; sourceTree = "<group>"; };
+		961210D1302E7233009A9A2A /* SAGitHubReleaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAGitHubReleaseTests.swift; sourceTree = "<group>"; };
 		963DA1C22CACC6F000B5A544 /* QuickLookUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLookUI.framework; path = System/Library/Frameworks/QuickLookUI.framework; sourceTree = SDKROOT; };
 		964908C4249A77CF0052FC4A /* ssh_config */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ssh_config; sourceTree = "<group>"; };
 		965125F524926B6300E65B53 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; usesTabs = 0; };
@@ -2571,6 +2574,7 @@
 		380F4EF20FC0B67A00B0BFD7 /* Unit Tests */ = {
 			isa = PBXGroup;
 			children = (
+				961210D1302E7233009A9A2A /* SAGitHubReleaseTests.swift */,
 				50D3C3591A771C2300B5429C /* Other */,
 				1198F5B41174EDDE00670590 /* Database Actions */,
 				17DC886A126B378A00E9AAEC /* Category Additions */,
@@ -3365,6 +3369,7 @@
 				FD8099A72C59DCFA0084646F /* SAUuidFormatterTests.swift in Sources */,
 				51B09FD82F767A3F003BAFFF /* SAConnectionInfo.swift in Sources */,
 				6CB1977AAE8D7D64B7593E66 /* SPBundleManagerAdditionsTests.swift in Sources */,
+				961210D6302E7269009A9A2A /* GitHub.swift in Sources */,
 				B6E4019A9F1C4A8AA0B3D101 /* SALocalNetworkPermissionCheckerTests.swift in Sources */,
 				51CC84042FDE000300C4C14A /* SAHelpViewerOnlineURLBuilderTests.swift in Sources */,
 				C0F17A1A2B3C4D5E6F708091 /* SPTableContentColumnFilterTests.swift in Sources */,
@@ -3410,6 +3415,7 @@
 				5AF0C2000000000000000032 /* SAFavoriteItemTests.swift in Sources */,
 				5147B00D2F8C000300C4C14A /* SAConnectionDetailsValidator.swift in Sources */,
 				5147B00F2F8C000300C4C14A /* SAConnectionDetailsValidatorTests.swift in Sources */,
+				961210D2302E7233009A9A2A /* SAGitHubReleaseTests.swift in Sources */,
 				5147B0122F8C000400C4C14A /* SAConnectionFormHelpers.swift in Sources */,
 				51EA02532FDFF02C00DF6A7B /* SAArchivingTests.swift in Sources */,
 				5147B0142F8C000400C4C14A /* SAConnectionFormHelpersTests.swift in Sources */,

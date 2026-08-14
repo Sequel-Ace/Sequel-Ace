@@ -6,492 +6,406 @@
 //  Copyright © 2020-2022 Sequel-Ace. All rights reserved.
 //
 
-// This file was generated from JSON Schema using quicktype, do not modify it directly.
-// To parse the JSON, add this file to your project and do:
-//
-//   let gitHub = try GitHub(json)
-
 import Foundation
 
-// MARK: - GitHubElement
-final class GitHubElement: Codable, Comparable {
-    static func < (lhs: GitHubElement, rhs: GitHubElement) -> Bool {
-        return lhs.publishedAt < rhs.publishedAt
+enum SAGitHubReleaseAppVariant {
+    case production
+    case beta
+}
+
+struct SAGitHubReleaseTagIdentity {
+    let channel: String
+    let version: String
+    let build: Int
+
+    init?(_ value: String) {
+        let channelAndValue = value.split(separator: "/", omittingEmptySubsequences: false)
+        guard
+            channelAndValue.count == 2,
+            channelAndValue[0] == "production" || channelAndValue[0] == "beta",
+            let buildSeparator = channelAndValue[1].lastIndex(of: "-"),
+            buildSeparator != channelAndValue[1].startIndex,
+            Self.isASCIIDigits(channelAndValue[1][channelAndValue[1].index(after: buildSeparator)...]),
+            channelAndValue[1][channelAndValue[1].index(after: buildSeparator)] != "0",
+            let build = Int(channelAndValue[1][channelAndValue[1].index(after: buildSeparator)...]),
+            build > 0
+        else {
+            return nil
+        }
+
+        let versionValue = channelAndValue[1][..<buildSeparator]
+        let versionComponents = versionValue.split(separator: ".", omittingEmptySubsequences: false)
+        guard versionComponents.count == 3, versionComponents.allSatisfy(Self.isASCIIDigits) else {
+            return nil
+        }
+
+        channel = String(channelAndValue[0])
+        version = String(versionValue)
+        self.build = build
     }
 
-    static func > (lhs: GitHubElement, rhs: GitHubElement) -> Bool {
-        return lhs.publishedAt > rhs.publishedAt
+    private static func isASCIIDigits<T: StringProtocol>(_ value: T) -> Bool {
+        value.isNotEmpty && value.allSatisfy { $0 >= "0" && $0 <= "9" }
     }
+}
 
-    static func == (lhs: GitHubElement, rhs: GitHubElement) -> Bool {
-        return lhs.publishedAt == rhs.publishedAt
-    }
+/// The subset of a GitHub release that the in-app update check uses.
+///
+/// GitHub adds fields over time and release authors may be users, bots, or
+/// GitHub Apps. Decoding only the values used by the update flow keeps those
+/// unrelated API details from invalidating the entire releases response.
+struct SAGitHubRelease: Decodable, Comparable {
+    private static let canonicalBetaArtifactNamingMinimumBuild = 20_110
+    static let settlingInterval: TimeInterval = 15 * 60
 
-    let url, assetsURL: String
-    let uploadURL: String
-    let htmlURL: String
-    let id: Int
-    let author: Author
-    let nodeID, tagName: String
-    let targetCommitish: String
+    let tagName: String
     let name: String
-    let draft, prerelease: Bool
-    let createdAt, publishedAt: Date
-    let assets: [Asset]
-    let tarballURL, zipballURL: String
-    let body: String
+    let htmlURL: String
+    let draft: Bool
+    let prerelease: Bool
+    let publishedAt: Date
+    let assets: [SAGitHubReleaseAsset]
+
+    static func < (lhs: SAGitHubRelease, rhs: SAGitHubRelease) -> Bool {
+        if lhs.publishedAt != rhs.publishedAt {
+            return lhs.publishedAt < rhs.publishedAt
+        }
+
+        if
+            let lhsIdentity = lhs.tagIdentity,
+            let rhsIdentity = rhs.tagIdentity,
+            lhsIdentity.channel == rhsIdentity.channel,
+            lhsIdentity.build != rhsIdentity.build
+        {
+            return lhsIdentity.build < rhsIdentity.build
+        }
+
+        return lhs.tagName < rhs.tagName
+    }
+
+    static func == (lhs: SAGitHubRelease, rhs: SAGitHubRelease) -> Bool {
+        lhs.publishedAt == rhs.publishedAt && lhs.tagName == rhs.tagName
+    }
 
     enum CodingKeys: String, CodingKey {
-        case url
-        case assetsURL = "assets_url"
-        case uploadURL = "upload_url"
-        case htmlURL = "html_url"
-        case id, author
-        case nodeID = "node_id"
         case tagName = "tag_name"
-        case targetCommitish = "target_commitish"
-        case name, draft, prerelease
+        case name
+        case htmlURL = "html_url"
+        case draft
+        case prerelease
         case createdAt = "created_at"
         case publishedAt = "published_at"
         case assets
-        case tarballURL = "tarball_url"
-        case zipballURL = "zipball_url"
-        case body
     }
 
-    init(url: String, assetsURL: String, uploadURL: String, htmlURL: String, id: Int, author: Author, nodeID: String, tagName: String, targetCommitish: String, name: String, draft: Bool, prerelease: Bool, createdAt: Date, publishedAt: Date, assets: [Asset], tarballURL: String, zipballURL: String, body: String) {
-        self.url = url
-        self.assetsURL = assetsURL
-        self.uploadURL = uploadURL
-        self.htmlURL = htmlURL
-        self.id = id
-        self.author = author
-        self.nodeID = nodeID
-        self.tagName = tagName
-        self.targetCommitish = targetCommitish
-        self.name = name
-        self.draft = draft
-        self.prerelease = prerelease
-        self.createdAt = createdAt
-        self.publishedAt = publishedAt
-        self.assets = assets
-        self.tarballURL = tarballURL
-        self.zipballURL = zipballURL
-        self.body = body
-    }
-}
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
 
-// MARK: GitHubElement convenience initializers and mutators
-
-extension GitHubElement {
-    convenience init(data: Data) throws {
-        let me = try newJSONDecoder().decode(GitHubElement.self, from: data)
-        self.init(url: me.url, assetsURL: me.assetsURL, uploadURL: me.uploadURL, htmlURL: me.htmlURL, id: me.id, author: me.author, nodeID: me.nodeID, tagName: me.tagName, targetCommitish: me.targetCommitish, name: me.name, draft: me.draft, prerelease: me.prerelease, createdAt: me.createdAt, publishedAt: me.publishedAt, assets: me.assets, tarballURL: me.tarballURL, zipballURL: me.zipballURL, body: me.body)
+        tagName = try container.decode(String.self, forKey: .tagName)
+        name = try container.decodeIfPresent(String.self, forKey: .name) ?? tagName
+        htmlURL = try container.decode(String.self, forKey: .htmlURL)
+        // Missing release-state gates must never make a partial response look public.
+        draft = try container.decodeIfPresent(Bool.self, forKey: .draft) ?? true
+        prerelease = try container.decodeIfPresent(Bool.self, forKey: .prerelease) ?? true
+        publishedAt = try container.decodeIfPresent(Date.self, forKey: .publishedAt)
+            ?? container.decode(Date.self, forKey: .createdAt)
+        assets = try container.decodeIfPresent([SAGitHubReleaseAsset].self, forKey: .assets) ?? []
     }
 
-    convenience init(_ json: String, using encoding: String.Encoding = .utf8) throws {
-        guard let data = json.data(using: encoding) else {
-            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+    static func decodeList(from data: Data) throws -> [SAGitHubRelease] {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode([SAGitHubRelease].self, from: data)
+    }
+
+    func matchesInstalledBuild(named installedBuildName: String, releaseTag: String? = nil) -> Bool {
+        if let releaseTag {
+            return tagName == releaseTag
         }
-        try self.init(data: data)
+
+        if name == installedBuildName || name.hasPrefix("\(installedBuildName) ") {
+            return true
+        }
+
+        let tagBuildName = installedBuildName
+            .replacingOccurrences(of: " (", with: "-")
+            .replacingOccurrences(of: ")", with: "")
+        return tagName.split(separator: "/").last.map(String.init) == tagBuildName
     }
 
-    convenience init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
+    func compatibleAppZip(for variant: SAGitHubReleaseAppVariant) -> SAGitHubReleaseAsset? {
+        let appZips = assets.filter(\.isAppZip)
+
+        if usesReleaseChannelTag && tagIdentity == nil {
+            return nil
+        }
+
+        if usesCanonicalBetaArtifactNaming {
+            return canonicalBetaAsset(for: variant, in: appZips)
+        }
+
+        guard appZips.count > 1 else {
+            return inferredAppVariant == variant ? appZips.first : nil
+        }
+
+        let alphaAppZips = appZips.filter(\.isAlphaAppZip)
+        if alphaAppZips.isNotEmpty {
+            // Canonical beta releases suffix the beta-bundle artifact with "-alpha".
+            let matchingAppZips = variant == .beta ? alphaAppZips : appZips.filter { !$0.isAlphaAppZip }
+            return Self.onlyAsset(in: matchingAppZips)
+        }
+
+        let betaAppZips = appZips.filter(\.isBetaNamedAppZip)
+        let productionAppZips = appZips.filter { !$0.isBetaNamedAppZip }
+        guard betaAppZips.isNotEmpty, productionAppZips.isNotEmpty else {
+            return nil
+        }
+
+        return Self.onlyAsset(in: variant == .beta ? betaAppZips : productionAppZips)
     }
 
-    func with(
-        url: String? = nil,
-        assetsURL: String? = nil,
-        uploadURL: String? = nil,
-        htmlURL: String? = nil,
-        id: Int? = nil,
-        author: Author? = nil,
-        nodeID: String? = nil,
-        tagName: String? = nil,
-        targetCommitish: String? = nil,
-        name: String? = nil,
-        draft: Bool? = nil,
-        prerelease: Bool? = nil,
-        createdAt: Date? = nil,
-        publishedAt: Date? = nil,
-        assets: [Asset]? = nil,
-        tarballURL: String? = nil,
-        zipballURL: String? = nil,
-        body: String? = nil
-    ) -> GitHubElement {
-        return GitHubElement(
-            url: url ?? self.url,
-            assetsURL: assetsURL ?? self.assetsURL,
-            uploadURL: uploadURL ?? self.uploadURL,
-            htmlURL: htmlURL ?? self.htmlURL,
-            id: id ?? self.id,
-            author: author ?? self.author,
-            nodeID: nodeID ?? self.nodeID,
-            tagName: tagName ?? self.tagName,
-            targetCommitish: targetCommitish ?? self.targetCommitish,
-            name: name ?? self.name,
-            draft: draft ?? self.draft,
-            prerelease: prerelease ?? self.prerelease,
-            createdAt: createdAt ?? self.createdAt,
-            publishedAt: publishedAt ?? self.publishedAt,
-            assets: assets ?? self.assets,
-            tarballURL: tarballURL ?? self.tarballURL,
-            zipballURL: zipballURL ?? self.zipballURL,
-            body: body ?? self.body
-        )
+    private var inferredAppVariant: SAGitHubReleaseAppVariant {
+        switch tagName.split(separator: "/").first {
+        case "beta":
+            return .beta
+        case "production":
+            return .production
+        default:
+            return prerelease ? .beta : .production
+        }
     }
 
-    func jsonData() throws -> Data {
-        return try newJSONEncoder().encode(self)
+    private static func onlyAsset(in assets: [SAGitHubReleaseAsset]) -> SAGitHubReleaseAsset? {
+        assets.count == 1 ? assets[0] : nil
     }
 
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
+    private var usesCanonicalBetaArtifactNaming: Bool {
+        guard let tagIdentity else {
+            return false
+        }
+
+        // Builds before the guarded release workflow used less predictable beta ZIP names.
+        return tagIdentity.channel == "beta" && tagIdentity.build >= Self.canonicalBetaArtifactNamingMinimumBuild
+    }
+
+    private var usesReleaseChannelTag: Bool {
+        let channel = tagName.split(separator: "/", omittingEmptySubsequences: false).first
+        return channel == "production" || channel == "beta"
+    }
+
+    private func canonicalBetaAsset(
+        for variant: SAGitHubReleaseAppVariant,
+        in appZips: [SAGitHubReleaseAsset]
+    ) -> SAGitHubReleaseAsset? {
+        guard let tagIdentity, tagIdentity.channel == "beta" else {
+            return nil
+        }
+
+        let prefix = "Sequel-Ace-\(tagIdentity.version)-beta"
+        let suffix = variant == .beta ? "-alpha.zip" : ".zip"
+        // Each installed variant needs only its own artifact; the shared settle
+        // window keeps an in-progress upload from reaching either updater.
+        return Self.onlyAsset(in: appZips.filter { asset in
+            guard asset.name.hasPrefix(prefix), asset.name.hasSuffix(suffix) else {
+                return false
+            }
+
+            let iterationStart = asset.name.index(asset.name.startIndex, offsetBy: prefix.count)
+            let iterationEnd = asset.name.index(asset.name.endIndex, offsetBy: -suffix.count)
+            return iterationStart < iterationEnd
+                && Int(asset.name[iterationStart..<iterationEnd]).map { $0 > 0 } == true
+        })
+    }
+
+    func settlingTimeRemaining(at date: Date) -> TimeInterval? {
+        let latestAssetChange = assets.compactMap(\.lastModifiedAt).max()
+        let latestReleaseChange = latestAssetChange.map { max(publishedAt, $0) } ?? publishedAt
+        let remaining = Self.settlingInterval - date.timeIntervalSince(latestReleaseChange)
+        return remaining > 0 ? remaining : nil
+    }
+
+    func isSettled(at date: Date) -> Bool {
+        settlingTimeRemaining(at: date) == nil
+    }
+
+    private var tagIdentity: SAGitHubReleaseTagIdentity? {
+        SAGitHubReleaseTagIdentity(tagName)
     }
 }
 
-// MARK: - Asset
-final class Asset: Codable {
-    let url: String
-    let id: Int
-    let nodeID, name: String
-    let label: JSONNull?
-    let uploader: Author
-    let contentType: ContentType
-    let state: GithubState
-    let size, downloadCount: Int
-    let createdAt, updatedAt: Date
+enum SAGitHubReleaseSettlingPolicy {
+    static func retryDelay(
+        at date: Date,
+        currentRelease: SAGitHubRelease?,
+        candidateReleases: [SAGitHubRelease]
+    ) -> TimeInterval? {
+        guard
+            let currentRelease,
+            let newestRelease = candidateReleases.max(),
+            newestRelease > currentRelease
+        else {
+            return nil
+        }
+
+        return newestRelease.settlingTimeRemaining(at: date)
+    }
+}
+
+struct SAGitHubReleaseCheckTracker {
+    private var currentID: UUID?
+    private var currentIsUserInitiated = false
+
+    mutating func begin(isUserInitiated: Bool) -> UUID? {
+        if currentIsUserInitiated && !isUserInitiated {
+            return nil
+        }
+
+        let id = UUID()
+        currentID = id
+        currentIsUserInitiated = isUserInitiated
+        return id
+    }
+
+    func isCurrent(_ id: UUID) -> Bool {
+        currentID == id
+    }
+
+    mutating func finish(_ id: UUID) {
+        guard currentID == id else {
+            return
+        }
+
+        currentID = nil
+        currentIsUserInitiated = false
+    }
+}
+
+enum SAGitHubReleasePagination {
+    static let pageSize = 100
+    static let maximumPageCount = 10
+
+    static func nextPageURL(
+        from linkHeader: String?,
+        pagesFetched: Int,
+        visitedPageURLs: Set<URL>,
+        releases: [SAGitHubRelease],
+        installedBuildName: String,
+        installedReleaseTag: String?
+    ) -> URL? {
+        guard
+            pagesFetched < maximumPageCount,
+            releases.contains(where: {
+                $0.matchesInstalledBuild(named: installedBuildName, releaseTag: installedReleaseTag)
+            }) == false,
+            let linkHeader
+        else {
+            return nil
+        }
+
+        for link in linkHeader.split(separator: ",") {
+            let components = link.split(separator: ";").map {
+                $0.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            guard
+                components.dropFirst().contains("rel=\"next\""),
+                let value = components.first,
+                value.hasPrefix("<"),
+                value.hasSuffix(">"),
+                let url = URL(string: String(value.dropFirst().dropLast())),
+                url.scheme == "https",
+                url.host == "api.github.com",
+                visitedPageURLs.contains(url) == false
+            else {
+                continue
+            }
+
+            return url
+        }
+
+        return nil
+    }
+}
+
+struct SAGitHubReleaseAsset: Decodable {
+    let name: String
+    let size: Int
     let browserDownloadURL: String
+    let createdAt: Date?
+    let updatedAt: Date?
 
     enum CodingKeys: String, CodingKey {
-        case url, id
-        case nodeID = "node_id"
-        case name, label, uploader
-        case contentType = "content_type"
-        case state, size
-        case downloadCount = "download_count"
+        case name
+        case size
+        case browserDownloadURL = "browser_download_url"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
-        case browserDownloadURL = "browser_download_url"
     }
 
-    init(url: String, id: Int, nodeID: String, name: String, label: JSONNull?, uploader: Author, contentType: ContentType, state: GithubState, size: Int, downloadCount: Int, createdAt: Date, updatedAt: Date, browserDownloadURL: String) {
-        self.url = url
-        self.id = id
-        self.nodeID = nodeID
-        self.name = name
-        self.label = label
-        self.uploader = uploader
-        self.contentType = contentType
-        self.state = state
-        self.size = size
-        self.downloadCount = downloadCount
-        self.createdAt = createdAt
-        self.updatedAt = updatedAt
-        self.browserDownloadURL = browserDownloadURL
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
+        size = try container.decodeIfPresent(Int.self, forKey: .size) ?? 0
+        browserDownloadURL = try container.decodeIfPresent(String.self, forKey: .browserDownloadURL) ?? ""
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt)
+        updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt)
+    }
+
+    fileprivate var isAppZip: Bool {
+        let normalizedName = name.lowercased()
+        let hasAppPrefix = normalizedName.hasPrefix("sequel-ace-") || normalizedName.hasPrefix("sequelace-")
+        return hasAppPrefix && normalizedName.hasSuffix(".zip") && size > 0 && browserDownloadURL.isNotEmpty
+    }
+
+    fileprivate var isAlphaAppZip: Bool {
+        name.lowercased().dropLast(4).contains("-alpha")
+    }
+
+    fileprivate var isBetaNamedAppZip: Bool {
+        name.lowercased().dropLast(4).contains("-beta")
+    }
+
+    fileprivate var lastModifiedAt: Date? {
+        updatedAt ?? createdAt
     }
 }
 
-// MARK: Asset convenience initializers and mutators
-
-extension Asset {
-    convenience init(data: Data) throws {
-        let me = try newJSONDecoder().decode(Asset.self, from: data)
-        self.init(url: me.url, id: me.id, nodeID: me.nodeID, name: me.name, label: me.label, uploader: me.uploader, contentType: me.contentType, state: me.state, size: me.size, downloadCount: me.downloadCount, createdAt: me.createdAt, updatedAt: me.updatedAt, browserDownloadURL: me.browserDownloadURL)
-    }
-
-    convenience init(_ json: String, using encoding: String.Encoding = .utf8) throws {
-        guard let data = json.data(using: encoding) else {
-            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+/// Decides whether an update-check failure should interrupt the user.
+enum SAGitHubReleaseErrorPolicy {
+    static func shouldPresentError(isUserInitiated: Bool, statusCode: Int?, underlyingError: Error?) -> Bool {
+        guard isUserInitiated else {
+            return false
         }
-        try self.init(data: data)
-    }
 
-    convenience init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
-    }
-
-    func with(
-        url: String? = nil,
-        id: Int? = nil,
-        nodeID: String? = nil,
-        name: String? = nil,
-        label: JSONNull?? = nil,
-        uploader: Author? = nil,
-        contentType: ContentType? = nil,
-        state: GithubState? = nil,
-        size: Int? = nil,
-        downloadCount: Int? = nil,
-        createdAt: Date? = nil,
-        updatedAt: Date? = nil,
-        browserDownloadURL: String? = nil
-    ) -> Asset {
-        return Asset(
-            url: url ?? self.url,
-            id: id ?? self.id,
-            nodeID: nodeID ?? self.nodeID,
-            name: name ?? self.name,
-            label: label ?? self.label,
-            uploader: uploader ?? self.uploader,
-            contentType: contentType ?? self.contentType,
-            state: state ?? self.state,
-            size: size ?? self.size,
-            downloadCount: downloadCount ?? self.downloadCount,
-            createdAt: createdAt ?? self.createdAt,
-            updatedAt: updatedAt ?? self.updatedAt,
-            browserDownloadURL: browserDownloadURL ?? self.browserDownloadURL
-        )
-    }
-
-    func jsonData() throws -> Data {
-        return try newJSONEncoder().encode(self)
-    }
-
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
-    }
-}
-
-enum ContentType: String, Codable {
-    case applicationZip = "application/zip"
-}
-
-enum GithubState: String, Codable {
-    case uploaded = "uploaded"
-}
-
-// MARK: - Author
-final class Author: Codable {
-    let login: Login
-    let id: Int
-    let nodeID: NodeID
-    let avatarURL: String
-    let gravatarID: String
-    let url, htmlURL, followersURL: String
-    let followingURL: FollowingURL
-    let gistsURL: GistsURL
-    let starredURL: StarredURL
-    let subscriptionsURL, organizationsURL, reposURL: String
-    let eventsURL: EventsURL
-    let receivedEventsURL: String
-    let type: TypeEnum
-    let siteAdmin: Bool
-
-    enum CodingKeys: String, CodingKey {
-        case login, id
-        case nodeID = "node_id"
-        case avatarURL = "avatar_url"
-        case gravatarID = "gravatar_id"
-        case url
-        case htmlURL = "html_url"
-        case followersURL = "followers_url"
-        case followingURL = "following_url"
-        case gistsURL = "gists_url"
-        case starredURL = "starred_url"
-        case subscriptionsURL = "subscriptions_url"
-        case organizationsURL = "organizations_url"
-        case reposURL = "repos_url"
-        case eventsURL = "events_url"
-        case receivedEventsURL = "received_events_url"
-        case type
-        case siteAdmin = "site_admin"
-    }
-
-    init(login: Login, id: Int, nodeID: NodeID, avatarURL: String, gravatarID: String, url: String, htmlURL: String, followersURL: String, followingURL: FollowingURL, gistsURL: GistsURL, starredURL: StarredURL, subscriptionsURL: String, organizationsURL: String, reposURL: String, eventsURL: EventsURL, receivedEventsURL: String, type: TypeEnum, siteAdmin: Bool) {
-        self.login = login
-        self.id = id
-        self.nodeID = nodeID
-        self.avatarURL = avatarURL
-        self.gravatarID = gravatarID
-        self.url = url
-        self.htmlURL = htmlURL
-        self.followersURL = followersURL
-        self.followingURL = followingURL
-        self.gistsURL = gistsURL
-        self.starredURL = starredURL
-        self.subscriptionsURL = subscriptionsURL
-        self.organizationsURL = organizationsURL
-        self.reposURL = reposURL
-        self.eventsURL = eventsURL
-        self.receivedEventsURL = receivedEventsURL
-        self.type = type
-        self.siteAdmin = siteAdmin
-    }
-}
-
-// MARK: Author convenience initializers and mutators
-
-extension Author {
-    convenience init(data: Data) throws {
-        let me = try newJSONDecoder().decode(Author.self, from: data)
-        self.init(login: me.login, id: me.id, nodeID: me.nodeID, avatarURL: me.avatarURL, gravatarID: me.gravatarID, url: me.url, htmlURL: me.htmlURL, followersURL: me.followersURL, followingURL: me.followingURL, gistsURL: me.gistsURL, starredURL: me.starredURL, subscriptionsURL: me.subscriptionsURL, organizationsURL: me.organizationsURL, reposURL: me.reposURL, eventsURL: me.eventsURL, receivedEventsURL: me.receivedEventsURL, type: me.type, siteAdmin: me.siteAdmin)
-    }
-
-    convenience init(_ json: String, using encoding: String.Encoding = .utf8) throws {
-        guard let data = json.data(using: encoding) else {
-            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        if let statusCode,
+           ephemeralHTTPStatusCodes.contains(statusCode) || (500...599).contains(statusCode) {
+            return false
         }
-        try self.init(data: data)
-    }
 
-    convenience init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
-    }
-
-    func with(
-        login: Login? = nil,
-        id: Int? = nil,
-        nodeID: NodeID? = nil,
-        avatarURL: String? = nil,
-        gravatarID: String? = nil,
-        url: String? = nil,
-        htmlURL: String? = nil,
-        followersURL: String? = nil,
-        followingURL: FollowingURL? = nil,
-        gistsURL: GistsURL? = nil,
-        starredURL: StarredURL? = nil,
-        subscriptionsURL: String? = nil,
-        organizationsURL: String? = nil,
-        reposURL: String? = nil,
-        eventsURL: EventsURL? = nil,
-        receivedEventsURL: String? = nil,
-        type: TypeEnum? = nil,
-        siteAdmin: Bool? = nil
-    ) -> Author {
-        return Author(
-            login: login ?? self.login,
-            id: id ?? self.id,
-            nodeID: nodeID ?? self.nodeID,
-            avatarURL: avatarURL ?? self.avatarURL,
-            gravatarID: gravatarID ?? self.gravatarID,
-            url: url ?? self.url,
-            htmlURL: htmlURL ?? self.htmlURL,
-            followersURL: followersURL ?? self.followersURL,
-            followingURL: followingURL ?? self.followingURL,
-            gistsURL: gistsURL ?? self.gistsURL,
-            starredURL: starredURL ?? self.starredURL,
-            subscriptionsURL: subscriptionsURL ?? self.subscriptionsURL,
-            organizationsURL: organizationsURL ?? self.organizationsURL,
-            reposURL: reposURL ?? self.reposURL,
-            eventsURL: eventsURL ?? self.eventsURL,
-            receivedEventsURL: receivedEventsURL ?? self.receivedEventsURL,
-            type: type ?? self.type,
-            siteAdmin: siteAdmin ?? self.siteAdmin
-        )
-    }
-
-    func jsonData() throws -> Data {
-        return try newJSONEncoder().encode(self)
-    }
-
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
-    }
-}
-
-enum EventsURL: String, Codable {
-    case httpsAPIGithubCOMUsersJasonMorcosEventsPrivacy = "https://api.github.com/users/Jason-Morcos/events{/privacy}"
-    case httpsAPIGithubCOMUsersKaspikEventsPrivacy = "https://api.github.com/users/Kaspik/events{/privacy}"
-}
-
-enum FollowingURL: String, Codable {
-    case httpsAPIGithubCOMUsersJasonMorcosFollowingOtherUser = "https://api.github.com/users/Jason-Morcos/following{/other_user}"
-    case httpsAPIGithubCOMUsersKaspikFollowingOtherUser = "https://api.github.com/users/Kaspik/following{/other_user}"
-}
-
-enum GistsURL: String, Codable {
-    case httpsAPIGithubCOMUsersJasonMorcosGistsGistID = "https://api.github.com/users/Jason-Morcos/gists{/gist_id}"
-    case httpsAPIGithubCOMUsersKaspikGistsGistID = "https://api.github.com/users/Kaspik/gists{/gist_id}"
-}
-
-enum Login: String, Codable {
-    case jasonMorcos = "Jason-Morcos"
-    case kaspik = "Kaspik"
-}
-
-enum NodeID: String, Codable {
-    case mdq6VXNlcjEwNzEwMzY3 = "MDQ6VXNlcjEwNzEwMzY3"
-    case mdq6VXNlcjcyMDQxNjg = "MDQ6VXNlcjcyMDQxNjg="
-}
-
-enum StarredURL: String, Codable {
-    case httpsAPIGithubCOMUsersJasonMorcosStarredOwnerRepo = "https://api.github.com/users/Jason-Morcos/starred{/owner}{/repo}"
-    case httpsAPIGithubCOMUsersKaspikStarredOwnerRepo = "https://api.github.com/users/Kaspik/starred{/owner}{/repo}"
-}
-
-enum TypeEnum: String, Codable {
-    case user = "User"
-}
-
-typealias GitHub = [GitHubElement]
-
-extension Array where Element == GitHub.Element {
-    init(data: Data) throws {
-        self = try newJSONDecoder().decode(GitHub.self, from: data)
-    }
-
-    init(_ json: String, using encoding: String.Encoding = .utf8) throws {
-        guard let data = json.data(using: encoding) else {
-            throw NSError(domain: "JSONDecoding", code: 0, userInfo: nil)
+        if let underlyingError {
+            let urlError = underlyingError as NSError
+            if urlError.domain == NSURLErrorDomain,
+               ephemeralURLErrorCodes.contains(URLError.Code(rawValue: urlError.code)) {
+                return false
+            }
         }
-        try self.init(data: data)
-    }
 
-    init(fromURL url: URL) throws {
-        try self.init(data: try Data(contentsOf: url))
-    }
-
-    func jsonData() throws -> Data {
-        return try newJSONEncoder().encode(self)
-    }
-
-    func jsonString(encoding: String.Encoding = .utf8) throws -> String? {
-        return String(data: try self.jsonData(), encoding: encoding)
-    }
-}
-
-// MARK: - Helper functions for creating encoders and decoders
-
-func newJSONDecoder() -> JSONDecoder {
-    let decoder = JSONDecoder()
-    decoder.dateDecodingStrategy = .iso8601
-    return decoder
-}
-
-func newJSONEncoder() -> JSONEncoder {
-    let encoder = JSONEncoder()
-    encoder.dateEncodingStrategy = .iso8601
-    return encoder
-}
-
-// MARK: - Encode/decode helpers
-
-final class JSONNull: Codable, Hashable {
-
-    public static func == (lhs: JSONNull, rhs: JSONNull) -> Bool {
         return true
     }
 
-    public var hashValue: Int {
-        return 0
-    }
+    private static let ephemeralURLErrorCodes: Set<URLError.Code> = [
+        .cancelled,
+        .timedOut,
+        .cannotFindHost,
+        .cannotConnectToHost,
+        .networkConnectionLost,
+        .dnsLookupFailed,
+        .resourceUnavailable,
+        .notConnectedToInternet,
+        .internationalRoamingOff,
+        .callIsActive,
+        .dataNotAllowed,
+        .cannotLoadFromNetwork
+    ]
 
-    public func hash(into hasher: inout Hasher) {
-        // No-op
-    }
-
-    public init() {}
-
-    public required init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        if !container.decodeNil() {
-            throw DecodingError.typeMismatch(JSONNull.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for JSONNull"))
-        }
-    }
-
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encodeNil()
-    }
+    private static let ephemeralHTTPStatusCodes: Set<Int> = [403, 408, 425, 429]
 }

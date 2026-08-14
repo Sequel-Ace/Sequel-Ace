@@ -156,7 +156,11 @@ module SequelAceRelease
         raise ValidationError, "changelog base tag does not match its approved SHA"
       end
 
-      version_result = VersionFiles.new.update!(version: options[:version], build: options[:build])
+      version_result = VersionFiles.new.update!(
+        version: options[:version],
+        build: options[:build],
+        channel: options[:channel]
+      )
       @runner.run(
         Config.repo_root.join("Scripts/generate-changelog.sh"),
         options[:version],
@@ -238,6 +242,7 @@ module SequelAceRelease
         value.on("--build BUILD", Integer) { |item| options[:build] = item }
         value.on("--any-build") { options[:any_build] = true }
         value.on("--channel CHANNEL") { |item| options[:channel] = item }
+        value.on("--release-tag TAG") { |item| options[:release_tag] = item }
         value.on("--launch") { options[:launch] = true }
         value.on("--output-zip FILE") { |item| options[:output_zip] = item }
         value.on("--sha256 SHA") { |item| options[:expected_sha256] = item }
@@ -348,6 +353,7 @@ module SequelAceRelease
         value.on("--build BUILD", Integer) { |item| options[:build] = item }
         value.on("--any-build") { options[:any_build] = true }
         value.on("--channel CHANNEL") { |item| options[:channel] = item }
+        value.on("--release-tag TAG") { |item| options[:release_tag] = item }
         value.on("--launch") { options[:launch] = true }
         value.on("--output-zip FILE") { |item| options[:output_zip] = item }
         value.on("--output FILE") { |item| options[:output] = item }
@@ -370,7 +376,8 @@ module SequelAceRelease
             launch: options[:launch],
             output_zip: options[:output_zip],
             any_build: options[:any_build],
-            expected_sha256: artifact["sha256"]
+            expected_sha256: artifact["sha256"],
+            release_tag: options[:release_tag]
           )
           return emit(result.merge("cloud_artifact" => artifact), options[:output])
         rescue ValidationError, CommandError => e

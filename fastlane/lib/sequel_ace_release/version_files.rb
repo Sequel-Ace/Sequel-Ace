@@ -27,8 +27,9 @@ module SequelAceRelease
       { "version" => versions.first, "build" => Integer(builds.first) }
     end
 
-    def update!(version:, build:)
+    def update!(version:, build:, channel:)
       Version.validate!(version)
+      Config.validate_channel!(channel)
       build_number = begin
         Integer(build)
       rescue ArgumentError, TypeError
@@ -41,6 +42,8 @@ module SequelAceRelease
         replace_plist_value!(path, VERSION_KEY, version)
         replace_plist_value!(path, BUILD_KEY, build_number.to_s)
       end
+      release_tag = "#{channel}/#{version}-#{build_number}"
+      replace_plist_value!(Config::APP_INFO_PLIST, Config::RELEASE_TAG_PLIST_KEY, release_tag)
       Config::PROJECT_FILES.each do |path, expected|
         replace_project_value!(path, "CURRENT_PROJECT_VERSION", build_number, expected.fetch(:current))
         replace_project_value!(path, "DYLIB_CURRENT_VERSION", build_number, expected.fetch(:dylib))
@@ -48,6 +51,9 @@ module SequelAceRelease
       after = current
       expected_after = { "version" => version, "build" => build_number }
       raise ValidationError, "version preparation did not converge on #{expected_after}" unless after == expected_after
+      unless read_plist_value(Config::APP_INFO_PLIST, Config::RELEASE_TAG_PLIST_KEY) == release_tag
+        raise ValidationError, "release tag preparation did not converge on #{release_tag}"
+      end
 
       { "before" => before, "after" => after }
     end

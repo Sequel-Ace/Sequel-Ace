@@ -19,6 +19,8 @@ module SequelAceRelease
     AUTHORIZED_ACTORS = %w[Jason-Morcos Kaspik].freeze
     ACTIONS_BOT = "github-actions[bot]".freeze
     CHANNELS = %w[production beta].freeze
+    APP_INFO_PLIST = "Resources/Plists/Info.plist".freeze
+    RELEASE_TAG_PLIST_KEY = "SAGitHubReleaseTag".freeze
     MANIFEST_STATES = %w[
       planned prepared pull_request_open merged prerelease_created
       cloud_running artifacts_verified archived submitted finalizing live failed
@@ -30,15 +32,14 @@ module SequelAceRelease
       "Frameworks/SPMySQLFramework/SPMySQLFramework.xcodeproj/project.pbxproj" => { current: 5, dylib: 5 }
     }.freeze
 
-    PLIST_FILES = %w[
-      Resources/Plists/Info.plist
+    PLIST_FILES = ([APP_INFO_PLIST] + %w[
       Resources/Plists/TunnelAssistant-Info.plist
       Resources/Plists/Unit\ Tests-Info.plist
       Frameworks/QueryKit/Resources/Info.plist
       Frameworks/QueryKit/Resources/Tests-Info.plist
       Frameworks/SPMySQLFramework/Resources/Info.plist
       Frameworks/SPMySQLFramework/SPMySQL\ Unit\ Tests/Info.plist
-    ].freeze
+    ]).freeze
 
     module_function
 
