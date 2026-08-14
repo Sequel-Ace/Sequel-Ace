@@ -90,13 +90,16 @@ module SequelAceRelease
       request!("GET", "/repos/#{@repository}/releases/latest")
     end
 
-    def validate_release_publisher!(expected_login:)
+    def validate_release_publisher!(expected_login:, expected_id:)
       unless expected_login.to_s.match?(/\A[A-Za-z0-9-]+\z/)
         raise ValidationError, "expected GitHub release publisher is malformed"
       end
+      unless expected_id.is_a?(Integer) && expected_id.positive?
+        raise ValidationError, "expected GitHub release publisher ID is malformed"
+      end
 
       user = request!("GET", "/user")
-      unless user.is_a?(Hash) && user["login"] == expected_login
+      unless user.is_a?(Hash) && user["login"] == expected_login && user["id"] == expected_id
         raise ValidationError, "GitHub release publisher credential does not belong to #{expected_login}"
       end
       repository = request!("GET", "/repos/#{@repository}")
@@ -107,6 +110,7 @@ module SequelAceRelease
 
       {
         "login" => expected_login,
+        "id" => expected_id,
         "repository" => @repository,
         "push_access" => true
       }
@@ -407,7 +411,10 @@ module SequelAceRelease
       })
     end
 
-    def create_or_validate_release(tag:, target_sha:, title:, body:, expected_author_login:, before_create: nil)
+    def create_or_validate_release(
+      tag:, target_sha:, title:, body:, expected_author_login:, expected_author_id: nil, before_create: nil
+    )
+      validate_expected_release_author!(expected_author_login, expected_author_id)
       validate_commit_sha!(target_sha, "release target SHA")
       validate_exact_release_tag!(tag: tag, target_sha: target_sha)
 
@@ -418,7 +425,8 @@ module SequelAceRelease
           tag: tag,
           title: title,
           body: body,
-          expected_author_login: expected_author_login
+          expected_author_login: expected_author_login,
+          expected_author_id: expected_author_id
         )
         validate_exact_release_tag!(tag: tag, target_sha: target_sha)
         return validated
@@ -444,6 +452,7 @@ module SequelAceRelease
           title: title,
           body: body,
           expected_author_login: expected_author_login,
+          expected_author_id: expected_author_id,
           created: false
         )
         validate_exact_release_tag!(tag: tag, target_sha: target_sha)
@@ -456,13 +465,17 @@ module SequelAceRelease
         title: title,
         body: body,
         expected_author_login: expected_author_login,
+        expected_author_id: expected_author_id,
         created: true
       )
       validate_exact_release_tag!(tag: tag, target_sha: target_sha)
       validated
     end
 
-    def validate_existing_release(release:, tag:, target_sha:, title:, body:, expected_author_login:)
+    def validate_existing_release(
+      release:, tag:, target_sha:, title:, body:, expected_author_login:, expected_author_id: nil
+    )
+      validate_expected_release_author!(expected_author_login, expected_author_id)
       validate_commit_sha!(target_sha, "release target SHA")
       validate_exact_release_tag!(tag: tag, target_sha: target_sha)
       validated = validate_existing_release_response(
@@ -470,7 +483,8 @@ module SequelAceRelease
         tag: tag,
         title: title,
         body: body,
-        expected_author_login: expected_author_login
+        expected_author_login: expected_author_login,
+        expected_author_id: expected_author_id
       )
       validate_exact_release_tag!(tag: tag, target_sha: target_sha)
       validated
@@ -629,13 +643,28 @@ module SequelAceRelease
 
     private
 
-    def validate_existing_release_response(release:, tag:, title:, body:, expected_author_login:)
+    def validate_expected_release_author!(login, id)
+      unless login.to_s.match?(/\A[A-Za-z0-9-]+(?:\[bot\])?\z/)
+        raise ValidationError, "expected GitHub release author is malformed"
+      end
+      if login == ReleasePublisher::USER_LOGIN && id != ReleasePublisher::USER_ID
+        raise ValidationError, "expected GitHub user release author ID does not match the pinned account"
+      end
+      if !id.nil? && (!id.is_a?(Integer) || !id.positive?)
+        raise ValidationError, "expected GitHub release author ID is malformed"
+      end
+    end
+
+    def validate_existing_release_response(
+      release:, tag:, title:, body:, expected_author_login:, expected_author_id:
+    )
       validate_release_response!(
         release,
         tag: tag,
         title: title,
         body: body,
         expected_author_login: expected_author_login,
+        expected_author_id: expected_author_id,
         created: false
       )
     end
@@ -655,7 +684,9 @@ module SequelAceRelease
       response.merge("created" => created)
     end
 
-    def validate_release_response!(response, tag:, title:, body:, expected_author_login:, created:)
+    def validate_release_response!(
+      response, tag:, title:, body:, expected_author_login:, expected_author_id:, created:
+    )
       expected = {
         "tag_name" => tag,
         "name" => title,
@@ -664,8 +695,14 @@ module SequelAceRelease
         "prerelease" => true,
         "author_login" => expected_author_login
       }
+      expected["author_id"] = expected_author_id unless expected_author_id.nil?
       actual = expected.keys.to_h do |key|
-        [key, key == "author_login" ? response.dig("author", "login") : response[key]]
+        value = case key
+                when "author_login" then response.dig("author", "login")
+                when "author_id" then response.dig("author", "id")
+                else response[key]
+                end
+        [key, value]
       end if response.is_a?(Hash)
       unless response.is_a?(Hash) && response["id"].is_a?(Integer) && response["id"].positive? && actual == expected
         raise IntegrityError, "GitHub release does not match the exact approved prerelease"

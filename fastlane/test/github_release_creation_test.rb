@@ -19,11 +19,17 @@ class GitHubReleaseCreationTest < Minitest::Test
       { "target_sha" => target_sha }
     end
 
-    def validate_release_publisher!(expected_login:)
+    def validate_release_publisher!(expected_login:, expected_id:)
       raise "wrong publisher" unless expected_login == SequelAceRelease::ReleasePublisher::USER_LOGIN
+      raise "wrong publisher ID" unless expected_id == SequelAceRelease::ReleasePublisher::USER_ID
 
       @events << :validate_publisher
-      { "login" => expected_login, "repository" => SequelAceRelease::Config::REPOSITORY, "push_access" => true }
+      {
+        "login" => expected_login,
+        "id" => expected_id,
+        "repository" => SequelAceRelease::Config::REPOSITORY,
+        "push_access" => true
+      }
     end
 
     def validate_release_app_publisher!(
@@ -63,19 +69,24 @@ class GitHubReleaseCreationTest < Minitest::Test
       @existing_release
     end
 
-    def validate_existing_release(release:, tag:, target_sha:, title:, body:, expected_author_login:)
+    def validate_existing_release(
+      release:, tag:, target_sha:, title:, body:, expected_author_login:, expected_author_id:
+    )
       raise "wrong existing release" unless release.equal?(@existing_release)
       raise "wrong tag" unless tag == "production/5.4.0-20109"
       raise "wrong target" unless target_sha == "a" * 40
       raise "wrong title" unless title == "5.4.0 (20109) - Release Candidate 1"
       raise "wrong body" unless body == "Approved notes"
       raise "wrong release author" unless expected_author_login == release.dig("author", "login")
+      raise "wrong release author ID" unless expected_author_id == release.dig("author", "id")
 
       @events << :validate_existing_release
       release.merge("created" => false)
     end
 
-    def create_or_validate_release(tag:, target_sha:, title:, body:, expected_author_login:, before_create: nil)
+    def create_or_validate_release(
+      tag:, target_sha:, title:, body:, expected_author_login:, expected_author_id: nil, before_create: nil
+    )
       expected_events = if expected_author_login == SequelAceRelease::ReleasePublisher::USER_LOGIN
                           %i[validate_target find_release validate_publisher create_tag]
                         else
@@ -92,6 +103,11 @@ class GitHubReleaseCreationTest < Minitest::Test
       ].include?(expected_author_login)
         raise "wrong release author"
       end
+      if expected_author_login == SequelAceRelease::ReleasePublisher::USER_LOGIN
+        raise "wrong release author ID" unless expected_author_id == SequelAceRelease::ReleasePublisher::USER_ID
+      elsif expected_author_id
+        raise "unexpected release App author ID"
+      end
 
       before_create&.call
       @events << :publish_release
@@ -103,7 +119,10 @@ class GitHubReleaseCreationTest < Minitest::Test
       {
         "id" => 100,
         "tag_name" => tag,
-        "author" => { "login" => expected_author_login },
+        "author" => {
+          "login" => expected_author_login,
+          "id" => expected_author_id || 999
+        },
         "created_at" => created_at,
         "created" => true
       }
@@ -206,7 +225,10 @@ class GitHubReleaseCreationTest < Minitest::Test
       "body" => "Approved notes",
       "draft" => false,
       "prerelease" => true,
-      "author" => { "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN },
+      "author" => {
+        "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN,
+        "id" => SequelAceRelease::ReleasePublisher::USER_ID
+      },
       "created_at" => "2027-08-13T23:00:00Z"
     }
     client = Client.new(existing_release: existing)
@@ -247,7 +269,10 @@ class GitHubReleaseCreationTest < Minitest::Test
   def test_publisher_mode_recovers_an_existing_release_during_the_safety_window
     existing = {
       "id" => 100,
-      "author" => { "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN },
+      "author" => {
+        "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN,
+        "id" => SequelAceRelease::ReleasePublisher::USER_ID
+      },
       "created_at" => "2027-08-13T23:00:00Z"
     }
     client = Client.new(existing_release: existing)

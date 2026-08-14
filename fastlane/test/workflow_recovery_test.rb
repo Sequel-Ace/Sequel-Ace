@@ -492,6 +492,8 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes gate, "still has an active asynchronous handoff"
     assert_includes gate, "ReleasePublisher.authorized?"
     assert_includes gate, "release_author"
+    assert_includes gate, "release_author_id"
+    assert_includes gate, "id: author_id"
     assert_includes gate, "has unreadable private handoff state; refusing to overlap it"
     refute_includes gate, "if Scripts/archive-release-to-ghcr.sh pull"
   end
@@ -789,15 +791,21 @@ class WorkflowRecoveryTest < Minitest::Test
     workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
     discovery = workflow.split("  discover:", 2).fetch(1).split("  finalize:", 2).first
     execution = workflow.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
+    manual_discovery = discovery.split('if [[ -n "${REQUESTED_TAG}" ]]', 2).fetch(1).split("          else", 2).first
 
-    assert_includes discovery, 'gh release view "${REQUESTED_TAG}"'
+    assert_includes discovery, 'gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${requested_tag_encoded}"'
     assert_includes discovery, '.author.login == "sequel-ace-release-automation[bot]"'
     assert_includes discovery, '.author.login == "sequel-ace-releases[bot]"'
     assert_includes discovery, '.author.login == "Jason-Morcos"'
-    assert_includes discovery, '.tagName == "production/5.4.0-20105"'
-    assert_includes discovery, '--json tagName,author,createdAt'
-    assert_includes discovery, '(.createdAt | fromdateiso8601) as $created'
-    assert_includes discovery, '(.author.login == "Jason-Morcos" and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601))'
+    assert_includes discovery, ".author.id == 10710367"
+    refute_includes discovery, '.tagName == "production/5.4.0-20105"'
+    refute_includes discovery, '.tag_name == "production/5.4.0-20105"'
+    assert_includes discovery, 'requested_tag_encoded="$(jq -rn --arg value "${REQUESTED_TAG}" \'$value | @uri\')"'
+    assert_includes discovery, '(.created_at | fromdateiso8601) as $created'
+    assert_includes manual_discovery, "Exact manual recovery deliberately accepts a finalized release"
+    assert_includes manual_discovery, ".draft == false"
+    refute_includes manual_discovery, ".prerelease == true"
+    assert_includes discovery, '(.author.login == "Jason-Morcos" and .author.id == 10710367 and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601))'
     assert_includes discovery, '$build >= 20109 and $created >= ("2027-08-14T00:00:00Z" | fromdateiso8601)'
     assert_includes execution, 'printf \'%s\\n\' "${REQUESTED_TAG}" > production-candidates.txt'
     assert_includes execution, "GitHub is finalized but the live archive refresh failed"
@@ -818,6 +826,7 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes discovery, "gh api --paginate"
     assert_includes discovery, 'repos/${GITHUB_REPOSITORY}/releases?per_page=100'
     assert_includes discovery, ".author.login"
+    assert_includes discovery, ".author.id == 10710367"
     refute_includes discovery, "gh release list"
     refute_includes discovery, "--json tagName,isPrerelease,author,createdAt"
     assert_includes finalizer, "needs: discover"
@@ -973,9 +982,9 @@ class WorkflowRecoveryTest < Minitest::Test
     discovery = workflow.split("  discover:", 2).fetch(1).split("  finalize:", 2).first
     execution = workflow.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
 
-    discovery_listing = discovery.index("gh api --paginate")
-    discovery_prerelease_filter = discovery.index(".prerelease == true")
-    discovery_production_filter = discovery.index('.tag_name | test("^production/')
+    discovery_listing = discovery.index('candidates="$(gh api --paginate')
+    discovery_prerelease_filter = discovery.index(".prerelease == true", discovery_listing)
+    discovery_production_filter = discovery.index('.tag_name | test("^production/', discovery_listing)
     assert discovery_listing
     assert discovery_prerelease_filter
     assert discovery_production_filter
@@ -993,6 +1002,7 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_operator execution_prerelease_filter, :<, execution_production_filter
     assert_includes execution, ".draft == false"
     assert_includes execution, ".author.login"
+    assert_includes execution, ".author.id == 10710367"
     assert_includes execution, 'repos/${GITHUB_REPOSITORY}/releases?per_page=100'
     refute_includes execution, "gh release list"
     assert_operator execution_production_filter, :<, execution.index("--validate-only")

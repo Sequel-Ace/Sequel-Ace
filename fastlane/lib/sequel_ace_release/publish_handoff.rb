@@ -48,6 +48,7 @@ module SequelAceRelease
       ReleasePublisher.validate!(
         tag: tag,
         login: release.dig("author", "login"),
+        id: release.dig("author", "id"),
         created_at: release["created_at"]
       )
       release_id = release["id"]

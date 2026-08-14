@@ -7,6 +7,7 @@ module SequelAceRelease
     # The user-publisher bridge ends before its repository-only PAT expires.
     # Historical publisher epochs remain accepted for archived releases.
     USER_LOGIN = "Jason-Morcos".freeze
+    USER_ID = 10_710_367
     CURRENT_MINIMUM_BUILD = 20_109
     RELEASE_APP_ID = 4_541_115
     RELEASE_APP_SLUGS = %w[sequel-ace-release-automation sequel-ace-releases].freeze
@@ -14,8 +15,6 @@ module SequelAceRelease
     RELEASE_APP_LOGIN = RELEASE_APP_LOGINS.first
     USER_PUBLISHER_CUTOFF = Time.utc(2027, 8, 14).freeze
     USER_PUBLISHER_SAFETY_WINDOW = 15 * 60
-    LEGACY_APP_LOGIN = RELEASE_APP_LOGIN
-    LEGACY_APP_TAG = "production/5.4.0-20105".freeze
     TAG_PATTERN = %r{\A(?:production|beta)/\d+\.\d+\.\d+-([1-9]\d*)\z}.freeze
     ZONED_TIMESTAMP_PATTERN = /(?:Z|[+-]\d{2}:\d{2})\z/.freeze
 
@@ -32,21 +31,20 @@ module SequelAceRelease
       :user
     end
 
-    def authorized?(tag:, login:, created_at: nil, at: Time.now.utc)
+    def authorized?(tag:, login:, id: nil, created_at: nil, at: Time.now.utc)
       build = tag.to_s[TAG_PATTERN, 1]&.to_i
       return false unless build
-      return true if RELEASE_APP_LOGINS.include?(login) && tag == LEGACY_APP_TAG
-
       release_created_at = publication_time(created_at || at)
-      (login == USER_LOGIN && build >= CURRENT_MINIMUM_BUILD && release_created_at < USER_PUBLISHER_CUTOFF) ||
+      (login == USER_LOGIN && id == USER_ID && build >= CURRENT_MINIMUM_BUILD &&
+        release_created_at < USER_PUBLISHER_CUTOFF) ||
         (RELEASE_APP_LOGINS.include?(login) && build >= CURRENT_MINIMUM_BUILD &&
           release_created_at >= USER_PUBLISHER_CUTOFF)
     rescue ArgumentError, TypeError
       false
     end
 
-    def validate!(tag:, login:, created_at: nil, at: Time.now.utc)
-      return login if authorized?(tag: tag, login: login, created_at: created_at, at: at)
+    def validate!(tag:, login:, id: nil, created_at: nil, at: Time.now.utc)
+      return login if authorized?(tag: tag, login: login, id: id, created_at: created_at, at: at)
 
       raise ValidationError, "GitHub release publisher is not authorized for #{tag}"
     end

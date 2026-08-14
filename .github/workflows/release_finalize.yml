@@ -79,18 +79,21 @@ jobs:
           echo "enabled=true" >> "${GITHUB_OUTPUT}"
 
           if [[ -n "${REQUESTED_TAG}" ]]; then
-            candidates="$(gh release view "${REQUESTED_TAG}" \
-              --repo "${GITHUB_REPOSITORY}" \
-              --json tagName,author,createdAt \
+            # Exact manual recovery deliberately accepts a finalized release so
+            # it can repair a failed final live-archive checkpoint.
+            requested_tag_encoded="$(jq -rn --arg value "${REQUESTED_TAG}" '$value | @uri')"
+            candidates="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${requested_tag_encoded}" \
               --jq '
-                (.tagName | capture("-(?<build>[1-9][0-9]*)$").build | tonumber) as $build |
-                (.createdAt | fromdateiso8601) as $created |
+                (.tag_name | capture("-(?<build>[1-9][0-9]*)$").build | tonumber) as $build |
+                (.created_at | fromdateiso8601) as $created |
                 select(
-                  ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and .tagName == "production/5.4.0-20105") or
-                  (.author.login == "Jason-Morcos" and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601)) or
-                  ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and $build >= 20109 and $created >= ("2027-08-14T00:00:00Z" | fromdateiso8601))
+                  .draft == false and
+                  (
+                    (.author.login == "Jason-Morcos" and .author.id == 10710367 and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601)) or
+                    ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and $build >= 20109 and $created >= ("2027-08-14T00:00:00Z" | fromdateiso8601))
+                  )
                 ) |
-                .tagName')"
+                .tag_name')"
             [[ "${candidates}" == "${REQUESTED_TAG}" ]] || { echo "Requested release does not have authorized publisher provenance." >&2; exit 1; }
           else
             candidates="$(gh api --paginate \
@@ -100,8 +103,7 @@ jobs:
                 (.tag_name | capture("-(?<build>[1-9][0-9]*)$").build | tonumber) as $build |
                 (.created_at | fromdateiso8601) as $created |
                 select(
-                  ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and .tag_name == "production/5.4.0-20105") or
-                  (.author.login == "Jason-Morcos" and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601)) or
+                  (.author.login == "Jason-Morcos" and .author.id == 10710367 and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601)) or
                   ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and $build >= 20109 and $created >= ("2027-08-14T00:00:00Z" | fromdateiso8601))
                 ) |
                 .tag_name')"
@@ -205,8 +207,7 @@ jobs:
                 (.tag_name | capture("-(?<build>[1-9][0-9]*)$").build | tonumber) as $build |
                 (.created_at | fromdateiso8601) as $created |
                 select(
-                  ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and .tag_name == "production/5.4.0-20105") or
-                  (.author.login == "Jason-Morcos" and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601)) or
+                  (.author.login == "Jason-Morcos" and .author.id == 10710367 and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601)) or
                   ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and $build >= 20109 and $created >= ("2027-08-14T00:00:00Z" | fromdateiso8601))
                 ) |
                 .tag_name' > production-candidates.txt

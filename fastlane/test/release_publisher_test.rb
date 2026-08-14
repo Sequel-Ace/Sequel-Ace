@@ -3,18 +3,12 @@
 require "test_helper"
 
 class ReleasePublisherTest < Minitest::Test
-  def test_accepts_the_single_legacy_app_release
-    assert SequelAceRelease::ReleasePublisher.authorized?(
-      tag: "production/5.4.0-20105",
-      login: "sequel-ace-release-automation[bot]"
-    )
-  end
-
   def test_requires_jason_for_the_current_and_future_build_range
     %w[production/5.4.0-20109 beta/5.5.0-20110 production/6.0.0-99999].each do |tag|
       assert SequelAceRelease::ReleasePublisher.authorized?(
         tag: tag,
         login: "Jason-Morcos",
+        id: SequelAceRelease::ReleasePublisher::USER_ID,
         at: Time.utc(2026, 8, 13)
       ), tag
     end
@@ -23,7 +17,12 @@ class ReleasePublisherTest < Minitest::Test
   def test_rejects_cross_generation_and_unrecognized_publishers
     refute SequelAceRelease::ReleasePublisher.authorized?(
       tag: "production/5.4.0-20105",
-      login: "Jason-Morcos"
+      login: "Jason-Morcos",
+      id: SequelAceRelease::ReleasePublisher::USER_ID
+    )
+    refute SequelAceRelease::ReleasePublisher.authorized?(
+      tag: "production/5.4.0-20105",
+      login: "sequel-ace-release-automation[bot]"
     )
     refute SequelAceRelease::ReleasePublisher.authorized?(
       tag: "production/5.4.0-20109",
@@ -33,6 +32,7 @@ class ReleasePublisherTest < Minitest::Test
     refute SequelAceRelease::ReleasePublisher.authorized?(
       tag: "production/5.4.0-20109",
       login: "another-maintainer",
+      id: SequelAceRelease::ReleasePublisher::USER_ID,
       at: Time.utc(2027, 8, 14)
     )
   end
@@ -57,6 +57,7 @@ class ReleasePublisherTest < Minitest::Test
     assert SequelAceRelease::ReleasePublisher.authorized?(
       tag: "production/5.4.0-20109",
       login: "Jason-Morcos",
+      id: SequelAceRelease::ReleasePublisher::USER_ID,
       created_at: "2026-08-13T00:00:00Z",
       at: cutoff
     ), "historical Jason-authored releases must remain verifiable after cutover"
@@ -75,12 +76,13 @@ class ReleasePublisherTest < Minitest::Test
     assert_equal :app, SequelAceRelease::ReleasePublisher.active_mode(at: cutoff)
   end
 
-  def test_binds_each_nonlegacy_publisher_to_the_release_creation_epoch
+  def test_binds_each_publisher_to_the_release_creation_epoch
     cutoff = SequelAceRelease::ReleasePublisher::USER_PUBLISHER_CUTOFF
 
     refute SequelAceRelease::ReleasePublisher.authorized?(
       tag: "production/5.5.0-20110",
       login: "Jason-Morcos",
+      id: SequelAceRelease::ReleasePublisher::USER_ID,
       created_at: cutoff.iso8601
     )
     refute SequelAceRelease::ReleasePublisher.authorized?(
@@ -91,11 +93,13 @@ class ReleasePublisherTest < Minitest::Test
     refute SequelAceRelease::ReleasePublisher.authorized?(
       tag: "production/5.5.0-20110",
       login: "Jason-Morcos",
+      id: SequelAceRelease::ReleasePublisher::USER_ID,
       created_at: "not-a-timestamp"
     )
     refute SequelAceRelease::ReleasePublisher.authorized?(
       tag: "production/5.5.0-20110",
       login: "Jason-Morcos",
+      id: SequelAceRelease::ReleasePublisher::USER_ID,
       created_at: "2026-08-13T00:00:00"
     )
   end
@@ -113,8 +117,12 @@ class ReleasePublisherTest < Minitest::Test
     end
   end
 
-  def test_rejects_malformed_tags_and_the_legacy_build_under_another_identity
-    refute SequelAceRelease::ReleasePublisher.authorized?(tag: "5.4.0", login: "Jason-Morcos")
+  def test_rejects_malformed_tags_and_pre_bridge_builds
+    refute SequelAceRelease::ReleasePublisher.authorized?(
+      tag: "5.4.0",
+      login: "Jason-Morcos",
+      id: SequelAceRelease::ReleasePublisher::USER_ID
+    )
     refute SequelAceRelease::ReleasePublisher.authorized?(
       tag: "beta/5.4.0-20105",
       login: "sequel-ace-release-automation[bot]"
@@ -126,11 +134,31 @@ class ReleasePublisherTest < Minitest::Test
       SequelAceRelease::ReleasePublisher.validate!(
         tag: "production/5.4.0-20109",
         login: "another-maintainer",
+        id: SequelAceRelease::ReleasePublisher::USER_ID,
         at: Time.utc(2026, 8, 13)
       )
     end
 
     assert_includes error.message, "not authorized"
+  end
+
+  def test_pins_the_user_publisher_to_the_stable_numeric_account_id
+    tag = "production/5.4.0-20109"
+    at = Time.utc(2026, 8, 13)
+
+    refute SequelAceRelease::ReleasePublisher.authorized?(tag: tag, login: "Jason-Morcos", at: at)
+    refute SequelAceRelease::ReleasePublisher.authorized?(
+      tag: tag,
+      login: "Jason-Morcos",
+      id: SequelAceRelease::ReleasePublisher::USER_ID + 1,
+      at: at
+    )
+    refute SequelAceRelease::ReleasePublisher.authorized?(
+      tag: tag,
+      login: "renamed-account",
+      id: SequelAceRelease::ReleasePublisher::USER_ID,
+      at: at
+    )
   end
 
   def test_accepts_only_a_fine_grained_pat_for_the_user_publisher

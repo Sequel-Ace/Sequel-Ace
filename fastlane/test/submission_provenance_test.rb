@@ -148,7 +148,10 @@ class SubmissionProvenanceTest < Minitest::Test
       "draft" => false,
       "prerelease" => true,
       "body" => BODY,
-      "author" => { "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN },
+      "author" => {
+        "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN,
+        "id" => SequelAceRelease::ReleasePublisher::USER_ID
+      },
       "created_at" => "2026-08-13T00:00:00Z",
       "assets" => [{
         "name" => "Sequel-Ace-5.3.2.zip",

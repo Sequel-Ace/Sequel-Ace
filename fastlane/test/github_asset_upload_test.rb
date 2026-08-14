@@ -288,7 +288,10 @@ class GitHubAssetUploadTest < Minitest::Test
       "draft" => false,
       "prerelease" => true,
       "body" => body,
-      "author" => { "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN },
+      "author" => {
+        "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN,
+        "id" => SequelAceRelease::ReleasePublisher::USER_ID
+      },
       "created_at" => "2026-08-13T00:00:00Z",
       "assets" => []
     }
