@@ -183,13 +183,34 @@ One-line-ish constant/API swaps, same shape as merged batches #2441/#2443:
   `graphicsPort`, `NSRoundLineCapStyle`) — third-party but vendored; patch the
   three constants in place.
 
-## Step 8 — Swift 6 readiness — ~3 warnings
+## Step 8 — Swift 6 readiness — ✅ Done
 
-- **AWSSSOClient.swift:252** — captured-var mutation in concurrent code
-  (hard error in Swift 6 mode): restructure with a continuation/actor.
-- **SPAppController.swift:38** — `token` mutated after sendable capture:
-  standard NotificationCenter-observer-token dance; use a box or
-  `withExtendedLifetime` pattern.
+5 warnings across 3 sites (the plan listed 2 — see below), all of the
+"mutation of captured var in concurrently-executing code" family that becomes
+a hard error in the Swift 6 language mode. Zero concurrency warnings left;
+clean build 173 → 165 (the extra 3 lines are the compiler's caret-continuation
+output for the same 5 warnings, which the grep counts separately).
+
+Execution notes:
+
+- ⚠️ **The plan missed a site.** `AWSSTSClient.swift:300/310` has the identical
+  blocking-wrapper pattern as AWSSSOClient — same failure mode as step 1, where
+  the truncated issue navigator hid siblings. Fixed too; a step that leaves an
+  identical Swift-6 hard error behind isn't done.
+- Both AWS clients now hand their outcome back through one shared
+  `SAAsyncResultBox<Success>` (`Source/Other/Utility/`, app + Unit Tests
+  targets) instead of writing into captured `var`s. It is a lock-protected
+  `Result` box: the lock is not ceremony, because the waiter abandons the call
+  on timeout while the task keeps running and writing. 5 unit tests, including
+  a concurrent-completion smoke test.
+- `SPAppController.openStandaloneConnectionWindow` needed no box at all: the
+  captured var only existed so the observer could unregister itself. Switching
+  to the repo's existing `NotificationToken` (which unregisters in `deinit`)
+  and storing it next to the controller — the same ownership shape as
+  `TabManager.ManagedWindow` — removes the self-reference entirely.
+- Behavior preserved at all three sites, including the AWSSTSClient path where
+  neither a result nor an error is recorded: it still returns nil without
+  touching the caller's error pointer.
 
 ## Step 9 — "Implementing deprecated method" batch — ~25 warnings
 
@@ -230,7 +251,7 @@ drag-drop verification — slowest batch, do last of the mechanical ones.
 | 3 (nullability) | ~260 |
 | 4-5 (archiver + notifications) | ~225 |
 | 6 + 7 (help viewer + AppKit batch) | **173 (measured, clean build)** |
-| 8 (Swift 6) | ~170 |
+| 8 (Swift 6) | **165 (measured, clean build)** |
 | 9 (deprecated delegate methods) | ~160* |
 
 \* Remainder is dominated by SPKeychain/NSConnection/linker (deferred) and

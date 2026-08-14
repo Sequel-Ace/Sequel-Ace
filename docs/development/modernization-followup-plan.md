@@ -484,7 +484,7 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
 1. ~~**Help viewer WKWebView rewrite**~~ — ✅ Done (warnings plan step 6).
    `SAHelpViewerModel` / `SAHelpViewerView` / `SAHelpViewerWindowController`
    replaced SPHelpViewerController + HelpViewer.xib; **legacy WebKit is now gone
-   from the codebase** (26 deprecation warnings retired). Execution notes in
+   from the codebase** (33 deprecation warnings retired). Execution notes in
    `docs/development/warnings-elimination-plan.md`.
 2. **C2b — extend SAConnectionFormModel/View to all connection types**
    (socket, SSH, AWS IAM, Vault + SSL options, colour, time zone). Scope grew
@@ -500,9 +500,12 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
    import/duplicate-detection logic (mostly pure dictionary work, see the
    `candidate*`/`detail*`/`imported*` naming from the shadow-rename pass) into
    tested Swift. Best done while the code is young.
-5. **Warnings remainder** (steps 8-9 + deferred SecKeychain/NSConnection/
-   OpenSSL — see warnings plan). Step 8 (Swift 6 concurrency, 2 sites) is a
-   quick filler any time.
+5. **Warnings remainder** (step 9 + deferred SecKeychain/NSConnection/
+   OpenSSL — see warnings plan). Step 8 (Swift 6 concurrency) is ✅ done: the
+   three blocking-wrapper/observer-token sites now go through
+   `SAAsyncResultBox` and `NotificationToken`, leaving no concurrency
+   warnings. Step 9 (deprecated drag-API delegate methods, ~25 warnings) is
+   the last mechanical batch and wants manual drag-drop verification.
 6. **Phase E (table content / custom query services)** — explicitly gated on
    the PostgreSQL abstraction decision (#2482/#2493): if it lands, extract
    against `id<SPDatabaseConnection>`; starting before that decision risks
