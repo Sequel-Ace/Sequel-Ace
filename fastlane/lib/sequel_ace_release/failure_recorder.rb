@@ -2,7 +2,7 @@
 
 module SequelAceRelease
   class FailureRecorder
-    FINALIZABLE_STATES = %w[submitted live].freeze
+    FINALIZABLE_STATES = %w[submitted finalizing live].freeze
     DURABLE_BETA_STATES = %w[archived].freeze
     SUBMISSION_FIELDS = %w[
       version_id build_id app_store_state scheduled_release_at phased_release_state

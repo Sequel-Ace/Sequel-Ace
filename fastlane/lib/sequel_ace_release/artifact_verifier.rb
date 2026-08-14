@@ -13,7 +13,7 @@ module SequelAceRelease
       @runner = runner
     end
 
-    def verify(path:, version:, build: nil, channel:, launch: false, output_zip: nil, any_build: false, expected_sha256: nil)
+    def verify(path:, version:, build: nil, channel:, launch: false, output_zip: nil, any_build: false, expected_sha256: nil, release_tag: nil)
       Config.validate_channel!(channel)
       Version.validate!(version)
       raise ValidationError, "build is required unless --any-build is used" if build.nil? && !any_build
@@ -35,6 +35,7 @@ module SequelAceRelease
         bundle_id = plist(info, "CFBundleIdentifier")
         actual_version = plist(info, "CFBundleShortVersionString")
         actual_build = plist(info, "CFBundleVersion")
+        actual_release_tag = plist(info, Config::RELEASE_TAG_PLIST_KEY) if release_tag
         actual_build_number = positive_build!(actual_build, "artifact build")
         executable_name = plist(info, "CFBundleExecutable")
         unless executable_name.match?(/\A[A-Za-z0-9 ._-]{1,128}\z/)
@@ -47,6 +48,9 @@ module SequelAceRelease
         if !any_build && actual_build != expected_build
           raise ValidationError, "artifact build #{actual_build} does not match #{expected_build}"
         end
+        if release_tag && actual_release_tag != release_tag
+          raise ValidationError, "artifact release tag #{actual_release_tag} does not match #{release_tag}"
+        end
         executable = validated_executable(app, executable_name)
 
         architectures = @runner.run("/usr/bin/lipo", "-archs", executable).stdout.split.sort
@@ -56,12 +60,7 @@ module SequelAceRelease
         @runner.run("/usr/bin/codesign", "--verify", "--deep", "--strict", "--verbose=2", app)
         signature = @runner.run("/usr/bin/codesign", "-d", "--verbose=4", app, allow_failure: true)
         signature_text = [signature.stdout, signature.stderr].join("\n")
-        team = signature_text[/^TeamIdentifier=(.+)$/, 1]
-        authorities = signature_text.scan(/^Authority=(.+)$/).flatten
-        raise ValidationError, "artifact TeamIdentifier #{team || 'missing'} does not match #{Config::TEAM_ID}" unless team == Config::TEAM_ID
-        unless authorities.any? { |authority| authority.include?("Developer ID Application") && authority.include?("Moballo") }
-          raise ValidationError, "artifact is not signed with a Moballo Developer ID Application certificate"
-        end
+        team, authorities = validate_developer_id_signature!(signature_text)
 
         @runner.run("/usr/bin/xcrun", "stapler", "validate", app)
         @runner.run("/usr/sbin/spctl", "--assess", "--type", "execute", "--verbose=4", app)
@@ -73,6 +72,7 @@ module SequelAceRelease
           "bundle_id" => bundle_id,
           "version" => actual_version,
           "build" => actual_build_number,
+          "release_tag" => actual_release_tag,
           "architectures" => architectures,
           "team_id" => team,
           "authorities" => authorities,
@@ -137,21 +137,30 @@ module SequelAceRelease
       existing = @runner.run("/usr/bin/pgrep", "-x", process_name, allow_failure: true)
       raise ValidationError, "#{process_name} is already running; refusing to quit an unrelated process" if existing.status.success?
 
-      @runner.run("/usr/bin/open", "-n", app)
+      # LaunchServices can keep `open` alive for the GUI app's entire lifetime
+      # on hosted runners. Spawn the already-verified executable directly so
+      # launch is asynchronous and its exact process identity is known.
+      process_id = @runner.spawn(executable, chdir: app.parent).to_s
+      raise ValidationError, "launched artifact returned an invalid process identifier" unless process_id.match?(/\A[1-9]\d*\z/)
       started = true
       sleep(5)
-      running = @runner.run("/usr/bin/pgrep", "-x", process_name, allow_failure: true)
-      raise ValidationError, "artifact did not remain running after launch" unless running.status.success?
 
-      process_ids = running.stdout.lines.map(&:strip).reject(&:empty?)
-      raise ValidationError, "expected exactly one launched artifact process, found #{process_ids.length}" unless process_ids.length == 1
-
-      process_id = process_ids.first
-      raise ValidationError, "launched artifact returned an invalid process identifier" unless process_id.match?(/\A[1-9]\d*\z/)
-
-      expected_command = executable.realpath.to_s
-      unless process_command_matches?(process_command(process_id), expected_command)
+      observed_executable = owned_process_executable(
+        process_command(process_id),
+        app: app,
+        expected_executable: executable
+      )
+      unless observed_executable
         raise ValidationError, "launched process does not belong to the verified artifact"
+      end
+      verify_translocated_app!(observed_executable, executable) unless observed_executable == executable.realpath
+      current_executable = owned_process_executable(
+        process_command(process_id),
+        app: app,
+        expected_executable: executable
+      )
+      unless current_executable == observed_executable
+        raise ValidationError, "launched process identity changed before graceful termination"
       end
       owned_process = true
 
@@ -163,7 +172,7 @@ module SequelAceRelease
         stopped = !@runner.run("/bin/kill", "-0", process_id, allow_failure: true).status.success?
         return if stopped
         if Time.now >= deadline
-          force_terminate!(process_id, expected_command)
+          force_terminate!(process_id, app, executable, observed_executable)
           raise ValidationError, "artifact did not quit cleanly"
         end
 
@@ -175,10 +184,15 @@ module SequelAceRelease
       end
     end
 
-    def force_terminate!(process_id, expected_command)
+    def force_terminate!(process_id, app, executable, observed_executable)
       command = process_command(process_id)
       return unless command
-      unless process_command_matches?(command, expected_command)
+      current_executable = owned_process_executable(
+        command,
+        app: app,
+        expected_executable: executable
+      )
+      unless current_executable == observed_executable
         raise ValidationError, "launched process identity changed before forced termination"
       end
 
@@ -188,9 +202,14 @@ module SequelAceRelease
         stopped = !@runner.run("/bin/kill", "-0", process_id, allow_failure: true).status.success?
         return if stopped
         if Time.now >= deadline
-          current_command = process_command(process_id)
-          return unless current_command
-          unless process_command_matches?(current_command, expected_command)
+          command = process_command(process_id)
+          return unless command
+          current_executable = owned_process_executable(
+            command,
+            app: app,
+            expected_executable: executable
+          )
+          unless current_executable == observed_executable
             raise ValidationError, "launched process identity changed after forced termination"
           end
           raise ValidationError, "artifact remained running after forced termination"
@@ -201,14 +220,55 @@ module SequelAceRelease
     end
 
     def process_command(process_id)
-      result = @runner.run("/bin/ps", "-p", process_id, "-o", "command=", allow_failure: true)
+      result = @runner.run("/bin/ps", "-ww", "-p", process_id, "-o", "command=", allow_failure: true)
       return nil unless result.status.success?
 
       result.stdout.strip
     end
 
-    def process_command_matches?(command, expected_command)
-      command && (command == expected_command || command.start_with?("#{expected_command} "))
+    def owned_process_executable(command, app:, expected_executable:)
+      return nil unless command
+
+      expected = expected_executable.realpath
+      return expected if command == expected.to_s || command.start_with?("#{expected} ")
+
+      app_relative_executable = [app.basename, "Contents", "MacOS", expected_executable.basename].join("/")
+      uuid = "[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}"
+      match = command.match(
+        %r{\A(?<path>/private/var/folders/[^/]+/[^/]+/T/AppTranslocation/#{uuid}/d/#{Regexp.escape(app_relative_executable)})(?: .*)?\z}
+      )
+      return nil unless match
+
+      observed = Pathname.new(match[:path])
+      stat = observed.lstat
+      return nil unless stat.file? && !stat.symlink?
+      return nil unless Digest::SHA256.file(observed).hexdigest == Digest::SHA256.file(expected).hexdigest
+
+      observed.realpath
+    rescue Errno::ENOENT, Errno::EACCES, Errno::ELOOP
+      nil
+    end
+
+    def verify_translocated_app!(observed_executable, expected_executable)
+      observed_app = observed_executable.parent.parent.parent
+      unless observed_app.basename == expected_executable.parent.parent.parent.basename
+        raise ValidationError, "translocated artifact bundle name changed"
+      end
+
+      @runner.run("/usr/bin/codesign", "--verify", "--deep", "--strict", "--verbose=2", observed_app)
+      signature = @runner.run("/usr/bin/codesign", "-d", "--verbose=4", observed_app, allow_failure: true)
+      validate_developer_id_signature!([signature.stdout, signature.stderr].join("\n"))
+    end
+
+    def validate_developer_id_signature!(signature_text)
+      team = signature_text[/^TeamIdentifier=(.+)$/, 1]
+      authorities = signature_text.scan(/^Authority=(.+)$/).flatten
+      raise ValidationError, "artifact TeamIdentifier #{team || 'missing'} does not match #{Config::TEAM_ID}" unless team == Config::TEAM_ID
+      unless authorities.any? { |authority| authority.include?("Developer ID Application") && authority.include?("Moballo") }
+        raise ValidationError, "artifact is not signed with a Moballo Developer ID Application certificate"
+      end
+
+      [team, authorities]
     end
 
     def package(app, output_zip)

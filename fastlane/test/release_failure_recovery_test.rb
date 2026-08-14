@@ -152,6 +152,16 @@ class ReleaseFailureRecoveryTest < Minitest::Test
     assert_equal "version-id", result.manifest.to_h.dig("asc_ids", "version_id")
   end
 
+  def test_finalizing_failure_preserves_the_active_checkpoint
+    result = recorder.record(
+      manifest: manifest(state: "finalizing"),
+      workflow_url: workflow_url
+    )
+
+    assert_equal "finalizing", result.manifest.to_h.fetch("state")
+    assert_equal true, result.preserve_release_body
+  end
+
   def test_archived_beta_failure_preserves_the_durable_artifact_checkpoint
     result = recorder.record(
       manifest: manifest(state: "archived", channel: "beta"),
@@ -281,6 +291,7 @@ class ReleaseFailureRecoveryTest < Minitest::Test
       naming: naming,
       base_sha: "b" * 40,
       canonical_build: 20_105,
+      production_build_evidence: production_build_evidence,
       release_notes_sha256: "c" * 64,
       state: state
     )

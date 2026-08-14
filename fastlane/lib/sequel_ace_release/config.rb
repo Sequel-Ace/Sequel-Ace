@@ -5,6 +5,7 @@ require "pathname"
 module SequelAceRelease
   module Config
     REPOSITORY = "Sequel-Ace/Sequel-Ace"
+    REPOSITORY_OWNER = "Sequel-Ace"
     REPOSITORY_URL = "https://github.com/#{REPOSITORY}"
     PRODUCTION_APP_ID = "1518036000"
     ALPHA_APP_ID = "1594104035"
@@ -13,13 +14,16 @@ module SequelAceRelease
     TEAM_ID = "NKQ4HJ66PX"
     LOCALE = "en-US"
     EXPECTED_SCREENSHOT_COUNT = 10
-    SCHEMA_VERSION = 1
+    SCHEMA_VERSION = 2
     GIT_SHA_PATTERN = /\A(?:[0-9a-f]{40}|[0-9a-f]{64})\z/i.freeze
     AUTHORIZED_ACTORS = %w[Jason-Morcos Kaspik].freeze
+    ACTIONS_BOT = "github-actions[bot]".freeze
     CHANNELS = %w[production beta].freeze
+    APP_INFO_PLIST = "Resources/Plists/Info.plist".freeze
+    RELEASE_TAG_PLIST_KEY = "SAGitHubReleaseTag".freeze
     MANIFEST_STATES = %w[
       planned prepared pull_request_open merged prerelease_created
-      cloud_running artifacts_verified archived submitted live failed
+      cloud_running artifacts_verified archived submitted finalizing live failed
     ].freeze
 
     PROJECT_FILES = {
@@ -28,15 +32,14 @@ module SequelAceRelease
       "Frameworks/SPMySQLFramework/SPMySQLFramework.xcodeproj/project.pbxproj" => { current: 5, dylib: 5 }
     }.freeze
 
-    PLIST_FILES = %w[
-      Resources/Plists/Info.plist
+    PLIST_FILES = ([APP_INFO_PLIST] + %w[
       Resources/Plists/TunnelAssistant-Info.plist
       Resources/Plists/Unit\ Tests-Info.plist
       Frameworks/QueryKit/Resources/Info.plist
       Frameworks/QueryKit/Resources/Tests-Info.plist
       Frameworks/SPMySQLFramework/Resources/Info.plist
       Frameworks/SPMySQLFramework/SPMySQL\ Unit\ Tests/Info.plist
-    ].freeze
+    ]).freeze
 
     module_function
 

@@ -160,6 +160,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 	SARecordViewController *recordViewController;
 
 	BOOL showFilterRuleEditor;
+	BOOL ruleEditorVisibilityHasBeenApplied;
 
 	NSDictionary *filtersToRestore;
 

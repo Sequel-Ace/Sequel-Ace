@@ -1,0 +1,1177 @@
+name: Release Artifact Publisher
+
+run-name: "Publish ready release artifacts by @${{ github.actor }}"
+
+on:
+  check_run:
+    types:
+      - completed
+  status: {}
+  schedule:
+    - cron: "11,41 * * * *"
+  workflow_run:
+    workflows:
+      - Release
+      - Retry Alpha Beta Artifact
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Exact production/* or beta/* tag to inspect
+        required: true
+        type: string
+      confirmation:
+        description: Type PUBLISH ARTIFACTS followed by the exact tag
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: sequel-ace-release
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    name: Inspect Cloud readiness without holding a Mac runner
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        (startsWith(vars.SA_RELEASE_PENDING_ARTIFACT_TAG, 'production/') || startsWith(vars.SA_RELEASE_PENDING_ARTIFACT_TAG, 'beta/')) &&
+        (
+          github.event_name == 'schedule' ||
+          github.event_name == 'workflow_run' ||
+          (
+            github.event_name == 'check_run' &&
+            github.event.check_run.app.slug == 'xcode-cloud' &&
+            github.event.check_run.app.id == 117084
+          ) ||
+          (
+            github.event_name == 'status' &&
+            (github.event.state == 'success' || github.event.state == 'failure' || github.event.state == 'error') &&
+            (github.event.context == 'Sequel Ace | Sequel Ace Release' || github.event.context == 'Sequel Ace Beta | Sequel Ace Beta')
+          )
+        )
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: sequel-ace-release
+    permissions:
+      checks: read
+      contents: read
+      packages: read
+    outputs:
+      action: ${{ steps.candidate.outputs.action }}
+      tag: ${{ steps.candidate.outputs.tag }}
+      channel: ${{ steps.candidate.outputs.channel }}
+      version: ${{ steps.candidate.outputs.version }}
+      build: ${{ steps.candidate.outputs.build }}
+      commit: ${{ steps.candidate.outputs.commit }}
+      archive_ref: ${{ steps.candidate.outputs.archive_ref }}
+      production_run_id: ${{ steps.candidate.outputs.production_run_id }}
+      alpha_run_id: ${{ steps.candidate.outputs.alpha_run_id }}
+      failed_component: ${{ steps.candidate.outputs.failed_component }}
+      failure_reason: ${{ steps.candidate.outputs.failure_reason }}
+      assigned_build: ${{ steps.candidate.outputs.assigned_build }}
+      recovery_build: ${{ steps.candidate.outputs.recovery_build }}
+    steps:
+      - name: Authorize the asynchronous publisher
+        id: authorization
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ACTOR: ${{ github.actor }}
+          RELEASE_CONFIRMATION: ${{ inputs.confirmation }}
+          RELEASE_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}
+          RELEASE_EVENT: ${{ github.event_name }}
+          RELEASE_PENDING_TAG: ${{ vars.SA_RELEASE_PENDING_ARTIFACT_TAG }}
+          RELEASE_REF: ${{ github.ref }}
+          RELEASE_RUN_ATTEMPT: ${{ github.run_attempt }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+          SOURCE_ACTOR: ${{ github.event.workflow_run.actor.login }}
+          SOURCE_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          SOURCE_EVENT: ${{ github.event.workflow_run.event }}
+          SOURCE_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          SOURCE_WORKFLOW_PATH: ${{ github.event.workflow_run.path }}
+          SOURCE_CHECK_APP_ID: ${{ github.event.check_run.app.id }}
+          SOURCE_CHECK_APP_SLUG: ${{ github.event.check_run.app.slug }}
+          SOURCE_CHECK_CONCLUSION: ${{ github.event.check_run.conclusion }}
+          SOURCE_CHECK_HEAD_SHA: ${{ github.event.check_run.head_sha }}
+          SOURCE_CHECK_NAME: ${{ github.event.check_run.name }}
+          SOURCE_CHECK_STATUS: ${{ github.event.check_run.status }}
+          SOURCE_STATUS_CONTEXT: ${{ github.event.context }}
+          SOURCE_STATUS_SHA: ${{ github.event.sha }}
+          SOURCE_STATUS_STATE: ${{ github.event.state }}
+          SOURCE_STATUS_TARGET_URL: ${{ github.event.target_url }}
+        run: |
+          set -euo pipefail
+          [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Artifact publication must run from main." >&2; exit 1; }
+          case "${RELEASE_EVENT}" in
+            workflow_dispatch)
+              [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized artifact-publisher actor." >&2; exit 1; }
+              [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized artifact-publisher rerun initiator." >&2; exit 1; }
+              [[ "${RELEASE_TAG}" =~ ^(production|beta)/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || { echo "Malformed release tag." >&2; exit 1; }
+              [[ "${RELEASE_CONFIRMATION}" == "PUBLISH ARTIFACTS ${RELEASE_TAG}" ]] || { echo "Typed confirmation does not match." >&2; exit 1; }
+              trigger="authorized manual recovery"
+              ;;
+            schedule)
+              [[ "${RELEASE_PENDING_TAG}" =~ ^(production|beta)/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || { echo "Scheduled publisher has no exact pending artifact tag." >&2; exit 1; }
+              if [[ "${RELEASE_RUN_ATTEMPT}" != "1" ]]; then
+                [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized scheduled-publisher rerun initiator." >&2; exit 1; }
+              fi
+              trigger="scheduled recovery check for ${RELEASE_PENDING_TAG}"
+              ;;
+            check_run)
+              [[ "${RELEASE_PENDING_TAG}" =~ ^(production|beta)/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || { echo "Xcode Cloud wake-up has no exact pending artifact tag." >&2; exit 1; }
+              [[ "${SOURCE_CHECK_APP_ID}" == "117084" && "${SOURCE_CHECK_APP_SLUG}" == "xcode-cloud" ]] || { echo "Artifact wake-up did not originate from the Xcode Cloud GitHub App." >&2; exit 1; }
+              [[ "${SOURCE_CHECK_STATUS}" == "completed" && -n "${SOURCE_CHECK_CONCLUSION}" ]] || { echo "Xcode Cloud check is not terminal." >&2; exit 1; }
+              [[ "${SOURCE_CHECK_HEAD_SHA}" =~ ^[0-9a-f]{40}$ ]] || { echo "Xcode Cloud check has a malformed head SHA." >&2; exit 1; }
+              [[ "${SOURCE_CHECK_NAME}" == "Sequel Ace | Sequel Ace Release | Archive - macOS" || "${SOURCE_CHECK_NAME}" == "Sequel Ace Beta | Sequel Ace Beta | Archive - macOS" ]] || { echo "Unexpected Xcode Cloud check identity." >&2; exit 1; }
+              trigger="completed Xcode Cloud check ${SOURCE_CHECK_NAME} for ${SOURCE_CHECK_HEAD_SHA}"
+              ;;
+            status)
+              [[ "${RELEASE_PENDING_TAG}" =~ ^(production|beta)/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || { echo "Xcode Cloud status wake-up has no exact pending artifact tag." >&2; exit 1; }
+              [[ "${SOURCE_STATUS_STATE}" == "success" || "${SOURCE_STATUS_STATE}" == "failure" || "${SOURCE_STATUS_STATE}" == "error" ]] || { echo "Xcode Cloud commit status is not terminal." >&2; exit 1; }
+              [[ "${SOURCE_STATUS_SHA}" =~ ^[0-9a-f]{40}$ ]] || { echo "Xcode Cloud commit status has a malformed SHA." >&2; exit 1; }
+              case "${SOURCE_STATUS_CONTEXT}" in
+                "Sequel Ace | Sequel Ace Release")
+                  [[ "${SOURCE_STATUS_TARGET_URL}" =~ ^https://appstoreconnect\.apple\.com/teams/[0-9a-f-]+/apps/1518036000/ci/builds/[0-9a-f-]+$ ]] || { echo "Production Xcode Cloud status has an unexpected target." >&2; exit 1; }
+                  expected_check_name="Sequel Ace | Sequel Ace Release | Archive - macOS"
+                  ;;
+                "Sequel Ace Beta | Sequel Ace Beta")
+                  [[ "${SOURCE_STATUS_TARGET_URL}" =~ ^https://appstoreconnect\.apple\.com/teams/[0-9a-f-]+/apps/1594104035/ci/builds/[0-9a-f-]+$ ]] || { echo "Alpha Xcode Cloud status has an unexpected target." >&2; exit 1; }
+                  expected_check_name="Sequel Ace Beta | Sequel Ace Beta | Archive - macOS"
+                  ;;
+                *)
+                  echo "Unexpected Xcode Cloud commit-status identity." >&2
+                  exit 1
+                  ;;
+              esac
+              matching_check_count="$(gh api -H "Accept: application/vnd.github+json" \
+                "repos/${GITHUB_REPOSITORY}/commits/${SOURCE_STATUS_SHA}/check-runs?per_page=100" \
+                --jq ".check_runs | map(select(.app.id == 117084 and .app.slug == \"xcode-cloud\" and .name == \"${expected_check_name}\" and .status == \"completed\")) | length")"
+              [[ "${matching_check_count}" -ge 1 ]] || { echo "Xcode Cloud workflow status has no authenticated Archive check." >&2; exit 1; }
+              trigger="terminal Xcode Cloud status ${SOURCE_STATUS_CONTEXT} for ${SOURCE_STATUS_SHA}"
+              ;;
+            workflow_run)
+              [[ "${RELEASE_PENDING_TAG}" =~ ^(production|beta)/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || { echo "Release handoff has no exact pending artifact tag." >&2; exit 1; }
+              if [[ "${SOURCE_CONCLUSION}" != "success" ]]; then
+                echo "enabled=false" >> "${GITHUB_OUTPUT}"
+                echo "The source workflow did not succeed; no artifact continuation was attempted." >> "${GITHUB_STEP_SUMMARY}"
+                exit 0
+              fi
+              [[ "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release.yml" || "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release_alpha_retry.yml" ]] || { echo "Unexpected source workflow path." >&2; exit 1; }
+              [[ "${SOURCE_EVENT}" == "workflow_dispatch" ]] || { echo "Artifact handoffs must originate from an authorized manual workflow." >&2; exit 1; }
+              [[ "${SOURCE_HEAD_BRANCH}" == "main" ]] || { echo "Artifact handoff source was not main." >&2; exit 1; }
+              if [[ "${SOURCE_WORKFLOW_PATH}" == ".github/workflows/release.yml" && "${SOURCE_ACTOR}" == "github-actions[bot]" ]]; then
+                : # The release workflow independently authenticates the archived recovery chain.
+              else
+                [[ "${SOURCE_ACTOR}" == "Jason-Morcos" || "${SOURCE_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized source workflow actor." >&2; exit 1; }
+              fi
+              if [[ "${RELEASE_RUN_ATTEMPT}" != "1" ]]; then
+                [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized handoff-publisher rerun initiator." >&2; exit 1; }
+              fi
+              trigger="successful release handoff"
+              ;;
+            *)
+              echo "Unsupported artifact-publisher event." >&2
+              exit 1
+              ;;
+          esac
+          if [[ "${RELEASE_ENABLED}" != "true" ]]; then
+            if [[ "${RELEASE_EVENT}" == "workflow_dispatch" ]]; then
+              echo "Release publishing is disabled." >&2
+              exit 1
+            fi
+            echo "enabled=false" >> "${GITHUB_OUTPUT}"
+            echo "Release publishing is disabled; the artifact publisher did no work." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+          echo "enabled=true" >> "${GITHUB_OUTPUT}"
+          echo "trigger=${trigger}" >> "${GITHUB_OUTPUT}"
+
+      - name: Check out immutable release tooling
+        if: steps.authorization.outputs.enabled == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Ruby and locked gems
+        if: steps.authorization.outputs.enabled == 'true'
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Install checksum-pinned ORAS on Linux
+        if: steps.authorization.outputs.enabled == 'true'
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz
+          checksum: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
+
+      - name: Inspect exact Cloud runs once
+        if: steps.authorization.outputs.enabled == 'true'
+        id: candidate
+        env:
+          GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+          GH_TOKEN: ${{ github.token }}
+          PENDING_TAG: ${{ vars.SA_RELEASE_PENDING_ARTIFACT_TAG }}
+          REQUESTED_TAG: ${{ inputs.release_tag }}
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
+          SA_ASC_REQUIRE_ISSUER: "1"
+          SA_ALPHA_WORKFLOW_ID: ${{ vars.SA_ALPHA_CLOUD_WORKFLOW_ID }}
+          SA_GITHUB_TOKEN: ${{ github.token }}
+          SA_PRODUCTION_WORKFLOW_ID: ${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}
+        run: |
+          set -euo pipefail
+          release_tag="${REQUESTED_TAG:-${PENDING_TAG}}"
+          [[ "${release_tag}" =~ ^(production|beta)/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || { echo "No exact artifact handoff tag was selected." >&2; exit 1; }
+          archive_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-publish-archive.XXXXXX")"
+          state_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-publish-state.XXXXXX")"
+          archive_ref="${GHCR_REPOSITORY}:${release_tag//\//-}"
+          trap 'rm -rf "${archive_directory}" "${state_directory}"' EXIT
+          if ! Scripts/archive-release-to-ghcr.sh pull "${archive_ref}" "${archive_directory}" >/dev/null; then
+            echo "Exact release ${release_tag} has no readable private handoff archive; recovery remains armed." >&2
+            exit 1
+          fi
+
+          locally_eligible="$(bundle exec ruby -Ifastlane/lib -rsequel_ace_release -e '
+            data = SequelAceRelease::Manifest.read(ARGV.fetch(0)).to_h
+            raise SequelAceRelease::ValidationError, "archive tag does not match the candidate" unless data.fetch("tag") == ARGV.fetch(1)
+            puts SequelAceRelease::PublishHandoff::ELIGIBLE_STATES.fetch(data.fetch("channel")).include?(data.fetch("state"))
+          ' "${archive_directory}/manifest.json" "${release_tag}")"
+          if [[ "${locally_eligible}" != "true" ]]; then
+            if [[ -n "${REQUESTED_TAG}" ]]; then
+              echo "Requested release ${release_tag} is not eligible for artifact publication." >&2
+              exit 1
+            fi
+            {
+              echo "action=settled"
+              echo "tag=${release_tag}"
+            } >> "${GITHUB_OUTPUT}"
+            echo "The exact handoff ${release_tag} is already terminal; its recovery wake state can be cleared." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+
+          bundle exec ruby fastlane/bin/sa-release validate-publish-handoff \
+            --manifest "${archive_directory}/manifest.json" \
+            --tag "${release_tag}" \
+            --notes "${archive_directory}/app-store-notes.txt" \
+            --output "${state_directory}/context.json"
+          eligible="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("eligible")' "${state_directory}/context.json")"
+          [[ "${eligible}" == "true" ]] || { echo "The exact handoff failed live eligibility validation." >&2; exit 1; }
+
+          channel="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("channel")' "${state_directory}/context.json")"
+          version="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("version")' "${state_directory}/context.json")"
+          build="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("build")' "${state_directory}/context.json")"
+          commit="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("release_commit_sha")' "${state_directory}/context.json")"
+          production_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("cloud_build_ids", {}).fetch("production", "")' "${state_directory}/context.json")"
+          production_arguments=(
+            --workflow-id "${SA_PRODUCTION_WORKFLOW_ID}"
+            --app-id "1518036000"
+            --version "${version}"
+            --tag "${release_tag}"
+            --build "${build}"
+            --commit "${commit}"
+          )
+          if [[ -n "${production_run_id}" ]]; then
+            production_arguments+=(--run-id "${production_run_id}")
+          fi
+          bundle exec ruby fastlane/bin/sa-release cloud-status \
+            "${production_arguments[@]}" \
+            --output "${state_directory}/production-status.json"
+          production_readiness="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("readiness")' "${state_directory}/production-status.json")"
+          production_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("id", "")' "${state_directory}/production-status.json")"
+          production_reason="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("reason", "")' "${state_directory}/production-status.json")"
+          assigned_build="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("assigned_build", "")' "${state_directory}/production-status.json")"
+          recovery_build="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("recovery_build", "")' "${state_directory}/production-status.json")"
+
+          alpha_readiness="not_required"
+          alpha_run_id=""
+          if [[ "${channel}" == "beta" && "${production_readiness}" == "ready" ]]; then
+            alpha_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("cloud_build_ids", {}).fetch("alpha", "")' "${state_directory}/context.json")"
+            alpha_arguments=(
+              --workflow-id "${SA_ALPHA_WORKFLOW_ID}"
+              --app-id "1594104035"
+              --version "${version}"
+              --tag "${release_tag}"
+              --allow-any-build
+              --commit "${commit}"
+            )
+            if [[ -n "${alpha_run_id}" ]]; then
+              alpha_arguments+=(--run-id "${alpha_run_id}")
+            fi
+            bundle exec ruby fastlane/bin/sa-release cloud-status \
+              "${alpha_arguments[@]}" \
+              --output "${state_directory}/alpha-status.json"
+            alpha_readiness="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("readiness")' "${state_directory}/alpha-status.json")"
+            alpha_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("id", "")' "${state_directory}/alpha-status.json")"
+          fi
+
+          failed_component=""
+          failure_reason=""
+          if [[ "${production_readiness}" == "failed" ]]; then
+            failed_component="production"
+            failure_reason="${production_reason}"
+            selected_action="fail"
+          elif [[ "${production_readiness}" == "ready" && "${alpha_readiness}" == "failed" ]]; then
+            failed_component="alpha"
+            failure_reason="cloud_run_failed"
+            selected_action="fail"
+          elif [[ "${production_readiness}" == "ready" && ( "${alpha_readiness}" == "ready" || "${alpha_readiness}" == "not_required" ) ]]; then
+            selected_action="publish"
+          else
+            selected_action="pending"
+            {
+              echo "Pending ${release_tag}: Production ${production_readiness}, Alpha ${alpha_readiness}."
+              echo "No runner will wait; Xcode Cloud check events or the gated recovery schedule will inspect this exact handoff again."
+            } >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+          {
+            echo "action=${selected_action}"
+            echo "tag=${release_tag}"
+            echo "channel=${channel}"
+            echo "version=${version}"
+            echo "build=${build}"
+            echo "commit=${commit}"
+            echo "archive_ref=${archive_ref}"
+            echo "production_run_id=${production_run_id}"
+            echo "alpha_run_id=${alpha_run_id}"
+            echo "failed_component=${failed_component}"
+            echo "failure_reason=${failure_reason}"
+            echo "assigned_build=${assigned_build}"
+            echo "recovery_build=${recovery_build}"
+          } >> "${GITHUB_OUTPUT}"
+
+  cloud_failure:
+    name: Preserve a terminal Cloud failure or build-number mismatch
+    needs: discover
+    if: needs.discover.outputs.action == 'fail'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: sequel-ace-release
+    permissions:
+      contents: write
+      packages: write
+    env:
+      GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
+    steps:
+      - name: Check out immutable release tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Ruby and locked gems
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Install checksum-pinned ORAS on Linux
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz
+          checksum: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
+
+      - name: Mint release mutation token for Cloud failure annotation
+        id: failure_release_token
+        continue-on-error: true
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: Sequel-Ace
+          repositories: Sequel-Ace
+          permission-contents: write
+          permission-workflows: write
+
+      - name: Authenticate and preserve the failed Cloud handoff
+        env:
+          ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
+          EXPECTED_TAG: ${{ needs.discover.outputs.tag }}
+          FAILED_COMPONENT: ${{ needs.discover.outputs.failed_component }}
+          FAILED_RUN_ID: ${{ needs.discover.outputs.failed_component == 'production' && needs.discover.outputs.production_run_id || needs.discover.outputs.alpha_run_id }}
+          FAILURE_REASON: ${{ needs.discover.outputs.failure_reason }}
+          EXPECTED_BUILD: ${{ needs.discover.outputs.build }}
+          ASSIGNED_BUILD: ${{ needs.discover.outputs.assigned_build }}
+          RECOVERY_BUILD: ${{ needs.discover.outputs.recovery_build }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+          RELEASE_COMMIT: ${{ needs.discover.outputs.commit }}
+          RELEASE_MUTATION_TOKEN: ${{ steps.failure_release_token.outputs.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SA_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          Scripts/archive-release-to-ghcr.sh pull "${ARCHIVE_REFERENCE}" release-archive
+          bundle exec ruby fastlane/bin/sa-release validate-publish-handoff \
+            --manifest release-archive/manifest.json \
+            --tag "${EXPECTED_TAG}" \
+            --notes release-archive/app-store-notes.txt \
+            --output failed-cloud-context.json
+          bundle exec ruby fastlane/bin/sa-release record-failure \
+            --manifest release-archive/manifest.json \
+            --workflow-url "${RUN_URL}" \
+            --output failure-disposition.json
+          bundle exec ruby -Ifastlane/lib -rsequel_ace_release -rjson <<'RUBY'
+          path = "release-archive/manifest.json"
+          manifest = SequelAceRelease::Manifest.read(path)
+          failure = manifest.to_h.fetch("failure").merge(
+            "component" => ENV.fetch("FAILED_COMPONENT"),
+            "cloud_run_id" => ENV.fetch("FAILED_RUN_ID"),
+            "reason" => ENV.fetch("FAILURE_REASON")
+          )
+          if %w[cloud_build_number_advanced cloud_build_number_regressed].include?(failure.fetch("reason"))
+            failure["expected_build"] = Integer(ENV.fetch("EXPECTED_BUILD"))
+            failure["assigned_build"] = Integer(ENV.fetch("ASSIGNED_BUILD"))
+          end
+          if failure.fetch("reason") == "cloud_build_number_advanced"
+            failure["recovery_build"] = Integer(ENV.fetch("RECOVERY_BUILD"))
+          end
+          manifest.with("failure" => failure).write(path)
+          RUBY
+          cp failure-disposition.json release-archive/
+          Scripts/archive-release-to-ghcr.sh push "${ARCHIVE_REFERENCE}" release-archive > failed-archive-evidence.json
+          if [[ "${FAILURE_REASON}" == "cloud_build_number_advanced" ]]; then
+            echo "Production Cloud assigned ${ASSIGNED_BUILD} instead of ${EXPECTED_BUILD}; the failed RC was preserved and recovery may advance to ${RECOVERY_BUILD}." >> "${GITHUB_STEP_SUMMARY}"
+          elif [[ "${FAILURE_REASON}" == "cloud_build_number_regressed" ]]; then
+            echo "Production Cloud assigned ${ASSIGNED_BUILD} below expected ${EXPECTED_BUILD}; the release stopped without backward recovery." >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "Exact ${FAILED_COMPONENT} Xcode Cloud run ${FAILED_RUN_ID} completed unsuccessfully; no Mac runner was started." >> "${GITHUB_STEP_SUMMARY}"
+          fi
+          if [[ -z "${RELEASE_MUTATION_TOKEN}" ]]; then
+            echo "Private failure evidence was preserved; GitHub annotation was skipped because the narrow mutation token was unavailable." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+          if ! (
+            set -euo pipefail
+            export GH_TOKEN="${RELEASE_MUTATION_TOKEN}"
+            gh release view "${EXPECTED_TAG}" --json body --jq .body > failed-release-body.md
+            bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
+              --tag "${EXPECTED_TAG}" \
+              --target-sha "${RELEASE_COMMIT}" >/dev/null
+            {
+              echo
+              echo "---"
+              echo "Automated release artifact processing stopped. The tag and prerelease are intentionally preserved."
+              echo "Workflow evidence: ${RUN_URL}"
+            } >> failed-release-body.md
+            gh release edit "${EXPECTED_TAG}" --verify-tag --target "${RELEASE_COMMIT}" --prerelease --latest=false --notes-file failed-release-body.md
+            bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
+              --tag "${EXPECTED_TAG}" \
+              --target-sha "${RELEASE_COMMIT}" >/dev/null
+          ); then
+            echo "Private failure evidence was preserved; the optional GitHub annotation failed and will not block forward recovery." >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+  forward_build_recovery:
+    name: Dispatch a verified forward-only RC recovery
+    needs:
+      - discover
+      - cloud_failure
+    if: >-
+      always() &&
+      needs.discover.outputs.action == 'fail' &&
+      needs.discover.outputs.failed_component == 'production' &&
+      needs.discover.outputs.failure_reason == 'cloud_build_number_advanced' &&
+      needs.cloud_failure.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: sequel-ace-release
+    permissions:
+      actions: write
+      contents: read
+      packages: read
+    env:
+      GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
+    steps:
+      - name: Check out immutable release tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Ruby and locked gems
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Install checksum-pinned ORAS on Linux
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz
+          checksum: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
+
+      - name: Revalidate the durable failure and dispatch the next RC
+        env:
+          ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
+          EXPECTED_TAG: ${{ needs.discover.outputs.tag }}
+          RELEASE_CHANNEL: ${{ needs.discover.outputs.channel }}
+          RELEASE_VERSION: ${{ needs.discover.outputs.version }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+          GH_TOKEN: ${{ github.token }}
+          SA_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          Scripts/archive-release-to-ghcr.sh pull "${ARCHIVE_REFERENCE}" recovery-archive
+          approval_sha="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("sha256")' recovery-archive/approval.json)"
+          bundle exec ruby fastlane/bin/sa-release validate-forward-recovery \
+            --manifest recovery-archive/manifest.json \
+            --approval recovery-archive/approval.json \
+            --approval-sha "${approval_sha}" \
+            --release-body recovery-archive/release-body.md \
+            --tag "${EXPECTED_TAG}" \
+            --current-sha "${GITHUB_SHA}" \
+            --channel "${RELEASE_CHANNEL}" \
+            --version "${RELEASE_VERSION}" \
+            --previous-tag "$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("previous_tag")' recovery-archive/approval.json)" \
+            --output forward-recovery.json
+
+          ruby -rjson -rbase64 <<'RUBY'
+          approval = JSON.parse(File.read("recovery-archive/approval.json"))
+          recovery = JSON.parse(File.read("forward-recovery.json"))
+          inputs = {
+            "mode" => "resume",
+            "channel" => approval.fetch("channel"),
+            "version" => approval.fetch("target_version"),
+            "expected_main_sha" => approval.fetch("main_sha"),
+            "previous_tag" => approval.fetch("previous_tag"),
+            "recovery_tag" => recovery.fetch("predecessor_tag"),
+            "app_store_notes_b64" => Base64.strict_encode64(File.binread("recovery-archive/app-store-notes.txt")),
+            "approval_sha256" => approval.fetch("sha256"),
+            "confirmation" => "RELEASE #{approval.fetch('channel')} #{approval.fetch('target_version')}"
+          }
+          File.write("workflow-dispatch.json", JSON.generate({ "ref" => "main", "inputs" => inputs }))
+          RUBY
+          gh api \
+            --method POST \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/release.yml/dispatches" \
+            --input workflow-dispatch.json
+          {
+            echo "### Forward-only build recovery"
+            echo "- Preserved predecessor: ${EXPECTED_TAG}"
+            echo "- Cloud-assigned build: $(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("cloud_assigned_build")' forward-recovery.json)"
+            echo "- Next RC floor: $(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("expected_recovery_build")' forward-recovery.json)"
+            echo "- The Release workflow was dispatched from main with the original immutable approval."
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+  publish:
+    name: Verify and publish ready release artifacts
+    needs: discover
+    if: needs.discover.outputs.action == 'publish'
+    # GitHub-hosted macOS; private Moballo runners are intentionally out of scope.
+    runs-on: macos-15
+    timeout-minutes: 90
+    environment: sequel-ace-release
+    permissions:
+      contents: write
+      packages: write
+    env:
+      GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
+      SA_ASC_REQUIRE_ISSUER: "1"
+    outputs:
+      context_validated: ${{ steps.disposition.outputs.context_validated }}
+      submission_started: ${{ steps.disposition.outputs.submission_started }}
+      terminal_failure: ${{ steps.disposition.outputs.terminal_failure }}
+    steps:
+      - name: Revalidate publisher rollout state
+        env:
+          RELEASE_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}
+          RELEASE_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          [[ "${RELEASE_ENABLED}" == "true" ]] || { echo "Release publishing is disabled." >&2; exit 1; }
+          [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Artifact publication must run from main." >&2; exit 1; }
+
+      - name: Check out immutable release tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Ruby and locked gems
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Install checksum-pinned ORAS on Apple silicon
+        if: runner.arch == 'ARM64'
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_darwin_arm64.tar.gz
+          checksum: f33fc12753c54172b0d0d19eaa0318d3f90fe9b094d96e8b259c881713c92e1c
+
+      - name: Install checksum-pinned ORAS on Intel
+        if: runner.arch == 'X64'
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_darwin_amd64.tar.gz
+          checksum: aeb684d8c24c18dce28fd1f7326636e4782b573108e244a93d4b1c4a5ec50f48
+
+      - name: Pull and revalidate the exact private handoff
+        id: context
+        env:
+          EXPECTED_ARCHIVE_REF: ${{ needs.discover.outputs.archive_ref }}
+          EXPECTED_BUILD: ${{ needs.discover.outputs.build }}
+          EXPECTED_CHANNEL: ${{ needs.discover.outputs.channel }}
+          EXPECTED_COMMIT: ${{ needs.discover.outputs.commit }}
+          EXPECTED_TAG: ${{ needs.discover.outputs.tag }}
+          EXPECTED_VERSION: ${{ needs.discover.outputs.version }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+          SA_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          Scripts/archive-release-to-ghcr.sh pull "${EXPECTED_ARCHIVE_REF}" release-archive
+          bundle exec ruby fastlane/bin/sa-release validate-publish-handoff \
+            --manifest release-archive/manifest.json \
+            --tag "${EXPECTED_TAG}" \
+            --notes release-archive/app-store-notes.txt \
+            --output publish-context.json
+          ruby -rjson <<'RUBY'
+          context = JSON.parse(File.read("publish-context.json"))
+          expected = {
+            "tag" => ENV.fetch("EXPECTED_TAG"),
+            "channel" => ENV.fetch("EXPECTED_CHANNEL"),
+            "version" => ENV.fetch("EXPECTED_VERSION"),
+            "build" => Integer(ENV.fetch("EXPECTED_BUILD")),
+            "release_commit_sha" => ENV.fetch("EXPECTED_COMMIT")
+          }
+          expected.each do |key, value|
+            raise "publisher context changed for #{key}" unless context.fetch(key) == value
+          end
+          raise "publisher handoff is no longer eligible" unless context.fetch("eligible")
+          File.open(ENV.fetch("GITHUB_OUTPUT"), "a") do |file|
+            file.puts("validated=true")
+            file.puts("state=#{context.fetch("state")}")
+            file.puts("production_asset=#{context.fetch("artifact_names").fetch(0)}")
+            file.puts("alpha_asset=#{context.fetch("artifact_names").fetch(1)}") if context.fetch("artifact_names")[1]
+            file.puts("alpha_recovery=#{context.fetch("alpha_recovery")}")
+          end
+          RUBY
+
+      - name: Recheck exact Cloud readiness once
+        id: cloud
+        env:
+          ALPHA_RUN_ID: ${{ needs.discover.outputs.alpha_run_id }}
+          EXPECTED_BUILD: ${{ needs.discover.outputs.build }}
+          EXPECTED_CHANNEL: ${{ needs.discover.outputs.channel }}
+          EXPECTED_COMMIT: ${{ needs.discover.outputs.commit }}
+          EXPECTED_TAG: ${{ needs.discover.outputs.tag }}
+          EXPECTED_VERSION: ${{ needs.discover.outputs.version }}
+          PRODUCTION_RUN_ID: ${{ needs.discover.outputs.production_run_id }}
+          SA_ALPHA_WORKFLOW_ID: ${{ vars.SA_ALPHA_CLOUD_WORKFLOW_ID }}
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
+          SA_PRODUCTION_WORKFLOW_ID: ${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}
+        run: |
+          set -euo pipefail
+          bundle exec ruby fastlane/bin/sa-release cloud-status \
+            --workflow-id "${SA_PRODUCTION_WORKFLOW_ID}" \
+            --app-id "1518036000" \
+            --version "${EXPECTED_VERSION}" \
+            --tag "${EXPECTED_TAG}" \
+            --build "${EXPECTED_BUILD}" \
+            --run-id "${PRODUCTION_RUN_ID}" \
+            --commit "${EXPECTED_COMMIT}" \
+            --output production-cloud-run.json
+          production_readiness="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("readiness")' production-cloud-run.json)"
+          alpha_readiness="not_required"
+          if [[ "${EXPECTED_CHANNEL}" == "beta" && "${production_readiness}" == "ready" ]]; then
+            bundle exec ruby fastlane/bin/sa-release cloud-status \
+              --workflow-id "${SA_ALPHA_WORKFLOW_ID}" \
+              --app-id "1594104035" \
+              --version "${EXPECTED_VERSION}" \
+              --tag "${EXPECTED_TAG}" \
+              --allow-any-build \
+              --run-id "${ALPHA_RUN_ID}" \
+              --commit "${EXPECTED_COMMIT}" \
+              --output alpha-cloud-run.json
+            alpha_readiness="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("readiness")' alpha-cloud-run.json)"
+          elif [[ "${EXPECTED_CHANNEL}" == "beta" ]]; then
+            alpha_readiness="not_checked"
+          fi
+          [[ "${production_readiness}" == "ready" ]] || { echo "Production Cloud readiness changed after discovery." >&2; exit 1; }
+          if [[ "${EXPECTED_CHANNEL}" == "beta" ]]; then
+            [[ "${alpha_readiness}" == "ready" ]] || { echo "Alpha Cloud readiness changed after discovery." >&2; exit 1; }
+          fi
+          echo "production_run_id=$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("id")' production-cloud-run.json)" >> "${GITHUB_OUTPUT}"
+          if [[ -f alpha-cloud-run.json ]]; then
+            echo "alpha_run_id=$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("id")' alpha-cloud-run.json)" >> "${GITHUB_OUTPUT}"
+            echo "alpha_build=$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("app_build")' alpha-cloud-run.json)" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Download exact Xcode Cloud artifacts
+        if: steps.context.outputs.state != 'archived'
+        env:
+          ALPHA_RUN_ID: ${{ steps.cloud.outputs.alpha_run_id }}
+          PRODUCTION_RUN_ID: ${{ steps.cloud.outputs.production_run_id }}
+          RELEASE_CHANNEL: ${{ needs.discover.outputs.channel }}
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
+        run: |
+          set -euo pipefail
+          bundle exec ruby fastlane/bin/sa-release download-cloud-artifacts \
+            --run-id "${PRODUCTION_RUN_ID}" \
+            --output-directory artifacts/cloud-production \
+            --output production-artifacts.json
+          if [[ "${RELEASE_CHANNEL}" == "beta" ]]; then
+            bundle exec ruby fastlane/bin/sa-release download-cloud-artifacts \
+              --run-id "${ALPHA_RUN_ID}" \
+              --output-directory artifacts/cloud-alpha \
+              --output alpha-artifacts.json
+          fi
+
+      - name: Verify, launch, quit, and package distributable apps
+        if: steps.context.outputs.state != 'archived'
+        env:
+          ALPHA_ASSET: ${{ steps.context.outputs.alpha_asset }}
+          PRODUCTION_ASSET: ${{ steps.context.outputs.production_asset }}
+          RELEASE_BUILD: ${{ needs.discover.outputs.build }}
+          RELEASE_CHANNEL: ${{ needs.discover.outputs.channel }}
+          RELEASE_TAG: ${{ needs.discover.outputs.tag }}
+          RELEASE_VERSION: ${{ needs.discover.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/public
+          if ! bundle exec ruby fastlane/bin/sa-release verify-artifact-set \
+              --index production-artifacts.json \
+              --version "${RELEASE_VERSION}" \
+              --build "${RELEASE_BUILD}" \
+              --channel production \
+              --release-tag "${RELEASE_TAG}" \
+              --launch \
+              --output-zip "artifacts/public/${PRODUCTION_ASSET}" \
+              --output production-verification.json; then
+            touch terminal-artifact-verification-failure
+            exit 1
+          fi
+          if [[ "${RELEASE_CHANNEL}" == "beta" ]]; then
+            if ! bundle exec ruby fastlane/bin/sa-release verify-artifact-set \
+                --index alpha-artifacts.json \
+                --version "${RELEASE_VERSION}" \
+                --any-build \
+                --channel beta \
+                --release-tag "${RELEASE_TAG}" \
+                --launch \
+                --output-zip "artifacts/public/${ALPHA_ASSET}" \
+                --output alpha-verification.json; then
+              touch terminal-artifact-verification-failure
+              exit 1
+            fi
+          fi
+          ruby -rjson -e 'verification = {"production" => JSON.parse(File.read("production-verification.json"))}; cloud = {"production" => JSON.parse(File.read("production-cloud-run.json")).fetch("id")}; if File.exist?("alpha-verification.json"); verification["alpha"] = JSON.parse(File.read("alpha-verification.json")); cloud["alpha"] = JSON.parse(File.read("alpha-cloud-run.json")).fetch("id"); end; File.write("artifact-evidence.json", JSON.pretty_generate({"verification" => verification, "cloud_build_ids" => cloud}) + "\n")'
+          bundle exec ruby fastlane/bin/sa-release update-manifest \
+            --manifest release-archive/manifest.json \
+            --state artifacts_verified \
+            --merge artifact-evidence.json >/dev/null
+
+      - name: Attach checksum-idempotent verified public artifacts
+        if: steps.context.outputs.state != 'archived'
+        env:
+          ALPHA_ASSET: ${{ steps.context.outputs.alpha_asset }}
+          PRODUCTION_ASSET: ${{ steps.context.outputs.production_asset }}
+          RELEASE_CHANNEL: ${{ needs.discover.outputs.channel }}
+          RELEASE_TAG: ${{ needs.discover.outputs.tag }}
+          SA_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          bundle exec ruby fastlane/bin/sa-release github-upload-asset \
+            --tag "${RELEASE_TAG}" \
+            --file "artifacts/public/${PRODUCTION_ASSET}" \
+            --manifest release-archive/manifest.json \
+            --notes release-archive/app-store-notes.txt \
+            --integrity-failure-marker terminal-artifact-verification-failure >/dev/null
+          if [[ "${RELEASE_CHANNEL}" == "beta" ]]; then
+            bundle exec ruby fastlane/bin/sa-release github-upload-asset \
+              --tag "${RELEASE_TAG}" \
+              --file "artifacts/public/${ALPHA_ASSET}" \
+              --manifest release-archive/manifest.json \
+              --notes release-archive/app-store-notes.txt \
+              --integrity-failure-marker terminal-artifact-verification-failure >/dev/null
+          fi
+
+      - name: Archive verified artifacts privately
+        if: steps.context.outputs.state != 'archived'
+        id: archive
+        env:
+          ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          cp production-cloud-run.json production-artifacts.json production-verification.json artifact-evidence.json release-archive/
+          if [[ -f alpha-cloud-run.json ]]; then
+            cp alpha-cloud-run.json alpha-artifacts.json alpha-verification.json release-archive/
+          fi
+          /bin/rm -rf release-archive/artifacts
+          /usr/bin/ditto artifacts release-archive/artifacts
+          bundle exec ruby fastlane/bin/sa-release update-manifest \
+            --manifest release-archive/manifest.json \
+            --state archived >/dev/null
+          Scripts/archive-release-to-ghcr.sh push "${ARCHIVE_REFERENCE}" release-archive > archive-evidence.json
+          echo "reference=${ARCHIVE_REFERENCE}" >> "${GITHUB_OUTPUT}"
+
+      - name: Stage, verify, and submit the production App Store version
+        if: needs.discover.outputs.channel == 'production'
+        id: app_store
+        env:
+          RELEASE_BUILD: ${{ needs.discover.outputs.build }}
+          RELEASE_VERSION: ${{ needs.discover.outputs.version }}
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
+          SA_GITHUB_TOKEN: ${{ github.token }}
+          SA_RELEASE_AUTOMATION_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}
+        run: |
+          set -euo pipefail
+          bundle exec ruby fastlane/bin/sa-release reconcile-submission \
+            --manifest release-archive/manifest.json \
+            --output pre-submit-reconciliation.json
+          already_submitted="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("submitted")' pre-submit-reconciliation.json)"
+          if [[ "${already_submitted}" == "true" ]]; then
+            ruby -rjson -e 'value = JSON.parse(File.read(ARGV.fetch(0))); File.write(ARGV.fetch(1), JSON.pretty_generate(value.slice("version_id", "build_id", "app_store_state")) + "\n")' pre-submit-reconciliation.json app-store-submission.json
+          else
+            bundle exec ruby fastlane/bin/sa-release submit \
+              --manifest release-archive/manifest.json \
+              --notes release-archive/app-store-notes.txt \
+              --confirm "SUBMIT ${RELEASE_VERSION} (${RELEASE_BUILD})" \
+              --output app-store-submission.json
+          fi
+          ruby -rjson -e 'File.write("submission-evidence.json", JSON.pretty_generate({"asc_ids" => JSON.parse(File.read("app-store-submission.json"))}) + "\n")'
+          bundle exec ruby fastlane/bin/sa-release update-manifest \
+            --manifest release-archive/manifest.json \
+            --state submitted \
+            --merge submission-evidence.json >/dev/null
+
+      - name: Refresh the private archive with submission evidence
+        if: needs.discover.outputs.channel == 'production'
+        env:
+          ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          cp app-store-submission.json release-archive/
+          Scripts/archive-release-to-ghcr.sh push "${ARCHIVE_REFERENCE}" release-archive > final-archive-evidence.json
+
+      - name: Mint release mutation token for Alpha recovery annotation
+        if: needs.discover.outputs.channel == 'beta' && steps.context.outputs.alpha_recovery == 'true'
+        id: alpha_recovery_release_token
+        continue-on-error: true
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: Sequel-Ace
+          repositories: Sequel-Ace
+          permission-contents: write
+          permission-workflows: write
+
+      - name: Append successful Alpha recovery evidence
+        if: needs.discover.outputs.channel == 'beta' && steps.context.outputs.alpha_recovery == 'true'
+        continue-on-error: true
+        env:
+          ALPHA_RUN_ID: ${{ steps.cloud.outputs.alpha_run_id }}
+          BETA_TAG: ${{ needs.discover.outputs.tag }}
+          RELEASE_COMMIT: ${{ needs.discover.outputs.commit }}
+          RELEASE_MUTATION_TOKEN: ${{ steps.alpha_recovery_release_token.outputs.token }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${RELEASE_MUTATION_TOKEN}" ]]; then
+            echo "Alpha recovery artifacts are durable; GitHub annotation was skipped because the narrow mutation token was unavailable." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+          export GH_TOKEN="${RELEASE_MUTATION_TOKEN}"
+          marker="Alpha artifact recovery succeeded in Xcode Cloud run ${ALPHA_RUN_ID}."
+          gh release view "${BETA_TAG}" --json body --jq .body > recovered-release-body.md
+          if ! grep -Fq "${marker}" recovered-release-body.md; then
+            bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
+              --tag "${BETA_TAG}" \
+              --target-sha "${RELEASE_COMMIT}" >/dev/null
+            {
+              echo
+              echo "${marker} Both beta artifacts are verified and archived."
+            } >> recovered-release-body.md
+            gh release edit "${BETA_TAG}" --verify-tag --target "${RELEASE_COMMIT}" --prerelease --latest=false --notes-file recovered-release-body.md
+            bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
+              --tag "${BETA_TAG}" \
+              --target-sha "${RELEASE_COMMIT}" >/dev/null
+          fi
+
+      - name: Record successful artifact handoff
+        env:
+          ALPHA_BUILD: ${{ steps.cloud.outputs.alpha_build }}
+          ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
+          RELEASE_BUILD: ${{ needs.discover.outputs.build }}
+          RELEASE_CHANNEL: ${{ needs.discover.outputs.channel }}
+          RELEASE_TAG: ${{ needs.discover.outputs.tag }}
+        run: |
+          {
+            echo "### Release artifact publication"
+            echo "- Tag: ${RELEASE_TAG}"
+            echo "- Production build: ${RELEASE_BUILD}"
+            echo "- Private archive: ${ARCHIVE_REFERENCE}"
+            if [[ "${RELEASE_CHANNEL}" == "production" ]]; then
+              echo "- Exact App Store version submitted; the six-hour finalizer will publish GitHub only after Apple reports live distribution."
+            else
+              echo "- Production and Alpha artifacts attached; informational Alpha build: ${ALPHA_BUILD}."
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Classify publisher outcome for asynchronous recovery
+        id: disposition
+        if: always()
+        env:
+          APP_STORE_OUTCOME: ${{ steps.app_store.outcome }}
+          CONTEXT_OUTCOME: ${{ steps.context.outcome }}
+        run: |
+          set -euo pipefail
+          if [[ "${CONTEXT_OUTCOME}" == "success" ]]; then
+            echo "context_validated=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "context_validated=false" >> "${GITHUB_OUTPUT}"
+          fi
+          if [[ "${APP_STORE_OUTCOME}" == "success" || "${APP_STORE_OUTCOME}" == "failure" || "${APP_STORE_OUTCOME}" == "cancelled" ]]; then
+            echo "submission_started=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "submission_started=false" >> "${GITHUB_OUTPUT}"
+          fi
+          if [[ -f terminal-artifact-verification-failure ]]; then
+            echo "terminal_failure=artifact_verification" >> "${GITHUB_OUTPUT}"
+          else
+            echo "terminal_failure=none" >> "${GITHUB_OUTPUT}"
+          fi
+
+  recover_publish_failure:
+    name: Reconcile a failed publisher without a Mac runner
+    needs:
+      - discover
+      - publish
+    if: always() && needs.discover.outputs.action == 'publish' && needs.publish.result != 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: sequel-ace-release
+    permissions:
+      contents: write
+      packages: write
+    env:
+      GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
+      SA_ASC_REQUIRE_ISSUER: "1"
+    outputs:
+      polling_needed: ${{ steps.polling.outputs.polling_needed }}
+    steps:
+      - name: Check out immutable release tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Ruby and locked gems
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Install checksum-pinned ORAS on Linux
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz
+          checksum: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
+
+      - name: Authenticate the preserved handoff
+        env:
+          ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
+          EXPECTED_TAG: ${{ needs.discover.outputs.tag }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+          SA_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          Scripts/archive-release-to-ghcr.sh pull "${ARCHIVE_REFERENCE}" release-archive
+          bundle exec ruby fastlane/bin/sa-release validate-publish-handoff \
+            --manifest release-archive/manifest.json \
+            --tag "${EXPECTED_TAG}" \
+            --notes release-archive/app-store-notes.txt \
+            --output recovery-context.json
+
+      - name: Reconcile an ambiguous App Store submission
+        id: submission
+        if: needs.discover.outputs.channel == 'production' && needs.publish.outputs.submission_started == 'true'
+        env:
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
+        run: |
+          set -euo pipefail
+          bundle exec ruby fastlane/bin/sa-release reconcile-submission \
+            --manifest release-archive/manifest.json \
+            --wait-seconds 900 \
+            --poll-interval 15 \
+            --output reconciled-submission.json
+          submitted="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("submitted")' reconciled-submission.json)"
+          echo "submitted=${submitted}" >> "${GITHUB_OUTPUT}"
+
+      - name: Preserve confirmed submission evidence
+        id: confirmed_submission
+        if: steps.submission.outputs.submitted == 'true'
+        env:
+          ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          bundle exec ruby fastlane/bin/sa-release record-failure \
+            --manifest release-archive/manifest.json \
+            --workflow-url "${RUN_URL}" \
+            --submission reconciled-submission.json \
+            --output submission-recovery.json
+          cp reconciled-submission.json submission-recovery.json release-archive/
+          Scripts/archive-release-to-ghcr.sh push "${ARCHIVE_REFERENCE}" release-archive > submission-archive-evidence.json
+          echo "The exact App Store submission was confirmed and archived; finalization remains eligible." >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Mint release mutation token for terminal failure annotation
+        if: always() && steps.submission.outputs.submitted != 'true' && needs.publish.outputs.terminal_failure == 'artifact_verification'
+        id: failure_release_token
+        continue-on-error: true
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: Sequel-Ace
+          repositories: Sequel-Ace
+          permission-contents: write
+          permission-workflows: write
+
+      - name: Preserve terminal artifact-verification failure
+        id: terminal_failure
+        if: always() && steps.submission.outputs.submitted != 'true' && needs.publish.outputs.terminal_failure == 'artifact_verification'
+        env:
+          ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
+          FAILED_TAG: ${{ needs.discover.outputs.tag }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+          RELEASE_COMMIT: ${{ needs.discover.outputs.commit }}
+          RELEASE_MUTATION_TOKEN: ${{ steps.failure_release_token.outputs.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          bundle exec ruby fastlane/bin/sa-release record-failure \
+            --manifest release-archive/manifest.json \
+            --workflow-url "${RUN_URL}" \
+            --output failure-disposition.json
+          cp failure-disposition.json release-archive/
+          Scripts/archive-release-to-ghcr.sh push "${ARCHIVE_REFERENCE}" release-archive > failed-archive-evidence.json
+          if [[ -z "${RELEASE_MUTATION_TOKEN}" ]]; then
+            echo "Private terminal-failure evidence was preserved; GitHub annotation was skipped because the narrow mutation token was unavailable." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+          export GH_TOKEN="${RELEASE_MUTATION_TOKEN}"
+          gh release view "${FAILED_TAG}" --json body --jq .body > failed-release-body.md
+          bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
+            --tag "${FAILED_TAG}" \
+            --target-sha "${RELEASE_COMMIT}" >/dev/null
+          {
+            echo
+            echo "---"
+            echo "Automated release artifact processing stopped. The tag and prerelease are intentionally preserved."
+            echo "Workflow evidence: ${RUN_URL}"
+          } >> failed-release-body.md
+          gh release edit "${FAILED_TAG}" --verify-tag --target "${RELEASE_COMMIT}" --prerelease --latest=false --notes-file failed-release-body.md
+          bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
+            --tag "${FAILED_TAG}" \
+            --target-sha "${RELEASE_COMMIT}" >/dev/null
+
+      - name: Preserve retryable state after a transient publisher failure
+        if: always() && steps.submission.outputs.submitted != 'true' && needs.publish.outputs.terminal_failure != 'artifact_verification'
+        env:
+          FAILED_TAG: ${{ needs.discover.outputs.tag }}
+        run: |
+          {
+            echo "Publisher failure for ${FAILED_TAG} was not a completed Cloud or artifact-integrity failure."
+            echo "The private handoff and GitHub release were left unchanged so the next event or gated recovery check can retry safely."
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Classify whether artifact recovery must remain armed
+        id: polling
+        if: always()
+        env:
+          CONFIRMED_SUBMISSION_OUTCOME: ${{ steps.confirmed_submission.outcome }}
+          SUBMITTED: ${{ steps.submission.outputs.submitted }}
+          TERMINAL_FAILURE: ${{ needs.publish.outputs.terminal_failure }}
+          TERMINAL_PRESERVATION_OUTCOME: ${{ steps.terminal_failure.outcome }}
+        run: |
+          set -euo pipefail
+          if [[ "${SUBMITTED}" == "true" && "${CONFIRMED_SUBMISSION_OUTCOME}" == "success" ]]; then
+            echo "polling_needed=false" >> "${GITHUB_OUTPUT}"
+          elif [[ "${TERMINAL_FAILURE}" == "artifact_verification" && "${TERMINAL_PRESERVATION_OUTCOME}" == "success" ]]; then
+            echo "polling_needed=false" >> "${GITHUB_OUTPUT}"
+          else
+            echo "polling_needed=true" >> "${GITHUB_OUTPUT}"
+          fi
+
+  settle_artifact_wake_state:
+    name: Clear settled artifact wake state
+    needs:
+      - discover
+      - cloud_failure
+      - forward_build_recovery
+      - publish
+      - recover_publish_failure
+    if: >-
+      always() &&
+      needs.discover.result == 'success' &&
+      needs.discover.outputs.tag != '' &&
+      (
+        needs.discover.outputs.action == 'settled' ||
+        (
+          needs.discover.outputs.action == 'fail' &&
+          needs.discover.outputs.failure_reason != 'cloud_build_number_advanced' &&
+          needs.cloud_failure.result == 'success'
+        ) ||
+        (needs.discover.outputs.action == 'publish' && needs.publish.result == 'success') ||
+        (
+          needs.discover.outputs.action == 'publish' &&
+          needs.recover_publish_failure.result == 'success' &&
+          needs.recover_publish_failure.outputs.polling_needed == 'false'
+        )
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: sequel-ace-release
+    permissions:
+      contents: read
+    steps:
+      - name: Check out immutable release tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Clear only the exact settled handoff
+        env:
+          GITHUB_REPOSITORY_ID: ${{ github.repository_id }}
+          SA_RELEASE_GITHUB_APP_CLIENT_ID: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          SA_RELEASE_GITHUB_APP_PRIVATE_KEY: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          SETTLED_TAG: ${{ needs.discover.outputs.tag }}
+        run: Scripts/release-artifact-wake-state.sh clear "${SETTLED_TAG}"

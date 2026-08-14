@@ -10,7 +10,7 @@ module SequelAceRelease
       @version_files = version_files
     end
 
-    def plan(channel:, target_version: nil, base_tag: nil, main_ref: "HEAD", app_store_notes: nil, observed_cloud_next_build: nil)
+    def plan(channel:, target_version: nil, base_tag: nil, main_ref: "HEAD", app_store_notes: nil)
       Config.validate_channel!(channel)
       main_sha = @git.sha(main_ref)
       release_notes_head_ref = resolve_release_notes_head_ref(main_ref)
@@ -64,10 +64,8 @@ module SequelAceRelease
         base_sha: base_sha,
         changelog_base_tag: changelog_base_tag,
         changelog_base_sha: changelog_base_sha,
-        release_iteration: iteration,
         app_store_notes: human_notes,
-        release_notes_sha256: release_notes_sha256,
-        observed_production_cloud_next_build: observed_cloud_next_build
+        release_notes_sha256: release_notes_sha256
       )
       {
         "schema_version" => Config::SCHEMA_VERSION,
@@ -83,7 +81,7 @@ module SequelAceRelease
         "recommended_version" => recommendation,
         "target_version" => chosen_version,
         "iteration" => iteration,
-        "observed_production_cloud_next_build" => approval.payload.fetch("observed_production_cloud_next_build"),
+        "build_policy" => approval.payload.fetch("build_policy"),
         "changes" => changes.map(&:to_h),
         "app_store_notes" => human_notes,
         "github_release_body" => release_body,

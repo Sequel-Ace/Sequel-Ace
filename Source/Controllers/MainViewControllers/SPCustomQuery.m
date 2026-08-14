@@ -54,7 +54,6 @@
 #import "SPAppController.h"
 #import "SPFunctions.h"
 #import "SPHelpViewerClient.h"
-#import "SPHelpViewerController.h"
 #import "SPBundleManager.h"
 
 #import <pthread.h>

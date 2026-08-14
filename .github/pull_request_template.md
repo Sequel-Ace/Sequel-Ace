@@ -24,6 +24,8 @@ Please use one of these hashtags for your PR title:
   - [ ] 13.x (Ventura)
   - [ ] 14.x (Sonoma)
   - [ ] 15.x (Sequoia)
+  - [ ] 26.x (Tahoe)
+  - [ ] 27.x (Golden Gate)
 - Localizations:
   - [ ] English
   - [ ] Spanish

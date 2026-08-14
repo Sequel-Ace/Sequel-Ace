@@ -47,7 +47,7 @@ module SequelAceRelease
       }
     GRAPHQL
 
-    def initialize(token:, repository: Config::REPOSITORY, transport: nil)
+    def initialize(token:, repository: Config::REPOSITORY, transport: nil, upload_transport: nil)
       raise ValidationError, "GitHub token is required" if token.to_s.empty?
 
       @token = token
@@ -61,6 +61,7 @@ module SequelAceRelease
           "User-Agent" => "sequel-ace-release-tool"
         }
       )
+      @upload_transport = upload_transport
     end
 
     def releases
@@ -75,6 +76,90 @@ module SequelAceRelease
 
     def release_by_tag(tag)
       request!("GET", "/repos/#{@repository}/releases/tags/#{URI.encode_www_form_component(tag)}")
+    end
+
+    def release_by_tag_if_exists(tag)
+      release_by_tag(tag)
+    rescue APIError => error
+      raise unless error.message.include?("HTTP 404")
+
+      nil
+    end
+
+    def latest_release
+      request!("GET", "/repos/#{@repository}/releases/latest")
+    end
+
+    def validate_release_publisher!(expected_login:, expected_id:)
+      unless expected_login.to_s.match?(/\A[A-Za-z0-9-]+\z/)
+        raise ValidationError, "expected GitHub release publisher is malformed"
+      end
+      unless expected_id.is_a?(Integer) && expected_id.positive?
+        raise ValidationError, "expected GitHub release publisher ID is malformed"
+      end
+
+      user = request!("GET", "/user")
+      unless user.is_a?(Hash) && user["login"] == expected_login && user["id"] == expected_id
+        raise ValidationError, "GitHub release publisher credential does not belong to #{expected_login}"
+      end
+      repository = request!("GET", "/repos/#{@repository}")
+      unless repository.is_a?(Hash) && repository["full_name"] == @repository &&
+             repository.dig("permissions", "push") == true
+        raise ValidationError, "GitHub release publisher credential lacks exact repository push access"
+      end
+
+      {
+        "login" => expected_login,
+        "id" => expected_id,
+        "repository" => @repository,
+        "push_access" => true
+      }
+    end
+
+    def validate_release_app_publisher!(
+      expected_app_id:, expected_client_id:, expected_app_slug:, expected_installation_id:
+    )
+      unless expected_app_id.is_a?(Integer) && expected_app_id.positive?
+        raise ValidationError, "expected GitHub release App ID is malformed"
+      end
+      unless expected_client_id.to_s.match?(/\AIv(?:1\.[A-Za-z0-9]+|23li[A-Za-z0-9]+)\z/)
+        raise ValidationError, "expected GitHub release App client ID is malformed"
+      end
+      unless expected_app_slug.to_s.match?(/\A[a-z0-9-]+\z/)
+        raise ValidationError, "expected GitHub release App slug is malformed"
+      end
+      unless ReleasePublisher::RELEASE_APP_SLUGS.include?(expected_app_slug)
+        raise ValidationError, "GitHub release App slug is not an authorized publisher"
+      end
+      installation_id = begin
+        Integer(expected_installation_id)
+      rescue ArgumentError, TypeError
+        raise ValidationError, "expected GitHub release App installation ID is malformed"
+      end
+      raise ValidationError, "expected GitHub release App installation ID is malformed" unless installation_id.positive?
+
+      app = request!("GET", "/apps/#{expected_app_slug}")
+      unless app.is_a?(Hash) && app["id"] == expected_app_id && app["slug"] == expected_app_slug &&
+             app["client_id"] == expected_client_id
+        raise ValidationError, "GitHub release App identity does not match the configured App"
+      end
+
+      inventory = request!("GET", "/installation/repositories?per_page=100")
+      repositories = inventory["repositories"] if inventory.is_a?(Hash)
+      unless inventory.is_a?(Hash) && inventory["total_count"] == 1 && repositories.is_a?(Array) &&
+             repositories.length == 1 && repositories.first["full_name"] == @repository &&
+             repositories.first.dig("permissions", "push") == true
+        raise ValidationError, "GitHub release App token is not restricted to the exact writable repository"
+      end
+
+      {
+        "login" => "#{expected_app_slug}[bot]",
+        "app_id" => expected_app_id,
+        "client_id" => expected_client_id,
+        "installation_id" => installation_id,
+        "repository" => @repository,
+        "push_access" => true
+      }
     end
 
     def pull_request(number)
@@ -244,30 +329,17 @@ module SequelAceRelease
       response
     end
 
-    def delete_branch(branch)
-      request!("DELETE", "/repos/#{@repository}/git/refs/heads/#{URI.encode_www_form_component(branch)}", expected: [204])
-      true
-    end
-
-    def dispatch_workflow(workflow:, ref:, inputs:)
-      unless workflow.to_s.match?(/\A[A-Za-z0-9._-]{1,255}\z/)
-        raise ValidationError, "workflow dispatch target is malformed"
-      end
-      unless ref.to_s.match?(/\A[A-Za-z0-9._\/-]{1,255}\z/)
-        raise ValidationError, "workflow dispatch ref is malformed"
-      end
-      valid_inputs = inputs.is_a?(Hash) && inputs.length <= 25 && inputs.all? do |key, value|
-        key.to_s.match?(/\A[A-Za-z0-9_-]{1,100}\z/) && value.is_a?(String)
-      end
-      raise ValidationError, "workflow dispatch inputs are malformed" unless valid_inputs
-
-      body = { "ref" => ref, "inputs" => inputs }
-      if JSON.generate(body).bytesize > 65_535
-        raise ValidationError, "workflow dispatch payload exceeds GitHub's size limit"
+    def delete_branch(branch, allow_absent: false)
+      response = @transport.request(
+        "DELETE",
+        "/repos/#{@repository}/git/refs/heads/#{URI.encode_www_form_component(branch)}"
+      )
+      if allow_absent && response.status == 422 && response.body.is_a?(Hash) &&
+         response.body["message"] == "Reference does not exist"
+        return false
       end
 
-      encoded_workflow = URI.encode_www_form_component(workflow)
-      request!("POST", "/repos/#{@repository}/actions/workflows/#{encoded_workflow}/dispatches", body: body)
+      ensure_response!(response, [204])
       true
     end
 
@@ -339,6 +411,115 @@ module SequelAceRelease
       })
     end
 
+    def create_or_validate_release(
+      tag:, target_sha:, title:, body:, expected_author_login:, expected_author_id: nil, before_create: nil
+    )
+      validate_expected_release_author!(expected_author_login, expected_author_id)
+      validate_commit_sha!(target_sha, "release target SHA")
+      validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+
+      existing = release_by_tag_if_exists(tag)
+      if existing
+        validated = validate_existing_release_response(
+          release: existing,
+          tag: tag,
+          title: title,
+          body: body,
+          expected_author_login: expected_author_login,
+          expected_author_id: expected_author_id
+        )
+        validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+        return validated
+      end
+
+      validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+      before_create&.call
+      begin
+        created = create_release(tag: tag, target_sha: target_sha, title: title, body: body)
+      rescue APIError => creation_error
+        # GitHub can accept the write while the client loses the response. Read
+        # the canonical tag endpoint before surfacing the original error so a
+        # retry cannot create or misclassify a second release.
+        validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+        begin
+          existing = release_by_tag(tag)
+        rescue APIError
+          raise creation_error
+        end
+        validated = validate_release_response!(
+          existing,
+          tag: tag,
+          title: title,
+          body: body,
+          expected_author_login: expected_author_login,
+          expected_author_id: expected_author_id,
+          created: false
+        )
+        validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+        return validated
+      end
+
+      validated = validate_release_response!(
+        created,
+        tag: tag,
+        title: title,
+        body: body,
+        expected_author_login: expected_author_login,
+        expected_author_id: expected_author_id,
+        created: true
+      )
+      validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+      validated
+    end
+
+    def validate_existing_release(
+      release:, tag:, target_sha:, title:, body:, expected_author_login:, expected_author_id: nil
+    )
+      validate_expected_release_author!(expected_author_login, expected_author_id)
+      validate_commit_sha!(target_sha, "release target SHA")
+      validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+      validated = validate_existing_release_response(
+        release: release,
+        tag: tag,
+        title: title,
+        body: body,
+        expected_author_login: expected_author_login,
+        expected_author_id: expected_author_id
+      )
+      validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+      validated
+    end
+
+    def create_or_validate_release_tag(tag:, target_sha:)
+      validate_commit_sha!(target_sha, "release target SHA")
+      expected_ref = "refs/tags/#{tag}"
+
+      begin
+        existing = request!("GET", "/repos/#{@repository}/git/ref/tags/#{URI.encode_www_form_component(tag)}")
+        return validate_release_tag_response!(existing, expected_ref: expected_ref, target_sha: target_sha, created: false)
+      rescue APIError => error
+        raise unless error.message.include?("HTTP 404")
+      end
+
+      begin
+        created = request!("POST", "/repos/#{@repository}/git/refs", body: {
+          "ref" => expected_ref,
+          "sha" => target_sha
+        })
+      rescue APIError => error
+        raise unless error.message.include?("HTTP 422")
+
+        raced = request!("GET", "/repos/#{@repository}/git/ref/tags/#{URI.encode_www_form_component(tag)}")
+        return validate_release_tag_response!(raced, expected_ref: expected_ref, target_sha: target_sha, created: false)
+      end
+      validate_release_tag_response!(created, expected_ref: expected_ref, target_sha: target_sha, created: true)
+    end
+
+    def validate_release_tag(tag:, target_sha:)
+      validate_commit_sha!(target_sha, "release target SHA")
+      validate_exact_release_tag!(tag: tag, target_sha: target_sha)
+    end
+
     def validate_release_target!(target_sha:, protected_paths:)
       validate_commit_sha!(target_sha, "release target SHA")
       current_main = ref_sha
@@ -390,25 +571,47 @@ module SequelAceRelease
       raise ValidationError, "GitHub returned malformed release-target ancestry evidence"
     end
 
-    def update_release(id:, title:, prerelease:, make_latest:)
+    def update_release(id:, tag:, target_sha:, title:, prerelease:, make_latest:)
+      validate_commit_sha!(target_sha, "release target SHA")
       request!("PATCH", "/repos/#{@repository}/releases/#{Integer(id)}", body: {
+        "tag_name" => tag,
+        "target_commitish" => target_sha,
         "name" => title,
+        "draft" => false,
         "prerelease" => prerelease,
         "make_latest" => make_latest ? "true" : "false"
       })
     end
 
-    def upload_release_asset(release:, path:, name: File.basename(path))
-      bytes = File.binread(path)
+    def upload_release_asset(release:, path:, expected_sha256:, name: File.basename(path))
+      expected_digest = expected_sha256.to_s.downcase
+      unless expected_digest.match?(/\A[0-9a-f]{64}\z/)
+        raise IntegrityError, "release asset #{name} has a malformed expected checksum"
+      end
+      unless File.basename(path) == name
+        raise IntegrityError, "release asset name #{name} does not match the local file"
+      end
+
+      open_flags = File::RDONLY
+      open_flags |= File::NOFOLLOW if File.const_defined?(:NOFOLLOW)
+      bytes = File.open(path, open_flags) do |file|
+        raise IntegrityError, "release asset #{name} is not a regular file" unless file.stat.file?
+
+        file.binmode
+        file.read
+      end
       digest = Digest::SHA256.hexdigest(bytes)
+      unless digest == expected_digest
+        raise IntegrityError, "release asset #{name} does not match its manifest checksum"
+      end
       existing = Array(release["assets"]).find { |asset| asset["name"] == name }
       if existing
-        existing_digest = existing["digest"].to_s.delete_prefix("sha256:")
-        raise ValidationError, "release asset #{name} already exists with a different checksum" unless existing_digest == digest
+        existing_digest = existing["digest"].to_s.delete_prefix("sha256:").downcase
+        raise IntegrityError, "release asset #{name} already exists with a different checksum" unless existing_digest == digest
 
         return existing
       end
-      transport = HTTPTransport.new(
+      transport = @upload_transport || HTTPTransport.new(
         base_url: UPLOAD_URL,
         default_headers: {
           "Accept" => "application/vnd.github+json",
@@ -424,10 +627,89 @@ module SequelAceRelease
         query: { "name" => name },
         body: bytes
       )
-      ensure_response!(response, [201])
+      uploaded = ensure_response!(response, [201])
+      unless uploaded.is_a?(Hash) && uploaded["name"] == name
+        raise IntegrityError, "GitHub returned a different release asset identity"
+      end
+      uploaded_digest = uploaded["digest"].to_s.delete_prefix("sha256:").downcase
+      unless uploaded_digest == digest
+        raise IntegrityError, "GitHub returned a different checksum for release asset #{name}"
+      end
+
+      uploaded
+    rescue Errno::ELOOP, Errno::ENOENT, Errno::EACCES, Errno::EISDIR => e
+      raise IntegrityError, "release asset #{name} is not a readable regular file: #{e.class}"
     end
 
     private
+
+    def validate_expected_release_author!(login, id)
+      unless login.to_s.match?(/\A[A-Za-z0-9-]+(?:\[bot\])?\z/)
+        raise ValidationError, "expected GitHub release author is malformed"
+      end
+      if login == ReleasePublisher::USER_LOGIN && id != ReleasePublisher::USER_ID
+        raise ValidationError, "expected GitHub user release author ID does not match the pinned account"
+      end
+      if !id.nil? && (!id.is_a?(Integer) || !id.positive?)
+        raise ValidationError, "expected GitHub release author ID is malformed"
+      end
+    end
+
+    def validate_existing_release_response(
+      release:, tag:, title:, body:, expected_author_login:, expected_author_id:
+    )
+      validate_release_response!(
+        release,
+        tag: tag,
+        title: title,
+        body: body,
+        expected_author_login: expected_author_login,
+        expected_author_id: expected_author_id,
+        created: false
+      )
+    end
+
+    def validate_exact_release_tag!(tag:, target_sha:)
+      expected_ref = "refs/tags/#{tag}"
+      response = request!("GET", "/repos/#{@repository}/git/ref/tags/#{URI.encode_www_form_component(tag)}")
+      validate_release_tag_response!(response, expected_ref: expected_ref, target_sha: target_sha, created: false)
+    end
+
+    def validate_release_tag_response!(response, expected_ref:, target_sha:, created:)
+      unless response.is_a?(Hash) && response["ref"] == expected_ref &&
+             response.dig("object", "type") == "commit" && response.dig("object", "sha") == target_sha
+        raise IntegrityError, "release tag does not resolve directly to the exact release commit"
+      end
+
+      response.merge("created" => created)
+    end
+
+    def validate_release_response!(
+      response, tag:, title:, body:, expected_author_login:, expected_author_id:, created:
+    )
+      expected = {
+        "tag_name" => tag,
+        "name" => title,
+        "body" => body,
+        "draft" => false,
+        "prerelease" => true,
+        "author_login" => expected_author_login
+      }
+      expected["author_id"] = expected_author_id unless expected_author_id.nil?
+      actual = expected.keys.to_h do |key|
+        value = case key
+                when "author_login" then response.dig("author", "login")
+                when "author_id" then response.dig("author", "id")
+                else response[key]
+                end
+        [key, value]
+      end if response.is_a?(Hash)
+      unless response.is_a?(Hash) && response["id"].is_a?(Integer) && response["id"].positive? && actual == expected
+        raise IntegrityError, "GitHub release does not match the exact approved prerelease"
+      end
+
+      response.merge("created" => created)
+    end
 
     def verified_commit_evidence(commit)
       validate_commit_sha!(commit.fetch("oid"), "created release commit SHA")

@@ -4,21 +4,19 @@ require "digest"
 
 module SequelAceRelease
   class Approval
-    POLICY = "authoritative-production-cloud-next".freeze
+    POLICY = "highest-observed-production-build-plus-one-forward-only-v1".freeze
     REQUIRED_KEYS = %w[
       channel target_version main_sha previous_tag base_sha
-      changelog_base_tag changelog_base_sha release_iteration
-      app_store_notes release_notes_sha256
-      observed_production_cloud_next_build build_policy
+      changelog_base_tag changelog_base_sha app_store_notes
+      release_notes_sha256 build_policy
     ].freeze
 
     attr_reader :payload
 
     def initialize(
       channel:, target_version:, main_sha:, previous_tag:, base_sha:,
-      changelog_base_tag:, changelog_base_sha:, release_iteration:,
-      app_store_notes:, release_notes_sha256:,
-      observed_production_cloud_next_build:, build_policy: POLICY
+      changelog_base_tag:, changelog_base_sha:, app_store_notes:,
+      release_notes_sha256:, build_policy: POLICY
     )
       @payload = immutable_copy(
         "channel" => Config.validate_channel!(channel),
@@ -28,10 +26,8 @@ module SequelAceRelease
         "base_sha" => validate_sha!(base_sha, "base"),
         "changelog_base_tag" => validate_tag!(changelog_base_tag, "changelog base"),
         "changelog_base_sha" => validate_sha!(changelog_base_sha, "changelog base"),
-        "release_iteration" => validate_iteration!(release_iteration),
         "app_store_notes" => validate_notes!(app_store_notes),
         "release_notes_sha256" => validate_digest!(release_notes_sha256),
-        "observed_production_cloud_next_build" => validate_build!(observed_production_cloud_next_build),
         "build_policy" => build_policy
       )
       raise ValidationError, "unsupported build policy" unless build_policy == POLICY
@@ -101,24 +97,6 @@ module SequelAceRelease
       return value if value.to_s.match?(/\A[0-9a-f]{64}\z/)
 
       raise ValidationError, "GitHub release-body SHA-256 is malformed"
-    end
-
-    def validate_iteration!(value)
-      iteration = Integer(value)
-      raise ValidationError, "release iteration must be positive" unless iteration.positive?
-
-      iteration
-    rescue ArgumentError, TypeError
-      raise ValidationError, "release iteration must be an integer"
-    end
-
-    def validate_build!(value)
-      build = Integer(value)
-      raise ValidationError, "observed Production Cloud next build must be positive" unless build.positive?
-
-      build
-    rescue ArgumentError, TypeError
-      raise ValidationError, "observed Production Cloud next build must be an integer"
     end
 
     def secure_compare(left, right)

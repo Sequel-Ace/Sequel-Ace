@@ -165,3 +165,82 @@ final class SACellFilterMergeTests: XCTestCase {
         return (filter["children"] as? [[String: Any]])?.map { $0 as NSDictionary }
     }
 }
+
+final class SARuleFilterVisibilityPolicyTests: XCTestCase {
+
+    /// Regression coverage for #2516: refreshing a table rebuilds the filter
+    /// model and reapplies `visible`, but that must not create a new rule.
+    func testReapplyingVisibleStateDoesNotAddStarterRule() {
+        XCTAssertFalse(SARuleFilterVisibilityPolicy.shouldAddStarterRule(
+            visibilityWasApplied: true,
+            wasVisible: true,
+            willBeVisible: true,
+            tableChanged: false,
+            editorIsEmpty: true
+        ))
+    }
+
+    func testSwitchingTablesWhileVisibleAddsStarterRule() {
+        XCTAssertTrue(SARuleFilterVisibilityPolicy.shouldAddStarterRule(
+            visibilityWasApplied: true,
+            wasVisible: true,
+            willBeVisible: true,
+            tableChanged: true,
+            editorIsEmpty: true
+        ))
+    }
+
+    /// The saved preference is desired state, not proof that visibility has
+    /// already been applied to a table after launch.
+    func testApplyingSavedVisiblePreferenceAddsStarterRule() {
+        XCTAssertTrue(SARuleFilterVisibilityPolicy.shouldAddStarterRule(
+            visibilityWasApplied: false,
+            wasVisible: true,
+            willBeVisible: true,
+            tableChanged: true,
+            editorIsEmpty: true
+        ))
+    }
+
+    /// Clearing the view invalidates the previous visibility application even
+    /// if the same table name is selected again afterward.
+    func testReselectingTableAfterBlankStateAddsStarterRule() {
+        XCTAssertTrue(SARuleFilterVisibilityPolicy.shouldAddStarterRule(
+            visibilityWasApplied: false,
+            wasVisible: true,
+            willBeVisible: true,
+            tableChanged: false,
+            editorIsEmpty: true
+        ))
+    }
+
+    func testOpeningEmptyEditorAddsStarterRule() {
+        XCTAssertTrue(SARuleFilterVisibilityPolicy.shouldAddStarterRule(
+            visibilityWasApplied: true,
+            wasVisible: false,
+            willBeVisible: true,
+            tableChanged: false,
+            editorIsEmpty: true
+        ))
+    }
+
+    func testOpeningPopulatedEditorDoesNotAddStarterRule() {
+        XCTAssertFalse(SARuleFilterVisibilityPolicy.shouldAddStarterRule(
+            visibilityWasApplied: true,
+            wasVisible: false,
+            willBeVisible: true,
+            tableChanged: true,
+            editorIsEmpty: false
+        ))
+    }
+
+    func testHidingEditorDoesNotAddStarterRule() {
+        XCTAssertFalse(SARuleFilterVisibilityPolicy.shouldAddStarterRule(
+            visibilityWasApplied: true,
+            wasVisible: true,
+            willBeVisible: false,
+            tableChanged: true,
+            editorIsEmpty: true
+        ))
+    }
+}

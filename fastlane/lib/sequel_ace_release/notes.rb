@@ -4,6 +4,8 @@ require "digest"
 
 module SequelAceRelease
   class Notes
+    APP_STORE_HEADING = "## App Store Release Notes".freeze
+    CHANGES_HEADING = "## What's Changed".freeze
     SUBSTANTIAL_CHANGE = /\b(?:overhaul|redesign|substantial|major rework|rewrite)\b/i
     HEADINGS = {
       "added" => "Added",
@@ -36,7 +38,7 @@ module SequelAceRelease
     end
 
     def github_body(app_store_notes:, base_tag:, head_ref:, contributors: {})
-      sections = ["## App Store Release Notes", "", app_store_notes.strip, "", "## What's Changed", ""]
+      sections = [APP_STORE_HEADING, "", app_store_notes.strip, "", CHANGES_HEADING, ""]
       GitRepository::CATEGORY_ORDER.each do |category|
         entries = changes.select { |change| change.category == category }
         next if entries.empty?
@@ -59,6 +61,24 @@ module SequelAceRelease
 
     def sha256(body)
       Digest::SHA256.hexdigest(body)
+    end
+
+    def self.app_store_notes_from_github_body(body)
+      value = body.to_s
+      if value.scan(/^#{Regexp.escape(APP_STORE_HEADING)}$/).length != 1 ||
+         value.scan(/^#{Regexp.escape(CHANGES_HEADING)}$/).length != 1
+        raise ValidationError, "GitHub release body must contain one canonical App Store notes section"
+      end
+
+      match = value.match(
+        /\A#{Regexp.escape(APP_STORE_HEADING)}\r?\n\r?\n(?<notes>.+?)\r?\n\r?\n#{Regexp.escape(CHANGES_HEADING)}(?:\r?\n|\z)/m
+      )
+      raise ValidationError, "GitHub release body has a malformed App Store notes section" unless match
+
+      notes = match[:notes]
+      raise ValidationError, "GitHub release body has empty App Store notes" if notes.empty?
+
+      notes
     end
 
     private

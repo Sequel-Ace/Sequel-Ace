@@ -14,14 +14,15 @@ module SequelAceRelease
       DEVELOPER_REJECTED INVALID_BINARY METADATA_REJECTED REJECTED
     ].freeze
 
-    def self.run(argv, out: $stdout, err: $stderr, env: ENV)
-      new(out: out, err: err, env: env).run(argv)
+    def self.run(argv, out: $stdout, err: $stderr, env: ENV, clock: -> { Time.now.utc })
+      new(out: out, err: err, env: env, clock: clock).run(argv)
     end
 
-    def initialize(out:, err:, env:)
+    def initialize(out:, err:, env:, clock: -> { Time.now.utc })
       @out = out
       @err = err
       @env = env
+      @clock = clock
       @runner = CommandRunner.new
     end
 
@@ -36,15 +37,18 @@ module SequelAceRelease
       when "verify-artifact-set" then verify_artifact_set(argv)
       when "submit" then submit(argv)
       when "finalize" then finalize(argv)
-      when "relay-webhook" then relay_webhook(argv)
-      when "resolve-app-store-version" then resolve_app_store_version(argv)
       when "github-prepare-pr" then github_prepare_pr(argv)
       when "github-cleanup-branch" then github_cleanup_branch(argv)
       when "github-wait-checks" then github_wait_checks(argv)
       when "github-merge-pr" then github_merge_pr(argv)
       when "github-validate-release-target" then github_validate_release_target(argv)
+      when "github-verify-release-tag" then github_verify_release_tag(argv)
+      when "github-release-publisher-mode" then github_release_publisher_mode(argv)
       when "github-create-release" then github_create_release(argv)
       when "github-upload-asset" then github_upload_asset(argv)
+      when "validate-publish-handoff" then validate_publish_handoff(argv)
+      when "validate-forward-recovery" then validate_forward_recovery(argv)
+      when "cloud-status" then cloud_status(argv)
       when "wait-cloud" then wait_cloud(argv)
       when "download-cloud-artifacts" then download_cloud_artifacts(argv)
       when "retry-alpha" then retry_alpha(argv)
@@ -69,7 +73,7 @@ module SequelAceRelease
     def guard(arguments)
       options = {}
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release guard --actor LOGIN --triggering-actor LOGIN --mode MODE --ref REF --current-sha SHA --expected-sha SHA --channel CHANNEL --version VERSION --cloud-next-build BUILD --confirmation TEXT --enabled VALUE"
+        value.banner = "Usage: sa-release guard --actor LOGIN --triggering-actor LOGIN --mode MODE --ref REF --current-sha SHA --expected-sha SHA --channel CHANNEL --version VERSION --confirmation TEXT --enabled VALUE"
         value.on("--actor LOGIN") { |item| options[:actor] = item }
         value.on("--triggering-actor LOGIN") { |item| options[:triggering_actor] = item }
         value.on("--mode MODE") { |item| options[:mode] = item }
@@ -78,14 +82,14 @@ module SequelAceRelease
         value.on("--expected-sha SHA") { |item| options[:expected_sha] = item }
         value.on("--channel CHANNEL") { |item| options[:channel] = item }
         value.on("--version VERSION") { |item| options[:version] = item }
-        value.on("--cloud-next-build BUILD", Integer) { |item| options[:cloud_next_build] = item }
+        value.on("--recovery-tag TAG") { |item| options[:recovery_tag] = item }
         value.on("--confirmation TEXT") { |item| options[:confirmation] = item }
         value.on("--enabled VALUE") { |item| options[:enabled] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
       reject_arguments!(arguments)
-      require_options!(options, :actor, :triggering_actor, :mode, :ref, :current_sha, :expected_sha, :channel, :version, :cloud_next_build, :confirmation, :enabled)
+      require_options!(options, :actor, :triggering_actor, :mode, :ref, :current_sha, :expected_sha, :channel, :version, :confirmation, :enabled)
       output = options.delete(:output)
       emit(DeploymentGuard.new.validate!(**options), output)
     end
@@ -99,17 +103,14 @@ module SequelAceRelease
         value.on("--base-tag TAG") { |item| options[:base_tag] = item }
         value.on("--main-ref REF") { |item| options[:main_ref] = item }
         value.on("--app-store-notes FILE") { |item| options[:app_store_notes] = File.read(item) }
-        value.on("--observed-cloud-next-build BUILD", Integer) { |item| options[:observed_cloud_next_build] = item }
         value.on("--expected-approval-sha SHA") { |item| options[:expected_approval_sha] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
       reject_arguments!(arguments)
-      require_options!(options, :observed_cloud_next_build)
-
       github = github_client(optional: true)
       result = Planner.new(github: github).plan(**options.slice(
-        :channel, :target_version, :base_tag, :main_ref, :app_store_notes, :observed_cloud_next_build
+        :channel, :target_version, :base_tag, :main_ref, :app_store_notes
       ))
       if options[:expected_approval_sha]
         Approval.from_hash(result.fetch("approval")).verify!(options[:expected_approval_sha])
@@ -155,7 +156,11 @@ module SequelAceRelease
         raise ValidationError, "changelog base tag does not match its approved SHA"
       end
 
-      version_result = VersionFiles.new.update!(version: options[:version], build: options[:build])
+      version_result = VersionFiles.new.update!(
+        version: options[:version],
+        build: options[:build],
+        channel: options[:channel]
+      )
       @runner.run(
         Config.repo_root.join("Scripts/generate-changelog.sh"),
         options[:version],
@@ -178,21 +183,20 @@ module SequelAceRelease
     def reconcile_build(arguments)
       options = { cloud_runs: [] }
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release reconcile-build --cloud-next-build BUILD [options]"
+        value.banner = "Usage: sa-release reconcile-build [options]"
         value.on("--source-build BUILD", Integer) { |item| options[:source_build] = item }
         value.on("--highest-tag-build BUILD", Integer) { |item| options[:highest_tag_build] = item }
         value.on("--highest-asc-build BUILD", Integer) { |item| options[:highest_asc_build] = item }
-        value.on("--cloud-next-build BUILD", Integer) { |item| options[:cloud_next_build] = item }
         value.on("--expected-target-build BUILD", Integer) { |item| options[:expected_target_build] = item }
         value.on("--cloud-runs FILE") { |item| options[:cloud_runs] = read_json(item) }
         value.on("--workflow-id ID") { |item| options[:workflow_id] = item }
         value.on("--source-tagged") { options[:source_tagged] = true }
+        value.on("--recover-release-channel CHANNEL") { |item| options[:recover_release_channel] = item }
+        value.on("--recover-release-version VERSION") { |item| options[:recover_release_version] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
       reject_arguments!(arguments)
-      require_options!(options, :cloud_next_build)
-
       git = GitRepository.new
       source_build = options[:source_build] || VersionFiles.new.current.fetch("build")
       canonical_tags = git.tags("production/*") + git.tags("beta/*")
@@ -206,16 +210,25 @@ module SequelAceRelease
       source_tags = git.tags("production/*-#{source_build}") + git.tags("beta/*-#{source_build}")
       source_tagged = options.fetch(:source_tagged, false) || source_tags.any?
       source_release_commit_sha = git.latest_commit_changing_all(release_paths)
+      recovery_tag = recover_release_tag(
+        options: options,
+        git: git,
+        source_build: source_build,
+        source_release_commit_sha: source_release_commit_sha,
+        runs: runs,
+        app_store_client: asc_client
+      )
 
       result = BuildReconciler.new.reconcile(
         source_build: source_build,
         highest_tag_build: highest_tag,
         highest_asc_build: highest_asc,
-        cloud_next_build: options[:cloud_next_build],
         cloud_runs: runs,
         source_tagged: source_tagged,
         source_release_commit_sha: source_release_commit_sha,
-        expected_target_build: options[:expected_target_build]
+        expected_target_build: options[:expected_target_build],
+        recover_release_tag: recovery_tag,
+        production_workflow_id: options[:workflow_id]
       )
       emit(result.to_h.merge("production_cloud_runs" => runs), options[:output])
     end
@@ -229,6 +242,7 @@ module SequelAceRelease
         value.on("--build BUILD", Integer) { |item| options[:build] = item }
         value.on("--any-build") { options[:any_build] = true }
         value.on("--channel CHANNEL") { |item| options[:channel] = item }
+        value.on("--release-tag TAG") { |item| options[:release_tag] = item }
         value.on("--launch") { options[:launch] = true }
         value.on("--output-zip FILE") { |item| options[:output_zip] = item }
         value.on("--sha256 SHA") { |item| options[:expected_sha256] = item }
@@ -251,6 +265,8 @@ module SequelAceRelease
         value.on("--build BUILD", Integer) { |item| options[:build] = item }
         value.on("--iteration NUMBER", Integer) { |item| options[:iteration] = item }
         value.on("--release-body FILE") { |item| options[:release_body] = File.read(item) }
+        value.on("--base-sha SHA") { |item| options[:base_sha] = item }
+        value.on("--recovery-evidence FILE") { |item| options[:recovery_evidence] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
@@ -260,7 +276,20 @@ module SequelAceRelease
       approval = approval_from_file(options[:approval_file])
       approval.verify!(options[:approval_sha])
       git = GitRepository.new
-      expected_sha = approval.payload.fetch("main_sha")
+      approved_sha = approval.payload.fetch("main_sha")
+      expected_sha = options[:base_sha] || approved_sha
+      if expected_sha != approved_sha
+        raise ValidationError, "advanced release PR base requires validated forward-recovery evidence" unless options[:recovery_evidence]
+
+        recovery = read_json(options[:recovery_evidence])
+        validate_forward_recovery_pr_evidence!(
+          recovery,
+          approval: approval,
+          approval_sha: options[:approval_sha],
+          expected_sha: expected_sha,
+          requested_build: options[:build]
+        )
+      end
       raise ValidationError, "release PR is not based on the frozen main SHA" unless git.sha == expected_sha
 
       naming = ReleaseNaming.new(
@@ -324,6 +353,7 @@ module SequelAceRelease
         value.on("--build BUILD", Integer) { |item| options[:build] = item }
         value.on("--any-build") { options[:any_build] = true }
         value.on("--channel CHANNEL") { |item| options[:channel] = item }
+        value.on("--release-tag TAG") { |item| options[:release_tag] = item }
         value.on("--launch") { options[:launch] = true }
         value.on("--output-zip FILE") { |item| options[:output_zip] = item }
         value.on("--output FILE") { |item| options[:output] = item }
@@ -346,7 +376,8 @@ module SequelAceRelease
             launch: options[:launch],
             output_zip: options[:output_zip],
             any_build: options[:any_build],
-            expected_sha256: artifact["sha256"]
+            expected_sha256: artifact["sha256"],
+            release_tag: options[:release_tag]
           )
           return emit(result.merge("cloud_artifact" => artifact), options[:output])
         rescue ValidationError, CommandError => e
@@ -438,13 +469,120 @@ module SequelAceRelease
         target_sha: options[:target_sha],
         protected_paths: release_paths
       )
-      release = client.create_release(
+      existing = client.release_by_tag_if_exists(naming.tag)
+      if existing
+        expected_publisher = ReleasePublisher.validate!(
+          tag: naming.tag,
+          login: existing.dig("author", "login"),
+          id: existing.dig("author", "id"),
+          created_at: existing["created_at"]
+        )
+        expected_author_id = expected_publisher == ReleasePublisher::USER_LOGIN ? ReleasePublisher::USER_ID : nil
+        publisher_validation = {
+          "login" => expected_publisher,
+          "id" => expected_author_id,
+          "mode" => "existing",
+          "repository" => Config::REPOSITORY
+        }.compact
+        tag = client.validate_release_tag(
+          tag: naming.tag,
+          target_sha: options[:target_sha]
+        )
+        release = client.validate_existing_release(
+          release: existing,
+          tag: naming.tag,
+          target_sha: options[:target_sha],
+          title: naming.title,
+          body: options[:body],
+          expected_author_login: expected_publisher,
+          expected_author_id: expected_author_id
+        )
+      else
+        publication_mode = ReleasePublisher.active_mode(at: @clock.call.utc)
+        if publication_mode == :user
+          publisher = github_user_publisher_client
+          expected_publisher = ReleasePublisher::USER_LOGIN
+          expected_author_id = ReleasePublisher::USER_ID
+          publisher_validation = publisher.validate_release_publisher!(
+            expected_login: expected_publisher,
+            expected_id: expected_author_id
+          )
+        else
+          publisher = client
+          publisher_validation = publisher.validate_release_app_publisher!(
+            expected_app_id: ReleasePublisher::RELEASE_APP_ID,
+            expected_client_id: @env["SA_RELEASE_GITHUB_APP_CLIENT_ID"],
+            expected_app_slug: @env["SA_RELEASE_GITHUB_APP_SLUG"],
+            expected_installation_id: @env["SA_RELEASE_GITHUB_APP_INSTALLATION_ID"]
+          )
+          expected_publisher = publisher_validation.fetch("login")
+          expected_author_id = nil
+        end
+        unless ReleasePublisher.active_mode(at: @clock.call.utc) == publication_mode
+          raise ValidationError, "GitHub release publisher epoch changed during preflight"
+        end
+        tag = client.create_or_validate_release_tag(
+          tag: naming.tag,
+          target_sha: options[:target_sha]
+        )
+        release = publisher.create_or_validate_release(
+          tag: naming.tag,
+          target_sha: options[:target_sha],
+          title: naming.title,
+          body: options[:body],
+          expected_author_login: expected_publisher,
+          expected_author_id: expected_author_id,
+          before_create: lambda do
+            unless ReleasePublisher.active_mode(at: @clock.call.utc) == publication_mode
+              raise ValidationError, "GitHub release publisher epoch changed before creation"
+            end
+          end
+        )
+      end
+      ReleasePublisher.validate!(
         tag: naming.tag,
-        target_sha: options[:target_sha],
-        title: naming.title,
-        body: options[:body]
+        login: release.dig("author", "login"),
+        id: release.dig("author", "id"),
+        created_at: release["created_at"]
       )
-      emit({ "naming" => naming.to_h, "target_validation" => target_validation, "release" => release }, options[:output])
+      emit({
+        "naming" => naming.to_h,
+        "target_validation" => target_validation,
+        "publisher_validation" => publisher_validation,
+        "tag" => tag,
+        "release" => release
+      }, options[:output])
+    end
+
+    def github_release_publisher_mode(arguments)
+      options = {}
+      parser = OptionParser.new do |value|
+        value.banner = "Usage: sa-release github-release-publisher-mode --tag TAG"
+        value.on("--tag TAG") { |item| options[:tag] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end
+      parser.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :tag)
+
+      existing = github_client.release_by_tag_if_exists(options[:tag])
+      mode = if existing
+               ReleasePublisher.validate!(
+                 tag: options[:tag],
+                 login: existing.dig("author", "login"),
+                 id: existing.dig("author", "id"),
+                 created_at: existing["created_at"]
+               )
+               :existing
+             else
+               ReleasePublisher.active_mode(at: @clock.call.utc)
+             end
+      emit({
+        "mode" => mode.to_s,
+        "cutoff" => ReleasePublisher::USER_PUBLISHER_CUTOFF.iso8601,
+        "safety_window_seconds" => ReleasePublisher::USER_PUBLISHER_SAFETY_WINDOW,
+        "existing_release_id" => existing && existing["id"]
+      }, options[:output])
     end
 
     def github_validate_release_target(arguments)
@@ -464,27 +602,154 @@ module SequelAceRelease
       emit(result, options[:output])
     end
 
-    def github_upload_asset(arguments)
+    def github_verify_release_tag(arguments)
       options = {}
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release github-upload-asset --tag TAG --file FILE [--name NAME]"
+        value.banner = "Usage: sa-release github-verify-release-tag --tag TAG --target-sha SHA"
         value.on("--tag TAG") { |item| options[:tag] = item }
-        value.on("--run-id ID") { |item| options[:run_id] = item }
-        value.on("--file FILE") { |item| options[:file] = item }
-        value.on("--name NAME") { |item| options[:name] = item }
+        value.on("--target-sha SHA") { |item| options[:target_sha] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
       reject_arguments!(arguments)
-      require_options!(options, :tag, :file)
-      client = github_client
-      release = client.release_by_tag(options[:tag])
-      response = client.upload_release_asset(
-        release: release,
-        path: options[:file],
-        name: options[:name] || File.basename(options[:file])
+      require_options!(options, :tag, :target_sha)
+      result = github_client.validate_release_tag(
+        tag: options[:tag],
+        target_sha: options[:target_sha]
       )
+      emit(result, options[:output])
+    end
+
+    def github_upload_asset(arguments)
+      options = {}
+      parser = OptionParser.new do |value|
+        value.banner = "Usage: sa-release github-upload-asset --tag TAG --file FILE --manifest FILE --notes FILE [--name NAME] [--integrity-failure-marker FILE]"
+        value.on("--tag TAG") { |item| options[:tag] = item }
+        value.on("--file FILE") { |item| options[:file] = item }
+        value.on("--manifest FILE") { |item| options[:manifest] = item }
+        value.on("--notes FILE") { |item| options[:notes] = item }
+        value.on("--name NAME") { |item| options[:name] = item }
+        value.on("--integrity-failure-marker FILE") { |item| options[:integrity_failure_marker] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end
+      parser.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :tag, :file, :manifest, :notes)
+      client = github_client
+      manifest = Manifest.read(options[:manifest])
+      handoff = PublishHandoff.new(github: client).validate(
+        manifest: manifest,
+        tag: options[:tag],
+        app_store_notes: File.read(options[:notes])
+      )
+      raise ValidationError, "release handoff is not eligible for artifact upload" unless handoff.fetch("eligible")
+
+      release = client.release_by_tag(options[:tag])
+      unless release["id"] == handoff.fetch("github_release_id")
+        raise ValidationError, "release identity changed before artifact upload"
+      end
+      begin
+        asset_name = options[:name] || File.basename(options[:file])
+        expected_sha256 = verified_release_asset_sha256!(
+          manifest: manifest,
+          path: options[:file],
+          name: asset_name
+        )
+        response = client.upload_release_asset(
+          release: release,
+          path: options[:file],
+          name: asset_name,
+          expected_sha256: expected_sha256
+        )
+      rescue IntegrityError
+        write_integrity_failure_marker(options[:integrity_failure_marker])
+        raise
+      end
       emit(response, options[:output])
+    end
+
+    def cloud_status(arguments)
+      options = { allow_any_build: false }
+      parser = OptionParser.new do |value|
+        value.banner = "Usage: sa-release cloud-status --workflow-id ID --app-id ID --version VERSION --tag TAG --build BUILD --commit SHA"
+        value.on("--workflow-id ID") { |item| options[:workflow_id] = item }
+        value.on("--app-id ID") { |item| options[:app_id] = item }
+        value.on("--version VERSION") { |item| options[:version] = item }
+        value.on("--tag TAG") { |item| options[:tag] = item }
+        value.on("--build BUILD", Integer) { |item| options[:build] = item }
+        value.on("--allow-any-build") { options[:allow_any_build] = true }
+        value.on("--run-id ID") { |item| options[:run_id] = item }
+        value.on("--commit SHA") { |item| options[:commit] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end
+      parser.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :workflow_id, :app_id, :version, :tag, :commit)
+      raise OptionParser::MissingArgument, "build" if options[:build].nil? && !options[:allow_any_build]
+      Version.validate!(options[:version])
+
+      result = CloudRunStatus.new(client: app_store_client).readiness(**options.slice(
+        :workflow_id, :app_id, :version, :tag, :build, :run_id, :commit
+      ))
+      emit(result, options[:output])
+    end
+
+    def validate_publish_handoff(arguments)
+      options = {}
+      parser = OptionParser.new do |value|
+        value.banner = "Usage: sa-release validate-publish-handoff --manifest FILE --tag TAG --notes FILE"
+        value.on("--manifest FILE") { |item| options[:manifest] = item }
+        value.on("--tag TAG") { |item| options[:tag] = item }
+        value.on("--notes FILE") { |item| options[:notes] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end
+      parser.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :manifest, :tag, :notes)
+
+      result = PublishHandoff.new(github: github_client).validate(
+        manifest: Manifest.read(options[:manifest]),
+        tag: options[:tag],
+        app_store_notes: File.read(options[:notes])
+      )
+      emit(result, options[:output])
+    end
+
+    def validate_forward_recovery(arguments)
+      options = {}
+      parser = OptionParser.new do |value|
+        value.banner = "Usage: sa-release validate-forward-recovery --manifest FILE --approval FILE --approval-sha SHA --release-body FILE --tag TAG --current-sha SHA --channel CHANNEL --version VERSION --previous-tag TAG"
+        value.on("--manifest FILE") { |item| options[:manifest] = item }
+        value.on("--approval FILE") { |item| options[:approval] = item }
+        value.on("--approval-sha SHA") { |item| options[:approval_sha] = item }
+        value.on("--release-body FILE") { |item| options[:release_body] = item }
+        value.on("--tag TAG") { |item| options[:tag] = item }
+        value.on("--current-sha SHA") { |item| options[:current_sha] = item }
+        value.on("--channel CHANNEL") { |item| options[:channel] = item }
+        value.on("--version VERSION") { |item| options[:version] = item }
+        value.on("--previous-tag TAG") { |item| options[:previous_tag] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end
+      parser.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(
+        options,
+        :manifest, :approval, :approval_sha, :release_body, :tag,
+        :current_sha, :channel, :version, :previous_tag
+      )
+
+      result = ForwardBuildRecovery.new(github: github_client).validate(
+        manifest: Manifest.read(options[:manifest]),
+        approval: approval_from_file(options[:approval]),
+        approval_sha: options[:approval_sha],
+        release_body: File.binread(options[:release_body]),
+        tag: options[:tag],
+        current_sha: options[:current_sha],
+        channel: options[:channel],
+        version: options[:version],
+        previous_tag: options[:previous_tag]
+      )
+      emit(result, options[:output])
     end
 
     def wait_cloud(arguments)
@@ -509,47 +774,18 @@ module SequelAceRelease
       raise OptionParser::MissingArgument, "build" if options[:build].nil? && !options[:allow_any_build]
       Version.validate!(options[:version])
 
-      client = app_store_client
+      inspector = CloudRunStatus.new(client: app_store_client)
       deadline = Time.now + options[:timeout]
       loop do
-        run = client.find_cloud_run(
-          workflow_id: options[:workflow_id],
-          build: options[:build],
-          commit: options[:commit],
-          tag: options[:tag],
-          run_id: options[:run_id]
-        )
-        if run
-          status = run["completion_status"]
-          if run["execution_progress"] == "COMPLETE"
-            label = options[:build] || run["number"]
-            raise ValidationError, "Xcode Cloud build #{label} completed with #{status}" unless status == "SUCCEEDED"
-            cloud_builds = begin
-              client.cloud_builds_for_run(run.fetch("id"))
-            rescue APIError => error
-              raise unless error.message.include?("HTTP 404")
-
-              []
-            end
-            matching_build = cloud_builds.find do |candidate|
-              next false unless candidate["app_id"] == options[:app_id]
-              next false unless candidate["version"] == options[:version]
-              next false if options[:build] && candidate["build"] != options[:build]
-
-              true
-            end
-            if matching_build
-              return emit(run.merge(
-                "app_store_build_id" => matching_build.fetch("id"),
-                "app_version" => matching_build.fetch("version"),
-                "app_build" => matching_build.fetch("build")
-              ), options[:output])
-            end
-            unless cloud_builds.empty?
-              observed = cloud_builds.map { |candidate| candidate.slice("app_id", "version", "build") }
-              raise ValidationError, "Xcode Cloud run does not contain the expected app version/build (observed: #{observed})"
-            end
-          end
+        result = inspector.readiness(**options.slice(
+          :workflow_id, :app_id, :version, :tag, :build, :run_id, :commit
+        ))
+        if result.fetch("readiness") == "ready"
+          return emit(result.except("readiness", "reason"), options[:output])
+        end
+        if result.fetch("readiness") == "failed"
+          label = options[:build] || result["number"] || "for commit #{options[:commit]}"
+          raise ValidationError, "Xcode Cloud build #{label} completed with #{result['completion_status']}"
         end
         label = options[:build] || "for commit #{options[:commit]}"
         raise ValidationError, "timed out waiting for Xcode Cloud build #{label}" if Time.now >= deadline
@@ -642,7 +878,10 @@ module SequelAceRelease
         if latest["execution_progress"] == "COMPLETE" && latest["completion_status"] != "SUCCEEDED"
           raise ValidationError, "a newer unsuccessful Alpha run exists; authorize that exact run ID"
         end
-        return emit(latest.merge("reused_existing_retry" => true), options[:output])
+        return emit(latest.merge(
+          "retried_failed_run_id" => failed.fetch("id"),
+          "reused_existing_retry" => true
+        ), options[:output])
       end
 
       reference_id = failed["git_reference_id"]
@@ -656,6 +895,7 @@ module SequelAceRelease
         "workflow_id" => options[:workflow_id],
         "git_reference" => options[:tag],
         "source_commit" => options[:commit],
+        "retried_failed_run_id" => failed.fetch("id"),
         "reused_existing_retry" => false
       }, options[:output])
     end
@@ -683,19 +923,8 @@ module SequelAceRelease
       raise ValidationError, "submission confirmation must be exactly #{expected_confirmation.inspect}" unless options[:confirm] == expected_confirmation
 
       notes = File.read(options[:notes]).strip
-      Approval.new(
-        channel: "production",
-        target_version: version,
-        main_sha: data.fetch("main_sha"),
-        previous_tag: data.fetch("base_tag"),
-        base_sha: data.fetch("base_sha"),
-        changelog_base_tag: data.fetch("changelog_base_tag"),
-        changelog_base_sha: data.fetch("changelog_base_sha"),
-        release_iteration: data.fetch("iteration"),
-        app_store_notes: notes,
-        release_notes_sha256: data.fetch("release_notes_sha256"),
-        observed_production_cloud_next_build: data.fetch("observed_production_cloud_next_build")
-      )
+      raise ValidationError, "App Store release notes must not be empty" if notes.empty?
+      raise ValidationError, "App Store release notes exceed Apple's 4,000 character limit" if notes.length > 4_000
       schedule_threshold = Time.now + (72 * 60 * 60) + SUBMISSION_SCHEDULE_SAFETY_SECONDS
       scheduled = options[:schedule_at] || default_schedule_time(Time.now + SUBMISSION_SCHEDULE_SAFETY_SECONDS)
       if scheduled < schedule_threshold
@@ -712,6 +941,7 @@ module SequelAceRelease
       Dir.mktmpdir("sequel-ace-app-store-submit") do |temporary_directory|
         promotion_file = File.join(temporary_directory, "promotional_text.txt")
         File.write(promotion_file, promotional_text)
+        validate_submission_handoff!(manifest: manifest, notes: notes)
         fastlane_release_stage(
           version: version,
           build: build,
@@ -726,6 +956,7 @@ module SequelAceRelease
             raise ValidationError, "explicit release schedule became too close during metadata staging"
           end
           scheduled = default_schedule_time(Time.now + SUBMISSION_SCHEDULE_SAFETY_SECONDS)
+          validate_submission_handoff!(manifest: manifest, notes: notes)
           fastlane_release_stage(
             version: version,
             build: build,
@@ -738,6 +969,7 @@ module SequelAceRelease
         snapshot = wait_for_metadata(client, version)
         exact_build = client.find_build(app_id: Config::PRODUCTION_APP_ID, version: version, build: build)
         raise ValidationError, "exact App Store Connect build #{version} (#{build}) is unavailable" unless exact_build
+        validate_submission_handoff!(manifest: manifest, notes: notes)
         client.attach_build(version_id: snapshot.dig("version", "id"), build_id: exact_build.fetch("id"))
         snapshot = wait_for_selected_build(client, version, build)
         minimum = Time.now + (72 * 60 * 60)
@@ -748,6 +980,7 @@ module SequelAceRelease
           expected_promotional_text: promotional_text,
           minimum_release_time: minimum
         )
+        validate_submission_handoff!(manifest: manifest, notes: notes)
         fastlane_release_submit(version: version, build: build)
         final_snapshot = wait_for_submission_state(client, version)
         MetadataValidator.new.validate!(
@@ -797,6 +1030,7 @@ module SequelAceRelease
         naming: naming,
         base_sha: options[:base_sha],
         canonical_build: reconciliation.fetch("target_build"),
+        production_build_evidence: reconciliation.fetch("production_build_evidence"),
         skipped_production_builds: reconciliation.fetch("skipped_production_builds", []),
         release_notes_sha256: plan_data.fetch("release_notes_sha256")
       )
@@ -869,78 +1103,6 @@ module SequelAceRelease
       emit(result.to_h, options[:output])
     end
 
-    def relay_webhook(arguments)
-      options = {}
-      parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release relay-webhook --payload FILE --app-id APP_ID --event-ledger FILE [--output FILE]"
-        value.on("--payload FILE") { |item| options[:payload] = item }
-        value.on("--app-id APP_ID") { |item| options[:app_id] = item }
-        value.on("--event-ledger FILE") { |item| options[:event_ledger] = item }
-        value.on("--output FILE") { |item| options[:output] = item }
-      end
-      parser.parse!(arguments)
-      reject_arguments!(arguments)
-      require_options!(options, :payload, :app_id)
-      unless options[:app_id] == Config::PRODUCTION_APP_ID
-        raise ValidationError, "webhook relay accepts only the Production App Store app"
-      end
-      require_options!(options, :event_ledger)
-
-      body = File.binread(options[:payload], AppStoreWebhook::MAX_BODY_BYTES + 1)
-      result = AppStoreWebhook.new(secret: @env["SA_ASC_WEBHOOK_SECRET"]).verify_and_classify(
-        body: body,
-        signature: @env["SA_ASC_WEBHOOK_SIGNATURE"]
-      )
-      evidence = result.merge(
-        "app_id" => options[:app_id],
-        "workflow_dispatch" => "not_required"
-      )
-      if result.fetch("dispatch")
-        claimed = WebhookEventLedger.new(path: options[:event_ledger]).claim(
-          event_id: result.fetch("event_id"),
-          fingerprint: Digest::SHA256.hexdigest(body)
-        )
-        unless claimed
-          evidence["workflow_dispatch"] = "duplicate_ignored"
-          return emit(evidence, options[:output])
-        end
-
-        token = GitHubAppAuthenticator.from_env(@env).installation_token
-        inputs = result.slice(
-          "event_id", "event_type", "version_id", "new_value", "old_value", "timestamp"
-        ).merge("app_id" => options[:app_id])
-        GitHubClient.new(token: token).dispatch_workflow(
-          workflow: "release_finalize.yml",
-          ref: "main",
-          inputs: inputs
-        )
-        evidence["workflow_dispatch"] = "sent"
-      end
-      emit(evidence, options[:output])
-    end
-
-    def resolve_app_store_version(arguments)
-      options = {}
-      parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release resolve-app-store-version --app-id APP_ID --version-id VERSION_ID [--output FILE]"
-        value.on("--app-id APP_ID") { |item| options[:app_id] = item }
-        value.on("--version-id VERSION_ID") { |item| options[:version_id] = item }
-        value.on("--output FILE") { |item| options[:output] = item }
-      end
-      parser.parse!(arguments)
-      reject_arguments!(arguments)
-      require_options!(options, :app_id, :version_id)
-      unless options[:app_id] == Config::PRODUCTION_APP_ID
-        raise ValidationError, "finalization events accept only the Production App Store app"
-      end
-
-      result = app_store_client.finalization_event_target(
-        app_id: options[:app_id],
-        version_id: options[:version_id]
-      )
-      emit(result, options[:output])
-    end
-
     def finalize(arguments)
       options = { validate_only: false }
       parser = OptionParser.new do |value|
@@ -983,6 +1145,15 @@ module SequelAceRelease
               "release tag moved after archival (expected #{archived_commit}, found #{current_tag_commit})"
       end
       release = client.release_by_tag(data.fetch("tag"))
+      unless release["tag_name"] == data.fetch("tag") && release["draft"] == false
+        raise ValidationError, "GitHub release identity is not publishable"
+      end
+      ReleasePublisher.validate!(
+        tag: data.fetch("tag"),
+        login: release.dig("author", "login"),
+        id: release.dig("author", "id"),
+        created_at: release["created_at"]
+      )
       verify_release_assets!(release, data)
       final_title = ReleaseNaming.new(
         channel: "production",
@@ -990,14 +1161,25 @@ module SequelAceRelease
         build: data.fetch("canonical_build"),
         iteration: data.fetch("iteration")
       ).final_title
-      transition_required = release["prerelease"] == true || release["name"] != final_title
+      current_latest = begin
+        client.latest_release
+      rescue APIError => error
+        raise unless error.message.include?("HTTP 404")
+
+        nil
+      end
+      currently_latest = !current_latest.nil? && current_latest["id"] == release["id"] &&
+                         current_latest["tag_name"] == data.fetch("tag")
+      transition_required = release["prerelease"] != false || release["name"] != final_title || !currently_latest
       evidence = {
         "release_id" => release.fetch("id"),
         "tag" => data.fetch("tag"),
         "release_commit_sha" => archived_commit,
         "app_store_state" => "READY_FOR_DISTRIBUTION",
         "current_title" => release["name"],
+        "current_draft" => release["draft"],
         "current_prerelease" => release["prerelease"],
+        "current_latest" => currently_latest,
         "target_title" => final_title,
         "target_latest" => true,
         "transition_required" => transition_required
@@ -1006,25 +1188,70 @@ module SequelAceRelease
         return emit(evidence.merge("github_transition" => "durably_validated_before_public_transition"), options[:output])
       end
 
-      if transition_required
-        release = client.update_release(
-          id: release.fetch("id"),
-          title: final_title,
-          prerelease: false,
-          make_latest: true
-        )
+      client.update_release(
+        id: release.fetch("id"),
+        tag: data.fetch("tag"),
+        target_sha: archived_commit,
+        title: final_title,
+        prerelease: false,
+        make_latest: true
+      )
+      finalized_tag_commit = client.ref_sha("tags/#{data.fetch('tag')}")
+      unless finalized_tag_commit == archived_commit
+        raise ValidationError,
+              "release tag moved during finalization (expected #{archived_commit}, found #{finalized_tag_commit})"
+      end
+      release = client.release_by_tag(data.fetch("tag"))
+      unless release["id"] == evidence.fetch("release_id") && release["tag_name"] == data.fetch("tag") &&
+             release["name"] == final_title && release["draft"] == false && release["prerelease"] == false &&
+             ReleasePublisher.authorized?(
+               tag: data.fetch("tag"),
+               login: release.dig("author", "login"),
+               id: release.dig("author", "id"),
+               created_at: release["created_at"]
+             )
+        raise ValidationError, "GitHub finalization readback did not match the requested release"
+      end
+      verify_release_assets!(release, data)
+      latest_release = client.latest_release
+      unless latest_release["id"] == release["id"] && latest_release["tag_name"] == data.fetch("tag") &&
+             latest_release["name"] == final_title && latest_release["draft"] == false &&
+             latest_release["prerelease"] == false
+        raise ValidationError, "GitHub did not mark the finalized release as latest"
       end
       emit(evidence.merge(
         "github_transition" => "complete",
         "final_title" => release["name"],
-        "final_prerelease" => release["prerelease"]
+        "final_draft" => release["draft"],
+        "final_prerelease" => release["prerelease"],
+        "final_latest" => true
       ), options[:output])
+    end
+
+    def validate_submission_handoff!(manifest:, notes:)
+      result = PublishHandoff.new(github: github_client).validate(
+        manifest: manifest,
+        tag: manifest.to_h.fetch("tag"),
+        app_store_notes: notes
+      )
+      unless result.fetch("eligible") && result.fetch("state") == "archived"
+        raise ValidationError, "production submission requires an eligible archived GitHub handoff"
+      end
+
+      result
     end
 
     def github_client(optional: false)
       token = @env["SA_GITHUB_TOKEN"] || @env["GH_TOKEN"] || @env["GITHUB_TOKEN"]
       return nil if optional && token.to_s.empty?
 
+      GitHubClient.new(token: token)
+    end
+
+    def github_user_publisher_client
+      token = ReleasePublisher.validate_user_publisher_token!(
+        @env["SA_RELEASE_GITHUB_PUBLISHER_TOKEN"]
+      )
       GitHubClient.new(token: token)
     end
 
@@ -1044,6 +1271,20 @@ module SequelAceRelease
 
     def read_json(path)
       JSON.parse(File.read(path))
+    end
+
+    def validate_forward_recovery_pr_evidence!(recovery, approval:, approval_sha:, expected_sha:, requested_build:)
+      failed_build = recovery["failed_expected_build"]
+      expected_predecessor_tag = if failed_build.is_a?(Integer) && failed_build.positive?
+                                   "#{approval.payload.fetch('channel')}/#{approval.payload.fetch('target_version')}-#{failed_build}"
+                                 end
+      valid = recovery["predecessor_release_commit_sha"] == expected_sha &&
+              recovery["predecessor_tag"] == expected_predecessor_tag &&
+              recovery["approval_sha256"] == approval_sha &&
+              recovery["expected_recovery_build"].is_a?(Integer) &&
+              recovery["expected_recovery_build"].positive? &&
+              recovery["expected_recovery_build"] == requested_build
+      raise ValidationError, "forward-recovery evidence does not match the requested release PR" unless valid
     end
 
     def approval_from_file(path)
@@ -1083,6 +1324,39 @@ module SequelAceRelease
 
     def highest_build_from_tags(tags)
       tags.filter_map { |tag| tag[%r{\A(?:production|beta)/\d+\.\d+\.\d+-([1-9]\d*)\z}, 1]&.to_i }.max || 0
+    end
+
+    def recover_release_tag(options:, git:, source_build:, source_release_commit_sha:, runs:, app_store_client:)
+      channel = options[:recover_release_channel]
+      version = options[:recover_release_version]
+      return nil if channel.nil? && version.nil?
+      if channel.to_s.empty? || version.to_s.empty?
+        raise ValidationError, "tag-only recovery requires both release channel and version"
+      end
+
+      naming = ReleaseNaming.new(channel: channel, version: version, build: source_build, iteration: 1)
+      tag = naming.tag
+      return nil unless git.tag_exists?(tag)
+      unless Config.valid_git_sha?(source_release_commit_sha) && git.sha("refs/tags/#{tag}") == source_release_commit_sha
+        raise IntegrityError, "tag-only recovery tag does not resolve to the exact release preparation commit"
+      end
+
+      begin
+        github_client.release_by_tag(tag)
+        return nil
+      rescue APIError => error
+        raise unless error.message.include?("HTTP 404")
+      end
+      if options[:workflow_id].to_s.empty? || app_store_client.nil?
+        raise ValidationError, "tag-only recovery requires Production Xcode Cloud access"
+      end
+
+      run = Array(runs).find { |candidate| candidate["number"].to_i == source_build }
+      if run
+        details = app_store_client.build_run(run.fetch("id"))
+        run.replace(run.merge(details))
+      end
+      tag
     end
 
     def release_pull_request_body(naming, release_body)
@@ -1234,6 +1508,54 @@ module SequelAceRelease
       end
     end
 
+    def verified_release_asset_sha256!(manifest:, path:, name:)
+      data = manifest.to_h
+      basename = File.basename(path)
+      unless name == basename
+        raise IntegrityError, "release asset name #{name} does not match local file #{basename}"
+      end
+      stat = File.lstat(path)
+      unless stat.file? && !stat.symlink?
+        raise IntegrityError, "release asset #{name} is not a regular non-symlink file"
+      end
+
+      expected_names = Array(data.fetch("artifact_names"))
+      unless expected_names.count(name) == 1
+        raise IntegrityError, "release asset #{name} is not a unique manifest-approved artifact"
+      end
+
+      matches = data.fetch("verification").values.select do |value|
+        value.is_a?(Hash) && value["zip_path"].is_a?(String) &&
+          File.basename(value["zip_path"]) == name && value["zip_sha256"]
+      end
+      unless matches.length == 1
+        raise IntegrityError, "release asset #{name} does not have one manifest verification record"
+      end
+
+      digest = matches.fetch(0).fetch("zip_sha256").to_s.downcase
+      unless digest.match?(/\A[0-9a-f]{64}\z/)
+        raise IntegrityError, "release asset #{name} has a malformed manifest checksum"
+      end
+      unless Digest::SHA256.file(path).hexdigest == digest
+        raise IntegrityError, "release asset #{name} does not match its manifest checksum"
+      end
+
+      digest
+    rescue Errno::ENOENT, Errno::EACCES => error
+      raise ValidationError, "release asset #{name} is not readable: #{error.class}"
+    rescue KeyError, TypeError
+      raise IntegrityError, "release asset verification evidence is malformed"
+    end
+
+    def write_integrity_failure_marker(path)
+      return unless path
+
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, "release asset checksum mismatch\n")
+    rescue SystemCallError => error
+      @err.puts("release tool warning: could not write integrity failure marker (#{error.class})")
+    end
+
     def help
       <<~HELP
         Sequel Ace release infrastructure #{SequelAceRelease::VERSION}
@@ -1242,21 +1564,25 @@ module SequelAceRelease
           guard                      Enforce actor, ref, freeze, confirmation, and enable gates
           plan                       Create a read-only release plan and approval payload
           prepare                    Set explicit version/build values and regenerate CHANGELOG.md
-          reconcile-build            Validate Xcode Cloud's authoritative next production build
+          reconcile-build            Derive highest observed Production build plus one
           verify-artifact            Verify signing, notarization, architecture, metadata, and launch
           verify-artifact-set        Find and verify the distributable app in a Cloud artifact set
           submit                     Stage, validate, and submit a production App Store version
           finalize                   Finalize a GitHub prerelease after App Store release
-          relay-webhook              Verify an Apple webhook and relay an exact ready event to GitHub
-          resolve-app-store-version  Resolve and validate an exact Production App Store version event
           github-prepare-pr          Create a verified GitHub App release commit and PR
           github-cleanup-branch      Close and delete an exact failed release branch
           github-wait-checks         Wait for exact-head release PR checks
           github-merge-pr            Recheck and merge the release PR
           github-validate-release-target
                                      Prove a release commit remains an unchanged main ancestor
+          github-verify-release-tag   Prove a release tag still names the exact release commit
+          github-release-publisher-mode
+                                     Select a PAT-free initial release publisher epoch
           github-create-release      Create the tag-backed GitHub prerelease
           github-upload-asset        Upload a verified zip to the prerelease
+          validate-publish-handoff   Validate an archived prerelease continuation
+          validate-forward-recovery  Validate a preserved forward-only build mismatch
+          cloud-status               Inspect an exact Xcode Cloud build without waiting
           wait-cloud                 Wait for an exact Xcode Cloud build
           download-cloud-artifacts   Download every artifact for an exact Cloud build run
           retry-alpha                Reuse or start an Alpha-only retry for a failed beta run

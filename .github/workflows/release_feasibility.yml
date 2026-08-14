@@ -7,6 +7,10 @@ on:
         description: Exact manually-started Alpha-only Xcode Cloud build run ID after Notarize is configured
         required: true
         type: string
+      alpha_source_sha:
+        description: Exact full source commit SHA used by that Alpha build; it must still be an ancestor of main
+        required: true
+        type: string
 
 permissions:
   actions: read
@@ -27,6 +31,9 @@ jobs:
     environment: sequel-ace-release
     env:
       SA_ASC_REQUIRE_ISSUER: "1"
+      ALPHA_BUILD_RUN_ID: ${{ inputs.alpha_build_run_id }}
+      ALPHA_SOURCE_SHA: ${{ inputs.alpha_source_sha }}
+      SA_ALPHA_WORKFLOW_ID: ${{ vars.SA_ALPHA_CLOUD_WORKFLOW_ID }}
       GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
       PROBE_BRANCH: prepare-release/feasibility-probe-${{ github.run_id }}
     steps:
@@ -36,7 +43,6 @@ jobs:
           RELEASE_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
           RELEASE_REF: ${{ github.ref }}
           RELEASE_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}
-          ALPHA_BUILD_RUN_ID: ${{ inputs.alpha_build_run_id }}
         run: |
           set -euo pipefail
           [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized release actor." >&2; exit 1; }
@@ -44,6 +50,7 @@ jobs:
           [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Feasibility must run from main." >&2; exit 1; }
           [[ "${RELEASE_ENABLED}" == "false" ]] || { echo "Set SA_RELEASE_AUTOMATION_ENABLED=false before running feasibility." >&2; exit 1; }
           [[ "${ALPHA_BUILD_RUN_ID}" =~ ^[A-Za-z0-9-]+$ ]] || { echo "Malformed Alpha build-run ID." >&2; exit 1; }
+          [[ "${ALPHA_SOURCE_SHA}" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "Malformed Alpha source commit SHA." >&2; exit 1; }
 
       - name: Check out release tooling
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -52,6 +59,18 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: false
+
+      - name: Validate the pinned Alpha source ancestry
+        run: |
+          set -euo pipefail
+          current_sha="$(git rev-parse HEAD)"
+          canonical_alpha_source_sha="$(git rev-parse --verify "${ALPHA_SOURCE_SHA}^{commit}")"
+          [[ "${canonical_alpha_source_sha}" =~ ^[0-9a-f]{40}$ ]] || { echo "Git returned a malformed canonical Alpha source commit SHA." >&2; exit 1; }
+          git merge-base --is-ancestor "${canonical_alpha_source_sha}" "${current_sha}" || {
+            echo "Pinned Alpha source commit is not an ancestor of current main." >&2
+            exit 1
+          }
+          printf 'ALPHA_SOURCE_SHA=%s\n' "${canonical_alpha_source_sha}" >> "${GITHUB_ENV}"
 
       - name: Exclude transient feasibility evidence from git status
         run: |
@@ -118,7 +137,6 @@ jobs:
           '
         env:
           SA_PRODUCTION_WORKFLOW_ID: ${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}
-          SA_ALPHA_WORKFLOW_ID: ${{ vars.SA_ALPHA_CLOUD_WORKFLOW_ID }}
           SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
           SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
           SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
@@ -133,18 +151,16 @@ jobs:
         run: |
           set -euo pipefail
           current_version="$(bundle exec ruby -Ifastlane/lib -rsequel_ace_release -e 'puts SequelAceRelease::VersionFiles.new.current.fetch("version")')"
-          current_sha="$(git rev-parse HEAD)"
           bundle exec ruby -Ifastlane/lib -rsequel_ace_release -e '
             client = SequelAceRelease::AppStoreConnectClient.from_env
             run = client.build_run(ARGV.fetch(0))
             raise SequelAceRelease::ValidationError, "Alpha run is not part of the configured Alpha workflow" unless run["workflow_id"] == ARGV.fetch(1)
             raise SequelAceRelease::ValidationError, "Alpha run did not succeed" unless run["execution_progress"] == "COMPLETE" && run["completion_status"] == "SUCCEEDED"
-            commits = [run["source_commit"], run["destination_commit"]].compact
-            raise SequelAceRelease::ValidationError, "Alpha run does not match checked-out main" unless commits.include?(ARGV.fetch(2))
+            raise SequelAceRelease::ValidationError, "Alpha run does not match the pinned source commit" unless run["source_commit"] == ARGV.fetch(2)
             File.write("feasibility/alpha-cloud-run.json", SequelAceRelease::CanonicalJSON.pretty(run))
-          ' "${{ inputs.alpha_build_run_id }}" "${{ vars.SA_ALPHA_CLOUD_WORKFLOW_ID }}" "${current_sha}"
+          ' "${ALPHA_BUILD_RUN_ID}" "${SA_ALPHA_WORKFLOW_ID}" "${ALPHA_SOURCE_SHA}"
           bundle exec ruby fastlane/bin/sa-release download-cloud-artifacts \
-            --run-id "${{ inputs.alpha_build_run_id }}" \
+            --run-id "${ALPHA_BUILD_RUN_ID}" \
             --output-directory feasibility/alpha-cloud \
             --output feasibility/alpha-artifacts.json
           bundle exec ruby fastlane/bin/sa-release verify-artifact-set \
@@ -160,10 +176,12 @@ jobs:
         id: probe_app_token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          app-id: ${{ secrets.SA_RELEASE_GITHUB_APP_ID }}
+          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
           private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
           owner: Sequel-Ace
           repositories: Sequel-Ace
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Create the verified GitHub App commit and disposable PR
         id: github_probe
@@ -213,10 +231,12 @@ jobs:
         id: probe_cleanup_token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          app-id: ${{ secrets.SA_RELEASE_GITHUB_APP_ID }}
+          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
           private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
           owner: Sequel-Ace
           repositories: Sequel-Ace
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Close and delete only the exact feasibility probe
         if: always()
@@ -239,6 +259,7 @@ jobs:
             --output feasibility/github-app-probe-cleanup.json
 
       - name: Prove private GHCR round trip and visibility
+        id: ghcr_probe
         env:
           GH_TOKEN: ${{ github.token }}
           GHCR_TOKEN: ${{ github.token }}
@@ -252,7 +273,85 @@ jobs:
           package_name="${GHCR_REPOSITORY#ghcr.io/sequel-ace/}"
           visibility="$(gh api "orgs/Sequel-Ace/packages/container/${package_name}" --jq .visibility)"
           [[ "${visibility}" == "private" ]] || { echo "GHCR release archive package is not private." >&2; exit 1; }
-          oras manifest delete "${probe_ref}" >/dev/null 2>&1 || true
+
+      - name: Delete the exact GHCR feasibility probe
+        if: ${{ always() && steps.ghcr_probe.outcome != 'skipped' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          probe_ref="${GHCR_REPOSITORY}:feasibility-${GITHUB_RUN_ID}"
+          package_name="${GHCR_REPOSITORY#ghcr.io/sequel-ace/}"
+          probe_tag="feasibility-${GITHUB_RUN_ID}"
+          package_endpoint="orgs/Sequel-Ace/packages/container/${package_name}"
+          package_versions_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-feasibility-package-versions.json.XXXXXX")"
+          gh api --paginate "${package_endpoint}/versions?per_page=100" \
+            --jq '.[] | {id, tags: (.metadata.container.tags | sort)}' \
+            | jq -sc 'sort_by(.id)' > "${package_versions_file}"
+          package_version_count="$(jq -r 'length' "${package_versions_file}")"
+          probe_version_rows="$(
+            jq -r --arg probe_tag "${probe_tag}" \
+              '.[] | select(any(.tags[]?; . == $probe_tag)) | [.id, (.tags | join(","))] | @tsv' \
+              "${package_versions_file}"
+          )"
+          [[ -n "${probe_version_rows}" && "${probe_version_rows}" != *$'\n'* ]] || {
+            echo "Expected exactly one GHCR package version for the feasibility probe tag." >&2
+            exit 1
+          }
+          IFS=$'\t' read -r probe_version_id probe_version_tags <<< "${probe_version_rows}"
+          [[ "${probe_version_id}" =~ ^[0-9]+$ && "${probe_version_tags}" == "${probe_tag}" ]] || {
+            echo "Refusing to delete a GHCR package version that is not exclusive to the feasibility probe tag." >&2
+            exit 1
+          }
+          [[ "${package_version_count}" =~ ^[1-9][0-9]*$ ]] || {
+            echo "Expected at least one GHCR package version before probe cleanup." >&2
+            exit 1
+          }
+          deleted_entire_package=0
+          if [[ "${package_version_count}" -eq 1 ]]; then
+            confirmed_versions_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-feasibility-confirmed-versions.json.XXXXXX")"
+            gh api --paginate "${package_endpoint}/versions?per_page=100" \
+              --jq '.[] | {id, tags: (.metadata.container.tags | sort)}' \
+              | jq -sc 'sort_by(.id)' > "${confirmed_versions_file}"
+            cmp -s "${package_versions_file}" "${confirmed_versions_file}" || {
+              echo "GHCR package versions changed before whole-package probe cleanup." >&2
+              exit 1
+            }
+            gh api --method DELETE \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "${package_endpoint}" \
+              --silent
+            deleted_entire_package=1
+          else
+            gh api --method DELETE \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "${package_endpoint}/versions/${probe_version_id}" \
+              --silent
+          fi
+          set +e
+          package_readback_headers="$(gh api --include --silent "${package_endpoint}" 2>&1)"
+          package_readback_exit=$?
+          set -e
+          package_readback_status="$(awk 'NR == 1 { print $2 }' <<< "${package_readback_headers}")"
+          if [[ "${deleted_entire_package}" -eq 1 && "${package_readback_exit}" -ne 0 && "${package_readback_status}" == "404" ]]; then
+            remaining_probe_versions=""
+          elif [[ "${deleted_entire_package}" -eq 0 && "${package_readback_exit}" -eq 0 && "${package_readback_status}" == "200" ]]; then
+            remaining_probe_versions="$(
+              gh api --paginate "${package_endpoint}/versions?per_page=100" \
+                --jq ".[] | select(any(.metadata.container.tags[]?; . == \"${probe_tag}\")) | .id"
+            )"
+          else
+            echo "Unexpected GHCR package read-back after probe cleanup (whole_package=${deleted_entire_package}, status=${package_readback_status:-unavailable})." >&2
+            exit 1
+          fi
+          [[ -z "${remaining_probe_versions}" ]] || {
+            echo "GHCR feasibility probe tag still exists after deletion." >&2
+            exit 1
+          }
 
       - name: Confirm publishing remains disabled after all gates pass
         run: |

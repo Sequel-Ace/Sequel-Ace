@@ -6,8 +6,48 @@ module SequelAceRelease
   class CommandRunner
     Result = Struct.new(:stdout, :stderr, :status, keyword_init: true)
 
-    def run(*command, chdir: Config.repo_root, env: {}, allow_failure: false, stdin_data: nil, redact_arguments: [])
-      stdout, stderr, status = Open3.capture3(env, *command.map(&:to_s), chdir: chdir.to_s, stdin_data: stdin_data)
+    def spawn(*command, chdir: Config.repo_root, env: {})
+      raise ArgumentError, "command is required" if command.empty?
+
+      program, *arguments = command.map(&:to_s)
+      process_id = Process.spawn(
+        env,
+        [program, program],
+        *arguments,
+        chdir: chdir.to_s,
+        in: File::NULL,
+        out: File::NULL,
+        err: File::NULL
+      )
+      Process.detach(process_id)
+      process_id
+    rescue SystemCallError => e
+      raise CommandError, "command could not be started (#{e.class.name}, errno #{e.errno})"
+    end
+
+    def run(*command, chdir: Config.repo_root, env: {}, allow_failure: false, stdin_data: nil, redact_arguments: [], discard_output: false)
+      if discard_output
+        raise ArgumentError, "stdin_data cannot be combined with discard_output" unless stdin_data.nil?
+
+        process_id = Process.spawn(
+          env,
+          *command.map(&:to_s),
+          chdir: chdir.to_s,
+          in: File::NULL,
+          out: File::NULL,
+          err: File::NULL
+        )
+        _waited_process_id, status = Process.wait2(process_id)
+        stdout = ""
+        stderr = ""
+      else
+        stdout, stderr, status = Open3.capture3(
+          env,
+          *command.map(&:to_s),
+          chdir: chdir.to_s,
+          stdin_data: stdin_data
+        )
+      end
       result = Result.new(stdout: stdout, stderr: stderr, status: status)
       return result if status.success? || allow_failure
 
