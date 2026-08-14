@@ -163,8 +163,8 @@ transition.
 
 Release-author provenance is an immutable epoch, not a mutable allowlist:
 
-- `production/5.4.0-20105` is the one accepted legacy release authored by
-  `sequel-ace-release-automation[bot]`.
+- The deleted `production/5.4.0-20105` RC1 tag remains only as burned-build
+  history. No GitHub release at that tag is accepted as publisher provenance.
 - Canonical production build 20109 and later are currently required to be
   authored by `Jason-Morcos` when their GitHub `created_at` timestamp is before
   the cutoff; those historical releases remain verifiable afterward.

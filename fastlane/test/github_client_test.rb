@@ -306,7 +306,7 @@ class GitHubClientTest < Minitest::Test
         "body" => "Notes",
         "draft" => false,
         "prerelease" => true,
-        "author" => { "login" => SequelAceRelease::ReleasePublisher::LEGACY_APP_LOGIN }
+        "author" => { "login" => SequelAceRelease::ReleasePublisher::RELEASE_APP_LOGIN }
       })
     ])
     client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)

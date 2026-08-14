@@ -14,8 +14,6 @@ module SequelAceRelease
     RELEASE_APP_LOGIN = RELEASE_APP_LOGINS.first
     USER_PUBLISHER_CUTOFF = Time.utc(2027, 8, 14).freeze
     USER_PUBLISHER_SAFETY_WINDOW = 15 * 60
-    LEGACY_APP_LOGIN = RELEASE_APP_LOGIN
-    LEGACY_APP_TAG = "production/5.4.0-20105".freeze
     TAG_PATTERN = %r{\A(?:production|beta)/\d+\.\d+\.\d+-([1-9]\d*)\z}.freeze
     ZONED_TIMESTAMP_PATTERN = /(?:Z|[+-]\d{2}:\d{2})\z/.freeze
 
@@ -35,8 +33,6 @@ module SequelAceRelease
     def authorized?(tag:, login:, created_at: nil, at: Time.now.utc)
       build = tag.to_s[TAG_PATTERN, 1]&.to_i
       return false unless build
-      return true if RELEASE_APP_LOGINS.include?(login) && tag == LEGACY_APP_TAG
-
       release_created_at = publication_time(created_at || at)
       (login == USER_LOGIN && build >= CURRENT_MINIMUM_BUILD && release_created_at < USER_PUBLISHER_CUTOFF) ||
         (RELEASE_APP_LOGINS.include?(login) && build >= CURRENT_MINIMUM_BUILD &&

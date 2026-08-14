@@ -86,7 +86,6 @@ jobs:
                 (.tagName | capture("-(?<build>[1-9][0-9]*)$").build | tonumber) as $build |
                 (.createdAt | fromdateiso8601) as $created |
                 select(
-                  ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and .tagName == "production/5.4.0-20105") or
                   (.author.login == "Jason-Morcos" and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601)) or
                   ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and $build >= 20109 and $created >= ("2027-08-14T00:00:00Z" | fromdateiso8601))
                 ) |
@@ -100,7 +99,6 @@ jobs:
                 (.tag_name | capture("-(?<build>[1-9][0-9]*)$").build | tonumber) as $build |
                 (.created_at | fromdateiso8601) as $created |
                 select(
-                  ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and .tag_name == "production/5.4.0-20105") or
                   (.author.login == "Jason-Morcos" and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601)) or
                   ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and $build >= 20109 and $created >= ("2027-08-14T00:00:00Z" | fromdateiso8601))
                 ) |
@@ -205,7 +203,6 @@ jobs:
                 (.tag_name | capture("-(?<build>[1-9][0-9]*)$").build | tonumber) as $build |
                 (.created_at | fromdateiso8601) as $created |
                 select(
-                  ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and .tag_name == "production/5.4.0-20105") or
                   (.author.login == "Jason-Morcos" and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601)) or
                   ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and $build >= 20109 and $created >= ("2027-08-14T00:00:00Z" | fromdateiso8601))
                 ) |

@@ -55,14 +55,15 @@ class PublishHandoffTest < Minitest::Test
     end
   end
 
-  def test_the_single_legacy_bot_release_remains_recoverable
+  def test_rejects_the_deleted_rc1_bot_release_provenance
     manifest = release_manifest(version: "5.4.0", build: 20_105)
-    release = release_for(manifest, author: SequelAceRelease::ReleasePublisher::LEGACY_APP_LOGIN)
+    release = release_for(manifest, author: SequelAceRelease::ReleasePublisher::RELEASE_APP_LOGIN)
 
-    result = validate(manifest, release: release)
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      validate(manifest, release: release)
+    end
 
-    assert_equal true, result.fetch("eligible")
-    assert_equal "production/5.4.0-20105", result.fetch("tag")
+    assert_includes error.message, "publisher is not authorized"
   end
 
   def test_completed_or_failed_handoffs_are_not_reprocessed
