@@ -35,6 +35,7 @@ import Foundation
     }
 
     public var isMASVersion: Bool {
+        // macOS App Store and TestFlight builds both carry a readable app receipt.
         guard
             let receiptURL: URL = appStoreReceiptURL
         else {
@@ -61,16 +62,33 @@ import Foundation
         return "%@ (%@)".format(version, build)
     }
 
+    public var githubReleaseTag: String? {
+        guard
+            // Keep the key in sync with SequelAceRelease::Config::RELEASE_TAG_PLIST_KEY.
+            let value = object(forInfoDictionaryKey: "SAGitHubReleaseTag") as? String,
+            let version,
+            let identity = SAGitHubReleaseTagIdentity(value),
+            identity.version == version
+        else {
+            return nil
+        }
+
+        return value
+    }
+
     public func checkForNewVersion(isFromMenuCheck: Bool) {
 
         if isMASVersion == false {
+            let isBetaBuild = isSnapshotBuild
             GitHubReleaseManager.setup(GitHubReleaseManager.Config(user: "Sequel-Ace",
                                                                    project: "Sequel-Ace",
                                                                    includeDraft: false,
-                                                                   includePrerelease: isSnapshotBuild ? true : false))
+                                                                   includePrerelease: isBetaBuild,
+                                                                   appVariant: isBetaBuild ? .beta : .production))
 
-            GitHubReleaseManager.sharedInstance.isFromMenuCheck = isFromMenuCheck
-            GitHubReleaseManager.sharedInstance.checkRelease(name: versionString)
+            GitHubReleaseManager.sharedInstance.checkRelease(name: versionString,
+                                                             installedReleaseTag: githubReleaseTag,
+                                                             isUserInitiated: isFromMenuCheck)
         }
     }
 

@@ -746,6 +746,7 @@ jobs:
           PRODUCTION_ASSET: ${{ steps.context.outputs.production_asset }}
           RELEASE_BUILD: ${{ needs.discover.outputs.build }}
           RELEASE_CHANNEL: ${{ needs.discover.outputs.channel }}
+          RELEASE_TAG: ${{ needs.discover.outputs.tag }}
           RELEASE_VERSION: ${{ needs.discover.outputs.version }}
         run: |
           set -euo pipefail
@@ -755,6 +756,7 @@ jobs:
               --version "${RELEASE_VERSION}" \
               --build "${RELEASE_BUILD}" \
               --channel production \
+              --release-tag "${RELEASE_TAG}" \
               --launch \
               --output-zip "artifacts/public/${PRODUCTION_ASSET}" \
               --output production-verification.json; then
@@ -767,6 +769,7 @@ jobs:
                 --version "${RELEASE_VERSION}" \
                 --any-build \
                 --channel beta \
+                --release-tag "${RELEASE_TAG}" \
                 --launch \
                 --output-zip "artifacts/public/${ALPHA_ASSET}" \
                 --output alpha-verification.json; then
