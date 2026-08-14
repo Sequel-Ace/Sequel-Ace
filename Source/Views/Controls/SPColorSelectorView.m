@@ -296,7 +296,7 @@ enum trackingAreaIDs
 				[NSColor colorWithCalibratedWhite:1.0 alpha:0.0], 0.6, nil];
 	circlePath = [NSBezierPath bezierPathWithOvalInRect:NSInsetRect(dotRect, 1.0, 1.0)];
 	[circlePath appendBezierPath:[NSBezierPath bezierPathWithOvalInRect:NSMakeRect(dotRect.origin.x+1.0, dotRect.origin.y-2.0, dotRect.size.width-2.0, dotRect.size.height)]];
-	[circlePath setWindingRule:NSEvenOddWindingRule];
+	[circlePath setWindingRule:NSWindingRuleEvenOdd];
 	[grad drawInBezierPath:circlePath angle:-90.0];
 	
 	// top center gloss
@@ -313,7 +313,7 @@ enum trackingAreaIDs
 	NSGradient *grad3 = [[NSGradient alloc] initWithStartingColor:[NSColor colorWithCalibratedWhite:0.0 alpha:0.12]
 											 endingColor:[NSColor colorWithCalibratedWhite:0.0 alpha:0.46]];
 	[circlePath appendBezierPath:[NSBezierPath bezierPathWithOvalInRect:NSInsetRect(dotRect, 1.0, 1.0)]];
-	[circlePath setWindingRule:NSEvenOddWindingRule];
+	[circlePath setWindingRule:NSWindingRuleEvenOdd];
 	[grad3 drawInBezierPath:circlePath angle:-90.0];
 }
 

@@ -1,0 +1,327 @@
+name: Retry Alpha Beta Artifact
+
+run-name: "Retry Alpha for ${{ inputs.beta_tag }} by @${{ github.actor }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      beta_tag:
+        description: Existing beta tag whose Production artifact succeeded
+        required: true
+        type: string
+      expected_commit:
+        description: Exact commit referenced by the beta tag
+        required: true
+        type: string
+      failed_alpha_run_id:
+        description: Exact completed unsuccessful Alpha Xcode Cloud run
+        required: true
+        type: string
+      confirmation:
+        description: Type RETRY ALPHA beta/<version>-<build>
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+  packages: write
+
+concurrency:
+  group: sequel-ace-release
+  cancel-in-progress: false
+
+jobs:
+  retry:
+    name: Retry only the informational Alpha build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: sequel-ace-release
+    env:
+      SA_ASC_REQUIRE_ISSUER: "1"
+      GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
+    steps:
+      - name: Enforce narrow Alpha-retry authorization
+        id: authorization
+        env:
+          RELEASE_ACTOR: ${{ github.actor }}
+          RELEASE_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+          RELEASE_REF: ${{ github.ref }}
+          RELEASE_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}
+          BETA_TAG: ${{ inputs.beta_tag }}
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+          FAILED_ALPHA_RUN_ID: ${{ inputs.failed_alpha_run_id }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+          [[ "${RELEASE_ENABLED}" == "true" ]] || { echo "Release publishing is disabled." >&2; exit 1; }
+          [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized release actor." >&2; exit 1; }
+          [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized release rerun initiator." >&2; exit 1; }
+          [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Alpha retry must be dispatched from main." >&2; exit 1; }
+          [[ "${BETA_TAG}" =~ ^beta/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || { echo "Malformed beta tag." >&2; exit 1; }
+          [[ "${EXPECTED_COMMIT}" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]] || { echo "Malformed expected commit." >&2; exit 1; }
+          [[ "${FAILED_ALPHA_RUN_ID}" =~ ^[A-Za-z0-9-]+$ ]] || { echo "Malformed Alpha run ID." >&2; exit 1; }
+          [[ "${CONFIRMATION}" == "RETRY ALPHA ${BETA_TAG}" ]] || { echo "Typed confirmation does not match." >&2; exit 1; }
+          echo "authorized=true" >> "${GITHUB_OUTPUT}"
+
+      - name: Mint repository-scoped release App token
+        id: app_token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: Sequel-Ace
+          repositories: Sequel-Ace
+          permission-contents: read
+
+      - name: Check out release tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Set up Ruby and locked gems
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Install checksum-pinned ORAS on Linux
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz
+          checksum: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
+
+      - name: Pull and validate the preserved beta release state
+        id: release
+        env:
+          SA_GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+          BETA_TAG: ${{ inputs.beta_tag }}
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+        run: |
+          set -euo pipefail
+          if [[ ! "${BETA_TAG}" =~ ^beta/([0-9]+\.[0-9]+\.[0-9]+)-([0-9]+)$ ]]; then
+            echo "Malformed beta tag." >&2
+            exit 1
+          fi
+          version="${BASH_REMATCH[1]}"
+          build="${BASH_REMATCH[2]}"
+          archive_ref="${GHCR_REPOSITORY}:beta-${version}-${build}"
+          Scripts/archive-release-to-ghcr.sh pull "${archive_ref}" retry-archive
+          bundle exec ruby -Ifastlane/lib -rsequel_ace_release -rjson <<'RUBY'
+          manifest = SequelAceRelease::Manifest.read("retry-archive/manifest.json").to_h
+          expected_tag = ENV.fetch("BETA_TAG")
+          expected_commit = ENV.fetch("EXPECTED_COMMIT")
+          version = manifest.fetch("target_version")
+          build = manifest.fetch("canonical_build")
+          naming = SequelAceRelease::ReleaseNaming.new(
+            channel: "beta",
+            version: version,
+            build: build,
+            iteration: manifest.fetch("iteration")
+          )
+          unless manifest["channel"] == "beta" && manifest["tag"] == expected_tag &&
+                 manifest["tag"] == naming.tag && manifest["title"] == naming.title &&
+                 manifest["artifact_names"] == naming.public_artifacts
+            raise SequelAceRelease::ValidationError, "archive is not the requested canonical beta"
+          end
+          raise SequelAceRelease::ValidationError, "archive release commit does not match" unless manifest["release_commit_sha"] == expected_commit
+          failure = manifest.fetch("failure", {})
+          unless manifest.fetch("state") == "failed" && failure["component"] == "alpha" &&
+                 failure["cloud_run_id"].to_s.match?(/\A[A-Za-z0-9-]+\z/)
+            raise SequelAceRelease::ValidationError,
+                  "archive does not record a valid durable failed Alpha run"
+          end
+          client = SequelAceRelease::GitHubClient.new(token: ENV.fetch("SA_GITHUB_TOKEN"))
+          raise SequelAceRelease::ValidationError, "beta tag moved" unless client.ref_sha("tags/#{expected_tag}") == expected_commit
+          client.validate_release_target!(
+            target_sha: expected_commit,
+            protected_paths: SequelAceRelease::PublishHandoff::RELEASE_PATHS
+          )
+          release = client.release_by_tag(expected_tag)
+          raise SequelAceRelease::ValidationError, "beta release must remain a prerelease" unless release["prerelease"] == true
+          raise SequelAceRelease::ValidationError, "beta release title changed" unless release["name"] == manifest["title"]
+          SequelAceRelease::ReleasePublisher.validate!(
+            tag: expected_tag,
+            login: release.dig("author", "login"),
+            id: release.dig("author", "id"),
+            created_at: release["created_at"]
+          )
+          approved_body = release.fetch("body", "").to_s
+          loop do
+            pattern = SequelAceRelease::PublishHandoff::ALPHA_RECOVERY_SUFFIXES.find do |candidate|
+              approved_body.match?(candidate)
+            end
+            break unless pattern
+
+            approved_body = approved_body.sub(pattern, "")
+          end
+          unless Digest::SHA256.hexdigest(approved_body) == manifest.fetch("release_notes_sha256")
+            raise SequelAceRelease::ValidationError, "beta release notes do not match the archived approval"
+          end
+          approved_notes = SequelAceRelease::Notes.app_store_notes_from_github_body(approved_body)
+          archived_notes = File.read("retry-archive/app-store-notes.txt").strip
+          unless approved_notes == archived_notes
+            raise SequelAceRelease::ValidationError, "App Store notes do not match the approved GitHub release section"
+          end
+          artifacts = manifest.fetch("artifact_names")
+          raise SequelAceRelease::ValidationError, "beta manifest must name two artifacts" unless artifacts.length == 2
+          production_asset = artifacts.fetch(0)
+          alpha_asset = artifacts.fetch(1)
+          archive_ref = "#{ENV.fetch('GHCR_REPOSITORY')}:beta-#{version}-#{build}"
+          File.open(ENV.fetch("GITHUB_OUTPUT"), "a") do |file|
+            file.puts("version=#{version}")
+            file.puts("build=#{build}")
+            file.puts("production_asset=#{production_asset}")
+            file.puts("alpha_asset=#{alpha_asset}")
+            file.puts("archive_ref=#{archive_ref}")
+            file.puts("archived_failed_alpha_run_id=#{failure.fetch('cloud_run_id')}")
+            file.puts("validated=true")
+          end
+          RUBY
+
+      - name: Resolve the existing exact Production build without waiting
+        id: production_cloud
+        env:
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
+        run: |
+          set -euo pipefail
+          bundle exec ruby fastlane/bin/sa-release cloud-status \
+            --workflow-id "${{ vars.SA_PRODUCTION_CLOUD_WORKFLOW_ID }}" \
+            --app-id "1518036000" \
+            --version "${{ steps.release.outputs.version }}" \
+            --tag "${{ inputs.beta_tag }}" \
+            --build "${{ steps.release.outputs.build }}" \
+            --commit "${{ inputs.expected_commit }}" \
+            --output production-cloud-run.json
+          ruby -rjson -e 'value = JSON.parse(File.read("production-cloud-run.json")); raise "Production Cloud run is not ready" unless value.fetch("readiness") == "ready"; File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("id=#{value.fetch("id")}") }'
+
+      - name: Reuse or start one Alpha-only Xcode Cloud retry
+        id: alpha_retry
+        env:
+          SA_ASC_KEY_ID: ${{ secrets.SA_ASC_KEY_ID }}
+          SA_ASC_ISSUER_ID: ${{ secrets.SA_ASC_ISSUER_ID }}
+          SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
+          SA_ASC_PRIVATE_KEY_BASE64: "1"
+        run: |
+          set -euo pipefail
+          bundle exec ruby fastlane/bin/sa-release retry-alpha \
+            --failed-run-id "${{ inputs.failed_alpha_run_id }}" \
+            --workflow-id "${{ vars.SA_ALPHA_CLOUD_WORKFLOW_ID }}" \
+            --tag "${{ inputs.beta_tag }}" \
+            --commit "${{ inputs.expected_commit }}" \
+            --output alpha-retry.json
+          ruby -rjson -e 'value = JSON.parse(File.read("alpha-retry.json")); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("id=#{value.fetch("id")}") }'
+
+      - name: Archive the exact Alpha retry handoff
+        id: retry_archive
+        env:
+          ARCHIVED_FAILED_ALPHA_RUN_ID: ${{ steps.release.outputs.archived_failed_alpha_run_id }}
+          AUTHORIZED_FAILED_ALPHA_RUN_ID: ${{ inputs.failed_alpha_run_id }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          ruby -rjson -e 'production = JSON.parse(File.read("production-cloud-run.json")); alpha_retry = JSON.parse(File.read("alpha-retry.json")); authorized = ENV.fetch("AUTHORIZED_FAILED_ALPHA_RUN_ID"); raise "Alpha retry evidence does not match the authorized failed run" unless alpha_retry.fetch("retried_failed_run_id") == authorized; predecessor = {"durable_failed_run_id" => ENV.fetch("ARCHIVED_FAILED_ALPHA_RUN_ID"), "authorized_failed_run_id" => authorized}; File.write("retry-evidence.json", JSON.pretty_generate({"cloud_build_ids" => {"production" => production.fetch("id"), "alpha" => alpha_retry.fetch("id")}, "alpha_retry" => alpha_retry, "alpha_retry_predecessor" => predecessor}) + "\n")'
+          bundle exec ruby fastlane/bin/sa-release update-manifest \
+            --manifest retry-archive/manifest.json \
+            --state cloud_running \
+            --merge retry-evidence.json >/dev/null
+          cp production-cloud-run.json alpha-retry.json retry-evidence.json retry-archive/
+          Scripts/archive-release-to-ghcr.sh push "${{ steps.release.outputs.archive_ref }}" retry-archive > retry-archive-evidence.json
+
+      - name: Arm event-driven artifact publication for the exact Alpha retry
+        id: artifact_wake
+        env:
+          GITHUB_REPOSITORY_ID: ${{ github.repository_id }}
+          RELEASE_TAG: ${{ inputs.beta_tag }}
+          SA_RELEASE_GITHUB_APP_CLIENT_ID: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          SA_RELEASE_GITHUB_APP_PRIVATE_KEY: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+        run: Scripts/release-artifact-wake-state.sh arm "${RELEASE_TAG}"
+
+      - name: Preserve a recoverable Alpha handoff when wake-state arming fails
+        if: >-
+          (failure() || cancelled()) &&
+          steps.retry_archive.outcome == 'success' &&
+          steps.artifact_wake.outcome != 'success'
+        env:
+          ARCHIVE_REFERENCE: ${{ steps.release.outputs.archive_ref }}
+          RELEASE_TAG: ${{ inputs.beta_tag }}
+        run: |
+          {
+            echo "### Alpha artifact wake-state recovery required"
+            echo "- The exact \`${RELEASE_TAG}\` retry handoff remains \`cloud_running\` in \`${ARCHIVE_REFERENCE}\`."
+            echo "- The existing beta prerelease and durable archive were not marked terminal or replaced."
+            echo "- Retry this workflow or manually dispatch Release Artifact Publisher for this exact tag."
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Record asynchronous Alpha retry handoff
+        run: |
+          {
+            echo "### Alpha-only beta recovery"
+            echo "- Tag: \`${{ inputs.beta_tag }}\` (unchanged)"
+            echo "- Production build: \`${{ steps.release.outputs.build }}\` (unchanged)"
+            echo "- Exact Alpha retry run: \`${{ steps.alpha_retry.outputs.id }}\`"
+            echo "- Private archive: \`${{ steps.release.outputs.archive_ref }}\`"
+            echo "- This runner is complete; Xcode Cloud completion checks will wake Release Artifact Publisher, with a gated schedule as recovery only."
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Mint release mutation token for failure annotation
+        if: >-
+          (failure() || cancelled()) &&
+          steps.authorization.outputs.authorized == 'true' &&
+          steps.release.outputs.validated == 'true' &&
+          (steps.retry_archive.outcome != 'success' || steps.artifact_wake.outcome == 'success')
+        id: failure_release_token
+        continue-on-error: true
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: Sequel-Ace
+          repositories: Sequel-Ace
+          permission-contents: write
+          permission-workflows: write
+
+      - name: Document transient Alpha retry failure without replacing the handoff
+        if: >-
+          (failure() || cancelled()) &&
+          steps.authorization.outputs.authorized == 'true' &&
+          steps.release.outputs.validated == 'true' &&
+          (steps.retry_archive.outcome != 'success' || steps.artifact_wake.outcome == 'success')
+        continue-on-error: true
+        env:
+          BETA_TAG: ${{ inputs.beta_tag }}
+          RELEASE_COMMIT: ${{ inputs.expected_commit }}
+          RELEASE_MUTATION_TOKEN: ${{ steps.failure_release_token.outputs.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${RELEASE_MUTATION_TOKEN}" ]]; then
+            echo "The durable failed-Alpha handoff was left unchanged; GitHub annotation was skipped because the narrow mutation token was unavailable." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+          export GH_TOKEN="${RELEASE_MUTATION_TOKEN}"
+          gh release view "${BETA_TAG}" --json body --jq .body > retry-failed-release-body.md
+          if ! grep -Fq "Workflow evidence: ${RUN_URL}" retry-failed-release-body.md; then
+            bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
+              --tag "${BETA_TAG}" \
+              --target-sha "${RELEASE_COMMIT}" >/dev/null
+            {
+              echo
+              echo "Alpha-only recovery attempt stopped; the beta tag and existing artifacts were not replaced."
+              echo "Workflow evidence: ${RUN_URL}"
+            } >> retry-failed-release-body.md
+            gh release edit "${BETA_TAG}" --verify-tag --target "${RELEASE_COMMIT}" --prerelease --latest=false --notes-file retry-failed-release-body.md
+            bundle exec ruby fastlane/bin/sa-release github-verify-release-tag \
+              --tag "${BETA_TAG}" \
+              --target-sha "${RELEASE_COMMIT}" >/dev/null
+          fi
+          echo "The exact durable failed-Alpha handoff was left unchanged so a later authorized retry can reuse it." >> "${GITHUB_STEP_SUMMARY}"

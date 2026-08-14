@@ -79,7 +79,6 @@
 #import "SPFavoritesOutlineView.h"
 #import "SPSSHTunnel.h"
 #import "SPHelpViewerClient.h"
-#import "SPHelpViewerController.h"
 #import "SPBundleManager.h"
 
 #import "sequel-ace-Swift.h"
@@ -482,12 +481,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     [self updateWindowTitle:self];
 
     NSString *serverDisplayName = [[self.parentWindowController window] title];
-    NSUserNotification *notification = [[NSUserNotification alloc] init];
-    notification.title = @"Connected";
-    notification.informativeText=[NSString stringWithFormat:NSLocalizedString(@"Connected to %@", @"description for connected notification"), serverDisplayName];
-    notification.soundName = NSUserNotificationDefaultSoundName;
-
-    [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+    [SANotificationCenter.shared postNotificationWithTitle:@"Connected" body:[NSString stringWithFormat:NSLocalizedString(@"Connected to %@", @"description for connected notification"), serverDisplayName]];
 
     // Init Custom Query editor with the stored queries in a spf file if given.
     [spfDocData setObject:@NO forKey:@"save_editor_content"];
@@ -1550,12 +1544,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [pb setString:createSyntax forType:NSPasteboardTypeString];
 
         // Table syntax copied notification
-        NSUserNotification *notification = [[NSUserNotification alloc] init];
-        notification.title = @"Syntax Copied";
-        notification.informativeText=[NSString stringWithFormat:NSLocalizedString(@"Syntax for %@ table copied", @"description for table syntax copied notification"), [self table]];
-        notification.soundName = NSUserNotificationDefaultSoundName;
-
-        [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+        [SANotificationCenter.shared postNotificationWithTitle:@"Syntax Copied" body:[NSString stringWithFormat:NSLocalizedString(@"Syntax for %@ table copied", @"description for table syntax copied notification"), [self table]]];
 
         return;
     }
@@ -1958,12 +1947,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [pb setString:createSyntax forType:NSPasteboardTypeString];
 
         // Table syntax copied notification
-        NSUserNotification *notification = [[NSUserNotification alloc] init];
-        notification.title = @"Syntax Copied";
-        notification.informativeText=[NSString stringWithFormat:NSLocalizedString(@"Syntax for %@ table copied", @"description for table syntax copied notification"), [self table]];
-        notification.soundName = NSUserNotificationDefaultSoundName;
-
-        [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+        [SANotificationCenter.shared postNotificationWithTitle:@"Syntax Copied" body:[NSString stringWithFormat:NSLocalizedString(@"Syntax for %@ table copied", @"description for table syntax copied notification"), [self table]]];
     }
 }
 
@@ -2130,11 +2114,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     _isConnected = NO;
 
     // Disconnected notification
-    NSUserNotification *notification = [[NSUserNotification alloc] init];
-    notification.title = @"Disconnected";
-    notification.soundName = NSUserNotificationDefaultSoundName;
-
-    [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+    [SANotificationCenter.shared postNotificationWithTitle:@"Disconnected" body:nil];
 }
 
 /**
@@ -3322,10 +3302,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         SPMainToolbarTableRelations,
         SPMainToolbarTableTriggers,
         SPMainToolbarUserManager,
-        NSToolbarCustomizeToolbarItemIdentifier,
         NSToolbarFlexibleSpaceItemIdentifier,
-        NSToolbarSpaceItemIdentifier,
-        NSToolbarSeparatorItemIdentifier
+        NSToolbarSpaceItemIdentifier
     ];
 }
 

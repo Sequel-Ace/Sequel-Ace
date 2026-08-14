@@ -750,12 +750,7 @@
 	[[tableDocumentInstance databaseStructureRetrieval] queryDbStructureInBackgroundWithUserInfo:@{@"forceUpdate" : @YES}];
 
 	// Import finished notification
-	NSUserNotification *notification = [[NSUserNotification alloc] init];
-	notification.title = @"Import Finished";
-	notification.informativeText=[NSString stringWithFormat:NSLocalizedString(@"Finished importing %@", @"description for finished importing notification"), [filename lastPathComponent]];
-	notification.soundName = NSUserNotificationDefaultSoundName;
-
-	[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+	[SANotificationCenter.shared postNotificationWithTitle:@"Import Finished" body:[NSString stringWithFormat:NSLocalizedString(@"Finished importing %@", @"description for finished importing notification"), [filename lastPathComponent]]];
 
 #ifdef DEBUG
 	endDate = [NSDate date];
@@ -1260,12 +1255,7 @@
 	}
 	
 	// Import finished notification
-	NSUserNotification *notification = [[NSUserNotification alloc] init];
-	notification.title = @"Import Finished";
-	notification.informativeText=[NSString stringWithFormat:NSLocalizedString(@"Finished importing %@", @"description for finished importing notification"), [filename lastPathComponent]];
-	notification.soundName = NSUserNotificationDefaultSoundName;
-
-	[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+	[SANotificationCenter.shared postNotificationWithTitle:@"Import Finished" body:[NSString stringWithFormat:NSLocalizedString(@"Finished importing %@", @"description for finished importing notification"), [filename lastPathComponent]]];
 
 	SPMainQSync(^{
 

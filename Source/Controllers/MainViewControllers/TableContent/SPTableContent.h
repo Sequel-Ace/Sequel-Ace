@@ -158,6 +158,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 	IBOutlet NSView *tableContentContainer;
 
 	BOOL showFilterRuleEditor;
+	BOOL ruleEditorVisibilityHasBeenApplied;
 
 	NSDictionary *filtersToRestore;
 

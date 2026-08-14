@@ -36,8 +36,8 @@ Deployment target is macOS 12+.
   `NSKeyedUnarchiver`, so removing the fallback silently wipes user settings.
 - **Web content:** never use legacy WebKit (`WebView`). Use `WKWebView` — via
   `SAWebView` (SwiftUI `NSViewRepresentable` wrapper) for embedded views, and
-  `SAPrintUtility` / `SAHTMLPrintRenderer` for print flows. The last legacy
-  `WebView` island is `SPHelpViewerController` (migration planned).
+  `SAPrintUtility` / `SAHTMLPrintRenderer` for print flows. No legacy `WebView`
+  remains: the last island, the MySQL help viewer, is now `SAHelpViewer*`.
 - **Persisted-format compatibility:** favorites plist, `.spf` documents, and
   NSUserDefaults blobs written by old versions must stay readable. When
   touching serialization, prove old data still decodes with a fixture test —
@@ -48,9 +48,12 @@ Deployment target is macOS 12+.
   pasteboards etc.); the `.spf` session paths in SPDatabaseDocument
   deliberately use non-secure keyed archiving under the `"data"` key — that is
   the cross-version wire format, don't "upgrade" it without a migration plan.
-- Known remaining deprecation group (deserves its own PR):
-  `NSUserNotification` → UserNotifications.framework (4 files). The wider
-  warning burn-down is tracked in `.claude/warnings-elimination-plan.md`.
+- **User notifications:** post via `SANotificationCenter`
+  (`Source/Other/Utility/SANotificationCenter.swift`), never the deprecated
+  `NSUserNotification` API. The wider warning burn-down (remaining: AppKit
+  deprecation batch, Swift 6 readiness, old drag-API delegate methods, and
+  the deferred SecKeychain/NSConnection projects) is tracked in
+  `docs/development/warnings-elimination-plan.md`.
 
 ## Repo layout (abridged)
 
@@ -61,7 +64,7 @@ Deployment target is macOS 12+.
 - `UnitTests/` — the "Unit Tests" target's sources
 - `Frameworks/SPMySQLFramework/` — the MySQL wire-protocol framework (separate
   Xcode project, its own tests)
-- `.claude/modernization-followup-plan.md` — the detailed modernization
+- `docs/development/modernization-followup-plan.md` — the detailed modernization
   roadmap: what's done (with rationale), what's next, and known sharp edges.
   Read it before starting refactoring work.
 

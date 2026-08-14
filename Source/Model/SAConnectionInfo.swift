@@ -89,6 +89,20 @@ struct SAConnectionInfo {
     var sshKeyLocationEnabled: Int = 0
     var sshKeyLocation: String = ""
     var sshPort: String = ""
+
+    /// The explicit command-line port override. A blank value returns zero so
+    /// OpenSSH can resolve the port from its configuration; invalid values fail.
+    var sshPortOverride: Int? {
+        let trimmedPort = sshPort.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedPort.isEmpty else {
+            return 0
+        }
+        guard let port = Int(trimmedPort), (1...65535).contains(port) else {
+            return nil
+        }
+        return port
+    }
+
     var sshRemoteSocketPath: String = ""
 
     // MARK: Keychain
