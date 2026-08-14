@@ -504,8 +504,9 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
    OpenSSL — see warnings plan). Step 8 (Swift 6 concurrency) is ✅ done: the
    three blocking-wrapper/observer-token sites now go through
    `SAAsyncResultBox` and `NotificationToken`, leaving no concurrency
-   warnings. Step 9 (deprecated drag-API delegate methods, ~25 warnings) is
-   the last mechanical batch and wants manual drag-drop verification.
+   warnings. Step 9 (deprecated drag-API delegate methods, **42** measured on
+   a clean build, not the ~25 originally estimated) is the last mechanical
+   batch and wants manual drag-drop verification per file.
 6. **Phase E (table content / custom query services)** — explicitly gated on
    the PostgreSQL abstraction decision (#2482/#2493): if it lands, extract
    against `id<SPDatabaseConnection>`; starting before that decision risks

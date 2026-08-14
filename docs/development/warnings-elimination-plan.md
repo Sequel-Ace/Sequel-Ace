@@ -212,7 +212,7 @@ Execution notes:
   neither a result nor an error is recorded: it still returns nil without
   touching the caller's error pointer.
 
-## Step 9 — "Implementing deprecated method" batch — ~25 warnings
+## Step 9 — "Implementing deprecated method" batch — 42 warnings (measured)
 
 Implementations of deprecated delegate signatures (mostly the pre-10.7
 NSTableView drag API `tableView:writeRowsWithIndexes:toPasteboard:` and
@@ -224,6 +224,9 @@ SPExportController, SPAppController, SPEditorPreferencePane.
 Adopt `NSPasteboardWriting`/`tableView:pasteboardWriterForRow:` per file;
 chunk into 2-3 PRs by area (managers / table views / misc). Each needs manual
 drag-drop verification — slowest batch, do last of the mechanical ones.
+
+⚠️ The original "~25" estimate is low: a clean build after step 8 reports **42**
+of these, so plan for 3 PRs rather than 2.
 
 ## Deferred (own projects, not part of this burn-down)
 
@@ -252,8 +255,17 @@ drag-drop verification — slowest batch, do last of the mechanical ones.
 | 4-5 (archiver + notifications) | ~225 |
 | 6 + 7 (help viewer + AppKit batch) | **173 (measured, clean build)** |
 | 8 (Swift 6) | **165 (measured, clean build)** |
-| 9 (deprecated delegate methods) | ~160* |
+| 9 (deprecated delegate methods) | ~123 (165 − 42 measured) |
 
-\* Remainder is dominated by SPKeychain/NSConnection/linker (deferred) and
-multi-target duplicate counting; the issue-navigator number after step 9
-should land near the duplicates-adjusted floor of the deferred items.
+**How these are counted.** Rows through step 5 are the original estimates, read
+off Xcode's issue navigator (which counts a file compiled into several targets
+several times). Rows from step 6 on are measured: `warning:` lines in a clean
+`xcodebuild` log, deduplicated (`sort -u`) — 165 unique lines / 318 raw. Note
+the unique count includes the compiler's caret-continuation lines, which repeat
+a warning's text under the source excerpt: 16 of the 165 are those, so the
+distinct-diagnostic count is nearer **149**. Compare like with like when
+claiming a delta.
+
+After step 9 the remainder is dominated by the deferred projects, measured on
+the same build: SecKeychain 10, tunnel assistant / NSConnection 4, bundled
+OpenSSL + linker 7. That is the realistic floor without taking one of those on.
