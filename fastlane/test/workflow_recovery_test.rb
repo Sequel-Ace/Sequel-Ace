@@ -791,6 +791,7 @@ class WorkflowRecoveryTest < Minitest::Test
     workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
     discovery = workflow.split("  discover:", 2).fetch(1).split("  finalize:", 2).first
     execution = workflow.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
+    manual_discovery = discovery.split('if [[ -n "${REQUESTED_TAG}" ]]', 2).fetch(1).split("          else", 2).first
 
     assert_includes discovery, 'gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${requested_tag_encoded}"'
     assert_includes discovery, '.author.login == "sequel-ace-release-automation[bot]"'
@@ -801,6 +802,7 @@ class WorkflowRecoveryTest < Minitest::Test
     refute_includes discovery, '.tag_name == "production/5.4.0-20105"'
     assert_includes discovery, 'requested_tag_encoded="$(jq -rn --arg value "${REQUESTED_TAG}" \'$value | @uri\')"'
     assert_includes discovery, '(.created_at | fromdateiso8601) as $created'
+    assert_includes manual_discovery, ".draft == false and .prerelease == true"
     assert_includes discovery, '(.author.login == "Jason-Morcos" and .author.id == 10710367 and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601))'
     assert_includes discovery, '$build >= 20109 and $created >= ("2027-08-14T00:00:00Z" | fromdateiso8601)'
     assert_includes execution, 'printf \'%s\\n\' "${REQUESTED_TAG}" > production-candidates.txt'
@@ -978,9 +980,9 @@ class WorkflowRecoveryTest < Minitest::Test
     discovery = workflow.split("  discover:", 2).fetch(1).split("  finalize:", 2).first
     execution = workflow.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
 
-    discovery_listing = discovery.index("gh api --paginate")
-    discovery_prerelease_filter = discovery.index(".prerelease == true")
-    discovery_production_filter = discovery.index('.tag_name | test("^production/')
+    discovery_listing = discovery.index('candidates="$(gh api --paginate')
+    discovery_prerelease_filter = discovery.index(".prerelease == true", discovery_listing)
+    discovery_production_filter = discovery.index('.tag_name | test("^production/', discovery_listing)
     assert discovery_listing
     assert discovery_prerelease_filter
     assert discovery_production_filter

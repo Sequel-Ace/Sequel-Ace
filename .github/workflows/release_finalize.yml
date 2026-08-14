@@ -85,8 +85,11 @@ jobs:
                 (.tag_name | capture("-(?<build>[1-9][0-9]*)$").build | tonumber) as $build |
                 (.created_at | fromdateiso8601) as $created |
                 select(
-                  (.author.login == "Jason-Morcos" and .author.id == 10710367 and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601)) or
-                  ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and $build >= 20109 and $created >= ("2027-08-14T00:00:00Z" | fromdateiso8601))
+                  .draft == false and .prerelease == true and
+                  (
+                    (.author.login == "Jason-Morcos" and .author.id == 10710367 and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601)) or
+                    ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and $build >= 20109 and $created >= ("2027-08-14T00:00:00Z" | fromdateiso8601))
+                  )
                 ) |
                 .tag_name')"
             [[ "${candidates}" == "${REQUESTED_TAG}" ]] || { echo "Requested release does not have authorized publisher provenance." >&2; exit 1; }
