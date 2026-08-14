@@ -75,21 +75,27 @@ import AppKit
 
         let row = typeAhead.bestMatch(appending: characters, candidates: searchableRowTitles(), atTime: event.timestamp)
 
+        pendingSelectionTimer?.invalidate()
+        pendingSelectionTimer = nil
+
         if row != NSNotFound {
             pendingSelectionRow = row
             scrollRowToVisible(row)
-        }
 
-        // Selecting a row synchronously starts loading its table, and while
-        // that load runs no row is selectable — an immediate selection would
-        // block the characters still to come from refining the match.
-        // Deferring the commit until the sequence settles also loads only the
-        // final match instead of every intermediate one.
-        if pendingSelectionRow != NSNotFound {
-            pendingSelectionTimer?.invalidate()
+            // Selecting a row synchronously starts loading its table, and while
+            // that load runs no row is selectable — an immediate selection would
+            // block the characters still to come from refining the match.
+            // Deferring the commit until the sequence settles also loads only the
+            // final match instead of every intermediate one.
             pendingSelectionTimer = Timer.scheduledTimer(withTimeInterval: Self.typeAheadResetInterval, repeats: false) { [weak self] _ in
                 self?.commitPendingSelection()
             }
+        }
+        else {
+            // The refined search string matches nothing; the row an earlier
+            // prefix matched is no longer what was asked for and must not be
+            // committed once typing stops.
+            pendingSelectionRow = NSNotFound
         }
 
         showSearchFeedback(typeAhead.currentSearchString, matched: row != NSNotFound)
@@ -103,9 +109,12 @@ import AppKit
         let row = pendingSelectionRow
         pendingSelectionRow = NSNotFound
 
-        // Respect the delegate's gating (e.g. selection is disallowed while
-        // the document is running a task), as a user-initiated selection would.
+        // Pass the same delegate gates a user-initiated selection would:
+        // selectionShouldChange(in:) rejects the change while the document is
+        // running a task or has uncommitted edits, shouldSelectRow: rejects
+        // individual rows.
         guard row != NSNotFound, row < numberOfRows,
+              delegate?.selectionShouldChange?(in: self) ?? true,
               delegate?.tableView?(self, shouldSelectRow: row) ?? true
         else {
             return
