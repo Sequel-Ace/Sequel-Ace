@@ -26,7 +26,7 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
       @release
     end
 
-    def release_feed_page
+    def public_release_feed_page
       [@release]
     end
 
@@ -64,6 +64,18 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
     with_handoff(assets: [incompatible]) do |manifest, notes, marker, output, client|
       assert_equal 1, run_cli(manifest: manifest, notes: notes, marker: marker, output: output, client: client)
       assert_equal "release asset integrity failure\n", File.read(marker)
+      refute_path_exists output
+    end
+  end
+
+  def test_anonymous_rate_limit_is_retryable_and_does_not_write_an_integrity_marker
+    with_handoff(assets: [asset]) do |manifest, notes, marker, output, client|
+      client.define_singleton_method(:public_release_feed_page) do
+        raise SequelAceRelease::APIError, "GitHub API returned HTTP 403: API rate limit exceeded"
+      end
+
+      assert_equal 1, run_cli(manifest: manifest, notes: notes, marker: marker, output: output, client: client)
+      refute_path_exists marker
       refute_path_exists output
     end
   end

@@ -47,19 +47,32 @@ module SequelAceRelease
       }
     GRAPHQL
 
-    def initialize(token:, repository: Config::REPOSITORY, transport: nil, upload_transport: nil)
+    def initialize(
+      token:,
+      repository: Config::REPOSITORY,
+      transport: nil,
+      public_transport: nil,
+      upload_transport: nil
+    )
       raise ValidationError, "GitHub token is required" if token.to_s.empty?
 
       @token = token
       @repository = repository
+      common_headers = {
+        "Accept" => "application/vnd.github+json",
+        "X-GitHub-Api-Version" => "2022-11-28",
+        "User-Agent" => "sequel-ace-release-tool"
+      }
       @transport = transport || HTTPTransport.new(
         base_url: API_URL,
-        default_headers: {
-          "Accept" => "application/vnd.github+json",
-          "Authorization" => "Bearer #{token}",
-          "X-GitHub-Api-Version" => "2022-11-28",
-          "User-Agent" => "sequel-ace-release-tool"
-        }
+        default_headers: common_headers.merge("Authorization" => "Bearer #{token}")
+      )
+      # Shipped Sequel Ace versions read this endpoint without credentials.
+      # Keep this transport deliberately anonymous so drafts and other
+      # credential-dependent response differences cannot satisfy the gate.
+      @public_transport = public_transport || HTTPTransport.new(
+        base_url: API_URL,
+        default_headers: common_headers
       )
       @upload_transport = upload_transport
     end
@@ -68,11 +81,11 @@ module SequelAceRelease
       paginate("/repos/#{@repository}/releases", { "per_page" => 100 })
     end
 
-    def release_feed_page(per_page: 30)
+    def public_release_feed_page(per_page: 30)
       size = Integer(per_page)
       raise ValidationError, "GitHub release feed page size must be between 1 and 100" unless (1..100).cover?(size)
 
-      response = @transport.request(
+      response = @public_transport.request(
         "GET",
         "/repos/#{@repository}/releases",
         query: { "per_page" => size, "page" => 1 }

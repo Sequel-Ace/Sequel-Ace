@@ -711,7 +711,7 @@ module SequelAceRelease
       )
       result = validator.validate
       if result.fetch("compatibility_profile") == GitHubReleasePayload::LEGACY_UPDATER_PROFILE
-        result["release_feed_entries_verified"] = validator.validate_legacy_feed!(client.release_feed_page)
+        result["release_feed_entries_verified"] = validator.validate_legacy_feed!(client.public_release_feed_page)
       end
       emit(result.merge(
         "tag" => options[:tag],
@@ -1208,7 +1208,7 @@ module SequelAceRelease
         id: release.dig("author", "id"),
         created_at: release["created_at"]
       )
-      verify_release_assets!(release, data)
+      verify_release_assets!(release, data, github: client)
       final_title = ReleaseNaming.new(
         channel: "production",
         version: data.fetch("target_version"),
@@ -1266,7 +1266,7 @@ module SequelAceRelease
              )
         raise ValidationError, "GitHub finalization readback did not match the requested release"
       end
-      verify_release_assets!(release, data)
+      verify_release_assets!(release, data, github: client)
       latest_release = client.latest_release
       unless latest_release["id"] == release["id"] && latest_release["tag_name"] == data.fetch("tag") &&
              latest_release["name"] == final_title && latest_release["draft"] == false &&
@@ -1528,19 +1528,23 @@ module SequelAceRelease
       end
     end
 
-    def verify_release_assets!(release, manifest)
+    def verify_release_assets!(release, manifest, github:)
       actual_notes_sha = Digest::SHA256.hexdigest(release.fetch("body").to_s)
       unless actual_notes_sha == manifest.fetch("release_notes_sha256")
         raise ValidationError, "GitHub release notes no longer match the archived manifest"
       end
 
-      status = GitHubReleasePayload.new(
+      validator = GitHubReleasePayload.new(
         release: release,
         expected_digests: release_asset_sha256s!(manifest)
-      ).validate
+      )
+      status = validator.validate
       unless status.fetch("ready")
         raise ValidationError,
               "GitHub release is missing artifacts: #{status.fetch('missing_assets').join(', ')}"
+      end
+      if status.fetch("compatibility_profile") == GitHubReleasePayload::LEGACY_UPDATER_PROFILE
+        validator.validate_legacy_feed!(github.public_release_feed_page)
       end
       true
     end

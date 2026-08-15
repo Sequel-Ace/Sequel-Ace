@@ -10,7 +10,8 @@ class FinalizationAssetsTest < Minitest::Test
   end
 
   def test_exact_release_body_asset_set_and_archived_checksum_pass
-    assert @cli.send(:verify_release_assets!, release, manifest)
+    value = release
+    assert @cli.send(:verify_release_assets!, value, manifest, github: public_feed_client(value))
   end
 
   def test_unexpected_public_asset_aborts
@@ -21,7 +22,7 @@ class FinalizationAssetsTest < Minitest::Test
     )
 
     error = assert_raises(SequelAceRelease::ValidationError) do
-      @cli.send(:verify_release_assets!, value, manifest)
+      @cli.send(:verify_release_assets!, value, manifest, github: public_feed_client(value))
     end
     assert_includes error.message, "unexpected artifacts"
   end
@@ -31,7 +32,8 @@ class FinalizationAssetsTest < Minitest::Test
     value["verification"] = {}
 
     error = assert_raises(SequelAceRelease::ValidationError) do
-      @cli.send(:verify_release_assets!, release, value)
+      current_release = release
+      @cli.send(:verify_release_assets!, current_release, value, github: public_feed_client(current_release))
     end
     assert_includes error.message, "missing artifact checksums"
   end
@@ -41,7 +43,8 @@ class FinalizationAssetsTest < Minitest::Test
     value["verification"]["duplicate"] = value["verification"].fetch("production").dup
 
     error = assert_raises(SequelAceRelease::ValidationError) do
-      @cli.send(:verify_release_assets!, release, value)
+      current_release = release
+      @cli.send(:verify_release_assets!, current_release, value, github: public_feed_client(current_release))
     end
     assert_includes error.message, "duplicate artifact checksums"
   end
@@ -64,6 +67,7 @@ class FinalizationAssetsTest < Minitest::Test
     github = Object.new
     github.define_singleton_method(:ref_sha) { |_ref| "d" * 40 }
     github.define_singleton_method(:release_by_tag) { |_tag| release_data }
+    github.define_singleton_method(:public_release_feed_page) { [release_data] }
     github.define_singleton_method(:latest_release) { { "id" => 99, "tag_name" => "production/5.3.1-20104" } }
     github.define_singleton_method(:update_release) { |**_options| raise "validate-only mutated GitHub" }
 
@@ -99,9 +103,14 @@ class FinalizationAssetsTest < Minitest::Test
     app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
     release_data = release
     update_options = nil
+    feed_reads = 0
     github = Object.new
     github.define_singleton_method(:ref_sha) { |_ref| "d" * 40 }
     github.define_singleton_method(:release_by_tag) { |_tag| release_data }
+    github.define_singleton_method(:public_release_feed_page) do
+      feed_reads += 1
+      [release_data]
+    end
     github.define_singleton_method(:latest_release) { release_data }
     github.define_singleton_method(:update_release) do |**options|
       update_options = options
@@ -137,7 +146,31 @@ class FinalizationAssetsTest < Minitest::Test
         },
         update_options
       )
+      assert_equal 2, feed_reads
     end
+  end
+
+  def test_finalization_aborts_if_the_anonymous_feed_becomes_legacy_incompatible
+    live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    app_store = Object.new
+    app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
+    app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
+    release_data = release
+    incompatible = release.merge(
+      "id" => 99,
+      "tag_name" => "production/5.3.1-20104",
+      "author" => release.fetch("author").merge("login" => "future-release-bot")
+    )
+    updates = 0
+    github = Object.new
+    github.define_singleton_method(:ref_sha) { |_ref| "d" * 40 }
+    github.define_singleton_method(:release_by_tag) { |_tag| release_data }
+    github.define_singleton_method(:public_release_feed_page) { [release_data, incompatible] }
+    github.define_singleton_method(:latest_release) { release_data }
+    github.define_singleton_method(:update_release) { |**_options| updates += 1 }
+
+    assert_equal 1, run_finalizer(app_store: app_store, github: github)
+    assert_equal 0, updates
   end
 
   def test_finalization_rechecks_the_tag_after_the_public_transition
@@ -361,6 +394,10 @@ class FinalizationAssetsTest < Minitest::Test
   end
 
   def run_finalizer(app_store:, github:)
+    unless github.respond_to?(:public_release_feed_page)
+      compatible_release = release
+      github.define_singleton_method(:public_release_feed_page) { [compatible_release] }
+    end
     Dir.mktmpdir do |directory|
       manifest_path = File.join(directory, "manifest.json")
       release_manifest.write(manifest_path)
@@ -374,6 +411,12 @@ class FinalizationAssetsTest < Minitest::Test
           ])
         end
       end
+    end
+  end
+
+  def public_feed_client(value)
+    Object.new.tap do |client|
+      client.define_singleton_method(:public_release_feed_page) { [value] }
     end
   end
 

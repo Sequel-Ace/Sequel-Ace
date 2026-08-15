@@ -28,21 +28,31 @@ class GitHubClientTest < Minitest::Test
     assert_nil transport.requests.last[:query]
   end
 
-  def test_reads_the_same_bounded_release_feed_page_as_shipped_clients
-    transport = FakeTransport.new([
+  def test_reads_the_same_bounded_anonymous_release_feed_page_as_shipped_clients
+    authenticated_transport = FakeTransport.new([])
+    public_transport = FakeTransport.new([
       http_response(body: [{ "tag_name" => "production/5.4.0-20109" }])
     ])
-    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+    client = SequelAceRelease::GitHubClient.new(
+      token: "token",
+      transport: authenticated_transport,
+      public_transport: public_transport
+    )
 
-    assert_equal 1, client.release_feed_page.length
-    assert_equal({ "per_page" => 30, "page" => 1 }, transport.requests.first[:query])
+    assert_equal 1, client.public_release_feed_page.length
+    assert_empty authenticated_transport.requests
+    assert_equal({ "per_page" => 30, "page" => 1 }, public_transport.requests.first[:query])
   end
 
   def test_rejects_a_malformed_release_feed_page
-    transport = FakeTransport.new([http_response(body: { "message" => "not an array" })])
-    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+    public_transport = FakeTransport.new([http_response(body: { "message" => "not an array" })])
+    client = SequelAceRelease::GitHubClient.new(
+      token: "token",
+      transport: FakeTransport.new([]),
+      public_transport: public_transport
+    )
 
-    error = assert_raises(SequelAceRelease::APIError) { client.release_feed_page }
+    error = assert_raises(SequelAceRelease::APIError) { client.public_release_feed_page }
 
     assert_includes error.message, "malformed response"
   end

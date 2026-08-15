@@ -178,7 +178,7 @@ version, build floor, wall-clock date, or guessed migration state:
 
 - `legacy_updater_v1` applies when the release author is one of the two users
   represented by the shipped decoder (`Jason-Morcos` or `Kaspik`). It validates
-  the same bounded 30-release feed page requested by shipped clients, including
+  the same bounded, anonymous 30-release feed page requested by shipped clients, including
   every release, author, and asset primitive required by that decoder; exact
   enum-constrained identity values; a JSON-null label; ZIP content type;
   uploaded state; and the target asset's manifest checksum. Additional GitHub
@@ -207,12 +207,19 @@ bounded manual compatibility handoff:
    uploads the exact manifest-named ZIP or ZIPs. This is the last-resort UI
    step; neither the publisher PAT nor a browser session is stored in Actions.
 4. The local release skill performs a supported REST read-back and requires the
-   exact release/tag to appear in a fully legacy-decodable 30-release feed,
-   complete author/uploader shapes, a JSON-null asset label, `application/zip`,
-   `uploaded`, and every manifest SHA-256. Only then may it manually dispatch
-   `release_publish.yml` for the exact tag.
+   exact release/tag to appear in a fully legacy-decodable anonymous 30-release
+   feed, complete author/uploader shapes, a JSON-null asset label,
+   `application/zip`, `uploaded`, and every manifest SHA-256. Only then may it
+   manually dispatch `release_publish.yml` for the exact tag.
 5. App Store submission, finalization, and wake-state clearing remain blocked
    until the same compatibility validator passes again in Actions.
+
+The compatibility feed request is intentionally unauthenticated because an
+authorized repository credential can see drafts that shipped clients cannot.
+An anonymous GitHub rate limit, transport error, or malformed response is a
+retryable read failure: do not write the terminal integrity marker and do not
+mutate the release. A successfully read but incompatible payload is a terminal
+integrity failure and remains fail-closed.
 
 A supported API-only replacement may store the ZIP on a separate durable
 public host and leave the primary GitHub release asset-free, but that changes

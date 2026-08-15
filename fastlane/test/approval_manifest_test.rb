@@ -210,11 +210,13 @@ class ApprovalManifestTest < Minitest::Test
       assets: [github_release_asset(name: "Sequel-Ace-5.3.2.zip", digest: digest)]
     )
     cli = SequelAceRelease::CLI.new(out: StringIO.new, err: StringIO.new, env: {})
+    github = Object.new
+    github.define_singleton_method(:public_release_feed_page) { [release] }
 
-    assert cli.send(:verify_release_assets!, release, manifest)
+    assert cli.send(:verify_release_assets!, release, manifest, github: github)
     release["body"] = "changed"
     assert_raises(SequelAceRelease::ValidationError) do
-      cli.send(:verify_release_assets!, release, manifest)
+      cli.send(:verify_release_assets!, release, manifest, github: github)
     end
   end
 
