@@ -45,6 +45,7 @@ module SequelAceRelease
       when "github-verify-release-tag" then github_verify_release_tag(argv)
       when "github-release-publisher-mode" then github_release_publisher_mode(argv)
       when "github-create-release" then github_create_release(argv)
+      when "github-public-assets-status" then github_public_assets_status(argv)
       when "github-upload-asset" then github_upload_asset(argv)
       when "validate-publish-handoff" then validate_publish_handoff(argv)
       when "validate-forward-recovery" then validate_forward_recovery(argv)
@@ -648,6 +649,11 @@ module SequelAceRelease
       unless release["id"] == handoff.fetch("github_release_id")
         raise ValidationError, "release identity changed before artifact upload"
       end
+      if LegacyReleasePayload.required?(release)
+        raise ValidationError,
+              "GitHub API asset uploads are disabled for the legacy-client compatibility epoch; " \
+              "upload through the Jason-Morcos GitHub web session and run github-public-assets-status"
+      end
       begin
         asset_name = options[:name] || File.basename(options[:file])
         expected_sha256 = verified_release_asset_sha256!(
@@ -666,6 +672,46 @@ module SequelAceRelease
         raise
       end
       emit(response, options[:output])
+    end
+
+    def github_public_assets_status(arguments)
+      options = {}
+      parser = OptionParser.new do |value|
+        value.banner = "Usage: sa-release github-public-assets-status --tag TAG --manifest FILE --notes FILE [--integrity-failure-marker FILE]"
+        value.on("--tag TAG") { |item| options[:tag] = item }
+        value.on("--manifest FILE") { |item| options[:manifest] = item }
+        value.on("--notes FILE") { |item| options[:notes] = item }
+        value.on("--integrity-failure-marker FILE") { |item| options[:integrity_failure_marker] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end
+      parser.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :tag, :manifest, :notes)
+
+      client = github_client
+      manifest = Manifest.read(options[:manifest])
+      handoff = PublishHandoff.new(github: client).validate(
+        manifest: manifest,
+        tag: options[:tag],
+        app_store_notes: File.read(options[:notes])
+      )
+      raise ValidationError, "release handoff is not eligible for public asset validation" unless handoff.fetch("eligible")
+
+      release = client.release_by_tag(options[:tag])
+      unless release["id"] == handoff.fetch("github_release_id")
+        raise ValidationError, "release identity changed before public asset validation"
+      end
+      result = LegacyReleasePayload.new(
+        release: release,
+        expected_digests: release_asset_sha256s!(manifest.to_h)
+      ).validate
+      emit(result.merge(
+        "tag" => options[:tag],
+        "github_release_id" => release.fetch("id")
+      ), options[:output])
+    rescue IntegrityError
+      write_integrity_failure_marker(options[:integrity_failure_marker])
+      raise
     end
 
     def cloud_status(arguments)
@@ -1480,32 +1526,37 @@ module SequelAceRelease
         raise ValidationError, "GitHub release notes no longer match the archived manifest"
       end
 
-      expected_names = Array(manifest.fetch("artifact_names"))
-      assets = Array(release["assets"])
-      actual_names = assets.map { |asset| asset["name"] }
-      missing = expected_names - actual_names
-      raise ValidationError, "GitHub release is missing artifacts: #{missing.join(', ')}" unless missing.empty?
-      unexpected = actual_names - expected_names
-      raise ValidationError, "GitHub release has unexpected artifacts: #{unexpected.join(', ')}" unless unexpected.empty?
+      status = LegacyReleasePayload.new(
+        release: release,
+        expected_digests: release_asset_sha256s!(manifest)
+      ).validate
+      unless status.fetch("ready")
+        raise ValidationError,
+              "GitHub release is missing artifacts: #{status.fetch('missing_assets').join(', ')}"
+      end
+      true
+    end
 
+    def release_asset_sha256s!(manifest)
+      expected_names = Array(manifest.fetch("artifact_names"))
       verification = manifest.fetch("verification", {})
       expected_digests = verification.each_with_object({}) do |(_key, value), result|
         next unless value.is_a?(Hash) && value["zip_path"] && value["zip_sha256"]
 
-        result[File.basename(value["zip_path"])] = value["zip_sha256"]
+        name = File.basename(value["zip_path"])
+        raise ValidationError, "private manifest has duplicate artifact checksums for #{name}" if result.key?(name)
+
+        result[name] = value["zip_sha256"].to_s.downcase
       end
       missing_digests = expected_names - expected_digests.keys
       unless missing_digests.empty?
         raise ValidationError, "private manifest is missing artifact checksums: #{missing_digests.join(', ')}"
       end
-      expected_digests.each do |name, digest|
-        unless digest.to_s.match?(/\A[0-9a-f]{64}\z/i)
-          raise ValidationError, "private manifest has a malformed checksum for #{name}"
-        end
-        asset = assets.find { |candidate| candidate["name"] == name }
-        actual = asset && asset["digest"].to_s.delete_prefix("sha256:")
-        raise ValidationError, "GitHub asset checksum mismatch for #{name}" unless actual == digest
+      unexpected_digests = expected_digests.keys - expected_names
+      unless unexpected_digests.empty?
+        raise ValidationError, "private manifest has unexpected artifact checksums: #{unexpected_digests.join(', ')}"
       end
+      expected_digests
     end
 
     def verified_release_asset_sha256!(manifest:, path:, name:)
@@ -1551,7 +1602,7 @@ module SequelAceRelease
       return unless path
 
       FileUtils.mkdir_p(File.dirname(path))
-      File.write(path, "release asset checksum mismatch\n")
+      File.write(path, "release asset integrity failure\n")
     rescue SystemCallError => error
       @err.puts("release tool warning: could not write integrity failure marker (#{error.class})")
     end
@@ -1579,6 +1630,8 @@ module SequelAceRelease
           github-release-publisher-mode
                                      Select a PAT-free initial release publisher epoch
           github-create-release      Create the tag-backed GitHub prerelease
+          github-public-assets-status
+                                     Validate public assets and legacy-client metadata
           github-upload-asset        Upload a verified zip to the prerelease
           validate-publish-handoff   Validate an archived prerelease continuation
           validate-forward-recovery  Validate a preserved forward-only build mismatch

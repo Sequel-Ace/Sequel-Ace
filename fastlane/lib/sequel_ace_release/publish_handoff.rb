@@ -70,7 +70,12 @@ module SequelAceRelease
         unless missing_assets.empty?
           raise ValidationError, "archived release is missing artifacts: #{missing_assets.join(', ')}"
         end
-        verify_asset_digests!(manifest: data, assets: assets, expected_names: expected_assets)
+        expected_digests = verify_asset_digests!(
+          manifest: data,
+          assets: assets,
+          expected_names: expected_assets
+        )
+        LegacyReleasePayload.new(release: release, expected_digests: expected_digests).validate
       end
 
       release_body = release.fetch("body", "").to_s
@@ -175,7 +180,10 @@ module SequelAceRelease
       expected_digests = verification.each_with_object({}) do |(_channel, value), result|
         next unless value.is_a?(Hash) && value["zip_path"] && value["zip_sha256"]
 
-        result[File.basename(value["zip_path"])] = value["zip_sha256"].to_s.downcase
+        name = File.basename(value["zip_path"])
+        raise ValidationError, "private manifest has duplicate artifact checksums for #{name}" if result.key?(name)
+
+        result[name] = value["zip_sha256"].to_s.downcase
       end
       missing = expected_names - expected_digests.keys
       unless missing.empty?
@@ -191,6 +199,7 @@ module SequelAceRelease
         actual = asset&.fetch("digest", "").to_s.delete_prefix("sha256:").downcase
         raise ValidationError, "GitHub asset checksum mismatch for #{name}" unless actual == expected
       end
+      expected_digests
     end
   end
 end

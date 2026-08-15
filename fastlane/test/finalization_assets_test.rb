@@ -15,7 +15,10 @@ class FinalizationAssetsTest < Minitest::Test
 
   def test_unexpected_public_asset_aborts
     value = release
-    value["assets"] << { "name" => "unexpected.zip", "digest" => "sha256:#{'b' * 64}" }
+    value["assets"] << value["assets"].first.merge(
+      "name" => "unexpected.zip",
+      "digest" => "sha256:#{'b' * 64}"
+    )
 
     error = assert_raises(SequelAceRelease::ValidationError) do
       @cli.send(:verify_release_assets!, value, manifest)
@@ -31,6 +34,16 @@ class FinalizationAssetsTest < Minitest::Test
       @cli.send(:verify_release_assets!, release, value)
     end
     assert_includes error.message, "missing artifact checksums"
+  end
+
+  def test_duplicate_manifest_checksum_source_aborts
+    value = manifest
+    value["verification"]["duplicate"] = value["verification"].fetch("production").dup
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      @cli.send(:verify_release_assets!, release, value)
+    end
+    assert_includes error.message, "duplicate artifact checksums"
   end
 
   def test_validate_only_does_not_make_the_public_github_transition
@@ -343,12 +356,29 @@ class FinalizationAssetsTest < Minitest::Test
       "draft" => false,
       "prerelease" => true,
       "body" => @body,
-      "author" => {
-        "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN,
-        "id" => SequelAceRelease::ReleasePublisher::USER_ID
-      },
+      "author" => legacy_author,
       "created_at" => "2026-08-13T00:00:00Z",
-      "assets" => [{ "name" => "Sequel-Ace-5.3.2.zip", "digest" => "sha256:#{@digest}" }]
+      "assets" => [{
+        "name" => "Sequel-Ace-5.3.2.zip",
+        "label" => nil,
+        "uploader" => legacy_author,
+        "content_type" => "application/zip",
+        "state" => "uploaded",
+        "digest" => "sha256:#{@digest}"
+      }]
+    }
+  end
+
+  def legacy_author
+    {
+      "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN,
+      "id" => SequelAceRelease::ReleasePublisher::USER_ID,
+      "node_id" => "MDQ6VXNlcjEwNzEwMzY3",
+      "type" => "User",
+      "following_url" => "https://api.github.com/users/Jason-Morcos/following{/other_user}",
+      "gists_url" => "https://api.github.com/users/Jason-Morcos/gists{/gist_id}",
+      "starred_url" => "https://api.github.com/users/Jason-Morcos/starred{/owner}{/repo}",
+      "events_url" => "https://api.github.com/users/Jason-Morcos/events{/privacy}"
     }
   end
 

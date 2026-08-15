@@ -59,6 +59,15 @@ module SequelAceRelease
       value
     end
 
+    def legacy_client_compatibility_required?(tag:, created_at:)
+      build = tag.to_s[TAG_PATTERN, 1]&.to_i
+      return false unless build && build >= CURRENT_MINIMUM_BUILD
+
+      publication_time(created_at) < USER_PUBLISHER_CUTOFF
+    rescue ArgumentError, TypeError
+      raise ValidationError, "GitHub release publication time is malformed"
+    end
+
     def publication_time(value)
       return value.utc if value.is_a?(Time)
       if value.is_a?(String) && value.match?(ZONED_TIMESTAMP_PATTERN)

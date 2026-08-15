@@ -273,6 +273,20 @@ jobs:
           version="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("version")' "${state_directory}/context.json")"
           build="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("build")' "${state_directory}/context.json")"
           commit="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("release_commit_sha")' "${state_directory}/context.json")"
+          handoff_state="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("state")' "${state_directory}/context.json")"
+          manual_assets_pending="false"
+          if [[ "${handoff_state}" == "artifacts_verified" ]]; then
+            bundle exec ruby fastlane/bin/sa-release github-public-assets-status \
+              --tag "${release_tag}" \
+              --manifest "${archive_directory}/manifest.json" \
+              --notes "${archive_directory}/app-store-notes.txt" \
+              --output "${state_directory}/public-assets.json"
+            public_asset_mode="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("mode")' "${state_directory}/public-assets.json")"
+            public_assets_ready="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("ready")' "${state_directory}/public-assets.json")"
+            if [[ "${public_asset_mode}" == "manual_web_upload" && "${public_assets_ready}" != "true" ]]; then
+              manual_assets_pending="true"
+            fi
+          fi
           production_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("cloud_build_ids", {}).fetch("production", "")' "${state_directory}/context.json")"
           production_arguments=(
             --workflow-id "${SA_PRODUCTION_WORKFLOW_ID}"
@@ -318,7 +332,13 @@ jobs:
 
           failed_component=""
           failure_reason=""
-          if [[ "${production_readiness}" == "failed" ]]; then
+          if [[ "${manual_assets_pending}" == "true" ]]; then
+            selected_action="pending"
+            {
+              echo "Verified artifacts for ${release_tag} are durable in the private archive."
+              echo "A Jason-Morcos GitHub web upload is required before App Store submission; no Mac runner was started."
+            } >> "${GITHUB_STEP_SUMMARY}"
+          elif [[ "${production_readiness}" == "failed" ]]; then
             failed_component="production"
             failure_reason="${production_reason}"
             selected_action="fail"
@@ -360,7 +380,7 @@ jobs:
     timeout-minutes: 15
     environment: sequel-ace-release
     permissions:
-      contents: write
+      contents: read
       packages: write
     env:
       GHCR_REPOSITORY: ${{ vars.SA_GHCR_ARCHIVE || 'ghcr.io/sequel-ace/sequel-ace-release-archive' }}
@@ -585,6 +605,7 @@ jobs:
       context_validated: ${{ steps.disposition.outputs.context_validated }}
       submission_started: ${{ steps.disposition.outputs.submission_started }}
       terminal_failure: ${{ steps.disposition.outputs.terminal_failure }}
+      public_assets_ready: ${{ steps.disposition.outputs.public_assets_ready }}
     steps:
       - name: Revalidate publisher rollout state
         env:
@@ -717,7 +738,7 @@ jobs:
           fi
 
       - name: Download exact Xcode Cloud artifacts
-        if: steps.context.outputs.state != 'archived'
+        if: steps.context.outputs.state == 'cloud_running'
         env:
           ALPHA_RUN_ID: ${{ steps.cloud.outputs.alpha_run_id }}
           PRODUCTION_RUN_ID: ${{ steps.cloud.outputs.production_run_id }}
@@ -740,7 +761,7 @@ jobs:
           fi
 
       - name: Verify, launch, quit, and package distributable apps
-        if: steps.context.outputs.state != 'archived'
+        if: steps.context.outputs.state == 'cloud_running'
         env:
           ALPHA_ASSET: ${{ steps.context.outputs.alpha_asset }}
           PRODUCTION_ASSET: ${{ steps.context.outputs.production_asset }}
@@ -783,34 +804,9 @@ jobs:
             --state artifacts_verified \
             --merge artifact-evidence.json >/dev/null
 
-      - name: Attach checksum-idempotent verified public artifacts
-        if: steps.context.outputs.state != 'archived'
-        env:
-          ALPHA_ASSET: ${{ steps.context.outputs.alpha_asset }}
-          PRODUCTION_ASSET: ${{ steps.context.outputs.production_asset }}
-          RELEASE_CHANNEL: ${{ needs.discover.outputs.channel }}
-          RELEASE_TAG: ${{ needs.discover.outputs.tag }}
-          SA_GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          bundle exec ruby fastlane/bin/sa-release github-upload-asset \
-            --tag "${RELEASE_TAG}" \
-            --file "artifacts/public/${PRODUCTION_ASSET}" \
-            --manifest release-archive/manifest.json \
-            --notes release-archive/app-store-notes.txt \
-            --integrity-failure-marker terminal-artifact-verification-failure >/dev/null
-          if [[ "${RELEASE_CHANNEL}" == "beta" ]]; then
-            bundle exec ruby fastlane/bin/sa-release github-upload-asset \
-              --tag "${RELEASE_TAG}" \
-              --file "artifacts/public/${ALPHA_ASSET}" \
-              --manifest release-archive/manifest.json \
-              --notes release-archive/app-store-notes.txt \
-              --integrity-failure-marker terminal-artifact-verification-failure >/dev/null
-          fi
-
-      - name: Archive verified artifacts privately
-        if: steps.context.outputs.state != 'archived'
-        id: archive
+      - name: Preserve verified artifacts privately before public attachment
+        if: steps.context.outputs.state == 'cloud_running'
+        id: verified_archive
         env:
           ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
           GHCR_TOKEN: ${{ github.token }}
@@ -823,6 +819,101 @@ jobs:
           fi
           /bin/rm -rf release-archive/artifacts
           /usr/bin/ditto artifacts release-archive/artifacts
+          Scripts/archive-release-to-ghcr.sh push "${ARCHIVE_REFERENCE}" release-archive > verified-archive-evidence.json
+          echo "reference=${ARCHIVE_REFERENCE}" >> "${GITHUB_OUTPUT}"
+
+      - name: Inspect public artifact compatibility
+        id: public_assets_before
+        env:
+          RELEASE_TAG: ${{ needs.discover.outputs.tag }}
+          SA_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          bundle exec ruby fastlane/bin/sa-release github-public-assets-status \
+            --tag "${RELEASE_TAG}" \
+            --manifest release-archive/manifest.json \
+            --notes release-archive/app-store-notes.txt \
+            --integrity-failure-marker terminal-artifact-verification-failure \
+            --output public-assets-before.json
+          ruby -rjson -e 'value = JSON.parse(File.read(ARGV.fetch(0))); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("ready=#{value.fetch("ready")}"); file.puts("mode=#{value.fetch("mode")}") }' public-assets-before.json
+
+      - name: Mint exact-target public asset token
+        if: steps.public_assets_before.outputs.mode == 'api_upload' && steps.public_assets_before.outputs.ready != 'true'
+        id: public_asset_token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          owner: Sequel-Ace
+          repositories: Sequel-Ace
+          permission-contents: write
+
+      - name: Attach checksum-idempotent verified public artifacts after the compatibility cutoff
+        if: steps.public_assets_before.outputs.mode == 'api_upload' && steps.public_assets_before.outputs.ready != 'true'
+        env:
+          ALPHA_ASSET: ${{ steps.context.outputs.alpha_asset }}
+          PRODUCTION_ASSET: ${{ steps.context.outputs.production_asset }}
+          RELEASE_CHANNEL: ${{ needs.discover.outputs.channel }}
+          RELEASE_TAG: ${{ needs.discover.outputs.tag }}
+          SA_GITHUB_TOKEN: ${{ steps.public_asset_token.outputs.token }}
+        run: |
+          set -euo pipefail
+          bundle exec ruby fastlane/bin/sa-release github-upload-asset \
+            --tag "${RELEASE_TAG}" \
+            --file "release-archive/artifacts/public/${PRODUCTION_ASSET}" \
+            --manifest release-archive/manifest.json \
+            --notes release-archive/app-store-notes.txt \
+            --integrity-failure-marker terminal-artifact-verification-failure >/dev/null
+          if [[ "${RELEASE_CHANNEL}" == "beta" ]]; then
+            bundle exec ruby fastlane/bin/sa-release github-upload-asset \
+              --tag "${RELEASE_TAG}" \
+              --file "release-archive/artifacts/public/${ALPHA_ASSET}" \
+              --manifest release-archive/manifest.json \
+              --notes release-archive/app-store-notes.txt \
+              --integrity-failure-marker terminal-artifact-verification-failure >/dev/null
+          fi
+
+      - name: Revalidate exact public artifacts
+        id: public_assets
+        env:
+          RELEASE_TAG: ${{ needs.discover.outputs.tag }}
+          SA_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          bundle exec ruby fastlane/bin/sa-release github-public-assets-status \
+            --tag "${RELEASE_TAG}" \
+            --manifest release-archive/manifest.json \
+            --notes release-archive/app-store-notes.txt \
+            --integrity-failure-marker terminal-artifact-verification-failure \
+            --output public-assets.json
+          ruby -rjson -e 'value = JSON.parse(File.read(ARGV.fetch(0))); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("ready=#{value.fetch("ready")}"); file.puts("mode=#{value.fetch("mode")}"); file.puts("missing=#{value.fetch("missing_assets").join(",")}") }' public-assets.json
+
+      - name: Record the required legacy-compatible browser upload handoff
+        if: steps.public_assets.outputs.ready != 'true'
+        env:
+          ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
+          MISSING_ASSETS: ${{ steps.public_assets.outputs.missing }}
+          RELEASE_TAG: ${{ needs.discover.outputs.tag }}
+        run: |
+          {
+            echo "### Legacy-compatible GitHub asset upload required"
+            echo "- Tag: ${RELEASE_TAG}"
+            echo "- Missing assets: ${MISSING_ASSETS}"
+            echo "- Private archive: ${ARCHIVE_REFERENCE}"
+            echo "- Upload through the Jason-Morcos GitHub web release editor, verify a JSON-null label and Jason uploader, then dispatch this workflow for the exact tag."
+            echo "- App Store submission has not started, and the event-driven wake state remains armed."
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Seal verified public artifacts in the private archive
+        if: steps.public_assets.outputs.ready == 'true' && steps.context.outputs.state != 'archived'
+        id: archive
+        env:
+          ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USERNAME: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          cp public-assets.json release-archive/
           bundle exec ruby fastlane/bin/sa-release update-manifest \
             --manifest release-archive/manifest.json \
             --state archived >/dev/null
@@ -830,7 +921,7 @@ jobs:
           echo "reference=${ARCHIVE_REFERENCE}" >> "${GITHUB_OUTPUT}"
 
       - name: Stage, verify, and submit the production App Store version
-        if: needs.discover.outputs.channel == 'production'
+        if: needs.discover.outputs.channel == 'production' && steps.public_assets.outputs.ready == 'true'
         id: app_store
         env:
           RELEASE_BUILD: ${{ needs.discover.outputs.build }}
@@ -863,7 +954,7 @@ jobs:
             --merge submission-evidence.json >/dev/null
 
       - name: Refresh the private archive with submission evidence
-        if: needs.discover.outputs.channel == 'production'
+        if: needs.discover.outputs.channel == 'production' && steps.public_assets.outputs.ready == 'true'
         env:
           ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
           GHCR_TOKEN: ${{ github.token }}
@@ -874,7 +965,7 @@ jobs:
           Scripts/archive-release-to-ghcr.sh push "${ARCHIVE_REFERENCE}" release-archive > final-archive-evidence.json
 
       - name: Mint release mutation token for Alpha recovery annotation
-        if: needs.discover.outputs.channel == 'beta' && steps.context.outputs.alpha_recovery == 'true'
+        if: needs.discover.outputs.channel == 'beta' && steps.context.outputs.alpha_recovery == 'true' && steps.public_assets.outputs.ready == 'true'
         id: alpha_recovery_release_token
         continue-on-error: true
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -887,7 +978,7 @@ jobs:
           permission-workflows: write
 
       - name: Append successful Alpha recovery evidence
-        if: needs.discover.outputs.channel == 'beta' && steps.context.outputs.alpha_recovery == 'true'
+        if: needs.discover.outputs.channel == 'beta' && steps.context.outputs.alpha_recovery == 'true' && steps.public_assets.outputs.ready == 'true'
         continue-on-error: true
         env:
           ALPHA_RUN_ID: ${{ steps.cloud.outputs.alpha_run_id }}
@@ -918,6 +1009,7 @@ jobs:
           fi
 
       - name: Record successful artifact handoff
+        if: steps.public_assets.outputs.ready == 'true'
         env:
           ALPHA_BUILD: ${{ steps.cloud.outputs.alpha_build }}
           ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
@@ -943,6 +1035,7 @@ jobs:
         env:
           APP_STORE_OUTCOME: ${{ steps.app_store.outcome }}
           CONTEXT_OUTCOME: ${{ steps.context.outcome }}
+          PUBLIC_ASSETS_READY: ${{ steps.public_assets.outputs.ready }}
         run: |
           set -euo pipefail
           if [[ "${CONTEXT_OUTCOME}" == "success" ]]; then
@@ -954,6 +1047,11 @@ jobs:
             echo "submission_started=true" >> "${GITHUB_OUTPUT}"
           else
             echo "submission_started=false" >> "${GITHUB_OUTPUT}"
+          fi
+          if [[ "${PUBLIC_ASSETS_READY}" == "true" ]]; then
+            echo "public_assets_ready=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "public_assets_ready=false" >> "${GITHUB_OUTPUT}"
           fi
           if [[ -f terminal-artifact-verification-failure ]]; then
             echo "terminal_failure=artifact_verification" >> "${GITHUB_OUTPUT}"
@@ -1149,7 +1247,11 @@ jobs:
           needs.discover.outputs.failure_reason != 'cloud_build_number_advanced' &&
           needs.cloud_failure.result == 'success'
         ) ||
-        (needs.discover.outputs.action == 'publish' && needs.publish.result == 'success') ||
+        (
+          needs.discover.outputs.action == 'publish' &&
+          needs.publish.result == 'success' &&
+          needs.publish.outputs.public_assets_ready == 'true'
+        ) ||
         (
           needs.discover.outputs.action == 'publish' &&
           needs.recover_publish_failure.result == 'success' &&

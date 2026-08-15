@@ -305,6 +305,20 @@ class PublishHandoffTest < Minitest::Test
     assert_includes error.message, "missing artifact checksums"
   end
 
+  def test_archived_handoff_rejects_duplicate_manifest_checksum_sources
+    original = release_manifest(state: "archived")
+    verification = original.to_h.fetch("verification")
+    duplicate = original.with(
+      "verification" => verification.merge("duplicate" => verification.fetch("production").dup)
+    )
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      validate(duplicate, release: release_for(duplicate).merge("assets" => release_assets(original)))
+    end
+
+    assert_includes error.message, "duplicate artifact checksums"
+  end
+
   private
 
   def validate(
@@ -345,10 +359,7 @@ class PublishHandoffTest < Minitest::Test
   end
 
   def release_for(manifest, author: SequelAceRelease::ReleasePublisher::USER_LOGIN)
-    author_data = { "login" => author }
-    if author == SequelAceRelease::ReleasePublisher::USER_LOGIN
-      author_data["id"] = SequelAceRelease::ReleasePublisher::USER_ID
-    end
+    author_data = author == SequelAceRelease::ReleasePublisher::USER_LOGIN ? legacy_author : { "login" => author }
     {
       "id" => 100,
       "tag_name" => manifest.to_h.fetch("tag"),
@@ -395,8 +406,28 @@ class PublishHandoffTest < Minitest::Test
 
   def release_assets(manifest)
     manifest.to_h.fetch("artifact_names").map do |name|
-      { "name" => name, "digest" => "sha256:#{digest_for(name)}" }
+      {
+        "name" => name,
+        "label" => nil,
+        "uploader" => legacy_author,
+        "content_type" => "application/zip",
+        "state" => "uploaded",
+        "digest" => "sha256:#{digest_for(name)}"
+      }
     end
+  end
+
+  def legacy_author
+    {
+      "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN,
+      "id" => SequelAceRelease::ReleasePublisher::USER_ID,
+      "node_id" => "MDQ6VXNlcjEwNzEwMzY3",
+      "type" => "User",
+      "following_url" => "https://api.github.com/users/Jason-Morcos/following{/other_user}",
+      "gists_url" => "https://api.github.com/users/Jason-Morcos/gists{/gist_id}",
+      "starred_url" => "https://api.github.com/users/Jason-Morcos/starred{/owner}{/repo}",
+      "events_url" => "https://api.github.com/users/Jason-Morcos/events{/privacy}"
+    }
   end
 
   def digest_for(name)
