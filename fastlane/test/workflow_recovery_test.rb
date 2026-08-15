@@ -467,9 +467,9 @@ class WorkflowRecoveryTest < Minitest::Test
     refute_includes publisher, "sleep "
     publish_job = publisher.split("  publish:", 2).fetch(1).split("  recover_publish_failure:", 2).first
     cloud_failure = publisher.split("  cloud_failure:", 2).fetch(1).split("  publish:", 2).first
-    assert_includes publish_job, "if: needs.discover.outputs.action == 'publish'"
+    assert_includes publish_job, "needs.discover.outputs.action == 'publish' || needs.discover.outputs.action == 'continue'"
     refute_includes publish_job, "action == 'fail'"
-    assert_includes publish_job, "runs-on: macos-15"
+    assert_includes publish_job, "needs.discover.outputs.action == 'continue' && 'ubuntu-latest' || 'macos-15'"
     assert_includes cloud_failure, "if: needs.discover.outputs.action == 'fail'"
     assert_includes cloud_failure, "runs-on: ubuntu-latest"
     assert_includes publisher, "selected_action=\"pending\""
@@ -748,11 +748,21 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes discovery, 'public_asset_mode}" == "manual_web_upload"'
     assert_includes discovery, 'manual_assets_pending="true"'
     assert_includes discovery, 'selected_action="pending"'
+    assert_includes discovery, 'selected_action="continue"'
+    assert_includes discovery, 'if [[ "${handoff_state}" == "cloud_running" ]]'
     assert_includes discovery, "no Mac runner was started"
+    assert_operator discovery.index('if [[ "${manual_assets_pending}" == "true" ]]'), :<,
+                    discovery.index('selected_action="continue"')
+    assert_includes publish, "Continue verified release through APIs"
+    assert_includes publish, "needs.discover.outputs.action == 'continue' && 'ubuntu-latest' || 'macos-15'"
+    assert_includes publish, "Install checksum-pinned ORAS on Linux"
+    assert_includes publish, 'when "continue" then ["artifacts_verified", "archived"]'
     assert_includes publish, "Preserve verified artifacts privately before public attachment"
     assert_includes publish, "Record the required legacy-compatible browser upload handoff"
     assert_includes publish, "event-driven wake state remains armed"
-    assert_includes publish, "if: steps.context.outputs.state == 'cloud_running'"
+    assert_includes publish, "if: needs.discover.outputs.action == 'publish' && steps.context.outputs.state == 'cloud_running'"
+    assert_equal 3,
+                 publish.scan("if: needs.discover.outputs.action == 'publish' && steps.context.outputs.state == 'cloud_running'").length
     refute_includes publish, "if: steps.context.outputs.state != 'archived'"
   end
 
@@ -959,7 +969,7 @@ class WorkflowRecoveryTest < Minitest::Test
     refute_includes feasibility, "brew install oras"
 
     publisher = File.read(repo_path(".github/workflows/release_publish.yml"))
-    assert_equal 6, publisher.scan(action).length
+    assert_equal 7, publisher.scan(action).length
     assert_includes publisher, "oras_1.3.3_linux_amd64.tar.gz"
     assert_includes publisher, linux_checksum
     assert_includes publisher, "oras_1.3.3_darwin_arm64.tar.gz"
@@ -1302,7 +1312,8 @@ class WorkflowRecoveryTest < Minitest::Test
     end
 
     publisher = File.read(repo_path(".github/workflows/release_publish.yml"))
-    assert_equal 1, publisher.scan("runs-on: macos-15").length
+    assert_includes publisher, "needs.discover.outputs.action == 'continue' && 'ubuntu-latest' || 'macos-15'"
+    refute_includes publisher, "runs-on: macos-15"
 
     ci = File.read(repo_path(".github/workflows/ci_pr_tests.yml"))
     assert_equal 1, ci.scan("runs-on: macos-26").length

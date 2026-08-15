@@ -210,7 +210,9 @@ bounded manual compatibility handoff:
    exact release/tag to appear in a fully legacy-decodable anonymous 30-release
    feed, complete author/uploader shapes, a JSON-null asset label,
    `application/zip`, `uploaded`, and every manifest SHA-256. Only then may it
-   manually dispatch `release_publish.yml` for the exact tag.
+   manually dispatch `release_publish.yml` for the exact tag. Discovery selects
+   the API-only `continue` action, which runs on Ubuntu and cannot allocate a
+   second hosted Mac.
 5. App Store submission, finalization, and wake-state clearing remain blocked
    until the same compatibility validator passes again in Actions.
 
@@ -633,8 +635,9 @@ automatic RC recovery described above.
   skill performs the last-resort compatible-user UI upload and a strict API
   read-back before dispatching the API-only continuation. While that handoff is
   pending, scheduled discovery stays on Ubuntu and never redownloads or
-  reverifies the artifacts. `github_api_v1` uses the supported asset API
-  automatically.
+  reverifies the artifacts. Once ready, the continuation also runs on Ubuntu;
+  only a `cloud_running` handoff can select the hosted Mac. `github_api_v1`
+  uses the supported asset API automatically.
 - The release and Alpha-retry workflows never poll Cloud to completion. They
   archive an immutable handoff and release their Ubuntu runners. Xcode Cloud's
   authenticated GitHub check or terminal workflow status wakes the publisher; the

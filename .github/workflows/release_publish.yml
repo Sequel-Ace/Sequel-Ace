@@ -347,7 +347,12 @@ jobs:
             failure_reason="cloud_run_failed"
             selected_action="fail"
           elif [[ "${production_readiness}" == "ready" && ( "${alpha_readiness}" == "ready" || "${alpha_readiness}" == "not_required" ) ]]; then
-            selected_action="publish"
+            if [[ "${handoff_state}" == "cloud_running" ]]; then
+              selected_action="publish"
+            else
+              selected_action="continue"
+              echo "Verified artifacts for ${release_tag} require API-only continuation; no Mac runner was started." >> "${GITHUB_STEP_SUMMARY}"
+            fi
           else
             selected_action="pending"
             {
@@ -588,11 +593,12 @@ jobs:
           } >> "${GITHUB_STEP_SUMMARY}"
 
   publish:
-    name: Verify and publish ready release artifacts
+    name: ${{ needs.discover.outputs.action == 'continue' && 'Continue verified release through APIs' || 'Verify and publish ready release artifacts' }}
     needs: discover
-    if: needs.discover.outputs.action == 'publish'
-    # GitHub-hosted macOS; private Moballo runners are intentionally out of scope.
-    runs-on: macos-15
+    if: needs.discover.outputs.action == 'publish' || needs.discover.outputs.action == 'continue'
+    # Artifact verification uses GitHub-hosted macOS. Once artifacts are
+    # verified, all remaining GitHub/ASC/GHCR operations continue on Ubuntu.
+    runs-on: ${{ needs.discover.outputs.action == 'continue' && 'ubuntu-latest' || 'macos-15' }}
     timeout-minutes: 90
     environment: sequel-ace-release
     permissions:
@@ -629,23 +635,31 @@ jobs:
           bundler-cache: true
 
       - name: Install checksum-pinned ORAS on Apple silicon
-        if: runner.arch == 'ARM64'
+        if: runner.os == 'macOS' && runner.arch == 'ARM64'
         uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
         with:
           url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_darwin_arm64.tar.gz
           checksum: f33fc12753c54172b0d0d19eaa0318d3f90fe9b094d96e8b259c881713c92e1c
 
       - name: Install checksum-pinned ORAS on Intel
-        if: runner.arch == 'X64'
+        if: runner.os == 'macOS' && runner.arch == 'X64'
         uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
         with:
           url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_darwin_amd64.tar.gz
           checksum: aeb684d8c24c18dce28fd1f7326636e4782b573108e244a93d4b1c4a5ec50f48
 
+      - name: Install checksum-pinned ORAS on Linux
+        if: runner.os == 'Linux'
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          url: https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz
+          checksum: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
+
       - name: Pull and revalidate the exact private handoff
         id: context
         env:
           EXPECTED_ARCHIVE_REF: ${{ needs.discover.outputs.archive_ref }}
+          EXPECTED_ACTION: ${{ needs.discover.outputs.action }}
           EXPECTED_BUILD: ${{ needs.discover.outputs.build }}
           EXPECTED_CHANNEL: ${{ needs.discover.outputs.channel }}
           EXPECTED_COMMIT: ${{ needs.discover.outputs.commit }}
@@ -675,6 +689,14 @@ jobs:
             raise "publisher context changed for #{key}" unless context.fetch(key) == value
           end
           raise "publisher handoff is no longer eligible" unless context.fetch("eligible")
+          expected_states = case ENV.fetch("EXPECTED_ACTION")
+                            when "publish" then ["cloud_running"]
+                            when "continue" then ["artifacts_verified", "archived"]
+                            else raise "publisher action is not executable"
+                            end
+          unless expected_states.include?(context.fetch("state"))
+            raise "publisher handoff state no longer matches #{ENV.fetch('EXPECTED_ACTION')}"
+          end
           File.open(ENV.fetch("GITHUB_OUTPUT"), "a") do |file|
             file.puts("validated=true")
             file.puts("state=#{context.fetch("state")}")
@@ -738,7 +760,7 @@ jobs:
           fi
 
       - name: Download exact Xcode Cloud artifacts
-        if: steps.context.outputs.state == 'cloud_running'
+        if: needs.discover.outputs.action == 'publish' && steps.context.outputs.state == 'cloud_running'
         env:
           ALPHA_RUN_ID: ${{ steps.cloud.outputs.alpha_run_id }}
           PRODUCTION_RUN_ID: ${{ steps.cloud.outputs.production_run_id }}
@@ -761,7 +783,7 @@ jobs:
           fi
 
       - name: Verify, launch, quit, and package distributable apps
-        if: steps.context.outputs.state == 'cloud_running'
+        if: needs.discover.outputs.action == 'publish' && steps.context.outputs.state == 'cloud_running'
         env:
           ALPHA_ASSET: ${{ steps.context.outputs.alpha_asset }}
           PRODUCTION_ASSET: ${{ steps.context.outputs.production_asset }}
@@ -805,7 +827,7 @@ jobs:
             --merge artifact-evidence.json >/dev/null
 
       - name: Preserve verified artifacts privately before public attachment
-        if: steps.context.outputs.state == 'cloud_running'
+        if: needs.discover.outputs.action == 'publish' && steps.context.outputs.state == 'cloud_running'
         id: verified_archive
         env:
           ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
@@ -1074,7 +1096,10 @@ jobs:
     needs:
       - discover
       - publish
-    if: always() && needs.discover.outputs.action == 'publish' && needs.publish.result != 'success'
+    if: >-
+      always() &&
+      (needs.discover.outputs.action == 'publish' || needs.discover.outputs.action == 'continue') &&
+      needs.publish.result != 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     environment: sequel-ace-release
@@ -1258,12 +1283,12 @@ jobs:
           needs.cloud_failure.result == 'success'
         ) ||
         (
-          needs.discover.outputs.action == 'publish' &&
+          (needs.discover.outputs.action == 'publish' || needs.discover.outputs.action == 'continue') &&
           needs.publish.result == 'success' &&
           needs.publish.outputs.public_assets_ready == 'true'
         ) ||
         (
-          needs.discover.outputs.action == 'publish' &&
+          (needs.discover.outputs.action == 'publish' || needs.discover.outputs.action == 'continue') &&
           needs.recover_publish_failure.result == 'success' &&
           needs.recover_publish_failure.outputs.polling_needed == 'false'
         )
