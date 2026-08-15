@@ -214,6 +214,48 @@ jobs:
           fi
           finalized=0
           pending=0
+          terminal=0
+          preserve_finalization_integrity_failure() {
+            local phase="$1"
+            local release_tag="$2"
+            local archive_ref="$3"
+            local archive_directory="$4"
+            local state_directory="$5"
+            local evidence_path="${state_directory}/finalization-integrity-failure.json"
+            local workflow_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            if ! ruby -rjson -rtime -e '
+              File.write(
+                ARGV.fetch(3),
+                JSON.pretty_generate({
+                  "schema_version" => 1,
+                  "tag" => ARGV.fetch(1),
+                  "phase" => ARGV.fetch(0),
+                  "workflow_url" => ARGV.fetch(2),
+                  "recorded_at" => Time.now.utc.iso8601
+                }) + "\n"
+              )
+            ' "${phase}" "${release_tag}" "${workflow_url}" "${evidence_path}"; then
+              return 1
+            fi
+            if ! /bin/rm -f "${archive_directory}/finalization-integrity-failure.json"; then
+              return 1
+            fi
+            if ! cp "${evidence_path}" "${archive_directory}/"; then
+              return 1
+            fi
+            local archive_evidence
+            if ! archive_evidence="$(mktemp "${RUNNER_TEMP}/sequel-ace-terminal-finalization-evidence.XXXXXX")"; then
+              return 1
+            fi
+            if ! Scripts/archive-release-to-ghcr.sh push "${archive_ref}" "${archive_directory}" > "${archive_evidence}"; then
+              /bin/rm -f "${archive_evidence}"
+              return 1
+            fi
+            if ! /bin/rm -f "${archive_evidence}"; then
+              return 1
+            fi
+            return 0
+          }
           while IFS= read -r release_tag; do
             [[ -n "${release_tag}" ]] || continue
             if [[ ! "${release_tag}" =~ ^production/([0-9]+\.[0-9]+\.[0-9]+)-([0-9]+)$ ]]; then
@@ -243,10 +285,41 @@ jobs:
               rm -rf "${archive_directory}" "${state_directory}"
               continue
             fi
+            terminal_evidence="${archive_directory}/finalization-integrity-failure.json"
+            if [[ -e "${terminal_evidence}" || -L "${terminal_evidence}" ]]; then
+              if ! terminal_phase="$(ruby -rjson -rtime -e '
+                path = ARGV.fetch(0)
+                stat = File.lstat(path)
+                abort unless stat.file? && !stat.symlink?
+                value = JSON.parse(File.read(path))
+                abort unless value.fetch("schema_version") == 1
+                abort unless value.fetch("tag") == ARGV.fetch(1)
+                abort unless %w[validation transition].include?(value.fetch("phase"))
+                prefix = "#{ARGV.fetch(2)}/#{ARGV.fetch(3)}/actions/runs/"
+                suffix = value.fetch("workflow_url").delete_prefix(prefix)
+                abort unless value.fetch("workflow_url").start_with?(prefix) && suffix.match?(/\A[1-9][0-9]*\z/)
+                Time.iso8601(value.fetch("recorded_at"))
+                puts value.fetch("phase")
+              ' "${terminal_evidence}" "${release_tag}" "${GITHUB_SERVER_URL}" "${GITHUB_REPOSITORY}" 2>/dev/null)"; then
+                echo "Pending ${release_tag}: archived finalization integrity evidence is malformed."
+                pending=$((pending + 1))
+                rm -rf "${archive_directory}" "${state_directory}"
+                continue
+              fi
+              if [[ -z "${REQUESTED_TAG}" ]]; then
+                echo "Terminal ${release_tag}: ${terminal_phase} integrity evidence is archived; an authorized exact-tag recovery is required after repair."
+                terminal=$((terminal + 1))
+                rm -rf "${archive_directory}" "${state_directory}"
+                continue
+              fi
+              echo "Retrying archived terminal ${terminal_phase} evidence for ${release_tag} through authorized exact-tag recovery."
+            fi
+            integrity_marker="${state_directory}/terminal-finalization-integrity-failure"
             if bundle exec ruby fastlane/bin/sa-release finalize \
               --manifest "${archive_directory}/manifest.json" \
               --confirm "FINALIZE ${release_tag}" \
               --validate-only \
+              --integrity-failure-marker "${integrity_marker}" \
               --output "${state_directory}/finalization-validation.json" 2> "${state_directory}/pending.log"; then
               ruby -rjson -e 'File.write(ARGV.fetch(1), JSON.pretty_generate({"finalization" => JSON.parse(File.read(ARGV.fetch(0)))}) + "\n")' \
                 "${state_directory}/finalization-validation.json" \
@@ -268,6 +341,7 @@ jobs:
               if bundle exec ruby fastlane/bin/sa-release finalize \
                 --manifest "${archive_directory}/manifest.json" \
                 --confirm "FINALIZE ${release_tag}" \
+                --integrity-failure-marker "${integrity_marker}" \
                 --output "${state_directory}/finalization.json" 2> "${state_directory}/pending.log"; then
                 ruby -rjson -e 'File.write(ARGV.fetch(1), JSON.pretty_generate({"finalization" => JSON.parse(File.read(ARGV.fetch(0)))}) + "\n")' \
                   "${state_directory}/finalization.json" \
@@ -289,18 +363,41 @@ jobs:
                 echo "Finalized ${release_tag}."
                 finalized=$((finalized + 1))
               else
+                if [[ -f "${integrity_marker}" ]]; then
+                  if preserve_finalization_integrity_failure \
+                    "transition" "${release_tag}" "${archive_ref}" "${archive_directory}" "${state_directory}"; then
+                    echo "Terminal ${release_tag}: public-transition integrity evidence was archived for authorized exact-tag recovery."
+                    terminal=$((terminal + 1))
+                  else
+                    echo "Pending ${release_tag}: terminal public-transition evidence could not be archived."
+                    pending=$((pending + 1))
+                  fi
+                else
+                  echo "Pending ${release_tag}: $(head -n 1 "${state_directory}/pending.log")"
+                  pending=$((pending + 1))
+                fi
+              fi
+            else
+              if [[ -f "${integrity_marker}" ]]; then
+                if preserve_finalization_integrity_failure \
+                  "validation" "${release_tag}" "${archive_ref}" "${archive_directory}" "${state_directory}"; then
+                  echo "Terminal ${release_tag}: pre-transition integrity evidence was archived for authorized exact-tag recovery."
+                  terminal=$((terminal + 1))
+                else
+                  echo "Pending ${release_tag}: terminal pre-transition evidence could not be archived."
+                  pending=$((pending + 1))
+                fi
+              else
                 echo "Pending ${release_tag}: $(head -n 1 "${state_directory}/pending.log")"
                 pending=$((pending + 1))
               fi
-            else
-              echo "Pending ${release_tag}: $(head -n 1 "${state_directory}/pending.log")"
-              pending=$((pending + 1))
             fi
             rm -rf "${archive_directory}" "${state_directory}"
           done < production-candidates.txt
           {
             echo "### App Store finalization check"
             echo "- Finalized: ${finalized}"
+            echo "- Terminal integrity failures: ${terminal}"
             echo "- Still pending or blocked: ${pending}"
             echo "- Trigger: ${FINALIZER_TRIGGER}"
           } >> "${GITHUB_STEP_SUMMARY}"

@@ -868,6 +868,22 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_operator workflow.scan("continue").length, :>=, 5
   end
 
+  def test_finalizer_archives_terminal_integrity_evidence_without_terminalizing_transport_failures
+    workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
+    execution = workflow.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
+
+    assert_equal 2, execution.scan('--integrity-failure-marker "${integrity_marker}"').length
+    assert_includes execution, 'finalization-integrity-failure.json'
+    assert_includes execution, '"schema_version" => 1'
+    assert_includes execution, '%w[validation transition].include?'
+    assert_includes execution, 'Scripts/archive-release-to-ghcr.sh push "${archive_ref}" "${archive_directory}"'
+    assert_includes execution, 'if [[ -z "${REQUESTED_TAG}" ]]'
+    assert_includes execution, "an authorized exact-tag recovery is required after repair"
+    assert_includes execution, "Retrying archived terminal"
+    assert_includes execution, 'echo "- Terminal integrity failures: ${terminal}"'
+    assert_includes execution, 'echo "Pending ${release_tag}: $(head -n 1 "${state_directory}/pending.log")"'
+  end
+
   def test_finalizer_polls_every_six_hours_with_an_authorized_manual_fallback
     workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
 
@@ -1142,7 +1158,7 @@ class WorkflowRecoveryTest < Minitest::Test
     workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
     validation = workflow.index("--validate-only")
     finalizing = workflow.index("--state finalizing")
-    archive = workflow.index('Scripts/archive-release-to-ghcr.sh push "${archive_ref}"')
+    archive = workflow.index('Scripts/archive-release-to-ghcr.sh push "${archive_ref}"', finalizing)
     public_transition = workflow.index('--output "${state_directory}/finalization.json"')
     live = workflow.index("--state live")
 

@@ -693,6 +693,12 @@ automatic RC recovery described above.
   retry. The GitHub update repeats both the exact tag and archived release
   commit, then revalidates the tag ref before accepting the release readback, so
   a deleted or moved tag cannot redirect the transition to current `main`.
+  A successfully read incompatible release or anonymous feed writes versioned
+  finalization-integrity evidence into the private archive. Scheduled runs
+  recognize that durable evidence and do not repeat the same terminal
+  validation; after the public payload is repaired, an authorized exact-tag
+  dispatch deliberately retries it. GitHub transport failures, rate limits,
+  and unavailable archives write no terminal evidence and remain retryable.
   Each run continues examining other production prereleases when one archive is
   missing or malformed. Finalization outputs and logs stay outside the pulled
   archive; only the validated evidence files and updated regular manifest are

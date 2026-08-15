@@ -1169,10 +1169,11 @@ module SequelAceRelease
     def finalize(arguments)
       options = { validate_only: false }
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release finalize --manifest FILE --confirm 'FINALIZE TAG' [--validate-only]"
+        value.banner = "Usage: sa-release finalize --manifest FILE --confirm 'FINALIZE TAG' [--validate-only] [--integrity-failure-marker FILE]"
         value.on("--manifest FILE") { |item| options[:manifest] = item }
         value.on("--confirm TEXT") { |item| options[:confirm] = item }
         value.on("--validate-only") { options[:validate_only] = true }
+        value.on("--integrity-failure-marker FILE") { |item| options[:integrity_failure_marker] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
@@ -1289,6 +1290,9 @@ module SequelAceRelease
         "final_prerelease" => release["prerelease"],
         "final_latest" => true
       ), options[:output])
+    rescue IntegrityError
+      write_integrity_failure_marker(options[:integrity_failure_marker])
+      raise
     end
 
     def validate_submission_handoff!(manifest:, notes:)

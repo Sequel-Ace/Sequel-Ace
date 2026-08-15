@@ -169,7 +169,37 @@ class FinalizationAssetsTest < Minitest::Test
     github.define_singleton_method(:latest_release) { release_data }
     github.define_singleton_method(:update_release) { |**_options| updates += 1 }
 
-    assert_equal 1, run_finalizer(app_store: app_store, github: github)
+    Dir.mktmpdir do |directory|
+      marker = File.join(directory, "terminal-finalization-integrity-failure")
+
+      assert_equal 1, run_finalizer(app_store: app_store, github: github, integrity_marker: marker)
+      assert_equal "release asset integrity failure\n", File.read(marker)
+    end
+    assert_equal 0, updates
+  end
+
+  def test_finalization_keeps_anonymous_feed_transport_failures_retryable
+    live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    app_store = Object.new
+    app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
+    app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
+    release_data = release
+    updates = 0
+    github = Object.new
+    github.define_singleton_method(:ref_sha) { |_ref| "d" * 40 }
+    github.define_singleton_method(:release_by_tag) { |_tag| release_data }
+    github.define_singleton_method(:public_release_feed_page) do
+      raise SequelAceRelease::APIError, "GitHub release feed failed with HTTP 403"
+    end
+    github.define_singleton_method(:latest_release) { release_data }
+    github.define_singleton_method(:update_release) { |**_options| updates += 1 }
+
+    Dir.mktmpdir do |directory|
+      marker = File.join(directory, "terminal-finalization-integrity-failure")
+
+      assert_equal 1, run_finalizer(app_store: app_store, github: github, integrity_marker: marker)
+      refute_path_exists marker
+    end
     assert_equal 0, updates
   end
 
@@ -393,7 +423,7 @@ class FinalizationAssetsTest < Minitest::Test
     )
   end
 
-  def run_finalizer(app_store:, github:)
+  def run_finalizer(app_store:, github:, integrity_marker: nil)
     unless github.respond_to?(:public_release_feed_page)
       compatible_release = release
       github.define_singleton_method(:public_release_feed_page) { [compatible_release] }
@@ -404,11 +434,13 @@ class FinalizationAssetsTest < Minitest::Test
       cli = SequelAceRelease::CLI.new(out: StringIO.new, err: StringIO.new, env: {})
       cli.stub(:app_store_client, app_store) do
         cli.stub(:github_client, github) do
-          cli.run([
+          arguments = [
             "finalize",
             "--manifest", manifest_path,
             "--confirm", "FINALIZE production/5.3.2-20109"
-          ])
+          ]
+          arguments.concat(["--integrity-failure-marker", integrity_marker]) if integrity_marker
+          cli.run(arguments)
         end
       end
     end
