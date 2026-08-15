@@ -106,6 +106,38 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
     end
   end
 
+  def test_handoff_validation_marks_archived_asset_divergence_as_terminal
+    with_handoff(assets: [], state: "archived") do |manifest, notes, marker, output, client|
+      assert_equal 1, run_handoff_cli(
+        manifest: manifest,
+        notes: notes,
+        marker: marker,
+        output: output,
+        client: client
+      )
+      assert_equal "release asset integrity failure\n", File.read(marker)
+      refute_path_exists output
+    end
+  end
+
+  def test_handoff_validation_keeps_api_failures_retryable
+    with_handoff(assets: [asset], state: "archived") do |manifest, notes, marker, output, client|
+      client.define_singleton_method(:release_by_tag) do |_tag|
+        raise SequelAceRelease::APIError, "GitHub API returned HTTP 503"
+      end
+
+      assert_equal 1, run_handoff_cli(
+        manifest: manifest,
+        notes: notes,
+        marker: marker,
+        output: output,
+        client: client
+      )
+      refute_path_exists marker
+      refute_path_exists output
+    end
+  end
+
   def test_anonymous_rate_limit_is_retryable_and_does_not_write_an_integrity_marker
     with_handoff(assets: [asset]) do |manifest, notes, marker, output, client|
       client.define_singleton_method(:public_release_feed_page) do
@@ -125,6 +157,19 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
       "github-public-assets-status",
       "--tag", "production/5.4.0-20109",
       "--manifest", manifest,
+      "--notes", notes,
+      "--output", output
+    ]
+    arguments += ["--integrity-failure-marker", marker] if marker
+    cli = SequelAceRelease::CLI.new(out: StringIO.new, err: StringIO.new, env: {})
+    cli.stub(:github_client, client) { cli.run(arguments) }
+  end
+
+  def run_handoff_cli(manifest:, notes:, output:, client:, marker: nil)
+    arguments = [
+      "validate-publish-handoff",
+      "--manifest", manifest,
+      "--tag", "production/5.4.0-20109",
       "--notes", notes,
       "--output", output
     ]

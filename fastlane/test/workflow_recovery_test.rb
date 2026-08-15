@@ -612,7 +612,8 @@ class WorkflowRecoveryTest < Minitest::Test
 
     assert_includes discovery, 'archive_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-publish-archive.XXXXXX")"'
     assert_includes discovery, 'state_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-publish-state.XXXXXX")"'
-    assert_includes discovery, '--manifest "${archive_directory}/manifest.json"'
+    assert_includes discovery, 'manifest_path="${archive_directory}/manifest.json"'
+    assert_includes discovery, '--manifest "${manifest_path}"'
     assert_includes discovery, '--output "${state_directory}/context.json"'
     assert_includes discovery, '--output "${state_directory}/production-status.json"'
     assert_includes discovery, '--output "${state_directory}/alpha-status.json"'
@@ -652,7 +653,9 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes discovery, "Requested release \${release_tag} is not eligible for artifact publication."
     assert_includes discovery, "recovery wake state can be cleared."
     assert_includes discovery, "PublishHandoff::ELIGIBLE_STATES"
-    refute_includes discovery, "if ! bundle exec ruby fastlane/bin/sa-release validate-publish-handoff"
+    assert_includes discovery, "if ! bundle exec ruby fastlane/bin/sa-release validate-publish-handoff"
+    assert_includes discovery, '--integrity-failure-marker "${integrity_marker}"'
+    assert_includes discovery, "Live handoff validation failed transiently; recovery remains armed."
   end
 
   def test_publisher_shell_uses_environment_indirection_for_external_values
@@ -688,7 +691,8 @@ class WorkflowRecoveryTest < Minitest::Test
 
     assert_includes terminal, "sa-release record-failure"
     assert_includes terminal, "terminal_failure == 'artifact_verification'"
-    assert_operator workflow.scan("--integrity-failure-marker terminal-artifact-verification-failure").length, :==, 5
+    assert_operator workflow.scan("--integrity-failure-marker terminal-artifact-verification-failure").length, :==, 6
+    assert_operator workflow.scan("--integrity-failure-marker").length, :==, 9
     refute_includes transient, "sa-release record-failure"
     refute_includes transient, "archive-release-to-ghcr.sh push"
     assert_includes transient, "left unchanged so the next event or gated recovery check can retry safely"
@@ -743,7 +747,7 @@ class WorkflowRecoveryTest < Minitest::Test
     discovery = workflow.split("  discover:", 2).fetch(1).split("  cloud_failure:", 2).first
     publish = workflow.split("  publish:", 2).fetch(1).split("  recover_publish_failure:", 2).first
 
-    assert_includes discovery, 'if [[ "${handoff_state}" == "artifacts_verified" ]]'
+    assert_includes discovery, '"${handoff_state}" == "artifacts_verified"'
     assert_includes discovery, "github-public-assets-status"
     assert_includes discovery, 'public_asset_mode}" == "manual_web_upload"'
     assert_includes discovery, 'manual_assets_pending="true"'
@@ -751,8 +755,9 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes discovery, 'selected_action="continue"'
     assert_includes discovery, 'if [[ "${handoff_state}" == "cloud_running" ]]'
     assert_includes discovery, "no Mac runner was started"
-    assert_operator discovery.index('if [[ "${manual_assets_pending}" == "true" ]]'), :<,
-                    discovery.index('selected_action="continue"')
+    manual_wait = discovery.index('elif [[ "${manual_assets_pending}" == "true" ]]')
+    api_continuation = discovery.index('selected_action="continue"', manual_wait)
+    assert_operator manual_wait, :<, api_continuation
     assert_includes publish, "Continue verified release through APIs"
     assert_includes publish, "needs.discover.outputs.action == 'continue' && 'ubuntu-latest' || 'macos-15'"
     assert_includes publish, "Install checksum-pinned ORAS on Linux"
@@ -764,6 +769,28 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_equal 3,
                  publish.scan("if: needs.discover.outputs.action == 'publish' && steps.context.outputs.state == 'cloud_running'").length
     refute_includes publish, "if: steps.context.outputs.state != 'archived'"
+  end
+
+  def test_terminal_github_asset_integrity_uses_ubuntu_recovery_without_polling_forever
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    discovery = workflow.split("  discover:", 2).fetch(1).split("  cloud_failure:", 2).first
+    publish = workflow.split("  publish:", 2).fetch(1).split("  recover_publish_failure:", 2).first
+    recovery = workflow.split("  recover_publish_failure:", 2).fetch(1)
+
+    assert_includes discovery, 'terminal_integrity_failure="true"'
+    assert_includes discovery, 'if [[ "${terminal_integrity_failure}" == "true" ]]'
+    assert_includes discovery, 'selected_action="continue"'
+    assert_includes discovery, "will be preserved through the Ubuntu recovery path; no Mac runner was started"
+    assert_includes discovery, "Public asset inspection failed transiently; recovery remains armed."
+    assert_operator discovery.index('if [[ "${terminal_integrity_failure}" == "true" ]]'), :<,
+                    discovery.index('elif [[ "${manual_assets_pending}" == "true" ]]')
+    assert_includes publish, "needs.discover.outputs.action == 'continue' && 'ubuntu-latest' || 'macos-15'"
+    assert_includes publish, "--integrity-failure-marker terminal-artifact-verification-failure"
+    assert_includes recovery, "terminal_failure == 'artifact_verification'"
+    assert_includes recovery, "EXPECTED_TERMINAL_FAILURE"
+    assert_includes recovery, "recovery-terminal-artifact-verification-failure"
+    assert_includes recovery, "independently reproduced before preservation"
+    assert_includes recovery, "polling_needed=false"
   end
 
   def test_api_asset_upload_is_profile_gated_and_uses_the_dedicated_release_app

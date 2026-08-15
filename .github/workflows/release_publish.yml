@@ -261,78 +261,107 @@ jobs:
             exit 0
           fi
 
-          bundle exec ruby fastlane/bin/sa-release validate-publish-handoff \
-            --manifest "${archive_directory}/manifest.json" \
-            --tag "${release_tag}" \
-            --notes "${archive_directory}/app-store-notes.txt" \
-            --output "${state_directory}/context.json"
-          eligible="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("eligible")' "${state_directory}/context.json")"
-          [[ "${eligible}" == "true" ]] || { echo "The exact handoff failed live eligibility validation." >&2; exit 1; }
-
-          channel="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("channel")' "${state_directory}/context.json")"
-          version="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("version")' "${state_directory}/context.json")"
-          build="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("build")' "${state_directory}/context.json")"
-          commit="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("release_commit_sha")' "${state_directory}/context.json")"
-          handoff_state="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("state")' "${state_directory}/context.json")"
-          manual_assets_pending="false"
-          if [[ "${handoff_state}" == "artifacts_verified" ]]; then
-            bundle exec ruby fastlane/bin/sa-release github-public-assets-status \
+          manifest_path="${archive_directory}/manifest.json"
+          channel="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("channel")' "${manifest_path}")"
+          version="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("target_version")' "${manifest_path}")"
+          build="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("canonical_build")' "${manifest_path}")"
+          commit="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("release_commit_sha")' "${manifest_path}")"
+          handoff_state="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("state")' "${manifest_path}")"
+          production_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("cloud_build_ids", {}).fetch("production", "")' "${manifest_path}")"
+          alpha_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("cloud_build_ids", {}).fetch("alpha", "")' "${manifest_path}")"
+          integrity_marker="${state_directory}/terminal-artifact-verification-failure"
+          terminal_integrity_failure="false"
+          if ! bundle exec ruby fastlane/bin/sa-release validate-publish-handoff \
+              --manifest "${manifest_path}" \
               --tag "${release_tag}" \
-              --manifest "${archive_directory}/manifest.json" \
               --notes "${archive_directory}/app-store-notes.txt" \
-              --output "${state_directory}/public-assets.json"
-            public_asset_mode="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("mode")' "${state_directory}/public-assets.json")"
-            public_assets_ready="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("ready")' "${state_directory}/public-assets.json")"
-            if [[ "${public_asset_mode}" == "manual_web_upload" && "${public_assets_ready}" != "true" ]]; then
-              manual_assets_pending="true"
+              --integrity-failure-marker "${integrity_marker}" \
+              --output "${state_directory}/context.json"; then
+            if [[ -f "${integrity_marker}" ]]; then
+              terminal_integrity_failure="true"
+            else
+              echo "Live handoff validation failed transiently; recovery remains armed." >&2
+              exit 1
+            fi
+          else
+            eligible="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("eligible")' "${state_directory}/context.json")"
+            [[ "${eligible}" == "true" ]] || { echo "The exact handoff failed live eligibility validation." >&2; exit 1; }
+          fi
+
+          manual_assets_pending="false"
+          if [[ "${terminal_integrity_failure}" != "true" && "${handoff_state}" == "artifacts_verified" ]]; then
+            if ! bundle exec ruby fastlane/bin/sa-release github-public-assets-status \
+              --tag "${release_tag}" \
+              --manifest "${manifest_path}" \
+              --notes "${archive_directory}/app-store-notes.txt" \
+              --integrity-failure-marker "${integrity_marker}" \
+              --output "${state_directory}/public-assets.json"; then
+              if [[ -f "${integrity_marker}" ]]; then
+                terminal_integrity_failure="true"
+              else
+                echo "Public asset inspection failed transiently; recovery remains armed." >&2
+                exit 1
+              fi
+            else
+              public_asset_mode="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("mode")' "${state_directory}/public-assets.json")"
+              public_assets_ready="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("ready")' "${state_directory}/public-assets.json")"
+              if [[ "${public_asset_mode}" == "manual_web_upload" && "${public_assets_ready}" != "true" ]]; then
+                manual_assets_pending="true"
+              fi
             fi
           fi
-          production_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("cloud_build_ids", {}).fetch("production", "")' "${state_directory}/context.json")"
-          production_arguments=(
-            --workflow-id "${SA_PRODUCTION_WORKFLOW_ID}"
-            --app-id "1518036000"
-            --version "${version}"
-            --tag "${release_tag}"
-            --build "${build}"
-            --commit "${commit}"
-          )
-          if [[ -n "${production_run_id}" ]]; then
-            production_arguments+=(--run-id "${production_run_id}")
-          fi
-          bundle exec ruby fastlane/bin/sa-release cloud-status \
-            "${production_arguments[@]}" \
-            --output "${state_directory}/production-status.json"
-          production_readiness="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("readiness")' "${state_directory}/production-status.json")"
-          production_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("id", "")' "${state_directory}/production-status.json")"
-          production_reason="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("reason", "")' "${state_directory}/production-status.json")"
-          assigned_build="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("assigned_build", "")' "${state_directory}/production-status.json")"
-          recovery_build="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("recovery_build", "")' "${state_directory}/production-status.json")"
-
+          production_readiness="not_checked"
+          production_reason=""
+          assigned_build=""
+          recovery_build=""
           alpha_readiness="not_required"
-          alpha_run_id=""
-          if [[ "${channel}" == "beta" && "${production_readiness}" == "ready" ]]; then
-            alpha_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("cloud_build_ids", {}).fetch("alpha", "")' "${state_directory}/context.json")"
-            alpha_arguments=(
-              --workflow-id "${SA_ALPHA_WORKFLOW_ID}"
-              --app-id "1594104035"
+          if [[ "${terminal_integrity_failure}" != "true" ]]; then
+            production_arguments=(
+              --workflow-id "${SA_PRODUCTION_WORKFLOW_ID}"
+              --app-id "1518036000"
               --version "${version}"
               --tag "${release_tag}"
-              --allow-any-build
+              --build "${build}"
               --commit "${commit}"
             )
-            if [[ -n "${alpha_run_id}" ]]; then
-              alpha_arguments+=(--run-id "${alpha_run_id}")
+            if [[ -n "${production_run_id}" ]]; then
+              production_arguments+=(--run-id "${production_run_id}")
             fi
             bundle exec ruby fastlane/bin/sa-release cloud-status \
-              "${alpha_arguments[@]}" \
-              --output "${state_directory}/alpha-status.json"
-            alpha_readiness="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("readiness")' "${state_directory}/alpha-status.json")"
-            alpha_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("id", "")' "${state_directory}/alpha-status.json")"
+              "${production_arguments[@]}" \
+              --output "${state_directory}/production-status.json"
+            production_readiness="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("readiness")' "${state_directory}/production-status.json")"
+            production_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("id", "")' "${state_directory}/production-status.json")"
+            production_reason="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("reason", "")' "${state_directory}/production-status.json")"
+            assigned_build="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("assigned_build", "")' "${state_directory}/production-status.json")"
+            recovery_build="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("recovery_build", "")' "${state_directory}/production-status.json")"
+
+            if [[ "${channel}" == "beta" && "${production_readiness}" == "ready" ]]; then
+              alpha_arguments=(
+                --workflow-id "${SA_ALPHA_WORKFLOW_ID}"
+                --app-id "1594104035"
+                --version "${version}"
+                --tag "${release_tag}"
+                --allow-any-build
+                --commit "${commit}"
+              )
+              if [[ -n "${alpha_run_id}" ]]; then
+                alpha_arguments+=(--run-id "${alpha_run_id}")
+              fi
+              bundle exec ruby fastlane/bin/sa-release cloud-status \
+                "${alpha_arguments[@]}" \
+                --output "${state_directory}/alpha-status.json"
+              alpha_readiness="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("readiness")' "${state_directory}/alpha-status.json")"
+              alpha_run_id="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("id", "")' "${state_directory}/alpha-status.json")"
+            fi
           fi
 
           failed_component=""
           failure_reason=""
-          if [[ "${manual_assets_pending}" == "true" ]]; then
+          if [[ "${terminal_integrity_failure}" == "true" ]]; then
+            selected_action="continue"
+            echo "A terminal GitHub release-asset integrity failure will be preserved through the Ubuntu recovery path; no Mac runner was started." >> "${GITHUB_STEP_SUMMARY}"
+          elif [[ "${manual_assets_pending}" == "true" ]]; then
             selected_action="pending"
             {
               echo "Verified artifacts for ${release_tag} are durable in the private archive."
@@ -675,6 +704,7 @@ jobs:
             --manifest release-archive/manifest.json \
             --tag "${EXPECTED_TAG}" \
             --notes release-archive/app-store-notes.txt \
+            --integrity-failure-marker terminal-artifact-verification-failure \
             --output publish-context.json
           ruby -rjson <<'RUBY'
           context = JSON.parse(File.read("publish-context.json"))
@@ -1137,15 +1167,23 @@ jobs:
           EXPECTED_TAG: ${{ needs.discover.outputs.tag }}
           GHCR_TOKEN: ${{ github.token }}
           GHCR_USERNAME: ${{ github.actor }}
+          EXPECTED_TERMINAL_FAILURE: ${{ needs.publish.outputs.terminal_failure }}
           SA_GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           Scripts/archive-release-to-ghcr.sh pull "${ARCHIVE_REFERENCE}" release-archive
-          bundle exec ruby fastlane/bin/sa-release validate-publish-handoff \
-            --manifest release-archive/manifest.json \
-            --tag "${EXPECTED_TAG}" \
-            --notes release-archive/app-store-notes.txt \
-            --output recovery-context.json
+          if ! bundle exec ruby fastlane/bin/sa-release validate-publish-handoff \
+              --manifest release-archive/manifest.json \
+              --tag "${EXPECTED_TAG}" \
+              --notes release-archive/app-store-notes.txt \
+              --integrity-failure-marker recovery-terminal-artifact-verification-failure \
+              --output recovery-context.json; then
+            if [[ "${EXPECTED_TERMINAL_FAILURE}" == "artifact_verification" && -f recovery-terminal-artifact-verification-failure ]]; then
+              echo "The publisher's terminal GitHub asset-integrity failure was independently reproduced before preservation." >> "${GITHUB_STEP_SUMMARY}"
+            else
+              exit 1
+            fi
+          fi
 
       - name: Reconcile an ambiguous App Store submission
         id: submission

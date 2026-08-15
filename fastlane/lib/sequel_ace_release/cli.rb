@@ -752,10 +752,11 @@ module SequelAceRelease
     def validate_publish_handoff(arguments)
       options = {}
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release validate-publish-handoff --manifest FILE --tag TAG --notes FILE"
+        value.banner = "Usage: sa-release validate-publish-handoff --manifest FILE --tag TAG --notes FILE [--integrity-failure-marker FILE]"
         value.on("--manifest FILE") { |item| options[:manifest] = item }
         value.on("--tag TAG") { |item| options[:tag] = item }
         value.on("--notes FILE") { |item| options[:notes] = item }
+        value.on("--integrity-failure-marker FILE") { |item| options[:integrity_failure_marker] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
@@ -768,6 +769,9 @@ module SequelAceRelease
         app_store_notes: File.read(options[:notes])
       )
       emit(result, options[:output])
+    rescue IntegrityError
+      write_integrity_failure_marker(options[:integrity_failure_marker])
+      raise
     end
 
     def validate_forward_recovery(arguments)

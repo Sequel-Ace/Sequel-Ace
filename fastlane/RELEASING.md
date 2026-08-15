@@ -218,10 +218,13 @@ bounded manual compatibility handoff:
 
 The compatibility feed request is intentionally unauthenticated because an
 authorized repository credential can see drafts that shipped clients cannot.
-An anonymous GitHub rate limit, transport error, or malformed response is a
-retryable read failure: do not write the terminal integrity marker and do not
-mutate the release. A successfully read but incompatible payload is a terminal
-integrity failure and remains fail-closed.
+An anonymous GitHub rate limit, transport error, or response that cannot be
+read as the feed array is a retryable failure: do not write the terminal
+integrity marker and do not mutate the release. A successfully parsed feed
+containing an incompatible or malformed entry is a terminal integrity failure
+and remains fail-closed. Linux discovery routes that marker through one
+Ubuntu-only recovery pass so private failure evidence is durable and the exact
+wake tag is cleared instead of polling the same terminal state.
 
 A supported API-only replacement may store the ZIP on a separate durable
 public host and leave the primary GitHub release asset-free, but that changes
