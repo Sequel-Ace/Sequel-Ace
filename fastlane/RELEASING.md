@@ -637,7 +637,8 @@ automatic RC recovery described above.
   pending, scheduled discovery stays on Ubuntu and never redownloads or
   reverifies the artifacts. Once ready, the continuation also runs on Ubuntu;
   only a `cloud_running` handoff can select the hosted Mac. `github_api_v1`
-  uses the supported asset API automatically.
+  uses the supported REST asset API with a fresh GitHub App token scoped to
+  exactly `Sequel-Ace/Sequel-Ace`.
 - The release and Alpha-retry workflows never poll Cloud to completion. They
   archive an immutable handoff and release their Ubuntu runners. Xcode Cloud's
   authenticated GitHub check or terminal workflow status wakes the publisher; the
