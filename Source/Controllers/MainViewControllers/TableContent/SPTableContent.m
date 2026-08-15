@@ -332,7 +332,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 - (void)toggleRecordView
 {
+	BOOL willShowRecordView = !recordViewController.isVisible;
 	[recordViewController toggle];
+	if (willShowRecordView) [self _updateRecordView];
 }
 
 #pragma mark -
@@ -4285,6 +4287,8 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 
 - (void)_updateRecordView
 {
+	if (!recordViewController.isVisible) return;
+
 	if (self.deferRecordViewRefreshUntilTableLoadCompletes) {
 		[recordViewController updateWithFields:@[] selectedRowCount:0];
 		return;

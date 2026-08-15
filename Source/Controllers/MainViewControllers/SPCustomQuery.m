@@ -3868,7 +3868,9 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 
 - (void)toggleRecordView
 {
+    BOOL willShowRecordView = !recordViewController.isVisible;
     [recordViewController toggle];
+    if (willShowRecordView) [self _updateRecordView];
 }
 
 #pragma mark -
@@ -3966,6 +3968,8 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 
 - (void)_updateRecordView
 {
+    if (!recordViewController.isVisible) return;
+
     NSUInteger selectedCount = [customQueryView numberOfSelectedRows];
     NSInteger selectedRow = [customQueryView selectedRow];
 
