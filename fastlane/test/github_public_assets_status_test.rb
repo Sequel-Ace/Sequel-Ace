@@ -69,6 +69,43 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
     end
   end
 
+  def test_unexpected_public_asset_is_terminal_integrity_evidence
+    unexpected = github_release_asset(
+      name: "unexpected.zip",
+      digest: Digest::SHA256.hexdigest("unexpected bytes")
+    )
+    with_handoff(assets: [unexpected]) do |manifest, notes, marker, output, client|
+      assert_equal 1, run_cli(manifest: manifest, notes: notes, marker: marker, output: output, client: client)
+      assert_equal "release asset integrity failure\n", File.read(marker)
+      refute_path_exists output
+    end
+  end
+
+  def test_malformed_public_asset_is_terminal_integrity_evidence
+    with_handoff(assets: [{ "name" => nil }]) do |manifest, notes, marker, output, client|
+      assert_equal 1, run_cli(manifest: manifest, notes: notes, marker: marker, output: output, client: client)
+      assert_equal "release asset integrity failure\n", File.read(marker)
+      refute_path_exists output
+    end
+  end
+
+  def test_archived_missing_public_asset_is_terminal_integrity_evidence
+    with_handoff(assets: [], state: "archived") do |manifest, notes, marker, output, client|
+      assert_equal 1, run_cli(manifest: manifest, notes: notes, marker: marker, output: output, client: client)
+      assert_equal "release asset integrity failure\n", File.read(marker)
+      refute_path_exists output
+    end
+  end
+
+  def test_archived_public_asset_checksum_mismatch_is_terminal_integrity_evidence
+    mismatched = asset.merge("digest" => "sha256:#{Digest::SHA256.hexdigest('different bytes')}")
+    with_handoff(assets: [mismatched], state: "archived") do |manifest, notes, marker, output, client|
+      assert_equal 1, run_cli(manifest: manifest, notes: notes, marker: marker, output: output, client: client)
+      assert_equal "release asset integrity failure\n", File.read(marker)
+      refute_path_exists output
+    end
+  end
+
   def test_anonymous_rate_limit_is_retryable_and_does_not_write_an_integrity_marker
     with_handoff(assets: [asset]) do |manifest, notes, marker, output, client|
       client.define_singleton_method(:public_release_feed_page) do
@@ -96,7 +133,7 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
     cli.stub(:github_client, client) { cli.run(arguments) }
   end
 
-  def with_handoff(assets:)
+  def with_handoff(assets:, state: "artifacts_verified")
     Dir.mktmpdir do |directory|
       naming = SequelAceRelease::ReleaseNaming.new(
         channel: "production", version: "5.4.0", build: 20_109, iteration: 1
@@ -112,7 +149,7 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
         canonical_build: 20_109,
         production_build_evidence: production_build_evidence(target: 20_109),
         release_notes_sha256: Digest::SHA256.hexdigest(BODY),
-        state: "artifacts_verified"
+        state: state
       ).with(
         "release_commit_sha" => "d" * 40,
         "verification" => {

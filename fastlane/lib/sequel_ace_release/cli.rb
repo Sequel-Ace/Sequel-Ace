@@ -636,29 +636,29 @@ module SequelAceRelease
       parser.parse!(arguments)
       reject_arguments!(arguments)
       require_options!(options, :tag, :file, :manifest, :notes)
-      client = github_client
-      manifest = Manifest.read(options[:manifest])
-      handoff = PublishHandoff.new(github: client).validate(
-        manifest: manifest,
-        tag: options[:tag],
-        app_store_notes: File.read(options[:notes])
-      )
-      raise ValidationError, "release handoff is not eligible for artifact upload" unless handoff.fetch("eligible")
-
-      release = client.release_by_tag(options[:tag])
-      unless release["id"] == handoff.fetch("github_release_id")
-        raise ValidationError, "release identity changed before artifact upload"
-      end
-      payload = GitHubReleasePayload.new(
-        release: release,
-        expected_digests: release_asset_sha256s!(manifest.to_h)
-      ).validate
-      if payload.fetch("mode") == "manual_web_upload"
-        raise ValidationError,
-              "GitHub API asset uploads cannot preserve the release's #{payload.fetch('compatibility_profile')} " \
-              "payload; upload through a compatible GitHub user session and run github-public-assets-status"
-      end
       begin
+        client = github_client
+        manifest = Manifest.read(options[:manifest])
+        handoff = PublishHandoff.new(github: client).validate(
+          manifest: manifest,
+          tag: options[:tag],
+          app_store_notes: File.read(options[:notes])
+        )
+        raise ValidationError, "release handoff is not eligible for artifact upload" unless handoff.fetch("eligible")
+
+        release = client.release_by_tag(options[:tag])
+        unless release["id"] == handoff.fetch("github_release_id")
+          raise ValidationError, "release identity changed before artifact upload"
+        end
+        payload = GitHubReleasePayload.new(
+          release: release,
+          expected_digests: release_asset_sha256s!(manifest.to_h)
+        ).validate
+        if payload.fetch("mode") == "manual_web_upload"
+          raise ValidationError,
+                "GitHub API asset uploads cannot preserve the release's #{payload.fetch('compatibility_profile')} " \
+                "payload; upload through a compatible GitHub user session and run github-public-assets-status"
+        end
         asset_name = options[:name] || File.basename(options[:file])
         expected_sha256 = verified_release_asset_sha256!(
           manifest: manifest,

@@ -101,7 +101,7 @@ class PublishHandoffTest < Minitest::Test
     end
 
     unexpected_asset = release_for(manifest).merge("assets" => [{ "name" => "unexpected.zip" }])
-    error = assert_raises(SequelAceRelease::ValidationError) do
+    error = assert_raises(SequelAceRelease::IntegrityError) do
       validate(manifest, release: unexpected_asset)
     end
     assert_includes error.message, "unexpected artifacts"
@@ -276,7 +276,7 @@ class PublishHandoffTest < Minitest::Test
   def test_archived_handoff_requires_every_expected_public_asset
     manifest = release_manifest(state: "archived")
 
-    error = assert_raises(SequelAceRelease::ValidationError) do
+    error = assert_raises(SequelAceRelease::IntegrityError) do
       validate(manifest, release: release_for(manifest))
     end
 
@@ -288,7 +288,7 @@ class PublishHandoffTest < Minitest::Test
     assets = release_assets(manifest)
     assets.first["digest"] = "sha256:#{'f' * 64}"
 
-    error = assert_raises(SequelAceRelease::ValidationError) do
+    error = assert_raises(SequelAceRelease::IntegrityError) do
       validate(manifest, release: release_for(manifest).merge("assets" => assets))
     end
 
@@ -298,7 +298,7 @@ class PublishHandoffTest < Minitest::Test
   def test_archived_handoff_requires_a_well_formed_checksum_for_every_asset
     manifest = release_manifest(state: "archived").with("verification" => {})
 
-    error = assert_raises(SequelAceRelease::ValidationError) do
+    error = assert_raises(SequelAceRelease::IntegrityError) do
       validate(manifest, release: release_for(manifest).merge("assets" => release_assets(release_manifest(state: "archived"))))
     end
 
@@ -312,7 +312,7 @@ class PublishHandoffTest < Minitest::Test
       "verification" => verification.merge("duplicate" => verification.fetch("production").dup)
     )
 
-    error = assert_raises(SequelAceRelease::ValidationError) do
+    error = assert_raises(SequelAceRelease::IntegrityError) do
       validate(duplicate, release: release_for(duplicate).merge("assets" => release_assets(original)))
     end
 

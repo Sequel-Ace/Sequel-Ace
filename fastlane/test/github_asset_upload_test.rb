@@ -61,6 +61,58 @@ class GitHubAssetUploadTest < Minitest::Test
     end
   end
 
+  def test_marks_an_unexpected_existing_release_asset_as_terminal_before_upload
+    Dir.mktmpdir do |directory|
+      asset = File.join(directory, "Sequel-Ace-5.3.2.zip")
+      marker = File.join(directory, "terminal-marker")
+      File.binwrite(asset, "verified bytes")
+      unexpected = github_release_asset(
+        name: "unexpected.zip",
+        digest: Digest::SHA256.hexdigest("unexpected bytes")
+      )
+      manifest_path, notes_path, release_data, release_commit = write_handoff(
+        directory,
+        assets: [unexpected]
+      )
+      client = Client.new(nil, release: release_data, release_commit: release_commit)
+      cli = SequelAceRelease::CLI.new(out: StringIO.new, err: StringIO.new, env: {})
+
+      status = cli.stub(:github_client, client) do
+        cli.run(upload_arguments(asset, marker, manifest_path, notes_path))
+      end
+
+      assert_equal 1, status
+      assert_equal "release asset integrity failure\n", File.read(marker)
+      assert_nil client.upload_arguments
+    end
+  end
+
+  def test_marks_an_existing_release_asset_checksum_mismatch_as_terminal_before_upload
+    Dir.mktmpdir do |directory|
+      asset = File.join(directory, "Sequel-Ace-5.3.2.zip")
+      marker = File.join(directory, "terminal-marker")
+      File.binwrite(asset, "verified bytes")
+      mismatched = github_release_asset(
+        name: File.basename(asset),
+        digest: Digest::SHA256.hexdigest("different bytes")
+      )
+      manifest_path, notes_path, release_data, release_commit = write_handoff(
+        directory,
+        assets: [mismatched]
+      )
+      client = Client.new(nil, release: release_data, release_commit: release_commit)
+      cli = SequelAceRelease::CLI.new(out: StringIO.new, err: StringIO.new, env: {})
+
+      status = cli.stub(:github_client, client) do
+        cli.run(upload_arguments(asset, marker, manifest_path, notes_path))
+      end
+
+      assert_equal 1, status
+      assert_equal "release asset integrity failure\n", File.read(marker)
+      assert_nil client.upload_arguments
+    end
+  end
+
   def test_creates_the_integrity_marker_parent_directory
     Dir.mktmpdir do |directory|
       asset = File.join(directory, "Sequel-Ace-5.3.2.zip")
@@ -265,7 +317,7 @@ class GitHubAssetUploadTest < Minitest::Test
     arguments
   end
 
-  def write_handoff(directory, verification_path: nil, legacy: false)
+  def write_handoff(directory, verification_path: nil, legacy: false, assets: [])
     body = <<~BODY
       ## App Store Release Notes
 
@@ -307,6 +359,7 @@ class GitHubAssetUploadTest < Minitest::Test
       title: naming.title,
       body: body,
       author: author,
+      assets: assets,
       created_at: legacy ? "2026-08-13T00:00:00Z" : "2027-08-14T00:00:00Z"
     )
     [manifest_path, notes_path, release, "d" * 40]
