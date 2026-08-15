@@ -26,6 +26,10 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
       @release
     end
 
+    def release_feed_page
+      [@release]
+    end
+
     def validate_release_target!(target_sha:, protected_paths:)
       raise "wrong release target" unless target_sha == "d" * 40
       raise "missing protected paths" if protected_paths.empty?
@@ -40,6 +44,7 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
       status = JSON.parse(File.read(output))
       assert_equal false, status.fetch("ready")
       assert_equal "manual_web_upload", status.fetch("mode")
+      assert_equal "legacy_updater_v1", status.fetch("compatibility_profile")
       assert_equal ["Sequel-Ace-5.4.0.zip"], status.fetch("missing_assets")
     end
   end
@@ -50,6 +55,7 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
       status = JSON.parse(File.read(output))
       assert_equal true, status.fetch("ready")
       assert_equal ["Sequel-Ace-5.4.0.zip"], status.fetch("verified_assets")
+      assert_equal 1, status.fetch("release_feed_entries_verified")
     end
   end
 
@@ -109,43 +115,22 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
       output_path = File.join(directory, "public-assets.json")
       manifest.write(manifest_path)
       File.write(notes_path, "A focused release note.\n")
-      release = {
-        "id" => 370_232_757,
-        "tag_name" => naming.tag,
-        "name" => naming.title,
-        "draft" => false,
-        "prerelease" => true,
-        "body" => BODY,
-        "author" => legacy_author,
-        "created_at" => "2026-08-13T00:00:00Z",
-        "assets" => assets
-      }
+      release = github_release_payload(
+        id: 370_232_757,
+        tag: naming.tag,
+        title: naming.title,
+        body: BODY,
+        assets: assets
+      )
       yield manifest_path, notes_path, marker_path, output_path, GitHub.new(release)
     end
   end
 
   def asset
-    {
-      "id" => 515_968_456,
-      "name" => "Sequel-Ace-5.4.0.zip",
-      "label" => nil,
-      "uploader" => legacy_author,
-      "content_type" => "application/zip",
-      "state" => "uploaded",
-      "digest" => "sha256:#{Digest::SHA256.hexdigest('verified release bytes')}"
-    }
-  end
-
-  def legacy_author
-    {
-      "login" => "Jason-Morcos",
-      "id" => 10_710_367,
-      "node_id" => "MDQ6VXNlcjEwNzEwMzY3",
-      "type" => "User",
-      "following_url" => "https://api.github.com/users/Jason-Morcos/following{/other_user}",
-      "gists_url" => "https://api.github.com/users/Jason-Morcos/gists{/gist_id}",
-      "starred_url" => "https://api.github.com/users/Jason-Morcos/starred{/owner}{/repo}",
-      "events_url" => "https://api.github.com/users/Jason-Morcos/events{/privacy}"
-    }
+    github_release_asset(
+      id: 515_968_456,
+      name: "Sequel-Ace-5.4.0.zip",
+      digest: Digest::SHA256.hexdigest("verified release bytes")
+    )
   end
 end

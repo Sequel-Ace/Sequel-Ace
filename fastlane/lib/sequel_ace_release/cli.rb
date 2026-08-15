@@ -649,10 +649,14 @@ module SequelAceRelease
       unless release["id"] == handoff.fetch("github_release_id")
         raise ValidationError, "release identity changed before artifact upload"
       end
-      if LegacyReleasePayload.required?(release)
+      payload = GitHubReleasePayload.new(
+        release: release,
+        expected_digests: release_asset_sha256s!(manifest.to_h)
+      ).validate
+      if payload.fetch("mode") == "manual_web_upload"
         raise ValidationError,
-              "GitHub API asset uploads are disabled for the legacy-client compatibility epoch; " \
-              "upload through the Jason-Morcos GitHub web session and run github-public-assets-status"
+              "GitHub API asset uploads cannot preserve the release's #{payload.fetch('compatibility_profile')} " \
+              "payload; upload through a compatible GitHub user session and run github-public-assets-status"
       end
       begin
         asset_name = options[:name] || File.basename(options[:file])
@@ -701,10 +705,14 @@ module SequelAceRelease
       unless release["id"] == handoff.fetch("github_release_id")
         raise ValidationError, "release identity changed before public asset validation"
       end
-      result = LegacyReleasePayload.new(
+      validator = GitHubReleasePayload.new(
         release: release,
         expected_digests: release_asset_sha256s!(manifest.to_h)
-      ).validate
+      )
+      result = validator.validate
+      if result.fetch("compatibility_profile") == GitHubReleasePayload::LEGACY_UPDATER_PROFILE
+        result["release_feed_entries_verified"] = validator.validate_legacy_feed!(client.release_feed_page)
+      end
       emit(result.merge(
         "tag" => options[:tag],
         "github_release_id" => release.fetch("id")
@@ -1526,7 +1534,7 @@ module SequelAceRelease
         raise ValidationError, "GitHub release notes no longer match the archived manifest"
       end
 
-      status = LegacyReleasePayload.new(
+      status = GitHubReleasePayload.new(
         release: release,
         expected_digests: release_asset_sha256s!(manifest)
       ).validate

@@ -68,6 +68,23 @@ module SequelAceRelease
       paginate("/repos/#{@repository}/releases", { "per_page" => 100 })
     end
 
+    def release_feed_page(per_page: 30)
+      size = Integer(per_page)
+      raise ValidationError, "GitHub release feed page size must be between 1 and 100" unless (1..100).cover?(size)
+
+      response = @transport.request(
+        "GET",
+        "/repos/#{@repository}/releases",
+        query: { "per_page" => size, "page" => 1 }
+      )
+      body = ensure_response!(response, [200])
+      raise APIError, "GitHub release feed returned a malformed response" unless body.is_a?(Array)
+
+      body
+    rescue ArgumentError, TypeError
+      raise ValidationError, "GitHub release feed page size must be an integer"
+    end
+
     def latest_stable_release
       releases
         .select { |release| !release["draft"] && !release["prerelease"] && release["tag_name"].to_s.start_with?("production/") }

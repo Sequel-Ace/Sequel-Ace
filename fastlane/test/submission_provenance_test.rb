@@ -141,29 +141,14 @@ class SubmissionProvenanceTest < Minitest::Test
   end
 
   def release_for(manifest)
-    {
-      "id" => 100,
-      "tag_name" => manifest.to_h.fetch("tag"),
-      "name" => manifest.to_h.fetch("title"),
-      "draft" => false,
-      "prerelease" => true,
-      "body" => BODY,
-      "author" => legacy_author,
-      "created_at" => "2026-08-13T00:00:00Z",
-      "assets" => [{
-        "name" => "Sequel-Ace-5.3.2.zip",
-        "digest" => "sha256:#{'e' * 64}",
-        "content_type" => "application/zip",
-        "state" => "uploaded",
-        "label" => nil,
-        "uploader" => legacy_author
-      }]
-    }
-  end
-
-  def legacy_author
-    SequelAceRelease::LegacyReleasePayload::JASON_IDENTITY.merge(
-      "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN
+    github_release_payload(
+      tag: manifest.to_h.fetch("tag"),
+      title: manifest.to_h.fetch("title"),
+      body: BODY,
+      assets: [github_release_asset(
+        name: "Sequel-Ace-5.3.2.zip",
+        digest: "e" * 64
+      )]
     )
   end
 end

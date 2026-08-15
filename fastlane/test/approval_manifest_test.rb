@@ -204,38 +204,11 @@ class ApprovalManifestTest < Minitest::Test
         }
       }
     }
-    release = {
-      "tag_name" => "production/5.3.2-20109",
-      "created_at" => "2026-08-13T00:00:00Z",
-      "author" => {
-        "login" => "Jason-Morcos",
-        "id" => 10_710_367,
-        "node_id" => "MDQ6VXNlcjEwNzEwMzY3",
-        "type" => "User",
-        "following_url" => "https://api.github.com/users/Jason-Morcos/following{/other_user}",
-        "gists_url" => "https://api.github.com/users/Jason-Morcos/gists{/gist_id}",
-        "starred_url" => "https://api.github.com/users/Jason-Morcos/starred{/owner}{/repo}",
-        "events_url" => "https://api.github.com/users/Jason-Morcos/events{/privacy}"
-      },
-      "body" => body,
-      "assets" => [{
-        "name" => "Sequel-Ace-5.3.2.zip",
-        "label" => nil,
-        "uploader" => {
-          "login" => "Jason-Morcos",
-          "id" => 10_710_367,
-          "node_id" => "MDQ6VXNlcjEwNzEwMzY3",
-          "type" => "User",
-          "following_url" => "https://api.github.com/users/Jason-Morcos/following{/other_user}",
-          "gists_url" => "https://api.github.com/users/Jason-Morcos/gists{/gist_id}",
-          "starred_url" => "https://api.github.com/users/Jason-Morcos/starred{/owner}{/repo}",
-          "events_url" => "https://api.github.com/users/Jason-Morcos/events{/privacy}"
-        },
-        "content_type" => "application/zip",
-        "state" => "uploaded",
-        "digest" => "sha256:#{digest}"
-      }]
-    }
+    release = github_release_payload(
+      tag: "production/5.3.2-20109",
+      body: body,
+      assets: [github_release_asset(name: "Sequel-Ace-5.3.2.zip", digest: digest)]
+    )
     cli = SequelAceRelease::CLI.new(out: StringIO.new, err: StringIO.new, env: {})
 
     assert cli.send(:verify_release_assets!, release, manifest)

@@ -75,7 +75,7 @@ module SequelAceRelease
           assets: assets,
           expected_names: expected_assets
         )
-        LegacyReleasePayload.new(release: release, expected_digests: expected_digests).validate
+        GitHubReleasePayload.new(release: release, expected_digests: expected_digests).validate
       end
 
       release_body = release.fetch("body", "").to_s

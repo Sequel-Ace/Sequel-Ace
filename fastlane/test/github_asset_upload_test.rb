@@ -149,7 +149,7 @@ class GitHubAssetUploadTest < Minitest::Test
     end
   end
 
-  def test_never_uses_the_github_asset_api_during_the_legacy_client_epoch
+  def test_never_uses_the_github_asset_api_for_a_legacy_compatible_release_payload
     Dir.mktmpdir do |directory|
       asset = File.join(directory, "Sequel-Ace-5.3.2.zip")
       File.binwrite(asset, "verified bytes")
@@ -163,7 +163,7 @@ class GitHubAssetUploadTest < Minitest::Test
       end
 
       assert_equal 1, status
-      assert_includes error.string, "API asset uploads are disabled"
+      assert_includes error.string, "cannot preserve the release's legacy_updater_v1 payload"
       assert_nil client.upload_arguments
     end
   end
@@ -300,25 +300,15 @@ class GitHubAssetUploadTest < Minitest::Test
     notes_path = File.join(directory, "notes.txt")
     manifest.write(manifest_path)
     File.write(notes_path, "A focused release note.\n")
-    author = if legacy
-               {
-                 "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN,
-                 "id" => SequelAceRelease::ReleasePublisher::USER_ID
-               }
-             else
-               { "login" => SequelAceRelease::ReleasePublisher::RELEASE_APP_LOGIN }
-             end
-    release = {
-      "id" => 123,
-      "tag_name" => naming.tag,
-      "name" => naming.title,
-      "draft" => false,
-      "prerelease" => true,
-      "body" => body,
-      "author" => author,
-      "created_at" => legacy ? "2026-08-13T00:00:00Z" : "2027-08-14T00:00:00Z",
-      "assets" => []
-    }
+    author = legacy ? legacy_github_user : { "login" => SequelAceRelease::ReleasePublisher::RELEASE_APP_LOGIN }
+    release = github_release_payload(
+      id: 123,
+      tag: naming.tag,
+      title: naming.title,
+      body: body,
+      author: author,
+      created_at: legacy ? "2026-08-13T00:00:00Z" : "2027-08-14T00:00:00Z"
+    )
     [manifest_path, notes_path, release, "d" * 40]
   end
 end

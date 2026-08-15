@@ -359,18 +359,13 @@ class PublishHandoffTest < Minitest::Test
   end
 
   def release_for(manifest, author: SequelAceRelease::ReleasePublisher::USER_LOGIN)
-    author_data = author == SequelAceRelease::ReleasePublisher::USER_LOGIN ? legacy_author : { "login" => author }
-    {
-      "id" => 100,
-      "tag_name" => manifest.to_h.fetch("tag"),
-      "name" => manifest.to_h.fetch("title"),
-      "draft" => false,
-      "prerelease" => true,
-      "body" => BODY,
-      "author" => author_data,
-      "created_at" => "2026-08-13T00:00:00Z",
-      "assets" => []
-    }
+    author_data = author == SequelAceRelease::ReleasePublisher::USER_LOGIN ? legacy_github_user : { "login" => author }
+    github_release_payload(
+      tag: manifest.to_h.fetch("tag"),
+      title: manifest.to_h.fetch("title"),
+      body: BODY,
+      author: author_data
+    )
   end
 
   def with_alpha_retry(manifest)
@@ -405,29 +400,9 @@ class PublishHandoffTest < Minitest::Test
   end
 
   def release_assets(manifest)
-    manifest.to_h.fetch("artifact_names").map do |name|
-      {
-        "name" => name,
-        "label" => nil,
-        "uploader" => legacy_author,
-        "content_type" => "application/zip",
-        "state" => "uploaded",
-        "digest" => "sha256:#{digest_for(name)}"
-      }
+    manifest.to_h.fetch("artifact_names").each_with_index.map do |name, index|
+      github_release_asset(name: name, digest: digest_for(name), id: 200 + index)
     end
-  end
-
-  def legacy_author
-    {
-      "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN,
-      "id" => SequelAceRelease::ReleasePublisher::USER_ID,
-      "node_id" => "MDQ6VXNlcjEwNzEwMzY3",
-      "type" => "User",
-      "following_url" => "https://api.github.com/users/Jason-Morcos/following{/other_user}",
-      "gists_url" => "https://api.github.com/users/Jason-Morcos/gists{/gist_id}",
-      "starred_url" => "https://api.github.com/users/Jason-Morcos/starred{/owner}{/repo}",
-      "events_url" => "https://api.github.com/users/Jason-Morcos/events{/privacy}"
-    }
   end
 
   def digest_for(name)

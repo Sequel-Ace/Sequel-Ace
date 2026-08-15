@@ -349,37 +349,15 @@ class FinalizationAssetsTest < Minitest::Test
   private
 
   def release
-    {
-      "id" => 100,
-      "tag_name" => "production/5.3.2-20109",
-      "name" => "5.3.2 (20109) - Release Candidate 1",
-      "draft" => false,
-      "prerelease" => true,
-      "body" => @body,
-      "author" => legacy_author,
-      "created_at" => "2026-08-13T00:00:00Z",
-      "assets" => [{
-        "name" => "Sequel-Ace-5.3.2.zip",
-        "label" => nil,
-        "uploader" => legacy_author,
-        "content_type" => "application/zip",
-        "state" => "uploaded",
-        "digest" => "sha256:#{@digest}"
-      }]
-    }
-  end
-
-  def legacy_author
-    {
-      "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN,
-      "id" => SequelAceRelease::ReleasePublisher::USER_ID,
-      "node_id" => "MDQ6VXNlcjEwNzEwMzY3",
-      "type" => "User",
-      "following_url" => "https://api.github.com/users/Jason-Morcos/following{/other_user}",
-      "gists_url" => "https://api.github.com/users/Jason-Morcos/gists{/gist_id}",
-      "starred_url" => "https://api.github.com/users/Jason-Morcos/starred{/owner}{/repo}",
-      "events_url" => "https://api.github.com/users/Jason-Morcos/events{/privacy}"
-    }
+    github_release_payload(
+      tag: "production/5.3.2-20109",
+      title: "5.3.2 (20109) - Release Candidate 1",
+      body: @body,
+      assets: [github_release_asset(
+        name: "Sequel-Ace-5.3.2.zip",
+        digest: @digest
+      )]
+    )
   end
 
   def run_finalizer(app_store:, github:)

@@ -661,7 +661,7 @@ class WorkflowRecoveryTest < Minitest::Test
                        .split("- name: Verify, launch, quit, and package distributable apps", 2).first
     verify = workflow.split("- name: Verify, launch, quit, and package distributable apps", 2).fetch(1)
                      .split("- name: Preserve verified artifacts privately before public attachment", 2).first
-    attach = workflow.split("- name: Attach checksum-idempotent verified public artifacts after the compatibility cutoff", 2).fetch(1)
+    attach = workflow.split("- name: Attach checksum-idempotent verified public artifacts for an API-compatible payload", 2).fetch(1)
                      .split("- name: Revalidate exact public artifacts", 2).first
 
     assert_includes download, '--run-id "${PRODUCTION_RUN_ID}"'
@@ -701,7 +701,7 @@ class WorkflowRecoveryTest < Minitest::Test
     download = workflow.index("- name: Download exact Xcode Cloud artifacts")
     verified_archive = workflow.index("- name: Preserve verified artifacts privately before public attachment")
     inspect = workflow.index("- name: Inspect public artifact compatibility")
-    attach = workflow.index("- name: Attach checksum-idempotent verified public artifacts after the compatibility cutoff")
+    attach = workflow.index("- name: Attach checksum-idempotent verified public artifacts for an API-compatible payload")
     revalidate = workflow.index("- name: Revalidate exact public artifacts")
     archive = workflow.index("- name: Seal verified public artifacts in the private archive")
     submit = workflow.index("- name: Stage, verify, and submit the production App Store version")
@@ -756,13 +756,13 @@ class WorkflowRecoveryTest < Minitest::Test
     refute_includes publish, "if: steps.context.outputs.state != 'archived'"
   end
 
-  def test_api_asset_upload_is_cutoff_only_and_uses_the_dedicated_release_app
+  def test_api_asset_upload_is_profile_gated_and_uses_the_dedicated_release_app
     workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
     inspect = workflow.split("- name: Inspect public artifact compatibility", 2).fetch(1)
                       .split("- name: Mint exact-target public asset token", 2).first
     token = workflow.split("- name: Mint exact-target public asset token", 2).fetch(1)
-                    .split("- name: Attach checksum-idempotent verified public artifacts after the compatibility cutoff", 2).first
-    upload = workflow.split("- name: Attach checksum-idempotent verified public artifacts after the compatibility cutoff", 2).fetch(1)
+                    .split("- name: Attach checksum-idempotent verified public artifacts for an API-compatible payload", 2).first
+    upload = workflow.split("- name: Attach checksum-idempotent verified public artifacts for an API-compatible payload", 2).fetch(1)
                      .split("- name: Revalidate exact public artifacts", 2).first
 
     assert_includes inspect, 'SA_GITHUB_TOKEN: ${{ github.token }}'
@@ -772,6 +772,8 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes upload, "steps.public_assets_before.outputs.mode == 'api_upload'"
     assert_includes upload, 'SA_GITHUB_TOKEN: ${{ steps.public_asset_token.outputs.token }}'
     refute_includes upload, 'SA_GITHUB_TOKEN: ${{ github.token }}'
+    refute_includes inspect, "2027"
+    refute_includes upload, "2027"
   end
 
   def test_submission_and_wake_settlement_require_verified_public_assets

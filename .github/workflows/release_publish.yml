@@ -336,7 +336,7 @@ jobs:
             selected_action="pending"
             {
               echo "Verified artifacts for ${release_tag} are durable in the private archive."
-              echo "A Jason-Morcos GitHub web upload is required before App Store submission; no Mac runner was started."
+              echo "A compatibility-preserving GitHub user upload is required before App Store submission; no Mac runner was started."
             } >> "${GITHUB_STEP_SUMMARY}"
           elif [[ "${production_readiness}" == "failed" ]]; then
             failed_component="production"
@@ -848,7 +848,7 @@ jobs:
           repositories: Sequel-Ace
           permission-contents: write
 
-      - name: Attach checksum-idempotent verified public artifacts after the compatibility cutoff
+      - name: Attach checksum-idempotent verified public artifacts for an API-compatible payload
         if: steps.public_assets_before.outputs.mode == 'api_upload' && steps.public_assets_before.outputs.ready != 'true'
         env:
           ALPHA_ASSET: ${{ steps.context.outputs.alpha_asset }}
@@ -886,23 +886,33 @@ jobs:
             --notes release-archive/app-store-notes.txt \
             --integrity-failure-marker terminal-artifact-verification-failure \
             --output public-assets.json
-          ruby -rjson -e 'value = JSON.parse(File.read(ARGV.fetch(0))); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("ready=#{value.fetch("ready")}"); file.puts("mode=#{value.fetch("mode")}"); file.puts("missing=#{value.fetch("missing_assets").join(",")}") }' public-assets.json
+          ruby -rjson -e 'value = JSON.parse(File.read(ARGV.fetch(0))); File.open(ENV.fetch("GITHUB_OUTPUT"), "a") { |file| file.puts("ready=#{value.fetch("ready")}"); file.puts("mode=#{value.fetch("mode")}"); file.puts("profile=#{value.fetch("compatibility_profile")}"); file.puts("uploaders=#{value.fetch("compatible_uploaders").join(",")}"); file.puts("missing=#{value.fetch("missing_assets").join(",")}") }' public-assets.json
 
       - name: Record the required legacy-compatible browser upload handoff
-        if: steps.public_assets.outputs.ready != 'true'
+        if: steps.public_assets.outputs.mode == 'manual_web_upload' && steps.public_assets.outputs.ready != 'true'
         env:
           ARCHIVE_REFERENCE: ${{ needs.discover.outputs.archive_ref }}
+          COMPATIBILITY_PROFILE: ${{ steps.public_assets.outputs.profile }}
+          COMPATIBLE_UPLOADERS: ${{ steps.public_assets.outputs.uploaders }}
           MISSING_ASSETS: ${{ steps.public_assets.outputs.missing }}
           RELEASE_TAG: ${{ needs.discover.outputs.tag }}
         run: |
           {
             echo "### Legacy-compatible GitHub asset upload required"
             echo "- Tag: ${RELEASE_TAG}"
+            echo "- Compatibility profile: ${COMPATIBILITY_PROFILE}"
+            echo "- Compatible uploaders: ${COMPATIBLE_UPLOADERS}"
             echo "- Missing assets: ${MISSING_ASSETS}"
             echo "- Private archive: ${ARCHIVE_REFERENCE}"
-            echo "- Upload through the Jason-Morcos GitHub web release editor, verify a JSON-null label and Jason uploader, then dispatch this workflow for the exact tag."
+            echo "- Upload through a listed user's GitHub release editor, verify a JSON-null label and compatible uploader, then dispatch this workflow for the exact tag."
             echo "- App Store submission has not started, and the event-driven wake state remains armed."
           } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Reject an incomplete API-compatible upload
+        if: steps.public_assets.outputs.mode == 'api_upload' && steps.public_assets.outputs.ready != 'true'
+        run: |
+          echo "The supported GitHub API path did not produce every expected public artifact; a retry may reconcile the exact release." >&2
+          exit 1
 
       - name: Seal verified public artifacts in the private archive
         if: steps.public_assets.outputs.ready == 'true' && steps.context.outputs.state != 'archived'

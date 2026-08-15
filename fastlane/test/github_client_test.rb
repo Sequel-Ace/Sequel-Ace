@@ -28,6 +28,25 @@ class GitHubClientTest < Minitest::Test
     assert_nil transport.requests.last[:query]
   end
 
+  def test_reads_the_same_bounded_release_feed_page_as_shipped_clients
+    transport = FakeTransport.new([
+      http_response(body: [{ "tag_name" => "production/5.4.0-20109" }])
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    assert_equal 1, client.release_feed_page.length
+    assert_equal({ "per_page" => 30, "page" => 1 }, transport.requests.first[:query])
+  end
+
+  def test_rejects_a_malformed_release_feed_page
+    transport = FakeTransport.new([http_response(body: { "message" => "not an array" })])
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
+
+    error = assert_raises(SequelAceRelease::APIError) { client.release_feed_page }
+
+    assert_includes error.message, "malformed response"
+  end
+
   def test_reads_the_exact_main_ref_sha
     transport = FakeTransport.new([
       http_response(body: { "object" => { "sha" => "a" * 40 } })

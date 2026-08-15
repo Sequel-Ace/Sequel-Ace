@@ -115,6 +115,83 @@ module ReleaseTestHelpers
       "reset_ratings_request" => nil
     }
   end
+
+  def legacy_github_user(login: "Jason-Morcos")
+    identities = {
+      "Jason-Morcos" => [10_710_367, "MDQ6VXNlcjEwNzEwMzY3"],
+      "Kaspik" => [7_204_168, "MDQ6VXNlcjcyMDQxNjg="]
+    }
+    id, node_id = identities.fetch(login)
+    {
+      "login" => login,
+      "id" => id,
+      "node_id" => node_id,
+      "avatar_url" => "https://avatars.githubusercontent.com/u/#{id}?v=4",
+      "gravatar_id" => "",
+      "url" => "https://api.github.com/users/#{login}",
+      "html_url" => "https://github.com/#{login}",
+      "followers_url" => "https://api.github.com/users/#{login}/followers",
+      "following_url" => "https://api.github.com/users/#{login}/following{/other_user}",
+      "gists_url" => "https://api.github.com/users/#{login}/gists{/gist_id}",
+      "starred_url" => "https://api.github.com/users/#{login}/starred{/owner}{/repo}",
+      "subscriptions_url" => "https://api.github.com/users/#{login}/subscriptions",
+      "organizations_url" => "https://api.github.com/users/#{login}/orgs",
+      "repos_url" => "https://api.github.com/users/#{login}/repos",
+      "events_url" => "https://api.github.com/users/#{login}/events{/privacy}",
+      "received_events_url" => "https://api.github.com/users/#{login}/received_events",
+      "type" => "User",
+      "site_admin" => false
+    }
+  end
+
+  def github_release_payload(
+    tag: "production/5.4.0-20109", title: "5.4.0 (20109)", body: "Release notes.",
+    author: legacy_github_user, assets: [], id: 100, prerelease: true,
+    created_at: "2026-08-13T00:00:00Z"
+  )
+    {
+      "url" => "https://api.github.com/repos/Sequel-Ace/Sequel-Ace/releases/#{id}",
+      "assets_url" => "https://api.github.com/repos/Sequel-Ace/Sequel-Ace/releases/#{id}/assets",
+      "upload_url" => "https://uploads.github.com/repos/Sequel-Ace/Sequel-Ace/releases/#{id}/assets{?name,label}",
+      "html_url" => "https://github.com/Sequel-Ace/Sequel-Ace/releases/tag/#{tag}",
+      "id" => id,
+      "author" => author,
+      "node_id" => "release-node-#{id}",
+      "tag_name" => tag,
+      "target_commitish" => "d" * 40,
+      "name" => title,
+      "draft" => false,
+      "prerelease" => prerelease,
+      "created_at" => created_at,
+      "published_at" => created_at,
+      "assets" => assets,
+      "tarball_url" => "https://api.github.com/repos/Sequel-Ace/Sequel-Ace/tarball/#{tag}",
+      "zipball_url" => "https://api.github.com/repos/Sequel-Ace/Sequel-Ace/zipball/#{tag}",
+      "body" => body
+    }
+  end
+
+  def github_release_asset(
+    name:, digest:, uploader: legacy_github_user, label: nil, id: 200,
+    created_at: "2026-08-13T00:05:00Z"
+  )
+    {
+      "url" => "https://api.github.com/repos/Sequel-Ace/Sequel-Ace/releases/assets/#{id}",
+      "id" => id,
+      "node_id" => "asset-node-#{id}",
+      "name" => name,
+      "label" => label,
+      "uploader" => uploader,
+      "content_type" => "application/zip",
+      "state" => "uploaded",
+      "size" => 42,
+      "digest" => "sha256:#{digest}",
+      "download_count" => 0,
+      "created_at" => created_at,
+      "updated_at" => created_at,
+      "browser_download_url" => "https://github.com/Sequel-Ace/Sequel-Ace/releases/download/release/#{name}"
+    }
+  end
 end
 
 class Minitest::Test
