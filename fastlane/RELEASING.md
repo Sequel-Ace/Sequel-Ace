@@ -673,7 +673,10 @@ automatic RC recovery described above.
 - Immediately before every App Store metadata, build-selection, or review
   mutation, submission revalidates the live GitHub tag, authorized-publisher
   non-draft prerelease, immutable body, exact public asset digests, and
-  current-main ancestry against the private archived manifest.
+  current-main ancestry against the private archived manifest. For
+  `legacy_updater_v1`, each of those guards also re-reads and validates the
+  complete anonymous feed. A newly incompatible feed writes terminal integrity
+  evidence and stops before the next Apple mutation.
 - Beta never creates a customer App Store version.
 - The six-hour finalizer changes the GitHub title, prerelease flag, and
   latest flag only after the exact ASC version is `READY_FOR_DISTRIBUTION`, the

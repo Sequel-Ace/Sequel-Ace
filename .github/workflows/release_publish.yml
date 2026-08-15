@@ -977,6 +977,7 @@ jobs:
               --manifest release-archive/manifest.json \
               --notes release-archive/app-store-notes.txt \
               --confirm "SUBMIT ${RELEASE_VERSION} (${RELEASE_BUILD})" \
+              --integrity-failure-marker terminal-artifact-verification-failure \
               --output app-store-submission.json
           fi
           ruby -rjson -e 'File.write("submission-evidence.json", JSON.pretty_generate({"asc_ids" => JSON.parse(File.read("app-store-submission.json"))}) + "\n")'

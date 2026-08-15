@@ -688,7 +688,7 @@ class WorkflowRecoveryTest < Minitest::Test
 
     assert_includes terminal, "sa-release record-failure"
     assert_includes terminal, "terminal_failure == 'artifact_verification'"
-    assert_operator workflow.scan("--integrity-failure-marker terminal-artifact-verification-failure").length, :==, 4
+    assert_operator workflow.scan("--integrity-failure-marker terminal-artifact-verification-failure").length, :==, 5
     refute_includes transient, "sa-release record-failure"
     refute_includes transient, "archive-release-to-ghcr.sh push"
     assert_includes transient, "left unchanged so the next event or gated recovery check can retry safely"

@@ -958,11 +958,12 @@ module SequelAceRelease
     def submit(arguments)
       options = {}
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release submit --manifest FILE --notes FILE --confirm 'SUBMIT VERSION (BUILD)'"
+        value.banner = "Usage: sa-release submit --manifest FILE --notes FILE --confirm 'SUBMIT VERSION (BUILD)' [--integrity-failure-marker FILE]"
         value.on("--manifest FILE") { |item| options[:manifest] = item }
         value.on("--notes FILE") { |item| options[:notes] = item }
         value.on("--confirm TEXT") { |item| options[:confirm] = item }
         value.on("--schedule-at TIME") { |item| options[:schedule_at] = Time.parse(item) }
+        value.on("--integrity-failure-marker FILE") { |item| options[:integrity_failure_marker] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
@@ -1053,6 +1054,9 @@ module SequelAceRelease
           "phased_release_state" => final_snapshot.dig("phased_release", "attributes", "phasedReleaseState")
         }, options[:output])
       end
+    rescue IntegrityError
+      write_integrity_failure_marker(options[:integrity_failure_marker])
+      raise
     end
 
     def create_manifest(arguments)
@@ -1284,15 +1288,35 @@ module SequelAceRelease
     end
 
     def validate_submission_handoff!(manifest:, notes:)
-      result = PublishHandoff.new(github: github_client).validate(
+      client = github_client
+      data = manifest.to_h
+      result = PublishHandoff.new(github: client).validate(
         manifest: manifest,
-        tag: manifest.to_h.fetch("tag"),
+        tag: data.fetch("tag"),
         app_store_notes: notes
       )
       unless result.fetch("eligible") && result.fetch("state") == "archived"
         raise ValidationError, "production submission requires an eligible archived GitHub handoff"
       end
 
+      release = client.release_by_tag(data.fetch("tag"))
+      unless release["id"] == result.fetch("github_release_id") &&
+             release["tag_name"] == data.fetch("tag") &&
+             release["name"] == data.fetch("title") &&
+             release["draft"] == false && release["prerelease"] == true
+        raise IntegrityError, "GitHub release identity changed during App Store submission"
+      end
+      ReleasePublisher.validate!(
+        tag: data.fetch("tag"),
+        login: release.dig("author", "login"),
+        id: release.dig("author", "id"),
+        created_at: release["created_at"]
+      )
+      status = verify_release_assets!(release, data, github: client)
+      if status.key?("release_feed_entries_verified")
+        result["release_feed_entries_verified"] = status.fetch("release_feed_entries_verified")
+      end
+      result["compatibility_profile"] = status.fetch("compatibility_profile")
       result
     end
 
@@ -1532,7 +1556,7 @@ module SequelAceRelease
     def verify_release_assets!(release, manifest, github:)
       actual_notes_sha = Digest::SHA256.hexdigest(release.fetch("body").to_s)
       unless actual_notes_sha == manifest.fetch("release_notes_sha256")
-        raise ValidationError, "GitHub release notes no longer match the archived manifest"
+        raise IntegrityError, "GitHub release notes no longer match the archived manifest"
       end
 
       validator = GitHubReleasePayload.new(
@@ -1541,13 +1565,13 @@ module SequelAceRelease
       )
       status = validator.validate
       unless status.fetch("ready")
-        raise ValidationError,
+        raise IntegrityError,
               "GitHub release is missing artifacts: #{status.fetch('missing_assets').join(', ')}"
       end
       if status.fetch("compatibility_profile") == GitHubReleasePayload::LEGACY_UPDATER_PROFILE
-        validator.validate_legacy_feed!(github.public_release_feed_page)
+        status["release_feed_entries_verified"] = validator.validate_legacy_feed!(github.public_release_feed_page)
       end
-      true
+      status
     end
 
     def release_asset_sha256s!(manifest)
