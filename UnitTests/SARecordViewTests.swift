@@ -184,6 +184,26 @@ final class SARecordViewTests: XCTestCase {
         XCTAssertEqual(model.editDraft, "Gra")
     }
 
+    func testTableFocusRequestSelectsFirstVisibleField() {
+        let model = SARecordViewModel()
+        model.update(fields: fields, selectedRowCount: 1)
+        model.searchText = "display"
+
+        model.requestFocus(.table)
+
+        XCTAssertEqual(model.selectedFieldID, 1)
+        XCTAssertEqual(model.focusTarget, .table)
+        XCTAssertEqual(model.focusRequestID, 1)
+
+        model.requestFocus(.filter)
+
+        XCTAssertEqual(model.focusTarget, .filter)
+        XCTAssertEqual(model.focusRequestID, 2)
+
+        model.searchText = "missing"
+        XCTAssertFalse(model.canFocusTable)
+    }
+
     func testRecordViewValidationUsesSelectionAwareFormatterRules() {
         let defaults = UserDefaults(suiteName: #function)!
         defaults.set("NULL", forKey: "NullValue")
@@ -199,6 +219,12 @@ final class SARecordViewTests: XCTestCase {
         XCTAssertTrue(
             controller.responds(to: NSSelectorFromString("setEditingHandlersWithBegin:validate:commit:"))
         )
+    }
+
+    func testControllerExposesObjectiveCShowHandlerSelector() {
+        let controller = SARecordViewController()
+
+        XCTAssertTrue(controller.responds(to: NSSelectorFromString("setShowHandler:")))
     }
 
     func testControllerUsesExplicitFieldIDsWithPositionalFallback() {
@@ -230,6 +256,30 @@ final class SARecordViewTests: XCTestCase {
         XCTAssertTrue(controller.isVisible)
         controller.toggle()
         XCTAssertFalse(controller.isVisible)
+    }
+
+    func testControllerCallsShowHandlerOnlyWhenOpening() {
+        let parent = NSView(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
+        let grid = NSView(frame: parent.bounds)
+        parent.addSubview(grid)
+        let controller = SARecordViewController()
+        var showCount = 0
+        controller.setShowHandler { showCount += 1 }
+        controller.installOverlay(
+            in: parent,
+            resizing: grid,
+            shortcutTableView: NSTableView(),
+            bottomInset: 0,
+            topInset: 0,
+            autosaveName: "SARecordViewTestsShowHandlerWidth"
+        )
+
+        controller.toggle()
+        XCTAssertEqual(showCount, 1)
+        controller.toggle()
+        XCTAssertEqual(showCount, 1)
+        controller.toggle()
+        XCTAssertEqual(showCount, 2)
     }
 
     func testClosingRecordViewRestoresResultTableFocus() {
@@ -308,6 +358,119 @@ final class SARecordViewTests: XCTestCase {
         XCTAssertFalse(SARecordViewToolbarSupport.shouldHandleSpace(space, firstResponder: nil, tableView: table, recordView: recordView))
     }
 
+    func testArrowKeysMoveFocusBetweenResultAndRecordViews() {
+        let table = NSTableView()
+        let recordView = NSView()
+        let recordRow = NSView()
+        let inlineEditor = NSTextField()
+        let outsideView = NSView()
+        recordView.addSubview(recordRow)
+        recordView.addSubview(inlineEditor)
+        let right = keyEvent(keyCode: 124, characters: "\u{F703}")
+        let left = keyEvent(keyCode: 123, characters: "\u{F702}")
+
+        XCTAssertEqual(
+            SARecordViewToolbarSupport.focusAction(
+                right,
+                firstResponder: table,
+                tableView: table,
+                recordView: recordView,
+                isRecordViewVisible: true,
+                canFocusRecordView: true
+            ),
+            .recordView
+        )
+        XCTAssertNil(SARecordViewToolbarSupport.focusAction(
+            right,
+            firstResponder: table,
+            tableView: table,
+            recordView: recordView,
+            isRecordViewVisible: false,
+            canFocusRecordView: true
+        ))
+        XCTAssertEqual(
+            SARecordViewToolbarSupport.focusAction(
+                left,
+                firstResponder: recordRow,
+                tableView: table,
+                recordView: recordView,
+                isRecordViewVisible: true,
+                canFocusRecordView: true
+            ),
+            .resultTable
+        )
+        XCTAssertNil(SARecordViewToolbarSupport.focusAction(
+            left,
+            firstResponder: inlineEditor,
+            tableView: table,
+            recordView: recordView,
+            isRecordViewVisible: true,
+            canFocusRecordView: true
+        ))
+        XCTAssertNil(SARecordViewToolbarSupport.focusAction(
+            left,
+            firstResponder: outsideView,
+            tableView: table,
+            recordView: recordView,
+            isRecordViewVisible: true,
+            canFocusRecordView: true
+        ))
+    }
+
+    func testCommandFFocusesFilterOnlyFromRecordFieldList() {
+        let table = NSTableView()
+        let recordView = NSView()
+        let recordRow = NSView()
+        let inlineEditor = NSTextField()
+        recordView.addSubview(recordRow)
+        recordView.addSubview(inlineEditor)
+        let commandF = keyEvent(keyCode: 3, characters: "f", modifiers: .command)
+
+        XCTAssertEqual(
+            SARecordViewToolbarSupport.focusAction(
+                commandF,
+                firstResponder: recordRow,
+                tableView: table,
+                recordView: recordView,
+                isRecordViewVisible: true,
+                canFocusRecordView: true
+            ),
+            .filter
+        )
+        XCTAssertNil(SARecordViewToolbarSupport.focusAction(
+            commandF,
+            firstResponder: inlineEditor,
+            tableView: table,
+            recordView: recordView,
+            isRecordViewVisible: true,
+            canFocusRecordView: true
+        ))
+        XCTAssertNil(SARecordViewToolbarSupport.focusAction(
+            commandF,
+            firstResponder: table,
+            tableView: table,
+            recordView: recordView,
+            isRecordViewVisible: true,
+            canFocusRecordView: true
+        ))
+        XCTAssertNil(SARecordViewToolbarSupport.focusAction(
+            keyEvent(keyCode: 124, characters: "\u{F703}", modifiers: .shift),
+            firstResponder: table,
+            tableView: table,
+            recordView: recordView,
+            isRecordViewVisible: true,
+            canFocusRecordView: true
+        ))
+        XCTAssertNil(SARecordViewToolbarSupport.focusAction(
+            keyEvent(keyCode: 124, characters: "\u{F703}", isRepeat: true),
+            firstResponder: table,
+            tableView: table,
+            recordView: recordView,
+            isRecordViewVisible: true,
+            canFocusRecordView: true
+        ))
+    }
+
     func testToolbarItemTargetsRecordViewAction() {
         let item = SARecordViewToolbarSupport.makeToolbarItem(target: NSObject())
 
@@ -315,5 +478,23 @@ final class SARecordViewTests: XCTestCase {
         XCTAssertEqual(item.label, "Record View")
         XCTAssertEqual(item.action.map(NSStringFromSelector), "toggleRecordView:")
         XCTAssertNil(item.view)
+    }
+
+    private func keyEvent(keyCode: UInt16,
+                          characters: String,
+                          modifiers: NSEvent.ModifierFlags = [],
+                          isRepeat: Bool = false) -> NSEvent {
+        NSEvent.keyEvent(
+            with: .keyDown,
+            location: .zero,
+            modifierFlags: modifiers,
+            timestamp: 0,
+            windowNumber: 0,
+            context: nil,
+            characters: characters,
+            charactersIgnoringModifiers: characters,
+            isARepeat: isRepeat,
+            keyCode: keyCode
+        )!
     }
 }

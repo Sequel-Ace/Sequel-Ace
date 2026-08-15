@@ -23,6 +23,17 @@ struct SARecordField: Identifiable, Equatable {
     }
 }
 
+enum SARecordViewFocusTarget: Equatable {
+    case table
+    case filter
+}
+
+enum SARecordViewFocusAction: Equatable {
+    case recordView
+    case resultTable
+    case filter
+}
+
 @objc final class SARecordViewEditSupport: NSObject {
     @objc(validateValue:withFormatter:)
     static func validate(_ value: String, with formatter: Formatter?) -> String? {
@@ -65,6 +76,8 @@ final class SARecordViewModel: ObservableObject {
     @Published var editingFieldID: SARecordField.ID?
     @Published var focusedFieldID: SARecordField.ID?
     @Published var editDraft = ""
+    @Published private(set) var focusRequestID = 0
+    private(set) var focusTarget: SARecordViewFocusTarget?
 
     var beginEditing: ((Int) -> Bool)?
     var validateEditing: ((Int, String) -> String?)?
@@ -76,6 +89,10 @@ final class SARecordViewModel: ObservableObject {
             return fields
         }
         return fields.filter { $0.name.localizedCaseInsensitiveContains(query) }
+    }
+
+    var canFocusTable: Bool {
+        selectedRowCount == 1 && !visibleFields.isEmpty
     }
 
     func update(fields: [SARecordField], selectedRowCount: Int) {
@@ -98,6 +115,14 @@ final class SARecordViewModel: ObservableObject {
         editingFieldID = field.id
         focusedFieldID = field.id
         editDraft = field.value
+    }
+
+    func requestFocus(_ target: SARecordViewFocusTarget) {
+        if target == .table && !visibleFields.contains(where: { $0.id == selectedFieldID }) {
+            selectedFieldID = visibleFields.first?.id
+        }
+        focusTarget = target
+        focusRequestID += 1
     }
 
     func commitEdit() {
@@ -135,11 +160,13 @@ final class SARecordViewModel: ObservableObject {
 private struct SARecordView: View {
     @ObservedObject var model: SARecordViewModel
     @FocusState private var focusedFieldID: SARecordField.ID?
+    @FocusState private var panelFocus: SARecordViewFocusTarget?
 
     var body: some View {
         VStack(spacing: 0) {
             TextField("Filter fields", text: $model.searchText)
                 .textFieldStyle(.roundedBorder)
+                .focused($panelFocus, equals: .filter)
                 .padding(8)
                 .accessibilityLabel("Filter record fields")
 
@@ -149,6 +176,7 @@ private struct SARecordView: View {
         .background(Color(nsColor: .windowBackgroundColor))
         .onChange(of: model.focusedFieldID) { focusedFieldID = $0 }
         .onChange(of: focusedFieldID) { model.editorFocusChanged($0) }
+        .onChange(of: model.focusRequestID) { _ in panelFocus = model.focusTarget }
     }
 
     @ViewBuilder
@@ -218,6 +246,7 @@ private struct SARecordView: View {
                 }
             }
         }
+        .focused($panelFocus, equals: .table)
     }
 
     @ViewBuilder
@@ -362,6 +391,43 @@ private final class SARecordViewOverlayView: NSView {
         return responderView === recordView || responderView.isDescendant(of: recordView)
     }
 
+    static func focusAction(_ event: NSEvent,
+                            firstResponder: NSResponder?,
+                            tableView: NSTableView,
+                            recordView: NSView,
+                            isRecordViewVisible: Bool,
+                            canFocusRecordView: Bool) -> SARecordViewFocusAction? {
+        guard isRecordViewVisible,
+              event.type == .keyDown,
+              !event.isARepeat,
+              let firstResponder else {
+            return nil
+        }
+
+        let modifiers: NSEvent.ModifierFlags = [.command, .control, .option, .shift]
+        let activeModifiers = event.modifierFlags.intersection(modifiers)
+        if event.keyCode == 124,
+           activeModifiers.isEmpty,
+           firstResponder === tableView,
+           canFocusRecordView {
+            return .recordView
+        }
+
+        guard !(firstResponder is NSTextField),
+              !(firstResponder is NSTextView),
+              let responderView = firstResponder as? NSView,
+              responderView === recordView || responderView.isDescendant(of: recordView) else {
+            return nil
+        }
+        if event.keyCode == 123 && activeModifiers.isEmpty {
+            return .resultTable
+        }
+        if event.charactersIgnoringModifiers?.lowercased() == "f", activeModifiers == .command {
+            return .filter
+        }
+        return nil
+    }
+
     @objc(makeToolbarItemWithTarget:)
     static func makeToolbarItem(target: AnyObject) -> NSToolbarItem {
         let item = NSToolbarItem(itemIdentifier: NSToolbarItem.Identifier(itemIdentifier))
@@ -382,6 +448,7 @@ private final class SARecordViewOverlayView: NSView {
     private weak var overlayView: SARecordViewOverlayView?
     private weak var shortcutTableView: NSTableView?
     private var shortcutMonitor: Any?
+    private var showHandler: (() -> Void)?
 
     deinit {
         if let shortcutMonitor {
@@ -398,18 +465,39 @@ private final class SARecordViewOverlayView: NSView {
                         autosaveName: String) {
         self.shortcutTableView = shortcutTableView
         shortcutMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard let self,
-                  let tableView = self.shortcutTableView,
-                  SARecordViewToolbarSupport.shouldHandleSpace(
-                     event,
-                     firstResponder: event.window?.firstResponder,
-                     tableView: tableView,
-                     recordView: self.hostingView
-                   ) else {
+            guard let self, let tableView = self.shortcutTableView else {
                 return event
             }
-            self.toggle()
-            return nil
+            let firstResponder = event.window?.firstResponder
+            if SARecordViewToolbarSupport.shouldHandleSpace(
+                event,
+                firstResponder: firstResponder,
+                tableView: tableView,
+                recordView: self.hostingView
+            ) {
+                self.toggle()
+                return nil
+            }
+            switch SARecordViewToolbarSupport.focusAction(
+                event,
+                firstResponder: firstResponder,
+                tableView: tableView,
+                recordView: self.hostingView,
+                isRecordViewVisible: self.isVisible,
+                canFocusRecordView: self.model.canFocusTable
+            ) {
+            case .recordView:
+                self.model.requestFocus(.table)
+                return nil
+            case .resultTable:
+                tableView.window?.makeFirstResponder(tableView)
+                return nil
+            case .filter:
+                self.model.requestFocus(.filter)
+                return nil
+            case nil:
+                return event
+            }
         }
 
         let savedWidth = UserDefaults.standard.double(forKey: autosaveName)
@@ -449,12 +537,18 @@ private final class SARecordViewOverlayView: NSView {
         overlayView?.isHidden == false
     }
 
+    @objc(setShowHandler:)
+    func setShowHandler(_ handler: @escaping () -> Void) {
+        showHandler = handler
+    }
+
     @objc func toggle() {
         guard let overlayView else {
             return
         }
         if overlayView.isHidden {
             overlayView.show()
+            showHandler?()
         } else {
             overlayView.hide()
             if let shortcutTableView {

@@ -229,6 +229,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
                                         autosaveName:@"SARecordViewContentWidth"];
 
     __weak __typeof__(self) weakSelf = self;
+    [recordViewController setShowHandler:^{
+        [weakSelf _updateRecordView];
+    }];
     [recordViewController setEditingHandlersWithBegin:^BOOL(NSInteger fieldIndex) {
         SPTableContent *strongSelf = weakSelf;
         if (!strongSelf) return NO;
@@ -332,9 +335,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 - (void)toggleRecordView
 {
-	BOOL willShowRecordView = !recordViewController.isVisible;
 	[recordViewController toggle];
-	if (willShowRecordView) [self _updateRecordView];
 }
 
 #pragma mark -

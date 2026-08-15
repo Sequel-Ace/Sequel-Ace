@@ -3786,6 +3786,9 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
                                        autosaveName:@"SARecordViewQueryWidth"];
 
     __weak __typeof__(self) weakSelf = self;
+    [recordViewController setShowHandler:^{
+        [weakSelf _updateRecordView];
+    }];
     [recordViewController setEditingHandlersWithBegin:^BOOL(NSInteger fieldIndex) {
         SPCustomQuery *strongSelf = weakSelf;
         if (!strongSelf) return NO;
@@ -3868,9 +3871,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 
 - (void)toggleRecordView
 {
-    BOOL willShowRecordView = !recordViewController.isVisible;
     [recordViewController toggle];
-    if (willShowRecordView) [self _updateRecordView];
 }
 
 #pragma mark -
