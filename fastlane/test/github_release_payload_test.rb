@@ -163,6 +163,31 @@ class GitHubReleasePayloadTest < Minitest::Test
     assert_includes error.message, "exact GitHub release is absent"
   end
 
+  def test_legacy_feed_target_must_contain_the_exact_public_asset_set_and_digests
+    validator = payload_validator(release)
+
+    missing_error = assert_raises(SequelAceRelease::IntegrityError) do
+      validator.validate_legacy_feed!([release.merge("assets" => [])])
+    end
+    assert_includes missing_error.message, "missing artifacts"
+
+    stale_asset = compatible_asset.merge("digest" => "sha256:#{'0' * 64}")
+    checksum_error = assert_raises(SequelAceRelease::IntegrityError) do
+      validator.validate_legacy_feed!([release.merge("assets" => [stale_asset])])
+    end
+    assert_includes checksum_error.message, "checksum mismatch"
+  end
+
+  def test_legacy_feed_rejects_duplicate_target_identities
+    validator = payload_validator(release)
+
+    error = assert_raises(SequelAceRelease::IntegrityError) do
+      validator.validate_legacy_feed!([release, release.dup])
+    end
+
+    assert_includes error.message, "appears more than once"
+  end
+
   private
 
   def validate(value)

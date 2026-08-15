@@ -710,7 +710,8 @@ module SequelAceRelease
         expected_digests: release_asset_sha256s!(manifest.to_h)
       )
       result = validator.validate
-      if result.fetch("compatibility_profile") == GitHubReleasePayload::LEGACY_UPDATER_PROFILE
+      if result.fetch("ready") &&
+         result.fetch("compatibility_profile") == GitHubReleasePayload::LEGACY_UPDATER_PROFILE
         result["release_feed_entries_verified"] = validator.validate_legacy_feed!(client.public_release_feed_page)
       end
       emit(result.merge(

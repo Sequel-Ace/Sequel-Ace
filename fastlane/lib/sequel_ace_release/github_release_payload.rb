@@ -111,10 +111,25 @@ module SequelAceRelease
         raise IntegrityError,
               "GitHub release feed entry #{index + 1} is not legacy-decodable: #{error.message}"
       end
-      target_visible = releases.any? do |release|
+      target_matches = releases.select do |release|
         release["id"] == @release["id"] && release["tag_name"] == @release["tag_name"]
       end
-      raise IntegrityError, "exact GitHub release is absent from the legacy client's release feed" unless target_visible
+      if target_matches.empty?
+        raise IntegrityError, "exact GitHub release is absent from the legacy client's release feed"
+      end
+      unless target_matches.one?
+        raise IntegrityError, "exact GitHub release appears more than once in the legacy client's release feed"
+      end
+
+      target_status = self.class.new(
+        release: target_matches.first,
+        expected_digests: @expected_digests
+      ).validate
+      unless target_status.fetch("ready")
+        raise IntegrityError,
+              "exact GitHub release is missing artifacts from the legacy client's release feed: " \
+              "#{target_status.fetch('missing_assets').join(', ')}"
+      end
 
       releases.length
     end

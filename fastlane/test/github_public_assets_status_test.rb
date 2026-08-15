@@ -46,6 +46,7 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
       assert_equal "manual_web_upload", status.fetch("mode")
       assert_equal "legacy_updater_v1", status.fetch("compatibility_profile")
       assert_equal ["Sequel-Ace-5.4.0.zip"], status.fetch("missing_assets")
+      refute status.key?("release_feed_entries_verified")
     end
   end
 
