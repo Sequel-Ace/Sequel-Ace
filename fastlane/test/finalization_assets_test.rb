@@ -14,6 +14,24 @@ class FinalizationAssetsTest < Minitest::Test
     assert @cli.send(:verify_release_assets!, value, manifest, github: public_feed_client(value))
   end
 
+  def test_app_authored_release_requires_exact_anonymous_feed_visibility
+    value = release.merge(
+      "author" => {
+        "login" => SequelAceRelease::ReleasePublisher::RELEASE_APP_LOGIN,
+        "id" => 315_153_817,
+        "type" => "Bot"
+      }
+    )
+    github = Object.new
+    github.define_singleton_method(:public_release_feed_page) { [] }
+
+    error = assert_raises(SequelAceRelease::IntegrityError) do
+      @cli.send(:verify_release_assets!, value, manifest, github: github)
+    end
+
+    assert_includes error.message, "release feed metadata is malformed"
+  end
+
   def test_unexpected_public_asset_aborts
     value = release
     value["assets"] << value["assets"].first.merge(

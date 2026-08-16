@@ -14,8 +14,11 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
   BODY
 
   class GitHub
+    attr_reader :public_feed_reads
+
     def initialize(release)
       @release = release
+      @public_feed_reads = 0
     end
 
     def ref_sha(_ref)
@@ -27,6 +30,7 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
     end
 
     def public_release_feed_page
+      @public_feed_reads += 1
       [@release]
     end
 
@@ -47,6 +51,7 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
       assert_equal "legacy_updater_v1", status.fetch("compatibility_profile")
       assert_equal ["Sequel-Ace-5.4.0.zip"], status.fetch("missing_assets")
       refute status.key?("release_feed_entries_verified")
+      assert_equal 0, client.public_feed_reads
     end
   end
 
@@ -57,6 +62,28 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
       assert_equal true, status.fetch("ready")
       assert_equal ["Sequel-Ace-5.4.0.zip"], status.fetch("verified_assets")
       assert_equal 1, status.fetch("release_feed_entries_verified")
+      assert_equal 1, client.public_feed_reads
+    end
+  end
+
+  def test_exact_api_uploaded_asset_requires_anonymous_visibility
+    app_author = {
+      "login" => SequelAceRelease::ReleasePublisher::RELEASE_APP_LOGIN,
+      "id" => 315_153_817,
+      "type" => "Bot"
+    }
+    with_handoff(
+      assets: [asset],
+      author: app_author,
+      created_at: SequelAceRelease::ReleasePublisher::USER_PUBLISHER_CUTOFF.iso8601
+    ) do |manifest, notes, _marker, output, client|
+      assert_equal 0, run_cli(manifest: manifest, notes: notes, output: output, client: client)
+      status = JSON.parse(File.read(output))
+      assert_equal true, status.fetch("ready")
+      assert_equal "api_upload", status.fetch("mode")
+      assert_equal "github_api_v1", status.fetch("compatibility_profile")
+      assert_equal 1, status.fetch("release_feed_entries_verified")
+      assert_equal 1, client.public_feed_reads
     end
   end
 
@@ -188,7 +215,10 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
     cli.stub(:github_client, client) { cli.run(arguments) }
   end
 
-  def with_handoff(assets:, state: "artifacts_verified")
+  def with_handoff(
+    assets:, state: "artifacts_verified", author: legacy_github_user,
+    created_at: "2026-08-13T00:00:00Z"
+  )
     Dir.mktmpdir do |directory|
       naming = SequelAceRelease::ReleaseNaming.new(
         channel: "production", version: "5.4.0", build: 20_109, iteration: 1
@@ -225,7 +255,9 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
         tag: naming.tag,
         title: naming.title,
         body: BODY,
-        assets: assets
+        author: author,
+        assets: assets,
+        created_at: created_at
       )
       yield manifest_path, notes_path, marker_path, output_path, GitHub.new(release)
     end

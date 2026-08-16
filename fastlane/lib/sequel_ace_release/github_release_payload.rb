@@ -48,6 +48,7 @@ module SequelAceRelease
       "state" => "uploaded"
     }.freeze
     TARGET_FEED_RELEASE_FIELDS = %w[name html_url draft prerelease published_at].freeze
+    TARGET_FEED_AUTHOR_FIELDS = %w[id login type].freeze
     TARGET_FEED_ASSET_FIELDS = %w[id size browser_download_url].freeze
     ZONED_TIMESTAMP_PATTERN = /(?:Z|[+-]\d{2}:\d{2})\z/.freeze
 
@@ -101,26 +102,28 @@ module SequelAceRelease
       raise IntegrityError, "GitHub release asset metadata is malformed"
     end
 
-    def validate_legacy_feed!(releases)
+    def validate_public_feed!(releases)
       unless releases.is_a?(Array) && !releases.empty?
         raise IntegrityError, "GitHub release feed metadata is malformed"
       end
 
-      releases.each_with_index do |release, index|
-        validate_legacy_release!(release)
-        release.fetch("assets").each { |asset| validate_legacy_asset_shape!(asset) }
-      rescue IntegrityError, KeyError => error
-        raise IntegrityError,
-              "GitHub release feed entry #{index + 1} is not legacy-decodable: #{error.message}"
+      if self.class.profile_for(@release) == LEGACY_UPDATER_PROFILE
+        releases.each_with_index do |release, index|
+          validate_legacy_release!(release)
+          release.fetch("assets").each { |asset| validate_legacy_asset_shape!(asset) }
+        rescue IntegrityError, KeyError => error
+          raise IntegrityError,
+                "GitHub release feed entry #{index + 1} is not legacy-decodable: #{error.message}"
+        end
       end
       target_matches = releases.select do |release|
-        release["id"] == @release["id"] && release["tag_name"] == @release["tag_name"]
+        release.is_a?(Hash) && release["id"] == @release["id"] && release["tag_name"] == @release["tag_name"]
       end
       if target_matches.empty?
-        raise IntegrityError, "exact GitHub release is absent from the legacy client's release feed"
+        raise IntegrityError, "exact GitHub release is absent from the public release feed"
       end
       unless target_matches.one?
-        raise IntegrityError, "exact GitHub release appears more than once in the legacy client's release feed"
+        raise IntegrityError, "exact GitHub release appears more than once in the public release feed"
       end
 
       target_status = self.class.new(
@@ -129,7 +132,7 @@ module SequelAceRelease
       ).validate
       unless target_status.fetch("ready")
         raise IntegrityError,
-              "exact GitHub release is missing artifacts from the legacy client's release feed: " \
+              "exact GitHub release is missing artifacts from the public release feed: " \
               "#{target_status.fetch('missing_assets').join(', ')}"
       end
       validate_target_feed_match!(target_matches.first)
@@ -221,6 +224,13 @@ module SequelAceRelease
 
         raise IntegrityError,
               "exact GitHub release field #{field.tr('_', ' ')} differs between authenticated and anonymous responses"
+      end
+      TARGET_FEED_AUTHOR_FIELDS.each do |field|
+        next if target.dig("author", field) == @release.dig("author", field)
+
+        raise IntegrityError,
+              "exact GitHub release author field #{field.tr('_', ' ')} differs between authenticated and " \
+              "anonymous responses"
       end
 
       expected_assets = @release.fetch("assets").to_h { |asset| [asset.fetch("name"), asset] }

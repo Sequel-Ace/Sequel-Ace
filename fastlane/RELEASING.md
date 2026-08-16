@@ -178,8 +178,9 @@ version, build floor, wall-clock date, or guessed migration state:
 
 - `legacy_updater_v1` applies when the release author is one of the two users
   represented by the shipped decoder (`Jason-Morcos` or `Kaspik`). It validates
-  the same bounded, anonymous 30-release feed page requested by shipped clients, including
-  every release, author, and asset primitive required by that decoder; exact
+  every release on the same bounded, anonymous 30-release feed page requested
+  by shipped clients, including each author and asset primitive required by
+  that decoder; exact
   enum-constrained identity values; a JSON-null label; ZIP content type;
   uploaded state; and the target asset's manifest checksum. Additional GitHub
   fields are ignored. The exact target entry must also match the authenticated
@@ -189,7 +190,10 @@ version, build floor, wall-clock date, or guessed migration state:
 - `github_api_v1` applies to any other publisher already authorized by the
   separate release-publisher provenance gate. It validates only durable release
   identity and asset integrity fields and deliberately ignores uploader, label,
-  and unrelated or newly added GitHub metadata.
+  unrelated feed entries, and newly added GitHub metadata. The exact target
+  must still be publicly visible with the authenticated title, URL, state,
+  author identity, asset identity, and checksums because every updater discovers
+  releases through the anonymous endpoint regardless of publisher profile.
 
 Consequently an existing user-authored release remains legacy-compatible and
 recoverable after the publisher cutoff, while an App-authored release uses the
@@ -219,15 +223,18 @@ bounded manual compatibility handoff:
 5. App Store submission, finalization, and wake-state clearing remain blocked
    until the same compatibility validator passes again in Actions.
 
-The compatibility feed request is intentionally unauthenticated because an
-authorized repository credential can see drafts that shipped clients cannot.
+The public feed request for every profile is intentionally unauthenticated
+because an authorized repository credential can see drafts that shipped clients
+cannot.
 An anonymous GitHub rate limit, transport error, or response that cannot be
 read as the feed array is a retryable failure: do not write the terminal
 integrity marker and do not mutate the release. A successfully parsed feed
-containing an incompatible or malformed entry is a terminal integrity failure
-and remains fail-closed. Linux discovery routes that marker through one
-Ubuntu-only recovery pass so private failure evidence is durable and the exact
-wake tag is cleared instead of polling the same terminal state.
+with a missing, duplicate, stale, or incompatible exact target is a terminal
+integrity failure and remains fail-closed. Under `legacy_updater_v1`, any other
+entry that the shipped decoder cannot parse is also terminal. Linux discovery
+routes that marker through one Ubuntu-only recovery pass so private failure
+evidence is durable and the exact wake tag is cleared instead of polling the
+same terminal state.
 
 A supported API-only replacement may store the ZIP on a separate durable
 public host and leave the primary GitHub release asset-free, but that changes
@@ -680,10 +687,11 @@ automatic RC recovery described above.
 - Immediately before every App Store metadata, build-selection, or review
   mutation, submission revalidates the live GitHub tag, authorized-publisher
   non-draft prerelease, immutable body, exact public asset digests, and
-  current-main ancestry against the private archived manifest. For
-  `legacy_updater_v1`, each of those guards also re-reads and validates the
-  complete anonymous feed. A newly incompatible feed writes terminal integrity
-  evidence and stops before the next Apple mutation.
+  current-main ancestry against the private archived manifest. Every guard also
+  requires the exact release and assets to match in the anonymous feed; for
+  `legacy_updater_v1`, it additionally validates every visible entry against the
+  shipped decoder. A newly incompatible feed writes terminal integrity evidence
+  and stops before the next Apple mutation.
 - Beta never creates a customer App Store version.
 - The six-hour finalizer changes the GitHub title, prerelease flag, and
   latest flag only after the exact ASC version is `READY_FOR_DISTRIBUTION`, the

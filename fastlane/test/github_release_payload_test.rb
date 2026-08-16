@@ -134,7 +134,7 @@ class GitHubReleasePayloadTest < Minitest::Test
     assert_empty result.fetch("compatible_uploaders")
   end
 
-  def test_legacy_feed_validation_covers_every_release_visible_to_shipped_clients
+  def test_legacy_profile_validates_every_release_visible_to_shipped_clients
     validator = payload_validator(release)
     other = github_release_payload(
       id: 101,
@@ -142,43 +142,43 @@ class GitHubReleasePayloadTest < Minitest::Test
       assets: [github_release_asset(name: "Sequel-Ace-5.3.1.zip", digest: "f" * 64)]
     )
 
-    assert_equal 2, validator.validate_legacy_feed!([release, other])
+    assert_equal 2, validator.validate_public_feed!([release, other])
 
     incompatible = other.merge("author" => modern_release.fetch("author"))
     error = assert_raises(SequelAceRelease::IntegrityError) do
-      validator.validate_legacy_feed!([release, incompatible])
+      validator.validate_public_feed!([release, incompatible])
     end
     assert_includes error.message, "entry 2"
     assert_includes error.message, "legacy-decodable"
   end
 
-  def test_legacy_feed_must_include_the_exact_release
+  def test_public_feed_must_include_the_exact_release
     validator = payload_validator(release)
     other = github_release_payload(id: 101, tag: "production/5.3.1-20104")
 
     error = assert_raises(SequelAceRelease::IntegrityError) do
-      validator.validate_legacy_feed!([other])
+      validator.validate_public_feed!([other])
     end
 
     assert_includes error.message, "exact GitHub release is absent"
   end
 
-  def test_legacy_feed_target_must_contain_the_exact_public_asset_set_and_digests
+  def test_public_feed_target_must_contain_the_exact_public_asset_set_and_digests
     validator = payload_validator(release)
 
     missing_error = assert_raises(SequelAceRelease::IntegrityError) do
-      validator.validate_legacy_feed!([release.merge("assets" => [])])
+      validator.validate_public_feed!([release.merge("assets" => [])])
     end
     assert_includes missing_error.message, "missing artifacts"
 
     stale_asset = compatible_asset.merge("digest" => "sha256:#{'0' * 64}")
     checksum_error = assert_raises(SequelAceRelease::IntegrityError) do
-      validator.validate_legacy_feed!([release.merge("assets" => [stale_asset])])
+      validator.validate_public_feed!([release.merge("assets" => [stale_asset])])
     end
     assert_includes checksum_error.message, "checksum mismatch"
   end
 
-  def test_legacy_feed_target_must_match_updater_consumed_authenticated_fields
+  def test_public_feed_target_must_match_updater_consumed_authenticated_fields
     authenticated = release.merge(
       "name" => "5.4.0 (20109)",
       "prerelease" => false
@@ -204,20 +204,52 @@ class GitHubReleasePayloadTest < Minitest::Test
 
     candidates.each do |candidate|
       error = assert_raises(SequelAceRelease::IntegrityError) do
-        validator.validate_legacy_feed!([candidate])
+        validator.validate_public_feed!([candidate])
       end
       assert_includes error.message, "authenticated and anonymous responses"
     end
   end
 
-  def test_legacy_feed_rejects_duplicate_target_identities
+  def test_public_feed_rejects_duplicate_target_identities
     validator = payload_validator(release)
 
     error = assert_raises(SequelAceRelease::IntegrityError) do
-      validator.validate_legacy_feed!([release, release.dup])
+      validator.validate_public_feed!([release, release.dup])
     end
 
     assert_includes error.message, "appears more than once"
+  end
+
+  def test_api_profile_requires_exact_anonymous_visibility_without_decoding_unrelated_entries
+    authenticated = modern_release
+    validator = payload_validator(authenticated)
+    unrelated_future_release = { "future_shape" => [1, 2, 3] }
+
+    assert_equal 2, validator.validate_public_feed!([authenticated, unrelated_future_release])
+
+    missing_error = assert_raises(SequelAceRelease::IntegrityError) do
+      validator.validate_public_feed!([unrelated_future_release])
+    end
+    assert_includes missing_error.message, "absent from the public release feed"
+
+    stale_error = assert_raises(SequelAceRelease::IntegrityError) do
+      validator.validate_public_feed!([authenticated.merge("assets" => [])])
+    end
+    assert_includes stale_error.message, "missing artifacts"
+  end
+
+  def test_api_profile_public_target_must_match_authenticated_author_identity
+    authenticated = modern_release
+    anonymous = authenticated.merge(
+      "author" => authenticated.fetch("author").merge("login" => "renamed-release-bot")
+    )
+
+    error = assert_raises(SequelAceRelease::IntegrityError) do
+      payload_validator(authenticated).validate_public_feed!([anonymous])
+    end
+
+    assert_includes error.message, "author field login"
+    assert_includes error.message, "authenticated and anonymous responses"
   end
 
   private
