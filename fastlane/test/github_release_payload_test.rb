@@ -178,6 +178,38 @@ class GitHubReleasePayloadTest < Minitest::Test
     assert_includes checksum_error.message, "checksum mismatch"
   end
 
+  def test_legacy_feed_target_must_match_updater_consumed_authenticated_fields
+    authenticated = release.merge(
+      "name" => "5.4.0 (20109)",
+      "prerelease" => false
+    )
+    validator = payload_validator(authenticated)
+    candidates = []
+    candidates << authenticated.merge("name" => "5.4.0 (20109) - Release Candidate 1")
+    candidates << authenticated.merge("draft" => true)
+    candidates << authenticated.merge("prerelease" => true)
+    candidates << authenticated.merge("html_url" => "https://github.com/Sequel-Ace/Sequel-Ace/releases/stale")
+    candidates << authenticated.merge("published_at" => "2026-08-12T00:00:00Z")
+    candidates << authenticated.merge(
+      "assets" => [authenticated.fetch("assets").first.merge("id" => 999)]
+    )
+    candidates << authenticated.merge(
+      "assets" => [authenticated.fetch("assets").first.merge("size" => 41)]
+    )
+    candidates << authenticated.merge(
+      "assets" => [authenticated.fetch("assets").first.merge(
+        "browser_download_url" => "https://github.com/Sequel-Ace/Sequel-Ace/releases/download/stale/app.zip"
+      )]
+    )
+
+    candidates.each do |candidate|
+      error = assert_raises(SequelAceRelease::IntegrityError) do
+        validator.validate_legacy_feed!([candidate])
+      end
+      assert_includes error.message, "authenticated and anonymous responses"
+    end
+  end
+
   def test_legacy_feed_rejects_duplicate_target_identities
     validator = payload_validator(release)
 

@@ -182,7 +182,10 @@ version, build floor, wall-clock date, or guessed migration state:
   every release, author, and asset primitive required by that decoder; exact
   enum-constrained identity values; a JSON-null label; ZIP content type;
   uploaded state; and the target asset's manifest checksum. Additional GitHub
-  fields are ignored.
+  fields are ignored. The exact target entry must also match the authenticated
+  release's updater-consumed title, public URL, draft/prerelease flags,
+  publication time, and downloadable asset identity; a stale anonymous cache
+  cannot satisfy a transition read-back merely by retaining the same ID/tag.
 - `github_api_v1` applies to any other publisher already authorized by the
   separate release-publisher provenance gate. It validates only durable release
   identity and asset integrity fields and deliberately ignores uploader, label,

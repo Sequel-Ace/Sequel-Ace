@@ -286,6 +286,40 @@ class FinalizationAssetsTest < Minitest::Test
     assert_equal 2, feed_reads
   end
 
+  def test_finalization_rejects_a_stale_anonymous_prerelease_after_transition
+    live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    app_store = Object.new
+    app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
+    app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
+    stale_prerelease = release
+    release_data = stale_prerelease
+    updates = 0
+    feed_reads = 0
+    github = Object.new
+    github.define_singleton_method(:ref_sha) { |_ref| "d" * 40 }
+    github.define_singleton_method(:release_by_tag) { |_tag| release_data }
+    github.define_singleton_method(:public_release_feed_page) do
+      feed_reads += 1
+      [stale_prerelease]
+    end
+    github.define_singleton_method(:latest_release) { release_data }
+    github.define_singleton_method(:update_release) do |**options|
+      updates += 1
+      release_data = release_data.merge(
+        "name" => options.fetch(:title), "draft" => false, "prerelease" => options.fetch(:prerelease)
+      )
+    end
+
+    Dir.mktmpdir do |directory|
+      marker = File.join(directory, "terminal-finalization-integrity-failure")
+
+      assert_equal 1, run_finalizer(app_store: app_store, github: github, integrity_marker: marker)
+      assert_equal "release asset integrity failure\n", File.read(marker)
+    end
+    assert_equal 1, updates
+    assert_equal 2, feed_reads
+  end
+
   def test_finalization_rechecks_the_tag_after_the_public_transition
     live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
     app_store = Object.new
@@ -508,8 +542,9 @@ class FinalizationAssetsTest < Minitest::Test
 
   def run_finalizer(app_store:, github:, integrity_marker: nil, output_path: nil)
     unless github.respond_to?(:public_release_feed_page)
-      compatible_release = release
-      github.define_singleton_method(:public_release_feed_page) { [compatible_release] }
+      github.define_singleton_method(:public_release_feed_page) do
+        [github.release_by_tag("production/5.3.2-20109")]
+      end
     end
     Dir.mktmpdir do |directory|
       manifest_path = File.join(directory, "manifest.json")

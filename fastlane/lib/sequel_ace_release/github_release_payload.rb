@@ -47,6 +47,8 @@ module SequelAceRelease
       "content_type" => "application/zip",
       "state" => "uploaded"
     }.freeze
+    TARGET_FEED_RELEASE_FIELDS = %w[name html_url draft prerelease published_at].freeze
+    TARGET_FEED_ASSET_FIELDS = %w[id size browser_download_url].freeze
     ZONED_TIMESTAMP_PATTERN = /(?:Z|[+-]\d{2}:\d{2})\z/.freeze
 
     def self.profile_for(release)
@@ -130,6 +132,7 @@ module SequelAceRelease
               "exact GitHub release is missing artifacts from the legacy client's release feed: " \
               "#{target_status.fetch('missing_assets').join(', ')}"
       end
+      validate_target_feed_match!(target_matches.first)
 
       releases.length
     end
@@ -210,6 +213,29 @@ module SequelAceRelease
           raise IntegrityError, "GitHub asset #{name} has incompatible #{field.tr('_', ' ')}"
         end
       end
+    end
+
+    def validate_target_feed_match!(target)
+      TARGET_FEED_RELEASE_FIELDS.each do |field|
+        next if target[field] == @release[field]
+
+        raise IntegrityError,
+              "exact GitHub release field #{field.tr('_', ' ')} differs between authenticated and anonymous responses"
+      end
+
+      expected_assets = @release.fetch("assets").to_h { |asset| [asset.fetch("name"), asset] }
+      target.fetch("assets").each do |asset|
+        expected = expected_assets.fetch(asset.fetch("name"))
+        TARGET_FEED_ASSET_FIELDS.each do |field|
+          next if asset[field] == expected[field]
+
+          raise IntegrityError,
+                "exact GitHub asset #{asset.fetch('name')} field #{field.tr('_', ' ')} differs between " \
+                "authenticated and anonymous responses"
+        end
+      end
+    rescue KeyError, TypeError
+      raise IntegrityError, "exact GitHub release differs between authenticated and anonymous responses"
     end
 
     def validate_legacy_user!(user, label)
