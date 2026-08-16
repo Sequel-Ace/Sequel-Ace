@@ -89,6 +89,16 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
     end
   end
 
+  def test_missing_verifier_checksum_is_terminal_integrity_evidence
+    with_handoff(assets: [asset]) do |manifest, notes, marker, output, client|
+      SequelAceRelease::Manifest.read(manifest).with("verification" => {}).write(manifest)
+
+      assert_equal 1, run_cli(manifest: manifest, notes: notes, marker: marker, output: output, client: client)
+      assert_equal "release asset integrity failure\n", File.read(marker)
+      refute_path_exists output
+    end
+  end
+
   def test_archived_missing_public_asset_is_terminal_integrity_evidence
     with_handoff(assets: [], state: "archived") do |manifest, notes, marker, output, client|
       assert_equal 1, run_cli(manifest: manifest, notes: notes, marker: marker, output: output, client: client)

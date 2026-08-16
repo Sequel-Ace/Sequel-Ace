@@ -1604,17 +1604,17 @@ module SequelAceRelease
         next unless value.is_a?(Hash) && value["zip_path"] && value["zip_sha256"]
 
         name = File.basename(value["zip_path"])
-        raise ValidationError, "private manifest has duplicate artifact checksums for #{name}" if result.key?(name)
+        raise IntegrityError, "private manifest has duplicate artifact checksums for #{name}" if result.key?(name)
 
         result[name] = value["zip_sha256"].to_s.downcase
       end
       missing_digests = expected_names - expected_digests.keys
       unless missing_digests.empty?
-        raise ValidationError, "private manifest is missing artifact checksums: #{missing_digests.join(', ')}"
+        raise IntegrityError, "private manifest is missing artifact checksums: #{missing_digests.join(', ')}"
       end
       unexpected_digests = expected_digests.keys - expected_names
       unless unexpected_digests.empty?
-        raise ValidationError, "private manifest has unexpected artifact checksums: #{unexpected_digests.join(', ')}"
+        raise IntegrityError, "private manifest has unexpected artifact checksums: #{unexpected_digests.join(', ')}"
       end
       expected_digests
     end
