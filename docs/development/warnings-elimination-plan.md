@@ -212,21 +212,45 @@ Execution notes:
   neither a result nor an error is recorded: it still returns nil without
   touching the caller's error pointer.
 
-## Step 9 — "Implementing deprecated method" batch — 42 warnings (measured)
+## Step 9a — Informal-protocol conformance — ✅ Done (36 of the 42)
 
-Implementations of deprecated delegate signatures (mostly the pre-10.7
-NSTableView drag API `tableView:writeRowsWithIndexes:toPasteboard:` and
-friends) across SPFieldMapperController, SPQueryFavoriteManager,
-SPContentFilterManager, SPProcessListController, SPQueryController,
-SPServerVariablesController, SPBundleEditorController, SPNavigatorController,
-SPConnectionController, SPCustomQuery, SPTableTriggers, SPTableRelations,
-SPExportController, SPAppController, SPEditorPreferencePane.
-Adopt `NSPasteboardWriting`/`tableView:pasteboardWriterForRow:` per file;
-chunk into 2-3 PRs by area (managers / table views / misc). Each needs manual
-drag-drop verification — slowest batch, do last of the mechanical ones.
+⚠️ **The plan mis-described this batch.** It assumed "mostly the pre-10.7
+NSTableView drag API … each needs manual drag-drop verification — slowest batch".
+Reading the actual method behind each of the 42 warnings says otherwise:
 
-⚠️ The original "~25" estimate is low: a clean build after step 8 reports **42**
-of these, so plan for 3 PRs rather than 2.
+| Method | Count | Formal protocol |
+|---|---|---|
+| `validateMenuItem:` | 18 | `NSMenuItemValidation` |
+| `controlTextDidChange:` / `…EndEditing:` | 14 | `NSControlTextEditingDelegate` |
+| `validModesForFontPanel:` | 3 | `NSFontChanging` |
+| `validateToolbarItem:` | 1 | `NSToolbarItemValidation` |
+| `tableView:` / `outlineView:` / `splitView:` | 6 | see step 9b |
+
+36 of them are AppKit informal `NSObject` category methods that became members
+of formal protocols (`API_DEPRECATED("This is now … of the X protocol")`), so
+the fix is one conformance declaration per class — method bodies untouched, no
+behavior change, nothing to drag-test. Landed as a single sweep over 21 files,
+following the conformance style already used by `SPFilterTableController` and
+`SPGotoDatabaseController`.
+
+## Step 9b — Genuinely deprecated delegate methods — 6 warnings
+
+The remainder, which do need real changes and manual verification:
+
+- `tableView:writeRowsWithIndexes:toPasteboard:` (4) — SPCustomQuery:2629,
+  SPTableContent:4482, SPTableStructure:2239, SPNetworkPreferencePane:764.
+  Adopt `tableView:pasteboardWriterForRow:`; note the drop side
+  (`validateDrop:` / `acceptDrop:`) is *not* deprecated and stays as is, but it
+  reads the pasteboard the write side produces — change both together per file.
+- `outlineView:writeItems:toPasteboard:` (1) — SPNavigatorController:1080.
+  Same migration, `outlineView:pasteboardWriterForItem:`.
+- `splitView:shouldCollapseSubview:forDoubleClickOnDividerAtIndex:` (1) —
+  SPSplitView:478. Unrelated to dragging; check what replaced it before
+  touching, it may just need the delegate protocol adopted.
+
+So the drag-API assumption was right for 5 of 42, not "most". These do touch
+behavior: verify drag-and-drop (table reordering, navigator drags to the query
+editor) and divider double-click collapse by hand, one PR per area.
 
 ## Deferred (own projects, not part of this burn-down)
 
@@ -255,7 +279,8 @@ of these, so plan for 3 PRs rather than 2.
 | 4-5 (archiver + notifications) | ~225 |
 | 6 + 7 (help viewer + AppKit batch) | **173 (measured, clean build)** |
 | 8 (Swift 6) | **165 (measured, clean build)** |
-| 9 (deprecated delegate methods) | ~123 (165 − 42 measured) |
+| 9a (informal-protocol conformance) | **129 (measured, clean build)** |
+| 9b (6 real delegate methods) | ~123 |
 
 **How these are counted.** Rows through step 5 are the original estimates, read
 off Xcode's issue navigator (which counts a file compiled into several targets

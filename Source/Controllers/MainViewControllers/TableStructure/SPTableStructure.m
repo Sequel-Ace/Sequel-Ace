@@ -109,7 +109,9 @@ struct _cmpMap {
  */
 static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntries);
 
-@interface SPTableStructure () {
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPTableStructure () <NSMenuItemValidation> {
 	TableSortHelper *fieldsSortHelper;
 }
 

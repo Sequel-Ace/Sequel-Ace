@@ -73,7 +73,9 @@
 
 @end
 
-@interface SPBundleEditorController ()
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPBundleEditorController () <NSMenuItemValidation, NSControlTextEditingDelegate>
 
 - (void)_updateBundleDataView;
 - (void)_updateBundleMetaSummary;
