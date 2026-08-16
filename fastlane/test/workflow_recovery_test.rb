@@ -51,6 +51,7 @@ class WorkflowRecoveryTest < Minitest::Test
       ".github/workflows/release_feasibility.yml:Refresh release App token for probe cleanup" => cleanup_permissions,
       ".github/workflows/release_finalize.yml:Mint exact-target release mutation token" => release_mutation_permissions,
       ".github/workflows/release_publish.yml:Mint release mutation token for Cloud failure annotation" => release_mutation_permissions,
+      ".github/workflows/release_publish.yml:Mint exact-target public asset token" => [["permission-contents", "write"]],
       ".github/workflows/release_publish.yml:Mint release mutation token for Alpha recovery annotation" => release_mutation_permissions,
       ".github/workflows/release_publish.yml:Mint release mutation token for terminal failure annotation" => release_mutation_permissions
     }
@@ -142,7 +143,7 @@ class WorkflowRecoveryTest < Minitest::Test
     refute_includes exact_finalize_token, "continue-on-error: true"
   end
 
-  def test_user_publisher_credential_is_scoped_only_to_initial_release_creation
+  def test_user_publisher_credential_is_scoped_only_to_live_selection_and_initial_creation
     release = File.read(repo_path(".github/workflows/release.yml"))
     selector = release.split("- name: Select the initial GitHub release publisher", 2).fetch(1)
                       .split("- name: Create the tag-backed GitHub prerelease as Jason-Morcos", 2).first
@@ -151,14 +152,16 @@ class WorkflowRecoveryTest < Minitest::Test
     app_creation = release.split("- name: Create or recover the tag-backed GitHub prerelease with the release App", 2).fetch(1)
                           .split("- name: Record the exact GitHub prerelease identity", 2).first
 
-    assert_equal 1, release.scan(/^\s+SA_RELEASE_GITHUB_PUBLISHER_TOKEN:/).length
-    assert_equal 1, release.scan(/secrets\.SA_RELEASE_GITHUB_PUBLISHER_TOKEN/).length
+    assert_equal 2, release.scan(/^\s+SA_RELEASE_GITHUB_PUBLISHER_TOKEN:/).length
+    assert_equal 2, release.scan(/secrets\.SA_RELEASE_GITHUB_PUBLISHER_TOKEN/).length
     assert_includes user_creation,
                     'SA_RELEASE_GITHUB_PUBLISHER_TOKEN: ${{ secrets.SA_RELEASE_GITHUB_PUBLISHER_TOKEN }}'
     assert_includes user_creation, "if: steps.release_publisher.outputs.mode == 'user'"
     assert_includes user_creation, 'SA_GITHUB_TOKEN: ${{ steps.release_mutation_token.outputs.token }}'
-    refute_includes selector, "SA_RELEASE_GITHUB_PUBLISHER_TOKEN"
+    assert_includes selector,
+                    'SA_RELEASE_GITHUB_PUBLISHER_TOKEN: ${{ secrets.SA_RELEASE_GITHUB_PUBLISHER_TOKEN }}'
     assert_includes selector, "github-release-publisher-mode"
+    assert_includes selector, "live credential capability"
     refute_includes app_creation, "SA_RELEASE_GITHUB_PUBLISHER_TOKEN"
     assert_includes app_creation, "steps.release_publisher.outputs.mode == 'app'"
     assert_includes app_creation, "steps.release_publisher.outputs.mode == 'existing'"
@@ -188,12 +191,15 @@ class WorkflowRecoveryTest < Minitest::Test
     end
   end
 
-  def test_artifact_wake_adapter_mints_only_an_exact_repository_variables_token
-    {
-      ".github/workflows/release.yml" => "Arm event-driven artifact publication for the exact handoff",
-      ".github/workflows/release_alpha_retry.yml" => "Arm event-driven artifact publication for the exact Alpha retry",
-      ".github/workflows/release_publish.yml" => "Clear only the exact settled handoff"
-    }.each do |path, consumer_name|
+  def test_release_wake_adapter_mints_only_an_exact_repository_variables_token
+    [
+      [".github/workflows/release.yml", "Arm event-driven artifact publication for the exact handoff"],
+      [".github/workflows/release_alpha_retry.yml", "Arm event-driven artifact publication for the exact Alpha retry"],
+      [".github/workflows/release_publish.yml", "Arm the exact production finalization wake state"],
+      [".github/workflows/release_publish.yml", "Arm the reconciled production finalization wake state"],
+      [".github/workflows/release_publish.yml", "Clear only the exact settled handoff"],
+      [".github/workflows/release_finalize.yml", "Clear only the exact settled finalization wake state"]
+    ].each do |path, consumer_name|
       workflow = File.read(repo_path(path))
       consumer = workflow.split("- name: #{consumer_name}", 2).fetch(1)
                          .split(/^\s{6}- name: /, 2).first
@@ -212,6 +218,9 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes adapter, '.permissions.actions_variables == "write"'
     assert_includes adapter, '.repositories | type == "array" and length == 1'
     assert_includes adapter, "--method DELETE installation/token"
+    assert_includes adapter, "SA_RELEASE_PENDING_ARTIFACT_TAG"
+    assert_includes adapter, "SA_RELEASE_PENDING_FINALIZATION_TAG"
+    assert_includes adapter, "Unsupported release wake-state variable"
   end
 
   def test_optional_release_annotations_cannot_recreate_a_missing_tag_from_main
@@ -466,9 +475,9 @@ class WorkflowRecoveryTest < Minitest::Test
     refute_includes publisher, "sleep "
     publish_job = publisher.split("  publish:", 2).fetch(1).split("  recover_publish_failure:", 2).first
     cloud_failure = publisher.split("  cloud_failure:", 2).fetch(1).split("  publish:", 2).first
-    assert_includes publish_job, "if: needs.discover.outputs.action == 'publish'"
+    assert_includes publish_job, "needs.discover.outputs.action == 'publish' || needs.discover.outputs.action == 'continue'"
     refute_includes publish_job, "action == 'fail'"
-    assert_includes publish_job, "runs-on: macos-15"
+    assert_includes publish_job, "needs.discover.outputs.action == 'continue' && 'ubuntu-latest' || 'macos-15'"
     assert_includes cloud_failure, "if: needs.discover.outputs.action == 'fail'"
     assert_includes cloud_failure, "runs-on: ubuntu-latest"
     assert_includes publisher, "selected_action=\"pending\""
@@ -611,7 +620,8 @@ class WorkflowRecoveryTest < Minitest::Test
 
     assert_includes discovery, 'archive_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-publish-archive.XXXXXX")"'
     assert_includes discovery, 'state_directory="$(mktemp -d "${RUNNER_TEMP}/sequel-ace-publish-state.XXXXXX")"'
-    assert_includes discovery, '--manifest "${archive_directory}/manifest.json"'
+    assert_includes discovery, 'manifest_path="${archive_directory}/manifest.json"'
+    assert_includes discovery, '--manifest "${manifest_path}"'
     assert_includes discovery, '--output "${state_directory}/context.json"'
     assert_includes discovery, '--output "${state_directory}/production-status.json"'
     assert_includes discovery, '--output "${state_directory}/alpha-status.json"'
@@ -651,7 +661,9 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes discovery, "Requested release \${release_tag} is not eligible for artifact publication."
     assert_includes discovery, "recovery wake state can be cleared."
     assert_includes discovery, "PublishHandoff::ELIGIBLE_STATES"
-    refute_includes discovery, "if ! bundle exec ruby fastlane/bin/sa-release validate-publish-handoff"
+    assert_includes discovery, "if ! bundle exec ruby fastlane/bin/sa-release validate-publish-handoff"
+    assert_includes discovery, '--integrity-failure-marker "${integrity_marker}"'
+    assert_includes discovery, "Live handoff validation failed transiently; recovery remains armed."
   end
 
   def test_publisher_shell_uses_environment_indirection_for_external_values
@@ -659,9 +671,9 @@ class WorkflowRecoveryTest < Minitest::Test
     download = workflow.split("- name: Download exact Xcode Cloud artifacts", 2).fetch(1)
                        .split("- name: Verify, launch, quit, and package distributable apps", 2).first
     verify = workflow.split("- name: Verify, launch, quit, and package distributable apps", 2).fetch(1)
-                     .split("- name: Attach checksum-idempotent verified public artifacts", 2).first
-    attach = workflow.split("- name: Attach checksum-idempotent verified public artifacts", 2).fetch(1)
-                     .split("- name: Archive verified artifacts privately", 2).first
+                     .split("- name: Preserve verified artifacts privately before public attachment", 2).first
+    attach = workflow.split("- name: Attach checksum-idempotent verified public artifacts for an API-compatible payload", 2).fetch(1)
+                     .split("- name: Revalidate exact public artifacts", 2).first
 
     assert_includes download, '--run-id "${PRODUCTION_RUN_ID}"'
     assert_includes download, '--run-id "${ALPHA_RUN_ID}"'
@@ -670,8 +682,8 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes verify, '--output-zip "artifacts/public/${PRODUCTION_ASSET}"'
     assert_includes verify, '--output-zip "artifacts/public/${ALPHA_ASSET}"'
     assert_includes attach, '--tag "${RELEASE_TAG}"'
-    assert_includes attach, '--file "artifacts/public/${PRODUCTION_ASSET}"'
-    assert_includes attach, '--file "artifacts/public/${ALPHA_ASSET}"'
+    assert_includes attach, '--file "release-archive/artifacts/public/${PRODUCTION_ASSET}"'
+    assert_includes attach, '--file "release-archive/artifacts/public/${ALPHA_ASSET}"'
     [download, verify, attach].each do |step|
       run_body = step.split("run: |", 2).fetch(1)
       refute_includes run_body, "${{"
@@ -687,7 +699,8 @@ class WorkflowRecoveryTest < Minitest::Test
 
     assert_includes terminal, "sa-release record-failure"
     assert_includes terminal, "terminal_failure == 'artifact_verification'"
-    assert_operator workflow.scan("--integrity-failure-marker terminal-artifact-verification-failure").length, :==, 2
+    assert_equal 6, workflow.scan("--integrity-failure-marker terminal-artifact-verification-failure").length
+    assert_equal 10, workflow.scan("--integrity-failure-marker").length
     refute_includes transient, "sa-release record-failure"
     refute_includes transient, "archive-release-to-ghcr.sh push"
     assert_includes transient, "left unchanged so the next event or gated recovery check can retry safely"
@@ -698,20 +711,27 @@ class WorkflowRecoveryTest < Minitest::Test
     pull = workflow.index("- name: Pull and revalidate the exact private handoff")
     cloud = workflow.index("- name: Recheck exact Cloud readiness once")
     download = workflow.index("- name: Download exact Xcode Cloud artifacts")
-    attach = workflow.index("- name: Attach checksum-idempotent verified public artifacts")
-    archive = workflow.index("- name: Archive verified artifacts privately")
+    verified_archive = workflow.index("- name: Preserve verified artifacts privately before public attachment")
+    inspect = workflow.index("- name: Inspect public artifact compatibility")
+    attach = workflow.index("- name: Attach checksum-idempotent verified public artifacts for an API-compatible payload")
+    revalidate = workflow.index("- name: Revalidate exact public artifacts")
+    archive = workflow.index("- name: Seal verified public artifacts in the private archive")
     submit = workflow.index("- name: Stage, verify, and submit the production App Store version")
 
     assert_operator pull, :<, cloud
     assert_operator cloud, :<, download
-    assert_operator download, :<, attach
+    assert_operator download, :<, verified_archive
+    assert_operator verified_archive, :<, inspect
+    assert_operator inspect, :<, attach
+    assert_operator attach, :<, revalidate
+    assert_operator revalidate, :<, archive
     assert_operator attach, :<, archive
     assert_operator archive, :<, submit
     assert_includes workflow[pull...cloud], "validate-publish-handoff"
     assert_includes workflow[pull...cloud], "--notes release-archive/app-store-notes.txt"
     assert_includes workflow[cloud...download], '--run-id "${PRODUCTION_RUN_ID}"'
     assert_includes workflow[cloud...download], '--run-id "${ALPHA_RUN_ID}"'
-    upload = workflow[attach...archive]
+    upload = workflow[attach...revalidate]
     assert_equal 2, upload.scan("--manifest release-archive/manifest.json").length
     assert_equal 2, upload.scan("--notes release-archive/app-store-notes.txt").length
     submit_section = workflow[submit..].split("- name: Refresh the private archive with submission evidence", 2).first
@@ -720,14 +740,118 @@ class WorkflowRecoveryTest < Minitest::Test
 
   def test_publisher_replaces_archive_artifacts_before_copying_verified_outputs
     workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
-    archive = workflow.split("- name: Archive verified artifacts privately", 2).fetch(1)
-                      .split("- name: Stage, verify, and submit the production App Store version", 2).first
+    archive = workflow.split("- name: Preserve verified artifacts privately before public attachment", 2).fetch(1)
+                      .split("- name: Mint exact-target public asset token", 2).first
     remove = archive.index("/bin/rm -rf release-archive/artifacts")
     copy = archive.index("/usr/bin/ditto artifacts release-archive/artifacts")
 
     assert remove
     assert copy
     assert_operator remove, :<, copy
+  end
+
+  def test_legacy_web_upload_wait_is_durable_and_does_not_restart_a_mac_runner
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    discovery = workflow.split("  discover:", 2).fetch(1).split("  cloud_failure:", 2).first
+    publish = workflow.split("  publish:", 2).fetch(1).split("  recover_publish_failure:", 2).first
+
+    assert_includes discovery, '"${handoff_state}" == "artifacts_verified"'
+    assert_includes discovery, "github-public-assets-status"
+    assert_includes discovery, 'public_asset_mode}" == "manual_web_upload"'
+    assert_includes discovery, 'manual_assets_pending="true"'
+    assert_includes discovery, 'selected_action="pending"'
+    assert_includes discovery, 'selected_action="continue"'
+    assert_includes discovery, 'if [[ "${handoff_state}" == "cloud_running" ]]'
+    assert_includes discovery, "no Mac runner was started"
+    manual_wait = discovery.index('elif [[ "${manual_assets_pending}" == "true" ]]')
+    api_ready = discovery.index('elif [[ "${production_readiness}" == "ready" && ( "${alpha_readiness}" == "ready"')
+    refute_nil manual_wait
+    refute_nil api_ready
+    mac_publish = discovery.index('selected_action="publish"', api_ready)
+    refute_nil mac_publish
+    api_continuation = discovery.index('selected_action="continue"', mac_publish)
+    refute_nil api_continuation
+    pending_fallback = discovery.index('selected_action="pending"', api_continuation)
+    refute_nil pending_fallback
+    assert_operator manual_wait, :<, api_ready
+    assert_operator api_ready, :<, mac_publish
+    assert_operator mac_publish, :<, api_continuation
+    assert_operator api_continuation, :<, pending_fallback
+    assert_includes publish, "Continue verified release through APIs"
+    assert_includes publish, "needs.discover.outputs.action == 'continue' && 'ubuntu-latest' || 'macos-15'"
+    assert_includes publish, "Install checksum-pinned ORAS on Linux"
+    assert_includes publish, 'when "continue" then ["artifacts_verified", "archived"]'
+    assert_includes publish, "Preserve verified artifacts privately before public attachment"
+    assert_includes publish, "Record the required legacy-compatible browser upload handoff"
+    assert_includes publish, "event-driven wake state remains armed"
+    assert_includes publish, "if: needs.discover.outputs.action == 'publish' && steps.context.outputs.state == 'cloud_running'"
+    assert_equal 3,
+                 publish.scan("if: needs.discover.outputs.action == 'publish' && steps.context.outputs.state == 'cloud_running'").length
+    refute_includes publish, "if: steps.context.outputs.state != 'archived'"
+  end
+
+  def test_terminal_github_asset_integrity_uses_ubuntu_recovery_without_polling_forever
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    discovery = workflow.split("  discover:", 2).fetch(1).split("  cloud_failure:", 2).first
+    publish = workflow.split("  publish:", 2).fetch(1).split("  recover_publish_failure:", 2).first
+    recovery = workflow.split("  recover_publish_failure:", 2).fetch(1)
+
+    assert_includes discovery, 'terminal_integrity_failure="true"'
+    assert_includes discovery, 'if [[ "${terminal_integrity_failure}" == "true" ]]'
+    assert_includes discovery, 'selected_action="continue"'
+    assert_includes discovery, "will be preserved through the Ubuntu recovery path; no Mac runner was started"
+    assert_includes discovery, "Public asset inspection failed transiently; recovery remains armed."
+    assert_operator discovery.index('if [[ "${terminal_integrity_failure}" == "true" ]]'), :<,
+                    discovery.index('elif [[ "${manual_assets_pending}" == "true" ]]')
+    assert_includes publish, "needs.discover.outputs.action == 'continue' && 'ubuntu-latest' || 'macos-15'"
+    assert_includes publish, "--integrity-failure-marker terminal-artifact-verification-failure"
+    assert_includes recovery, "terminal_failure == 'artifact_verification'"
+    assert_includes recovery, "EXPECTED_TERMINAL_FAILURE"
+    assert_includes recovery, "recovery-terminal-artifact-verification-failure"
+    assert_includes recovery, "github-public-assets-status"
+    assert_includes recovery, "recovery-public-assets.json"
+    assert_includes recovery, "could not be reproduced"
+    assert_operator recovery.index("validate-publish-handoff"), :<,
+                    recovery.index("github-public-assets-status")
+    assert_includes recovery, "independently reproduced before preservation"
+    assert_includes recovery, "polling_needed=false"
+  end
+
+  def test_api_asset_upload_is_profile_gated_and_uses_the_dedicated_release_app
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    inspect = workflow.split("- name: Inspect public artifact compatibility", 2).fetch(1)
+                      .split("- name: Mint exact-target public asset token", 2).first
+    token = workflow.split("- name: Mint exact-target public asset token", 2).fetch(1)
+                    .split("- name: Attach checksum-idempotent verified public artifacts for an API-compatible payload", 2).first
+    upload = workflow.split("- name: Attach checksum-idempotent verified public artifacts for an API-compatible payload", 2).fetch(1)
+                     .split("- name: Revalidate exact public artifacts", 2).first
+
+    assert_includes inspect, 'SA_GITHUB_TOKEN: ${{ github.token }}'
+    assert_includes token, "actions/create-github-app-token@"
+    assert_includes token, "steps.public_assets_before.outputs.mode == 'api_upload'"
+    assert_includes token, "permission-contents: write"
+    assert_includes upload, "steps.public_assets_before.outputs.mode == 'api_upload'"
+    assert_includes upload, 'SA_GITHUB_TOKEN: ${{ steps.public_asset_token.outputs.token }}'
+    refute_includes upload, 'SA_GITHUB_TOKEN: ${{ github.token }}'
+    cutover = "2027-08-14T00:00:00Z"
+    refute_includes inspect, cutover,
+                     "public asset inspection must not hardcode the profile cutover date"
+    refute_includes upload, cutover,
+                     "API asset upload must not hardcode the profile cutover date"
+  end
+
+  def test_submission_and_wake_settlement_require_verified_public_assets
+    workflow = File.read(repo_path(".github/workflows/release_publish.yml"))
+    submission = workflow.split("- name: Stage, verify, and submit the production App Store version", 2).fetch(1)
+                         .split("- name: Refresh the private archive with submission evidence", 2).first
+    settlement = workflow.split("  settle_artifact_wake_state:", 2).fetch(1)
+
+    assert_includes submission, "steps.public_assets.outputs.ready == 'true'"
+    assert_includes settlement, "needs.publish.outputs.public_assets_ready == 'true'"
+    assert_includes workflow, "--state artifacts_verified"
+    assert_includes workflow, "--state archived"
+    assert_operator workflow.index("--state artifacts_verified"), :<,
+                    workflow.index("--state archived")
   end
 
   def test_publisher_reconciles_an_existing_exact_submission_before_retrying_mutation
@@ -753,10 +877,14 @@ class WorkflowRecoveryTest < Minitest::Test
     )
   end
 
-  def test_finalizer_continues_when_an_archive_manifest_is_unreadable
+  def test_finalizer_continues_when_an_archive_manifest_is_unreadable_or_mismatched
     workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
-    assert_includes workflow, 'if ! state="$(ruby -rjson'
-    assert_includes workflow, "private release archive has no readable manifest state"
+    assert_includes workflow, 'if ! state="$(bundle exec ruby -Ifastlane/lib -rsequel_ace_release'
+    assert_includes workflow, 'manifest.fetch("tag") == ARGV.fetch(1)'
+    assert_includes workflow, 'manifest.fetch("target_version") == ARGV.fetch(2)'
+    assert_includes workflow, 'manifest.fetch("canonical_build").to_s == ARGV.fetch(3)'
+    assert_includes workflow, '"${archive_directory}/manifest.json" "${release_tag}" "${version}" "${build}"'
+    assert_includes workflow, "private release archive has no valid matching manifest identity"
     assert_includes workflow, "pending=$((pending + 1))"
     assert_includes workflow, "continue"
   end
@@ -769,6 +897,36 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes workflow, "GitHub is finalized but the live archive refresh failed"
     assert_operator workflow.scan("pending=$((pending + 1))").length, :>=, 6
     assert_operator workflow.scan("continue").length, :>=, 5
+  end
+
+  def test_finalizer_archives_terminal_integrity_evidence_without_terminalizing_transport_failures
+    workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
+    execution = workflow.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
+
+    assert_equal 2, execution.scan('--integrity-failure-marker "${integrity_marker}"').length
+    assert_includes execution, 'finalization-integrity-failure.json'
+    assert_includes execution, '"schema_version" => 1'
+    assert_includes execution, '%w[validation transition].include?'
+    assert_includes execution, 'Scripts/archive-release-to-ghcr.sh push "${archive_ref}" "${archive_directory}"'
+    assert_includes execution, 'if [[ -z "${REQUESTED_TAG}" ]]'
+    assert_includes execution, "an authorized exact-tag recovery is required after repair"
+    assert_includes execution, "Retrying archived terminal"
+    assert_equal 3, execution.scan("preserve_finalization_integrity_failure").length
+    assert_includes execution, "terminal pre-transition evidence could not be archived"
+    assert_includes execution, "terminal public-transition evidence could not be archived"
+    assert_includes execution, 'echo "- Terminal integrity failures: ${terminal}"'
+    assert_includes execution, 'echo "Pending ${release_tag}: $(head -n 1 "${state_directory}/pending.log")"'
+    assert_includes execution, 'if [[ -n "${REQUESTED_TAG}" && "${terminal}" -gt 0 ]]'
+    assert_includes execution, "Requested recovery ended with archived terminal integrity evidence."
+
+    validation = execution.index("--validate-only")
+    refute_nil validation
+    clear_obsolete = execution.index('/bin/rm -f "${terminal_evidence}"', validation)
+    refute_nil clear_obsolete
+    finalizing = execution.index("--state finalizing", clear_obsolete)
+    refute_nil finalizing
+    assert_operator validation, :<, clear_obsolete
+    assert_operator clear_obsolete, :<, finalizing
   end
 
   def test_finalizer_polls_every_six_hours_with_an_authorized_manual_fallback
@@ -793,26 +951,25 @@ class WorkflowRecoveryTest < Minitest::Test
     workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
     discovery = workflow.split("  discover:", 2).fetch(1).split("  finalize:", 2).first
     execution = workflow.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
-    manual_discovery = discovery.split('if [[ -n "${REQUESTED_TAG}" ]]', 2).fetch(1).split("          else", 2).first
 
-    assert_includes discovery, 'gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${requested_tag_encoded}"'
-    assert_includes discovery, '.author.login == "sequel-ace-release-automation[bot]"'
-    assert_includes discovery, '.author.login == "sequel-ace-releases[bot]"'
-    assert_includes discovery, '.author.login == "Jason-Morcos"'
+    assert_includes discovery, 'candidate="${REQUESTED_TAG}"'
+    assert_includes discovery, 'candidate="${RELEASE_PENDING_TAG}"'
+    assert_includes discovery, 'gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${candidate_encoded}"'
     assert_includes discovery, ".author.id == 10710367"
-    refute_includes discovery, '.tagName == "production/5.4.0-20105"'
-    refute_includes discovery, '.tag_name == "production/5.4.0-20105"'
-    assert_includes discovery, 'requested_tag_encoded="$(jq -rn --arg value "${REQUESTED_TAG}" \'$value | @uri\')"'
-    assert_includes discovery, '(.created_at | fromdateiso8601) as $created'
-    assert_includes manual_discovery, "Exact manual recovery deliberately accepts a finalized release"
-    assert_includes manual_discovery, ".draft == false"
-    refute_includes manual_discovery, ".prerelease == true"
-    assert_includes discovery, '(.author.login == "Jason-Morcos" and .author.id == 10710367 and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601))'
-    assert_includes discovery, '$build >= 20109 and $created >= ("2027-08-14T00:00:00Z" | fromdateiso8601)'
-    assert_includes execution, 'printf \'%s\\n\' "${REQUESTED_TAG}" > production-candidates.txt'
+    assert_includes discovery, ".author.id == 315153817"
+    assert_includes discovery, ".draft == false"
+    refute_includes discovery, "2027-08-14"
+    refute_includes discovery, "$build >= 20109"
+    refute_includes execution, 'if .prerelease then "prerelease" else "stable" end'
+    refute_includes execution, "only the wake state needs settlement"
+    assert_includes execution, 'manifest.fetch("tag") == ARGV.fetch(1)'
+    assert_includes execution, 'manifest.fetch("target_version") == ARGV.fetch(2)'
+    assert_includes execution, 'manifest.fetch("canonical_build").to_s == ARGV.fetch(3)'
     assert_includes execution, "GitHub is finalized but the live archive refresh failed"
     assert_includes execution, "--state finalizing"
     assert_includes execution, "--state live"
+    assert_includes workflow, "Clear only the exact settled finalization wake state"
+    assert_includes workflow, "SA_RELEASE_PENDING_FINALIZATION_TAG"
   end
 
   def test_scheduled_finalizer_skips_expensive_work_when_disabled_or_empty
@@ -825,9 +982,11 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes discovery, 'if [[ "${RELEASE_ENABLED}" != "true" ]]'
     assert_includes discovery, "the scheduled finalizer did no work"
     assert_includes discovery, "has_candidates=false"
-    assert_includes discovery, "gh api --paginate"
-    assert_includes discovery, 'repos/${GITHUB_REPOSITORY}/releases?per_page=100'
-    assert_includes discovery, ".author.login"
+    assert_includes discovery, 'RELEASE_PENDING_TAG: ${{ vars.SA_RELEASE_PENDING_FINALIZATION_TAG }}'
+    assert_includes discovery, 'if [[ -z "${candidate}" && "${RELEASE_PENDING_TAG}" != "none" ]]'
+    assert_includes discovery, "No production release is awaiting finalization."
+    refute_includes discovery, "gh api --paginate"
+    refute_includes discovery, 'repos/${GITHUB_REPOSITORY}/releases?per_page=100'
     assert_includes discovery, ".author.id == 10710367"
     refute_includes discovery, "gh release list"
     refute_includes discovery, "--json tagName,isPrerelease,author,createdAt"
@@ -860,6 +1019,17 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes workflow[authorization...ancestry], '[[ "${EXPECTED_SHA}" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]'
     assert_includes proof, '/compare/${EXPECTED_SHA}...${DISPATCH_SHA}'
     assert_includes proof, '"${comparison_status}" == "identical" || "${comparison_status}" == "ahead"'
+  end
+
+  def test_release_start_fails_before_checkout_while_a_production_finalization_is_pending
+    workflow = File.read(repo_path(".github/workflows/release.yml"))
+    authorization = workflow.split("- name: Enforce release authorization", 2).fetch(1)
+                            .split("- name: Prove the frozen release SHA is on dispatch main", 2).first
+
+    assert_includes authorization,
+                    'PENDING_FINALIZATION_TAG: ${{ vars.SA_RELEASE_PENDING_FINALIZATION_TAG }}'
+    assert_includes authorization, '"${PENDING_FINALIZATION_TAG}" != "none"'
+    assert_includes authorization, "A production release is still awaiting finalization"
   end
 
   def test_exact_resume_executes_trusted_current_tooling_but_keeps_the_release_plan_frozen
@@ -899,7 +1069,7 @@ class WorkflowRecoveryTest < Minitest::Test
     refute_includes feasibility, "brew install oras"
 
     publisher = File.read(repo_path(".github/workflows/release_publish.yml"))
-    assert_equal 6, publisher.scan(action).length
+    assert_equal 7, publisher.scan(action).length
     assert_includes publisher, "oras_1.3.3_linux_amd64.tar.gz"
     assert_includes publisher, linux_checksum
     assert_includes publisher, "oras_1.3.3_darwin_arm64.tar.gz"
@@ -979,35 +1149,33 @@ class WorkflowRecoveryTest < Minitest::Test
     end
   end
 
-  def test_finalizer_discovers_only_production_prereleases
+  def test_finalizer_uses_only_the_exact_production_wake_tag_and_stable_publisher_ids
     workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
     discovery = workflow.split("  discover:", 2).fetch(1).split("  finalize:", 2).first
     execution = workflow.split("- name: Finalize only exact App Store-live releases", 2).fetch(1)
 
-    discovery_listing = discovery.index('candidates="$(gh api --paginate')
-    discovery_prerelease_filter = discovery.index(".prerelease == true", discovery_listing)
-    discovery_production_filter = discovery.index('.tag_name | test("^production/', discovery_listing)
-    assert discovery_listing
-    assert discovery_prerelease_filter
-    assert discovery_production_filter
-    assert_operator discovery_listing, :<, discovery_prerelease_filter
-    assert_operator discovery_prerelease_filter, :<, discovery_production_filter
+    assert_includes discovery, 'RELEASE_PENDING_TAG: ${{ vars.SA_RELEASE_PENDING_FINALIZATION_TAG }}'
+    assert_includes discovery, 'candidate="${REQUESTED_TAG}"'
+    assert_includes discovery, 'candidate="${RELEASE_PENDING_TAG}"'
+    assert_includes discovery, '^production/[0-9]+'
+    assert_includes discovery, 'releases/tags/${candidate_encoded}'
     assert_includes discovery, ".draft == false"
+    assert_includes discovery, ".author.id == 10710367"
+    assert_includes discovery, ".author.id == 315153817"
+    refute_includes discovery, ".author.login"
+    refute_includes discovery, "fromdateiso8601"
+    refute_includes discovery, "20109"
 
-    execution_listing = execution.index("gh api --paginate")
-    execution_prerelease_filter = execution.index(".prerelease == true")
-    execution_production_filter = execution.index('.tag_name | test("^production/')
-    assert execution_listing
-    assert execution_prerelease_filter
-    assert execution_production_filter
-    assert_operator execution_listing, :<, execution_prerelease_filter
-    assert_operator execution_prerelease_filter, :<, execution_production_filter
+    assert_includes execution, 'candidate="${REQUESTED_TAG}"'
+    assert_includes execution, 'candidate="${RELEASE_PENDING_TAG}"'
+    assert_includes execution, 'releases/tags/${candidate_encoded}'
+    refute_includes execution, 'if .prerelease then "prerelease" else "stable" end'
     assert_includes execution, ".draft == false"
-    assert_includes execution, ".author.login"
     assert_includes execution, ".author.id == 10710367"
-    assert_includes execution, 'repos/${GITHUB_REPOSITORY}/releases?per_page=100'
+    assert_includes execution, ".author.id == 315153817"
+    refute_includes execution, "gh api --paginate"
     refute_includes execution, "gh release list"
-    assert_operator execution_production_filter, :<, execution.index("--validate-only")
+    assert_operator execution.index('releases/tags/${candidate_encoded}'), :<, execution.index("--validate-only")
     refute_includes workflow, "resolve-app-store-version"
   end
 
@@ -1045,7 +1213,7 @@ class WorkflowRecoveryTest < Minitest::Test
     workflow = File.read(repo_path(".github/workflows/release_finalize.yml"))
     validation = workflow.index("--validate-only")
     finalizing = workflow.index("--state finalizing")
-    archive = workflow.index('Scripts/archive-release-to-ghcr.sh push "${archive_ref}"')
+    archive = workflow.index('Scripts/archive-release-to-ghcr.sh push "${archive_ref}"', finalizing)
     public_transition = workflow.index('--output "${state_directory}/finalization.json"')
     live = workflow.index("--state live")
 
@@ -1242,7 +1410,8 @@ class WorkflowRecoveryTest < Minitest::Test
     end
 
     publisher = File.read(repo_path(".github/workflows/release_publish.yml"))
-    assert_equal 1, publisher.scan("runs-on: macos-15").length
+    assert_includes publisher, "needs.discover.outputs.action == 'continue' && 'ubuntu-latest' || 'macos-15'"
+    refute_includes publisher, "runs-on: macos-15"
 
     ci = File.read(repo_path(".github/workflows/ci_pr_tests.yml"))
     assert_equal 1, ci.scan("runs-on: macos-26").length

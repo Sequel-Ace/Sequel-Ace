@@ -101,7 +101,7 @@ class PublishHandoffTest < Minitest::Test
     end
 
     unexpected_asset = release_for(manifest).merge("assets" => [{ "name" => "unexpected.zip" }])
-    error = assert_raises(SequelAceRelease::ValidationError) do
+    error = assert_raises(SequelAceRelease::IntegrityError) do
       validate(manifest, release: unexpected_asset)
     end
     assert_includes error.message, "unexpected artifacts"
@@ -276,7 +276,7 @@ class PublishHandoffTest < Minitest::Test
   def test_archived_handoff_requires_every_expected_public_asset
     manifest = release_manifest(state: "archived")
 
-    error = assert_raises(SequelAceRelease::ValidationError) do
+    error = assert_raises(SequelAceRelease::IntegrityError) do
       validate(manifest, release: release_for(manifest))
     end
 
@@ -288,7 +288,7 @@ class PublishHandoffTest < Minitest::Test
     assets = release_assets(manifest)
     assets.first["digest"] = "sha256:#{'f' * 64}"
 
-    error = assert_raises(SequelAceRelease::ValidationError) do
+    error = assert_raises(SequelAceRelease::IntegrityError) do
       validate(manifest, release: release_for(manifest).merge("assets" => assets))
     end
 
@@ -298,11 +298,25 @@ class PublishHandoffTest < Minitest::Test
   def test_archived_handoff_requires_a_well_formed_checksum_for_every_asset
     manifest = release_manifest(state: "archived").with("verification" => {})
 
-    error = assert_raises(SequelAceRelease::ValidationError) do
+    error = assert_raises(SequelAceRelease::IntegrityError) do
       validate(manifest, release: release_for(manifest).merge("assets" => release_assets(release_manifest(state: "archived"))))
     end
 
     assert_includes error.message, "missing artifact checksums"
+  end
+
+  def test_archived_handoff_rejects_duplicate_manifest_checksum_sources
+    original = release_manifest(state: "archived")
+    verification = original.to_h.fetch("verification")
+    duplicate = original.with(
+      "verification" => verification.merge("duplicate" => verification.fetch("production").dup)
+    )
+
+    error = assert_raises(SequelAceRelease::IntegrityError) do
+      validate(duplicate, release: release_for(duplicate).merge("assets" => release_assets(original)))
+    end
+
+    assert_includes error.message, "duplicate artifact checksums"
   end
 
   private
@@ -345,21 +359,13 @@ class PublishHandoffTest < Minitest::Test
   end
 
   def release_for(manifest, author: SequelAceRelease::ReleasePublisher::USER_LOGIN)
-    author_data = { "login" => author }
-    if author == SequelAceRelease::ReleasePublisher::USER_LOGIN
-      author_data["id"] = SequelAceRelease::ReleasePublisher::USER_ID
-    end
-    {
-      "id" => 100,
-      "tag_name" => manifest.to_h.fetch("tag"),
-      "name" => manifest.to_h.fetch("title"),
-      "draft" => false,
-      "prerelease" => true,
-      "body" => BODY,
-      "author" => author_data,
-      "created_at" => "2026-08-13T00:00:00Z",
-      "assets" => []
-    }
+    author_data = author == SequelAceRelease::ReleasePublisher::USER_LOGIN ? legacy_github_user : { "login" => author }
+    github_release_payload(
+      tag: manifest.to_h.fetch("tag"),
+      title: manifest.to_h.fetch("title"),
+      body: BODY,
+      author: author_data
+    )
   end
 
   def with_alpha_retry(manifest)
@@ -394,8 +400,8 @@ class PublishHandoffTest < Minitest::Test
   end
 
   def release_assets(manifest)
-    manifest.to_h.fetch("artifact_names").map do |name|
-      { "name" => name, "digest" => "sha256:#{digest_for(name)}" }
+    manifest.to_h.fetch("artifact_names").each_with_index.map do |name, index|
+      github_release_asset(name: name, digest: digest_for(name), id: 200 + index)
     end
   end
 

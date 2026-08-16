@@ -47,25 +47,57 @@ module SequelAceRelease
       }
     GRAPHQL
 
-    def initialize(token:, repository: Config::REPOSITORY, transport: nil, upload_transport: nil)
+    def initialize(
+      token:,
+      repository: Config::REPOSITORY,
+      transport: nil,
+      public_transport: nil,
+      upload_transport: nil
+    )
       raise ValidationError, "GitHub token is required" if token.to_s.empty?
 
       @token = token
       @repository = repository
+      common_headers = {
+        "Accept" => "application/vnd.github+json",
+        "X-GitHub-Api-Version" => "2022-11-28",
+        "User-Agent" => "sequel-ace-release-tool"
+      }
       @transport = transport || HTTPTransport.new(
         base_url: API_URL,
-        default_headers: {
-          "Accept" => "application/vnd.github+json",
-          "Authorization" => "Bearer #{token}",
-          "X-GitHub-Api-Version" => "2022-11-28",
-          "User-Agent" => "sequel-ace-release-tool"
-        }
+        default_headers: common_headers.merge("Authorization" => "Bearer #{token}")
+      )
+      # Shipped Sequel Ace versions read this endpoint without credentials.
+      # Keep this transport deliberately anonymous so drafts and other
+      # credential-dependent response differences cannot satisfy the gate.
+      @public_transport = public_transport || HTTPTransport.new(
+        base_url: API_URL,
+        default_headers: common_headers
       )
       @upload_transport = upload_transport
     end
 
     def releases
       paginate("/repos/#{@repository}/releases", { "per_page" => 100 })
+    end
+
+    def public_release_feed_page(per_page: 30)
+      size = begin
+        Integer(per_page)
+      rescue ArgumentError, TypeError
+        raise ValidationError, "GitHub release feed page size must be an integer"
+      end
+      raise ValidationError, "GitHub release feed page size must be between 1 and 100" unless (1..100).cover?(size)
+
+      response = @public_transport.request(
+        "GET",
+        "/repos/#{@repository}/releases",
+        query: { "per_page" => size, "page" => 1 }
+      )
+      body = ensure_response!(response, [200])
+      raise APIError, "GitHub release feed returned a malformed response" unless body.is_a?(Array)
+
+      body
     end
 
     def latest_stable_release
@@ -81,7 +113,7 @@ module SequelAceRelease
     def release_by_tag_if_exists(tag)
       release_by_tag(tag)
     rescue APIError => error
-      raise unless error.message.include?("HTTP 404")
+      raise unless error.status == 404
 
       nil
     end
@@ -127,9 +159,6 @@ module SequelAceRelease
       end
       unless expected_app_slug.to_s.match?(/\A[a-z0-9-]+\z/)
         raise ValidationError, "expected GitHub release App slug is malformed"
-      end
-      unless ReleasePublisher::RELEASE_APP_SLUGS.include?(expected_app_slug)
-        raise ValidationError, "GitHub release App slug is not an authorized publisher"
       end
       installation_id = begin
         Integer(expected_installation_id)
@@ -353,7 +382,7 @@ module SequelAceRelease
       begin
         actual_sha = ref_sha("heads/#{branch}")
       rescue APIError => e
-        raise unless e.message.include?("HTTP 404")
+        raise unless e.status == 404
 
         return { "branch" => branch, "deleted" => false, "reason" => "already_absent" }
       end
@@ -498,7 +527,7 @@ module SequelAceRelease
         existing = request!("GET", "/repos/#{@repository}/git/ref/tags/#{URI.encode_www_form_component(tag)}")
         return validate_release_tag_response!(existing, expected_ref: expected_ref, target_sha: target_sha, created: false)
       rescue APIError => error
-        raise unless error.message.include?("HTTP 404")
+        raise unless error.status == 404
       end
 
       begin
@@ -507,7 +536,7 @@ module SequelAceRelease
           "sha" => target_sha
         })
       rescue APIError => error
-        raise unless error.message.include?("HTTP 422")
+        raise unless error.status == 422
 
         raced = request!("GET", "/repos/#{@repository}/git/ref/tags/#{URI.encode_www_form_component(tag)}")
         return validate_release_tag_response!(raced, expected_ref: expected_ref, target_sha: target_sha, created: false)
@@ -649,6 +678,9 @@ module SequelAceRelease
       end
       if login == ReleasePublisher::USER_LOGIN && id != ReleasePublisher::USER_ID
         raise ValidationError, "expected GitHub user release author ID does not match the pinned account"
+      end
+      if login.to_s.end_with?("[bot]") && id != ReleasePublisher::RELEASE_APP_BOT_ID
+        raise ValidationError, "expected GitHub App release author ID does not match the pinned bot account"
       end
       if !id.nil? && (!id.is_a?(Integer) || !id.positive?)
         raise ValidationError, "expected GitHub release author ID is malformed"
@@ -875,7 +907,10 @@ module SequelAceRelease
       return response.body if expected.include?(response.status)
 
       message = response.body.is_a?(Hash) ? response.body["message"] : nil
-      raise APIError, "GitHub API returned HTTP #{response.status}#{message ? ": #{message}" : ''}"
+      raise APIError.new(
+        "GitHub API returned HTTP #{response.status}#{message ? ": #{message}" : ''}",
+        status: response.status
+      )
     end
 
     def success_codes(method)

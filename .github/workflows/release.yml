@@ -80,6 +80,7 @@ jobs:
           RELEASE_SHA: ${{ github.sha }}
           EXPECTED_SHA: ${{ inputs.expected_main_sha }}
           RELEASE_MODE: ${{ inputs.mode }}
+          PENDING_FINALIZATION_TAG: ${{ vars.SA_RELEASE_PENDING_FINALIZATION_TAG }}
           CHANNEL: ${{ inputs.channel }}
           VERSION: ${{ inputs.version }}
           RECOVERY_TAG: ${{ inputs.recovery_tag }}
@@ -99,6 +100,10 @@ jobs:
           fi
           [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Releases must be dispatched from main." >&2; exit 1; }
           [[ "${RELEASE_MODE}" == "start" || "${RELEASE_MODE}" == "resume" ]] || { echo "Invalid release mode." >&2; exit 1; }
+          if [[ -n "${PENDING_FINALIZATION_TAG}" && "${PENDING_FINALIZATION_TAG}" != "none" ]]; then
+            echo "A production release is still awaiting finalization: ${PENDING_FINALIZATION_TAG}." >&2
+            exit 1
+          fi
           [[ "${EXPECTED_SHA}" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]] || { echo "Frozen main SHA must be a complete lowercase object ID." >&2; exit 1; }
           [[ "${RELEASE_SHA}" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]] || { echo "Dispatch main SHA is malformed." >&2; exit 1; }
           if [[ "${RELEASE_SHA}" != "${EXPECTED_SHA}" && "${RELEASE_MODE}" != "resume" ]]; then
@@ -639,11 +644,12 @@ jobs:
           permission-contents: write
           permission-workflows: write
 
-      - name: Select the initial GitHub release publisher without loading the PAT
+      - name: Select the initial GitHub release publisher from live credential capability
         id: release_publisher
         env:
           RELEASE_TAG: ${{ inputs.channel }}/${{ inputs.version }}-${{ steps.reconcile.outputs.build }}
           SA_GITHUB_TOKEN: ${{ steps.release_mutation_token.outputs.token }}
+          SA_RELEASE_GITHUB_PUBLISHER_TOKEN: ${{ secrets.SA_RELEASE_GITHUB_PUBLISHER_TOKEN }}
         run: |
           set -euo pipefail
           bundle exec ruby fastlane/bin/sa-release github-release-publisher-mode \
@@ -671,6 +677,7 @@ jobs:
             --iteration "${RELEASE_ITERATION}" \
             --target-sha "${RELEASE_TARGET_SHA}" \
             --body release-body.md \
+            --publisher user \
             --output prerelease.json
 
       - name: Create or recover the tag-backed GitHub prerelease with the release App
@@ -697,6 +704,7 @@ jobs:
             --iteration "${RELEASE_ITERATION}" \
             --target-sha "${RELEASE_TARGET_SHA}" \
             --body release-body.md \
+            --publisher app \
             --output prerelease.json
 
       - name: Record the exact GitHub prerelease identity

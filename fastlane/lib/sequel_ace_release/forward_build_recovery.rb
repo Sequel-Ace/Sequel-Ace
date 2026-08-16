@@ -126,8 +126,7 @@ module SequelAceRelease
       ReleasePublisher.validate!(
         tag: tag,
         login: release.dig("author", "login"),
-        id: release.dig("author", "id"),
-        created_at: release["created_at"]
+        id: release.dig("author", "id")
       )
       unless Array(release["assets"]).empty?
         raise ValidationError, "build-number recovery is unsafe after release assets were attached"
