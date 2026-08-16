@@ -88,7 +88,7 @@ class GitHubReleasePayloadTest < Minitest::Test
 
     candidates.each do |candidate|
       error = assert_raises(SequelAceRelease::IntegrityError) { validate(candidate) }
-      assert_includes error.message, "legacy clients"
+      assert_match(/legacy clients|metadata is malformed/, error.message)
     end
   end
 
@@ -250,6 +250,25 @@ class GitHubReleasePayloadTest < Minitest::Test
 
     assert_includes error.message, "author field login"
     assert_includes error.message, "authenticated and anonymous responses"
+  end
+
+  def test_api_profile_rejects_malformed_updater_consumed_target_fields
+    candidates = []
+    candidates << modern_release.merge("html_url" => nil)
+    candidates << modern_release.merge("published_at" => "not-a-date")
+    candidates << modern_release.merge(
+      "assets" => [compatible_asset.merge("size" => 0)]
+    )
+    candidates << modern_release.merge(
+      "assets" => [compatible_asset.merge("browser_download_url" => "")]
+    )
+
+    candidates.each do |candidate|
+      error = assert_raises(SequelAceRelease::IntegrityError) do
+        payload_validator(candidate).validate_public_feed!([candidate])
+      end
+      assert_includes error.message, "metadata is malformed"
+    end
   end
 
   private

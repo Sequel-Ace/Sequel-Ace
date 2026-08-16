@@ -157,13 +157,46 @@ module SequelAceRelease
     def validate_release_envelope!
       unless @release.is_a?(Hash) && positive_integer?(@release["id"]) &&
              @release["tag_name"].is_a?(String) && !@release["tag_name"].empty? &&
-             @release["assets"].is_a?(Array) && @release["assets"].all? { |asset| valid_asset_envelope?(asset) }
+             @release["name"].is_a?(String) && !@release["name"].empty? &&
+             @release["html_url"].is_a?(String) && !@release["html_url"].empty? &&
+             boolean?(@release["draft"]) && boolean?(@release["prerelease"]) &&
+             valid_timestamp?(@release["published_at"]) && valid_author_envelope?(@release["author"])
+        raise IntegrityError, "GitHub release metadata is malformed"
+      end
+      unless @release["assets"].is_a?(Array) && @release["assets"].all? { |asset| valid_asset_envelope?(asset) }
         raise IntegrityError, "GitHub release asset metadata is malformed"
       end
     end
 
     def valid_asset_envelope?(asset)
-      asset.is_a?(Hash) && asset["name"].is_a?(String) && !asset["name"].empty?
+      asset.is_a?(Hash) && positive_integer?(asset["id"]) &&
+        asset["name"].is_a?(String) && !asset["name"].empty? &&
+        positive_integer?(asset["size"]) &&
+        asset["browser_download_url"].is_a?(String) && !asset["browser_download_url"].empty? &&
+        optional_timestamp_valid?(asset, "created_at") && optional_timestamp_valid?(asset, "updated_at")
+    end
+
+    def valid_author_envelope?(author)
+      author.is_a?(Hash) && positive_integer?(author["id"]) &&
+        author["login"].is_a?(String) && !author["login"].empty? &&
+        author["type"].is_a?(String) && !author["type"].empty?
+    end
+
+    def optional_timestamp_valid?(value, field)
+      !value.key?(field) || valid_timestamp?(value[field])
+    end
+
+    def valid_timestamp?(value)
+      return false unless value.is_a?(String) && value.match?(ZONED_TIMESTAMP_PATTERN)
+
+      Time.iso8601(value)
+      true
+    rescue ArgumentError, TypeError
+      false
+    end
+
+    def boolean?(value)
+      value == true || value == false
     end
 
     def validate_legacy_release!(release = @release)

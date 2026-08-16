@@ -352,7 +352,15 @@ class GitHubAssetUploadTest < Minitest::Test
     notes_path = File.join(directory, "notes.txt")
     manifest.write(manifest_path)
     File.write(notes_path, "A focused release note.\n")
-    author = legacy ? legacy_github_user : { "login" => SequelAceRelease::ReleasePublisher::RELEASE_APP_LOGIN }
+    author = if legacy
+               legacy_github_user
+             else
+               {
+                 "login" => SequelAceRelease::ReleasePublisher::RELEASE_APP_LOGIN,
+                 "id" => 315_153_817,
+                 "type" => "Bot"
+               }
+             end
     release = github_release_payload(
       id: 123,
       tag: naming.tag,
