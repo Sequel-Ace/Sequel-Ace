@@ -504,9 +504,12 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
    OpenSSL — see warnings plan). Step 8 (Swift 6 concurrency) is ✅ done: the
    three blocking-wrapper/observer-token sites now go through
    `SAAsyncResultBox` and `NotificationToken`, leaving no concurrency
-   warnings. Step 9 (deprecated drag-API delegate methods, **42** measured on
-   a clean build, not the ~25 originally estimated) is the last mechanical
-   batch and wants manual drag-drop verification per file.
+   warnings. Step 9 turned out to be mostly informal-protocol conformance
+   rather than the drag-API rewrites the plan assumed: 36 of its 42 warnings
+   were fixed by declaring `NSMenuItemValidation` /
+   `NSControlTextEditingDelegate` / `NSFontChanging` /
+   `NSToolbarItemValidation` (step 9a, done). Only 6 real delegate methods
+   remain (step 9b), and those do want manual verification.
 6. **Phase E (table content / custom query services)** — explicitly gated on
    the PostgreSQL abstraction decision (#2482/#2493): if it lands, extract
    against `id<SPDatabaseConnection>`; starting before that decision risks

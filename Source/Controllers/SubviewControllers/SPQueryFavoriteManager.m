@@ -46,7 +46,9 @@
 #define SP_MULTIPLE_SELECTION_PLACEHOLDER_STRING NSLocalizedString(@"[multiple selection]", @"[multiple selection]")
 #define SP_NO_SELECTION_PLACEHOLDER_STRING       NSLocalizedString(@"[no selection]", @"[no selection]")
 
-@interface SPQueryFavoriteManager ()
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPQueryFavoriteManager () <NSMenuItemValidation, NSControlTextEditingDelegate>
 
 - (void)_initWithNoSelection;
 

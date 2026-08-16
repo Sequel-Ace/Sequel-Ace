@@ -98,8 +98,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 - (void)_updateProgress;
 @end
 
-@interface SPCustomQuery ()
-
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPCustomQuery () <NSMenuItemValidation, NSFontChanging>
 - (id)_resultDataItemAtRow:(NSInteger)row columnIndex:(NSUInteger)column preserveNULLs:(BOOL)preserveNULLs asPreview:(BOOL)asPreview;
 - (void)_updateColumnHeadersForCurrentPreference;
 + (NSAttributedString *)columnHeaderAttributedStringForColumnDefinition:(NSDictionary *)columnDefinition showColumnTypes:(BOOL)showColumnTypes;

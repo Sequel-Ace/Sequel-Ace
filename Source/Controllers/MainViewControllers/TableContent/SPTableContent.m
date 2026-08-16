@@ -100,8 +100,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 @end
 
-@interface SPTableContent () <SATableHeaderViewDelegate>
-
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPTableContent () <SATableHeaderViewDelegate, NSMenuItemValidation>
 - (BOOL)cancelRowEditing;
 - (void)documentWillClose:(NSNotification *)notification;
 

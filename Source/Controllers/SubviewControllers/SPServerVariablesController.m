@@ -37,8 +37,9 @@
 
 #import "sequel-ace-Swift.h"
 
-@interface SPServerVariablesController ()
-
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPServerVariablesController () <NSMenuItemValidation, NSControlTextEditingDelegate>
 - (void)_getDatabaseServerVariables;
 - (void)_updateServerVariablesFilterForFilterString:(NSString *)filterString;
 - (void)_copyServerVariablesToPasteboardIncludingName:(BOOL)name andValue:(BOOL)value;

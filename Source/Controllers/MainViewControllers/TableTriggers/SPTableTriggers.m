@@ -62,8 +62,9 @@ typedef NS_ENUM(NSInteger, SPTriggerEventTag) {
 static SPTriggerActionTimeTag TagForActionTime(NSString *mysql);
 static SPTriggerEventTag TagForEvent(NSString *mysql);
 
-@interface SPTableTriggers ()
-
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPTableTriggers () <NSMenuItemValidation, NSControlTextEditingDelegate>
 - (void)_editTriggerAtIndex:(NSInteger)index;
 - (void)_toggleConfirmAddTriggerButtonEnabled;
 - (void)_refreshTriggerDataForcingCacheRefresh:(BOOL)clearAllCaches;

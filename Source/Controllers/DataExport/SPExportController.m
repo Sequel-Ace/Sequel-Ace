@@ -90,8 +90,9 @@ static inline NSNumber *IsOn(id obj);
  */
 static inline void SetOnOff(NSNumber *ref,id obj);
 
-@interface SPExportController () <SPCSVExporterProtocol, SPSQLExporterProtocol, SPXMLExporterProtocol, SPDotExporterProtocol, SPPDFExporterProtocol, SPHTMLExporterProtocol>
-
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPExportController () <SPCSVExporterProtocol, SPSQLExporterProtocol, SPXMLExporterProtocol, SPDotExporterProtocol, SPPDFExporterProtocol, SPHTMLExporterProtocol, NSMenuItemValidation, NSControlTextEditingDelegate>
 @property (readwrite, copy) NSString *exportDatabaseName;
 
 - (void)_switchTab;
