@@ -18,7 +18,7 @@ class FinalizationAssetsTest < Minitest::Test
     value = release.merge(
       "author" => {
         "login" => SequelAceRelease::ReleasePublisher::RELEASE_APP_LOGIN,
-        "id" => 315_153_817,
+        "id" => SequelAceRelease::ReleasePublisher::RELEASE_APP_BOT_ID,
         "type" => "Bot"
       }
     )
@@ -221,7 +221,7 @@ class FinalizationAssetsTest < Minitest::Test
     assert_equal 0, updates
   end
 
-  def test_finalization_reconciles_a_post_transition_feed_transport_failure
+  def test_finalization_leaves_a_post_transition_feed_transport_failure_retryable
     live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
     app_store = Object.new
     app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
@@ -250,20 +250,74 @@ class FinalizationAssetsTest < Minitest::Test
       marker = File.join(directory, "terminal-finalization-integrity-failure")
       output = File.join(directory, "finalization.json")
 
-      assert_equal 0, run_finalizer(
+      assert_equal 1, run_finalizer(
         app_store: app_store,
         github: github,
         integrity_marker: marker,
         output_path: output
       )
       refute_path_exists marker
-      evidence = JSON.parse(File.read(output))
-      assert_equal "unavailable_reconciled_after_authenticated_readback",
-                   evidence.fetch("post_transition_public_feed")
-      assert_equal false, evidence.fetch("final_prerelease")
+      refute_path_exists output
     end
     assert_equal 1, updates
     assert_equal 2, feed_reads
+  end
+
+  def test_finalization_leaves_every_authenticated_post_transition_readback_retryable
+    %i[tag release latest].each do |failure_point|
+      live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+      app_store = Object.new
+      app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
+      app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
+      release_data = release
+      calls = Hash.new(0)
+      updates = 0
+      github = Object.new
+      github.define_singleton_method(:ref_sha) do |_ref|
+        calls[:tag] += 1
+        raise SequelAceRelease::APIError, "GitHub tag readback failed with HTTP 503" if failure_point == :tag && calls[:tag] == 2
+
+        "d" * 40
+      end
+      github.define_singleton_method(:release_by_tag) do |_tag|
+        calls[:release] += 1
+        if failure_point == :release && calls[:release] == 2
+          raise SequelAceRelease::APIError, "GitHub release readback failed with HTTP 503"
+        end
+
+        release_data
+      end
+      github.define_singleton_method(:public_release_feed_page) { [release_data] }
+      github.define_singleton_method(:latest_release) do
+        calls[:latest] += 1
+        if failure_point == :latest && calls[:latest] == 2
+          raise SequelAceRelease::APIError, "GitHub latest readback failed with HTTP 503"
+        end
+
+        release_data
+      end
+      github.define_singleton_method(:update_release) do |**options|
+        updates += 1
+        release_data = release_data.merge(
+          "name" => options.fetch(:title), "draft" => false, "prerelease" => options.fetch(:prerelease)
+        )
+      end
+
+      Dir.mktmpdir do |directory|
+        marker = File.join(directory, "terminal-finalization-integrity-failure")
+        output = File.join(directory, "finalization.json")
+
+        assert_equal 1, run_finalizer(
+          app_store: app_store,
+          github: github,
+          integrity_marker: marker,
+          output_path: output
+        ), failure_point
+        refute_path_exists marker, failure_point
+        refute_path_exists output, failure_point
+      end
+      assert_equal 1, updates, failure_point
+    end
   end
 
   def test_finalization_keeps_a_post_transition_incompatible_feed_terminal
@@ -479,7 +533,7 @@ class FinalizationAssetsTest < Minitest::Test
     github.define_singleton_method(:release_by_tag) { |_tag| release_data }
     github.define_singleton_method(:latest_release) do
       if updates.zero?
-        raise SequelAceRelease::APIError, "GitHub API returned HTTP 404"
+        raise SequelAceRelease::APIError.new("GitHub API returned HTTP 404", status: 404)
       end
 
       release_data

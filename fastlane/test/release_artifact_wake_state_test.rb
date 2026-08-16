@@ -84,12 +84,34 @@ class ReleaseArtifactWakeStateTest < Minitest::Test
     end
   end
 
+  def test_finalization_wake_state_uses_the_separate_allowlisted_variable
+    with_fake_github("none", wake_variable: "SA_RELEASE_PENDING_FINALIZATION_TAG") do |run, state, log|
+      stdout, stderr, status = run.call("arm", PRODUCTION_TAG)
+
+      assert_predicate status, :success?, stderr
+      assert_includes stdout, "Finalization wake state"
+      assert_equal PRODUCTION_TAG, File.read(state).strip
+      assert_includes File.read(log), "SA_RELEASE_PENDING_FINALIZATION_TAG"
+    end
+  end
+
+  def test_rejects_an_unrecognized_wake_state_variable_before_api_access
+    with_fake_github("none", wake_variable: "UNTRUSTED_VARIABLE") do |run, state, log|
+      _stdout, stderr, status = run.call("arm", PRODUCTION_TAG)
+
+      assert_equal 64, status.exitstatus
+      assert_includes stderr, "Unsupported release wake-state variable"
+      assert_equal "none", File.read(state).strip
+      assert_empty File.read(log)
+    end
+  end
+
   def test_malformed_tag_fails_before_api_access
     with_fake_github("none") do |run, state|
       _stdout, stderr, status = run.call("arm", "production/not-a-tag")
 
       assert_equal 64, status.exitstatus
-      assert_includes stderr, "Malformed release artifact wake tag"
+      assert_includes stderr, "Malformed release wake tag"
       assert_equal "none", File.read(state).strip
     end
   end
@@ -126,7 +148,12 @@ class ReleaseArtifactWakeStateTest < Minitest::Test
     File.expand_path("../..", __dir__) + "/#{relative_path}"
   end
 
-  def with_fake_github(initial_value, provided_token: true, installation_response: '{"id":123}')
+  def with_fake_github(
+    initial_value,
+    provided_token: true,
+    installation_response: '{"id":123}',
+    wake_variable: nil
+  )
     Dir.mktmpdir("sequel-ace-wake-state-test") do |directory|
       bin_directory = File.join(directory, "bin")
       state_path = File.join(directory, "state")
@@ -191,6 +218,7 @@ class ReleaseArtifactWakeStateTest < Minitest::Test
             "SA_RELEASE_GITHUB_APP_PRIVATE_KEY" => "test-private-key"
           )
         end
+        environment["SA_RELEASE_WAKE_VARIABLE"] = wake_variable if wake_variable
         arguments = [repo_path("Scripts/release-artifact-wake-state.sh"), operation, tag]
         arguments << predecessor if predecessor
         Open3.capture3(environment, *arguments)

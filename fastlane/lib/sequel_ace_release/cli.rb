@@ -452,13 +452,14 @@ module SequelAceRelease
     def github_create_release(arguments)
       options = { iteration: 1 }
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release github-create-release --channel CHANNEL --version VERSION --build BUILD --target-sha SHA --body FILE"
+        value.banner = "Usage: sa-release github-create-release --channel CHANNEL --version VERSION --build BUILD --target-sha SHA --body FILE [--publisher user|app]"
         value.on("--channel CHANNEL") { |item| options[:channel] = item }
         value.on("--version VERSION") { |item| options[:version] = item }
         value.on("--build BUILD", Integer) { |item| options[:build] = item }
         value.on("--iteration NUMBER", Integer) { |item| options[:iteration] = item }
         value.on("--target-sha SHA") { |item| options[:target_sha] = item }
         value.on("--body FILE") { |item| options[:body] = File.read(item) }
+        value.on("--publisher MODE") { |item| options[:publisher] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
@@ -475,10 +476,9 @@ module SequelAceRelease
         expected_publisher = ReleasePublisher.validate!(
           tag: naming.tag,
           login: existing.dig("author", "login"),
-          id: existing.dig("author", "id"),
-          created_at: existing["created_at"]
+          id: existing.dig("author", "id")
         )
-        expected_author_id = expected_publisher == ReleasePublisher::USER_LOGIN ? ReleasePublisher::USER_ID : nil
+        expected_author_id = existing.dig("author", "id")
         publisher_validation = {
           "login" => expected_publisher,
           "id" => expected_author_id,
@@ -499,7 +499,13 @@ module SequelAceRelease
           expected_author_id: expected_author_id
         )
       else
-        publication_mode = ReleasePublisher.active_mode(at: @clock.call.utc)
+        if options[:publisher].nil?
+          raise ValidationError, "new GitHub releases require an explicit user or app publisher mode"
+        end
+        publication_mode = options[:publisher].to_sym
+        unless %i[user app].include?(publication_mode)
+          raise ValidationError, "GitHub release publisher mode must be user or app"
+        end
         if publication_mode == :user
           publisher = github_user_publisher_client
           expected_publisher = ReleasePublisher::USER_LOGIN
@@ -517,10 +523,7 @@ module SequelAceRelease
             expected_installation_id: @env["SA_RELEASE_GITHUB_APP_INSTALLATION_ID"]
           )
           expected_publisher = publisher_validation.fetch("login")
-          expected_author_id = nil
-        end
-        unless ReleasePublisher.active_mode(at: @clock.call.utc) == publication_mode
-          raise ValidationError, "GitHub release publisher epoch changed during preflight"
+          expected_author_id = ReleasePublisher::RELEASE_APP_BOT_ID
         end
         tag = client.create_or_validate_release_tag(
           tag: naming.tag,
@@ -532,19 +535,13 @@ module SequelAceRelease
           title: naming.title,
           body: options[:body],
           expected_author_login: expected_publisher,
-          expected_author_id: expected_author_id,
-          before_create: lambda do
-            unless ReleasePublisher.active_mode(at: @clock.call.utc) == publication_mode
-              raise ValidationError, "GitHub release publisher epoch changed before creation"
-            end
-          end
+          expected_author_id: expected_author_id
         )
       end
       ReleasePublisher.validate!(
         tag: naming.tag,
         login: release.dig("author", "login"),
-        id: release.dig("author", "id"),
-        created_at: release["created_at"]
+        id: release.dig("author", "id")
       )
       emit({
         "naming" => naming.to_h,
@@ -565,23 +562,41 @@ module SequelAceRelease
       parser.parse!(arguments)
       reject_arguments!(arguments)
       require_options!(options, :tag)
+      ReleasePublisher.validate_tag!(options[:tag])
 
       existing = github_client.release_by_tag_if_exists(options[:tag])
+      reason = nil
+      publisher_validation = nil
       mode = if existing
                ReleasePublisher.validate!(
                  tag: options[:tag],
                  login: existing.dig("author", "login"),
-                 id: existing.dig("author", "id"),
-                 created_at: existing["created_at"]
+                 id: existing.dig("author", "id")
                )
+               reason = "existing_release"
                :existing
+             elsif @env["SA_RELEASE_GITHUB_PUBLISHER_TOKEN"].to_s.empty?
+               reason = "user_credential_absent"
+               :app
              else
-               ReleasePublisher.active_mode(at: @clock.call.utc)
+               begin
+                 publisher_validation = github_user_publisher_client.validate_release_publisher!(
+                   expected_login: ReleasePublisher::USER_LOGIN,
+                   expected_id: ReleasePublisher::USER_ID
+                 )
+                 reason = "user_credential_available"
+                 :user
+               rescue APIError => error
+                 raise unless error.status == 401
+
+                 reason = "user_credential_expired_or_revoked"
+                 :app
+               end
              end
       emit({
         "mode" => mode.to_s,
-        "cutoff" => ReleasePublisher::USER_PUBLISHER_CUTOFF.iso8601,
-        "safety_window_seconds" => ReleasePublisher::USER_PUBLISHER_SAFETY_WINDOW,
+        "reason" => reason,
+        "publisher_validation" => publisher_validation,
         "existing_release_id" => existing && existing["id"]
       }, options[:output])
     end
@@ -1214,8 +1229,7 @@ module SequelAceRelease
       ReleasePublisher.validate!(
         tag: data.fetch("tag"),
         login: release.dig("author", "login"),
-        id: release.dig("author", "id"),
-        created_at: release["created_at"]
+        id: release.dig("author", "id")
       )
       verify_release_assets!(release, data, github: client)
       final_title = ReleaseNaming.new(
@@ -1227,7 +1241,7 @@ module SequelAceRelease
       current_latest = begin
         client.latest_release
       rescue APIError => error
-        raise unless error.message.include?("HTTP 404")
+        raise unless error.status == 404
 
         nil
       end
@@ -1270,17 +1284,11 @@ module SequelAceRelease
              ReleasePublisher.authorized?(
                tag: data.fetch("tag"),
                login: release.dig("author", "login"),
-               id: release.dig("author", "id"),
-               created_at: release["created_at"]
+               id: release.dig("author", "id")
              )
         raise ValidationError, "GitHub finalization readback did not match the requested release"
       end
-      post_transition_assets = verify_release_assets!(
-        release,
-        data,
-        github: client,
-        allow_retryable_public_feed_failure: true
-      )
+      post_transition_assets = verify_release_assets!(release, data, github: client)
       latest_release = client.latest_release
       unless latest_release["id"] == release["id"] && latest_release["tag_name"] == data.fetch("tag") &&
              latest_release["name"] == final_title && latest_release["draft"] == false &&
@@ -1322,8 +1330,7 @@ module SequelAceRelease
       ReleasePublisher.validate!(
         tag: data.fetch("tag"),
         login: release.dig("author", "login"),
-        id: release.dig("author", "id"),
-        created_at: release["created_at"]
+        id: release.dig("author", "id")
       )
       status = verify_release_assets!(release, data, github: client)
       if status.key?("release_feed_entries_verified")
@@ -1437,7 +1444,7 @@ module SequelAceRelease
         github_client.release_by_tag(tag)
         return nil
       rescue APIError => error
-        raise unless error.message.include?("HTTP 404")
+        raise unless error.status == 404
       end
       if options[:workflow_id].to_s.empty? || app_store_client.nil?
         raise ValidationError, "tag-only recovery requires Production Xcode Cloud access"
@@ -1566,7 +1573,7 @@ module SequelAceRelease
       end
     end
 
-    def verify_release_assets!(release, manifest, github:, allow_retryable_public_feed_failure: false)
+    def verify_release_assets!(release, manifest, github:)
       actual_notes_sha = Digest::SHA256.hexdigest(release.fetch("body").to_s)
       unless actual_notes_sha == manifest.fetch("release_notes_sha256")
         raise IntegrityError, "GitHub release notes no longer match the archived manifest"
@@ -1581,14 +1588,8 @@ module SequelAceRelease
         raise IntegrityError,
               "GitHub release is missing artifacts: #{status.fetch('missing_assets').join(', ')}"
       end
-      begin
-        status["release_feed_entries_verified"] = validator.validate_public_feed!(github.public_release_feed_page)
-        status["release_feed_verification"] = "verified"
-      rescue APIError
-        raise unless allow_retryable_public_feed_failure
-
-        status["release_feed_verification"] = "unavailable_reconciled_after_authenticated_readback"
-      end
+      status["release_feed_entries_verified"] = validator.validate_public_feed!(github.public_release_feed_page)
+      status["release_feed_verification"] = "verified"
       status
     end
 
@@ -1683,7 +1684,7 @@ module SequelAceRelease
                                      Prove a release commit remains an unchanged main ancestor
           github-verify-release-tag   Prove a release tag still names the exact release commit
           github-release-publisher-mode
-                                     Select a PAT-free initial release publisher epoch
+                                     Select a live-capable initial release publisher
           github-create-release      Create the tag-backed GitHub prerelease
           github-public-assets-status
                                      Validate public assets and legacy-client metadata

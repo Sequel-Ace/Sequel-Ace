@@ -69,13 +69,13 @@ class GitHubPublicAssetsStatusTest < Minitest::Test
   def test_exact_api_uploaded_asset_requires_anonymous_visibility
     app_author = {
       "login" => SequelAceRelease::ReleasePublisher::RELEASE_APP_LOGIN,
-      "id" => 315_153_817,
+      "id" => SequelAceRelease::ReleasePublisher::RELEASE_APP_BOT_ID,
       "type" => "Bot"
     }
     with_handoff(
       assets: [asset],
       author: app_author,
-      created_at: SequelAceRelease::ReleasePublisher::USER_PUBLISHER_CUTOFF.iso8601
+      created_at: "2035-08-14T00:00:00Z"
     ) do |manifest, notes, _marker, output, client|
       assert_equal 0, run_cli(manifest: manifest, notes: notes, output: output, client: client)
       status = JSON.parse(File.read(output))

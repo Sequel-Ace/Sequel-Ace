@@ -60,7 +60,7 @@ class GitHubReleasePayloadTest < Minitest::Test
     incompatible = release
     incompatible["assets"].first["uploader"] = {
       "login" => "sequel-ace-release-automation[bot]",
-      "id" => 4_541_115,
+      "id" => SequelAceRelease::ReleasePublisher::RELEASE_APP_BOT_ID,
       "type" => "Bot"
     }
 
@@ -292,7 +292,7 @@ class GitHubReleasePayloadTest < Minitest::Test
     github_release_payload(
       author: {
         "login" => "sequel-ace-release-automation[bot]",
-        "id" => 4_541_115,
+        "id" => SequelAceRelease::ReleasePublisher::RELEASE_APP_BOT_ID,
         "type" => "Bot"
       },
       assets: [compatible_asset]

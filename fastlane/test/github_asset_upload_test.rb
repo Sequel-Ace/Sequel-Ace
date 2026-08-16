@@ -357,7 +357,7 @@ class GitHubAssetUploadTest < Minitest::Test
              else
                {
                  "login" => SequelAceRelease::ReleasePublisher::RELEASE_APP_LOGIN,
-                 "id" => 315_153_817,
+                 "id" => SequelAceRelease::ReleasePublisher::RELEASE_APP_BOT_ID,
                  "type" => "Bot"
                }
              end

@@ -105,25 +105,20 @@ class GitHubReleaseCreationTest < Minitest::Test
       end
       if expected_author_login == SequelAceRelease::ReleasePublisher::USER_LOGIN
         raise "wrong release author ID" unless expected_author_id == SequelAceRelease::ReleasePublisher::USER_ID
-      elsif expected_author_id
-        raise "unexpected release App author ID"
+      elsif expected_author_id != SequelAceRelease::ReleasePublisher::RELEASE_APP_BOT_ID
+        raise "wrong release App author ID"
       end
 
       before_create&.call
       @events << :publish_release
-      created_at = if expected_author_login == SequelAceRelease::ReleasePublisher::USER_LOGIN
-                     "2026-08-13T00:00:00Z"
-                   else
-                     SequelAceRelease::ReleasePublisher::USER_PUBLISHER_CUTOFF.iso8601
-                   end
       {
         "id" => 100,
         "tag_name" => tag,
         "author" => {
           "login" => expected_author_login,
-          "id" => expected_author_id || 999
+          "id" => expected_author_id
         },
-        "created_at" => created_at,
+        "created_at" => "2026-08-13T00:00:00Z",
         "created" => true
       }
     end
@@ -165,7 +160,8 @@ class GitHubReleaseCreationTest < Minitest::Test
             "--build", "20109",
             "--iteration", "1",
             "--target-sha", "a" * 40,
-            "--body", body
+            "--body", body,
+            "--publisher", "user"
           ])
         end
       end
@@ -180,7 +176,7 @@ class GitHubReleaseCreationTest < Minitest::Test
     assert_equal "Jason-Morcos", result.dig("release", "author", "login")
   end
 
-  def test_cli_switches_initial_release_creation_to_the_app_at_the_fixed_cutoff
+  def test_cli_creates_with_the_explicit_app_publisher
     client = Client.new
     output = StringIO.new
     cli = SequelAceRelease::CLI.new(
@@ -190,8 +186,7 @@ class GitHubReleaseCreationTest < Minitest::Test
         "SA_RELEASE_GITHUB_APP_CLIENT_ID" => "Iv1.releaseclient",
         "SA_RELEASE_GITHUB_APP_SLUG" => "sequel-ace-release-automation",
         "SA_RELEASE_GITHUB_APP_INSTALLATION_ID" => "12345"
-      },
-      clock: -> { SequelAceRelease::ReleasePublisher::USER_PUBLISHER_CUTOFF }
+      }
     )
 
     Dir.mktmpdir do |directory|
@@ -205,7 +200,8 @@ class GitHubReleaseCreationTest < Minitest::Test
           "--build", "20109",
           "--iteration", "1",
           "--target-sha", "a" * 40,
-          "--body", body
+          "--body", body,
+          "--publisher", "app"
         ])
       end
 
@@ -217,7 +213,37 @@ class GitHubReleaseCreationTest < Minitest::Test
                  JSON.parse(output.string).dig("release", "author", "login")
   end
 
-  def test_cli_recovers_a_pre_cutoff_user_release_after_the_cutoff_without_the_pat
+  def test_cli_refuses_to_infer_a_new_release_publisher_from_loaded_credentials
+    client = Client.new
+    error = StringIO.new
+    cli = SequelAceRelease::CLI.new(
+      out: StringIO.new,
+      err: error,
+      env: { "SA_RELEASE_GITHUB_PUBLISHER_TOKEN" => "github_pat_example" }
+    )
+
+    Dir.mktmpdir do |directory|
+      body = File.join(directory, "release-body.md")
+      File.write(body, "Approved notes")
+      status = cli.stub(:github_client, client) do
+        cli.run([
+          "github-create-release",
+          "--channel", "production",
+          "--version", "5.4.0",
+          "--build", "20109",
+          "--target-sha", "a" * 40,
+          "--body", body
+        ])
+      end
+
+      assert_equal 1, status
+    end
+
+    assert_includes error.string, "explicit user or app publisher mode"
+    assert_equal %i[validate_target find_release], client.events
+  end
+
+  def test_cli_recovers_an_existing_authorized_release_without_a_publisher_credential
     existing = {
       "id" => 100,
       "tag_name" => "production/5.4.0-20109",
@@ -229,16 +255,11 @@ class GitHubReleaseCreationTest < Minitest::Test
         "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN,
         "id" => SequelAceRelease::ReleasePublisher::USER_ID
       },
-      "created_at" => "2027-08-13T23:00:00Z"
+      "created_at" => "2035-08-13T23:00:00Z"
     }
     client = Client.new(existing_release: existing)
     output = StringIO.new
-    cli = SequelAceRelease::CLI.new(
-      out: output,
-      err: StringIO.new,
-      env: {},
-      clock: -> { SequelAceRelease::ReleasePublisher::USER_PUBLISHER_CUTOFF + 60 }
-    )
+    cli = SequelAceRelease::CLI.new(out: output, err: StringIO.new, env: {})
 
     Dir.mktmpdir do |directory|
       body = File.join(directory, "release-body.md")
@@ -252,7 +273,8 @@ class GitHubReleaseCreationTest < Minitest::Test
             "--build", "20109",
             "--iteration", "1",
             "--target-sha", "a" * 40,
-            "--body", body
+            "--body", body,
+            "--publisher", "app"
           ])
         end
       end
@@ -266,123 +288,155 @@ class GitHubReleaseCreationTest < Minitest::Test
     assert_equal "Jason-Morcos", result.dig("release", "author", "login")
   end
 
-  def test_publisher_mode_recovers_an_existing_release_during_the_safety_window
+  def test_publisher_mode_recovers_an_existing_release_without_loading_the_pat
     existing = {
       "id" => 100,
       "author" => {
         "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN,
         "id" => SequelAceRelease::ReleasePublisher::USER_ID
       },
-      "created_at" => "2027-08-13T23:00:00Z"
+      "created_at" => "2035-08-13T23:00:00Z"
     }
     client = Client.new(existing_release: existing)
     output = StringIO.new
-    cutoff = SequelAceRelease::ReleasePublisher::USER_PUBLISHER_CUTOFF
-    cli = SequelAceRelease::CLI.new(
-      out: output,
-      err: StringIO.new,
-      env: {},
-      clock: -> { cutoff - 1 }
-    )
+    cli = SequelAceRelease::CLI.new(out: output, err: StringIO.new, env: {})
 
     status = cli.stub(:github_client, client) do
       cli.run(["github-release-publisher-mode", "--tag", "production/5.4.0-20109"])
     end
 
     assert_equal 0, status
-    assert_equal "existing", JSON.parse(output.string).fetch("mode")
-    assert_equal 100, JSON.parse(output.string).fetch("existing_release_id")
+    evidence = JSON.parse(output.string)
+    assert_equal "existing", evidence.fetch("mode")
+    assert_equal "existing_release", evidence.fetch("reason")
+    assert_equal 100, evidence.fetch("existing_release_id")
   end
 
-  def test_publisher_mode_blocks_a_fresh_release_during_the_safety_window
+  def test_publisher_mode_uses_the_user_credential_when_live_validation_passes
     client = Client.new
-    error = StringIO.new
-    cutoff = SequelAceRelease::ReleasePublisher::USER_PUBLISHER_CUTOFF
+    output = StringIO.new
     cli = SequelAceRelease::CLI.new(
-      out: StringIO.new,
-      err: error,
-      env: {},
-      clock: -> { cutoff - 1 }
+      out: output,
+      err: StringIO.new,
+      env: { "SA_RELEASE_GITHUB_PUBLISHER_TOKEN" => "github_pat_example" }
     )
 
     status = cli.stub(:github_client, client) do
-      cli.run(["github-release-publisher-mode", "--tag", "production/5.4.0-20109"])
+      cli.stub(:github_user_publisher_client, client) do
+        cli.run(["github-release-publisher-mode", "--tag", "production/5.4.0-20109"])
+      end
+    end
+
+    assert_equal 0, status
+    evidence = JSON.parse(output.string)
+    assert_equal "user", evidence.fetch("mode")
+    assert_equal "user_credential_available", evidence.fetch("reason")
+    assert_equal true, evidence.dig("publisher_validation", "push_access")
+  end
+
+  def test_publisher_mode_uses_the_app_when_the_user_credential_is_absent
+    client = Client.new
+    output = StringIO.new
+    cli = SequelAceRelease::CLI.new(out: output, err: StringIO.new, env: {})
+
+    status = cli.stub(:github_client, client) do
+      cli.stub(:github_user_publisher_client, -> { raise "publisher PAT must not be loaded" }) do
+        cli.run(["github-release-publisher-mode", "--tag", "production/5.4.0-20109"])
+      end
+    end
+
+    assert_equal 0, status
+    evidence = JSON.parse(output.string)
+    assert_equal "app", evidence.fetch("mode")
+    assert_equal "user_credential_absent", evidence.fetch("reason")
+  end
+
+  def test_publisher_mode_switches_to_the_app_for_an_expired_or_revoked_credential
+    client = Client.new
+    expired = Object.new
+    expired.define_singleton_method(:validate_release_publisher!) do |**_options|
+      raise SequelAceRelease::APIError.new(
+        "GitHub API returned HTTP 401: Bad credentials",
+        status: 401
+      )
+    end
+    output = StringIO.new
+    cli = SequelAceRelease::CLI.new(
+      out: output,
+      err: StringIO.new,
+      env: { "SA_RELEASE_GITHUB_PUBLISHER_TOKEN" => "github_pat_expired" }
+    )
+
+    status = cli.stub(:github_client, client) do
+      cli.stub(:github_user_publisher_client, expired) do
+        cli.run(["github-release-publisher-mode", "--tag", "production/5.4.0-20109"])
+      end
+    end
+
+    assert_equal 0, status
+    evidence = JSON.parse(output.string)
+    assert_equal "app", evidence.fetch("mode")
+    assert_equal "user_credential_expired_or_revoked", evidence.fetch("reason")
+  end
+
+  def test_publisher_mode_does_not_fallback_on_an_ambiguous_github_failure
+    client = Client.new
+    unavailable = Object.new
+    unavailable.define_singleton_method(:validate_release_publisher!) do |**_options|
+      raise SequelAceRelease::APIError, "GitHub API returned HTTP 503"
+    end
+    error = StringIO.new
+    cli = SequelAceRelease::CLI.new(
+      out: StringIO.new,
+      err: error,
+      env: { "SA_RELEASE_GITHUB_PUBLISHER_TOKEN" => "github_pat_example" }
+    )
+
+    status = cli.stub(:github_client, client) do
+      cli.stub(:github_user_publisher_client, unavailable) do
+        cli.run(["github-release-publisher-mode", "--tag", "production/5.4.0-20109"])
+      end
     end
 
     assert_equal 1, status
-    assert_includes error.string, "cutoff safety window"
+    assert_includes error.string, "HTTP 503"
   end
 
-  def test_create_release_blocks_the_safety_window_before_loading_the_pat_or_creating_the_tag
+  def test_publisher_mode_does_not_parse_an_unstructured_error_message_as_an_expired_credential
     client = Client.new
+    unavailable = Object.new
+    unavailable.define_singleton_method(:validate_release_publisher!) do |**_options|
+      raise SequelAceRelease::APIError, "proxy response mentioned HTTP 401 without a GitHub status"
+    end
     error = StringIO.new
-    cutoff = SequelAceRelease::ReleasePublisher::USER_PUBLISHER_CUTOFF
     cli = SequelAceRelease::CLI.new(
       out: StringIO.new,
       err: error,
-      env: {},
-      clock: -> { cutoff - 1 }
+      env: { "SA_RELEASE_GITHUB_PUBLISHER_TOKEN" => "github_pat_example" }
     )
 
-    Dir.mktmpdir do |directory|
-      body = File.join(directory, "release-body.md")
-      File.write(body, "Approved notes")
-      status = cli.stub(:github_client, client) do
-        cli.stub(:github_user_publisher_client, -> { raise "publisher PAT must not be loaded" }) do
-          cli.run([
-            "github-create-release",
-            "--channel", "production",
-            "--version", "5.4.0",
-            "--build", "20109",
-            "--iteration", "1",
-            "--target-sha", "a" * 40,
-            "--body", body
-          ])
-        end
+    status = cli.stub(:github_client, client) do
+      cli.stub(:github_user_publisher_client, unavailable) do
+        cli.run(["github-release-publisher-mode", "--tag", "production/5.4.0-20109"])
       end
-
-      assert_equal 1, status
     end
 
-    assert_equal %i[validate_target find_release], client.events
-    assert_includes error.string, "cutoff safety window"
+    assert_equal 1, status
+    assert_includes error.string, "without a GitHub status"
   end
 
-  def test_create_release_rechecks_the_epoch_at_the_write_boundary
+  def test_publisher_mode_rejects_a_malformed_release_tag_before_any_github_read
     client = Client.new
     error = StringIO.new
-    cutoff = SequelAceRelease::ReleasePublisher::USER_PUBLISHER_CUTOFF
-    before_window = cutoff - SequelAceRelease::ReleasePublisher::USER_PUBLISHER_SAFETY_WINDOW - 1
-    clock_values = [before_window, before_window, cutoff]
-    cli = SequelAceRelease::CLI.new(
-      out: StringIO.new,
-      err: error,
-      env: {},
-      clock: -> { clock_values.shift || cutoff }
-    )
+    cli = SequelAceRelease::CLI.new(out: StringIO.new, err: error, env: {})
 
-    Dir.mktmpdir do |directory|
-      body = File.join(directory, "release-body.md")
-      File.write(body, "Approved notes")
-      status = cli.stub(:github_client, client) do
-        cli.stub(:github_user_publisher_client, client) do
-          cli.run([
-            "github-create-release",
-            "--channel", "production",
-            "--version", "5.4.0",
-            "--build", "20109",
-            "--iteration", "1",
-            "--target-sha", "a" * 40,
-            "--body", body
-          ])
-        end
-      end
-
-      assert_equal 1, status
+    status = cli.stub(:github_client, client) do
+      cli.run(["github-release-publisher-mode", "--tag", "production/latest"])
     end
 
-    assert_equal %i[validate_target find_release validate_publisher create_tag], client.events
-    assert_includes error.string, "publisher epoch changed before creation"
+    assert_equal 1, status
+    assert_includes error.string, "release tag is malformed"
+    assert_empty client.events
   end
 
   def test_cli_verifies_the_exact_existing_release_tag

@@ -1027,6 +1027,16 @@ jobs:
           cp app-store-submission.json release-archive/
           Scripts/archive-release-to-ghcr.sh push "${ARCHIVE_REFERENCE}" release-archive > final-archive-evidence.json
 
+      - name: Arm the exact production finalization wake state
+        if: needs.discover.outputs.channel == 'production' && steps.public_assets.outputs.ready == 'true'
+        env:
+          GITHUB_REPOSITORY_ID: ${{ github.repository_id }}
+          RELEASE_TAG: ${{ needs.discover.outputs.tag }}
+          SA_RELEASE_GITHUB_APP_CLIENT_ID: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          SA_RELEASE_GITHUB_APP_PRIVATE_KEY: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          SA_RELEASE_WAKE_VARIABLE: SA_RELEASE_PENDING_FINALIZATION_TAG
+        run: Scripts/release-artifact-wake-state.sh arm "${RELEASE_TAG}"
+
       - name: Mint release mutation token for Alpha recovery annotation
         if: needs.discover.outputs.channel == 'beta' && steps.context.outputs.alpha_recovery == 'true' && steps.public_assets.outputs.ready == 'true'
         id: alpha_recovery_release_token
@@ -1236,6 +1246,16 @@ jobs:
           cp reconciled-submission.json submission-recovery.json release-archive/
           Scripts/archive-release-to-ghcr.sh push "${ARCHIVE_REFERENCE}" release-archive > submission-archive-evidence.json
           echo "The exact App Store submission was confirmed and archived; finalization remains eligible." >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Arm the reconciled production finalization wake state
+        if: steps.submission.outputs.submitted == 'true'
+        env:
+          GITHUB_REPOSITORY_ID: ${{ github.repository_id }}
+          RELEASE_TAG: ${{ needs.discover.outputs.tag }}
+          SA_RELEASE_GITHUB_APP_CLIENT_ID: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          SA_RELEASE_GITHUB_APP_PRIVATE_KEY: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          SA_RELEASE_WAKE_VARIABLE: SA_RELEASE_PENDING_FINALIZATION_TAG
+        run: Scripts/release-artifact-wake-state.sh arm "${RELEASE_TAG}"
 
       - name: Mint release mutation token for terminal failure annotation
         if: always() && steps.submission.outputs.submitted != 'true' && needs.publish.outputs.terminal_failure == 'artifact_verification'

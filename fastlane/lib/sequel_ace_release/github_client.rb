@@ -111,7 +111,7 @@ module SequelAceRelease
     def release_by_tag_if_exists(tag)
       release_by_tag(tag)
     rescue APIError => error
-      raise unless error.message.include?("HTTP 404")
+      raise unless error.status == 404
 
       nil
     end
@@ -157,9 +157,6 @@ module SequelAceRelease
       end
       unless expected_app_slug.to_s.match?(/\A[a-z0-9-]+\z/)
         raise ValidationError, "expected GitHub release App slug is malformed"
-      end
-      unless ReleasePublisher::RELEASE_APP_SLUGS.include?(expected_app_slug)
-        raise ValidationError, "GitHub release App slug is not an authorized publisher"
       end
       installation_id = begin
         Integer(expected_installation_id)
@@ -383,7 +380,7 @@ module SequelAceRelease
       begin
         actual_sha = ref_sha("heads/#{branch}")
       rescue APIError => e
-        raise unless e.message.include?("HTTP 404")
+        raise unless e.status == 404
 
         return { "branch" => branch, "deleted" => false, "reason" => "already_absent" }
       end
@@ -528,7 +525,7 @@ module SequelAceRelease
         existing = request!("GET", "/repos/#{@repository}/git/ref/tags/#{URI.encode_www_form_component(tag)}")
         return validate_release_tag_response!(existing, expected_ref: expected_ref, target_sha: target_sha, created: false)
       rescue APIError => error
-        raise unless error.message.include?("HTTP 404")
+        raise unless error.status == 404
       end
 
       begin
@@ -537,7 +534,7 @@ module SequelAceRelease
           "sha" => target_sha
         })
       rescue APIError => error
-        raise unless error.message.include?("HTTP 422")
+        raise unless error.status == 422
 
         raced = request!("GET", "/repos/#{@repository}/git/ref/tags/#{URI.encode_www_form_component(tag)}")
         return validate_release_tag_response!(raced, expected_ref: expected_ref, target_sha: target_sha, created: false)
@@ -679,6 +676,9 @@ module SequelAceRelease
       end
       if login == ReleasePublisher::USER_LOGIN && id != ReleasePublisher::USER_ID
         raise ValidationError, "expected GitHub user release author ID does not match the pinned account"
+      end
+      if login.to_s.end_with?("[bot]") && id != ReleasePublisher::RELEASE_APP_BOT_ID
+        raise ValidationError, "expected GitHub App release author ID does not match the pinned bot account"
       end
       if !id.nil? && (!id.is_a?(Integer) || !id.positive?)
         raise ValidationError, "expected GitHub release author ID is malformed"
@@ -905,7 +905,10 @@ module SequelAceRelease
       return response.body if expected.include?(response.status)
 
       message = response.body.is_a?(Hash) ? response.body["message"] : nil
-      raise APIError, "GitHub API returned HTTP #{response.status}#{message ? ": #{message}" : ''}"
+      raise APIError.new(
+        "GitHub API returned HTTP #{response.status}#{message ? ": #{message}" : ''}",
+        status: response.status
+      )
     end
 
     def success_codes(method)

@@ -48,8 +48,7 @@ module SequelAceRelease
       ReleasePublisher.validate!(
         tag: tag,
         login: release.dig("author", "login"),
-        id: release.dig("author", "id"),
-        created_at: release["created_at"]
+        id: release.dig("author", "id")
       )
       release_id = release["id"]
       unless release_id.is_a?(Integer) && release_id.positive?
