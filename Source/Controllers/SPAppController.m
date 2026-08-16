@@ -62,7 +62,9 @@
 
 static const double SPDelayBeforeCheckingForNewReleases = 10;
 
-@interface SPAppController ()
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPAppController () <NSMenuItemValidation>
 @property (strong) IBOutlet NSMenu *mainMenu;
 
 - (void)_copyDefaultThemes;

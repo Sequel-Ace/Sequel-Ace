@@ -2,7 +2,21 @@
 
 set -euo pipefail
 
-readonly variable_name="SA_RELEASE_PENDING_ARTIFACT_TAG"
+readonly variable_name="${SA_RELEASE_WAKE_VARIABLE:-SA_RELEASE_PENDING_ARTIFACT_TAG}"
+case "${variable_name}" in
+	SA_RELEASE_PENDING_ARTIFACT_TAG)
+		readonly wake_label="Artifact"
+		readonly wake_label_lower="artifact"
+		;;
+	SA_RELEASE_PENDING_FINALIZATION_TAG)
+		readonly wake_label="Finalization"
+		readonly wake_label_lower="finalization"
+		;;
+	*)
+		echo "Unsupported release wake-state variable." >&2
+		exit 64
+		;;
+esac
 readonly tag_pattern='^(production|beta)/([0-9]+\.[0-9]+\.[0-9]+)-([1-9][0-9]*)$'
 generated_token=""
 private_key_path=""
@@ -19,6 +33,9 @@ installation token:
   SA_RELEASE_GITHUB_APP_CLIENT_ID
   SA_RELEASE_GITHUB_APP_PRIVATE_KEY
   GITHUB_REPOSITORY_ID
+
+SA_RELEASE_WAKE_VARIABLE may select SA_RELEASE_PENDING_ARTIFACT_TAG (default)
+or SA_RELEASE_PENDING_FINALIZATION_TAG.
 USAGE
 	exit 64
 }
@@ -143,7 +160,7 @@ readonly operation="$1"
 readonly release_tag="$2"
 readonly expected_predecessor_tag="${3:-}"
 [[ "${operation}" == "arm" || "${operation}" == "clear" ]] || usage
-[[ "${release_tag}" =~ ${tag_pattern} ]] || { echo "Malformed release artifact wake tag." >&2; exit 64; }
+[[ "${release_tag}" =~ ${tag_pattern} ]] || { echo "Malformed release wake tag." >&2; exit 64; }
 readonly release_channel="${BASH_REMATCH[1]}"
 readonly release_version="${BASH_REMATCH[2]}"
 readonly release_build="${BASH_REMATCH[3]}"
@@ -179,20 +196,20 @@ case "${operation}" in
 	arm)
 		if [[ "${current_value}" != "none" && "${current_value}" != "${release_tag}" ]]; then
 			if [[ -z "${expected_predecessor_tag}" || "${current_value}" != "${expected_predecessor_tag}" ]]; then
-				echo "Artifact wake state already belongs to ${current_value}; refusing to replace it with ${release_tag}." >&2
+				echo "${wake_label} wake state already belongs to ${current_value}; refusing to replace it with ${release_tag}." >&2
 				exit 1
 			fi
-			echo "Atomically forwarding artifact wake state from ${current_value} to ${release_tag}."
+			echo "Atomically forwarding ${wake_label_lower} wake state from ${current_value} to ${release_tag}."
 		fi
 		new_value="${release_tag}"
 		;;
 	clear)
 		if [[ "${current_value}" == "none" ]]; then
-			echo "Artifact wake state is already clear."
+		echo "${wake_label} wake state is already clear."
 			exit 0
 		fi
 		if [[ "${current_value}" != "${release_tag}" ]]; then
-			echo "Artifact wake state now belongs to ${current_value}; leaving it unchanged."
+		echo "${wake_label} wake state now belongs to ${current_value}; leaving it unchanged."
 			exit 0
 		fi
 		new_value="none"
@@ -201,5 +218,5 @@ esac
 
 retry_command api_as_token "${active_token}" --method PATCH "${endpoint}" --field "value=${new_value}" >/dev/null
 verified_value="$(retry_command api_as_token "${active_token}" "${endpoint}" --jq .value)"
-[[ "${verified_value}" == "${new_value}" ]] || { echo "Artifact wake-state readback did not persist ${new_value}." >&2; exit 1; }
-echo "Artifact wake state is ${verified_value}."
+[[ "${verified_value}" == "${new_value}" ]] || { echo "${wake_label} wake-state readback did not persist ${new_value}." >&2; exit 1; }
+echo "${wake_label} wake state is ${verified_value}."

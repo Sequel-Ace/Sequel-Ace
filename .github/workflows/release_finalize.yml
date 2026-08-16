@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   discover:
-    name: Find production prereleases to finalize
+    name: Find a production release to finalize
     runs-on: ubuntu-latest
     timeout-minutes: 5
     environment: sequel-ace-release
@@ -36,6 +36,7 @@ jobs:
           RELEASE_ACTOR: ${{ github.actor }}
           RELEASE_ENABLED: ${{ vars.SA_RELEASE_AUTOMATION_ENABLED }}
           RELEASE_EVENT: ${{ github.event_name }}
+          RELEASE_PENDING_TAG: ${{ vars.SA_RELEASE_PENDING_FINALIZATION_TAG }}
           RELEASE_REF: ${{ github.ref }}
           REQUESTED_TAG: ${{ inputs.release_tag }}
           RELEASE_RUN_ATTEMPT: ${{ github.run_attempt }}
@@ -78,47 +79,28 @@ jobs:
           fi
           echo "enabled=true" >> "${GITHUB_OUTPUT}"
 
-          if [[ -n "${REQUESTED_TAG}" ]]; then
-            # Exact manual recovery deliberately accepts a finalized release so
-            # it can repair a failed final live-archive checkpoint.
-            requested_tag_encoded="$(jq -rn --arg value "${REQUESTED_TAG}" '$value | @uri')"
-            candidates="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${requested_tag_encoded}" \
-              --jq '
-                (.tag_name | capture("-(?<build>[1-9][0-9]*)$").build | tonumber) as $build |
-                (.created_at | fromdateiso8601) as $created |
-                select(
-                  .draft == false and
-                  (
-                    (.author.login == "Jason-Morcos" and .author.id == 10710367 and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601)) or
-                    ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and $build >= 20109 and $created >= ("2027-08-14T00:00:00Z" | fromdateiso8601))
-                  )
-                ) |
-                .tag_name')"
-            [[ "${candidates}" == "${REQUESTED_TAG}" ]] || { echo "Requested release does not have authorized publisher provenance." >&2; exit 1; }
-          else
-            candidates="$(gh api --paginate \
-              "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
-              --jq '.[] |
-                select(.draft == false and .prerelease == true and (.tag_name | test("^production/[0-9]+\\.[0-9]+\\.[0-9]+-[1-9][0-9]*$"))) |
-                (.tag_name | capture("-(?<build>[1-9][0-9]*)$").build | tonumber) as $build |
-                (.created_at | fromdateiso8601) as $created |
-                select(
-                  (.author.login == "Jason-Morcos" and .author.id == 10710367 and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601)) or
-                  ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and $build >= 20109 and $created >= ("2027-08-14T00:00:00Z" | fromdateiso8601))
-                ) |
-                .tag_name')"
+          candidate="${REQUESTED_TAG}"
+          if [[ -z "${candidate}" && "${RELEASE_PENDING_TAG}" != "none" ]]; then
+            candidate="${RELEASE_PENDING_TAG}"
           fi
-          if [[ -n "${candidates}" ]]; then
-            candidate_count="$(printf '%s\n' "${candidates}" | awk 'NF { count += 1 } END { print count + 0 }')"
+          if [[ -n "${candidate}" ]]; then
+            [[ "${candidate}" =~ ^production/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || { echo "Malformed production finalization wake tag." >&2; exit 1; }
+            candidate_encoded="$(jq -rn --arg value "${candidate}" '$value | @uri')"
+            authorized_candidate="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${candidate_encoded}" \
+              --jq 'select(
+                .draft == false and
+                (.author.id == 10710367 or .author.id == 315153817)
+              ) | .tag_name')"
+            [[ "${authorized_candidate}" == "${candidate}" ]] || { echo "Release does not have authorized publisher provenance." >&2; exit 1; }
             echo "has_candidates=true" >> "${GITHUB_OUTPUT}"
-            echo "Found ${candidate_count} production prerelease candidate(s)." >> "${GITHUB_STEP_SUMMARY}"
+            echo "Found exact production finalization candidate ${candidate}." >> "${GITHUB_STEP_SUMMARY}"
           else
             echo "has_candidates=false" >> "${GITHUB_OUTPUT}"
-            echo "No production prereleases require finalization." >> "${GITHUB_STEP_SUMMARY}"
+            echo "No production release is awaiting finalization." >> "${GITHUB_STEP_SUMMARY}"
           fi
 
   finalize:
-    name: Finalize live production prereleases
+    name: Finalize the exact live production release
     needs: discover
     if: needs.discover.outputs.enabled == 'true' && needs.discover.outputs.has_candidates == 'true'
     runs-on: ubuntu-latest
@@ -184,6 +166,7 @@ jobs:
           permission-workflows: write
 
       - name: Finalize only exact App Store-live releases
+        id: finalization
         env:
           FINALIZER_TRIGGER: ${{ needs.discover.outputs.trigger }}
           GH_TOKEN: ${{ github.token }}
@@ -195,25 +178,67 @@ jobs:
           SA_ASC_PRIVATE_KEY: ${{ secrets.SA_ASC_PRIVATE_KEY }}
           SA_ASC_PRIVATE_KEY_BASE64: "1"
           REQUESTED_TAG: ${{ inputs.release_tag }}
+          RELEASE_PENDING_TAG: ${{ vars.SA_RELEASE_PENDING_FINALIZATION_TAG }}
         run: |
           set -euo pipefail
-          if [[ -n "${REQUESTED_TAG}" ]]; then
-            printf '%s\n' "${REQUESTED_TAG}" > production-candidates.txt
-          else
-            gh api --paginate \
-              "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
-              --jq '.[] |
-                select(.draft == false and .prerelease == true and (.tag_name | test("^production/[0-9]+\\.[0-9]+\\.[0-9]+-[1-9][0-9]*$"))) |
-                (.tag_name | capture("-(?<build>[1-9][0-9]*)$").build | tonumber) as $build |
-                (.created_at | fromdateiso8601) as $created |
-                select(
-                  (.author.login == "Jason-Morcos" and .author.id == 10710367 and $build >= 20109 and $created < ("2027-08-14T00:00:00Z" | fromdateiso8601)) or
-                  ((.author.login == "sequel-ace-release-automation[bot]" or .author.login == "sequel-ace-releases[bot]") and $build >= 20109 and $created >= ("2027-08-14T00:00:00Z" | fromdateiso8601))
-                ) |
-                .tag_name' > production-candidates.txt
+          candidate="${REQUESTED_TAG}"
+          if [[ -z "${candidate}" ]]; then
+            candidate="${RELEASE_PENDING_TAG}"
           fi
+          [[ "${candidate}" =~ ^production/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || { echo "Malformed production finalization candidate." >&2; exit 1; }
+          candidate_encoded="$(jq -rn --arg value "${candidate}" '$value | @uri')"
+          gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${candidate_encoded}" \
+            --jq 'select(
+              .draft == false and
+              (.author.id == 10710367 or .author.id == 315153817)
+            ) | .tag_name' \
+            > production-candidates.txt
+          [[ -s production-candidates.txt ]] || { echo "Exact finalization candidate is no longer authorized." >&2; exit 1; }
           finalized=0
           pending=0
+          terminal=0
+          settled_tag=""
+          preserve_finalization_integrity_failure() {
+            local phase="$1"
+            local release_tag="$2"
+            local archive_ref="$3"
+            local archive_directory="$4"
+            local state_directory="$5"
+            local evidence_path="${state_directory}/finalization-integrity-failure.json"
+            local workflow_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            if ! ruby -rjson -rtime -e '
+              File.write(
+                ARGV.fetch(3),
+                JSON.pretty_generate({
+                  "schema_version" => 1,
+                  "tag" => ARGV.fetch(1),
+                  "phase" => ARGV.fetch(0),
+                  "workflow_url" => ARGV.fetch(2),
+                  "recorded_at" => Time.now.utc.iso8601
+                }) + "\n"
+              )
+            ' "${phase}" "${release_tag}" "${workflow_url}" "${evidence_path}"; then
+              return 1
+            fi
+            if ! /bin/rm -f "${archive_directory}/finalization-integrity-failure.json"; then
+              return 1
+            fi
+            if ! cp "${evidence_path}" "${archive_directory}/"; then
+              return 1
+            fi
+            local archive_evidence
+            if ! archive_evidence="$(mktemp "${RUNNER_TEMP}/sequel-ace-terminal-finalization-evidence.XXXXXX")"; then
+              return 1
+            fi
+            if ! Scripts/archive-release-to-ghcr.sh push "${archive_ref}" "${archive_directory}" > "${archive_evidence}"; then
+              /bin/rm -f "${archive_evidence}"
+              return 1
+            fi
+            if ! /bin/rm -f "${archive_evidence}"; then
+              return 1
+            fi
+            return 0
+          }
           while IFS= read -r release_tag; do
             [[ -n "${release_tag}" ]] || continue
             if [[ ! "${release_tag}" =~ ^production/([0-9]+\.[0-9]+\.[0-9]+)-([0-9]+)$ ]]; then
@@ -231,8 +256,14 @@ jobs:
               rm -rf "${archive_directory}" "${state_directory}"
               continue
             fi
-            if ! state="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("state")' "${archive_directory}/manifest.json" 2>/dev/null)"; then
-              echo "Pending ${release_tag}: private release archive has no readable manifest state."
+            if ! state="$(bundle exec ruby -Ifastlane/lib -rsequel_ace_release -e '
+              manifest = SequelAceRelease::Manifest.read(ARGV.fetch(0)).to_h
+              abort unless manifest.fetch("tag") == ARGV.fetch(1)
+              abort unless manifest.fetch("target_version") == ARGV.fetch(2)
+              abort unless manifest.fetch("canonical_build").to_s == ARGV.fetch(3)
+              puts manifest.fetch("state")
+            ' "${archive_directory}/manifest.json" "${release_tag}" "${version}" "${build}" 2>/dev/null)"; then
+              echo "Pending ${release_tag}: private release archive has no valid matching manifest identity."
               pending=$((pending + 1))
               rm -rf "${archive_directory}" "${state_directory}"
               continue
@@ -243,11 +274,49 @@ jobs:
               rm -rf "${archive_directory}" "${state_directory}"
               continue
             fi
+            terminal_evidence="${archive_directory}/finalization-integrity-failure.json"
+            if [[ -e "${terminal_evidence}" || -L "${terminal_evidence}" ]]; then
+              if ! terminal_phase="$(ruby -rjson -rtime -e '
+                path = ARGV.fetch(0)
+                stat = File.lstat(path)
+                abort unless stat.file? && !stat.symlink?
+                value = JSON.parse(File.read(path))
+                abort unless value.fetch("schema_version") == 1
+                abort unless value.fetch("tag") == ARGV.fetch(1)
+                abort unless %w[validation transition].include?(value.fetch("phase"))
+                prefix = "#{ARGV.fetch(2)}/#{ARGV.fetch(3)}/actions/runs/"
+                suffix = value.fetch("workflow_url").delete_prefix(prefix)
+                abort unless value.fetch("workflow_url").start_with?(prefix) && suffix.match?(/\A[1-9][0-9]*\z/)
+                Time.iso8601(value.fetch("recorded_at"))
+                puts value.fetch("phase")
+              ' "${terminal_evidence}" "${release_tag}" "${GITHUB_SERVER_URL}" "${GITHUB_REPOSITORY}" 2>/dev/null)"; then
+                echo "Pending ${release_tag}: archived finalization integrity evidence is malformed."
+                pending=$((pending + 1))
+                rm -rf "${archive_directory}" "${state_directory}"
+                continue
+              fi
+              if [[ -z "${REQUESTED_TAG}" ]]; then
+                echo "Terminal ${release_tag}: ${terminal_phase} integrity evidence is archived; an authorized exact-tag recovery is required after repair."
+                terminal=$((terminal + 1))
+                settled_tag="${release_tag}"
+                rm -rf "${archive_directory}" "${state_directory}"
+                continue
+              fi
+              echo "Retrying archived terminal ${terminal_phase} evidence for ${release_tag} through authorized exact-tag recovery."
+            fi
+            integrity_marker="${state_directory}/terminal-finalization-integrity-failure"
             if bundle exec ruby fastlane/bin/sa-release finalize \
               --manifest "${archive_directory}/manifest.json" \
               --confirm "FINALIZE ${release_tag}" \
               --validate-only \
+              --integrity-failure-marker "${integrity_marker}" \
               --output "${state_directory}/finalization-validation.json" 2> "${state_directory}/pending.log"; then
+              if ! /bin/rm -f "${terminal_evidence}"; then
+                echo "Pending ${release_tag}: obsolete terminal finalization evidence could not be cleared."
+                pending=$((pending + 1))
+                rm -rf "${archive_directory}" "${state_directory}"
+                continue
+              fi
               ruby -rjson -e 'File.write(ARGV.fetch(1), JSON.pretty_generate({"finalization" => JSON.parse(File.read(ARGV.fetch(0)))}) + "\n")' \
                 "${state_directory}/finalization-validation.json" \
                 "${state_directory}/finalization-evidence.json"
@@ -268,6 +337,7 @@ jobs:
               if bundle exec ruby fastlane/bin/sa-release finalize \
                 --manifest "${archive_directory}/manifest.json" \
                 --confirm "FINALIZE ${release_tag}" \
+                --integrity-failure-marker "${integrity_marker}" \
                 --output "${state_directory}/finalization.json" 2> "${state_directory}/pending.log"; then
                 ruby -rjson -e 'File.write(ARGV.fetch(1), JSON.pretty_generate({"finalization" => JSON.parse(File.read(ARGV.fetch(0)))}) + "\n")' \
                   "${state_directory}/finalization.json" \
@@ -288,19 +358,60 @@ jobs:
                 /bin/rm -f "${live_archive_evidence}"
                 echo "Finalized ${release_tag}."
                 finalized=$((finalized + 1))
+                settled_tag="${release_tag}"
+              else
+                if [[ -f "${integrity_marker}" ]]; then
+                  if preserve_finalization_integrity_failure \
+                    "transition" "${release_tag}" "${archive_ref}" "${archive_directory}" "${state_directory}"; then
+                    echo "Terminal ${release_tag}: public-transition integrity evidence was archived for authorized exact-tag recovery."
+                    terminal=$((terminal + 1))
+                    settled_tag="${release_tag}"
+                  else
+                    echo "Pending ${release_tag}: terminal public-transition evidence could not be archived."
+                    pending=$((pending + 1))
+                  fi
+                else
+                  echo "Pending ${release_tag}: $(head -n 1 "${state_directory}/pending.log")"
+                  pending=$((pending + 1))
+                fi
+              fi
+            else
+              if [[ -f "${integrity_marker}" ]]; then
+                if preserve_finalization_integrity_failure \
+                  "validation" "${release_tag}" "${archive_ref}" "${archive_directory}" "${state_directory}"; then
+                  echo "Terminal ${release_tag}: pre-transition integrity evidence was archived for authorized exact-tag recovery."
+                  terminal=$((terminal + 1))
+                  settled_tag="${release_tag}"
+                else
+                  echo "Pending ${release_tag}: terminal pre-transition evidence could not be archived."
+                  pending=$((pending + 1))
+                fi
               else
                 echo "Pending ${release_tag}: $(head -n 1 "${state_directory}/pending.log")"
                 pending=$((pending + 1))
               fi
-            else
-              echo "Pending ${release_tag}: $(head -n 1 "${state_directory}/pending.log")"
-              pending=$((pending + 1))
             fi
             rm -rf "${archive_directory}" "${state_directory}"
           done < production-candidates.txt
           {
             echo "### App Store finalization check"
             echo "- Finalized: ${finalized}"
+            echo "- Terminal integrity failures: ${terminal}"
             echo "- Still pending or blocked: ${pending}"
             echo "- Trigger: ${FINALIZER_TRIGGER}"
           } >> "${GITHUB_STEP_SUMMARY}"
+          echo "settled_tag=${settled_tag}" >> "${GITHUB_OUTPUT}"
+          if [[ -n "${REQUESTED_TAG}" && "${terminal}" -gt 0 ]]; then
+            echo "Requested recovery ended with archived terminal integrity evidence." >&2
+            exit 1
+          fi
+
+      - name: Clear only the exact settled finalization wake state
+        if: always() && steps.finalization.outputs.settled_tag != ''
+        env:
+          GITHUB_REPOSITORY_ID: ${{ github.repository_id }}
+          SA_RELEASE_GITHUB_APP_CLIENT_ID: ${{ vars.SA_RELEASE_GITHUB_APP_CLIENT_ID }}
+          SA_RELEASE_GITHUB_APP_PRIVATE_KEY: ${{ secrets.SA_RELEASE_GITHUB_APP_PRIVATE_KEY }}
+          SA_RELEASE_WAKE_VARIABLE: SA_RELEASE_PENDING_FINALIZATION_TAG
+          SETTLED_TAG: ${{ steps.finalization.outputs.settled_tag }}
+        run: Scripts/release-artifact-wake-state.sh clear "${SETTLED_TAG}"

@@ -100,7 +100,9 @@ static void *TableContentKVOContext = &TableContentKVOContext;
 
 @end
 
-@interface SPTableContent () <SATableHeaderViewDelegate>
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPTableContent () <SATableHeaderViewDelegate, NSMenuItemValidation>
 
 @property (assign, nonatomic) BOOL deferRecordViewRefreshUntilTableLoadCompletes;
 @property (assign, nonatomic) BOOL suppressRecordViewTaskRefresh;

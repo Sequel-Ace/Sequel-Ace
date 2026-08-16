@@ -78,8 +78,9 @@
 
 #pragma mark -
 
-@interface SPTextView ()
-
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPTextView () <NSFontChanging>
 NSInteger _alphabeticSort(id string1, id string2, void *reverse);
 - (void)_setTextSelectionColor:(NSColor *)newSelectionColor;
 - (void)_setTextSelectionColor:(NSColor *)newSelectionColor onBackgroundColor:(NSColor *)aBackgroundColor;

@@ -55,8 +55,9 @@ static const NSString *SPNewIndexKeyBlockSize   = @"IndexKeyBlockSize";
  */
 static void *IndexesControllerKVOContext = &IndexesControllerKVOContext;
 
-@interface SPIndexesController ()
-
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPIndexesController () <NSMenuItemValidation>
 - (BOOL)_isFullTextIndexSelected;
 - (void)_addAdditionalIndexTypes;
 - (void)_reloadIndexedColumnsTableData;

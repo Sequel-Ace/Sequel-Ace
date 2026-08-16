@@ -45,6 +45,7 @@ module SequelAceRelease
       when "github-verify-release-tag" then github_verify_release_tag(argv)
       when "github-release-publisher-mode" then github_release_publisher_mode(argv)
       when "github-create-release" then github_create_release(argv)
+      when "github-public-assets-status" then github_public_assets_status(argv)
       when "github-upload-asset" then github_upload_asset(argv)
       when "validate-publish-handoff" then validate_publish_handoff(argv)
       when "validate-forward-recovery" then validate_forward_recovery(argv)
@@ -451,13 +452,14 @@ module SequelAceRelease
     def github_create_release(arguments)
       options = { iteration: 1 }
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release github-create-release --channel CHANNEL --version VERSION --build BUILD --target-sha SHA --body FILE"
+        value.banner = "Usage: sa-release github-create-release --channel CHANNEL --version VERSION --build BUILD --target-sha SHA --body FILE [--publisher user|app]"
         value.on("--channel CHANNEL") { |item| options[:channel] = item }
         value.on("--version VERSION") { |item| options[:version] = item }
         value.on("--build BUILD", Integer) { |item| options[:build] = item }
         value.on("--iteration NUMBER", Integer) { |item| options[:iteration] = item }
         value.on("--target-sha SHA") { |item| options[:target_sha] = item }
         value.on("--body FILE") { |item| options[:body] = File.read(item) }
+        value.on("--publisher MODE") { |item| options[:publisher] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
@@ -474,10 +476,9 @@ module SequelAceRelease
         expected_publisher = ReleasePublisher.validate!(
           tag: naming.tag,
           login: existing.dig("author", "login"),
-          id: existing.dig("author", "id"),
-          created_at: existing["created_at"]
+          id: existing.dig("author", "id")
         )
-        expected_author_id = expected_publisher == ReleasePublisher::USER_LOGIN ? ReleasePublisher::USER_ID : nil
+        expected_author_id = existing.dig("author", "id")
         publisher_validation = {
           "login" => expected_publisher,
           "id" => expected_author_id,
@@ -498,7 +499,13 @@ module SequelAceRelease
           expected_author_id: expected_author_id
         )
       else
-        publication_mode = ReleasePublisher.active_mode(at: @clock.call.utc)
+        if options[:publisher].nil?
+          raise ValidationError, "new GitHub releases require an explicit user or app publisher mode"
+        end
+        publication_mode = options[:publisher].to_sym
+        unless %i[user app].include?(publication_mode)
+          raise ValidationError, "GitHub release publisher mode must be user or app"
+        end
         if publication_mode == :user
           publisher = github_user_publisher_client
           expected_publisher = ReleasePublisher::USER_LOGIN
@@ -516,10 +523,7 @@ module SequelAceRelease
             expected_installation_id: @env["SA_RELEASE_GITHUB_APP_INSTALLATION_ID"]
           )
           expected_publisher = publisher_validation.fetch("login")
-          expected_author_id = nil
-        end
-        unless ReleasePublisher.active_mode(at: @clock.call.utc) == publication_mode
-          raise ValidationError, "GitHub release publisher epoch changed during preflight"
+          expected_author_id = ReleasePublisher::RELEASE_APP_BOT_ID
         end
         tag = client.create_or_validate_release_tag(
           tag: naming.tag,
@@ -531,19 +535,13 @@ module SequelAceRelease
           title: naming.title,
           body: options[:body],
           expected_author_login: expected_publisher,
-          expected_author_id: expected_author_id,
-          before_create: lambda do
-            unless ReleasePublisher.active_mode(at: @clock.call.utc) == publication_mode
-              raise ValidationError, "GitHub release publisher epoch changed before creation"
-            end
-          end
+          expected_author_id: expected_author_id
         )
       end
       ReleasePublisher.validate!(
         tag: naming.tag,
         login: release.dig("author", "login"),
-        id: release.dig("author", "id"),
-        created_at: release["created_at"]
+        id: release.dig("author", "id")
       )
       emit({
         "naming" => naming.to_h,
@@ -564,23 +562,41 @@ module SequelAceRelease
       parser.parse!(arguments)
       reject_arguments!(arguments)
       require_options!(options, :tag)
+      ReleasePublisher.validate_tag!(options[:tag])
 
       existing = github_client.release_by_tag_if_exists(options[:tag])
+      reason = nil
+      publisher_validation = nil
       mode = if existing
                ReleasePublisher.validate!(
                  tag: options[:tag],
                  login: existing.dig("author", "login"),
-                 id: existing.dig("author", "id"),
-                 created_at: existing["created_at"]
+                 id: existing.dig("author", "id")
                )
+               reason = "existing_release"
                :existing
+             elsif @env["SA_RELEASE_GITHUB_PUBLISHER_TOKEN"].to_s.empty?
+               reason = "user_credential_absent"
+               :app
              else
-               ReleasePublisher.active_mode(at: @clock.call.utc)
+               begin
+                 publisher_validation = github_user_publisher_client.validate_release_publisher!(
+                   expected_login: ReleasePublisher::USER_LOGIN,
+                   expected_id: ReleasePublisher::USER_ID
+                 )
+                 reason = "user_credential_available"
+                 :user
+               rescue APIError => error
+                 raise unless error.status == 401
+
+                 reason = "user_credential_expired_or_revoked"
+                 :app
+               end
              end
       emit({
         "mode" => mode.to_s,
-        "cutoff" => ReleasePublisher::USER_PUBLISHER_CUTOFF.iso8601,
-        "safety_window_seconds" => ReleasePublisher::USER_PUBLISHER_SAFETY_WINDOW,
+        "reason" => reason,
+        "publisher_validation" => publisher_validation,
         "existing_release_id" => existing && existing["id"]
       }, options[:output])
     end
@@ -635,20 +651,29 @@ module SequelAceRelease
       parser.parse!(arguments)
       reject_arguments!(arguments)
       require_options!(options, :tag, :file, :manifest, :notes)
-      client = github_client
-      manifest = Manifest.read(options[:manifest])
-      handoff = PublishHandoff.new(github: client).validate(
-        manifest: manifest,
-        tag: options[:tag],
-        app_store_notes: File.read(options[:notes])
-      )
-      raise ValidationError, "release handoff is not eligible for artifact upload" unless handoff.fetch("eligible")
-
-      release = client.release_by_tag(options[:tag])
-      unless release["id"] == handoff.fetch("github_release_id")
-        raise ValidationError, "release identity changed before artifact upload"
-      end
       begin
+        client = github_client
+        manifest = Manifest.read(options[:manifest])
+        handoff = PublishHandoff.new(github: client).validate(
+          manifest: manifest,
+          tag: options[:tag],
+          app_store_notes: File.read(options[:notes])
+        )
+        raise ValidationError, "release handoff is not eligible for artifact upload" unless handoff.fetch("eligible")
+
+        release = client.release_by_tag(options[:tag])
+        unless release["id"] == handoff.fetch("github_release_id")
+          raise ValidationError, "release identity changed before artifact upload"
+        end
+        payload = GitHubReleasePayload.new(
+          release: release,
+          expected_digests: release_asset_sha256s!(manifest.to_h)
+        ).validate
+        if payload.fetch("mode") == "manual_web_upload"
+          raise ValidationError,
+                "GitHub API asset uploads cannot preserve the release's #{payload.fetch('compatibility_profile')} " \
+                "payload; upload through a compatible GitHub user session and run github-public-assets-status"
+        end
         asset_name = options[:name] || File.basename(options[:file])
         expected_sha256 = verified_release_asset_sha256!(
           manifest: manifest,
@@ -666,6 +691,50 @@ module SequelAceRelease
         raise
       end
       emit(response, options[:output])
+    end
+
+    def github_public_assets_status(arguments)
+      options = {}
+      parser = OptionParser.new do |value|
+        value.banner = "Usage: sa-release github-public-assets-status --tag TAG --manifest FILE --notes FILE [--integrity-failure-marker FILE]"
+        value.on("--tag TAG") { |item| options[:tag] = item }
+        value.on("--manifest FILE") { |item| options[:manifest] = item }
+        value.on("--notes FILE") { |item| options[:notes] = item }
+        value.on("--integrity-failure-marker FILE") { |item| options[:integrity_failure_marker] = item }
+        value.on("--output FILE") { |item| options[:output] = item }
+      end
+      parser.parse!(arguments)
+      reject_arguments!(arguments)
+      require_options!(options, :tag, :manifest, :notes)
+
+      client = github_client
+      manifest = Manifest.read(options[:manifest])
+      handoff = PublishHandoff.new(github: client).validate(
+        manifest: manifest,
+        tag: options[:tag],
+        app_store_notes: File.read(options[:notes])
+      )
+      raise ValidationError, "release handoff is not eligible for public asset validation" unless handoff.fetch("eligible")
+
+      release = client.release_by_tag(options[:tag])
+      unless release["id"] == handoff.fetch("github_release_id")
+        raise ValidationError, "release identity changed before public asset validation"
+      end
+      validator = GitHubReleasePayload.new(
+        release: release,
+        expected_digests: release_asset_sha256s!(manifest.to_h)
+      )
+      result = validator.validate
+      if result.fetch("ready")
+        result["release_feed_entries_verified"] = validator.validate_public_feed!(client.public_release_feed_page)
+      end
+      emit(result.merge(
+        "tag" => options[:tag],
+        "github_release_id" => release.fetch("id")
+      ), options[:output])
+    rescue IntegrityError
+      write_integrity_failure_marker(options[:integrity_failure_marker])
+      raise
     end
 
     def cloud_status(arguments)
@@ -697,10 +766,11 @@ module SequelAceRelease
     def validate_publish_handoff(arguments)
       options = {}
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release validate-publish-handoff --manifest FILE --tag TAG --notes FILE"
+        value.banner = "Usage: sa-release validate-publish-handoff --manifest FILE --tag TAG --notes FILE [--integrity-failure-marker FILE]"
         value.on("--manifest FILE") { |item| options[:manifest] = item }
         value.on("--tag TAG") { |item| options[:tag] = item }
         value.on("--notes FILE") { |item| options[:notes] = item }
+        value.on("--integrity-failure-marker FILE") { |item| options[:integrity_failure_marker] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
@@ -713,6 +783,9 @@ module SequelAceRelease
         app_store_notes: File.read(options[:notes])
       )
       emit(result, options[:output])
+    rescue IntegrityError
+      write_integrity_failure_marker(options[:integrity_failure_marker])
+      raise
     end
 
     def validate_forward_recovery(arguments)
@@ -903,11 +976,12 @@ module SequelAceRelease
     def submit(arguments)
       options = {}
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release submit --manifest FILE --notes FILE --confirm 'SUBMIT VERSION (BUILD)'"
+        value.banner = "Usage: sa-release submit --manifest FILE --notes FILE --confirm 'SUBMIT VERSION (BUILD)' [--integrity-failure-marker FILE]"
         value.on("--manifest FILE") { |item| options[:manifest] = item }
         value.on("--notes FILE") { |item| options[:notes] = item }
         value.on("--confirm TEXT") { |item| options[:confirm] = item }
         value.on("--schedule-at TIME") { |item| options[:schedule_at] = Time.parse(item) }
+        value.on("--integrity-failure-marker FILE") { |item| options[:integrity_failure_marker] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
@@ -998,6 +1072,9 @@ module SequelAceRelease
           "phased_release_state" => final_snapshot.dig("phased_release", "attributes", "phasedReleaseState")
         }, options[:output])
       end
+    rescue IntegrityError
+      write_integrity_failure_marker(options[:integrity_failure_marker])
+      raise
     end
 
     def create_manifest(arguments)
@@ -1106,10 +1183,11 @@ module SequelAceRelease
     def finalize(arguments)
       options = { validate_only: false }
       parser = OptionParser.new do |value|
-        value.banner = "Usage: sa-release finalize --manifest FILE --confirm 'FINALIZE TAG' [--validate-only]"
+        value.banner = "Usage: sa-release finalize --manifest FILE --confirm 'FINALIZE TAG' [--validate-only] [--integrity-failure-marker FILE]"
         value.on("--manifest FILE") { |item| options[:manifest] = item }
         value.on("--confirm TEXT") { |item| options[:confirm] = item }
         value.on("--validate-only") { options[:validate_only] = true }
+        value.on("--integrity-failure-marker FILE") { |item| options[:integrity_failure_marker] = item }
         value.on("--output FILE") { |item| options[:output] = item }
       end
       parser.parse!(arguments)
@@ -1151,10 +1229,9 @@ module SequelAceRelease
       ReleasePublisher.validate!(
         tag: data.fetch("tag"),
         login: release.dig("author", "login"),
-        id: release.dig("author", "id"),
-        created_at: release["created_at"]
+        id: release.dig("author", "id")
       )
-      verify_release_assets!(release, data)
+      verify_release_assets!(release, data, github: client)
       final_title = ReleaseNaming.new(
         channel: "production",
         version: data.fetch("target_version"),
@@ -1164,7 +1241,7 @@ module SequelAceRelease
       current_latest = begin
         client.latest_release
       rescue APIError => error
-        raise unless error.message.include?("HTTP 404")
+        raise unless error.status == 404
 
         nil
       end
@@ -1188,14 +1265,16 @@ module SequelAceRelease
         return emit(evidence.merge("github_transition" => "durably_validated_before_public_transition"), options[:output])
       end
 
-      client.update_release(
-        id: release.fetch("id"),
-        tag: data.fetch("tag"),
-        target_sha: archived_commit,
-        title: final_title,
-        prerelease: false,
-        make_latest: true
-      )
+      if transition_required
+        client.update_release(
+          id: release.fetch("id"),
+          tag: data.fetch("tag"),
+          target_sha: archived_commit,
+          title: final_title,
+          prerelease: false,
+          make_latest: true
+        )
+      end
       finalized_tag_commit = client.ref_sha("tags/#{data.fetch('tag')}")
       unless finalized_tag_commit == archived_commit
         raise ValidationError,
@@ -1207,12 +1286,11 @@ module SequelAceRelease
              ReleasePublisher.authorized?(
                tag: data.fetch("tag"),
                login: release.dig("author", "login"),
-               id: release.dig("author", "id"),
-               created_at: release["created_at"]
+               id: release.dig("author", "id")
              )
         raise ValidationError, "GitHub finalization readback did not match the requested release"
       end
-      verify_release_assets!(release, data)
+      post_transition_assets = verify_release_assets!(release, data, github: client)
       latest_release = client.latest_release
       unless latest_release["id"] == release["id"] && latest_release["tag_name"] == data.fetch("tag") &&
              latest_release["name"] == final_title && latest_release["draft"] == false &&
@@ -1224,20 +1302,43 @@ module SequelAceRelease
         "final_title" => release["name"],
         "final_draft" => release["draft"],
         "final_prerelease" => release["prerelease"],
-        "final_latest" => true
+        "final_latest" => true,
+        "post_transition_public_feed" => post_transition_assets.fetch("release_feed_verification")
       ), options[:output])
+    rescue IntegrityError
+      write_integrity_failure_marker(options[:integrity_failure_marker])
+      raise
     end
 
     def validate_submission_handoff!(manifest:, notes:)
-      result = PublishHandoff.new(github: github_client).validate(
+      client = github_client
+      data = manifest.to_h
+      result = PublishHandoff.new(github: client).validate(
         manifest: manifest,
-        tag: manifest.to_h.fetch("tag"),
+        tag: data.fetch("tag"),
         app_store_notes: notes
       )
       unless result.fetch("eligible") && result.fetch("state") == "archived"
         raise ValidationError, "production submission requires an eligible archived GitHub handoff"
       end
 
+      release = client.release_by_tag(data.fetch("tag"))
+      unless release["id"] == result.fetch("github_release_id") &&
+             release["tag_name"] == data.fetch("tag") &&
+             release["name"] == data.fetch("title") &&
+             release["draft"] == false && release["prerelease"] == true
+        raise IntegrityError, "GitHub release identity changed during App Store submission"
+      end
+      ReleasePublisher.validate!(
+        tag: data.fetch("tag"),
+        login: release.dig("author", "login"),
+        id: release.dig("author", "id")
+      )
+      status = verify_release_assets!(release, data, github: client)
+      if status.key?("release_feed_entries_verified")
+        result["release_feed_entries_verified"] = status.fetch("release_feed_entries_verified")
+      end
+      result["compatibility_profile"] = status.fetch("compatibility_profile")
       result
     end
 
@@ -1345,7 +1446,7 @@ module SequelAceRelease
         github_client.release_by_tag(tag)
         return nil
       rescue APIError => error
-        raise unless error.message.include?("HTTP 404")
+        raise unless error.status == 404
       end
       if options[:workflow_id].to_s.empty? || app_store_client.nil?
         raise ValidationError, "tag-only recovery requires Production Xcode Cloud access"
@@ -1474,38 +1575,46 @@ module SequelAceRelease
       end
     end
 
-    def verify_release_assets!(release, manifest)
+    def verify_release_assets!(release, manifest, github:)
       actual_notes_sha = Digest::SHA256.hexdigest(release.fetch("body").to_s)
       unless actual_notes_sha == manifest.fetch("release_notes_sha256")
-        raise ValidationError, "GitHub release notes no longer match the archived manifest"
+        raise IntegrityError, "GitHub release notes no longer match the archived manifest"
       end
 
-      expected_names = Array(manifest.fetch("artifact_names"))
-      assets = Array(release["assets"])
-      actual_names = assets.map { |asset| asset["name"] }
-      missing = expected_names - actual_names
-      raise ValidationError, "GitHub release is missing artifacts: #{missing.join(', ')}" unless missing.empty?
-      unexpected = actual_names - expected_names
-      raise ValidationError, "GitHub release has unexpected artifacts: #{unexpected.join(', ')}" unless unexpected.empty?
+      validator = GitHubReleasePayload.new(
+        release: release,
+        expected_digests: release_asset_sha256s!(manifest)
+      )
+      status = validator.validate
+      unless status.fetch("ready")
+        raise IntegrityError,
+              "GitHub release is missing artifacts: #{status.fetch('missing_assets').join(', ')}"
+      end
+      status["release_feed_entries_verified"] = validator.validate_public_feed!(github.public_release_feed_page)
+      status["release_feed_verification"] = "verified"
+      status
+    end
 
+    def release_asset_sha256s!(manifest)
+      expected_names = Array(manifest.fetch("artifact_names"))
       verification = manifest.fetch("verification", {})
       expected_digests = verification.each_with_object({}) do |(_key, value), result|
         next unless value.is_a?(Hash) && value["zip_path"] && value["zip_sha256"]
 
-        result[File.basename(value["zip_path"])] = value["zip_sha256"]
+        name = File.basename(value["zip_path"])
+        raise IntegrityError, "private manifest has duplicate artifact checksums for #{name}" if result.key?(name)
+
+        result[name] = value["zip_sha256"].to_s.downcase
       end
       missing_digests = expected_names - expected_digests.keys
       unless missing_digests.empty?
-        raise ValidationError, "private manifest is missing artifact checksums: #{missing_digests.join(', ')}"
+        raise IntegrityError, "private manifest is missing artifact checksums: #{missing_digests.join(', ')}"
       end
-      expected_digests.each do |name, digest|
-        unless digest.to_s.match?(/\A[0-9a-f]{64}\z/i)
-          raise ValidationError, "private manifest has a malformed checksum for #{name}"
-        end
-        asset = assets.find { |candidate| candidate["name"] == name }
-        actual = asset && asset["digest"].to_s.delete_prefix("sha256:")
-        raise ValidationError, "GitHub asset checksum mismatch for #{name}" unless actual == digest
+      unexpected_digests = expected_digests.keys - expected_names
+      unless unexpected_digests.empty?
+        raise IntegrityError, "private manifest has unexpected artifact checksums: #{unexpected_digests.join(', ')}"
       end
+      expected_digests
     end
 
     def verified_release_asset_sha256!(manifest:, path:, name:)
@@ -1551,7 +1660,7 @@ module SequelAceRelease
       return unless path
 
       FileUtils.mkdir_p(File.dirname(path))
-      File.write(path, "release asset checksum mismatch\n")
+      File.write(path, "release asset integrity failure\n")
     rescue SystemCallError => error
       @err.puts("release tool warning: could not write integrity failure marker (#{error.class})")
     end
@@ -1577,8 +1686,10 @@ module SequelAceRelease
                                      Prove a release commit remains an unchanged main ancestor
           github-verify-release-tag   Prove a release tag still names the exact release commit
           github-release-publisher-mode
-                                     Select a PAT-free initial release publisher epoch
+                                     Select a live-capable initial release publisher
           github-create-release      Create the tag-backed GitHub prerelease
+          github-public-assets-status
+                                     Validate public assets and legacy-client metadata
           github-upload-asset        Upload a verified zip to the prerelease
           validate-publish-handoff   Validate an archived prerelease continuation
           validate-forward-recovery  Validate a preserved forward-only build mismatch

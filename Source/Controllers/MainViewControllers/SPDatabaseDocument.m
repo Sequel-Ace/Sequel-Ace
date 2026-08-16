@@ -94,8 +94,9 @@ static NSString *SPNewDatabaseCopyContent = @"SPNewDatabaseCopyContent";
 
 static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
-@interface SPDatabaseDocument () <SADatabaseSelectionDelegate>
-
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPDatabaseDocument () <SADatabaseSelectionDelegate, NSToolbarItemValidation>
 // Privately redeclare as read/write to get the synthesized setter
 @property (readwrite, assign) BOOL allowSplitViewResizing;
 

@@ -26,14 +26,19 @@ or creates a GitHub release.
   passes.
 - One `sequel-ace-release` concurrency group prevents overlapping preparation,
   deployment, artifact publication, Alpha recovery, and finalization.
+- A non-`none` `SA_RELEASE_PENDING_FINALIZATION_TAG` blocks another release
+  start even between workflow runs, so a submitted production release cannot
+  be overlapped before its live or terminal checkpoint settles.
 - The GitHub App may bypass the release PR's human-review requirement, but the
   workflow still waits for the exact release commit's `Run Tests`,
   `Release Tool Tests`, and every other observed check to finish acceptably.
 - A failed tag or prerelease is preserved. Never delete, move, or reuse it.
-- New GitHub releases are temporarily created by `Jason-Morcos` for
-  compatibility with installed Sequel Ace versions affected by
-  [#2555](https://github.com/Sequel-Ace/Sequel-Ace/issues/2555). The dedicated
-  GitHub App still creates the tag and performs every later release mutation.
+- New GitHub releases are created by `Jason-Morcos` while the protected
+  repository-only credential validates successfully, for compatibility with
+  installed Sequel Ace versions affected by [#2555](https://github.com/Sequel-Ace/Sequel-Ace/issues/2555).
+  The existing release App is selected automatically when that credential is
+  absent or explicitly expired, and it still creates every tag and performs
+  every later release mutation.
 - Secrets, App Review credentials, private-key material, and full sensitive ASC
   responses must never be written to a manifest or workflow log.
 - Hosted workflows put their transient JSON/evidence paths in the checkout's
@@ -92,10 +97,12 @@ or creates a GitHub release.
    | `SA_ALPHA_CLOUD_WORKFLOW_ID` | Alpha Xcode Cloud workflow ID |
    | `SA_GHCR_ARCHIVE` | `ghcr.io/sequel-ace/sequel-ace-release-archive` |
 
-8. Add repository variable `SA_RELEASE_PENDING_ARTIFACT_TAG` with initial value
-   `none`. It must be repository-scoped, rather than environment-scoped, because
-   GitHub evaluates the scheduled publisher's job condition before opening the
-   protected environment.
+8. Add repository variables `SA_RELEASE_PENDING_ARTIFACT_TAG` and
+   `SA_RELEASE_PENDING_FINALIZATION_TAG`, both with initial value `none`. They
+   must be repository-scoped, rather than environment-scoped, because GitHub
+   evaluates scheduled discovery before opening the protected environment. The
+   former identifies one exact Cloud/artifact handoff; the latter identifies
+   one exact submitted production release awaiting App Store-live finalization.
 9. Require both `Run Tests` and `Release Tool Tests` on `main`.
 10. Confirm the GHCR package is private and linked to this repository. The
    feasibility workflow verifies this again before enabling publishing.
@@ -109,28 +116,39 @@ for [`createCommitOnBranch`](https://docs.github.com/en/graphql/reference/mutati
 [GitHub App workflow authentication](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/making-authenticated-api-requests-with-a-github-app-in-a-github-actions-workflow)
 and [bot signature verification](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification#signature-verification-for-bots).
 
-### Temporary release-publisher compatibility bridge
+### Release-publisher capability selection and compatibility
 
 Issue [#2555](https://github.com/Sequel-Ace/Sequel-Ace/issues/2555) showed that
 already-installed Sequel Ace versions can reject GitHub's releases response
-when the newest release is authored by an unfamiliar publishing identity. New
-releases therefore use a deliberately narrow compatibility bridge:
+when the newest release is authored by an unfamiliar publishing identity. The
+release system keeps that payload concern separate from publisher
+authentication and recovery:
 
 - The release App validates the frozen target and creates the exact tag.
-- A PAT-free selector first looks up the exact release tag with the short-lived
-  release App token. An existing prerelease is recovered by immutable author
-  login, numeric ID, and `created_at` provenance without loading the PAT,
-  including across the publisher cutoff.
-- Only the conditional step that may make the initial `POST /releases` call as
-  Jason receives `SA_RELEASE_GITHUB_PUBLISHER_TOKEN`. Before that mutation, the
-  tool reads `/user` and the exact repository and requires both
-  `login == Jason-Morcos` and stable numeric user ID `10710367`, plus write
-  access to `Sequel-Ace/Sequel-Ace`.
-- Before `2027-08-14T00:00:00Z`, a newly created release must report
-  both `author.login == Jason-Morcos` and `author.id == 10710367`. The
-  publisher token is absent from App-mode creation, existing-release recovery,
-  artifact publication, failure recovery, App Store submission, and
-  finalization.
+- A live selector first looks up the exact release tag with the short-lived
+  release App token. An existing release is recovered by its GitHub-controlled
+  numeric author identity without loading or needing a publisher credential.
+- For a new release, the selector validates the user publisher token against
+  `/user` and the exact repository. A valid token must belong to numeric user ID
+  `10710367`, currently report `Jason-Morcos`, and have push access to exactly
+  `Sequel-Ace/Sequel-Ace`; that release is created as Jason for compatibility
+  with installed clients.
+- If the protected user credential is absent, or the authenticated GitHub API
+  explicitly returns structured status `401 Bad credentials` because it expired
+  or was revoked, the selector chooses the dedicated release App. Error-message
+  text is never parsed as authority to change publisher. A wrong user, wrong
+  repository scope, permission mismatch, rate limit, transport failure, or
+  other ambiguous response fails closed instead of silently changing publisher.
+- App-mode creation requires the pinned action's live `app-slug` and
+  `installation-id`, immutable App ID `4541115`, configured client ID, exact
+  writable repository inventory, and release-author bot ID `315153817`. Account
+  names may change without invalidating an archived release because subsequent
+  authorization uses the stable numeric identity.
+- The selected `user` or `app` mode is passed explicitly to the creation
+  command. Only live selection and the conditional user-creation step receive
+  `SA_RELEASE_GITHUB_PUBLISHER_TOKEN`; App-mode creation, existing-release
+  recovery, artifact publication, failure recovery, App Store submission, and
+  finalization do not.
 - The protected secret is a fine-grained personal access token owned by
   `Jason-Morcos`, limited to the single repository, with Contents read/write
   and no organization permissions. Metadata read access is implicit. The
@@ -144,47 +162,103 @@ Follow GitHub's
 when provisioning the protected secret. Never print, persist, or
 archive the token value.
 
-The PAT's organization-enforced 366-day expiration is August 14, 2027. The
-fixed, tested publisher cutoff is `2027-08-14T00:00:00Z`, not an error fallback.
-Fresh release creation is paused during the preceding 15-minute safety window
-(`2027-08-13T23:45:00Z` through the cutoff) so a user-authored request cannot
-cross the immutable author epoch while GitHub is accepting it. Exact existing
-prereleases remain recoverable throughout that window. Before the window, a
-missing, revoked, or invalid PAT stops the release; it never causes an early bot
-fallback. At and after the cutoff, the workflow's selected creation step does
-not receive or read the PAT and creates new releases with the same dedicated
-release GitHub App that already creates tags. It requires the pinned token
-action's `app-slug` and `installation-id` outputs, matches the live App record
-to immutable App ID `4541115` and the configured client ID, and requires the
-installation token to list exactly `Sequel-Ace/Sequel-Ace` with write access.
-It then requires the release response author to match the App's live slug. The
-output contract is documented by
+There is no calendar cutoff, build floor, or guessed migration epoch. Jason is
+used while the narrowly scoped credential proves that capability; an absent or
+explicitly expired credential selects the existing App automatically. A rerun
+repeats the live selection, while an already-created exact release always keeps
+its immutable author. After a bot-authored release is read back successfully,
+the expired user secret may be removed. Renaming the existing App is optional
+and must not create a second GitHub App. The App-token output contract is
+documented by
 [`actions/create-github-app-token`](https://github.com/actions/create-github-app-token#outputs).
-This avoids both annual credential rotation and an accidental early bot
-transition.
 
-Release-author provenance is an immutable epoch, not a mutable allowlist:
+The same installed clients also generated the release asset's `label` as a
+JSON-null-only value and generated the asset uploader from the same two-user
+enum as the release author. GitHub's supported
+[release-asset upload API](https://docs.github.com/en/rest/releases/assets#upload-a-release-asset)
+accepts `label` only as an optional string. A live upload with the parameter
+omitted is returned as `label: ""`; the update endpoint rejects a JSON `null`
+label, and GitHub's GraphQL release-asset schema has no mutation. Therefore no
+supported GitHub API can currently create an in-repository release asset that
+those clients can decode. Do not substitute an undocumented web endpoint.
 
-- The GitHub release for `production/5.4.0-20105` RC1 was deleted; the tag
-  remains only as burned-build history. No GitHub release at that tag is
-  accepted as publisher provenance.
-- Canonical production build 20109 and later are currently required to be
-  authored by `Jason-Morcos` when their GitHub `created_at` timestamp is before
-  the cutoff; those historical releases remain verifiable afterward.
-- New releases created at or after the cutoff are authored by the dedicated
-  release App. Both its current `sequel-ace-release-automation[bot]` slug and a
-  future rename to `sequel-ace-releases[bot]` are recognized, while the stable
-  App ID is the authentication authority. Recovery and finalization validate
-  the immutable release creation timestamp rather than the current wall clock,
-  so an early bot-authored release cannot become eligible merely because the
-  cutoff date later arrives.
+Asset handling is selected from the live release payload, not a semantic
+version, build floor, wall-clock date, or guessed migration state:
 
-This automatic August 2027 cutover supersedes the earlier approximate 2028
-target for removing Jason from publication. Do not renew the PAT. Remove the
-expired `SA_RELEASE_GITHUB_PUBLISHER_TOKEN` secret after readback proves a
-post-cutover bot-authored release, and retain every earlier provenance epoch so
-archived releases remain verifiable. Renaming the existing App to
-`sequel-ace-releases` is optional and must not create a second GitHub App.
+- `legacy_updater_v1` applies when the release author is one of the two users
+  represented by the shipped decoder (`Jason-Morcos` or `Kaspik`). It validates
+  every release on the same bounded, anonymous 30-release feed page requested
+  by shipped clients, including each author and asset primitive required by
+  that decoder; exact
+  enum-constrained identity values; a JSON-null label; ZIP content type;
+  uploaded state; and the target asset's manifest checksum. Additional GitHub
+  fields are ignored. The exact target entry must also match the authenticated
+  release's updater-consumed title, public URL, draft/prerelease flags,
+  publication time, and downloadable asset identity; a stale anonymous cache
+  cannot satisfy a transition read-back merely by retaining the same ID/tag.
+- `github_api_v1` applies to any other publisher already authorized by the
+  separate release-publisher provenance gate. It validates only durable release
+  identity and asset integrity fields and deliberately ignores uploader, label,
+  unrelated feed entries, and newly added GitHub metadata. The exact target
+  must still be publicly visible with the authenticated title, URL, state,
+  author identity, asset identity, and checksums because every updater discovers
+  releases through the anonymous endpoint regardless of publisher profile.
+
+Consequently an existing compatible user-authored release stays recoverable
+regardless of its age, while an App-authored release uses the supported API
+path regardless of tag number or timestamp. Future publisher changes require a
+stable authenticated identity and payload-capability handling, not another date
+or build epoch.
+
+For a release classified as `legacy_updater_v1`, artifact publication is a
+bounded manual compatibility handoff:
+
+1. The hosted Mac downloads, verifies, launches, packages, and checksum-seals
+   the exact artifacts in private GHCR, then records manifest state
+   `artifacts_verified` before any public upload.
+2. The workflow exits successfully with the exact wake tag still armed. Its
+   Linux discovery job recognizes the pending UI handoff and does not start
+   another Mac runner.
+3. An agent using a listed compatible user's signed-in GitHub release editor
+   uploads the exact manifest-named ZIP or ZIPs. This is the last-resort UI
+   step; neither the publisher PAT nor a browser session is stored in Actions.
+4. The local release skill performs a supported REST read-back and requires the
+   exact release/tag to appear in a fully legacy-decodable anonymous 30-release
+   feed, complete author/uploader shapes, a JSON-null asset label,
+   `application/zip`, `uploaded`, and every manifest SHA-256. Only then may it
+   manually dispatch `release_publish.yml` for the exact tag. Discovery selects
+   the API-only `continue` action, which runs on Ubuntu and cannot allocate a
+   second hosted Mac.
+5. App Store submission, finalization, and wake-state clearing remain blocked
+   until the same compatibility validator passes again in Actions.
+
+The public feed request for every profile is intentionally unauthenticated
+because an authorized repository credential can see drafts that shipped clients
+cannot.
+An anonymous GitHub rate limit, transport error, or response that cannot be
+read as the feed array is a retryable failure: do not write the terminal
+integrity marker and do not mutate the release. A successfully parsed feed
+with a missing, duplicate, stale, or incompatible exact target is a terminal
+integrity failure and remains fail-closed. Under `legacy_updater_v1`, any other
+entry that the shipped decoder cannot parse is also terminal. Linux discovery
+routes that marker through one Ubuntu-only recovery pass so private failure
+evidence is durable and the exact wake tag is cleared instead of polling the
+same terminal state.
+
+A supported API-only replacement may store the ZIP on a separate durable
+public host and leave the primary GitHub release asset-free, but that changes
+old clients from an in-app **Download** button to **View** and is not enabled by
+this contract. Releases classified as `github_api_v1` use the supported REST
+upload endpoint with a fresh release App token.
+
+Release-author provenance is a small stable-identity policy, not a migration
+timeline. GitHub's numeric user ID `10710367` and release-App bot ID `315153817`
+are authorized for well-formed production and beta tags. Login text is checked
+for a valid user or bot shape but is not used as a historical epoch, so a future
+account or App rename does not strand an otherwise immutable archived release.
+New publication still validates the live Jason login or the configured App
+identity before mutation. Payload compatibility is then derived independently
+from the actual release author and asset shapes exposed to shipped clients.
 
 The shared HTTP transport automatically retries read-only `GET` requests only.
 It never replays `POST`, `PATCH`, `PUT`, or `DELETE` mutations after a server or
@@ -198,7 +272,8 @@ that mutation. Because `actions/create-github-app-token` 3.2.0 does not expose
 GitHub's Variables permission, the fixed wake-state adapter directly requests a
 short-lived installation token limited to this repository ID and exactly
 `actions_variables: write`, verifies the returned repository and permission
-set, and revokes the token after use. In particular, Workflows write is absent
+set, permits only the artifact and finalization wake-variable names, and revokes
+the token after use. In particular, Workflows write is absent
 from branch, PR, check, cleanup, and wake-state tokens and is present only on
 fresh tokens used for exact-target GitHub release mutations. This prevents both
 unnecessary privilege reuse and the one-hour App-token lifetime from stranding
@@ -299,14 +374,17 @@ so failure handling never allocates a Mac. A higher assignment may dispatch the
 bounded forward-only RC recovery described below; a lower assignment is
 terminal.
 
-Every asynchronous continuation requires an exact publisher provenance epoch,
+Every asynchronous continuation requires an authorized stable publisher identity,
 proves that the tagged commit remains on current `main` with no intervening
 release-file changes, and binds the private App Store notes to the fixed App
 Store section of the approved GitHub body. Archived continuations also compare
 every live GitHub asset digest with the verifier-produced SHA-256 in the
-private manifest. The release starter ignores releases outside the explicit
-epochs, but an unreadable authorized-publisher handoff fails closed instead of
-allowing a second release to overlap it.
+private manifest and, under `legacy_updater_v1`, require every field and type
+needed by the shipped decoder plus its exact enum-constrained author, uploader,
+label, content-type, and state metadata. The release starter rejects
+unrecognized numeric publisher identities, while an unreadable
+authorized-publisher handoff fails closed instead of allowing a second release
+to overlap it.
 
 ## One-time Apple setup
 
@@ -561,6 +639,15 @@ automatic RC recovery described above.
   bundle ID `com.sequel-ace.sequel-ace-beta`; its build is recorded only as
   evidence.
 - Public names are generated by `ReleaseNaming`; do not rename them manually.
+- For `legacy_updater_v1`, the hosted Mac archives verified ZIPs before public
+  mutation and then stops if the exact GitHub assets are missing. The local
+  skill performs the last-resort compatible-user UI upload and a strict API
+  read-back before dispatching the API-only continuation. While that handoff is
+  pending, scheduled discovery stays on Ubuntu and never redownloads or
+  reverifies the artifacts. Once ready, the continuation also runs on Ubuntu;
+  only a `cloud_running` handoff can select the hosted Mac. `github_api_v1`
+  uses the supported REST asset API with a fresh GitHub App token scoped to
+  exactly `Sequel-Ace/Sequel-Ace`.
 - The release and Alpha-retry workflows never poll Cloud to completion. They
   archive an immutable handoff and release their Ubuntu runners. Xcode Cloud's
   authenticated GitHub check or terminal workflow status wakes the publisher; the
@@ -596,28 +683,52 @@ automatic RC recovery described above.
 - Immediately before every App Store metadata, build-selection, or review
   mutation, submission revalidates the live GitHub tag, authorized-publisher
   non-draft prerelease, immutable body, exact public asset digests, and
-  current-main ancestry against the private archived manifest.
+  current-main ancestry against the private archived manifest. Every guard also
+  requires the exact release and assets to match in the anonymous feed; for
+  `legacy_updater_v1`, it additionally validates every visible entry against the
+  shipped decoder. A newly incompatible feed writes terminal integrity evidence
+  and stops before the next Apple mutation.
 - Beta never creates a customer App Store version.
-- The six-hour finalizer changes the GitHub title, prerelease flag, and
-  latest flag only after the exact ASC version is `READY_FOR_DISTRIBUTION`, the
-  exact version remains Apple's latest released Production version, the exact
-  build remains selected, phased release is `ACTIVE` or `COMPLETE`, and public
-  asset checksums match the private manifest. It first records that validation
-  under the active `finalizing` state in the private archive, and only then
-  performs the public GitHub transition; an archive failure therefore leaves the
-  prerelease discoverable for the next scheduled check or an authorized manual
-  retry. The GitHub update repeats both the exact tag and archived release
-  commit, then revalidates the tag ref before accepting the release readback, so
-  a deleted or moved tag cannot redirect the transition to current `main`.
-  Each run continues examining other production prereleases when one archive is
-  missing or malformed. Finalization outputs and logs stay outside the pulled
-  archive; only the validated evidence files and updated regular manifest are
-  copied back.
-  After the public transition succeeds, the finalizer records `live` and pushes
-  that read-back evidence to the private archive. If that last archive refresh
-  fails after GitHub has already transitioned, an authorized manual finalizer
-  run can name the exact production tag and idempotently repair the `live`
-  checkpoint; scheduled runs continue scanning prereleases only.
+- Production submission arms `SA_RELEASE_PENDING_FINALIZATION_TAG` only after
+  the exact `submitted` archive is durable. The six-hour schedule does no
+  expensive work while that variable is `none`; otherwise it inspects only that
+  exact production tag. An authorized manual dispatch may name the same or a
+  different exact tag for recovery. Discovery accepts a prerelease or a stable
+  release because a public transition may have succeeded before a later
+  readback or archive checkpoint failed.
+- Every pulled private archive must pass the versioned manifest validator and
+  match the candidate's exact tag, semantic version, and canonical build before
+  any state decision. Scheduled and authorized exact-tag manual recovery both
+  repeat the complete Apple, tag, release, feed, asset, latest-release, and
+  archive validation. When a release is already stable, correctly titled, and
+  latest, that path is read-only rather than replaying the GitHub mutation.
+- The finalizer changes the GitHub title, prerelease flag, and latest flag only
+  after the exact ASC version is `READY_FOR_DISTRIBUTION`, remains Apple's
+  latest released Production version, keeps the exact selected build, has an
+  `ACTIVE` or `COMPLETE` phased release, and matches every public checksum in
+  the private manifest. It archives that validation as `finalizing` before the
+  public transition. The update repeats the exact tag and archived commit, then
+  revalidates the tag, authenticated release, anonymous release feed, assets,
+  and latest-release endpoint before accepting success.
+- Every transport failure, rate limit, unavailable archive, or failed
+  post-transition readback leaves the exact wake tag armed and the durable
+  archive at its last retryable checkpoint. The next scheduled run therefore
+  retries the same `finalizing` release even when GitHub already reports it as
+  stable; there is no special anonymous-feed exception and no prerelease-only
+  discovery assumption.
+- A successfully parsed incompatible release or anonymous feed writes versioned
+  finalization-integrity evidence into the private archive. The scheduled run
+  clears the wake tag after that evidence is durable so it does not repeat a
+  terminal failure; after the public payload is repaired, an authorized
+  exact-tag dispatch deliberately retries it. A successful recovery preflight
+  removes the obsolete marker before re-archiving `finalizing`; a still-terminal
+  manual recovery exits unsuccessfully.
+- After every final/latest/feed readback passes, the finalizer records `live`,
+  pushes that evidence to private GHCR, and clears only the matching wake tag.
+  If wake-state clearing alone fails, the next schedule repeats the complete
+  read-only validation of the already-stable release before retrying the exact
+  clear. Finalization outputs and logs stay outside the pulled archive; only
+  validated evidence files and the updated regular manifest are copied back.
 - The public transition always explicitly sends `draft: false`,
   `prerelease: false`, and `make_latest: true`, even when the title and
   prerelease flag already look final. It then re-reads both the exact release

@@ -63,8 +63,9 @@ static NSString *SPNewTableType         = @"SPNewTableType";
 static NSString *SPNewTableCharacterSet = @"SPNewTableCharacterSet";
 static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 
-@interface SPTablesList () <NSSplitViewDelegate, NSTableViewDataSource>
-
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPTablesList () <NSSplitViewDelegate, NSTableViewDataSource, NSMenuItemValidation>
 - (void)_removeTable:(BOOL)force;
 - (void)_truncateTable;
 - (void)_addTable;
