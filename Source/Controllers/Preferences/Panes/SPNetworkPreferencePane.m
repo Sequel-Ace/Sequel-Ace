@@ -727,10 +727,15 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	if(row < 0) return NO; //why is that even a signed int when all "indexes" are unsigned!?
 	
 	NSPasteboard *pboard = [info draggingPasteboard];
-	NSArray *draggedItems = [NSKeyedUnarchiver unarchivedObjectOfClasses:[NSSet setWithObjects:[NSArray class], [NSString class], nil]
-	                                                             fromData:[pboard dataForType:SPSSLCipherPboardTypeName]
-	                                                                error:nil];
-	
+
+	// One pasteboard item per dragged row, in row order (see
+	// -tableView:pasteboardWriterForRow: above).
+	NSMutableArray<NSString *> *draggedItems = [NSMutableArray array];
+	for (NSPasteboardItem *item in [pboard pasteboardItems]) {
+		NSString *cipher = [item stringForType:SPSSLCipherPboardTypeName];
+		if (cipher) [draggedItems addObject:cipher];
+	}
+
 	NSUInteger nextInsert = row;
 	for (NSString *item in draggedItems) {
 		NSUInteger oldPos = [sslCiphers indexOfObject:item];
@@ -761,22 +766,23 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 	return (operation == NSTableViewDropOn)? NSDragOperationNone : NSDragOperationMove;
 }
 
-- (BOOL)tableView:(NSTableView *)aTableView writeRowsWithIndexes:(NSIndexSet *)rowIndexes toPasteboard:(NSPasteboard *)pboard
+- (id <NSPasteboardWriting>)tableView:(NSTableView *)aTableView pasteboardWriterForRow:(NSInteger)row
 {
+	NSUInteger markerIndex = [sslCiphers indexOfObject:SPSSLCipherListMarkerItem];
+
 	//the marker cannot be actively reordered
-	if ([rowIndexes containsIndex:[sslCiphers indexOfObject:SPSSLCipherListMarkerItem]])
-		return NO;
-	
-	//put the names of the items on the pasteboard. easier to work with than indexes...
-	NSMutableArray *items = [NSMutableArray arrayWithCapacity:[rowIndexes count]];
-	[rowIndexes enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
-		[items addObject:[sslCiphers objectAtIndex:idx]];
-	}];
-	
-	NSData *arch = [NSKeyedArchiver archivedDataWithRootObject:items requiringSecureCoding:YES error:nil];
-	[pboard declareTypes:@[SPSSLCipherPboardTypeName] owner:self];
-	[pboard setData:arch forType:SPSSLCipherPboardTypeName];
-	return YES;
+	if ((NSUInteger)row == markerIndex) return nil;
+
+	//...and neither can a selection containing it: the previous implementation
+	//refused the whole drag in that case, so refuse every row of such a drag
+	if ([aTableView isRowSelected:row] && [[aTableView selectedRowIndexes] containsIndex:markerIndex]) return nil;
+
+	//put the name of the item on the pasteboard. easier to work with than indexes...
+	//one item per row now, rather than one archived array for the whole drag
+	NSPasteboardItem *item = [[NSPasteboardItem alloc] init];
+	[item setString:[sslCiphers objectAtIndex:row] forType:SPSSLCipherPboardTypeName];
+
+	return item;
 }
 
 @end

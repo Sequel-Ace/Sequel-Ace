@@ -233,24 +233,43 @@ behavior change, nothing to drag-test. Landed as a single sweep over 21 files,
 following the conformance style already used by `SPFilterTableController` and
 `SPGotoDatabaseController`.
 
-## Step 9b — Genuinely deprecated delegate methods — 6 warnings
+## Step 9b — Genuinely deprecated delegate methods — 3 of 6 done
 
-The remainder, which do need real changes and manual verification:
+Split by who consumes the dragged payload, because that decides the risk.
 
-- `tableView:writeRowsWithIndexes:toPasteboard:` (4) — SPCustomQuery:2629,
-  SPTableContent:4482, SPTableStructure:2239, SPNetworkPreferencePane:764.
-  Adopt `tableView:pasteboardWriterForRow:`; note the drop side
-  (`validateDrop:` / `acceptDrop:`) is *not* deprecated and stays as is, but it
-  reads the pasteboard the write side produces — change both together per file.
-- `outlineView:writeItems:toPasteboard:` (1) — SPNavigatorController:1080.
-  Same migration, `outlineView:pasteboardWriterForItem:`.
-- `splitView:shouldCollapseSubview:forDoubleClickOnDividerAtIndex:` (1) —
-  SPSplitView:478. Unrelated to dragging; check what replaced it before
-  touching, it may just need the delegate protocol adopted.
+**Done — payload stays inside the app (both ends ours), plus one dead method:**
 
-So the drag-API assumption was right for 5 of 42, not "most". These do touch
-behavior: verify drag-and-drop (table reordering, navigator drags to the query
-editor) and divider double-click collapse by hand, one PR per area.
+- `splitView:shouldCollapseSubview:forDoubleClickOnDividerAtIndex:` —
+  SPSplitView. **Not a migration: deleted.** The SDK says "NSSplitView no
+  longer supports collapsing sections via double-click. This delegate method is
+  never called." (deprecated 10.15, app targets 12), so the animated-collapse
+  branch it guarded had been unreachable for years. Collapsing still works via
+  `-toggleCollapse:` / `-setCollapsibleSubviewCollapsed:animate:`.
+- `tableView:pasteboardWriterForRow:` — SPTableStructure (field reorder) and
+  SPNetworkPreferencePane (SSL cipher reorder). Both write and read their own
+  pasteboard, so both ends moved together. SPTableStructure keeps the exact
+  payload (row index string under `SPDefaultPasteboardDragType`);
+  SPNetworkPreferencePane moved from one archived array to one item per row,
+  and its `-acceptDrop:` now reads the items.
+
+**Remaining (3) — the payload leaves the view, so it must keep its current
+shape on the pasteboard:**
+
+- `tableView:writeRowsWithIndexes:toPasteboard:` — SPCustomQuery:2629,
+  SPTableContent:4482. These write *one* combined blob for the whole selection
+  (tab-delimited text, SQL INSERTs when a modifier is held, plus a single-cell
+  type in SPTableContent) which is dropped into other apps and into the rule
+  filter. Per-row writers would put N items on the pasteboard, and a receiver
+  reading `-stringForType:` gets only the first — so write the combined payload
+  in `tableView:draggingSession:willBeginAtPoint:forRowIndexes:` and return a
+  lightweight item per row.
+- `outlineView:writeItems:toPasteboard:` — SPNavigatorController:1080, same
+  shape (three types incl. a string dropped into the query editor);
+  `outlineView:draggingSession:willBeginAtPoint:forItems:`.
+
+Verify by hand: drag rows from the query result and content views into TextEdit
+(with and without ⌘/⇧/⌥), a cell onto a rule-filter field, and a navigator item
+into the query editor.
 
 ## Deferred (own projects, not part of this burn-down)
 
@@ -280,7 +299,8 @@ editor) and divider double-click collapse by hand, one PR per area.
 | 6 + 7 (help viewer + AppKit batch) | **173 (measured, clean build)** |
 | 8 (Swift 6) | **165 (measured, clean build)** |
 | 9a (informal-protocol conformance) | **129 (measured, clean build)** |
-| 9b (6 real delegate methods) | ~123 |
+| 9b part 1 (internal reorders + dead split-view method) | **125 (measured, clean build)** |
+| 9b part 2 (3 drag-out payloads) | ~122 |
 
 **How these are counted.** Rows through step 5 are the original estimates, read
 off Xcode's issue navigator (which counts a file compiled into several targets

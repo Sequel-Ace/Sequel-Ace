@@ -2236,22 +2236,27 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 /**
  * Begin a drag and drop operation from the table - copy a single dragged row to the drag pasteboard.
  */
-- (BOOL)tableView:(NSTableView *)aTableView writeRowsWithIndexes:(NSIndexSet *)rows toPasteboard:(NSPasteboard*)pboard
+- (id <NSPasteboardWriting>)tableView:(NSTableView *)aTableView pasteboardWriterForRow:(NSInteger)row
 {
 	// Make sure that the drag operation is started from the right table view
-	if (aTableView != tableSourceView) return NO;
+	if (aTableView != tableSourceView) return nil;
 
 	// Check whether a save of the current field row is required.
-	if (![self saveRowOnDeselect]) return NO;
+	if (![self saveRowOnDeselect]) return nil;
 
-	if ([rows count] == 1) {
-		[pboard declareTypes:@[SPDefaultPasteboardDragType] owner:nil];
-		[pboard setString:[NSString stringWithFormat:@"%lu",[rows firstIndex]] forType:SPDefaultPasteboardDragType];
+	// Reordering only handles a single field, and -acceptDrop: below reads one
+	// index off the pasteboard. The previous implementation refused the whole
+	// drag when several rows were selected; returning nil for every row of a
+	// multi-row selection keeps that.
+	if ([aTableView isRowSelected:row] && [aTableView numberOfSelectedRows] > 1) return nil;
 
-		return YES;
-	}
+	// Same payload as before the migration off
+	// -tableView:writeRowsWithIndexes:toPasteboard:, so -validateDrop:/-acceptDrop:
+	// keep reading the row index with -stringForType:.
+	NSPasteboardItem *item = [[NSPasteboardItem alloc] init];
+	[item setString:[NSString stringWithFormat:@"%ld", (long)row] forType:SPDefaultPasteboardDragType];
 
-	return NO;
+	return item;
 }
 
 /**
