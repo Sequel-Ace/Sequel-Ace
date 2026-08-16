@@ -1172,17 +1172,32 @@ jobs:
         run: |
           set -euo pipefail
           Scripts/archive-release-to-ghcr.sh pull "${ARCHIVE_REFERENCE}" release-archive
+          validation_failed=false
           if ! bundle exec ruby fastlane/bin/sa-release validate-publish-handoff \
               --manifest release-archive/manifest.json \
               --tag "${EXPECTED_TAG}" \
               --notes release-archive/app-store-notes.txt \
               --integrity-failure-marker recovery-terminal-artifact-verification-failure \
               --output recovery-context.json; then
-            if [[ "${EXPECTED_TERMINAL_FAILURE}" == "artifact_verification" && -f recovery-terminal-artifact-verification-failure ]]; then
-              echo "The publisher's terminal GitHub asset-integrity failure was independently reproduced before preservation." >> "${GITHUB_STEP_SUMMARY}"
-            else
+            validation_failed=true
+          elif [[ "${EXPECTED_TERMINAL_FAILURE}" == "artifact_verification" ]]; then
+            if ! bundle exec ruby fastlane/bin/sa-release github-public-assets-status \
+                --tag "${EXPECTED_TAG}" \
+                --manifest release-archive/manifest.json \
+                --notes release-archive/app-store-notes.txt \
+                --integrity-failure-marker recovery-terminal-artifact-verification-failure \
+                --output recovery-public-assets.json; then
+              validation_failed=true
+            fi
+          fi
+          if [[ "${validation_failed}" == "true" ]]; then
+            if [[ "${EXPECTED_TERMINAL_FAILURE}" != "artifact_verification" || ! -f recovery-terminal-artifact-verification-failure ]]; then
               exit 1
             fi
+            echo "The publisher's terminal GitHub asset-integrity failure was independently reproduced before preservation." >> "${GITHUB_STEP_SUMMARY}"
+          elif [[ "${EXPECTED_TERMINAL_FAILURE}" == "artifact_verification" ]]; then
+            echo "The publisher's reported terminal GitHub asset-integrity failure could not be reproduced." >&2
+            exit 1
           fi
 
       - name: Reconcile an ambiguous App Store submission

@@ -692,7 +692,7 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes terminal, "sa-release record-failure"
     assert_includes terminal, "terminal_failure == 'artifact_verification'"
     assert_equal 6, workflow.scan("--integrity-failure-marker terminal-artifact-verification-failure").length
-    assert_equal 9, workflow.scan("--integrity-failure-marker").length
+    assert_equal 10, workflow.scan("--integrity-failure-marker").length
     refute_includes transient, "sa-release record-failure"
     refute_includes transient, "archive-release-to-ghcr.sh push"
     assert_includes transient, "left unchanged so the next event or gated recovery check can retry safely"
@@ -800,6 +800,11 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes recovery, "terminal_failure == 'artifact_verification'"
     assert_includes recovery, "EXPECTED_TERMINAL_FAILURE"
     assert_includes recovery, "recovery-terminal-artifact-verification-failure"
+    assert_includes recovery, "github-public-assets-status"
+    assert_includes recovery, "recovery-public-assets.json"
+    assert_includes recovery, "could not be reproduced"
+    assert_operator recovery.index("validate-publish-handoff"), :<,
+                    recovery.index("github-public-assets-status")
     assert_includes recovery, "independently reproduced before preservation"
     assert_includes recovery, "polling_needed=false"
   end
