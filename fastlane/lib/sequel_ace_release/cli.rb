@@ -1276,7 +1276,12 @@ module SequelAceRelease
              )
         raise ValidationError, "GitHub finalization readback did not match the requested release"
       end
-      verify_release_assets!(release, data, github: client)
+      post_transition_assets = verify_release_assets!(
+        release,
+        data,
+        github: client,
+        allow_retryable_legacy_feed_failure: true
+      )
       latest_release = client.latest_release
       unless latest_release["id"] == release["id"] && latest_release["tag_name"] == data.fetch("tag") &&
              latest_release["name"] == final_title && latest_release["draft"] == false &&
@@ -1288,7 +1293,8 @@ module SequelAceRelease
         "final_title" => release["name"],
         "final_draft" => release["draft"],
         "final_prerelease" => release["prerelease"],
-        "final_latest" => true
+        "final_latest" => true,
+        "post_transition_public_feed" => post_transition_assets.fetch("release_feed_verification")
       ), options[:output])
     rescue IntegrityError
       write_integrity_failure_marker(options[:integrity_failure_marker])
@@ -1561,7 +1567,7 @@ module SequelAceRelease
       end
     end
 
-    def verify_release_assets!(release, manifest, github:)
+    def verify_release_assets!(release, manifest, github:, allow_retryable_legacy_feed_failure: false)
       actual_notes_sha = Digest::SHA256.hexdigest(release.fetch("body").to_s)
       unless actual_notes_sha == manifest.fetch("release_notes_sha256")
         raise IntegrityError, "GitHub release notes no longer match the archived manifest"
@@ -1577,7 +1583,16 @@ module SequelAceRelease
               "GitHub release is missing artifacts: #{status.fetch('missing_assets').join(', ')}"
       end
       if status.fetch("compatibility_profile") == GitHubReleasePayload::LEGACY_UPDATER_PROFILE
-        status["release_feed_entries_verified"] = validator.validate_legacy_feed!(github.public_release_feed_page)
+        begin
+          status["release_feed_entries_verified"] = validator.validate_legacy_feed!(github.public_release_feed_page)
+          status["release_feed_verification"] = "verified"
+        rescue APIError
+          raise unless allow_retryable_legacy_feed_failure
+
+          status["release_feed_verification"] = "unavailable_reconciled_after_authenticated_readback"
+        end
+      else
+        status["release_feed_verification"] = "not_required"
       end
       status
     end

@@ -701,6 +701,13 @@ automatic RC recovery described above.
   the obsolete marker before archiving `finalizing`; a still-terminal manual
   recovery exits unsuccessfully. GitHub transport failures, rate limits, and
   unavailable archives write no terminal evidence and remain retryable.
+  If GitHub has already accepted the public transition, a transient anonymous
+  feed read cannot make the now-stable release discoverable again. In that
+  narrow case, the finalizer records the unavailable feed read and completes
+  the `live` archive only after the pre-transition anonymous feed plus the
+  post-transition authenticated release, tag, asset-digest, and latest-release
+  readbacks all pass. A successfully parsed incompatible post-transition feed
+  remains terminal and is never reconciled as live.
   Each run continues examining other production prereleases when one archive is
   missing or malformed. Finalization outputs and logs stay outside the pulled
   archive; only the validated evidence files and updated regular manifest are
