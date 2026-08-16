@@ -321,6 +321,12 @@ jobs:
               --validate-only \
               --integrity-failure-marker "${integrity_marker}" \
               --output "${state_directory}/finalization-validation.json" 2> "${state_directory}/pending.log"; then
+              if ! /bin/rm -f "${terminal_evidence}"; then
+                echo "Pending ${release_tag}: obsolete terminal finalization evidence could not be cleared."
+                pending=$((pending + 1))
+                rm -rf "${archive_directory}" "${state_directory}"
+                continue
+              fi
               ruby -rjson -e 'File.write(ARGV.fetch(1), JSON.pretty_generate({"finalization" => JSON.parse(File.read(ARGV.fetch(0)))}) + "\n")' \
                 "${state_directory}/finalization-validation.json" \
                 "${state_directory}/finalization-evidence.json"
@@ -401,3 +407,7 @@ jobs:
             echo "- Still pending or blocked: ${pending}"
             echo "- Trigger: ${FINALIZER_TRIGGER}"
           } >> "${GITHUB_STEP_SUMMARY}"
+          if [[ -n "${REQUESTED_TAG}" && "${terminal}" -gt 0 ]]; then
+            echo "Requested recovery ended with archived terminal integrity evidence." >&2
+            exit 1
+          fi

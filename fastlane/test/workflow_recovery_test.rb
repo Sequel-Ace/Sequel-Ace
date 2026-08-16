@@ -691,8 +691,8 @@ class WorkflowRecoveryTest < Minitest::Test
 
     assert_includes terminal, "sa-release record-failure"
     assert_includes terminal, "terminal_failure == 'artifact_verification'"
-    assert_operator workflow.scan("--integrity-failure-marker terminal-artifact-verification-failure").length, :==, 6
-    assert_operator workflow.scan("--integrity-failure-marker").length, :==, 9
+    assert_equal 6, workflow.scan("--integrity-failure-marker terminal-artifact-verification-failure").length
+    assert_equal 9, workflow.scan("--integrity-failure-marker").length
     refute_includes transient, "sa-release record-failure"
     refute_includes transient, "archive-release-to-ghcr.sh push"
     assert_includes transient, "left unchanged so the next event or gated recovery check can retry safely"
@@ -756,8 +756,19 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes discovery, 'if [[ "${handoff_state}" == "cloud_running" ]]'
     assert_includes discovery, "no Mac runner was started"
     manual_wait = discovery.index('elif [[ "${manual_assets_pending}" == "true" ]]')
-    api_continuation = discovery.index('selected_action="continue"', manual_wait)
-    assert_operator manual_wait, :<, api_continuation
+    api_ready = discovery.index('elif [[ "${production_readiness}" == "ready" && ( "${alpha_readiness}" == "ready"')
+    refute_nil manual_wait
+    refute_nil api_ready
+    mac_publish = discovery.index('selected_action="publish"', api_ready)
+    refute_nil mac_publish
+    api_continuation = discovery.index('selected_action="continue"', mac_publish)
+    refute_nil api_continuation
+    pending_fallback = discovery.index('selected_action="pending"', api_continuation)
+    refute_nil pending_fallback
+    assert_operator manual_wait, :<, api_ready
+    assert_operator api_ready, :<, mac_publish
+    assert_operator mac_publish, :<, api_continuation
+    assert_operator api_continuation, :<, pending_fallback
     assert_includes publish, "Continue verified release through APIs"
     assert_includes publish, "needs.discover.outputs.action == 'continue' && 'ubuntu-latest' || 'macos-15'"
     assert_includes publish, "Install checksum-pinned ORAS on Linux"
@@ -809,8 +820,11 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes upload, "steps.public_assets_before.outputs.mode == 'api_upload'"
     assert_includes upload, 'SA_GITHUB_TOKEN: ${{ steps.public_asset_token.outputs.token }}'
     refute_includes upload, 'SA_GITHUB_TOKEN: ${{ github.token }}'
-    refute_includes inspect, "2027"
-    refute_includes upload, "2027"
+    cutover = "2027-08-14T00:00:00Z"
+    refute_includes inspect, cutover,
+                     "public asset inspection must not hardcode the profile cutover date"
+    refute_includes upload, cutover,
+                     "API asset upload must not hardcode the profile cutover date"
   end
 
   def test_submission_and_wake_settlement_require_verified_public_assets
@@ -880,8 +894,22 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes execution, 'if [[ -z "${REQUESTED_TAG}" ]]'
     assert_includes execution, "an authorized exact-tag recovery is required after repair"
     assert_includes execution, "Retrying archived terminal"
+    assert_equal 3, execution.scan("preserve_finalization_integrity_failure").length
+    assert_includes execution, "terminal pre-transition evidence could not be archived"
+    assert_includes execution, "terminal public-transition evidence could not be archived"
     assert_includes execution, 'echo "- Terminal integrity failures: ${terminal}"'
     assert_includes execution, 'echo "Pending ${release_tag}: $(head -n 1 "${state_directory}/pending.log")"'
+    assert_includes execution, 'if [[ -n "${REQUESTED_TAG}" && "${terminal}" -gt 0 ]]'
+    assert_includes execution, "Requested recovery ended with archived terminal integrity evidence."
+
+    validation = execution.index("--validate-only")
+    refute_nil validation
+    clear_obsolete = execution.index('/bin/rm -f "${terminal_evidence}"', validation)
+    refute_nil clear_obsolete
+    finalizing = execution.index("--state finalizing", clear_obsolete)
+    refute_nil finalizing
+    assert_operator validation, :<, clear_obsolete
+    assert_operator clear_obsolete, :<, finalizing
   end
 
   def test_finalizer_polls_every_six_hours_with_an_authorized_manual_fallback

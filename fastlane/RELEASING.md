@@ -697,8 +697,10 @@ automatic RC recovery described above.
   finalization-integrity evidence into the private archive. Scheduled runs
   recognize that durable evidence and do not repeat the same terminal
   validation; after the public payload is repaired, an authorized exact-tag
-  dispatch deliberately retries it. GitHub transport failures, rate limits,
-  and unavailable archives write no terminal evidence and remain retryable.
+  dispatch deliberately retries it. A successful recovery preflight removes
+  the obsolete marker before archiving `finalizing`; a still-terminal manual
+  recovery exits unsuccessfully. GitHub transport failures, rate limits, and
+  unavailable archives write no terminal evidence and remain retryable.
   Each run continues examining other production prereleases when one archive is
   missing or malformed. Finalization outputs and logs stay outside the pulled
   archive; only the validated evidence files and updated regular manifest are
