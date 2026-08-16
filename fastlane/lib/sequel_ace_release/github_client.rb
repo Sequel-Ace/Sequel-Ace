@@ -82,7 +82,11 @@ module SequelAceRelease
     end
 
     def public_release_feed_page(per_page: 30)
-      size = Integer(per_page)
+      size = begin
+        Integer(per_page)
+      rescue ArgumentError, TypeError
+        raise ValidationError, "GitHub release feed page size must be an integer"
+      end
       raise ValidationError, "GitHub release feed page size must be between 1 and 100" unless (1..100).cover?(size)
 
       response = @public_transport.request(
@@ -94,8 +98,6 @@ module SequelAceRelease
       raise APIError, "GitHub release feed returned a malformed response" unless body.is_a?(Array)
 
       body
-    rescue ArgumentError, TypeError
-      raise ValidationError, "GitHub release feed page size must be an integer"
     end
 
     def latest_stable_release

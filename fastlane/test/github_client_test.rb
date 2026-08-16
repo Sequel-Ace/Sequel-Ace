@@ -57,6 +57,32 @@ class GitHubClientTest < Minitest::Test
     assert_includes error.message, "malformed response"
   end
 
+  def test_rejects_a_non_integer_public_release_feed_page_size
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: FakeTransport.new([]))
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      client.public_release_feed_page(per_page: "thirty")
+    end
+
+    assert_includes error.message, "page size must be an integer"
+  end
+
+  def test_does_not_relabel_a_public_feed_transport_type_error_as_invalid_input
+    public_transport = Object.new
+    public_transport.define_singleton_method(:request) do |*_arguments, **_options|
+      raise TypeError, "simulated transport decoder failure"
+    end
+    client = SequelAceRelease::GitHubClient.new(
+      token: "token",
+      transport: FakeTransport.new([]),
+      public_transport: public_transport
+    )
+
+    error = assert_raises(TypeError) { client.public_release_feed_page }
+
+    assert_includes error.message, "transport decoder failure"
+  end
+
   def test_reads_the_exact_main_ref_sha
     transport = FakeTransport.new([
       http_response(body: { "object" => { "sha" => "a" * 40 } })
