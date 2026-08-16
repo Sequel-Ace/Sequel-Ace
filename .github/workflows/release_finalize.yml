@@ -191,7 +191,7 @@ jobs:
             --jq 'select(
               .draft == false and
               (.author.id == 10710367 or .author.id == 315153817)
-            ) | [.tag_name, (if .prerelease then "prerelease" else "stable" end)] | @tsv' \
+            ) | .tag_name' \
             > production-candidates.txt
           [[ -s production-candidates.txt ]] || { echo "Exact finalization candidate is no longer authorized." >&2; exit 1; }
           finalized=0
@@ -239,7 +239,7 @@ jobs:
             fi
             return 0
           }
-          while IFS=$'\t' read -r release_tag release_visibility; do
+          while IFS= read -r release_tag; do
             [[ -n "${release_tag}" ]] || continue
             if [[ ! "${release_tag}" =~ ^production/([0-9]+\.[0-9]+\.[0-9]+)-([0-9]+)$ ]]; then
               echo "Skipping malformed production tag: ${release_tag}" >&2
@@ -271,12 +271,6 @@ jobs:
             if [[ "${state}" != "archived" && "${state}" != "submitted" && "${state}" != "finalizing" && "${state}" != "live" ]]; then
               echo "Pending ${release_tag}: manifest state is ${state}."
               pending=$((pending + 1))
-              rm -rf "${archive_directory}" "${state_directory}"
-              continue
-            fi
-            if [[ -z "${REQUESTED_TAG}" && "${state}" == "live" && "${release_visibility}" == "stable" ]]; then
-              echo "Already finalized ${release_tag}; only the wake state needs settlement."
-              settled_tag="${release_tag}"
               rm -rf "${archive_directory}" "${state_directory}"
               continue
             fi

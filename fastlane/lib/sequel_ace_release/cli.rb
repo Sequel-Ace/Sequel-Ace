@@ -1265,14 +1265,16 @@ module SequelAceRelease
         return emit(evidence.merge("github_transition" => "durably_validated_before_public_transition"), options[:output])
       end
 
-      client.update_release(
-        id: release.fetch("id"),
-        tag: data.fetch("tag"),
-        target_sha: archived_commit,
-        title: final_title,
-        prerelease: false,
-        make_latest: true
-      )
+      if transition_required
+        client.update_release(
+          id: release.fetch("id"),
+          tag: data.fetch("tag"),
+          target_sha: archived_commit,
+          title: final_title,
+          prerelease: false,
+          make_latest: true
+        )
+      end
       finalized_tag_commit = client.ref_sha("tags/#{data.fetch('tag')}")
       unless finalized_tag_commit == archived_commit
         raise ValidationError,

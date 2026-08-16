@@ -698,10 +698,10 @@ automatic RC recovery described above.
   readback or archive checkpoint failed.
 - Every pulled private archive must pass the versioned manifest validator and
   match the candidate's exact tag, semantic version, and canonical build before
-  any state decision. A scheduled run may use an already-validated stable
-  `live` archive only to retry wake-state clearing; an authorized exact-tag
-  manual recovery always repeats the complete Apple, tag, release, feed, asset,
-  latest-release, and archive validation.
+  any state decision. Scheduled and authorized exact-tag manual recovery both
+  repeat the complete Apple, tag, release, feed, asset, latest-release, and
+  archive validation. When a release is already stable, correctly titled, and
+  latest, that path is read-only rather than replaying the GitHub mutation.
 - The finalizer changes the GitHub title, prerelease flag, and latest flag only
   after the exact ASC version is `READY_FOR_DISTRIBUTION`, remains Apple's
   latest released Production version, keeps the exact selected build, has an
@@ -725,10 +725,10 @@ automatic RC recovery described above.
   manual recovery exits unsuccessfully.
 - After every final/latest/feed readback passes, the finalizer records `live`,
   pushes that evidence to private GHCR, and clears only the matching wake tag.
-  If wake-state clearing alone fails, the next schedule recognizes the stable
-  `live` archive and retries only the exact clear. Finalization outputs and logs
-  stay outside the pulled archive; only validated evidence files and the updated
-  regular manifest are copied back.
+  If wake-state clearing alone fails, the next schedule repeats the complete
+  read-only validation of the already-stable release before retrying the exact
+  clear. Finalization outputs and logs stay outside the pulled archive; only
+  validated evidence files and the updated regular manifest are copied back.
 - The public transition always explicitly sends `draft: false`,
   `prerelease: false`, and `make_latest: true`, even when the title and
   prerelease flag already look final. It then re-reads both the exact release

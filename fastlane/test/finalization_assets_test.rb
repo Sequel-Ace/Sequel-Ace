@@ -168,6 +168,43 @@ class FinalizationAssetsTest < Minitest::Test
     end
   end
 
+  def test_already_finalized_release_is_fully_revalidated_without_replaying_the_mutation
+    live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
+    app_store = Object.new
+    app_store.define_singleton_method(:metadata_snapshot) { |**_options| live_snapshot }
+    app_store.define_singleton_method(:latest_released_version) { |**_options| live_snapshot.fetch("version") }
+    release_data = release.merge("name" => "5.3.2 (20109)", "prerelease" => false)
+    reads = Hash.new(0)
+    github = Object.new
+    github.define_singleton_method(:ref_sha) do |_ref|
+      reads[:tag] += 1
+      "d" * 40
+    end
+    github.define_singleton_method(:release_by_tag) do |_tag|
+      reads[:release] += 1
+      release_data
+    end
+    github.define_singleton_method(:public_release_feed_page) do
+      reads[:feed] += 1
+      [release_data]
+    end
+    github.define_singleton_method(:latest_release) do
+      reads[:latest] += 1
+      release_data
+    end
+    github.define_singleton_method(:update_release) { |**_options| raise "replayed an unnecessary mutation" }
+
+    Dir.mktmpdir do |directory|
+      output_path = File.join(directory, "finalization.json")
+
+      assert_equal 0, run_finalizer(app_store: app_store, github: github, output_path: output_path)
+      evidence = JSON.parse(File.read(output_path))
+      assert_equal false, evidence.fetch("transition_required")
+      assert_equal "complete", evidence.fetch("github_transition")
+    end
+    assert_equal({ tag: 2, release: 2, feed: 2, latest: 2 }, reads)
+  end
+
   def test_finalization_aborts_if_the_anonymous_feed_becomes_legacy_incompatible
     live_snapshot = metadata_snapshot(build: 20_109, state: "READY_FOR_DISTRIBUTION", phased_state: "ACTIVE")
     app_store = Object.new

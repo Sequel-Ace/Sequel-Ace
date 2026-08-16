@@ -960,9 +960,8 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes discovery, ".draft == false"
     refute_includes discovery, "2027-08-14"
     refute_includes discovery, "$build >= 20109"
-    assert_includes execution, 'if .prerelease then "prerelease" else "stable" end'
-    assert_includes execution,
-                    '-z "${REQUESTED_TAG}" && "${state}" == "live" && "${release_visibility}" == "stable"'
+    refute_includes execution, 'if .prerelease then "prerelease" else "stable" end'
+    refute_includes execution, "only the wake state needs settlement"
     assert_includes execution, 'manifest.fetch("tag") == ARGV.fetch(1)'
     assert_includes execution, 'manifest.fetch("target_version") == ARGV.fetch(2)'
     assert_includes execution, 'manifest.fetch("canonical_build").to_s == ARGV.fetch(3)'
@@ -1170,7 +1169,7 @@ class WorkflowRecoveryTest < Minitest::Test
     assert_includes execution, 'candidate="${REQUESTED_TAG}"'
     assert_includes execution, 'candidate="${RELEASE_PENDING_TAG}"'
     assert_includes execution, 'releases/tags/${candidate_encoded}'
-    assert_includes execution, 'if .prerelease then "prerelease" else "stable" end'
+    refute_includes execution, 'if .prerelease then "prerelease" else "stable" end'
     assert_includes execution, ".draft == false"
     assert_includes execution, ".author.id == 10710367"
     assert_includes execution, ".author.id == 315153817"
