@@ -270,4 +270,15 @@ final class SACellValueCopyMenuBuilderTests: XCTestCase {
             quoteString: { "'\($0)'" }, quoteData: { _ in nil }
         ))
     }
+
+    func testSQLLiteralFormatsBitValuesAsBinaryLiterals() {
+        XCTAssertEqual(SACellValueCopyMenuBuilder.sqlLiteral(
+            value: "00101101", typeGrouping: "bit", fieldType: "BIT(8)",
+            quoteString: { _ in nil }, quoteData: { _ in nil }
+        ), "b'00101101'")
+        XCTAssertNil(SACellValueCopyMenuBuilder.sqlLiteral(
+            value: "102", typeGrouping: "bit", fieldType: "BIT(3)",
+            quoteString: { _ in nil }, quoteData: { _ in nil }
+        ))
+    }
 }

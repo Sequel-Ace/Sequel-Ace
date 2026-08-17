@@ -76,6 +76,9 @@ import AppKit
         connection: SPMySQLConnection?
     ) {
         removeItems(from: menu)
+        if let customQuery = table.delegate as? SPCustomQuery, customQuery.isWorking {
+            return
+        }
 
         let point = table.convert(event.locationInWindow, from: nil)
         let clickedRow = table.row(at: point)

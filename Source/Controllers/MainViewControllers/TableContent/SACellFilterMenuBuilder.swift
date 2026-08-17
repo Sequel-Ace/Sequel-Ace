@@ -102,6 +102,11 @@ import AppKit
         quoteData: (Data) -> String?
     ) -> String? {
         if value is NSNull { return "NULL" }
+        if typeGrouping?.lowercased() == "bit" || fieldType?.lowercased().hasPrefix("bit") == true {
+            let bits = String(describing: value)
+            guard !bits.isEmpty, bits.allSatisfy({ $0 == "0" || $0 == "1" }) else { return nil }
+            return "b'\(bits)'"
+        }
         if SPFieldTypeClassifier.shouldBeUnquoted(fieldTypeGroup: typeGrouping, fieldType: fieldType) {
             return String(describing: value)
         }
