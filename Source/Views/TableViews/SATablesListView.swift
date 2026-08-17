@@ -35,6 +35,7 @@ import AppKit
     // client callbacks below know they are answering that event.
     private var routedInputEvent: NSEvent?
     private var routedInputWasConsumed = false
+    private var isDiscardingComposition = false
     // Whether the last searched string matched a row, so the badge can be
     // restored after a composition ends without a commit.
     private var lastSearchMatched = false
@@ -121,7 +122,13 @@ import AppKit
         guard hasMarkedText() else {
             return
         }
+
+        // Some input methods answer this by committing what they had, which
+        // would restart the search that is being cancelled here.
+        isDiscardingComposition = true
         inputContext?.discardMarkedText()
+        isDiscardingComposition = false
+
         markedText = ""
     }
 
@@ -234,6 +241,10 @@ import AppKit
     func insertText(_ string: Any, replacementRange: NSRange) {
         markedText = ""
 
+        guard !isDiscardingComposition else {
+            return
+        }
+
         let text = (string as? NSAttributedString)?.string ?? (string as? String) ?? ""
         let time = routedInputEvent?.timestamp ?? ProcessInfo.processInfo.systemUptime
         let consumed = performTypeAhead(text, atTime: time)
@@ -252,14 +263,15 @@ import AppKit
         }
 
         // The input method turned the keystroke into a command rather than
-        // text. Leave it unconsumed so keyDown forwards the original event and
-        // the table keeps its normal handling for Return, arrows, Tab, …
-        routedInputWasConsumed = false
+        // text. Nothing is consumed here, so keyDown forwards the original
+        // event and the table keeps its normal handling for Return, arrows,
+        // Tab, … — unless another callback already consumed the event.
     }
 
     /// Text still being composed is shown in the badge but not searched — the
     /// search only ever sees what the input method commits.
     func setMarkedText(_ string: Any, selectedRange: NSRange, replacementRange: NSRange) {
+        let wasComposing = hasMarkedText()
         markedText = (string as? NSAttributedString)?.string ?? (string as? String) ?? ""
 
         if !markedText.isEmpty {
@@ -267,23 +279,29 @@ import AppKit
             // as unmatched, since it has not been searched for yet.
             showSearchFeedback(typeAhead.currentSearchString + markedText, matched: true)
         }
-        else if typeAhead.currentSearchString.isEmpty {
-            hideSearchFeedback()
-        }
-        else {
-            // Composition ended; fall back to what has actually been searched.
-            showSearchFeedback(typeAhead.currentSearchString, matched: lastSearchMatched)
+        else if wasComposing {
+            // Composition ended without a commit; fall back to what has
+            // actually been searched. A commit instead comes through
+            // insertText, which has already refreshed the badge by now.
+            if typeAhead.currentSearchString.isEmpty {
+                hideSearchFeedback()
+            }
+            else {
+                showSearchFeedback(typeAhead.currentSearchString, matched: lastSearchMatched)
+            }
         }
 
-        if routedInputEvent != nil {
+        // Only a call that started or ended a composition acted on the event.
+        if routedInputEvent != nil, wasComposing || !markedText.isEmpty {
             routedInputWasConsumed = true
         }
     }
 
     func unmarkText() {
+        let wasComposing = hasMarkedText()
         markedText = ""
 
-        if routedInputEvent != nil {
+        if routedInputEvent != nil, wasComposing {
             routedInputWasConsumed = true
         }
     }
