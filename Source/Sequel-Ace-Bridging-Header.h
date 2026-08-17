@@ -62,6 +62,8 @@
 #import "SPHelpViewerClient.h"
 // Base class + protocol for the Swift preference pane SPMCPPreferencePane.swift.
 #import "SPPreferencePane.h"
+// Base class for the tables list sidebar subclass SATablesListView.swift.
+#import "SPTableView.h"
 #import <SPMySQL/SPMySQLConstants.h>
 #import <SPMySQL/SPMySQLConnectionDelegate.h>
 #import <SPMySQL/SPMySQLConnectionProxy.h>
