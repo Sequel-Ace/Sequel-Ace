@@ -181,3 +181,93 @@ final class SACellFilterMenuBuilderTests: XCTestCase {
         XCTAssertEqual(descriptors.map(\.isNull), [true, true])
     }
 }
+
+final class SACellValueCopyMenuBuilderTests: XCTestCase {
+
+    func testSingleValueBuildsRawAndSQLColumnValueItems() {
+        let items = SACellValueCopyMenuBuilder.menuItemDescriptors(
+            columnName: "name",
+            rawValues: ["Ada"],
+            sqlLiterals: ["'Ada'"]
+        )
+
+        XCTAssertEqual(items.map(\.title), ["Copy 'name' Value", "Copy 'name' Value as SQL"])
+        XCTAssertEqual(items.map(\.text), ["Ada", "'Ada'"])
+        XCTAssertEqual(items.map(\.isSQL), [false, true])
+        XCTAssertTrue(items.allSatisfy(\.isEnabled))
+    }
+
+    func testMultipleValuesPreserveOrderDuplicatesAndNull() {
+        let items = SACellValueCopyMenuBuilder.menuItemDescriptors(
+            columnName: "serial",
+            rawValues: ["A", "A", "NULL", "B"],
+            sqlLiterals: ["'A'", "'A'", "NULL", "'B'"]
+        )
+
+        XCTAssertEqual(items.map(\.title), ["Copy 'serial' Values", "Copy 'serial' Values as SQL"])
+        XCTAssertEqual(items[0].text, "A\nA\nNULL\nB")
+        XCTAssertEqual(items[1].text, "'A', 'A', NULL, 'B'")
+    }
+
+    func testUnavailableSQLLiteralDisablesOnlySQLCopy() {
+        let items = SACellValueCopyMenuBuilder.menuItemDescriptors(
+            columnName: "payload",
+            rawValues: ["(not loaded)"],
+            sqlLiterals: nil
+        )
+
+        XCTAssertTrue(items[0].isEnabled)
+        XCTAssertFalse(items[1].isEnabled)
+        XCTAssertEqual(items[1].text, "")
+        XCTAssertFalse(SACellValueCopyAction(descriptor: items[1]).validateMenuItem(NSMenuItem()))
+    }
+
+    func testEmptySelectionBuildsNoItems() {
+        XCTAssertTrue(
+            SACellValueCopyMenuBuilder.menuItemDescriptors(columnName: "serial", rawValues: [], sqlLiterals: []).isEmpty
+        )
+    }
+
+    func testClickOutsideSelectionReplacesItAndClickInsidePreservesIt() {
+        let selected = IndexSet([1, 2, 3])
+
+        XCTAssertEqual(SACellValueCopyMenuBuilder.selectedRows(current: selected, clickedRow: 2), selected)
+        XCTAssertEqual(
+            SACellValueCopyMenuBuilder.selectedRows(current: selected, clickedRow: 4),
+            IndexSet(integer: 4)
+        )
+    }
+
+    func testSQLLiteralFormatsNullNumericStringAndBinaryValues() {
+        let quoteString: (String) -> String? = { "quoted<\($0)>" }
+        let quoteData: (Data) -> String? = { "binary<\($0.map { String(format: "%02x", $0) }.joined())>" }
+
+        XCTAssertEqual(SACellValueCopyMenuBuilder.sqlLiteral(
+            value: NSNull(), typeGrouping: "string", fieldType: "VARCHAR",
+            quoteString: quoteString, quoteData: quoteData
+        ), "NULL")
+        XCTAssertEqual(SACellValueCopyMenuBuilder.sqlLiteral(
+            value: 42, typeGrouping: "integer", fieldType: "INT",
+            quoteString: quoteString, quoteData: quoteData
+        ), "42")
+        XCTAssertEqual(SACellValueCopyMenuBuilder.sqlLiteral(
+            value: "O'Brien", typeGrouping: "string", fieldType: "VARCHAR",
+            quoteString: quoteString, quoteData: quoteData
+        ), "quoted<O'Brien>")
+        XCTAssertEqual(SACellValueCopyMenuBuilder.sqlLiteral(
+            value: Data([0xde, 0xad]), typeGrouping: "blobdata", fieldType: "BLOB",
+            quoteString: quoteString, quoteData: quoteData
+        ), "binary<dead>")
+    }
+
+    func testSQLLiteralDecodesTextDataAsUTF8() {
+        XCTAssertEqual(SACellValueCopyMenuBuilder.sqlLiteral(
+            value: Data("é".utf8), typeGrouping: "textdata", fieldType: "TEXT",
+            quoteString: { "'\($0)'" }, quoteData: { _ in nil }
+        ), "'é'")
+        XCTAssertNil(SACellValueCopyMenuBuilder.sqlLiteral(
+            value: Data([0xff]), typeGrouping: "textdata", fieldType: "TEXT",
+            quoteString: { "'\($0)'" }, quoteData: { _ in nil }
+        ))
+    }
+}

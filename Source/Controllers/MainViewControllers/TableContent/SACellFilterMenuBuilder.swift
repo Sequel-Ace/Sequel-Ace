@@ -49,6 +49,103 @@ import AppKit
     }
 }
 
+/// Description of one copy action for the values in a clicked result column.
+@objcMembers public final class SACellValueCopyMenuItemDescriptor: NSObject {
+    public let title: String
+    public let text: String
+    public let isSQL: Bool
+    public let isEnabled: Bool
+
+    public init(title: String, text: String, isSQL: Bool, isEnabled: Bool) {
+        self.title = title
+        self.text = text
+        self.isSQL = isSQL
+        self.isEnabled = isEnabled
+        super.init()
+    }
+}
+
+/// Builds copy actions for one result column across the selected rows.
+@objcMembers public final class SACellValueCopyMenuBuilder: NSObject {
+    @objc(menuItemDescriptorsWithColumnName:rawValues:sqlLiterals:)
+    public static func menuItemDescriptors(columnName: String?, rawValues: [String], sqlLiterals: [String]?) -> [SACellValueCopyMenuItemDescriptor] {
+        guard !rawValues.isEmpty else { return [] }
+
+        let quotedColumnName = columnName.map { "'\($0)'" }
+        let valueLabel = [quotedColumnName, rawValues.count == 1 ? "Value" : "Values"]
+            .compactMap { $0 }
+            .joined(separator: " ")
+        let rawItem = SACellValueCopyMenuItemDescriptor(
+            title: String(format: NSLocalizedString("Copy %@", comment: "copy selected column values menu item"), valueLabel),
+            text: rawValues.joined(separator: "\n"),
+            isSQL: false,
+            isEnabled: true
+        )
+        let sqlItem = SACellValueCopyMenuItemDescriptor(
+            title: String(format: NSLocalizedString("Copy %@ as SQL", comment: "copy selected column values as SQL literals menu item"), valueLabel),
+            text: sqlLiterals?.joined(separator: ", ") ?? "",
+            isSQL: true,
+            isEnabled: sqlLiterals != nil
+        )
+        return [rawItem, sqlItem]
+    }
+
+    @nonobjc public static func selectedRows(current: IndexSet, clickedRow: Int) -> IndexSet {
+        current.contains(clickedRow) ? current : IndexSet(integer: clickedRow)
+    }
+
+    @nonobjc public static func sqlLiteral(
+        value: Any,
+        typeGrouping: String?,
+        fieldType: String?,
+        quoteString: (String) -> String?,
+        quoteData: (Data) -> String?
+    ) -> String? {
+        if value is NSNull { return "NULL" }
+        if SPFieldTypeClassifier.shouldBeUnquoted(fieldTypeGroup: typeGrouping, fieldType: fieldType) {
+            return String(describing: value)
+        }
+
+        if let data = value as? Data {
+            let isTextData = fieldType == "UUID" || typeGrouping == "textdata" || typeGrouping == "string"
+            if isTextData {
+                guard let string = String(data: data, encoding: .utf8) else { return nil }
+                return quoteString(string)
+            }
+            return quoteData(data)
+        }
+
+        return quoteString(String(describing: value))
+    }
+}
+
+/// Owns the payload for a dynamically-created cell-value copy menu item.
+@objcMembers public final class SACellValueCopyAction: NSObject, NSMenuItemValidation {
+    private let descriptor: SACellValueCopyMenuItemDescriptor
+
+    public init(descriptor: SACellValueCopyMenuItemDescriptor) {
+        self.descriptor = descriptor
+        super.init()
+    }
+
+    public func copy(_ sender: Any?) {
+        guard descriptor.isEnabled else { return }
+
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        let types: [NSPasteboard.PasteboardType] = descriptor.isSQL ? [.string] : [.string, .tabularText]
+        pasteboard.declareTypes(types, owner: nil)
+        pasteboard.setString(descriptor.text, forType: .string)
+        if !descriptor.isSQL {
+            pasteboard.setString(descriptor.text, forType: .tabularText)
+        }
+    }
+
+    public func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        descriptor.isEnabled
+    }
+}
+
 /// Builds the filter submenu and its serializable item descriptors.
 ///
 /// This class keeps the type/operator matrix in Swift while exposing an

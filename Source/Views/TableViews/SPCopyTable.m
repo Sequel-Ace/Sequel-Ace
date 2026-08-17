@@ -1188,6 +1188,7 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
 		}
 	}
 
+	[SACellValueCopyCoordinator appendItemsToMenu:menu event:event table:self tableStorage:tableStorage columnDefinitions:columnDefinitions connection:mySQLConnection];
 	[self _appendCellFilterMenuToMenu:menu forEvent:event];
 
 	return menu;
