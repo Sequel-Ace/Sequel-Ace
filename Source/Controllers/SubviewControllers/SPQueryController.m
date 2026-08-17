@@ -54,8 +54,9 @@ static NSString *SPCompletionTokensSnippetsKey  = @"function_argument_snippets";
 
 static NSUInteger SPMessageTruncateCharacterLength = 256;
 
-@interface SPQueryController ()
-
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPQueryController () <NSMenuItemValidation, NSControlTextEditingDelegate>
 - (void)_updateFilterState;
 - (void)_allowFilterClearOrSave:(NSNumber *)enabled;
 - (BOOL)_messageMatchesCurrentFilters:(NSString *)message;

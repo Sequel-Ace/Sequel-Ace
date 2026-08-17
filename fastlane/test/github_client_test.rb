@@ -28,6 +28,61 @@ class GitHubClientTest < Minitest::Test
     assert_nil transport.requests.last[:query]
   end
 
+  def test_reads_the_same_bounded_anonymous_release_feed_page_as_shipped_clients
+    authenticated_transport = FakeTransport.new([])
+    public_transport = FakeTransport.new([
+      http_response(body: [{ "tag_name" => "production/5.4.0-20109" }])
+    ])
+    client = SequelAceRelease::GitHubClient.new(
+      token: "token",
+      transport: authenticated_transport,
+      public_transport: public_transport
+    )
+
+    assert_equal 1, client.public_release_feed_page.length
+    assert_empty authenticated_transport.requests
+    assert_equal({ "per_page" => 30, "page" => 1 }, public_transport.requests.first[:query])
+  end
+
+  def test_rejects_a_malformed_release_feed_page
+    public_transport = FakeTransport.new([http_response(body: { "message" => "not an array" })])
+    client = SequelAceRelease::GitHubClient.new(
+      token: "token",
+      transport: FakeTransport.new([]),
+      public_transport: public_transport
+    )
+
+    error = assert_raises(SequelAceRelease::APIError) { client.public_release_feed_page }
+
+    assert_includes error.message, "malformed response"
+  end
+
+  def test_rejects_a_non_integer_public_release_feed_page_size
+    client = SequelAceRelease::GitHubClient.new(token: "token", transport: FakeTransport.new([]))
+
+    error = assert_raises(SequelAceRelease::ValidationError) do
+      client.public_release_feed_page(per_page: "thirty")
+    end
+
+    assert_includes error.message, "page size must be an integer"
+  end
+
+  def test_does_not_relabel_a_public_feed_transport_type_error_as_invalid_input
+    public_transport = Object.new
+    public_transport.define_singleton_method(:request) do |*_arguments, **_options|
+      raise TypeError, "simulated transport decoder failure"
+    end
+    client = SequelAceRelease::GitHubClient.new(
+      token: "token",
+      transport: FakeTransport.new([]),
+      public_transport: public_transport
+    )
+
+    error = assert_raises(TypeError) { client.public_release_feed_page }
+
+    assert_includes error.message, "transport decoder failure"
+  end
+
   def test_reads_the_exact_main_ref_sha
     transport = FakeTransport.new([
       http_response(body: { "object" => { "sha" => "a" * 40 } })
@@ -46,6 +101,18 @@ class GitHubClientTest < Minitest::Test
 
     assert_equal 100, client.latest_release.fetch("id")
     assert_equal "/repos/Sequel-Ace/Sequel-Ace/releases/latest", transport.requests.first[:path]
+  end
+
+  def test_preserves_the_github_http_status_as_structured_error_data
+    transport = FakeTransport.new([
+      http_response(status: 401, body: { "message" => "Bad credentials" })
+    ])
+    client = SequelAceRelease::GitHubClient.new(token: "expired", transport: transport)
+
+    error = assert_raises(SequelAceRelease::APIError) { client.latest_release }
+
+    assert_equal 401, error.status
+    assert_includes error.message, "Bad credentials"
   end
 
   def test_validates_the_exact_release_publisher_identity_and_repository_access
@@ -166,21 +233,31 @@ class GitHubClientTest < Minitest::Test
     assert_equal ["/apps/sequel-ace-release-automation"], transport.requests.map { |request| request.fetch(:path) }
   end
 
-  def test_rejects_an_unapproved_release_app_slug_before_any_api_request
-    transport = FakeTransport.new([])
+  def test_accepts_a_live_app_rename_when_stable_identity_and_repository_scope_match
+    transport = FakeTransport.new([
+      http_response(body: {
+        "id" => 4_541_115,
+        "slug" => "renamed-release-publisher",
+        "client_id" => "Iv1.releaseclient"
+      }),
+      http_response(body: {
+        "total_count" => 1,
+        "repositories" => [{
+          "full_name" => "Sequel-Ace/Sequel-Ace",
+          "permissions" => { "push" => true }
+        }]
+      })
+    ])
     client = SequelAceRelease::GitHubClient.new(token: "token", transport: transport)
 
-    error = assert_raises(SequelAceRelease::ValidationError) do
-      client.validate_release_app_publisher!(
-        expected_app_id: 4_541_115,
-        expected_client_id: "Iv1.releaseclient",
-        expected_app_slug: "unreviewed-release-publisher",
-        expected_installation_id: "12345"
-      )
-    end
+    result = client.validate_release_app_publisher!(
+      expected_app_id: 4_541_115,
+      expected_client_id: "Iv1.releaseclient",
+      expected_app_slug: "renamed-release-publisher",
+      expected_installation_id: "12345"
+    )
 
-    assert_includes error.message, "not an authorized publisher"
-    assert_empty transport.requests
+    assert_equal "renamed-release-publisher[bot]", result.fetch("login")
   end
 
   def test_accepts_the_documented_future_release_app_slug

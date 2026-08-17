@@ -46,8 +46,9 @@ static NSString *SPCustomColorSchemeNameLC  = @"user-defined";
 
 #define SP_EXPORT_COLOR_SCHEME_NAME_STRING NSLocalizedString(@"MyTheme", @"Preferences : Themes : Initial filename for 'Export'")
 
-@interface SPEditorPreferencePane ()
-
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPEditorPreferencePane () <NSControlTextEditingDelegate, NSFontChanging>
 - (BOOL)_checkForUnsavedTheme;
 - (NSArray *)_getAvailableThemes;
 - (void)_saveColorThemeAtPath:(NSString *)path;

@@ -242,16 +242,16 @@ import OSLog
             assertionFailure("AWSSSOClient.resolveCredentials should not be called from the main thread")
         }
 
-        var result: AWSCredentials?
-        var asyncError: Error?
+        let outcome = SAAsyncResultBox<AWSCredentials>()
         let semaphore = DispatchSemaphore(value: 0)
 
         DispatchQueue.global(qos: .userInitiated).async {
             Task {
                 do {
-                    result = try await resolveCredentials(for: profileCredentials)
+                    let credentials = try await resolveCredentials(for: profileCredentials)
+                    outcome.succeed(credentials)
                 } catch {
-                    asyncError = error
+                    outcome.fail(error)
                 }
                 semaphore.signal()
             }
@@ -261,15 +261,14 @@ import OSLog
             throw AWSSSOClientError.requestTimeout
         }
 
-        if let asyncError = asyncError {
+        switch outcome.result {
+        case .success(let credentials):
+            return credentials
+        case .failure(let asyncError):
             throw asyncError
-        }
-
-        guard let result = result else {
+        case nil:
             throw AWSSSOClientError.invalidResponse
         }
-
-        return result
     }
 
     /// Objective-C compatible method that returns nil on error

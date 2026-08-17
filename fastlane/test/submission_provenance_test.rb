@@ -15,11 +15,14 @@ class SubmissionProvenanceTest < Minitest::Test
   NOTES = "A focused release note."
 
   class GitHub
-    attr_accessor :release
+    attr_accessor :release, :public_feed
+    attr_reader :public_feed_reads
 
     def initialize(release:, commit:)
       @release = release
       @commit = commit
+      @public_feed = [release]
+      @public_feed_reads = 0
     end
 
     def ref_sha(_ref)
@@ -28,6 +31,11 @@ class SubmissionProvenanceTest < Minitest::Test
 
     def release_by_tag(_tag)
       @release
+    end
+
+    def public_release_feed_page
+      @public_feed_reads += 1
+      @public_feed
     end
 
     def validate_release_target!(target_sha:, protected_paths:)
@@ -46,7 +54,17 @@ class SubmissionProvenanceTest < Minitest::Test
     cli.stub(:github_client, github) do
       result = cli.send(:validate_submission_handoff!, manifest: manifest, notes: NOTES)
       assert_equal "archived", result.fetch("state")
+      assert_equal "legacy_updater_v1", result.fetch("compatibility_profile")
+      assert_equal 1, result.fetch("release_feed_entries_verified")
+      assert_equal 1, github.public_feed_reads
 
+      github.public_feed = [github.release.merge("assets" => [])]
+      error = assert_raises(SequelAceRelease::IntegrityError) do
+        cli.send(:validate_submission_handoff!, manifest: manifest, notes: NOTES)
+      end
+      assert_includes error.message, "missing artifacts"
+
+      github.public_feed = [github.release]
       github.release = github.release.merge("draft" => true)
       error = assert_raises(SequelAceRelease::ValidationError) do
         cli.send(:validate_submission_handoff!, manifest: manifest, notes: NOTES)
@@ -115,6 +133,42 @@ class SubmissionProvenanceTest < Minitest::Test
     end
   end
 
+  def test_submit_marks_a_new_public_feed_integrity_failure_as_terminal
+    app_store = Object.new
+    app_store.define_singleton_method(:latest_released_version) { |**_options| { "id" => "previous-version-id" } }
+    app_store.define_singleton_method(:localization) do |version_id:|
+      raise "wrong prior version" unless version_id == "previous-version-id"
+
+      { "attributes" => { "promotionalText" => "A native database client." } }
+    end
+
+    Dir.mktmpdir do |directory|
+      manifest_path = File.join(directory, "manifest.json")
+      notes_path = File.join(directory, "notes.txt")
+      marker_path = File.join(directory, "terminal-marker")
+      archived_manifest.write(manifest_path)
+      File.write(notes_path, "#{NOTES}\n")
+      cli = SequelAceRelease::CLI.new(out: StringIO.new, err: StringIO.new, env: {})
+
+      status = cli.stub(:app_store_client, app_store) do
+        cli.stub(:validate_submission_handoff!, ->(**_options) { raise SequelAceRelease::IntegrityError, "public feed changed" }) do
+          cli.stub(:fastlane_release_stage, ->(**_options) { raise "staging must not start" }) do
+            cli.run([
+              "submit",
+              "--manifest", manifest_path,
+              "--notes", notes_path,
+              "--confirm", "SUBMIT 5.3.2 (20109)",
+              "--integrity-failure-marker", marker_path
+            ])
+          end
+        end
+      end
+
+      assert_equal 1, status
+      assert_equal "release asset integrity failure\n", File.read(marker_path)
+    end
+  end
+
   private
 
   def archived_manifest
@@ -141,22 +195,14 @@ class SubmissionProvenanceTest < Minitest::Test
   end
 
   def release_for(manifest)
-    {
-      "id" => 100,
-      "tag_name" => manifest.to_h.fetch("tag"),
-      "name" => manifest.to_h.fetch("title"),
-      "draft" => false,
-      "prerelease" => true,
-      "body" => BODY,
-      "author" => {
-        "login" => SequelAceRelease::ReleasePublisher::USER_LOGIN,
-        "id" => SequelAceRelease::ReleasePublisher::USER_ID
-      },
-      "created_at" => "2026-08-13T00:00:00Z",
-      "assets" => [{
-        "name" => "Sequel-Ace-5.3.2.zip",
-        "digest" => "sha256:#{'e' * 64}"
-      }]
-    }
+    github_release_payload(
+      tag: manifest.to_h.fetch("tag"),
+      title: manifest.to_h.fetch("title"),
+      body: BODY,
+      assets: [github_release_asset(
+        name: "Sequel-Ace-5.3.2.zip",
+        digest: "e" * 64
+      )]
+    )
   end
 end

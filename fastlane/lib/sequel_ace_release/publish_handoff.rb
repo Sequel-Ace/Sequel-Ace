@@ -48,8 +48,7 @@ module SequelAceRelease
       ReleasePublisher.validate!(
         tag: tag,
         login: release.dig("author", "login"),
-        id: release.dig("author", "id"),
-        created_at: release["created_at"]
+        id: release.dig("author", "id")
       )
       release_id = release["id"]
       unless release_id.is_a?(Integer) && release_id.positive?
@@ -57,20 +56,31 @@ module SequelAceRelease
       end
 
       expected_assets = data.fetch("artifact_names")
-      assets = Array(release["assets"])
-      actual_assets = assets.map { |asset| asset.fetch("name") }
+      assets = release["assets"]
+      valid_assets = assets.is_a?(Array) && assets.all? do |asset|
+        asset.is_a?(Hash) && asset["name"].is_a?(String) && !asset["name"].empty?
+      end
+      unless valid_assets
+        raise IntegrityError, "release asset metadata is malformed"
+      end
+      actual_assets = assets.map { |asset| asset["name"] }
       unexpected_assets = actual_assets - expected_assets
       unless unexpected_assets.empty?
-        raise ValidationError, "release has unexpected artifacts: #{unexpected_assets.join(', ')}"
+        raise IntegrityError, "release has unexpected artifacts: #{unexpected_assets.join(', ')}"
       end
 
       state = data.fetch("state")
       if %w[archived submitted finalizing live].include?(state)
         missing_assets = expected_assets - actual_assets
         unless missing_assets.empty?
-          raise ValidationError, "archived release is missing artifacts: #{missing_assets.join(', ')}"
+          raise IntegrityError, "archived release is missing artifacts: #{missing_assets.join(', ')}"
         end
-        verify_asset_digests!(manifest: data, assets: assets, expected_names: expected_assets)
+        expected_digests = verify_asset_digests!(
+          manifest: data,
+          assets: assets,
+          expected_names: expected_assets
+        )
+        GitHubReleasePayload.new(release: release, expected_digests: expected_digests).validate
       end
 
       release_body = release.fetch("body", "").to_s
@@ -175,22 +185,26 @@ module SequelAceRelease
       expected_digests = verification.each_with_object({}) do |(_channel, value), result|
         next unless value.is_a?(Hash) && value["zip_path"] && value["zip_sha256"]
 
-        result[File.basename(value["zip_path"])] = value["zip_sha256"].to_s.downcase
+        name = File.basename(value["zip_path"])
+        raise IntegrityError, "private manifest has duplicate artifact checksums for #{name}" if result.key?(name)
+
+        result[name] = value["zip_sha256"].to_s.downcase
       end
       missing = expected_names - expected_digests.keys
       unless missing.empty?
-        raise ValidationError, "private manifest is missing artifact checksums: #{missing.join(', ')}"
+        raise IntegrityError, "private manifest is missing artifact checksums: #{missing.join(', ')}"
       end
 
       expected_names.each do |name|
         expected = expected_digests.fetch(name)
         unless expected.match?(/\A[0-9a-f]{64}\z/)
-          raise ValidationError, "private manifest has a malformed checksum for #{name}"
+          raise IntegrityError, "private manifest has a malformed checksum for #{name}"
         end
         asset = assets.find { |candidate| candidate["name"] == name }
         actual = asset&.fetch("digest", "").to_s.delete_prefix("sha256:").downcase
-        raise ValidationError, "GitHub asset checksum mismatch for #{name}" unless actual == expected
+        raise IntegrityError, "GitHub asset checksum mismatch for #{name}" unless actual == expected
       end
+      expected_digests
     end
   end
 end

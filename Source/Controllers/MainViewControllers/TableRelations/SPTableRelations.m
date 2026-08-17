@@ -48,8 +48,9 @@ static NSString *SPRelationFKColumnsKey  = @"fk_columns";
 static NSString *SPRelationOnUpdateKey   = @"on_update";
 static NSString *SPRelationOnDeleteKey   = @"on_delete";
 
-@interface SPTableRelations ()
-
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPTableRelations () <NSMenuItemValidation>
 - (void)_refreshRelationDataForcingCacheRefresh:(BOOL)clearAllCaches;
 - (void)_updateAvailableTableColumns;
 - (BOOL)_serverRequiresStandardForeignKeyReferences;

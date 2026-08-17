@@ -47,8 +47,9 @@ static NSString *SPTableViewProgressColumnIdentifier = @"Progress";
 static NSString * const SPKillModeKey = @"SPKillMode";
 static NSString * const SPKillIdKey   = @"SPKillId";
 
-@interface SPProcessListController ()
-
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPProcessListController () <NSMenuItemValidation, NSControlTextEditingDelegate>
 - (void)_processListRefreshed;
 - (void)_startAutoRefreshTimer;
 - (void)_killAutoRefreshTimer;

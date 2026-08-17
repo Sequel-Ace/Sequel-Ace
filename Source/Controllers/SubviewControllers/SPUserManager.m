@@ -48,8 +48,9 @@ static NSString *SPGlobalPrivilegesTabIdentifier = @"Global Privileges";
 static NSString *SPResourcesTabIdentifier = @"Resources";
 static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 
-@interface SPUserManager ()
-
+// Formal conformance for methods AppKit moved off the informal NSObject
+// categories; implementing them without it is deprecated. No behavior change.
+@interface SPUserManager () <NSMenuItemValidation>
 - (void)_initializeTree:(NSArray *)items;
 - (void)_initializeUsers;
 - (void)_selectParentFromSelection;

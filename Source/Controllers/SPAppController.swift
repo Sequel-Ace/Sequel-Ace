@@ -22,29 +22,41 @@ extension SPAppController {
         tabManager.newWindowForTab()
     }
 
+    /// An open standalone connection window, kept alive until it closes.
+    private struct StandaloneConnectionWindow {
+        /// Keep the controller around so the window isn't deallocated.
+        let controller: SAConnectionWindowController
+
+        /// React to window closing, auto-unsubscribing on dealloc.
+        let closingSubscription: NotificationToken
+    }
+
+    /// Tracks open standalone connection windows so they don't get deallocated.
+    private static var standaloneConnectionWindows: [StandaloneConnectionWindow] = []
+
     /// Opens a standalone connection window (decoupled from document lifecycle).
     /// This is the modernized connection flow — the connection screen exists
     /// independently, and only creates a document tab on successful connect.
-    /// Tracks open standalone connection windows so they don't get deallocated.
-    private static var standaloneConnectionWindows: [SAConnectionWindowController] = []
-
     @IBAction func openStandaloneConnectionWindow(_ sender: Any) {
         let controller = SAConnectionWindowController()
         controller.showWindow(sender)
 
-        // Retain the controller; remove when its window closes.
-        Self.standaloneConnectionWindows.append(controller)
-        var token: NSObjectProtocol?
-        token = NotificationCenter.default.addObserver(
-            forName: NSWindow.willCloseNotification,
+        // Retain the controller until its window closes. Dropping the entry also
+        // releases the NotificationToken, which unregisters the observer in its
+        // deinit — so the observer no longer has to remove itself, which is what
+        // required a captured var (and tripped Swift 6 concurrency checking).
+        // Same ownership shape as TabManager's ManagedWindow.
+        let closingSubscription = NotificationCenter.default.observe(
+            name: NSWindow.willCloseNotification,
             object: controller.window,
             queue: .main
         ) { _ in
-            Self.standaloneConnectionWindows.removeAll { $0 === controller }
-            if let token = token {
-                NotificationCenter.default.removeObserver(token)
-            }
+            Self.standaloneConnectionWindows.removeAll { $0.controller === controller }
         }
+
+        Self.standaloneConnectionWindows.append(
+            StandaloneConnectionWindow(controller: controller, closingSubscription: closingSubscription)
+        )
     }
 
     @IBAction func export(_ sender: Any) {

@@ -95,7 +95,10 @@ class CliBuildReconciliationTest < Minitest::Test
     git.define_singleton_method(:sha) { |_ref| commit }
     github = Object.new
     github.define_singleton_method(:release_by_tag) do |_candidate|
-      raise SequelAceRelease::APIError, "GitHub API returned HTTP 404: Not Found"
+      raise SequelAceRelease::APIError.new(
+        "GitHub API returned HTTP 404: Not Found",
+        status: 404
+      )
     end
     apple = Object.new
     apple.define_singleton_method(:build_run) do |run_id|
