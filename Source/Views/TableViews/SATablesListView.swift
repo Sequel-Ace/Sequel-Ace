@@ -25,14 +25,17 @@ import AppKit
 
     // Selecting a row starts loading its table, so the selection is only
     // committed once the sequence settles (see commitPendingSelection). The
-    // matched title is kept alongside the row because the list can reload
-    // while the search settles.
-    private var pendingSelection: (row: Int, title: String)?
+    // matched row's identity is kept alongside its index because the list can
+    // reload while the search settles.
+    private var pendingSelection: (row: Int, entry: RowEntry)?
     private var pendingSelectionTimer: Timer?
 
     // Text an input method is still composing; it is displayed but not
     // searched until the input method commits it via insertText/unmarkText.
     private var markedText = ""
+    // Decided once per composition: whether it continues the search already
+    // running or starts a new one. The badge shows the same thing.
+    private var compositionExtendsSearch = false
     // Set while a key event is being offered to the input context, so the
     // client callbacks below know they are answering that event.
     private var routedInputEvent: NSEvent?
@@ -218,11 +221,11 @@ import AppKit
             return false
         }
 
-        let titles = searchableRowTitles()
-        let row = typeAhead.bestMatch(appending: characters, candidates: titles, atTime: time)
+        let rows = searchableRows()
+        let row = typeAhead.bestMatch(appending: characters, candidates: rows.map(\.title), atTime: time)
 
         if row != NSNotFound {
-            pendingSelection = (row: row, title: titles[row])
+            pendingSelection = (row: row, entry: rows[row])
             scrollRowToVisible(row)
         }
         else {
@@ -249,14 +252,14 @@ import AppKit
         pendingSelection = nil
 
         // The list can be reloaded or reordered while the search settles, so
-        // the matched name — not the row index it happened to have — is what
-        // gets selected.
-        let titles = searchableRowTitles()
+        // the matched object — not the row index it happened to have — is what
+        // gets selected, and nothing is selected if it is no longer there.
+        let rows = searchableRows()
         let row: Int
-        if pending.row < titles.count, titles[pending.row] == pending.title {
+        if pending.row < rows.count, rows[pending.row] == pending.entry {
             row = pending.row
         }
-        else if let movedRow = titles.firstIndex(of: pending.title) {
+        else if let movedRow = rows.firstIndex(of: pending.entry) {
             row = movedRow
         }
         else {
@@ -282,11 +285,16 @@ import AppKit
     /// Committed text — either a plain keystroke or the result of an input
     /// method composition — extends the search.
     func insertText(_ string: Any, replacementRange: NSRange) {
+        let wasComposing = hasMarkedText()
         markedText = ""
         noteInputCallback()
 
         guard !isDiscardingComposition else {
             return
+        }
+
+        if wasComposing, compositionExtendsSearch {
+            keepSearchAliveDuringComposition()
         }
 
         let text = (string as? NSAttributedString)?.string ?? (string as? String) ?? ""
@@ -320,6 +328,18 @@ import AppKit
         noteInputCallback()
 
         if !markedText.isEmpty {
+            if !wasComposing {
+                compositionExtendsSearch = typeAhead.isActive(atTime: inputEventTime)
+                if !compositionExtendsSearch {
+                    // The earlier search has already timed out, so the badge
+                    // shows this composition on its own.
+                    typeAhead.reset()
+                }
+            }
+            if compositionExtendsSearch {
+                keepSearchAliveDuringComposition()
+            }
+
             // Composition in progress: appended to the badge but never marked
             // as unmatched, since it has not been searched for yet. It can
             // easily outlast the settle interval, so the row an earlier
@@ -359,11 +379,22 @@ import AppKit
             return
         }
 
+        if compositionExtendsSearch {
+            keepSearchAliveDuringComposition()
+        }
+
         performTypeAhead(composedText, atTime: inputEventTime)
 
         if routedInputEvent != nil {
             routedInputWasConsumed = true
         }
+    }
+
+    /// A composition — and the pause before the user confirms it — routinely
+    /// outlasts the settle interval. Without this the committed text would
+    /// start a new search while the badge showed it appended to the old one.
+    private func keepSearchAliveDuringComposition() {
+        typeAhead.keepAlive(atTime: inputEventTime)
     }
 
     /// Timestamp to attribute committed text to: the key event being routed,
@@ -525,26 +556,45 @@ import AppKit
         return true
     }
 
-    /// Row titles indexed by row; rows that can never hold a table (group
-    /// headers, placeholders) are represented as empty strings, which never
-    /// match a non-empty search string. Built from the stable group-row
-    /// metadata rather than shouldSelectRow: the latter reports every row as
+    /// A row's identity: its name plus the section heading above it. The list
+    /// keeps tables/views and procedures/functions in separate sections, and
+    /// names are unique within one, so the pair still names the same object
+    /// after the list is reloaded — a bare name would not, since a table and a
+    /// procedure may share one.
+    private struct RowEntry: Equatable {
+        /// Empty for rows that can never hold a table (section headings,
+        /// placeholders); an empty title never matches a search string.
+        let title: String
+        let section: String
+    }
+
+    /// Row identities indexed by row. Built from the stable group-row metadata
+    /// rather than shouldSelectRow: the latter reports every row as
     /// unselectable while a load task runs, which would empty the candidate
     /// list mid-sequence.
-    private func searchableRowTitles() -> [String] {
+    private func searchableRows() -> [RowEntry] {
         guard let dataSource, let delegate else {
             return []
         }
         let column = tableColumns.first
 
-        return (0..<numberOfRows).map { row in
-            guard !(delegate.tableView?(self, isGroupRow: row) ?? false),
-                  let title = dataSource.tableView?(self, objectValueFor: column, row: row) as? String
-            else {
-                return ""
+        var rows: [RowEntry] = []
+        rows.reserveCapacity(numberOfRows)
+        var section = ""
+
+        for row in 0..<numberOfRows {
+            let value = dataSource.tableView?(self, objectValueFor: column, row: row) as? String
+
+            if delegate.tableView?(self, isGroupRow: row) ?? false {
+                section = value ?? ""
+                rows.append(RowEntry(title: "", section: section))
             }
-            return title
+            else {
+                rows.append(RowEntry(title: value ?? "", section: section))
+            }
         }
+
+        return rows
     }
 }
 

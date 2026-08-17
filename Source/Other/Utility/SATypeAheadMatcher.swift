@@ -54,6 +54,18 @@ import Foundation
         !searchString.isEmpty && time - lastKeystrokeTime <= resetInterval
     }
 
+    /// Keeps the running search string from expiring while the sequence is
+    /// held up outside the matcher — an input method composing, say, which can
+    /// easily take longer than `resetInterval`. Does nothing when no search is
+    /// running, so it can never resurrect one that was already reset.
+    @objc(keepAliveAtTime:)
+    func keepAlive(atTime time: TimeInterval) {
+        guard !searchString.isEmpty else {
+            return
+        }
+        lastKeystrokeTime = time
+    }
+
     /// Forgets the accumulated search string immediately.
     @objc func reset() {
         searchString = ""

@@ -91,6 +91,32 @@ final class SATypeAheadMatcherTests: XCTestCase {
         XCTAssertEqual(matcher.currentSearchString, "o")
     }
 
+    func testKeepAliveExtendsTheSearchAcrossALongPause() {
+        let matcher = SATypeAheadMatcher(resetInterval: 0.3)
+
+        XCTAssertEqual(matcher.bestMatch(appending: "m", candidates: tables, atTime: 10.0), 2)
+
+        // A composition running from 10.1 to 12.0 keeps the sequence alive.
+        matcher.keepAlive(atTime: 10.1)
+        matcher.keepAlive(atTime: 12.0)
+
+        XCTAssertTrue(matcher.isActive(atTime: 12.1))
+        XCTAssertEqual(matcher.bestMatch(appending: "e", candidates: tables, atTime: 12.1), 2)
+        XCTAssertEqual(matcher.currentSearchString, "me")
+    }
+
+    func testKeepAliveDoesNotResurrectAResetSearch() {
+        let matcher = SATypeAheadMatcher(resetInterval: 0.3)
+
+        _ = matcher.bestMatch(appending: "m", candidates: tables, atTime: 10.0)
+        matcher.reset()
+        matcher.keepAlive(atTime: 10.1)
+
+        XCTAssertFalse(matcher.isActive(atTime: 10.1))
+        XCTAssertEqual(matcher.bestMatch(appending: "o", candidates: tables, atTime: 10.1), 4)
+        XCTAssertEqual(matcher.currentSearchString, "o")
+    }
+
     func testNoMatchKeepsAccumulatingUntilReset() {
         let matcher = SATypeAheadMatcher(resetInterval: 0.3)
 
