@@ -71,21 +71,18 @@ import AppKit
     public static func menuItemDescriptors(columnName: String?, rawValues: [String], sqlLiterals: [String]?) -> [SACellValueCopyMenuItemDescriptor] {
         guard !rawValues.isEmpty else { return [] }
 
-        let quotedColumnName = columnName.map { "'\($0)'" }
-        let valueLabel = [quotedColumnName, rawValues.count == 1 ? "Value" : "Values"]
-            .compactMap { $0 }
-            .joined(separator: " ")
+        let valueLabel = columnName.map { "'\($0)'" } ?? ""
         let rawItem = SACellValueCopyMenuItemDescriptor(
-            title: String(format: NSLocalizedString("Copy %@", comment: "copy selected column values menu item"), valueLabel),
+            title: String(format: NSLocalizedString("Copy %@ Values", comment: "copy selected values from the named result column"), valueLabel),
             text: rawValues.joined(separator: "\n"),
             isSQL: false,
             isEnabled: true
         )
         let sqlItem = SACellValueCopyMenuItemDescriptor(
-            title: String(format: NSLocalizedString("Copy %@ as SQL", comment: "copy selected column values as SQL literals menu item"), valueLabel),
+            title: String(format: NSLocalizedString("Copy %@ Values as SQL", comment: "copy selected values from the named result column as SQL literals"), valueLabel),
             text: sqlLiterals?.joined(separator: ", ") ?? "",
             isSQL: true,
-            isEnabled: sqlLiterals != nil
+            isEnabled: sqlLiterals?.count == rawValues.count
         )
         return [rawItem, sqlItem]
     }

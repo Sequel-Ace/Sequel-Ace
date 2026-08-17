@@ -191,7 +191,7 @@ final class SACellValueCopyMenuBuilderTests: XCTestCase {
             sqlLiterals: ["'Ada'"]
         )
 
-        XCTAssertEqual(items.map(\.title), ["Copy 'name' Value", "Copy 'name' Value as SQL"])
+        XCTAssertEqual(items.map(\.title), ["Copy 'name' Values", "Copy 'name' Values as SQL"])
         XCTAssertEqual(items.map(\.text), ["Ada", "'Ada'"])
         XCTAssertEqual(items.map(\.isSQL), [false, true])
         XCTAssertTrue(items.allSatisfy(\.isEnabled))
@@ -220,6 +220,17 @@ final class SACellValueCopyMenuBuilderTests: XCTestCase {
         XCTAssertFalse(items[1].isEnabled)
         XCTAssertEqual(items[1].text, "")
         XCTAssertFalse(SACellValueCopyAction(descriptor: items[1]).validateMenuItem(NSMenuItem()))
+    }
+
+    func testIncompleteSQLLiteralsDisableOnlySQLCopy() {
+        let items = SACellValueCopyMenuBuilder.menuItemDescriptors(
+            columnName: "payload",
+            rawValues: ["A", "B"],
+            sqlLiterals: ["'A'"]
+        )
+
+        XCTAssertTrue(items[0].isEnabled)
+        XCTAssertFalse(items[1].isEnabled)
     }
 
     func testEmptySelectionBuildsNoItems() {
