@@ -24,17 +24,20 @@ import AppKit
     private let typeAhead = SATypeAheadMatcher(resetInterval: SATablesListView.typeAheadResetInterval)
 
     // Selecting a row starts loading its table, so the selection is only
-    // committed once the sequence settles (see commitPendingSelection).
-    private var pendingSelectionRow = NSNotFound
+    // committed once the sequence settles (see commitPendingSelection). The
+    // matched title is kept alongside the row because the list can reload
+    // while the search settles.
+    private var pendingSelection: (row: Int, title: String)?
     private var pendingSelectionTimer: Timer?
 
     // Text an input method is still composing; it is displayed but not
-    // searched until the input method commits it via insertText.
+    // searched until the input method commits it via insertText/unmarkText.
     private var markedText = ""
     // Set while a key event is being offered to the input context, so the
     // client callbacks below know they are answering that event.
     private var routedInputEvent: NSEvent?
     private var routedInputWasConsumed = false
+    private var routedInputCallbackReceived = false
     private var isDiscardingComposition = false
     // Whether the last searched string matched a row, so the badge can be
     // restored after a composition ends without a commit.
@@ -97,23 +100,46 @@ import AppKit
     private func cancelTypeAhead() {
         typeAhead.reset()
         discardComposition()
-        pendingSelectionTimer?.invalidate()
-        pendingSelectionTimer = nil
-        pendingSelectionRow = NSNotFound
+        suspendPendingCommit()
+        pendingSelection = nil
         feedbackHideTimer?.invalidate()
         hideSearchFeedback()
     }
 
     /// Ends the current search immediately, committing the row it matched.
     private func resolveTypeAhead() {
-        pendingSelectionTimer?.invalidate()
-        pendingSelectionTimer = nil
+        suspendPendingCommit()
         commitPendingSelection()
 
         typeAhead.reset()
         discardComposition()
         feedbackHideTimer?.invalidate()
         hideSearchFeedback()
+    }
+
+    /// Holds back the deferred selection without forgetting it — used while an
+    /// input method composes, which can easily outlast the settle interval.
+    private func suspendPendingCommit() {
+        pendingSelectionTimer?.invalidate()
+        pendingSelectionTimer = nil
+    }
+
+    /// (Re)starts the settle timer for the row the search currently matches.
+    private func schedulePendingCommit() {
+        suspendPendingCommit()
+
+        guard pendingSelection != nil else {
+            return
+        }
+
+        // Selecting a row synchronously starts loading its table, and while
+        // that load runs no row is selectable — an immediate selection would
+        // block the characters still to come from refining the match.
+        // Deferring the commit until the sequence settles also loads only the
+        // final match instead of every intermediate one.
+        pendingSelectionTimer = Timer.scheduledTimer(withTimeInterval: Self.typeAheadResetInterval, repeats: false) { [weak self] _ in
+            self?.commitPendingSelection()
+        }
     }
 
     /// Throws away any half-composed input method text, so it cannot be
@@ -149,10 +175,16 @@ import AppKit
 
         routedInputEvent = event
         routedInputWasConsumed = false
-        inputContext.handleEvent(event)
+        routedInputCallbackReceived = false
+        let handledByTextInput = inputContext.handleEvent(event)
         routedInputEvent = nil
 
-        return routedInputWasConsumed
+        // When a client callback ran, its own verdict decides — a keystroke the
+        // search declined (a leading space, say) still has to reach the table.
+        // Otherwise the text input system swallowed the event on its own, as it
+        // does for the keys an input source consumes silently, and forwarding it
+        // would end the search that is still being typed.
+        return routedInputCallbackReceived ? routedInputWasConsumed : handledByTextInput
     }
 
     /// Whether the event looks like plain text entry rather than a command.
@@ -167,45 +199,40 @@ import AppKit
     }
 
     /// Extends the search with committed text and shows the new best match.
-    /// Returns true if the text was consumed as part of a search.
+    /// Returns true if the text was consumed as part of a search. Either way
+    /// the settle timer is left running for whatever is still pending, so a
+    /// commit suspended during a composition is never stranded.
     @discardableResult
     private func performTypeAhead(_ characters: String, atTime time: TimeInterval) -> Bool {
         guard !characters.isEmpty,
               characters.unicodeScalars.allSatisfy({ isSearchableScalar($0) })
         else {
+            schedulePendingCommit()
             return false
         }
 
         // A leading space should keep its default behaviour; mid-search it is
         // part of the name being typed.
         if characters == " " && !typeAhead.isActive(atTime: time) {
+            schedulePendingCommit()
             return false
         }
 
-        let row = typeAhead.bestMatch(appending: characters, candidates: searchableRowTitles(), atTime: time)
-
-        pendingSelectionTimer?.invalidate()
-        pendingSelectionTimer = nil
+        let titles = searchableRowTitles()
+        let row = typeAhead.bestMatch(appending: characters, candidates: titles, atTime: time)
 
         if row != NSNotFound {
-            pendingSelectionRow = row
+            pendingSelection = (row: row, title: titles[row])
             scrollRowToVisible(row)
-
-            // Selecting a row synchronously starts loading its table, and while
-            // that load runs no row is selectable — an immediate selection would
-            // block the characters still to come from refining the match.
-            // Deferring the commit until the sequence settles also loads only the
-            // final match instead of every intermediate one.
-            pendingSelectionTimer = Timer.scheduledTimer(withTimeInterval: Self.typeAheadResetInterval, repeats: false) { [weak self] _ in
-                self?.commitPendingSelection()
-            }
         }
         else {
             // The refined search string matches nothing; the row an earlier
             // prefix matched is no longer what was asked for and must not be
             // committed once typing stops.
-            pendingSelectionRow = NSNotFound
+            pendingSelection = nil
         }
+
+        schedulePendingCommit()
 
         lastSearchMatched = row != NSNotFound
         showSearchFeedback(typeAhead.currentSearchString, matched: lastSearchMatched)
@@ -216,15 +243,31 @@ import AppKit
     }
 
     private func commitPendingSelection() {
-        let row = pendingSelectionRow
-        pendingSelectionRow = NSNotFound
+        guard let pending = pendingSelection else {
+            return
+        }
+        pendingSelection = nil
+
+        // The list can be reloaded or reordered while the search settles, so
+        // the matched name — not the row index it happened to have — is what
+        // gets selected.
+        let titles = searchableRowTitles()
+        let row: Int
+        if pending.row < titles.count, titles[pending.row] == pending.title {
+            row = pending.row
+        }
+        else if let movedRow = titles.firstIndex(of: pending.title) {
+            row = movedRow
+        }
+        else {
+            return
+        }
 
         // Pass the same delegate gates a user-initiated selection would:
         // selectionShouldChange(in:) rejects the change while the document is
         // running a task or has uncommitted edits, shouldSelectRow: rejects
         // individual rows.
-        guard row != NSNotFound, row < numberOfRows,
-              delegate?.selectionShouldChange?(in: self) ?? true,
+        guard delegate?.selectionShouldChange?(in: self) ?? true,
               delegate?.tableView?(self, shouldSelectRow: row) ?? true
         else {
             return
@@ -240,14 +283,14 @@ import AppKit
     /// method composition — extends the search.
     func insertText(_ string: Any, replacementRange: NSRange) {
         markedText = ""
+        noteInputCallback()
 
         guard !isDiscardingComposition else {
             return
         }
 
         let text = (string as? NSAttributedString)?.string ?? (string as? String) ?? ""
-        let time = routedInputEvent?.timestamp ?? ProcessInfo.processInfo.systemUptime
-        let consumed = performTypeAhead(text, atTime: time)
+        let consumed = performTypeAhead(text, atTime: inputEventTime)
 
         if routedInputEvent != nil {
             routedInputWasConsumed = consumed
@@ -266,6 +309,7 @@ import AppKit
         // text. Nothing is consumed here, so keyDown forwards the original
         // event and the table keeps its normal handling for Return, arrows,
         // Tab, … — unless another callback already consumed the event.
+        noteInputCallback()
     }
 
     /// Text still being composed is shown in the badge but not searched — the
@@ -273,16 +317,23 @@ import AppKit
     func setMarkedText(_ string: Any, selectedRange: NSRange, replacementRange: NSRange) {
         let wasComposing = hasMarkedText()
         markedText = (string as? NSAttributedString)?.string ?? (string as? String) ?? ""
+        noteInputCallback()
 
         if !markedText.isEmpty {
             // Composition in progress: appended to the badge but never marked
-            // as unmatched, since it has not been searched for yet.
+            // as unmatched, since it has not been searched for yet. It can
+            // easily outlast the settle interval, so the row an earlier
+            // character matched waits rather than loading its table midway.
+            suspendPendingCommit()
             showSearchFeedback(typeAhead.currentSearchString + markedText, matched: true)
         }
         else if wasComposing {
-            // Composition ended without a commit; fall back to what has
-            // actually been searched. A commit instead comes through
-            // insertText, which has already refreshed the badge by now.
+            // Composition ended without a commit; resume the earlier match and
+            // fall back to what has actually been searched. A commit instead
+            // comes through insertText/unmarkText, which have already
+            // rescheduled the commit and refreshed the badge by now.
+            schedulePendingCommit()
+
             if typeAhead.currentSearchString.isEmpty {
                 hideSearchFeedback()
             }
@@ -297,13 +348,33 @@ import AppKit
         }
     }
 
+    /// Unmarking accepts the composed text — unlike discardMarkedText, which
+    /// throws it away — so it is searched for here rather than dropped.
     func unmarkText() {
-        let wasComposing = hasMarkedText()
+        let composedText = markedText
         markedText = ""
+        noteInputCallback()
 
-        if routedInputEvent != nil, wasComposing {
+        guard !isDiscardingComposition, !composedText.isEmpty else {
+            return
+        }
+
+        performTypeAhead(composedText, atTime: inputEventTime)
+
+        if routedInputEvent != nil {
             routedInputWasConsumed = true
         }
+    }
+
+    /// Timestamp to attribute committed text to: the key event being routed,
+    /// or now if the input method committed on its own (a click in its
+    /// candidate window). NSEvent.timestamp uses the same clock.
+    private var inputEventTime: TimeInterval {
+        routedInputEvent?.timestamp ?? ProcessInfo.processInfo.systemUptime
+    }
+
+    private func noteInputCallback() {
+        routedInputCallbackReceived = true
     }
 
     func selectedRange() -> NSRange {
