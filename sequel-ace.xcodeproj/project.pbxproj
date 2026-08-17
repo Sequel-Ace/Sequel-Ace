@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		410065F67228AD394D48A156 /* SADragPasteboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB3422CB850D1768BBDEFC9 /* SADragPasteboard.swift */; };
+		FA9D8FF0B7ABD591E1A9170E /* SADragPasteboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB3422CB850D1768BBDEFC9 /* SADragPasteboard.swift */; };
+		E51CC2AA59AF37FEF73B06A0 /* SADragPasteboardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7409B60D0436BCD43BD208D4 /* SADragPasteboardTests.swift */; };
 		0B0F0950807A8DF7B38C26AC /* SPMCPFavorite.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E51CBFF347BD58D412A988F /* SPMCPFavorite.swift */; };
 		0FA952B1549148DF8C1B7E61 /* SAStaleBookmarkAlertContentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5438EBE13DEF4D968F600054 /* SAStaleBookmarkAlertContentTests.swift */; };
 		10E61D41B1CA258A66686820 /* SAAsyncResultBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEFB3FFA0EBB99359D3ECA23 /* SAAsyncResultBox.swift */; };
@@ -759,6 +762,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		5AB3422CB850D1768BBDEFC9 /* SADragPasteboard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADragPasteboard.swift; sourceTree = "<group>"; };
+		7409B60D0436BCD43BD208D4 /* SADragPasteboardTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SADragPasteboardTests.swift; sourceTree = "<group>"; };
 		1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		112730551180788A000737FD /* SPTableCopyTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SPTableCopyTest.m; sourceTree = "<group>"; };
 		1141A387117BBFF200126A28 /* SPTableCopy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SPTableCopy.h; sourceTree = "<group>"; };
@@ -2589,6 +2594,7 @@
 				6549DFDEB75EC2BCCFA93A85 /* SAHelpViewerModelTests.swift */,
 				138583510330B4131DA1C8A9 /* SAAsyncResultBoxTests.swift */,
 				ED6AC28123000BCB7363F94A /* SAKeyboardShortcutTests.swift */,
+				7409B60D0436BCD43BD208D4 /* SADragPasteboardTests.swift */,
 			);
 			name = "Unit Tests";
 			path = UnitTests;
@@ -2614,6 +2620,7 @@
 				51BE68DB3017550E00AF389C /* SAImageRenderer.swift */,
 				AEFB3FFA0EBB99359D3ECA23 /* SAAsyncResultBox.swift */,
 				644FFD84B58CEAE73585045B /* SAKeyboardShortcut.swift */,
+				5AB3422CB850D1768BBDEFC9 /* SADragPasteboard.swift */,
 			);
 			path = Utility;
 			sourceTree = "<group>";
@@ -3456,6 +3463,8 @@
 				8BE925D095CAA6341924C92F /* SAAsyncResultBoxTests.swift in Sources */,
 				2A0129AA121A225FB6CCA2AA /* SAKeyboardShortcut.swift in Sources */,
 				190CAC547AADBBBB8BB28750 /* SAKeyboardShortcutTests.swift in Sources */,
+				FA9D8FF0B7ABD591E1A9170E /* SADragPasteboard.swift in Sources */,
+				E51CC2AA59AF37FEF73B06A0 /* SADragPasteboardTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3765,6 +3774,7 @@
 				B0595D7939BDBEBD29E0E617 /* SAHelpViewerWindowController.swift in Sources */,
 				9FAB1CF8AFD6A6D9D3F89171 /* SAAsyncResultBox.swift in Sources */,
 				16C621C7049FAECBAC96972E /* SAKeyboardShortcut.swift in Sources */,
+				410065F67228AD394D48A156 /* SADragPasteboard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

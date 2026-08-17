@@ -37,7 +37,6 @@
 #import "sequel-ace-Swift.h"
 
 static NSString *SPSSLCipherListMarkerItem = @"--";
-static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 
 @interface SPMySQLConnection (CipherPreferenceMerging)
 + (NSArray<NSString *> *)defaultSSLCipherList;
@@ -127,8 +126,8 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
     [self updateSSHConfigPopUp:knownHostsChooser];
 
 	[self loadSSLCiphers];
-	if(![[sslCipherView registeredDraggedTypes] containsObject:SPSSLCipherPboardTypeName])
-		[sslCipherView registerForDraggedTypes:@[SPSSLCipherPboardTypeName]];
+	if(![[sslCipherView registeredDraggedTypes] containsObject:SADragPasteboard.sslCipherType])
+		[sslCipherView registerForDraggedTypes:@[SADragPasteboard.sslCipherType]];
 }
 
 
@@ -726,15 +725,10 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 {
 	if(row < 0) return NO; //why is that even a signed int when all "indexes" are unsigned!?
 	
-	NSPasteboard *pboard = [info draggingPasteboard];
-
 	// One pasteboard item per dragged row, in row order (see
 	// -tableView:pasteboardWriterForRow: above).
-	NSMutableArray<NSString *> *draggedItems = [NSMutableArray array];
-	for (NSPasteboardItem *item in [pboard pasteboardItems]) {
-		NSString *cipher = [item stringForType:SPSSLCipherPboardTypeName];
-		if (cipher) [draggedItems addObject:cipher];
-	}
+	NSArray<NSString *> *draggedItems = [SADragPasteboard stringsFromPasteboard:[info draggingPasteboard]
+	                                                                   forType:SADragPasteboard.sslCipherType];
 
 	NSUInteger nextInsert = row;
 	for (NSString *item in draggedItems) {
@@ -768,21 +762,15 @@ static NSString *SPSSLCipherPboardTypeName = @"SSLCipherPboardType";
 
 - (id <NSPasteboardWriting>)tableView:(NSTableView *)aTableView pasteboardWriterForRow:(NSInteger)row
 {
-	NSUInteger markerIndex = [sslCiphers indexOfObject:SPSSLCipherListMarkerItem];
-
-	//the marker cannot be actively reordered
-	if ((NSUInteger)row == markerIndex) return nil;
-
-	//...and neither can a selection containing it: the previous implementation
-	//refused the whole drag in that case, so refuse every row of such a drag
-	if ([aTableView isRowSelected:row] && [[aTableView selectedRowIndexes] containsIndex:markerIndex]) return nil;
+	//the marker cannot be actively reordered, and neither can a selection
+	//containing it (the previous implementation refused the whole drag)
+	if ([SADragPasteboard refusesDragForRow:row
+	                           selectedRows:[aTableView selectedRowIndexes]
+	                            excludedRow:[sslCiphers indexOfObject:SPSSLCipherListMarkerItem]]) return nil;
 
 	//put the name of the item on the pasteboard. easier to work with than indexes...
 	//one item per row now, rather than one archived array for the whole drag
-	NSPasteboardItem *item = [[NSPasteboardItem alloc] init];
-	[item setString:[sslCiphers objectAtIndex:row] forType:SPSSLCipherPboardTypeName];
-
-	return item;
+	return [SADragPasteboard itemWithString:[sslCiphers objectAtIndex:row] forType:SADragPasteboard.sslCipherType];
 }
 
 @end

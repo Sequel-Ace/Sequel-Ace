@@ -247,10 +247,24 @@ Split by who consumes the dragged payload, because that decides the risk.
   `-toggleCollapse:` / `-setCollapsibleSubviewCollapsed:animate:`.
 - `tableView:pasteboardWriterForRow:` — SPTableStructure (field reorder) and
   SPNetworkPreferencePane (SSL cipher reorder). Both write and read their own
-  pasteboard, so both ends moved together. SPTableStructure keeps the exact
-  payload (row index string under `SPDefaultPasteboardDragType`);
-  SPNetworkPreferencePane moved from one archived array to one item per row,
-  and its `-acceptDrop:` now reads the items.
+  pasteboard, so both ends moved together, via the new Swift `SADragPasteboard`
+  (items, item-order reads, and the refusal rules the per-row API can no longer
+  express on its own — 15 unit tests).
+
+⚠️ **The modern API requires UTI-conformant pasteboard type names, and this is
+silent.** `NSPasteboardItem.setString:forType:` and `NSPasteboardWriting`'s
+`writableTypesForPasteboard:` both reject anything that is not a valid UTI:
+AppKit logs *"'SequelProPasteboard' is not a valid UTI string. Cannot set data
+for an invalid UTI."*, the item carries nothing, and `writeObjects:` still
+returns YES. The deprecated `-declareTypes:`/`-setString:forType:` path accepted
+the app's legacy names, so a like-for-like migration compiles, runs, and drags
+nothing. Caught here only because the extraction came with unit tests.
+
+The two migrated sites therefore use new types owned by `SADragPasteboard`
+(`com.sequel-ace.pasteboard.table-row`, `…ssl-cipher`), with both ends updated
+together. `SPDefaultPasteboardDragType` ("SequelProPasteboard") now has no live
+readers — its remaining references are inside SPCustomQuery's commented-out
+drop handlers.
 
 **Remaining (3) — the payload leaves the view, so it must keep its current
 shape on the pasteboard:**
@@ -265,7 +279,10 @@ shape on the pasteboard:**
   lightweight item per row.
 - `outlineView:writeItems:toPasteboard:` — SPNavigatorController:1080, same
   shape (three types incl. a string dropped into the query editor);
-  `outlineView:draggingSession:willBeginAtPoint:forItems:`.
+  `outlineView:draggingSession:willBeginAtPoint:forItems:`. Note its types
+  (`SPNavigatorPasteboardDragType`, `SPNavigatorTableDataPasteboardDragType`)
+  are legacy names too, so they hit the UTI rule above and must be renamed with
+  their readers — SPTextView reads them.
 
 Verify by hand: drag rows from the query result and content views into TextEdit
 (with and without ⌘/⇧/⌥), a cell onto a rule-filter field, and a navigator item
