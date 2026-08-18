@@ -289,12 +289,9 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         if ([tableDocumentInstance isUntitled]) {
             [saveQueryFavoriteGlobal setState:NSControlStateValueOn];
         }
+        [self populateFavoriteReplacePopup];
         [[tableDocumentInstance parentWindowControllerWindow] beginSheet:queryFavoritesSheet completionHandler:^(NSModalResponse returnCode) {
             if (returnCode == NSModalResponseOK) {
-                
-                // Add the new query favorite directly the user's preferences here instead of asking the manager to do it
-                // as it may not have been fully initialized yet.
-                NSMutableArray *favorites = [NSMutableArray arrayWithArray:[self->prefs objectForKey:SPQueryFavorites]];
                 
                 // What should be saved
                 NSString *queryToBeAddded;
@@ -305,17 +302,43 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
                 } else { // otherwise take the entire string
                     queryToBeAddded = [self->textView string];
                 }
-                
-                if ([self->saveQueryFavoriteGlobal state] == NSControlStateValueOn) {
-                    [favorites addObject:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], queryToBeAddded, nil] forKeys:@[@"name", @"query"]]];
-                    
-                    [self->prefs setObject:favorites forKey:SPQueryFavorites];
+
+                NSInteger replaceIdx = [self->queryFavoriteReplacePopup indexOfSelectedItem];
+                if (replaceIdx > 0) {
+                    // Replace existing favorite – keep its original name, update the query only
+                    NSDictionary *meta = [[self->queryFavoriteReplacePopup selectedItem] representedObject];
+                    NSUInteger favIndex = [[meta objectForKey:@"index"] unsignedIntegerValue];
+                    BOOL isGlobal = [[meta objectForKey:@"isGlobal"] boolValue];
+                    if (isGlobal) {
+                        NSMutableArray *favorites = [NSMutableArray arrayWithArray:[self->prefs objectForKey:SPQueryFavorites]];
+                        NSMutableDictionary *updated = [NSMutableDictionary dictionaryWithDictionary:favorites[favIndex]];
+                        [updated setObject:[queryToBeAddded mutableCopy] forKey:@"query"];
+                        [favorites replaceObjectAtIndex:favIndex withObject:updated];
+                        [self->prefs setObject:favorites forKey:SPQueryFavorites];
+                    } else {
+                        NSURL *fileURL = [self->tableDocumentInstance fileURL];
+                        NSMutableArray *docFavorites = [NSMutableArray arrayWithArray:[[SPQueryController sharedQueryController] favoritesForFileURL:fileURL]];
+                        NSMutableDictionary *updated = [NSMutableDictionary dictionaryWithDictionary:docFavorites[favIndex]];
+                        [updated setObject:[queryToBeAddded mutableCopy] forKey:@"query"];
+                        [docFavorites replaceObjectAtIndex:favIndex withObject:updated];
+                        [[SPQueryController sharedQueryController] replaceFavoritesByArray:docFavorites forFileURL:fileURL];
+                    }
                 } else {
-                    [[SPQueryController sharedQueryController] addFavorite:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], [queryToBeAddded mutableCopy], nil] forKeys:@[@"name", @"query"]] forFileURL:[self->tableDocumentInstance fileURL]];
+                    // Save as new favorite
+                    NSMutableArray *favorites = [NSMutableArray arrayWithArray:[self->prefs objectForKey:SPQueryFavorites]];
+                    if ([self->saveQueryFavoriteGlobal state] == NSControlStateValueOn) {
+                        [favorites addObject:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], queryToBeAddded, nil] forKeys:@[@"name", @"query"]]];
+                        [self->prefs setObject:favorites forKey:SPQueryFavorites];
+                    } else {
+                        [[SPQueryController sharedQueryController] addFavorite:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], [queryToBeAddded mutableCopy], nil] forKeys:@[@"name", @"query"]] forFileURL:[self->tableDocumentInstance fileURL]];
+                    }
                 }
                 [self->saveQueryFavoriteGlobal setState:NSControlStateValueOff];
+                [self->queryFavoriteReplacePopup selectItemAtIndex:0];
                 [self queryFavoritesHaveBeenUpdated:nil];
                 [self->queryFavoriteNameTextField setStringValue:@""];
+            } else {
+                [self->queryFavoriteReplacePopup selectItemAtIndex:0];
             }
         }];
         
@@ -331,26 +354,49 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
         if ([tableDocumentInstance isUntitled]) {
             [saveQueryFavoriteGlobal setState:NSControlStateValueOn];
         }
+        [self populateFavoriteReplacePopup];
         [[tableDocumentInstance parentWindowControllerWindow] beginSheet:queryFavoritesSheet completionHandler:^(NSModalResponse returnCode) {
             if (returnCode == NSModalResponseOK) {
                 
-                // Add the new query favorite directly the user's preferences here instead of asking the manager to do it
-                // as it may not have been fully initialized yet.
-                NSMutableArray *favorites = [NSMutableArray arrayWithArray:[self->prefs objectForKey:SPQueryFavorites]];
-                
                 // What should be saved
                 NSString *queryToBeAddded = [self->textView string];
-                
-                if ([self->saveQueryFavoriteGlobal state] == NSControlStateValueOn) {
-                    [favorites addObject:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], queryToBeAddded, nil] forKeys:@[@"name", @"query"]]];
-                    
-                    [self->prefs setObject:favorites forKey:SPQueryFavorites];
+
+                NSInteger replaceIdx = [self->queryFavoriteReplacePopup indexOfSelectedItem];
+                if (replaceIdx > 0) {
+                    // Replace existing favorite – keep its original name, update the query only
+                    NSDictionary *meta = [[self->queryFavoriteReplacePopup selectedItem] representedObject];
+                    NSUInteger favIndex = [[meta objectForKey:@"index"] unsignedIntegerValue];
+                    BOOL isGlobal = [[meta objectForKey:@"isGlobal"] boolValue];
+                    if (isGlobal) {
+                        NSMutableArray *favorites = [NSMutableArray arrayWithArray:[self->prefs objectForKey:SPQueryFavorites]];
+                        NSMutableDictionary *updated = [NSMutableDictionary dictionaryWithDictionary:favorites[favIndex]];
+                        [updated setObject:[queryToBeAddded mutableCopy] forKey:@"query"];
+                        [favorites replaceObjectAtIndex:favIndex withObject:updated];
+                        [self->prefs setObject:favorites forKey:SPQueryFavorites];
+                    } else {
+                        NSURL *fileURL = [self->tableDocumentInstance fileURL];
+                        NSMutableArray *docFavorites = [NSMutableArray arrayWithArray:[[SPQueryController sharedQueryController] favoritesForFileURL:fileURL]];
+                        NSMutableDictionary *updated = [NSMutableDictionary dictionaryWithDictionary:docFavorites[favIndex]];
+                        [updated setObject:[queryToBeAddded mutableCopy] forKey:@"query"];
+                        [docFavorites replaceObjectAtIndex:favIndex withObject:updated];
+                        [[SPQueryController sharedQueryController] replaceFavoritesByArray:docFavorites forFileURL:fileURL];
+                    }
                 } else {
-                    [[SPQueryController sharedQueryController] addFavorite:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], [queryToBeAddded mutableCopy], nil] forKeys:@[@"name", @"query"]] forFileURL:[self->tableDocumentInstance fileURL]];
+                    // Save as new favorite
+                    NSMutableArray *favorites = [NSMutableArray arrayWithArray:[self->prefs objectForKey:SPQueryFavorites]];
+                    if ([self->saveQueryFavoriteGlobal state] == NSControlStateValueOn) {
+                        [favorites addObject:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], queryToBeAddded, nil] forKeys:@[@"name", @"query"]]];
+                        [self->prefs setObject:favorites forKey:SPQueryFavorites];
+                    } else {
+                        [[SPQueryController sharedQueryController] addFavorite:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], [queryToBeAddded mutableCopy], nil] forKeys:@[@"name", @"query"]] forFileURL:[self->tableDocumentInstance fileURL]];
+                    }
                 }
                 [self->saveQueryFavoriteGlobal setState:NSControlStateValueOff];
+                [self->queryFavoriteReplacePopup selectItemAtIndex:0];
                 [self queryFavoritesHaveBeenUpdated:nil];
                 [self->queryFavoriteNameTextField setStringValue:@""];
+            } else {
+                [self->queryFavoriteReplacePopup selectItemAtIndex:0];
             }
         }];
     } else if ([queryFavoritesButton indexOfSelectedItem] == 3) {
@@ -3113,13 +3159,53 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 - (void)controlTextDidChange:(NSNotification *)notification
 {
     if ([notification object] == queryFavoriteNameTextField)
-        [saveQueryFavoriteButton setEnabled:[[queryFavoriteNameTextField stringValue] length]];
+        [saveQueryFavoriteButton setEnabled:[[queryFavoriteNameTextField stringValue] length] || [queryFavoriteReplacePopup indexOfSelectedItem] > 0];
     else if ([notification object] == queryFavoritesSearchField){
         [self filterQueryFavorites:nil];
     }
     else if ([notification object] == queryHistorySearchField) {
         // if the query is empty, send nil to repopulate the menu
         [self filterQueryHistory:(queryHistorySearchField.stringValue.length > 0) ? @"" : nil];
+    }
+}
+
+/**
+ * Called when the user changes the "replace existing favorite" popup selection.
+ * Enables or disables the Save button accordingly.
+ */
+- (IBAction)favoriteReplacePopupChanged:(id)sender
+{
+    [saveQueryFavoriteButton setEnabled:[[queryFavoriteNameTextField stringValue] length] || [queryFavoriteReplacePopup indexOfSelectedItem] > 0];
+}
+
+/**
+ * Populates the replace-favorite popup with all currently available favorites
+ * (document-level and global), preceded by a "\u2014 None \u2014" placeholder item.
+ */
+- (void)populateFavoriteReplacePopup
+{
+    [queryFavoriteReplacePopup removeAllItems];
+    [queryFavoriteReplacePopup addItemWithTitle:NSLocalizedString(@"\u2014 None \u2014", @"Query Favorites : Save Sheet : Replace popup : no selection placeholder")];
+
+    // Document-level favorites
+    NSURL *fileURL = [tableDocumentInstance fileURL];
+    NSArray *docFavorites = [[SPQueryController sharedQueryController] favoritesForFileURL:fileURL];
+    for (NSUInteger i = 0; i < docFavorites.count; i++) {
+        NSDictionary *fav = docFavorites[i];
+        if (![fav isKindOfClass:[NSDictionary class]] || !fav[@"name"]) continue;
+        NSString *title = [NSString stringWithFormat:@"[Doc] %@", fav[@"name"]];
+        [queryFavoriteReplacePopup addItemWithTitle:title];
+        [[queryFavoriteReplacePopup lastItem] setRepresentedObject:@{@"isGlobal": @NO, @"index": @(i)}];
+    }
+
+    // Global favorites
+    NSArray *globalFavorites = [prefs objectForKey:SPQueryFavorites];
+    for (NSUInteger i = 0; i < globalFavorites.count; i++) {
+        NSDictionary *fav = globalFavorites[i];
+        if (![fav isKindOfClass:[NSDictionary class]] || !fav[@"name"]) continue;
+        NSString *title = [NSString stringWithFormat:@"[Global] %@", fav[@"name"]];
+        [queryFavoriteReplacePopup addItemWithTitle:title];
+        [[queryFavoriteReplacePopup lastItem] setRepresentedObject:@{@"isGlobal": @YES, @"index": @(i)}];
     }
 }
 
