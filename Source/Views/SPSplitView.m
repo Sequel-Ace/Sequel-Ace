@@ -468,33 +468,12 @@
 	return NO;
 }
 
-/**
- * Handle requests as to whether a subview should be collapsed as a result of
- * a double-click on a divider.  If a subview is collapsible, by default this
- * will return NO, but an animated collapse/expand will be triggered instead to
- * perform the same action with animation.
- * The delegate can override this if necessary.
- */
-- (BOOL)splitView:(NSSplitView *)splitView shouldCollapseSubview:(NSView *)subview forDoubleClickOnDividerAtIndex:(NSInteger)dividerIndex
-{
-	if ([delegate respondsToSelector:@selector(splitView:shouldCollapseSubview:forDoubleClickOnDividerAtIndex:)]) {
-		return [delegate splitView:splitView shouldCollapseSubview:subview forDoubleClickOnDividerAtIndex:dividerIndex];
-	}
-
-	// If there's no collapsible subview, don't allow collapse
-	if (collapsibleSubviewIndex == NSNotFound) {
-		return NO;
-	}
-
-	// Ensure the divider is adjacent to the collapsible view
-	if ((NSUInteger)dividerIndex != collapsibleSubviewIndex && (NSUInteger)dividerIndex != (collapsibleSubviewIndex - 1)) {
-		return NO;
-	}
-
-	// Trigger an animated collapse and prevent the original collapse
-	[self setCollapsibleSubviewCollapsed:YES animate:YES];
-	return NO;
-}
+// -splitView:shouldCollapseSubview:forDoubleClickOnDividerAtIndex: used to live
+// here, animating the collapse instead of letting AppKit do it. It was removed
+// because AppKit stopped calling it: "NSSplitView no longer supports collapsing
+// sections via double-click. This delegate method is never called." (deprecated
+// in 10.15, and this app targets macOS 12). Collapsing is still available
+// through -toggleCollapse: and -setCollapsibleSubviewCollapsed:animate:.
 
 /**
  * While the collapsible subview is collapsed, hide the adjacent divider.
