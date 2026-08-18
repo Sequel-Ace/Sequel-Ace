@@ -30,6 +30,7 @@
 
 #import "SPNavigatorController.h"
 #import "SPSplitView.h"
+#import "sequel-ace-Swift.h"
 #import "RegexKitLite.h"
 #import "SPNavigatorOutlineView.h"
 #import "ImageAndTextCell.h"
@@ -48,6 +49,8 @@
 static SPNavigatorController *sharedNavigatorController = nil;
 
 @interface SPNavigatorController () <NSOutlineViewDataSource, NSOutlineViewDelegate>
+
+- (NSString *)schemaPathForItem:(id)item inOutlineView:(NSOutlineView *)outlineView;
 
 @end
 
@@ -134,7 +137,7 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 	[schemaStatusSplitView setMinSize:16.f ofSubviewAtIndex:1];
 
 	[self setWindowFrameAutosaveName:@"SPNavigator"];
-	[outlineSchema2 registerForDraggedTypes:@[SPNavigatorTableDataPasteboardDragType, SPNavigatorPasteboardDragType, NSPasteboardTypeString]];
+	[outlineSchema2 registerForDraggedTypes:@[SADragPasteboard.navigatorTableDataType, SADragPasteboard.navigatorSchemaPathsType, NSPasteboardTypeString]];
 	[outlineSchema2 setDraggingSourceOperationMask:NSDragOperationEvery forLocal:YES];
 	[outlineSchema2 setDraggingSourceOperationMask:NSDragOperationEvery forLocal:NO];
 
@@ -1077,35 +1080,49 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 	}
 }
 
-- (BOOL)outlineView:(NSOutlineView *)outlineView writeItems:(NSArray *)items toPasteboard:(NSPasteboard *)pboard
+/**
+ * Give each dragged navigator item its own pasteboard item. The payloads that
+ * leave the outline view — the archived schema paths, the CREATE TABLE
+ * statement, and the plain-text list — describe the whole drag, so they are
+ * attached in -outlineView:draggingSession:willBeginAtPoint:forItems: below.
+ */
+- (id <NSPasteboardWriting>)outlineView:(NSOutlineView *)outlineView pasteboardWriterForItem:(id)item
 {
-	// Provide data for our custom type, and simple NSStrings.
-	[pboard declareTypes:@[SPNavigatorTableDataPasteboardDragType, SPNavigatorPasteboardDragType, NSPasteboardTypeString] owner:self];
+	// Only items that resolve to a schema path can be dragged; refusing here is
+	// what the whole-drag writer expressed by returning NO.
+	if (![self schemaPathForItem:item inOutlineView:outlineView]) return nil;
+
+	return [SADragPasteboard dragRowItemForRow:[outlineView rowForItem:item]];
+}
+
+- (void)outlineView:(NSOutlineView *)outlineView draggingSession:(NSDraggingSession *)session willBeginAtPoint:(NSPoint)screenPoint forItems:(NSArray *)items
+{
+	NSPasteboard *pboard = [session draggingPasteboard];
 
 	// Collect the actual schema paths without leading connection ID
 	NSMutableArray *draggedItems = [NSMutableArray array];
 	for(id item in items) {
-		id parentObject = [outlineView parentForItem:item] ? [outlineView parentForItem:item] : schemaData;
-		if(!parentObject) return NO;
-		id parentKeys = [parentObject allKeysForObject:item];
-		if(parentKeys && [parentKeys count] == 1)
-			[draggedItems addObject:[[[parentKeys objectAtIndex:0] description] stringByReplacingOccurrencesOfRegex:[NSString stringWithFormat:@"^.*?%@", SPUniqueSchemaDelimiter] withString:@""]];
+		NSString *path = [self schemaPathForItem:item inOutlineView:outlineView];
+		if(path) [draggedItems addObject:path];
 	}
+
+	if(![draggedItems count]) return;
 
 	// Drag the array with schema paths
 	NSData *arraydata = [NSKeyedArchiver archivedDataWithRootObject:draggedItems requiringSecureCoding:YES error:nil];
-	[pboard setData:arraydata forType:SPNavigatorPasteboardDragType];
+	if(arraydata) [SADragPasteboard attachData:arraydata forType:SADragPasteboard.navigatorSchemaPathsType toPasteboard:pboard];
 
 	if([draggedItems count] == 1) {
 		NSArray *pathComponents = [[draggedItems objectAtIndex:0] componentsSeparatedByString:SPUniqueSchemaDelimiter];
 		// Is a table?
 		if([pathComponents count] == 2) {
-			[pboard setString:[NSString stringWithFormat:@"CREATE TABLE IF NOT EXISTS %@ SELECT * FROM %@", 
+			[SADragPasteboard attachString:[NSString stringWithFormat:@"CREATE TABLE IF NOT EXISTS %@ SELECT * FROM %@",
 					[[pathComponents lastObject] backtickQuotedString],
 					[pathComponents componentsJoinedByPeriodAndBacktickQuoted]
-				] forType:SPNavigatorTableDataPasteboardDragType];
+				] forType:SADragPasteboard.navigatorTableDataType toPasteboard:pboard];
 		}
 	}
+
 	// For external destinations provide a comma separated string
 	NSMutableString *dragString = [NSMutableString string];
 	for(id item in draggedItems) {
@@ -1113,10 +1130,22 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 		[dragString appendString:[[item componentsSeparatedByString:SPUniqueSchemaDelimiter] componentsJoinedByPeriodAndBacktickQuotedAndIgnoreFirst]];
 	}
 
-	if(![dragString length]) return NO;
+	if([dragString length]) [SADragPasteboard attachString:dragString forType:NSPasteboardTypeString toPasteboard:pboard];
+}
 
-	[pboard setString:dragString forType:NSPasteboardTypeString];
-	return YES;
+/**
+ * The item's schema path with the leading connection ID stripped, or nil when
+ * the item has no resolvable parent key.
+ */
+- (NSString *)schemaPathForItem:(id)item inOutlineView:(NSOutlineView *)outlineView
+{
+	id parentObject = [outlineView parentForItem:item] ? [outlineView parentForItem:item] : schemaData;
+	if(!parentObject) return nil;
+
+	id parentKeys = [parentObject allKeysForObject:item];
+	if(!(parentKeys && [parentKeys count] == 1)) return nil;
+
+	return [[[parentKeys objectAtIndex:0] description] stringByReplacingOccurrencesOfRegex:[NSString stringWithFormat:@"^.*?%@", SPUniqueSchemaDelimiter] withString:@""];
 }
 
 #pragma mark -

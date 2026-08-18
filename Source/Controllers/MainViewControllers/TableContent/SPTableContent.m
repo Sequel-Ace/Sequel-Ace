@@ -4661,88 +4661,83 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 }
 
 /**
+ * Give each dragged content row its own pasteboard item. The payloads that
+ * leave the app — the selection's text, and the clicked cell for the rule
+ * filter — are attached to the drag as a whole in
+ * -tableView:draggingSession:willBeginAtPoint:forRowIndexes: below.
+ */
+- (id <NSPasteboardWriting>)tableView:(NSTableView *)tableView pasteboardWriterForRow:(NSInteger)row
+{
+	if (tableView != tableContentView) return nil;
+
+	// Refuse the drag outright when there is nothing selected to write, the way
+	// the previous whole-drag writer refused an empty payload.
+	if (![[tableContentView selectedRowIndexes] count]) return nil;
+
+	return [SADragPasteboard dragRowItemForRow:row];
+}
+
+/**
  * Enable drag from tableview
  */
-- (BOOL)tableView:(NSTableView *)tableView writeRowsWithIndexes:(NSIndexSet *)rows toPasteboard:(NSPasteboard*)pboard
+- (void)tableView:(NSTableView *)tableView draggingSession:(NSDraggingSession *)session willBeginAtPoint:(NSPoint)screenPoint forRowIndexes:(NSIndexSet *)rowIndexes
 {
-	if (tableView == tableContentView) {
-		NSString *tmp;
+	if (tableView != tableContentView) return;
 
-		// By holding ⌘, ⇧, or/and ⌥ copies selected rows as SQL INSERTS
-		// otherwise \t delimited lines
-		if ([[NSApp currentEvent] modifierFlags] & (NSEventModifierFlagCommand|NSEventModifierFlagShift|NSEventModifierFlagOption)) {
-			tmp = [tableContentView rowsAsSqlInsertsOnlySelectedRows:YES];
-		}
-		else {
-			tmp = [tableContentView draggedRowsAsTabString];
-		}
+	NSString *tmp;
 
-		if (tmp && [tmp length])
-		{
-			// Also offer a single-cell pasteboard type so a drop onto the
-			// rule-filter input populates that one field with just the
-			// clicked cell's value, rather than the whole row's tab string.
-			// The clicked cell is the one captured by -[SPCopyTable mouseDown:]
-			// – -clickedRow / -clickedColumn are only valid during NSControl
-			// action dispatch, and NSApp.currentEvent here is the mouseDragged
-			// event that crossed the drag threshold rather than the original
-			// mouseDown, so it can resolve to a different cell if the pointer
-			// moved before the drag started.
-			NSString *cellValue = nil;
-			NSString *cellColumnName = nil;
-			BOOL cellIsNull = NO;
-			NSInteger clickedRow = [tableContentView mouseDownRow];
-			NSInteger clickedCol = [tableContentView mouseDownColumn];
-			if (clickedRow >= 0 && clickedCol >= 0) {
-				cellValue = [tableContentView displayStringForRow:clickedRow column:clickedCol];
-				cellIsNull = [tableContentView isNullAtRow:clickedRow column:clickedCol];
+	// By holding ⌘, ⇧, or/and ⌥ copies selected rows as SQL INSERTS
+	// otherwise \t delimited lines
+	if ([[NSApp currentEvent] modifierFlags] & (NSEventModifierFlagCommand|NSEventModifierFlagShift|NSEventModifierFlagOption)) {
+		tmp = [tableContentView rowsAsSqlInsertsOnlySelectedRows:YES];
+	}
+	else {
+		tmp = [tableContentView draggedRowsAsTabString];
+	}
 
-				// Map the visible column back to a column definition (by its
-				// storage index, same mapping SPCopyTable uses) so the drop
-				// target gets the original schema column name the rule
-				// editor looks up against.
-				NSArray *viewColumns = [tableContentView tableColumns];
-				if ((NSUInteger)clickedCol < [viewColumns count]) {
-					NSInteger storageIndex = [[[viewColumns objectAtIndex:(NSUInteger)clickedCol] identifier] integerValue];
-					if (storageIndex >= 0 && (NSUInteger)storageIndex < [dataColumns count]) {
-						cellColumnName = [[dataColumns objectAtIndex:(NSUInteger)storageIndex] objectForKey:@"name"];
-					}
-				}
+	if (!(tmp && [tmp length])) return;
+
+	NSPasteboard *pboard = [session draggingPasteboard];
+	[SADragPasteboard attachDragString:tmp toPasteboard:pboard];
+
+	// Also offer a single-cell pasteboard type so a drop onto the
+	// rule-filter input populates that one field with just the
+	// clicked cell's value, rather than the whole row's tab string.
+	// The clicked cell is the one captured by -[SPCopyTable mouseDown:]
+	// – -clickedRow / -clickedColumn are only valid during NSControl
+	// action dispatch, and NSApp.currentEvent here is the mouseDragged
+	// event that crossed the drag threshold rather than the original
+	// mouseDown, so it can resolve to a different cell if the pointer
+	// moved before the drag started.
+	NSString *cellValue = nil;
+	NSString *cellColumnName = nil;
+	BOOL cellIsNull = NO;
+	NSInteger clickedRow = [tableContentView mouseDownRow];
+	NSInteger clickedCol = [tableContentView mouseDownColumn];
+	if (clickedRow >= 0 && clickedCol >= 0) {
+		cellValue = [tableContentView displayStringForRow:clickedRow column:clickedCol];
+		cellIsNull = [tableContentView isNullAtRow:clickedRow column:clickedCol];
+
+		// Map the visible column back to a column definition (by its
+		// storage index, same mapping SPCopyTable uses) so the drop
+		// target gets the original schema column name the rule
+		// editor looks up against.
+		NSArray *viewColumns = [tableContentView tableColumns];
+		if ((NSUInteger)clickedCol < [viewColumns count]) {
+			NSInteger storageIndex = [[[viewColumns objectAtIndex:(NSUInteger)clickedCol] identifier] integerValue];
+			if (storageIndex >= 0 && (NSUInteger)storageIndex < [dataColumns count]) {
+				cellColumnName = [[dataColumns objectAtIndex:(NSUInteger)storageIndex] objectForKey:@"name"];
 			}
-
-			NSString *cellRowType = [SPCellValuePasteboard pasteboardRowTypeRaw];
-			// Only advertise the filter payload if we actually resolved a
-			// real cell: a known column AND either a non-nil display value
-			// or a positively-identified NULL. A nil display value for a
-			// non-NULL cell (stale row after reload, out-of-range storage
-			// index) would otherwise synthesize a spurious `col = ''`
-			// filter on drop.
-			BOOL publishCellPayload = [cellColumnName length] && (cellIsNull || cellValue != nil);
-			NSMutableArray<NSPasteboardType> *types = [NSMutableArray arrayWithObjects:NSPasteboardTypeTabularText, NSPasteboardTypeString, nil];
-			if (publishCellPayload) {
-				[types addObject:cellRowType];
-			}
-			[pboard declareTypes:types owner:nil];
-
-			[pboard setString:tmp forType:NSPasteboardTypeString];
-			[pboard setString:tmp forType:NSPasteboardTypeTabularText];
-			if (publishCellPayload) {
-				// Dropped onto the rule editor, the plist alone is enough to
-				// synthesize a fully-populated filter rule (column + default
-				// operator + value).
-				NSDictionary *rowPayload = @{
-					[SPCellValuePasteboard rowColumnNameKey]: cellColumnName,
-					[SPCellValuePasteboard rowValueKey]: cellValue ?: @"",
-					[SPCellValuePasteboard rowValueKindKey]: cellIsNull ? [SPCellValuePasteboard rowValueKindNull] : [SPCellValuePasteboard rowValueKindString],
-				};
-				[pboard setPropertyList:rowPayload forType:cellRowType];
-			}
-
-			return YES;
 		}
 	}
 
-	return NO;
+	// Dropped onto the rule editor, the plist alone is enough to synthesize a
+	// fully-populated filter rule (column + default operator + value); a nil
+	// payload means the cell did not resolve and must not be advertised.
+	NSDictionary *rowPayload = [SPCellValuePasteboard rowPayloadForColumnName:cellColumnName value:cellValue isNull:cellIsNull];
+	if (rowPayload) {
+		[SADragPasteboard attachPropertyList:rowPayload forType:[SPCellValuePasteboard pasteboardRowTypeRaw] toPasteboard:pboard];
+	}
 }
 
 /**
