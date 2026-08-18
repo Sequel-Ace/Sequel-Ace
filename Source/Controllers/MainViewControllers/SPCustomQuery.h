@@ -53,116 +53,117 @@
 
 @interface SPCustomQuery : NSObject <NSTableViewDataSource, NSWindowDelegate, NSTableViewDelegate, SPDatabaseContentViewDelegate>
 {
-	IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
-	IBOutlet SPTablesList *tablesListInstance;
+    IBOutlet __weak SPDatabaseDocument *tableDocumentInstance;
+    IBOutlet SPTablesList *tablesListInstance;
 
-	IBOutlet id queryFavoritesButton;
-	IBOutlet NSMenuItem *queryFavoritesSearchMenuItem;
-	IBOutlet NSMenuItem *queryFavoritesSaveAsMenuItem;
-	IBOutlet NSMenuItem *queryFavoritesSaveAllMenuItem;
-	IBOutlet id queryFavoritesSearchFieldView;
-	IBOutlet NSSearchField *queryFavoritesSearchField;
+    IBOutlet id queryFavoritesButton;
+    IBOutlet NSMenuItem *queryFavoritesSearchMenuItem;
+    IBOutlet NSMenuItem *queryFavoritesSaveAsMenuItem;
+    IBOutlet NSMenuItem *queryFavoritesSaveAllMenuItem;
+    IBOutlet id queryFavoritesSearchFieldView;
+    IBOutlet NSSearchField *queryFavoritesSearchField;
 
-	IBOutlet NSWindow *queryFavoritesSheet;
-	IBOutlet NSButton *saveQueryFavoriteButton;
-	IBOutlet NSTextField *queryFavoriteNameTextField;
-	IBOutlet NSButton *saveQueryFavoriteGlobal;
+    IBOutlet NSWindow *queryFavoritesSheet;
+    IBOutlet NSButton *saveQueryFavoriteButton;
+    IBOutlet NSTextField *queryFavoriteNameTextField;
+    IBOutlet NSButton *saveQueryFavoriteGlobal;
+    IBOutlet NSPopUpButton *queryFavoriteReplacePopup;
 
-	IBOutlet id queryHistoryButton;
-	IBOutlet NSMenuItem *queryHistorySearchMenuItem;
-	IBOutlet id queryHistorySearchFieldView;
-	IBOutlet NSSearchField *queryHistorySearchField;
-	IBOutlet NSMenuItem *clearHistoryMenuItem;
-	IBOutlet NSMenuItem *saveHistoryMenuItem;
-	IBOutlet NSMenuItem *copyHistoryMenuItem;
-	IBOutlet NSPopUpButton *encodingPopUp;
+    IBOutlet id queryHistoryButton;
+    IBOutlet NSMenuItem *queryHistorySearchMenuItem;
+    IBOutlet id queryHistorySearchFieldView;
+    IBOutlet NSSearchField *queryHistorySearchField;
+    IBOutlet NSMenuItem *clearHistoryMenuItem;
+    IBOutlet NSMenuItem *saveHistoryMenuItem;
+    IBOutlet NSMenuItem *copyHistoryMenuItem;
+    IBOutlet NSPopUpButton *encodingPopUp;
 
-	IBOutlet SPTextView *textView;
-	IBOutlet SPCopyTable *customQueryView;
-	IBOutlet NSScrollView *customQueryScrollView;
-	IBOutlet id errorText;
-	IBOutlet NSTextField *errorTextTitle;
-	IBOutlet NSScrollView *errorTextScrollView;
-	IBOutlet id affectedRowsText;
-	IBOutlet id valueSheet;
-	IBOutlet id valueTextField;
+    IBOutlet SPTextView *textView;
+    IBOutlet SPCopyTable *customQueryView;
+    IBOutlet NSScrollView *customQueryScrollView;
+    IBOutlet id errorText;
+    IBOutlet NSTextField *errorTextTitle;
+    IBOutlet NSScrollView *errorTextScrollView;
+    IBOutlet id affectedRowsText;
+    IBOutlet id valueSheet;
+    IBOutlet id valueTextField;
 
-	// Hooks for old layouts using just the Run All button
-	IBOutlet id runAllButton;
+    // Hooks for old layouts using just the Run All button
+    IBOutlet id runAllButton;
 
-	// Hooks for layouts using the new single button with interchangeable actions
-	IBOutlet id runPrimaryActionButton;
-	IBOutlet id runPrimaryActionButtonAsSelection;
-	IBOutlet NSMenuItem *runPrimaryActionMenuItem;
-	IBOutlet NSMenuItem *runSecondaryActionMenuItem;
+    // Hooks for layouts using the new single button with interchangeable actions
+    IBOutlet id runPrimaryActionButton;
+    IBOutlet id runPrimaryActionButtonAsSelection;
+    IBOutlet NSMenuItem *runPrimaryActionMenuItem;
+    IBOutlet NSMenuItem *runSecondaryActionMenuItem;
 
-	IBOutlet NSMenuItem *shiftLeftMenuItem;
-	IBOutlet NSMenuItem *shiftRightMenuItem;
-	IBOutlet NSMenuItem *completionListMenuItem;
-	IBOutlet NSMenuItem *editorFontMenuItem;
-	IBOutlet NSMenuItem *autoindentMenuItem;
-	IBOutlet NSMenuItem *autopairMenuItem;
-	IBOutlet NSMenuItem *autohelpMenuItem;
-	IBOutlet NSMenuItem *autouppercaseKeywordsMenuItem;
-	IBOutlet NSMenuItem *commentCurrentQueryMenuItem;
-	IBOutlet NSMenuItem *commentLineOrSelectionMenuItem;
+    IBOutlet NSMenuItem *shiftLeftMenuItem;
+    IBOutlet NSMenuItem *shiftRightMenuItem;
+    IBOutlet NSMenuItem *completionListMenuItem;
+    IBOutlet NSMenuItem *editorFontMenuItem;
+    IBOutlet NSMenuItem *autoindentMenuItem;
+    IBOutlet NSMenuItem *autopairMenuItem;
+    IBOutlet NSMenuItem *autohelpMenuItem;
+    IBOutlet NSMenuItem *autouppercaseKeywordsMenuItem;
+    IBOutlet NSMenuItem *commentCurrentQueryMenuItem;
+    IBOutlet NSMenuItem *commentLineOrSelectionMenuItem;
 
-	IBOutlet NSMenuItem *previousHistoryMenuItem;
-	IBOutlet NSMenuItem *nextHistoryMenuItem;
+    IBOutlet NSMenuItem *previousHistoryMenuItem;
+    IBOutlet NSMenuItem *nextHistoryMenuItem;
 
-	IBOutlet NSButton *queryInfoButton;
-	IBOutlet SPSplitView *queryInfoPaneSplitView;
-	IBOutlet SPSplitView *queryEditorSplitView;
+    IBOutlet NSButton *queryInfoButton;
+    IBOutlet SPSplitView *queryInfoPaneSplitView;
+    IBOutlet SPSplitView *queryEditorSplitView;
 
-	SPFieldEditorController *fieldEditor;
-	SPQueryFavoriteManager *favoritesManager;
+    SPFieldEditorController *fieldEditor;
+    SPQueryFavoriteManager *favoritesManager;
 
-	NSUserDefaults *prefs;
-	SPMySQLConnection *mySQLConnection;
+    NSUserDefaults *prefs;
+    SPMySQLConnection *mySQLConnection;
 
-	NSString *usedQuery;
-	NSRange currentQueryRange;
-	NSArray *currentQueryRanges;
-	BOOL currentQueryBeforeCaret;
+    NSString *usedQuery;
+    NSRange currentQueryRange;
+    NSArray *currentQueryRanges;
+    BOOL currentQueryBeforeCaret;
 
-	NSTableColumn *sortColumn;
+    NSTableColumn *sortColumn;
 
-	NSUInteger queryStartPosition;
+    NSUInteger queryStartPosition;
 
-	SPDataStorage *resultData;
-	pthread_mutex_t resultDataLock;
-	NSArray *cqColumnDefinition;
-	NSString *lastExecutedQuery;
-	NSInteger editedRow;
-	NSRect editedScrollViewRect;
+    SPDataStorage *resultData;
+    pthread_mutex_t resultDataLock;
+    NSArray *cqColumnDefinition;
+    NSString *lastExecutedQuery;
+    NSInteger editedRow;
+    NSRect editedScrollViewRect;
 
-	BOOL isWorking;
-	BOOL tableRowsSelectable;
-	BOOL reloadingExistingResult;
-	BOOL queryIsTableSorter;
-	BOOL isDesc;
-	BOOL isFieldEditable;
-	BOOL textViewWasChanged;
-	NSNumber *sortField;
+    BOOL isWorking;
+    BOOL tableRowsSelectable;
+    BOOL reloadingExistingResult;
+    BOOL queryIsTableSorter;
+    BOOL isDesc;
+    BOOL isFieldEditable;
+    BOOL textViewWasChanged;
+    NSNumber *sortField;
 
-	NSIndexSet *selectionIndexToRestore;
-	NSRect selectionViewportToRestore;
+    NSIndexSet *selectionIndexToRestore;
+    NSRect selectionViewportToRestore;
 
-	NSString *fieldIDQueryString;
+    NSString *fieldIDQueryString;
 
-	NSUInteger numberOfQueries;
-	NSUInteger queryInfoPanePaddingHeight;
+    NSUInteger numberOfQueries;
+    NSUInteger queryInfoPanePaddingHeight;
 
-	NSInteger currentHistoryOffsetIndex;
-	BOOL historyItemWasJustInserted;
+    NSInteger currentHistoryOffsetIndex;
+    BOOL historyItemWasJustInserted;
 
-	NSTimer *queryLoadTimer;
-	NSInteger runAllContinueStopSheetReturnCode;
-	NSUInteger queryLoadInterfaceUpdateInterval, queryLoadTimerTicksSinceLastUpdate, queryLoadLastRowCount;
+    NSTimer *queryLoadTimer;
+    NSInteger runAllContinueStopSheetReturnCode;
+    NSUInteger queryLoadInterfaceUpdateInterval, queryLoadTimerTicksSinceLastUpdate, queryLoadLastRowCount;
 
-	NSString *kCellEditorErrorNoMatch;
-	NSString *kCellEditorErrorNoMultiTabDb;
-	NSString *kCellEditorErrorTooManyMatches;
+    NSString *kCellEditorErrorNoMatch;
+    NSString *kCellEditorErrorNoMultiTabDb;
+    NSString *kCellEditorErrorTooManyMatches;
 }
 
 @property (strong) NSButton* runAllButton;
