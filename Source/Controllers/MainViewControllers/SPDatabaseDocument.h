@@ -435,6 +435,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)viewStatus;
 - (void)viewRelations;
 - (void)viewTriggers;
+- (void)toggleRecordView:(id)sender;
 - (void)backForwardInHistory:(id)sender;
 - (void)toggleConsole;
 - (void)showConsole;
