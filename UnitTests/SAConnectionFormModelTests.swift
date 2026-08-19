@@ -629,24 +629,44 @@ final class SAConnectionFormModelTests: XCTestCase {
         XCTAssertNil(SAConnectionFileValidator.rejection(forFileAt: missing, kind: .sslCACert))
     }
 
-    // MARK: - Review round 2: SSL files on an SSH tunnel
+    // MARK: - SSL files on an SSH tunnel
 
-    /// Documents the inherited gap rather than fixing it here: the SSH tab
-    /// offers SSL file rows, but the shared validator has never checked them
-    /// (pre-D3 ObjC read `type == SPTCPIPConnection || type == SPSocketConnection`).
-    /// Fixing it changes the shipping AppKit form too, so it wants its own PR;
-    /// this test will fail loudly there, which is the point.
-    func testSSHTunnelSSLFilesAreNotValidatedYet() {
+    /// The SSH tab offers the same three SSL file rows, writing the same
+    /// properties, so a missing file is caught here rather than at connect time.
+    func testSSHTunnelValidatesItsSSLFiles() {
+        let missing = "/nonexistent/\(UUID().uuidString).pem"
+
+        for (enable, path, expected) in [
+            (\SAConnectionInfo.sslKeyFileLocationEnabled, \SAConnectionInfo.sslKeyFileLocation,
+             SAConnectionValidationFailureKind.sslKeyFileMissing),
+            (\SAConnectionInfo.sslCertificateFileLocationEnabled, \SAConnectionInfo.sslCertificateFileLocation,
+             .sslCertificateFileMissing),
+            (\SAConnectionInfo.sslCACertFileLocationEnabled, \SAConnectionInfo.sslCACertFileLocation,
+             .sslCACertFileMissing),
+        ] {
+            let model = SAConnectionFormModel()
+            model.info.type = .sshTunnel
+            model.info.host = "db.internal"
+            model.info.sshHost = "bastion.example.com"
+            model.useSSL = true
+            model.info[keyPath: enable] = 1
+            model.info[keyPath: path] = missing
+
+            XCTAssertEqual(model.validate()?.kind, expected)
+        }
+    }
+
+    /// The tunnel's own SSL toggle still gates the checks.
+    func testSSHTunnelWithoutSSLIgnoresTheSSLFiles() {
         let model = SAConnectionFormModel()
         model.info.type = .sshTunnel
         model.info.host = "db.internal"
         model.info.sshHost = "bastion.example.com"
-        model.useSSL = true
+        model.useSSL = false
         model.info.sslKeyFileLocationEnabled = 1
         model.info.sslKeyFileLocation = "/nonexistent/\(UUID().uuidString).pem"
 
-        XCTAssertNil(model.validate(),
-                     "known gap inherited from the AppKit form — see SAConnectionDetailsValidator")
+        XCTAssertNil(model.validate())
     }
 
     // MARK: - Review round 2: public keys rejected by the chooser
