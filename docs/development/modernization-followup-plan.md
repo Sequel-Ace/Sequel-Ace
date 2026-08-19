@@ -348,10 +348,58 @@ C2a — TCP/IP form + observable model — ✅ Done
   objectWillChange publishing on field mutation.
 - Files were added via Xcode MCP `XcodeWrite` (real Xcode IDs); only
   the model's second (Unit Tests) membership was a manual pbxproj edit.
-- Remaining C2 scope: socket/SSH/AWS/Vault type switching, SSL options,
-  color index, time-zone picker, favorites save/auto-name parity.
+- C2b superseded this: see below.
 - Files: `Source/Controllers/MainViewControllers/ConnectionView/SAConnectionFormModel.swift`,
   `SAConnectionFormView.swift`, `UnitTests/SAConnectionFormModelTests.swift`
+
+C2b — all connection types + SSL, colour, time zone — ✅ Done
+- `SAConnectionFormView` now renders every type `ConnectionView.xib`
+  offers. A `Picker` replaces the tab bar; the detail fields switch on
+  `info.type`. Field sets, labels and placeholders were read off the XIB
+  container by container (TCP/IP, socket, SSH, AWS IAM, Vault), so e.g.
+  the socket tab has no Port field and the SSH tab keeps its two groups
+  (tunnel credentials, then MySQL-side details + remote socket).
+- Shared sections added: colour (`SPFavoriteColorSupport`'s 7 swatches
+  plus the -1 "none" sentinel the favorites plist uses), the time-zone
+  picker, the security toggles, and the SSL file rows.
+- `SATimeZoneChoice` (Swift, pure) collapses the stored
+  (`timeZoneMode`, `timeZoneIdentifier`) pair into one selectable value,
+  making the invalid combinations unrepresentable; `SATimeZoneMenuEntry.menu()`
+  reproduces `-generateTimeZoneMenuItems` (two relative entries, then every
+  identifier sorted case-insensitively, separator on each region-prefix
+  change). Setting the choice clears the identifier outside the fixed
+  mode, matching `-didChangeSelectedTimeZone:`.
+- Per-type form shape lives on the model (`forcesSSL`, `showsSSLToggle`,
+  `showsSSLFileOptions`, …) so it is testable: AWS IAM turns SSL and the
+  cleartext plugin on itself, so its tab shows neither toggle nor an SSL
+  container — it shows the explanatory label instead, which is exactly
+  what the XIB does.
+- Bool bridges for the `Int`-typed flags (`useSSL`, `allowDataLocalInfile`,
+  …) so Toggles can bind; non-zero reads as on, matching the ObjC
+  `-boolValue` the favorites plist is read with.
+- ⚠️ **`vaultCredentialsPath` is a computed join, not a field.** The first
+  cut bound a single "Vault mount" text field straight to it; the AppKit
+  controller actually keeps `vaultMount` + `vaultCredentialsRole` ivars and
+  computes the path via `SAVaultCredentialsPath`. The model now mirrors
+  that with two stored halves — they cannot be derived from the path,
+  because `credPath(mount:role:)` returns "" while the role is blank, so a
+  mount typed first would vanish. Writing the tests for it caught a real
+  bug: the resplit assigned `vaultMount` and then re-read
+  `info.vaultCredentialsPath` for the role, but the first assignment had
+  already rewritten that path from the half-updated pair, so loading a
+  favorite kept the previous role.
+- 25 new tests in `SAConnectionFormModelTests` (42 total): time-zone
+  round-trip and menu shape, the flag bridges, per-type form shape, the
+  connect gate and generated name across all five types, and the Vault
+  mount/role split including the resplit-on-load case.
+- Not covered here, deliberately: the AWS "Authorize Access to ~/.aws…"
+  bookmark flow (needs Security-framework state, same reason D3 left it
+  inline), the Vault role *list* fetch behind the XIB's combo box and its
+  Refresh button (`SAVaultRoleListController`) — the Role field is plain
+  text for now — and favorites save parity. All three want a live host,
+  so they belong to C3.
+- Files: `SAConnectionFormModel.swift`, `SAConnectionFormView.swift`,
+  `UnitTests/SAConnectionFormModelTests.swift`
 
 **C3. Wire SwiftUI into SAConnectionWindowController + expose in menu**
 - The standalone connection window is the ideal host for SwiftUI views
@@ -486,10 +534,11 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
    replaced SPHelpViewerController + HelpViewer.xib; **legacy WebKit is now gone
    from the codebase** (33 deprecation warnings retired). Execution notes in
    `docs/development/warnings-elimination-plan.md`.
-2. **C2b — extend SAConnectionFormModel/View to all connection types**
-   (socket, SSH, AWS IAM, Vault + SSL options, colour, time zone). Scope grew
-   since June: Vault and AWS variants now exist and must be covered. Reuse
-   D1/D3 extractions; every new sub-form gets model tests.
+2. ~~**C2b — extend SAConnectionFormModel/View to all connection types**~~ —
+   ✅ Done. All five types render, with SSL options, colour and time zone;
+   42 model tests. The AWS `~/.aws` authorization, the Vault role-list fetch
+   and favorites save parity were deliberately left to C3, which supplies the
+   live host they need.
 3. **C3 — make the standalone window real**: host SAFavoritesList +
    SAConnectionFormView in SAConnectionWindowController via
    SAConnectionViewCoordinator, drive it with SAConnectionService. The
