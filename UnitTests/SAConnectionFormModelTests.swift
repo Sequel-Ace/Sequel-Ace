@@ -124,15 +124,27 @@ final class SAConnectionFormModelTests: XCTestCase {
         XCTAssertTrue(model.canAttemptConnection)
     }
 
-    func testCanAttemptConnectionRequiresHostForAWSAndVault() {
-        for type in [SAConnectionType.awsIAM, .vault] {
-            let model = SAConnectionFormModel()
-            model.info.type = type
-            XCTAssertFalse(model.canAttemptConnection, "\(type) without host")
+    func testCanAttemptConnectionRequiresHostForAWS() {
+        let model = SAConnectionFormModel()
+        model.info.type = .awsIAM
+        XCTAssertFalse(model.canAttemptConnection, "without host")
 
-            model.info.host = "db.example.com"
-            XCTAssertTrue(model.canAttemptConnection, "\(type) with host")
-        }
+        model.info.host = "db.example.com"
+        XCTAssertTrue(model.canAttemptConnection, "with host")
+    }
+
+    /// Vault needs a host too, but a host alone is not enough — see
+    /// testVaultConnectGateRequiresHostVaultHostAndCredentials.
+    func testCanAttemptConnectionRequiresHostForVault() {
+        let model = SAConnectionFormModel()
+        model.info.type = .vault
+        model.info.vaultHost = "https://vault.example.com"
+        model.vaultMount = "databases_credentials"
+        model.vaultCredentialsRole = "readonly"
+        XCTAssertFalse(model.canAttemptConnection, "without host")
+
+        model.info.host = "db.example.com"
+        XCTAssertTrue(model.canAttemptConnection, "with host")
     }
 
     func testCanAttemptConnectionForSSHTunnelAcceptsHostOrRemoteSocket() {
@@ -392,15 +404,13 @@ final class SAConnectionFormModelTests: XCTestCase {
         XCTAssertTrue(model.canAttemptConnection)
     }
 
-    func testAWSAndVaultRequireAHost() {
-        for type in [SAConnectionType.awsIAM, .vault] {
-            let model = SAConnectionFormModel()
-            model.info.type = type
-            XCTAssertFalse(model.canAttemptConnection, "\(type)")
+    func testAWSRequiresAHost() {
+        let model = SAConnectionFormModel()
+        model.info.type = .awsIAM
+        XCTAssertFalse(model.canAttemptConnection)
 
-            model.info.host = "db.example.com"
-            XCTAssertTrue(model.canAttemptConnection, "\(type)")
-        }
+        model.info.host = "db.example.com"
+        XCTAssertTrue(model.canAttemptConnection)
     }
 
     // MARK: - C2b: vault mount / role split
@@ -474,6 +484,149 @@ final class SAConnectionFormModelTests: XCTestCase {
         model.vaultCredentialsRole = "team/creds/writer"
 
         XCTAssertEqual(model.info.vaultCredentialsPath, "team/creds/writer")
+    }
+
+    // MARK: - C2b: Vault preconditions (review follow-up)
+
+    // -initiateConnection: refuses to start authenticating without these, so
+    // the form must too rather than handing onConnect an unusable config.
+
+    func testVaultConnectGateRequiresHostVaultHostAndCredentials() {
+        let model = SAConnectionFormModel()
+        model.info.type = .vault
+        model.info.host = "db.example.com"
+        XCTAssertFalse(model.canAttemptConnection, "vault host still missing")
+
+        model.info.vaultHost = "https://vault.example.com"
+        XCTAssertFalse(model.canAttemptConnection, "credentials path still missing")
+
+        model.vaultMount = "databases_credentials"
+        model.vaultCredentialsRole = "readonly"
+        XCTAssertTrue(model.canAttemptConnection)
+    }
+
+    func testVaultValidationReportsAMissingVaultHostFirst() {
+        let model = SAConnectionFormModel()
+        model.info.type = .vault
+
+        let failure = model.validate()
+        XCTAssertEqual(failure?.kind, .vaultHostMissing)
+        XCTAssertFalse(failure?.alertMessage.isEmpty ?? true)
+    }
+
+    func testVaultValidationReportsAMissingCredentialsPath() {
+        let model = SAConnectionFormModel()
+        model.info.type = .vault
+        model.info.vaultHost = "https://vault.example.com"
+
+        XCTAssertEqual(model.validate()?.kind, .vaultCredentialsPathMissing)
+    }
+
+    func testVaultValidationReportsAMissingDatabaseHostLast() {
+        let model = SAConnectionFormModel()
+        model.info.type = .vault
+        model.info.vaultHost = "https://vault.example.com"
+        model.vaultMount = "databases_credentials"
+        model.vaultCredentialsRole = "readonly"
+
+        XCTAssertEqual(model.validate()?.kind, .hostMissing)
+    }
+
+    func testFullyPopulatedVaultDetailsValidate() {
+        let model = SAConnectionFormModel()
+        model.info.type = .vault
+        model.info.host = "db.example.com"
+        model.info.vaultHost = "https://vault.example.com"
+        model.vaultMount = "databases_credentials"
+        model.vaultCredentialsRole = "readonly"
+
+        XCTAssertNil(model.validate())
+    }
+
+    func testWhitespaceOnlyVaultFieldsCountAsMissing() {
+        let model = SAConnectionFormModel()
+        model.info.type = .vault
+        model.info.host = "db.example.com"
+        model.info.vaultHost = "   "
+
+        XCTAssertFalse(model.canAttemptConnection)
+        XCTAssertEqual(model.validate()?.kind, .vaultHostMissing)
+    }
+
+    /// The Vault checks must not leak into the other types.
+    func testNonVaultTypesAreUnaffectedByTheVaultChecks() {
+        for type in [SAConnectionType.tcpIP, .socket, .sshTunnel, .awsIAM] {
+            let model = SAConnectionFormModel()
+            model.info.type = type
+            model.info.host = "db.example.com"
+            // The tunnel needs its own host from the D3 validator; supplying it
+            // keeps this test about the Vault checks rather than that rule.
+            if type == .sshTunnel { model.info.sshHost = "bastion.example.com" }
+
+            XCTAssertNil(model.validate(), "\(type)")
+        }
+    }
+
+    // MARK: - C2b: chosen-file validation (review follow-up)
+
+    private static let validKey = "-----BEGIN RSA PRIVATE KEY-----\nabc\n-----END RSA PRIVATE KEY-----"
+    private static let validCert = "-----BEGIN CERTIFICATE-----\nabc\n-----END CERTIFICATE-----"
+
+    func testValidKeyAndCertificateAreAccepted() {
+        XCTAssertTrue(SAConnectionFileValidator.isValidPEM(contents: Self.validKey, kind: .sslKey))
+        XCTAssertTrue(SAConnectionFileValidator.isValidPEM(contents: Self.validCert, kind: .sslCertificate))
+    }
+
+    func testACertificateIsNotAcceptedAsAKey() {
+        XCTAssertFalse(SAConnectionFileValidator.isValidPEM(contents: Self.validCert, kind: .sslKey))
+        XCTAssertFalse(SAConnectionFileValidator.isValidPEM(contents: Self.validKey, kind: .sslCertificate))
+    }
+
+    func testATruncatedPEMBlockIsRejected() {
+        let noEnd = "-----BEGIN RSA PRIVATE KEY-----\nabc\n"
+        XCTAssertFalse(SAConnectionFileValidator.isValidPEM(contents: noEnd, kind: .sslKey))
+    }
+
+    func testGarbageIsRejected() {
+        XCTAssertFalse(SAConnectionFileValidator.isValidPEM(contents: "not a key at all", kind: .sslKey))
+        XCTAssertFalse(SAConnectionFileValidator.isValidPEM(contents: "", kind: .sslKey))
+    }
+
+    /// The original walked paragraphs, which treats \n, \r and \r\n alike.
+    func testLineEndingsAreHandledAlike() {
+        for terminator in ["\n", "\r", "\r\n"] {
+            let key = "-----BEGIN RSA PRIVATE KEY-----\(terminator)abc\(terminator)-----END RSA PRIVATE KEY-----"
+            XCTAssertTrue(SAConnectionFileValidator.isValidPEM(contents: key, kind: .sslKey),
+                          terminator.debugDescription)
+        }
+    }
+
+    /// -chooseKeyLocation: validates only the SSL key and client certificate;
+    /// SSH keys and CA certificates are accepted as-is.
+    func testUncheckedKindsAcceptAnything() {
+        for kind in [SAConnectionFileKind.sshKey, .sslCACert] {
+            XCTAssertTrue(SAConnectionFileValidator.isValidPEM(contents: "anything", kind: kind))
+            XCTAssertNil(SAConnectionFileValidator.rejection(contents: "anything", kind: kind, fileName: "f"))
+        }
+    }
+
+    func testRejectionCarriesTheFileNameAndAdvice() {
+        let rejection = SAConnectionFileValidator.rejection(contents: "junk", kind: .sslKey, fileName: "server.pem")
+
+        XCTAssertTrue(rejection?.alertTitle.contains("server.pem") ?? false)
+        XCTAssertFalse(rejection?.alertMessage.isEmpty ?? true)
+    }
+
+    func testAcceptedFileProducesNoRejection() {
+        XCTAssertNil(SAConnectionFileValidator.rejection(contents: Self.validKey, kind: .sslKey, fileName: "k.pem"))
+    }
+
+    func testAnUnreadableFileIsReportedRatherThanAccepted() {
+        let missing = URL(fileURLWithPath: "/nonexistent/\(UUID().uuidString).pem")
+
+        XCTAssertNotNil(SAConnectionFileValidator.rejection(forFileAt: missing, kind: .sslKey))
+        // An unchecked kind never reads the file at all.
+        XCTAssertNil(SAConnectionFileValidator.rejection(forFileAt: missing, kind: .sslCACert))
     }
 
     // MARK: - C2b: generated name across the types

@@ -197,8 +197,14 @@ final class SAConnectionFormModel: ObservableObject {
             let hasRemoteSocket = !info.sshRemoteSocketPath
                 .trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             return hasHost || hasRemoteSocket
-        case .tcpIP, .awsIAM, .vault:
+        case .tcpIP, .awsIAM:
             return hasHost
+        case .vault:
+            // Vault needs its own endpoint and a credentials path on top of the
+            // database host — `-initiateConnection:` rejects all three.
+            return hasHost
+                && !info.vaultHost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                && !info.vaultCredentialsPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
     }
 
@@ -308,7 +314,11 @@ final class SAConnectionFormModel: ObservableObject {
     /// Returns nil when the details are valid; otherwise the first
     /// failure, carrying ready-to-display alert strings.
     func validate() -> SAConnectionValidationFailure? {
-        SAConnectionDetailsValidator.validate(
+        if let vaultFailure = validateVaultDetails() {
+            return vaultFailure
+        }
+
+        return SAConnectionDetailsValidator.validate(
             type: info.type,
             host: info.host,
             sshHost: info.sshHost,
@@ -323,5 +333,50 @@ final class SAConnectionFormModel: ObservableObject {
             sslCACertFileLocationEnabled: info.sslCACertFileLocationEnabled != 0,
             sslCACertFileLocation: info.sslCACertFileLocation
         )
+    }
+
+    /// The three Vault preconditions `-initiateConnection:` enforces before it
+    /// starts authenticating, in its order. They are not in
+    /// `SAConnectionDetailsValidator` because that is shared with the AppKit
+    /// controller, which still runs these itself; duplicating them there would
+    /// double the alert.
+    private func validateVaultDetails() -> SAConnectionValidationFailure? {
+        guard info.type == .vault else { return nil }
+
+        let title = NSLocalizedString("Insufficient connection details",
+                                      comment: "insufficient details message")
+
+        func blank(_ value: String) -> Bool {
+            value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+
+        if blank(info.vaultHost) {
+            return SAConnectionValidationFailure(
+                kind: .vaultHostMissing,
+                alertTitle: title,
+                alertMessage: NSLocalizedString("A Vault host is required to connect.",
+                                                comment: "vault host required connect message")
+            )
+        }
+
+        if blank(info.vaultCredentialsPath) {
+            return SAConnectionValidationFailure(
+                kind: .vaultCredentialsPathMissing,
+                alertTitle: title,
+                alertMessage: NSLocalizedString("A Vault credentials path is required to connect. Fill in the mount and role, or paste a full path into the Role field.",
+                                                comment: "vault creds path required connect message")
+            )
+        }
+
+        if blank(info.host) {
+            return SAConnectionValidationFailure(
+                kind: .hostMissing,
+                alertTitle: title,
+                alertMessage: NSLocalizedString("A database host is required to connect.",
+                                                comment: "vault db host required connect message")
+            )
+        }
+
+        return nil
     }
 }

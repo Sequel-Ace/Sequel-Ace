@@ -116,10 +116,15 @@ struct SAConnectionFormView: View {
         }
     }
 
+    /// Built once: the identifier list is fixed for the process lifetime, and
+    /// `body` re-evaluates on every keystroke (any `info` mutation publishes),
+    /// which would otherwise re-sort ~600 identifiers each time.
+    private static let timeZoneMenu = SATimeZoneMenuEntry.menu()
+
     private var timeZoneSection: some View {
         Section {
             Picker(selection: timeZoneBinding) {
-                ForEach(SATimeZoneMenuEntry.menu(), id: \.self) { entry in
+                ForEach(Self.timeZoneMenu, id: \.self) { entry in
                     switch entry {
                     case .choice(.server):
                         Text("Use Server Time Zone", comment: "Leave the server time zone in place when connecting")
@@ -182,16 +187,19 @@ struct SAConnectionFormView: View {
         Section {
             SAOptionalFileRow(
                 title: Text("Key File", comment: "connection view : ssl key file label"),
+                kind: .sslKey,
                 isEnabled: $model.sslKeyFileLocationEnabled,
                 path: $model.info.sslKeyFileLocation
             )
             SAOptionalFileRow(
                 title: Text("Certificate", comment: "connection view : ssl certificate label"),
+                kind: .sslCertificate,
                 isEnabled: $model.sslCertificateFileLocationEnabled,
                 path: $model.info.sslCertificateFileLocation
             )
             SAOptionalFileRow(
                 title: Text("CA Cert", comment: "connection view : ssl ca cert label"),
+                kind: .sslCACert,
                 isEnabled: $model.sslCACertFileLocationEnabled,
                 path: $model.info.sslCACertFileLocation
             )
@@ -264,6 +272,7 @@ struct SAConnectionFormView: View {
                 }
                 SAOptionalFileRow(
                     title: Text("SSH Key", comment: "connection view : ssh key label"),
+                    kind: .sshKey,
                     isEnabled: $model.sshKeyLocationEnabled,
                     path: $model.info.sshKeyLocation
                 )
@@ -418,10 +427,10 @@ private struct SAFavoriteColorPicker: View {
             Text("None", comment: "connection view : no favorite colour")
                 .tag(Self.noColorIndex)
             ForEach(Array(colors.enumerated()), id: \.offset) { index, color in
-                // A label as well as the swatch, so the choice survives
-                // for anyone who cannot distinguish the colours.
+                // A label as well as the swatch, so the choice is distinguishable
+                // without relying on colour perception.
                 Label {
-                    Text(verbatim: colorName(at: index))
+                    Text(colorLabel(at: index))
                 } icon: {
                     Circle().fill(Color(nsColor: color))
                 }
@@ -433,10 +442,13 @@ private struct SAFavoriteColorPicker: View {
         .pickerStyle(.menu)
     }
 
-    /// Names match the asset catalog entries backing the colour list.
-    private func colorName(at index: Int) -> String {
-        let names = ["Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Graphite"]
-        return index < names.count ? names[index] : "\(index)"
+    /// The list is positional and its length is not guaranteed, so the label is
+    /// derived from the index rather than a parallel array of hardcoded names —
+    /// a shorter or reordered list would otherwise mislabel the swatches.
+    private func colorLabel(at index: Int) -> String {
+        String(format: NSLocalizedString("Colour %ld",
+                                         comment: "connection view : favorite colour by position"),
+               index + 1)
     }
 }
 
@@ -448,8 +460,13 @@ private struct SAFavoriteColorPicker: View {
 private struct SAOptionalFileRow: View {
 
     let title: Text
+    /// Decides which PEM check the chosen file must pass — the SwiftUI
+    /// equivalent of `-chooseKeyLocation:` branching on the sending button.
+    let kind: SAConnectionFileKind
     @Binding var isEnabled: Bool
     @Binding var path: String
+
+    @State private var rejection: SAConnectionFileRejection?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -474,6 +491,18 @@ private struct SAOptionalFileRow: View {
                 }
             }
         }
+        .alert(
+            rejection?.alertTitle ?? "",
+            isPresented: Binding(
+                get: { rejection != nil },
+                set: { if !$0 { rejection = nil } }
+            ),
+            presenting: rejection
+        ) { _ in
+            Button { rejection = nil } label: { Text("OK", comment: "OK button") }
+        } message: { rejection in
+            Text(rejection.alertMessage)
+        }
     }
 
     private func chooseFile() {
@@ -484,7 +513,37 @@ private struct SAOptionalFileRow: View {
         // Key and certificate files are routinely kept in ~/.ssh.
         panel.showsHiddenFiles = true
 
-        guard panel.runModal() == .OK, let url = panel.url else { return }
+        // Cancelling clears the row, as -chooseKeyLocation: does: an enabled
+        // checkbox with no path would claim a file the connection cannot use.
+        guard panel.runModal() == .OK, let url = panel.url else {
+            isEnabled = false
+            path = ""
+            return
+        }
+
+        // Reject a file of the wrong shape before storing it, so the failure
+        // surfaces here rather than as an opaque connection error later.
+        if let rejection = SAConnectionFileValidator.rejection(forFileAt: url, kind: kind) {
+            self.rejection = rejection
+            return
+        }
+
+        // Persist a read-only security-scoped bookmark before storing the path.
+        // Without one the sandbox grants access only for this launch: the panel
+        // itself starts access, but a favorite saved with this path would find
+        // the file unreadable after a relaunch. Read-only matters because keys
+        // are routinely mode 400.
+        //
+        // A failed bookmark is not fatal — access still works for this launch —
+        // so the path is stored either way, matching -chooseKeyLocation:.
+        _ = SecureBookmarkManager.sharedInstance.addBookmarkFor(
+            url: url,
+            options: UInt(NSURL.BookmarkCreationOptions.withSecurityScope.rawValue
+                          | NSURL.BookmarkCreationOptions.securityScopeAllowOnlyReadAccess.rawValue),
+            isForStaleBookmark: false,
+            isForKnownHostsFile: false
+        )
+
         path = url.path
     }
 }
