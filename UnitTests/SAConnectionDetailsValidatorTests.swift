@@ -245,17 +245,65 @@ final class SAConnectionDetailsValidatorTests: XCTestCase {
         ))
     }
 
-    func testSSLChecksDoNotApplyToSSHTunnel() {
-        // SSL file checks only run for TCP/IP and socket types per the
-        // original code — SSH tunnel skips them even if useSSL is on.
-        XCTAssertNil(validate(
+    func testSSLChecksApplyToSSHTunnelWhenUseSSLOn() {
+        // The SSH tab offers the same three SSL file rows, writing the same
+        // properties, so a missing file has to be caught here rather than at
+        // connect time. This deliberately diverges from the pre-D3 ObjC, which
+        // checked only TCP/IP and socket — see the note in the validator.
+        XCTAssertEqual(validate(
             type: .sshTunnel,
             host: "db.example.com",
             sshHost: "bastion.example.com",
             useSSL: true,
             sslKeyFileLocationEnabled: true,
             sslKeyFileLocation: missingFilePath
+        )?.kind, .sslKeyFileMissing)
+
+        XCTAssertEqual(validate(
+            type: .sshTunnel,
+            host: "db.example.com",
+            sshHost: "bastion.example.com",
+            useSSL: true,
+            sslCertificateFileLocationEnabled: true,
+            sslCertificateFileLocation: missingFilePath
+        )?.kind, .sslCertificateFileMissing)
+
+        XCTAssertEqual(validate(
+            type: .sshTunnel,
+            host: "db.example.com",
+            sshHost: "bastion.example.com",
+            useSSL: true,
+            sslCACertFileLocationEnabled: true,
+            sslCACertFileLocation: missingFilePath
+        )?.kind, .sslCACertFileMissing)
+    }
+
+    /// The tunnel's own SSL toggle still gates the checks, same as every other
+    /// type — an unticked "Require SSL" leaves stale paths alone.
+    func testSSLChecksSkippedForSSHTunnelWhenUseSSLOff() {
+        XCTAssertNil(validate(
+            type: .sshTunnel,
+            host: "db.example.com",
+            sshHost: "bastion.example.com",
+            useSSL: false,
+            sslKeyFileLocationEnabled: true,
+            sslKeyFileLocation: missingFilePath
         ))
+    }
+
+    /// The SSH key check still comes first: it is an earlier rule, and a tunnel
+    /// with both problems should report the one the user hits first.
+    func testSSHKeyMissingBeatsSSLKeyMissingOnATunnel() {
+        XCTAssertEqual(validate(
+            type: .sshTunnel,
+            host: "db.example.com",
+            sshHost: "bastion.example.com",
+            useSSL: true,
+            sshKeyLocationEnabled: true,
+            sshKeyLocation: missingFilePath,
+            sslKeyFileLocationEnabled: true,
+            sslKeyFileLocation: missingFilePath
+        )?.kind, .sshKeyFileMissing)
     }
 
     func testSSLChecksAppliesToSocketWhenUseSSLOn() {
