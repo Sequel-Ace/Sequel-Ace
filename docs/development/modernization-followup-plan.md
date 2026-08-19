@@ -315,7 +315,7 @@ C1b — pure SwiftUI `List` / `OutlineGroup` — ✅ Done (display/search/select
 - Files: new `SAFavoriteItem.swift`, `SAFavoriteItem+Tree.swift`,
   `SAFavoritesList.swift`, `UnitTests/SAFavoriteItemTests.swift`
 
-**C2. SwiftUI ConnectionFormView** — 🟡 TCP/IP form + model done; other types + SSL + hosting pending
+**C2. SwiftUI ConnectionFormView** — 🟡 All types + SSL/colour/time zone done (C2a+C2b); hosting pending (C3)
 - The 55 IBOutlets in ConnectionView.xib are the eventual target.
 
 C2a — TCP/IP form + observable model — ✅ Done
@@ -392,6 +392,27 @@ C2b — all connection types + SSL, colour, time zone — ✅ Done
   round-trip and menu shape, the flag bridges, per-type form shape, the
   connect gate and generated name across all five types, and the Vault
   mount/role split including the resplit-on-load case.
+- Review follow-up (Codex P1/P2, CodeRabbit): three gaps against the AppKit
+  form, all confirmed against `SPConnectionController` before fixing.
+  - The file chooser stored only the path. `-chooseKeyLocation:` also writes a
+    read-only security-scoped bookmark, without which a saved favorite cannot
+    reach its key or certificate after the next launch — the panel grants
+    access for the current launch only. The SwiftUI row now writes the same
+    bookmark, and clears the row on cancel as the AppKit flow does.
+  - It also accepted any existing file. `-chooseKeyLocation:` runs
+    `validateKeyFile:`/`validateCertFile:` on the SSL key and client
+    certificate (and, deliberately, on neither the SSH key nor the CA cert).
+    Those checks moved into `SAConnectionFileValidator` + `SAConnectionFileKind`
+    — pure, so they are tested on strings rather than needing a controller.
+  - Vault could reach `onConnect` with an unusable configuration:
+    `-initiateConnection:` rejects a blank vault host, credentials path or
+    database host, and none of those were checked. They now gate both the
+    Connect button and `validate()`, in the controller's order, via two new
+    `SAConnectionValidationFailureKind` cases.
+  - Also: the time-zone menu is built once rather than re-sorted on every
+    `body` evaluation (which is every keystroke), and the colour swatch labels
+    are derived from position and localized instead of a hardcoded English
+    name list.
 - Not covered here, deliberately: the AWS "Authorize Access to ~/.aws…"
   bookmark flow (needs Security-framework state, same reason D3 left it
   inline), the Vault role *list* fetch behind the XIB's combo box and its
