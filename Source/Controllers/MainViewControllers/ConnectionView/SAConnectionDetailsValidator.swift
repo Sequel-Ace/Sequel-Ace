@@ -125,6 +125,17 @@ import Foundation
         // 4-6. SSL file checks — run for connection types whose MySQL leg can use
         //      the shared SSL file fields. The order matches the original code so that
         //      a multi-issue form produces the same first-error UX.
+        //
+        //      ⚠️ `.sshTunnel` is absent on purpose, and it is probably an upstream
+        //      bug rather than a decision: the SSH tab does have a "Require SSL"
+        //      checkbox and its own SSL details container
+        //      (`sshConnectionSSLDetailsContainer`, `sslOverSSHKeyFileButton` and
+        //      friends), so an enabled-but-missing key/cert/CA on a tunnel reaches
+        //      connection setup unchecked. The pre-D3 ObjC read
+        //      `(type == SPTCPIPConnection || type == SPSocketConnection) && useSSL`,
+        //      D3 preserved that, and `testSSLChecksDoNotApplyToSSHTunnel` pins it.
+        //      Changing it would also change the shipping AppKit form, so it wants
+        //      its own PR rather than riding along with the SwiftUI work.
         if (type == .tcpIP || type == .socket || type == .vault) && useSSL {
             if sslKeyFileLocationEnabled, let path = sslKeyFileLocation,
                !fileExistsExpandingTilde(path) {
@@ -199,6 +210,18 @@ import Foundation
         case .sshKey, .sslCACert: return nil
         }
     }
+
+    /// File extensions the chooser must refuse outright.
+    ///
+    /// `-panel:shouldEnableURL:` greys out `.pub` files so an SSH *public* key
+    /// cannot be picked as an identity file — OpenSSH cannot use one, and the
+    /// failure would otherwise only appear when the tunnel connects.
+    var rejectedExtensions: Set<String> {
+        switch self {
+        case .sshKey: return ["pub"]
+        case .sslKey, .sslCertificate, .sslCACert: return []
+        }
+    }
 }
 
 /// Why a chosen file was rejected, carrying the same strings the AppKit alert
@@ -269,6 +292,16 @@ struct SAConnectionFileRejection {
     /// An unreadable file is reported with the underlying read error, matching
     /// the original, which surfaced the NSData error before its own check.
     static func rejection(forFileAt url: URL, kind: SAConnectionFileKind) -> SAConnectionFileRejection? {
+        if kind.rejectedExtensions.contains(url.pathExtension.lowercased()) {
+            return SAConnectionFileRejection(
+                alertTitle: String(format: NSLocalizedString("“%@” is a public key.",
+                                                             comment: "connection view : ssh : key file picker : public key error title"),
+                                   url.lastPathComponent),
+                alertMessage: NSLocalizedString("Choose the private key instead — the file without the .pub extension.",
+                                                comment: "connection view : ssh : key file picker : public key error description")
+            )
+        }
+
         guard kind.requiredPEMMarker != nil else { return nil }
 
         let data: Data

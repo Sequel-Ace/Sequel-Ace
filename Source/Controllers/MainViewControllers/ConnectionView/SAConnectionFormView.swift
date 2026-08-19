@@ -40,6 +40,9 @@ struct SAConnectionFormView: View {
     /// an alert (same strings the AppKit flow shows).
     @State private var validationFailure: SAConnectionValidationFailure?
 
+    /// Tracks the Vault Role field so losing focus can commit a pasted path.
+    @FocusState private var roleFieldFocused: Bool
+
     var body: some View {
         Form {
             typeSection
@@ -354,6 +357,14 @@ struct SAConnectionFormView: View {
                 // button are C3 scope, so this is the plain text half for now.
                 TextField(text: $model.vaultCredentialsRole) {
                     Text("Role", comment: "connection view : field label")
+                }
+                // Normalize a pasted full path into Mount + Role once editing
+                // commits, as -controlTextDidEndEditing: does. Focus loss counts
+                // as a commit, so both are wired.
+                .focused($roleFieldFocused)
+                .onSubmit { model.commitVaultCredentialsRole() }
+                .onChange(of: roleFieldFocused) { isFocused in
+                    if !isFocused { model.commitVaultCredentialsRole() }
                 }
             }
         }

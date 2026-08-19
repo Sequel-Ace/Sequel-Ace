@@ -134,6 +134,22 @@ final class SAConnectionFormModel: ObservableObject {
         vaultCredentialsRole = SAVaultCredentialsPath.role(fromCredPath: credentialsPath)
     }
 
+    /// Splits a full credentials path out of the Role half into Mount + Role.
+    ///
+    /// Mirrors `-controlTextDidEndEditing:`, which does this on commit rather
+    /// than per keystroke so a path being typed is not yanked away mid-edit.
+    /// Without it the two controls disagree with the endpoint actually used:
+    /// `credPath(mount:role:)` honours a pasted full path and ignores the
+    /// mount, so the stale mount stays on screen — and the moment the user
+    /// then types a bare role, it silently comes back.
+    func commitVaultCredentialsRole() {
+        guard SAVaultCredentialsPath.isFullCredPath(vaultCredentialsRole) else { return }
+
+        let pasted = vaultCredentialsRole
+        vaultMount = SAVaultCredentialsPath.mount(fromCredPath: pasted)
+        vaultCredentialsRole = SAVaultCredentialsPath.role(fromCredPath: pasted)
+    }
+
     private func rejoinVaultCredentialsPath() {
         info.vaultCredentialsPath = SAVaultCredentialsPath.credPath(mount: vaultMount,
                                                                     role: vaultCredentialsRole)
