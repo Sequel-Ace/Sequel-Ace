@@ -301,10 +301,11 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         }
     }
 
-    // Note: standalone connection window (SAConnectionWindowController) is available
-    // programmatically but not yet exposed in the menu to avoid confusion with the
-    // existing "New Connection Window" XIB menu item. Menu item can be added once
-    // the standalone window fully replaces the embedded connection flow.
+    // The standalone connection window now hosts the SwiftUI connection screen
+    // (C3), so it is worth reaching. It sits alongside the XIB's document-based
+    // flow rather than replacing it: this one opens a connection screen with no
+    // document behind it, and only creates a tab once a connection succeeds.
+    [self installStandaloneConnectionMenuItem];
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {

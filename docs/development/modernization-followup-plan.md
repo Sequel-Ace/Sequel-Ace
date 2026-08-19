@@ -422,7 +422,27 @@ C2b — all connection types + SSL, colour, time zone — ✅ Done
 - Files: `SAConnectionFormModel.swift`, `SAConnectionFormView.swift`,
   `UnitTests/SAConnectionFormModelTests.swift`
 
-**C3. Wire SwiftUI into SAConnectionWindowController + expose in menu**
+**C3. Wire SwiftUI into SAConnectionWindowController + expose in menu** — 🟡 Hosted; favorites CRUD + keychain pending
+- ✅ Done: `SAConnectionWindowController` now hosts `SAConnectionWindowView`
+  (an `NSHostingView` over `SAFavoritesList` + `SAConnectionFormView` in an
+  `HSplitView`) instead of instantiating `SPConnectionController`. This is the
+  first place the C1b/C2 views actually run — until now both compiled but
+  nothing created them.
+- ✅ Selecting a favorite populates the form through the D1 decoder
+  (`SAConnectionFormModel.load(favorite:)`); Quick Connect resets it. Connecting
+  validates via D3/C2b and goes through the existing `connectDirectly`, i.e.
+  `SAConnectionService`, with no `SPConnectionController` involved.
+- ✅ The "New Connection Window" menu item is enabled — `installStandaloneConnectionMenuItem`
+  existed since the scaffolding landed but was never called. It sits alongside
+  the XIB's document-based flow rather than replacing it.
+- ⚠️ Deliberately not done here, all of which the AppKit form still owns:
+  keychain password retrieval for a selected favorite (the D1 decoder never
+  carried passwords, and the lookup needs the account/service naming still in
+  `SPConnectionController`), favorites CRUD from this window (add / duplicate /
+  delete / rename / reorder), and the Vault role-list fetch. Typing a password
+  into the form works; a saved favorite's password does not auto-fill.
+- 5 new model tests (73 in `SAConnectionFormModelTests`) covering favorite load,
+  password non-carry, the Vault re-split on load, nil favorites and Quick Connect.
 - The standalone connection window is the ideal host for SwiftUI views
 - Replace the embedded SPConnectionController with SwiftUI favorites list + connection form
 - Use `SAConnectionService` directly for connection establishment

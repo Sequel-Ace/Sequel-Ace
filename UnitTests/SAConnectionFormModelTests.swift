@@ -884,6 +884,80 @@ final class SAConnectionFormModelTests: XCTestCase {
         model.info.host = "elsewhere.example.com"
 
         XCTAssertEqual(model.info.password, "")
+
+    // MARK: - C3: loading a favorite into the form
+
+    func testLoadingAFavoritePopulatesTheForm() {
+        let model = SAConnectionFormModel()
+        model.load(favorite: [
+            "type": SAConnectionType.sshTunnel.rawValue,
+            "name": "prod",
+            "host": "db.internal",
+            "user": "app",
+            "database": "sakila",
+            "sshHost": "bastion.example.com",
+        ] as NSDictionary)
+
+        XCTAssertEqual(model.info.type, .sshTunnel)
+        XCTAssertEqual(model.info.name, "prod")
+        XCTAssertEqual(model.info.host, "db.internal")
+        XCTAssertEqual(model.info.sshHost, "bastion.example.com")
+    }
+
+    /// Favorites never carry passwords — they live in the keychain — so loading
+    /// one must not leave a previous entry's password behind in the form.
+    func testLoadingAFavoriteClearsTheTypedPassword() {
+        let model = SAConnectionFormModel()
+        model.info.password = "left-over"
+        model.info.sshPassword = "left-over-ssh"
+
+        model.load(favorite: ["host": "db.example.com"] as NSDictionary)
+
+        XCTAssertEqual(model.info.password, "")
+        XCTAssertEqual(model.info.sshPassword, "")
+    }
+
+    /// Loading replaces `info` wholesale, which is what re-splits the Vault
+    /// halves — otherwise the mount control would keep the previous value.
+    func testLoadingAVaultFavoriteSplitsItsCredentialsPath() {
+        let model = SAConnectionFormModel()
+        model.vaultMount = "stale"
+        model.vaultCredentialsRole = "stale-role"
+
+        model.load(favorite: [
+            "type": SAConnectionType.vault.rawValue,
+            "host": "db.example.com",
+            "vaultCredentialsPath": "team/creds/writer",
+        ] as NSDictionary)
+
+        XCTAssertEqual(model.vaultMount, "team")
+        XCTAssertEqual(model.vaultCredentialsRole, "writer")
+    }
+
+    func testLoadingANilFavoriteYieldsABlankForm() {
+        let model = SAConnectionFormModel()
+        model.info.host = "something"
+
+        model.load(favorite: nil)
+
+        XCTAssertEqual(model.info.host, "")
+        XCTAssertEqual(model.info.type, .tcpIP)
+    }
+
+    /// Quick Connect is the blank-form row.
+    func testQuickConnectResetsEveryField() {
+        let model = SAConnectionFormModel()
+        model.info.type = .vault
+        model.info.host = "db.example.com"
+        model.vaultMount = "m"
+        model.vaultCredentialsRole = "r"
+
+        model.loadQuickConnect()
+
+        XCTAssertEqual(model.info.type, .tcpIP)
+        XCTAssertEqual(model.info.host, "")
+        XCTAssertEqual(model.vaultMount, "")
+        XCTAssertEqual(model.vaultCredentialsRole, "")
     }
 
     // MARK: - Review round 5: type-derived state
