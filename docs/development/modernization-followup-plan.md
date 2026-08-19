@@ -422,7 +422,7 @@ C2b — all connection types + SSL, colour, time zone — ✅ Done
 - Files: `SAConnectionFormModel.swift`, `SAConnectionFormView.swift`,
   `UnitTests/SAConnectionFormModelTests.swift`
 
-**C3. Wire SwiftUI into SAConnectionWindowController + expose in menu** — 🟡 Hosting done; document handoff + menu exposure pending
+**C3. Wire SwiftUI into SAConnectionWindowController + expose in menu** — ✅ Done (favorites CRUD + keychain still with the AppKit form)
 - ✅ Done: `SAConnectionWindowController` now hosts `SAConnectionWindowView`
   (an `NSHostingView` over `SAFavoritesList` + `SAConnectionFormView` in an
   `HSplitView`) instead of instantiating `SPConnectionController`. This is the
@@ -432,26 +432,28 @@ C2b — all connection types + SSL, colour, time zone — ✅ Done
   (`SAConnectionFormModel.load(favorite:)`); Quick Connect resets it. Connecting
   validates via D3/C2b and goes through the existing `connectDirectly`, i.e.
   `SAConnectionService`, with no `SPConnectionController` involved.
-- ⚠️ The menu item stays **off**. `installStandaloneConnectionMenuItem` exists
-  and is ready, but review of #2572 showed the handoff into a new document is
-  incomplete in ways that would ship a trap, so exposing it was reverted.
-- ⚠️ **The handoff is the remaining C3 work** (Codex, #2572). Hosting the views
-  turned three latent bugs in the scaffolding from dead code into live code:
-  - `connectionDidEstablish` ignores the `info` it is handed and only calls
-    `-setConnection:`, so the destination document's `SPConnectionController`
-    stays blank — the new tab's title, database, host, user, port and colour
-    read empty, and saving it as `.spf` persists empty connection details.
-    Fixing it needs an info → controller applier that does not exist yet (~30
-    properties), which is itself a chunk of SPConnectionController work.
-  - `SAConnectionService` configures transport flags only: it never calls
-    `AWSIAMAuthManager` to generate an IAM token, nor `VaultAuthManager` for
-    ephemeral credentials, both of which `SPConnectionController` does. So AWS
-    IAM authenticates with whatever was typed rather than a generated token,
-    and Vault cannot authenticate at all.
-  - Fixed here: the established connection had no delegate, so the framework
-    fell back to bare automatic retry — no query-error logging, no
-    no-connection alert, no keychain prompt on reconnect, no connection-loss
-    UI. The destination document is now set as the delegate before handoff.
+- ✅ The "New Connection Window" menu item is enabled. It sits alongside the
+  XIB's document-based flow rather than replacing it.
+- ✅ **The handoff is complete** (three gaps found by Codex on #2572; hosting the
+  views turned them from dead scaffolding into live code):
+  - `SAConnectionInfoObjC.apply(to:)` populates the destination document's
+    `SPConnectionController` before the connection is handed over, so the new
+    tab's title, database, host, user, port and colour are right and `.spf`
+    serialization carries real details. It is written as the exact inverse of
+    `-_buildConnectionInfo`, field for field in the same order; the two were
+    diffed mechanically to confirm 41/41 coverage both ways, which is a stronger
+    check than a hand-written test since the risk here is omission, not logic.
+  - AWS IAM and Vault now resolve their credentials before connecting.
+    `SAConnectionService` only configures transport flags, so the window calls
+    `AWSIAMAuthManager.generateAuthToken` for the RDS token (on the main queue,
+    since the profile flow can raise an MFA sheet) and `VaultAuthManager`
+    for ephemeral credentials (off the main queue — the OIDC leg can open a
+    browser for up to two minutes — clearing the cached pair on failure so a
+    retry re-runs it).
+  - The established connection is given the destination document as its
+    delegate; without it the framework fell back to bare automatic retry with no
+    query-error logging, no no-connection alert, no keychain prompt on reconnect
+    and no connection-loss UI.
 - ⚠️ Also still owned by the AppKit form:
   keychain password retrieval for a selected favorite (the D1 decoder never
   carried passwords, and the lookup needs the account/service naming still in

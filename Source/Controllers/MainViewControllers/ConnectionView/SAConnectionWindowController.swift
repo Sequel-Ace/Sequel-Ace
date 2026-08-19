@@ -178,21 +178,147 @@ import SwiftUI
     }
 
     /// Validates and connects using whatever the form currently holds.
+    ///
+    /// AWS IAM and Vault do not authenticate with a typed password: the former
+    /// needs a generated RDS token, the latter a pair of ephemeral credentials
+    /// fetched over OIDC. `SAConnectionService` only configures transport flags,
+    /// so those have to be resolved here — the same work `-_resolvedMySQLPassword`
+    /// and the Vault block in `-initiateConnection:` do for the embedded form.
     private func connectUsingForm() {
         if let failure = formModel.validate() {
             showConnectionError(title: failure.alertTitle, detail: failure.alertMessage)
             return
         }
 
-        let info = SAConnectionInfoObjC(info: formModel.info)
+        resolveCredentials { [weak self] result in
+            guard let self else { return }
 
-        // Passwords come from the form's own fields. Reading a saved favorite's
-        // password out of the keychain is deliberately not wired here — the D1
-        // decoder never carried passwords, and the keychain lookup needs the
-        // account/service naming that still lives in SPConnectionController.
-        connectDirectly(with: info,
-                        password: formModel.info.password,
-                        sshPassword: formModel.info.sshPassword)
+            switch result {
+            case .failure(let failure):
+                self.showConnectionError(title: failure.title, detail: failure.detail)
+
+            case .success(let credentials):
+                var resolved = self.formModel.info
+                resolved.user = credentials.user
+                resolved.password = credentials.password
+
+                self.connectDirectly(with: SAConnectionInfoObjC(info: resolved),
+                                     password: credentials.password,
+                                     sshPassword: resolved.sshPassword)
+            }
+        }
+    }
+
+    /// The username and password to actually connect with.
+    private struct SAResolvedCredentials {
+        let user: String
+        let password: String
+    }
+
+    private struct SACredentialFailure: Error {
+        let title: String
+        let detail: String?
+    }
+
+    /// Resolves type-specific credentials, calling back on the main queue.
+    private func resolveCredentials(_ completion: @escaping (Result<SAResolvedCredentials, SACredentialFailure>) -> Void) {
+        let info = formModel.info
+
+        switch info.type {
+        case .awsIAM:
+            completion(resolveAWSIAMToken(info: info))
+
+        case .vault:
+            resolveVaultCredentials(info: info, completion: completion)
+
+        case .tcpIP, .socket, .sshTunnel:
+            // The typed password is the credential. Reading a saved favorite's
+            // password out of the keychain is still not wired — the D1 decoder
+            // never carried passwords, and the lookup needs the account/service
+            // naming that lives in SPConnectionController.
+            completion(.success(SAResolvedCredentials(user: info.user, password: info.password)))
+        }
+    }
+
+    /// Generates the RDS auth token that stands in for the password. Stays on
+    /// the main queue because the profile flow can raise an MFA sheet.
+    private func resolveAWSIAMToken(info: SAConnectionInfo) -> Result<SAResolvedCredentials, SACredentialFailure> {
+        let port = Int(info.port.trimmingCharacters(in: .whitespaces)) ?? 3306
+        let trimmedProfile = info.awsProfile.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        do {
+            let token = try AWSIAMAuthManager.generateAuthToken(
+                hostname: info.host,
+                port: port,
+                username: info.user,
+                region: info.awsRegion,
+                // Matches -generateAWSIAMAuthTokenWithError:, which falls back to
+                // "default" rather than passing an empty profile name.
+                profile: trimmedProfile.isEmpty ? "default" : trimmedProfile,
+                accessKey: nil,
+                secretKey: nil,
+                parentWindow: window
+            )
+
+            guard !token.isEmpty else {
+                return .failure(SACredentialFailure(
+                    title: NSLocalizedString("AWS IAM Authentication Failed", comment: "AWS IAM auth failed title"),
+                    detail: NSLocalizedString("Empty authentication token returned", comment: "AWS IAM empty token error")))
+            }
+
+            return .success(SAResolvedCredentials(user: info.user, password: token))
+        } catch {
+            return .failure(SACredentialFailure(
+                title: NSLocalizedString("AWS IAM Authentication Failed", comment: "AWS IAM auth failed title"),
+                detail: error.localizedDescription))
+        }
+    }
+
+    /// Fetches ephemeral Vault credentials off the main queue: the OIDC leg can
+    /// open a browser and take up to two minutes, which must not block the UI.
+    private func resolveVaultCredentials(info: SAConnectionInfo,
+                                         completion: @escaping (Result<SAResolvedCredentials, SACredentialFailure>) -> Void) {
+        let host = info.vaultHost.trimmingCharacters(in: .whitespacesAndNewlines)
+        let port = info.vaultPort.isEmpty ? "443" : info.vaultPort
+        let mount = info.vaultOIDCMount.isEmpty ? "oidc" : info.vaultOIDCMount
+        let credPath = info.vaultCredentialsPath
+        let loginIdentifier = VaultOIDCHandler.prepareActiveLogin()
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            var username: NSString?
+            var password: NSString?
+            var error: NSError?
+
+            let succeeded = VaultAuthManager.generateCredentials(
+                host: host,
+                port: port,
+                oidcMount: mount,
+                credPath: credPath,
+                loginIdentifier: loginIdentifier,
+                username: &username,
+                password: &password,
+                error: &error
+            )
+            VaultOIDCHandler.clearPreparedActiveLogin(identifier: loginIdentifier)
+
+            DispatchQueue.main.async {
+                guard succeeded,
+                      let username = username as String?, !username.isEmpty,
+                      let password = password as String?, !password.isEmpty else {
+                    // Drop whatever was cached for this endpoint, as the embedded
+                    // flow does, so a retry re-runs the OIDC leg rather than
+                    // reusing a half-formed result.
+                    VaultAuthManager.clearCachedCredentials(host: host, port: port,
+                                                            oidcMount: mount, credPath: credPath)
+                    completion(.failure(SACredentialFailure(
+                        title: NSLocalizedString("Vault Authentication Failed", comment: "Vault auth failed title"),
+                        detail: error?.localizedDescription)))
+                    return
+                }
+
+                completion(.success(SAResolvedCredentials(user: username, password: password)))
+            }
+        }
     }
 
     // MARK: - SAConnectionDelegate
@@ -205,22 +331,28 @@ import SwiftUI
 
         guard let document = windowController?.databaseDocument else { return }
 
-        // 2. Hand off the established connection to the new document.
-        // setConnection: transitions the document out of connection mode
-        // into the database UI (same as the embedded flow's addConnectionToDocument).
-        //
-        // The document must become the connection's delegate first: neither
-        // SAConnectionService nor -setConnection: assigns it, and without it the
+        // 2. Populate the destination document's connection controller before
+        // handing the connection over. SPDatabaseDocument reads its title,
+        // database, host, user, port, colour and .spf serialization state from
+        // that controller, so without this the new tab looks connected but
+        // reads blank and saves empty connection details (Codex, #2572).
+        info.apply(to: document.connectionController())
+
+        // 3. The document must become the connection's delegate: neither
+        // SAConnectionService nor -setConnection: assigns one, and without it the
         // framework falls back to its automatic retry with no query-error
         // logging, no no-connection alert, no keychain password prompt on
-        // reconnect and no connection-loss decision UI (Codex, #2572).
+        // reconnect and no connection-loss decision UI.
         connection.setDelegate(document)
+
+        // 4. setConnection: transitions the document out of connection mode
+        // into the database UI (same as the embedded flow's addConnectionToDocument).
         document.setConnection(connection)
 
-        // 3. Mark handoff complete so windowWillClose doesn't cancel the connection
+        // 5. Mark handoff complete so windowWillClose doesn't cancel the connection
         connectionHandedOff = true
 
-        // 4. Close the standalone connection window
+        // 6. Close the standalone connection window
         close()
     }
 
@@ -282,6 +414,79 @@ import SwiftUI
                 )
             }
         }
+    }
+}
+
+// MARK: - Populating a document's connection controller
+
+extension SAConnectionInfoObjC {
+
+    /// Copies these details onto a document's `SPConnectionController`.
+    ///
+    /// The exact inverse of `-[SPConnectionController _buildConnectionInfo]`,
+    /// field for field and in the same order, so the two can be diffed against
+    /// each other when either gains a field. `SPDatabaseDocument` reads its
+    /// window title, tab label, selected database, favourite colour and `.spf`
+    /// serialization out of the controller, so a document handed a connection
+    /// without this looks connected while reading blank.
+    ///
+    /// `vaultMount` and `vaultCredentialsRole` are not set directly: the
+    /// controller derives them in its `setVaultCredentialsPath:` setter, which
+    /// splits the joined path across both ivars.
+    func apply(to controller: SPConnectionController?) {
+        guard let controller else { return }
+        let info = self.info
+
+        controller.type = info.type.rawValue
+        controller.name = info.name
+        controller.host = info.host
+        controller.user = info.user
+        controller.password = info.password
+        controller.database = info.database
+        controller.socket = info.socket
+        controller.port = info.port
+        controller.colorIndex = info.colorIndex
+        controller.useCompression = info.useCompression
+
+        controller.useSSL = info.useSSL
+        controller.sslKeyFileLocationEnabled = info.sslKeyFileLocationEnabled
+        controller.sslKeyFileLocation = info.sslKeyFileLocation
+        controller.sslCertificateFileLocationEnabled = info.sslCertificateFileLocationEnabled
+        controller.sslCertificateFileLocation = info.sslCertificateFileLocation
+        controller.sslCACertFileLocationEnabled = info.sslCACertFileLocationEnabled
+        controller.sslCACertFileLocation = info.sslCACertFileLocation
+
+        controller.sshHost = info.sshHost
+        controller.sshUser = info.sshUser
+        controller.sshPassword = info.sshPassword
+        controller.sshKeyLocationEnabled = info.sshKeyLocationEnabled
+        controller.sshKeyLocation = info.sshKeyLocation
+        controller.sshPort = info.sshPort
+        controller.sshRemoteSocketPath = info.sshRemoteSocketPath
+
+        controller.connectionKeychainID = info.connectionKeychainID
+        controller.connectionKeychainItemName = info.connectionKeychainItemName
+        controller.connectionKeychainItemAccount = info.connectionKeychainItemAccount
+        controller.connectionSSHKeychainItemName = info.connectionSSHKeychainItemName
+        controller.connectionSSHKeychainItemAccount = info.connectionSSHKeychainItemAccount
+
+        // Both enums are NSInteger-backed and share their case order
+        // (server / system / fixed), so the raw value carries across.
+        controller.timeZoneMode = SPConnectionTimeZoneMode(rawValue: info.timeZoneMode.rawValue) ?? .useServerTZ
+        controller.timeZoneIdentifier = info.timeZoneIdentifier
+
+        controller.allowDataLocalInfile = info.allowDataLocalInfile
+        controller.enableClearTextPlugin = info.enableClearTextPlugin
+        controller.requestServerPublicKey = info.requestServerPublicKey
+
+        controller.useAWSIAMAuth = info.useAWSIAMAuth
+        controller.awsRegion = info.awsRegion
+        controller.awsProfile = info.awsProfile
+
+        controller.vaultHost = info.vaultHost
+        controller.vaultPort = info.vaultPort
+        controller.vaultOIDCMount = info.vaultOIDCMount
+        controller.vaultCredentialsPath = info.vaultCredentialsPath
     }
 }
 
