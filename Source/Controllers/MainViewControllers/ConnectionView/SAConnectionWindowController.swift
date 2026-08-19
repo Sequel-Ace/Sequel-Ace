@@ -208,6 +208,13 @@ import SwiftUI
         // 2. Hand off the established connection to the new document.
         // setConnection: transitions the document out of connection mode
         // into the database UI (same as the embedded flow's addConnectionToDocument).
+        //
+        // The document must become the connection's delegate first: neither
+        // SAConnectionService nor -setConnection: assigns it, and without it the
+        // framework falls back to its automatic retry with no query-error
+        // logging, no no-connection alert, no keychain password prompt on
+        // reconnect and no connection-loss decision UI (Codex, #2572).
+        connection.setDelegate(document)
         document.setConnection(connection)
 
         // 3. Mark handoff complete so windowWillClose doesn't cancel the connection

@@ -301,11 +301,20 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         }
     }
 
-    // The standalone connection window now hosts the SwiftUI connection screen
-    // (C3), so it is worth reaching. It sits alongside the XIB's document-based
-    // flow rather than replacing it: this one opens a connection screen with no
-    // document behind it, and only creates a tab once a connection succeeds.
-    [self installStandaloneConnectionMenuItem];
+    // The standalone connection window (SAConnectionWindowController) now hosts
+    // the SwiftUI connection screen, but its handoff into a new document is not
+    // complete, so it stays off the menu and reachable only programmatically.
+    // Three gaps, all found in review of #2572:
+    //   - the destination document's SPConnectionController is never populated
+    //     from the connection details, so the new tab's title, database, colour
+    //     and .spf serialization read blank;
+    //   - AWS IAM and Vault never get their credentials generated
+    //     (AWSIAMAuthManager / VaultAuthManager), so those types cannot
+    //     authenticate through this window at all;
+    //   - favorites CRUD and keychain password retrieval still belong to the
+    //     embedded flow.
+    // Install the item (-installStandaloneConnectionMenuItem) once the handoff
+    // produces a document indistinguishable from the embedded flow's.
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {
