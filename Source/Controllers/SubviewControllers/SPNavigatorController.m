@@ -1145,7 +1145,8 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 	id parentKeys = [parentObject allKeysForObject:item];
 	if(!(parentKeys && [parentKeys count] == 1)) return nil;
 
-	return [[[parentKeys objectAtIndex:0] description] stringByReplacingOccurrencesOfRegex:[NSString stringWithFormat:@"^.*?%@", SPUniqueSchemaDelimiter] withString:@""];
+	return [SADragPasteboard schemaPathFromKey:[[parentKeys objectAtIndex:0] description]
+	                                 delimiter:SPUniqueSchemaDelimiter];
 }
 
 #pragma mark -

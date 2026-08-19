@@ -167,6 +167,55 @@ import AppKit
         return stored
     }
 
+    // MARK: - Payload field resolution
+
+    // The two pure lookups the drag-out sites needed, lifted out of the
+    // delegate methods so they can be tested without an outline view or a
+    // live result set.
+
+    /// A navigator schema path with its leading connection ID stripped — the
+    /// part before and including the first delimiter.
+    ///
+    /// Replaces `stringByReplacingOccurrencesOfRegex:@"^.*?<delim>"`. Splitting
+    /// on the first occurrence rather than running the regex also drops the
+    /// pattern's newline caveat: `.` does not match newlines in ICU, so a key
+    /// containing one before its delimiter used to come back unstripped.
+    /// Returns the key unchanged when it holds no delimiter, as the regex did.
+    @objc(schemaPathFromKey:delimiter:)
+    static func schemaPath(fromKey key: String, delimiter: String) -> String {
+        guard !delimiter.isEmpty, let range = key.range(of: delimiter) else { return key }
+        return String(key[range.upperBound...])
+    }
+
+    /// The schema column name behind a clicked table column, or nil when the
+    /// click cannot be resolved to one.
+    ///
+    /// Visible columns carry their storage index as the column identifier (the
+    /// mapping SPCopyTable uses), so this is a two-step lookup with a bounds
+    /// check at each step. `identifiers` are the view's column identifiers in
+    /// display order; `columnNames` are the storage-ordered column names.
+    ///
+    /// Both arrive as untyped ObjC arrays because the call sites build them
+    /// with `-valueForKey:`, which substitutes `NSNull` for anything missing —
+    /// a `[String]` parameter would trap on that during bridging rather than
+    /// resolve to "no column", which is the honest answer. Non-string entries
+    /// are therefore treated as absent.
+    @objc(columnNameForClickedColumn:identifiers:columnNames:)
+    static func columnName(forClickedColumn column: Int,
+                           identifiers: [Any],
+                           columnNames: [Any]) -> String? {
+        guard column >= 0, column < identifiers.count,
+              let identifier = identifiers[column] as? String else { return nil }
+
+        // NSString's -integerValue, not Int(_:), to keep the ObjC leniency the
+        // identifiers were read with: it parses a leading integer and yields 0
+        // rather than failing on anything unexpected.
+        let storageIndex = (identifier as NSString).integerValue
+        guard storageIndex >= 0, storageIndex < columnNames.count else { return nil }
+
+        return columnNames[storageIndex] as? String
+    }
+
     // MARK: - Refusal rules
 
     /// True when a drag beginning at `row` must be refused because it would carry

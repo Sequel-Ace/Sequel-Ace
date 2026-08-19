@@ -287,6 +287,87 @@ final class SADragPasteboardTests: XCTestCase {
         XCTAssertEqual(SADragPasteboard.strings(from: pasteboard, forType: SADragPasteboard.dragRowType).count, 3)
     }
 
+    // MARK: - Payload field resolution
+
+    func testSchemaPathStripsTheLeadingConnectionID() {
+        let path = SADragPasteboard.schemaPath(fromKey: "conn123\u{FFF8}mydb\u{FFF8}mytable",
+                                               delimiter: "\u{FFF8}")
+
+        XCTAssertEqual(path, "mydb\u{FFF8}mytable")
+    }
+
+    /// The regex this replaced was non-greedy, so only the first segment goes.
+    func testSchemaPathStripsOnlyTheFirstSegment() {
+        XCTAssertEqual(SADragPasteboard.schemaPath(fromKey: "a/b/c", delimiter: "/"), "b/c")
+    }
+
+    func testSchemaPathLeavesAKeyWithoutADelimiterAlone() {
+        XCTAssertEqual(SADragPasteboard.schemaPath(fromKey: "justaname", delimiter: "\u{FFF8}"),
+                       "justaname")
+    }
+
+    func testSchemaPathHandlesATrailingDelimiter() {
+        XCTAssertEqual(SADragPasteboard.schemaPath(fromKey: "conn\u{FFF8}", delimiter: "\u{FFF8}"), "")
+    }
+
+    func testSchemaPathWithAnEmptyDelimiterIsANoOp() {
+        XCTAssertEqual(SADragPasteboard.schemaPath(fromKey: "conn\u{FFF8}db", delimiter: ""),
+                       "conn\u{FFF8}db")
+    }
+
+    /// Splitting on the first occurrence also fixes a latent regex quirk: `.`
+    /// does not match newlines in ICU, so `^.*?<delim>` left such a key
+    /// unstripped.
+    func testSchemaPathStripsEvenWhenTheKeyContainsANewline() {
+        XCTAssertEqual(SADragPasteboard.schemaPath(fromKey: "co\nnn\u{FFF8}db", delimiter: "\u{FFF8}"),
+                       "db")
+    }
+
+    func testClickedColumnResolvesThroughItsStorageIndex() {
+        // Visible column 1 carries storage index 2.
+        let name = SADragPasteboard.columnName(forClickedColumn: 1,
+                                               identifiers: ["0", "2"],
+                                               columnNames: ["id", "name", "email"])
+
+        XCTAssertEqual(name, "email")
+    }
+
+    func testClickedColumnOutOfRangeResolvesToNothing() {
+        XCTAssertNil(SADragPasteboard.columnName(forClickedColumn: 5,
+                                                 identifiers: ["0"],
+                                                 columnNames: ["id"]))
+        XCTAssertNil(SADragPasteboard.columnName(forClickedColumn: -1,
+                                                 identifiers: ["0"],
+                                                 columnNames: ["id"]))
+    }
+
+    /// A stale storage index — the row reloaded under the drag — must resolve
+    /// to nothing rather than to the wrong column.
+    func testStorageIndexPastTheColumnListResolvesToNothing() {
+        XCTAssertNil(SADragPasteboard.columnName(forClickedColumn: 0,
+                                                 identifiers: ["9"],
+                                                 columnNames: ["id"]))
+    }
+
+    /// `-valueForKey:` substitutes NSNull where a value is missing; that must
+    /// read as "no column", not crash.
+    func testNullEntriesResolveToNothing() {
+        XCTAssertNil(SADragPasteboard.columnName(forClickedColumn: 0,
+                                                 identifiers: [NSNull()],
+                                                 columnNames: ["id"]))
+        XCTAssertNil(SADragPasteboard.columnName(forClickedColumn: 0,
+                                                 identifiers: ["0"],
+                                                 columnNames: [NSNull()]))
+    }
+
+    /// ObjC `-integerValue` leniency: a non-numeric identifier yields 0.
+    func testNonNumericIdentifierFallsBackToTheFirstColumn() {
+        XCTAssertEqual(SADragPasteboard.columnName(forClickedColumn: 0,
+                                                   identifiers: ["notanumber"],
+                                                   columnNames: ["id", "name"]),
+                       "id")
+    }
+
     // MARK: - Rule-filter cell payload
 
     // Gates which drags advertise a droppable cell for the Content-tab filter.
@@ -329,10 +410,10 @@ final class SADragPasteboardTests: XCTestCase {
 
     /// The payload must survive the pasteboard as a plist, which means every
     /// value has to be a property-list type.
-    func testCellPayloadIsPropertyListEncodable() {
+    func testCellPayloadIsPropertyListEncodable() throws {
         let pasteboard = makePasteboard()
         writeMarkers(0..<1, to: pasteboard)
-        let payload = try! XCTUnwrap(SPCellValuePasteboard.rowPayload(columnName: "id", value: "7", isNull: false))
+        let payload = try XCTUnwrap(SPCellValuePasteboard.rowPayload(columnName: "id", value: "7", isNull: false))
 
         XCTAssertTrue(SADragPasteboard.attach(propertyList: payload,
                                               forType: SPCellValuePasteboard.pasteboardRowTypeRaw,

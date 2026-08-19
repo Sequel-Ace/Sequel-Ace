@@ -4722,13 +4722,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		// storage index, same mapping SPCopyTable uses) so the drop
 		// target gets the original schema column name the rule
 		// editor looks up against.
-		NSArray *viewColumns = [tableContentView tableColumns];
-		if ((NSUInteger)clickedCol < [viewColumns count]) {
-			NSInteger storageIndex = [[[viewColumns objectAtIndex:(NSUInteger)clickedCol] identifier] integerValue];
-			if (storageIndex >= 0 && (NSUInteger)storageIndex < [dataColumns count]) {
-				cellColumnName = [[dataColumns objectAtIndex:(NSUInteger)storageIndex] objectForKey:@"name"];
-			}
-		}
+		cellColumnName = [SADragPasteboard columnNameForClickedColumn:clickedCol
+		                                                  identifiers:[[tableContentView tableColumns] valueForKey:@"identifier"]
+		                                                  columnNames:[dataColumns valueForKey:@"name"]];
 	}
 
 	// Dropped onto the rule editor, the plist alone is enough to synthesize a

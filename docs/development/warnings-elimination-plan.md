@@ -307,6 +307,18 @@ Two smaller behaviour notes:
 - SPTableContent's rule-filter cell payload moved its publish/refuse rule into
   `SPCellValuePasteboard.rowPayload(columnName:value:isNull:)` (Swift, 6 tests).
 
+Review follow-up (CodeRabbit): the two pure lookups the migration left in ObjC
+moved to `SADragPasteboard` — `schemaPath(fromKey:delimiter:)` (strip the
+navigator's leading connection ID) and `columnName(forClickedColumn:…)` (map a
+clicked table column through its storage index). Both are now tested, and the
+schema-path split fixes a latent quirk in the regex it replaced: `.` does not
+match newlines in ICU, so `^.*?<delim>` left a key containing one unstripped.
+The rest of the flagged ObjC is pre-existing logic that *moved* between delegate
+methods rather than new code — the net ObjC across the three files is +33 lines,
+mostly doc comments and the two delegate signatures each site needs, against
++462 lines of Swift. The remaining ObjC (outline-view traversal, the cell
+display/NULL reads) needs live AppKit objects and would only gain indirection.
+
 One worry checked and dismissed: `SPCopyTable` grants drag-out permission by
 overriding the pre-10.7 `-draggingSourceOperationMaskForLocal:` rather than
 calling `-setDraggingSourceOperationMask:forLocal:`, and the session-based drag
@@ -350,7 +362,7 @@ into the query editor.
 | 8 (Swift 6) | **165 (measured, clean build)** |
 | 9a (informal-protocol conformance) | **129 (measured, clean build)** |
 | 9b part 1 (internal reorders + dead split-view method) | **125 (measured, clean build)** |
-| 9b part 2 (3 drag-out payloads) | **-3 (measured as a diff, see below)** |
+| 9b part 2 (3 drag-out payloads) | **128 -> 125 (-3); own basis, see below** |
 
 ⚠️ The 9b-part-2 row is a *delta*, not a level, because it could not be made
 comparable to the rows above it. Measured with `xcodebuild -scheme "Sequel Ace
