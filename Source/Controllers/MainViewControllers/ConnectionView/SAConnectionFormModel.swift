@@ -3,7 +3,10 @@
 //  Sequel Ace
 //
 //  Phase C2 of the SwiftUI migration: the observable model behind
-//  SAConnectionFormView. Wraps the value-type SAConnectionInfo so
+//  SAConnectionFormView. C2a covered TCP/IP; C2b extends it to every
+//  connection type (socket, SSH tunnel, AWS IAM, Vault) plus the SSL
+//  file options, colour index and time zone the XIB tabs carry.
+//  Wraps the value-type SAConnectionInfo so
 //  SwiftUI fields can bind straight into it ($model.info.host), and
 //  funnels the pieces extracted in earlier phases:
 //  - SAConnectionDetailsValidator (D3) for pre-connection validation
@@ -18,6 +21,80 @@
 import Foundation
 import Combine
 
+// MARK: - Time Zone Choice
+
+/// The three states the XIB's time-zone popup can be in, collapsed into
+/// one value. `SAConnectionInfo` stores this as a (mode, identifier)
+/// pair where the identifier is only meaningful in `.useFixedTZ`; this
+/// makes the invalid combinations unrepresentable so a SwiftUI picker
+/// can bind to a single selection.
+enum SATimeZoneChoice: Hashable {
+    case server
+    case system
+    case fixed(String)
+
+    /// Reconstructs the choice from the stored pair. A fixed mode with a
+    /// blank identifier degrades to `.server`, matching the AppKit popup,
+    /// which has no menu item that could represent it.
+    init(mode: SAConnectionTimeZoneMode, identifier: String) {
+        switch mode {
+        case .useServerTZ:
+            self = .server
+        case .useSystemTZ:
+            self = .system
+        case .useFixedTZ:
+            self = identifier.isEmpty ? .server : .fixed(identifier)
+        }
+    }
+
+    var mode: SAConnectionTimeZoneMode {
+        switch self {
+        case .server: return .useServerTZ
+        case .system: return .useSystemTZ
+        case .fixed: return .useFixedTZ
+        }
+    }
+
+    /// Blank for the two relative modes — `-didChangeSelectedTimeZone:`
+    /// clears the identifier when leaving the fixed mode, and a stale
+    /// identifier would otherwise be written back to the favorite.
+    var identifier: String {
+        switch self {
+        case .server, .system: return ""
+        case .fixed(let identifier): return identifier
+        }
+    }
+}
+
+/// One row of the time-zone picker, mirroring `-generateTimeZoneMenuItems`:
+/// the two relative entries first, then every known identifier sorted
+/// case-insensitively, with a separator wherever the region prefix changes.
+enum SATimeZoneMenuEntry: Hashable {
+    case choice(SATimeZoneChoice)
+    case separator(afterPrefix: String)
+
+    /// The full menu, in order.
+    static func menu(identifiers: [String] = TimeZone.knownTimeZoneIdentifiers) -> [SATimeZoneMenuEntry] {
+        var entries: [SATimeZoneMenuEntry] = [
+            .choice(.server),
+            .separator(afterPrefix: ""),
+            .choice(.system),
+        ]
+
+        var previousPrefix = ""
+        for identifier in identifiers.sorted(by: { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }) {
+            let prefix = identifier.components(separatedBy: "/").first ?? identifier
+            if prefix != previousPrefix {
+                previousPrefix = prefix
+                entries.append(.separator(afterPrefix: prefix))
+            }
+            entries.append(.choice(.fixed(identifier)))
+        }
+
+        return entries
+    }
+}
+
 final class SAConnectionFormModel: ObservableObject {
 
     /// The connection parameters being edited. SwiftUI binds into this
@@ -25,10 +102,58 @@ final class SAConnectionFormModel: ObservableObject {
     /// a change for the whole model, which is the granularity the form
     /// needs (the effective name and validation state depend on several
     /// fields at once).
-    @Published var info: SAConnectionInfo
+    @Published var info: SAConnectionInfo {
+        didSet {
+            resplitVaultCredentialsPathIfChangedExternally()
+        }
+    }
+
+    // MARK: Vault mount / role
+
+    // `info.vaultCredentialsPath` persists the joined "<mount>/creds/<role>",
+    // but the form edits the two halves separately — same split the AppKit
+    // controller keeps as its `vaultMount` / `vaultCredentialsRole` ivars with
+    // a computed `vaultCredentialsPath` on top. They have to be stored rather
+    // than computed off the path: `credPath(mount:role:)` returns "" while the
+    // role is still blank, so a mount typed first would otherwise vanish.
+
+    @Published var vaultMount: String = "" {
+        didSet { rejoinVaultCredentialsPath() }
+    }
+
+    @Published var vaultCredentialsRole: String = "" {
+        didSet { rejoinVaultCredentialsPath() }
+    }
 
     init(info: SAConnectionInfo = SAConnectionInfo()) {
         self.info = info
+        // Same one-read rule as the resplit below (didSet observers do not run
+        // during init, but the parameter is the honest source either way).
+        let credentialsPath = info.vaultCredentialsPath
+        vaultMount = SAVaultCredentialsPath.mount(fromCredPath: credentialsPath)
+        vaultCredentialsRole = SAVaultCredentialsPath.role(fromCredPath: credentialsPath)
+    }
+
+    private func rejoinVaultCredentialsPath() {
+        info.vaultCredentialsPath = SAVaultCredentialsPath.credPath(mount: vaultMount,
+                                                                    role: vaultCredentialsRole)
+    }
+
+    /// Re-derives the two halves when `info` is replaced wholesale — loading a
+    /// favorite, say. Skipped when the path already equals what the current
+    /// halves join to, which is what stops `rejoinVaultCredentialsPath` and
+    /// this from bouncing off each other.
+    private func resplitVaultCredentialsPathIfChangedExternally() {
+        let joined = SAVaultCredentialsPath.credPath(mount: vaultMount, role: vaultCredentialsRole)
+        guard info.vaultCredentialsPath != joined else { return }
+
+        // Read the incoming path once, up front: assigning either half runs
+        // `rejoinVaultCredentialsPath`, which overwrites
+        // `info.vaultCredentialsPath` with the half-updated pair — so reading
+        // it again for the second half would parse the value we just wrote.
+        let incoming = info.vaultCredentialsPath
+        vaultMount = SAVaultCredentialsPath.mount(fromCredPath: incoming)
+        vaultCredentialsRole = SAVaultCredentialsPath.role(fromCredPath: incoming)
     }
 
     /// Bridge in from the ObjC wrapper (e.g. the controller's current
@@ -75,6 +200,106 @@ final class SAConnectionFormModel: ObservableObject {
         case .tcpIP, .awsIAM, .vault:
             return hasHost
         }
+    }
+
+    // MARK: - Time zone
+
+    /// The time-zone popup's selection, collapsing the stored
+    /// (mode, identifier) pair. Setting it writes both, clearing the
+    /// identifier outside the fixed mode exactly as
+    /// `-didChangeSelectedTimeZone:` does.
+    var timeZoneChoice: SATimeZoneChoice {
+        get { SATimeZoneChoice(mode: info.timeZoneMode, identifier: info.timeZoneIdentifier) }
+        set {
+            info.timeZoneMode = newValue.mode
+            info.timeZoneIdentifier = newValue.identifier
+        }
+    }
+
+    // MARK: - Flag bridges
+
+    // SAConnectionInfo stores these as Int because they cross into ObjC as
+    // 0/1; SwiftUI Toggles need Bool. Non-zero counts as on, which is what
+    // the ObjC `-boolValue` reads the favorite plist with.
+
+    private func flag(_ keyPath: WritableKeyPath<SAConnectionInfo, Int>) -> Bool {
+        info[keyPath: keyPath] != 0
+    }
+
+    private func setFlag(_ keyPath: WritableKeyPath<SAConnectionInfo, Int>, _ isOn: Bool) {
+        info[keyPath: keyPath] = isOn ? 1 : 0
+    }
+
+    var useSSL: Bool {
+        get { flag(\.useSSL) }
+        set { setFlag(\.useSSL, newValue) }
+    }
+
+    var allowDataLocalInfile: Bool {
+        get { flag(\.allowDataLocalInfile) }
+        set { setFlag(\.allowDataLocalInfile, newValue) }
+    }
+
+    var enableClearTextPlugin: Bool {
+        get { flag(\.enableClearTextPlugin) }
+        set { setFlag(\.enableClearTextPlugin, newValue) }
+    }
+
+    var requestServerPublicKey: Bool {
+        get { flag(\.requestServerPublicKey) }
+        set { setFlag(\.requestServerPublicKey, newValue) }
+    }
+
+    var sshKeyLocationEnabled: Bool {
+        get { flag(\.sshKeyLocationEnabled) }
+        set { setFlag(\.sshKeyLocationEnabled, newValue) }
+    }
+
+    var sslKeyFileLocationEnabled: Bool {
+        get { flag(\.sslKeyFileLocationEnabled) }
+        set { setFlag(\.sslKeyFileLocationEnabled, newValue) }
+    }
+
+    var sslCertificateFileLocationEnabled: Bool {
+        get { flag(\.sslCertificateFileLocationEnabled) }
+        set { setFlag(\.sslCertificateFileLocationEnabled, newValue) }
+    }
+
+    var sslCACertFileLocationEnabled: Bool {
+        get { flag(\.sslCACertFileLocationEnabled) }
+        set { setFlag(\.sslCACertFileLocationEnabled, newValue) }
+    }
+
+    // MARK: - Per-type form shape
+
+    /// AWS IAM turns SSL and the cleartext plugin on itself, so its tab
+    /// shows neither toggle — it shows a static explanatory label instead
+    /// (see `awsIAMConnectionFormContainer` in ConnectionView.xib, which
+    /// is also the only tab with no SSL details container).
+    var forcesSSL: Bool {
+        info.type == .awsIAM
+    }
+
+    /// Whether the "Require SSL" toggle is offered at all.
+    var showsSSLToggle: Bool {
+        !forcesSSL
+    }
+
+    /// Whether the three SSL file pickers (key / certificate / CA cert)
+    /// are visible. The XIB reveals that container only while the type's
+    /// SSL toggle is on, and never for AWS IAM.
+    var showsSSLFileOptions: Bool {
+        showsSSLToggle && useSSL
+    }
+
+    /// The cleartext-plugin toggle is likewise absent from the AWS tab.
+    var showsClearTextPluginToggle: Bool {
+        !forcesSSL
+    }
+
+    /// "Get Public Key" is offered on every tab except AWS IAM.
+    var showsRequestServerPublicKeyToggle: Bool {
+        !forcesSSL
     }
 
     // MARK: - Validation
