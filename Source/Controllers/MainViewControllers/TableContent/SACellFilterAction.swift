@@ -76,7 +76,12 @@ import AppKit
         connection: SPMySQLConnection?
     ) {
         removeItems(from: menu)
-        if let customQuery = table.delegate as? SPCustomQuery, customQuery.isWorking {
+        let tableContentIsWorking = (table.delegate as? SPTableContent)?.isWorking ?? false
+        let customQueryIsWorking = (table.delegate as? SPCustomQuery)?.isWorking ?? false
+        if SACellValueCopyMenuBuilder.shouldSuppressMenu(
+            tableContentIsWorking: tableContentIsWorking,
+            customQueryIsWorking: customQueryIsWorking
+        ) {
             return
         }
 
@@ -106,7 +111,7 @@ import AppKit
 
         let columnDefinition = columnDefinitions?[safe: storageColumn]
         var rawValues: [String] = []
-        var sqlLiterals: [String]? = columnDefinition != nil && connection != nil ? [] : nil
+        var sqlValues: [Any]? = columnDefinition != nil && connection != nil ? [] : nil
         for row in selectedRows {
             guard UInt(row) < tableStorage.count(),
                   let displayValue = table.displayString(forRow: row, column: visibleColumn) else {
@@ -114,23 +119,25 @@ import AppKit
             }
             rawValues.append(displayValue)
 
-            if sqlLiterals != nil,
-               let columnDefinition,
-               let connection {
+            if sqlValues != nil, let columnDefinition {
                 guard let value = tableStorage.cellData(atRow: UInt(row), column: UInt(storageColumn)),
                       !(value is SPNotLoaded),
-                      let literal = sqlLiteral(value: value, columnDefinition: columnDefinition, connection: connection) else {
-                    sqlLiterals = nil
+                      SACellValueCopyMenuBuilder.canPrepareSQLLiteral(
+                          value: value,
+                          typeGrouping: columnDefinition["typegrouping"] as? String,
+                          fieldType: columnDefinition["type"] as? String
+                      ) else {
+                    sqlValues = nil
                     continue
                 }
-                sqlLiterals?.append(literal)
+                sqlValues?.append(value)
             }
         }
 
-        let descriptors = SACellValueCopyMenuBuilder.menuItemDescriptors(
+        let descriptors = SACellValueCopyMenuBuilder.deferredMenuItemDescriptors(
             columnName: columnDefinition?["name"] as? String ?? tableColumn.headerCell.stringValue,
             rawValues: rawValues,
-            sqlLiterals: sqlLiterals
+            sqlLiteralCount: sqlValues?.count
         )
         guard !descriptors.isEmpty else { return }
 
@@ -138,7 +145,21 @@ import AppKit
         if insertionIndex == -1 { insertionIndex = menu.numberOfItems - 1 }
         insertionIndex += 1
         for descriptor in descriptors {
-            let action = SACellValueCopyAction(descriptor: descriptor)
+            let action: SACellValueCopyAction
+            if descriptor.isSQL,
+               let sqlValues,
+               let columnDefinition,
+               let connection {
+                action = SACellValueCopyAction(descriptor: descriptor) {
+                    let sqlLiterals = sqlValues.compactMap { value in
+                        Self.sqlLiteral(value: value, columnDefinition: columnDefinition, connection: connection)
+                    }
+                    guard sqlLiterals.count == sqlValues.count else { return nil }
+                    return sqlLiterals.joined(separator: ", ")
+                }
+            } else {
+                action = SACellValueCopyAction(descriptor: descriptor)
+            }
             let item = NSMenuItem(title: descriptor.title, action: #selector(SACellValueCopyAction.copy(_:)), keyEquivalent: "")
             item.target = action
             item.representedObject = action

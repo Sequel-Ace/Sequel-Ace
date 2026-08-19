@@ -210,6 +210,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 - (NSArray *)currentDataResultWithNULLs:(BOOL)includeNULLs hideBLOBs:(BOOL)hide;
 
 // Task interaction
+@property (readonly) BOOL isWorking;
 - (void)startDocumentTaskForTab:(NSNotification *)aNotification;
 - (void)endDocumentTaskForTab:(NSNotification *)aNotification;
 

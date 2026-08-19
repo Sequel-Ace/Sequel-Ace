@@ -184,6 +184,61 @@ final class SACellFilterMenuBuilderTests: XCTestCase {
 
 final class SACellValueCopyMenuBuilderTests: XCTestCase {
 
+    func testCopyMenuIsSuppressedWhileEitherResultTableIsWorking() {
+        XCTAssertFalse(SACellValueCopyMenuBuilder.shouldSuppressMenu(
+            tableContentIsWorking: false,
+            customQueryIsWorking: false
+        ))
+        XCTAssertTrue(SACellValueCopyMenuBuilder.shouldSuppressMenu(
+            tableContentIsWorking: true,
+            customQueryIsWorking: false
+        ))
+        XCTAssertTrue(SACellValueCopyMenuBuilder.shouldSuppressMenu(
+            tableContentIsWorking: false,
+            customQueryIsWorking: true
+        ))
+    }
+
+    func testSQLCopyDefersTextGenerationUntilTheActionIsInvoked() {
+        let items = SACellValueCopyMenuBuilder.deferredMenuItemDescriptors(
+            columnName: "name",
+            rawValues: ["Ada"],
+            sqlLiteralCount: 1
+        )
+        var generationCount = 0
+        let action = SACellValueCopyAction(descriptor: items[1]) {
+            generationCount += 1
+            return "'Ada'"
+        }
+
+        XCTAssertEqual(items[1].text, "")
+        XCTAssertTrue(items[1].isEnabled)
+        XCTAssertEqual(generationCount, 0)
+
+        action.copy(nil)
+
+        XCTAssertEqual(generationCount, 1)
+        XCTAssertEqual(NSPasteboard.general.string(forType: .string), "'Ada'")
+    }
+
+    func testSQLLiteralPreflightRejectsValuesThatCannotBeRepresented() {
+        XCTAssertFalse(SACellValueCopyMenuBuilder.canPrepareSQLLiteral(
+            value: Data([0xff]),
+            typeGrouping: "textdata",
+            fieldType: "TEXT"
+        ))
+        XCTAssertFalse(SACellValueCopyMenuBuilder.canPrepareSQLLiteral(
+            value: "102",
+            typeGrouping: "bit",
+            fieldType: "BIT(3)"
+        ))
+        XCTAssertTrue(SACellValueCopyMenuBuilder.canPrepareSQLLiteral(
+            value: "Ada",
+            typeGrouping: "string",
+            fieldType: "VARCHAR"
+        ))
+    }
+
     func testSingleValueBuildsRawAndSQLColumnValueItems() {
         let items = SACellValueCopyMenuBuilder.menuItemDescriptors(
             columnName: "name",

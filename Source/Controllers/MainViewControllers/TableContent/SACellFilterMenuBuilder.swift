@@ -71,6 +71,47 @@ import AppKit
     public static func menuItemDescriptors(columnName: String?, rawValues: [String], sqlLiterals: [String]?) -> [SACellValueCopyMenuItemDescriptor] {
         guard !rawValues.isEmpty else { return [] }
 
+        return makeMenuItemDescriptors(
+            columnName: columnName,
+            rawValues: rawValues,
+            sqlText: sqlLiterals?.joined(separator: ", ") ?? "",
+            sqlIsEnabled: sqlLiterals?.count == rawValues.count
+        )
+    }
+
+    /// Builds copy actions whose SQL text is generated when the action runs.
+    ///
+    /// The caller supplies the number of values that can be converted later so
+    /// menu construction does not need to call connection-backed quoting APIs.
+    @nonobjc public static func deferredMenuItemDescriptors(
+        columnName: String?,
+        rawValues: [String],
+        sqlLiteralCount: Int?
+    ) -> [SACellValueCopyMenuItemDescriptor] {
+        guard !rawValues.isEmpty else { return [] }
+
+        return makeMenuItemDescriptors(
+            columnName: columnName,
+            rawValues: rawValues,
+            sqlText: "",
+            sqlIsEnabled: sqlLiteralCount == rawValues.count
+        )
+    }
+
+    /// Returns whether result-value copying should be skipped while a result is loading.
+    @nonobjc public static func shouldSuppressMenu(
+        tableContentIsWorking: Bool,
+        customQueryIsWorking: Bool
+    ) -> Bool {
+        tableContentIsWorking || customQueryIsWorking
+    }
+
+    private static func makeMenuItemDescriptors(
+        columnName: String?,
+        rawValues: [String],
+        sqlText: String,
+        sqlIsEnabled: Bool
+    ) -> [SACellValueCopyMenuItemDescriptor] {
         let valueLabel = columnName.map { "'\($0)'" } ?? ""
         let rawItem = SACellValueCopyMenuItemDescriptor(
             title: String(format: NSLocalizedString("Copy %@ Values", comment: "copy selected values from the named result column"), valueLabel),
@@ -80,9 +121,9 @@ import AppKit
         )
         let sqlItem = SACellValueCopyMenuItemDescriptor(
             title: String(format: NSLocalizedString("Copy %@ Values as SQL", comment: "copy selected values from the named result column as SQL literals"), valueLabel),
-            text: sqlLiterals?.joined(separator: ", ") ?? "",
+            text: sqlText,
             isSQL: true,
-            isEnabled: sqlLiterals?.count == rawValues.count
+            isEnabled: sqlIsEnabled
         )
         return [rawItem, sqlItem]
     }
@@ -119,27 +160,58 @@ import AppKit
 
         return quoteString(String(describing: value))
     }
+
+    /// Checks conversion failures that can be detected without a database connection.
+    @nonobjc public static func canPrepareSQLLiteral(
+        value: Any,
+        typeGrouping: String?,
+        fieldType: String?
+    ) -> Bool {
+        sqlLiteral(
+            value: value,
+            typeGrouping: typeGrouping,
+            fieldType: fieldType,
+            quoteString: { _ in "" },
+            quoteData: { _ in "" }
+        ) != nil
+    }
 }
 
 /// Owns the payload for a dynamically-created cell-value copy menu item.
 @objcMembers public final class SACellValueCopyAction: NSObject, NSMenuItemValidation {
     private let descriptor: SACellValueCopyMenuItemDescriptor
+    private let textProvider: (() -> String?)?
 
     public init(descriptor: SACellValueCopyMenuItemDescriptor) {
         self.descriptor = descriptor
+        self.textProvider = nil
+        super.init()
+    }
+
+    /// Creates an action whose text is resolved only when the user selects it.
+    @nonobjc public init(descriptor: SACellValueCopyMenuItemDescriptor, textProvider: @escaping () -> String?) {
+        self.descriptor = descriptor
+        self.textProvider = textProvider
         super.init()
     }
 
     public func copy(_ sender: Any?) {
         guard descriptor.isEnabled else { return }
+        let text: String?
+        if let textProvider = textProvider {
+            text = textProvider()
+        } else {
+            text = descriptor.text
+        }
+        guard let text = text else { return }
 
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         let types: [NSPasteboard.PasteboardType] = descriptor.isSQL ? [.string] : [.string, .tabularText]
         pasteboard.declareTypes(types, owner: nil)
-        pasteboard.setString(descriptor.text, forType: .string)
+        pasteboard.setString(text, forType: .string)
         if !descriptor.isSQL {
-            pasteboard.setString(descriptor.text, forType: .tabularText)
+            pasteboard.setString(text, forType: .tabularText)
         }
     }
 
