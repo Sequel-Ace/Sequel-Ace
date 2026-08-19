@@ -183,6 +183,26 @@ final class SAConnectionFormModel: ObservableObject {
         objc.info = info
     }
 
+    // MARK: - Loading a favorite
+
+    /// Replaces the edited values with those decoded from a favorite.
+    ///
+    /// Uses the D1 decoder, so the defaulting rules (missing colorIndex → -1,
+    /// unknown type → tcpIP, and the rest) stay in one place. Passwords are
+    /// deliberately not carried: `fromFavoriteDictionary` never decodes them,
+    /// because they live in the keychain rather than the favorites plist.
+    ///
+    /// Assigning `info` wholesale is what re-splits the Vault mount/role halves,
+    /// so a favorite's credentials path lands in both controls.
+    func load(favorite: NSDictionary?) {
+        info = SAConnectionInfoObjC.info(fromFavoriteDictionary: favorite).info
+    }
+
+    /// Resets to a blank form — the Quick Connect row.
+    func loadQuickConnect() {
+        info = SAConnectionInfo()
+    }
+
     // MARK: - Derived display values
 
     /// The name shown for this connection: the user-entered name when
