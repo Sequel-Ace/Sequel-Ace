@@ -173,6 +173,12 @@ class CommandRunnerTest < Minitest::Test
       File.write(path, "not-a-pid")
       assert_nil recorded_pid(path), "unparseable"
 
+      File.write(path, "0")
+      assert_nil recorded_pid(path), "0 would signal our own process group"
+
+      File.write(path, "-1")
+      assert_nil recorded_pid(path), "a negative pid would signal a process group"
+
       assert_nil recorded_pid(directory), "a directory is not a pid file"
 
       File.write(path, "4242\n")
@@ -194,10 +200,15 @@ class CommandRunnerTest < Minitest::Test
       return nil
     end
 
-    begin
+    pid = begin
       Integer(contents.strip)
     rescue ArgumentError
-      nil
+      return nil
     end
+
+    # Only a real child pid. Process.kill would read 0 as "my whole process
+    # group" and a negative value as another group — from a test's ensure
+    # block that would signal the runner itself.
+    pid.positive? ? pid : nil
   end
 end
