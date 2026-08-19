@@ -629,6 +629,113 @@ final class SAConnectionFormModelTests: XCTestCase {
         XCTAssertNil(SAConnectionFileValidator.rejection(forFileAt: missing, kind: .sslCACert))
     }
 
+    // MARK: - Review round 2: SSL files on an SSH tunnel
+
+    /// Documents the inherited gap rather than fixing it here: the SSH tab
+    /// offers SSL file rows, but the shared validator has never checked them
+    /// (pre-D3 ObjC read `type == SPTCPIPConnection || type == SPSocketConnection`).
+    /// Fixing it changes the shipping AppKit form too, so it wants its own PR;
+    /// this test will fail loudly there, which is the point.
+    func testSSHTunnelSSLFilesAreNotValidatedYet() {
+        let model = SAConnectionFormModel()
+        model.info.type = .sshTunnel
+        model.info.host = "db.internal"
+        model.info.sshHost = "bastion.example.com"
+        model.useSSL = true
+        model.info.sslKeyFileLocationEnabled = 1
+        model.info.sslKeyFileLocation = "/nonexistent/\(UUID().uuidString).pem"
+
+        XCTAssertNil(model.validate(),
+                     "known gap inherited from the AppKit form — see SAConnectionDetailsValidator")
+    }
+
+    // MARK: - Review round 2: public keys rejected by the chooser
+
+    /// -panel:shouldEnableURL: greys out .pub files so a public key cannot be
+    /// picked as an identity file; OpenSSH cannot use one.
+    func testPublicKeysAreRejectedForTheSSHKeyRow() {
+        let rejection = SAConnectionFileValidator.rejection(
+            forFileAt: URL(fileURLWithPath: "/tmp/id_ed25519.pub"), kind: .sshKey)
+
+        XCTAssertNotNil(rejection)
+        XCTAssertTrue(rejection?.alertTitle.contains("id_ed25519.pub") ?? false)
+    }
+
+    func testPublicKeyRejectionIsCaseInsensitive() {
+        XCTAssertNotNil(SAConnectionFileValidator.rejection(
+            forFileAt: URL(fileURLWithPath: "/tmp/id_rsa.PUB"), kind: .sshKey))
+    }
+
+    /// The rule is specific to the SSH-key row — the SSL rows never offered it.
+    func testOtherRowsDoNotRejectPubFiles() {
+        for kind in [SAConnectionFileKind.sslCACert, .sslKey, .sslCertificate] {
+            let rejection = SAConnectionFileValidator.rejection(
+                forFileAt: URL(fileURLWithPath: "/tmp/thing.pub"), kind: kind)
+            // The SSL kinds still reject it, but for failing to be PEM rather
+            // than for its extension; the CA cert accepts anything.
+            if kind == .sslCACert {
+                XCTAssertNil(rejection, "\(kind)")
+            } else {
+                XCTAssertFalse(rejection?.alertTitle.contains("public key") ?? false, "\(kind)")
+            }
+        }
+    }
+
+    func testAPrivateSSHKeyIsStillAccepted() {
+        XCTAssertNil(SAConnectionFileValidator.rejection(
+            forFileAt: URL(fileURLWithPath: "/tmp/id_ed25519"), kind: .sshKey))
+    }
+
+    // MARK: - Review round 2: committing a pasted Vault path
+
+    /// -controlTextDidEndEditing: splits a full path pasted into Role back into
+    /// Mount + Role, so the controls agree with the endpoint actually used.
+    func testCommittingAPastedPathSplitsItIntoMountAndRole() {
+        let model = SAConnectionFormModel()
+        model.vaultMount = "stale_mount"
+        model.vaultCredentialsRole = "team/creds/writer"
+
+        model.commitVaultCredentialsRole()
+
+        XCTAssertEqual(model.vaultMount, "team")
+        XCTAssertEqual(model.vaultCredentialsRole, "writer")
+        XCTAssertEqual(model.info.vaultCredentialsPath, "team/creds/writer")
+    }
+
+    /// The bug the split prevents: without it the stale mount stays on screen
+    /// and silently returns the moment a bare role is typed.
+    func testABareRoleAfterCommittingUsesThePastedMount() {
+        let model = SAConnectionFormModel()
+        model.vaultMount = "stale_mount"
+        model.vaultCredentialsRole = "team/creds/writer"
+        model.commitVaultCredentialsRole()
+
+        model.vaultCredentialsRole = "reader"
+
+        XCTAssertEqual(model.info.vaultCredentialsPath, "team/creds/reader")
+    }
+
+    func testCommittingABareRoleChangesNothing() {
+        let model = SAConnectionFormModel()
+        model.vaultMount = "databases_credentials"
+        model.vaultCredentialsRole = "readonly"
+
+        model.commitVaultCredentialsRole()
+
+        XCTAssertEqual(model.vaultMount, "databases_credentials")
+        XCTAssertEqual(model.vaultCredentialsRole, "readonly")
+    }
+
+    func testCommittingAnEmptyRoleChangesNothing() {
+        let model = SAConnectionFormModel()
+        model.vaultMount = "databases_credentials"
+
+        model.commitVaultCredentialsRole()
+
+        XCTAssertEqual(model.vaultMount, "databases_credentials")
+        XCTAssertEqual(model.vaultCredentialsRole, "")
+    }
+
     // MARK: - C2b: generated name across the types
 
     func testSocketConnectionsNameThemselvesLocalhost() {
