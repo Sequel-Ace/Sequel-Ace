@@ -187,6 +187,24 @@ import AppKit
         return String(key[range.upperBound...])
     }
 
+    /// Whether a navigator schema path contributes anything to the drag's text.
+    ///
+    /// The whole-drag writer joined paths with
+    /// `-componentsJoinedByPeriodAndBacktickQuotedAndIgnoreFirst`, which drops
+    /// the first component — so a single-component path (a connection, or a
+    /// database once its connection ID is stripped) produced an empty string,
+    /// and a drag containing only those was refused outright by the trailing
+    /// `if(![dragString length]) return NO;`.
+    ///
+    /// The per-item writer has to reconstruct that refusal, or dragging a
+    /// connection or database on its own starts a drag that drops the internal
+    /// connection key into the query editor.
+    @objc(carriesDragTextForSchemaPath:delimiter:)
+    static func carriesDragText(schemaPath: String, delimiter: String) -> Bool {
+        guard !delimiter.isEmpty else { return false }
+        return schemaPath.components(separatedBy: delimiter).count >= 2
+    }
+
     /// The schema column name behind a clicked table column, or nil when the
     /// click cannot be resolved to one.
     ///

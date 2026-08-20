@@ -51,6 +51,7 @@ static SPNavigatorController *sharedNavigatorController = nil;
 @interface SPNavigatorController () <NSOutlineViewDataSource, NSOutlineViewDelegate>
 
 - (NSString *)schemaPathForItem:(id)item inOutlineView:(NSOutlineView *)outlineView;
+- (BOOL)navigatorDragCarriesTextForItem:(id)item inOutlineView:(NSOutlineView *)outlineView;
 
 @end
 
@@ -1088,9 +1089,12 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
  */
 - (id <NSPasteboardWriting>)outlineView:(NSOutlineView *)outlineView pasteboardWriterForItem:(id)item
 {
-	// Only items that resolve to a schema path can be dragged; refusing here is
-	// what the whole-drag writer expressed by returning NO.
+	// Two refusals the whole-drag writer expressed by returning NO: an item with
+	// no resolvable schema path, and a drag that would carry no text at all
+	// (connections and databases join to an empty string — see
+	// +carriesDragTextForSchemaPath:delimiter:).
 	if (![self schemaPathForItem:item inOutlineView:outlineView]) return nil;
+	if (![self navigatorDragCarriesTextForItem:item inOutlineView:outlineView]) return nil;
 
 	return [SADragPasteboard dragRowItemForRow:[outlineView rowForItem:item]];
 }
@@ -1131,6 +1135,40 @@ static NSComparisonResult compareStrings(NSString *s1, NSString *s2, void* conte
 	}
 
 	if([dragString length]) [SADragPasteboard attachString:dragString forType:NSPasteboardTypeString toPasteboard:pboard];
+}
+
+/**
+ * Whether the drag this item belongs to would carry any text.
+ *
+ * The old writer refused the whole drag when the joined string came out empty,
+ * which a per-item writer cannot see. Reconstructed the same way the table
+ * reorders do: a selected item is dragged with the rest of the selection, an
+ * unselected one travels alone.
+ */
+- (BOOL)navigatorDragCarriesTextForItem:(id)item inOutlineView:(NSOutlineView *)outlineView
+{
+	NSMutableArray *candidates = [NSMutableArray array];
+	NSInteger row = [outlineView rowForItem:item];
+	NSIndexSet *selection = [outlineView selectedRowIndexes];
+
+	if (row >= 0 && [selection containsIndex:(NSUInteger)row]) {
+		[selection enumerateIndexesUsingBlock:^(NSUInteger index, BOOL *stop) {
+			id selected = [outlineView itemAtRow:(NSInteger)index];
+			if (selected) [candidates addObject:selected];
+		}];
+	}
+	else {
+		[candidates addObject:item];
+	}
+
+	for (id candidate in candidates) {
+		NSString *path = [self schemaPathForItem:candidate inOutlineView:outlineView];
+		if (path && [SADragPasteboard carriesDragTextForSchemaPath:path delimiter:SPUniqueSchemaDelimiter]) {
+			return YES;
+		}
+	}
+
+	return NO;
 }
 
 /**

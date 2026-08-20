@@ -323,6 +323,27 @@ final class SADragPasteboardTests: XCTestCase {
                        "db")
     }
 
+    // MARK: - Navigator drag refusal
+
+    // The whole-drag writer joined paths with "ignore first component", so a
+    // connection or a database produced nothing and the drag was refused.
+
+    func testATableOrDeeperPathCarriesText() {
+        XCTAssertTrue(SADragPasteboard.carriesDragText(schemaPath: "mydb\u{FFF8}mytable", delimiter: "\u{FFF8}"))
+        XCTAssertTrue(SADragPasteboard.carriesDragText(schemaPath: "mydb\u{FFF8}mytable\u{FFF8}col", delimiter: "\u{FFF8}"))
+    }
+
+    /// A database, once its connection ID is stripped, is a single component —
+    /// dragging one alone used to be refused and must stay refused.
+    func testASingleComponentPathCarriesNoText() {
+        XCTAssertFalse(SADragPasteboard.carriesDragText(schemaPath: "mydb", delimiter: "\u{FFF8}"))
+        XCTAssertFalse(SADragPasteboard.carriesDragText(schemaPath: "", delimiter: "\u{FFF8}"))
+    }
+
+    func testAnEmptyDelimiterCarriesNoText() {
+        XCTAssertFalse(SADragPasteboard.carriesDragText(schemaPath: "mydb\u{FFF8}mytable", delimiter: ""))
+    }
+
     func testClickedColumnResolvesThroughItsStorageIndex() {
         // Visible column 1 carries storage index 2.
         let name = SADragPasteboard.columnName(forClickedColumn: 1,
