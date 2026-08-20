@@ -31,88 +31,41 @@
 #include "SPParserUtils.h"
 #include <stdint.h>
 
-#define SIZET (sizeof(size_t))
-#define SIZET1 (SIZET - 1)
-#define SBYTE (SIZET1 * 8)
-
-#define ONEMASK ((size_t)(-1) / 0xFF)
-#define ONEMASK8 (ONEMASK * 0x80)
-#define FMASK ((size_t)(-1)*(ONEMASK*0xf)-1)
-
-// adapted from http://www.daemonology.net/blog/2008-06-05-faster-utf8-strlen.html
+// Count the number of characters (not bytes) in a NUL-terminated UTF-8 C string.
+// Result is kept parity-equal to -[NSString length] for the same bytes: each
+// non-leading (continuation) byte subtracts one from the byte count, and each
+// 4-byte (non-BMP) start byte subtracts one more (NSString counts surrogate
+// pairs as length 2).
+//
+// NOTE: the previous implementation used a SWAR word-aligned inner loop that
+// performed an 8-byte read (`*(size_t*)s`) and a 256-byte prefetch on every
+// iteration. On inputs shorter than 8 bytes those reads ran past the end of the
+// buffer -- undefined behaviour reported by AddressSanitizer as
+// heap-buffer-overflow (GitHub issue #792). This byte-wise loop is safe and,
+// because the inputs here are short SQL/CSV cell strings, the SWAR speed-up is
+// irrelevant. Counting math is byte-for-byte identical to the old prologue and
+// epilogue loops, so all existing return values are preserved.
 size_t utf8strlen(const char * _s)
 {
-	
-	/* Due to [NSString length] behaviour for chars > 0xFFFF {length = 2}
-	 "correct" the variable 'count' by subtraction the number
-	 of occurrences of the start byte 0xF0 (4-byte UTF-8 char).
-	 Here we assume that only up to 4-byte UTF-8 chars
-	 are allowed [latest UTF-8 specification].
-	 
-	 Marked in the source code by "CORRECT".
-	 */
-	
-	const char * s;
+	const char *s;
 	long count = 0;
-	size_t u = 0;
-	size_t u1 = 0;
 	unsigned char b;
-	
-	
-	/* Handle any initial misaligned bytes. */
-	for (s = _s; (uintptr_t)(s) & SIZET1; s++) {
-		b = *s;
-		
-		/* Exit if we hit a zero byte. */
-		if (b == '\0')
-			goto done;
-		
-		/* Is this byte NOT the first byte of a character? */
+
+	for (s = _s; ; s++) {
+		b = (unsigned char)*s;
+
+		/* Exit at the NUL terminator. */
+		if (b == '\0') {
+			break;
+		}
+
+		/* +1 if this byte is NOT the first byte of a character (a continuation byte). */
 		count += (b >> 7) & ((~b) >> 6);
-		
-		/* CORRECT */
+
+		/* CORRECT: subtract one extra for each 4-byte (non-BMP) start byte so the
+		 * result matches -[NSString length], which counts a surrogate pair as 2. */
 		count -= (b & 0xf0) == 0xf0;
 	}
-	
-	/* Handle complete blocks. */
-	for (; ; s += SIZET) {
-		/* Prefetch 256 bytes ahead. */
-		__builtin_prefetch(&s[256], 0, 0);
 
-		/* Grab 4 or 8 bytes of UTF-8 data. */
-		u = *(size_t *)(s); // FIXME: AddressSanitizer: heap-buffer-overflow - GitHub issue: #792
-		
-		/* Exit the loop if there are any zero bytes. */
-		if ((u - ONEMASK) & (~u) & ONEMASK8)
-			break;
-		
-		/* CORRECT */
-		u1 = u & FMASK;
-		u1 = (u1 >> 7) & (u1 >> 6) & (u1 >> 5) & (u1 >> 4);
-		if (u1) count -= (u1 * ONEMASK) >> SBYTE;
-		
-		/* Count bytes which are NOT the first byte of a character. */
-		u = ((u & ONEMASK8) >> 7) & ((~u) >> 6);
-		
-		count += (u * ONEMASK) >> SBYTE;
-
-	}
-	
-	/* Take care of any left-over bytes. */
-	for (; ; s++) {
-		b = *s;
-		
-		/* Exit if we hit a zero byte. */
-		if (b == '\0')
-			break;
-		
-		/* Is this byte NOT the first byte of a character? */
-		count += (b >> 7) & ((~b) >> 6);
-		
-		/* CORRECT */
-		count -= (b & 0xf0) == 0xf0;
-	}
-	
-done:
-	return ((s - _s) - count);
+	return (size_t)((s - _s) - count);
 }
