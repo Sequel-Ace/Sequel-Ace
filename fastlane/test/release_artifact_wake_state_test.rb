@@ -125,6 +125,11 @@ class ReleaseArtifactWakeStateTest < Minitest::Test
       api_log = File.read(log)
       assert_includes api_log, "repos/Sequel-Ace/Sequel-Ace/installation"
       assert_includes api_log, "app/installations/123/access_tokens"
+      jwt_api_lines = api_log.lines.grep(/(?:repos\/Sequel-Ace\/Sequel-Ace\/installation|app\/installations\/123\/access_tokens)/)
+      assert_equal 2, jwt_api_lines.length
+      jwt_api_lines.each do |line|
+        assert_includes line, "--header Authorization: Bearer encoded.encoded.encoded"
+      end
       assert_includes api_log, '"repository_ids":[12345]'
       assert_includes api_log, '"actions_variables":"write"'
       assert_includes api_log, "--method DELETE installation/token"
