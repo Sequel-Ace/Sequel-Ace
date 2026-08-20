@@ -5248,9 +5248,11 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         NSView *connView = strongSelf->connectionView;
         if (!field || !connView) return event;
 
-        BOOL cmdPressed = ([event modifierFlags] & NSEventModifierFlagCommand) != 0;
-        BOOL isCmdF = cmdPressed && [[event charactersIgnoringModifiers] isEqualToString:@"f"];
-        if (!isCmdF) return event;
+        // Match ⌘F only, not merely "Command is among the modifiers". This monitor runs
+        // ahead of the main menu's key equivalent dispatch, so accepting any superset of
+        // ⌘ would swallow ⌃⌘F (Enter Full Screen), ⌥⌘F (Filter Content) and ⌃⌥⌘F (Filter
+        // Tables) before those menu items ever see them.
+        if (![SAKeyboardShortcut.commandF matchesEvent:event]) return event;
 
         NSWindow *window = [connView window];
         if (!window || [NSApp keyWindow] != window) return event;

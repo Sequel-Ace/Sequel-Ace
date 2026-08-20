@@ -78,8 +78,11 @@ object being decomposed), `SPTableContent.m` (~5k), `SPExportController.m`
   Beta" is a build configuration of the same target, not a separate target.
 - Dependencies come via SPM (Firebase, Alamofire, SnapKit, OCMock, FMDB, …);
   first resolve needs network access.
-- Run the "Unit Tests" target's tests for any change. The full suite is ~700+
+- Run the "Unit Tests" target's tests for any change. The full suite is 900+
   tests and should be fully green.
+- Agents: prefer the Xcode MCP (`BuildProject`, `GetTestList`, `RunSomeTests`,
+  `RunAllTests`, `GetBuildLog`) over shelling out to `xcodebuild` — see
+  [Xcode automation (MCP)](#xcode-automation-mcp) below.
 
 ### Unit Tests target — sharp edges
 
@@ -96,21 +99,48 @@ object being decomposed), `SPTableContent.m` (~5k), `SPExportController.m`
   bridge code in a separate app-target-only file (e.g. `SAFavoriteItem.swift`
   vs `SAFavoriteItem+Tree.swift`).
 
+## Xcode automation (MCP)
+
+- The repo ships an `xcode` MCP server in `.mcp.json`. It runs `xcrun
+  mcpbridge`, which is bundled with Xcode 26+ — no install step, and because it
+  is committed it works from any clone path. Approve it once per checkout when
+  the client prompts. On an older Xcode the server simply fails to start; fall
+  back to `xcodebuild` and the notes below.
+- It is **windowless**. `XcodeOpenWorkspace` does not launch the Xcode UI — a
+  background `XcodeService` does the work and nothing appears on screen. Do not
+  tell the user "I opened Xcode".
+- **Open the project first, every session.** Call `XcodeOpenWorkspace` with the
+  absolute path to `sequel-ace.xcodeproj` and pass the returned
+  `workspaceIdentifier` to the other tools. That identifier is minted per open
+  and is not stable across opens; handing a path to a workspace that is not
+  open fails with "Unknown workspace identifier".
+- Beyond file management it covers builds and tests (`BuildProject`,
+  `GetBuildLog`, `GetTestList`, `RunSomeTests`, `RunAllTests`) and reads the
+  project tree with `XcodeLS` / `XcodeGrep`, which reflect *project*
+  organization and target membership rather than the filesystem — which is what
+  you want when verifying a file was registered.
+
 ## Xcode project file (pbxproj) rules
 
 - The project uses **classic groups**, not filesystem-synchronized folders.
   Files must be registered in `project.pbxproj` with target membership.
-- **Never hand-edit `project.pbxproj` while Xcode has the project open** —
-  Xcode clobbers on-disk edits with its in-memory model, and conversely a
-  behind-Xcode's-back change (branch switch, merge) leaves Xcode's in-memory
+- **Add and remove files with `XcodeWrite` / `XcodeRM`** — they register real
+  IDs and target membership. A Swift file exercised by tests needs to land in
+  **both** "Sequel Ace" and "Unit Tests"; confirm with `XcodeLS` plus a test run
+  that shows the new tests, not by reading the pbxproj diff.
+- **Never hand-edit `project.pbxproj` while the Xcode UI has the project
+  open** — Xcode clobbers on-disk edits with its in-memory model, and
+  conversely a behind-Xcode's-back change (branch switch, merge) leaves its
   model stale: builds then silently compile the *old* file set while reporting
-  success. If the pbxproj changed outside Xcode, close and reopen the project
-  (or verify the build log actually compiled your files) before trusting any
-  build.
-- Agents with Xcode automation (MCP `XcodeWrite`/`XcodeRM`): use it to
-  add/remove files — it updates Xcode's live model with real IDs. Otherwise,
-  ask the user to add the file in Xcode rather than editing the pbxproj by
-  hand.
+  success. The MCP bridge does **not** share this hazard — it tracks the
+  pbxproj on disk, so a `git checkout` under a workspace opened by the bridge is
+  picked up with no close/reopen. Either way, after any out-of-band pbxproj
+  change, verify the build actually compiled your files before trusting it.
+- Without the MCP and without Xcode, the `xcodeproj` Ruby gem (already present
+  transitively via fastlane) writes a valid additions-only diff. Verify with
+  `plutil -lint` and a build that compiles the new files. Note it drops a couple
+  of cosmetic `/* comment */` annotations on the main group; restore them to
+  keep the diff additions-only.
 - Prefer resolving pbxproj merge conflicts by replaying the add/remove
   operations on a fresh branch instead of hand-merging conflict hunks.
 

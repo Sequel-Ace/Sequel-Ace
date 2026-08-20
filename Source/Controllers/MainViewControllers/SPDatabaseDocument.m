@@ -3237,6 +3237,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         [toolbarItem setTarget:self];
         [toolbarItem setAction:@selector(clearConsole:)];
 
+    } else if ([itemIdentifier isEqualToString:[SARecordViewToolbarSupport itemIdentifier]]) {
+        return [SARecordViewToolbarSupport makeToolbarItemWithTarget:self];
+
     } else if ([[SAViewModeHelper allToolbarIdentifiers] containsObject:itemIdentifier]) {
         // Use data-driven SAViewMode for view-switching toolbar items
         for (NSInteger i = 0; i <= SAViewModeTriggers; i++) {
@@ -3299,6 +3302,7 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         SPMainToolbarTableStructure,
         SPMainToolbarTableContent,
         SPMainToolbarCustomQuery,
+        [SARecordViewToolbarSupport itemIdentifier],
         SPMainToolbarTableInfo,
         SPMainToolbarTableRelations,
         SPMainToolbarTableTriggers,
@@ -3341,7 +3345,8 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
         SPMainToolbarCustomQuery,
         SPMainToolbarTableInfo,
         SPMainToolbarTableRelations,
-        SPMainToolbarTableTriggers
+        SPMainToolbarTableTriggers,
+        [SARecordViewToolbarSupport itemIdentifier]
     ];
 
 }
@@ -3354,6 +3359,10 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
     if (!_isConnected || _isWorkingLevel) return NO;
 
     NSString *identifier = [toolbarItem itemIdentifier];
+
+    if ([identifier isEqualToString:[SARecordViewToolbarSupport itemIdentifier]]) {
+        return [SARecordViewToolbarSupport hostIdentifierForTabIndex:[self currentlySelectedView]] != nil;
+    }
 
     // Show console item
     if ([identifier isEqualToString:SPMainToolbarShowConsole]) {
@@ -5426,6 +5435,17 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 
 - (void)viewTriggers {
     [self switchToViewMode:SAViewModeTriggers];
+}
+
+- (void)toggleRecordView:(id)sender
+{
+    NSString *hostIdentifier = [SARecordViewToolbarSupport hostIdentifierForTabIndex:[self currentlySelectedView]];
+    if ([hostIdentifier isEqualToString:SPMainToolbarTableContent]) {
+        [tableContentInstance toggleRecordView];
+    } else if ([hostIdentifier isEqualToString:SPMainToolbarCustomQuery]) {
+        [customQueryInstance toggleRecordView];
+    }
+    if (hostIdentifier) [self.mainToolbar setSelectedItemIdentifier:hostIdentifier];
 }
 
 /**

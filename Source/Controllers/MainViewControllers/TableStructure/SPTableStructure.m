@@ -1398,7 +1398,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[indexesController setConnection:mySQLConnection];
 	
 	// Set up tableView
-	[tableSourceView registerForDraggedTypes:@[SPDefaultPasteboardDragType]];
+	[tableSourceView registerForDraggedTypes:@[SADragPasteboard.tableRowType]];
 }
 
 /**
@@ -2236,22 +2236,22 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 /**
  * Begin a drag and drop operation from the table - copy a single dragged row to the drag pasteboard.
  */
-- (BOOL)tableView:(NSTableView *)aTableView writeRowsWithIndexes:(NSIndexSet *)rows toPasteboard:(NSPasteboard*)pboard
+- (id <NSPasteboardWriting>)tableView:(NSTableView *)aTableView pasteboardWriterForRow:(NSInteger)row
 {
 	// Make sure that the drag operation is started from the right table view
-	if (aTableView != tableSourceView) return NO;
+	if (aTableView != tableSourceView) return nil;
 
 	// Check whether a save of the current field row is required.
-	if (![self saveRowOnDeselect]) return NO;
+	if (![self saveRowOnDeselect]) return nil;
 
-	if ([rows count] == 1) {
-		[pboard declareTypes:@[SPDefaultPasteboardDragType] owner:nil];
-		[pboard setString:[NSString stringWithFormat:@"%lu",[rows firstIndex]] forType:SPDefaultPasteboardDragType];
+	// Reordering only handles a single field, and -acceptDrop: below reads one
+	// index off the pasteboard, so multi-row drags stay refused as before.
+	if ([SADragPasteboard refusesMultiRowDragForRow:row selectedRows:[aTableView selectedRowIndexes]]) return nil;
 
-		return YES;
-	}
-
-	return NO;
+	// Same payload as before the migration off
+	// -tableView:writeRowsWithIndexes:toPasteboard:, so -validateDrop:/-acceptDrop:
+	// keep reading the row index with -stringForType:.
+	return [SADragPasteboard itemWithRow:row forType:SADragPasteboard.tableRowType];
 }
 
 /**
@@ -2268,11 +2268,11 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	NSInteger originalRow;
 
 	// Ensure the drop is of the correct type
-	if (operation == NSTableViewDropAbove && row != -1 && [pboardTypes containsObject:SPDefaultPasteboardDragType]) {
+	if (operation == NSTableViewDropAbove && row != -1 && [pboardTypes containsObject:SADragPasteboard.tableRowType]) {
 
 		// Ensure the drag originated within this table
 		if ([info draggingSource] == tableView) {
-			originalRow = [[[info draggingPasteboard] stringForType:SPDefaultPasteboardDragType] integerValue];
+			originalRow = [[[info draggingPasteboard] stringForType:SADragPasteboard.tableRowType] integerValue];
 
 			if (row != originalRow && row != (originalRow+1)) {
 				return NSDragOperationMove;
@@ -2292,7 +2292,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	if (tableView != tableSourceView) return NO;
 
 	// Extract the original row position from the pasteboard and retrieve the details
-	NSInteger originalRowIndex = [[[info draggingPasteboard] stringForType:SPDefaultPasteboardDragType] integerValue];
+	NSInteger originalRowIndex = [[[info draggingPasteboard] stringForType:SADragPasteboard.tableRowType] integerValue];
 	NSDictionary *originalRow = [[NSDictionary alloc] initWithDictionary:[[self activeFieldsSource] objectAtIndex:originalRowIndex]];
 
 	[[NSNotificationCenter defaultCenter] postNotificationName:@"SMySQLQueryWillBePerformed" object:tableDocumentInstance];
