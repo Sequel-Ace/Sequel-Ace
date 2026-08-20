@@ -3936,6 +3936,11 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 #pragma mark -
 #pragma mark Task interaction
 
+- (BOOL)isWorking
+{
+	return isWorking;
+}
+
 /**
  * Disable all content interactive elements during an ongoing task.
  */
