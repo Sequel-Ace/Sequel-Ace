@@ -1,3 +1,34 @@
+## [5.5.0](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%225.5.0+%28*%29%22&expanded=true)
+
+### Added
+- Add editable Record View ([1e83fc659](https://github.com/Sequel-Ace/Sequel-Ace/commit/1e83fc659e0d8368871fef69e929ea76bf779d2c), [#2520](https://github.com/Sequel-Ace/Sequel-Ace/pull/2520))
+
+### Fixed
+- Fix the flaky pid-file race in the command runner test ([606050681](https://github.com/Sequel-Ace/Sequel-Ace/commit/6060506819b3dd9e70fcf7a1f963958c255a834f), [#2570](https://github.com/Sequel-Ace/Sequel-Ace/pull/2570))
+
+### Changed
+- Copy selected column values from result tables ([73812bb2f](https://github.com/Sequel-Ace/Sequel-Ace/commit/73812bb2f2a13de2cafcc9122c6ce76aeaf49e71), [#2564](https://github.com/Sequel-Ace/Sequel-Ace/pull/2564))
+- Ignore superseded prereleases in release overlap guard ([939ffc6ce](https://github.com/Sequel-Ace/Sequel-Ace/commit/939ffc6cebfd6d7c562860555503aad520ee4f23), [#2574](https://github.com/Sequel-Ace/Sequel-Ace/pull/2574))
+- Ship the Xcode MCP server and document the windowless workflow ([f9c0e04be](https://github.com/Sequel-Ace/Sequel-Ace/commit/f9c0e04be05f45d33b6c28b456e93e4bb5179a53), [#2566](https://github.com/Sequel-Ace/Sequel-Ace/pull/2566))
+- Migrate the internal drag reorders off the deprecated write API (step 9b, part 1) ([190215b77](https://github.com/Sequel-Ace/Sequel-Ace/commit/190215b7759ddc9a2162dc53ff03dbce3f0dbffd), [#2562](https://github.com/Sequel-Ace/Sequel-Ace/pull/2562))
+- Restrict the favorites search shortcut to plain ⌘F ([d49d70d30](https://github.com/Sequel-Ace/Sequel-Ace/commit/d49d70d30d8d667d9df3e40830c09ba5e828d586), [#2565](https://github.com/Sequel-Ace/Sequel-Ace/pull/2565))
+- Adopt the formal AppKit validation/editing protocols (step 9a) ([cf58101cc](https://github.com/Sequel-Ace/Sequel-Ace/commit/cf58101cc6740c4f848da7dc1b8f3946660a99b1), [#2561](https://github.com/Sequel-Ace/Sequel-Ace/pull/2561))
+- Validate GitHub release payload compatibility ([77b5cbab6](https://github.com/Sequel-Ace/Sequel-Ace/commit/77b5cbab64f22fe8c3834d52f467467fae0c4831), [#2560](https://github.com/Sequel-Ace/Sequel-Ace/pull/2560))
+- Swift 6 readiness: remove captured-var mutation in concurrent code ([851580c1b](https://github.com/Sequel-Ace/Sequel-Ace/commit/851580c1bad9d4f5440a730663a9968ff373913f), [#2559](https://github.com/Sequel-Ace/Sequel-Ace/pull/2559))
+- Make GitHub release checks resilient ([1e27279c7](https://github.com/Sequel-Ace/Sequel-Ace/commit/1e27279c722506229b726093688b5a6c8bc6b880), [#2556](https://github.com/Sequel-Ace/Sequel-Ace/pull/2556))
+- Preserve compatible GitHub release publisher identity ([da667a72b](https://github.com/Sequel-Ace/Sequel-Ace/commit/da667a72bc603e7e04e8613ba10cd0b7c2bc7566), [#2557](https://github.com/Sequel-Ace/Sequel-Ace/pull/2557))
+- Derive release builds from Apple state ([bf7496216](https://github.com/Sequel-Ace/Sequel-Ace/commit/bf74962168ffb291f2e46aacf89ccb3c1df015d9), [#2554](https://github.com/Sequel-Ace/Sequel-Ace/pull/2554))
+- Rewrite the MySQL help viewer on WKWebView ([c6e3bf636](https://github.com/Sequel-Ace/Sequel-Ace/commit/c6e3bf636f94506882af2bcdfff13c3e684f029d), [#2542](https://github.com/Sequel-Ace/Sequel-Ace/pull/2542))
+- Authenticate asynchronous release publisher source ([34799b57f](https://github.com/Sequel-Ace/Sequel-Ace/commit/34799b57f3c1d83a57be8e5624d0f47842c8365d), [#2553](https://github.com/Sequel-Ace/Sequel-Ace/pull/2553))
+- Authorize exact-target GitHub release mutations ([d28ff28d7](https://github.com/Sequel-Ace/Sequel-Ace/commit/d28ff28d7a16dc085f7800508ff33e2269a0894a), [#2552](https://github.com/Sequel-Ace/Sequel-Ace/pull/2552))
+- Handle already-deleted release branches ([ec1af6450](https://github.com/Sequel-Ace/Sequel-Ace/commit/ec1af645050e613752fa99a508471853b2ac4d60), [#2551](https://github.com/Sequel-Ace/Sequel-Ace/pull/2551))
+
+### Removed
+- Remove deleted RC1 publisher exception ([f4da8f951](https://github.com/Sequel-Ace/Sequel-Ace/commit/f4da8f951ebb1dcbe652254f21429f1379aa13bf), [#2558](https://github.com/Sequel-Ace/Sequel-Ace/pull/2558))
+
+### Infra
+
+
 ## [5.4.0](https://github.com/Sequel-Ace/Sequel-Ace/releases?q=%225.4.0+%28*%29%22&expanded=true)
 
 ### Added
