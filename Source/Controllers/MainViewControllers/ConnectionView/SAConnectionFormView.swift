@@ -311,9 +311,17 @@ struct SAConnectionFormView: View {
                 TextField(text: $model.info.user) {
                     Text("Username", comment: "connection view : field label")
                 }
-                SecureField(text: $model.info.password) {
+                // IAM authenticates with a token generated from the profile, so
+                // a typed password can never be used. -_syncAWSIAMAndSSLInterfaceState
+                // disables, clears and relabels the AppKit field; leaving it
+                // editable would invite a value that goes nowhere and would then
+                // sit in the model for the host and any favorite saved from it.
+                SecureField(text: .constant(""),
+                            prompt: Text("Generated from AWS IAM profile",
+                                         comment: "placeholder when AWS IAM auth is enabled")) {
                     Text("Password", comment: "connection view : field label")
                 }
+                .disabled(true)
                 databaseField
                 portField
             }
@@ -482,6 +490,13 @@ private struct SAOptionalFileRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Toggle(isOn: $isEnabled) { title }
+                // Unticking clears the path, as -chooseKeyLocation: does on
+                // cancel. Keeping it would make the old file silently reappear
+                // on re-tick, and would leave a disabled credential path in any
+                // favorite saved or exported afterwards.
+                .onChange(of: isEnabled) { isOn in
+                    if !isOn { path = "" }
+                }
 
             if isEnabled {
                 HStack {
