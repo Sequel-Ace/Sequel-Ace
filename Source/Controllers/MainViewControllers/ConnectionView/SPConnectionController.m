@@ -449,6 +449,10 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                 break;
             case SAConnectionValidationFailureKindHostMissing:
             case SAConnectionValidationFailureKindSshHostMissing:
+            // Raised only by the SwiftUI form's model, never by the validator
+            // this switch handles; listed so the switch stays exhaustive.
+            case SAConnectionValidationFailureKindVaultHostMissing:
+            case SAConnectionValidationFailureKindVaultCredentialsPathMissing:
                 break;
         }
         [NSAlert createWarningAlertWithTitle:failure.alertTitle message:failure.alertMessage callback:nil];
