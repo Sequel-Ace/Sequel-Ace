@@ -80,6 +80,7 @@ jobs:
           RELEASE_SHA: ${{ github.sha }}
           EXPECTED_SHA: ${{ inputs.expected_main_sha }}
           RELEASE_MODE: ${{ inputs.mode }}
+          PENDING_ARTIFACT_TAG: ${{ vars.SA_RELEASE_PENDING_ARTIFACT_TAG }}
           PENDING_FINALIZATION_TAG: ${{ vars.SA_RELEASE_PENDING_FINALIZATION_TAG }}
           CHANNEL: ${{ inputs.channel }}
           VERSION: ${{ inputs.version }}
@@ -89,10 +90,12 @@ jobs:
           CONFIRMATION: ${{ inputs.confirmation }}
         run: |
           set -euo pipefail
+          automatic_forward_recovery="false"
           [[ "${RELEASE_ENABLED}" == "true" ]] || { echo "Release publishing is disabled until every feasibility gate passes." >&2; exit 1; }
           if [[ "${RELEASE_ACTOR}" == "github-actions[bot]" && "${RELEASE_TRIGGERING_ACTOR}" == "github-actions[bot]" ]]; then
             [[ "${RELEASE_MODE}" == "resume" ]] || { echo "Automated build recovery must use resume mode." >&2; exit 1; }
             [[ "${RECOVERY_TAG}" =~ ^(production|beta)/[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || { echo "Automated build recovery requires an exact predecessor tag." >&2; exit 1; }
+            automatic_forward_recovery="true"
           else
             [[ "${RELEASE_ACTOR}" == "Jason-Morcos" || "${RELEASE_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized release actor." >&2; exit 1; }
             [[ "${RELEASE_TRIGGERING_ACTOR}" == "Jason-Morcos" || "${RELEASE_TRIGGERING_ACTOR}" == "Kaspik" ]] || { echo "Unauthorized release rerun initiator." >&2; exit 1; }
@@ -100,6 +103,13 @@ jobs:
           fi
           [[ "${RELEASE_REF}" == "refs/heads/main" ]] || { echo "Releases must be dispatched from main." >&2; exit 1; }
           [[ "${RELEASE_MODE}" == "start" || "${RELEASE_MODE}" == "resume" ]] || { echo "Invalid release mode." >&2; exit 1; }
+          [[ -n "${PENDING_ARTIFACT_TAG}" ]] || { echo "SA_RELEASE_PENDING_ARTIFACT_TAG is not configured." >&2; exit 1; }
+          [[ -n "${PENDING_FINALIZATION_TAG}" ]] || { echo "SA_RELEASE_PENDING_FINALIZATION_TAG is not configured." >&2; exit 1; }
+          if [[ "${PENDING_ARTIFACT_TAG}" != "none" &&
+                ( "${automatic_forward_recovery}" != "true" || "${PENDING_ARTIFACT_TAG}" != "${RECOVERY_TAG}" ) ]]; then
+            echo "A release is still awaiting artifact publication: ${PENDING_ARTIFACT_TAG}." >&2
+            exit 1
+          fi
           if [[ -n "${PENDING_FINALIZATION_TAG}" && "${PENDING_FINALIZATION_TAG}" != "none" ]]; then
             echo "A production release is still awaiting finalization: ${PENDING_FINALIZATION_TAG}." >&2
             exit 1
@@ -253,12 +263,23 @@ jobs:
           GHCR_USERNAME: ${{ github.actor }}
         run: |
           set -euo pipefail
+          source_release_suffix="$(bundle exec ruby -I fastlane/lib -rsequel_ace_release -e '
+            source = SequelAceRelease::VersionFiles.new.current
+            puts "#{source.fetch("version")}-#{source.fetch("build")}"
+          ')"
+          [[ "${source_release_suffix}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]] || {
+            echo "Current source release identity is malformed." >&2
+            exit 1
+          }
           prereleases_file="$(mktemp "${RUNNER_TEMP}/sequel-ace-existing-prereleases.XXXXXX")"
           gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
             --jq '.[] | select(.prerelease == true and (.tag_name | test("^(production|beta)/[0-9]+\\.[0-9]+\\.[0-9]+-[1-9][0-9]*$"))) | [.tag_name, .author.login, (.author.id | tostring), .created_at] | @tsv' \
             > "${prereleases_file}"
           while IFS=$'\t' read -r release_tag release_author release_author_id release_created_at; do
             [[ -n "${release_tag}" && -n "${release_author}" && -n "${release_author_id}" && -n "${release_created_at}" ]] || continue
+            if [[ "${release_tag}" != "production/${source_release_suffix}" && "${release_tag}" != "beta/${source_release_suffix}" ]]; then
+              continue
+            fi
             if ! bundle exec ruby -I fastlane/lib -rsequel_ace_release -e \
               'author_id = Integer(ARGV.fetch(2), 10) rescue nil; exit(SequelAceRelease::ReleasePublisher.authorized?(tag: ARGV.fetch(0), login: ARGV.fetch(1), id: author_id, created_at: ARGV.fetch(3)) ? 0 : 1)' \
               "${release_tag}" "${release_author}" "${release_author_id}" "${release_created_at}"; then
