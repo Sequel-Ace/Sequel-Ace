@@ -225,7 +225,7 @@ class ReleaseArtifactWakeStateTest < Minitest::Test
             "SA_RELEASE_GITHUB_APP_PRIVATE_KEY" => "test-private-key"
           )
         end
-        environment["GITHUB_ACTIONS"] = "true" if github_actions
+        environment["GITHUB_ACTIONS"] = github_actions ? "true" : nil
         environment["SA_RELEASE_WAKE_VARIABLE"] = wake_variable if wake_variable
         arguments = [repo_path("Scripts/release-artifact-wake-state.sh"), operation, tag]
         arguments << predecessor if predecessor
