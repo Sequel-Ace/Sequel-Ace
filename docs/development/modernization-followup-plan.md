@@ -422,7 +422,62 @@ C2b — all connection types + SSL, colour, time zone — ✅ Done
 - Files: `SAConnectionFormModel.swift`, `SAConnectionFormView.swift`,
   `UnitTests/SAConnectionFormModelTests.swift`
 
-**C3. Wire SwiftUI into SAConnectionWindowController + expose in menu**
+**C3. Wire SwiftUI into SAConnectionWindowController + expose in menu** — ✅ Done (favorites CRUD + keychain still with the AppKit form)
+- ✅ Done: `SAConnectionWindowController` now hosts `SAConnectionWindowView`
+  (an `NSHostingView` over `SAFavoritesList` + `SAConnectionFormView` in an
+  `HSplitView`) instead of instantiating `SPConnectionController`. This is the
+  first place the C1b/C2 views actually run — until now both compiled but
+  nothing created them.
+- ✅ Selecting a favorite populates the form through the D1 decoder
+  (`SAConnectionFormModel.load(favorite:)`); Quick Connect resets it. Connecting
+  validates via D3/C2b and goes through the existing `connectDirectly`, i.e.
+  `SAConnectionService`, with no `SPConnectionController` involved.
+- ✅ The "New Connection Window" menu item is enabled. It sits alongside the
+  XIB's document-based flow rather than replacing it.
+- ✅ **The handoff is complete** (three gaps found by Codex on #2572; hosting the
+  views turned them from dead scaffolding into live code):
+  - `SAConnectionInfoObjC.apply(to:)` populates the destination document's
+    `SPConnectionController` before the connection is handed over, so the new
+    tab's title, database, host, user, port and colour are right and `.spf`
+    serialization carries real details. It is written as the exact inverse of
+    `-_buildConnectionInfo`, field for field in the same order; the two were
+    diffed mechanically to confirm 41/41 coverage both ways, which is a stronger
+    check than a hand-written test since the risk here is omission, not logic.
+  - AWS IAM and Vault now resolve their credentials before connecting.
+    `SAConnectionService` only configures transport flags, so the window calls
+    `AWSIAMAuthManager.generateAuthToken` for the RDS token (on the main queue,
+    since the profile flow can raise an MFA sheet) and `VaultAuthManager`
+    for ephemeral credentials (off the main queue — the OIDC leg can open a
+    browser for up to two minutes — clearing the cached pair on failure so a
+    retry re-runs it).
+  - The established connection is given the destination document as its
+    delegate; without it the framework fell back to bare automatic retry with no
+    query-error logging, no no-connection alert, no keychain prompt on reconnect
+    and no connection-loss UI.
+- ✅ Second review round on the connect path (Codex, #2572), all seven fixed:
+  Vault favorites keep a custom `vaultPort` / `vaultOIDCMount` (D1 omits them
+  because the AppKit controller reads them raw for its placeholders, so this
+  path carries them itself); Quick Connect resets through the nil-favorite
+  decoder rather than `SAConnectionInfo()`, restoring colour -1 / compression
+  on / profile "default"; the connection details are snapshotted before the
+  asynchronous Vault leg so one endpoint's credentials cannot pair with
+  another's details; an in-flight Vault OIDC login is cancelled on window close
+  instead of holding its exclusive slot for two minutes; AWS IAM checks and
+  prompts for `~/.aws` authorization before generating a token, which the
+  sandbox needs and only `-authorizeAWSDirectory:` used to offer; a cancelled
+  SSH password prompt no longer shows a spurious "Connection failed"; and the
+  handoff asks TabManager for a *window* rather than a tab, since
+  `newWindowForTab()` resolves through `mainWindow`, whose assertion that a
+  managed database window is main would fire — and crash Debug — with the
+  standalone window frontmost.
+- ⚠️ Also still owned by the AppKit form:
+  keychain password retrieval for a selected favorite (the D1 decoder never
+  carried passwords, and the lookup needs the account/service naming still in
+  `SPConnectionController`), favorites CRUD from this window (add / duplicate /
+  delete / rename / reorder), and the Vault role-list fetch. Typing a password
+  into the form works; a saved favorite's password does not auto-fill.
+- 5 new model tests (73 in `SAConnectionFormModelTests`) covering favorite load,
+  password non-carry, the Vault re-split on load, nil favorites and Quick Connect.
 - The standalone connection window is the ideal host for SwiftUI views
 - Replace the embedded SPConnectionController with SwiftUI favorites list + connection form
 - Use `SAConnectionService` directly for connection establishment

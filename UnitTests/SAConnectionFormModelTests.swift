@@ -756,6 +756,144 @@ final class SAConnectionFormModelTests: XCTestCase {
         XCTAssertEqual(model.vaultCredentialsRole, "")
     }
 
+    // MARK: - C3: loading a favorite into the form
+
+    func testLoadingAFavoritePopulatesTheForm() {
+        let model = SAConnectionFormModel()
+        model.load(favorite: [
+            "type": SAConnectionType.sshTunnel.rawValue,
+            "name": "prod",
+            "host": "db.internal",
+            "user": "app",
+            "database": "sakila",
+            "sshHost": "bastion.example.com",
+        ] as NSDictionary)
+
+        XCTAssertEqual(model.info.type, .sshTunnel)
+        XCTAssertEqual(model.info.name, "prod")
+        XCTAssertEqual(model.info.host, "db.internal")
+        XCTAssertEqual(model.info.sshHost, "bastion.example.com")
+    }
+
+    /// Favorites never carry passwords — they live in the keychain — so loading
+    /// one must not leave a previous entry's password behind in the form.
+    func testLoadingAFavoriteClearsTheTypedPassword() {
+        let model = SAConnectionFormModel()
+        model.info.password = "left-over"
+        model.info.sshPassword = "left-over-ssh"
+
+        model.load(favorite: ["host": "db.example.com"] as NSDictionary)
+
+        XCTAssertEqual(model.info.password, "")
+        XCTAssertEqual(model.info.sshPassword, "")
+    }
+
+    /// Loading replaces `info` wholesale, which is what re-splits the Vault
+    /// halves — otherwise the mount control would keep the previous value.
+    func testLoadingAVaultFavoriteSplitsItsCredentialsPath() {
+        let model = SAConnectionFormModel()
+        model.vaultMount = "stale"
+        model.vaultCredentialsRole = "stale-role"
+
+        model.load(favorite: [
+            "type": SAConnectionType.vault.rawValue,
+            "host": "db.example.com",
+            "vaultCredentialsPath": "team/creds/writer",
+        ] as NSDictionary)
+
+        XCTAssertEqual(model.vaultMount, "team")
+        XCTAssertEqual(model.vaultCredentialsRole, "writer")
+    }
+
+    func testLoadingANilFavoriteYieldsABlankForm() {
+        let model = SAConnectionFormModel()
+        model.info.host = "something"
+
+        model.load(favorite: nil)
+
+        XCTAssertEqual(model.info.host, "")
+        XCTAssertEqual(model.info.type, .tcpIP)
+    }
+
+    /// The blank form's historical defaults, which raw `SAConnectionInfo()` does
+    /// not match — building Quick Connect by hand gave it an unintended colour
+    /// and silently turned compression off.
+    func testQuickConnectUsesTheHistoricalBlankFormDefaults() {
+        let model = SAConnectionFormModel()
+        model.loadQuickConnect()
+
+        XCTAssertEqual(model.info.colorIndex, -1, "no colour, not the first swatch")
+        XCTAssertTrue(model.info.useCompression, "compression defaults on")
+        XCTAssertEqual(model.info.awsProfile, "default")
+    }
+
+    func testQuickConnectMatchesTheNilFavoriteDecoder() {
+        let quick = SAConnectionFormModel()
+        quick.loadQuickConnect()
+
+        let decoded = SAConnectionFormModel()
+        decoded.load(favorite: nil)
+
+        XCTAssertEqual(quick.info.colorIndex, decoded.info.colorIndex)
+        XCTAssertEqual(quick.info.useCompression, decoded.info.useCompression)
+        XCTAssertEqual(quick.info.awsProfile, decoded.info.awsProfile)
+        XCTAssertEqual(quick.info.type, decoded.info.type)
+    }
+
+    // MARK: - C3: Vault endpoint fields survive a favorite load
+
+    /// D1 leaves vaultPort / vaultOIDCMount out on purpose — the AppKit
+    /// controller reads them raw so a missing key can drive the "443" / "oidc"
+    /// placeholder. This path has no such read, so it has to carry them itself
+    /// or a custom endpoint silently reverts to the defaults.
+    func testLoadingAVaultFavoriteKeepsItsCustomEndpoint() {
+        let model = SAConnectionFormModel()
+        model.load(favorite: [
+            "type": SAConnectionType.vault.rawValue,
+            "host": "db.example.com",
+            "vaultHost": "https://vault.internal",
+            "vaultPort": "8200",
+            "vaultOIDCMount": "corp-oidc",
+        ] as NSDictionary)
+
+        XCTAssertEqual(model.info.vaultPort, "8200")
+        XCTAssertEqual(model.info.vaultOIDCMount, "corp-oidc")
+    }
+
+    /// A numeric port survives too — favorites store some values as NSNumber.
+    func testAVaultPortStoredAsANumberIsCarried() {
+        let model = SAConnectionFormModel()
+        model.load(favorite: ["vaultPort": NSNumber(value: 8200)] as NSDictionary)
+
+        XCTAssertEqual(model.info.vaultPort, "8200")
+    }
+
+    /// Absent keys stay empty so the form shows its placeholders, and
+    /// resolveVaultCredentials applies the same 443 / oidc fallbacks.
+    func testAVaultFavoriteWithoutAnEndpointLeavesThoseFieldsEmpty() {
+        let model = SAConnectionFormModel()
+        model.load(favorite: ["host": "db.example.com"] as NSDictionary)
+
+        XCTAssertEqual(model.info.vaultPort, "")
+        XCTAssertEqual(model.info.vaultOIDCMount, "")
+    }
+
+    /// Quick Connect is the blank-form row.
+    func testQuickConnectResetsEveryField() {
+        let model = SAConnectionFormModel()
+        model.info.type = .vault
+        model.info.host = "db.example.com"
+        model.vaultMount = "m"
+        model.vaultCredentialsRole = "r"
+
+        model.loadQuickConnect()
+
+        XCTAssertEqual(model.info.type, .tcpIP)
+        XCTAssertEqual(model.info.host, "")
+        XCTAssertEqual(model.vaultMount, "")
+        XCTAssertEqual(model.vaultCredentialsRole, "")
+    }
+
     // MARK: - C2b: generated name across the types
 
     func testSocketConnectionsNameThemselvesLocalhost() {

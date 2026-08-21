@@ -86,7 +86,11 @@ extension SAFavoriteItem {
 
     /// Normalize a favorite-dictionary value (often an `NSNumber`)
     /// to a string ID.
-    private static func string(_ value: Any?) -> String? {
+    ///
+    /// Internal rather than private so a selection can be resolved back to its
+    /// favorite dictionary through the *same* normalization that produced the
+    /// id — deriving it separately is how the two drift apart.
+    static func string(_ value: Any?) -> String? {
         switch value {
         case let number as NSNumber: return number.stringValue
         case let string as String where !string.isEmpty: return string
