@@ -43,6 +43,9 @@ import SwiftUI
     /// The favorite currently selected in the sidebar.
     private var selection: SAFavoriteItem.ID?
 
+    /// The in-flight Vault OIDC login, if any, so closing the window releases it.
+    private var activeVaultLoginIdentifier: String?
+
     /// Set to true after a successful connection handoff to prevent
     /// windowWillClose from disconnecting the just-handed-off connection.
     private var connectionHandedOff = false
@@ -104,6 +107,13 @@ import SwiftUI
     func windowWillClose(_ notification: Notification) {
         guard !connectionHandedOff else { return }
         connectionService.cancel()
+
+        // Credential generation happens outside the service, so cancelling the
+        // service alone leaves a browser-based Vault login holding its slot.
+        if let activeVaultLoginIdentifier {
+            VaultOIDCHandler.cancelActiveLogin(identifier: activeVaultLoginIdentifier)
+            self.activeVaultLoginIdentifier = nil
+        }
     }
 
     // MARK: - Connection screen
@@ -190,7 +200,13 @@ import SwiftUI
             return
         }
 
-        resolveCredentials { [weak self] result in
+        // Snapshot now and carry it through: the Vault leg is asynchronous and can
+        // sit in a browser for minutes, during which the user may edit the form or
+        // pick another favorite. Re-reading formModel.info afterwards would pair
+        // one endpoint's ephemeral credentials with another's connection details.
+        let attempt = formModel.info
+
+        resolveCredentials(for: attempt) { [weak self] result in
             guard let self else { return }
 
             switch result {
@@ -198,7 +214,7 @@ import SwiftUI
                 self.showConnectionError(title: failure.title, detail: failure.detail)
 
             case .success(let credentials):
-                var resolved = self.formModel.info
+                var resolved = attempt
                 resolved.user = credentials.user
                 resolved.password = credentials.password
 
@@ -221,11 +237,21 @@ import SwiftUI
     }
 
     /// Resolves type-specific credentials, calling back on the main queue.
-    private func resolveCredentials(_ completion: @escaping (Result<SAResolvedCredentials, SACredentialFailure>) -> Void) {
-        let info = formModel.info
-
+    private func resolveCredentials(for info: SAConnectionInfo,
+                                    _ completion: @escaping (Result<SAResolvedCredentials, SACredentialFailure>) -> Void) {
         switch info.type {
         case .awsIAM:
+            // Under the sandbox the credential loader cannot read ~/.aws without
+            // a security-scoped bookmark, and the only UI that creates one lives
+            // on SPConnectionController — which this window no longer builds. So
+            // a first-time IAM user would hit an opaque failure here.
+            guard ensureAWSDirectoryAuthorized() else {
+                completion(.failure(SACredentialFailure(
+                    title: NSLocalizedString("AWS Access Not Authorized", comment: "AWS authorization required title"),
+                    detail: NSLocalizedString("Authorize access to your ~/.aws directory before connecting with an AWS IAM favorite.",
+                                              comment: "AWS authorization required message"))))
+                return
+            }
             completion(resolveAWSIAMToken(info: info))
 
         case .vault:
@@ -238,6 +264,43 @@ import SwiftUI
             // naming that lives in SPConnectionController.
             completion(.success(SAResolvedCredentials(user: info.user, password: info.password)))
         }
+    }
+
+    /// Ensures `~/.aws` is reachable under the sandbox, prompting for access if
+    /// not, and reports whether it is authorized afterwards.
+    ///
+    /// The AppKit equivalent is `-authorizeAWSDirectory:`, reachable from a
+    /// button on the IAM tab. This window has no such button, so the check runs
+    /// as part of connecting: without the bookmark the credential loader cannot
+    /// read the default profile and token generation fails opaquely.
+    private func ensureAWSDirectoryAuthorized() -> Bool {
+        if AWSDirectoryBookmarkManager.shared.isAWSDirectoryAuthorized { return true }
+
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = false
+        // .aws is hidden, so the panel has to show hidden entries to reach it.
+        panel.showsHiddenFiles = true
+        panel.directoryURL = URL(fileURLWithPath: NSHomeDirectory())
+        panel.message = NSLocalizedString("Select your .aws directory to enable AWS IAM authentication",
+                                          comment: "AWS directory selection message")
+        panel.prompt = NSLocalizedString("Authorize", comment: "AWS directory authorize button")
+
+        guard panel.runModal() == .OK, let url = panel.url else { return false }
+
+        // Same acceptance rule as -authorizeAWSDirectory:: the folder itself, or
+        // any folder holding the files the loader reads.
+        let path = url.path
+        let contents = FileManager.default
+        let looksLikeAWSDirectory = path.hasSuffix(".aws")
+            || contents.fileExists(atPath: (path as NSString).appendingPathComponent("credentials"))
+            || contents.fileExists(atPath: (path as NSString).appendingPathComponent("config"))
+
+        guard looksLikeAWSDirectory else { return false }
+
+        return AWSDirectoryBookmarkManager.shared.addAWSDirectoryBookmark(from: url)
     }
 
     /// Generates the RDS auth token that stands in for the password. Stays on
@@ -283,8 +346,13 @@ import SwiftUI
         let mount = info.vaultOIDCMount.isEmpty ? "oidc" : info.vaultOIDCMount
         let credPath = info.vaultCredentialsPath
         let loginIdentifier = VaultOIDCHandler.prepareActiveLogin()
+        // Remembered so windowWillClose can cancel it: the login holds an
+        // exclusive slot and a fixed callback listener, and abandoning it would
+        // block the next Vault attempt until the two-minute timeout.
+        activeVaultLoginIdentifier = loginIdentifier
 
-        DispatchQueue.global(qos: .userInitiated).async {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self else { return }
             var username: NSString?
             var password: NSString?
             var error: NSError?
@@ -302,6 +370,10 @@ import SwiftUI
             VaultOIDCHandler.clearPreparedActiveLogin(identifier: loginIdentifier)
 
             DispatchQueue.main.async {
+                if self.activeVaultLoginIdentifier == loginIdentifier {
+                    self.activeVaultLoginIdentifier = nil
+                }
+
                 guard succeeded,
                       let username = username as String?, !username.isEmpty,
                       let password = password as String?, !password.isEmpty else {
@@ -327,7 +399,13 @@ import SwiftUI
         // 1. Create a new document tab via TabManager
         guard let appDelegate = NSApp.delegate as? SPAppController else { return }
         let tabManager = appDelegate.tabManager
-        let windowController = tabManager?.newWindowForTab()
+        // newWindowForTab() resolves the target through TabManager's mainWindow,
+        // which asserts that a managed database window is main whenever any
+        // exist. This window is not managed, so with it frontmost that assertion
+        // fires and crashes the Debug build on every successful handoff. Asking
+        // for a window sidesteps it, and matches what "New Connection Window"
+        // implies anyway.
+        let windowController = tabManager?.newWindowForWindow()
 
         guard let document = windowController?.databaseDocument else { return }
 
@@ -402,6 +480,11 @@ import SwiftUI
             if result.isSuccess, let connection = result.connection {
                 let wrappedInfo = SAConnectionInfoObjC(info: info.info)
                 self.connectionDidEstablish(connection, info: wrappedInfo)
+            } else if result.userCancelled {
+                // Cancelling the interactive SSH password prompt is not a
+                // failure; the embedded flow restores the UI silently and shows
+                // nothing, and the result carries no error title to show anyway.
+                return
             } else {
                 // Build a meaningful error from all available fields
                 let detail = [result.errorMessage, result.errorDetail]

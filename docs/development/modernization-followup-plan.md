@@ -454,6 +454,22 @@ C2b — all connection types + SSL, colour, time zone — ✅ Done
     delegate; without it the framework fell back to bare automatic retry with no
     query-error logging, no no-connection alert, no keychain prompt on reconnect
     and no connection-loss UI.
+- ✅ Second review round on the connect path (Codex, #2572), all seven fixed:
+  Vault favorites keep a custom `vaultPort` / `vaultOIDCMount` (D1 omits them
+  because the AppKit controller reads them raw for its placeholders, so this
+  path carries them itself); Quick Connect resets through the nil-favorite
+  decoder rather than `SAConnectionInfo()`, restoring colour -1 / compression
+  on / profile "default"; the connection details are snapshotted before the
+  asynchronous Vault leg so one endpoint's credentials cannot pair with
+  another's details; an in-flight Vault OIDC login is cancelled on window close
+  instead of holding its exclusive slot for two minutes; AWS IAM checks and
+  prompts for `~/.aws` authorization before generating a token, which the
+  sandbox needs and only `-authorizeAWSDirectory:` used to offer; a cancelled
+  SSH password prompt no longer shows a spurious "Connection failed"; and the
+  handoff asks TabManager for a *window* rather than a tab, since
+  `newWindowForTab()` resolves through `mainWindow`, whose assertion that a
+  managed database window is main would fire — and crash Debug — with the
+  standalone window frontmost.
 - ⚠️ Also still owned by the AppKit form:
   keychain password retrieval for a selected favorite (the D1 decoder never
   carried passwords, and the lookup needs the account/service naming still in

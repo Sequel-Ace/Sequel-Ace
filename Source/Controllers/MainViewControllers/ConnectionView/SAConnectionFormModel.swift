@@ -219,12 +219,39 @@ final class SAConnectionFormModel: ObservableObject {
     /// Assigning `info` wholesale is what re-splits the Vault mount/role halves,
     /// so a favorite's credentials path lands in both controls.
     func load(favorite: NSDictionary?) {
-        info = SAConnectionInfoObjC.info(fromFavoriteDictionary: favorite).info
+        var decoded = SAConnectionInfoObjC.info(fromFavoriteDictionary: favorite).info
+
+        // D1 deliberately leaves these two out: the AppKit controller reads them
+        // raw so that a *missing* key can drive the field's "443" / "oidc"
+        // placeholder, which a non-optional String cannot express. This path has
+        // no such raw read, so without carrying them a Vault favorite with a
+        // custom endpoint would silently authenticate against the defaults.
+        if let favorite {
+            decoded.vaultPort = Self.string(favorite["vaultPort"]) ?? ""
+            decoded.vaultOIDCMount = Self.string(favorite["vaultOIDCMount"]) ?? ""
+        }
+
+        info = decoded
     }
 
-    /// Resets to a blank form — the Quick Connect row.
+    /// Normalizes a favorite-dictionary value that may be a string or a number.
+    private static func string(_ value: Any?) -> String? {
+        switch value {
+        case let text as String: return text
+        case let number as NSNumber: return number.stringValue
+        default: return nil
+        }
+    }
+
+    /// Resets to the blank form behind the Quick Connect row.
+    ///
+    /// Goes through the nil-favorite decoder rather than `SAConnectionInfo()`:
+    /// the blank form's historical defaults are no colour (-1), compression on,
+    /// and the AWS profile "default", none of which the raw struct defaults
+    /// match. Building it by hand gave Quick Connect an unintended colour and
+    /// silently turned compression off.
     func loadQuickConnect() {
-        info = SAConnectionInfo()
+        load(favorite: nil)
     }
 
     // MARK: - Derived display values
