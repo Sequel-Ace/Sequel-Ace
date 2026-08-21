@@ -37,6 +37,27 @@ import Cocoa
 
     /// Marker value written under `rowValueKindKey` for ordinary string cells.
     @objc public static let rowValueKindString: String = "string"
+
+    /// The plist a drag should publish under `pasteboardRowTypeRaw` for the
+    /// cell the drag started on, or `nil` when the drag must not advertise a
+    /// cell payload at all.
+    ///
+    /// Only a positively-resolved cell qualifies: a known column name, and
+    /// either a non-nil display value or a cell identified as SQL NULL. A nil
+    /// display value on a non-NULL cell means the lookup failed — a stale row
+    /// after a reload, an out-of-range storage index — and publishing it anyway
+    /// would synthesize a spurious `col = ''` filter on drop.
+    @objc(rowPayloadForColumnName:value:isNull:)
+    public static func rowPayload(columnName: String?, value: String?, isNull: Bool) -> [String: String]? {
+        guard let columnName, !columnName.isEmpty else { return nil }
+        guard isNull || value != nil else { return nil }
+
+        return [
+            rowColumnNameKey: columnName,
+            rowValueKey: value ?? "",
+            rowValueKindKey: isNull ? rowValueKindNull : rowValueKindString,
+        ]
+    }
 }
 
 /// `NSTextField` subclass used for the argument input of a rule row.

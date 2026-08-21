@@ -3630,14 +3630,14 @@ static inline NSPoint SPPointOnLine(NSPoint a, NSPoint b, CGFloat t) { return NS
 	}
 
 	// Insert selected items coming from the Navigator
-	if ( [[pboard types] containsObject:SPNavigatorPasteboardDragType] ) {
+	if ( [[pboard types] containsObject:SADragPasteboard.navigatorSchemaPathsType] ) {
 		NSPoint draggingLocation = [sender draggingLocation];
 		draggingLocation = [self convertPoint:draggingLocation fromView:nil];
 		NSUInteger characterIndex = [self characterIndexOfPoint:draggingLocation];
 		[self setSelectedRange:NSMakeRange(characterIndex,0)];
 
 		NSArray *draggedItems = [NSKeyedUnarchiver unarchivedObjectOfClasses:[NSSet setWithObjects:[NSArray class], [NSString class], nil]
-		                                                             fromData:[pboard dataForType:SPNavigatorPasteboardDragType]
+		                                                             fromData:[pboard dataForType:SADragPasteboard.navigatorSchemaPathsType]
 		                                                                error:nil] ?: @[];
 
 		NSMutableString *dragString = [NSMutableString string];

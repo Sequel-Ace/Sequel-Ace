@@ -262,8 +262,6 @@ extern NSString *SPMySQLSysDatabase;
 extern NSString *SPDefaultPasteboardDragType;
 extern NSString *SPFavoritesPasteboardDragType;
 extern NSString *SPContentFilterPasteboardDragType;
-extern NSString *SPNavigatorPasteboardDragType;
-extern NSString *SPNavigatorTableDataPasteboardDragType;
 extern NSString *SPExportCustomFileNameTokenPlistType;
 
 // File extensions

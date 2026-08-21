@@ -2670,20 +2670,36 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 #pragma mark -
 #pragma mark TableView Drag & Drop datasource methods
 
-- (BOOL)tableView:(NSTableView *)aTableView writeRowsWithIndexes:(NSIndexSet *)rows toPasteboard:(NSPasteboard*)pboard
+/**
+ * Give each dragged result row its own pasteboard item. The rows' combined
+ * tab-delimited text is attached to the drag as a whole in
+ * -tableView:draggingSession:willBeginAtPoint:forRowIndexes: below, because it
+ * is one blob for the selection and this method only ever sees one row.
+ */
+- (id <NSPasteboardWriting>)tableView:(NSTableView *)aTableView pasteboardWriterForRow:(NSInteger)row
 {
-    if ( aTableView == customQueryView ) {
-        NSString *tmp = [customQueryView draggedRowsAsTabString];
-        if ( nil != tmp )
-        {
-            [pboard declareTypes:@[NSPasteboardTypeTabularText, NSPasteboardTypeString] owner:nil];
-            [pboard setString:tmp forType:NSPasteboardTypeString];
-            [pboard setString:tmp forType:NSPasteboardTypeTabularText];
-            return YES;
-        }
-        return NO;
-    } else {
-        return NO;
+    if (aTableView != customQueryView) return nil;
+
+    // Refuse the drag outright when there is nothing selected to write, the way
+    // the previous whole-drag writer refused an empty payload.
+    if (![[customQueryView selectedRowIndexes] count]) return nil;
+
+    return [SADragPasteboard dragRowItemForRow:row];
+}
+
+/**
+ * Attach the selection as tab-delimited text, which is what receivers outside
+ * the app read.
+ */
+- (void)tableView:(NSTableView *)aTableView draggingSession:(NSDraggingSession *)session willBeginAtPoint:(NSPoint)screenPoint forRowIndexes:(NSIndexSet *)rowIndexes
+{
+    if (aTableView != customQueryView) return;
+
+    // Selection-derived, exactly as before: -draggedRowsAsTabString reads
+    // -selectedRowIndexes, and the old writer ignored the indexes it was passed.
+    NSString *tmp = [customQueryView draggedRowsAsTabString];
+    if ([tmp length]) {
+        [SADragPasteboard attachDragString:tmp toPasteboard:[session draggingPasteboard]];
     }
 }
 

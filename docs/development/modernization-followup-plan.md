@@ -508,8 +508,12 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
    rather than the drag-API rewrites the plan assumed: 36 of its 42 warnings
    were fixed by declaring `NSMenuItemValidation` /
    `NSControlTextEditingDelegate` / `NSFontChanging` /
-   `NSToolbarItemValidation` (step 9a, done). Only 6 real delegate methods
-   remain (step 9b), and those do want manual verification.
+   `NSToolbarItemValidation` (step 9a, done). Step 9b (the 6 real delegate
+   methods) is now also done: part 1 migrated the internal reorders, part 2 the
+   three drag-*out* payloads (query results, table content, navigator) via
+   `SADragPasteboard`, which also retired the navigator's two non-UTI
+   pasteboard type names. The drag-out paths still want the manual
+   drag-into-TextEdit verification listed in the warnings plan.
 6. **Phase E (table content / custom query services)** — explicitly gated on
    the PostgreSQL abstraction decision (#2482/#2493): if it lands, extract
    against `id<SPDatabaseConnection>`; starting before that decision risks

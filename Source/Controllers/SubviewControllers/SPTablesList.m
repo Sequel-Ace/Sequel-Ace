@@ -150,7 +150,7 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 												 name:SPDocumentTaskEndNotification
 											   object:tableDocumentInstance];
 	
-	[tablesListView registerForDraggedTypes:@[SPNavigatorTableDataPasteboardDragType]];
+	[tablesListView registerForDraggedTypes:@[SADragPasteboard.navigatorTableDataType]];
 
 	//create the charset helper
 	addTableCharsetHelper = [[SPCharsetCollationHelper alloc] initWithCharsetButton:tableEncodingButton CollationButton:tableCollationButton];
@@ -1978,8 +1978,8 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 	NSPasteboard *pboard = [info draggingPasteboard];
 
 	// tables were dropped coming from the Navigator
-	if ( [[pboard types] containsObject:SPNavigatorTableDataPasteboardDragType] ) {
-		NSString *query = [pboard stringForType:SPNavigatorTableDataPasteboardDragType];
+	if ( [[pboard types] containsObject:SADragPasteboard.navigatorTableDataType] ) {
+		NSString *query = [pboard stringForType:SADragPasteboard.navigatorTableDataType];
 		if(!query) return NO;
 
 		[mySQLConnection queryString:query assertingDatabase:[tableDocumentInstance database]];

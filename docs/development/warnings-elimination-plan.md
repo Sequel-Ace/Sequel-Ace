@@ -233,7 +233,7 @@ behavior change, nothing to drag-test. Landed as a single sweep over 21 files,
 following the conformance style already used by `SPFilterTableController` and
 `SPGotoDatabaseController`.
 
-## Step 9b — Genuinely deprecated delegate methods — 3 of 6 done
+## Step 9b — Genuinely deprecated delegate methods — ✅ Done (6 of 6)
 
 Split by who consumes the dragged payload, because that decides the risk.
 
@@ -266,23 +266,68 @@ together. `SPDefaultPasteboardDragType` ("SequelProPasteboard") now has no live
 readers — its remaining references are inside SPCustomQuery's commented-out
 drop handlers.
 
-**Remaining (3) — the payload leaves the view, so it must keep its current
-shape on the pasteboard:**
+**Done (part 2) — the payload leaves the view, so it kept its current shape:**
 
-- `tableView:writeRowsWithIndexes:toPasteboard:` — SPCustomQuery:2629,
-  SPTableContent:4482. These write *one* combined blob for the whole selection
-  (tab-delimited text, SQL INSERTs when a modifier is held, plus a single-cell
-  type in SPTableContent) which is dropped into other apps and into the rule
-  filter. Per-row writers would put N items on the pasteboard, and a receiver
-  reading `-stringForType:` gets only the first — so write the combined payload
-  in `tableView:draggingSession:willBeginAtPoint:forRowIndexes:` and return a
-  lightweight item per row.
-- `outlineView:writeItems:toPasteboard:` — SPNavigatorController:1080, same
-  shape (three types incl. a string dropped into the query editor);
-  `outlineView:draggingSession:willBeginAtPoint:forItems:`. Note its types
-  (`SPNavigatorPasteboardDragType`, `SPNavigatorTableDataPasteboardDragType`)
-  are legacy names too, so they hit the UTI rule above and must be renamed with
-  their readers — SPTextView reads them.
+- `tableView:writeRowsWithIndexes:toPasteboard:` — SPCustomQuery, SPTableContent.
+- `outlineView:writeItems:toPasteboard:` — SPNavigatorController.
+
+Each is now `-pasteboardWriterForRow:`/`-pasteboardWriterForItem:` returning a
+marker-only item per row, plus `-draggingSession:willBeginAtPoint:for…:` which
+attaches the whole-drag payload through `SADragPasteboard`. The navigator's two
+legacy type names were renamed to UTIs alongside their readers (SPTextView,
+SPTablesList), and `SPNavigatorPasteboardDragType` /
+`SPNavigatorTableDataPasteboardDragType` were retired from SPConstants.
+
+⚠️ **This plan's stated reason for the design was wrong, and the correction is
+what makes the migration safe.** It said "per-row writers would put N items on
+the pasteboard, and a receiver reading `-stringForType:` gets only the first".
+Measured against AppKit, `NSPasteboard` does not treat the types alike:
+
+| Type | Multi-item read |
+|---|---|
+| `.string` | **concatenated across all items, joined with `\n`** |
+| `.tabularText` | first item only |
+| custom UTI types, property lists | first item only |
+
+So the danger was the opposite of the one described: had each row's item carried
+its own `.string`, a receiver would have read the whole-drag blob *followed by
+every row's fragment*. Keeping the per-row items marker-only is what holds
+`-stringForType:` byte-identical to the deprecated writer's output.
+`SADragPasteboardTests` pins both halves, including the contaminated shape.
+
+Two smaller behaviour notes:
+
+- The old writers refused a drag by returning NO when the combined payload came
+  out empty. The per-row writer cannot see the payload, so it refuses on the
+  cheap precondition instead (empty selection; no resolvable schema path), and
+  the session hook skips attaching an empty blob. A non-empty selection whose
+  text renders empty now starts a drag that carries nothing rather than not
+  starting — unreachable in practice, since `-draggedRowsAsTabString` emits
+  delimiters even for empty cells.
+- SPTableContent's rule-filter cell payload moved its publish/refuse rule into
+  `SPCellValuePasteboard.rowPayload(columnName:value:isNull:)` (Swift, 6 tests).
+
+Review follow-up (CodeRabbit): the two pure lookups the migration left in ObjC
+moved to `SADragPasteboard` — `schemaPath(fromKey:delimiter:)` (strip the
+navigator's leading connection ID) and `columnName(forClickedColumn:…)` (map a
+clicked table column through its storage index). Both are now tested, and the
+schema-path split fixes a latent quirk in the regex it replaced: `.` does not
+match newlines in ICU, so `^.*?<delim>` left a key containing one unstripped.
+The rest of the flagged ObjC is pre-existing logic that *moved* between delegate
+methods rather than new code — the net ObjC across the three files is +33 lines,
+mostly doc comments and the two delegate signatures each site needs, against
++462 lines of Swift. The remaining ObjC (outline-view traversal, the cell
+display/NULL reads) needs live AppKit objects and would only gain indirection.
+
+One worry checked and dismissed: `SPCopyTable` grants drag-out permission by
+overriding the pre-10.7 `-draggingSourceOperationMaskForLocal:` rather than
+calling `-setDraggingSourceOperationMask:forLocal:`, and the session-based drag
+path might plausibly have stopped consulting it — which would have left external
+drags with the `NSDragOperationNone` default and broken them silently. Measured
+against AppKit: a table view with only that override still reports
+`NSDragOperationCopy` for `NSDraggingContextOutsideApplication` (one without it
+reports 0), so the override is still honoured and needs no change. The navigator
+sets its mask explicitly already.
 
 Verify by hand: drag rows from the query result and content views into TextEdit
 (with and without ⌘/⇧/⌥), a cell onto a rule-filter field, and a navigator item
@@ -317,7 +362,19 @@ into the query editor.
 | 8 (Swift 6) | **165 (measured, clean build)** |
 | 9a (informal-protocol conformance) | **129 (measured, clean build)** |
 | 9b part 1 (internal reorders + dead split-view method) | **125 (measured, clean build)** |
-| 9b part 2 (3 drag-out payloads) | ~122 |
+| 9b part 2 (3 drag-out payloads) | **128 -> 125 (-3); own basis, see below** |
+
+⚠️ The 9b-part-2 row is a *delta*, not a level, because it could not be made
+comparable to the rows above it. Measured with `xcodebuild -scheme "Sequel Ace
+Debug" ... clean build`, the same tree that the 9b-part-1 row records as 125
+counts **128** unique `warning:` lines — the scheme or configuration used for
+the earlier rows is not recorded, and two of the 128 are timestamped
+`appintentsmetadataprocessor` lines that are build noise rather than code
+warnings. What is solid is the before/after diff on one basis: 128 -> 125, and
+`comm` over the two sorted logs shows the only substantive change is the three
+`-Wdeprecated-implementations` lines disappearing (the other diff entries are
+the same warnings at line numbers shifted by the edit). Re-baseline this column
+with a recorded command before trusting the absolute numbers again.
 
 **How these are counted.** Rows through step 5 are the original estimates, read
 off Xcode's issue navigator (which counts a file compiled into several targets
