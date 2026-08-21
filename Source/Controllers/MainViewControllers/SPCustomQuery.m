@@ -2422,6 +2422,11 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 #pragma mark -
 #pragma mark TableView datasource methods
 
+- (BOOL)isWorking
+{
+    return isWorking;
+}
+
 /**
  * Returns the number of rows in the result set table view.
  */

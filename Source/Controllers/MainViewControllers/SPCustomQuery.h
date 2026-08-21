@@ -178,6 +178,7 @@
 @property (readwrite, strong) NSTableColumn *sortColumn;
 @property (readwrite, assign) BOOL isDesc;
 @property (readwrite, assign) BOOL reloadingExistingResult;
+@property (readonly) BOOL isWorking;
 @property (readonly, strong) NSTextField *errorTextTitle;
 @property (readonly, strong) id errorText;
 @property (readonly, strong) NSMutableDictionary<NSNumber*,NSNumber*> *sortCount;

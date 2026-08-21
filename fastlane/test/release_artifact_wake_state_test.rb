@@ -117,14 +117,20 @@ class ReleaseArtifactWakeStateTest < Minitest::Test
   end
 
   def test_workflow_credentials_mint_and_revoke_an_exact_repository_variables_token
-    with_fake_github("none", provided_token: false) do |run, state, log|
-      _stdout, stderr, status = run.call("arm", PRODUCTION_TAG)
+    with_fake_github("none", provided_token: false, github_actions: true) do |run, state, log|
+      stdout, stderr, status = run.call("arm", PRODUCTION_TAG)
 
       assert_predicate status, :success?, stderr
       assert_equal PRODUCTION_TAG, File.read(state).strip
+      assert_includes stdout, "::add-mask::encoded.encoded.encoded"
       api_log = File.read(log)
       assert_includes api_log, "repos/Sequel-Ace/Sequel-Ace/installation"
       assert_includes api_log, "app/installations/123/access_tokens"
+      jwt_api_lines = api_log.lines.grep(/(?:repos\/Sequel-Ace\/Sequel-Ace\/installation|app\/installations\/123\/access_tokens)/)
+      assert_equal 2, jwt_api_lines.length
+      jwt_api_lines.each do |line|
+        assert_includes line, "--header Authorization: Bearer encoded.encoded.encoded"
+      end
       assert_includes api_log, '"repository_ids":[12345]'
       assert_includes api_log, '"actions_variables":"write"'
       assert_includes api_log, "--method DELETE installation/token"
@@ -152,6 +158,7 @@ class ReleaseArtifactWakeStateTest < Minitest::Test
     initial_value,
     provided_token: true,
     installation_response: '{"id":123}',
+    github_actions: false,
     wake_variable: nil
   )
     Dir.mktmpdir("sequel-ace-wake-state-test") do |directory|
@@ -218,6 +225,7 @@ class ReleaseArtifactWakeStateTest < Minitest::Test
             "SA_RELEASE_GITHUB_APP_PRIVATE_KEY" => "test-private-key"
           )
         end
+        environment["GITHUB_ACTIONS"] = github_actions ? "true" : nil
         environment["SA_RELEASE_WAKE_VARIABLE"] = wake_variable if wake_variable
         arguments = [repo_path("Scripts/release-artifact-wake-state.sh"), operation, tag]
         arguments << predecessor if predecessor

@@ -68,6 +68,15 @@ api_as_token()
 	GH_TOKEN="${token}" gh api "$@"
 }
 
+api_as_app_jwt()
+{
+	local token="$1"
+	shift
+	# GitHub App JWTs specifically require the Bearer authentication scheme.
+	# GH_TOKEN otherwise makes gh use the ordinary token scheme.
+	GH_TOKEN="${token}" gh api --header "Authorization: Bearer ${token}" "$@"
+}
+
 base64url()
 {
 	openssl base64 -A | tr '+/' '-_' | tr -d '='
@@ -76,7 +85,7 @@ base64url()
 request_installation_token()
 {
 	printf '%s' "${installation_token_request}" |
-		api_as_token "${app_jwt}" --method POST "app/installations/${installation_id}/access_tokens" --input -
+		api_as_app_jwt "${app_jwt}" --method POST "app/installations/${installation_id}/access_tokens" --input -
 }
 
 cleanup()
@@ -120,9 +129,12 @@ mint_exact_repository_token()
 	readonly app_jwt_unsigned="${header}.${payload}"
 	signature="$(printf '%s' "${app_jwt_unsigned}" | openssl dgst -sha256 -sign "${private_key_path}" | base64url)"
 	readonly app_jwt="${app_jwt_unsigned}.${signature}"
+	if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+		printf '::add-mask::%s\n' "${app_jwt}"
+	fi
 
 	local installation_json
-	installation_json="$(retry_command api_as_token "${app_jwt}" "repos/${GITHUB_REPOSITORY}/installation")"
+	installation_json="$(retry_command api_as_app_jwt "${app_jwt}" "repos/${GITHUB_REPOSITORY}/installation")"
 	local parsed_installation_id
 	parsed_installation_id="$(jq -er '.id | select(type == "number" and . > 0)' <<< "${installation_json}")" || {
 		echo "GitHub did not return a valid repository installation ID." >&2
