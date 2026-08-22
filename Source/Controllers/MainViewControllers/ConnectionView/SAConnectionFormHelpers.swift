@@ -75,4 +75,27 @@ import Foundation
         }
         return "\(base)/\(database)"
     }
+
+    /// As above, but with the Vault rule folded in.
+    ///
+    /// A Vault connection is named after its *Vault* endpoint and role rather
+    /// than the database host — `<vaultHost>/<role>`, falling back to the vault
+    /// host alone, and to the literal "vault" when even that is blank. The rule
+    /// lived inline in `-_generateNameForConnection`; it belongs here so the
+    /// AppKit form and the SwiftUI one cannot drift.
+    @objc static func generateName(
+        type: SAConnectionType,
+        host: String,
+        database: String,
+        vaultHost: String,
+        vaultCredentialsPath: String
+    ) -> String? {
+        guard type == .vault else {
+            return generateName(type: type, host: host, database: database)
+        }
+
+        let role = (vaultCredentialsPath as NSString).lastPathComponent
+        let endpoint = vaultHost.isEmpty ? "vault" : vaultHost
+        return role.isEmpty ? endpoint : "\(endpoint)/\(role)"
+    }
 }
