@@ -126,17 +126,17 @@ import Foundation
         //      the shared SSL file fields. The order matches the original code so that
         //      a multi-issue form produces the same first-error UX.
         //
-        //      ⚠️ `.sshTunnel` is absent on purpose, and it is probably an upstream
-        //      bug rather than a decision: the SSH tab does have a "Require SSL"
-        //      checkbox and its own SSL details container
-        //      (`sshConnectionSSLDetailsContainer`, `sslOverSSHKeyFileButton` and
-        //      friends), so an enabled-but-missing key/cert/CA on a tunnel reaches
-        //      connection setup unchecked. The pre-D3 ObjC read
-        //      `(type == SPTCPIPConnection || type == SPSocketConnection) && useSSL`,
-        //      D3 preserved that, and `testSSLChecksDoNotApplyToSSHTunnel` pins it.
-        //      Changing it would also change the shipping AppKit form, so it wants
-        //      its own PR rather than riding along with the SwiftUI work.
-        if (type == .tcpIP || type == .socket || type == .vault) && useSSL {
+        //      `.sshTunnel` was missing here until now, and it was an oversight rather
+        //      than a decision: the SSH tab has its own "Require SSL" checkbox and SSL
+        //      details container (`sshConnectionSSLDetailsContainer`), whose file
+        //      buttons write the very same `sslKeyFileLocation` /
+        //      `sslCertificateFileLocation` / `sslCACertFileLocation` properties this
+        //      validator reads. An enabled-but-missing file on a tunnel therefore
+        //      reached connection setup unchecked and failed at connect time instead.
+        //      The pre-D3 ObjC read `SPTCPIPConnection || SPSocketConnection`, D3
+        //      preserved that, and `.vault` was appended when Vault landed — the SSH
+        //      case simply never got revisited.
+        if (type == .tcpIP || type == .socket || type == .sshTunnel || type == .vault) && useSSL {
             if sslKeyFileLocationEnabled, let path = sslKeyFileLocation,
                !fileExistsExpandingTilde(path) {
                 return SAConnectionValidationFailure(
