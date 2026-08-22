@@ -43,6 +43,12 @@ struct SAConnectionFormView: View {
     /// Tracks the Vault Role field so losing focus can commit a pasted path.
     @FocusState private var roleFieldFocused: Bool
 
+    /// The four fields whose commit invalidates any stored password.
+    @FocusState private var standardHostFocused: Bool
+    @FocusState private var standardUserFocused: Bool
+    @FocusState private var sshHostFocused: Bool
+    @FocusState private var sshUserFocused: Bool
+
     var body: some View {
         Form {
             typeSection
@@ -228,12 +234,12 @@ struct SAConnectionFormView: View {
 
     private var standardFields: some View {
         Section {
-            TextField(text: $model.info.host) {
+            identityField(TextField(text: $model.info.host) {
                 Text("Host", comment: "connection view : field label")
-            }
-            TextField(text: $model.info.user) {
+            }, focus: $standardHostFocused)
+            identityField(TextField(text: $model.info.user) {
                 Text("Username", comment: "connection view : field label")
-            }
+            }, focus: $standardUserFocused)
             SecureField(text: $model.info.password) {
                 Text("Password", comment: "connection view : field label")
             }
@@ -261,12 +267,12 @@ struct SAConnectionFormView: View {
     private var sshFields: some View {
         Group {
             Section {
-                TextField(text: $model.info.sshHost) {
+                identityField(TextField(text: $model.info.sshHost) {
                     Text("SSH Host", comment: "connection view : field label")
-                }
-                TextField(text: $model.info.sshUser) {
+                }, focus: $sshHostFocused)
+                identityField(TextField(text: $model.info.sshUser) {
                     Text("SSH User", comment: "connection view : field label")
-                }
+                }, focus: $sshUserFocused)
                 SecureField(text: $model.info.sshPassword) {
                     Text("SSH Password", comment: "connection view : field label")
                 }
@@ -282,12 +288,12 @@ struct SAConnectionFormView: View {
             }
 
             Section {
-                TextField(text: $model.info.host) {
+                identityField(TextField(text: $model.info.host) {
                     Text("MySQL Host", comment: "connection view : field label")
-                }
-                TextField(text: $model.info.user) {
+                }, focus: $standardHostFocused)
+                identityField(TextField(text: $model.info.user) {
                     Text("Username", comment: "connection view : field label")
-                }
+                }, focus: $standardUserFocused)
                 SecureField(text: $model.info.password) {
                     Text("Password", comment: "connection view : field label")
                 }
@@ -400,13 +406,22 @@ struct SAConnectionFormView: View {
     /// connection would get, mirroring the AppKit form's behaviour of
     /// auto-filling "host[/database]" until the user types their own.
     private var namePrompt: String {
-        let generated = SAConnectionFormHelpers.generateName(type: model.info.type,
-                                                             host: model.info.host,
-                                                             database: model.info.database)
-        if let generated, !generated.isEmpty {
+        if let generated = model.generatedName, !generated.isEmpty {
             return generated
         }
         return NSLocalizedString("Optional Name", comment: "connection view : name field placeholder")
+    }
+
+    /// Clears both passwords once an identity field commits, mirroring
+    /// -controlTextDidEndEditing:. Applied to the standard host and user and the
+    /// SSH host and user — the four fields it watches.
+    private func identityField(_ field: some View, focus: FocusState<Bool>.Binding) -> some View {
+        field
+            .focused(focus)
+            .onSubmit { model.clearPasswordsAfterIdentityChange() }
+            .onChange(of: focus.wrappedValue) { isFocused in
+                if !isFocused { model.clearPasswordsAfterIdentityChange() }
+            }
     }
 
     private var timeZoneBinding: Binding<SATimeZoneChoice> {

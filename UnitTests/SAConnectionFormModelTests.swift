@@ -736,6 +736,90 @@ final class SAConnectionFormModelTests: XCTestCase {
         XCTAssertEqual(model.vaultCredentialsRole, "")
     }
 
+    // MARK: - Review round 4: blank-form defaults, Vault names, secret clearing
+
+    /// A brand-new model is the blank form, not raw SAConnectionInfo() — else
+    /// the colour picker shows the first swatch as chosen and compression is off.
+    func testANewModelUsesTheBlankFormDefaults() {
+        let model = SAConnectionFormModel()
+
+        XCTAssertEqual(model.info.colorIndex, -1)
+        XCTAssertTrue(model.info.useCompression)
+        XCTAssertEqual(model.info.awsProfile, "default")
+    }
+
+    /// An explicitly supplied info is still used verbatim.
+    func testAnExplicitInfoIsNotOverriddenByTheBlankDefaults() {
+        var info = SAConnectionInfo()
+        info.colorIndex = 3
+        let model = SAConnectionFormModel(info: info)
+
+        XCTAssertEqual(model.info.colorIndex, 3)
+    }
+
+    /// Vault names come from the Vault endpoint and role, not the database host.
+    func testVaultNamesUseTheVaultEndpointAndRole() {
+        let model = SAConnectionFormModel()
+        model.info.type = .vault
+        model.info.host = "db.example.com"
+        model.info.vaultHost = "vault.internal"
+        model.vaultMount = "databases_credentials"
+        model.vaultCredentialsRole = "readonly"
+
+        XCTAssertEqual(model.generatedName, "vault.internal/readonly")
+        XCTAssertEqual(model.effectiveName, "vault.internal/readonly")
+    }
+
+    func testAVaultNameFallsBackToTheEndpointThenToVault() {
+        let model = SAConnectionFormModel()
+        model.info.type = .vault
+        model.info.vaultHost = "vault.internal"
+        XCTAssertEqual(model.generatedName, "vault.internal")
+
+        model.info.vaultHost = ""
+        XCTAssertEqual(model.generatedName, "vault")
+    }
+
+    /// The other types keep the host[/database] rule.
+    func testNonVaultNamesAreUnchanged() {
+        let model = SAConnectionFormModel()
+        model.info.host = "db.example.com"
+        model.info.database = "sakila"
+
+        XCTAssertEqual(model.generatedName, "db.example.com/sakila")
+    }
+
+    /// -controlTextDidEndEditing: clears BOTH passwords when an identity field
+    /// changes, so credentials hydrated for one account cannot be sent under
+    /// another.
+    func testAnIdentityChangeClearsBothPasswords() {
+        let model = SAConnectionFormModel()
+        model.info.password = "db-secret"
+        model.info.sshPassword = "ssh-secret"
+
+        model.clearPasswordsAfterIdentityChange()
+
+        XCTAssertEqual(model.info.password, "")
+        XCTAssertEqual(model.info.sshPassword, "")
+    }
+
+    /// Clearing secrets must not disturb the identity being edited.
+    func testClearingPasswordsLeavesTheOtherFieldsAlone() {
+        let model = SAConnectionFormModel()
+        model.info.type = .sshTunnel
+        model.info.host = "db.internal"
+        model.info.user = "app"
+        model.info.sshHost = "bastion.example.com"
+        model.info.sshUser = "jump"
+
+        model.clearPasswordsAfterIdentityChange()
+
+        XCTAssertEqual(model.info.host, "db.internal")
+        XCTAssertEqual(model.info.user, "app")
+        XCTAssertEqual(model.info.sshHost, "bastion.example.com")
+        XCTAssertEqual(model.info.sshUser, "jump")
+    }
+
     // MARK: - C2b: generated name across the types
 
     func testSocketConnectionsNameThemselvesLocalhost() {
@@ -748,8 +832,10 @@ final class SAConnectionFormModelTests: XCTestCase {
         XCTAssertEqual(model.effectiveName, "localhost/sakila")
     }
 
+    /// Vault is excluded on purpose: it names itself after its Vault endpoint
+    /// and role, never the database host — see testVaultNamesUseTheVaultEndpointAndRole.
     func testNonSocketTypesGenerateFromTheHost() {
-        for type in [SAConnectionType.tcpIP, .sshTunnel, .awsIAM, .vault] {
+        for type in [SAConnectionType.tcpIP, .sshTunnel, .awsIAM] {
             let model = SAConnectionFormModel()
             model.info.type = type
 

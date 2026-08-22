@@ -125,7 +125,15 @@ final class SAConnectionFormModel: ObservableObject {
         didSet { rejoinVaultCredentialsPath() }
     }
 
-    init(info: SAConnectionInfo = SAConnectionInfo()) {
+    /// The blank form's historical state: no colour (-1), compression on, AWS
+    /// profile "default". Raw `SAConnectionInfo()` matches none of those, so a
+    /// model built from it would show the first colour swatch as chosen and
+    /// silently connect without compression.
+    static var blankFormInfo: SAConnectionInfo {
+        SAConnectionInfoObjC.info(fromFavoriteDictionary: nil).info
+    }
+
+    init(info: SAConnectionInfo = SAConnectionFormModel.blankFormInfo) {
         self.info = info
         // Same one-read rule as the resplit below (didSet observers do not run
         // during init, but the parameter is the honest source either way).
@@ -194,9 +202,18 @@ final class SAConnectionFormModel: ObservableObject {
         if !trimmed.isEmpty {
             return trimmed
         }
-        return SAConnectionFormHelpers.generateName(type: info.type,
-                                                    host: info.host,
-                                                    database: info.database) ?? ""
+        return generatedName ?? ""
+    }
+
+    /// The auto-generated name for the current values, or nil when there is not
+    /// enough to build one. Vault names come from the Vault endpoint and role
+    /// rather than the database host.
+    var generatedName: String? {
+        SAConnectionFormHelpers.generateName(type: info.type,
+                                             host: info.host,
+                                             database: info.database,
+                                             vaultHost: info.vaultHost,
+                                             vaultCredentialsPath: info.vaultCredentialsPath)
     }
 
     /// True when the form has the minimum input to attempt a connection
@@ -322,6 +339,19 @@ final class SAConnectionFormModel: ObservableObject {
     /// "Get Public Key" is offered on every tab except AWS IAM.
     var showsRequestServerPublicKeyToggle: Bool {
         !forcesSSL
+    }
+
+    // MARK: - Identity changes
+
+    /// Drops both stored passwords.
+    ///
+    /// `-controlTextDidEndEditing:` clears the database *and* SSH password
+    /// whenever the standard host, standard user, SSH host or SSH user changes,
+    /// so credentials hydrated for one account are never sent under another
+    /// identity. Called on commit rather than per keystroke, as there.
+    func clearPasswordsAfterIdentityChange() {
+        info.password = ""
+        info.sshPassword = ""
     }
 
     // MARK: - Validation
