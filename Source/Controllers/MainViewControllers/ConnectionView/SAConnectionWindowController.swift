@@ -46,6 +46,13 @@ import SwiftUI
     /// The in-flight Vault OIDC login, if any, so closing the window releases it.
     private var activeVaultLoginIdentifier: String?
 
+    /// Identifies the current credential attempt. Credential generation is
+    /// asynchronous and the form stays interactive, so a Vault login the user
+    /// abandoned can finish after a newer attempt has started; without this its
+    /// completion would call connectDirectly again, and SAConnectionService's
+    /// startAttempt() would invalidate the newer connection.
+    private var credentialAttemptID: UInt = 0
+
     /// Set to true after a successful connection handoff to prevent
     /// windowWillClose from disconnecting the just-handed-off connection.
     private var connectionHandedOff = false
@@ -110,10 +117,7 @@ import SwiftUI
 
         // Credential generation happens outside the service, so cancelling the
         // service alone leaves a browser-based Vault login holding its slot.
-        if let activeVaultLoginIdentifier {
-            VaultOIDCHandler.cancelActiveLogin(identifier: activeVaultLoginIdentifier)
-            self.activeVaultLoginIdentifier = nil
-        }
+        cancelActiveVaultLogin()
     }
 
     // MARK: - Connection screen
@@ -149,6 +153,10 @@ import SwiftUI
     /// Populates the form from the sidebar selection.
     private func applySelection(_ item: SAFavoriteItem) {
         selection = item.id
+
+        // Picking another row supersedes any credential work already running,
+        // so its result cannot be applied to the details now on screen.
+        _ = beginCredentialAttempt()
 
         switch item.kind {
         case .quickConnect:
@@ -205,9 +213,10 @@ import SwiftUI
         // pick another favorite. Re-reading formModel.info afterwards would pair
         // one endpoint's ephemeral credentials with another's connection details.
         let attempt = formModel.info
+        let attemptID = beginCredentialAttempt()
 
         resolveCredentials(for: attempt) { [weak self] result in
-            guard let self else { return }
+            guard let self, self.credentialAttemptID == attemptID else { return }
 
             switch result {
             case .failure(let failure):
@@ -223,6 +232,22 @@ import SwiftUI
                                      sshPassword: resolved.sshPassword)
             }
         }
+    }
+
+    /// Starts a new credential attempt, superseding any in flight, and returns
+    /// its identifier. Abandoning a Vault login also cancels it rather than
+    /// leaving it to hold the exclusive slot until it times out.
+    private func beginCredentialAttempt() -> UInt {
+        cancelActiveVaultLogin()
+        credentialAttemptID &+= 1
+        return credentialAttemptID
+    }
+
+    /// Releases an in-flight Vault OIDC login, if there is one.
+    private func cancelActiveVaultLogin() {
+        guard let identifier = activeVaultLoginIdentifier else { return }
+        VaultOIDCHandler.cancelActiveLogin(identifier: identifier)
+        activeVaultLoginIdentifier = nil
     }
 
     /// The username and password to actually connect with.
