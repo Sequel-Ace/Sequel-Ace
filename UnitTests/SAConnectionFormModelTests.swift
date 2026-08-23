@@ -789,35 +789,81 @@ final class SAConnectionFormModelTests: XCTestCase {
         XCTAssertEqual(model.generatedName, "db.example.com/sakila")
     }
 
-    /// -controlTextDidEndEditing: clears BOTH passwords when an identity field
-    /// changes, so credentials hydrated for one account cannot be sent under
+    /// -controlTextDidChange: clears BOTH passwords when an identity field is
+    /// edited, so credentials hydrated for one account cannot be sent under
     /// another.
-    func testAnIdentityChangeClearsBothPasswords() {
+    func testEditingAnIdentityFieldClearsBothPasswords() {
+        for edit: (SAConnectionFormModel) -> Void in [
+            { $0.info.host = "other.example.com" },
+            { $0.info.user = "someone-else" },
+            { $0.info.sshHost = "other-bastion" },
+            { $0.info.sshUser = "other-jump" },
+        ] {
+            let model = SAConnectionFormModel()
+            model.info.password = "db-secret"
+            model.info.sshPassword = "ssh-secret"
+
+            edit(model)
+
+            XCTAssertEqual(model.info.password, "")
+            XCTAssertEqual(model.info.sshPassword, "")
+        }
+    }
+
+    /// The bug in the first attempt at this: focus alone is not an edit, so
+    /// touching a field without changing it must keep the passwords.
+    func testAnUnchangedIdentityFieldKeepsThePasswords() {
         let model = SAConnectionFormModel()
+        model.info.host = "db.example.com"
         model.info.password = "db-secret"
         model.info.sshPassword = "ssh-secret"
 
-        model.clearPasswordsAfterIdentityChange()
+        // Re-assigning the same value is what a focus-driven clear would treat
+        // as a change.
+        model.info.host = "db.example.com"
 
-        XCTAssertEqual(model.info.password, "")
-        XCTAssertEqual(model.info.sshPassword, "")
+        XCTAssertEqual(model.info.password, "db-secret")
+        XCTAssertEqual(model.info.sshPassword, "ssh-secret")
     }
 
-    /// Clearing secrets must not disturb the identity being edited.
-    func testClearingPasswordsLeavesTheOtherFieldsAlone() {
+    /// Editing something that is not an identity field leaves them alone.
+    func testEditingANonIdentityFieldKeepsThePasswords() {
         let model = SAConnectionFormModel()
-        model.info.type = .sshTunnel
-        model.info.host = "db.internal"
-        model.info.user = "app"
-        model.info.sshHost = "bastion.example.com"
-        model.info.sshUser = "jump"
+        model.info.password = "db-secret"
 
-        model.clearPasswordsAfterIdentityChange()
+        model.info.database = "sakila"
+        model.info.port = "3307"
 
-        XCTAssertEqual(model.info.host, "db.internal")
-        XCTAssertEqual(model.info.user, "app")
-        XCTAssertEqual(model.info.sshHost, "bastion.example.com")
-        XCTAssertEqual(model.info.sshUser, "jump")
+        XCTAssertEqual(model.info.password, "db-secret")
+    }
+
+    /// Replacing the whole info — what loading a favorite does — writes host and
+    /// user too, and must not discard the credentials it just hydrated.
+    func testReplacingInfoDoesNotCountAsAnEdit() {
+        let model = SAConnectionFormModel()
+
+        var loaded = SAConnectionInfo()
+        loaded.host = "db.example.com"
+        loaded.user = "app"
+        loaded.password = "hydrated"
+        loaded.sshPassword = "hydrated-ssh"
+        model.replaceInfo(loaded)
+
+        XCTAssertEqual(model.info.password, "hydrated")
+        XCTAssertEqual(model.info.sshPassword, "hydrated-ssh")
+    }
+
+    /// Editing after such a load still clears, so the seam does not stick.
+    func testEditingAfterAReplacementStillClears() {
+        let model = SAConnectionFormModel()
+        var loaded = SAConnectionInfo()
+        loaded.host = "db.example.com"
+        loaded.password = "hydrated"
+        model.replaceInfo(loaded)
+
+        model.info.host = "elsewhere.example.com"
+
+        XCTAssertEqual(model.info.password, "")
     }
 
     // MARK: - C2b: generated name across the types

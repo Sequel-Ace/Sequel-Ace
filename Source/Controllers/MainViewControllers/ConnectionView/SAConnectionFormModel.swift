@@ -105,7 +105,22 @@ final class SAConnectionFormModel: ObservableObject {
     @Published var info: SAConnectionInfo {
         didSet {
             resplitVaultCredentialsPathIfChangedExternally()
+            clearPasswordsIfIdentityWasEdited(from: oldValue)
         }
+    }
+
+    /// Set while `info` is being replaced wholesale rather than typed into, so
+    /// the replacement does not read as a user edit. `-controlTextDidChange:`
+    /// only fires for typing, never for the programmatic `-setStringValue:` a
+    /// favorite load performs.
+    private var isReplacingInfo = false
+
+    /// Replaces every field at once without the change counting as an edit.
+    /// Used by the hosts that load a favorite into the form.
+    func replaceInfo(_ newInfo: SAConnectionInfo) {
+        isReplacingInfo = true
+        info = newInfo
+        isReplacingInfo = false
     }
 
     // MARK: Vault mount / role
@@ -343,13 +358,31 @@ final class SAConnectionFormModel: ObservableObject {
 
     // MARK: - Identity changes
 
-    /// Drops both stored passwords.
+    /// Drops both stored passwords when an identity field is actually edited.
     ///
-    /// `-controlTextDidEndEditing:` clears the database *and* SSH password
-    /// whenever the standard host, standard user, SSH host or SSH user changes,
-    /// so credentials hydrated for one account are never sent under another
-    /// identity. Called on commit rather than per keystroke, as there.
-    func clearPasswordsAfterIdentityChange() {
+    /// `-controlTextDidChange:` clears the database *and* SSH password whenever
+    /// the standard host, standard user, SSH host or SSH user changes, so
+    /// credentials hydrated for one account are never sent under another
+    /// identity. It fires on the *edit* — tabbing through an untouched field
+    /// must not discard a valid password, which is why this compares values
+    /// rather than watching focus.
+    ///
+    /// The same comparison distinguishes an edit from a load: replacing `info`
+    /// through `replaceInfo(_:)` also writes host and user, and clearing then
+    /// would throw away the credentials that load just hydrated.
+    private func clearPasswordsIfIdentityWasEdited(from previous: SAConnectionInfo) {
+        guard !isReplacingInfo else { return }
+
+        let identityEdited = info.host != previous.host
+            || info.user != previous.user
+            || info.sshHost != previous.sshHost
+            || info.sshUser != previous.sshUser
+        guard identityEdited else { return }
+
+        // Nothing to clear — also stops the assignment below re-entering didSet
+        // for no reason.
+        guard !info.password.isEmpty || !info.sshPassword.isEmpty else { return }
+
         info.password = ""
         info.sshPassword = ""
     }
