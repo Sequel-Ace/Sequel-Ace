@@ -162,8 +162,11 @@ import SwiftUI
         case .quickConnect:
             formModel.loadQuickConnect()
         case .group:
-            // Groups are not connectable and carry no details to show.
-            break
+            // A group is a nil favorite: -updateFavoriteSelection: sets
+            // `node = nil` for one and populates the form from that, so the
+            // previous favorite's details do not linger. Leaving them would let
+            // Connect fire against a favorite that is no longer highlighted.
+            formModel.load(favorite: nil)
         case .favorite:
             formModel.load(favorite: Self.favoriteDictionary(withID: item.favoriteID))
         }
@@ -434,28 +437,35 @@ import SwiftUI
 
         guard let document = windowController?.databaseDocument else { return }
 
-        // 2. Populate the destination document's connection controller before
+        // 2. SSL can be requested and silently not granted: MySQL may lack SSL
+        // support, have it disabled, or have been given too little to negotiate
+        // with. -mySQLConnectionEstablished: warns in that case, and handing off
+        // without the same check leaves the user believing an unencrypted
+        // session is encrypted.
+        warnIfRequestedSSLWasNotEstablished(connection, info: info)
+
+        // 3. Populate the destination document's connection controller before
         // handing the connection over. SPDatabaseDocument reads its title,
         // database, host, user, port, colour and .spf serialization state from
         // that controller, so without this the new tab looks connected but
         // reads blank and saves empty connection details (Codex, #2572).
         info.apply(to: document.connectionController())
 
-        // 3. The document must become the connection's delegate: neither
+        // 4. The document must become the connection's delegate: neither
         // SAConnectionService nor -setConnection: assigns one, and without it the
         // framework falls back to its automatic retry with no query-error
         // logging, no no-connection alert, no keychain password prompt on
         // reconnect and no connection-loss decision UI.
         connection.setDelegate(document)
 
-        // 4. setConnection: transitions the document out of connection mode
+        // 5. setConnection: transitions the document out of connection mode
         // into the database UI (same as the embedded flow's addConnectionToDocument).
         document.setConnection(connection)
 
-        // 5. Mark handoff complete so windowWillClose doesn't cancel the connection
+        // 6. Mark handoff complete so windowWillClose doesn't cancel the connection
         connectionHandedOff = true
 
-        // 6. Close the standalone connection window
+        // 7. Close the standalone connection window
         close()
     }
 
@@ -464,6 +474,30 @@ import SwiftUI
         // so this delegate method is a no-op for that flow.
         // The connectDirectly path shows its own alert below.
         NSLog("Standalone connection failed: %@", error)
+    }
+
+    /// Warns when SSL was asked for but the server did not use it.
+    ///
+    /// Mirrors the check in `-mySQLConnectionEstablished:`, including which
+    /// types it applies to: SSH tunnels are excluded there, since their MySQL
+    /// leg runs inside the tunnel. AWS IAM counts as requesting SSL whether or
+    /// not the toggle is on, because it enables it implicitly.
+    private func warnIfRequestedSSLWasNotEstablished(_ connection: SPMySQLConnection,
+                                                     info: SAConnectionInfoObjC) {
+        let details = info.info
+        let requiresSSL = details.useSSL != 0 || details.type == .awsIAM
+        let checkedTypes: [SAConnectionType] = [.tcpIP, .socket, .awsIAM, .vault]
+
+        guard requiresSSL, checkedTypes.contains(details.type), !connection.isConnectedViaSSL() else {
+            return
+        }
+
+        NSAlert.createWarningAlert(
+            title: NSLocalizedString("SSL connection not established",
+                                         comment: "SSL requested but not used title"),
+            message: NSLocalizedString("You requested that the connection should be established using SSL, but MySQL made the connection without SSL.\n\nThis may be because the server does not support SSL connections, or has SSL disabled; or insufficient details were supplied to establish an SSL connection.\n\nThis connection is not encrypted.",
+                                       comment: "SSL connection requested but not established error detail"),
+            callback: nil)
     }
 
     /// Shows an error alert as a sheet on the standalone window.
