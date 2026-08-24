@@ -1,5 +1,11 @@
 # Drop macOS 12, Raise the Minimum to macOS 13.5
 
+> **✅ Executed. Merged 2026-08-24 as #2587** (`3763d5247`), together with the
+> 6.0.0 major version bump. Kept as the record of what was changed and why —
+> read it as history, not as a proposal. The one deliberate omission,
+> rebuilding the bundled dylibs, is still outstanding and lives in
+> `warnings-elimination-plan.md` § Deferred.
+>
 > **Written 2026-08-24.** Answers the open question in
 > `docs/development/ssh-tunnel-xpc-migration-plan.md` § Step 4 ("Decision
 > needed: is bumping the deployment target to 13.0 acceptable?") and unblocks

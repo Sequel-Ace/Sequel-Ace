@@ -1,5 +1,9 @@
 # SSH Tunnel IPC — NSConnection → NSXPCConnection Migration Plan
 
+> **Status 2026-08-24: unblocked, not started.** The macOS 13.5 floor this
+> plan asked for was merged as #2587, so Step 4 is a full peer-validation win
+> rather than a partial one. Next action is the Step 0 spike.
+>
 > **Written 2026-08-24.** Picks up the "NSConnection → NSXPCConnection" item
 > deferred in `docs/development/warnings-elimination-plan.md` (§ Deferred).
 > Pairs with the deferred SPKeychain `SecItem` migration — both touch how the
