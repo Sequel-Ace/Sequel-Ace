@@ -267,7 +267,7 @@ enum trackingAreaIDs
 			NSBezierPath *left = [NSBezierPath bezierPath];
 			
 			[left setLineWidth:3.0];
-			[left setLineCapStyle:NSButtLineCapStyle];
+			[left setLineCapStyle:NSLineCapStyleButt];
 			[left moveToPoint:NSMakePoint(colorSquareRect.origin.x +  4.0, colorSquareRect.origin.y +  4.0)];
 			[left lineToPoint:NSMakePoint(colorSquareRect.origin.x + 12.0, colorSquareRect.origin.y + 12.0)];
 			[left moveToPoint:NSMakePoint(colorSquareRect.origin.x + 12.0, colorSquareRect.origin.y +  4.0)];
