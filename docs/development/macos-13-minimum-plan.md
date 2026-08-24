@@ -135,6 +135,49 @@ target silently picked up an inherited value instead.
   into `### Changed`. The commit subject *is* the changelog line, so write it
   to read as one.
 
+### Version policy
+
+Dropping an OS is a breaking change, so the source version goes to **6.0.0**.
+
+Do not hand-edit the version files. `SequelAceRelease::VersionFiles#update!`
+owns all ten of them — the seven `CFBundleShortVersionString`/`CFBundleVersion`
+plists, `CURRENT_PROJECT_VERSION`/`DYLIB_CURRENT_VERSION` in the three
+`project.pbxproj` files, and the `SAGitHubReleaseTag` key in the app plist —
+and it validates that they converge:
+
+```sh
+ruby -Ifastlane/lib -rsequel_ace_release \
+  -e 'p SequelAceRelease::VersionFiles.new.update!(version: "6.0.0", build: 20111, channel: "beta")'
+```
+
+Two things make the tag key load-bearing rather than cosmetic:
+
+- `Bundle.githubReleaseTag` (`BundleExtension.swift:66`) returns `nil` unless the
+  tag's embedded version **equals** `CFBundleShortVersionString`. Bumping the
+  version without the tag would silently disable the in-app update check's
+  installed-release identity.
+- The build moves with it (20110 → 20111) because the tag embeds the build, and
+  20110 already belongs to `beta/5.5.0-20110`. Release preparation overwrites
+  all of this with the Xcode Cloud-authoritative number anyway
+  (`release_feasibility.yml` reads the source version back via
+  `VersionFiles#current`).
+
+**The major bump cannot be automatic.** `Version.bump` raises on anything but
+`patch`/`minor`, and `Notes#recommended_bump` only ever returns those two, so
+6.0.0 has to be typed explicitly at release time (`RELEASE <channel> 6.0.0`).
+
+**Tag the PR `#removed`, not `#infra`.** Squash merging is disabled, so the
+changelog and release notes classify one entry per PR from the merge commit's
+PR title (`GitRepository#changes` walks `--first-parent`). `#infra` lands the
+entry under Infrastructure *and* `Notes#app_store_draft` drops infra changes
+entirely — so the one thing users must be told would appear nowhere in the App
+Store notes. `#removed` puts it under Removed and keeps it in the draft.
+
+The `## [5.5.0]` heading now at the top of `CHANGELOG.md` belongs to the already
+tagged `beta/5.5.0-20110`. Whether that section is folded into 6.0.0 or left as
+an orphan is a release-manager call, made when the release is prepared; the
+changelog is regenerated then and must not be hand-edited here.
+
 ### Explicitly out of scope
 
 - **Rebuilding the bundled dylibs.** The 11 → 12 bump rebuilt libmysqlclient /
