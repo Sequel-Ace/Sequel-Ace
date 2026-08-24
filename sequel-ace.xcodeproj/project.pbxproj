@@ -179,6 +179,7 @@
 		29FA88231114619E00D1AF3D /* SPTableTriggers.m in Sources */ = {isa = PBXBuildFile; fileRef = 29FA88221114619E00D1AF3D /* SPTableTriggers.m */; };
 		2A0129AA121A225FB6CCA2AA /* SAKeyboardShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = 644FFD84B58CEAE73585045B /* SAKeyboardShortcut.swift */; };
 		2A7D5700E8EA895137AA6F91 /* SPMCPHTTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B91D4A5EC24F24F7A7BCA7D /* SPMCPHTTP.swift */; };
+		CACA94EDDD5F7ADE62E4CA71 /* SAMCPToolDefinitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE1A7F618E708C87E8FAC85 /* SAMCPToolDefinitions.swift */; };
 		380F4EF50FC0B68F00B0BFD7 /* SPStringAdditionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 380F4EF40FC0B68F00B0BFD7 /* SPStringAdditionsTests.m */; };
 		384582C40FB95FF800DDACB6 /* func-small.png in Resources */ = {isa = PBXBuildFile; fileRef = 384582C30FB95FF800DDACB6 /* func-small.png */; };
 		384582C70FB9603600DDACB6 /* proc-small.png in Resources */ = {isa = PBXBuildFile; fileRef = 384582C60FB9603600DDACB6 /* proc-small.png */; };
@@ -506,6 +507,7 @@
 		A946E44AA14C458182205CFF /* CompletionTokens.plist in Resources */ = {isa = PBXBuildFile; fileRef = BC962D651144EACA006170BD /* CompletionTokens.plist */; };
 		AA000001000000000000001B /* SAAboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000001A /* SAAboutView.swift */; };
 		B04369CDAE73936C539212F7 /* SPMCPServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB4D0AEB506704E1B3B2A8C6 /* SPMCPServer.swift */; };
+		03B3C091388E27E56C58B846 /* SAMCPToolDefinitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE1A7F618E708C87E8FAC85 /* SAMCPToolDefinitions.swift */; };
 		B0595D7939BDBEBD29E0E617 /* SAHelpViewerWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F7D127BB5BCD94B0E794C5E /* SAHelpViewerWindowController.swift */; };
 		B51D6B9E114C310C0074704E /* toolbar-switch-to-table-triggers.png in Resources */ = {isa = PBXBuildFile; fileRef = B51D6B9D114C310C0074704E /* toolbar-switch-to-table-triggers.png */; };
 		B52460D70F8EF92300171639 /* SPArrayAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = B52460D40F8EF92300171639 /* SPArrayAdditions.m */; };
@@ -1454,6 +1456,7 @@
 		C9F92713162D39FE0051CB2E /* toolbar-switch-to-browse@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "toolbar-switch-to-browse@2x.png"; sourceTree = "<group>"; };
 		CAE8AEB5768B402AAF04C961 /* SAEditorTokensTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAEditorTokensTests.swift; sourceTree = "<group>"; };
 		CB4D0AEB506704E1B3B2A8C6 /* SPMCPServer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SPMCPServer.swift; sourceTree = "<group>"; };
+		4FE1A7F618E708C87E8FAC85 /* SAMCPToolDefinitions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SAMCPToolDefinitions.swift; sourceTree = "<group>"; };
 		CF0000022F8C000600C4C14A /* SACellFilterOperatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterOperatorTests.swift; sourceTree = "<group>"; };
 		CF0000042F8C000600C4C14A /* SACellFilterOperator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterOperator.swift; sourceTree = "<group>"; };
 		CF0000072F8C000600C4C14A /* SACellFilterOperatorRoundTripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SACellFilterOperatorRoundTripTests.swift; sourceTree = "<group>"; };
@@ -2890,6 +2893,7 @@
 				2B91D4A5EC24F24F7A7BCA7D /* SPMCPHTTP.swift */,
 				7AC51026DDFB4980A84A78F1 /* SPAppController+MCP.swift */,
 				5E51CBFF347BD58D412A988F /* SPMCPFavorite.swift */,
+				4FE1A7F618E708C87E8FAC85 /* SAMCPToolDefinitions.swift */,
 			);
 			path = MCP;
 			sourceTree = "<group>";
@@ -3466,6 +3470,7 @@
 				441E45F5DCF87A54D8FEC130 /* SADatabaseScopedValueCache.swift in Sources */,
 				624E13DFBB2F343500B94705 /* SADatabaseScopedValueCacheTests.swift in Sources */,
 				0B0F0950807A8DF7B38C26AC /* SPMCPFavorite.swift in Sources */,
+				CACA94EDDD5F7ADE62E4CA71 /* SAMCPToolDefinitions.swift in Sources */,
 				81B906DAF9B997FA30469210 /* SAHelpViewerModel.swift in Sources */,
 				60111925195F940E7252B376 /* SAHelpViewerModelTests.swift in Sources */,
 				10E61D41B1CA258A66686820 /* SAAsyncResultBox.swift in Sources */,
@@ -3620,6 +3625,7 @@
 				503B02CA1AE82C5E0060CAB1 /* SPTableFilterParser.m in Sources */,
 				1A9F343F257B0DBE0062EC87 /* SPBundleManager.m in Sources */,
 				B04369CDAE73936C539212F7 /* SPMCPServer.swift in Sources */,
+				03B3C091388E27E56C58B846 /* SAMCPToolDefinitions.swift in Sources */,
 				4D90B79A101E0CDF00D116A1 /* SPUserManager.m in Sources */,
 				FD18C8992C3C9B2F002A5D57 /* SAUuidFormatter.swift in Sources */,
 				4D90B79E101E0CF200D116A1 /* SPUserManager.xcdatamodel in Sources */,
