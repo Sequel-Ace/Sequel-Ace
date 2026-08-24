@@ -37,8 +37,14 @@ struct SAConnectionFormView: View {
     var onConnect: (SAConnectionFormModel) -> Void = { _ in }
 
     /// The first validation failure of the latest submit, surfaced as
-    /// an alert (same strings the AppKit flow shows).
+    /// an alert (same strings the AppKit flow shows). Presentation is a
+    /// separate Bool so the alert binds `$isPresentingValidationFailure` — a
+    /// key path SwiftUI can compare — rather than a closure-built Binding
+    /// derived from the optional, which cannot be compared and forces
+    /// re-evaluation. The optional intentionally survives dismissal; it is
+    /// only read while presented and the next submit overwrites it.
     @State private var validationFailure: SAConnectionValidationFailure?
+    @State private var isPresentingValidationFailure = false
 
     /// Tracks the Vault Role field so losing focus can commit a pasted path.
     @FocusState private var roleFieldFocused: Bool
@@ -59,14 +65,11 @@ struct SAConnectionFormView: View {
         .modifier(SAGroupedFormStyle())
         .alert(
             validationFailure?.alertTitle ?? "",
-            isPresented: Binding(
-                get: { validationFailure != nil },
-                set: { if !$0 { validationFailure = nil } }
-            ),
+            isPresented: $isPresentingValidationFailure,
             presenting: validationFailure
         ) { _ in
             Button {
-                validationFailure = nil
+                // Dismissal is driven by the isPresented binding; nothing to do.
             } label: {
                 Text("OK", comment: "OK button")
             }
@@ -120,32 +123,19 @@ struct SAConnectionFormView: View {
         }
     }
 
-    /// Built once: the identifier list is fixed for the process lifetime, and
-    /// `body` re-evaluates on every keystroke (any `info` mutation publishes),
-    /// which would otherwise re-sort ~600 identifiers each time.
-    private static let timeZoneMenu = SATimeZoneMenuEntry.menu()
-
     private var timeZoneSection: some View {
         Section {
-            Picker(selection: timeZoneBinding) {
-                ForEach(Self.timeZoneMenu, id: \.self) { entry in
-                    switch entry {
-                    case .choice(.server):
-                        Text("Use Server Time Zone", comment: "Leave the server time zone in place when connecting")
-                            .tag(SATimeZoneChoice.server)
-                    case .choice(.system):
-                        Text("Use System Time Zone", comment: "Set the time zone currently used by the user when connecting")
-                            .tag(SATimeZoneChoice.system)
-                    case .choice(.fixed(let identifier)):
-                        Text(verbatim: identifier).tag(SATimeZoneChoice.fixed(identifier))
-                    case .separator:
-                        Divider()
-                    }
-                }
-            } label: {
-                Text("Time Zone", comment: "connection view : field label")
+            // .equatable() + the explicit Equatable conformance is what lets
+            // SwiftUI skip the picker: its ~600-row menu would otherwise be
+            // rebuilt on every body evaluation, i.e. on every keystroke in any
+            // field, since any `info` mutation publishes. A plain child struct
+            // would not be enough — the callback closure defeats SwiftUI's
+            // memberwise comparison, so re-evaluation must be gated on the one
+            // value that matters, the selection.
+            SATimeZonePicker(choice: model.timeZoneChoice) { newChoice in
+                model.timeZoneChoice = newChoice
             }
-            .pickerStyle(.menu)
+            .equatable()
         }
     }
 
@@ -408,19 +398,72 @@ struct SAConnectionFormView: View {
     }
 
 
-    private var timeZoneBinding: Binding<SATimeZoneChoice> {
-        Binding(
-            get: { model.timeZoneChoice },
-            set: { model.timeZoneChoice = $0 }
-        )
-    }
-
     private func submit() {
         if let failure = model.validate() {
             validationFailure = failure
+            isPresentingValidationFailure = true
             return
         }
         onConnect(model)
+    }
+}
+
+// MARK: - Time-zone picker
+
+/// The time-zone menu as its own invalidation boundary.
+///
+/// Splitting a body into computed properties looks like factoring, but every
+/// section still shares the parent view's invalidation boundary, so each
+/// keystroke re-evaluated this ~600-entry menu along with everything else.
+/// A separate struct gets its own boundary — but only pays off with the
+/// explicit `Equatable` conformance and `.equatable()` at the call site,
+/// because the `onSelect` closure defeats SwiftUI's memberwise comparison
+/// and would otherwise force re-evaluation anyway. The comparison keys on
+/// the selection alone, which is the only input that changes.
+private struct SATimeZonePicker: View, Equatable {
+
+    let choice: SATimeZoneChoice
+    let onSelect: (SATimeZoneChoice) -> Void
+
+    static func == (a: Self, b: Self) -> Bool {
+        a.choice == b.choice
+    }
+
+    /// Built once: the identifier list is fixed for the process lifetime.
+    private static let menu = SATimeZoneMenuEntry.menu()
+
+    var body: some View {
+        Picker(selection: selection) {
+            ForEach(Self.menu, id: \.self) { entry in
+                switch entry {
+                case .choice(.server):
+                    Text("Use Server Time Zone", comment: "Leave the server time zone in place when connecting")
+                        .tag(SATimeZoneChoice.server)
+                case .choice(.system):
+                    Text("Use System Time Zone", comment: "Set the time zone currently used by the user when connecting")
+                        .tag(SATimeZoneChoice.system)
+                case .choice(.fixed(let identifier)):
+                    Text(verbatim: identifier).tag(SATimeZoneChoice.fixed(identifier))
+                case .separator:
+                    Divider()
+                }
+            }
+        } label: {
+            Text("Time Zone", comment: "connection view : field label")
+        }
+        .pickerStyle(.menu)
+    }
+
+    /// A closure-built Binding is normally the pattern to avoid — SwiftUI
+    /// cannot compare it, forcing re-evaluation — but here it never crosses a
+    /// view boundary as an input: it is built inside this body, which the
+    /// `.equatable()` gate only runs when `choice` actually changed. The
+    /// alternative (holding a live keypath Binding and comparing its
+    /// `wrappedValue` in `==`) is subtly broken: the old and new view values
+    /// would both read the same live model and always compare equal, so the
+    /// picker would never refresh.
+    private var selection: Binding<SATimeZoneChoice> {
+        Binding(get: { choice }, set: { onSelect($0) })
     }
 }
 
@@ -484,7 +527,9 @@ private struct SAOptionalFileRow: View {
     @Binding var isEnabled: Bool
     @Binding var path: String
 
+    /// Same split as the form's validation alert: the Bool binds by key path.
     @State private var rejection: SAConnectionFileRejection?
+    @State private var isPresentingRejection = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -518,13 +563,10 @@ private struct SAOptionalFileRow: View {
         }
         .alert(
             rejection?.alertTitle ?? "",
-            isPresented: Binding(
-                get: { rejection != nil },
-                set: { if !$0 { rejection = nil } }
-            ),
+            isPresented: $isPresentingRejection,
             presenting: rejection
         ) { _ in
-            Button { rejection = nil } label: { Text("OK", comment: "OK button") }
+            Button {} label: { Text("OK", comment: "OK button") }
         } message: { rejection in
             Text(rejection.alertMessage)
         }
@@ -550,6 +592,7 @@ private struct SAOptionalFileRow: View {
         // surfaces here rather than as an opaque connection error later.
         if let rejection = SAConnectionFileValidator.rejection(forFileAt: url, kind: kind) {
             self.rejection = rejection
+            isPresentingRejection = true
             return
         }
 

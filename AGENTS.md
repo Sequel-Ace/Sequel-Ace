@@ -16,6 +16,33 @@ Deployment target is macOS 12+.
 - **New UI is SwiftUI** where feasible. Established hosting pattern:
   `@objc final` `NSWindowController` subclass + `NSHostingView` + SwiftUI root
   view — see `SAAboutWindowController`, `SABundleHTMLOutputWindowController`.
+- **SwiftUI view boundaries** (per Apple's performance guidance): splitting a
+  `body` into computed properties is *not* factoring for invalidation — every
+  section still shares the view's boundary and re-evaluates on any state
+  change. Give an expensive section its own `View` struct. Two caveats before
+  assuming a split helps here:
+  - A child holding `@ObservedObject`, a `Binding`, or a closure re-evaluates
+    anyway (the object publishes to it; non-equatable fields defeat SwiftUI's
+    memberwise comparison). Gate such a child with an explicit `Equatable`
+    conformance comparing only its meaningful inputs, plus `.equatable()` at
+    the call site — see `SATimeZonePicker` in `SAConnectionFormView.swift`.
+  - The connection form's single `@Published var info` makes every keystroke
+    publish model-wide; that granularity is fixed by `@Observable`
+    (macOS 14+), not by splitting views — blocked on the 12.0 target.
+- **No closure-built `Binding(get:set:)` as a child-view input** (same Apple
+  guidance): the closure pair is recreated every body evaluation and SwiftUI
+  cannot compare it, so the child re-evaluates even when nothing changed.
+  Bind through a stable key path instead — `$model.<property>` works on
+  `@ObservedObject`/`@State` even for *computed* read-write properties, so a
+  write that needs routing (validation, side effects) gets a computed accessor
+  on the model rather than a `set:` closure — see
+  `SARecordViewModel.validatedEditDraft`. (`@Bindable` + subscript is the
+  macOS 14+ form of the same idea.) Presentation flags for `.alert` get their
+  own `@State` Bool next to the presented optional rather than a Bool binding
+  derived from it. One sanctioned exception: a binding built *inside* an
+  `.equatable()`-gated child from its own snapshot, which never crosses the
+  boundary as an input — see `SATimeZonePicker.selection` and its comment for
+  why holding a live Binding there instead would break the gate.
 - **ObjC interop:** mark classes `@objc final class X: NSObject`. When a Swift
   method's internal argument label would be dropped in the generated selector,
   spell the selector explicitly — e.g. `func font(from data: Data?)` bridges to

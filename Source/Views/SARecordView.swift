@@ -133,6 +133,18 @@ final class SARecordViewModel: ObservableObject {
         cancelEdit()
     }
 
+    /// Keypath-bindable draft that routes writes through validation.
+    ///
+    /// SwiftUI cannot compare closure-built `Binding(get:set:)` pairs, so a
+    /// text field fed one is re-evaluated on every body pass. Binding
+    /// `$model.validatedEditDraft` instead derives the binding through a
+    /// stable key path SwiftUI can compare — the macOS 12 equivalent of the
+    /// `@Bindable` + subscript pattern (`@Bindable` needs macOS 14).
+    var validatedEditDraft: String {
+        get { editDraft }
+        set { updateEditDraft(newValue) }
+    }
+
     func updateEditDraft(_ value: String) {
         guard let fieldID = editingFieldID else {
             return
@@ -211,10 +223,7 @@ private struct SARecordView: View {
             }
             TableColumn("Value") { field in
                 if model.editingFieldID == field.id {
-                    TextField("Value", text: Binding(
-                        get: { model.editDraft },
-                        set: model.updateEditDraft
-                    ))
+                    TextField("Value", text: $model.validatedEditDraft)
                         .textFieldStyle(.plain)
                         .onSubmit(model.commitEdit)
                         .focused($focusedFieldID, equals: field.id)
