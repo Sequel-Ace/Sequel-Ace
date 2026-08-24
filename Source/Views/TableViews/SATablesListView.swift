@@ -42,7 +42,7 @@ import AppKit
 
     // Text an input method is still composing; it is displayed but not
     // searched until the input method commits it via insertText/unmarkText.
-    private var markedText = ""
+    private let markedTextState = SAMarkedTextInputState()
     // Decided once per composition: whether it continues the search already
     // running or starts a new one. The badge shows the same thing.
     private var compositionExtendsSearch = false
@@ -217,7 +217,7 @@ import AppKit
         inputContext?.discardMarkedText()
         isDiscardingComposition = false
 
-        markedText = ""
+        markedTextState.clear()
     }
 
     /// Offers a text-entry keystroke to the input context first, so an input
@@ -348,7 +348,7 @@ import AppKit
     /// method composition — extends the search.
     func insertText(_ string: Any, replacementRange: NSRange) {
         let wasComposing = hasMarkedText()
-        markedText = ""
+        markedTextState.clear()
         noteInputCallback()
 
         guard !isDiscardingComposition else {
@@ -375,21 +375,39 @@ import AppKit
             return
         }
 
-        // The input method turned the keystroke into a command rather than
-        // text. Nothing is consumed here, so keyDown forwards the original
-        // event and the table keeps its normal handling for Return, arrows,
-        // Tab, … — unless another callback already consumed the event.
         noteInputCallback()
+
+        // When a composition exists, the input method's editing commands
+        // belong to its marked text rather than to the table. Execute them in
+        // the isolated composition buffer and consume the original event, so
+        // Delete or an arrow key cannot discard the whole composition and act
+        // on the table instead. With no composition, ordinary table commands
+        // still fall through unchanged.
+        let wasComposing = hasMarkedText()
+        if markedTextState.performCommand(selector) {
+            updateCompositionPresentation(wasComposing: wasComposing)
+            routedInputWasConsumed = true
+        }
     }
 
     /// Text still being composed is shown in the badge but not searched — the
     /// search only ever sees what the input method commits.
     func setMarkedText(_ string: Any, selectedRange: NSRange, replacementRange: NSRange) {
         let wasComposing = hasMarkedText()
-        markedText = (string as? NSAttributedString)?.string ?? (string as? String) ?? ""
+        let text = (string as? NSAttributedString)?.string ?? (string as? String) ?? ""
+        markedTextState.setMarkedText(text, selectedRange: selectedRange, replacementRange: replacementRange)
         noteInputCallback()
 
-        if !markedText.isEmpty {
+        updateCompositionPresentation(wasComposing: wasComposing)
+
+        // Only a call that started or ended a composition acted on the event.
+        if routedInputEvent != nil, wasComposing || hasMarkedText() {
+            routedInputWasConsumed = true
+        }
+    }
+
+    private func updateCompositionPresentation(wasComposing: Bool) {
+        if hasMarkedText() {
             if !wasComposing {
                 compositionExtendsSearch = typeAhead.isActive(atTime: inputEventTime)
                 if !compositionExtendsSearch {
@@ -407,7 +425,7 @@ import AppKit
             // easily outlast the settle interval, so the row an earlier
             // character matched waits rather than loading its table midway.
             suspendPendingCommit()
-            showSearchFeedback(typeAhead.currentSearchString + markedText, matched: true)
+            showSearchFeedback(typeAhead.currentSearchString + markedTextState.text, matched: true)
         }
         else if wasComposing {
             // Composition ended without a commit; resume the earlier match and
@@ -423,18 +441,13 @@ import AppKit
                 showSearchFeedback(typeAhead.currentSearchString, matched: lastSearchMatched)
             }
         }
-
-        // Only a call that started or ended a composition acted on the event.
-        if routedInputEvent != nil, wasComposing || !markedText.isEmpty {
-            routedInputWasConsumed = true
-        }
     }
 
     /// Unmarking accepts the composed text — unlike discardMarkedText, which
     /// throws it away — so it is searched for here rather than dropped.
     func unmarkText() {
-        let composedText = markedText
-        markedText = ""
+        let composedText = markedTextState.text
+        markedTextState.clear()
         noteInputCallback()
 
         guard !isDiscardingComposition, !composedText.isEmpty else {
@@ -471,19 +484,19 @@ import AppKit
     }
 
     func selectedRange() -> NSRange {
-        NSRange(location: markedText.utf16.count, length: 0)
+        markedTextState.selectedRange
     }
 
     func markedRange() -> NSRange {
-        markedText.isEmpty ? NSRange(location: NSNotFound, length: 0) : NSRange(location: 0, length: markedText.utf16.count)
+        markedTextState.markedRange
     }
 
     func hasMarkedText() -> Bool {
-        !markedText.isEmpty
+        markedTextState.hasMarkedText
     }
 
     func attributedSubstring(forProposedRange range: NSRange, actualRange: NSRangePointer?) -> NSAttributedString? {
-        nil
+        markedTextState.attributedSubstring(forProposedRange: range, actualRange: actualRange)
     }
 
     func validAttributesForMarkedText() -> [NSAttributedString.Key] {
