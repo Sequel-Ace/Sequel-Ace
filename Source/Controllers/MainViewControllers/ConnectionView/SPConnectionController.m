@@ -449,6 +449,10 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                 break;
             case SAConnectionValidationFailureKindHostMissing:
             case SAConnectionValidationFailureKindSshHostMissing:
+            // Raised only by the SwiftUI form's model, never by the validator
+            // this switch handles; listed so the switch stays exhaustive.
+            case SAConnectionValidationFailureKindVaultHostMissing:
+            case SAConnectionValidationFailureKindVaultCredentialsPathMissing:
                 break;
         }
         [NSAlert createWarningAlertWithTitle:failure.alertTitle message:failure.alertMessage callback:nil];
@@ -3491,15 +3495,13 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (NSString *)_generateNameForConnection
 {
-    if ([self type] == SPVaultConnection) {
-        NSString *credPath = [[self vaultCredentialsPath] lastPathComponent];
-        NSString *vHost = [[self vaultHost] length] ? [self vaultHost] : @"vault";
-        return [credPath length] ? [NSString stringWithFormat:@"%@/%@", vHost, credPath] : vHost;
-    }
-
+    // The Vault rule moved into SAConnectionFormHelpers so the SwiftUI form
+    // shares it; behaviour is unchanged.
     return [SAConnectionFormHelpers generateNameWithType:(SAConnectionType)[self type]
                                                     host:[self host] ?: @""
-                                                database:[self database] ?: @""];
+                                                database:[self database] ?: @""
+                                               vaultHost:[self vaultHost] ?: @""
+                                    vaultCredentialsPath:[self vaultCredentialsPath] ?: @""];
 }
 
 

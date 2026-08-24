@@ -133,4 +133,48 @@ final class SAConnectionFormHelpersTests: XCTestCase {
             "db.example.com"
         )
     }
+
+    // MARK: - Vault names (review round 4)
+
+    /// The Vault rule moved out of -_generateNameForConnection so both forms
+    /// share it: <vaultHost>/<role>, the endpoint alone without a role, and the
+    /// literal "vault" when the endpoint is blank too.
+    func testVaultNameJoinsTheEndpointAndRole() {
+        XCTAssertEqual(SAConnectionFormHelpers.generateName(
+            type: .vault, host: "db.example.com", database: "sakila",
+            vaultHost: "vault.internal", vaultCredentialsPath: "databases_credentials/creds/readonly"),
+            "vault.internal/readonly")
+    }
+
+    func testVaultNameWithoutARoleIsTheEndpoint() {
+        XCTAssertEqual(SAConnectionFormHelpers.generateName(
+            type: .vault, host: "", database: "",
+            vaultHost: "vault.internal", vaultCredentialsPath: ""),
+            "vault.internal")
+    }
+
+    func testVaultNameWithoutAnEndpointFallsBackToVault() {
+        XCTAssertEqual(SAConnectionFormHelpers.generateName(
+            type: .vault, host: "", database: "", vaultHost: "", vaultCredentialsPath: ""),
+            "vault")
+    }
+
+    /// The database host is deliberately ignored for Vault.
+    func testVaultNameIgnoresTheDatabaseHost() {
+        XCTAssertEqual(SAConnectionFormHelpers.generateName(
+            type: .vault, host: "db.example.com", database: "sakila",
+            vaultHost: "", vaultCredentialsPath: "m/creds/writer"),
+            "vault/writer")
+    }
+
+    /// Every other type falls through to the host[/database] rule unchanged.
+    func testTheVaultAwareOverloadMatchesTheOriginalForOtherTypes() {
+        for type in [SAConnectionType.tcpIP, .socket, .sshTunnel, .awsIAM] {
+            XCTAssertEqual(
+                SAConnectionFormHelpers.generateName(type: type, host: "h", database: "d",
+                                                     vaultHost: "ignored", vaultCredentialsPath: "ignored"),
+                SAConnectionFormHelpers.generateName(type: type, host: "h", database: "d"),
+                "\(type)")
+        }
+    }
 }
