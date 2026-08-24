@@ -884,6 +884,7 @@ final class SAConnectionFormModelTests: XCTestCase {
         model.info.host = "elsewhere.example.com"
 
         XCTAssertEqual(model.info.password, "")
+    }
 
     // MARK: - C3: loading a favorite into the form
 

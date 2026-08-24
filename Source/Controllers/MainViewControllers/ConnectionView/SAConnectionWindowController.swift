@@ -117,7 +117,12 @@ import SwiftUI
 
         // Credential generation happens outside the service, so cancelling the
         // service alone leaves a browser-based Vault login holding its slot.
-        cancelActiveVaultLogin()
+        // Superseding the attempt (rather than only cancelling the login) also
+        // invalidates its token: cancellation wakes generateCredentials with a
+        // failure, and without this the completion guard still accepted it —
+        // clearing the endpoint's cached credentials and presenting an error
+        // against a window that no longer exists.
+        _ = beginCredentialAttempt()
     }
 
     // MARK: - Connection screen
@@ -215,7 +220,29 @@ import SwiftUI
         // sit in a browser for minutes, during which the user may edit the form or
         // pick another favorite. Re-reading formModel.info afterwards would pair
         // one endpoint's ephemeral credentials with another's connection details.
-        let attempt = formModel.info
+        var attempt = formModel.info
+
+        // -initiateConnection: trims the host — and the SSH host for tunnels —
+        // before doing anything else (SPConnectionController.m:537,541). Without
+        // it, pasted whitespace makes IAM sign a different hostname than the one
+        // the service later connects to, and the tunnel resolves a
+        // whitespace-bearing host and fails.
+        attempt.host = attempt.host.trimmingCharacters(in: .whitespacesAndNewlines)
+        if attempt.type == .sshTunnel {
+            attempt.sshHost = attempt.sshHost.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        // A blank name gets the generated one, as the AppKit form commits while
+        // editing. Without it the tab title and a saved .spf fall back to
+        // user@host, disagreeing with the placeholder the form showed.
+        if attempt.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            attempt.name = SAConnectionFormHelpers.generateName(type: attempt.type,
+                                                                host: attempt.host,
+                                                                database: attempt.database,
+                                                                vaultHost: attempt.vaultHost,
+                                                                vaultCredentialsPath: attempt.vaultCredentialsPath) ?? ""
+        }
+
         let attemptID = beginCredentialAttempt()
 
         resolveCredentials(for: attempt) { [weak self] result in
