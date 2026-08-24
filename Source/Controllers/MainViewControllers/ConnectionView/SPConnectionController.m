@@ -80,7 +80,7 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 
 // Formal conformance for methods AppKit moved off the informal NSObject
 // categories; implementing them without it is deprecated. No behavior change.
-@interface SPConnectionController () <SAVaultRoleListControllerDelegate, NSMenuItemValidation, NSControlTextEditingDelegate>
+@interface SPConnectionController () <SAVaultRoleListControllerDelegate, NSMenuItemValidation, NSControlTextEditingDelegate, NSSearchFieldDelegate, SAFavoritesListDelegate>
 // Privately redeclare as read/write to get the synthesized setter
 @property (readwrite, assign) BOOL isEditingConnection;
 @property (readwrite, assign) BOOL allowSplitViewResizing;
@@ -224,6 +224,9 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
 @synthesize sshKeyLocation;
 @synthesize sshPort;
 @synthesize sshRemoteSocketPath;
+@synthesize vaultHost;
+@synthesize vaultPort;
+@synthesize vaultOIDCMount;
 @synthesize useCompression;
 @synthesize bookmarks;
 @synthesize allowSplitViewResizing;
@@ -4714,7 +4717,7 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         self.favoritesListDataSource = [[SAFavoritesListDataSource alloc]
             initWithFavoritesRoot:favoritesRoot
             favoritesController:favoritesController];
-        self.favoritesListDataSource.delegate = (id<SAFavoritesListDelegate>)self;
+        self.favoritesListDataSource.delegate = self;
 
         // Keep local references in sync with the data source
         quickConnectItem = self.favoritesListDataSource.quickConnectItem;

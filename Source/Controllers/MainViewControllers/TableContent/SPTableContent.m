@@ -4314,10 +4314,10 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 		return;
 	}
 
-	NSArray *visibleColumns = [tableContentView tableColumns];
-	NSMutableArray *fields = [NSMutableArray arrayWithCapacity:[visibleColumns count]];
-	for (NSUInteger fieldIndex = 0; fieldIndex < [visibleColumns count]; fieldIndex++) {
-		NSTableColumn *tableColumn = [visibleColumns objectAtIndex:fieldIndex];
+	NSArray *displayedTableColumns = [tableContentView tableColumns];
+	NSMutableArray *fields = [NSMutableArray arrayWithCapacity:[displayedTableColumns count]];
+	for (NSUInteger fieldIndex = 0; fieldIndex < [displayedTableColumns count]; fieldIndex++) {
+		NSTableColumn *tableColumn = [displayedTableColumns objectAtIndex:fieldIndex];
 		NSInteger storageIndex = [[tableColumn identifier] integerValue];
 		if (storageIndex < 0) continue;
 

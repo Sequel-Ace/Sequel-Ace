@@ -3470,7 +3470,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     } else if ([keyPath isEqualToString:SPCustomQueryEnableBracketHighlighting]) {
         self.bracketHighlighter.enabled = [[change valueForKey:NSKeyValueChangeNewKey] boolValue];
     } else if ([keyPath isEqualToString:SPDisplayTableViewColumnTypes]) {
-        if ([customQueryView numberOfColumns] != [cqColumnDefinition count]) {
+        if ((NSUInteger)[customQueryView numberOfColumns] != [cqColumnDefinition count]) {
             [self updateTableView];
         } else {
             [self _updateColumnHeadersForCurrentPreference];

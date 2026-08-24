@@ -75,7 +75,7 @@ static char GetNextANSIChar(SPJSONTokenizerState *stateInfo);
       if (indentWidth > 32) indentWidth = 32;
 
       if (useSoftIndent == YES) {
-        for(NSUInteger i = 0; i < indentWidth; i++)
+        for(NSUInteger i = 0; i < (NSUInteger)indentWidth; i++)
           [indentString appendString:@" "];
       } else {
         [indentString appendString:@"\t"];

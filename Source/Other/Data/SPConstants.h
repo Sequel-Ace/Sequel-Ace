@@ -760,7 +760,10 @@ inline __attribute__((always_inline)) NSString *dictionaryValueToString(NSObject
 #ifdef DEBUG
 #   define SPLog(fmt, ...) NSLog((@"%s:%d: " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
 #else
-#   define SPLog(...)
+// No-op outside DEBUG, but the arguments are still parsed so that variables used
+// only by SPLog do not trip -Wunused-variable, and format strings keep getting
+// checked. `if (0)` means the call is dead-code-eliminated - nothing is evaluated.
+#   define SPLog(fmt, ...) do { if (0) NSLog((@"%s:%d: " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__); } while (0)
 #endif
 
 // See http://stackoverflow.com/questions/4415524
