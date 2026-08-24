@@ -37,6 +37,9 @@ import SnapKit
 
     @objc let uniqueID: UUID = UUID()
 
+    /// Autosave name shared by all main windows: the frame the user saw last wins.
+    private static let frameAutosaveName = "MainWindow"
+
     override func awakeFromNib() {
         super.awakeFromNib()
 
@@ -65,13 +68,15 @@ private extension SPWindowController {
     /// dropped the user's window size and position (#1307). Restore the saved frame explicitly
     /// and claim the autosave name so subsequent moves/resizes are persisted again.
     ///
-    /// Only one live window can own an autosave name at a time; when several windows are open
-    /// the first one keeps persisting its frame and later ones still *restore* from the saved
-    /// frame, which is the behaviour users asked for in #1307.
+    /// Only one live window can own an autosave name at a time, so with several windows open
+    /// the claim is best-effort: it keeps live move/resize persistence for whichever window
+    /// holds it. Every window additionally saves its frame in `windowWillClose(_:)`, so the
+    /// most recently closed window always defines the frame the next new window opens with -
+    /// no ownership handover is needed when the claiming window closes first.
     func setupFramePersistence() {
         shouldCascadeWindows = false
-        windowFrameAutosaveName = "MainWindow"
-        window?.setFrameUsingName("MainWindow")
+        windowFrameAutosaveName = Self.frameAutosaveName
+        window?.setFrameUsingName(Self.frameAutosaveName)
     }
 
     func setupAppearance() {
@@ -116,6 +121,11 @@ extension SPWindowController: NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
+        // Persist this window's frame as the shared last-used frame even when it never owned
+        // the exclusive autosave name (only one live window can): the most recently closed
+        // window wins, so the next new window restores the frame the user saw last (#1307).
+        window?.saveFrame(usingName: Self.frameAutosaveName)
+
         // Tell listeners that this database document is being closed - fixes retain cycles and allows cleanup
         NotificationCenter.default.post(name: NSNotification.Name.SPDocumentWillClose, object: databaseDocument)
     }
