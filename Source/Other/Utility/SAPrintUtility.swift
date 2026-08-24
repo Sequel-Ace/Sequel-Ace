@@ -59,10 +59,8 @@ let printBackgroundPreferenceKey = "PrintBackground"
     @objc(printOperationForWebView:)
     static func printOperation(for webView: WKWebView) -> NSPrintOperation {
         // The legacy print accessory toggled WebPreferences.shouldPrintBackgrounds;
-        // WKWebView only exposes this from macOS 13.3.
-        if #available(macOS 13.3, *) {
-            webView.configuration.preferences.shouldPrintBackgrounds = UserDefaults.standard.bool(forKey: printBackgroundPreferenceKey)
-        }
+        // WKWebView exposes this from macOS 13.3, below the 13.5 target.
+        webView.configuration.preferences.shouldPrintBackgrounds = UserDefaults.standard.bool(forKey: printBackgroundPreferenceKey)
 
         let operation = webView.printOperation(with: configuredPrintInfo())
 
@@ -84,10 +82,8 @@ let printBackgroundPreferenceKey = "PrintBackground"
 
 /// The "Print Backgrounds" checkbox in the print panel, replacing the legacy
 /// SPPrintAccessory (which bound the same `PrintBackground` default to the
-/// deprecated WebPreferences). Toggling persists the default and, on
-/// macOS 13.3+, live-applies `shouldPrintBackgrounds` so the print preview
-/// refreshes. On older macOS the setting takes effect from the next print
-/// (WKWebView exposes no equivalent API; see `SAHTMLPrintRenderer`).
+/// deprecated WebPreferences). Toggling persists the default and live-applies
+/// `shouldPrintBackgrounds` so the print preview refreshes.
 final class SAPrintAccessoryController: NSViewController, NSPrintPanelAccessorizing {
 
     private weak var webView: WKWebView?
@@ -96,9 +92,7 @@ final class SAPrintAccessoryController: NSViewController, NSPrintPanelAccessoriz
     @objc dynamic var printsBackgrounds: Bool {
         didSet {
             UserDefaults.standard.set(printsBackgrounds, forKey: printBackgroundPreferenceKey)
-            if #available(macOS 13.3, *) {
-                webView?.configuration.preferences.shouldPrintBackgrounds = printsBackgrounds
-            }
+            webView?.configuration.preferences.shouldPrintBackgrounds = printsBackgrounds
         }
     }
 
@@ -172,25 +166,11 @@ final class SAPrintAccessoryController: NSViewController, NSPrintPanelAccessoriz
 
         let configuration = WKWebViewConfiguration()
 
-        // Before macOS 13.3 WKWebView has no shouldPrintBackgrounds, and it
-        // omits backgrounds from print output by default — which would drop
-        // the print templates' header and alternating-row colours for users
-        // with the (default-on) PrintBackground preference. Forcing
-        // -webkit-print-color-adjust restores the legacy WebView output there.
-        // On 13.3+ the preference is applied via shouldPrintBackgrounds in
-        // SAPrintUtility instead, so the checkbox stays live-toggleable.
-        if #unavailable(macOS 13.3) {
-            if UserDefaults.standard.bool(forKey: printBackgroundPreferenceKey) {
-                let forceBackgrounds = """
-                var style = document.createElement('style');
-                style.textContent = '* { -webkit-print-color-adjust: exact; }';
-                document.head.appendChild(style);
-                """
-                configuration.userContentController.addUserScript(
-                    WKUserScript(source: forceBackgrounds, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
-                )
-            }
-        }
+        // The PrintBackground preference is applied via WKWebView's
+        // shouldPrintBackgrounds in SAPrintUtility (13.3+, below the 13.5
+        // target), which keeps the print panel's checkbox live-toggleable.
+        // The pre-13.3 stand-in — injecting -webkit-print-color-adjust as a
+        // user script — is gone with the deployment target that needed it.
 
         // A plausible page frame; the print operation repaginates for the real
         // paper size, but a zero-sized web view renders nothing.
