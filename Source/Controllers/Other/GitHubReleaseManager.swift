@@ -152,6 +152,14 @@ import OSLog
                 }
             }
 
+            guard SAGitHubReleaseCheckPolicy.shouldCheck(
+                isUserInitiated: isUserInitiated,
+                automaticChecksEnabled: UserDefaults.standard.bool(forKey: SPShowUpdateAvailable)
+            ) else {
+                Log.debug("Ignoring automatic GitHub release check response because it is disabled")
+                return
+            }
+
             switch response.result {
             case .success:
                 Log.info("Validation Successful")
