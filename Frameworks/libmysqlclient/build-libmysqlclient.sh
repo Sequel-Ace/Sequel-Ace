@@ -44,7 +44,7 @@ fi
 
 export CC=/usr/bin/clang
 export CXX=/usr/bin/clang++
-cd "$MYSQL_SRC"
+cd "$MYSQL_SRC" || { echo "❌ Could not enter MySQL source directory: $MYSQL_SRC. Aborting build process."; exit 1; }
 
 
 # Check that we have HomeBrew installed
@@ -209,7 +209,7 @@ lipo -create -output "$TARGET_BUILD_DIR/libssl.3.dylib" \
 #     $BUILD_DIR/arm64/install/lib/libfido2.1.15.0.dylib
 
 echo "***** Fixing DYLIB Paths *****"
-cd "$TARGET_BUILD_DIR"
+cd "$TARGET_BUILD_DIR" || { echo "❌ Could not enter target build directory: $TARGET_BUILD_DIR. Aborting build process."; exit 1; }
 install_name_tool -id "libmysqlclient.24.dylib" libmysqlclient.24.dylib
 install_name_tool -id "libcrypto.3.dylib" libcrypto.3.dylib
 install_name_tool -id "libssl.3.dylib" libssl.3.dylib

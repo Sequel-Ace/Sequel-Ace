@@ -30,9 +30,15 @@ advertise macOS 12 get corrected. Nothing else changes behaviour.
 3. **Swift language features become usable**: `Regex`/regex literals,
    `Duration` + `ContinuousClock` + `Task.sleep(for:)`, the newer `URL`
    path APIs. None are needed today; they stop being off-limits for new code.
-4. **macOS 12 has been out of Apple security support since September 2024.**
-   We are shipping a database client — one that stores credentials in the
-   Keychain and opens SSH tunnels — to an OS that no longer receives patches.
+4. **macOS 12 is outside Apple's security-update window.** Apple publishes no
+   end-of-support dates for macOS; what it does in practice is ship security
+   updates for the current major and the two before it. With macOS 26 current,
+   that window is 14/15/26 — macOS 12 has been outside it for two majors, and
+   macOS 13 is outside it too. Treat that as the documented *practice* it is,
+   not a published cutoff; if a release note needs a specific date, check
+   Apple's security-releases page rather than quoting this plan. Either way we
+   are shipping a database client — one that stores credentials in the Keychain
+   and opens SSH tunnels — to an OS that no longer receives patches.
 
 ### Why 13.5 and not 13.0
 
@@ -45,10 +51,12 @@ script — two code paths for one checkbox, only one of which anyone tests. At a
 
 The rationale is that gate removal, not adoption data. This plan deliberately
 did not collect install-share numbers (see *Decisions taken*), so it makes no
-claim about how many machines sit on 13.0–13.4. What can be said without data:
-Ventura left Apple's security support in September 2025, so every 13.x machine
-— 13.5 included — is already unsupported by Apple, and users below 13.5 land on
-the same `production/5.4.0-20109` fallback as macOS 12 users.
+claim about how many machines sit on 13.0–13.4, nor about which point release
+Ventura users have settled on. The rest of the argument is simply that 13.x as
+a whole is already outside Apple's security-update window (point 4 above), so
+the choice between 13.0 and 13.5 does not move anyone from a supported OS to an
+unsupported one — and users below 13.5 land on the same
+`production/5.4.0-20109` fallback as macOS 12 users.
 
 ### What this does *not* unlock
 
