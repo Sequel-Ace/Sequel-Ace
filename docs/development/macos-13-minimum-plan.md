@@ -43,9 +43,12 @@ pre-13.3 stand-in that injected `-webkit-print-color-adjust: exact` as a user
 script — two code paths for one checkbox, only one of which anyone tests. At a
 13.0 floor both survive; at 13.5 the fallback and its tests go.
 
-13.5 (July 2023) is also the last 13.x most Ventura machines actually sit on,
-and Ventura left Apple's security support in September 2025 regardless, so the
-population between 13.0 and 13.4 is small and already unsupported by Apple.
+The rationale is that gate removal, not adoption data. This plan deliberately
+did not collect install-share numbers (see *Decisions taken*), so it makes no
+claim about how many machines sit on 13.0–13.4. What can be said without data:
+Ventura left Apple's security support in September 2025, so every 13.x machine
+— 13.5 included — is already unsupported by Apple, and users below 13.5 land on
+the same `production/5.4.0-20109` fallback as macOS 12 users.
 
 ### What this does *not* unlock
 
@@ -82,11 +85,21 @@ the decision is worth taking with that comparison in hand.
 
 These are project-level *and* per-target overrides across the Debug / Release /
 Distribution / Beta configurations (app, Unit Tests, QLGenerator, tunnel
-assistant, `xibLocalizationPostprocessor`, PSMTabBar). A blanket
-`sed -i '' 's/MACOSX_DEPLOYMENT_TARGET = 12.0;/MACOSX_DEPLOYMENT_TARGET = 13.5;/g'`
-over the four `project.pbxproj` files is correct here — there is no config that
-should stay behind — but open the project in Xcode afterwards to confirm no
-target silently picked up an inherited value instead.
+assistant, `xibLocalizationPostprocessor`, PSMTabBar). A
+blanket `sed` over the four `project.pbxproj` files is correct here — there is
+no config that should stay behind:
+
+```sh
+sed -i '' 's/MACOSX_DEPLOYMENT_TARGET = 12.0;/MACOSX_DEPLOYMENT_TARGET = 13.5;/g' \
+  sequel-ace.xcodeproj/project.pbxproj \
+  Frameworks/SPMySQLFramework/SPMySQLFramework.xcodeproj/project.pbxproj \
+  Frameworks/QueryKit/QueryKit.xcodeproj/project.pbxproj \
+  Frameworks/libmysqlclient/libmysqlclient.xcodeproj/project.pbxproj
+```
+
+Pass the paths explicitly — with no file arguments BSD `sed` reads stdin and
+silently changes nothing. Afterwards, open the project in Xcode to confirm no
+target picked up an inherited value instead.
 
 ### The standalone dylib build script (6 occurrences)
 
