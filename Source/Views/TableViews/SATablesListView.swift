@@ -35,6 +35,11 @@ import AppKit
     // transition explicitly so a pending match cannot load in the background.
     private var windowDeactivationSubscription: NotificationToken?
 
+    // Scrollbar and scroll-wheel events are handled by the enclosing scroll
+    // view, not this table. Observe user-initiated scrolling so those actions
+    // cancel a pending match just like a click delivered to the table does.
+    private var scrollInteractionSubscriptions: [NotificationToken] = []
+
     // Text an input method is still composing; it is displayed but not
     // searched until the input method commits it via insertText/unmarkText.
     private var markedText = ""
@@ -66,6 +71,7 @@ import AppKit
 
     override func viewWillMove(toWindow newWindow: NSWindow?) {
         windowDeactivationSubscription = nil
+        scrollInteractionSubscriptions.removeAll()
 
         if let newWindow {
             windowDeactivationSubscription = NotificationCenter.default.observe(
@@ -75,9 +81,41 @@ import AppKit
             ) { [weak self] _ in
                 self?.cancelTypeAhead()
             }
+
+            if let scrollView = enclosingScrollView {
+                // Unlike clip-view bounds notifications, these are posted
+                // only for user-initiated scrolling, so scrollRowToVisible(_:)
+                // can still reveal a match without cancelling its pending
+                // commit. didLiveScroll also covers legacy input devices that
+                // do not emit the will-start notification.
+                let notifications: [Notification.Name] = [
+                    NSScrollView.willStartLiveScrollNotification,
+                    NSScrollView.didLiveScrollNotification
+                ]
+                scrollInteractionSubscriptions = notifications.map { notification in
+                    NotificationCenter.default.observe(
+                        name: notification,
+                        object: scrollView,
+                        queue: .main
+                    ) { [weak self] _ in
+                        self?.cancelTypeAheadIfNeeded()
+                    }
+                }
+            }
         }
 
         super.viewWillMove(toWindow: newWindow)
+    }
+
+    private func cancelTypeAheadIfNeeded() {
+        let hasActiveTypeAhead = !typeAhead.currentSearchString.isEmpty
+            || pendingSelection != nil
+            || pendingSelectionTimer != nil
+            || hasMarkedText()
+        guard hasActiveTypeAhead else {
+            return
+        }
+        cancelTypeAhead()
     }
 
     override func keyDown(with event: NSEvent) {
