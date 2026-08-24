@@ -44,6 +44,7 @@ import SnapKit
             window.collectionBehavior = [window.collectionBehavior, .fullScreenPrimary]
         }
 
+        setupFramePersistence()
         setupAppearance()
     }
 
@@ -58,6 +59,21 @@ import SnapKit
 // MARK: - Private API
 
 private extension SPWindowController {
+    /// The main window nib carries `frameAutosaveName="MainWindow"`, but `NSWindowController`
+    /// applies its own (empty) `windowFrameAutosaveName` to the window it loads, so the nib
+    /// value never takes effect: closing the last window and opening a new one (⌘W → ⌘N/⌘T)
+    /// dropped the user's window size and position (#1307). Restore the saved frame explicitly
+    /// and claim the autosave name so subsequent moves/resizes are persisted again.
+    ///
+    /// Only one live window can own an autosave name at a time; when several windows are open
+    /// the first one keeps persisting its frame and later ones still *restore* from the saved
+    /// frame, which is the behaviour users asked for in #1307.
+    func setupFramePersistence() {
+        shouldCascadeWindows = false
+        windowFrameAutosaveName = "MainWindow"
+        window?.setFrameUsingName("MainWindow")
+    }
+
     func setupAppearance() {
         databaseDocument.updateWindowTitle(self)
 
