@@ -177,59 +177,19 @@ static void *kHidePasswordImageKey = &kHidePasswordImageKey;
  */
 + (NSInteger)favoriteTypeTagForString:(NSString *)typeString
 {
-    if ([typeString isEqualToString:@"SPSocketConnection"]) {
-        return SPSocketConnection;
-    }
-    else if ([typeString isEqualToString:@"SPSSHTunnelConnection"]) {
-        return SPSSHTunnelConnection;
-    }
-    else if ([typeString isEqualToString:@"SPAWSIAMConnection"]) {
-        return SPAWSIAMConnection;
-    }
-    return SPTCPIPConnection; // Default
+    // Extracted to Swift with the rest of the duplicate-detection rules
+    // (modernization item 4); behaviour pinned by SAFavoriteDuplicateMatcherTests.
+    return [SAFavoriteDuplicateMatcher typeTagForString:typeString];
 }
 
-/**
- * Converts a connection type tag to its string representation.
- * @param typeTag The connection type tag (0=TCP/IP, 1=Socket, 2=SSH, 3=AWS IAM)
- * @return The corresponding type string
- */
 + (NSString *)stringForFavoriteTypeTag:(NSInteger)typeTag
 {
-    switch (typeTag) {
-        case SPSocketConnection:
-            return @"SPSocketConnection";
-        case SPSSHTunnelConnection:
-            return @"SPSSHTunnelConnection";
-        case SPAWSIAMConnection:
-            return @"SPAWSIAMConnection";
-        case SPTCPIPConnection:
-        default:
-            return @"SPTCPIPConnection";
-    }
+    return [SAFavoriteDuplicateMatcher typeStringForTag:typeTag];
 }
 
 + (NSString *)normalizedPortForDuplicateComparison:(id)port type:(NSString *)type
 {
-    NSInteger typeTag = [SPConnectionController favoriteTypeTagForString:type];
-    NSString *portString = @"";
-
-    if ([port isKindOfClass:[NSNumber class]]) {
-        portString = [(NSNumber *)port stringValue];
-    }
-    else if ([port isKindOfClass:[NSString class]]) {
-        portString = [(NSString *)port stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    }
-
-    if (typeTag == SPSocketConnection) {
-        return portString;
-    }
-
-    if (portString.length == 0) {
-        return @"3306";
-    }
-
-    return portString;
+    return [SAFavoriteDuplicateMatcher normalizedPort:port typeString:type];
 }
 
 @synthesize delegate;
@@ -2477,88 +2437,24 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
                                          type:(NSString *)candidateType
                               modeSpecificFields:(NSDictionary *)modeFields
 {
-    // Get all favorite leaves
-    NSArray *allFavorites = [favoritesRoot allChildLeafs];
-
-    for (SPTreeNode *node in allFavorites) {
+    // The tree walk stays here (SPTreeNode is not reachable from the test
+    // target — the B2b sharp edge); the matching rules live in
+    // SAFavoriteDuplicateMatcher, where they are tested.
+    for (SPTreeNode *node in [favoritesRoot allChildLeafs]) {
         if ([node isGroup]) continue;
 
         NSDictionary *favoriteDict = [[node representedObject] nodeFavorite];
         if (!favoriteDict) continue;
 
-        // Compare key fields
-        NSString *existingHost = [favoriteDict objectForKey:SPFavoriteHostKey] ?: @"";
-        NSString *existingUser = [favoriteDict objectForKey:SPFavoriteUserKey] ?: @"";
-        NSString *existingDatabase = [favoriteDict objectForKey:SPFavoriteDatabaseKey] ?: @"";
-        NSString *existingPort = [favoriteDict objectForKey:SPFavoritePortKey] ?: @"";
-
-        // Get candidateType string using centralized helper
-        NSInteger existingTypeInt = [[favoriteDict objectForKey:SPFavoriteTypeKey] integerValue];
-        NSString *existingType = [SPConnectionController stringForFavoriteTypeTag:existingTypeInt];
-        NSString *normalizedExistingPort = [SPConnectionController normalizedPortForDuplicateComparison:existingPort type:existingType];
-        NSString *normalizedNewPort = [SPConnectionController normalizedPortForDuplicateComparison:candidatePort type:candidateType];
-
-        // Check if basic fields match
-        if (![existingHost isEqualToString:candidateHost] ||
-            ![existingUser isEqualToString:candidateUser] ||
-            ![existingDatabase isEqualToString:candidateDatabase] ||
-            ![normalizedExistingPort isEqualToString:normalizedNewPort] ||
-            ![existingType isEqualToString:candidateType]) {
-            continue;
+        if ([SAFavoriteDuplicateMatcher favorite:favoriteDict
+                               isDuplicateOfHost:candidateHost
+                                            user:candidateUser
+                                        database:candidateDatabase
+                                            port:candidatePort
+                                      typeString:candidateType
+                              modeSpecificFields:modeFields]) {
+            return node;
         }
-
-        // If mode-specific fields were provided, compare them too
-        if (modeFields) {
-            NSInteger typeTag = [SPConnectionController favoriteTypeTagForString:candidateType];
-
-            if (typeTag == SPSSHTunnelConnection) {
-                // Compare SSH-specific fields
-                NSString *existingSSHHost = [favoriteDict objectForKey:SPFavoriteSSHHostKey] ?: @"";
-                NSString *existingSSHUser = [favoriteDict objectForKey:SPFavoriteSSHUserKey] ?: @"";
-                NSString *existingSSHPort = [favoriteDict objectForKey:SPFavoriteSSHPortKey] ?: @"";
-                NSString *existingSSHRemoteSocketPath = [favoriteDict objectForKey:SPFavoriteSSHRemoteSocketPathKey] ?: @"";
-
-                // Check both URL keys (from connection string) and favorite keys (from plist import)
-                NSString *newSSHHost = [modeFields objectForKey:@"ssh_host"] ?: [modeFields objectForKey:SPFavoriteSSHHostKey] ?: @"";
-                NSString *newSSHUser = [modeFields objectForKey:@"ssh_user"] ?: [modeFields objectForKey:SPFavoriteSSHUserKey] ?: @"";
-                NSString *newSSHPort = [modeFields objectForKey:@"ssh_port"] ?: [modeFields objectForKey:SPFavoriteSSHPortKey] ?: @"";
-                NSString *newSSHRemoteSocketPath = [modeFields objectForKey:@"ssh_remote_socket_path"] ?: [modeFields objectForKey:SPFavoriteSSHRemoteSocketPathKey] ?: @"";
-
-                if (![existingSSHHost isEqualToString:newSSHHost] ||
-                    ![existingSSHUser isEqualToString:newSSHUser] ||
-                    ![existingSSHPort isEqualToString:newSSHPort] ||
-                    ![existingSSHRemoteSocketPath isEqualToString:newSSHRemoteSocketPath]) {
-                    continue;
-                }
-            }
-            else if (typeTag == SPSocketConnection) {
-                // Compare socket path
-                NSString *existingSocket = [favoriteDict objectForKey:SPFavoriteSocketKey] ?: @"";
-                // Check both URL key (from connection string) and favorite key (from plist import)
-                NSString *newSocket = [modeFields objectForKey:@"socket"] ?: [modeFields objectForKey:SPFavoriteSocketKey] ?: @"";
-
-                if (![existingSocket isEqualToString:newSocket]) {
-                    continue;
-                }
-            }
-            else if (typeTag == SPAWSIAMConnection) {
-                // Compare AWS-specific fields
-                NSString *existingRegion = [favoriteDict objectForKey:@"awsRegion"] ?: @"";
-                NSString *existingProfile = [favoriteDict objectForKey:@"awsProfile"] ?: @"";
-
-                // Check both URL keys (from connection string) and favorite keys (from plist import)
-                NSString *newRegion = [modeFields objectForKey:@"aws_region"] ?: [modeFields objectForKey:@"awsRegion"] ?: @"";
-                NSString *newProfile = [modeFields objectForKey:@"aws_profile"] ?: [modeFields objectForKey:@"awsProfile"] ?: @"";
-
-                if (![existingRegion isEqualToString:newRegion] ||
-                    ![existingProfile isEqualToString:newProfile]) {
-                    continue;
-                }
-            }
-        }
-
-        // All fields match - this is a duplicate
-        return node;
     }
 
     return nil;
@@ -2587,12 +2483,9 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
     NSString *oldSSHUser = [favoriteDict objectForKey:SPFavoriteSSHUserKey] ?: @"";
     NSString *oldSSHHost = [favoriteDict objectForKey:SPFavoriteSSHHostKey] ?: @"";
 
-    // Update all fields from newData (except name and ID - keep existing name and ID)
-    for (NSString *key in newData) {
-        if (![key isEqualToString:SPFavoriteNameKey] && ![key isEqualToString:SPFavoriteIDKey]) {
-            [favoriteDict setObject:[newData objectForKey:key] forKey:key];
-        }
-    }
+    // Apply the update; the name/ID-preserving merge rule lives with the other
+    // duplicate rules in SAFavoriteDuplicateMatcher.
+    favoriteDict = [SAFavoriteDuplicateMatcher mergedFavoriteFrom:favoriteDict applying:newData];
 
     // Get new values
     NSString *newHost = [favoriteDict objectForKey:SPFavoriteHostKey] ?: @"";

@@ -641,16 +641,24 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
    42 model tests. The AWS `~/.aws` authorization, the Vault role-list fetch
    and favorites save parity were deliberately left to C3, which supplies the
    live host they need.
-3. **C3 — make the standalone window real**: host SAFavoritesList +
-   SAConnectionFormView in SAConnectionWindowController via
-   SAConnectionViewCoordinator, drive it with SAConnectionService. The
-   scaffolding and menu item already exist; this is the payoff milestone that
-   also stops the SPConnectionController regression (new connection UI stops
-   landing in the XIB).
-4. **SPConnectionController re-containment**: extract the freshly-added
-   import/duplicate-detection logic (mostly pure dictionary work, see the
-   `candidate*`/`detail*`/`imported*` naming from the shadow-rename pass) into
-   tested Swift. Best done while the code is young.
+3. ~~**C3 — make the standalone window real**~~ — ✅ Done. The standalone window
+   hosts SAFavoritesList + SAConnectionFormView, drives SAConnectionService
+   directly (IAM/Vault credentials included), and the "New Connection Window"
+   menu item is live. Favorites CRUD, keychain retrieval and the Vault
+   role-list fetch remain with the AppKit form — see the C3 section above.
+4. **SPConnectionController re-containment** — 🟡 Duplicate detection done.
+   `SAFavoriteDuplicateMatcher` (both targets, 21 tests) now owns the pure
+   rules: connection-type string↔tag mapping (including the deliberate quirk
+   that Vault compares as TCP/IP), port normalization (NSNumber/NSString,
+   empty → 3306 except sockets), the base + mode-specific duplicate predicate
+   fed by both import paths (URL keys first, favorite-plist keys second), and
+   the name/ID-preserving merge behind "Update". The controller keeps the
+   SPTreeNode walk (B2b sharp edge), the alert UI and the keychain side
+   effects; its three class helpers are one-line delegations. Remaining in
+   this item: the connection-string → favorite-dictionary *mapping* itself
+   (`favoriteDictionaryFromConnectionDetails`-shaped code around
+   SPConnectionController.m:2300) and the import-plist ID reassignment /
+   leaf-collection helpers — same extraction pattern, next slice.
 5. **Warnings remainder** (step 9 + deferred SecKeychain/NSConnection/
    OpenSSL — see warnings plan). Step 8 (Swift 6 concurrency) is ✅ done: the
    three blocking-wrapper/observer-token sites now go through
