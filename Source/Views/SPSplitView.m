@@ -472,7 +472,7 @@
 // here, animating the collapse instead of letting AppKit do it. It was removed
 // because AppKit stopped calling it: "NSSplitView no longer supports collapsing
 // sections via double-click. This delegate method is never called." (deprecated
-// in 10.15, and this app targets macOS 12). Collapsing is still available
+// in 10.15, and this app targets macOS 13). Collapsing is still available
 // through -toggleCollapse: and -setCollapsibleSubviewCollapsed:animate:.
 
 /**
