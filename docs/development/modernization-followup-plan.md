@@ -484,6 +484,32 @@ C2b — all connection types + SSL, colour, time zone — ✅ Done
 - Re-enable the "New Connection Window" menu item (currently deferred to avoid duplicate with XIB item)
 - Eventually the XIB menu item (`newWindow:`) gets replaced by the standalone window flow
 
+**C2/C3 follow-up — SwiftUI invalidation boundaries** — 🟡 Time-zone picker done
+- Apple's guidance: computed-property sections share their view's invalidation
+  boundary, so `SAConnectionFormView`'s sections all re-evaluate on every
+  keystroke (any `info` mutation publishes). The one expensive section — the
+  ~600-entry time-zone menu — is now `SATimeZonePicker`, a separate `View`
+  struct with an explicit `Equatable` conformance keyed on the selection and
+  `.equatable()` at the call site. The conformance is load-bearing: the
+  `onSelect` closure defeats SwiftUI's memberwise comparison, so a plain child
+  struct would have re-evaluated anyway.
+- Splitting the remaining sections is deliberately not done: each holds
+  `Binding`s into the shared model, so extra structs would add boundaries that
+  never skip. The real granularity fix is `@Observable`'s per-property
+  tracking — **macOS 14+, blocked on the 12.0 deployment target**. Revisit when
+  the target moves; until then treat `SATimeZonePicker` as the pattern for any
+  genuinely expensive section (guidance recorded in AGENTS.md).
+- Companion rule, same source: no closure-built `Binding(get:set:)` as a
+  child-view input — SwiftUI cannot compare the closures, so the child
+  re-evaluates regardless. The three shipped instances were converted:
+  `SARecordView`'s edit field now binds `$model.validatedEditDraft`, a computed
+  accessor routing writes through validation (the macOS 12 stand-in for
+  `@Bindable` + subscript), and both connection-form alerts present via a
+  dedicated `@State` Bool instead of a Bool binding derived from the optional.
+  `SATimeZonePicker.selection` stays closure-built on purpose — built inside
+  the `.equatable()` gate from a snapshot, it never crosses a boundary; its
+  comment explains why a live keypath Binding there would break the gate.
+
 ### Phase D: SPConnectionController further cleanup
 
 **D1. Replace `updateFavoriteSelection:` with structured data flow** — ✅ Done
