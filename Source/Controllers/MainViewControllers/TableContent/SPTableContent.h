@@ -45,6 +45,7 @@
 @class SPTableStructure;
 @class SPRuleFilterController;
 @class SPFilterTableController;
+@class SARecordViewController;
 
 @class ContentPaginationViewController; //private
 
@@ -156,6 +157,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 	IBOutlet NSView *contentAreaContainer;
 	IBOutlet NSView *filterRuleEditorContainer;
 	IBOutlet NSView *tableContentContainer;
+	SARecordViewController *recordViewController;
 
 	BOOL showFilterRuleEditor;
 	BOOL ruleEditorVisibilityHasBeenApplied;
@@ -210,6 +212,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 - (NSArray *)currentDataResultWithNULLs:(BOOL)includeNULLs hideBLOBs:(BOOL)hide;
 
 // Task interaction
+@property (readonly) BOOL isWorking;
 - (void)startDocumentTaskForTab:(NSNotification *)aNotification;
 - (void)endDocumentTaskForTab:(NSNotification *)aNotification;
 
@@ -227,6 +230,7 @@ typedef NS_ENUM(NSInteger, SPTableContentFilterSource) {
 - (NSString *)fieldListForQuery;
 - (void)updateNumberOfRows;
 - (void)autosizeColumns;
+- (void)toggleRecordView;
 - (BOOL)saveRowOnDeselect;
 - (void)sortTableTaskWithColumn:(NSTableColumn *)tableColumn;
 - (void)showErrorSheetWith:(NSArray *)error;

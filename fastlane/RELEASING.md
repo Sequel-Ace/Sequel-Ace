@@ -26,9 +26,21 @@ or creates a GitHub release.
   passes.
 - One `sequel-ace-release` concurrency group prevents overlapping preparation,
   deployment, artifact publication, Alpha recovery, and finalization.
+- Both asynchronous wake-state variables must be configured. An unset or empty
+  `SA_RELEASE_PENDING_ARTIFACT_TAG` or
+  `SA_RELEASE_PENDING_FINALIZATION_TAG` is rejected before checkout and
+  intentionally blocks every release.
 - A non-`none` `SA_RELEASE_PENDING_FINALIZATION_TAG` blocks another release
   start even between workflow runs, so a submitted production release cannot
   be overlapped before its live or terminal checkpoint settles.
+- A non-`none` `SA_RELEASE_PENDING_ARTIFACT_TAG` likewise blocks another release
+  start. The sole exception is an Actions-bot `mode=resume` forward recovery
+  whose authenticated `recovery_tag` exactly equals the armed predecessor; the
+  child replaces that tag only after its own handoff is durably archived. The
+  archive fallback examines only an authorized prerelease whose exact version
+  and build still match every current source version file. This keeps a missing
+  or unreadable current handoff fail-closed without treating preserved,
+  superseded prereleases from before the automation archive as active releases.
 - The GitHub App may bypass the release PR's human-review requirement, but the
   workflow still waits for the exact release commit's `Run Tests`,
   `Release Tool Tests`, and every other observed check to finish acceptably.

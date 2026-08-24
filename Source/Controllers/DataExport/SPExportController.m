@@ -2664,7 +2664,7 @@ set_input:
  */
 - (NSTokenStyle)tokenField:(NSTokenField *)tokenField styleForRepresentedObject:(id)representedObject
 {
-	if (IS_TOKEN(representedObject)) return NSDefaultTokenStyle;
+	if (IS_TOKEN(representedObject)) return NSTokenStyleDefault;
 
 	return NSTokenStyleNone;
 }

@@ -490,21 +490,78 @@ class WorkflowRecoveryTest < Minitest::Test
 
   def test_new_releases_refuse_an_active_asynchronous_handoff
     workflow = File.read(repo_path(".github/workflows/release.yml"))
+    authorization_start = workflow.index("- name: Enforce release authorization")
+    authorization_end = workflow.index("- name: Prove the frozen release SHA is on dispatch main")
+    checkout = workflow.index("- name: Check out immutable dispatch tooling")
+    authorization = workflow[authorization_start...authorization_end]
     overlap = workflow.index("- name: Refuse overlapping asynchronous release handoffs")
     approval = workflow.index("- name: Recheck release authorization with the tested guard")
     gate = workflow[overlap...approval]
 
+    assert_operator authorization_start, :<, checkout
     assert_operator overlap, :<, approval
     assert_includes gate, "%w[cloud_running artifacts_verified archived submitted finalizing]"
     assert_includes gate, "%w[cloud_running artifacts_verified]"
     assert_includes gate, "ReleaseNaming.new"
     assert_includes gate, "still has an active asynchronous handoff"
+    assert_includes authorization, "SA_RELEASE_PENDING_ARTIFACT_TAG is not configured."
+    assert_includes authorization, "A release is still awaiting artifact publication"
+    assert_includes authorization, 'automatic_forward_recovery="false"'
+    assert_includes authorization, 'automatic_forward_recovery="true"'
+    assert_includes authorization,
+                    '( "${automatic_forward_recovery}" != "true" || "${PENDING_ARTIFACT_TAG}" != "${RECOVERY_TAG}" )'
+    assert_includes authorization, "SA_RELEASE_PENDING_FINALIZATION_TAG is not configured."
+    assert_includes authorization,
+                    '[[ -n "${PENDING_ARTIFACT_TAG}" ]] || { echo "SA_RELEASE_PENDING_ARTIFACT_TAG is not configured." >&2; exit 1; }'
+    assert_includes authorization,
+                    '[[ -n "${PENDING_FINALIZATION_TAG}" ]] || { echo "SA_RELEASE_PENDING_FINALIZATION_TAG is not configured." >&2; exit 1; }'
+    assert_operator authorization.index("SA_RELEASE_PENDING_ARTIFACT_TAG is not configured."), :<,
+                    authorization.index("A release is still awaiting artifact publication")
+    assert_operator authorization.index("SA_RELEASE_PENDING_FINALIZATION_TAG is not configured."), :<,
+                    authorization.index("A production release is still awaiting finalization")
+    pending_artifact_branch = authorization.split(
+      'if [[ "${PENDING_ARTIFACT_TAG}" != "none" &&',
+      2
+    ).fetch(1).split(/^\s+fi$/, 2).first
+    pending_finalization_branch = authorization.split(
+      'if [[ -n "${PENDING_FINALIZATION_TAG}" && "${PENDING_FINALIZATION_TAG}" != "none" ]]',
+      2
+    ).fetch(1).split(/^\s+fi$/, 2).first
+    assert_includes pending_artifact_branch, "exit 1"
+    assert_includes pending_finalization_branch, "exit 1"
+    assert_includes gate, "SequelAceRelease::VersionFiles.new.current"
+    assert_includes gate, 'puts "#{source.fetch("version")}-#{source.fetch("build")}"'
     assert_includes gate, "ReleasePublisher.authorized?"
     assert_includes gate, "release_author"
     assert_includes gate, "release_author_id"
     assert_includes gate, "id: author_id"
     assert_includes gate, "has unreadable private handoff state; refusing to overlap it"
+    assert_includes gate, 'if ! Scripts/archive-release-to-ghcr.sh pull "${archive_ref}" "${work_directory}"'
     refute_includes gate, "if Scripts/archive-release-to-ghcr.sh pull"
+    authorization_check = gate.index("ReleasePublisher.authorized?")
+    archive_pull = gate.index("Scripts/archive-release-to-ghcr.sh pull")
+    assert_operator authorization_check, :<, archive_pull
+    publisher_authorization_branch = gate.split(
+      "if ! bundle exec ruby -I fastlane/lib -rsequel_ace_release -e",
+      2
+    ).fetch(1).split(/^\s+fi$/, 2).first
+    assert_includes publisher_authorization_branch,
+                    'authorized?(tag: ARGV.fetch(0), login: ARGV.fetch(1), id: author_id, created_at: ARGV.fetch(3))'
+    assert_includes publisher_authorization_branch,
+                    '"${release_tag}" "${release_author}" "${release_author_id}" "${release_created_at}"'
+    assert_includes publisher_authorization_branch, "continue"
+    unreadable_archive_branch = gate.split(
+      'if ! Scripts/archive-release-to-ghcr.sh pull "${archive_ref}" "${work_directory}"',
+      2
+    ).fetch(1).split(/^\s+fi$/, 2).first
+    assert_includes unreadable_archive_branch, "exit 1"
+    production_filter = gate.index('release_tag}" != "production/${source_release_suffix}')
+    beta_filter = gate.index('release_tag}" != "beta/${source_release_suffix}')
+    assert_operator production_filter, :<, archive_pull
+    assert_operator beta_filter, :<, archive_pull
+    active_handoff_branch = gate.split('if [[ "${active}" == "true" ]]', 2)
+                                .fetch(1).split(/^\s+fi$/, 2).first
+    assert_includes active_handoff_branch, "exit 1"
   end
 
   def test_publisher_uses_authenticated_xcode_checks_with_a_variable_gated_recovery_poll

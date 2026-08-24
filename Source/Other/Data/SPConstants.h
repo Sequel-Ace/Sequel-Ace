@@ -262,8 +262,6 @@ extern NSString *SPMySQLSysDatabase;
 extern NSString *SPDefaultPasteboardDragType;
 extern NSString *SPFavoritesPasteboardDragType;
 extern NSString *SPContentFilterPasteboardDragType;
-extern NSString *SPNavigatorPasteboardDragType;
-extern NSString *SPNavigatorTableDataPasteboardDragType;
 extern NSString *SPExportCustomFileNameTokenPlistType;
 
 // File extensions
@@ -755,7 +753,6 @@ inline __attribute__((always_inline)) NSString *dictionaryValueToString(NSObject
 #define user_defaults_get_bool_ud(key, ud)      [ud boolForKey:key]
 #define user_defaults_set_bool_ud(key, b, ud)   [ud setBool:b forKey:key]
 #define user_defaults_set_bool(key, b)          [[NSUserDefaults standardUserDefaults] setBool:b forKey:key]
-#define is_big_sur()  [[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:(NSOperatingSystemVersion){ .majorVersion = 11, .minorVersion = 0, .patchVersion = 0 }]
 
 #define SPAppDelegate ((SPAppController *)[NSApp delegate])
 
@@ -763,7 +760,10 @@ inline __attribute__((always_inline)) NSString *dictionaryValueToString(NSObject
 #ifdef DEBUG
 #   define SPLog(fmt, ...) NSLog((@"%s:%d: " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
 #else
-#   define SPLog(...)
+// No-op outside DEBUG, but the arguments are still parsed so that variables used
+// only by SPLog do not trip -Wunused-variable, and format strings keep getting
+// checked. `if (0)` means the call is dead-code-eliminated - nothing is evaluated.
+#   define SPLog(fmt, ...) do { if (0) NSLog((@"%s:%d: " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__); } while (0)
 #endif
 
 // See http://stackoverflow.com/questions/4415524

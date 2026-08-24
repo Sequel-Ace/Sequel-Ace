@@ -48,6 +48,7 @@
 @class SPTextView;
 @class SPDatabaseDocument;
 @class SPTablesList;
+@class SARecordViewController;
 
 @class SPBracketHighlighter;
 
@@ -113,6 +114,7 @@
 	IBOutlet NSButton *queryInfoButton;
 	IBOutlet SPSplitView *queryInfoPaneSplitView;
 	IBOutlet SPSplitView *queryEditorSplitView;
+	SARecordViewController *recordViewController;
 
 	SPFieldEditorController *fieldEditor;
 	SPQueryFavoriteManager *favoritesManager;
@@ -176,6 +178,7 @@
 @property (readwrite, strong) NSTableColumn *sortColumn;
 @property (readwrite, assign) BOOL isDesc;
 @property (readwrite, assign) BOOL reloadingExistingResult;
+@property (readonly) BOOL isWorking;
 @property (readonly, strong) NSTextField *errorTextTitle;
 @property (readonly, strong) id errorText;
 @property (readonly, strong) NSMutableDictionary<NSNumber*,NSNumber*> *sortCount;
@@ -209,6 +212,7 @@
 // Interface setup
 - (void)updateQueryInteractionInterface;
 - (void)updateContextualRunInterface;
+- (void)toggleRecordView;
 
 // Query load actions
 - (void)initQueryLoadTimer;

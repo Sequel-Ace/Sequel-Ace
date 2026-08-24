@@ -940,7 +940,7 @@ Gw
             <point key="canvasLocation" x="-19" y="1116"/>
         </customView>
         <customView translatesAutoresizingMaskIntoConstraints="NO" id="512" userLabel="Tables">
-            <rect key="frame" x="0.0" y="0.0" width="549" height="359"/>
+            <rect key="frame" x="0.0" y="0.0" width="549" height="390"/>
             <userGuides>
                 <userLayoutGuide location="195" affinity="minX"/>
             </userGuides>
@@ -971,13 +971,13 @@ Gw
                     </constraints>
                 </box>
                 <box autoresizesSubviews="NO" verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="552">
-                    <rect key="frame" x="180" y="248" width="349" height="5"/>
+                    <rect key="frame" x="180" y="279" width="349" height="5"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="1" id="XQn-Hf-WgQ"/>
                     </constraints>
                 </box>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="535">
-                    <rect key="frame" x="180" y="219" width="349" height="22"/>
+                    <rect key="frame" x="180" y="250" width="349" height="22"/>
                     <buttonCell key="cell" type="check" title="Don't load blob and text fields until needed" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="538">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -988,6 +988,19 @@ Gw
                     </constraints>
                     <connections>
                         <binding destination="117" name="value" keyPath="values.LoadBlobsAsNeeded" id="614"/>
+                    </connections>
+                </button>
+                <button toolTip="Show or hide the &quot;Drop a value here...&quot; area below table filters" translatesAutoresizingMaskIntoConstraints="NO" id="C1x-7W-DzP">
+                    <rect key="frame" x="180" y="219" width="349" height="22"/>
+                    <buttonCell key="cell" type="check" title="Show filter drop zone" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="rFZ-4S-9oQ">
+                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="22" id="J92-oZ-Apd"/>
+                    </constraints>
+                    <connections>
+                        <binding destination="117" name="value" keyPath="values.RuleFilterShowDropZone" id="p4g-D3-Km8"/>
                     </connections>
                 </button>
                 <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="532">
@@ -1052,7 +1065,7 @@ Gw
                     </connections>
                 </stepper>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="518">
-                    <rect key="frame" x="180" y="291" width="349" height="22"/>
+                    <rect key="frame" x="180" y="322" width="349" height="22"/>
                     <buttonCell key="cell" type="check" title="Editing a row" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="524">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -1079,7 +1092,7 @@ Gw
                     </connections>
                 </button>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="516">
-                    <rect key="frame" x="180" y="322" width="349" height="22"/>
+                    <rect key="frame" x="180" y="353" width="349" height="22"/>
                     <buttonCell key="cell" type="check" title="Adding a row" bezelStyle="regularSquare" imagePosition="left" alignment="left" state="on" inset="2" id="526">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -1106,7 +1119,7 @@ Gw
                     </connections>
                 </textField>
                 <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="514">
-                    <rect key="frame" x="18" y="323" width="154" height="20"/>
+                    <rect key="frame" x="18" y="354" width="154" height="20"/>
                     <constraints>
                         <constraint firstAttribute="height" constant="20" id="atp-2o-EmZ"/>
                         <constraint firstAttribute="width" constant="150" id="uia-kW-GYj"/>
@@ -1118,7 +1131,7 @@ Gw
                     </textFieldCell>
                 </textField>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="513">
-                    <rect key="frame" x="180" y="260" width="349" height="22"/>
+                    <rect key="frame" x="180" y="291" width="349" height="22"/>
                     <buttonCell key="cell" type="check" title="Removing a row" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="529">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
@@ -1241,7 +1254,7 @@ Gw
                 <constraint firstItem="535" firstAttribute="trailing" secondItem="518" secondAttribute="trailing" id="Prb-2M-s2K"/>
                 <constraint firstItem="515" firstAttribute="trailing" secondItem="535" secondAttribute="trailing" id="Q4L-Wc-m65"/>
                 <constraint firstItem="517" firstAttribute="top" secondItem="553" secondAttribute="bottom" constant="9" id="QMo-la-sjs"/>
-                <constraint firstItem="950" firstAttribute="top" secondItem="535" secondAttribute="bottom" constant="9" id="SLx-mS-ImY"/>
+                <constraint firstItem="950" firstAttribute="top" secondItem="C1x-7W-DzP" secondAttribute="bottom" constant="9" id="SLx-mS-ImY"/>
                 <constraint firstItem="516" firstAttribute="top" secondItem="512" secondAttribute="top" constant="15" id="T2u-oA-dCw"/>
                 <constraint firstItem="1467" firstAttribute="top" secondItem="532" secondAttribute="bottom" constant="9" id="Te7-4g-Xzx"/>
                 <constraint firstItem="515" firstAttribute="centerY" secondItem="517" secondAttribute="centerY" id="Vat-H9-p6s"/>
@@ -1256,6 +1269,9 @@ Gw
                 <constraint firstItem="535" firstAttribute="trailing" secondItem="552" secondAttribute="trailing" id="gEf-Yt-4oK"/>
                 <constraint firstItem="517" firstAttribute="leading" secondItem="516" secondAttribute="leading" id="gbh-Ii-Zzd"/>
                 <constraint firstItem="535" firstAttribute="top" secondItem="552" secondAttribute="bottom" constant="9" id="id8-2Z-Cwy"/>
+                <constraint firstItem="C1x-7W-DzP" firstAttribute="leading" secondItem="535" secondAttribute="leading" id="FtA-M9-Yt1"/>
+                <constraint firstItem="C1x-7W-DzP" firstAttribute="top" secondItem="535" secondAttribute="bottom" constant="9" id="V8s-E2-Hn6"/>
+                <constraint firstItem="C1x-7W-DzP" firstAttribute="trailing" secondItem="535" secondAttribute="trailing" id="L5v-Q4-Jc7"/>
                 <constraint firstItem="suA-e3-Xus" firstAttribute="trailing" secondItem="1470" secondAttribute="trailing" id="k0P-6r-dl3"/>
                 <constraint firstItem="518" firstAttribute="leading" secondItem="516" secondAttribute="leading" id="kgA-Tk-nbF"/>
                 <constraint firstItem="950" firstAttribute="leading" secondItem="516" secondAttribute="leading" id="lri-W5-gQr"/>

@@ -37,6 +37,9 @@
 #import "SPTooltip.h"
 #import "YRKSpinningProgressIndicator.h"
 #import "SPTableContent.h"
+#import "SPCopyTable.h"
+#import "SPDataStorage.h"
+#import "SPNotLoaded.h"
 #import "SPProcessListController.h"
 #import "SPBundleManager.h"
 #import "SPWindow.h"
@@ -62,13 +65,8 @@
 #import "SPHelpViewerClient.h"
 // Base class + protocol for the Swift preference pane SPMCPPreferencePane.swift.
 #import "SPPreferencePane.h"
-// Base class for the tables list sidebar subclass SATablesListView.swift.
-#import "SPTableView.h"
-#import <SPMySQL/SPMySQLConstants.h>
 #import <SPMySQL/SPMySQLConnectionDelegate.h>
-#import <SPMySQL/SPMySQLConnectionProxy.h>
+// Also pulls in SPMySQLResult and the querying category (queryString:,
+// escapeAndQuoteString:, queryErrored, ...) needed by SPAppController+MCP.swift.
 #import <SPMySQL/SPMySQLConnection.h>
-// Full umbrella so Swift can use SPMySQLResult and the querying category
-// (queryString:, escapeAndQuoteString:, queryErrored, ...) - needed by SPAppController+MCP.swift.
-#import <SPMySQL/SPMySQL.h>
 #import "SPSSHTunnel.h"

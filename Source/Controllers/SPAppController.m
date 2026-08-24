@@ -301,10 +301,16 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
         }
     }
 
-    // Note: standalone connection window (SAConnectionWindowController) is available
-    // programmatically but not yet exposed in the menu to avoid confusion with the
-    // existing "New Connection Window" XIB menu item. Menu item can be added once
-    // the standalone window fully replaces the embedded connection flow.
+    // The standalone connection window now hosts the SwiftUI connection screen
+    // and produces a document indistinguishable from the embedded flow's: the
+    // destination document's connection controller is populated from the
+    // details, the connection gets the document as its delegate, and AWS IAM /
+    // Vault resolve their credentials before connecting. Worth reaching now.
+    //
+    // It sits alongside the XIB's document-based flow rather than replacing it:
+    // this one opens a connection screen with no document behind it, and only
+    // creates a tab once a connection succeeds.
+    [self installStandaloneConnectionMenuItem];
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {

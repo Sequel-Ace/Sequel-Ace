@@ -3,7 +3,10 @@
 Sequel Ace is a native macOS GUI client for MySQL and MariaDB (a maintained fork
 of Sequel Pro). It is an AppKit application with a large Objective-C legacy
 codebase undergoing a gradual, deliberate modernization to Swift and SwiftUI.
-Deployment target is macOS 12+.
+Deployment target is macOS 13.5+ (Ventura). Anything introduced up to and
+including 13.5 needs no availability gate; 14+ APIs still do — so
+`@available`/`#available` in this codebase should only ever name 13.6 or
+later.
 
 ## Language policy — the most important rule
 
@@ -16,6 +19,33 @@ Deployment target is macOS 12+.
 - **New UI is SwiftUI** where feasible. Established hosting pattern:
   `@objc final` `NSWindowController` subclass + `NSHostingView` + SwiftUI root
   view — see `SAAboutWindowController`, `SABundleHTMLOutputWindowController`.
+- **SwiftUI view boundaries** (per Apple's performance guidance): splitting a
+  `body` into computed properties is *not* factoring for invalidation — every
+  section still shares the view's boundary and re-evaluates on any state
+  change. Give an expensive section its own `View` struct. Two caveats before
+  assuming a split helps here:
+  - A child holding `@ObservedObject`, a `Binding`, or a closure re-evaluates
+    anyway (the object publishes to it; non-equatable fields defeat SwiftUI's
+    memberwise comparison). Gate such a child with an explicit `Equatable`
+    conformance comparing only its meaningful inputs, plus `.equatable()` at
+    the call site — see `SATimeZonePicker` in `SAConnectionFormView.swift`.
+  - The connection form's single `@Published var info` makes every keystroke
+    publish model-wide; that granularity is fixed by `@Observable`
+    (macOS 14+), not by splitting views — blocked on the 13.5 target.
+- **No closure-built `Binding(get:set:)` as a child-view input** (same Apple
+  guidance): the closure pair is recreated every body evaluation and SwiftUI
+  cannot compare it, so the child re-evaluates even when nothing changed.
+  Bind through a stable key path instead — `$model.<property>` works on
+  `@ObservedObject`/`@State` even for *computed* read-write properties, so a
+  write that needs routing (validation, side effects) gets a computed accessor
+  on the model rather than a `set:` closure — see
+  `SARecordViewModel.validatedEditDraft`. (`@Bindable` + subscript is the
+  macOS 14+ form of the same idea.) Presentation flags for `.alert` get their
+  own `@State` Bool next to the presented optional rather than a Bool binding
+  derived from it. One sanctioned exception: a binding built *inside* an
+  `.equatable()`-gated child from its own snapshot, which never crosses the
+  boundary as an input — see `SATimeZonePicker.selection` and its comment for
+  why holding a live Binding there instead would break the gate.
 - **ObjC interop:** mark classes `@objc final class X: NSObject`. When a Swift
   method's internal argument label would be dropped in the generated selector,
   spell the selector explicitly — e.g. `func font(from data: Data?)` bridges to
@@ -78,8 +108,11 @@ object being decomposed), `SPTableContent.m` (~5k), `SPExportController.m`
   Beta" is a build configuration of the same target, not a separate target.
 - Dependencies come via SPM (Firebase, Alamofire, SnapKit, OCMock, FMDB, …);
   first resolve needs network access.
-- Run the "Unit Tests" target's tests for any change. The full suite is ~700+
+- Run the "Unit Tests" target's tests for any change. The full suite is 900+
   tests and should be fully green.
+- Agents: prefer the Xcode MCP (`BuildProject`, `GetTestList`, `RunSomeTests`,
+  `RunAllTests`, `GetBuildLog`) over shelling out to `xcodebuild` — see
+  [Xcode automation (MCP)](#xcode-automation-mcp) below.
 
 ### Unit Tests target — sharp edges
 
@@ -96,21 +129,48 @@ object being decomposed), `SPTableContent.m` (~5k), `SPExportController.m`
   bridge code in a separate app-target-only file (e.g. `SAFavoriteItem.swift`
   vs `SAFavoriteItem+Tree.swift`).
 
+## Xcode automation (MCP)
+
+- The repo ships an `xcode` MCP server in `.mcp.json`. It runs `xcrun
+  mcpbridge`, which is bundled with Xcode 26+ — no install step, and because it
+  is committed it works from any clone path. Approve it once per checkout when
+  the client prompts. On an older Xcode the server simply fails to start; fall
+  back to `xcodebuild` and the notes below.
+- It is **windowless**. `XcodeOpenWorkspace` does not launch the Xcode UI — a
+  background `XcodeService` does the work and nothing appears on screen. Do not
+  tell the user "I opened Xcode".
+- **Open the project first, every session.** Call `XcodeOpenWorkspace` with the
+  absolute path to `sequel-ace.xcodeproj` and pass the returned
+  `workspaceIdentifier` to the other tools. That identifier is minted per open
+  and is not stable across opens; handing a path to a workspace that is not
+  open fails with "Unknown workspace identifier".
+- Beyond file management it covers builds and tests (`BuildProject`,
+  `GetBuildLog`, `GetTestList`, `RunSomeTests`, `RunAllTests`) and reads the
+  project tree with `XcodeLS` / `XcodeGrep`, which reflect *project*
+  organization and target membership rather than the filesystem — which is what
+  you want when verifying a file was registered.
+
 ## Xcode project file (pbxproj) rules
 
 - The project uses **classic groups**, not filesystem-synchronized folders.
   Files must be registered in `project.pbxproj` with target membership.
-- **Never hand-edit `project.pbxproj` while Xcode has the project open** —
-  Xcode clobbers on-disk edits with its in-memory model, and conversely a
-  behind-Xcode's-back change (branch switch, merge) leaves Xcode's in-memory
+- **Add and remove files with `XcodeWrite` / `XcodeRM`** — they register real
+  IDs and target membership. A Swift file exercised by tests needs to land in
+  **both** "Sequel Ace" and "Unit Tests"; confirm with `XcodeLS` plus a test run
+  that shows the new tests, not by reading the pbxproj diff.
+- **Never hand-edit `project.pbxproj` while the Xcode UI has the project
+  open** — Xcode clobbers on-disk edits with its in-memory model, and
+  conversely a behind-Xcode's-back change (branch switch, merge) leaves its
   model stale: builds then silently compile the *old* file set while reporting
-  success. If the pbxproj changed outside Xcode, close and reopen the project
-  (or verify the build log actually compiled your files) before trusting any
-  build.
-- Agents with Xcode automation (MCP `XcodeWrite`/`XcodeRM`): use it to
-  add/remove files — it updates Xcode's live model with real IDs. Otherwise,
-  ask the user to add the file in Xcode rather than editing the pbxproj by
-  hand.
+  success. The MCP bridge does **not** share this hazard — it tracks the
+  pbxproj on disk, so a `git checkout` under a workspace opened by the bridge is
+  picked up with no close/reopen. Either way, after any out-of-band pbxproj
+  change, verify the build actually compiled your files before trusting it.
+- Without the MCP and without Xcode, the `xcodeproj` Ruby gem (already present
+  transitively via fastlane) writes a valid additions-only diff. Verify with
+  `plutil -lint` and a build that compiles the new files. Note it drops a couple
+  of cosmetic `/* comment */` annotations on the main group; restore them to
+  keep the diff additions-only.
 - Prefer resolving pbxproj merge conflicts by replaying the add/remove
   operations on a fresh branch instead of hand-merging conflict hunks.
 

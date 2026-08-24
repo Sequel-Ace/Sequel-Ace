@@ -315,7 +315,7 @@ C1b — pure SwiftUI `List` / `OutlineGroup` — ✅ Done (display/search/select
 - Files: new `SAFavoriteItem.swift`, `SAFavoriteItem+Tree.swift`,
   `SAFavoritesList.swift`, `UnitTests/SAFavoriteItemTests.swift`
 
-**C2. SwiftUI ConnectionFormView** — 🟡 TCP/IP form + model done; other types + SSL + hosting pending
+**C2. SwiftUI ConnectionFormView** — 🟡 All types + SSL/colour/time zone done (C2a+C2b); hosting pending (C3)
 - The 55 IBOutlets in ConnectionView.xib are the eventual target.
 
 C2a — TCP/IP form + observable model — ✅ Done
@@ -338,7 +338,8 @@ C2a — TCP/IP form + observable model — ✅ Done
   D3 validation and surfaces the failure's alertTitle/alertMessage
   via `.alert`; on success calls the `onConnect` closure (C3 will pass
   SAConnectionService there). `formStyle(.grouped)` applied via an
-  availability-gated modifier (macOS 13+; target is 12.0). Like C1b,
+  availability-gated modifier (macOS 13+; target was 12.0 at the time — the
+  gate was removed when the target moved to 13.5). Like C1b,
   nothing hosts the view yet — C3 is the host.
 - 14 unit tests in `UnitTests/SAConnectionFormModelTests.swift`:
   defaults, ObjC round-trip both ways, value-copy isolation,
@@ -348,17 +349,167 @@ C2a — TCP/IP form + observable model — ✅ Done
   objectWillChange publishing on field mutation.
 - Files were added via Xcode MCP `XcodeWrite` (real Xcode IDs); only
   the model's second (Unit Tests) membership was a manual pbxproj edit.
-- Remaining C2 scope: socket/SSH/AWS/Vault type switching, SSL options,
-  color index, time-zone picker, favorites save/auto-name parity.
+- C2b superseded this: see below.
 - Files: `Source/Controllers/MainViewControllers/ConnectionView/SAConnectionFormModel.swift`,
   `SAConnectionFormView.swift`, `UnitTests/SAConnectionFormModelTests.swift`
 
-**C3. Wire SwiftUI into SAConnectionWindowController + expose in menu**
+C2b — all connection types + SSL, colour, time zone — ✅ Done
+- `SAConnectionFormView` now renders every type `ConnectionView.xib`
+  offers. A `Picker` replaces the tab bar; the detail fields switch on
+  `info.type`. Field sets, labels and placeholders were read off the XIB
+  container by container (TCP/IP, socket, SSH, AWS IAM, Vault), so e.g.
+  the socket tab has no Port field and the SSH tab keeps its two groups
+  (tunnel credentials, then MySQL-side details + remote socket).
+- Shared sections added: colour (`SPFavoriteColorSupport`'s 7 swatches
+  plus the -1 "none" sentinel the favorites plist uses), the time-zone
+  picker, the security toggles, and the SSL file rows.
+- `SATimeZoneChoice` (Swift, pure) collapses the stored
+  (`timeZoneMode`, `timeZoneIdentifier`) pair into one selectable value,
+  making the invalid combinations unrepresentable; `SATimeZoneMenuEntry.menu()`
+  reproduces `-generateTimeZoneMenuItems` (two relative entries, then every
+  identifier sorted case-insensitively, separator on each region-prefix
+  change). Setting the choice clears the identifier outside the fixed
+  mode, matching `-didChangeSelectedTimeZone:`.
+- Per-type form shape lives on the model (`forcesSSL`, `showsSSLToggle`,
+  `showsSSLFileOptions`, …) so it is testable: AWS IAM turns SSL and the
+  cleartext plugin on itself, so its tab shows neither toggle nor an SSL
+  container — it shows the explanatory label instead, which is exactly
+  what the XIB does.
+- Bool bridges for the `Int`-typed flags (`useSSL`, `allowDataLocalInfile`,
+  …) so Toggles can bind; non-zero reads as on, matching the ObjC
+  `-boolValue` the favorites plist is read with.
+- ⚠️ **`vaultCredentialsPath` is a computed join, not a field.** The first
+  cut bound a single "Vault mount" text field straight to it; the AppKit
+  controller actually keeps `vaultMount` + `vaultCredentialsRole` ivars and
+  computes the path via `SAVaultCredentialsPath`. The model now mirrors
+  that with two stored halves — they cannot be derived from the path,
+  because `credPath(mount:role:)` returns "" while the role is blank, so a
+  mount typed first would vanish. Writing the tests for it caught a real
+  bug: the resplit assigned `vaultMount` and then re-read
+  `info.vaultCredentialsPath` for the role, but the first assignment had
+  already rewritten that path from the half-updated pair, so loading a
+  favorite kept the previous role.
+- 25 new tests in `SAConnectionFormModelTests` (42 total): time-zone
+  round-trip and menu shape, the flag bridges, per-type form shape, the
+  connect gate and generated name across all five types, and the Vault
+  mount/role split including the resplit-on-load case.
+- Review follow-up (Codex P1/P2, CodeRabbit): three gaps against the AppKit
+  form, all confirmed against `SPConnectionController` before fixing.
+  - The file chooser stored only the path. `-chooseKeyLocation:` also writes a
+    read-only security-scoped bookmark, without which a saved favorite cannot
+    reach its key or certificate after the next launch — the panel grants
+    access for the current launch only. The SwiftUI row now writes the same
+    bookmark, and clears the row on cancel as the AppKit flow does.
+  - It also accepted any existing file. `-chooseKeyLocation:` runs
+    `validateKeyFile:`/`validateCertFile:` on the SSL key and client
+    certificate (and, deliberately, on neither the SSH key nor the CA cert).
+    Those checks moved into `SAConnectionFileValidator` + `SAConnectionFileKind`
+    — pure, so they are tested on strings rather than needing a controller.
+  - Vault could reach `onConnect` with an unusable configuration:
+    `-initiateConnection:` rejects a blank vault host, credentials path or
+    database host, and none of those were checked. They now gate both the
+    Connect button and `validate()`, in the controller's order, via two new
+    `SAConnectionValidationFailureKind` cases.
+  - Also: the time-zone menu is built once rather than re-sorted on every
+    `body` evaluation (which is every keystroke), and the colour swatch labels
+    are derived from position and localized instead of a hardcoded English
+    name list.
+- Not covered here, deliberately: the AWS "Authorize Access to ~/.aws…"
+  bookmark flow (needs Security-framework state, same reason D3 left it
+  inline), the Vault role *list* fetch behind the XIB's combo box and its
+  Refresh button (`SAVaultRoleListController`) — the Role field is plain
+  text for now — and favorites save parity. All three want a live host,
+  so they belong to C3.
+- Files: `SAConnectionFormModel.swift`, `SAConnectionFormView.swift`,
+  `UnitTests/SAConnectionFormModelTests.swift`
+
+**C3. Wire SwiftUI into SAConnectionWindowController + expose in menu** — ✅ Done (favorites CRUD + keychain still with the AppKit form)
+- ✅ Done: `SAConnectionWindowController` now hosts `SAConnectionWindowView`
+  (an `NSHostingView` over `SAFavoritesList` + `SAConnectionFormView` in an
+  `HSplitView`) instead of instantiating `SPConnectionController`. This is the
+  first place the C1b/C2 views actually run — until now both compiled but
+  nothing created them.
+- ✅ Selecting a favorite populates the form through the D1 decoder
+  (`SAConnectionFormModel.load(favorite:)`); Quick Connect resets it. Connecting
+  validates via D3/C2b and goes through the existing `connectDirectly`, i.e.
+  `SAConnectionService`, with no `SPConnectionController` involved.
+- ✅ The "New Connection Window" menu item is enabled. It sits alongside the
+  XIB's document-based flow rather than replacing it.
+- ✅ **The handoff is complete** (three gaps found by Codex on #2572; hosting the
+  views turned them from dead scaffolding into live code):
+  - `SAConnectionInfoObjC.apply(to:)` populates the destination document's
+    `SPConnectionController` before the connection is handed over, so the new
+    tab's title, database, host, user, port and colour are right and `.spf`
+    serialization carries real details. It is written as the exact inverse of
+    `-_buildConnectionInfo`, field for field in the same order; the two were
+    diffed mechanically to confirm 41/41 coverage both ways, which is a stronger
+    check than a hand-written test since the risk here is omission, not logic.
+  - AWS IAM and Vault now resolve their credentials before connecting.
+    `SAConnectionService` only configures transport flags, so the window calls
+    `AWSIAMAuthManager.generateAuthToken` for the RDS token (on the main queue,
+    since the profile flow can raise an MFA sheet) and `VaultAuthManager`
+    for ephemeral credentials (off the main queue — the OIDC leg can open a
+    browser for up to two minutes — clearing the cached pair on failure so a
+    retry re-runs it).
+  - The established connection is given the destination document as its
+    delegate; without it the framework fell back to bare automatic retry with no
+    query-error logging, no no-connection alert, no keychain prompt on reconnect
+    and no connection-loss UI.
+- ✅ Second review round on the connect path (Codex, #2572), all seven fixed:
+  Vault favorites keep a custom `vaultPort` / `vaultOIDCMount` (D1 omits them
+  because the AppKit controller reads them raw for its placeholders, so this
+  path carries them itself); Quick Connect resets through the nil-favorite
+  decoder rather than `SAConnectionInfo()`, restoring colour -1 / compression
+  on / profile "default"; the connection details are snapshotted before the
+  asynchronous Vault leg so one endpoint's credentials cannot pair with
+  another's details; an in-flight Vault OIDC login is cancelled on window close
+  instead of holding its exclusive slot for two minutes; AWS IAM checks and
+  prompts for `~/.aws` authorization before generating a token, which the
+  sandbox needs and only `-authorizeAWSDirectory:` used to offer; a cancelled
+  SSH password prompt no longer shows a spurious "Connection failed"; and the
+  handoff asks TabManager for a *window* rather than a tab, since
+  `newWindowForTab()` resolves through `mainWindow`, whose assertion that a
+  managed database window is main would fire — and crash Debug — with the
+  standalone window frontmost.
+- ⚠️ Also still owned by the AppKit form:
+  keychain password retrieval for a selected favorite (the D1 decoder never
+  carried passwords, and the lookup needs the account/service naming still in
+  `SPConnectionController`), favorites CRUD from this window (add / duplicate /
+  delete / rename / reorder), and the Vault role-list fetch. Typing a password
+  into the form works; a saved favorite's password does not auto-fill.
+- 5 new model tests (73 in `SAConnectionFormModelTests`) covering favorite load,
+  password non-carry, the Vault re-split on load, nil favorites and Quick Connect.
 - The standalone connection window is the ideal host for SwiftUI views
 - Replace the embedded SPConnectionController with SwiftUI favorites list + connection form
 - Use `SAConnectionService` directly for connection establishment
 - Re-enable the "New Connection Window" menu item (currently deferred to avoid duplicate with XIB item)
 - Eventually the XIB menu item (`newWindow:`) gets replaced by the standalone window flow
+
+**C2/C3 follow-up — SwiftUI invalidation boundaries** — 🟡 Time-zone picker done
+- Apple's guidance: computed-property sections share their view's invalidation
+  boundary, so `SAConnectionFormView`'s sections all re-evaluate on every
+  keystroke (any `info` mutation publishes). The one expensive section — the
+  ~600-entry time-zone menu — is now `SATimeZonePicker`, a separate `View`
+  struct with an explicit `Equatable` conformance keyed on the selection and
+  `.equatable()` at the call site. The conformance is load-bearing: the
+  `onSelect` closure defeats SwiftUI's memberwise comparison, so a plain child
+  struct would have re-evaluated anyway.
+- Splitting the remaining sections is deliberately not done: each holds
+  `Binding`s into the shared model, so extra structs would add boundaries that
+  never skip. The real granularity fix is `@Observable`'s per-property
+  tracking — **macOS 14+, blocked on the 13.5 deployment target**. Revisit when
+  the target moves; until then treat `SATimeZonePicker` as the pattern for any
+  genuinely expensive section (guidance recorded in AGENTS.md).
+- Companion rule, same source: no closure-built `Binding(get:set:)` as a
+  child-view input — SwiftUI cannot compare the closures, so the child
+  re-evaluates regardless. The three shipped instances were converted:
+  `SARecordView`'s edit field now binds `$model.validatedEditDraft`, a computed
+  accessor routing writes through validation (the stand-in for
+  `@Bindable` + subscript, which needs macOS 14), and both connection-form alerts present via a
+  dedicated `@State` Bool instead of a Bool binding derived from the optional.
+  `SATimeZonePicker.selection` stays closure-built on purpose — built inside
+  the `.equatable()` gate from a snapshot, it never crosses a boundary; its
+  comment explains why a live keypath Binding there would break the gate.
 
 ### Phase D: SPConnectionController further cleanup
 
@@ -486,20 +637,29 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
    replaced SPHelpViewerController + HelpViewer.xib; **legacy WebKit is now gone
    from the codebase** (33 deprecation warnings retired). Execution notes in
    `docs/development/warnings-elimination-plan.md`.
-2. **C2b — extend SAConnectionFormModel/View to all connection types**
-   (socket, SSH, AWS IAM, Vault + SSL options, colour, time zone). Scope grew
-   since June: Vault and AWS variants now exist and must be covered. Reuse
-   D1/D3 extractions; every new sub-form gets model tests.
-3. **C3 — make the standalone window real**: host SAFavoritesList +
-   SAConnectionFormView in SAConnectionWindowController via
-   SAConnectionViewCoordinator, drive it with SAConnectionService. The
-   scaffolding and menu item already exist; this is the payoff milestone that
-   also stops the SPConnectionController regression (new connection UI stops
-   landing in the XIB).
-4. **SPConnectionController re-containment**: extract the freshly-added
-   import/duplicate-detection logic (mostly pure dictionary work, see the
-   `candidate*`/`detail*`/`imported*` naming from the shadow-rename pass) into
-   tested Swift. Best done while the code is young.
+2. ~~**C2b — extend SAConnectionFormModel/View to all connection types**~~ —
+   ✅ Done. All five types render, with SSL options, colour and time zone;
+   42 model tests. The AWS `~/.aws` authorization, the Vault role-list fetch
+   and favorites save parity were deliberately left to C3, which supplies the
+   live host they need.
+3. ~~**C3 — make the standalone window real**~~ — ✅ Done. The standalone window
+   hosts SAFavoritesList + SAConnectionFormView, drives SAConnectionService
+   directly (IAM/Vault credentials included), and the "New Connection Window"
+   menu item is live. Favorites CRUD, keychain retrieval and the Vault
+   role-list fetch remain with the AppKit form — see the C3 section above.
+4. **SPConnectionController re-containment** — 🟡 Duplicate detection done.
+   `SAFavoriteDuplicateMatcher` (both targets, 21 tests) now owns the pure
+   rules: connection-type string↔tag mapping (including the deliberate quirk
+   that Vault compares as TCP/IP), port normalization (NSNumber/NSString,
+   empty → 3306 except sockets), the base + mode-specific duplicate predicate
+   fed by both import paths (URL keys first, favorite-plist keys second), and
+   the name/ID-preserving merge behind "Update". The controller keeps the
+   SPTreeNode walk (B2b sharp edge), the alert UI and the keychain side
+   effects; its three class helpers are one-line delegations. Remaining in
+   this item: the connection-string → favorite-dictionary *mapping* itself
+   (`favoriteDictionaryFromConnectionDetails`-shaped code around
+   SPConnectionController.m:2300) and the import-plist ID reassignment /
+   leaf-collection helpers — same extraction pattern, next slice.
 5. **Warnings remainder** (step 9 + deferred SecKeychain/NSConnection/
    OpenSSL — see warnings plan). Step 8 (Swift 6 concurrency) is ✅ done: the
    three blocking-wrapper/observer-token sites now go through
@@ -508,8 +668,12 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
    rather than the drag-API rewrites the plan assumed: 36 of its 42 warnings
    were fixed by declaring `NSMenuItemValidation` /
    `NSControlTextEditingDelegate` / `NSFontChanging` /
-   `NSToolbarItemValidation` (step 9a, done). Only 6 real delegate methods
-   remain (step 9b), and those do want manual verification.
+   `NSToolbarItemValidation` (step 9a, done). Step 9b (the 6 real delegate
+   methods) is now also done: part 1 migrated the internal reorders, part 2 the
+   three drag-*out* payloads (query results, table content, navigator) via
+   `SADragPasteboard`, which also retired the navigator's two non-UTI
+   pasteboard type names. The drag-out paths still want the manual
+   drag-into-TextEdit verification listed in the warnings plan.
 6. **Phase E (table content / custom query services)** — explicitly gated on
    the PostgreSQL abstraction decision (#2482/#2493): if it lands, extract
    against `id<SPDatabaseConnection>`; starting before that decision risks

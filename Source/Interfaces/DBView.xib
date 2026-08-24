@@ -1036,9 +1036,9 @@
                                                                         </scroller>
                                                                     </scrollView>
                                                                     <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4676">
-                                                                        <rect key="frame" x="579" y="-1" width="111" height="32"/>
+                                                                        <rect key="frame" x="579" y="2" width="101" height="27"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                                                                        <buttonCell key="cell" type="push" title="Apply Filter(s)" bezelStyle="rounded" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="4677">
+                                                                        <buttonCell key="cell" type="push" title="Apply Filter(s)" bezelStyle="rounded" alignment="center" controlSize="small" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="4677">
                                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                             <font key="font" metaFont="system" size="11"/>
                                                                         </buttonCell>
@@ -1048,9 +1048,9 @@
                                                                         </connections>
                                                                     </button>
                                                                     <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xVl-jD-jgc">
-                                                                        <rect key="frame" x="579" y="-1" width="111" height="32"/>
+                                                                        <rect key="frame" x="579" y="2" width="101" height="27"/>
                                                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                                                                        <buttonCell key="cell" type="push" title="Add Filter" bezelStyle="rounded" alignment="center" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="MCE-yX-CGu">
+                                                                        <buttonCell key="cell" type="push" title="Add Filter" bezelStyle="rounded" alignment="center" controlSize="small" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="MCE-yX-CGu">
                                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                             <font key="font" metaFont="system" size="11"/>
                                                                         </buttonCell>

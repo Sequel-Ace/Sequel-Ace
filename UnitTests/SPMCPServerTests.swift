@@ -3,7 +3,8 @@
 //  Unit Tests
 //
 //  Covers the hand-rolled HTTP request parser and the Origin allow-list used
-//  by the MCP server's loopback/DNS-rebinding protection.
+//  by the MCP server's loopback/DNS-rebinding protection, and the JSON Schema
+//  the server advertises for its tools.
 //
 
 import XCTest
@@ -456,5 +457,121 @@ final class SPMCPFavoriteTests: XCTestCase {
         XCTAssertNil(SPMCPFavorite.idString(""))
         XCTAssertNil(SPMCPFavorite.idString(nil))
         XCTAssertNil(SPMCPFavorite.idString(Date()))
+    }
+}
+
+/// Covers the schemas advertised from tools/list. Clients such as VS Code and
+/// GitHub Copilot validate them and drop any tool whose schema is malformed.
+final class SAMCPToolDefinitionsTests: XCTestCase {
+
+    private let tools = SAMCPToolDefinitions.all()
+
+    /// The tools that write, and so must not be annotated read-only.
+    private let writingTools: Set<String> = ["run_query", "kill_query", "export_results"]
+
+    private func name(of tool: [String: Any]) -> String {
+        tool["name"] as? String ?? "<unnamed>"
+    }
+
+    private func inputSchema(of tool: [String: Any]) -> [String: Any] {
+        tool["inputSchema"] as? [String: Any] ?? [:]
+    }
+
+    /// The declared properties, still boxed as `Any` so that a value which is
+    /// not a schema object fails its own assertion rather than emptying the
+    /// whole dictionary through a failed cast.
+    private func properties(of tool: [String: Any]) -> [String: Any] {
+        inputSchema(of: tool)["properties"] as? [String: Any] ?? [:]
+    }
+
+    /// `true` if `schema` declares an array, written either as a bare type or
+    /// inside a type union.
+    private func declaresArray(_ schema: [String: Any]) -> Bool {
+        if let type = schema["type"] as? String { return type == "array" }
+        if let types = schema["type"] as? [String] { return types.contains("array") }
+        return false
+    }
+
+    // MARK: - Catalogue
+
+    func testToolNamesArePresentAndUnique() {
+        XCTAssertFalse(tools.isEmpty)
+        let names = tools.map { name(of: $0) }
+        XCTAssertFalse(names.contains("<unnamed>"))
+        XCTAssertEqual(Set(names).count, names.count, "tool names must be unique")
+        XCTAssertTrue(names.contains("run_query"))
+    }
+
+    func testEveryToolHasADescription() {
+        for tool in tools {
+            XCTAssertFalse((tool["description"] as? String ?? "").isEmpty, "\(name(of: tool)) has no description")
+        }
+    }
+
+    // MARK: - Schema validity
+
+    // An array schema without "items" is invalid JSON Schema and strict clients
+    // reject the whole tool.
+    func testEveryArrayPropertyDeclaresItems() {
+        var checked = 0
+        for tool in tools {
+            for (property, value) in properties(of: tool) {
+                guard let schema = value as? [String: Any] else {
+                    XCTFail("\(name(of: tool)).\(property) is not a schema object")
+                    continue
+                }
+                guard declaresArray(schema) else { continue }
+                checked += 1
+                XCTAssertTrue(schema["items"] is [String: Any],
+                              "\(name(of: tool)).\(property) declares an array without an items schema")
+            }
+        }
+        XCTAssertGreaterThan(checked, 0, "no array property was reached, so this guard asserted nothing")
+    }
+
+    func testRunQueryParamsAcceptsTheScalarsTheBinderSupports() {
+        guard let runQuery = tools.first(where: { name(of: $0) == "run_query" }) else {
+            XCTFail("run_query is missing from the tool list")
+            return
+        }
+        let params = properties(of: runQuery)["params"] as? [String: Any]
+        XCTAssertEqual(params?["type"] as? String, "array")
+        let items = params?["items"] as? [String: Any]
+        XCTAssertEqual(items?["type"] as? [String], ["string", "number", "boolean", "null"])
+    }
+
+    func testEveryToolDeclaresAnObjectInputSchema() {
+        for tool in tools {
+            XCTAssertEqual(inputSchema(of: tool)["type"] as? String, "object", "\(name(of: tool)) inputSchema is not an object")
+        }
+    }
+
+    func testEveryRequiredEntryNamesADeclaredProperty() {
+        for tool in tools {
+            let declared = properties(of: tool)
+            for required in inputSchema(of: tool)["required"] as? [String] ?? [] {
+                XCTAssertNotNil(declared[required], "\(name(of: tool)) requires \(required) but does not declare it")
+            }
+        }
+    }
+
+    func testEveryToolDefinitionIsJSONSerializable() {
+        for tool in tools {
+            XCTAssertTrue(JSONSerialization.isValidJSONObject(tool), "\(name(of: tool)) is not JSON-serializable")
+        }
+    }
+
+    // MARK: - Annotations
+
+    // destructiveHint is derived from the readOnly flag, so dropping that flag
+    // would advertise a writing tool as safe to run unattended.
+    func testOnlyWritingToolsAreAnnotatedDestructive() {
+        for tool in tools {
+            let annotations = tool["annotations"] as? [String: Any] ?? [:]
+            let writes = writingTools.contains(name(of: tool))
+            XCTAssertEqual(annotations["readOnlyHint"] as? Bool, !writes, "\(name(of: tool)) readOnlyHint")
+            XCTAssertEqual(annotations["destructiveHint"] as? Bool, writes, "\(name(of: tool)) destructiveHint")
+            XCTAssertEqual(annotations["openWorldHint"] as? Bool, false, "\(name(of: tool)) openWorldHint")
+        }
     }
 }
