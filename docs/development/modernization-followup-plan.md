@@ -338,7 +338,8 @@ C2a — TCP/IP form + observable model — ✅ Done
   D3 validation and surfaces the failure's alertTitle/alertMessage
   via `.alert`; on success calls the `onConnect` closure (C3 will pass
   SAConnectionService there). `formStyle(.grouped)` applied via an
-  availability-gated modifier (macOS 13+; target is 12.0). Like C1b,
+  availability-gated modifier (macOS 13+; target was 12.0 at the time — the
+  gate was removed when the target moved to 13.0). Like C1b,
   nothing hosts the view yet — C3 is the host.
 - 14 unit tests in `UnitTests/SAConnectionFormModelTests.swift`:
   defaults, ObjC round-trip both ways, value-copy isolation,
@@ -496,15 +497,15 @@ C2b — all connection types + SSL, colour, time zone — ✅ Done
 - Splitting the remaining sections is deliberately not done: each holds
   `Binding`s into the shared model, so extra structs would add boundaries that
   never skip. The real granularity fix is `@Observable`'s per-property
-  tracking — **macOS 14+, blocked on the 12.0 deployment target**. Revisit when
+  tracking — **macOS 14+, blocked on the 13.0 deployment target**. Revisit when
   the target moves; until then treat `SATimeZonePicker` as the pattern for any
   genuinely expensive section (guidance recorded in AGENTS.md).
 - Companion rule, same source: no closure-built `Binding(get:set:)` as a
   child-view input — SwiftUI cannot compare the closures, so the child
   re-evaluates regardless. The three shipped instances were converted:
   `SARecordView`'s edit field now binds `$model.validatedEditDraft`, a computed
-  accessor routing writes through validation (the macOS 12 stand-in for
-  `@Bindable` + subscript), and both connection-form alerts present via a
+  accessor routing writes through validation (the stand-in for
+  `@Bindable` + subscript, which needs macOS 14), and both connection-form alerts present via a
   dedicated `@State` Bool instead of a Bool binding derived from the optional.
   `SATimeZonePicker.selection` stays closure-built on purpose — built inside
   the `.equatable()` gate from a snapshot, it never crosses a boundary; its

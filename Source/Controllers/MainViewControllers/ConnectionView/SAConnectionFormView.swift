@@ -62,7 +62,7 @@ struct SAConnectionFormView: View {
             }
             connectSection
         }
-        .modifier(SAGroupedFormStyle())
+        .formStyle(.grouped)
         .alert(
             validationFailure?.alertTitle ?? "",
             isPresented: $isPresentingValidationFailure,
@@ -613,17 +613,5 @@ private struct SAOptionalFileRow: View {
         )
 
         path = url.path
-    }
-}
-
-/// Applies the grouped form style where available (macOS 13+); on
-/// macOS 12 the default Form rendering is used.
-private struct SAGroupedFormStyle: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(macOS 13.0, *) {
-            content.formStyle(.grouped)
-        } else {
-            content
-        }
     }
 }
