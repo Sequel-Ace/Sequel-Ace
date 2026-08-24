@@ -337,12 +337,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 
     SPLog(@"checking for updates");
     executeOnLowPrioQueueAfterADelay(^{
-        // Re-read the preference so a launch check queued during the delay does
-        // not make a GitHub request after automatic checks have been disabled.
-        if ([SAGitHubReleaseCheckPolicy shouldCheckWithIsUserInitiated:isFromMenuCheck
-                                                automaticChecksEnabled:[defaults boolForKey:SPShowUpdateAvailable]]) {
-            [NSBundle.mainBundle checkForNewVersionWithIsFromMenuCheck:isFromMenuCheck];
-        }
+        [NSBundle.mainBundle checkForNewVersionWithIsFromMenuCheck:isFromMenuCheck];
     }, delay);
 }
 

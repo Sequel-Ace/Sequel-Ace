@@ -8,7 +8,7 @@
 import XCTest
 
 final class SAGitHubReleaseTests: XCTestCase {
-    func testAutomaticUpdateCheckPreferenceDoesNotBlockManualChecks() {
+    func testAutomaticAndRetryChecksRequirePreferenceWhileManualChecksDoNot() {
         XCTAssertFalse(SAGitHubReleaseCheckPolicy.shouldCheck(isUserInitiated: false,
                                                               automaticChecksEnabled: false))
         XCTAssertTrue(SAGitHubReleaseCheckPolicy.shouldCheck(isUserInitiated: false,

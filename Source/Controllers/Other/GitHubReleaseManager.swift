@@ -67,6 +67,14 @@ import OSLog
     }
 
     public func checkRelease(name: String, installedReleaseTag: String?, isUserInitiated: Bool) {
+        guard SAGitHubReleaseCheckPolicy.shouldCheck(
+            isUserInitiated: isUserInitiated,
+            automaticChecksEnabled: UserDefaults.standard.bool(forKey: SPShowUpdateAvailable)
+        ) else {
+            Log.debug("Skipping automatic GitHub release check because it is disabled")
+            return
+        }
+
         if name.isEmpty {
             Log.error("name not valid")
             return
