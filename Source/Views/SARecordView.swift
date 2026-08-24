@@ -138,8 +138,8 @@ final class SARecordViewModel: ObservableObject {
     /// SwiftUI cannot compare closure-built `Binding(get:set:)` pairs, so a
     /// text field fed one is re-evaluated on every body pass. Binding
     /// `$model.validatedEditDraft` instead derives the binding through a
-    /// stable key path SwiftUI can compare — the macOS 12 equivalent of the
-    /// `@Bindable` + subscript pattern (`@Bindable` needs macOS 14).
+    /// stable key path SwiftUI can compare — the pre-`@Bindable` equivalent
+    /// of the `@Bindable` + subscript pattern (`@Bindable` needs macOS 14).
     var validatedEditDraft: String {
         get { editDraft }
         set { updateEditDraft(newValue) }
@@ -199,7 +199,7 @@ private struct SARecordView: View {
             emptyState("Select only one row", systemImage: "rectangle.stack")
         } else if model.fields.isEmpty {
             emptyState("This record has no fields", systemImage: "list.bullet.rectangle")
-        } else if #available(macOS 13.0, *) {
+        } else {
             recordFieldsTable
                 .contextMenu(forSelectionType: SARecordField.ID.self) { selection in
                     if let field = field(id: selection.first) {
@@ -210,8 +210,6 @@ private struct SARecordView: View {
                         model.requestEdit(field)
                     }
                 }
-        } else {
-            recordFieldsTable
         }
     }
 
@@ -233,25 +231,10 @@ private struct SARecordView: View {
                                 focusedFieldID = field.id
                             }
                         }
-                } else if #available(macOS 13.0, *) {
+                } else {
                     Text(field.previewValue)
                         .lineLimit(1)
                         .truncationMode(.tail)
-                } else {
-                    ZStack(alignment: .leading) {
-                        Color.clear
-                        Text(field.previewValue)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                    }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
-                        .simultaneousGesture(
-                            TapGesture(count: 2).onEnded { model.requestEdit(field) }
-                        )
-                        .contextMenu {
-                            fieldMenu(field)
-                        }
                 }
             }
         }

@@ -44,7 +44,7 @@ fi
 
 export CC=/usr/bin/clang
 export CXX=/usr/bin/clang++
-cd $MYSQL_SRC
+cd "$MYSQL_SRC" || { echo "❌ Could not enter MySQL source directory: $MYSQL_SRC. Aborting build process."; exit 1; }
 
 
 # Check that we have HomeBrew installed
@@ -60,22 +60,30 @@ if [[ $? != 0 ]] ; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
-rm -rf $BUILD_DIR/arm64
-mkdir -p $BUILD_DIR/arm64
+rm -rf "$BUILD_DIR/arm64"
+mkdir -p "$BUILD_DIR/arm64"
 /opt/homebrew/bin/brew install icu4c googletest bison flex ninja cmake lz4 zlib llvm openssl@3
-export MACOSX_DEPLOYMENT_TARGET=12.0
-export OPENSSL_ROOT_DIR=$(/opt/homebrew/bin/brew --prefix openssl@3)
-export OPENSSL_LIB_DIR=$(/opt/homebrew/bin/brew --prefix openssl@3)"/lib"
-export OPENSSL_INCLUDE_DIR=$(/opt/homebrew/bin/brew --prefix openssl@3)"/include"
+export MACOSX_DEPLOYMENT_TARGET=13.5
+# Resolve the prefix separately: `export FOO=$(...)` always exits 0, so a
+# failed `brew --prefix` would export empty paths and the build would go on
+# with a silently broken OpenSSL.
+openssl_prefix="$(/opt/homebrew/bin/brew --prefix openssl@3)"
+if [ -z "${openssl_prefix}" ] || [ ! -d "${openssl_prefix}" ]; then
+    echo "❌ Could not resolve openssl@3 via /opt/homebrew/bin/brew (arm64). Aborting build process."
+    exit 1
+fi
+export OPENSSL_ROOT_DIR="${openssl_prefix}"
+export OPENSSL_LIB_DIR="${openssl_prefix}/lib"
+export OPENSSL_INCLUDE_DIR="${openssl_prefix}/include"
 
-/opt/homebrew/bin/cmake -S . -B $BUILD_DIR/arm64 \
+/opt/homebrew/bin/cmake -S . -B "$BUILD_DIR/arm64" \
     -DCMAKE_OSX_ARCHITECTURES=arm64 \
-    -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
+    -DCMAKE_OSX_DEPLOYMENT_TARGET=13.5 \
     -DCMAKE_CXX_STANDARD=20 \
     -DCMAKE_SYSTEM_PROCESSOR=arm64 \
-    -DCMAKE_OSX_SYSROOT=$(xcrun --sdk macosx --show-sdk-path) \
-    -DCMAKE_CXX_FLAGS="-stdlib=libc++ -nostdinc++ -I/opt/homebrew/opt/llvm/include/c++/v1 -mmacosx-version-min=12.0" \
-    -DCMAKE_INSTALL_PREFIX=$BUILD_DIR/arm64/install \
+    -DCMAKE_OSX_SYSROOT="$(xcrun --sdk macosx --show-sdk-path)" \
+    -DCMAKE_CXX_FLAGS="-stdlib=libc++ -nostdinc++ -I/opt/homebrew/opt/llvm/include/c++/v1 -mmacosx-version-min=13.5" \
+    -DCMAKE_INSTALL_PREFIX="$BUILD_DIR/arm64/install" \
     -DCMAKE_PREFIX_PATH="/opt/homebrew/opt/gtest;/opt/homebrew/opt/icu4c;/opt/homebrew/opt/openssl" \
     -DBISON_EXECUTABLE=/opt/homebrew/opt/bison/bin/bison \
     -DWITH_SSL=/opt/homebrew/opt/openssl@3 \
@@ -106,30 +114,38 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-/opt/homebrew/bin/cmake --build $BUILD_DIR/arm64 --target install --parallel $(sysctl -n hw.ncpu)
+/opt/homebrew/bin/cmake --build "$BUILD_DIR/arm64" --target install --parallel $(sysctl -n hw.ncpu)
 # Check if CMake succeeded
 if [ $? -ne 0 ]; then
     echo "❌ CMake failed! Aborting build process."
     exit 1
 fi
 
-rm -rf $BUILD_DIR/x86_64
-mkdir -p $BUILD_DIR/x86_64
+rm -rf "$BUILD_DIR/x86_64"
+mkdir -p "$BUILD_DIR/x86_64"
 arch -x86_64 /usr/local/bin/brew install icu4c googletest bison flex ninja cmake lz4 zlib llvm openssl@3
 mkdir -p /usr/local/mysql/lib/private
-export MACOSX_DEPLOYMENT_TARGET=12.0
-export OPENSSL_ROOT_DIR=$(/usr/local/bin/brew --prefix openssl@3)
-export OPENSSL_LIB_DIR=$(/usr/local/bin/brew --prefix openssl@3)"/lib"
-export OPENSSL_INCLUDE_DIR=$(/usr/local/bin/brew --prefix openssl@3)"/include"
+export MACOSX_DEPLOYMENT_TARGET=13.5
+# Resolve the prefix separately: `export FOO=$(...)` always exits 0, so a
+# failed `brew --prefix` would export empty paths and the build would go on
+# with a silently broken OpenSSL.
+openssl_prefix="$(/usr/local/bin/brew --prefix openssl@3)"
+if [ -z "${openssl_prefix}" ] || [ ! -d "${openssl_prefix}" ]; then
+    echo "❌ Could not resolve openssl@3 via /usr/local/bin/brew (x86_64). Aborting build process."
+    exit 1
+fi
+export OPENSSL_ROOT_DIR="${openssl_prefix}"
+export OPENSSL_LIB_DIR="${openssl_prefix}/lib"
+export OPENSSL_INCLUDE_DIR="${openssl_prefix}/include"
 
-arch -x86_64 /usr/local/bin/cmake -S . -B $BUILD_DIR/x86_64 \
+arch -x86_64 /usr/local/bin/cmake -S . -B "$BUILD_DIR/x86_64" \
     -DCMAKE_OSX_ARCHITECTURES=x86_64 \
-    -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
+    -DCMAKE_OSX_DEPLOYMENT_TARGET=13.5 \
     -DCMAKE_CXX_STANDARD=20 \
     -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
-    -DCMAKE_OSX_SYSROOT=$(xcrun --sdk macosx --show-sdk-path) \
-    -DCMAKE_CXX_FLAGS="-stdlib=libc++ -nostdinc++ -I/usr/local/opt/llvm/include/c++/v1 -mmacosx-version-min=12.0" \
-    -DCMAKE_INSTALL_PREFIX=$BUILD_DIR/x86_64/install \
+    -DCMAKE_OSX_SYSROOT="$(xcrun --sdk macosx --show-sdk-path)" \
+    -DCMAKE_CXX_FLAGS="-stdlib=libc++ -nostdinc++ -I/usr/local/opt/llvm/include/c++/v1 -mmacosx-version-min=13.5" \
+    -DCMAKE_INSTALL_PREFIX="$BUILD_DIR/x86_64/install" \
     -DCMAKE_PREFIX_PATH="/usr/local/gtest_x86_64;/usr/local/icu_x86_64" \
     -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison \
     -DWITH_SSL=/usr/local/opt/openssl@3 \
@@ -160,7 +176,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-arch -x86_64 /usr/local/bin/cmake --build $BUILD_DIR/x86_64 --target install --parallel $(sysctl -n hw.ncpu)
+arch -x86_64 /usr/local/bin/cmake --build "$BUILD_DIR/x86_64" --target install --parallel $(sysctl -n hw.ncpu)
 # Check if CMake succeeded
 if [ $? -ne 0 ]; then
     echo "❌ CMake failed! Aborting build process."
@@ -168,17 +184,17 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "***** creating universallibraries in $TARGET_BUILD_DIR *****"
-lipo -create -output $TARGET_BUILD_DIR/libmysqlclient.24.dylib \
-    $BUILD_DIR/x86_64/install/lib/libmysqlclient.24.dylib \
-    $BUILD_DIR/arm64/install/lib/libmysqlclient.24.dylib
+lipo -create -output "$TARGET_BUILD_DIR/libmysqlclient.24.dylib" \
+    "$BUILD_DIR/x86_64/install/lib/libmysqlclient.24.dylib" \
+    "$BUILD_DIR/arm64/install/lib/libmysqlclient.24.dylib"
 
-lipo -create -output $TARGET_BUILD_DIR/libcrypto.3.dylib \
-    $BUILD_DIR/x86_64/install/lib/libcrypto.3.dylib \
-    $BUILD_DIR/arm64/install/lib/libcrypto.3.dylib
+lipo -create -output "$TARGET_BUILD_DIR/libcrypto.3.dylib" \
+    "$BUILD_DIR/x86_64/install/lib/libcrypto.3.dylib" \
+    "$BUILD_DIR/arm64/install/lib/libcrypto.3.dylib"
 
-lipo -create -output $TARGET_BUILD_DIR/libssl.3.dylib \
-    $BUILD_DIR/x86_64/install/lib/libssl.3.dylib \
-    $BUILD_DIR/arm64/install/lib/libssl.3.dylib
+lipo -create -output "$TARGET_BUILD_DIR/libssl.3.dylib" \
+    "$BUILD_DIR/x86_64/install/lib/libssl.3.dylib" \
+    "$BUILD_DIR/arm64/install/lib/libssl.3.dylib"
 
 # lipo -create -output $TARGET_BUILD_DIR/libprotobuf-lite.24.4.0.dylib \
 #     $BUILD_DIR/x86_64/install/lib/libprotobuf-lite.24.4.0.dylib \
@@ -193,7 +209,7 @@ lipo -create -output $TARGET_BUILD_DIR/libssl.3.dylib \
 #     $BUILD_DIR/arm64/install/lib/libfido2.1.15.0.dylib
 
 echo "***** Fixing DYLIB Paths *****"
-cd "$TARGET_BUILD_DIR"
+cd "$TARGET_BUILD_DIR" || { echo "❌ Could not enter target build directory: $TARGET_BUILD_DIR. Aborting build process."; exit 1; }
 install_name_tool -id "libmysqlclient.24.dylib" libmysqlclient.24.dylib
 install_name_tool -id "libcrypto.3.dylib" libcrypto.3.dylib
 install_name_tool -id "libssl.3.dylib" libssl.3.dylib
