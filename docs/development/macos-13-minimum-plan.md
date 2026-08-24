@@ -56,7 +56,7 @@ the decision is worth taking with that comparison in hand.
 
 ## Inventory — everything that mentions 12.0
 
-### Build settings (36 occurrences, 4 projects)
+### Xcode build settings (36 occurrences, 4 projects)
 
 | Project | Occurrences |
 | --- | --- |
@@ -72,6 +72,21 @@ assistant, `xibLocalizationPostprocessor`, PSMTabBar). A blanket
 over the four `project.pbxproj` files is correct here — there is no config that
 should stay behind — but open the project in Xcode afterwards to confirm no
 target silently picked up an inherited value instead.
+
+### The standalone dylib build script (6 occurrences)
+
+`Frameworks/libmysqlclient/build-libmysqlclient.sh` sets the minimum three
+times per architecture — `MACOSX_DEPLOYMENT_TARGET`,
+`-DCMAKE_OSX_DEPLOYMENT_TARGET`, and `-mmacosx-version-min` in
+`CMAKE_CXX_FLAGS` — for the arm64 and x86_64 passes. It is not run by CI or by
+any Xcode build; it is the recipe for regenerating the *committed*
+`libmysqlclient.24.dylib`. Bump it anyway, or the next regeneration silently
+produces a macOS 12 dylib again. The 11 → 12 bump moved this script for the
+same reason.
+
+This does **not** rebuild the dylib — see *Explicitly out of scope*. The
+committed binary keeps whatever minimum it was built with until someone runs
+the script; a dylib with a lower minimum loads fine on 13.
 
 ### Code that deletes
 
@@ -220,9 +235,23 @@ Connect numbers come back worse than expected.
    deleting. It should not name any 13.3 or 15.0 site.
 2. `./Scripts/build.sh tests` — full build plus unit tests, all schemes.
    `SAPrintUtilityTests` must still compile with its 13.3 guards intact.
-3. `grep -rn "macOS 12\|Monterey\|12\.0" --include="*.swift" --include="*.m" --include="*.h" --include="*.md" --include="*.pbxproj" .`
-   returns only intentional history (CHANGELOG entries, the readme fallback
-   line, old release notes).
+3. Sweep for stragglers, excluding this plan (which quotes the old values
+   throughout, so it matches itself):
+
+   ```sh
+   grep -rn "macOS 12\|Monterey\|12\.0" \
+     --include="*.swift" --include="*.m" --include="*.h" --include="*.md" \
+     --include="*.pbxproj" --include="*.sh" . \
+     | grep -v "docs/development/macos-13-minimum-plan.md" \
+     | grep -v "^./build/"
+   ```
+
+   What remains should be only intentional history — CHANGELOG entries, the
+   readme fallback line, old release notes — plus unrelated `12.0` literals
+   (view coordinates, font sizes, `compatibilityVersion = "Xcode 12.0"`).
+   Note the `--include="*.sh"`: without it the sweep misses
+   `build-libmysqlclient.sh`, whose `MACOSX_DEPLOYMENT_TARGET=12.0` has no
+   space around the `=` and so escapes a "macOS 12" search.
 4. **Manual pass on the two touched screens**, since PR 2 changes their real
    render path and neither is covered by a UI test: the connection form renders
    grouped, and Record View's context menu, double-click-to-edit, and value

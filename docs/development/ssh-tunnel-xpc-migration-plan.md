@@ -36,7 +36,7 @@ below is therefore spike-first and ships behind a flag.
 
 ## How it works today
 
-```
+```text
 Sequel Ace (sandboxed, app group NKQ4HJ66PX.sequel-ace)
   │
   ├─ SPSSHTunnel init                                    SPSSHTunnel.m:100-112
@@ -134,6 +134,16 @@ This is the de-risking step: it collapses the exposed API from ~30 methods to 3
 *before* any transport change, and it is independently reviewable and revertable.
 If the XPC work later stalls, this alone closes the worst of the exposure.
 
+**Lifetime is part of this step, not an afterthought.** The assistant blocks
+inside a prompt while the user types; `disconnect()` can clear
+`SAConnectionService.activeTunnel` in that window, and a weak `SPSSHTunnel`
+would go `nil` under a call already in flight. Define it explicitly: the façade
+outlives every in-flight prompt, and teardown resolves blocked waiters
+deterministically — `disconnect()` fails outstanding prompts closed (reply
+`nil`/`false`) rather than leaving the assistant blocked until ssh times out.
+Cover cancellation and app termination during *both* prompt methods; a hang
+here means the user cannot connect and cannot cancel.
+
 ## Step 2 — Shared protocol
 
 New file compiled into **both** targets:
@@ -170,6 +180,15 @@ unique, as today.
 Assistant side: replace the three `rootProxyForConnectionWithRegisteredName:`
 call sites with an `NSXPCConnection`, and **drop the `SPSSHTunnel.h` import**.
 
+**The assistant cannot read the default.** It is a separate short-lived process
+launched by ssh, so a `NSUserDefaults` key in the app decides nothing on its
+own. The app resolves the selection once, when it builds the ssh task, and
+passes it in that task's environment next to `SP_CONNECTION_VERIFY_HASH` — the
+channel that already exists and is already per-launch. A tunnel therefore uses
+one transport for its whole life, and flipping the default cannot strand a
+running tunnel halfway. Test that app and assistant agree for every launch,
+including the rollback direction.
+
 ## Step 4 — Peer validation (the security win)
 
 Replace the environment shared-secret as the primary check.
@@ -188,6 +207,16 @@ API, and pid-based lookup is racy by construction — so the step would have
 degraded to keeping the environment hash as the only check.
 
 Keep the hash anyway; it is free and it narrows the window further.
+
+**Validate both directions.** `setConnectionCodeSigningRequirement:` on the
+listener authenticates the peer that connects — the assistant. It says nothing
+about who the assistant reached. The assistant should apply the mirror-image
+`NSXPCConnection.setCodeSigningRequirement:` (same 13.0 availability) naming the
+app's identifier, so a process that registered the service name first cannot
+impersonate the app. Either that, or write down precisely which sandbox
+bootstrap guarantee makes listener spoofing impossible — but do not leave it
+implied. Verification must include a **negative** test: a connection presenting
+the wrong signing identity is rejected, in both directions.
 
 ## Step 5 — Flip the default, then delete DO
 
