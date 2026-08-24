@@ -1475,10 +1475,11 @@ module SequelAceRelease
           - [ ] Intel
           - [ ] Apple Silicon
         - macOS Versions:
-          - [ ] 12.x (Monterey)
           - [ ] 13.x (Ventura)
           - [ ] 14.x (Sonoma)
           - [ ] 15.x (Sequoia)
+          - [ ] 26.x (Tahoe)
+          - [ ] 27.x (Golden Gate)
         - Localizations:
           - [x] English release metadata generated
           - [ ] Spanish

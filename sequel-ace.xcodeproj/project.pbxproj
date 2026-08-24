@@ -3859,7 +3859,7 @@
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
 				LD_RUNPATH_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					Cocoa,
@@ -3898,7 +3898,7 @@
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
 				LD_RUNPATH_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					Cocoa,
@@ -3937,7 +3937,7 @@
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
 				LD_RUNPATH_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -4015,7 +4015,7 @@
 				GCC_WARN_UNUSED_VALUE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IBC_WARNINGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				SCRIPTS_DIR = "$(SRCROOT)/Scripts";
 				SDKROOT = macosx;
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(PROJECT_NAME)-Swift.h";
@@ -4062,7 +4062,7 @@
 					"$(inherited)",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
@@ -4094,7 +4094,7 @@
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INSTALL_PATH = /usr/local/bin;
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -4122,7 +4122,7 @@
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INSTALL_PATH = /usr/local/bin;
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -4150,7 +4150,7 @@
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INSTALL_PATH = /usr/local/bin;
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -4184,7 +4184,7 @@
 				INFOPLIST_FILE = "Resources/Plists/TunnelAssistant-Info.plist";
 				INSTALL_PATH = "/Applications/Sequel Ace.app/Contents/MacOS";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -4220,7 +4220,7 @@
 				INFOPLIST_FILE = "Resources/Plists/TunnelAssistant-Info.plist";
 				INSTALL_PATH = "/Applications/Sequel Ace.app/Contents/MacOS";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -4256,7 +4256,7 @@
 				INFOPLIST_FILE = "Resources/Plists/TunnelAssistant-Info.plist";
 				INSTALL_PATH = "/Applications/Sequel Ace.app/Contents/MacOS";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -4337,7 +4337,7 @@
 				GCC_WARN_UNUSED_VALUE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IBC_WARNINGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				SCRIPTS_DIR = "$(SRCROOT)/Scripts";
 				SDKROOT = macosx;
 				STRIP_INSTALLED_PRODUCT = NO;
@@ -4385,7 +4385,7 @@
 					"$(inherited)",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace-beta";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
@@ -4426,7 +4426,7 @@
 				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
 				LD_RUNPATH_SEARCH_PATHS = "$(SRCROOT)/Frameworks";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -4459,7 +4459,7 @@
 				INFOPLIST_FILE = "Resources/Plists/TunnelAssistant-Info.plist";
 				INSTALL_PATH = "/Applications/Sequel Ace.app/Contents/MacOS";
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -4489,7 +4489,7 @@
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				INSTALL_PATH = /usr/local/bin;
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -4540,7 +4540,7 @@
 					"$(inherited)",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
@@ -4594,7 +4594,7 @@
 					"$(inherited)",
 				);
 				LOCALIZED_STRING_SWIFTUI_SUPPORT = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sequel-ace.sequel-ace";
 				PRODUCT_MODULE_NAME = Sequel_Ace;
@@ -4681,7 +4681,7 @@
 				IBC_WARNINGS = YES;
 				LEX_INSERT_LINE_DIRECTIVES = YES;
 				LEX_SUPPRESS_DEFAULT_RULE = NO;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_SWIFT_FLAGS = "-D DEBUG";
 				SCRIPTS_DIR = "$(SRCROOT)/Scripts";
@@ -4758,7 +4758,7 @@
 				GCC_WARN_UNUSED_VALUE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IBC_WARNINGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				SCRIPTS_DIR = "$(SRCROOT)/Scripts";
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
