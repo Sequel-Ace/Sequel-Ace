@@ -198,6 +198,9 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 	[tableSourceView setEmptyDoubleClickAction:@selector(addField:)];
 
 	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:nil];
+	// Owned here rather than registered on our behalf by SPDatabaseDocument, so the
+	// registration cannot outlive this object (#2033)
+	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:nil];
 
 	NSFont *tableFont = [NSUserDefaults getFont];
 	[tableSourceView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
@@ -2787,6 +2790,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 - (void)dealloc
 {
 	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
+	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 
     NSLog(@"Dealloc called %s", __FILE_NAME__);

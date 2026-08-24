@@ -96,6 +96,10 @@ enum trackingAreaIDs
 - (void)bind:(NSString *)binding toObject:(id)observableObject withKeyPath:(NSString *)keyPath options:(NSDictionary *)options
 {
 	if ([binding isEqualToString:@"selectedTag"]) {
+		// Drop any previous registration first so re-binding cannot leak an observation
+		if (observer) {
+			[observer removeObserver:self forKeyPath:observerKeyPath];
+		}
 		[observableObject addObserver:self forKeyPath:keyPath options:0 context:nil];
 		observer = observableObject;
 		observerKeyPath = [keyPath copy];
@@ -103,6 +107,20 @@ enum trackingAreaIDs
 	else {
 		[super bind:binding toObject:observableObject withKeyPath:keyPath options:options];
 	}
+}
+
+- (void)unbind:(NSString *)binding
+{
+	if ([binding isEqualToString:@"selectedTag"]) {
+		if (observer) {
+			[observer removeObserver:self forKeyPath:observerKeyPath];
+			observer = nil;
+			observerKeyPath = nil;
+		}
+		return;
+	}
+
+	[super unbind:binding];
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
@@ -416,6 +434,17 @@ enum trackingAreaIDs
 
 // -------------------------------------------------------------------------------
 //	dealloc:
+//
+//	The KVO registrations made in initWithFrame: and bind: must not outlive this
+//	view - a dangling observation crashes the next change notification (#2033).
 // -------------------------------------------------------------------------------
+- (void)dealloc
+{
+	[self removeObserver:self forKeyPath:@"selectedTag"];
+
+	if (observer) {
+		[observer removeObserver:self forKeyPath:observerKeyPath];
+	}
+}
 
 @end
