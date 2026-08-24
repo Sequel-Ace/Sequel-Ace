@@ -3,7 +3,9 @@
 Sequel Ace is a native macOS GUI client for MySQL and MariaDB (a maintained fork
 of Sequel Pro). It is an AppKit application with a large Objective-C legacy
 codebase undergoing a gradual, deliberate modernization to Swift and SwiftUI.
-Deployment target is macOS 13+.
+Deployment target is macOS 13+ (Ventura). macOS 13 APIs need no availability
+gate; 14+ APIs still do — `@available`/`#available` in this codebase should
+only ever name 13.1 or later.
 
 ## Language policy — the most important rule
 

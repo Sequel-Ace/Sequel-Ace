@@ -97,7 +97,9 @@ target silently picked up an inherited value instead.
 ### Comments and prose
 
 - `Source/Views/SPSplitView.m:475` — "this app targets macOS 12" → 13.
-- `AGENTS.md:6` — "Deployment target is macOS 12+." → 13+.
+- `AGENTS.md:6` — "Deployment target is macOS 12+." → 13+, plus an explicit
+  rule for agents: 13 APIs need no gate, and any `@available`/`#available`
+  in this codebase should name 13.1 or later.
 - `AGENTS.md:31` and `:40` — the `@Observable`/`@Bindable` notes say "blocked on
   the 12.0 target"; reword to 13.0 (still blocked, different number).
 - `Source/Views/SARecordView.swift:141-142` — the `validatedEditDraft` comment
@@ -112,12 +114,17 @@ target silently picked up an inherited value instead.
 ### User-facing and process
 
 - `readme.md:17` — `**macOS:** >= 12.0` → `>= 13.0`.
+- `docs/index.md` — the public docs site states no system requirements at
+  all today. Add a short Requirements block under Installation so the
+  compatibility floor is visible somewhere other than the readme.
 - `readme.md:25-27` — add a fallback line in the existing house style, naming
   the last *production* release that shipped with macOS 12 support. That is
   `production/5.4.0-20109`; 5.5.0 is still on a beta tag when this lands, so it
   is not a link to hand a Monterey user. Follow the shape of the existing
   4.1.7 / 3.5.2 / 2.3.2 notes.
 - `.github/pull_request_template.md:23` — drop the `12.x (Monterey)` checkbox.
+  The issue templates ask for a free-text "macOS Version" and `SECURITY.md`
+  defers to the readme, so neither needs an edit.
 - `fastlane/lib/sequel_ace_release/cli.rb:1478` — drop `12.x (Monterey)` from
   the generated release-PR body. **Note the drift**: this template still stops
   at `15.x (Sequoia)` while the PR template already lists 26.x and 27.x. Bring
