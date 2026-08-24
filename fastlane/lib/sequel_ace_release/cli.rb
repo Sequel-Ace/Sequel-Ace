@@ -1475,7 +1475,7 @@ module SequelAceRelease
           - [ ] Intel
           - [ ] Apple Silicon
         - macOS Versions:
-          - [ ] 13.x (Ventura)
+          - [ ] 13.5+ (Ventura)
           - [ ] 14.x (Sonoma)
           - [ ] 15.x (Sequoia)
           - [ ] 26.x (Tahoe)

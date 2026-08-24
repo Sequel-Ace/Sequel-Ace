@@ -4,7 +4,7 @@
 
 ### Requirements
 
-- **macOS:** 13.0 (Ventura) or later
+- **macOS:** 13.5 (Ventura) or later
 - **Processors:** Intel & Apple Silicon
 - **MySQL:** 5.7 or later &middot; **MariaDB:** 10.0 or later
 

@@ -69,7 +69,7 @@ Facts that matter for the design:
   (`Entitlements/Sequel Ace.entitlements`). The assistant is sandboxed with
   `com.apple.security.inherit`. The DO service name is already app-group
   prefixed — that is *why* it is allowed to register at all.
-- **Deployment target is macOS 13.0.**
+- **Deployment target is macOS 13.5.**
 - **The assistant is a 5-file `com.apple.product-type.tool` target** and
   **already compiles Swift** (`StringRegexExtension.swift`). Swift in the helper
   costs nothing new.
@@ -199,7 +199,7 @@ anonymous listeners). Requirement along the lines of `anchor apple generic and
 certificate leaf[subject.OU] = "NKQ4HJ66PX" and identifier
 "<assistant identifier>"`.
 
-This needs no availability gate: the deployment target moved to 13.0 in
+This needs no availability gate: the deployment target moved to 13.5 in
 `macos-13-minimum-plan.md`, which was done specifically to unblock this step.
 On 12.0 there was no supported equivalent — `NSXPCConnection` exposes only
 `processIdentifier` and `effectiveUserIdentifier`, `auditToken` is not public
@@ -306,7 +306,7 @@ day and captures most of the security benefit.
 
 1. **Does the spike pass?** Everything depends on it.
 2. ~~**Can we require macOS 13?**~~ Answered: yes. The deployment target moved
-   to 13.0 (`macos-13-minimum-plan.md`), so Step 4 is a real win, not a partial
+   to 13.5 (`macos-13-minimum-plan.md`), so Step 4 is a real win, not a partial
    one.
 3. **Sequencing against the SPKeychain `SecItem` migration.** Both change how
    the assistant gets passwords. Suggest this project goes first: it is smaller,

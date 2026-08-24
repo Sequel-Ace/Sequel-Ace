@@ -1,4 +1,4 @@
-# Drop macOS 12, Raise the Minimum to macOS 13
+# Drop macOS 12, Raise the Minimum to macOS 13.5
 
 > **Written 2026-08-24.** Answers the open question in
 > `docs/development/ssh-tunnel-xpc-migration-plan.md` § Step 4 ("Decision
@@ -8,7 +8,7 @@
 
 ## Scope in one line
 
-`MACOSX_DEPLOYMENT_TARGET` goes 12.0 → 13.0 in all four Xcode projects, the
+`MACOSX_DEPLOYMENT_TARGET` goes 12.0 → 13.5 in all four Xcode projects, the
 macOS 12 fallback branches come out of the code, and the docs/templates that
 advertise macOS 12 get corrected. Nothing else changes behaviour.
 
@@ -33,6 +33,19 @@ advertise macOS 12 get corrected. Nothing else changes behaviour.
 4. **macOS 12 has been out of Apple security support since September 2024.**
    We are shipping a database client — one that stores credentials in the
    Keychain and opens SSH tunnels — to an OS that no longer receives patches.
+
+### Why 13.5 and not 13.0
+
+The floor is a point release, which is unusual, and it buys one concrete thing:
+**every `#available(macOS 13.3)` gate dies too.** `WKWebView.shouldPrintBackgrounds`
+landed in 13.3, so `SAPrintUtility` carried both the modern path and a
+pre-13.3 stand-in that injected `-webkit-print-color-adjust: exact` as a user
+script — two code paths for one checkbox, only one of which anyone tests. At a
+13.0 floor both survive; at 13.5 the fallback and its tests go.
+
+13.5 (July 2023) is also the last 13.x most Ventura machines actually sit on,
+and Ventura left Apple's security support in September 2025 regardless, so the
+population between 13.0 and 13.4 is small and already unsupported by Apple.
 
 ### What this does *not* unlock
 
@@ -70,7 +83,7 @@ the decision is worth taking with that comparison in hand.
 These are project-level *and* per-target overrides across the Debug / Release /
 Distribution / Beta configurations (app, Unit Tests, QLGenerator, tunnel
 assistant, `xibLocalizationPostprocessor`, PSMTabBar). A blanket
-`sed -i '' 's/MACOSX_DEPLOYMENT_TARGET = 12.0;/MACOSX_DEPLOYMENT_TARGET = 13.0;/g'`
+`sed -i '' 's/MACOSX_DEPLOYMENT_TARGET = 12.0;/MACOSX_DEPLOYMENT_TARGET = 13.5;/g'`
 over the four `project.pbxproj` files is correct here — there is no config that
 should stay behind — but open the project in Xcode afterwards to confirm no
 target silently picked up an inherited value instead.
@@ -102,12 +115,18 @@ the script; a dylib with a lower minimum loads fine on 13.
   keep the plain `Text` + `lineLimit`/`truncationMode` branch.
 - `Source/Other/Data/SPConstants.h:756` — `is_big_sur()` has **no call sites**
   anywhere in the tree. Dead since the 11 → 12 bump; remove it in this sweep.
+- `Source/Other/Utility/SAPrintUtility.swift` — the three **13.3** gates go
+  with the 13.5 floor: `shouldPrintBackgrounds` is set unconditionally in both
+  `printOperation(for:)` and the accessory's `didSet`, and the
+  `#unavailable(macOS 13.3)` block that injected
+  `-webkit-print-color-adjust: exact` as a `WKUserScript` is deleted outright.
+  That removes the second, untested rendering path for the same checkbox.
+- `UnitTests/SAPrintUtilityTests.swift:108/207` — the matching `guard #available`
+  and `if #available` come out, so both assertions now always run rather than
+  silently passing on older systems.
 
 ### Code that stays (do not over-delete)
 
-- `SAPrintUtility.swift:63/99/182` and `UnitTests/SAPrintUtilityTests.swift:108/207`
-  gate on **13.3**, not 13.0. macOS 13.0–13.2 are still in range, so every one
-  of these checks remains live and correct.
 - `SALocalNetworkPermissionChecker.swift:13` and `SPConnectionController.m:3947/3956`
   gate on 15.0. Untouched.
 
@@ -118,7 +137,7 @@ the script; a dylib with a lower minimum loads fine on 13.
   rule for agents: 13 APIs need no gate, and any `@available`/`#available`
   in this codebase should name 13.1 or later.
 - `AGENTS.md:31` and `:40` — the `@Observable`/`@Bindable` notes say "blocked on
-  the 12.0 target"; reword to 13.0 (still blocked, different number).
+  the 12.0 target"; reword to 13.5 (still blocked, different number).
 - `Source/Views/SARecordView.swift:141-142` — the `validatedEditDraft` comment
   calls itself "the macOS 12 equivalent of the `@Bindable` + subscript pattern".
   Same rewording.
@@ -130,7 +149,8 @@ the script; a dylib with a lower minimum loads fine on 13.
 
 ### User-facing and process
 
-- `readme.md:17` — `**macOS:** >= 12.0` → `>= 13.0`.
+- `readme.md:17` — `**macOS:** >= 12.0` → `>= 13.5`, and the Previous Versions
+  fallback line covers macOS 12 *and* 13.0–13.4.
 - `docs/index.md` — the public docs site states no system requirements at
   all today. Add a short Requirements block under Installation so the
   compatibility floor is visible somewhere other than the readme.
@@ -232,33 +252,38 @@ Connect numbers come back worse than expected.
 
 1. **Let the compiler find the dead branches.** After PR 1, a clean build emits
    *"unnecessary check for 'macOS'; minimum deployment target ensures guard will
-   always be true"* at exactly the macOS 13.0 gates. That warning list **is** the
+   always be true"* at exactly the macOS 13.0 and 13.3 gates. That warning list **is** the
    PR 2 work list — if it names a site this plan does not, investigate before
-   deleting. It should not name any 13.3 or 15.0 site.
+   deleting. It should not name any 15.0 site.
 2. `./Scripts/build.sh tests` — full build plus unit tests, all schemes.
-   `SAPrintUtilityTests` must still compile with its 13.3 guards intact.
+   `SAPrintUtilityTests` compiles with its 13.3 guards removed.
 3. Sweep for stragglers, excluding this plan (which quotes the old values
    throughout, so it matches itself):
 
    ```sh
-   grep -rn "macOS 12\|Monterey\|12\.0" \
+   grep -rn "macOS 12\|Monterey\|12\.0\|13\.0\|13\.3" \
      --include="*.swift" --include="*.m" --include="*.h" --include="*.md" \
-     --include="*.pbxproj" --include="*.sh" . \
+     --include="*.pbxproj" --include="*.sh" --include="*.rb" . \
      | grep -v "docs/development/macos-13-minimum-plan.md" \
      | grep -v "^./build/"
    ```
 
    What remains should be only intentional history — CHANGELOG entries, the
-   readme fallback line, old release notes — plus unrelated `12.0` literals
-   (view coordinates, font sizes, `compatibilityVersion = "Xcode 12.0"`).
-   Note the `--include="*.sh"`: without it the sweep misses
+   readme fallback line, old release notes — plus unrelated literals (view
+   coordinates, font sizes, `compatibilityVersion = "Xcode 12.0"`, the
+   `API_AVAILABLE(macos(13.0))` fact about `setConnectionCodeSigningRequirement:`).
+
+   The file filters matter more than they look. `--include="*.sh"` catches
    `build-libmysqlclient.sh`, whose `MACOSX_DEPLOYMENT_TARGET=12.0` has no
-   space around the `=` and so escapes a "macOS 12" search.
+   space around the `=` and so escapes a `"macOS 12"` search entirely.
+   `--include="*.rb"` catches the release tool's generated PR checklist in
+   `fastlane/lib/sequel_ace_release/cli.rb`, which is a required update and
+   which no other filter reaches.
 4. **Manual pass on the two touched screens**, since PR 2 changes their real
    render path and neither is covered by a UI test: the connection form renders
    grouped, and Record View's context menu, double-click-to-edit, and value
    truncation all still behave.
-5. Confirm the built app's `LC_BUILD_VERSION` minos is 13.0:
+5. Confirm the built app's `LC_BUILD_VERSION` minos is 13.5:
    `vtool -show-build-version <app>/Contents/MacOS/Sequel\ Ace | grep minos`.
 
 ## Risk
