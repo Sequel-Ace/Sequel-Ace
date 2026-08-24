@@ -201,6 +201,8 @@
 	<false/>
 	<key>ResetAutoIncrementAfterDeletionOfAllRows</key>
 	<true/>
+	<key>RuleFilterShowDropZone</key>
+	<true/>
 	<key>SelectLastFavoriteUsed</key>
 	<true/>
 	<key>ShowNoAffectedRowsError</key>

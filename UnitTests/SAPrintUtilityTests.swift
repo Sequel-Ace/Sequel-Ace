@@ -105,8 +105,6 @@ final class SAPrintUtilityTests: XCTestCase {
     }
 
     func testPrintBackgroundPreferenceIsAppliedToWebViewPreferences() {
-        guard #available(macOS 13.3, *) else { return }
-
         let defaults = UserDefaults.standard
         let original = defaults.object(forKey: printBackgroundPreferenceKey)
         defer {
@@ -204,9 +202,7 @@ final class SAPrintUtilityTests: XCTestCase {
             accessory.printsBackgrounds = true
 
             XCTAssertTrue(UserDefaults.standard.bool(forKey: printBackgroundPreferenceKey))
-            if #available(macOS 13.3, *) {
-                XCTAssertTrue(webView.configuration.preferences.shouldPrintBackgrounds)
-            }
+            XCTAssertTrue(webView.configuration.preferences.shouldPrintBackgrounds)
         }
     }
 
