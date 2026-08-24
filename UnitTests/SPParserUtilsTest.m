@@ -32,16 +32,15 @@
 
 #import <Cocoa/Cocoa.h>
 #import <XCTest/XCTest.h>
+#import "sequel-ace-Swift.h"
 
 #include "SPParserUtils.h"
-#include <stdlib.h>
 #include <string.h>
 
 @interface SPParserUtilsTest : XCTestCase
 
 - (void)testUtf8strlen;
-- (void)testUtf8strlenShortBuffers;
-- (void)testUtf8strlenLongLexerToken;
+- (void)testUtf8strlenBounds;
 
 @end
 
@@ -88,60 +87,10 @@
 	XCTAssertEqual(utf8strlen(decompSeq, strlen(decompSeq)), [decompString length], @"\"LATIN SMALL LETTER A WITH DIAERESIS\" vs. \"LATIN SMALL LETTER A\" + \"COMBINING DIAERESIS\"");
 }
 
-- (void)testUtf8strlenShortBuffers {
-	NSArray<NSString *> *cases = @[
-		@"", @"a", @"ab", @"abc", @"abcd", @"selec", @"abcdef", @"abcdefg", @"abcdefgh", @"abcdefghi",
-		@"ä", @"こ", @"\U0001F34F", @"\U0001F34F\U0001F34B"
-	];
-
-	for (NSString *string in cases) {
-		NSData *data = [string dataUsingEncoding:NSUTF8StringEncoding];
-		size_t byteLength = [data length];
-		char *allocation = malloc(byteLength + 1);
-		if (!allocation) {
-			XCTFail(@"Could not allocate test buffer");
-			return;
-		}
-
-		/* Start one byte into the allocation so the input is unaligned and ends
-		 * exactly at the allocation boundary, with no NUL terminator. Under ASan,
-		 * any read beyond the explicit byte span enters the redzone. */
-		char *bytes = allocation + 1;
-		if (byteLength > 0) {
-			memcpy(bytes, [data bytes], byteLength);
-		}
-
-		size_t actual = utf8strlen(bytes, byteLength);
-		free(allocation);
-
-		XCTAssertEqual(actual, [string length], @"character count for %@ (%zu bytes)", string, byteLength);
-	}
-}
-
-- (void)testUtf8strlenLongLexerToken {
-	/* A mixed 10-byte pattern deliberately shifts relative to the 8-byte word
-	 * boundary on every repetition, exercising both the SWAR bulk path and its
-	 * tail handling across a representative one-megabyte lexer token. */
-	const unsigned char pattern[] = {
-		'a',                         // one UTF-8 byte, one UTF-16 code unit
-		0xc3, 0xa4,                  // two UTF-8 bytes, one UTF-16 code unit
-		0xe3, 0x81, 0x93,            // three UTF-8 bytes, one UTF-16 code unit
-		0xf0, 0x9f, 0x8d, 0x8f      // four UTF-8 bytes, two UTF-16 code units
-	};
-	const size_t repetitions = 100000;
-	const size_t byteLength = sizeof(pattern) * repetitions;
-	unsigned char *bytes = malloc(byteLength);
-	if (!bytes) {
-		XCTFail(@"Could not allocate long lexer-token buffer");
-		return;
-	}
-
-	for (size_t offset = 0; offset < byteLength; offset += sizeof(pattern)) {
-		memcpy(bytes + offset, pattern, sizeof(pattern));
-	}
-
-	XCTAssertEqual(utf8strlen((const char *)bytes, byteLength), (size_t)(5 * repetitions));
-	free(bytes);
+- (void)testUtf8strlenBounds {
+	[SAParserUtilsTestSupport runTestsWithCounter:^NSUInteger(const char *bytes, NSUInteger byteLength) {
+		return utf8strlen(bytes, byteLength);
+	}];
 }
 
 @end
