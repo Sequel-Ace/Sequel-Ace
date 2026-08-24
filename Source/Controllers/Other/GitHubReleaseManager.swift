@@ -126,6 +126,15 @@ import OSLog
         installedReleaseTag: String?,
         isUserInitiated: Bool
     ) {
+        guard SAGitHubReleaseCheckPolicy.shouldCheck(
+            isUserInitiated: isUserInitiated,
+            automaticChecksEnabled: UserDefaults.standard.bool(forKey: SPShowUpdateAvailable)
+        ) else {
+            Log.debug("Stopping automatic GitHub release pagination because it is disabled")
+            checkTracker.finish(checkID)
+            return
+        }
+
         AF.request(url) { urlRequest in
             urlRequest.timeoutInterval = 60
             self.Log.debug("urlRequest: \(urlRequest)")
