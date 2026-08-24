@@ -3,7 +3,10 @@
 Sequel Ace is a native macOS GUI client for MySQL and MariaDB (a maintained fork
 of Sequel Pro). It is an AppKit application with a large Objective-C legacy
 codebase undergoing a gradual, deliberate modernization to Swift and SwiftUI.
-Deployment target is macOS 12+.
+Deployment target is macOS 13.5+ (Ventura). Anything introduced up to and
+including 13.5 needs no availability gate; 14+ APIs still do — so
+`@available`/`#available` in this codebase should only ever name 13.6 or
+later.
 
 ## Language policy — the most important rule
 
@@ -28,7 +31,7 @@ Deployment target is macOS 12+.
     the call site — see `SATimeZonePicker` in `SAConnectionFormView.swift`.
   - The connection form's single `@Published var info` makes every keystroke
     publish model-wide; that granularity is fixed by `@Observable`
-    (macOS 14+), not by splitting views — blocked on the 12.0 target.
+    (macOS 14+), not by splitting views — blocked on the 13.5 target.
 - **No closure-built `Binding(get:set:)` as a child-view input** (same Apple
   guidance): the closure pair is recreated every body evaluation and SwiftUI
   cannot compare it, so the child re-evaluates even when nothing changed.

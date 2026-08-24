@@ -301,6 +301,7 @@ static void *TableContentKVOContext = &TableContentKVOContext;
     [self->prefs addObserver:self forKeyPath:SPDisplayTableViewColumnTypes options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
     [self->prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
     [self->prefs addObserver:self forKeyPath:SPDisplayBinaryDataAsHex options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
+    [self->prefs addObserver:self forKeyPath:[SARuleFilterDropZoneLayoutPolicy defaultsKey] options:NSKeyValueObservingOptionNew context:TableContentKVOContext];
 
     // Add observer to change view sizes with filter rule editor
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -3743,22 +3744,17 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	CGFloat availableHeight = contentAreaRect.size.height;
 	NSRect ruleEditorRect = [[[ruleFilterController view] enclosingScrollView] frame];
 
-	// Space reserved at the bottom of the filter container for the
-	// "Drop a value here, or click to add a filter" zone. The drop box sits
-	// below the rule editor's scroll view, shrinking the scroll view
-	// upward so both fit without overlapping the Apply / Add Filter
-	// buttons pinned to the right.
-	CGFloat dropBoxReserved = showFilterRuleEditor ? [ruleFilterController dropBoxReservedHeight] : 0;
-	// When the rule editor has no rules, collapse its scroll view so
-	// the filter container shrinks to just the drop box – leaving a
-	// tall empty band above the drop box would look abandoned.
-	BOOL ruleEditorHasRows = showFilterRuleEditor && ![ruleFilterController isEmpty];
-	CGFloat ruleEditorTopMargin = ruleEditorHasRows ? 1 : 0;
+	SARuleFilterDropZoneLayoutMetrics *layout = [SARuleFilterDropZoneLayoutPolicy metricsWithEditorVisible:showFilterRuleEditor
+	                                                                                       editorHasRows:![ruleFilterController isEmpty]
+	                                                                                      requestedHeight:requestedHeight
+	                                                                                       dropZoneHeight:[ruleFilterController dropBoxReservedHeight]
+	                                                                                         userDefaults:prefs];
+	CGFloat dropBoxReserved = [layout dropZoneReservedHeight];
 	ruleEditorRect.origin.x = 1;
-	ruleEditorRect.origin.y = dropBoxReserved + ruleEditorTopMargin;
+	ruleEditorRect.origin.y = [layout ruleEditorOriginY];
 
 	//adjust for the UI elements below the rule editor, but only if the view should not be hidden
-	CGFloat containerRequestedHeight = showFilterRuleEditor ? (dropBoxReserved + (ruleEditorHasRows ? MAX(requestedHeight, 29) + ruleEditorTopMargin : 0)) : 0;
+	CGFloat containerRequestedHeight = [layout containerRequestedHeight];
 
 	//the rule editor can ask for about one-third of the available space before we have it use it's scrollbar
 	CGFloat topContainerGivenHeight = MAX(MIN(containerRequestedHeight,(availableHeight / 3)), 1);
@@ -3815,7 +3811,7 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
         [[[ruleFilterController view] enclosingScrollView] setFrame:ruleEditorRect];
         if (dropBox) [dropBox setFrame:dropBoxRect];
 	}
-	[dropBox setHidden:!showFilterRuleEditor];
+	[dropBox setHidden:![layout dropZoneVisible]];
 
 	//disable rubberband scrolling as long as there is nothing to scroll
     NSScrollView *filterControllerScroller = [[ruleFilterController view] enclosingScrollView];
@@ -4058,6 +4054,9 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
                                           [tableDataInstance getConstraints], @"constraints",
                                           nil];
             [[self onMainThread] setTableDetails:tableDetails];
+		}
+		else if ([keyPath isEqualToString:[SARuleFilterDropZoneLayoutPolicy defaultsKey]] && showFilterRuleEditor) {
+			[self updateFilterRuleEditorSize:[[ruleFilterController onMainThread] preferredHeight] animate:YES];
 		}
 	}
 	else {
@@ -5294,6 +5293,7 @@ static NSString* dbHostPrefKey(SPTableContent* tc) {
 		[prefs removeObserver:self forKeyPath:SPDisplayBinaryDataAsHex];
 		[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 		[prefs removeObserver:self forKeyPath:SPDisplayTableViewColumnTypes];
+		[prefs removeObserver:self forKeyPath:[SARuleFilterDropZoneLayoutPolicy defaultsKey]];
 	}
 
 	// Cancel previous performSelector: requests on ourselves and the table view

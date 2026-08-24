@@ -62,6 +62,17 @@ final class SPTableContentColumnFilterTests: XCTestCase {
         XCTAssertEqual(value, false)
     }
 
+    /// Existing users should retain the drop zone unless they explicitly hide it.
+    func testFilterDropZoneShownByDefault() {
+        guard let defaults = preferenceDefaultsDictionary() else {
+            XCTFail("Could not find PreferenceDefaults.plist in any loaded bundle")
+            return
+        }
+
+        let value = defaults[SARuleFilterDropZoneLayoutPolicy.defaultsKey] as? Bool
+        XCTAssertEqual(value, true)
+    }
+
     // MARK: - Helper Functions (mirrors SPTableContent logic)
 
     /// Parse comma-separated filter string into array of lowercase trimmed terms
