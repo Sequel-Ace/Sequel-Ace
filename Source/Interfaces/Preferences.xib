@@ -1404,7 +1404,7 @@ Gw
                 </box>
                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="nmG-Wb-i0O">
                     <rect key="frame" x="20" y="214" width="460" height="22"/>
-                    <buttonCell key="cell" type="check" title="Show alert when update is available" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="aXv-Nb-zHe">
+                    <buttonCell key="cell" type="check" title="Automatically check for updates" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="aXv-Nb-zHe">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>

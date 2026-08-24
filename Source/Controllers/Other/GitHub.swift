@@ -8,6 +8,14 @@
 
 import Foundation
 
+/// Prevents background GitHub requests without blocking explicit manual checks.
+@objc final class SAGitHubReleaseCheckPolicy: NSObject {
+    @objc(shouldCheckWithIsUserInitiated:automaticChecksEnabled:)
+    static func shouldCheck(isUserInitiated: Bool, automaticChecksEnabled: Bool) -> Bool {
+        isUserInitiated || automaticChecksEnabled
+    }
+}
+
 enum SAGitHubReleaseAppVariant {
     case production
     case beta

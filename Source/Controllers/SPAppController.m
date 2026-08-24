@@ -74,7 +74,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (void)openSessionBundleAtPath:(NSString *)filePath;
 - (void)openColorThemeFileAtPath:(NSString *)filePath;
 - (void)checkForNewVersionWithDelay:(double)delay andIsFromMenuCheck:(BOOL)isFromMenuCheck;
-- (void)removeCheckForUpdatesMenuItem;
 - (void)addCheckForUpdatesMenuItem;
 - (void)checkForNewVersionFromMenu;
 
@@ -271,8 +270,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     // Add menu item to check for updates
     [self addCheckForUpdatesMenuItem];
 
-    [prefs addObserver:self forKeyPath:SPShowUpdateAvailable options:NSKeyValueObservingOptionNew context:NULL];
-
     [[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(externalApplicationWantsToOpenADatabaseConnection:) name:@"ExternalApplicationWantsToOpenADatabaseConnection" object:nil];
 
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(duplicateConnectionToTab:) name:SPDocumentDuplicateTabNotification object:nil];
@@ -318,22 +315,11 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 }
 
 - (void)addCheckForUpdatesMenuItem {
-    if (NSBundle.mainBundle.isMASVersion == NO && [[NSUserDefaults standardUserDefaults] boolForKey:SPShowUpdateAvailable] == YES) {
+    if (NSBundle.mainBundle.isMASVersion == NO) {
         SPLog(@"Adding menu item to check for updates");
         NSMenuItem *updates = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Check for Updates...", @"Menu item Check for Updates...") action:@selector(checkForNewVersionFromMenu) keyEquivalent:@""];
         [mainMenu insertItem:updates atIndex:1];
     }
-}
-
-- (void)removeCheckForUpdatesMenuItem {
-
-    [mainMenu.itemArray enumerateObjectsUsingBlock:^(NSMenuItem *item2, NSUInteger idx, BOOL * _Nonnull stop) {
-        if ([item2.title isEqualToString:NSLocalizedString(@"Check for Updates...", @"Menu item Check for Updates...")]) {
-            SPLog(@"Removing menu item to check for updates");
-            [mainMenu removeItemAtIndex:idx];
-            *stop = YES;
-        }
-    }];
 }
 
 - (void)checkForNewVersionFromMenu{
@@ -343,23 +329,21 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (void)checkForNewVersionWithDelay:(double)delay andIsFromMenuCheck:(BOOL)isFromMenuCheck {
 
     SPLog(@"isFromMenuCheck %d", isFromMenuCheck);
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:SPShowUpdateAvailable] == YES) {
-        SPLog(@"checking for updates");
-        executeOnLowPrioQueueAfterADelay(^{
-            [NSBundle.mainBundle checkForNewVersionWithIsFromMenuCheck:isFromMenuCheck];
-        }, delay);
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    if (![SAGitHubReleaseCheckPolicy shouldCheckWithIsUserInitiated:isFromMenuCheck
+                                            automaticChecksEnabled:[defaults boolForKey:SPShowUpdateAvailable]]) {
+        return;
     }
-}
 
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context{
-    if ([keyPath isEqualToString:SPShowUpdateAvailable]) {
-        if([[change objectForKey:NSKeyValueChangeNewKey] boolValue] == YES){
-            [self addCheckForUpdatesMenuItem];
+    SPLog(@"checking for updates");
+    executeOnLowPrioQueueAfterADelay(^{
+        // Re-read the preference so a launch check queued during the delay does
+        // not make a GitHub request after automatic checks have been disabled.
+        if ([SAGitHubReleaseCheckPolicy shouldCheckWithIsUserInitiated:isFromMenuCheck
+                                                automaticChecksEnabled:[defaults boolForKey:SPShowUpdateAvailable]]) {
+            [NSBundle.mainBundle checkForNewVersionWithIsFromMenuCheck:isFromMenuCheck];
         }
-        else if([[change objectForKey:NSKeyValueChangeNewKey] boolValue] == NO){
-            [self removeCheckForUpdatesMenuItem];
-        }
-    }
+    }, delay);
 }
 
 - (void)externalApplicationWantsToOpenADatabaseConnection:(NSNotification *)notification {
@@ -1709,7 +1693,6 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (void)dealloc
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
-    [self removeObserver:self forKeyPath:SPShowUpdateAvailable];
     if(SecureBookmarkManager.sharedInstance != nil) {
         [SecureBookmarkManager.sharedInstance stopAllSecurityScopedAccess];
     }

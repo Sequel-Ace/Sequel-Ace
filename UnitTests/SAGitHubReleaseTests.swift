@@ -8,6 +8,15 @@
 import XCTest
 
 final class SAGitHubReleaseTests: XCTestCase {
+    func testAutomaticUpdateCheckPreferenceDoesNotBlockManualChecks() {
+        XCTAssertFalse(SAGitHubReleaseCheckPolicy.shouldCheck(isUserInitiated: false,
+                                                              automaticChecksEnabled: false))
+        XCTAssertTrue(SAGitHubReleaseCheckPolicy.shouldCheck(isUserInitiated: false,
+                                                             automaticChecksEnabled: true))
+        XCTAssertTrue(SAGitHubReleaseCheckPolicy.shouldCheck(isUserInitiated: true,
+                                                             automaticChecksEnabled: false))
+    }
+
     func testDecodesAutomatedAndHistoricalReleases() throws {
         let data = Data(
             #"""
