@@ -3999,78 +3999,6 @@ Gw
             </connections>
             <point key="canvasLocation" x="-991" y="524"/>
         </window>
-        <window title="Query Favorite Sheet" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="6405" userLabel="Query Favorite Sheet" customClass="NSPanel">
-            <windowStyleMask key="styleMask" titled="YES" resizable="YES"/>
-            <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="343" y="488" width="260" height="127"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="3008" height="1667"/>
-            <value key="minSize" type="size" width="260" height="127"/>
-            <value key="maxSize" type="size" width="600" height="127"/>
-            <view key="contentView" id="6406">
-                <rect key="frame" x="0.0" y="0.0" width="260" height="127"/>
-                <autoresizingMask key="autoresizingMask"/>
-                <subviews>
-                    <textField focusRingType="none" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6409">
-                        <rect key="frame" x="17" y="93" width="225" height="14"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
-                        <textFieldCell key="cell" lineBreakMode="truncatingMiddle" sendsActionOnEndEditing="YES" alignment="left" title="Query Name:" id="6412">
-                            <font key="font" metaFont="message" size="11"/>
-                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                            <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                        </textFieldCell>
-                    </textField>
-                    <textField focusRingType="none" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6408">
-                        <rect key="frame" x="19" y="67" width="220" height="18"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
-                        <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" alignment="left" drawsBackground="YES" usesSingleLineMode="YES" id="6413">
-                            <font key="font" metaFont="message" size="11"/>
-                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                        </textFieldCell>
-                        <connections>
-                            <outlet property="delegate" destination="134" id="6417"/>
-                        </connections>
-                    </textField>
-                    <button tag="1" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6410">
-                        <rect key="frame" x="150" y="13" width="94" height="28"/>
-                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                        <buttonCell key="cell" type="push" title="Save" bezelStyle="rounded" alignment="center" controlSize="small" enabled="NO" borderStyle="border" tag="1" inset="2" id="6411">
-                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                            <font key="font" metaFont="message" size="11"/>
-                            <string key="keyEquivalent" base64-UTF8="YES">
-DQ
-</string>
-                        </buttonCell>
-                        <connections>
-                            <action selector="closeSheet:" target="134" id="6419"/>
-                        </connections>
-                    </button>
-                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6407">
-                        <rect key="frame" x="14" y="13" width="99" height="28"/>
-                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                        <buttonCell key="cell" type="push" title="Cancel" bezelStyle="rounded" alignment="center" controlSize="small" borderStyle="border" inset="2" id="6414">
-                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                            <font key="font" metaFont="message" size="11"/>
-                            <string key="keyEquivalent" base64-UTF8="YES">
-Gw
-</string>
-                        </buttonCell>
-                        <connections>
-                            <action selector="closeSheet:" target="134" id="6418"/>
-                        </connections>
-                    </button>
-                    <button toolTip="If set save the favorite globally accessible for each document" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6516">
-                        <rect key="frame" x="18" y="43" width="224" height="18"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
-                        <buttonCell key="cell" type="check" title="Save globally" bezelStyle="regularSquare" imagePosition="left" alignment="left" controlSize="small" inset="2" id="6517">
-                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="message" size="11"/>
-                        </buttonCell>
-                    </button>
-                </subviews>
-            </view>
-            <point key="canvasLocation" x="-1127" y="210"/>
-        </window>
         <window title="Secure Text Input Sheet" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" hidesOnDeactivate="YES" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="6492" userLabel="Secure Text Input Sheet" customClass="NSPanel">
             <windowStyleMask key="styleMask" titled="YES" utility="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" bottomStrut="YES"/>
@@ -4349,14 +4277,12 @@ Gw
                 <outlet property="nextHistoryMenuItem" destination="7242" id="7368"/>
                 <outlet property="previousHistoryMenuItem" destination="7243" id="7369"/>
                 <outlet property="queryEditorSplitView" destination="7209" id="8023"/>
-                <outlet property="queryFavoriteNameTextField" destination="6408" id="6416"/>
                 <outlet property="queryFavoritesButton" destination="7218" id="7353"/>
                 <outlet property="queryFavoritesSaveAllMenuItem" destination="7269" id="7363"/>
                 <outlet property="queryFavoritesSaveAsMenuItem" destination="7265" id="7364"/>
                 <outlet property="queryFavoritesSearchField" destination="6432" id="6434"/>
                 <outlet property="queryFavoritesSearchFieldView" destination="6431" id="6435"/>
                 <outlet property="queryFavoritesSearchMenuItem" destination="7268" id="7365"/>
-                <outlet property="queryFavoritesSheet" destination="6405" id="6415"/>
                 <outlet property="queryHistoryButton" destination="7217" id="7354"/>
                 <outlet property="queryHistorySearchField" destination="6448" id="6451"/>
                 <outlet property="queryHistorySearchFieldView" destination="6447" id="6450"/>
@@ -4367,8 +4293,6 @@ Gw
                 <outlet property="runPrimaryActionMenuItem" destination="8323" id="8332"/>
                 <outlet property="runSecondaryActionMenuItem" destination="8324" id="8331"/>
                 <outlet property="saveHistoryMenuItem" destination="7276" id="7373"/>
-                <outlet property="saveQueryFavoriteButton" destination="6410" id="6420"/>
-                <outlet property="saveQueryFavoriteGlobal" destination="6516" id="6518"/>
                 <outlet property="shiftLeftMenuItem" destination="7239" id="7349"/>
                 <outlet property="shiftRightMenuItem" destination="7240" id="7348"/>
                 <outlet property="tableDocumentInstance" destination="-2" id="6256"/>

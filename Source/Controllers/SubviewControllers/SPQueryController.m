@@ -933,7 +933,10 @@ static SPQueryController *sharedQueryController = nil;
 - (void)replaceFavoritesByArray:(NSArray *)favoritesArray forFileURL:(NSURL *)fileURL
 {
 	if ([favoritesContainer objectForKey:[fileURL absoluteString]]) {
-		[favoritesContainer setObject:favoritesArray forKey:[fileURL absoluteString]];
+		// The add/remove APIs mutate this stored value in place. Swift arrays
+		// bridge as immutable NSArray instances, so preserve the container's
+		// NSMutableArray contract at this boundary.
+		[favoritesContainer setObject:[favoritesArray mutableCopy] forKey:[fileURL absoluteString]];
 	}
 }
 
