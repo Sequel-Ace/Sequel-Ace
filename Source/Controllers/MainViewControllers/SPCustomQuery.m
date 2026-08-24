@@ -3887,6 +3887,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     [prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:NULL];
     [prefs addObserver:self forKeyPath:SPCustomQueryEnableBracketHighlighting options:NSKeyValueObservingOptionNew context:NULL];
     [prefs addObserver:self forKeyPath:SPDisplayTableViewColumnTypes options:NSKeyValueObservingOptionNew context:NULL];
+    [prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
     self.bracketHighlighter = [[SPBracketHighlighter alloc] initWithTextView:textView];
     self.bracketHighlighter.enabled = [prefs boolForKey:SPCustomQueryEnableBracketHighlighting];
 }
@@ -4047,6 +4048,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
     [prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
     [prefs removeObserver:self forKeyPath:SPCustomQueryEnableBracketHighlighting];
     [prefs removeObserver:self forKeyPath:SPDisplayTableViewColumnTypes];
+    [prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
     [NSObject cancelPreviousPerformRequestsWithTarget:customQueryView];
     
     [self clearQueryLoadTimer];

@@ -92,6 +92,9 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 	[relationsTableView setEmptyDoubleClickAction:@selector(addRelation:)];
 
 	[prefs addObserver:self forKeyPath:SPGlobalFontSettings options:NSKeyValueObservingOptionNew context:nil];
+	// Owned here rather than registered on our behalf by SPDatabaseDocument, so the
+	// registration cannot outlive this object (#2033)
+	[prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:nil];
 
 	NSFont *tableFont = [NSUserDefaults getFont];
 	[relationsTableView setRowHeight:4.0f + NSSizeToCGSize([@"{ǞṶḹÜ∑zgyf" sizeWithAttributes:@{NSFontAttributeName : tableFont}]).height];
@@ -751,6 +754,7 @@ static NSString *SPRelationOnDeleteKey   = @"on_delete";
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	[prefs removeObserver:self forKeyPath:SPGlobalFontSettings];
+	[prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
 
 }
 
