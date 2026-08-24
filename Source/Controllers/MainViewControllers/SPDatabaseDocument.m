@@ -107,6 +107,9 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 @property (nonatomic, weak, readwrite) SPWindowController *parentWindowController;
 @property (assign) BOOL appIsTerminating;
 
+// Whether the NSUserDefaults KVO observers are currently registered (#2033)
+@property (assign) BOOL preferenceObserversRegistered;
+
 @property (readwrite, nonatomic, strong) NSToolbar *mainToolbar;
 
 - (void)_addDatabase;
@@ -5286,11 +5289,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)_addPreferenceObservers
 {
-    // Register observers for when the DisplayTableViewVerticalGridlines preference changes
+    if (_preferenceObserversRegistered) return;
+    _preferenceObserversRegistered = YES;
+
+    // Register observers for when the DisplayTableViewVerticalGridlines preference changes.
+    // The table subview controllers (structure, content, query, relations) register their own
+    // observers and unregister them in their own dealloc - see #2033.
     [prefs addObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
-    [prefs addObserver:tableSourceInstance forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
-    [prefs addObserver:customQueryInstance forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
-    [prefs addObserver:tableRelationsInstance forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
     [prefs addObserver:self forKeyPath:SPEditInSheetEnabled options:NSKeyValueObservingOptionNew context:NULL];
     [prefs addObserver:[SPQueryController sharedQueryController] forKeyPath:SPDisplayTableViewVerticalGridlines options:NSKeyValueObservingOptionNew context:NULL];
 
@@ -5306,13 +5311,12 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
  */
 - (void)_removePreferenceObservers
 {
+    if (!_preferenceObserversRegistered) return;
+    _preferenceObserversRegistered = NO;
+
     [prefs removeObserver:self forKeyPath:SPConsoleEnableLogging];
     [prefs removeObserver:self forKeyPath:SPEditInSheetEnabled];
     [prefs removeObserver:self forKeyPath:SPDisplayTableViewVerticalGridlines];
-
-    [prefs removeObserver:customQueryInstance forKeyPath:SPDisplayTableViewVerticalGridlines];
-    [prefs removeObserver:tableRelationsInstance forKeyPath:SPDisplayTableViewVerticalGridlines];
-    [prefs removeObserver:tableSourceInstance forKeyPath:SPDisplayTableViewVerticalGridlines];
 
     [prefs removeObserver:[SPQueryController sharedQueryController] forKeyPath:SPConsoleEnableLogging];
     [prefs removeObserver:[SPQueryController sharedQueryController] forKeyPath:SPDisplayTableViewVerticalGridlines];
@@ -6363,6 +6367,13 @@ static _Atomic int SPDatabaseDocumentInstanceCounter = 0;
 #pragma mark -
 
 - (void)dealloc {
+    // Safety net for #2033: if the document is released without the
+    // SPDocumentWillClose path having run (documentWillClose:), the
+    // NSUserDefaults KVO registrations would dangle and crash the next
+    // preference write deep inside CFPrefs. The registration flag makes
+    // this a no-op when documentWillClose: already cleaned up.
+    [self _removePreferenceObservers];
+
     NSLog(@"Dealloc called %s", __FILE_NAME__);
 }
 
