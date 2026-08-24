@@ -2,6 +2,15 @@
 
 ## Installation
 
+### Requirements
+
+- **macOS:** 13.5 (Ventura) or later
+- **Processors:** Intel & Apple Silicon
+- **MySQL:** 5.7 or later &middot; **MariaDB:** 10.0 or later
+
+If you are on an older macOS, the [readme](https://github.com/Sequel-Ace/Sequel-Ace#compatibility) lists the last Sequel Ace release that supports it.
+
+
 ### Mac AppStore <a href="https://apps.apple.com/us/app/sequel-ace/id1518036000?ls=1"><img alt="Download on the Mac AppStore" src="https://sequel-ace.com/images/download_on_mas.png" align="right" height="60"></a>
 
 Download Sequel Ace today from the [macOS App Store](https://apps.apple.com/us/app/sequel-ace/id1518036000?ls=1)!
