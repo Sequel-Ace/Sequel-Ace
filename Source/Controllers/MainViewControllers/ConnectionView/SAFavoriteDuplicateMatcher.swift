@@ -54,10 +54,14 @@ import Foundation
     @objc(typeTagForString:)
     static func typeTag(forString typeString: String?) -> Int {
         switch typeString {
-        case "SPSocketConnection": return socketTag
-        case "SPSSHTunnelConnection": return sshTunnelTag
-        case "SPAWSIAMConnection": return awsIAMTag
-        default: return tcpIPTag
+        case "SPSocketConnection":
+            return socketTag
+        case "SPSSHTunnelConnection":
+            return sshTunnelTag
+        case "SPAWSIAMConnection":
+            return awsIAMTag
+        default:
+            return tcpIPTag
         }
     }
 
@@ -66,10 +70,14 @@ import Foundation
     @objc(typeStringForTag:)
     static func typeString(forTag tag: Int) -> String {
         switch tag {
-        case socketTag: return "SPSocketConnection"
-        case sshTunnelTag: return "SPSSHTunnelConnection"
-        case awsIAMTag: return "SPAWSIAMConnection"
-        default: return "SPTCPIPConnection"
+        case socketTag:
+            return "SPSocketConnection"
+        case sshTunnelTag:
+            return "SPSSHTunnelConnection"
+        case awsIAMTag:
+            return "SPAWSIAMConnection"
+        default:
+            return "SPTCPIPConnection"
         }
     }
 
@@ -189,9 +197,12 @@ import Foundation
     /// that would skip the duplicate prompt for it (Codex, #2583).
     private static func intValue(_ value: Any?) -> Int {
         switch value {
-        case let number as NSNumber: return number.intValue
-        case let text as String: return (text as NSString).integerValue
-        default: return 0
+        case let number as NSNumber:
+            return number.intValue
+        case let text as String:
+            return (text as NSString).integerValue
+        default:
+            return 0
         }
     }
 
