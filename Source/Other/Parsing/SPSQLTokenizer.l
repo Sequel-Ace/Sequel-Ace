@@ -36,7 +36,7 @@
 size_t yyuoffset, yyuleng;
 
 //keep track of the current utf-8 character (not byte) offset and token length
-#define YY_USER_ACTION { yyuoffset += yyuleng; yyuleng = utf8strlen(yytext); }
+#define YY_USER_ACTION { yyuoffset += yyuleng; yyuleng = utf8strlen(yytext, (size_t)yyleng); }
 //ignore the output of unmatched characters
 #define ECHO {}
 %}
