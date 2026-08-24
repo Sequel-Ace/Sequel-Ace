@@ -875,6 +875,16 @@ asm(".desc ___crashreporter_info__, 0x10");
     // Some servers have issues when we try caching_sha2_password first; let's always try mysql_native_password first; ref: https://github.com/Sequel-Ace/Sequel-Ace/issues/141
     mysql_options(theConnection, MYSQL_DEFAULT_AUTH, [@"mysql_native_password" UTF8String]);
 
+    // Point libmysqlclient at this framework's PlugIns directory for client-side auth plugins.
+    // Without this the library falls back to the plugin path baked in at compile time - a
+    // directory on the build machine that never exists on user systems - so any server auth
+    // scheme requiring a client plugin (e.g. MariaDB ed25519) failed with a dlopen error
+    // pointing at a meaningless path; ref: https://github.com/Sequel-Ace/Sequel-Ace/issues/1036
+    NSString *pluginDirectory = [[NSBundle bundleForClass:[self class]] builtInPlugInsPath];
+    if (pluginDirectory) {
+        mysql_options(theConnection, MYSQL_PLUGIN_DIR, [pluginDirectory fileSystemRepresentation]);
+    }
+
     // Allow using LOAD DATA LOCAL INFILE ...; ref: https://github.com/Sequel-Ace/Sequel-Ace/issues/245
     if(allowDataLocalInfile) {
         mysql_options(theConnection, MYSQL_OPT_LOCAL_INFILE, [@"On" UTF8String]);
