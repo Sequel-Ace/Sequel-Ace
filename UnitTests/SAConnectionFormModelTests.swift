@@ -866,6 +866,61 @@ final class SAConnectionFormModelTests: XCTestCase {
         XCTAssertEqual(model.info.password, "")
     }
 
+    // MARK: - Review round 5: type-derived state
+
+    /// -_favoriteTypeDidChange derives useAWSIAMAuth from the type, and the
+    /// sync clears manual SSL for IAM (which always uses TLS internally).
+    func testSwitchingToAWSIAMDerivesTheFlagAndClearsManualSSL() {
+        let model = SAConnectionFormModel()
+        model.info.type = .tcpIP
+        model.useSSL = true
+
+        model.info.type = .awsIAM
+
+        XCTAssertEqual(model.info.useAWSIAMAuth, 1)
+        XCTAssertEqual(model.info.useSSL, 0, "IAM uses TLS internally; the manual flag is cleared, not hidden")
+    }
+
+    /// Coming back clears the IAM flag; SSL stays off, as in the AppKit form.
+    func testSwitchingBackFromAWSIAMClearsTheIAMFlag() {
+        let model = SAConnectionFormModel()
+        model.info.type = .tcpIP
+        model.useSSL = true
+        model.info.type = .awsIAM
+
+        model.info.type = .tcpIP
+
+        XCTAssertEqual(model.info.useAWSIAMAuth, 0)
+        XCTAssertEqual(model.info.useSSL, 0, "not restored — the AppKit form does not either")
+    }
+
+    func testNonTypeEditsLeaveTheDerivedFlagsAlone() {
+        let model = SAConnectionFormModel()
+        model.info.type = .tcpIP
+        model.useSSL = true
+
+        model.info.host = "db.example.com"
+
+        XCTAssertEqual(model.info.useSSL, 1)
+        XCTAssertEqual(model.info.useAWSIAMAuth, 0)
+    }
+
+    /// A replace re-syncs too, matching the AppKit form's sync after favorite
+    /// selection: a stored favorite whose flags disagree with its type is
+    /// normalized on load.
+    func testReplacingWithInconsistentFlagsNormalizesThem() {
+        let model = SAConnectionFormModel()
+        var inconsistent = SAConnectionInfo()
+        inconsistent.type = .awsIAM
+        inconsistent.useSSL = 1
+        inconsistent.useAWSIAMAuth = 0
+
+        model.replaceInfo(inconsistent)
+
+        XCTAssertEqual(model.info.useAWSIAMAuth, 1)
+        XCTAssertEqual(model.info.useSSL, 0)
+    }
+
     // MARK: - C2b: generated name across the types
 
     func testSocketConnectionsNameThemselvesLocalhost() {

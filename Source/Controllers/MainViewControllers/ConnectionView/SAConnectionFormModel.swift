@@ -106,6 +106,7 @@ final class SAConnectionFormModel: ObservableObject {
         didSet {
             resplitVaultCredentialsPathIfChangedExternally()
             clearPasswordsIfIdentityWasEdited(from: oldValue)
+            syncTypeDerivedState(from: oldValue)
         }
     }
 
@@ -354,6 +355,37 @@ final class SAConnectionFormModel: ObservableObject {
     /// "Get Public Key" is offered on every tab except AWS IAM.
     var showsRequestServerPublicKeyToggle: Bool {
         !forcesSSL
+    }
+
+    // MARK: - Type changes
+
+    /// Keeps the flags a type switch derives in step with the type.
+    ///
+    /// `-_favoriteTypeDidChange` sets `useAWSIAMAuth` from the type, and
+    /// `-_syncAWSIAMAndSSLInterfaceState` clears the manual SSL flag for IAM,
+    /// which always uses TLS internally. Binding the picker straight to
+    /// `info.type` skipped both, so enabling Require SSL on TCP/IP, visiting
+    /// AWS IAM and coming back left `useSSL` set with the toggle hidden — and
+    /// `useAWSIAMAuth` stale in the bridged info.
+    ///
+    /// Also run on a wholesale replace: the AppKit form re-syncs after a
+    /// favorite is selected too, so a stored favorite whose flags disagree
+    /// with its type is normalized the same way in both forms. Every write is
+    /// guarded by a difference check, so the nested `didSet` a write triggers
+    /// no-ops instead of recursing.
+    private func syncTypeDerivedState(from previous: SAConnectionInfo) {
+        guard info.type != previous.type || isReplacingInfo else { return }
+
+        let isIAM = info.type == .awsIAM
+        if (info.useAWSIAMAuth != 0) != isIAM {
+            info.useAWSIAMAuth = isIAM ? 1 : 0
+        }
+        // IAM connections always use TLS internally; the manual flag is
+        // cleared rather than merely hidden, matching the AppKit sync. It is
+        // not restored on the way back — the AppKit form does not either.
+        if isIAM && info.useSSL != 0 {
+            info.useSSL = 0
+        }
     }
 
     // MARK: - Identity changes
