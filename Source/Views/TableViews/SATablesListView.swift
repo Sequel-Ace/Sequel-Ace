@@ -30,6 +30,11 @@ import AppKit
     private var pendingSelection: (row: Int, entry: RowEntry)?
     private var pendingSelectionTimer: Timer?
 
+    // A window can stop being key without replacing its first responder (for
+    // example when the user switches windows or applications). Observe that
+    // transition explicitly so a pending match cannot load in the background.
+    private var windowDeactivationSubscription: NotificationToken?
+
     // Text an input method is still composing; it is displayed but not
     // searched until the input method commits it via insertText/unmarkText.
     private var markedText = ""
@@ -57,6 +62,22 @@ import AppKit
         super.awakeFromNib()
         // The type-ahead below replaces the built-in single-letter type select.
         allowsTypeSelect = false
+    }
+
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        windowDeactivationSubscription = nil
+
+        if let newWindow {
+            windowDeactivationSubscription = NotificationCenter.default.observe(
+                name: NSWindow.didResignKeyNotification,
+                object: newWindow,
+                queue: .main
+            ) { [weak self] _ in
+                self?.cancelTypeAhead()
+            }
+        }
+
+        super.viewWillMove(toWindow: newWindow)
     }
 
     override func keyDown(with event: NSEvent) {
@@ -193,11 +214,14 @@ import AppKit
     /// Whether the event looks like plain text entry rather than a command.
     private func isTextEntry(_ event: NSEvent) -> Bool {
         guard event.modifierFlags.isDisjoint(with: [.command, .control, .function]),
-              let characters = event.characters,
-              !characters.isEmpty
+              let characters = event.characters
         else {
             return false
         }
+
+        // A dead key can intentionally produce an empty string before the
+        // next keystroke completes its composition. It still has to reach the
+        // input context so a running search such as "caf" can become "café".
         return characters.unicodeScalars.allSatisfy { isSearchableScalar($0) }
     }
 

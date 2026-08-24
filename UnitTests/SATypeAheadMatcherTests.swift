@@ -38,6 +38,11 @@ final class SATypeAheadMatcherTests: XCTestCase {
         XCTAssertEqual(SATypeAheadMatcher.bestMatch(for: "me", in: ["MESAJLAR"]), 0)
     }
 
+    func testMatchingIsDiacriticInsensitive() {
+        XCTAssertEqual(SATypeAheadMatcher.bestMatch(for: "cafe", in: ["café_orders"]), 0)
+        XCTAssertEqual(SATypeAheadMatcher.bestMatch(for: "CAFÉ", in: ["cafe_orders"]), 0)
+    }
+
     func testNoMatchReturnsNotFound() {
         XCTAssertEqual(SATypeAheadMatcher.bestMatch(for: "xyz", in: tables), NSNotFound)
     }
