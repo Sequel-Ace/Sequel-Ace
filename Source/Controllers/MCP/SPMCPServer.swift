@@ -587,7 +587,7 @@ private extension SPMCPServer {
                      description: "Execute an SQL statement and return the results as JSON. Use ? placeholders with `params` for values (safer than string-building). For read queries you can paginate with `limit`/`offset`. When read-only mode is enabled in Sequel Ace preferences, only single non-destructive read statements (SELECT/SHOW/DESCRIBE/EXPLAIN) are accepted; otherwise write queries are permitted if the connection allows them.",
                      properties: [
                         "sql": ["type": "string", "description": "SQL statement; use ? for bound parameters"],
-                        "params": ["type": "array", "description": "Values bound to ? placeholders, in order"],
+                        "params": ["type": "array", "items": ["type": ["string", "number", "boolean", "null"]], "description": "Values bound to ? placeholders, in order"],
                         "limit": ["type": "integer", "description": "Optional row limit for read queries (paginates by wrapping the query)"],
                         "offset": ["type": "integer", "description": "Optional row offset, used with limit"],
                         "connection": conn
