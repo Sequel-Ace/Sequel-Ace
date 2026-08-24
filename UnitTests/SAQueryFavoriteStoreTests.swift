@@ -198,6 +198,16 @@ final class SAQueryFavoriteStoreTests: XCTestCase {
         XCTAssertEqual((mutation.favorites[1] as? NSDictionary)?["query"] as? String, "SELECT replacement")
     }
 
+    func testReplacementFailsWhenSelectedDuplicateWasRemovedAndAnotherShiftedIntoItsIndex() {
+        let duplicate = favorite("Duplicate")
+        let selection = SAQueryFavoriteStore.selections(
+            documentFavorites: [duplicate, duplicate],
+            globalFavorites: []
+        )[0]
+
+        assertSelectedFavoriteChanged(selection: selection, current: [duplicate])
+    }
+
     private func assertSelectedFavoriteChanged(selection: SAQueryFavoriteSelection,
                                                current: [Any],
                                                file: StaticString = #filePath,

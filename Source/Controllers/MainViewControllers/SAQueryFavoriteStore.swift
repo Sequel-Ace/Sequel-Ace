@@ -16,14 +16,16 @@ enum SAQueryFavoriteScope: Int {
 
 /// A snapshot of one favorite shown in the replacement picker.
 ///
-/// Query favorites have no persistent identifier. The original position and
-/// full dictionary are therefore retained so a save can revalidate the choice
-/// against the latest list instead of trusting a stale array index.
+/// Query favorites have no persistent identifier. The original position, full
+/// dictionary and source-list snapshot are therefore retained so a save can
+/// revalidate the choice against the latest list instead of trusting a stale
+/// array index.
 struct SAQueryFavoriteSelection: Identifiable {
     let scope: SAQueryFavoriteScope
     let originalIndex: Int
     let favorite: NSDictionary
     let name: String
+    let sourceFavorites: NSArray
 
     var id: String {
         "\(scope.rawValue):\(originalIndex)"
@@ -85,7 +87,13 @@ enum SAQueryFavoriteStore {
 
     private static func selections(in favorites: [Any],
                                    scope: SAQueryFavoriteScope) -> [SAQueryFavoriteSelection] {
-        favorites.enumerated().compactMap { index, rawFavorite in
+        let sourceSnapshotItems: [Any] = favorites.map { rawFavorite -> Any in
+            guard let favorite = rawFavorite as? NSDictionary else { return rawFavorite }
+            return NSDictionary(dictionary: favorite)
+        }
+        let sourceFavorites = NSArray(array: sourceSnapshotItems)
+
+        return favorites.enumerated().compactMap { index, rawFavorite in
             guard let favorite = rawFavorite as? NSDictionary,
                   let name = favorite["name"] as? String else {
                 return nil
@@ -95,18 +103,31 @@ enum SAQueryFavoriteStore {
                 scope: scope,
                 originalIndex: index,
                 favorite: NSDictionary(dictionary: favorite),
-                name: name
+                name: name,
+                sourceFavorites: sourceFavorites
             )
         }
     }
 
     private static func resolvedIndex(for selection: SAQueryFavoriteSelection,
                                       in favorites: [Any]) -> Int? {
-        if favorites.indices.contains(selection.originalIndex),
+        // An unchanged list preserves the identity of even identical entries.
+        // Once the list changes, both the original and current match must be
+        // unique because no persisted favorite identifier exists.
+        if selection.sourceFavorites.isEqual(to: favorites),
+           favorites.indices.contains(selection.originalIndex),
            let favorite = favorites[selection.originalIndex] as? NSDictionary,
            favorite.isEqual(selection.favorite) {
             return selection.originalIndex
         }
+
+        let originalMatchCount = selection.sourceFavorites.reduce(into: 0) { count, rawFavorite in
+            guard let favorite = rawFavorite as? NSDictionary else { return }
+            if favorite.isEqual(selection.favorite) {
+                count += 1
+            }
+        }
+        guard originalMatchCount == 1 else { return nil }
 
         let matchingIndexes = favorites.indices.filter { index in
             guard let favorite = favorites[index] as? NSDictionary else { return false }
