@@ -88,6 +88,7 @@ enum trackingAreaIDs
 		
 		//set ourselves as observer of selectedTag (need to mark view dirty)
 		[self addObserver:self forKeyPath:@"selectedTag" options:0 context:nil];
+		observingSelfSelectedTag = YES;
 	}
 	
 	return self;
@@ -97,8 +98,9 @@ enum trackingAreaIDs
 {
 	if ([binding isEqualToString:@"selectedTag"]) {
 		// Drop any previous registration first so re-binding cannot leak an observation
-		if (observer) {
-			[observer removeObserver:self forKeyPath:observerKeyPath];
+		id previousObserver = observer;
+		if (previousObserver) {
+			[previousObserver removeObserver:self forKeyPath:observerKeyPath];
 		}
 		[observableObject addObserver:self forKeyPath:keyPath options:0 context:nil];
 		observer = observableObject;
@@ -112,8 +114,9 @@ enum trackingAreaIDs
 - (void)unbind:(NSString *)binding
 {
 	if ([binding isEqualToString:@"selectedTag"]) {
-		if (observer) {
-			[observer removeObserver:self forKeyPath:observerKeyPath];
+		id boundObserver = observer;
+		if (boundObserver) {
+			[boundObserver removeObserver:self forKeyPath:observerKeyPath];
 			observer = nil;
 			observerKeyPath = nil;
 		}
@@ -440,10 +443,16 @@ enum trackingAreaIDs
 // -------------------------------------------------------------------------------
 - (void)dealloc
 {
-	[self removeObserver:self forKeyPath:@"selectedTag"];
+	// The xib instantiates these views through NSCustomView placeholders, which call
+	// initWithFrame:, so the self-observation is registered there; the flag guards
+	// against any init path that skips it.
+	if (observingSelfSelectedTag) {
+		[self removeObserver:self forKeyPath:@"selectedTag"];
+	}
 
-	if (observer) {
-		[observer removeObserver:self forKeyPath:observerKeyPath];
+	id boundObserver = observer;
+	if (boundObserver) {
+		[boundObserver removeObserver:self forKeyPath:observerKeyPath];
 	}
 }
 
