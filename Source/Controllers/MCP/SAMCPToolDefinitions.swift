@@ -1,5 +1,5 @@
 //
-//  SPMCPToolDefinitions.swift
+//  SAMCPToolDefinitions.swift
 //  Sequel Ace
 //
 //  The tool definitions the MCP server advertises from tools/list. Kept free
@@ -10,7 +10,7 @@ import Foundation
 
 /// The MCP tool catalogue: one definition per tool, each with its JSON Schema
 /// input schema and MCP annotations.
-enum SPMCPToolDefinitions {
+enum SAMCPToolDefinitions {
 
     /// Returns the tool definitions advertised by tools/list.
     static func all() -> [[String: Any]] {

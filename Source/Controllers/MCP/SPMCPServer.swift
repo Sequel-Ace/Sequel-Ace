@@ -454,7 +454,7 @@ private extension SPMCPServer {
             return jsonRPCSuccess(id: id, result: initializeResult(protocolVersion: clientVersion))
 
         case "tools/list":
-            return jsonRPCSuccess(id: id, result: ["tools": SPMCPToolDefinitions.all()])
+            return jsonRPCSuccess(id: id, result: ["tools": SAMCPToolDefinitions.all()])
 
         case "tools/call":
             let toolName  = params?["name"] as? String ?? ""

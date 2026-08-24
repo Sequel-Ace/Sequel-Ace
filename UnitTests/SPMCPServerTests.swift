@@ -462,9 +462,9 @@ final class SPMCPFavoriteTests: XCTestCase {
 
 /// Covers the schemas advertised from tools/list. Clients such as VS Code and
 /// GitHub Copilot validate them and drop any tool whose schema is malformed.
-final class SPMCPToolDefinitionsTests: XCTestCase {
+final class SAMCPToolDefinitionsTests: XCTestCase {
 
-    private let tools = SPMCPToolDefinitions.all()
+    private let tools = SAMCPToolDefinitions.all()
 
     /// The tools that write, and so must not be annotated read-only.
     private let writingTools: Set<String> = ["run_query", "kill_query", "export_results"]
