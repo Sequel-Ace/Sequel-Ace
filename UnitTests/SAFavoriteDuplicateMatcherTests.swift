@@ -56,7 +56,7 @@ final class SAFavoriteDuplicateMatcherTests: XCTestCase {
 
     private let existingTCPIP: NSDictionary = [
         "host": "db.example.com", "user": "app", "database": "sakila",
-        "port": "3306", "type": 0,
+        "port": "3306", "type": 0
     ]
 
     private func isDuplicate(_ existing: NSDictionary,
@@ -94,16 +94,29 @@ final class SAFavoriteDuplicateMatcherTests: XCTestCase {
     func testNumberStoredPortMatchesStringCandidate() {
         let existing: NSDictionary = [
             "host": "db.example.com", "user": "app", "database": "sakila",
-            "port": NSNumber(value: 3306), "type": 0,
+            "port": NSNumber(value: 3306), "type": 0
         ]
         XCTAssertTrue(isDuplicate(existing))
+    }
+
+    /// -integerValue semantics for non-canonical stored type strings: leading
+    /// whitespace is skipped and a leading digit run parses (" 2" is SSH, not
+    /// TCP/IP). A favorite persisted that way must keep matching its imports,
+    /// or the duplicate prompt is silently skipped for it.
+    func testNonCanonicalTypeStringsParseLikeIntegerValue() {
+        let existing: NSDictionary = [
+            "host": "db.internal", "user": "app", "database": "", "port": "3306", "type": " 2"
+        ]
+        XCTAssertTrue(isDuplicate(existing, host: "db.internal", database: "", type: "SPSSHTunnelConnection"))
+        XCTAssertFalse(isDuplicate(existing, host: "db.internal", database: ""),
+                       "a whitespace-prefixed 2 is SSH, so it must not match a TCP/IP candidate")
     }
 
     /// The stored type may be a numeric string (plist round-trips).
     func testStringStoredTypeIsReadLeniently() {
         let existing: NSDictionary = [
             "host": "db.example.com", "user": "app", "database": "sakila",
-            "port": "3306", "type": "0",
+            "port": "3306", "type": "0"
         ]
         XCTAssertTrue(isDuplicate(existing))
     }
@@ -119,7 +132,7 @@ final class SAFavoriteDuplicateMatcherTests: XCTestCase {
 
     private let existingSSH: NSDictionary = [
         "host": "db.internal", "user": "app", "database": "", "port": "3306", "type": 2,
-        "sshHost": "bastion.example.com", "sshUser": "jump", "sshPort": "22", "sshRemoteSocketPath": "",
+        "sshHost": "bastion.example.com", "sshUser": "jump", "sshPort": "22", "sshRemoteSocketPath": ""
     ]
 
     func testSSHFieldsCompareWhenModeFieldsSupplied() {

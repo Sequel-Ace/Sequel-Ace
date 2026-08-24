@@ -178,12 +178,19 @@ import Foundation
         value as? String ?? ""
     }
 
-    /// ObjC `-integerValue` leniency for the type field: NSNumber or numeric
-    /// NSString, anything else 0 (TCP/IP).
+    /// ObjC `-integerValue` leniency for the type field: NSNumber or NSString,
+    /// anything else 0 (TCP/IP).
+    ///
+    /// Strings go through `NSString.integerValue` itself rather than `Int(_:)`,
+    /// because the two disagree on non-canonical input: `-integerValue` skips
+    /// leading whitespace and parses a leading digit run (" 2" -> 2, "2x" -> 2)
+    /// where `Int(_:)` returns nil. A favorite persisted with such a type
+    /// string was SSH under the ObjC and must not silently become TCP/IP here —
+    /// that would skip the duplicate prompt for it (Codex, #2583).
     private static func intValue(_ value: Any?) -> Int {
         switch value {
         case let number as NSNumber: return number.intValue
-        case let text as String: return Int(text) ?? 0
+        case let text as String: return (text as NSString).integerValue
         default: return 0
         }
     }
