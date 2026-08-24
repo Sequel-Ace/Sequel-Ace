@@ -49,6 +49,12 @@
 static unsigned short getRandomPort(void);
 
 @interface SPSSHTunnel ()
+{
+	// Private: kept out of the public header so the NSConnection deprecation is
+	// not re-emitted in every translation unit that reaches SPSSHTunnel.h via
+	// the bridging header. Used only in this file.
+	NSConnection *tunnelConnection;
+}
 
 - (void)setLastError:(NSString *)msg;
 

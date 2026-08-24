@@ -52,7 +52,7 @@ struct SAFavoritesListView: NSViewRepresentable {
         self.favoritesRoot = favoritesRoot
         self.favoritesController = favoritesController
         self.searchQuery = searchQuery
-        weak var weakDelegate = delegate
+        weak let weakDelegate = delegate
         self.delegateProvider = { weakDelegate }
     }
 
