@@ -244,3 +244,99 @@ final class SARuleFilterVisibilityPolicyTests: XCTestCase {
         ))
     }
 }
+
+final class SARuleFilterDropZoneLayoutPolicyTests: XCTestCase {
+
+    func testVisibleDropZonePreservesExistingPopulatedEditorLayout() {
+        let metrics = SARuleFilterDropZoneLayoutPolicy.metrics(
+            editorVisible: true,
+            editorHasRows: true,
+            requestedHeight: 72,
+            dropZoneHeight: 40,
+            showDropZonePreference: true
+        )
+
+        XCTAssertTrue(metrics.dropZoneVisible)
+        XCTAssertEqual(metrics.dropZoneReservedHeight, 40)
+        XCTAssertEqual(metrics.ruleEditorOriginY, 41)
+        XCTAssertEqual(metrics.containerRequestedHeight, 113)
+    }
+
+    func testHiddenDropZoneRestoresCompactPopulatedEditorLayout() {
+        let metrics = SARuleFilterDropZoneLayoutPolicy.metrics(
+            editorVisible: true,
+            editorHasRows: true,
+            requestedHeight: 72,
+            dropZoneHeight: 40,
+            showDropZonePreference: false
+        )
+
+        XCTAssertFalse(metrics.dropZoneVisible)
+        XCTAssertEqual(metrics.dropZoneReservedHeight, 0)
+        XCTAssertEqual(metrics.ruleEditorOriginY, 1)
+        XCTAssertEqual(metrics.containerRequestedHeight, 73)
+    }
+
+    func testVisibleDropZoneOwnsEmptyEditorHeight() {
+        let metrics = SARuleFilterDropZoneLayoutPolicy.metrics(
+            editorVisible: true,
+            editorHasRows: false,
+            requestedHeight: 0,
+            dropZoneHeight: 40,
+            showDropZonePreference: true
+        )
+
+        XCTAssertTrue(metrics.dropZoneVisible)
+        XCTAssertEqual(metrics.ruleEditorOriginY, 40)
+        XCTAssertEqual(metrics.containerRequestedHeight, 40)
+    }
+
+    func testEmptyEditorRetainsAddFilterRowWhenDropZoneIsHidden() {
+        let metrics = SARuleFilterDropZoneLayoutPolicy.metrics(
+            editorVisible: true,
+            editorHasRows: false,
+            requestedHeight: 0,
+            dropZoneHeight: 40,
+            showDropZonePreference: false
+        )
+
+        XCTAssertFalse(metrics.dropZoneVisible)
+        XCTAssertEqual(metrics.ruleEditorOriginY, 0)
+        XCTAssertEqual(metrics.containerRequestedHeight, 29)
+    }
+
+    func testHiddenEditorCollapsesRegardlessOfDropZonePreference() {
+        for showDropZone in [false, true] {
+            let metrics = SARuleFilterDropZoneLayoutPolicy.metrics(
+                editorVisible: false,
+                editorHasRows: true,
+                requestedHeight: 72,
+                dropZoneHeight: 40,
+                showDropZonePreference: showDropZone
+            )
+
+            XCTAssertFalse(metrics.dropZoneVisible)
+            XCTAssertEqual(metrics.dropZoneReservedHeight, 0)
+            XCTAssertEqual(metrics.ruleEditorOriginY, 0)
+            XCTAssertEqual(metrics.containerRequestedHeight, 0)
+        }
+    }
+
+    func testMissingPreferenceDefaultsToVisibleForUpgradingUsers() {
+        let suiteName = "SARuleFilterDropZoneLayoutPolicyTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let metrics = SARuleFilterDropZoneLayoutPolicy.metrics(
+            editorVisible: true,
+            editorHasRows: true,
+            requestedHeight: 29,
+            dropZoneHeight: 40,
+            userDefaults: defaults
+        )
+
+        XCTAssertEqual(SARuleFilterDropZoneLayoutPolicy.defaultsKey, "RuleFilterShowDropZone")
+        XCTAssertTrue(metrics.dropZoneVisible)
+    }
+}

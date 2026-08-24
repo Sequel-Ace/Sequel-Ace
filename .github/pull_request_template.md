@@ -20,8 +20,7 @@ Please use one of these hashtags for your PR title:
   - [ ] Intel
   - [ ] Apple Silicon
 - macOS Versions:
-  - [ ] 12.x (Monterey)
-  - [ ] 13.x (Ventura)
+  - [ ] 13.5+ (Ventura)
   - [ ] 14.x (Sonoma)
   - [ ] 15.x (Sequoia)
   - [ ] 26.x (Tahoe)

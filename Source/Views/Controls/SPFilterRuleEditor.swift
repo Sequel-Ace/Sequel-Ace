@@ -54,6 +54,88 @@ import Cocoa
     }
 }
 
+/// Immutable layout values consumed by the legacy table-content controller.
+/// Keeping the policy in Swift makes the Objective-C call site a thin view
+/// trampoline and gives the preference combinations direct unit coverage.
+@objc public final class SARuleFilterDropZoneLayoutMetrics: NSObject {
+    @objc public let dropZoneVisible: Bool
+    @objc public let dropZoneReservedHeight: CGFloat
+    @objc public let ruleEditorOriginY: CGFloat
+    @objc public let containerRequestedHeight: CGFloat
+
+    fileprivate init(
+        dropZoneVisible: Bool,
+        dropZoneReservedHeight: CGFloat,
+        ruleEditorOriginY: CGFloat,
+        containerRequestedHeight: CGFloat
+    ) {
+        self.dropZoneVisible = dropZoneVisible
+        self.dropZoneReservedHeight = dropZoneReservedHeight
+        self.ruleEditorOriginY = ruleEditorOriginY
+        self.containerRequestedHeight = containerRequestedHeight
+    }
+}
+
+/// Controls whether the optional filter drop zone participates in layout.
+/// Missing preferences deliberately preserve the existing visible behavior for
+/// users upgrading from versions that predate the setting.
+@objc public final class SARuleFilterDropZoneLayoutPolicy: NSObject {
+    private static let preferenceKey = "RuleFilterShowDropZone"
+
+    @objc(defaultsKey)
+    public static var defaultsKey: String {
+        return preferenceKey
+    }
+
+    @objc(metricsWithEditorVisible:editorHasRows:requestedHeight:dropZoneHeight:userDefaults:)
+    public static func metrics(
+        editorVisible: Bool,
+        editorHasRows: Bool,
+        requestedHeight: CGFloat,
+        dropZoneHeight: CGFloat,
+        userDefaults: UserDefaults
+    ) -> SARuleFilterDropZoneLayoutMetrics {
+        let showDropZone = userDefaults.object(forKey: preferenceKey).map { _ in
+            userDefaults.bool(forKey: preferenceKey)
+        } ?? true
+
+        return metrics(
+            editorVisible: editorVisible,
+            editorHasRows: editorHasRows,
+            requestedHeight: requestedHeight,
+            dropZoneHeight: dropZoneHeight,
+            showDropZonePreference: showDropZone
+        )
+    }
+
+    static func metrics(
+        editorVisible: Bool,
+        editorHasRows: Bool,
+        requestedHeight: CGFloat,
+        dropZoneHeight: CGFloat,
+        showDropZonePreference: Bool
+    ) -> SARuleFilterDropZoneLayoutMetrics {
+        let effectiveEditorHasRows = editorVisible && editorHasRows
+        let dropZoneVisible = editorVisible && showDropZonePreference
+        let reservedDropZoneHeight = dropZoneVisible ? max(dropZoneHeight, 0) : 0
+        let ruleEditorTopMargin: CGFloat = effectiveEditorHasRows ? 1 : 0
+
+        // With no rows, the drop zone is normally the only visible affordance.
+        // If the user hides it, retain the original 29-point editor/button row
+        // so the filter UI never becomes an enabled-but-inaccessible zero-height
+        // strip.
+        let shouldReserveRuleEditor = effectiveEditorHasRows || (editorVisible && !dropZoneVisible)
+        let ruleEditorHeight = shouldReserveRuleEditor ? max(requestedHeight, 29) + ruleEditorTopMargin : 0
+
+        return SARuleFilterDropZoneLayoutMetrics(
+            dropZoneVisible: dropZoneVisible,
+            dropZoneReservedHeight: reservedDropZoneHeight,
+            ruleEditorOriginY: reservedDropZoneHeight + ruleEditorTopMargin,
+            containerRequestedHeight: editorVisible ? reservedDropZoneHeight + ruleEditorHeight : 0
+        )
+    }
+}
+
 /// `NSRuleEditor` subclass that extends the content-tab filter with
 /// drag-and-drop support for the
 /// `SPCellValuePasteboard.pasteboardRowTypeRaw` payload. Dropping a
