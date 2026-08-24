@@ -45,14 +45,16 @@ is where the SwiftUI modernization payoff actually is**; 13 buys the XPC
 security win and tidies two views. Recommend proceeding with 13 as asked, but
 the decision is worth taking with that comparison in hand.
 
-### Decision inputs to gather before starting
+### Decisions taken
 
-- **macOS 12 install share from App Store Connect analytics.** Do not guess
-  this — pull the real number. If it is non-trivial, the bump still happens but
-  the release notes and the readme fallback line matter more.
-- **Which release line lands it.** This is a user-visible compatibility break;
-  it belongs in a minor bump (5.6.0), not a patch, and it needs a CHANGELOG
-  entry and a release-note line.
+- **macOS 12 install share: deliberately not gathered.** The obvious input is
+  App Store Connect analytics; the call was to proceed without it. An OS two
+  years past its last security update gets dropped on that basis alone, and
+  the number would not have changed the outcome — only how loudly the release
+  notes said it. The readme fallback line and the release note carry the
+  affected users either way.
+- **Which release line lands it.** A user-visible compatibility break, so a
+  major bump — 6.0.0. See *Version policy* below.
 
 ## Inventory — everything that mentions 12.0
 
