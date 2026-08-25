@@ -37,6 +37,9 @@ import SnapKit
 
     @objc let uniqueID: UUID = UUID()
 
+    /// Autosave name shared by all main windows: the frame the user saw last wins.
+    private static let frameAutosaveName = "MainWindow"
+
     override func awakeFromNib() {
         super.awakeFromNib()
 
@@ -44,6 +47,7 @@ import SnapKit
             window.collectionBehavior = [window.collectionBehavior, .fullScreenPrimary]
         }
 
+        setupFramePersistence()
         setupAppearance()
     }
 
@@ -58,6 +62,23 @@ import SnapKit
 // MARK: - Private API
 
 private extension SPWindowController {
+    /// The main window nib carries `frameAutosaveName="MainWindow"`, but `NSWindowController`
+    /// applies its own (empty) `windowFrameAutosaveName` to the window it loads, so the nib
+    /// value never takes effect: closing the last window and opening a new one (⌘W → ⌘N/⌘T)
+    /// dropped the user's window size and position (#1307). Restore the saved frame explicitly
+    /// and claim the autosave name so subsequent moves/resizes are persisted again.
+    ///
+    /// Only one live window can own an autosave name at a time, so with several windows open
+    /// the claim is best-effort. Every window additionally saves its frame when it is moved,
+    /// resized, or closed (see the `NSWindowDelegate` methods below), so the most recently
+    /// manipulated window always defines the frame the next new window opens with - no
+    /// ownership handover is needed when the claiming window closes first.
+    func setupFramePersistence() {
+        shouldCascadeWindows = false
+        windowFrameAutosaveName = Self.frameAutosaveName
+        window?.setFrameUsingName(Self.frameAutosaveName)
+    }
+
     func setupAppearance() {
         databaseDocument.updateWindowTitle(self)
 
@@ -100,7 +121,31 @@ extension SPWindowController: NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
+        // Persist this window's frame as the shared last-used frame even when it never owned
+        // the exclusive autosave name (only one live window can): the most recently closed
+        // window wins, so the next new window restores the frame the user saw last (#1307).
+        window?.saveFrame(usingName: Self.frameAutosaveName)
+
         // Tell listeners that this database document is being closed - fixes retain cycles and allows cleanup
         NotificationCenter.default.post(name: NSNotification.Name.SPDocumentWillClose, object: databaseDocument)
+    }
+
+    // AppKit only auto-persists moves and resizes for the single window that owns the
+    // autosave name, so windows that lost the claim would leave stale frame data behind
+    // if a new window opened while they were still alive. Save explicitly from every
+    // window so the last-manipulated frame is always the one a new window restores.
+    func windowDidMove(_ notification: Notification) {
+        window?.saveFrame(usingName: Self.frameAutosaveName)
+    }
+
+    func windowDidEndLiveResize(_ notification: Notification) {
+        window?.saveFrame(usingName: Self.frameAutosaveName)
+    }
+
+    func windowDidResize(_ notification: Notification) {
+        // Covers non-live frame changes (zoom, programmatic setFrame) that never fire
+        // windowDidEndLiveResize. Skipped mid-drag: live resizes save once at the end.
+        guard let window = window, !window.inLiveResize else { return }
+        window.saveFrame(usingName: Self.frameAutosaveName)
     }
 }
