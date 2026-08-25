@@ -705,14 +705,30 @@ extension AWSIAMAuthManager {
     }()
 
     override func mouseDown(with event: NSEvent) {
-        guard shouldPreparePopup(for: event),
-              let preparationDelegate else {
+        guard shouldPreparePopup(for: event), preparePopupIfNeeded() else {
             super.mouseDown(with: event)
             return
         }
+    }
 
+    override func accessibilityPerformShowMenu() -> Bool {
+        if preparePopupIfNeeded() {
+            return true
+        }
+        return super.accessibilityPerformShowMenu()
+    }
+
+    /// Starts first-use preparation and reports whether the initiating popup should wait.
+    @objc(preparePopupIfNeeded)
+    func preparePopupIfNeeded() -> Bool {
+        guard !hasPreparedPopup else {
+            return false
+        }
         guard !isPreparingPopup else {
-            return
+            return true
+        }
+        guard let preparationDelegate else {
+            return false
         }
 
         isPreparingPopup = true
@@ -731,6 +747,7 @@ extension AWSIAMAuthManager {
                 }
             }
         }
+        return true
     }
 
     override func layout() {
@@ -850,5 +867,16 @@ extension AWSIAMAuthManager {
 
     deinit {
         stopMonitoringInterveningInput()
+    }
+}
+
+/// Routes the combo box cell's accessibility menu action through first-use preparation.
+@objc final class SAAWSRegionComboBoxCell: NSComboBoxCell {
+    override func accessibilityPerformShowMenu() -> Bool {
+        if let comboBox = controlView as? SAAWSRegionComboBox,
+           comboBox.preparePopupIfNeeded() {
+            return true
+        }
+        return super.accessibilityPerformShowMenu()
     }
 }

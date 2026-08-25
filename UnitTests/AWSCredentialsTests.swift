@@ -866,6 +866,37 @@ final class AWSIAMAuthManagerTests: XCTestCase {
         XCTAssertFalse(comboBox.shouldOpenPopupAfterPreparation)
     }
 
+    func testRegionComboBoxDefersPopupPreparationWithoutMouseInput() {
+        let comboBox = SAAWSRegionComboBox(frame: NSRect(x: 0, y: 0, width: 200, height: 26))
+        let delegate = SAAWSRegionComboBoxPreparationDelegateStub()
+        comboBox.preparationDelegate = delegate
+
+        XCTAssertTrue(comboBox.preparePopupIfNeeded())
+        XCTAssertEqual(delegate.preparationCount, 1)
+        XCTAssertFalse(comboBox.hasPreparedPopup)
+
+        delegate.completePreparation()
+
+        XCTAssertTrue(comboBox.hasPreparedPopup)
+        XCTAssertFalse(comboBox.preparePopupIfNeeded())
+    }
+
+    func testRegionComboBoxCellRoutesAccessibilityMenuThroughPreparation() {
+        let comboBox = SAAWSRegionComboBox(frame: NSRect(x: 0, y: 0, width: 200, height: 26))
+        let cell = SAAWSRegionComboBoxCell()
+        let delegate = SAAWSRegionComboBoxPreparationDelegateStub()
+        comboBox.cell = cell
+        comboBox.preparationDelegate = delegate
+
+        XCTAssertTrue(cell.accessibilityPerformShowMenu())
+        XCTAssertEqual(delegate.preparationCount, 1)
+        XCTAssertFalse(comboBox.hasPreparedPopup)
+
+        delegate.completePreparation()
+
+        XCTAssertTrue(comboBox.hasPreparedPopup)
+    }
+
     func testRegionComboBoxDoesNotRefreshWhenEditingItsText() throws {
         let comboBox = SAAWSRegionComboBox(frame: NSRect(x: 0, y: 0, width: 200, height: 26))
         let textFieldEvent = try XCTUnwrap(comboBoxMouseDownEvent(x: 8))

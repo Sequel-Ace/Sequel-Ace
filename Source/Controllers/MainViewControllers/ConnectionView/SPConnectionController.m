@@ -5181,6 +5181,13 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
  */
 - (BOOL)control:(NSControl *)control textView:(NSTextView *)textView doCommandBySelector:(SEL)commandSelector
 {
+    // NSComboBox routes keyboard popup requests through moveDown: on its text
+    // delegate. Let the Swift control defer that first popup until preparation.
+    if (control == awsRegionComboBox && commandSelector == @selector(moveDown:)
+        && [control isKindOfClass:[SAAWSRegionComboBox class]]) {
+        return [(SAAWSRegionComboBox *)control preparePopupIfNeeded];
+    }
+
     if (control != favoritesSearchField) return NO;
     if (commandSelector != @selector(moveDown:)) return NO;
 
