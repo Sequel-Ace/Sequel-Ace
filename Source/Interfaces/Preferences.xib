@@ -798,7 +798,7 @@ Gw
                 </textField>
                 <button translatesAutoresizingMaskIntoConstraints="NO" id="2aR-JM-Lbr">
                     <rect key="frame" x="180" y="41" width="456" height="22"/>
-                    <buttonCell key="cell" type="check" title="Share anonymized usage analytics with developers" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="mZ1-oa-LuT">
+                    <buttonCell key="cell" type="check" title="Share usage analytics and crash reports with developers" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="mZ1-oa-LuT">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                         <font key="font" metaFont="system"/>
                     </buttonCell>

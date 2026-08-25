@@ -616,6 +616,21 @@
 /* Preferences : General : Automatically check for updates checkbox */
 "Automatically check for updates" = "Automatically check for updates";
 
+/* analytics consent dialog message */
+"Allow Sequel Ace to send device and app information, usage analytics, and crash reports to Google Firebase?\n\nThis helps the developers understand how Sequel Ace is used and diagnose problems. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences." = "Allow Sequel Ace to send device and app information, usage analytics, and crash reports to Google Firebase?\n\nThis helps the developers understand how Sequel Ace is used and diagnose problems. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences.";
+
+/* analytics consent deny button */
+"Don't Share" = "Don't Share";
+
+/* analytics consent dialog title */
+"Help Improve Sequel Ace" = "Help Improve Sequel Ace";
+
+/* analytics consent allow button */
+"Share Analytics" = "Share Analytics";
+
+/* Preferences : General : analytics and crash reporting checkbox */
+"Share usage analytics and crash reports with developers" = "Share usage analytics and crash reports with developers";
+
 /* background label for color table (Prefs > Editor) */
 "Background" = "Background";
 

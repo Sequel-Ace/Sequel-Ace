@@ -76,10 +76,14 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
 - (void)checkForNewVersionWithDelay:(double)delay andIsFromMenuCheck:(BOOL)isFromMenuCheck;
 - (void)addCheckForUpdatesMenuItem;
 - (void)checkForNewVersionFromMenu;
+- (void)applyAnalyticsConsent;
 
 @property (readwrite, strong) NSFileManager *fileManager;
 
 @property (nonatomic, strong, readwrite) TabManager *tabManager;
+
+@property (nonatomic) BOOL hasAppliedAnalyticsConsent;
+@property (nonatomic) BOOL appliedAnalyticsConsent;
 
 @end
 
@@ -144,6 +148,7 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (void)defaultsChanged:(NSNotification *)notification {
     [self switchAppearance];
+    [self applyAnalyticsConsent];
 }
 
 /**
@@ -203,13 +208,10 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
 
+    [SAAnalyticsConsentPolicy requestConsentIfNeeded];
+    [self applyAnalyticsConsent];
+
     NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
-    BOOL analyticsEnabled = [prefs boolForKey:SPSaveApplicationUsageAnalytics];
-    if ([SAAnalyticsConsentPolicy shouldConfigureFirebaseWithAnalyticsEnabled:analyticsEnabled]) {
-        [FIRApp configure];
-        [FIRAnalytics setAnalyticsCollectionEnabled:YES];
-        [[FIRCrashlytics crashlytics] setCrashlyticsCollectionEnabled:YES];
-    }
 
 
     // this reRequests access to all bookmarks
@@ -309,6 +311,31 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     // this one opens a connection screen with no document behind it, and only
     // creates a tab once a connection succeeds.
     [self installStandaloneConnectionMenuItem];
+}
+
+- (void)applyAnalyticsConsent
+{
+    BOOL analyticsEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:SPSaveApplicationUsageAnalytics];
+    if (self.hasAppliedAnalyticsConsent && self.appliedAnalyticsConsent == analyticsEnabled) {
+        return;
+    }
+
+    self.hasAppliedAnalyticsConsent = YES;
+    self.appliedAnalyticsConsent = analyticsEnabled;
+
+    if (![SAAnalyticsConsentPolicy shouldConfigureFirebaseWithAnalyticsEnabled:analyticsEnabled]) {
+        if ([FIRApp defaultApp] != nil) {
+            [FIRAnalytics setAnalyticsCollectionEnabled:NO];
+            [[FIRCrashlytics crashlytics] setCrashlyticsCollectionEnabled:NO];
+        }
+        return;
+    }
+
+    if ([FIRApp defaultApp] == nil) {
+        [FIRApp configure];
+    }
+    [FIRAnalytics setAnalyticsCollectionEnabled:YES];
+    [[FIRCrashlytics crashlytics] setCrashlyticsCollectionEnabled:YES];
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender {

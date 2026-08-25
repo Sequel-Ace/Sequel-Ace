@@ -212,6 +212,10 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>20111</string>
+	<key>FIREBASE_ANALYTICS_COLLECTION_ENABLED</key>
+	<false/>
+	<key>FirebaseCrashlyticsCollectionEnabled</key>
+	<false/>
 	<key>SAGitHubReleaseTag</key>
 	<string>beta/6.0.0-20111</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
