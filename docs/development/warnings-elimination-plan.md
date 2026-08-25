@@ -5,6 +5,33 @@ Xcode 26.5). Counts include duplicates from files compiled into multiple
 targets (e.g. SPKeychain.m → app + SequelAceTunnelAssistant) and headers
 included by several targets.
 
+> **Status 2026-08-24.** Steps 0-9 are merged. Two reduction PRs are open and
+> unmerged — **#2584** (532 → 358 occurrences) and **#2586** (358 → 162) — so
+> everything below describes the merged state on `main`, not those branches.
+>
+> Measured on `main` at `3763d5247`, **"Unit Tests" scheme**, fresh derived
+> data:
+>
+> ```sh
+> xcodebuild test -project sequel-ace.xcodeproj -scheme "Unit Tests" \
+>   -destination "platform=macOS,arch=arm64" -derivedDataPath /tmp/dd \
+>   CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO > build.log 2>&1
+> grep -c " warning: " build.log                    # 352 raw occurrences
+> grep -oE "/[^ ]+:[0-9]+:[0-9]+: warning: .*" build.log | sort -u | wc -l   # 146
+> ```
+>
+> ⚠️ **Not comparable to the trajectory table below**, which was measured with
+> the **"Sequel Ace Debug"** scheme — a smaller compile than the test scheme,
+> so its numbers are lower for the same tree. The open PRs' occurrence counts
+> are a third basis again. No attempt is made here to convert between them:
+> this plan already warns *compare like with like when claiming a delta*, and
+> the scheme is the part most easily forgotten, so it is now recorded next to
+> the number.
+>
+> The macOS 13.5 bump (#2587) changed none of this: normalizing both logs the
+> same way, the warning sets before and after are identical, with no new
+> deprecations from 13.1-13.5 despite the floor crossing those releases.
+
 Ground rules (per AGENTS.md): all new code Swift, one focused PR per step,
 behavior-preserving unless the step says otherwise, full test suite green,
 `#infra` PR tag.
@@ -340,11 +367,18 @@ into the query editor.
   needs its own design (and pairs with the NSConnection item below since the
   tunnel assistant reads passwords).
 - **NSConnection → NSXPCConnection** (SequelAceTunnelAssistant.m:117/168) —
-  reworks the SSH-password IPC between app and helper tool.
-- **Linker warnings** (libssl.3/libcrypto built for macOS 15 vs 12 target,
-  install-name mismatch) — fixed by rebuilding the bundled OpenSSL in
+  reworks the SSH-password IPC between app and helper tool. **Now designed and
+  unblocked**: see `docs/development/ssh-tunnel-xpc-migration-plan.md`. The
+  macOS 13.5 floor (#2587) was adopted for it, so peer validation via
+  `setConnectionCodeSigningRequirement:` needs no availability gate. Not
+  started; spike-first.
+- **Linker warnings** (libssl.3/libcrypto built for macOS 15 vs the app's
+  target, install-name mismatch) — fixed by rebuilding the bundled OpenSSL in
   SPMySQLFramework with the right deployment target; belongs to a dependency
-  refresh.
+  refresh. **Unchanged by #2587**: the deployment target moved to 13.5 and the
+  message now reads "building for macOS-13.5", but the committed dylibs were
+  not rebuilt. `build-libmysqlclient.sh` *was* updated to 13.5, so whenever the
+  rebuild happens it will produce a consistent binary.
 - **Intentional markers, keep**: SAArchiving `legacyUnarchive` (by design),
   `#warning` TODOs (collation-menu perf hog SPTableStructure:1994, duplicate
   code SPDataImport:1167 / SPCustomQuery:3761, private-ivar note
@@ -363,6 +397,7 @@ into the query editor.
 | 9a (informal-protocol conformance) | **129 (measured, clean build)** |
 | 9b part 1 (internal reorders + dead split-view method) | **125 (measured, clean build)** |
 | 9b part 2 (3 drag-out payloads) | **128 -> 125 (-3); own basis, see below** |
+| #2587 (macOS 13.5 floor + 6.0.0) | **no change** — sets identical before/after |
 
 ⚠️ The 9b-part-2 row is a *delta*, not a level, because it could not be made
 comparable to the rows above it. Measured with `xcodebuild -scheme "Sequel Ace
