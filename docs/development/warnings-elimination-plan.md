@@ -376,12 +376,17 @@ this batch lived:
   of its three deliberately-partial stub classes; the pragma block now wraps
   all three, plus `-Wobjc-autosynthesis-property-ivar-name-match` for the
   stubs' autosynthesized properties next to the real classes' ivars.
-- **`performSelector` leak warnings (7, the full set)** — all are void
-  target/action-style invocations (keepalive ping, pagination/filter-table
-  actions, link cell, SPTextView's color-setter table, and the two forwarding
-  shims in SPMainThreadTrampoline). Each wrapped in the
-  `-Warc-performSelector-leaks` pragma per the SPRuleFilterController
-  precedent, with a per-site justification comment.
+- **`performSelector` leak warnings (7, the full set)** — five are void
+  target/action- or setter-style invocations (keepalive ping,
+  pagination/filter-table actions, link cell, SPTextView's color-setter
+  table), where no +1 object can exist to leak. The other two are the
+  forwarding shims in SPMainThreadTrampoline, which forward *arbitrary*
+  selectors: the superclass path returns the value unchanged and the
+  trampolined path intentionally discards it, so selector ownership is the
+  caller's contract — the same contract as the NSObject `performSelector:`
+  API they override. Each site wrapped in the `-Warc-performSelector-leaks`
+  pragma per the SPRuleFilterController precedent, with a per-site
+  justification comment.
 - **SPFieldEditorController.m:1302 sign-compare** — the underflow flagged in
   #2584: `adjTextMaxTextLength - textLength` is unsigned, so when the existing
   text already exceeds the field maximum the remaining capacity underflowed
