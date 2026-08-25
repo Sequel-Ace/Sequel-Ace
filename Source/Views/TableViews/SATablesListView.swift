@@ -40,6 +40,15 @@ import AppKit
     // cancel a pending match just like a click delivered to the table does.
     private var scrollInteractionSubscriptions: [NotificationToken] = []
 
+    // Selecting a match starts its document load synchronously. A row command
+    // entered immediately after the search must wait for that document's task
+    // to end, otherwise the table delegate rejects it while the document works.
+    private var documentTaskSubscriptions: [NotificationToken] = []
+    private var isCommittingPendingSelection = false
+    private var documentWithTaskStartedDuringPendingSelection: AnyObject?
+    private var deferredRowCommand: NSEvent?
+    private weak var deferredRowCommandDocument: AnyObject?
+
     // Text an input method is still composing; it is displayed but not
     // searched until the input method commits it via insertText/unmarkText.
     private let markedTextState = SAMarkedTextInputState()
@@ -67,9 +76,28 @@ import AppKit
         super.awakeFromNib()
         // The type-ahead below replaces the built-in single-letter type select.
         allowsTypeSelect = false
+
+        // A nil queue preserves NotificationCenter's synchronous delivery.
+        // The start observer must run inside selectRowIndexes(_:)'s delegate
+        // callback while isCommittingPendingSelection is still true.
+        documentTaskSubscriptions = [
+            NotificationCenter.default.observe(
+                name: .SPDocumentTaskStart,
+                object: nil
+            ) { [weak self] notification in
+                self?.captureDocumentTaskStartedDuringPendingSelection(notification)
+            },
+            NotificationCenter.default.observe(
+                name: .SPDocumentTaskEnd,
+                object: nil
+            ) { [weak self] notification in
+                self?.documentTaskEnded(notification)
+            }
+        ]
     }
 
     override func viewWillMove(toWindow newWindow: NSWindow?) {
+        cancelDeferredRowCommand()
         windowDeactivationSubscription = nil
         scrollInteractionSubscriptions.removeAll()
 
@@ -112,6 +140,7 @@ import AppKit
             || pendingSelection != nil
             || pendingSelectionTimer != nil
             || hasMarkedText()
+            || deferredRowCommand != nil
         guard hasActiveTypeAhead else {
             return
         }
@@ -119,6 +148,9 @@ import AppKit
     }
 
     override func keyDown(with event: NSEvent) {
+        // A newer user action supersedes a command waiting on a table load.
+        cancelDeferredRowCommand()
+
         if routeThroughInputContext(event) {
             return
         }
@@ -134,7 +166,11 @@ import AppKit
             // otherwise Return would start renaming the row that was selected
             // before the search, and the delayed commit would then interrupt
             // that edit.
-            resolveTypeAhead()
+            if let loadingDocument = resolveTypeAhead() {
+                deferredRowCommand = event
+                deferredRowCommandDocument = loadingDocument
+                return
+            }
         }
 
         super.keyDown(with: event)
@@ -160,6 +196,7 @@ import AppKit
     }
 
     private func cancelTypeAhead() {
+        cancelDeferredRowCommand()
         typeAhead.reset()
         discardComposition()
         suspendPendingCommit()
@@ -169,14 +206,54 @@ import AppKit
     }
 
     /// Ends the current search immediately, committing the row it matched.
-    private func resolveTypeAhead() {
+    private func resolveTypeAhead() -> AnyObject? {
         suspendPendingCommit()
-        commitPendingSelection()
+        let loadingDocument = commitPendingSelection()
 
         typeAhead.reset()
         discardComposition()
         feedbackHideTimer?.invalidate()
         hideSearchFeedback()
+        return loadingDocument
+    }
+
+    private func captureDocumentTaskStartedDuringPendingSelection(_ notification: Notification) {
+        guard isCommittingPendingSelection, let document = notification.object as AnyObject? else {
+            return
+        }
+        documentWithTaskStartedDuringPendingSelection = document
+    }
+
+    private func documentTaskEnded(_ notification: Notification) {
+        guard let endedDocument = notification.object as AnyObject?,
+              let pendingDocument = deferredRowCommandDocument,
+              endedDocument === pendingDocument
+        else {
+            return
+        }
+
+        // Other observers restore the list's selectability in response to the
+        // same notification. Replay on the next main-loop turn so every one of
+        // them has finished first.
+        deferredRowCommandDocument = nil
+        DispatchQueue.main.async { [weak self] in
+            self?.replayDeferredRowCommand()
+        }
+    }
+
+    private func replayDeferredRowCommand() {
+        guard let event = deferredRowCommand, window?.firstResponder === self else {
+            cancelDeferredRowCommand()
+            return
+        }
+
+        deferredRowCommand = nil
+        super.keyDown(with: event)
+    }
+
+    private func cancelDeferredRowCommand() {
+        deferredRowCommand = nil
+        deferredRowCommandDocument = nil
     }
 
     /// Holds back the deferred selection without forgetting it — used while an
@@ -307,9 +384,10 @@ import AppKit
         return true
     }
 
-    private func commitPendingSelection() {
+    @discardableResult
+    private func commitPendingSelection() -> AnyObject? {
         guard let pending = pendingSelection else {
-            return
+            return nil
         }
         pendingSelection = nil
 
@@ -325,7 +403,7 @@ import AppKit
             row = movedRow
         }
         else {
-            return
+            return nil
         }
 
         // Pass the same delegate gates a user-initiated selection would:
@@ -335,11 +413,18 @@ import AppKit
         guard delegate?.selectionShouldChange?(in: self) ?? true,
               delegate?.tableView?(self, shouldSelectRow: row) ?? true
         else {
-            return
+            return nil
         }
 
+        isCommittingPendingSelection = true
+        documentWithTaskStartedDuringPendingSelection = nil
         selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        isCommittingPendingSelection = false
+
+        let loadingDocument = documentWithTaskStartedDuringPendingSelection
+        documentWithTaskStartedDuringPendingSelection = nil
         scrollRowToVisible(row)
+        return loadingDocument
     }
 
     // MARK: - NSTextInputClient
