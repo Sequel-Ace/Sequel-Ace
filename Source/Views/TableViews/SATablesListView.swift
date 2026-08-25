@@ -46,6 +46,7 @@ import AppKit
     private var documentTaskSubscriptions: [NotificationToken] = []
     private var isCommittingPendingSelection = false
     private var documentWithTaskStartedDuringPendingSelection: SPDatabaseDocument?
+    private weak var pendingSelectionRetryDocument: SPDatabaseDocument?
     private var deferredRowCommand: NSEvent?
     private weak var deferredRowCommandDocument: SPDatabaseDocument?
 
@@ -230,6 +231,7 @@ import AppKit
         discardComposition()
         suspendPendingCommit()
         pendingSelection = nil
+        pendingSelectionRetryDocument = nil
         feedbackHideTimer?.invalidate()
         hideSearchFeedback()
     }
@@ -254,19 +256,43 @@ import AppKit
     }
 
     private func documentTaskEnded(_ notification: Notification) {
-        guard let endedDocument = notification.object as? SPDatabaseDocument,
-              let pendingDocument = deferredRowCommandDocument,
-              endedDocument === pendingDocument
-        else {
+        guard let endedDocument = notification.object as? SPDatabaseDocument else {
             return
         }
 
+        let retriesPendingSelection = endedDocument === pendingSelectionRetryDocument
+        let replaysRowCommand = endedDocument === deferredRowCommandDocument
+        guard retriesPendingSelection || replaysRowCommand else {
+            return
+        }
+
+        if retriesPendingSelection {
+            pendingSelectionRetryDocument = nil
+        }
+        if replaysRowCommand {
+            deferredRowCommandDocument = nil
+        }
+
         // Other observers restore the list's selectability in response to the
-        // same notification. Replay on the next main-loop turn so every one of
-        // them has finished first.
-        deferredRowCommandDocument = nil
+        // same notification. Retry on the next main-loop turn so every one of
+        // them has finished first. If selecting the retained match starts a
+        // new load, keep any row command behind that new task as well.
         DispatchQueue.main.async { [weak self] in
-            self?.replayDeferredRowCommand()
+            guard let self else {
+                return
+            }
+
+            let loadingDocument = retriesPendingSelection ? self.commitPendingSelection() : nil
+            guard replaysRowCommand else {
+                return
+            }
+
+            if let loadingDocument, loadingDocument.isWorking() {
+                self.deferredRowCommandDocument = loadingDocument
+            }
+            else {
+                self.replayDeferredRowCommand()
+            }
         }
     }
 
@@ -401,6 +427,7 @@ import AppKit
             // prefix matched is no longer what was asked for and must not be
             // committed once typing stops.
             pendingSelection = nil
+            pendingSelectionRetryDocument = nil
         }
 
         schedulePendingCommit()
@@ -418,7 +445,6 @@ import AppKit
         guard let pending = pendingSelection else {
             return nil
         }
-        pendingSelection = nil
 
         // The list can be reloaded or reordered while the search settles, so
         // the matched object — not the row index it happened to have — is what
@@ -432,6 +458,8 @@ import AppKit
             row = movedRow
         }
         else {
+            pendingSelection = nil
+            pendingSelectionRetryDocument = nil
             return nil
         }
 
@@ -439,12 +467,25 @@ import AppKit
         // selectionShouldChange(in:) rejects the change while the document is
         // running a task or has uncommitted edits, shouldSelectRow: rejects
         // individual rows.
-        guard delegate?.selectionShouldChange?(in: self) ?? true,
-              delegate?.tableView?(self, shouldSelectRow: row) ?? true
-        else {
+        let canSelect = (delegate?.selectionShouldChange?(in: self) ?? true)
+            && (delegate?.tableView?(self, shouldSelectRow: row) ?? true)
+        guard canSelect else {
+            if let document = (window?.windowController as? SPWindowController)?.databaseDocument,
+               document.isWorking() {
+                // Keep the newest match while the previous selection loads.
+                // Its task-end notification will retry this commit after the
+                // Objective-C delegate has made the list selectable again.
+                pendingSelectionRetryDocument = document
+                return document
+            }
+
+            pendingSelection = nil
+            pendingSelectionRetryDocument = nil
             return nil
         }
 
+        pendingSelection = nil
+        pendingSelectionRetryDocument = nil
         isCommittingPendingSelection = true
         documentWithTaskStartedDuringPendingSelection = nil
         selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
