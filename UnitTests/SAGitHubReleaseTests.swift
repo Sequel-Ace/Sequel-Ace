@@ -498,9 +498,9 @@ final class SAGitHubReleaseTests: XCTestCase {
         manualRetry()
         automaticRetry()
 
-        XCTAssertEqual(receivedValues.map(\.name), ["5.5.0 (20111)", "5.5.0 (20111)"])
-        XCTAssertEqual(receivedValues.map(\.tag), ["production/5.5.0-20111", nil])
-        XCTAssertEqual(receivedValues.map(\.isUserInitiated), [true, false])
+        XCTAssertEqual(receivedValues.map { $0.name }, ["5.5.0 (20111)", "5.5.0 (20111)"])
+        XCTAssertEqual(receivedValues.map { $0.tag }, ["production/5.5.0-20111", nil])
+        XCTAssertEqual(receivedValues.map { $0.isUserInitiated }, [true, false])
     }
 
     func testUserInitiatedReleaseCheckTakesPriorityOverBackgroundChecks() throws {

@@ -140,7 +140,9 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (void)defaultsChanged:(NSNotification *)notification {
     [self switchAppearance];
-    [SAAnalyticsConsentPolicy applyAnalyticsConsent];
+    SPMainQSync(^{
+        [SAAnalyticsConsentPolicy applyAnalyticsConsent];
+    });
 }
 
 /**
