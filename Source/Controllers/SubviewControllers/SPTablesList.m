@@ -1432,6 +1432,16 @@ static NSString *SPNewTableCollation    = @"SPNewTableCollation";
 }
 
 /**
+ * Returns the object type for a row in the currently displayed table list.
+ */
+- (SPTableType)tableTypeAtRow:(NSInteger)rowIndex
+{
+	if (rowIndex < 0 || rowIndex >= (NSInteger)[filteredTableTypes count]) return SPTableTypeNone;
+
+	return (SPTableType)[[filteredTableTypes objectAtIndex:(NSUInteger)rowIndex] integerValue];
+}
+
+/**
  * Returns whether or not the current database contains any views.
  */
 - (BOOL)hasViews

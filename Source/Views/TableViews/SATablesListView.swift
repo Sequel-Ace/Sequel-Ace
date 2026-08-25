@@ -100,6 +100,7 @@ import AppKit
 
     override func viewWillMove(toWindow newWindow: NSWindow?) {
         cancelTypeAhead()
+        removeFeedbackOverlay()
         windowDeactivationSubscription = nil
         removeWindowMouseDownMonitor()
         scrollInteractionSubscriptions.removeAll()
@@ -152,6 +153,7 @@ import AppKit
     }
 
     deinit {
+        removeFeedbackOverlay()
         removeWindowMouseDownMonitor()
     }
 
@@ -750,6 +752,15 @@ import AppKit
         })
     }
 
+    private func removeFeedbackOverlay() {
+        feedbackHideTimer?.invalidate()
+        feedbackHideTimer = nil
+        feedbackVisibilityGeneration += 1
+        feedbackOverlay?.removeFromSuperview()
+        feedbackOverlay = nil
+        feedbackLabel = nil
+    }
+
     /// Builds the badge lazily and pins it over the bottom edge of the
     /// enclosing scroll view, so it stays put while the list scrolls.
     private func ensureFeedbackOverlay() -> NSVisualEffectView? {
@@ -816,16 +827,17 @@ import AppKit
         return true
     }
 
-    /// A row's identity: its name plus the section heading above it. The list
+    /// A row's identity: its name, object type, and the section heading above it. The list
     /// keeps tables/views and procedures/functions in separate sections, and
-    /// names are unique within one, so the pair still names the same object
-    /// after the list is reloaded — a bare name would not, since a table and a
-    /// procedure may share one.
+    /// names are unique within one object type, so the triple still names the
+    /// same object after the list is reloaded — a bare name would not, since a
+    /// table and a procedure, or a procedure and function, may share one.
     private struct SARowEntry: Equatable {
         /// Empty for rows that can never hold a table (section headings,
         /// placeholders); an empty title never matches a search string.
         let title: String
         let section: String
+        let objectType: SPTableType
     }
 
     /// Row identities indexed by row. Built from the stable group-row metadata
@@ -833,7 +845,7 @@ import AppKit
     /// unselectable while a load task runs, which would empty the candidate
     /// list mid-sequence.
     private func searchableRows() -> [SARowEntry] {
-        guard let dataSource, let delegate else {
+        guard let dataSource, let delegate, let tablesList = delegate as? SPTablesList else {
             return []
         }
         let column = tableColumns.first
@@ -844,13 +856,14 @@ import AppKit
 
         for row in 0..<numberOfRows {
             let value = dataSource.tableView?(self, objectValueFor: column, row: row) as? String
+            let objectType = tablesList.tableType(atRow: row)
 
             if delegate.tableView?(self, isGroupRow: row) ?? false {
                 section = value ?? ""
-                rows.append(SARowEntry(title: "", section: section))
+                rows.append(SARowEntry(title: "", section: section, objectType: objectType))
             }
             else {
-                rows.append(SARowEntry(title: value ?? "", section: section))
+                rows.append(SARowEntry(title: value ?? "", section: section, objectType: objectType))
             }
         }
 
