@@ -5,12 +5,15 @@ Xcode 26.5). Counts include duplicates from files compiled into multiple
 targets (e.g. SPKeychain.m → app + SequelAceTunnelAssistant) and headers
 included by several targets.
 
-> **Status 2026-08-24.** Steps 0-9 are merged. Two reduction PRs are open and
-> unmerged — **#2584** (532 → 358 occurrences) and **#2586** (358 → 162) — so
-> everything below describes the merged state on `main`, not those branches.
+> **Status 2026-08-24 (updated on rebase).** Steps 0-9 are merged, and the two
+> reduction sweeps have landed since this revision was drafted — **#2584**
+> (532 → 358 occurrences) and **#2586** (358 → 162) are both on `main` now, so
+> the sweep phase is complete and what remains is the deferred project set
+> (SPKeychain `SecItem*`, NSConnection → XPC, bundled OpenSSL).
 >
-> Measured on `main` at `3763d5247`, **"Unit Tests" scheme**, fresh derived
-> data:
+> The measurement below predates those two merges: taken on `main` at
+> `3763d5247`, **"Unit Tests" scheme**, fresh derived data. Re-baseline with
+> the same command before claiming any post-sweep delta:
 >
 > ```sh
 > xcodebuild test -project sequel-ace.xcodeproj -scheme "Unit Tests" \
@@ -22,8 +25,8 @@ included by several targets.
 >
 > ⚠️ **Not comparable to the trajectory table below**, which was measured with
 > the **"Sequel Ace Debug"** scheme — a smaller compile than the test scheme,
-> so its numbers are lower for the same tree. The open PRs' occurrence counts
-> are a third basis again. No attempt is made here to convert between them:
+> so its numbers are lower for the same tree. The sweep PRs' occurrence counts
+> (#2584/#2586) are a third basis again. No attempt is made here to convert between them:
 > this plan already warns *compare like with like when claiming a delta*, and
 > the scheme is the part most easily forgotten, so it is now recorded next to
 > the number.
