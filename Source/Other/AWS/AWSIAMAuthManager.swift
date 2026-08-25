@@ -691,7 +691,9 @@ extension AWSIAMAuthManager {
     @objc weak var preparationDelegate: SAAWSRegionComboBoxPreparationDelegate?
 
     private(set) var hasPreparedPopup = false
+    private(set) var shouldOpenPopupAfterPreparation = false
     private var isPreparingPopup = false
+    private var interveningInputMonitor: Any?
 
     private lazy var preparationIndicator: NSProgressIndicator = {
         let indicator = NSProgressIndicator()
@@ -714,6 +716,8 @@ extension AWSIAMAuthManager {
         }
 
         isPreparingPopup = true
+        shouldOpenPopupAfterPreparation = true
+        monitorForInterveningInput()
         preparationIndicator.startAnimation(nil)
         needsLayout = true
 
@@ -750,6 +754,11 @@ extension AWSIAMAuthManager {
         )
     }
 
+    /// Cancels the delayed popup while allowing the catalog refresh to finish.
+    func cancelPendingPopupOpening() {
+        shouldOpenPopupAfterPreparation = false
+    }
+
     func shouldPreparePopup(for event: NSEvent) -> Bool {
         guard !hasPreparedPopup,
               event.type == .leftMouseDown,
@@ -761,16 +770,40 @@ extension AWSIAMAuthManager {
         return hit.contains(.trackableArea) && !hit.contains(.editableTextArea)
     }
 
+    private func monitorForInterveningInput() {
+        interveningInputMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown, .keyDown]
+        ) { [weak self] event in
+            self?.cancelPendingPopupOpening()
+            return event
+        }
+    }
+
+    private func stopMonitoringInterveningInput() {
+        guard let interveningInputMonitor else {
+            return
+        }
+
+        NSEvent.removeMonitor(interveningInputMonitor)
+        self.interveningInputMonitor = nil
+    }
+
     private func finishPreparingPopup() {
         guard isPreparingPopup else {
             return
         }
 
+        let shouldOpenPopup = shouldOpenPopupAfterPreparation
         isPreparingPopup = false
         hasPreparedPopup = true
+        shouldOpenPopupAfterPreparation = false
+        stopMonitoringInterveningInput()
         preparationIndicator.stopAnimation(nil)
 
-        guard let window,
+        guard shouldOpenPopup,
+              let window,
+              NSApp.isActive,
+              window.isKeyWindow,
               !isHiddenOrHasHiddenAncestor,
               isEnabled else {
             return
@@ -813,5 +846,9 @@ extension AWSIAMAuthManager {
 
         NSApp.postEvent(mouseUp, atStart: false)
         NSApp.sendEvent(mouseDown)
+    }
+
+    deinit {
+        stopMonitoringInterveningInput()
     }
 }

@@ -257,6 +257,18 @@ enum SAGitHubReleaseSettlingPolicy {
 
         return newestRelease.settlingTimeRemaining(at: date)
     }
+
+    /// Builds a settling retry that preserves the initiating check's authorization.
+    static func retryOperation(
+        installedBuildName: String,
+        installedReleaseTag: String?,
+        isUserInitiated: Bool,
+        perform: @escaping (String, String?, Bool) -> Void
+    ) -> () -> Void {
+        {
+            perform(installedBuildName, installedReleaseTag, isUserInitiated)
+        }
+    }
 }
 
 struct SAGitHubReleaseCheckTracker {

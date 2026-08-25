@@ -372,6 +372,31 @@ final class SAGitHubReleaseTests: XCTestCase {
         ))
     }
 
+    func testSettlingRetryPreservesTheInitiatingCheckAuthorization() {
+        var receivedValues: [(name: String, tag: String?, isUserInitiated: Bool)] = []
+        let manualRetry = SAGitHubReleaseSettlingPolicy.retryOperation(
+            installedBuildName: "5.5.0 (20111)",
+            installedReleaseTag: "production/5.5.0-20111",
+            isUserInitiated: true
+        ) { name, tag, isUserInitiated in
+            receivedValues.append((name, tag, isUserInitiated))
+        }
+        let automaticRetry = SAGitHubReleaseSettlingPolicy.retryOperation(
+            installedBuildName: "5.5.0 (20111)",
+            installedReleaseTag: nil,
+            isUserInitiated: false
+        ) { name, tag, isUserInitiated in
+            receivedValues.append((name, tag, isUserInitiated))
+        }
+
+        manualRetry()
+        automaticRetry()
+
+        XCTAssertEqual(receivedValues.map(\.name), ["5.5.0 (20111)", "5.5.0 (20111)"])
+        XCTAssertEqual(receivedValues.map(\.tag), ["production/5.5.0-20111", nil])
+        XCTAssertEqual(receivedValues.map(\.isUserInitiated), [true, false])
+    }
+
     func testUserInitiatedReleaseCheckTakesPriorityOverBackgroundChecks() throws {
         var tracker = SAGitHubReleaseCheckTracker()
         let backgroundCheck = try XCTUnwrap(tracker.begin(isUserInitiated: false))

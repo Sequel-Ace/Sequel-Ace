@@ -232,7 +232,8 @@ import OSLog
                     ) {
                         scheduleSettlingRetry(after: retryDelay,
                                              installedBuildName: installedBuildName,
-                                             installedReleaseTag: installedReleaseTag)
+                                             installedReleaseTag: installedReleaseTag,
+                                             isUserInitiated: isUserInitiated)
                         return
                     }
 
@@ -246,7 +247,8 @@ import OSLog
                     ) {
                         scheduleSettlingRetry(after: retryDelay,
                                              installedBuildName: installedBuildName,
-                                             installedReleaseTag: installedReleaseTag)
+                                             installedReleaseTag: installedReleaseTag,
+                                             isUserInitiated: isUserInitiated)
                         return
                     }
 
@@ -308,14 +310,20 @@ import OSLog
     private func scheduleSettlingRetry(
         after delay: TimeInterval,
         installedBuildName: String,
-        installedReleaseTag: String?
+        installedReleaseTag: String?,
+        isUserInitiated: Bool
     ) {
         Log.info("A newer GitHub release is still settling; retrying in \(delay) seconds")
-        let retry = DispatchWorkItem { [weak self] in
-            self?.checkRelease(name: installedBuildName,
-                               installedReleaseTag: installedReleaseTag,
-                               isUserInitiated: false)
+        let operation = SAGitHubReleaseSettlingPolicy.retryOperation(
+            installedBuildName: installedBuildName,
+            installedReleaseTag: installedReleaseTag,
+            isUserInitiated: isUserInitiated
+        ) { [weak self] name, releaseTag, isUserInitiated in
+            self?.checkRelease(name: name,
+                               installedReleaseTag: releaseTag,
+                               isUserInitiated: isUserInitiated)
         }
+        let retry = DispatchWorkItem(block: operation)
         settlingRetry = retry
         DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: retry)
     }

@@ -840,11 +840,30 @@ final class AWSIAMAuthManagerTests: XCTestCase {
 
         XCTAssertEqual(delegate.preparationCount, 1)
         XCTAssertFalse(comboBox.hasPreparedPopup)
+        XCTAssertTrue(comboBox.shouldOpenPopupAfterPreparation)
 
         delegate.completePreparation()
 
         XCTAssertTrue(comboBox.hasPreparedPopup)
+        XCTAssertFalse(comboBox.shouldOpenPopupAfterPreparation)
         XCTAssertFalse(comboBox.shouldPreparePopup(for: popupButtonEvent))
+    }
+
+    func testRegionComboBoxCancelsDeferredPopupAfterInterveningInput() throws {
+        let comboBox = SAAWSRegionComboBox(frame: NSRect(x: 0, y: 0, width: 200, height: 26))
+        let delegate = SAAWSRegionComboBoxPreparationDelegateStub()
+        comboBox.preparationDelegate = delegate
+        let popupButtonEvent = try XCTUnwrap(comboBoxMouseDownEvent(x: 192))
+
+        comboBox.mouseDown(with: popupButtonEvent)
+        comboBox.cancelPendingPopupOpening()
+
+        XCTAssertFalse(comboBox.shouldOpenPopupAfterPreparation)
+
+        delegate.completePreparation()
+
+        XCTAssertTrue(comboBox.hasPreparedPopup)
+        XCTAssertFalse(comboBox.shouldOpenPopupAfterPreparation)
     }
 
     func testRegionComboBoxDoesNotRefreshWhenEditingItsText() throws {
