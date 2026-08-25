@@ -176,7 +176,7 @@ import AppKit
     ) -> String? {
         let normalizedValue: Any
         if let geometry = value as? SPMySQLGeometryData {
-            normalizedValue = geometry.data()
+            normalizedValue = geometry.data() as Any
         } else {
             normalizedValue = value
         }

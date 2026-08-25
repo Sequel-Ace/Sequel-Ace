@@ -235,7 +235,7 @@ extension SPAppController: SPMCPDataSource {
             }
             if let doc = doc, !doc.isProcessing, let c = doc.getConnection(), c.isConnected() {
                 info = MCPResolvedConnection(conn: c, id: mcpDocumentID(doc),
-                                             database: doc.database() ?? "", host: doc.host() ?? "")
+                                             database: doc.database() ?? "", host: doc.host())
             }
         }
         if Thread.isMainThread { resolve() } else { DispatchQueue.main.sync(execute: resolve) }
@@ -723,7 +723,7 @@ extension SPAppController: SPMCPDataSource {
         }
         var rows: [[String: Any]] = []
         var truncated = false
-        while let row = res.getRowAsArray() as? [Any] {
+        while let row = res.getRowAsArray() {
             if rows.count >= maxRows { truncated = true; break }   // a further row exists beyond the cap
             var safeRow: [String: Any] = [:]
             for (i, key) in columns.enumerated() {
