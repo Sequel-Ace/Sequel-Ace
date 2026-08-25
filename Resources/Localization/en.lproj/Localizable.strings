@@ -613,6 +613,9 @@
 /* Encoding autodetect menu item */
 "Autodetect" = "Autodetect";
 
+/* Preferences : General : Automatically check for updates checkbox */
+"Automatically check for updates" = "Automatically check for updates";
+
 /* background label for color table (Prefs > Editor) */
 "Background" = "Background";
 
