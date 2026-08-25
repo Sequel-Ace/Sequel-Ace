@@ -1418,7 +1418,10 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 // just before it appears (behaviour lives in SAVaultRoleListController).
 - (void)comboBoxWillPopUp:(NSNotification *)notification
 {
-    if ([notification object] == vaultCredentialsRoleComboBox) {
+    if ([notification object] == awsRegionComboBox) {
+        [self _refreshAWSAvailableRegions];
+    }
+    else if ([notification object] == vaultCredentialsRoleComboBox) {
         [vaultRoleListController reloadItems];
     }
 }
@@ -4740,9 +4743,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         currentSortItem = (SPFavoritesSortItem)[prefs integerForKey:SPFavoritesSortedBy];
         reverseFavoritesSort = [prefs boolForKey:SPFavoritesSortedInReverse];
 
-        // Update AWS authorization UI state and kick off async region refresh.
+        // Populate AWS regions locally; remote metadata is refreshed only when
+        // the user opens the region picker.
         [self updateAWSAuthorizationUI];
-        [self _refreshAWSAvailableRegions];
 
         // Track profile/region edits the same way as the IAM toggle.
         [awsProfilePopup setTarget:self];

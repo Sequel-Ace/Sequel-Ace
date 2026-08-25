@@ -2132,6 +2132,7 @@ DQ
                                                                                                     </dictionary>
                                                                                                 </binding>
                                                                                                 <binding destination="-2" name="enabled" keyPath="isAWSDirectoryAuthorized" id="AWSIAM-BND-CMB-EN"/>
+                                                                                                <outlet property="delegate" destination="-2" id="AWSIAM-CMB-DLG1"/>
                                                                                             </connections>
                                                                                         </comboBox>
                                                                                     </subviews>

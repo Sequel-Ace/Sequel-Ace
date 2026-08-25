@@ -203,12 +203,13 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
  */
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
 
-    [FIRApp configure];
-
     NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
     BOOL analyticsEnabled = [prefs boolForKey:SPSaveApplicationUsageAnalytics];
-    [FIRAnalytics setAnalyticsCollectionEnabled:analyticsEnabled];
-    [[FIRCrashlytics crashlytics] setCrashlyticsCollectionEnabled:analyticsEnabled];
+    if ([SAAnalyticsConsentPolicy shouldConfigureFirebaseWithAnalyticsEnabled:analyticsEnabled]) {
+        [FIRApp configure];
+        [FIRAnalytics setAnalyticsCollectionEnabled:YES];
+        [[FIRCrashlytics crashlytics] setCrashlyticsCollectionEnabled:YES];
+    }
 
 
     // this reRequests access to all bookmarks
