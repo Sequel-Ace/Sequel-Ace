@@ -261,21 +261,16 @@ import OSLog
                     let rolloutSeed = isUserInitiated
                         ? nil
                         : SAGitHubReleaseRolloutPolicy.installationSeed(in: .standard)
-                    Log.debug("applying phased rollout to automatic GitHub update prompts")
-                    releasesArray.removeAll(where: { release in
-                        !SAGitHubReleaseRolloutPolicy.shouldOffer(
-                            releaseTag: release.tagName,
-                            rolloutStartedAt: release.phasedRolloutStartedAt,
-                            at: now,
-                            installationSeed: rolloutSeed,
-                            isUserInitiated: isUserInitiated
-                        )
-                    })
+                    Log.debug("applying phased rollout to the newest GitHub update")
+                    availableRelease = SAGitHubReleaseRolloutPolicy.newestOfferedRelease(
+                        in: releasesArray,
+                        at: now,
+                        installationSeed: rolloutSeed,
+                        isUserInitiated: isUserInitiated
+                    )
+                    releases = availableRelease.map { [$0] } ?? []
 
-                    Log.debug("releasesArray count: \(releasesArray.count)")
-
-                    releases = releasesArray
-                    availableRelease = releases.first
+                    Log.debug("releases count after rollout gate: \(releases.count)")
 
                     guard
                         let currentReleaseTmp = currentRelease

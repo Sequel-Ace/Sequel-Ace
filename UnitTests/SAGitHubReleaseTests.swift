@@ -131,6 +131,63 @@ final class SAGitHubReleaseTests: XCTestCase {
         ))
     }
 
+    func testNewestPhasedReleaseDoesNotFallBackToOlderRelease() throws {
+        let data = Data(
+            #"""
+            [
+              {
+                "tag_name": "production/5.5.0-20111",
+                "name": "5.5.0 (20111)",
+                "html_url": "https://example.com/older",
+                "draft": false,
+                "prerelease": false,
+                "published_at": "2026-08-01T00:00:00Z"
+              },
+              {
+                "tag_name": "production/6.0.0-20112",
+                "name": "6.0.0 (20112)",
+                "html_url": "https://example.com/newest",
+                "draft": false,
+                "prerelease": false,
+                "published_at": "2026-08-08T00:00:00Z"
+              }
+            ]
+            """#.utf8
+        )
+        let releases = try SAGitHubRelease.decodeList(from: data)
+        let newestRelease = try XCTUnwrap(releases.max())
+        let olderRelease = try XCTUnwrap(releases.min())
+        let rolloutStart = newestRelease.phasedRolloutStartedAt
+        let lateSeed = "00000000-0000-4000-8000-000000000000"
+
+        XCTAssertFalse(SAGitHubReleaseRolloutPolicy.shouldOffer(
+            releaseTag: newestRelease.tagName,
+            rolloutStartedAt: rolloutStart,
+            at: rolloutStart,
+            installationSeed: lateSeed,
+            isUserInitiated: false
+        ))
+        XCTAssertTrue(SAGitHubReleaseRolloutPolicy.shouldOffer(
+            releaseTag: olderRelease.tagName,
+            rolloutStartedAt: olderRelease.phasedRolloutStartedAt,
+            at: rolloutStart,
+            installationSeed: lateSeed,
+            isUserInitiated: false
+        ))
+        XCTAssertNil(SAGitHubReleaseRolloutPolicy.newestOfferedRelease(
+            in: releases,
+            at: rolloutStart,
+            installationSeed: lateSeed,
+            isUserInitiated: false
+        ))
+        XCTAssertEqual(SAGitHubReleaseRolloutPolicy.newestOfferedRelease(
+            in: releases,
+            at: rolloutStart,
+            installationSeed: nil,
+            isUserInitiated: true
+        ), newestRelease)
+    }
+
     func testRolloutSeedPersistsLocally() throws {
         let suiteName = "SAGitHubReleaseRolloutPolicyTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))

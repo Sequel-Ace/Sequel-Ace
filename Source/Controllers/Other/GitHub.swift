@@ -311,6 +311,28 @@ enum SAGitHubReleaseRolloutPolicy {
             < percentage * (cohortBucketCount / 100)
     }
 
+    /// Treats the newest compatible release as the rollout gate. Falling back
+    /// to an older, fully rolled-out release would offer an obsolete
+    /// intermediate update while the intended update is still phased.
+    static func newestOfferedRelease(
+        in releases: [SAGitHubRelease],
+        at date: Date,
+        installationSeed: String?,
+        isUserInitiated: Bool
+    ) -> SAGitHubRelease? {
+        guard let newestRelease = releases.max() else {
+            return nil
+        }
+
+        return shouldOffer(
+            releaseTag: newestRelease.tagName,
+            rolloutStartedAt: newestRelease.phasedRolloutStartedAt,
+            at: date,
+            installationSeed: installationSeed,
+            isUserInitiated: isUserInitiated
+        ) ? newestRelease : nil
+    }
+
     static func installationSeed(in defaults: UserDefaults) -> String {
         if
             let storedSeed = defaults.string(forKey: installationSeedPreferenceKey),
