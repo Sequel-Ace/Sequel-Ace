@@ -2115,7 +2115,7 @@ DQ
                                                                                                 <binding destination="-2" name="enabled" keyPath="isAWSDirectoryAuthorized" id="AWSIAM-BND-LBL3-EN"/>
                                                                                             </connections>
                                                                                         </textField>
-                                                                                        <comboBox verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-CMB-001">
+                                                                                        <comboBox verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="AWSIAM-CMB-001" customClass="SAAWSRegionComboBox" customModule="Sequel_Ace" customModuleProvider="target">
                                                                                             <rect key="frame" x="108" y="202" width="252" height="25"/>
                                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                                                             <comboBoxCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" numberOfVisibleItems="10" id="AWSIAM-CMB-002">

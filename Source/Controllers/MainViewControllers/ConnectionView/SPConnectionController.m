@@ -80,7 +80,7 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 
 // Formal conformance for methods AppKit moved off the informal NSObject
 // categories; implementing them without it is deprecated. No behavior change.
-@interface SPConnectionController () <SAVaultRoleListControllerDelegate, NSMenuItemValidation, NSControlTextEditingDelegate, NSSearchFieldDelegate, SAFavoritesListDelegate>
+@interface SPConnectionController () <SAAWSRegionComboBoxPreparationDelegate, SAVaultRoleListControllerDelegate, NSMenuItemValidation, NSControlTextEditingDelegate, NSSearchFieldDelegate, SAFavoritesListDelegate>
 // Privately redeclare as read/write to get the synthesized setter
 @property (readwrite, assign) BOOL isEditingConnection;
 @property (readwrite, assign) BOOL allowSplitViewResizing;
@@ -111,7 +111,7 @@ const static NSInteger SPUseSystemTimeZoneTag = -2;
 - (BOOL)_isAWSIAMConnection;
 - (BOOL)_shouldRequireMySQLHost;
 - (void)_syncAWSIAMAndSSLInterfaceState;
-- (void)_refreshAWSAvailableRegions;
+- (void)_prepareAWSRegionPickerWithCompletion:(void (^)(void))completion;
 - (BOOL)_isVaultConnection;
 
 static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, void *key);
@@ -1281,13 +1281,6 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
                 // Post notification
                 [[NSNotificationCenter defaultCenter] postNotificationName:@"AWSDirectoryAuthorizationChanged" object:self];
-
-                // Authorization is an explicit user action and happens before the
-                // region picker can be used, so refresh its catalog now rather than
-                // after an NSComboBox popup is already visible.
-                if ([self _isAWSIAMConnection]) {
-                    [self _refreshAWSAvailableRegions];
-                }
             } else {
                 NSAlert *alert = [[NSAlert alloc] init];
                 [alert setMessageText:NSLocalizedString(@"Authorization Failed", @"AWS authorization failed alert title")];
@@ -1316,25 +1309,26 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
  * Refreshes AWS regions from AWS public metadata with a fallback cache/list.
  * The async callback updates the bound combo box values via KVO.
  */
-- (void)_refreshAWSAvailableRegions
+- (void)_prepareAWSRegionPickerWithCompletion:(void (^)(void))completion
 {
     [AWSIAMAuthManager refreshAWSRegionsIfNeededWithCompletion:^(NSArray<NSString *> *regions) {
-        if (!regions || !regions.count) return;
-        if ([self->awsAvailableRegionValues isEqualToArray:regions]) return;
+        if (regions.count && ![self->awsAvailableRegionValues isEqualToArray:regions]) {
+            NSString *currentRegion = [[self awsRegion] copy];
 
-        NSString *currentRegion = [[self awsRegion] copy];
+            [self willChangeValueForKey:@"awsAvailableRegions"];
+            self->awsAvailableRegionValues = [regions copy];
+            [self didChangeValueForKey:@"awsAvailableRegions"];
 
-        [self willChangeValueForKey:@"awsAvailableRegions"];
-        self->awsAvailableRegionValues = [regions copy];
-        [self didChangeValueForKey:@"awsAvailableRegions"];
+            if (self->awsRegionComboBox) {
+                [self->awsRegionComboBox reloadData];
+            }
 
-        if (self->awsRegionComboBox) {
-            [self->awsRegionComboBox reloadData];
+            if ([currentRegion length]) {
+                [self setAwsRegion:currentRegion];
+            }
         }
 
-        if ([currentRegion length]) {
-            [self setAwsRegion:currentRegion];
-        }
+        if (completion) completion();
     }];
 }
 
@@ -1344,6 +1338,13 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 - (NSArray<NSString *> *)awsAvailableRegions
 {
     return awsAvailableRegionValues ?: [AWSIAMAuthManager cachedOrFallbackRegions];
+}
+
+#pragma mark - SAAWSRegionComboBoxPreparationDelegate
+
+- (void)prepareAWSRegionComboBox:(SAAWSRegionComboBox *)comboBox completion:(void (^)(void))completion
+{
+    [self _prepareAWSRegionPickerWithCompletion:completion];
 }
 
 #pragma mark -
@@ -1422,8 +1423,8 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 }
 
 // Reorder Vault roles just before the popup appears (behaviour lives in
-// SAVaultRoleListController). AWS regions start refreshing earlier, when the
-// user enters the AWS IAM flow, because an open NSComboBox does not live-refresh.
+// SAVaultRoleListController). SAAWSRegionComboBox defers its first popup until
+// the user-initiated catalog refresh completes.
 - (void)comboBoxWillPopUp:(NSNotification *)notification
 {
     if ([notification object] == vaultCredentialsRoleComboBox) {
@@ -3987,14 +3988,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
 
     if (selected == 1) {
         [self updateFavoriteSelection:self];
-
-        // Favorite selection is user-initiated after setup. Start the remote
-        // catalog refresh while the AWS form is appearing so the first region
-        // popup can use the result; startup continues to use only local values.
-        if (initComplete && [self _isAWSIAMConnection]) {
-            [self _refreshAWSAvailableRegions];
-        }
-
         favoriteNameFieldWasAutogenerated = NO;
         [connectionResizeContainer setHidden:NO];
         [connectionInstructionsTextField setStringValue:NSLocalizedString(@"Enter connection details below, or choose a favorite", @"enter connection details label")];
@@ -4190,13 +4183,6 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
     [self _startEditingConnection];
 
     [self resizeTabViewToConnectionType:selectedTabView animating:YES];
-
-    // Entering the AWS IAM form is the earliest explicit user action that can
-    // require the remote region catalog. Begin loading here so the first popup
-    // is populated, while preserving a network-free startup.
-    if (selectedTabView == SPAWSIAMConnection) {
-        [self _refreshAWSAvailableRegions];
-    }
 
 
     if (selectedTabView == SPSocketConnection) {
@@ -4763,8 +4749,8 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         currentSortItem = (SPFavoritesSortItem)[prefs integerForKey:SPFavoritesSortedBy];
         reverseFavoritesSort = [prefs boolForKey:SPFavoritesSortedInReverse];
 
-        // Populate AWS regions locally. Remote metadata is refreshed only after
-        // the user enters the AWS IAM flow.
+        // Populate AWS regions locally. The custom combo box defers its first
+        // popup until a user-initiated remote refresh completes.
         [self updateAWSAuthorizationUI];
 
         // Track profile/region edits the same way as the IAM toggle.
@@ -4772,6 +4758,9 @@ static NSComparisonResult _compareFavoritesUsingKey(id favorite1, id favorite2, 
         [awsProfilePopup setAction:@selector(updateAWSIAMInterface:)];
         [awsRegionComboBox setTarget:self];
         [awsRegionComboBox setAction:@selector(updateAWSIAMInterface:)];
+        if ([awsRegionComboBox isKindOfClass:[SAAWSRegionComboBox class]]) {
+            [(SAAWSRegionComboBox *)awsRegionComboBox setPreparationDelegate:self];
+        }
 
         // Localize the Vault role refresh button title (static XIB titles are not localized in this app).
         [vaultRefreshRolesButton setTitle:NSLocalizedString(@"Refresh", @"Vault roles refresh button title")];

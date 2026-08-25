@@ -676,3 +676,142 @@ extension AWSIAMAuthManager {
         }
     }
 }
+
+// MARK: - Region Picker
+
+/// Supplies the region picker with current catalog data before its first popup.
+@objc protocol SAAWSRegionComboBoxPreparationDelegate: AnyObject {
+    @objc(prepareAWSRegionComboBox:completion:)
+    func prepareAWSRegionComboBox(_ comboBox: SAAWSRegionComboBox, completion: @escaping () -> Void)
+}
+
+/// Defers the first popup until a user-initiated AWS region refresh completes.
+/// This keeps application startup network-free without presenting a stale popup.
+@objc final class SAAWSRegionComboBox: NSComboBox {
+    @objc weak var preparationDelegate: SAAWSRegionComboBoxPreparationDelegate?
+
+    private(set) var hasPreparedPopup = false
+    private var isPreparingPopup = false
+
+    private lazy var preparationIndicator: NSProgressIndicator = {
+        let indicator = NSProgressIndicator()
+        indicator.controlSize = .small
+        indicator.style = .spinning
+        indicator.isDisplayedWhenStopped = false
+        addSubview(indicator)
+        return indicator
+    }()
+
+    override func mouseDown(with event: NSEvent) {
+        guard shouldPreparePopup(for: event),
+              let preparationDelegate else {
+            super.mouseDown(with: event)
+            return
+        }
+
+        guard !isPreparingPopup else {
+            return
+        }
+
+        isPreparingPopup = true
+        preparationIndicator.startAnimation(nil)
+        needsLayout = true
+
+        preparationDelegate.prepareAWSRegionComboBox(self) { [weak self] in
+            if Thread.isMainThread {
+                self?.finishPreparingPopup()
+            }
+            else {
+                DispatchQueue.main.async {
+                    self?.finishPreparingPopup()
+                }
+            }
+        }
+    }
+
+    override func layout() {
+        super.layout()
+
+        let indicatorSize: CGFloat = 12
+        let inset: CGFloat = 7
+        let x: CGFloat
+        if userInterfaceLayoutDirection == .rightToLeft {
+            x = bounds.minX + inset
+        }
+        else {
+            x = bounds.maxX - inset - indicatorSize
+        }
+
+        preparationIndicator.frame = NSRect(
+            x: x,
+            y: bounds.midY - indicatorSize / 2,
+            width: indicatorSize,
+            height: indicatorSize
+        )
+    }
+
+    func shouldPreparePopup(for event: NSEvent) -> Bool {
+        guard !hasPreparedPopup,
+              event.type == .leftMouseDown,
+              let cell else {
+            return false
+        }
+
+        let hit = cell.hitTest(for: event, in: bounds, of: self)
+        return hit.contains(.trackableArea) && !hit.contains(.editableTextArea)
+    }
+
+    private func finishPreparingPopup() {
+        guard isPreparingPopup else {
+            return
+        }
+
+        isPreparingPopup = false
+        hasPreparedPopup = true
+        preparationIndicator.stopAnimation(nil)
+
+        guard let window,
+              !isHiddenOrHasHiddenAncestor,
+              isEnabled else {
+            return
+        }
+
+        let buttonX: CGFloat
+        if userInterfaceLayoutDirection == .rightToLeft {
+            buttonX = bounds.minX + 8
+        }
+        else {
+            buttonX = bounds.maxX - 8
+        }
+
+        let location = convert(NSPoint(x: buttonX, y: bounds.midY), to: nil)
+        let timestamp = ProcessInfo.processInfo.systemUptime
+        guard let mouseDown = NSEvent.mouseEvent(
+            with: .leftMouseDown,
+            location: location,
+            modifierFlags: [],
+            timestamp: timestamp,
+            windowNumber: window.windowNumber,
+            context: nil,
+            eventNumber: 0,
+            clickCount: 1,
+            pressure: 1
+        ),
+        let mouseUp = NSEvent.mouseEvent(
+            with: .leftMouseUp,
+            location: location,
+            modifierFlags: [],
+            timestamp: timestamp + 0.01,
+            windowNumber: window.windowNumber,
+            context: nil,
+            eventNumber: 0,
+            clickCount: 1,
+            pressure: 0
+        ) else {
+            return
+        }
+
+        NSApp.postEvent(mouseUp, atStart: false)
+        NSApp.sendEvent(mouseDown)
+    }
+}

@@ -5,6 +5,7 @@
 //  Unit tests for AWS credentials, STS validation, and IAM auth integration.
 //
 
+import AppKit
 import XCTest
 
 final class AWSCredentialsTests: XCTestCase {
@@ -827,9 +828,64 @@ final class AWSIAMAuthManagerTests: XCTestCase {
         XCTAssertTrue(regions.isEmpty)
     }
 
+    func testRegionComboBoxDefersFirstPopupUntilPreparationCompletes() throws {
+        let comboBox = SAAWSRegionComboBox(frame: NSRect(x: 0, y: 0, width: 200, height: 26))
+        let delegate = SAAWSRegionComboBoxPreparationDelegateStub()
+        comboBox.preparationDelegate = delegate
+        let popupButtonEvent = try XCTUnwrap(comboBoxMouseDownEvent(x: 192))
+
+        XCTAssertTrue(comboBox.shouldPreparePopup(for: popupButtonEvent))
+
+        comboBox.mouseDown(with: popupButtonEvent)
+
+        XCTAssertEqual(delegate.preparationCount, 1)
+        XCTAssertFalse(comboBox.hasPreparedPopup)
+
+        delegate.completePreparation()
+
+        XCTAssertTrue(comboBox.hasPreparedPopup)
+        XCTAssertFalse(comboBox.shouldPreparePopup(for: popupButtonEvent))
+    }
+
+    func testRegionComboBoxDoesNotRefreshWhenEditingItsText() throws {
+        let comboBox = SAAWSRegionComboBox(frame: NSRect(x: 0, y: 0, width: 200, height: 26))
+        let textFieldEvent = try XCTUnwrap(comboBoxMouseDownEvent(x: 8))
+
+        XCTAssertFalse(comboBox.shouldPreparePopup(for: textFieldEvent))
+    }
+
+    private func comboBoxMouseDownEvent(x: CGFloat) -> NSEvent? {
+        NSEvent.mouseEvent(
+            with: .leftMouseDown,
+            location: NSPoint(x: x, y: 13),
+            modifierFlags: [],
+            timestamp: 0,
+            windowNumber: 0,
+            context: nil,
+            eventNumber: 1,
+            clickCount: 1,
+            pressure: 1
+        )
+    }
+
     private func clearRegionCatalogCache() {
         UserDefaults.standard.removeObject(forKey: RegionCacheKeys.regions)
         UserDefaults.standard.removeObject(forKey: RegionCacheKeys.timestamp)
+    }
+}
+
+private final class SAAWSRegionComboBoxPreparationDelegateStub: NSObject, SAAWSRegionComboBoxPreparationDelegate {
+    private(set) var preparationCount = 0
+    private var completion: (() -> Void)?
+
+    func prepareAWSRegionComboBox(_ comboBox: SAAWSRegionComboBox, completion: @escaping () -> Void) {
+        preparationCount += 1
+        self.completion = completion
+    }
+
+    func completePreparation() {
+        completion?()
+        completion = nil
     }
 }
 
