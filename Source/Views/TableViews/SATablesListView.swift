@@ -34,6 +34,7 @@ import AppKit
     // example when the user switches windows or applications). Observe that
     // transition explicitly so a pending match cannot load in the background.
     private var windowDeactivationSubscription: NotificationToken?
+    private var windowMouseDownMonitor: Any?
 
     // Scrollbar and scroll-wheel events are handled by the enclosing scroll
     // view, not this table. Observe user-initiated scrolling so those actions
@@ -100,6 +101,7 @@ import AppKit
     override func viewWillMove(toWindow newWindow: NSWindow?) {
         cancelDeferredRowCommand()
         windowDeactivationSubscription = nil
+        removeWindowMouseDownMonitor()
         scrollInteractionSubscriptions.removeAll()
 
         if let newWindow {
@@ -109,6 +111,19 @@ import AppKit
                 queue: .main
             ) { [weak self] _ in
                 self?.cancelTypeAhead()
+            }
+
+            // Mouse-downs handled by surrounding views (notably split-view
+            // dividers) neither reach this table nor change first responder.
+            // Watch this window so any such click still cancels a pending
+            // match before AppKit enters its tracking loop.
+            windowMouseDownMonitor = NSEvent.addLocalMonitorForEvents(
+                matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]
+            ) { [weak self] event in
+                if event.window === self?.window {
+                    self?.cancelTypeAheadIfNeeded()
+                }
+                return event
             }
 
             if let scrollView = enclosingScrollView {
@@ -134,6 +149,18 @@ import AppKit
         }
 
         super.viewWillMove(toWindow: newWindow)
+    }
+
+    deinit {
+        removeWindowMouseDownMonitor()
+    }
+
+    private func removeWindowMouseDownMonitor() {
+        guard let windowMouseDownMonitor else {
+            return
+        }
+        NSEvent.removeMonitor(windowMouseDownMonitor)
+        self.windowMouseDownMonitor = nil
     }
 
     private func cancelTypeAheadIfNeeded() {
@@ -289,6 +316,9 @@ import AppKit
 
             if let loadingDocument, loadingDocument.isWorking() {
                 self.deferredRowCommandDocument = loadingDocument
+            }
+            else if endedDocument.isWorking() {
+                self.deferredRowCommandDocument = endedDocument
             }
             else {
                 self.replayDeferredRowCommand()
@@ -830,7 +860,7 @@ import AppKit
 
 /// The search badge is purely informational; without this override the
 /// visual-effect view would swallow clicks meant for the rows beneath it.
-private final class SAClickThroughVisualEffectView: NSVisualEffectView {
+@objc private final class SAClickThroughVisualEffectView: NSVisualEffectView {
 
     override func hitTest(_ point: NSPoint) -> NSView? {
         nil
