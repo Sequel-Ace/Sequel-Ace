@@ -141,4 +141,11 @@ extension SPWindowController: NSWindowDelegate {
     func windowDidEndLiveResize(_ notification: Notification) {
         window?.saveFrame(usingName: Self.frameAutosaveName)
     }
+
+    func windowDidResize(_ notification: Notification) {
+        // Covers non-live frame changes (zoom, programmatic setFrame) that never fire
+        // windowDidEndLiveResize. Skipped mid-drag: live resizes save once at the end.
+        guard let window = window, !window.inLiveResize else { return }
+        window.saveFrame(usingName: Self.frameAutosaveName)
+    }
 }
