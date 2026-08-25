@@ -1367,7 +1367,8 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 		//ignore anything that we didn't change
 		if (![changedKeys containsObject:key]) continue;
 		
-		NSString *privilege = SPUserManagerGrantNameForPrivilegeKey(key, [connection isMariaDB]);
+		BOOL isMariaDB = [connection isMariaDB];
+		NSString *privilege = [SAUserManagerPrivilegeNormalizer normalizedGrantName:SPUserManagerGrantNameForPrivilegeKey(key, isMariaDB) isMariaDB:isMariaDB];
 		
 		NS_DURING
 			if ([[schemaPriv valueForKey:key] boolValue] == YES) {
@@ -1458,7 +1459,8 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 			//ignore anything that we didn't change
 			if (![changedKeys containsObject:key]) continue;
 			
-			NSString *privilege = SPUserManagerGrantNameForPrivilegeKey(key, [connection isMariaDB]);
+			BOOL isMariaDB = [connection isMariaDB];
+			NSString *privilege = [SAUserManagerPrivilegeNormalizer normalizedGrantName:SPUserManagerGrantNameForPrivilegeKey(key, isMariaDB) isMariaDB:isMariaDB];
 			
 			// Check the value of the priv and assign to grant or revoke query as appropriate; do this
 			// in a try/catch check to avoid exceptions for unhandled privs
@@ -1582,10 +1584,6 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 									[aUser tickQuotedString],
 									[aHost tickQuotedString]];
 
-		if(![connection isNotMariadb103]){
-			grantStatement = [grantStatement stringByReplacingOccurrencesOfString:@"DELETE VERSIONING ROWS" withString:@"DELETE HISTORY"];
-		}
-
 		[connection queryString:grantStatement];
 		return [self _checkAndDisplayMySqlErrorForPrivilegeOperation:NSLocalizedString(@"grant", @"grant privilege operation") privileges:thePrivileges onDatabase:aDatabase forUser:aUser host:aHost statement:grantStatement];
 	}
@@ -1617,10 +1615,6 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 									[aUser tickQuotedString],
 									[aHost tickQuotedString],
 									[[grantBatch objectForKey:@"preserveGrantOption"] boolValue] ? @" WITH GRANT OPTION" : @""];
-
-		if(![connection isNotMariadb103]){
-			grantStatement = [grantStatement stringByReplacingOccurrencesOfString:@"DELETE VERSIONING ROWS" withString:@"DELETE HISTORY"];
-		}
 
 		[connection queryString:grantStatement];
 		if (![self _checkAndDisplayMySqlErrorForPrivilegeOperation:NSLocalizedString(@"grant", @"grant privilege operation") privileges:privileges onDatabase:aDatabase forUser:aUser host:aHost statement:grantStatement]) return NO;
@@ -1662,10 +1656,6 @@ static NSString *SPSchemaPrivilegesTabIdentifier = @"Schema Privileges";
 							[aHost tickQuotedString]];
 	}
 	
-	if(![connection isNotMariadb103]){
-		revokeStatement = [revokeStatement stringByReplacingOccurrencesOfString:@"DELETE VERSIONING ROWS" withString:@"DELETE HISTORY"];
-	}
-
 	[connection queryString:revokeStatement];
 	NSArray *revokeOperationPrivileges = [revokeStatement rangeOfString:@"REVOKE GRANT OPTION" options:NSCaseInsensitiveSearch].location == NSNotFound ? thePrivileges : @[@"grant option"];
 	return [self _checkAndDisplayMySqlErrorForPrivilegeOperation:NSLocalizedString(@"revoke", @"revoke privilege operation") privileges:revokeOperationPrivileges onDatabase:aDatabase forUser:aUser host:aHost statement:revokeStatement];
