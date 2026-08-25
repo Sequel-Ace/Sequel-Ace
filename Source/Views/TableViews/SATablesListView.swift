@@ -166,7 +166,8 @@ import AppKit
             // otherwise Return would start renaming the row that was selected
             // before the search, and the delayed commit would then interrupt
             // that edit.
-            if let loadingDocument = resolveTypeAhead() {
+            let waitsForTableLoad = isRowCommandBlockedByLoading(event)
+            if let loadingDocument = resolveTypeAhead(), waitsForTableLoad {
                 deferredRowCommand = event
                 deferredRowCommandDocument = loadingDocument
                 return
@@ -174,6 +175,20 @@ import AppKit
         }
 
         super.keyDown(with: event)
+    }
+
+    /// Commands that edit or move the selected row are rejected while its
+    /// table loads. Focus traversal and shortcuts do not depend on the row
+    /// being selectable and must be forwarded immediately.
+    private func isRowCommandBlockedByLoading(_ event: NSEvent) -> Bool {
+        switch event.keyCode {
+        case 36, 76,                         // Return, keypad Enter
+             115, 116, 119, 121,            // Home, Page Up, End, Page Down
+             123...126:                     // Arrow keys
+            return true
+        default:
+            return false
+        }
     }
 
     override func mouseDown(with event: NSEvent) {
