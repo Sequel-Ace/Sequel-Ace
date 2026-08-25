@@ -69,10 +69,10 @@ private extension SPWindowController {
     /// and claim the autosave name so subsequent moves/resizes are persisted again.
     ///
     /// Only one live window can own an autosave name at a time, so with several windows open
-    /// the claim is best-effort: it keeps live move/resize persistence for whichever window
-    /// holds it. Every window additionally saves its frame in `windowWillClose(_:)`, so the
-    /// most recently closed window always defines the frame the next new window opens with -
-    /// no ownership handover is needed when the claiming window closes first.
+    /// the claim is best-effort. Every window additionally saves its frame when it is moved,
+    /// resized, or closed (see the `NSWindowDelegate` methods below), so the most recently
+    /// manipulated window always defines the frame the next new window opens with - no
+    /// ownership handover is needed when the claiming window closes first.
     func setupFramePersistence() {
         shouldCascadeWindows = false
         windowFrameAutosaveName = Self.frameAutosaveName
@@ -128,5 +128,17 @@ extension SPWindowController: NSWindowDelegate {
 
         // Tell listeners that this database document is being closed - fixes retain cycles and allows cleanup
         NotificationCenter.default.post(name: NSNotification.Name.SPDocumentWillClose, object: databaseDocument)
+    }
+
+    // AppKit only auto-persists moves and resizes for the single window that owns the
+    // autosave name, so windows that lost the claim would leave stale frame data behind
+    // if a new window opened while they were still alive. Save explicitly from every
+    // window so the last-manipulated frame is always the one a new window restores.
+    func windowDidMove(_ notification: Notification) {
+        window?.saveFrame(usingName: Self.frameAutosaveName)
+    }
+
+    func windowDidEndLiveResize(_ notification: Notification) {
+        window?.saveFrame(usingName: Self.frameAutosaveName)
     }
 }
