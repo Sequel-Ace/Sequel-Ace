@@ -45,9 +45,9 @@ import AppKit
     // to end, otherwise the table delegate rejects it while the document works.
     private var documentTaskSubscriptions: [NotificationToken] = []
     private var isCommittingPendingSelection = false
-    private var documentWithTaskStartedDuringPendingSelection: AnyObject?
+    private var documentWithTaskStartedDuringPendingSelection: SPDatabaseDocument?
     private var deferredRowCommand: NSEvent?
-    private weak var deferredRowCommandDocument: AnyObject?
+    private weak var deferredRowCommandDocument: SPDatabaseDocument?
 
     // Text an input method is still composing; it is displayed but not
     // searched until the input method commits it via insertText/unmarkText.
@@ -175,7 +175,13 @@ import AppKit
             // before the search, and the delayed commit would then interrupt
             // that edit.
             let waitsForTableLoad = isRowCommandBlockedByLoading(event)
-            if let loadingDocument = resolveTypeAhead(), waitsForTableLoad {
+            if let loadingDocument = resolveTypeAhead(),
+               waitsForTableLoad,
+               loadingDocument.isWorking() {
+                // A sufficiently fast load can finish before selection
+                // returns. Check the live state on the main thread before
+                // deferring so an already-delivered end notification cannot
+                // strand this event.
                 deferredRowCommand = event
                 deferredRowCommandDocument = loadingDocument
                 return
@@ -229,7 +235,7 @@ import AppKit
     }
 
     /// Ends the current search immediately, committing the row it matched.
-    private func resolveTypeAhead() -> AnyObject? {
+    private func resolveTypeAhead() -> SPDatabaseDocument? {
         suspendPendingCommit()
         let loadingDocument = commitPendingSelection()
 
@@ -241,14 +247,14 @@ import AppKit
     }
 
     private func captureDocumentTaskStartedDuringPendingSelection(_ notification: Notification) {
-        guard isCommittingPendingSelection, let document = notification.object as AnyObject? else {
+        guard isCommittingPendingSelection, let document = notification.object as? SPDatabaseDocument else {
             return
         }
         documentWithTaskStartedDuringPendingSelection = document
     }
 
     private func documentTaskEnded(_ notification: Notification) {
-        guard let endedDocument = notification.object as AnyObject?,
+        guard let endedDocument = notification.object as? SPDatabaseDocument,
               let pendingDocument = deferredRowCommandDocument,
               endedDocument === pendingDocument
         else {
@@ -408,7 +414,7 @@ import AppKit
     }
 
     @discardableResult
-    private func commitPendingSelection() -> AnyObject? {
+    private func commitPendingSelection() -> SPDatabaseDocument? {
         guard let pending = pendingSelection else {
             return nil
         }
