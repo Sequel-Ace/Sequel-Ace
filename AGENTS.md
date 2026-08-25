@@ -19,6 +19,12 @@ later.
 - **New UI is SwiftUI** where feasible. Established hosting pattern:
   `@objc final` `NSWindowController` subclass + `NSHostingView` + SwiftUI root
   view — see `SAAboutWindowController`, `SABundleHTMLOutputWindowController`.
+- **Localization:** every new or changed localized UI string — whether added in
+  code, a XIB, or another language catalog — must have a matching key and
+  English value in `Resources/Localization/en.lproj/Localizable.strings` in the
+  same PR. Reuse an existing exact-text key where possible, include a useful
+  translator comment for new entries, and run
+  `plutil -lint Resources/Localization/en.lproj/Localizable.strings`.
 - **SwiftUI view boundaries** (per Apple's performance guidance): splitting a
   `body` into computed properties is *not* factoring for invalidation — every
   section still shares the view's boundary and re-evaluates on any state
@@ -83,7 +89,8 @@ later.
   `NSUserNotification` API. The wider warning burn-down (remaining: AppKit
   deprecation batch, Swift 6 readiness, old drag-API delegate methods, and
   the deferred SecKeychain/NSConnection projects) is tracked in
-  `docs/development/warnings-elimination-plan.md`.
+  `docs/development/warnings-elimination-plan.md`. The NSConnection item now
+  has a design: `docs/development/ssh-tunnel-xpc-migration-plan.md`.
 
 ## Repo layout (abridged)
 
@@ -98,9 +105,12 @@ later.
   roadmap: what's done (with rationale), what's next, and known sharp edges.
   Read it before starting refactoring work.
 
-Biggest legacy files (approx.): `SPDatabaseDocument.m` (~6.3k lines, god
-object being decomposed), `SPTableContent.m` (~5k), `SPExportController.m`
-(~4k), `SPCustomQuery.m` (~3.9k), `SPTextView.m` (~3.9k).
+Biggest legacy files (2026-08-24): `SPDatabaseDocument.m` (~6.4k lines, god
+object being decomposed), `SPConnectionController.m` (~5.4k — *growing*, new
+connection features keep landing here as ObjC; see the modernization plan),
+`SPTableContent.m` (~5.4k), `SPCustomQuery.m` (~4.1k), `SPExportController.m`
+(~4.0k), `SPTextView.m` (~3.9k). Roughly 23% of `Source/` is Swift by line
+count.
 
 ## Building and testing
 
@@ -108,8 +118,8 @@ object being decomposed), `SPTableContent.m` (~5k), `SPExportController.m`
   Beta" is a build configuration of the same target, not a separate target.
 - Dependencies come via SPM (Firebase, Alamofire, SnapKit, OCMock, FMDB, …);
   first resolve needs network access.
-- Run the "Unit Tests" target's tests for any change. The full suite is 900+
-  tests and should be fully green.
+- Run the "Unit Tests" target's tests for any change. The full suite is ~1,080
+  tests (63 environment-skipped) and should be fully green.
 - Agents: prefer the Xcode MCP (`BuildProject`, `GetTestList`, `RunSomeTests`,
   `RunAllTests`, `GetBuildLog`) over shelling out to `xcodebuild` — see
   [Xcode automation (MCP)](#xcode-automation-mcp) below.

@@ -1,40 +1,68 @@
 # Sequel Ace Modernization — Follow-up Plan
 
-> **Revised 2026-08-11.** Sibling tracks: the build-warning burn-down lives in
-> `docs/development/warnings-elimination-plan.md` (steps 0-7 merged; 413 -> ~180),
-> the help-viewer rewrite plan in `docs/development/help-viewer-rewrite-plan.md`
-> (executed), agent ground rules in `AGENTS.md`.
+> **Revised 2026-08-24.** Sibling tracks: the build-warning burn-down in
+> `docs/development/warnings-elimination-plan.md` (steps 0-9 merged; the last
+> two reduction PRs are in review), the help-viewer rewrite in
+> `docs/development/help-viewer-rewrite-plan.md` (executed), the platform floor
+> in `docs/development/macos-13-minimum-plan.md` (executed, merged as #2587),
+> the SSH-tunnel IPC design in `docs/development/ssh-tunnel-xpc-migration-plan.md`
+> (not started), agent ground rules in `AGENTS.md`.
 
-## State of the world (August 2026 revision)
+## State of the world (2026-08-24 revision)
 
-Landed since this plan was written:
+Everything in this section was re-derived from `main` at `3763d5247` on the
+revision date, not carried forward from the previous pass.
 
-- **Phases A1-A4, D1-D3, B3, C1a/C1b, C2a**: done as detailed below.
+- **Phases A1-A4, B3, C1a/C1b, C2a/C2b, C3, D1-D3**: done as detailed below.
+  The SwiftUI connection screen is no longer scaffolding — see the C3 note.
+- **The platform floor moved to macOS 13.5 and the app is now 6.0.0**
+  (#2587, merged 2026-08-24). What that changed for this plan:
+  - `SAGroupedFormStyle`, both `SARecordView` macOS 12 fallbacks and the
+    `SAPrintUtility` 13.3 fallbacks are gone — the second, untested
+    print-background rendering path with them.
+  - **`@Observable` is still blocked.** It needs macOS 14, so the
+    invalidation-granularity work below stays parked; 13.5 did not move it.
+    Availability gates in this codebase should now name **13.6 or later** or
+    they are dead code (`AGENTS.md`).
+  - It unblocked Step 4 of the SSH-tunnel XPC plan, which was the actual reason
+    for the bump: `-[NSXPCListener setConnectionCodeSigningRequirement:]` is
+    13+ and had no supported equivalent on 12.
 - **Modernization arcs completed** (see warnings plan for details):
-  NSArchiver -> keyed archiving (SAArchiving, all call sites), WebView -> 
+  NSArchiver -> keyed archiving (SAArchiving, all call sites), WebView ->
   WKWebView for bundle output, all print flows (SAPrintUtility +
   SAHTMLPrintRenderer + SAPrintAccessoryController) *and* the MySQL help viewer
   (SAHelpViewer*) — no legacy WebKit left, NSUserNotification ->
   SANotificationCenter, keyed-archiver initializer migration (spf wire format
   pinned by SAKeyedArchiveCompatTests), AppKit deprecation batch 3,
-  SPDatabaseDocument.h nullability audit.
+  SPDatabaseDocument.h nullability audit, Swift 6 concurrency readiness
+  (step 8), the AppKit validation/editing protocols and both drag-API
+  migrations (steps 9a/9b).
 - **Community/parallel work**: MCP server (SPMCPServer + HTTP + pref pane),
   Vault auth (`SAVault*` + VaultAuthManager), AWS IAM/SSO, cell-filter suite
   (`SACellFilter*`), SAHelpViewerOnlineURLBuilder (+tests), connection-string
-  import + duplicate detection, PHP-serialized field editor support.
-- **C3 scaffolding exists but is hollow**: SAConnectionWindowController (221
-  lines), SAConnectionViewCoordinator, and a "New Connection Window" menu item
-  are in — but the window still hosts the AppKit/XIB connection view, and
-  SAConnectionFormView remains TCP/IP-only (C2b not started).
-- **PostgreSQL abstraction pending**: PRs #2482/#2493 (Rust FFI driver +
-  Swift `id<SPDatabaseConnection>` abstraction) are open. If they land, all
-  Phase E work must target the abstraction, not raw SPMySQLConnection.
-- **⚠️ SPConnectionController.m regressed to 5,426 lines** (was 3,755 after
-  the decoupling branch): the connection-string import, duplicate detection,
-  Vault and AWS features landed as new ObjC directly in the controller,
-  outpacing extraction. The AGENTS.md Swift-only rule postdates most of that
-  code. The #2491 keychain-handoff regression is evidence of the integration
-  risk in this area.
+  import + duplicate detection, PHP-serialized field editor support, editable
+  Record View (`SARecordView`), column-value copy in result tables.
+- **C3 is real.** `SAConnectionWindowController` is 755 lines (was 221) and
+  hosts `SAFavoritesList` + `SAConnectionFormView` over `SAConnectionService`;
+  the "New Connection Window" menu item is enabled and runs the SwiftUI screen
+  beside the XIB flow. Still with the AppKit form: keychain password
+  auto-fill, favorites CRUD, and the Vault role-list fetch.
+- **Swift/ObjC balance**: 125 Swift files / 28.4k lines against 143 `.m` files
+  / 94.0k lines under `Source/` (excluding `ThirdParty/`) — roughly 23% Swift
+  by line count. Useful as a trend line; re-measure with
+  `find Source -name "*.swift" -not -path "*ThirdParty*" -exec cat {} + | wc -l`.
+- **PostgreSQL abstraction is stalled, not pending.** #2482 (Rust FFI driver)
+  and #2493 (Swift abstraction) are both still **drafts**, last touched
+  2026-08-03. Phase E is gated on them (see Recommended order), so that gate
+  has not moved in three weeks — worth an explicit decision rather than
+  continued waiting.
+- **⚠️ SPConnectionController.m is 5,431 lines** (was 3,755 after the
+  decoupling branch, 5,426 at the previous revision): the connection-string
+  import, duplicate detection, Vault and AWS features landed as new ObjC
+  directly in the controller, outpacing extraction. The AGENTS.md Swift-only
+  rule postdates most of that code, and the #2491 keychain-handoff regression
+  is evidence of the integration risk here. **First slice of the fix is in
+  review**: #2583 extracts duplicate detection into `SAFavoriteDuplicateMatcher`.
 
 ## What's been done (decoupling branch)
 
@@ -54,14 +82,23 @@ Key deliverables:
 
 ## Current codebase pain points
 
-| File | Lines (Jun -> Aug 2026) | Problem |
-|------|-------|---------|
-| SPDatabaseDocument.m | 6,592 -> 6,349 | God object; shrinking despite feature additions |
-| SPConnectionController.m | 3,755 -> **5,426** | REGRESSED: new import/Vault/AWS ObjC landed here |
-| SPTableContent.m | 5,027 -> 5,145 | Table data display + editing, massive |
-| SPExportController.m | 3,952 -> 3,958 | Export logic tightly coupled to UI |
-| SPCustomQuery.m | 3,870 -> 3,904 | Query editor + result handling |
-| SPTextView.m | 3,865 -> 3,878 | SQL text view with autocompletion |
+Measured on `main` at `3763d5247` (2026-08-24) with `wc -l`. The middle column
+is the 2026-08-11 revision, so the delta is two weeks of feature work.
+
+| File | Jun 2026 | Aug 11 | **Aug 24** | Problem |
+|------|------|------|------|---------|
+| SPDatabaseDocument.m | 6,592 | 6,349 | **6,369** | God object; roughly flat, still the biggest |
+| SPConnectionController.m | 3,755 | 5,426 | **5,431** | REGRESSED: import/Vault/AWS ObjC landed here. #2583 starts the clawback |
+| SPTableContent.m | 5,027 | 5,145 | **5,351** | +206 in two weeks — fastest-growing file in the app |
+| SPCustomQuery.m | 3,870 | 3,904 | **4,106** | +202 in two weeks; crossed 4k |
+| SPExportController.m | 3,952 | 3,958 | **3,959** | Export logic tightly coupled to UI |
+| SPTextView.m | 3,865 | 3,878 | **3,879** | SQL text view with autocompletion |
+
+Read the trend, not the absolute numbers: decomposition (A1-A4, D1-D3) is
+holding `SPDatabaseDocument.m` roughly flat against continuous feature work,
+which is the win. The two Phase E files are now the ones actually accelerating
+— together +408 lines in a fortnight — which strengthens the case for not
+leaving Phase E indefinitely parked behind a stalled draft.
 
 ## Follow-up work (prioritized)
 
@@ -479,11 +516,13 @@ C2b — all connection types + SSL, colour, time zone — ✅ Done
   into the form works; a saved favorite's password does not auto-fill.
 - 5 new model tests (73 in `SAConnectionFormModelTests`) covering favorite load,
   password non-carry, the Vault re-split on load, nil favorites and Quick Connect.
-- The standalone connection window is the ideal host for SwiftUI views
-- Replace the embedded SPConnectionController with SwiftUI favorites list + connection form
-- Use `SAConnectionService` directly for connection establishment
-- Re-enable the "New Connection Window" menu item (currently deferred to avoid duplicate with XIB item)
-- Eventually the XIB menu item (`newWindow:`) gets replaced by the standalone window flow
+- **Remaining before the SwiftUI screen can replace the XIB flow** (this is
+  what actually stops new connection UI landing in `SPConnectionController.m`,
+  so it is on the recommended order): keychain password auto-fill for a
+  selected favorite, favorites CRUD from this window (add / duplicate / delete
+  / rename / reorder), and the Vault role-list fetch. Only once those exist
+  does replacing the XIB's `newWindow:` become a question of switching a menu
+  item rather than a feature gap.
 
 **C2/C3 follow-up — SwiftUI invalidation boundaries** — 🟡 Time-zone picker done
 - Apple's guidance: computed-property sections share their view's invalidation
@@ -630,53 +669,53 @@ These are the next biggest files after SPDatabaseDocument. Lower priority but ev
 - Extract query execution into a service
 - Create protocols for table data source/delegate
 
-## Recommended order (August 2026 revision)
+## Recommended order (2026-08-24 revision)
 
-1. ~~**Help viewer WKWebView rewrite**~~ — ✅ Done (warnings plan step 6).
-   `SAHelpViewerModel` / `SAHelpViewerView` / `SAHelpViewerWindowController`
-   replaced SPHelpViewerController + HelpViewer.xib; **legacy WebKit is now gone
-   from the codebase** (33 deprecation warnings retired). Execution notes in
-   `docs/development/warnings-elimination-plan.md`.
-2. ~~**C2b — extend SAConnectionFormModel/View to all connection types**~~ —
-   ✅ Done. All five types render, with SSL options, colour and time zone;
-   42 model tests. The AWS `~/.aws` authorization, the Vault role-list fetch
-   and favorites save parity were deliberately left to C3, which supplies the
-   live host they need.
-3. ~~**C3 — make the standalone window real**~~ — ✅ Done. The standalone window
-   hosts SAFavoritesList + SAConnectionFormView, drives SAConnectionService
-   directly (IAM/Vault credentials included), and the "New Connection Window"
-   menu item is live. Favorites CRUD, keychain retrieval and the Vault
-   role-list fetch remain with the AppKit form — see the C3 section above.
-4. **SPConnectionController re-containment** — 🟡 Duplicate detection done.
-   `SAFavoriteDuplicateMatcher` (both targets, 21 tests) now owns the pure
-   rules: connection-type string↔tag mapping (including the deliberate quirk
-   that Vault compares as TCP/IP), port normalization (NSNumber/NSString,
-   empty → 3306 except sockets), the base + mode-specific duplicate predicate
-   fed by both import paths (URL keys first, favorite-plist keys second), and
-   the name/ID-preserving merge behind "Update". The controller keeps the
-   SPTreeNode walk (B2b sharp edge), the alert UI and the keychain side
-   effects; its three class helpers are one-line delegations. Remaining in
-   this item: the connection-string → favorite-dictionary *mapping* itself
-   (`favoriteDictionaryFromConnectionDetails`-shaped code around
-   SPConnectionController.m:2300) and the import-plist ID reassignment /
-   leaf-collection helpers — same extraction pattern, next slice.
-5. **Warnings remainder** (step 9 + deferred SecKeychain/NSConnection/
-   OpenSSL — see warnings plan). Step 8 (Swift 6 concurrency) is ✅ done: the
-   three blocking-wrapper/observer-token sites now go through
-   `SAAsyncResultBox` and `NotificationToken`, leaving no concurrency
-   warnings. Step 9 turned out to be mostly informal-protocol conformance
-   rather than the drag-API rewrites the plan assumed: 36 of its 42 warnings
-   were fixed by declaring `NSMenuItemValidation` /
-   `NSControlTextEditingDelegate` / `NSFontChanging` /
-   `NSToolbarItemValidation` (step 9a, done). Step 9b (the 6 real delegate
-   methods) is now also done: part 1 migrated the internal reorders, part 2 the
-   three drag-*out* payloads (query results, table content, navigator) via
-   `SADragPasteboard`, which also retired the navigator's two non-UTI
-   pasteboard type names. The drag-out paths still want the manual
-   drag-into-TextEdit verification listed in the warnings plan.
-6. **Phase E (table content / custom query services)** — explicitly gated on
-   the PostgreSQL abstraction decision (#2482/#2493): if it lands, extract
-   against `id<SPDatabaseConnection>`; starting before that decision risks
-   re-doing the seams.
-7. **B1/B2b** (integration tests, test-target restructure) — unchanged
-   backlog, pick up opportunistically.
+Items 1-3 of the previous revision are done; the list below is what is actually
+next. (#2583, #2584 and #2586, in review when this revision was drafted, have
+all landed since.)
+
+1. **SPConnectionController re-containment** — 🟡 first slice landed.
+   #2583 (merged) extracts connection-import duplicate detection into
+   `SAFavoriteDuplicateMatcher` (pure Swift, both targets), leaving the
+   `SPTreeNode` walk, alert UI and keychain side effects behind. The rest of
+   the freshly-added import logic (the `candidate*`/`detail*`/`imported*`
+   naming from the shadow-rename pass) is the same shape of work and is best
+   done while the code is young. This is the file that regressed; it is the
+   highest-value target on the list.
+2. **Finish the warnings burn-down** — ✅ sweeps done. #2584 (532 -> 358) and
+   #2586 (358 -> 162) have both landed. What remains is the *deferred* set,
+   which is project work rather than a sweep: SPKeychain `SecItem*`, the
+   NSConnection -> XPC migration, and the bundled OpenSSL rebuild. See the
+   warnings plan.
+3. **SSH tunnel IPC: NSConnection -> NSXPCConnection** — now unblocked. The
+   macOS 13.5 floor was adopted specifically so Step 4 (peer validation via
+   `setConnectionCodeSigningRequirement:`) is a real security win rather than a
+   partial one. Design is written up in `ssh-tunnel-xpc-migration-plan.md`,
+   including a spike (Step 0) that decides the whole approach and a Step 1
+   (narrow the vended surface) that is worth landing on its own merits either
+   way. Highest blast radius in the codebase — SSH connections break if it is
+   wrong — so it stays spike-first and behind a flag.
+4. **Decide the PostgreSQL question rather than wait on it.** #2482 and #2493
+   are drafts that have not moved since 2026-08-03, and Phase E has been gated
+   on them. Meanwhile `SPTableContent.m` and `SPCustomQuery.m` grew 408 lines
+   in a fortnight. Either the abstraction is going to land — in which case
+   Phase E extractions should target `id<SPDatabaseConnection>` — or it is not,
+   and Phase E should start against `SPMySQLConnection` with the seams drawn so
+   an abstraction can slot in later. Continuing to wait is the one option that
+   costs something every week.
+5. **Phase E (table content / custom query services)** — see item 4. The
+   extraction shape is unchanged: pull data loading and query execution into
+   services, define protocols for the table data source/delegate.
+6. **C3 remainder: keychain, favorites CRUD, Vault role list.** The standalone
+   window works but a saved favorite's password does not auto-fill, favorites
+   cannot be added/renamed/reordered from it, and the Vault Role field is plain
+   text. Until these land the SwiftUI screen cannot replace the XIB flow, which
+   is what actually stops new connection UI from landing in
+   `SPConnectionController.m`.
+7. **B1/B2b** (connection integration tests, test-target restructure) —
+   unchanged backlog, pick up opportunistically. B2b is still blocked behind
+   the test-target ObjC visibility sharp edge documented above.
+8. **Invalidation granularity** — parked until the deployment target reaches
+   macOS 14 for `@Observable`. 13.5 did not unlock it. `SATimeZonePicker`
+   remains the pattern for any genuinely expensive section in the meantime.
