@@ -287,6 +287,16 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 
 			[[theTableView tableColumnWithIdentifier:@"name"] setWidth:maxWindowWidth];
 		}
+		else {
+			NSScrollView *scrollView = (NSScrollView *)[self contentView];
+			maxWindowWidth = [SACompletionWindowLayout windowSizeForTableContentSize:NSMakeSize(tableContentWidth, 0)
+			                                                           maximumWidth:CGFLOAT_MAX
+			                                                           scrollerStyle:[scrollView scrollerStyle]].width;
+		}
+
+		// setCaretPos: runs before the first filter pass, so size the window now
+		// to keep the expanded popup inside the current screen.
+		[self setContentSize:NSMakeSize(maxWindowWidth, 0)];
 
 		currentDb = selectedDb;
 
@@ -391,6 +401,7 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 
 	[theTableView setDataSource:self];
 	[theTableView setDelegate:self];
+	tableContentWidth = NSWidth([theTableView frame]);
 	[scrollView setDocumentView:theTableView];
 
 	[self setContentView:scrollView];
@@ -729,7 +740,12 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 	NSPoint old = NSMakePoint([self frame].origin.x, [self frame].origin.y + [self frame].size.height);
 
 	NSInteger displayedRows = [newFiltered count] < SPNarrowDownCompletionMaxRows ? [newFiltered count] : SPNarrowDownCompletionMaxRows;
-	CGFloat newHeight = ([theTableView rowHeight] + [theTableView intercellSpacing].height) * ((displayedRows) ? displayedRows : 1);
+	CGFloat rowsHeight = ([theTableView rowHeight] + [theTableView intercellSpacing].height) * ((displayedRows) ? displayedRows : 1);
+	NSScrollView *scrollView = (NSScrollView *)[self contentView];
+	NSSize newWindowSize = [SACompletionWindowLayout windowSizeForTableContentSize:NSMakeSize(tableContentWidth, rowsHeight)
+	                                                                  maximumWidth:maxWindowWidth
+	                                                                  scrollerStyle:[scrollView scrollerStyle]];
+	CGFloat newHeight = newWindowSize.height;
 
 	if(caretPos.y >= 0 && (isAbove || caretPos.y < newHeight)) {
 		isAbove = YES;
@@ -742,7 +758,7 @@ withDBStructureRetriever:(SPDatabaseStructure *)theDatabaseStructure
 
 	// newHeight is currently the new height for theTableView, but we need to resize the whole window
 	// so here we use the difference in height to find the new height for the window
-	[self setFrame:NSMakeRect(old.x, old.y-newHeight, maxWindowWidth, newHeight) display:YES];
+	[self setFrame:NSMakeRect(old.x, old.y-newHeight, newWindowSize.width, newHeight) display:YES];
 	filtered = newFiltered;
 	if(!dictMode) [self checkSpaceForAllowedCharacter];
 	[theTableView reloadData];
