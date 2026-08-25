@@ -9,7 +9,7 @@ import AppKit
 
 /// Keeps third-party analytics services dormant until the user opts in.
 @objc final class SAAnalyticsConsentPolicy: NSObject {
-    private static let analyticsPreferenceKey = "SaveApplicationUsageAnalytics"
+    static let analyticsPreferenceKey = "SaveApplicationUsageAnalytics"
 
     @objc(shouldConfigureFirebaseWithAnalyticsEnabled:)
     static func shouldConfigureFirebase(analyticsEnabled: Bool) -> Bool {
