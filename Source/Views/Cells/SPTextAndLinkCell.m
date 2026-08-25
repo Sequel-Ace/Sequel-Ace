@@ -228,7 +228,11 @@ static inline NSRect SPTextLinkRectFromCellRect(NSRect inRect)
 
 				// Remove highlight, and follow the link
 				[linkButton highlight:NO withFrame:linkRect inView:controlView];
+// Target/action invocation: action methods return void, so nothing can leak
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 				[linkTarget performSelector:linkAction withObject:self];
+#pragma clang diagnostic pop
 				return YES;
 			}
 
