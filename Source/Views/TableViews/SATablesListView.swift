@@ -27,7 +27,7 @@ import AppKit
     // committed once the sequence settles (see commitPendingSelection). The
     // matched row's identity is kept alongside its index because the list can
     // reload while the search settles.
-    private var pendingSelection: (row: Int, entry: RowEntry)?
+    private var pendingSelection: (row: Int, entry: SARowEntry)?
     private var pendingSelectionTimer: Timer?
 
     // A window can stop being key without replacing its first responder (for
@@ -821,7 +821,7 @@ import AppKit
     /// names are unique within one, so the pair still names the same object
     /// after the list is reloaded — a bare name would not, since a table and a
     /// procedure may share one.
-    private struct RowEntry: Equatable {
+    private struct SARowEntry: Equatable {
         /// Empty for rows that can never hold a table (section headings,
         /// placeholders); an empty title never matches a search string.
         let title: String
@@ -832,13 +832,13 @@ import AppKit
     /// rather than shouldSelectRow: the latter reports every row as
     /// unselectable while a load task runs, which would empty the candidate
     /// list mid-sequence.
-    private func searchableRows() -> [RowEntry] {
+    private func searchableRows() -> [SARowEntry] {
         guard let dataSource, let delegate else {
             return []
         }
         let column = tableColumns.first
 
-        var rows: [RowEntry] = []
+        var rows: [SARowEntry] = []
         rows.reserveCapacity(numberOfRows)
         var section = ""
 
@@ -847,10 +847,10 @@ import AppKit
 
             if delegate.tableView?(self, isGroupRow: row) ?? false {
                 section = value ?? ""
-                rows.append(RowEntry(title: "", section: section))
+                rows.append(SARowEntry(title: "", section: section))
             }
             else {
-                rows.append(RowEntry(title: value ?? "", section: section))
+                rows.append(SARowEntry(title: value ?? "", section: section))
             }
         }
 
