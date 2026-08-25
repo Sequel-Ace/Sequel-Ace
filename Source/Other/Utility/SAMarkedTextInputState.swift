@@ -64,11 +64,13 @@ final class SAMarkedTextInputState {
     }
 
     /// Executes a standard key-binding command against the marked text.
-    /// Returns false only when no composition exists and the caller should let
-    /// its ordinary responder handle the command instead.
+    /// Returns false when no composition exists or when the command belongs to
+    /// the ordinary responder rather than the composition buffer.
     @discardableResult
     func performCommand(_ selector: Selector) -> Bool {
-        guard hasMarkedText else {
+        // Escape arrives as cancelOperation:. Let the real table responder
+        // cancel its type-ahead state and preserve its usual Escape behaviour.
+        guard hasMarkedText, selector != #selector(NSResponder.cancelOperation(_:)) else {
             return false
         }
 

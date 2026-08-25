@@ -148,8 +148,16 @@ import AppKit
     }
 
     override func keyDown(with event: NSEvent) {
-        // A newer user action supersedes a command waiting on a table load.
-        cancelDeferredRowCommand()
+        if deferredRowCommand != nil {
+            // Repeated navigation while the table is still loading replaces
+            // the pending row command but stays behind the same task gate.
+            // A different action supersedes it and continues immediately.
+            if deferredRowCommandDocument != nil, isRowCommandBlockedByLoading(event) {
+                deferredRowCommand = event
+                return
+            }
+            cancelDeferredRowCommand()
+        }
 
         if routeThroughInputContext(event) {
             return

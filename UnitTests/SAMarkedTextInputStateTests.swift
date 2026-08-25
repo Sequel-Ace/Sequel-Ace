@@ -90,4 +90,17 @@ final class SAMarkedTextInputStateTests: XCTestCase {
 
         XCTAssertFalse(state.performCommand(NSSelectorFromString("moveLeft:")))
     }
+
+    func testCancelOperationFallsThroughWithoutChangingComposition() {
+        let state = SAMarkedTextInputState()
+        state.setMarkedText(
+            "かな",
+            selectedRange: NSRange(location: 2, length: 0),
+            replacementRange: NSRange(location: NSNotFound, length: 0)
+        )
+
+        XCTAssertFalse(state.performCommand(NSSelectorFromString("cancelOperation:")))
+        XCTAssertEqual(state.text, "かな")
+        XCTAssertTrue(state.hasMarkedText)
+    }
 }
