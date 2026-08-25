@@ -112,6 +112,7 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 - (void)queryFavoritesHaveBeenUpdated:(NSNotification *)notification;
 - (void)historyItemsHaveBeenUpdated:(NSNotification *)notification;
 - (void)helpWindowClosedByUser:(NSNotification *)notification;
+- (void)presentQueryFavoriteSaveSheetForQuery:(NSString *)query;
 
 @property (readwrite, strong) NSMutableDictionary<NSNumber*,NSNumber*> *sortCount;
 @property (assign) BOOL recordViewNeedsSelectionRestoreRefresh;
@@ -279,87 +280,50 @@ typedef void (^QueryProgressHandler)(QueryProgress *);
 }
 
 /**
- * Insert the choosen favorite query in the query textView or save query to favorites or opens window to edit favorites
+ * Present the SwiftUI save sheet. The completion block intentionally retains
+ * the controller for the sheet's lifetime; the parent releases it afterwards.
+ */
+- (void)presentQueryFavoriteSaveSheetForQuery:(NSString *)query
+{
+    NSWindow *parentWindow = [tableDocumentInstance parentWindowControllerWindow];
+    NSURL *fileURL = [tableDocumentInstance fileURL];
+    if (!parentWindow || !fileURL) return;
+
+    SAQueryFavoriteSaveWindowController *saveController = [[SAQueryFavoriteSaveWindowController alloc]
+        initWithQuery:query
+        fileURL:fileURL
+        defaultSaveGlobally:[tableDocumentInstance isUntitled]];
+    [parentWindow beginSheet:[saveController window] completionHandler:^(__unused NSModalResponse returnCode) {
+        (void)[saveController window];
+    }];
+}
+
+/**
+ * Insert the chosen favorite query in the query text view, save a query to
+ * favorites, or open the favorites manager.
  */
 - (IBAction)chooseQueryFavorite:(id)sender
 {
-    if ([queryFavoritesButton indexOfSelectedItem] == 1) {
-        
-        // This should never evaluate to true as we are now performing menu validation, meaning the 'Save Query to Favorites' menu item will
-        // only be enabled if the query text view has at least one character present.
+    NSInteger selectedItem = [queryFavoritesButton indexOfSelectedItem];
+
+    if (selectedItem == 1 || selectedItem == 2) {
+        // Menu validation normally prevents this path for an empty editor.
         if ([[textView string] isEqualToString:@""]) {
             [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Empty query", @"empty query message") message:NSLocalizedString(@"Cannot save an empty query.", @"empty query informative message") callback:nil];
             return;
         }
-        
-        if ([tableDocumentInstance isUntitled]) {
-            [saveQueryFavoriteGlobal setState:NSControlStateValueOn];
-        }
-        [[tableDocumentInstance parentWindowControllerWindow] beginSheet:queryFavoritesSheet completionHandler:^(NSModalResponse returnCode) {
-            if (returnCode == NSModalResponseOK) {
-                
-                // Add the new query favorite directly the user's preferences here instead of asking the manager to do it
-                // as it may not have been fully initialized yet.
-                NSMutableArray *favorites = [NSMutableArray arrayWithArray:[self->prefs objectForKey:SPQueryFavorites]];
-                
-                // What should be saved
-                NSString *queryToBeAddded;
-                if ([self->textView selectedRange].length) { // First check for a selection
-                    queryToBeAddded = [[self->textView string] substringWithRange:[self->textView selectedRange]];
-                } else if (self->currentQueryRange.length) { // then for a current query
-                    queryToBeAddded = [[self->textView string] substringWithRange:self->currentQueryRange];
-                } else { // otherwise take the entire string
-                    queryToBeAddded = [self->textView string];
-                }
-                
-                if ([self->saveQueryFavoriteGlobal state] == NSControlStateValueOn) {
-                    [favorites addObject:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], queryToBeAddded, nil] forKeys:@[@"name", @"query"]]];
-                    
-                    [self->prefs setObject:favorites forKey:SPQueryFavorites];
-                } else {
-                    [[SPQueryController sharedQueryController] addFavorite:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], [queryToBeAddded mutableCopy], nil] forKeys:@[@"name", @"query"]] forFileURL:[self->tableDocumentInstance fileURL]];
-                }
-                [self->saveQueryFavoriteGlobal setState:NSControlStateValueOff];
-                [self queryFavoritesHaveBeenUpdated:nil];
-                [self->queryFavoriteNameTextField setStringValue:@""];
+
+        NSString *queryToSave = [textView string];
+        if (selectedItem == 1) {
+            if ([textView selectedRange].length) {
+                queryToSave = [[textView string] substringWithRange:[textView selectedRange]];
+            } else if (currentQueryRange.length) {
+                queryToSave = [[textView string] substringWithRange:currentQueryRange];
             }
-        }];
-        
-    }
-    if ([queryFavoritesButton indexOfSelectedItem] == 2) {
-        
-        // This should never evaluate to true as we are now performing menu validation, meaning the 'Save Query to Favorites' menu item will only be enabled if the query text view has at least one character present.
-        if ([[textView string] isEqualToString:@""]) {
-            [NSAlert createWarningAlertWithTitle:NSLocalizedString(@"Empty query", @"empty query message") message:NSLocalizedString(@"Cannot save an empty query.", @"empty query informative message") callback:nil];
-            return;
         }
-        
-        if ([tableDocumentInstance isUntitled]) {
-            [saveQueryFavoriteGlobal setState:NSControlStateValueOn];
-        }
-        [[tableDocumentInstance parentWindowControllerWindow] beginSheet:queryFavoritesSheet completionHandler:^(NSModalResponse returnCode) {
-            if (returnCode == NSModalResponseOK) {
-                
-                // Add the new query favorite directly the user's preferences here instead of asking the manager to do it
-                // as it may not have been fully initialized yet.
-                NSMutableArray *favorites = [NSMutableArray arrayWithArray:[self->prefs objectForKey:SPQueryFavorites]];
-                
-                // What should be saved
-                NSString *queryToBeAddded = [self->textView string];
-                
-                if ([self->saveQueryFavoriteGlobal state] == NSControlStateValueOn) {
-                    [favorites addObject:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], queryToBeAddded, nil] forKeys:@[@"name", @"query"]]];
-                    
-                    [self->prefs setObject:favorites forKey:SPQueryFavorites];
-                } else {
-                    [[SPQueryController sharedQueryController] addFavorite:[NSMutableDictionary dictionaryWithObjects: [NSArray arrayWithObjects:[self->queryFavoriteNameTextField stringValue], [queryToBeAddded mutableCopy], nil] forKeys:@[@"name", @"query"]] forFileURL:[self->tableDocumentInstance fileURL]];
-                }
-                [self->saveQueryFavoriteGlobal setState:NSControlStateValueOff];
-                [self queryFavoritesHaveBeenUpdated:nil];
-                [self->queryFavoriteNameTextField setStringValue:@""];
-            }
-        }];
-    } else if ([queryFavoritesButton indexOfSelectedItem] == 3) {
+
+        [self presentQueryFavoriteSaveSheetForQuery:queryToSave];
+    } else if (selectedItem == 3) {
         
         favoritesManager = [[SPQueryFavoriteManager alloc] initWithDelegate:self];
         
@@ -3169,14 +3133,11 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
 #pragma mark TextField delegate methods
 
 /**
- * Called whenever the user changes the name of the new query favorite or
- * the user changed the query favorite search string.
+ * Called whenever the user changes a query favorites/history search string.
  */
 - (void)controlTextDidChange:(NSNotification *)notification
 {
-    if ([notification object] == queryFavoriteNameTextField)
-        [saveQueryFavoriteButton setEnabled:[[queryFavoriteNameTextField stringValue] length]];
-    else if ([notification object] == queryFavoritesSearchField){
+    if ([notification object] == queryFavoritesSearchField){
         [self filterQueryFavorites:nil];
     }
     else if ([notification object] == queryHistorySearchField) {
