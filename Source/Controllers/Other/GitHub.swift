@@ -8,11 +8,15 @@
 
 import Foundation
 
-/// Prevents background GitHub requests without blocking explicit manual checks.
+/// Prevents App Store builds and opted-out background checks from using the GitHub updater.
 @objc final class SAGitHubReleaseCheckPolicy: NSObject {
-    @objc(shouldCheckWithIsUserInitiated:automaticChecksEnabled:)
-    static func shouldCheck(isUserInitiated: Bool, automaticChecksEnabled: Bool) -> Bool {
-        isUserInitiated || automaticChecksEnabled
+    @objc(shouldCheckWithIsUserInitiated:automaticChecksEnabled:isAppStoreInstall:)
+    static func shouldCheck(
+        isUserInitiated: Bool,
+        automaticChecksEnabled: Bool,
+        isAppStoreInstall: Bool
+    ) -> Bool {
+        !isAppStoreInstall && (isUserInitiated || automaticChecksEnabled)
     }
 }
 
@@ -226,8 +230,6 @@ struct SAGitHubRelease: Decodable, Comparable {
     }
 
     func settlingTimeRemaining(at date: Date) -> TimeInterval? {
-        let latestAssetChange = assets.compactMap(\.lastModifiedAt).max()
-        let latestReleaseChange = latestAssetChange.map { max(publishedAt, $0) } ?? publishedAt
         let remaining = Self.settlingInterval - date.timeIntervalSince(latestReleaseChange)
         return remaining > 0 ? remaining : nil
     }
@@ -238,6 +240,88 @@ struct SAGitHubRelease: Decodable, Comparable {
 
     private var tagIdentity: SAGitHubReleaseTagIdentity? {
         SAGitHubReleaseTagIdentity(tagName)
+    }
+
+    var phasedRolloutStartedAt: Date {
+        latestReleaseChange.addingTimeInterval(Self.settlingInterval)
+    }
+
+    private var latestReleaseChange: Date {
+        let latestAssetChange = assets.compactMap(\.lastModifiedAt).max()
+        return latestAssetChange.map { max(publishedAt, $0) } ?? publishedAt
+    }
+}
+
+/// Mirrors Apple's seven-day phased-release percentages for automatic GitHub update prompts.
+/// Manual checks remain available immediately after the release's artifact-settling window.
+enum SAGitHubReleaseRolloutPolicy {
+    static let installationSeedPreferenceKey = "SAGitHubReleaseRolloutSeed"
+
+    private static let day: TimeInterval = 24 * 60 * 60
+    private static let dailyPercentages = [1, 2, 5, 10, 20, 50, 100]
+    private static let cohortBucketCount = 10_000
+
+    static func rolloutPercentage(at date: Date, startedAt: Date) -> Int {
+        let elapsed = date.timeIntervalSince(startedAt)
+        guard elapsed >= 0 else {
+            return 0
+        }
+
+        let dayIndex = min(Int(elapsed / day), dailyPercentages.count - 1)
+        return dailyPercentages[dayIndex]
+    }
+
+    static func shouldOffer(
+        releaseTag: String,
+        rolloutStartedAt: Date,
+        at date: Date,
+        installationSeed: String?,
+        isUserInitiated: Bool
+    ) -> Bool {
+        if isUserInitiated {
+            return true
+        }
+
+        let percentage = rolloutPercentage(at: date, startedAt: rolloutStartedAt)
+        guard percentage > 0 else {
+            return false
+        }
+        guard percentage < 100 else {
+            return true
+        }
+        guard let installationSeed else {
+            return false
+        }
+
+        return cohortBucket(installationSeed: installationSeed, releaseTag: releaseTag)
+            < percentage * (cohortBucketCount / 100)
+    }
+
+    static func installationSeed(in defaults: UserDefaults) -> String {
+        if
+            let storedSeed = defaults.string(forKey: installationSeedPreferenceKey),
+            UUID(uuidString: storedSeed) != nil
+        {
+            return storedSeed
+        }
+
+        let seed = UUID().uuidString
+        defaults.set(seed, forKey: installationSeedPreferenceKey)
+        return seed
+    }
+
+    static func cohortBucket(installationSeed: String, releaseTag: String) -> Int {
+        // Swift's Hasher is intentionally randomized per process. FNV-1a keeps a
+        // given installation in a stable, release-specific cohort across launches.
+        var hash: UInt64 = 14_695_981_039_346_656_037
+        for byte in installationSeed.utf8 {
+            hash = (hash ^ UInt64(byte)) &* 1_099_511_628_211
+        }
+        hash = (hash ^ 0) &* 1_099_511_628_211
+        for byte in releaseTag.utf8 {
+            hash = (hash ^ UInt64(byte)) &* 1_099_511_628_211
+        }
+        return Int(hash % UInt64(cohortBucketCount))
     }
 }
 

@@ -69,9 +69,10 @@ import OSLog
     public func checkRelease(name: String, installedReleaseTag: String?, isUserInitiated: Bool) {
         guard SAGitHubReleaseCheckPolicy.shouldCheck(
             isUserInitiated: isUserInitiated,
-            automaticChecksEnabled: UserDefaults.standard.bool(forKey: SPShowUpdateAvailable)
+            automaticChecksEnabled: UserDefaults.standard.bool(forKey: SPShowUpdateAvailable),
+            isAppStoreInstall: Bundle.main.isMASVersion
         ) else {
-            Log.debug("Skipping automatic GitHub release check because it is disabled")
+            Log.debug("Skipping unavailable GitHub release check")
             return
         }
 
@@ -128,9 +129,10 @@ import OSLog
     ) {
         guard SAGitHubReleaseCheckPolicy.shouldCheck(
             isUserInitiated: isUserInitiated,
-            automaticChecksEnabled: UserDefaults.standard.bool(forKey: SPShowUpdateAvailable)
+            automaticChecksEnabled: UserDefaults.standard.bool(forKey: SPShowUpdateAvailable),
+            isAppStoreInstall: Bundle.main.isMASVersion
         ) else {
-            Log.debug("Stopping automatic GitHub release pagination because it is disabled")
+            Log.debug("Stopping unavailable GitHub release pagination")
             checkTracker.finish(checkID)
             return
         }
@@ -154,9 +156,10 @@ import OSLog
 
             guard SAGitHubReleaseCheckPolicy.shouldCheck(
                 isUserInitiated: isUserInitiated,
-                automaticChecksEnabled: UserDefaults.standard.bool(forKey: SPShowUpdateAvailable)
+                automaticChecksEnabled: UserDefaults.standard.bool(forKey: SPShowUpdateAvailable),
+                isAppStoreInstall: Bundle.main.isMASVersion
             ) else {
-                Log.debug("Ignoring automatic GitHub release check response because it is disabled")
+                Log.debug("Ignoring unavailable GitHub release check response")
                 return
             }
 
@@ -255,6 +258,20 @@ import OSLog
                     Log.debug("removing releases whose assets are still settling")
                     releasesArray.removeAll(where: { $0.isSettled(at: now) == false })
 
+                    let rolloutSeed = isUserInitiated
+                        ? nil
+                        : SAGitHubReleaseRolloutPolicy.installationSeed(in: .standard)
+                    Log.debug("applying phased rollout to automatic GitHub update prompts")
+                    releasesArray.removeAll(where: { release in
+                        !SAGitHubReleaseRolloutPolicy.shouldOffer(
+                            releaseTag: release.tagName,
+                            rolloutStartedAt: release.phasedRolloutStartedAt,
+                            at: now,
+                            installationSeed: rolloutSeed,
+                            isUserInitiated: isUserInitiated
+                        )
+                    })
+
                     Log.debug("releasesArray count: \(releasesArray.count)")
 
                     releases = releasesArray
@@ -342,6 +359,11 @@ import OSLog
 
     private func displayNewReleaseAvailableAlert(isUserInitiated: Bool) -> Bool {
         Log.debug("displayNewReleaseAvailableAlert")
+
+        guard Bundle.main.isMASVersion == false else {
+            Log.error("Refusing to present a GitHub update to an App Store install")
+            return false
+        }
 
         let prefs: UserDefaults = UserDefaults.standard
         var localURL: URL

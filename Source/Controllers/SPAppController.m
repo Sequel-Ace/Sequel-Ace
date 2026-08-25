@@ -326,7 +326,8 @@ static const double SPDelayBeforeCheckingForNewReleases = 10;
     SPLog(@"isFromMenuCheck %d", isFromMenuCheck);
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     if (![SAGitHubReleaseCheckPolicy shouldCheckWithIsUserInitiated:isFromMenuCheck
-                                            automaticChecksEnabled:[defaults boolForKey:SPShowUpdateAvailable]]) {
+                                            automaticChecksEnabled:[defaults boolForKey:SPShowUpdateAvailable]
+                                                isAppStoreInstall:NSBundle.mainBundle.isMASVersion]) {
         return;
     }
 

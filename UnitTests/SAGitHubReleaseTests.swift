@@ -10,11 +10,113 @@ import XCTest
 final class SAGitHubReleaseTests: XCTestCase {
     func testAutomaticAndRetryChecksRequirePreferenceWhileManualChecksDoNot() {
         XCTAssertFalse(SAGitHubReleaseCheckPolicy.shouldCheck(isUserInitiated: false,
-                                                              automaticChecksEnabled: false))
+                                                              automaticChecksEnabled: false,
+                                                              isAppStoreInstall: false))
         XCTAssertTrue(SAGitHubReleaseCheckPolicy.shouldCheck(isUserInitiated: false,
-                                                             automaticChecksEnabled: true))
+                                                             automaticChecksEnabled: true,
+                                                             isAppStoreInstall: false))
         XCTAssertTrue(SAGitHubReleaseCheckPolicy.shouldCheck(isUserInitiated: true,
-                                                             automaticChecksEnabled: false))
+                                                             automaticChecksEnabled: false,
+                                                             isAppStoreInstall: false))
+    }
+
+    func testAppStoreInstallNeverUsesGitHubUpdater() {
+        XCTAssertFalse(SAGitHubReleaseCheckPolicy.shouldCheck(isUserInitiated: false,
+                                                              automaticChecksEnabled: true,
+                                                              isAppStoreInstall: true))
+        XCTAssertFalse(SAGitHubReleaseCheckPolicy.shouldCheck(isUserInitiated: true,
+                                                              automaticChecksEnabled: false,
+                                                              isAppStoreInstall: true))
+    }
+
+    func testAutomaticRolloutMatchesAppleSevenDayPercentages() {
+        let start = Date(timeIntervalSince1970: 1_000_000)
+        let oneDay: TimeInterval = 24 * 60 * 60
+
+        XCTAssertEqual(SAGitHubReleaseRolloutPolicy.rolloutPercentage(
+            at: start.addingTimeInterval(-1),
+            startedAt: start
+        ), 0)
+        for (dayIndex, percentage) in [1, 2, 5, 10, 20, 50, 100].enumerated() {
+            XCTAssertEqual(SAGitHubReleaseRolloutPolicy.rolloutPercentage(
+                at: start.addingTimeInterval(Double(dayIndex) * oneDay),
+                startedAt: start
+            ), percentage)
+        }
+        XCTAssertEqual(SAGitHubReleaseRolloutPolicy.rolloutPercentage(
+            at: start.addingTimeInterval(30 * oneDay),
+            startedAt: start
+        ), 100)
+    }
+
+    func testAutomaticRolloutUsesStableReleaseSpecificCohorts() {
+        let seed = "4C55C2A6-C1E3-42AB-BCB1-30F0A2B989C1"
+        let firstBucket = SAGitHubReleaseRolloutPolicy.cohortBucket(
+            installationSeed: seed,
+            releaseTag: "production/6.0.0-20112"
+        )
+
+        XCTAssertEqual(firstBucket, 4_032)
+        XCTAssertEqual(SAGitHubReleaseRolloutPolicy.cohortBucket(
+            installationSeed: seed,
+            releaseTag: "production/6.0.0-20112"
+        ), 4_032)
+        XCTAssertEqual(SAGitHubReleaseRolloutPolicy.cohortBucket(
+            installationSeed: seed,
+            releaseTag: "production/6.0.1-20113"
+        ), 6_416)
+        XCTAssertTrue((0..<10_000).contains(firstBucket))
+    }
+
+    func testManualChecksBypassPhasingButAutomaticChecksRespectCohort() {
+        let start = Date(timeIntervalSince1970: 1_000_000)
+        let releaseTag = "production/6.0.0-20112"
+        let earlySeed = "00000000-0000-4000-8000-000000000076"
+        let lateSeed = "00000000-0000-4000-8000-000000000000"
+
+        XCTAssertTrue(SAGitHubReleaseRolloutPolicy.shouldOffer(
+            releaseTag: releaseTag,
+            rolloutStartedAt: start,
+            at: start,
+            installationSeed: nil,
+            isUserInitiated: true
+        ))
+        XCTAssertFalse(SAGitHubReleaseRolloutPolicy.shouldOffer(
+            releaseTag: releaseTag,
+            rolloutStartedAt: start,
+            at: start,
+            installationSeed: lateSeed,
+            isUserInitiated: false
+        ))
+        XCTAssertTrue(SAGitHubReleaseRolloutPolicy.shouldOffer(
+            releaseTag: releaseTag,
+            rolloutStartedAt: start,
+            at: start,
+            installationSeed: earlySeed,
+            isUserInitiated: false
+        ))
+        XCTAssertTrue(SAGitHubReleaseRolloutPolicy.shouldOffer(
+            releaseTag: releaseTag,
+            rolloutStartedAt: start,
+            at: start.addingTimeInterval(6 * 24 * 60 * 60),
+            installationSeed: lateSeed,
+            isUserInitiated: false
+        ))
+    }
+
+    func testRolloutSeedPersistsLocally() throws {
+        let suiteName = "SAGitHubReleaseRolloutPolicyTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let firstSeed = SAGitHubReleaseRolloutPolicy.installationSeed(in: defaults)
+        let secondSeed = SAGitHubReleaseRolloutPolicy.installationSeed(in: defaults)
+
+        XCTAssertNotNil(UUID(uuidString: firstSeed))
+        XCTAssertEqual(firstSeed, secondSeed)
+        XCTAssertEqual(defaults.string(
+            forKey: SAGitHubReleaseRolloutPolicy.installationSeedPreferenceKey
+        ), firstSeed)
     }
 
     func testDecodesAutomatedAndHistoricalReleases() throws {
@@ -309,6 +411,10 @@ final class SAGitHubReleaseTests: XCTestCase {
         XCTAssertNil(release.settlingTimeRemaining(at: newestAssetChange.addingTimeInterval(
             SAGitHubRelease.settlingInterval
         )))
+        XCTAssertEqual(
+            release.phasedRolloutStartedAt,
+            newestAssetChange.addingTimeInterval(SAGitHubRelease.settlingInterval)
+        )
     }
 
     func testSettlingPolicyRetriesOnlyForTheNewestCandidateUpdate() throws {
