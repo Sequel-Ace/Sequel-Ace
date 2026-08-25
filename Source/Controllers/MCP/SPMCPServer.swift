@@ -116,7 +116,10 @@ import Network
     /// Start the server on `port`. Completion fires on the main queue.
     @objc public func start(port: UInt16, completion: @escaping (Bool, String?) -> Void) {
         // Tear down any existing listener, then bind the new one once the old port is released.
-        stop {
+        // `[self]` is explicit: this one-shot closure genuinely holds self for its
+        // duration, while the listener handlers it installs are weak on purpose
+        // because they outlive it.
+        stop { [self] in
             guard let nwPort = NWEndpoint.Port(rawValue: port) else {
                 DispatchQueue.main.async { completion(false, "Invalid port number") }
                 return

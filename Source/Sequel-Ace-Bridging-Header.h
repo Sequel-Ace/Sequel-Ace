@@ -29,6 +29,7 @@
 
 #import "SPAppController.h"
 #import "SPCustomQuery.h"
+#import "SPQueryController.h"
 #import "SPTextView.h"
 #import "SPSQLParser.h"
 #import "SPStringAdditions.h"
