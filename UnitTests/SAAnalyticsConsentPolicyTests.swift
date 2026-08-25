@@ -30,6 +30,33 @@ final class SAAnalyticsConsentPolicyTests: XCTestCase {
         XCTAssertTrue(SAAnalyticsConsentPolicy.shouldConfigureFirebase(analyticsEnabled: true))
     }
 
+    func testPrivacyPolicyUsesExpectedSecureURL() {
+        XCTAssertEqual(
+            SAAnalyticsConsentPolicy.privacyPolicyURL.absoluteString,
+            "https://moballo.com/privacy-policy/"
+        )
+        XCTAssertEqual(SAAnalyticsConsentPolicy.privacyPolicyURL.scheme, "https")
+        XCTAssertEqual(SAAnalyticsConsentPolicy.privacyPolicyURL.host, "moballo.com")
+    }
+
+    func testAnalyticsContextSegmentsDistributionAndReleaseChannel() {
+        XCTAssertEqual(SAAnalyticsConsentPolicy.analyticsInstallationContext(
+            isAppStoreInstall: false,
+            isTestFlight: false,
+            isBetaBuild: false
+        ), SAAnalyticsInstallationContext(distribution: "direct", releaseChannel: "production"))
+        XCTAssertEqual(SAAnalyticsConsentPolicy.analyticsInstallationContext(
+            isAppStoreInstall: true,
+            isTestFlight: false,
+            isBetaBuild: false
+        ), SAAnalyticsInstallationContext(distribution: "app_store", releaseChannel: "production"))
+        XCTAssertEqual(SAAnalyticsConsentPolicy.analyticsInstallationContext(
+            isAppStoreInstall: true,
+            isTestFlight: true,
+            isBetaBuild: true
+        ), SAAnalyticsInstallationContext(distribution: "testflight", releaseChannel: "beta"))
+    }
+
     func testRegisteredDefaultDoesNotCountAsRecordedConsentChoice() {
         defaults.register(defaults: ["SaveApplicationUsageAnalytics": false])
 

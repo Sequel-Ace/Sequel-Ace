@@ -30,7 +30,18 @@ extension SAAnalyticsConsentPolicy {
         guard shouldConfigureFirebase(analyticsEnabled: analyticsEnabled) else {
             if FirebaseApp.app() != nil {
                 Analytics.setAnalyticsCollectionEnabled(false)
-                Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(false)
+                Analytics.setConsent([
+                    .adPersonalization: .denied,
+                    .adStorage: .denied,
+                    .adUserData: .denied,
+                    .analyticsStorage: .denied,
+                ])
+                Analytics.setUserProperty(nil, forName: "distribution")
+                Analytics.setUserProperty(nil, forName: "release_channel")
+
+                let crashlytics = Crashlytics.crashlytics()
+                crashlytics.setCrashlyticsCollectionEnabled(false)
+                crashlytics.deleteUnsentReports()
             }
             return
         }
@@ -38,7 +49,29 @@ extension SAAnalyticsConsentPolicy {
         if FirebaseApp.app() == nil {
             FirebaseApp.configure()
         }
+
+        // This app uses Firebase only for first-party product analytics and
+        // diagnostics. Advertising consent remains denied even after opt-in.
+        Analytics.setConsent([
+            .adPersonalization: .denied,
+            .adStorage: .denied,
+            .adUserData: .denied,
+            .analyticsStorage: .granted,
+        ])
         Analytics.setAnalyticsCollectionEnabled(true)
-        Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
+
+        let receiptURL = Bundle.main.appStoreReceiptURL
+        let context = analyticsInstallationContext(
+            isAppStoreInstall: Bundle.main.isMASVersion,
+            isTestFlight: receiptURL?.lastPathComponent == "sandboxReceipt",
+            isBetaBuild: Bundle.main.isSnapshotBuild
+        )
+        Analytics.setUserProperty(context.distribution, forName: "distribution")
+        Analytics.setUserProperty(context.releaseChannel, forName: "release_channel")
+
+        let crashlytics = Crashlytics.crashlytics()
+        crashlytics.setCustomValue(context.distribution, forKey: "distribution")
+        crashlytics.setCustomValue(context.releaseChannel, forKey: "release_channel")
+        crashlytics.setCrashlyticsCollectionEnabled(true)
     }
 }

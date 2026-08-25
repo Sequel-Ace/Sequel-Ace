@@ -281,7 +281,6 @@
 		51AA84032FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AA84012FDE000100C4C14A /* SAAutoIncrementRuleSupport.swift */; };
 		51AA84052FDE000100C4C14A /* SAAutoIncrementRuleSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AA84042FDE000100C4C14A /* SAAutoIncrementRuleSupportTests.swift */; };
 		51B09FC92F7677AA003BAFFF /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 51B09FC82F7677AA003BAFFF /* GoogleService-Info.plist */; };
-		51B09FCF2F7677EB003BAFFF /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 51B09FCE2F7677EB003BAFFF /* FirebaseAnalytics */; };
 		51B09FD12F7677EB003BAFFF /* FirebaseAnalyticsCore in Frameworks */ = {isa = PBXBuildFile; productRef = 51B09FD02F7677EB003BAFFF /* FirebaseAnalyticsCore */; };
 		51B09FD32F7677EB003BAFFF /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 51B09FD22F7677EB003BAFFF /* FirebaseCrashlytics */; };
 		51B09FD72F767A3E003BAFFF /* SAConnectionInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B09FD62F767A3E003BAFFF /* SAConnectionInfo.swift */; };
@@ -1566,7 +1565,6 @@
 				17AED4161888BD67008E380F /* Security.framework in Frameworks */,
 				51BC150125BE138700F1CDC9 /* SnapKit in Frameworks */,
 				296DC8BF0F9091DF002A3258 /* libicucore.dylib in Frameworks */,
-				51B09FCF2F7677EB003BAFFF /* FirebaseAnalytics in Frameworks */,
 				8D15AC340486D014006FF6A4 /* Cocoa.framework in Frameworks */,
 				296DC89F0F8FD336002A3258 /* WebKit.framework in Frameworks */,
 				96B0A1512493DF3E007BB270 /* ShortcutRecorder.framework in Frameworks */,
@@ -3054,7 +3052,6 @@
 				51D9527525AE2B5300574BEB /* FMDB */,
 				51BC150025BE138700F1CDC9 /* SnapKit */,
 				1A89556E25D6C8880060CE72 /* Alamofire */,
-				51B09FCE2F7677EB003BAFFF /* FirebaseAnalytics */,
 				51B09FD02F7677EB003BAFFF /* FirebaseAnalyticsCore */,
 				51B09FD22F7677EB003BAFFF /* FirebaseCrashlytics */,
 			);
@@ -4949,11 +4946,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 513C8CDF2BBC4132001CCE3A /* XCRemoteSwiftPackageReference "ocmock" */;
 			productName = OCMock;
-		};
-		51B09FCE2F7677EB003BAFFF /* FirebaseAnalytics */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 51B09FCD2F7677EB003BAFFF /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseAnalytics;
 		};
 		51B09FD02F7677EB003BAFFF /* FirebaseAnalyticsCore */ = {
 			isa = XCSwiftPackageProductDependency;

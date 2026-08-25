@@ -44,8 +44,12 @@ struct SAAboutView: View {
 
                 Spacer().frame(height: 4)
 
-                Button("License") {
-                    showingLicense = true
+                HStack(spacing: 12) {
+                    Button("License") {
+                        showingLicense = true
+                    }
+
+                    Link("Privacy Policy", destination: SAAnalyticsConsentPolicy.privacyPolicyURL)
                 }
                 .controlSize(.large)
             }

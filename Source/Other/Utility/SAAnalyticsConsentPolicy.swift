@@ -7,9 +7,15 @@
 
 import AppKit
 
+struct SAAnalyticsInstallationContext: Equatable {
+    let distribution: String
+    let releaseChannel: String
+}
+
 /// Keeps third-party analytics services dormant until the user opts in.
 @objc final class SAAnalyticsConsentPolicy: NSObject {
     static let analyticsPreferenceKey = "SaveApplicationUsageAnalytics"
+    static let privacyPolicyURL = URL(string: "https://moballo.com/privacy-policy/")!
 
     @objc(shouldConfigureFirebaseWithAnalyticsEnabled:)
     static func shouldConfigureFirebase(analyticsEnabled: Bool) -> Bool {
@@ -47,6 +53,24 @@ import AppKit
         return defaults.persistentDomain(forName: applicationIdentifier)?[analyticsPreferenceKey] != nil
     }
 
+    static func analyticsInstallationContext(
+        isAppStoreInstall: Bool,
+        isTestFlight: Bool,
+        isBetaBuild: Bool
+    ) -> SAAnalyticsInstallationContext {
+        let distribution: String
+        if isAppStoreInstall {
+            distribution = isTestFlight ? "testflight" : "app_store"
+        } else {
+            distribution = "direct"
+        }
+
+        return SAAnalyticsInstallationContext(
+            distribution: distribution,
+            releaseChannel: isBetaBuild ? "beta" : "production"
+        )
+    }
+
     private static func requestAnalyticsConsent() -> Bool {
         assert(Thread.isMainThread)
 
@@ -57,7 +81,7 @@ import AppKit
             comment: "analytics consent dialog title"
         )
         alert.informativeText = NSLocalizedString(
-            "Allow Sequel Ace to send device and app information, usage analytics, and crash reports to Google Firebase?\n\nThis helps the developers understand how Sequel Ace is used and diagnose problems. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences.",
+            "Allow Sequel Ace to send an app installation identifier, app version, macOS and device details, approximate region, usage analytics, and crash and diagnostic reports to Google Firebase?\n\nThe developers use this data to understand feature adoption and diagnose problems. It is not used for advertising or to track you across other companies' apps or websites. Collection starts only if you choose Share Analytics, and you can change your choice anytime in Preferences.",
             comment: "analytics consent dialog message"
         )
 
@@ -75,6 +99,20 @@ import AppKit
         ))
         declineButton.keyEquivalent = "\u{1b}"
 
-        return alert.runModal() == .alertFirstButtonReturn
+        alert.addButton(withTitle: NSLocalizedString(
+            "Privacy Policy…",
+            comment: "analytics consent privacy policy button"
+        ))
+
+        while true {
+            switch alert.runModal() {
+            case .alertFirstButtonReturn:
+                return true
+            case .alertThirdButtonReturn:
+                NSWorkspace.shared.open(privacyPolicyURL)
+            default:
+                return false
+            }
+        }
     }
 }

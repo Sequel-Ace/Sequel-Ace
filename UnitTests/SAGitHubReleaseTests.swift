@@ -8,6 +8,33 @@
 import XCTest
 
 final class SAGitHubReleaseTests: XCTestCase {
+    func testExistingAppStoreReceiptFailsClosedWithoutReadingIt() {
+        let receiptURL = URL(fileURLWithPath: "/unreadable/_MASReceipt/receipt")
+        var inspectedURL: URL?
+
+        XCTAssertTrue(SAAppStoreReceiptPolicy.isAppStoreInstall(
+            receiptURL: receiptURL,
+            receiptExists: { url in
+                inspectedURL = url
+                return true
+            }
+        ))
+        XCTAssertEqual(inspectedURL, receiptURL)
+    }
+
+    func testMissingAppStoreReceiptIsNotAnAppStoreInstall() {
+        var checkedForReceipt = false
+
+        XCTAssertFalse(SAAppStoreReceiptPolicy.isAppStoreInstall(
+            receiptURL: nil,
+            receiptExists: { _ in
+                checkedForReceipt = true
+                return true
+            }
+        ))
+        XCTAssertFalse(checkedForReceipt)
+    }
+
     func testAutomaticAndRetryChecksRequirePreferenceWhileManualChecksDoNot() {
         XCTAssertFalse(SAGitHubReleaseCheckPolicy.shouldCheck(isUserInitiated: false,
                                                               automaticChecksEnabled: false,

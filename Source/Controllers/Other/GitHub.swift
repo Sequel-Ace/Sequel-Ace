@@ -8,6 +8,20 @@
 
 import Foundation
 
+/// Identifies App Store and TestFlight installs without reading receipt contents.
+enum SAAppStoreReceiptPolicy {
+    static func isAppStoreInstall(
+        receiptURL: URL?,
+        receiptExists: (URL) -> Bool
+    ) -> Bool {
+        guard let receiptURL else {
+            return false
+        }
+
+        return receiptExists(receiptURL)
+    }
+}
+
 /// Prevents App Store builds and opted-out background checks from using the GitHub updater.
 @objc final class SAGitHubReleaseCheckPolicy: NSObject {
     @objc(shouldCheckWithIsUserInitiated:automaticChecksEnabled:isAppStoreInstall:)
