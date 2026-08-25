@@ -34,6 +34,7 @@ import AppKit
     // example when the user switches windows or applications). Observe that
     // transition explicitly so a pending match cannot load in the background.
     private var windowDeactivationSubscription: NotificationToken?
+    private var menuTrackingSubscription: NotificationToken?
     private var windowMouseDownMonitor: Any?
 
     // Scrollbar and scroll-wheel events are handled by the enclosing scroll
@@ -102,6 +103,7 @@ import AppKit
         cancelTypeAhead()
         removeFeedbackOverlay()
         windowDeactivationSubscription = nil
+        menuTrackingSubscription = nil
         removeWindowMouseDownMonitor()
         scrollInteractionSubscriptions.removeAll()
 
@@ -112,6 +114,16 @@ import AppKit
                 queue: .main
             ) { [weak self] _ in
                 self?.cancelTypeAhead()
+            }
+
+            // Menu-bar clicks do not belong to the document window and leave
+            // its first responder in place. Cancel synchronously before menu
+            // tracking suspends the pending commit timer's run-loop mode.
+            menuTrackingSubscription = NotificationCenter.default.observe(
+                name: NSMenu.didBeginTrackingNotification,
+                object: nil
+            ) { [weak self] _ in
+                self?.cancelTypeAheadIfNeeded()
             }
 
             // Mouse-downs handled by surrounding views (notably split-view
