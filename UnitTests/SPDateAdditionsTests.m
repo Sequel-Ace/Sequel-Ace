@@ -38,8 +38,7 @@
 		for (int i = 0; i < iterations; i++) {
 			@autoreleasepool {
 				// exec on bg thread
-				uint64_t startTime = [NSDate monotonicTime];
-				startTime = 0;
+				uint64_t __unused startTime = [NSDate monotonicTime];
 			}
 		}
 

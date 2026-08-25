@@ -363,6 +363,46 @@ Verify by hand: drag rows from the query result and content views into TextEdit
 (with and without ⌘/⇧/⌥), a cell onto a rule-filter field, and a navigator item
 into the query editor.
 
+## Step 10 — Test-scheme residue sweep — ✅ Done
+
+Measured on the **"Unit Tests" scheme** (`xcodebuild build-for-testing`, fresh
+derived data): **165 → 104 raw occurrences, 119 → 60 unique lines**, zero new
+warnings (`comm` over normalized sorted logs). This scheme compiles the test
+sources the "Sequel Ace Debug" numbers above never saw, which is where most of
+this batch lived:
+
+- **SACellFilterRuleControllerStubs.m (46)** — the file's existing
+  `-Wincomplete-implementation`/`-Wprotocol` suppression only covered the third
+  of its three deliberately-partial stub classes; the pragma block now wraps
+  all three, plus `-Wobjc-autosynthesis-property-ivar-name-match` for the
+  stubs' autosynthesized properties next to the real classes' ivars.
+- **`performSelector` leak warnings (7, the full set)** — all are void
+  target/action-style invocations (keepalive ping, pagination/filter-table
+  actions, link cell, SPTextView's color-setter table, and the two forwarding
+  shims in SPMainThreadTrampoline). Each wrapped in the
+  `-Warc-performSelector-leaks` pragma per the SPRuleFilterController
+  precedent, with a per-site justification comment.
+- **SPFieldEditorController.m:1302 sign-compare** — the underflow flagged in
+  #2584: `adjTextMaxTextLength - textLength` is unsigned, so when the existing
+  text already exceeds the field maximum the remaining capacity underflowed
+  huge, silently skipping the too-long tooltip. Now computed in signed
+  `long long`; the truncated-insert append is additionally guarded to run only
+  for positive capacity (previously it appended an empty string at exactly 0,
+  and would have thrown had the underflow branch ever reached it).
+- **Unused-but-set test variables (3)** — `__unused` on perf-test loop locals.
+- **`-Wshadow` (2)** — the two inner `dispatch_async` re-resolutions of
+  `weakSelf` in SPConnectionController's Vault flow shadowed the outer
+  `strongSelf`; renamed to `mainSelf` (the deliberate re-resolve-after-hop
+  semantics are unchanged).
+
+Left alone, unchanged from the analysis above: Firebase's
+`-Wquoted-include-in-framework-header` (21, prebuilt third-party framework
+headers), SecKeychain (11) and NSConnection (6) deferred migrations, the
+intentional `#warning` markers (14), `preparedCellAtColumn:` ×2 (wants the
+view-based-tableview migration, not a cast), generated lexer unreachable-code
+(2), RegexKitLite (1, vendored), `selectionHighlightStyle = .sourceList` and
+the three intentional `legacyUnarchive`/`legacyArchivedData` markers.
+
 ## Deferred (own projects, not part of this burn-down)
 
 - **SPKeychain SecKeychain* API (~15)** — migrate to `SecItem*` with in-place

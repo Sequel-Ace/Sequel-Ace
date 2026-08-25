@@ -658,14 +658,14 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
 
             if (!success || ![outUsername length] || ![outPassword length]) {
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    SPConnectionController *strongSelf = weakSelf;
-                    if (!strongSelf || strongSelf->connectionAttemptID != vaultConnectionAttemptID) return;
-                    if ([strongSelf->vaultLoginIdentifier isEqualToString:vaultLoginIdentifierForAttempt]) {
-                        strongSelf->vaultLoginIdentifier = nil;
+                    SPConnectionController *mainSelf = weakSelf;
+                    if (!mainSelf || mainSelf->connectionAttemptID != vaultConnectionAttemptID) return;
+                    if ([mainSelf->vaultLoginIdentifier isEqualToString:vaultLoginIdentifierForAttempt]) {
+                        mainSelf->vaultLoginIdentifier = nil;
                     }
-                    [strongSelf failConnectionWithTitle:NSLocalizedString(@"Vault Authentication Failed", @"Vault auth failed title")
-                                          errorMessage:vaultError ? vaultError.localizedDescription : NSLocalizedString(@"Vault returned empty credentials.", @"Vault auth empty creds error")
-                                                detail:nil];
+                    [mainSelf failConnectionWithTitle:NSLocalizedString(@"Vault Authentication Failed", @"Vault auth failed title")
+                                         errorMessage:vaultError ? vaultError.localizedDescription : NSLocalizedString(@"Vault returned empty credentials.", @"Vault auth empty creds error")
+                                               detail:nil];
                 });
                 return;
             }
@@ -673,26 +673,26 @@ sslCACertFileLocationEnabled:(sslCACertFileLocationEnabled != NSControlStateValu
             NSString *capturedUsername = outUsername;
             NSString *capturedPassword = outPassword;
             dispatch_async(dispatch_get_main_queue(), ^{
-                SPConnectionController *strongSelf = weakSelf;
-                if (!strongSelf) return;
+                SPConnectionController *mainSelf = weakSelf;
+                if (!mainSelf) return;
                 // Second cancel check: user may have hit Cancel while we were on the background queue.
-                if (strongSelf->cancellingConnection || strongSelf->connectionAttemptID != vaultConnectionAttemptID) {
+                if (mainSelf->cancellingConnection || mainSelf->connectionAttemptID != vaultConnectionAttemptID) {
                     [VaultAuthManager clearCachedCredentialsForHost:credHost
                                                                port:credPort
                                                          oidcMount:credMount
                                                            credPath:credPath];
                     return;
                 }
-                if ([strongSelf->vaultLoginIdentifier isEqualToString:vaultLoginIdentifierForAttempt]) {
-                    strongSelf->vaultLoginIdentifier = nil;
+                if ([mainSelf->vaultLoginIdentifier isEqualToString:vaultLoginIdentifierForAttempt]) {
+                    mainSelf->vaultLoginIdentifier = nil;
                 }
                 info.user = capturedUsername;
-                [strongSelf.connectionService connectWith:info
-                                             preferences:preferences
-                                                password:capturedPassword
-                                             sshPassword:@""
-                                            parentWindow:[strongSelf->dbDocument parentWindowControllerWindow]
-                                              completion:connectCompletion];
+                [mainSelf.connectionService connectWith:info
+                                            preferences:preferences
+                                               password:capturedPassword
+                                            sshPassword:@""
+                                           parentWindow:[mainSelf->dbDocument parentWindowControllerWindow]
+                                             completion:connectCompletion];
             });
         });
         return;
