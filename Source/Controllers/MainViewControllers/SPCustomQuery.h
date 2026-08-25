@@ -64,11 +64,6 @@
 	IBOutlet id queryFavoritesSearchFieldView;
 	IBOutlet NSSearchField *queryFavoritesSearchField;
 
-	IBOutlet NSWindow *queryFavoritesSheet;
-	IBOutlet NSButton *saveQueryFavoriteButton;
-	IBOutlet NSTextField *queryFavoriteNameTextField;
-	IBOutlet NSButton *saveQueryFavoriteGlobal;
-
 	IBOutlet id queryHistoryButton;
 	IBOutlet NSMenuItem *queryHistorySearchMenuItem;
 	IBOutlet id queryHistorySearchFieldView;

@@ -84,8 +84,11 @@ extension SAConnectionInfo {
                 queryItems.append(URLQueryItem(name: "aws_profile", value: awsProfile))
             }
 
-        case .tcpIP:
-            // tcpip is the default, only add if needed for clarity
+        case .tcpIP, .vault:
+            // tcpip is the default, only add if needed for clarity.
+            // Vault carries no type of its own in a connection string and has
+            // always round-tripped as tcpip - the same deliberate quirk recorded
+            // on SAFavoriteDuplicateMatcher.typeTag(forString:).
             break
 
         @unknown default:

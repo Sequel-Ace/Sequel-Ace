@@ -195,7 +195,6 @@ import SwiftUI
     private static func allFavorites(under node: SPTreeNode) -> [NSDictionary] {
         if node.isGroup {
             return (node.children ?? [])
-                .compactMap { $0 as? SPTreeNode }
                 .flatMap { allFavorites(under: $0) }
         }
 

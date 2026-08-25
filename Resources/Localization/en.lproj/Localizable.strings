@@ -1167,6 +1167,9 @@
 /* shutdown server : confirmation dialog : title */
 "Do you really want to shutdown the server?" = "Do you really want to shutdown the server?";
 
+/* Document query favorite scope */
+"Document" = "Document";
+
 /* dtd identifier label (Navigator) */
 "DTD Identifier" = "DTD Identifier";
 
@@ -1235,6 +1238,9 @@
 
 /* Table Info Section : Table Engine */
 "engine: %@" = "engine: %@";
+
+/* Missing query favorite name alert message */
+"Enter a query name or choose a favorite to replace." = "Enter a query name or choose a favorite to replace.";
 
 /* enter connection details label */
 "Enter connection details below, or choose a favorite" = "Enter connection details below, or choose a favorite";
@@ -1432,6 +1438,12 @@
 
 /* export filename favorite name token */
 "Favorite" = "Favorite";
+
+/* Stale query favorite replacement alert title */
+"Favorite Changed" = "Favorite Changed";
+
+/* Query favorite replacement picker accessibility label */
+"Favorite to replace" = "Favorite to replace";
 
 /* favorites label */
 "Favorites" = "Favorites";
@@ -2065,6 +2077,9 @@
 /* optional placeholder string */
 "optional" = "optional";
 
+/* Query favorite replacement picker label */
+"Or replace an existing favorite:" = "Or replace an existing favorite:";
+
 /* Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed. */
 "Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed." = "Passed parameter couldn't be interpreted. Only string or array (with 2 elements) are allowed.";
 
@@ -2125,6 +2140,9 @@
 /* query logging currently disabled label
  query logging disabled label */
 "Query logging is currently disabled" = "Query logging is currently disabled";
+
+/* Query favorite save sheet name label */
+"Query Name:" = "Query Name:";
 
 /* query result print heading */
 "Query Result" = "Query Result";
@@ -2391,11 +2409,17 @@
 /* Save Current Query to Favorites */
 "Save Current Query to Favorites" = "Save Current Query to Favorites";
 
+/* Query favorite save sheet global checkbox */
+"Save globally" = "Save globally";
+
 /* save page as menu item title */
 "Save Page As…" = "Save Page As…";
 
 /* Save Queries… */
 "Save Queries…" = "Save Queries…";
+
+/* Query favorite save sheet title */
+"Save Query Favorite" = "Save Query Favorite";
 
 /* Save Query… */
 "Save Query…" = "Save Query…";
@@ -2853,6 +2877,12 @@
 
 /* export : import settings : file version error description ($1 = is version, $2 = list of supported versions); note: the u00A0 is a non-breaking space, do not add more whitespace. */
 "The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace." = "The selected export settings were stored with version %1$ld, but only settings with the following versions can be imported: %2$@.\n\nEither save the settings in a backwards compatible way or update your version of Sequel Ace.";
+
+/* Query favorite replacement explanation */
+"The selected favorite keeps its name and location." = "The selected favorite keeps its name and location.";
+
+/* Stale query favorite replacement alert message */
+"The selected favorite was changed or removed in another window. Choose it again before saving." = "The selected favorite was changed or removed in another window. Choose it again before saving.";
 
 /* export : import settings : spf content type error description */
 "The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file." = "The selected file contains data of type “%1$@”, but type “%2$@” is needed. Please choose a different file.";
