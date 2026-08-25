@@ -19,6 +19,12 @@ later.
 - **New UI is SwiftUI** where feasible. Established hosting pattern:
   `@objc final` `NSWindowController` subclass + `NSHostingView` + SwiftUI root
   view — see `SAAboutWindowController`, `SABundleHTMLOutputWindowController`.
+- **Localization:** every new or changed localized UI string — whether added in
+  code, a XIB, or another language catalog — must have a matching key and
+  English value in `Resources/Localization/en.lproj/Localizable.strings` in the
+  same PR. Reuse an existing exact-text key where possible, include a useful
+  translator comment for new entries, and validate the catalog with
+  `plutil -lint`.
 - **SwiftUI view boundaries** (per Apple's performance guidance): splitting a
   `body` into computed properties is *not* factoring for invalidation — every
   section still shares the view's boundary and re-evaluates on any state
