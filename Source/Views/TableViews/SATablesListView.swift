@@ -99,7 +99,7 @@ import AppKit
     }
 
     override func viewWillMove(toWindow newWindow: NSWindow?) {
-        cancelDeferredRowCommand()
+        cancelTypeAhead()
         windowDeactivationSubscription = nil
         removeWindowMouseDownMonitor()
         scrollInteractionSubscriptions.removeAll()
