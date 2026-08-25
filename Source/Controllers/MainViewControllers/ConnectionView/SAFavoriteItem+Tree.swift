@@ -34,7 +34,7 @@ extension SAFavoriteItem {
             ))
         }
 
-        let topLevel = (root.children ?? []).compactMap { $0 as? SPTreeNode }
+        let topLevel = root.children ?? []
         for node in topLevel {
             items.append(build(node))
         }
@@ -57,9 +57,7 @@ extension SAFavoriteItem {
 
         if node.isGroup {
             let group = node.representedObject as? SPGroupNode
-            let children = (node.children ?? [])
-                .compactMap { $0 as? SPTreeNode }
-                .map { build($0) }
+            let children = (node.children ?? []).map { build($0) }
             return SAFavoriteItem(
                 id: "grp:\(nodeAddress)",
                 kind: .group,

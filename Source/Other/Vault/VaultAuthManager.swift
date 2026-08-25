@@ -401,7 +401,7 @@ import OSLog
             errorPointer?.pointee = NSError(
                 domain: errorDomain,
                 code: VaultAuthError.invalidConfiguration.rawValue,
-                userInfo: [NSLocalizedDescriptionKey: VaultAuthError.invalidConfiguration.localizedDescription ?? ""])
+                userInfo: [NSLocalizedDescriptionKey: VaultAuthError.invalidConfiguration.localizedDescription])
             return nil
         }
 
@@ -428,7 +428,7 @@ import OSLog
                     errorPointer?.pointee = NSError(
                         domain: errorDomain,
                         code: VaultAuthError.loginCancelled.rawValue,
-                        userInfo: [NSLocalizedDescriptionKey: VaultAuthError.loginCancelled.localizedDescription ?? ""])
+                        userInfo: [NSLocalizedDescriptionKey: VaultAuthError.loginCancelled.localizedDescription])
                     return nil
                 }
                 os_log("Vault listRoles: no valid cached token, falling through to OIDC login", log: log, type: .info)
@@ -439,8 +439,8 @@ import OSLog
             errorPointer?.pointee = NSError(
                 domain: errorDomain,
                 code: authError.rawValue,
-                userInfo: [NSLocalizedDescriptionKey: oidcError.localizedDescription ?? ""])
-            os_log("Vault OIDC login failed: %{public}@", log: log, type: .error, oidcError.localizedDescription ?? "unknown")
+                userInfo: [NSLocalizedDescriptionKey: oidcError.localizedDescription])
+            os_log("Vault OIDC login failed: %{public}@", log: log, type: .error, oidcError.localizedDescription)
             return nil
         } catch {
             errorPointer?.pointee = NSError(

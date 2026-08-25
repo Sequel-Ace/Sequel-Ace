@@ -39,7 +39,6 @@
 	NSWindow *parentWindow;
 	NSTask *task;
 	NSPipe *standardError;
-	NSConnection *tunnelConnection;
 	NSString *lastError;
 	id lastErrorLock;
 	NSString *tunnelConnectionName;
