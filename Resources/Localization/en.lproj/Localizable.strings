@@ -235,6 +235,9 @@
 /* Add trigger button label */
 "Add" = "Add";
 
+/* table Content : rule filter editor : AND/OR popup and group rows : combine with AND */
+"AND" = "AND";
+
 /* table Content : rule filter editor : context menu : add nested AND/OR group */
 "Add AND/OR Group" = "Add AND/OR Group";
 
@@ -2015,6 +2018,9 @@
  Open Files : Bundle : Install-Error : OK button
  Open Files : Bundle : UUID : OK button
  Preferences : Network : Custom SSH client : warning dialog : accept button */
+/* table Content : rule filter editor : AND/OR popup and group rows : combine with OR */
+"OR" = "OR";
+
 "OK" = "OK";
 
 /* Table Content : Remove Row : Result : Too Many : Part 1 : n+1 rows instead of n selected were deleted. */
