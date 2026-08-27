@@ -15,7 +15,8 @@ import Cocoa
 ///   `SPFilterRuleEditorDropHandler` to append a fully-populated filter
 ///   rule (column, default operator, value).
 /// * When the user clicks it, it asks the handler to add an empty rule
-///   – same semantics as the existing "+ Add Filter" button.
+///   – same semantics as the existing "+ Add Filter" button. ⌥-click (or
+///   the context menu) adds a nested AND/OR group instead.
 ///
 /// Rendered as a dashed rounded rectangle with a short centred prompt.
 /// During a drag the border flips to the system accent colour and the
@@ -67,6 +68,12 @@ import Cocoa
         wantsLayer = true
         addSubview(label)
         registerForDraggedTypes([Self.rowDropType])
+        toolTip = NSLocalizedString("Click to add a filter, ⌥-click to add an AND/OR group", comment: "content tab : rule filter : drop zone tooltip")
+    }
+
+    override public func menu(for event: NSEvent) -> NSMenu? {
+        guard let handler = dropHandler else { return super.menu(for: event) }
+        return SARuleFilterContextMenu.menu(for: handler)
     }
 
     override public func layout() {
@@ -117,6 +124,9 @@ import Cocoa
         // the modal event loop so we don't have to juggle state between
         // mouseDown / mouseDragged / mouseUp.
         guard let window = self.window else { return }
+        // ⌥ at press time decides between a plain row and a nested group;
+        // read it here so releasing the key mid-press doesn't change it.
+        let wantsGroup = event.modifierFlags.contains(.option)
         var tracking = true
         while tracking {
             guard let next = window.nextEvent(matching: [.leftMouseUp, .leftMouseDragged]) else { break }
@@ -124,7 +134,11 @@ import Cocoa
             case .leftMouseUp:
                 let point = self.convert(next.locationInWindow, from: nil)
                 if self.bounds.contains(point) {
-                    dropHandler?.addEmptyFilterRow()
+                    if wantsGroup {
+                        dropHandler?.addEmptyFilterGroup()
+                    } else {
+                        dropHandler?.addEmptyFilterRow()
+                    }
                 }
                 tracking = false
             default:

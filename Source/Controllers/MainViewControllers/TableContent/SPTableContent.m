@@ -3776,15 +3776,15 @@ static id configureDataCell(SPTableContent *tc, NSDictionary *colDefs, NSString 
 	ruleEditorRect.size.height = MAX(topContainerGivenHeight - ruleEditorRect.origin.y, 0);
 
 	// Drop box spans the full width minus the button zone on the right
-	// (Apply Filters / Add Filter both live at x=579 width=111 in the
-	// IB layout). Keeping it short-of-buttons avoids any overlap even
-	// when the rule editor grows to its full allotted height, and the
-	// padding on every side prevents the dashed border from abutting
-	// the rule editor above, the result-grid header below, or the
-	// window edges on the sides.
+	// (the AND/OR popup at x=514 width=62 plus Apply Filters / Add Filter
+	// at x=579 width=111 in the IB layout). Keeping it short-of-buttons
+	// avoids any overlap even when the rule editor grows to its full
+	// allotted height, and the padding on every side prevents the dashed
+	// border from abutting the rule editor above, the result-grid header
+	// below, or the window edges on the sides.
 	SPRuleFilterDropBox *dropBox = [ruleFilterController dropBoxView];
 	const CGFloat dropBoxLeftPadding = 10;
-	const CGFloat dropBoxRightReserve = 125;
+	const CGFloat dropBoxRightReserve = 190;
 	const CGFloat dropBoxBottomPadding = 7;
 	const CGFloat dropBoxTopPadding = 5;
 	// Also clamp the drop box height against the container's actual

@@ -235,8 +235,14 @@
 /* Add trigger button label */
 "Add" = "Add";
 
+/* table Content : rule filter editor : context menu : add nested AND/OR group */
+"Add AND/OR Group" = "Add AND/OR Group";
+
 /* menu item to add db */
 "Add Database..." = "Add Database...";
+
+/* table Content : rule filter editor : context menu : add filter row */
+"Add Filter" = "Add Filter";
 
 /* Add Host */
 "Add Host" = "Add Host";
@@ -779,6 +785,12 @@
 
 /* collation connection: %@ */
 "collation connection: %@" = "collation connection: %@";
+
+/* content tab : rule filter : drop zone tooltip */
+"Click to add a filter, ⌥-click to add an AND/OR group" = "Click to add a filter, ⌥-click to add an AND/OR group";
+
+/* table Content : rule filter editor : AND/OR popup : tooltip */
+"Combine the top-level filter rows with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group." = "Combine the top-level filter rows with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group.";
 
 /* comment label */
 "Comment" = "Comment";

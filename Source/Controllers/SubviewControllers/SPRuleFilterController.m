@@ -262,6 +262,8 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 - (void)_invokeTarget:(id)aTarget action:(SEL)anAction withObject:(id)object;
 - (void)_invokeFilterTargetActionWithObject:(id)object;
 - (IBAction)_checkboxClicked:(id)sender;
+- (IBAction)_rootConjunctionPopUpChanged:(id)sender;
+- (void)_syncRootConjunctionPopUp;
 - (void)_updateCheckedStateUpwardsFromCompoundRow:(NSInteger)row;
 - (void)_updateCheckedStateForRow:(NSInteger)row to:(NSControlStateValue)newState;
 - (void)_updateCheckedStateDownwardsFromCompoundRow:(NSInteger)row to:(NSControlStateValue)newState;
@@ -286,6 +288,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		opNodeCacheVersion = 1;
 		isDoingChangeCausedOutsideOfRuleEditor = NO;
 		previousRowCount = 0;
+		rootIsConjunction = YES;
 
 		// Init default filters for Content Browser
 		contentFilters = [[NSMutableDictionary alloc] init];
@@ -339,6 +342,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	[self _doChangeToRuleEditorData:^{
 		[self->filterRuleEditor bind:@"rows" toObject:self->_modelContainer withKeyPath:@"model" options:nil];
 	}];
+
+	[rootConjunctionPopUp setToolTip:NSLocalizedString(@"Combine the top-level filter rows with AND or OR. Hold ⌥ while clicking a row's + button to add a nested AND/OR group.", @"table Content : rule filter editor : AND/OR popup : tooltip")];
+	[self _syncRootConjunctionPopUp];
 
 	[[NSNotificationCenter defaultCenter] addObserver:self
 	                                         selector:@selector(_contentFiltersHaveBeenUpdated:)
@@ -429,6 +435,10 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		// make the rule editor reload the criteria
 		[self->filterRuleEditor reloadCriteria];
 	}];
+
+	// the rows are gone, so the way they were combined is meaningless now;
+	// -restoreSerializedFilters: brings it back for a saved filter
+	[self setRootIsConjunction:YES];
 
 	// disable UI if no criteria exist (enable otherwise)
 	[self setEnabled:YES];
@@ -1048,6 +1058,7 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	[self _doChangeToRuleEditorData:^{
 		[[self->_modelContainer mutableArrayValueForKey:@"model"] removeAllObjects];
 	}];
+	[self setRootIsConjunction:YES];
 	[self _invokeFilterTargetActionWithObject:nil];
 }
 
@@ -1097,6 +1108,32 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	[filterButton setEnabled:(enabled && !empty)];
 	[filterRuleEditor setEnabled:enabled];
 	[addFilterButton setEnabled:(enabled && empty)];
+	[rootConjunctionPopUp setHidden:empty];
+	[rootConjunctionPopUp setEnabled:(enabled && !empty)];
+}
+
+- (BOOL)rootIsConjunction
+{
+	return rootIsConjunction;
+}
+
+- (void)setRootIsConjunction:(BOOL)isConjunction
+{
+	rootIsConjunction = isConjunction;
+	[self _syncRootConjunctionPopUp];
+}
+
+- (void)_syncRootConjunctionPopUp
+{
+	// AND is tag 1, OR is tag 0 in the XIB
+	[rootConjunctionPopUp selectItemWithTag:(rootIsConjunction ? 1 : 0)];
+}
+
+- (IBAction)_rootConjunctionPopUpChanged:(id)sender
+{
+	// like the per-row enable checkbox this does not run the filter; the
+	// user confirms via Apply Filters (or Return in any argument field)
+	rootIsConjunction = ([rootConjunctionPopUp selectedTag] == 1);
 }
 
 - (void)dealloc
@@ -1399,39 +1436,16 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	NSDictionary *newRule = [self _makeSerializedRuleForColumn:columnName value:value isNull:isNull];
 	if (!newRule) return NO;
 
-	// Merge the new rule with any existing tree under a single AND
-	// group so it can be fed to -restoreSerializedFilters:. Filtering
-	// is not kicked off – the user confirms via the Apply Filters
-	// button or by pressing Return in any argument field.
-	NSDictionary *existing = [self serializedFilter];
-	NSDictionary *combined;
-	if (!existing) {
-		combined = newRule;
-	}
-	else if (SerIsUntouchedStarterRule(existing)) {
-		// The rule editor auto-creates one empty row on open; if the
-		// user's first action is a drag, that placeholder is still
-		// present. ANDing onto it produces "firstColumn = '' AND
-		// droppedColumn = value", which isn't what the user asked for.
-		// Replace the starter outright instead.
-		combined = newRule;
-	}
-	else if (SerIsGroup(existing) && [[existing objectForKey:SerFilterGroupIsConjunction] boolValue]) {
-		NSMutableArray *children = [NSMutableArray arrayWithArray:[existing objectForKey:SerFilterGroupChildren]];
-		[children addObject:newRule];
-		combined = @{
-			(NSString *)SerFilterClass: (NSString *)SerFilterClassGroup,
-			(NSString *)SerFilterGroupIsConjunction: @YES,
-			(NSString *)SerFilterGroupChildren: children,
-		};
-	}
-	else {
-		combined = @{
-			(NSString *)SerFilterClass: (NSString *)SerFilterClassGroup,
-			(NSString *)SerFilterGroupIsConjunction: @YES,
-			(NSString *)SerFilterGroupChildren: @[existing, newRule],
-		};
-	}
+	// Merge the new rule with any existing tree as a further top-level
+	// row (combined via the AND/OR popup) so it can be fed to
+	// -restoreSerializedFilters:. An untouched starter row – the one the
+	// rule editor auto-creates on open – is replaced outright, so a first
+	// drag doesn't produce "firstColumn = '' AND droppedColumn = value".
+	// Filtering is not kicked off – the user confirms via the Apply
+	// Filters button or by pressing Return in any argument field.
+	NSDictionary *combined = [SARuleFilterRootConjunction appendingRule:newRule
+	                                                                 to:[self serializedFilter]
+	                                                  rootIsConjunction:rootIsConjunction];
 
 	[self restoreSerializedFilters:combined];
 	return YES;
@@ -1443,44 +1457,44 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	NSDictionary *newRule = [self _makeSerializedRuleForColumn:columnName value:value isNull:isNull];
 	if (!newRule) return NO;
 
-	NSDictionary *existing = [self serializedFilter];
-	NSDictionary *combined;
-	if (!existing) {
-		combined = newRule;
-	}
-	else if (SerIsGroup(existing) && [[existing objectForKey:SerFilterGroupIsConjunction] boolValue]) {
-		NSArray *children = [existing objectForKey:SerFilterGroupChildren];
-		// Only handle flat AND groups here. Nested groups (e.g. AND
-		// wrapping an OR subgroup) break the 1:1 mapping between
-		// NSRuleEditor row index and the AND-children index; the rule
-		// editor inserts extra rows for the subgroup's own children,
-		// throwing off direct indexing. The drop target rejects in
-		// that case so the user can still append a fresh rule via the
-		// drop box.
-		for (NSDictionary *child in children) {
-			if (SerIsGroup(child)) return NO;
-		}
-		if ((NSUInteger)row >= [children count]) {
-			return NO;
-		}
-		NSMutableArray *newChildren = [NSMutableArray arrayWithArray:children];
-		[newChildren replaceObjectAtIndex:(NSUInteger)row withObject:newRule];
-		combined = @{
-			(NSString *)SerFilterClass: (NSString *)SerFilterClassGroup,
-			(NSString *)SerFilterGroupIsConjunction: @YES,
-			(NSString *)SerFilterGroupChildren: newChildren,
-		};
-	}
-	else if (row == 0) {
-		// Single-expression tree – drop index 0 replaces the whole thing.
-		combined = newRule;
-	}
-	else {
-		return NO;
-	}
+	// Only a single expression or a flat root group can be addressed by
+	// row index; nested groups break the 1:1 mapping between NSRuleEditor
+	// row index and top-level child index (the rule editor inserts extra
+	// rows for the subgroup's own children). The helper rejects those and
+	// the drop target does too, so the user can still append a fresh rule
+	// via the drop box.
+	NSDictionary *combined = [SARuleFilterRootConjunction replacingRule:newRule
+	                                                              atRow:row
+	                                                                 in:[self serializedFilter]
+	                                                  rootIsConjunction:rootIsConjunction];
+	if (!combined) return NO;
 
 	[self restoreSerializedFilters:combined];
 	return YES;
+}
+
+- (void)addEmptyFilterGroup
+{
+	if (!enabled || ![columns count]) return;
+
+	// The group needs one row to be visible – give it the same empty
+	// starter rule a fresh row would show (first column, "=", no value).
+	NSDictionary *starter = [self _makeSerializedRuleForColumn:[(ColumnNode *)[columns firstObject] name] value:@"" isNull:NO];
+	if (!starter) return;
+	NSDictionary *group = [SARuleFilterRootConjunction nestedGroupWithChild:starter rootIsConjunction:rootIsConjunction];
+
+	// Append to the model directly instead of round-tripping through
+	// -restoreSerializedFilters:, which would flatten a lone root group
+	// into the AND/OR popup – the user asked for a visible group here.
+	NSMutableDictionary *groupRow = [self _restoreSerializedFilter:group];
+	if (!groupRow) return;
+	[self _doChangeToRuleEditorData:^{
+		[[self->_modelContainer mutableArrayValueForKey:@"model"] addObject:groupRow];
+	}];
+	[self _recalculateCheckboxStatesFromRow:-1];
+
+	// Focus the row inside the new group, like -addEmptyFilterRow does.
+	[self _focusOnFieldInSubtree:groupRow];
 }
 
 - (void)addEmptyFilterRow
@@ -1562,17 +1576,8 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 		NSDictionary *sub = [self _serializeSubtree:item includingDefinition:includeDefinition withDisabled:includeDisabled];
 		_addIfNotNil(rootItems, sub);
 	}
-	//the root serialized filter can either be an AND of multiple root items or a single root item
-	if([rootItems count] == 1) {
-		return [rootItems objectAtIndex:0];
-	}
-	else {
-		return @{
-			SerFilterClass: SerFilterClassGroup,
-			SerFilterGroupIsConjunction: @YES,
-			SerFilterGroupChildren: rootItems,
-		};
-	}
+	//the root serialized filter can either be an AND/OR group of multiple root items or a single root item
+	return [SARuleFilterRootConjunction serializedRootWithItems:rootItems isConjunction:rootIsConjunction];
 }
 
 - (NSDictionary *)_serializeSubtree:(NSDictionary *)item includingDefinition:(BOOL)includeDefinition withDisabled:(BOOL)includeDisabled
@@ -1645,16 +1650,14 @@ void _addIfNotNil(NSMutableArray *array, id toAdd)
 {
 	if(!serialized) return;
 
+	// a group at the root becomes the top-level rows plus the AND/OR popup, anything else is a single row
+	SARuleFilterRootRestorePlan *plan = [SARuleFilterRootConjunction restorePlanFor:serialized currentIsConjunction:rootIsConjunction];
+	[self setRootIsConjunction:[plan isConjunction]];
+
 	NSMutableArray *newModel = [[NSMutableArray alloc] init];
 	@autoreleasepool {
-		// if the root object is an AND group directly restore its contents, otherwise restore the object
-		if(SerIsGroup(serialized) && [[serialized objectForKey:SerFilterGroupIsConjunction] boolValue]) {
-			for(NSDictionary *child in [serialized objectForKey:SerFilterGroupChildren]) {
-				_addIfNotNil(newModel, [self _restoreSerializedFilter:child]);
-			}
-		}
-		else {
-			_addIfNotNil(newModel, [self _restoreSerializedFilter:serialized]);
+		for(NSDictionary *item in [plan items]) {
+			_addIfNotNil(newModel, [self _restoreSerializedFilter:item]);
 		}
 	}
 
@@ -1825,36 +1828,6 @@ fail:
 BOOL SerIsGroup(NSDictionary *dict)
 {
 	return [SerFilterClassGroup isEqual:[dict objectForKey:SerFilterClass]];
-}
-
-/**
- * YES if @c dict is a single expression node whose argument values are
- * all empty strings – the shape produced by the rule editor's auto-added
- * starter row before the user has typed anything. Used by
- * -appendFilterForColumn:... to decide whether a drop should replace the
- * placeholder rather than AND a new rule onto it.
- */
-static BOOL SerIsUntouchedStarterRule(NSDictionary *dict)
-{
-	if (!dict || SerIsGroup(dict)) return NO;
-	if (![SerFilterClassExpression isEqual:[dict objectForKey:SerFilterClass]]) return NO;
-	NSArray *values = [dict objectForKey:SerFilterExprValues];
-	if (![values isKindOfClass:[NSArray class]]) return NO;
-	// A row counts as "untouched starter" only if at least one argument
-	// is present AND every argument is an empty NSString. Zero-argument
-	// operators such as IS NULL / IS NOT NULL serialize with an empty
-	// values array (count == 0); without the count guard they would be
-	// misclassified as starter and replaced on the next append/drop,
-	// silently dropping the user's NULL filter.
-	// Anything else (NSData, NSNull, NSNumber, or a non-empty string)
-	// is real data the user or a restore path put there – merging, not
-	// replacing, is the correct behavior.
-	if ([values count] == 0) return NO;
-	for (id v in values) {
-		if (![v isKindOfClass:[NSString class]]) return NO;
-		if ([(NSString *)v length]) return NO;
-	}
-	return YES;
 }
 
 /**

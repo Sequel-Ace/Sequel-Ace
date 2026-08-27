@@ -32,6 +32,36 @@ import Cocoa
     /// Used when the user clicks the drop box instead of dropping onto it.
     @objc(addEmptyFilterRow)
     func addEmptyFilterRow()
+
+    /// Append a nested AND/OR group holding one empty filter row – the
+    /// discoverable equivalent of ⌥-clicking a row's "+" button.
+    /// Used by the context menus and by ⌥-clicking the drop box.
+    @objc(addEmptyFilterGroup)
+    func addEmptyFilterGroup()
+}
+
+/// Context menu shared by the rule editor and its drop box. It exists to
+/// surface the nested-group feature: `NSRuleEditor` only offers it via
+/// ⌥-click on a row's "+" button, which nobody discovers on their own.
+enum SARuleFilterContextMenu {
+    static func menu(for handler: SPFilterRuleEditorDropHandler) -> NSMenu {
+        let menu = NSMenu()
+        let addFilter = NSMenuItem(
+            title: NSLocalizedString("Add Filter", comment: "table Content : rule filter editor : context menu : add filter row"),
+            action: #selector(SPFilterRuleEditorDropHandler.addEmptyFilterRow),
+            keyEquivalent: ""
+        )
+        addFilter.target = handler
+        menu.addItem(addFilter)
+        let addGroup = NSMenuItem(
+            title: NSLocalizedString("Add AND/OR Group", comment: "table Content : rule filter editor : context menu : add nested AND/OR group"),
+            action: #selector(SPFilterRuleEditorDropHandler.addEmptyFilterGroup),
+            keyEquivalent: ""
+        )
+        addGroup.target = handler
+        menu.addItem(addGroup)
+        return menu
+    }
 }
 
 /// Keeps the rule editor's visibility setter free of model mutations when it
@@ -161,6 +191,16 @@ import Cocoa
     public required init?(coder: NSCoder) {
         super.init(coder: coder)
         registerForDraggedTypes([Self.rowDropType])
+    }
+
+    /// Right-click on a row's background (the controls inside a row keep
+    /// their own menus) offers the same add-row / add-group actions as the
+    /// drop box, so the nested-group feature is reachable without ⌥-click.
+    override public func menu(for event: NSEvent) -> NSMenu? {
+        guard let handler = self.delegate as? SPFilterRuleEditorDropHandler else {
+            return super.menu(for: event)
+        }
+        return SARuleFilterContextMenu.menu(for: handler)
     }
 
     override public func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {

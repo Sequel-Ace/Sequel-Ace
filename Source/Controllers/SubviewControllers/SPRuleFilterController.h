@@ -46,6 +46,7 @@ NSString * const SPRuleFilterHeightChangedNotification;
 	IBOutlet NSView *tableContentViewBelow;
 	IBOutlet NSButton *filterButton;
 	IBOutlet NSButton *addFilterButton;
+	IBOutlet NSPopUpButton *rootConjunctionPopUp;
 
 	NSMutableArray *columns;
 	NSMutableDictionary *contentFilters;
@@ -61,7 +62,8 @@ NSString * const SPRuleFilterHeightChangedNotification;
 	SEL action;
 
 	BOOL enabled;
-	
+	BOOL rootIsConjunction;
+
 	NSUInteger opNodeCacheVersion;
 	BOOL isDoingChangeCausedOutsideOfRuleEditor;
 	NSInteger previousRowCount;
@@ -211,6 +213,26 @@ NSString * const SPRuleFilterHeightChangedNotification;
  * MUST BE CALLED ON THE UI THREAD!
  */
 - (void)addEmptyFilterRow;
+
+/**
+ * Appends a nested AND/OR group (with one empty rule inside) as a new
+ * top-level row. The group uses the opposite of the root conjunction, so
+ * the default "AND" top level gets an OR group and vice versa. Equivalent
+ * to ⌥-clicking a row's "+" button in the rule editor, but discoverable.
+ *
+ * MUST BE CALLED ON THE UI THREAD!
+ */
+- (void)addEmptyFilterGroup;
+
+/**
+ * How the top-level rows of the rule editor are combined: YES for AND
+ * (the default), NO for OR. Shown as the AND/OR popup next to the Apply
+ * button. Reset to YES whenever the columns are reconfigured; restored
+ * from the serialized filter by -restoreSerializedFilters:.
+ *
+ * SHOULD be called on the UI thread, or results may be inconsistent!
+ */
+@property (assign, nonatomic) BOOL rootIsConjunction;
 
 /**
  * The always-visible "Drop a value here, or click to add a filter" zone placed
