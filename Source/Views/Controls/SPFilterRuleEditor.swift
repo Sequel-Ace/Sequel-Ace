@@ -44,6 +44,8 @@ import Cocoa
 /// surface the nested-group feature: `NSRuleEditor` only offers it via
 /// ⌥-click on a row's "+" button, which nobody discovers on their own.
 enum SARuleFilterContextMenu {
+    /// Builds a fresh menu whose items send `addEmptyFilterRow` /
+    /// `addEmptyFilterGroup` to `handler` (held weakly by the menu items).
     static func menu(for handler: SPFilterRuleEditorDropHandler) -> NSMenu {
         let menu = NSMenu()
         let addFilter = NSMenuItem(

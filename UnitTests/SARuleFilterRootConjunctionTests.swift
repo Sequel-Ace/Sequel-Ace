@@ -13,11 +13,38 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
 
     // MARK: - serializedRoot
 
-    /// Verifies a single top-level row is serialized as itself, whatever the popup says.
-    func testSingleItemIsReturnedAsItself() {
+    /// Verifies a single top-level expression is serialized as itself, whatever the popup says.
+    func testSingleExpressionIsReturnedAsItself() {
         let rule = expression(column: "name", values: ["Alice"])
 
         XCTAssertEqual(dictionary(SARuleFilterRootConjunction.serializedRoot(items: [rule], isConjunction: false)), dictionary(rule))
+    }
+
+    /// Verifies a single top-level group is wrapped in the root group so the root conjunction is not lost.
+    func testSingleNestedGroupIsWrappedInRootGroup() {
+        let nested = group(children: [expression(column: "a", values: ["1"]), expression(column: "b", values: ["2"])], isConjunction: false)
+
+        let root = SARuleFilterRootConjunction.serializedRoot(items: [nested], isConjunction: true)
+
+        XCTAssertEqual(root["isConjunction"] as? Bool, true)
+        XCTAssertEqual(children(of: root).map(dictionary), [dictionary(nested)])
+    }
+
+    /// Verifies an AND root holding one OR subgroup survives a round trip and a later append keeps the AND.
+    func testRoundTripOfAndRootWithSingleOrSubgroupThenAppend() {
+        let nested = group(children: [expression(column: "a", values: ["1"]), expression(column: "b", values: ["2"])], isConjunction: false)
+        let c = expression(column: "c", values: ["3"])
+
+        let serialized = SARuleFilterRootConjunction.serializedRoot(items: [nested], isConjunction: true)
+        let plan = SARuleFilterRootConjunction.restorePlan(for: serialized, currentIsConjunction: true)
+        XCTAssertTrue(plan.isConjunction)
+        XCTAssertEqual(plan.items.map(dictionary), [dictionary(nested)])
+
+        let reserialized = SARuleFilterRootConjunction.serializedRoot(items: plan.items, isConjunction: plan.isConjunction)
+        let appended = SARuleFilterRootConjunction.appending(rule: c, to: reserialized, rootIsConjunction: plan.isConjunction)
+
+        XCTAssertEqual(appended["isConjunction"] as? Bool, true, "(a OR b) AND c, not a OR b OR c")
+        XCTAssertEqual(children(of: appended).map(dictionary), [dictionary(nested), dictionary(c)])
     }
 
     /// Verifies several top-level rows are wrapped in a group carrying the root conjunction.
@@ -221,6 +248,23 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         XCTAssertEqual(controller.value(forKey: "rootIsConjunction") as? Bool, true)
     }
 
+    /// Verifies a single nested OR group under an AND root keeps its shape through the controller's restore → serialize round trip.
+    func testControllerKeepsSingleNestedGroupUnderAndRoot() throws {
+        let controller = try makeController(columns: ["a", "b"])
+        let nested = group(children: [expression(column: "a", values: ["1"]), expression(column: "b", values: ["2"])], isConjunction: false)
+
+        restore(group(children: [nested], isConjunction: true), into: controller)
+
+        XCTAssertEqual(controller.value(forKey: "rootIsConjunction") as? Bool, true)
+        let serialized = try XCTUnwrap(serializedFilter(of: controller))
+        XCTAssertEqual(serialized["isConjunction"] as? Bool, true)
+        let kids = children(of: serialized)
+        XCTAssertEqual(kids.count, 1)
+        XCTAssertEqual(kids.first?["filterClass"] as? String, "groupNode")
+        XCTAssertEqual(kids.first?["isConjunction"] as? Bool, false)
+        XCTAssertEqual(children(of: kids.first ?? [:]).count, 2)
+    }
+
     /// Verifies -addEmptyFilterGroup appends a visible group row (with the opposite conjunction) rather than flattening it into the popup.
     func testControllerAddsNestedGroupRow() throws {
         let controller = try makeController(columns: ["a", "b"])
@@ -239,6 +283,7 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
 
     // MARK: - Helpers
 
+    /// Builds a serialized expression node in the controller's dictionary shape.
     private func expression(column: String, comparison: String = "=", values: [String]) -> [String: Any] {
         return [
             "filterClass": "expressionNode",
@@ -248,6 +293,7 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         ]
     }
 
+    /// Builds a serialized group node in the controller's dictionary shape.
     private func group(children: [[String: Any]], isConjunction: Bool) -> [String: Any] {
         return [
             "filterClass": "groupNode",
@@ -256,18 +302,23 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         ]
     }
 
+    /// The children of a serialized group, or an empty array for expressions.
     private func children(of filter: [String: Any]) -> [[String: Any]] {
         return filter["children"] as? [[String: Any]] ?? []
     }
 
+    /// Bridges to `NSDictionary` so nested `[String: Any]` values can be compared with `XCTAssertEqual`.
     private func dictionary(_ filter: [String: Any]) -> NSDictionary {
         return filter as NSDictionary
     }
 
+    /// Column definitions in the shape `-[SPRuleFilterController setColumns:]` expects (all string-typed).
     private func columnDefinitions(_ names: [String]) -> [[String: Any]] {
         return names.map { ["name": $0, "typegrouping": "string"] }
     }
 
+    /// Creates an `SPRuleFilterController` with a bare rule editor and the given string columns, via KVC/selectors
+    /// because the test target has no bridging header for the Objective-C class.
     private func makeController(columns: [String]) throws -> NSObject {
         let controllerClass = try XCTUnwrap(NSClassFromString("SPRuleFilterController") as? NSObject.Type)
         let controller = controllerClass.init()
@@ -278,10 +329,12 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         return controller
     }
 
+    /// Calls `-restoreSerializedFilters:` on the controller.
     private func restore(_ filter: [String: Any], into controller: NSObject) {
         controller.perform(NSSelectorFromString("restoreSerializedFilters:"), with: filter)
     }
 
+    /// Calls `-serializedFilter` on the controller and bridges the result.
     private func serializedFilter(of controller: NSObject) -> [String: Any]? {
         return controller.perform(NSSelectorFromString("serializedFilter"))?.takeUnretainedValue() as? [String: Any]
     }

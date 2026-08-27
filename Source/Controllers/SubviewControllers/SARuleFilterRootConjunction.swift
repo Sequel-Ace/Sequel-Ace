@@ -42,9 +42,15 @@ import Foundation
 
     /// Builds the serialized root for the given top-level rows.
     ///
-    /// A single row is returned as itself (its conjunction is irrelevant);
-    /// any other count – including zero – is wrapped in a group carrying the
-    /// root conjunction so it survives a round trip.
+    /// A single expression is returned as itself (its conjunction is
+    /// irrelevant, and this keeps the persisted shape of the common one-row
+    /// filter unchanged). Any other case – several rows, no rows, or a single
+    /// nested group – is wrapped in a group carrying the root conjunction.
+    /// Wrapping a lone nested group matters: without the wrapper,
+    /// `AND[(a OR b)]` would be indistinguishable from an OR root with two
+    /// rows, and `restorePlan(for:currentIsConjunction:)` would flatten it
+    /// into the popup, so a later append would produce `a OR b OR c` instead
+    /// of `(a OR b) AND c`.
     ///
     /// - Parameters:
     ///   - items: Serialized top-level rows.
@@ -52,7 +58,7 @@ import Foundation
     /// - Returns: The serialized filter tree.
     @objc(serializedRootWithItems:isConjunction:)
     public static func serializedRoot(items: [[String: Any]], isConjunction: Bool) -> [String: Any] {
-        if items.count == 1 {
+        if items.count == 1 && !isGroup(items[0]) {
             return items[0]
         }
         return group(children: items, isConjunction: isConjunction)
@@ -149,14 +155,18 @@ import Foundation
         return group(children: [child], isConjunction: !rootIsConjunction)
     }
 
+    /// Whether the serialized node is a group (as opposed to an expression).
     private static func isGroup(_ filter: [String: Any]) -> Bool {
         return filter[filterClassKey] as? String == groupClass
     }
 
+    /// The group's conjunction flag; `false` when missing, matching the
+    /// Objective-C `boolValue` reading of the same key.
     private static func groupIsConjunction(_ filter: [String: Any]) -> Bool {
         return (filter[isConjunctionKey] as? NSNumber)?.boolValue ?? false
     }
 
+    /// Builds a serialized group node.
     private static func group(children: [[String: Any]], isConjunction: Bool) -> [String: Any] {
         return [
             filterClassKey: groupClass,

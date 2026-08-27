@@ -71,6 +71,8 @@ import Cocoa
         toolTip = NSLocalizedString("Click to add a filter, ⌥-click to add an AND/OR group", comment: "content tab : rule filter : drop zone tooltip")
     }
 
+    /// Right-click offers the same "Add Filter" / "Add AND/OR Group" actions
+    /// as a plain click / ⌥-click, so the group feature is discoverable.
     override public func menu(for event: NSEvent) -> NSMenu? {
         guard let handler = dropHandler else { return super.menu(for: event) }
         return SARuleFilterContextMenu.menu(for: handler)

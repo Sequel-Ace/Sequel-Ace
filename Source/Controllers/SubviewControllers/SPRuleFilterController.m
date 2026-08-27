@@ -1112,23 +1112,35 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	[rootConjunctionPopUp setEnabled:(enabled && !empty)];
 }
 
+/**
+ * How the top-level rows are combined: YES for AND, NO for OR (see the header).
+ */
 - (BOOL)rootIsConjunction
 {
 	return rootIsConjunction;
 }
 
+/**
+ * Sets the root conjunction and mirrors it into the AND/OR popup.
+ */
 - (void)setRootIsConjunction:(BOOL)isConjunction
 {
 	rootIsConjunction = isConjunction;
 	[self _syncRootConjunctionPopUp];
 }
 
+/**
+ * Selects the popup item matching `rootIsConjunction` (no-op without a popup, e.g. in unit tests).
+ */
 - (void)_syncRootConjunctionPopUp
 {
 	// AND is tag 1, OR is tag 0 in the XIB
 	[rootConjunctionPopUp selectItemWithTag:(rootIsConjunction ? 1 : 0)];
 }
 
+/**
+ * Action of the AND/OR popup: stores the user's choice for the next serialization.
+ */
 - (IBAction)_rootConjunctionPopUpChanged:(id)sender
 {
 	// like the per-row enable checkbox this does not run the filter; the
@@ -1473,6 +1485,9 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	return YES;
 }
 
+/**
+ * Appends a nested AND/OR group holding one empty starter rule (see the header).
+ */
 - (void)addEmptyFilterGroup
 {
 	if (!enabled || ![columns count]) return;
