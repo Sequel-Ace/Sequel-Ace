@@ -1068,20 +1068,32 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 
 - (void)ruleEditorRowsDidChange:(NSNotification *)notification 
 {
-	//TODO find a better way to trigger resize
-	// We can't do this here, because it will cause rows to jump around when removing them (the add case works fine, though)
-	[self performSelector:@selector(_resize) withObject:nil afterDelay:0.2];
-	//[self _resize];
+	// The rule editor is very liberal in the use of this notification: one click on "+"/"-" can post it
+	// several times, and not every post means the number of rows actually changed.
+	NSInteger newRowCount = [filterRuleEditor numberOfRows];
+
+	if(newRowCount != previousRowCount) {
+		// Coalesce: drop any resize still pending from an earlier notification of the same gesture,
+		// otherwise every one of them would animate the container again after the fixed delay.
+		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_resize) object:nil];
+		if(newRowCount > previousRowCount) {
+			// Growing: resize right away so the container makes room while the rule editor is still
+			// animating the new row in. Running both at the same time is what makes "+" feel immediate.
+			[self _resize];
+		}
+		else {
+			// Shrinking: the rule editor is still animating the removed row out; resizing the container
+			// underneath it makes the remaining rows jump, so wait for that animation to finish first.
+			[self performSelector:@selector(_resize) withObject:nil afterDelay:0.2];
+		}
+	}
 	[self _updateButtonStates];
 
 	// if a row has been added, we need to update the checkboxes to match again
 	[self _recalculateCheckboxStatesFromRow:-1];
 
 	// if the user removed the last row in the editor by pressing "-" (and only then) we immediately want to trigger a filter reset.
-	// There are two problems with that:
-	// - The rule editor is very liberal in the use of this notification. Receiving it does not mean the number of rows actually did change
-	// - There is no direct way to know whether the action was triggered by the user, so we can only try to exclude all other causes of changes
-	NSInteger newRowCount = [filterRuleEditor numberOfRows];
+	// There is no direct way to know whether the action was triggered by the user, so we can only try to exclude all other causes of changes
 	if(!isDoingChangeCausedOutsideOfRuleEditor && previousRowCount > 0 && newRowCount == 0) {
 		[self _invokeFilterTargetActionWithObject:nil];
 	}
