@@ -1069,23 +1069,20 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 - (void)ruleEditorRowsDidChange:(NSNotification *)notification 
 {
 	// The rule editor is very liberal in the use of this notification: one click on "+"/"-" can post it
-	// several times, and not every post means the number of rows actually changed.
+	// several times, and not every post means the number of rows actually changed. SARuleFilterResizePolicy
+	// decides what to do; this method only carries it out (see the policy for the reasoning).
 	NSInteger newRowCount = [filterRuleEditor numberOfRows];
-
-	if(newRowCount != previousRowCount) {
-		// Coalesce: drop any resize still pending from an earlier notification of the same gesture,
-		// otherwise every one of them would animate the container again after the fixed delay.
-		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_resize) object:nil];
-		if(newRowCount > previousRowCount) {
-			// Growing: resize right away so the container makes room while the rule editor is still
-			// animating the new row in. Running both at the same time is what makes "+" feel immediate.
+	switch([SARuleFilterResizePolicy actionForRowCount:newRowCount previousRowCount:previousRowCount]) {
+		case SARuleFilterResizeActionNone:
+			break;
+		case SARuleFilterResizeActionImmediate:
+			[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_resize) object:nil];
 			[self _resize];
-		}
-		else {
-			// Shrinking: the rule editor is still animating the removed row out; resizing the container
-			// underneath it makes the remaining rows jump, so wait for that animation to finish first.
-			[self performSelector:@selector(_resize) withObject:nil afterDelay:0.2];
-		}
+			break;
+		case SARuleFilterResizeActionDeferred:
+			[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_resize) object:nil];
+			[self performSelector:@selector(_resize) withObject:nil afterDelay:[SARuleFilterResizePolicy deferredResizeDelay]];
+			break;
 	}
 	[self _updateButtonStates];
 

@@ -54,6 +54,47 @@ import Cocoa
     }
 }
 
+/// What `-[SPRuleFilterController ruleEditorRowsDidChange:]` should do about
+/// the container size after the rule editor reported a rows change.
+@objc public enum SARuleFilterResizeAction: Int {
+    /// The row count did not change – nothing to resize.
+    case none
+    /// Resize right away.
+    case immediate
+    /// Resize after `SARuleFilterResizePolicy.deferredResizeDelay`.
+    case deferred
+}
+
+/// Decides when the filter container follows a rows change in the rule editor.
+///
+/// `NSRuleEditor` posts its rows-did-change notification several times per
+/// click on "+" / "−", and not every post means the number of rows changed.
+/// Scheduling a delayed resize for each of them (the pre-2026 behaviour)
+/// stacked delay and container animations on top of the rule editor's own row
+/// animation, which made the buttons feel like they hang. The policy turns a
+/// (row count, previous row count) pair into a single action:
+///
+/// * unchanged count → nothing;
+/// * growing → resize immediately, so the container makes room while the
+///   rule editor animates the new row in (both animations run concurrently);
+/// * shrinking → wait for the rule editor's removal animation first, because
+///   resizing the container underneath it makes the remaining rows jump.
+///
+/// The caller is expected to cancel any pending deferred resize before acting
+/// on the returned action, so one gesture ends in one resize.
+@objc public final class SARuleFilterResizePolicy: NSObject {
+    /// Delay for `.deferred`, matching the rule editor's row-removal animation.
+    @objc public static let deferredResizeDelay: TimeInterval = 0.2
+
+    @objc(actionForRowCount:previousRowCount:)
+    public static func action(rowCount: Int, previousRowCount: Int) -> SARuleFilterResizeAction {
+        if rowCount == previousRowCount {
+            return .none
+        }
+        return rowCount > previousRowCount ? .immediate : .deferred
+    }
+}
+
 /// Immutable layout values consumed by the legacy table-content controller.
 /// Keeping the policy in Swift makes the Objective-C call site a thin view
 /// trampoline and gives the preference combinations direct unit coverage.
