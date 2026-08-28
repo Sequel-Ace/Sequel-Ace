@@ -1066,6 +1066,10 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 }
 
 
+/**
+ * NSRuleEditorRowsDidChangeNotification handler: keeps the container height, the button states and the
+ * checkbox states in sync with the rows, and resets the filter when the user removed the last row.
+ */
 - (void)ruleEditorRowsDidChange:(NSNotification *)notification 
 {
 	// The rule editor is very liberal in the use of this notification: one click on "+"/"-" can post it

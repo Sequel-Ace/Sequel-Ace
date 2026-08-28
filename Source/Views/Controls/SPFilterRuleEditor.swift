@@ -86,6 +86,13 @@ import Cocoa
     /// Delay for `.deferred`, matching the rule editor's row-removal animation.
     @objc public static let deferredResizeDelay: TimeInterval = 0.2
 
+    /// Picks the resize action for a rows-did-change notification.
+    ///
+    /// - Parameters:
+    ///   - rowCount: The rule editor's row count after the change.
+    ///   - previousRowCount: The row count the controller last acted on.
+    /// - Returns: `.none` when the count is unchanged, `.immediate` when rows
+    ///   were added, `.deferred` when rows were removed.
     @objc(actionForRowCount:previousRowCount:)
     public static func action(rowCount: Int, previousRowCount: Int) -> SARuleFilterResizeAction {
         if rowCount == previousRowCount {
