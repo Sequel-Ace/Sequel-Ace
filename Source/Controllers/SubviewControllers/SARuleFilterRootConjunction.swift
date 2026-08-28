@@ -34,11 +34,21 @@ import Foundation
 ///
 /// Serialized keys are inlined as private literals – keep in sync with
 /// `SPRuleFilterController.m`.
+///
+/// Format note: the root group written by `serializedRoot(items:isConjunction:)`
+/// carries the marker `rootGroup = true`. Trees written before the AND/OR popup
+/// existed (older `.spf` sessions, query history, `contentFilterV2`) have no
+/// marker; for those the old semantics apply – an AND group at the root is
+/// unpacked into rows, any other group is one nested row under an implicit
+/// AND root. Older readers ignore the marker and still restore the same SQL.
 @objcMembers public final class SARuleFilterRootConjunction: NSObject {
     private static let filterClassKey = "filterClass"
     private static let groupClass = "groupNode"
     private static let isConjunctionKey = "isConjunction"
     private static let childrenKey = "children"
+    /// Marks the group that represents the AND/OR popup, as opposed to a
+    /// nested compound row. Only the root written by this type carries it.
+    private static let rootGroupKey = "rootGroup"
 
     /// Builds the serialized root for the given top-level rows.
     ///
@@ -61,17 +71,19 @@ import Foundation
         if items.count == 1 && !isGroup(items[0]) {
             return items[0]
         }
-        return group(children: items, isConjunction: isConjunction)
+        return group(children: items, isConjunction: isConjunction, isRoot: true)
     }
 
     /// Splits a serialized filter tree into the root conjunction and the
     /// top-level rows to show.
     ///
-    /// A group at the root is always unpacked into top-level rows: the popup
-    /// takes over the group's conjunction, so a single top-level group would
-    /// only duplicate what the popup already expresses. A single expression
-    /// keeps whatever conjunction is currently selected, because a lone row
-    /// carries no information about it.
+    /// A marked root group is unpacked into top-level rows and the popup takes
+    /// over its conjunction. A group without the marker is a legacy tree: an
+    /// AND group is unpacked as the old code did, anything else is kept as one
+    /// nested compound row under an AND root – exactly what the old rule editor
+    /// showed for it, so `(a OR b)` followed by an append still yields
+    /// `(a OR b) AND c`. A single expression keeps whatever conjunction is
+    /// currently selected, because a lone row carries no information about it.
     ///
     /// - Parameters:
     ///   - serialized: The serialized filter tree.
@@ -79,19 +91,26 @@ import Foundation
     /// - Returns: The plan describing what to restore.
     @objc(restorePlanFor:currentIsConjunction:)
     public static func restorePlan(for serialized: [String: Any], currentIsConjunction: Bool) -> SARuleFilterRootRestorePlan {
-        if isGroup(serialized) {
-            let children = serialized[childrenKey] as? [[String: Any]] ?? []
+        guard isGroup(serialized) else {
+            return SARuleFilterRootRestorePlan(isConjunction: currentIsConjunction, items: [serialized])
+        }
+        let children = serialized[childrenKey] as? [[String: Any]] ?? []
+        if isRootGroup(serialized) {
             return SARuleFilterRootRestorePlan(isConjunction: groupIsConjunction(serialized), items: children)
         }
-        return SARuleFilterRootRestorePlan(isConjunction: currentIsConjunction, items: [serialized])
+        if groupIsConjunction(serialized) {
+            return SARuleFilterRootRestorePlan(isConjunction: true, items: children)
+        }
+        return SARuleFilterRootRestorePlan(isConjunction: true, items: [serialized])
     }
 
     /// Appends a new rule to the existing tree as a further top-level row.
     ///
     /// Mirrors the drag-and-drop append flow: a missing or untouched starter
-    /// tree is replaced outright, a root group with the current conjunction
-    /// gains a child, and anything else is wrapped together with the new rule
-    /// under the root conjunction.
+    /// tree is replaced outright, a marked root group with the current
+    /// conjunction gains a child, and anything else – a single expression or a
+    /// nested (unmarked) group – is wrapped together with the new rule under
+    /// the root conjunction.
     ///
     /// - Parameters:
     ///   - rule: The serialized expression to append.
@@ -103,20 +122,20 @@ import Foundation
         guard let existing, !SACellFilterMerge.isUntouchedStarter(filter: existing) else {
             return rule
         }
-        if isGroup(existing) && groupIsConjunction(existing) == rootIsConjunction {
+        if isRootGroup(existing) && groupIsConjunction(existing) == rootIsConjunction {
             var children = existing[childrenKey] as? [[String: Any]] ?? []
             children.append(rule)
-            return group(children: children, isConjunction: rootIsConjunction)
+            return group(children: children, isConjunction: rootIsConjunction, isRoot: true)
         }
-        return group(children: [existing, rule], isConjunction: rootIsConjunction)
+        return group(children: [existing, rule], isConjunction: rootIsConjunction, isRoot: true)
     }
 
     /// Replaces the top-level row at `row` with a new rule.
     ///
-    /// Only a single expression (row 0) or a flat root group – one whose
-    /// children are all expressions – can be addressed by row index; nested
-    /// groups insert extra rule-editor rows for their own children and break
-    /// the 1:1 mapping, so they are rejected.
+    /// Only a single expression (row 0) or a flat marked root group – one
+    /// whose children are all expressions – can be addressed by row index;
+    /// nested groups insert extra rule-editor rows for their own children and
+    /// break the 1:1 mapping, so they are rejected.
     ///
     /// - Parameters:
     ///   - rule: The serialized expression to put at `row`.
@@ -131,15 +150,15 @@ import Foundation
         guard let existing else {
             return rule
         }
-        if isGroup(existing) && groupIsConjunction(existing) == rootIsConjunction {
+        if isRootGroup(existing) && groupIsConjunction(existing) == rootIsConjunction {
             var children = existing[childrenKey] as? [[String: Any]] ?? []
             guard !children.contains(where: isGroup), row < children.count else {
                 return nil
             }
             children[row] = rule
-            return group(children: children, isConjunction: rootIsConjunction)
+            return group(children: children, isConjunction: rootIsConjunction, isRoot: true)
         }
-        return row == 0 ? rule : nil
+        return row == 0 && !isGroup(existing) ? rule : nil
     }
 
     /// Builds a serialized group with a single child, used for the "Add
@@ -152,7 +171,7 @@ import Foundation
     /// - Returns: The serialized group.
     @objc(nestedGroupWithChild:rootIsConjunction:)
     public static func nestedGroup(child: [String: Any], rootIsConjunction: Bool) -> [String: Any] {
-        return group(children: [child], isConjunction: !rootIsConjunction)
+        return group(children: [child], isConjunction: !rootIsConjunction, isRoot: false)
     }
 
     /// Whether the serialized node is a group (as opposed to an expression).
@@ -166,12 +185,22 @@ import Foundation
         return (filter[isConjunctionKey] as? NSNumber)?.boolValue ?? false
     }
 
-    /// Builds a serialized group node.
-    private static func group(children: [[String: Any]], isConjunction: Bool) -> [String: Any] {
-        return [
+    /// Whether the serialized group carries the root marker written by
+    /// `serializedRoot(items:isConjunction:)`.
+    private static func isRootGroup(_ filter: [String: Any]) -> Bool {
+        return isGroup(filter) && ((filter[rootGroupKey] as? NSNumber)?.boolValue ?? false)
+    }
+
+    /// Builds a serialized group node; `isRoot` adds the root marker.
+    private static func group(children: [[String: Any]], isConjunction: Bool, isRoot: Bool) -> [String: Any] {
+        var node: [String: Any] = [
             filterClassKey: groupClass,
             isConjunctionKey: isConjunction,
             childrenKey: children,
         ]
+        if isRoot {
+            node[rootGroupKey] = true
+        }
+        return node
     }
 }

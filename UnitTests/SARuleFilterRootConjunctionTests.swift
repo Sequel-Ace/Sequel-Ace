@@ -27,6 +27,7 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         let root = SARuleFilterRootConjunction.serializedRoot(items: [nested], isConjunction: true)
 
         XCTAssertEqual(root["isConjunction"] as? Bool, true)
+        XCTAssertEqual(root["rootGroup"] as? Bool, true)
         XCTAssertEqual(children(of: root).map(dictionary), [dictionary(nested)])
     }
 
@@ -55,6 +56,7 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         let andRoot = SARuleFilterRootConjunction.serializedRoot(items: [a, b], isConjunction: true)
         XCTAssertEqual(andRoot["filterClass"] as? String, "groupNode")
         XCTAssertEqual(andRoot["isConjunction"] as? Bool, true)
+        XCTAssertEqual(andRoot["rootGroup"] as? Bool, true, "the root carries the marker that tells it apart from a nested row")
         XCTAssertEqual(children(of: andRoot).map(dictionary), [a, b].map(dictionary))
 
         let orRoot = SARuleFilterRootConjunction.serializedRoot(items: [a, b], isConjunction: false)
@@ -73,23 +75,59 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
 
     // MARK: - restorePlan
 
-    /// Verifies a root group is unpacked into top-level rows and its conjunction goes to the popup.
+    /// Verifies a marked root group is unpacked into top-level rows and its conjunction goes to the popup.
     func testRestorePlanUnpacksRootGroupIntoPopupAndRows() {
         let a = expression(column: "a", values: ["1"])
         let b = expression(column: "b", values: ["2"])
-        let orGroup = group(children: [a, b], isConjunction: false)
+        let orRoot = rootGroup(children: [a, b], isConjunction: false)
 
-        let plan = SARuleFilterRootConjunction.restorePlan(for: orGroup, currentIsConjunction: true)
+        let plan = SARuleFilterRootConjunction.restorePlan(for: orRoot, currentIsConjunction: true)
 
         XCTAssertFalse(plan.isConjunction)
         XCTAssertEqual(plan.items.map(dictionary), [a, b].map(dictionary))
+    }
+
+    /// Verifies a legacy (unmarked) OR group – written before the popup existed – stays one nested row under an AND root.
+    func testRestorePlanKeepsLegacyOrGroupAsNestedRow() {
+        let a = expression(column: "a", values: ["1"])
+        let b = expression(column: "b", values: ["2"])
+        let legacyOrGroup = group(children: [a, b], isConjunction: false)
+
+        let plan = SARuleFilterRootConjunction.restorePlan(for: legacyOrGroup, currentIsConjunction: false)
+
+        XCTAssertTrue(plan.isConjunction, "legacy trees had an implicit AND root")
+        XCTAssertEqual(plan.items.map(dictionary), [dictionary(legacyOrGroup)])
+    }
+
+    /// Verifies a legacy (unmarked) AND group at the root is unpacked, as the old restore code did.
+    func testRestorePlanUnpacksLegacyAndGroup() {
+        let a = expression(column: "a", values: ["1"])
+        let b = expression(column: "b", values: ["2"])
+
+        let plan = SARuleFilterRootConjunction.restorePlan(for: group(children: [a, b], isConjunction: true), currentIsConjunction: false)
+
+        XCTAssertTrue(plan.isConjunction)
+        XCTAssertEqual(plan.items.map(dictionary), [a, b].map(dictionary))
+    }
+
+    /// Verifies a legacy OR group followed by an append still yields (a OR b) AND c.
+    func testLegacyOrGroupThenAppendKeepsGroupBoundary() {
+        let legacyOrGroup = group(children: [expression(column: "a", values: ["1"]), expression(column: "b", values: ["2"])], isConjunction: false)
+        let c = expression(column: "c", values: ["3"])
+
+        let plan = SARuleFilterRootConjunction.restorePlan(for: legacyOrGroup, currentIsConjunction: true)
+        let reserialized = SARuleFilterRootConjunction.serializedRoot(items: plan.items, isConjunction: plan.isConjunction)
+        let appended = SARuleFilterRootConjunction.appending(rule: c, to: reserialized, rootIsConjunction: plan.isConjunction)
+
+        XCTAssertEqual(appended["isConjunction"] as? Bool, true)
+        XCTAssertEqual(children(of: appended).map(dictionary), [dictionary(legacyOrGroup), dictionary(c)])
     }
 
     /// Verifies a nested group inside the root group stays a nested group.
     func testRestorePlanKeepsNestedGroups() {
         let a = expression(column: "a", values: ["1"])
         let nested = group(children: [expression(column: "b", values: ["2"]), expression(column: "c", values: ["3"])], isConjunction: false)
-        let root = group(children: [a, nested], isConjunction: true)
+        let root = rootGroup(children: [a, nested], isConjunction: true)
 
         let plan = SARuleFilterRootConjunction.restorePlan(for: root, currentIsConjunction: false)
 
@@ -136,10 +174,22 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         let b = expression(column: "b", values: ["2"])
         let c = expression(column: "c", values: ["3"])
 
-        let combined = SARuleFilterRootConjunction.appending(rule: c, to: group(children: [a, b], isConjunction: false), rootIsConjunction: false)
+        let combined = SARuleFilterRootConjunction.appending(rule: c, to: rootGroup(children: [a, b], isConjunction: false), rootIsConjunction: false)
 
         XCTAssertEqual(combined["isConjunction"] as? Bool, false)
+        XCTAssertEqual(combined["rootGroup"] as? Bool, true)
         XCTAssertEqual(children(of: combined).map(dictionary), [a, b, c].map(dictionary))
+    }
+
+    /// Verifies an unmarked (nested) group is never extended in place, even when its conjunction matches the root.
+    func testAppendingWrapsUnmarkedGroupEvenWithMatchingConjunction() {
+        let nestedOr = group(children: [expression(column: "a", values: ["1"]), expression(column: "b", values: ["2"])], isConjunction: false)
+        let c = expression(column: "c", values: ["3"])
+
+        let combined = SARuleFilterRootConjunction.appending(rule: c, to: nestedOr, rootIsConjunction: false)
+
+        XCTAssertEqual(combined["rootGroup"] as? Bool, true)
+        XCTAssertEqual(children(of: combined).map(dictionary), [dictionary(nestedOr), dictionary(c)])
     }
 
     /// Verifies a group with the other conjunction is nested under the root instead of being extended.
@@ -184,11 +234,20 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         let b = expression(column: "b", values: ["2"])
         let c = expression(column: "c", values: ["3"])
 
-        let combined = SARuleFilterRootConjunction.replacing(rule: c, atRow: 1, in: group(children: [a, b], isConjunction: false), rootIsConjunction: false)
+        let combined = SARuleFilterRootConjunction.replacing(rule: c, atRow: 1, in: rootGroup(children: [a, b], isConjunction: false), rootIsConjunction: false)
 
         XCTAssertEqual(combined?["isConjunction"] as? Bool, false)
+        XCTAssertEqual(combined?["rootGroup"] as? Bool, true)
         XCTAssertEqual(combined.map(children).map { $0.map(dictionary) }, [a, c].map(dictionary))
-        XCTAssertNil(SARuleFilterRootConjunction.replacing(rule: c, atRow: 2, in: group(children: [a, b], isConjunction: false), rootIsConjunction: false))
+        XCTAssertNil(SARuleFilterRootConjunction.replacing(rule: c, atRow: 2, in: rootGroup(children: [a, b], isConjunction: false), rootIsConjunction: false))
+    }
+
+    /// Verifies a lone nested (unmarked) group cannot be replaced by row index.
+    func testReplacingRejectsLoneNestedGroup() {
+        let nestedOr = group(children: [expression(column: "a", values: ["1"])], isConjunction: false)
+        let c = expression(column: "c", values: ["3"])
+
+        XCTAssertNil(SARuleFilterRootConjunction.replacing(rule: c, atRow: 0, in: nestedOr, rootIsConjunction: true))
     }
 
     /// Verifies nested groups cannot be addressed by row index.
@@ -197,7 +256,7 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         let nested = group(children: [expression(column: "b", values: ["2"])], isConjunction: false)
         let c = expression(column: "c", values: ["3"])
 
-        XCTAssertNil(SARuleFilterRootConjunction.replacing(rule: c, atRow: 0, in: group(children: [a, nested], isConjunction: true), rootIsConjunction: true))
+        XCTAssertNil(SARuleFilterRootConjunction.replacing(rule: c, atRow: 0, in: rootGroup(children: [a, nested], isConjunction: true), rootIsConjunction: true))
     }
 
     // MARK: - nestedGroup
@@ -208,6 +267,7 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
 
         let underAnd = SARuleFilterRootConjunction.nestedGroup(child: starter, rootIsConjunction: true)
         XCTAssertEqual(underAnd["isConjunction"] as? Bool, false)
+        XCTAssertNil(underAnd["rootGroup"], "a nested group must not look like the root")
         XCTAssertEqual(children(of: underAnd).map(dictionary), [dictionary(starter)])
 
         let underOr = SARuleFilterRootConjunction.nestedGroup(child: starter, rootIsConjunction: false)
@@ -222,7 +282,7 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         let a = expression(column: "a", values: ["1"])
         let b = expression(column: "b", values: ["2"])
 
-        restore(group(children: [a, b], isConjunction: false), into: controller)
+        restore(rootGroup(children: [a, b], isConjunction: false), into: controller)
 
         XCTAssertEqual(controller.value(forKey: "rootIsConjunction") as? Bool, false)
         let serialized = try XCTUnwrap(serializedFilter(of: controller))
@@ -248,12 +308,30 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         XCTAssertEqual(controller.value(forKey: "rootIsConjunction") as? Bool, true)
     }
 
+    /// Verifies a legacy filter (single unmarked OR group, as older versions persisted it) restores as one nested row under an AND root.
+    func testControllerRestoresLegacyOrGroupAsNestedRow() throws {
+        let controller = try makeController(columns: ["a", "b"])
+        let legacyOrGroup = group(children: [expression(column: "a", values: ["1"]), expression(column: "b", values: ["2"])], isConjunction: false)
+
+        restore(legacyOrGroup, into: controller)
+
+        XCTAssertEqual(controller.value(forKey: "rootIsConjunction") as? Bool, true)
+        let serialized = try XCTUnwrap(serializedFilter(of: controller))
+        XCTAssertEqual(serialized["isConjunction"] as? Bool, true)
+        XCTAssertEqual(serialized["rootGroup"] as? Bool, true)
+        let kids = children(of: serialized)
+        XCTAssertEqual(kids.count, 1)
+        XCTAssertEqual(kids.first?["isConjunction"] as? Bool, false)
+        XCTAssertNil(kids.first?["rootGroup"])
+        XCTAssertEqual(children(of: kids.first ?? [:]).count, 2)
+    }
+
     /// Verifies a single nested OR group under an AND root keeps its shape through the controller's restore → serialize round trip.
     func testControllerKeepsSingleNestedGroupUnderAndRoot() throws {
         let controller = try makeController(columns: ["a", "b"])
         let nested = group(children: [expression(column: "a", values: ["1"]), expression(column: "b", values: ["2"])], isConjunction: false)
 
-        restore(group(children: [nested], isConjunction: true), into: controller)
+        restore(rootGroup(children: [nested], isConjunction: true), into: controller)
 
         XCTAssertEqual(controller.value(forKey: "rootIsConjunction") as? Bool, true)
         let serialized = try XCTUnwrap(serializedFilter(of: controller))
@@ -293,13 +371,21 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         ]
     }
 
-    /// Builds a serialized group node in the controller's dictionary shape.
+    /// Builds a serialized group node in the controller's dictionary shape – a nested compound row,
+    /// or a legacy root written before the AND/OR popup existed (both carry no `rootGroup` marker).
     private func group(children: [[String: Any]], isConjunction: Bool) -> [String: Any] {
         return [
             "filterClass": "groupNode",
             "isConjunction": isConjunction,
             "children": children,
         ]
+    }
+
+    /// Builds the marked root group the current serializer writes for the AND/OR popup.
+    private func rootGroup(children: [[String: Any]], isConjunction: Bool) -> [String: Any] {
+        var node = group(children: children, isConjunction: isConjunction)
+        node["rootGroup"] = true
+        return node
     }
 
     /// The children of a serialized group, or an empty array for expressions.
