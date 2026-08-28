@@ -196,7 +196,7 @@ import Foundation
         var node: [String: Any] = [
             filterClassKey: groupClass,
             isConjunctionKey: isConjunction,
-            childrenKey: children,
+            childrenKey: children
         ]
         if isRoot {
             node[rootGroupKey] = true
