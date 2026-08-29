@@ -274,6 +274,17 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         XCTAssertEqual(underOr["isConjunction"] as? Bool, true)
     }
 
+    // MARK: - isUntouchedStarterTree
+
+    /// Verifies only a lone expression with all-empty arguments counts as the seeded starter row.
+    func testUntouchedStarterTreeDetection() {
+        XCTAssertFalse(SARuleFilterRootConjunction.isUntouchedStarterTree(nil))
+        XCTAssertTrue(SARuleFilterRootConjunction.isUntouchedStarterTree(expression(column: "a", values: [""])))
+        XCTAssertFalse(SARuleFilterRootConjunction.isUntouchedStarterTree(expression(column: "a", values: ["1"])))
+        XCTAssertFalse(SARuleFilterRootConjunction.isUntouchedStarterTree(expression(column: "a", comparison: "IS NULL", values: [])), "zero-argument operators are real rules")
+        XCTAssertFalse(SARuleFilterRootConjunction.isUntouchedStarterTree(rootGroup(children: [expression(column: "a", values: [""]), expression(column: "b", values: [""])], isConjunction: true)))
+    }
+
     // MARK: - Controller round trip
 
     /// Verifies an OR root survives restore → serialize through SPRuleFilterController and that the popup state drives serialization.
@@ -341,6 +352,20 @@ final class SARuleFilterRootConjunctionTests: XCTestCase {
         XCTAssertEqual(kids.first?["filterClass"] as? String, "groupNode")
         XCTAssertEqual(kids.first?["isConjunction"] as? Bool, false)
         XCTAssertEqual(children(of: kids.first ?? [:]).count, 2)
+    }
+
+    /// Verifies -addEmptyFilterGroup replaces the seeded starter row instead of leaving "a = ''" beside the new group.
+    func testControllerReplacesUntouchedStarterWhenAddingGroup() throws {
+        let controller = try makeController(columns: ["a", "b"])
+        restore(expression(column: "a", values: [""]), into: controller)
+
+        controller.perform(NSSelectorFromString("addEmptyFilterGroup"))
+
+        let serialized = try XCTUnwrap(serializedFilter(of: controller))
+        let kids = children(of: serialized)
+        XCTAssertEqual(kids.count, 1, "the starter row is gone, only the group remains")
+        XCTAssertEqual(kids.first?["filterClass"] as? String, "groupNode")
+        XCTAssertEqual(kids.first?["isConjunction"] as? Bool, false)
     }
 
     /// Verifies -addEmptyFilterGroup appends a visible group row (with the opposite conjunction) rather than flattening it into the popup.

@@ -174,6 +174,21 @@ import Foundation
         return group(children: [child], isConjunction: !rootIsConjunction, isRoot: false)
     }
 
+    /// Whether the whole tree is nothing but the untouched starter row the
+    /// rule editor seeds when it is first shown (one expression whose
+    /// arguments are all empty). Such a row would contribute `column = ''`
+    /// to the query, so callers that add a real rule or group replace it
+    /// instead of appending beside it – the same rule the drag-and-drop
+    /// append flow applies.
+    ///
+    /// - Parameter tree: The serialized tree currently shown, if any.
+    /// - Returns: `true` when the tree is a lone untouched starter row.
+    @objc(isUntouchedStarterTree:)
+    public static func isUntouchedStarterTree(_ tree: [String: Any]?) -> Bool {
+        guard let tree else { return false }
+        return SACellFilterMerge.isUntouchedStarter(filter: tree)
+    }
+
     /// Whether the serialized node is a group (as opposed to an expression).
     private static func isGroup(_ filter: [String: Any]) -> Bool {
         return filter[filterClassKey] as? String == groupClass

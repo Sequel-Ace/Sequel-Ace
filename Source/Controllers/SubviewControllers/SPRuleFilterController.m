@@ -1501,10 +1501,20 @@ static void _addIfNotNil(NSMutableArray *array, id toAdd);
 	// Append to the model directly instead of round-tripping through
 	// -restoreSerializedFilters:, which would flatten a lone root group
 	// into the AND/OR popup – the user asked for a visible group here.
+	// If the editor only holds the untouched starter row it was seeded
+	// with, replace that row: left beside the group it would add
+	// "firstColumn = ''" to the query (same rule as -appendFilterForColumn:).
 	NSMutableDictionary *groupRow = [self _restoreSerializedFilter:group];
 	if (!groupRow) return;
+	BOOL replaceStarter = [SARuleFilterRootConjunction isUntouchedStarterTree:[self serializedFilter]];
 	[self _doChangeToRuleEditorData:^{
-		[[self->_modelContainer mutableArrayValueForKey:@"model"] addObject:groupRow];
+		NSMutableArray *proxy = [self->_modelContainer mutableArrayValueForKey:@"model"];
+		if (replaceStarter) {
+			[proxy setArray:@[groupRow]];
+		}
+		else {
+			[proxy addObject:groupRow];
+		}
 	}];
 	[self _recalculateCheckboxStatesFromRow:-1];
 
