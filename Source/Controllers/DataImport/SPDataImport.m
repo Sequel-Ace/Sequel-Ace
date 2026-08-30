@@ -931,7 +931,7 @@
 			BOOL atPartialLineEnding = NO;
 			NSInteger segmentEndPosition = dataBufferPosition;
 
-#warning This EOL detection logic will break for multibyte encodings (like UTF16)!
+			// TODO (#2605): this EOL detection logic will break for multibyte encodings (like UTF16)
 			if (csvLineTerminatorLength && dataBufferPosition < dataBufferLength) {
 				NSInteger remainingBytes = dataBufferLength - dataBufferPosition;
 				NSInteger bytesToCompare = MIN(remainingBytes, csvLineTerminatorLength);
@@ -1167,7 +1167,7 @@
 
 						rowsImported++;
 						csvRowsThisQuery++;
-#warning Updating the UI for every single row is likely a performance killer (even without synchronization).
+						// TODO (#2606): updating the UI for every single row is likely a performance killer (even without synchronization)
 						SPMainQSync(^{
 							if (fileIsCompressed) {
 								[self->singleProgressBar setDoubleValue:[csvFileHandle realDataReadLength]];
@@ -1205,7 +1205,7 @@
 								[[SPQueryController sharedQueryController] showErrorInConsole:mySQLConnection.lastErrorMessage connection:mySQLConnection.host database:databaseName];
 							}
 						}
-#warning duplicate code (see above)
+						// TODO (#2606): duplicate progress-update code (see above)
 						rowsImported++;
 						SPMainQSync(^{
 							if (fileIsCompressed) {
@@ -1219,7 +1219,7 @@
 					}
 				} else {
 					rowsImported += csvRowsThisQuery;
-#warning duplicate code (see above)
+					// TODO (#2606): duplicate progress-update code (see above)
 					SPMainQSync(^{
 						if (fileIsCompressed) {
 							[self->singleProgressBar setDoubleValue:[csvFileHandle realDataReadLength]];
