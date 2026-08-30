@@ -408,6 +408,41 @@ view-based-tableview migration, not a cast), generated lexer unreachable-code
 (2), RegexKitLite (1, vendored), `selectionHighlightStyle = .sourceList` and
 the three intentional `legacyUnarchive`/`legacyArchivedData` markers.
 
+## Step 11 — Third-party / generated-code containment — ✅ Done
+
+Same basis as step 10 ("Unit Tests" scheme, clean `build-for-testing`, fresh
+derived data): **104 → 78 raw occurrences, 60 → 34 unique lines** — exactly the
+−26 predicted, zero new warnings. What remains is now *only* the deferred
+migrations and the intentional markers (see below).
+
+- **Firebase `-Wquoted-include-in-framework-header` (21)** — the prebuilt
+  FirebaseAnalytics xcframework's own headers, unfixable from here. Silenced
+  with per-file `-Wno-quoted-include-in-framework-header` on the only two TUs
+  that `@import` Firebase modules (SPAppController.m,
+  ReportExceptionApplication.m), set via the Xcode MCP. Deliberately *not* the
+  target-wide `CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO`, so the
+  check still guards our own framework headers. Verified the per-file flags do
+  reach the module builds on Xcode 26.
+- **`preparedCellAtColumn:row:` (2)** — containment, not migration: both
+  tables (SPCopyTable, SPFieldMapperController's field mapper) are still
+  cell-based, so the deprecated cell API is the only correct one until the
+  view-based rewrite their existing 2020 TODOs already call for. Pragma-wrapped
+  with a comment saying exactly that.
+- **Generated lexer `-Wunreachable-code` (2)** — the unreachable code is
+  flex's boilerplate in the generated `.yy.c`, so each `.l` prologue now
+  carries a file-scope `#pragma clang diagnostic ignored` (a scoped push/pop
+  can't reach generated code).
+- **RegexKitLite `-Wobjc-multiple-method-names` (1)** — vendored third-party,
+  patched in place per the step 7 precedent: the ambiguous `id` receiver is
+  inside an `isKindOfClass:[NSException class]` branch, so it now casts to
+  `NSException *` (also de-ambiguating `reason`/`userInfo` on the same line).
+
+The remaining 34 unique lines are the floor this plan predicted: SecKeychain
+(10) + NSConnection (6) deferred migrations, the intentional `#warning`
+markers (14), and the intentional Swift deprecation markers (4:
+`selectionHighlightStyle = .sourceList`, `legacyUnarchive`,
+`legacyArchivedData` ×2).
+
 ## Deferred (own projects, not part of this burn-down)
 
 - **SPKeychain SecKeychain* API (~15)** — migrate to `SecItem*` with in-place
