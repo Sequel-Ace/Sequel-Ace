@@ -120,6 +120,28 @@ final class SPTableContentColumnFilterTests: XCTestCase {
     }
 }
 
+final class SARuleFilterResizePolicyTests: XCTestCase {
+
+    /// Verifies an unchanged row count schedules no resize at all.
+    func testUnchangedRowCountDoesNothing() {
+        XCTAssertEqual(SARuleFilterResizePolicy.action(rowCount: 3, previousRowCount: 3), .none)
+        XCTAssertEqual(SARuleFilterResizePolicy.action(rowCount: 0, previousRowCount: 0), .none)
+    }
+
+    /// Verifies growing resizes immediately so the container makes room while the row animates in.
+    func testGrowingResizesImmediately() {
+        XCTAssertEqual(SARuleFilterResizePolicy.action(rowCount: 1, previousRowCount: 0), .immediate)
+        XCTAssertEqual(SARuleFilterResizePolicy.action(rowCount: 5, previousRowCount: 2), .immediate)
+    }
+
+    /// Verifies shrinking waits for the rule editor's removal animation.
+    func testShrinkingDefersResize() {
+        XCTAssertEqual(SARuleFilterResizePolicy.action(rowCount: 2, previousRowCount: 3), .deferred)
+        XCTAssertEqual(SARuleFilterResizePolicy.action(rowCount: 0, previousRowCount: 1), .deferred)
+        XCTAssertGreaterThan(SARuleFilterResizePolicy.deferredResizeDelay, 0)
+    }
+}
+
 final class PinnedTableMigrationPlannerTests: XCTestCase {
 
     func testPinnedTableMigrationTokenGeneration() {
