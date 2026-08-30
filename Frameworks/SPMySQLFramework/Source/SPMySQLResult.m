@@ -313,7 +313,7 @@ static id NSNullPointer;
     
     return (str == nil) ? @"" : str;
 }
-#warning duplicate code with Data Conversion.m stringForDataBytes:length:encoding: (↑, ↓)
+// TODO (#2604): duplicate code with Data Conversion.m stringForDataBytes:length:encoding: (↑, ↓)
 - (NSString *)_lossyStringWithBytes:(const void *)bytes length:(NSUInteger)length wasLossy:(BOOL *)outLossy
 {
 	if(!bytes || !length) return @""; //to match -[NSString initWithBytes:length:encoding:]

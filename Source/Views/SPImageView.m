@@ -49,7 +49,7 @@
 		if ([delegate respondsToSelector:@selector(processUpdatedImageData:)]) {
 			delegateForUse = delegate;
 		}
-#warning Private ivar accessed from outside (#2978)
+		// TODO (#2603): private ivar accessed from outside via KVC (upstream sequelpro#2978)
 		else if ( [delegate valueForKey:@"tableContentInstance"]
 					&& [[delegate valueForKey:@"tableContentInstance"] respondsToSelector:@selector(processUpdatedImageData:)] ) {
 			delegateForUse = [delegate valueForKey:@"tableContentInstance"];
@@ -115,7 +115,7 @@
 		if ([delegate respondsToSelector:@selector(processUpdatedImageData:)]) {
 			delegateForUse = delegate;
 		}
-#warning Private ivar accessed from outside (#2978)
+		// TODO (#2603): private ivar accessed from outside via KVC (upstream sequelpro#2978)
 		else if ( [delegate valueForKey:@"tableContentInstance"]
 					&& [[delegate valueForKey:@"tableContentInstance"] respondsToSelector:@selector(processUpdatedImageData:)] ) {
 			delegateForUse = [delegate valueForKey:@"tableContentInstance"];

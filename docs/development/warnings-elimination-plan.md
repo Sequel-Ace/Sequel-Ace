@@ -443,6 +443,33 @@ markers (14), and the intentional Swift deprecation markers (4:
 `selectionHighlightStyle = .sourceList`, `legacyUnarchive`,
 `legacyArchivedData` ×2).
 
+## Step 12 — `#warning` markers → GitHub issues — ✅ Done
+
+Same basis as steps 10-11: **78 → 52 raw occurrences, 34 → 20 unique lines**.
+Every `#warning` in the codebase (15 sites — the build showed 14 because the
+`Querying & Preparation.m` one had the same normalized text as a sibling) is
+now a `// TODO (#issue):` comment pointing at a tracked Sequel-Ace issue:
+
+| Issue | Markers |
+|---|---|
+| #2603 cross-class ivar access via KVC | SPWindowAdditions:79, SPImageView:52/118 |
+| #2604 SPMySQLFramework encoding/dup conversion | Conversion.m:46, Querying & Preparation.m:130, SPMySQLResult.m:316 |
+| #2605 CSV EOL detection vs multibyte encodings | SPDataImport.m:934 |
+| #2606 SPDataImport cleanup (per-row UI, dup code, xib outlets) | SPDataImport.m:1170/1208/1222, SPDataImport.h:49 |
+| #2607 dedupe result-cell lookup with SPTableContent | SPCustomQuery.m:3875 |
+| #2608 collation menu rebuilt per cell-display | SPTableStructure.m:1997 |
+| #2609 exporter encoding audit (writeUTF8String / NSData decode) | SPExporter.h:156, SPSQLExporter.m:345 |
+
+The old markers' `#2978`/`#2700` references were **upstream sequel-pro issue
+numbers**, not Sequel-Ace ones (they resolve to unrelated PRs here); the new
+issues cite `sequelpro/sequelpro#2978` / `#2700` explicitly for history.
+
+Remaining after this step: **20 unique lines**, all of them the two deferred
+migrations — SecKeychain (10) and NSConnection (6) — plus the 4 intentional
+Swift deprecation markers (`selectionHighlightStyle = .sourceList`,
+`legacyUnarchive`, `legacyArchivedData` ×2). Zero is now gated purely on the
+deferred projects below.
+
 ## Deferred (own projects, not part of this burn-down)
 
 - **SPKeychain SecKeychain* API (~15)** — migrate to `SecItem*` with in-place
@@ -462,10 +489,11 @@ markers (14), and the intentional Swift deprecation markers (4:
   message now reads "building for macOS-13.5", but the committed dylibs were
   not rebuilt. `build-libmysqlclient.sh` *was* updated to 13.5, so whenever the
   rebuild happens it will produce a consistent binary.
-- **Intentional markers, keep**: SAArchiving `legacyUnarchive` (by design),
-  `#warning` TODOs (collation-menu perf hog SPTableStructure:1994, duplicate
-  code SPDataImport:1167 / SPCustomQuery:3761, private-ivar note
-  SPImageView:50 (#2978)) — convert to GitHub issues if we want a clean zero.
+- **Intentional markers, keep**: SAArchiving `legacyUnarchive` /
+  `legacyArchivedData` (by design — the deprecation attribute *is* the
+  guard-rail) and `selectionHighlightStyle = .sourceList` (replacement changes
+  row metrics; wants a visual pass). The `#warning` TODOs were converted to
+  tracked issues in step 12.
 
 ## Expected trajectory
 

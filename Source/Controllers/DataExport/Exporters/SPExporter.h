@@ -153,9 +153,10 @@
  * Write a string to the current output file using UTF-8 encoding
  * @param input The string to write
  */
-#warning This method mainly exists to shorten some old code which sometimes uses [self exportOutputEncoding] and sometimes NSUTF8StringEncoding. \
-	     In general there should be no need to have more than one encoding in a file. \
-         Someone needs to check if that was an oversight or intentional.
+// TODO (#2609): this method mainly exists to shorten some old code which sometimes uses
+// [self exportOutputEncoding] and sometimes NSUTF8StringEncoding. In general there should
+// be no need to have more than one encoding in a file; someone needs to check whether
+// that was an oversight or intentional.
 - (void)writeUTF8String:(NSString *)input;
 
 @end

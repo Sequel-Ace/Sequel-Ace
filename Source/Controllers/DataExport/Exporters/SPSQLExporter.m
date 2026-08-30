@@ -342,7 +342,9 @@
             if (sqlOutputIncludeStructure && createTableSyntax && tableType == SPTableTypeTable) {
 
                 if ([createTableSyntax isKindOfClass:[NSData class]]) {
-#warning This doesn't make sense. If the NSData really contains a string it would be in utf8, utf8mb4 or a mysql pre-4.1 legacy charset, but not in the export output charset. This whole if() is likely a side effect of the BINARY flag confusion (#2700)
+                    // TODO (#2609): this doesn't make sense — if the NSData really contains a string it would be
+                    // in utf8, utf8mb4 or a mysql pre-4.1 legacy charset, but not in the export output charset.
+                    // This whole if() is likely a side effect of the BINARY flag confusion (upstream sequelpro#2700).
                     createTableSyntax = [[NSString alloc] initWithData:createTableSyntax encoding:[self exportOutputEncoding]];
                 }
 

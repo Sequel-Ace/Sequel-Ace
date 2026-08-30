@@ -127,7 +127,8 @@ databaseContextIsRequired:(BOOL)databaseContextIsRequired;
 	// any nul characters contained in the string.
 	NSData *escapedData;
 	if (includeQuotes) {
-#warning This code assumes that the encoding cData is in is still ASCII-compatible which may not be the case (e.g. for UTF16, EBCDIC)
+		// TODO (#2604): this code assumes that the encoding cData is in is still ASCII-compatible,
+		// which may not be the case (e.g. for UTF16, EBCDIC)
 		// Add quotes if requested
 		escBuffer[0] = '\'';
 		escBuffer[escapedLength+1] = '\'';
