@@ -387,9 +387,12 @@ favorites (items created by the released app, read in place by SAKeychain):
   `information_schema.processlist` showed both sessions authenticated as the
   favorite's user with its database selected.
 
-Rows 1/3/4/5/7 (favorite save / rename / password change / delete /
-import-export) and row 9 (downgrade) still need a hands-on pass before
-release; the soak-one-release guidance stands.
+The remaining UI rows (favorite save / rename / password change / delete /
+import-export) were then verified hands-on by the maintainer against the
+same debug build (2026-08-31), covering most of the matrix. Anything not
+explicitly exercised — notably row 9, the downgrade check against the
+previous release — should get a look during the release soak; the
+soak-one-release guidance stands.
 
 - Swap the ~8 constructing call sites (`SPConnectionController`,
   `SPDatabaseDocument`, `SPSSHTunnel`, `SAConnectionService`,
