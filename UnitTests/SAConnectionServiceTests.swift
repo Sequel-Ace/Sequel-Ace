@@ -2,12 +2,41 @@
 //  SAConnectionServiceTests.swift
 //  Unit Tests
 //
-//  Tests for the connection info → service parameter mapping.
+//  Tests for the connection service's pure Swift support types and
+//  connection info → service parameter mapping.
 //  SAConnectionResult and SAConnectionPreferences live in the app target
 //  (depend on SPMySQL), so they're tested via integration, not here.
 //
 
 import XCTest
+
+// MARK: - SSH Tunnel Failure Tests
+
+final class SASSHTunnelFailureTests: XCTestCase {
+
+    func testSSHFailurePreservesTunnelDiagnostics() {
+        let debugMessages = """
+        debug1: Connecting to jump.local [192.168.1.8] port 22.
+        ssh: connect to host jump.local port 22: No route to host
+        """
+
+        let failure = SASSHTunnelFailure(
+            message: "The SSH Tunnel has unexpectedly closed.",
+            debugMessages: debugMessages
+        )
+
+        XCTAssertEqual(failure.message, "The SSH Tunnel has unexpectedly closed.")
+        XCTAssertEqual(failure.errorDetail, debugMessages)
+        XCTAssertEqual(failure.debugMessages, debugMessages)
+    }
+
+    func testSSHFailureOmitsEmptyTunnelDiagnosticsFromDetail() {
+        let failure = SASSHTunnelFailure(message: "Failed to create SSH tunnel", debugMessages: "")
+
+        XCTAssertNil(failure.errorDetail)
+        XCTAssertEqual(failure.debugMessages, "")
+    }
+}
 
 // MARK: - Connection Info Parameter Mapping Tests
 
