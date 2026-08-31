@@ -3872,7 +3872,7 @@ static NSString * const SPDashStyleCommentMarker = @"-- ";
  */
 - (id)_resultDataItemAtRow:(NSInteger)row columnIndex:(NSUInteger)column preserveNULLs:(BOOL)preserveNULLs asPreview:(BOOL)asPreview;
 {
-#warning duplicate code with SPTableContent.m tableView:objectValueForTableColumn:…
+    // TODO (#2607): duplicate code with SPTableContent.m tableView:objectValueForTableColumn:…
     id value = nil;
     
     // While the table is being loaded, additional validation is required - data

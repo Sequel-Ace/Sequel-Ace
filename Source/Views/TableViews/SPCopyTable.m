@@ -167,7 +167,12 @@ NSString *kFieldTypeGroup = @"FIELDGROUP";
  */
 - (BOOL)isCellComplex {
 	// TODO: using rowViewAtRow:createIfNeeded means changing the entire table to be view based rather than cell based. leaveing for now - 2020-10-22
+	// Containment, not migration: this table is still cell-based, so the
+	// deprecated cell API is the only correct one until the view-based rewrite.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 	return (![[self preparedCellAtColumn:[self editedColumn] row:[self editedRow]] isKindOfClass:[SPTextAndLinkCell class]]);
+#pragma clang diagnostic pop
 }
 
 #pragma mark -

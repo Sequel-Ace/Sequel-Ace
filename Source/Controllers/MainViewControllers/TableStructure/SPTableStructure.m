@@ -1994,7 +1994,7 @@ static void _BuildMenuWithPills(NSMenu *menu,struct _cmpMap *map,size_t mapEntri
 		NSString *columnEncoding = [rowData safeObjectForKey:@"encodingName"];
 		NSString *columnCollation = [rowData safeObjectForKey:@"collationName"]; // loadTable: has already inferred it, if not set explicit
 
-#warning Building the collation menu here is a big performance hog. This should be done in menuNeedsUpdate: below!
+		// TODO (#2608): building the collation menu here is a big performance hog; it should happen in menuNeedsUpdate: below
 		NSPopUpButtonCell *collationCell = [tableColumn dataCell];
 		[collationCell removeAllItems];
 		[collationCell addItemWithTitle:@"dummy"];

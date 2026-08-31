@@ -43,6 +43,10 @@
  */
  
 #import "SPEditorTokens.h"
+
+// File-scope on purpose: the unreachable code lives in flex's generated
+// boilerplate below this prologue, which cannot carry its own pragma.
+#pragma clang diagnostic ignored "-Wunreachable-code"
 #include "SPParserUtils.h"
 
 size_t yyuoffset, yyuleng;
